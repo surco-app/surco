@@ -16,7 +16,7 @@ import type {
 import { beatGrid } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
-import { readMatchingChains } from './rekordboxMatching'
+import { readMatchingBlocks } from './rekordboxMatching'
 import { localDate } from './rekordboxRows'
 import { smartListContent } from './rekordboxSmartList'
 
@@ -302,7 +302,7 @@ export function readRekordboxPlaylistWithPreview(
   exists: (p: string) => boolean = existsSync,
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
-  const chains = id === MATCHING_ID ? readMatchingChains(db) : []
+  const chains = id === MATCHING_ID ? readMatchingBlocks(db) : []
   const matched = chains.flat()
   const content =
     id === RECENTLY_ADDED_ID

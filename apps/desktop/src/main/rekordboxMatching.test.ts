@@ -77,7 +77,7 @@ describe('the Matching entry of the rekordbox source', () => {
     expect(readMatchingCount(await open(fixture))).toBe(5)
   })
 
-  it('lists the tracks chain by chain with a separator between chains, longest chain first', async () => {
+  it('lists each block as a track and the ones saved after it, with a separator between blocks', async () => {
     const rows = readRekordboxPlaylistWithPreview(
       await open(fixture),
       '/share',
@@ -85,12 +85,14 @@ describe('the Matching entry of the rekordbox source', () => {
       () => false,
     )
     expect(rows.map((r) => (r.separator ? '|' : r.preview?.title))).toEqual([
-      'Acid Groove',
-      'Take Me Home',
       'Let Yourself Go',
+      'Take Me Home',
       '|',
-      'In My Eyes',
       'Que Idea',
+      'In My Eyes',
+      '|',
+      'Take Me Home',
+      'Acid Groove',
     ])
   })
 
@@ -106,7 +108,7 @@ describe('the Matching entry of the rekordbox source', () => {
       MATCHING_ID,
       () => false,
     )
-    expect(rows[0]).toMatchObject({ path: ACID.FolderPath, contentId: ACID.ID, separator: false })
+    expect(rows[0]).toMatchObject({ path: LET.FolderPath, contentId: LET.ID, separator: false })
   })
 })
 

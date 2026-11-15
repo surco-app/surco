@@ -1,4 +1,4 @@
-import { matchingChains } from '../../../shared/matchingChains'
+import { matchingBlocks } from '../../../shared/matchingBlocks'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { MatchingPartner } from './matchingPartners'
 
@@ -42,7 +42,7 @@ export function matchingEntriesFor(
 ): SourcePlaylistEntry[] {
   const here = byPath(entries)
   const held = pairs.filter(([a, b]) => here.has(nfc(a)) && here.has(nfc(b)))
-  const chains = matchingChains(
+  const chains = matchingBlocks(
     held.map(([a, b]) => [nfc(a), nfc(b)] as const),
     (path) => titleOf(here.get(path) as SourcePlaylistEntry),
   )

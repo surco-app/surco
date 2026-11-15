@@ -1,4 +1,4 @@
-import { matchingChains } from '../shared/matchingChains'
+import { matchingBlocks } from '../shared/matchingBlocks'
 import type { openRekordboxDb } from './rekordboxDb'
 import { IS_SEPARATOR } from './rekordboxPlaylists'
 
@@ -31,7 +31,7 @@ export function readMatchingCount(db: RekordboxDb): number {
   return new Set(readMatchingPairs(db).flat()).size
 }
 
-export function readMatchingChains(db: RekordboxDb): string[][] {
+export function readMatchingBlocks(db: RekordboxDb): string[][] {
   const pairs = readMatchingPairs(db)
   if (pairs.length === 0) return []
   const ids = [...new Set(pairs.flat())]
@@ -39,7 +39,7 @@ export function readMatchingChains(db: RekordboxDb): string[][] {
     .prepare(`SELECT ID, Title FROM djmdContent WHERE ID IN (${ids.map(() => '?').join(',')})`)
     .all(...ids) as { ID: string | number; Title: string | null }[]
   const titles = new Map(rows.map((r) => [String(r.ID), r.Title?.trim() ?? '']))
-  return matchingChains(pairs, (id) => titles.get(id) ?? '')
+  return matchingBlocks(pairs, (id) => titles.get(id) ?? '')
 }
 
 interface PlayedRow {
