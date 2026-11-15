@@ -2465,6 +2465,7 @@
     "removeFromPlaylistTitle_one": "Vols treure aquesta pista de «{{name}}»?",
     "removeFromPlaylistTitle_other": "Vols treure {{count}} pistes de «{{name}}»?",
     "removeFromPlaylistMessage": "Es treuen de la playlist a rekordbox. Els fitxers i la resta de la col·lecció no canvien.",
+    "removeFromMatchingMessage": "Es desfan les seves parelles de matching. Els fitxers no canvien.",
     "removeFromPlaylistConfirm": "Treure"
   },
   "activity": {
