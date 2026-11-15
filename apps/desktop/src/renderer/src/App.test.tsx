@@ -1063,6 +1063,18 @@ describe('App Traktor cues', () => {
       )
     })
 
+    it('unpairs from the menu of the one row marked with the rings, the pair the DJ sees', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await openPlaylist()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await within(screen.getAllByTestId('track-row')[1]).findByTestId('track-matching')
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+      fireEvent.click(await screen.findByTestId('track-menu-unmatch'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+    })
+
     it('unpairs a partner from the editor', async () => {
       openTraktor({ matchingPairs: paired() })
       await openPlaylist()
@@ -3848,6 +3860,18 @@ describe('App source playlists', () => {
       const unmatch = await screen.findByTestId('track-menu-unmatch')
       expect(screen.queryByTestId('track-menu-matching')).not.toBeInTheDocument()
       fireEvent.click(unmatch)
+      await waitFor(() =>
+        expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
+      )
+    })
+
+    it('unpairs the chosen track from the ringed row right-clicked alone, in rekordbox too', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      await within(rowTitled('Charlie')).findByTestId('track-matching')
+      fireEvent.contextMenu(rowTitled('Charlie'))
+      fireEvent.click(await screen.findByTestId('track-menu-unmatch'))
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
       )
