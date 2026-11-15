@@ -35,3 +35,18 @@ Change: in `twinPlansOf`, skip a draft before any read when none of its cues has
 Tests (lib/cueTwins.test.ts, following its existing setup):
 - a draft with no flow-placed cues is never read (`window.api.cues.trackCues` not called for it) and yields no plan, so clearing thousands of tracks does not read and cache every track's analysis;
 - a draft with flow-placed cues is still read and planned exactly as before (an existing test may already cover it; keep it green).
+
+## Task 3: one draft notification per batch
+
+Measured 15/11 with Tasks 1-2 in place: clearing all 13,280 rows of `SOAK BIG` still crashed the renderer after 11 minutes. Experiment (uncommitted, reverted): setting all cleared drafts and notifying the draft listeners ONCE at the end made the same run finish in 43-74 s with the heap at 400-560 MB, tally right (75,364 hot cues, 106,572 CALLs). Cause: `keepDraft` (lib/cueSession.ts) calls `changed()` per track, which rebuilds the unsaved Set and re-renders every subscriber; `CuesBatchSection` then builds a new `cue-twin-plans-batch` query whose key holds every draft, so the query cache retains thousands of ever-growing keys. Discard has the same shape: `forgetDraft` per id took 3.8 s for 13,280. A second experiment (asking the queue without the query cache) changed nothing and is NOT part of this task. With 13,280 rows selected and nothing clicked, the renderer already spends 42.6 of every 50 s in long tasks; that background load is pre-existing and out of scope.
+
+Change:
+1. `lib/cueSession.ts`: add `keepDrafts(entries)` taking the same fields as `keepDraft` per entry (`contentId, draftKey, value, target, base`), setting them all and calling `changed()` once when at least one entry was set. Add `forgetDrafts(contentIds)` that deletes them all and calls `changed()` once when something was deleted. Keep `keepDraft`/`forgetDraft` unchanged for their existing callers.
+2. `clearCueDrafts` (lib/cueAutoMark.ts): collect the cleared drafts and call `keepDrafts` once at the end instead of `keepDraft` per track. The counts and `cleared` list stay as they are.
+3. `CuesBatchSection` discard of cleared drafts: call `forgetDrafts(cleared ids)` once instead of `forgetDraft` per id.
+
+Tests (lib/cueSession.test.ts if it exists, else next to the existing session tests; cueAutoMark.test.ts; CuesBatchSection.test.tsx):
+- keepDrafts of many entries notifies subscribers once (subscribeCueDrafts listener called once) and all become unsaved, so a big clear does not re-render the app once per track;
+- forgetDrafts notifies once and removes them all; forgetDrafts of ids with no draft does not notify;
+- clearCueDrafts on several tracks notifies the draft listeners once;
+- existing clear and discard tests keep passing with their meaning.
