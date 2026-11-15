@@ -1,7 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { blocksOf, blocksWith, playlistMembership, playlistView } from './playlistView'
+import {
+  blocksOf,
+  blocksWith,
+  distinctById,
+  playlistMembership,
+  playlistView,
+  rowKeys,
+} from './playlistView'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -180,6 +187,40 @@ describe('playlistView', () => {
     expect(after.contentOf).not.toBe(before.contentOf)
   })
 
+  it('shows a track again in every Matching block it belongs to, so each block reads whole', () => {
+    const D = track('d', '/m/D.wav')
+    const entries = [
+      entry('/m/A.wav'),
+      entry('/m/B.wav'),
+      entry('/m/C.wav'),
+      entry(SEP, true, 's1'),
+      entry('/m/C.wav'),
+      entry('/m/D.wav'),
+    ]
+    const view = playlistView([A, B, C, D], entries, null, { repeats: true })
+    expect(view.tracks.map((t) => t.id)).toEqual(['a', 'b', 'c', 'c', 'd'])
+    expect(view.separatorBefore.has('c~1')).toBe(true)
+    expect(view.separatorBefore.has('c')).toBe(false)
+  })
+
+  it('shows a track once in any other playlist, where a second row is the same track', () => {
+    const D = track('d', '/m/D.wav')
+    const entries = [
+      entry('/m/A.wav'),
+      entry('/m/B.wav'),
+      entry('/m/C.wav'),
+      entry(SEP, true, 's1'),
+      entry('/m/C.wav'),
+      entry('/m/D.wav'),
+    ]
+    expect(playlistView([A, B, C, D], entries).tracks.map((t) => t.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
+  })
+
   it('lays the playlist out again when its rows change', () => {
     const before = playlistView([A, B], [entry('/m/A.wav', false, 'l1')])
     const after = playlistView([A, B], [entry('/m/A.wav', false, 'l1')], before)
@@ -233,6 +274,48 @@ describe('blocksOf', () => {
       'c',
       'd',
     ])
+  })
+})
+
+describe('blocksOf with a track in two blocks', () => {
+  const rows = ['a', 'c', 'c', 'd'].map((id) => ({ id }))
+  const breaks = new Map([['c~1', ['s1']]])
+
+  it('puts a chosen track in the new playlist once, though two blocks hold it', () => {
+    expect(blocksOf(rows, breaks, new Set(['c'])).map((r) => r.id)).toEqual(['a', 'c', 'd'])
+  })
+
+  it('puts every track in once when none is chosen', () => {
+    expect(blocksOf(rows, breaks, new Set()).map((r) => r.id)).toEqual(['a', 'c', 'd'])
+  })
+})
+
+describe('rowKeys', () => {
+  it('keys each repeat of a track apart, so React and the separators can tell the rows apart', () => {
+    expect(rowKeys(['a', 'c', 'c', 'c'].map((id) => ({ id })))).toEqual(['a', 'c', 'c~1', 'c~2'])
+  })
+})
+
+describe('distinctById', () => {
+  it('keeps the first row of each track, so counts and bulk actions see a track once', () => {
+    expect(distinctById(['a', 'c', 'c', 'd'].map((id) => ({ id }))).map((r) => r.id)).toEqual([
+      'a',
+      'c',
+      'd',
+    ])
+  })
+
+  it('hands back the same list when nothing repeats, so the memoized rows keep their input', () => {
+    const rows = ['a', 'b'].map((id) => ({ id }))
+    expect(distinctById(rows)).toBe(rows)
+  })
+})
+
+describe('blocksWith with a track in two blocks', () => {
+  it('reads the break before the second row of a repeated track', () => {
+    const rows = ['a', 'c', 'c', 'd'].map((id) => ({ id }))
+    const breaks = new Map([['c~1', ['s1']]])
+    expect(blocksWith(rows, breaks, (r) => r.id === 'd').map((r) => r.id)).toEqual(['c', 'd'])
   })
 })
 

@@ -216,6 +216,7 @@ import { reopenedPlaylist } from './lib/playlistEdits'
 import {
   blocksOf,
   blocksWith,
+  distinctById,
   type PlaylistScope,
   playlistMembership,
   playlistView,
@@ -1974,7 +1975,9 @@ export default function App(): React.JSX.Element {
   const playlistScope = useMemo(() => {
     prevPlaylistScope.current =
       browser.playlist && browser.entries
-        ? playlistView(tracksView, browser.entries, prevPlaylistScope.current)
+        ? playlistView(tracksView, browser.entries, prevPlaylistScope.current, {
+            repeats: browser.playlist.id === MATCHING_ID,
+          })
         : null
     return prevPlaylistScope.current
   }, [browser.playlist, browser.entries, tracksView])
@@ -1989,10 +1992,11 @@ export default function App(): React.JSX.Element {
   const filesView = useMemo(() => tracksView.filter(inFiles), [tracksView])
   // A source with no playlist applied yet (none picked, or its entries still loading) shows
   // nothing: the working list's rows there read as tracks of that library.
-  const scopeTracks = useMemo(
+  const scopeRows = useMemo(
     () => playlistScope?.tracks ?? (browser.source ? [] : filesView),
     [playlistScope, browser.source, filesView],
   )
+  const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
   const listedCount = browser.source ? tracks.length : filesView.length
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
@@ -2213,14 +2217,14 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = filterKey
       stickyIds.current = new Set()
     }
-    const filtered = filterWithSticky(scopeTracks, filterSelection, stickyIds.current, filterFacts)
+    const filtered = filterWithSticky(scopeRows, filterSelection, stickyIds.current, filterFacts)
     const found =
       sourceProgram !== null && browser.playlist?.id === MATCHING_ID
         ? blocksWith(filtered, playlistScope?.separatorBefore, searchMatcher(deferredSearch))
         : filtered.filter(searchMatcher(deferredSearch))
     return sortTracks(found, sortBy, sortDir)
   }, [
-    scopeTracks,
+    scopeRows,
     filterSelection,
     filterKey,
     filterFacts,
@@ -2233,7 +2237,7 @@ export default function App(): React.JSX.Element {
   ])
   const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
-  const visibleTracks = useMemo(() => {
+  const visibleRows = useMemo(() => {
     // While the same track stays selected under the same view, edits re-sort nothing: the
     // row the user is correcting (or one a background match rewrites) keeps its place, and
     // the list catches up when the user picks another track or changes the sort.
@@ -2250,6 +2254,7 @@ export default function App(): React.JSX.Element {
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
+  const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -4250,7 +4255,7 @@ export default function App(): React.JSX.Element {
                                         name,
                                         folder: false,
                                         tracks: blocksOf(
-                                          scopeTracks,
+                                          scopeRows,
                                           playlistScope?.separatorBefore,
                                           selectedIdSet,
                                         ).map(trackRef),
@@ -4385,7 +4390,7 @@ export default function App(): React.JSX.Element {
                           ) : (
                             <TrackList
                               showWaves={showListWaves}
-                              tracks={visibleTracks}
+                              tracks={visibleRows}
                               selectedId={selectedId}
                               selectedIds={selectedIdSet}
                               outputFormat={

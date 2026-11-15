@@ -62,10 +62,26 @@ function sameLayout(a: LaidOutFrom, b: LaidOutFrom): boolean {
   )
 }
 
+export function rowKeys(tracks: readonly { id: string }[]): string[] {
+  const times = new Map<string, number>()
+  return tracks.map((t) => {
+    const n = times.get(t.id) ?? 0
+    times.set(t.id, n + 1)
+    return n === 0 ? t.id : `${t.id}~${n}`
+  })
+}
+
+export function distinctById<T extends { id: string }>(tracks: T[]): T[] {
+  const seen = new Set<string>()
+  const distinct = tracks.filter((t) => !seen.has(t.id) && !!seen.add(t.id))
+  return distinct.length === tracks.length ? tracks : distinct
+}
+
 export function playlistView(
   tracks: TrackItem[],
   entries: SourcePlaylistEntry[],
   previous: PlaylistScope | null = null,
+  { repeats = false }: { repeats?: boolean } = {},
 ): PlaylistScope {
   const byPath = new Map<string, TrackItem>()
   for (const t of tracks) for (const p of composed(t).moved) byPath.set(p, t)
@@ -75,7 +91,7 @@ export function playlistView(
   }
   for (const t of tracks) byPath.set(composed(t).input, t)
   const shown: TrackItem[] = []
-  const seen = new Set<string>()
+  const seen = new Map<string, number>()
   const separatorBefore = new Map<string, string[]>()
   const linkOf = new Map<string, string>()
   const linksOf = new Map<string, string[]>()
@@ -97,12 +113,15 @@ export function playlistView(
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
     rows.push(t && `${t.id}\n${t.inputPath}`)
     if (t && e.linkId) linksOf.set(t.id, [...(linksOf.get(t.id) ?? []), e.linkId])
-    if (!t || seen.has(t.id)) return
-    seen.add(t.id)
+    if (!t) return
+    const times = seen.get(t.id) ?? 0
+    if (times > 0 && !repeats) return
+    seen.set(t.id, times + 1)
     shown.push(t)
-    if (e.linkId) linkOf.set(t.id, e.linkId)
-    if (e.contentId) contentOf.set(t.id, e.contentId)
-    if (pending.length) separatorBefore.set(t.id, pending)
+    const key = times === 0 ? t.id : `${t.id}~${times}`
+    if (times === 0 && e.linkId) linkOf.set(t.id, e.linkId)
+    if (times === 0 && e.contentId) contentOf.set(t.id, e.contentId)
+    if (pending.length) separatorBefore.set(key, pending)
     pending = []
   })
   const from = { entries, rows }
@@ -145,10 +164,11 @@ export function blocksWith<T extends { id: string }>(
   test: (track: T) => boolean,
 ): T[] {
   const blocks: T[][] = []
-  for (const t of tracks) {
-    if (blocks.length === 0 || separatorBefore?.has(t.id)) blocks.push([])
+  const keys = rowKeys(tracks)
+  tracks.forEach((t, i) => {
+    if (blocks.length === 0 || separatorBefore?.has(keys[i])) blocks.push([])
     blocks[blocks.length - 1].push(t)
-  }
+  })
   return blocks.filter((block) => block.some(test)).flat()
 }
 
@@ -158,5 +178,5 @@ export function blocksOf<T extends { id: string }>(
   chosen: ReadonlySet<string>,
 ): T[] {
   const picked = blocksWith(tracks, separatorBefore, (t) => chosen.has(t.id))
-  return picked.length > 0 ? picked : [...tracks]
+  return distinctById(picked.length > 0 ? picked : [...tracks])
 }

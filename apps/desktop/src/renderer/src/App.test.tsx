@@ -3728,6 +3728,7 @@ describe('App source playlists', () => {
     '/m/a.wav': 'Alpha',
     '/m/b.wav': 'Bravo',
     '/m/c.wav': 'Charlie',
+    '/m/d.wav': 'Delta',
   }
   const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent ?? '')
   const expectNoReorderLine = () => {
@@ -3743,7 +3744,7 @@ describe('App source playlists', () => {
     fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
   }
 
-  async function openFactory(over: Record<string, unknown> = {}) {
+  async function openFactory(over: Record<string, unknown> = {}, loaded = 3) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
       readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
@@ -3765,7 +3766,7 @@ describe('App source playlists', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(loaded))
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await screen.findByTestId('track-separator-s1')
@@ -4850,6 +4851,86 @@ describe('App source playlists', () => {
         await waitFor(() => expect(titles()).toHaveLength(2))
         expect(titles().join()).toContain('Charlie')
         expect(titles().join()).not.toContain('Bravo')
+      })
+    })
+
+    describe('with a track in two blocks', () => {
+      const entryOf = (id: string, path: string) => ({
+        path,
+        separator: false,
+        meta: {},
+        linkId: id,
+        contentId: id,
+      })
+      const TWO_BLOCKS = [
+        entryOf('r1', '/m/a.wav'),
+        entryOf('r2', '/m/b.wav'),
+        entryOf('r3', '/m/c.wav'),
+        { path: null, separator: true, meta: {}, linkId: 'matching-sep-1' },
+        entryOf('r3', '/m/c.wav'),
+        entryOf('r4', '/m/d.wav'),
+      ]
+      const openTwoBlocks = async (editPlaylist = vi.fn<ProgramReads['editPlaylist']>()) => {
+        await openFactory(
+          {
+            pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav']),
+            dj: djReads({
+              rekordbox: {
+                matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([
+                  ['r1', 'r2'],
+                  ['r1', 'r3'],
+                  ['r3', 'r4'],
+                ]),
+                playlist: vi
+                  .fn<ProgramReads['playlist']>()
+                  .mockImplementation(async (id) =>
+                    id === MATCHING_ID ? TWO_BLOCKS : FACTORY_ENTRIES,
+                  ),
+                editPlaylist,
+              },
+            }),
+          },
+          4,
+        )
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() => expect(titles()).toHaveLength(5))
+      }
+
+      it('shows it in each block, since each block is one track and the tracks played after it', async () => {
+        await openTwoBlocks()
+        expect(titles().filter((t) => t.includes('Charlie'))).toHaveLength(2)
+        expect(screen.getByTestId('track-separator-matching-sep-1')).toBeInTheDocument()
+      })
+
+      it('puts it in the new playlist once, since the playlist holds tracks, not rows', async () => {
+        const editPlaylist = vi
+          .fn<ProgramReads['editPlaylist']>()
+          .mockResolvedValue({ applied: true, createdId: 'new' })
+        await openTwoBlocks(editPlaylist)
+        fireEvent.click(screen.getByTestId('matching-create-playlist'))
+        await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+        expect(editPlaylist.mock.calls[0][0]).toMatchObject({
+          tracks: [
+            { contentId: 'r1' },
+            { contentId: 'r2' },
+            { contentId: 'r3' },
+            { contentId: 'r4' },
+          ],
+        })
+      })
+
+      it('moves past it with the down arrow instead of stopping on its second row', async () => {
+        await openTwoBlocks()
+        const charlie = screen
+          .getAllByTestId('track-row')
+          .find((r) => r.textContent?.includes('Charlie')) as HTMLElement
+        fireEvent.click(charlie)
+        fireEvent.keyDown(window, { key: 'ArrowDown' })
+        await waitFor(() =>
+          expect(
+            screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('Delta')),
+          ).toHaveAttribute('aria-selected', 'true'),
+        )
       })
     })
 
