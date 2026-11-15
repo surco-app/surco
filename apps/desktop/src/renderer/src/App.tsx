@@ -2952,40 +2952,39 @@ export default function App(): React.JSX.Element {
       void editMatching('remove', [selectedContentId, partner.contentId], label, paths)
     else void editMatching('remove', rekordboxPairOf(paths), label, paths)
   })
-  const menuPartnerOf = (track: TrackItem): MatchingPartner | null => {
-    if (!selected) return null
-    const others = menuTargets(track.id).filter((t) => t.id !== selected.id)
-    if (others.length !== 1) return null
-    if (inRekordbox) {
-      const contentId = playlistScope?.contentOf.get(others[0].id)
-      return matchingPartners.find((p) => p.contentId === contentId) ?? null
-    }
-    const path = others[0].inputPath.normalize('NFC')
-    return otherPartners.find((p) => p.path === path) ?? null
-  }
-  const matchPairOf = (
-    track: TrackItem,
+  const pairOfTracks = (
+    first: TrackItem,
+    second: TrackItem,
   ): { pair: [string, string] | null; label: string; paths: [string, string] } | null => {
+    const label = `${first.listLabel} · ${second.listLabel}`
+    const paths: [string, string] = [first.inputPath, second.inputPath]
+    if (!inRekordbox) {
+      if (paths[0] === paths[1]) return null
+      return { pair: rekordboxPairOf(paths), label, paths }
+    }
+    const a = playlistScope?.contentOf.get(first.id)
+    const b = playlistScope?.contentOf.get(second.id)
+    if (!a || !b || a === b) return null
+    return { pair: [a, b], label, paths }
+  }
+  const matchPairOf = (track: TrackItem) => {
     if (!cuesOpen) return null
     const targets = menuTargets(track.id)
-    if (targets.length !== 2) return null
-    if (!inRekordbox) {
-      const paths: [string, string] = [targets[0].inputPath, targets[1].inputPath]
-      if (paths[0] === paths[1]) return null
-      return {
-        pair: rekordboxPairOf(paths),
-        label: targets.map((t) => t.listLabel).join(' · '),
-        paths,
-      }
-    }
-    const ids = targets.map((t) => playlistScope?.contentOf.get(t.id))
-    const [a, b] = ids
-    if (!a || !b || a === b) return null
-    return {
-      pair: [a, b],
-      label: targets.map((t) => t.listLabel).join(' · '),
-      paths: [targets[0].inputPath, targets[1].inputPath],
-    }
+    return targets.length === 2 ? pairOfTracks(targets[0], targets[1]) : null
+  }
+  const unmatchPairOf = (menu: TrackMenuState) => {
+    const chosen = tracks.find((t) => t.id === menu.chosenId)
+    if (!chosen || !(inRekordbox || otherOpen)) return null
+    const others = menuTargets(menu.track.id).filter((t) => t.id !== chosen.id)
+    if (others.length !== 1) return null
+    const found = pairOfTracks(chosen, others[0])
+    if (!found) return null
+    const [a, b] = inRekordbox
+      ? (found.pair ?? [])
+      : found.paths.map((path) => path.normalize('NFC'))
+    const pairs = (inRekordbox ? matchingPairs : matchingPathPairs) ?? []
+    const paired = pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a))
+    return paired ? found : null
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = inRekordbox
@@ -3395,7 +3394,7 @@ export default function App(): React.JSX.Element {
   // stays TrackList's. Stable so the memoized list never re-renders for a handler change.
   const renderTrackMenu = useStableCallback(
     (menu: TrackMenuState, close: () => void): React.ReactNode => {
-      const partner = menuPartnerOf(menu.track)
+      const unmatch = unmatchPairOf(menu)
       return (
         <TrackContextMenu
           track={menu.track}
@@ -3407,10 +3406,14 @@ export default function App(): React.JSX.Element {
           onStartOver={startOverTrack}
           onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
           onMatch={((m) =>
-            m && !partner ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
+            m && !unmatch ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
             matchPairOf(menu.track),
           )}
-          onUnmatch={partner ? () => removeMatchingPartner(partner) : undefined}
+          onUnmatch={
+            unmatch
+              ? () => void editMatching('remove', unmatch.pair, unmatch.label, unmatch.paths)
+              : undefined
+          }
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
           onPasteMeta={onPasteMeta}

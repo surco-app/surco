@@ -44,10 +44,10 @@ export function MatchingSuggestions({
         >
           <TrackLine track={tracks.get(s.pair[0]) as CollectionTrack} />
           <TrackLine track={tracks.get(s.pair[1]) as CollectionTrack} />
-          <div className="flex items-center gap-2 px-1 pt-1">
-            <span className="min-w-0 flex-1 truncate text-xs text-fg-dim">
-              {tr('sources.matchingTimes', { count: s.times })}
-            </span>
+          <span className="block px-1 pt-1 text-xs text-fg-dim">
+            {tr('sources.matchingTimes', { count: s.times })}
+          </span>
+          <div className="flex items-center justify-end gap-2 px-1 pt-1">
             <button
               type="button"
               data-testid="matching-suggestion-dismiss"

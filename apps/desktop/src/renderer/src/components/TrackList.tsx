@@ -141,7 +141,7 @@ interface Props {
   onReorderBlocked?: () => void
 }
 
-export type MenuState = { track: TrackItem; x: number; y: number }
+export type MenuState = { track: TrackItem; x: number; y: number; chosenId: string | null }
 
 // Rows below this count all get painted up front (see the content-visibility note on the
 // row wrapper): a small crate scrolls over already-rasterized content instead of paying
@@ -1200,9 +1200,8 @@ export const TrackList = memo(function TrackList({
     rowRegistry?.current?.get(to.id)?.focus()
   })
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
-  const openMenu = useCallback(
-    (track: TrackItem, x: number, y: number) => setMenu({ track, x, y }),
-    [],
+  const openMenu = useStableCallback((track: TrackItem, x: number, y: number) =>
+    setMenu({ track, x, y, chosenId: selectedId }),
   )
   const closeMenu = useCallback(() => setMenu(null), [])
   const { t: tr } = useTranslation()
