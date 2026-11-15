@@ -635,6 +635,31 @@ textarea {
   }
 }
 
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--step-from, 16px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-step-in {
+  animation: step-in var(--duration-state) var(--ease-standard);
+}
+
+.animate-step-in[data-dir="back"] {
+  --step-from: -16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-step-in {
+    animation: overlay-in var(--duration-state) var(--ease-standard);
+  }
+}
+
 /* The convert button's two faces. Blocked, it names the missing field on a neutral
    ground, with the amber dot as the only warning; once the field is filled the accent
    fades in and the action rolls down into place. The fade has no direction on purpose: a left-to-right sweep read as
