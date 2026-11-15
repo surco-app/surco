@@ -5,7 +5,6 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
 import { type DropInput, type DropProposal, dropProposals } from '../../../shared/dropDetect'
 import { modelWithTaste } from '../../../shared/dropTaste'
-import type { LiveCues } from '../../../shared/types'
 import {
   cueDropInputQuery,
   cueProfileQuery,
@@ -27,6 +26,7 @@ import {
   unsavedCueTracks,
 } from './cueSession'
 import { quantizePoints } from './cueWave'
+import { liveCuesOf } from './liveCuesOf'
 
 export function withoutCallInBar(
   proposed: DropProposal[],
@@ -181,17 +181,6 @@ export interface ClearedCues {
   loops: number
   unsaved: number
   cleared: string[]
-}
-
-const LIVE_CUES_CHUNK = 500
-
-async function liveCuesOf(contentIds: string[]): Promise<Record<string, LiveCues>> {
-  const reads: Record<string, LiveCues> = {}
-  for (let i = 0; i < contentIds.length; i += LIVE_CUES_CHUNK) {
-    const chunk = contentIds.slice(i, i + LIVE_CUES_CHUNK)
-    Object.assign(reads, await window.api.cues.liveCues(chunk).catch(() => ({})))
-  }
-  return reads
 }
 
 export async function clearCueDrafts(

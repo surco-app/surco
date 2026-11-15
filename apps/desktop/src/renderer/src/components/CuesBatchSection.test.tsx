@@ -472,6 +472,11 @@ describe('Cues over several selected tracks', () => {
           ...READ,
           contentId: id,
         })),
+        liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) =>
+          Object.fromEntries(
+            ids.map((id) => [id, { cues: READ.cues, fingerprint: READ.fingerprint }]),
+          ),
+        ),
         queued: vi.fn<Api['cues']['queued']>(async () => null),
         save: saveRekordboxCues,
       },

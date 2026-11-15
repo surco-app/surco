@@ -78,6 +78,14 @@ function setup(
         if (read instanceof Error) throw read
         return read
       }),
+      liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) => {
+        if (read instanceof Error) throw read
+        return read
+          ? Object.fromEntries(
+              ids.map((id) => [id, { cues: read.cues, fingerprint: read.fingerprint }]),
+            )
+          : {}
+      }),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       dropInput: vi.fn(dropInput),
       save: saveRekordboxCues,

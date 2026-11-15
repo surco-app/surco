@@ -71,6 +71,17 @@ function setup(
         contentId: id,
         ...reads[id],
       })),
+      liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) =>
+        Object.fromEntries(
+          ids.map((id) => [
+            id,
+            {
+              cues: reads[id]?.cues ?? READ.cues,
+              fingerprint: reads[id]?.fingerprint ?? READ.fingerprint,
+            },
+          ]),
+        ),
+      ),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       twins: rekordboxCueTwins,
       save: saveRekordboxCues,
