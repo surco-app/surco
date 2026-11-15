@@ -16,6 +16,9 @@ vi.mock('electron', () => {
 // answered too, though their exact bytes don't matter to these tests.
 const calls: Array<{ file: string; args: string[] }> = []
 
+const TRAKTOR_BLOB = 'AQAAAAAAAAA'.repeat(42_000)
+const LINER_NOTE = 'Near mint, original 1995 pressing, light hairlines on side B, sleeve intact'
+
 const PROBE_JSON = JSON.stringify({
   format: { duration: '1.5', tags: { title: 'Test Track', artist: 'Test Artist' } },
   streams: [],
@@ -34,7 +37,10 @@ vi.mock('node:child_process', () => ({
       return
     }
     if (args.includes('ffmetadata')) {
-      cb(null, { stdout: 'FFMETADATA1\n', stderr: '' })
+      const stdout = args.some((a) => /traktor(-\d+)?\.flac/.test(a))
+        ? `FFMETADATA1\nTRAKTOR4=${TRAKTOR_BLOB}\nVINYLCONDITION=${LINER_NOTE}\n`
+        : 'FFMETADATA1\n'
+      cb(null, { stdout, stderr: '' })
       return
     }
     if (args.includes('-show_entries')) {
@@ -50,6 +56,8 @@ vi.mock('node:child_process', () => ({
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { setFlagsFromString } from 'node:v8'
+import { runInNewContext } from 'node:vm'
 import { app } from 'electron'
 import { clearAnalysisCache } from './analysisCache'
 import { peekMeta, readMeta, readMetaLight } from './ffmpeg'
@@ -204,5 +212,56 @@ describe('peekMeta', () => {
     await readMetaLight(src)
 
     expect(await peekMeta(src, false)).toBeNull()
+  })
+})
+
+// Traktor keeps its whole analysis inside every file it analysed, in a TRAKTOR4 tag of
+// ~450 KB. A list hands the renderer the cached reads of all its rows in one IPC reply, so
+// 8,272 of those added up to 3.7 GB and killed the main process while serializing it (a
+// DJ's "Todas las pistas", 15/11/2026). The renderer only shows the value and only sends the
+// name back, so what crosses must stay small, the cached reads written before included.
+describe('a foreign tag holding a program blob', () => {
+  const traktorFile = join(work, 'traktor.flac')
+  writeFileSync(traktorFile, 'audio')
+
+  it('reaches the renderer cut short, from the file and from the cache alike', async () => {
+    const read = await readMeta(traktorFile)
+    const peeked = await peekMeta(traktorFile, true)
+    const light = await readMetaLight(traktorFile)
+
+    for (const answer of [read, peeked, light]) {
+      const blob = answer?.foreignTags.find((t) => t.name === 'TRAKTOR4')
+      expect(blob, 'the tag must still be listed by name').toBeDefined()
+      expect(blob?.value.length).toBeLessThan(2000)
+      expect(TRAKTOR_BLOB.startsWith(blob?.value.replace(/…$/, '') ?? '-')).toBe(true)
+    }
+  })
+
+  // V8 keeps a slice's whole parent string alive: a value cut with a plain slice still
+  // held its 450 KB blob, and the 8,272 rows kept 3.8 GB in the main process all the same.
+  it('lets go of the blob once it is cut, so thousands of rows do not keep it in memory', async () => {
+    setFlagsFromString('--expose-gc')
+    const gc = runInNewContext('gc') as () => void
+    const files = Array.from({ length: 100 }, (_, i) => {
+      const file = join(work, `traktor-${i}.flac`)
+      writeFileSync(file, 'audio')
+      return file
+    })
+    gc()
+    const before = process.memoryUsage().heapUsed
+
+    const reads = []
+    for (const file of files) reads.push(await readMeta(file))
+    gc()
+    const held = process.memoryUsage().heapUsed - before
+
+    expect(reads.every((r) => r.foreignTags.some((t) => t.name === 'TRAKTOR4'))).toBe(true)
+    expect(held, `100 cut values still hold ${Math.round(held / 1e6)} MB`).toBeLessThan(10e6)
+  })
+
+  it('leaves an ordinary foreign tag whole', async () => {
+    const read = await readMeta(traktorFile)
+
+    expect(read.foreignTags).toContainEqual({ name: 'VINYLCONDITION', value: LINER_NOTE })
   })
 })

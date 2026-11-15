@@ -349,9 +349,16 @@ export function foreignTagsFromFfmetadata(text: string): ForeignTag[] {
     const lower = name.toLowerCase()
     if (lower === 'encoder' || MANAGED_ALIASES.has(lower) || seen.has(lower)) continue
     seen.add(lower)
-    foreign.push({ name, value: unescapeFfmetadata(rawValue) })
+    foreign.push({ name: detached(name), value: detached(unescapeFfmetadata(rawValue)) })
   }
   return foreign
+}
+
+// A copy of text that holds nothing else alive. V8 keeps a slice's whole parent string in
+// memory, so a tag name cut from ffmpeg's output kept that output, Traktor's ~450 KB
+// TRAKTOR4 blob included, for as long as the row lived.
+function detached(text: string): string {
+  return Buffer.from(text, 'utf16le').toString('utf16le')
 }
 
 // Undoes ffmetadata's backslash-escaping of the reserved characters, so a value or key
@@ -631,9 +638,20 @@ const FAILED_READ: MetaRead = {
   failed: true,
 }
 
+// A DJ program keeps its own analysis in a foreign tag (Traktor's TRAKTOR4 is ~450 KB per
+// file). The renderer only shows the value and only sends the name back, and a list's rows
+// cross in one IPC reply: thousands of those blobs killed the main process serializing it.
+const FOREIGN_VALUE_MAX = 512
+
+function shownForeignTag(tag: ForeignTag): ForeignTag {
+  if (tag.value.length <= FOREIGN_VALUE_MAX) return tag
+  return { ...tag, value: `${detached(tag.value.slice(0, FOREIGN_VALUE_MAX))}…` }
+}
+
 function composed(result: MetaRead): MetaRead {
   return {
     ...result,
+    foreignTags: result.foreignTags.map(shownForeignTag),
     tags: composeMeta(result.tags),
     ...(result.reviewRaw && { reviewRaw: composeMeta(result.reviewRaw) }),
   }
