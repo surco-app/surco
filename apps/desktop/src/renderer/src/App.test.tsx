@@ -4046,6 +4046,16 @@ describe('App source playlists', () => {
       expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav')
     })
 
+    it('hides the suggestions while searching, so the blocks found are the first thing in view', async () => {
+      await openFactory({ dj: playedReads() })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await screen.findByTestId('matching-suggestion')
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'Alpha' } })
+      await waitFor(() => expect(screen.queryByTestId('matching-suggestion')).toBeNull())
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: '' } })
+      expect(await screen.findByTestId('matching-suggestion')).toBeInTheDocument()
+    })
+
     it('remembers a dismissed suggestion so it is not offered again', async () => {
       await openFactory({ dj: playedReads() })
       fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))

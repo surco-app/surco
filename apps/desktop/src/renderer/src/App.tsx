@@ -4514,14 +4514,16 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
-                          {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
-                            <MatchingSuggestions
-                              suggestions={matchingSuggestions}
-                              tracks={suggestionTracks}
-                              onMatch={matchSuggestion}
-                              onDismiss={dismissSuggestion}
-                            />
-                          )}
+                          {sourceProgram !== null &&
+                            browser.playlist?.id === MATCHING_ID &&
+                            deferredSearch.trim() === '' && (
+                              <MatchingSuggestions
+                                suggestions={matchingSuggestions}
+                                tracks={suggestionTracks}
+                                onMatch={matchSuggestion}
+                                onDismiss={dismissSuggestion}
+                              />
+                            )}
                           {visibleTracks.length === 0 ? (
                             <div className="flex flex-col items-center gap-3 p-6 text-center">
                               <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
