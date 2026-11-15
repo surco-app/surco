@@ -2465,6 +2465,7 @@
     "removeFromPlaylistTitle_one": "Togliere questo brano da «{{name}}»?",
     "removeFromPlaylistTitle_other": "Togliere {{count}} brani da «{{name}}»?",
     "removeFromPlaylistMessage": "Vengono tolti dalla playlist in rekordbox. I file e il resto della collezione non cambiano.",
+    "removeFromMatchingMessage": "Le loro coppie di Matching vengono sciolte. I file non cambiano.",
     "removeFromPlaylistConfirm": "Togli"
   },
   "activity": {

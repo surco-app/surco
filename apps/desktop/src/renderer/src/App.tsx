@@ -124,7 +124,7 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
-import { useMatchingEdit, useMatchingEdits } from './hooks/useMatchingEdit'
+import { type MatchingEdit, useMatchingEdit, useMatchingEdits } from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -3005,15 +3005,25 @@ export default function App(): React.JSX.Element {
     return paired ? found : null
   }
   const matchingOpen = browser.playlist?.id === MATCHING_ID
+  const confirmRemoveFromMatching = (edits: MatchingEdit[], count: number): void => {
+    if (edits.length === 0) return
+    overlays.openConfirm({
+      title: tr('confirm.removeFromPlaylistTitle', { count, name: browser.playlist?.name }),
+      message: tr('confirm.removeFromMatchingMessage'),
+      confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
+      destructive: true,
+      onConfirm: () => void editMatchings('remove', edits),
+    })
+  }
   const removeFromMatching = (targets: TrackItem[]): void => {
     if (inRekordbox) {
       const entryOf = new Map(
         (matchingEntries ?? []).flatMap((e) => (e.contentId ? [[e.contentId, e] as const] : [])),
       )
       const chosen = targets.flatMap((t) => playlistScope?.contentOf.get(t.id) ?? [])
-      void editMatchings(
-        'remove',
-        pairsOfBlocks(matchingPairs ?? [], chosen).map((pair) => {
+      const pairs = pairsOfBlocks(matchingPairs ?? [], chosen)
+      confirmRemoveFromMatching(
+        pairs.map((pair) => {
           const [a, b] = pair.map((id) => entryOf.get(id))
           return {
             pair,
@@ -3021,6 +3031,7 @@ export default function App(): React.JSX.Element {
             paths: a?.path && b?.path ? [a.path, b.path] : null,
           }
         }),
+        new Set(pairs.flat()).size,
       )
       return
     }
@@ -3028,16 +3039,17 @@ export default function App(): React.JSX.Element {
       tracks.find((t) => t.inputPath.normalize('NFC') === path)?.listLabel ??
       path.split(/[\\/]/).pop() ??
       path
-    void editMatchings(
-      'remove',
-      pairsOfBlocks(
-        matchingPathPairs,
-        targets.map((t) => t.inputPath.normalize('NFC')),
-      ).map((paths) => ({
+    const pairs = pairsOfBlocks(
+      matchingPathPairs,
+      targets.map((t) => t.inputPath.normalize('NFC')),
+    )
+    confirmRemoveFromMatching(
+      pairs.map((paths) => ({
         pair: rekordboxPairOf(paths),
         label: paths.map(labelOf).join(' · '),
         paths,
       })),
+      new Set(pairs.flat()).size,
     )
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {

@@ -1088,10 +1088,25 @@ describe('App Traktor cues', () => {
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-remove'))
+      fireEvent.click(await screen.findByTestId('confirm-ok'))
       await waitFor(() =>
         expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
       )
       expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+    })
+
+    it('asks before emptying a block from Matching even for one track, and keeps it on cancel', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-remove'))
+      fireEvent.click(await screen.findByTestId('confirm-cancel'))
+      expect(window.api.removeMatchingPair).not.toHaveBeenCalled()
     })
 
     it('unpairs a partner from the editor', async () => {
@@ -3926,6 +3941,10 @@ describe('App source playlists', () => {
       const remove = await screen.findByTestId('track-menu-remove')
       expect(remove).toHaveTextContent('Matching')
       fireEvent.click(remove)
+      await screen.findByTestId('confirm-ok')
+      expect(document.getElementById('confirm-title')).toHaveTextContent('3')
+      expect(match).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByTestId('confirm-ok'))
       await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
       expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String))
       expect(match).toHaveBeenCalledWith('remove', ['c-l3', 'c-l2'], expect.any(String))
