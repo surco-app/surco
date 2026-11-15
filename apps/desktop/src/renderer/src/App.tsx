@@ -213,7 +213,13 @@ import { flushPendingEdits } from './lib/pendingEdits'
 import { phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
-import { blocksOf, type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
+import {
+  blocksOf,
+  blocksWith,
+  type PlaylistScope,
+  playlistMembership,
+  playlistView,
+} from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
 import { withCachedQualityTag } from './lib/qualityTag'
@@ -2207,14 +2213,24 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = filterKey
       stickyIds.current = new Set()
     }
-    return sortTracks(
-      filterWithSticky(scopeTracks, filterSelection, stickyIds.current, filterFacts).filter(
-        searchMatcher(deferredSearch),
-      ),
-      sortBy,
-      sortDir,
-    )
-  }, [scopeTracks, filterSelection, filterKey, filterFacts, deferredSearch, sortBy, sortDir])
+    const filtered = filterWithSticky(scopeTracks, filterSelection, stickyIds.current, filterFacts)
+    const found =
+      sourceProgram !== null && browser.playlist?.id === MATCHING_ID
+        ? blocksWith(filtered, playlistScope?.separatorBefore, searchMatcher(deferredSearch))
+        : filtered.filter(searchMatcher(deferredSearch))
+    return sortTracks(found, sortBy, sortDir)
+  }, [
+    scopeTracks,
+    filterSelection,
+    filterKey,
+    filterFacts,
+    deferredSearch,
+    sortBy,
+    sortDir,
+    sourceProgram,
+    browser.playlist?.id,
+    playlistScope?.separatorBefore,
+  ])
   const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
   const visibleTracks = useMemo(() => {

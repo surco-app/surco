@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { blocksOf, playlistMembership, playlistView } from './playlistView'
+import { blocksOf, blocksWith, playlistMembership, playlistView } from './playlistView'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -233,5 +233,18 @@ describe('blocksOf', () => {
       'c',
       'd',
     ])
+  })
+})
+
+describe('blocksWith', () => {
+  const rows = ['a', 'b', 'c', 'd'].map((id) => ({ id }))
+  const breaks = new Map([['c', ['s1']]])
+
+  it('shows a searched track with every partner in its block, since the block is the match', () => {
+    expect(blocksWith(rows, breaks, (r) => r.id === 'd').map((r) => r.id)).toEqual(['c', 'd'])
+  })
+
+  it('shows nothing when no track is found, so an empty search result stays empty', () => {
+    expect(blocksWith(rows, breaks, () => false)).toEqual([])
   })
 })
