@@ -28,6 +28,7 @@ import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
 import { type ActivityRow, activityFeedText, rowDetailText } from '../lib/activityLog'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
+import { SectionBody } from './SectionBody'
 
 type Translate = ReturnType<typeof useTranslation>['t']
 
@@ -207,11 +208,14 @@ function ChildRow({ row }: { row: ActivityRow }): React.JSX.Element {
             levels' timers on the exact same column. */}
         <span className="mr-2 ml-1 h-6 w-6 shrink-0" />
       </button>
-      {open && detail && (
-        <pre className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-label text-fg-muted">
-          <DetailText text={detail} />
+      <SectionBody open={open && Boolean(detail)}>
+        <pre
+          data-testid="activity-child-detail"
+          className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-12 font-mono text-label text-fg-muted"
+        >
+          <DetailText text={detail ?? ''} />
         </pre>
-      )}
+      </SectionBody>
     </li>
   )
 }
@@ -275,21 +279,21 @@ function Row({ row }: { row: ActivityRow }): React.JSX.Element {
           )}
         </span>
       </div>
-      {open && grouped && (
+      <SectionBody open={open && grouped}>
         <ul className="border-t border-[var(--color-line)] bg-[var(--color-panel-2)]/40">
           {row.children?.map((c) => (
             <ChildRow key={c.id} row={c} />
           ))}
         </ul>
-      )}
-      {open && !grouped && detail && (
+      </SectionBody>
+      <SectionBody open={open && !grouped && Boolean(detail)}>
         <pre
           data-testid="activity-row-detail"
           className="max-h-32 overflow-auto whitespace-pre-wrap break-all px-3 pb-2 pl-9 font-mono text-label text-fg-muted"
         >
-          <DetailText text={detail} />
+          <DetailText text={detail ?? ''} />
         </pre>
-      )}
+      </SectionBody>
     </li>
   )
 }
