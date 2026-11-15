@@ -15,6 +15,7 @@ import {
   keepAutoMark,
   keepDraft,
   resetCueSession,
+  subscribeCueDrafts,
   unsavedCueTracks,
 } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
@@ -604,6 +605,18 @@ describe('Clearing the cues of several selected tracks', () => {
     expect([...unsavedCueTracks()]).toEqual([])
     expect(screen.queryByTestId('cues-batch-save')).toBeNull()
     expect(screen.queryByTestId('cues-batch-cleared')).toBeNull()
+  })
+
+  it('drops every cleared draft with one notification when the DJ discards, so a big discard does not repaint the app once per track', async () => {
+    setup({}, TARGETS, CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    const discard = await screen.findByTestId('cues-batch-clear-discard')
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    fireEvent.click(discard)
+    stop()
+    expect([...unsavedCueTracks()]).toEqual([])
+    expect(listener).toHaveBeenCalledTimes(1)
   })
 
   it('offers no discard when every track was left alone, since there is nothing to bring back', async () => {

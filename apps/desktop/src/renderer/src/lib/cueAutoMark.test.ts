@@ -20,6 +20,7 @@ import {
   draftsToSave,
   keepDraft,
   resetCueSession,
+  subscribeCueDrafts,
   unsavedCueTracks,
 } from './cueSession'
 import { quantizePoints } from './cueWave'
@@ -450,6 +451,24 @@ describe('clearing the cues of several tracks', () => {
 
     expect(cleared).toEqual({ hot: 0, calls: 0, loops: 0, unsaved: 1, cleared: [] })
     expect(draftsToSave()[0].wanted).toEqual([{ id: 'a', ms: 1000, kind: 1, color: null }])
+  })
+
+  it('notifies the draft listeners once for the whole clear, so thousands of tracks do not repaint the app thousands of times', async () => {
+    const { client } = setup({
+      reads: {
+        '103': withCues('103', [hot('a', 1000, 1)]),
+        '104': withCues('104', [hot('b', 1000, 1)]),
+        '105': withCues('105', [hot('c', 1000, 1)]),
+      },
+    })
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+
+    await clearCueDrafts(client, [target('103'), target('104'), target('105')], settings)
+    stop()
+
+    expect([...unsavedCueTracks()]).toEqual(['103', '104', '105'])
+    expect(listener).toHaveBeenCalledTimes(1)
   })
 
   it('leaves no draft for a track with only loops or no cues, so Save does not count tracks it would not change', async () => {

@@ -22,6 +22,7 @@ import {
   forgetAutoMark,
   keepAutoMark,
   keepDraft,
+  keepDrafts,
   keptDraftOn,
   unsavedCueTracks,
 } from './cueSession'
@@ -200,6 +201,7 @@ export async function clearCueDrafts(
 ): Promise<ClearedCues> {
   const result: ClearedCues = { hot: 0, calls: 0, loops: 0, unsaved: 0, cleared: [] }
   const reads = await liveCuesOf(targets.map((t) => t.contentId))
+  const drafts: Parameters<typeof keepDrafts>[0] = []
   for (const target of targets) {
     if (unsavedCueTracks().has(target.contentId)) {
       result.unsaved += 1
@@ -232,14 +234,15 @@ export async function clearCueDrafts(
     result.hot += loose.filter((c) => c.kind !== 0).length
     result.calls += loose.filter((c) => c.kind === 0).length
     result.loops += loopIds.length
-    keepDraft(
-      target.contentId,
-      cueDraftKey(target.contentId, read.fingerprint, queued),
-      cleared,
-      { path: target.path, label: target.label, fingerprint: read.fingerprint },
-      fresh ? queued : null,
-    )
+    drafts.push({
+      contentId: target.contentId,
+      draftKey: cueDraftKey(target.contentId, read.fingerprint, queued),
+      value: cleared,
+      target: { path: target.path, label: target.label, fingerprint: read.fingerprint },
+      base: fresh ? queued : null,
+    })
     result.cleared.push(target.contentId)
   }
+  keepDrafts(drafts)
   return result
 }
