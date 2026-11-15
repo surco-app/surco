@@ -47,6 +47,18 @@
       {
         "text": "Surco hängt nicht mehr, wenn du rekordbox oder Traktor mit einer großen Bibliothek öffnest. Deine intelligenten Playlists aus rekordbox erscheinen jetzt ohne die Anzahl der Tracks.",
         "in": "1.35.1"
+      },
+      {
+        "text": "Wähl mehrere Tracks aus und drück „Alle Cues löschen“ in ihrem Cues-Bereich. Das entfernt die Hot Cues und CALLs und lässt die Loops stehen. Vor dem Speichern siehst du, wie viele wegfallen, und „Verwerfen“ holt sie zurück.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "In Matching löst „Matching entfernen“ ein Paar per Rechtsklick. „Playlist aus Auswahl erstellen“ baut die Liste nur aus den Tracks, die du wählst, und der Button bleibt in Reichweite, während du durch die Liste scrollst.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "Matching-Vorschläge zeigen jedes Paar in der Reihenfolge, in der du es am häufigsten spielst. Sie kommen nicht mehr aus deinem rekordbox-Verlauf, nur noch aus deinen Mix-Playlists.",
+        "in": "1.35.2"
       }
     ]
   },

@@ -47,6 +47,18 @@
       {
         "text": "O Surco não trava mais ao abrir o rekordbox ou o Traktor com uma biblioteca grande. Suas playlists inteligentes do rekordbox agora aparecem sem o número de faixas.",
         "in": "1.35.1"
+      },
+      {
+        "text": "Selecione várias faixas e clique em “Apagar todos os cues” na seção Cues. Os hot cues e os CALLs saem e os loops ficam. Antes de salvar você vê quantos vão embora, e “Descartar” traz todos de volta.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "No Matching, “Remover matching” desfaz um par pelo clique direito. “Criar playlist com a seleção” monta a lista só com as faixas que você escolhe, e o botão continua à mão enquanto você desce pela lista.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "As sugestões de Matching mostram cada par na ordem em que você mais o toca. Elas não vêm mais do histórico do rekordbox, só das suas playlists de mixagens.",
+        "in": "1.35.2"
       }
     ]
   },

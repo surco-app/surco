@@ -47,6 +47,18 @@
       {
         "text": "Surco ja no es queda penjat quan obres rekordbox o Traktor amb una biblioteca gran. Les teves llistes intel·ligents de rekordbox ara surten sense el nombre de pistes.",
         "in": "1.35.1"
+      },
+      {
+        "text": "Selecciona diverses pistes i prem «Esborrar tots els cues» a la seva secció Cues. Treu els hot cues i els CALLs i deixa els loops. Abans de desar veus quants se'n van, i «Descartar» els torna.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "A Matching, «Treure el matching» desfà una parella des del clic dret. «Crear playlist amb la selecció» fa la llista només amb les pistes que tries, i el botó continua a mà mentre baixes per la llista.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "Els suggeriments de Matching surten en l'ordre en què més punxes cada parella. Ja no surten de l'historial de rekordbox, només de les teves playlists de mescles.",
+        "in": "1.35.2"
       }
     ]
   },

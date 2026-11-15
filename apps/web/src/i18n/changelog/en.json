@@ -47,6 +47,18 @@
       {
         "text": "Surco no longer hangs when you open rekordbox or Traktor with a big library. Your rekordbox intelligent playlists now show without their track count.",
         "in": "1.35.1"
+      },
+      {
+        "text": "Select several tracks and press “Clear all cues” in their Cues section. It removes the hot cues and CALLs and keeps the loops. Before you save you see how many go, and “Discard” brings them back.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "In Matching, “Remove Matching pair” undoes a pair from the right-click menu. “Create playlist from selection” builds the list from just the tracks you pick, and the button stays in reach as you scroll down the list.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "Matching suggestions show each pair in the order you play it most. They no longer come from your rekordbox history, only from your mix playlists.",
+        "in": "1.35.2"
       }
     ]
   },

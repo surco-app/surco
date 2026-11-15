@@ -47,6 +47,18 @@
       {
         "text": "Surco ya no se queda colgado al abrir rekordbox o Traktor con una biblioteca grande. Tus listas inteligentes de rekordbox salen ahora sin el número de pistas.",
         "in": "1.35.1"
+      },
+      {
+        "text": "Selecciona varias pistas y pulsa «Borrar todos los cues» en su sección Cues. Quita los hot cues y los CALLs y deja los loops. Antes de guardar ves cuántos se van, y «Descartar» los devuelve.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "En Matching, «Quitar matching» deshace una pareja desde el clic derecho. «Crear playlist con la selección» hace la lista solo con las pistas que eliges, y el botón sigue a mano mientras bajas por la lista.",
+        "in": "1.35.2"
+      },
+      {
+        "text": "Las sugerencias de Matching salen en el orden en que más pinchas cada pareja. Ya no salen del historial de rekordbox, solo de tus playlists de mezclas.",
+        "in": "1.35.2"
       }
     ]
   },
