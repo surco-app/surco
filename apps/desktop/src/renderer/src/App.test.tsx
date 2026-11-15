@@ -5156,6 +5156,19 @@ describe('App source playlists', () => {
         )
       })
 
+      it('says the change waits for rekordbox when one step is queued, even if the last one lands', async () => {
+        const match = await openPair()
+        match
+          .mockResolvedValueOnce({ applied: false, queued: true, opId: 'op1' })
+          .mockResolvedValueOnce({ applied: true })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
+          'rekordbox is still open. The change will apply when you close it',
+        )
+      })
+
       it('stops after a refused step, so rekordbox never holds a pair both ways round', async () => {
         const match = await openPair()
         match.mockResolvedValueOnce({ applied: false, reason: 'write-failed' })
