@@ -579,6 +579,18 @@ describe('Clearing the cues of several selected tracks', () => {
     expect(saveRekordboxCues).not.toHaveBeenCalled()
   })
 
+  it('puts Save beside Discard and above the grid block, so the DJ sees it saves the cleared cues and not the grid or a conversion', async () => {
+    setup({}, TARGETS, CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    const save = await screen.findByTestId('cues-batch-save')
+    const discard = screen.getByTestId('cues-batch-clear-discard')
+    expect(discard.parentElement).toBe(save.parentElement)
+    expect(
+      save.compareDocumentPosition(screen.getByTestId('grid-batch')) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('turns the clear button off while it reads the tracks, so a second click does not read them twice', async () => {
     const { saveRekordboxCues } = setup({}, TARGETS, CUES)
     fireEvent.click(screen.getByTestId('cues-batch-clear'))
