@@ -687,6 +687,8 @@
       "startSession": "Sessione da questo brano…",
       "matching": "Crea un Matching",
       "unmatch": "Rimuovi il Matching",
+      "reverseMatch": "Inverti l'ordine",
+      "leaveMatch": "Togli dal matching",
       "copyMeta": "Copia tutti i metadati",
       "pasteMeta": "Incolla i metadati",
       "remove": "Rimuovi da Surco",

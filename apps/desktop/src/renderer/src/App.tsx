@@ -123,7 +123,7 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
-import { useMatchingEdit } from './hooks/useMatchingEdit'
+import { type MatchingAction, useMatchingEdit } from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -220,6 +220,7 @@ import {
   type PlaylistScope,
   playlistMembership,
   playlistView,
+  rowKeys,
 } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
@@ -3017,6 +3018,48 @@ export default function App(): React.JSX.Element {
     const paired = pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a))
     return paired ? found : null
   }
+  const matchingBlockEdits = (menu: TrackMenuState) => {
+    if (sourceProgram === null || browser.playlist?.id !== MATCHING_ID || sortBy !== 'import')
+      return null
+    const keys = rowKeys(visibleRows)
+    const at = keys.indexOf(menu.rowKey)
+    if (at < 0) return null
+    let start = at
+    while (start > 0 && !shownSeparators?.get(keys[start])) start--
+    let end = at + 1
+    while (end < visibleRows.length && !shownSeparators?.get(keys[end])) end++
+    const [head, ...followers] = visibleRows.slice(start, end)
+    if (followers.length === 0) return null
+    const x = at > start ? visibleRows[at] : followers.length === 1 ? followers[0] : null
+    const plan = (steps: [MatchingAction, TrackItem, TrackItem][]) => {
+      const found = steps.flatMap(([action, a, b]) => {
+        const pair = pairOfTracks(a, b)
+        return pair ? [{ action, ...pair }] : []
+      })
+      return found.length === steps.length ? found : null
+    }
+    const [first, ...rest] = followers
+    return {
+      reverse: x
+        ? plan([
+            ['remove', head, x],
+            ['add', x, head],
+          ])
+        : null,
+      leave: x
+        ? plan([['remove', head, x]])
+        : plan([
+            ...followers.map((s): [MatchingAction, TrackItem, TrackItem] => ['remove', head, s]),
+            ...rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['add', first, s]),
+          ]),
+    }
+  }
+  const runMatchingEdits = async (
+    steps: (NonNullable<ReturnType<typeof pairOfTracks>> & { action: MatchingAction })[],
+  ) => {
+    for (const { action, pair, label, paths } of steps)
+      await editMatching(action, pair, label, paths)
+  }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = inRekordbox
       ? scopeTracks.find((t) => playlistScope?.contentOf.get(t.id) === partner.contentId)
@@ -3426,6 +3469,9 @@ export default function App(): React.JSX.Element {
   const renderTrackMenu = useStableCallback(
     (menu: TrackMenuState, close: () => void): React.ReactNode => {
       const unmatch = unmatchPairOf(menu)
+      const block = matchingBlockEdits(menu)
+      const reverse = block?.reverse
+      const leave = unmatch ? null : block?.leave
       return (
         <TrackContextMenu
           track={menu.track}
@@ -3445,6 +3491,8 @@ export default function App(): React.JSX.Element {
               ? () => void editMatching('remove', unmatch.pair, unmatch.label, unmatch.paths)
               : undefined
           }
+          onReverseMatch={reverse ? () => void runMatchingEdits(reverse) : undefined}
+          onLeaveMatch={leave ? () => void runMatchingEdits(leave) : undefined}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
           onPasteMeta={onPasteMeta}

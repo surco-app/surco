@@ -687,6 +687,8 @@
       "startSession": "Sesión desde esta pista…",
       "matching": "Hacer matching",
       "unmatch": "Quitar matching",
+      "reverseMatch": "Invertir orden",
+      "leaveMatch": "Quitar del matching",
       "copyMeta": "Copiar todos los metadatos",
       "pasteMeta": "Pegar metadatos",
       "remove": "Quitar de Surco",

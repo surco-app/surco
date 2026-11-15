@@ -687,6 +687,8 @@
       "startSession": "Sessão a partir desta faixa…",
       "matching": "Fazer matching",
       "unmatch": "Remover matching",
+      "reverseMatch": "Inverter a ordem",
+      "leaveMatch": "Tirar do matching",
       "copyMeta": "Copiar todos os metadados",
       "pasteMeta": "Colar metadados",
       "remove": "Remover do Surco",

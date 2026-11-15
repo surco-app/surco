@@ -409,3 +409,24 @@ describe('TrackContextMenu submenus on hover', () => {
     }
   })
 })
+
+describe('TrackContextMenu Matching block', () => {
+  it('reverses the pair or takes the track out of its block from the row', () => {
+    const onReverseMatch = vi.fn()
+    const onLeaveMatch = vi.fn()
+    renderMenu({ onReverseMatch, onLeaveMatch })
+    expect(screen.getByTestId('track-menu-reverse-match')).toHaveTextContent('Reverse order')
+    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from matching')
+    fireEvent.click(screen.getByTestId('track-menu-reverse-match'))
+    expect(onReverseMatch).toHaveBeenCalledTimes(1)
+    renderMenu({ onReverseMatch, onLeaveMatch })
+    fireEvent.click(screen.getAllByTestId('track-menu-leave-match')[0])
+    expect(onLeaveMatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers neither where the row sits in no Matching block', () => {
+    renderMenu()
+    expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+  })
+})

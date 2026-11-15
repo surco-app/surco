@@ -4947,6 +4947,116 @@ describe('App source playlists', () => {
       })
     })
 
+    describe('editing a block from the row menu', () => {
+      const entryOf = (id: string, path: string) => ({
+        path,
+        separator: false,
+        meta: {},
+        linkId: id,
+        contentId: id,
+      })
+      const openBlock = async (
+        pairs: [string, string][],
+        entries: ReturnType<typeof entryOf>[],
+      ) => {
+        const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue(pairs),
+              playlist: vi
+                .fn<ProgramReads['playlist']>()
+                .mockImplementation(async (id) => (id === MATCHING_ID ? entries : FACTORY_ENTRIES)),
+              match,
+            },
+          }),
+        })
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() => expect(titles()).toHaveLength(entries.length))
+        return match
+      }
+      const openPair = () =>
+        openBlock([['r1', 'r2']], [entryOf('r1', '/m/a.wav'), entryOf('r2', '/m/b.wav')])
+      const openTrio = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r1', 'r3'],
+          ],
+          [entryOf('r1', '/m/a.wav'), entryOf('r2', '/m/b.wav'), entryOf('r3', '/m/c.wav')],
+        )
+      const calls = (match: ReturnType<typeof vi.fn>) =>
+        match.mock.calls.map(([action, pair]) => [action, pair])
+
+      it('reverses a pair from its second row, so the DJ plays them the other way round', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['add', ['r2', 'r1']],
+          ]),
+        )
+      })
+
+      it('waits for rekordbox to drop the old pair before saving the reversed one', async () => {
+        const match = await openPair()
+        let release: (value: { applied: true }) => void = () => {}
+        match.mockImplementationOnce(() => new Promise((resolve) => (release = resolve)))
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(match).toHaveBeenCalledTimes(1)
+        release({ applied: true })
+        await waitFor(() =>
+          expect(match).toHaveBeenCalledWith('add', ['r2', 'r1'], expect.any(String)),
+        )
+      })
+
+      it('takes a follower out of a block of three without touching the other pair', async () => {
+        const match = await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() => expect(calls(match)).toEqual([['remove', ['r1', 'r3']]]))
+      })
+
+      it('takes the head out of a block of three and keeps the rest together under the next track', async () => {
+        const match = await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['remove', ['r1', 'r3']],
+            ['add', ['r2', 'r3']],
+          ]),
+        )
+      })
+
+      it('offers no reversing on the head of a block of three, since there is no single pair to flip', async () => {
+        await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+      })
+
+      it('offers neither outside Matching, where the rows are no blocks', async () => {
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r1', 'r2']]),
+            },
+          }),
+        })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        await screen.findByTestId('track-menu-add-to')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+      })
+    })
+
     it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
       await openFactory({
         dj: djReads({

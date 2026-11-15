@@ -687,6 +687,8 @@
       "startSession": "Session à partir de ce morceau…",
       "matching": "Créer un Matching",
       "unmatch": "Retirer le Matching",
+      "reverseMatch": "Inverser l'ordre",
+      "leaveMatch": "Retirer du matching",
       "copyMeta": "Copier toutes les métadonnées",
       "pasteMeta": "Coller les métadonnées",
       "remove": "Retirer de Surco",

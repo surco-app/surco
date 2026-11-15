@@ -687,6 +687,8 @@
       "startSession": "Session from this track…",
       "matching": "Make a Matching pair",
       "unmatch": "Remove Matching pair",
+      "reverseMatch": "Reverse order",
+      "leaveMatch": "Remove from matching",
       "copyMeta": "Copy all metadata",
       "pasteMeta": "Paste metadata",
       "remove": "Remove from Surco",

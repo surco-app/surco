@@ -31,6 +31,8 @@ interface Props {
   onStartSession?: (track: TrackItem) => void
   onMatch?: () => void
   onUnmatch?: () => void
+  onReverseMatch?: () => void
+  onLeaveMatch?: () => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -110,6 +112,8 @@ export function TrackContextMenu({
   onStartSession,
   onMatch,
   onUnmatch,
+  onReverseMatch,
+  onLeaveMatch,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -300,6 +304,22 @@ export function TrackContextMenu({
             testid="track-menu-unmatch"
             label={tr('trackList.context.unmatch')}
             onClick={() => run(onUnmatch)}
+          />
+        )}
+        {onReverseMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-reverse-match"
+            label={tr('trackList.context.reverseMatch')}
+            onClick={() => run(onReverseMatch)}
+          />
+        )}
+        {onLeaveMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-leave-match"
+            label={tr('trackList.context.leaveMatch')}
+            onClick={() => run(onLeaveMatch)}
           />
         )}
         {playlist && (

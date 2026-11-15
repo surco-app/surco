@@ -687,6 +687,8 @@
       "startSession": "Sessió a partir d'aquesta pista…",
       "matching": "Fer matching",
       "unmatch": "Treure el matching",
+      "reverseMatch": "Inverteix l'ordre",
+      "leaveMatch": "Treu del matching",
       "copyMeta": "Copiar totes les metadades",
       "pasteMeta": "Enganxar les metadades",
       "remove": "Treure de Surco",
