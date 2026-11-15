@@ -24,7 +24,7 @@ export function cueFingerprint(cues: TrackCueRow[]): string {
     .join(';')
 }
 
-function liveCuesQuery(db: Db): (contentId: string) => TrackCueRow[] {
+export function liveCuesQuery(db: Db): (contentId: string) => TrackCueRow[] {
   const statement = db.prepare(
     `SELECT ID, InMsec, OutMsec, Kind, ColorTableIndex FROM djmdCue
       WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,

@@ -855,6 +855,7 @@ function notWiredCues(op: string): never {
 function wiredCues(): CuesApi {
   return {
     trackCues: async () => null,
+    liveCues: async () => ({}),
     waveDetail: async () => null,
     waveFine: () => notWiredCues('waveFine'),
     dropInput: async () => null,

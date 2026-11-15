@@ -21,6 +21,7 @@ const REQUESTS = [{ contentId: 'serato:/m/a.mp3', path: '/m/a.mp3', label: 'a', 
 describe('createCuesApi', () => {
   it.each([
     ['trackCues', 'cues:trackCues', ['engine:4']],
+    ['liveCues', 'cues:liveCues', [['engine:4', 'engine:5']]],
     ['waveDetail', 'cues:waveDetail', ['engine:4']],
     ['waveFine', 'cues:waveFine', ['engine:4']],
     ['dropInput', 'cues:dropInput', ['engine:4']],

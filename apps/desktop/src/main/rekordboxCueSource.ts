@@ -1,10 +1,11 @@
 import type { GridFit } from '../shared/gridEdit'
+import type { LiveCues } from '../shared/types'
 import { type BeatGridFit, provisionalGrid, REKORDBOX_BEAT_AFTER_RISE_MS } from './beatGrid'
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
 import { rekordboxShareDir } from './rekordboxArtwork'
-import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
+import { cueFingerprint, liveCuesQuery, readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
 import { queuedWanted } from './rekordboxPlaylistWrite'
 import { rekordboxLeadOfFile, rekordboxShiftOfFile } from './rekordboxTimeline'
@@ -58,6 +59,27 @@ export function rekordboxCueSource(host: {
         path,
         (db) => readTrackCues(db, rekordboxShareDir(path), contentId),
         null,
+        await keyOf(path),
+      )
+    },
+    liveCues: async (contentIds) => {
+      const path = host.collection()
+      return withCollection(
+        path,
+        (db) => {
+          const exists = db.prepare(
+            `SELECT 1 FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0`,
+          )
+          const cuesOf = liveCuesQuery(db)
+          const out: Record<string, LiveCues> = {}
+          for (const id of contentIds) {
+            if (!exists.get(id)) continue
+            const cues = cuesOf(id)
+            out[id] = { cues, fingerprint: cueFingerprint(cues) }
+          }
+          return out
+        },
+        {},
         await keyOf(path),
       )
     },

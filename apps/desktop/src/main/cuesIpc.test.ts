@@ -973,6 +973,99 @@ describe('registerCuesIpc', () => {
   })
 })
 
+describe('cues:liveCues', () => {
+  async function twoCuedTracks(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rblive-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) => (c.ID === '104' ? { ...c, deleted: true } : c)),
+      cueRows: [
+        { ID: '11', ContentID: '101', InMsec: 128000, Kind: 0, ColorTableIndex: null },
+        { ID: '12', ContentID: '101', InMsec: 4000, Kind: 1, ColorTableIndex: 3 },
+        { ID: '13', ContentID: '102', InMsec: 9000, Kind: 2, ColorTableIndex: null },
+        { ID: '14', ContentID: '104', InMsec: 1000, Kind: 1, ColorTableIndex: null },
+      ],
+    })
+    return path
+  }
+
+  const host = (path: string) => ({
+    collection: () => path,
+    queue: queue(),
+    applyQuietly: quietly(),
+    flow: () => MY_FLOW,
+    beatGrid: async () => null,
+    words: async () => null,
+    provisional: { add: vi.fn() },
+    twins: async () => ({}),
+  })
+
+  it('opens the encrypted collection once for all the tracks and gives each the cues and fingerprint the editor reads, so clearing many tracks does not pay the key derivation per track', async () => {
+    const path = await twoCuedTracks()
+    registerWithSources(host(path))
+    const one = (id: string) => handler('cues:trackCues')({}, id) as Promise<TrackCues>
+    const [a, b] = [await one('101'), await one('102')]
+    vi.mocked(openRekordboxDb).mockClear()
+
+    const live = await handler('cues:liveCues')({}, ['101', '102'])
+
+    expect(vi.mocked(openRekordboxDb)).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(openRekordboxDb).mock.calls[0][1]?.readonly).toBe(true)
+    expect(live).toEqual({
+      '101': { cues: a.cues, fingerprint: a.fingerprint },
+      '102': { cues: b.cues, fingerprint: b.fingerprint },
+    })
+  })
+
+  it('leaves out a deleted or unknown track, as trackCues answers null for it', async () => {
+    registerWithSources(host(await twoCuedTracks()))
+    const live = (await handler('cues:liveCues')({}, ['101', '104', '999'])) as Record<
+      string,
+      unknown
+    >
+    expect(Object.keys(live)).toEqual(['101'])
+  })
+
+  it('uses the source’s own batch when it has one and falls back to trackCues for a program without it, merging both', async () => {
+    const liveCues = vi.fn(async (ids: string[]) =>
+      Object.fromEntries(ids.map((id) => [id, { cues: [], fingerprint: 'rb' }])),
+    )
+    const trackCues = vi.fn(async (id: string) =>
+      id === 'engine:4'
+        ? ({
+            contentId: id,
+            cues: [{ id: 'x', ms: 1, kind: 1, color: null }],
+            fingerprint: 'en',
+          } as TrackCues)
+        : null,
+    )
+    const source = (over: object) => ({ queue: queue(), applyQuietly: quietly(), ...over }) as never
+    registerCuesIpc({
+      collection: () => '',
+      flow: () => MY_FLOW,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      sources: {
+        rekordbox: source({ trackCues: vi.fn(), liveCues }),
+        engine: source({ trackCues }),
+        traktor: null,
+        serato: null,
+        virtualdj: null,
+      },
+    })
+
+    const live = await handler('cues:liveCues')({}, ['101', 'engine:4', 'engine:5'])
+
+    expect(liveCues).toHaveBeenCalledWith(['101'])
+    expect(trackCues).toHaveBeenCalledTimes(2)
+    expect(live).toEqual({
+      '101': { cues: [], fingerprint: 'rb' },
+      'engine:4': { cues: [{ id: 'x', ms: 1, kind: 1, color: null }], fingerprint: 'en' },
+    })
+  })
+})
+
 describe('registerCuesIpc for Engine DJ tracks', () => {
   async function engineLibrary(): Promise<string> {
     const dir = await mkdtemp(join(tmpdir(), 'surco-enginecuesipc-'))

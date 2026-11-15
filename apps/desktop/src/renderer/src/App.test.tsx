@@ -560,6 +560,9 @@ describe('App unsaved cues', () => {
           fingerprint: 'f0',
           gridFingerprint: '',
         })),
+        liveCues: vi.fn<Api['cues']['liveCues']>(async () => ({
+          '103': { cues: [], fingerprint: 'f0' },
+        })),
         queued: vi.fn<Api['cues']['queued']>(async () => null),
       },
     })

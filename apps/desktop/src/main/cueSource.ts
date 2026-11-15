@@ -2,7 +2,7 @@ import type { WantedCue } from '../shared/cueRules'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
-import type { FineWave, SurcoGrid, TrackCues } from '../shared/types'
+import type { FineWave, LiveCues, SurcoGrid, TrackCues } from '../shared/types'
 import type { RekordboxQueue } from './rekordboxQueue'
 import type { CuesOp, QueueOp } from './rekordboxQueueOps'
 
@@ -12,6 +12,7 @@ export type CueQueue = Pick<RekordboxQueue, 'cuesOp' | 'drop'> & {
 
 export interface CueReader {
   trackCues(contentId: string): Promise<TrackCues | null>
+  liveCues?(contentIds: string[]): Promise<Record<string, LiveCues>>
   waveDetail(contentId: string): Promise<Uint16Array | null>
   fineWave(contentId: string): Promise<FineWave | null>
   dropInput(contentId: string): Promise<DropInput | null>

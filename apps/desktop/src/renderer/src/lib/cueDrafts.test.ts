@@ -11,6 +11,7 @@ import {
   draftsToSave,
   keepDraft,
   resetCueSession,
+  subscribeCueDrafts,
   unsavedCueTracks,
 } from './cueSession'
 
@@ -45,6 +46,9 @@ function setup(
         cues,
       })),
       queued: vi.fn<Api['cues']['queued']>(async (id) => queued[id] ?? null),
+      liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) =>
+        Object.fromEntries(ids.map((id) => [id, { cues, fingerprint }])),
+      ),
     },
   })
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -102,5 +106,51 @@ describe('forgetting stale cue drafts', () => {
     keepDraft('103', cueDraftKey('103', 'f0', Q1), startDraft(Q1.wanted, 'mine'), TARGET, Q1)
     await forgetStaleDrafts(client)
     expect([...unsavedCueTracks()]).toEqual([])
+  })
+
+  it('checks many unsaved tracks through one bulk read per 500 and never reads their analysis, so Save after a big clear stays fast', async () => {
+    const client = setup({})
+    for (let i = 0; i < 1200; i++) {
+      keepDraft(String(i), cueDraftKey(String(i), 'f0', null), startDraft([], 'mine'), TARGET)
+    }
+    await forgetStaleDrafts(client)
+    expect(window.api.cues.liveCues).toHaveBeenCalledTimes(3)
+    expect(window.api.cues.trackCues).not.toHaveBeenCalled()
+    expect(unsavedCueTracks().size).toBe(1200)
+  })
+
+  it('forgets a draft whose track the bulk read did not return, as an unreadable track was forgotten before', async () => {
+    const client = setup({})
+    vi.mocked(window.api.cues.liveCues).mockResolvedValue({})
+    keepDraft('103', cueDraftKey('103', 'f0', null), startDraft([], 'mine'), TARGET)
+    await forgetStaleDrafts(client)
+    expect([...unsavedCueTracks()]).toEqual([])
+  })
+
+  it('notifies the draft listeners once when it forgets many stale drafts, so the batch view does not rebuild per track', async () => {
+    const client = setup({}, 'f1')
+    for (let i = 0; i < 50; i++) {
+      keepDraft(String(i), cueDraftKey(String(i), 'f0', null), startDraft([], 'mine'), TARGET)
+    }
+    const listener = vi.fn()
+    const off = subscribeCueDrafts(listener)
+    await forgetStaleDrafts(client)
+    off()
+    expect(unsavedCueTracks().size).toBe(0)
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
+
+  it("keeps the drafts of a chunk whose read failed, so a busy database during a queue write never discards the DJ's work", async () => {
+    const client = setup({})
+    for (let i = 0; i < 600; i++) {
+      keepDraft(String(i), cueDraftKey(String(i), 'f0', null), startDraft([], 'mine'), TARGET)
+    }
+    vi.mocked(window.api.cues.liveCues)
+      .mockRejectedValueOnce(new Error('database busy'))
+      .mockImplementation(async (ids) =>
+        Object.fromEntries(ids.map((id) => [id, { cues: [], fingerprint: 'f1' }])),
+      )
+    await forgetStaleDrafts(client)
+    expect([...unsavedCueTracks()]).toEqual(Array.from({ length: 500 }, (_, i) => String(i)))
   })
 })

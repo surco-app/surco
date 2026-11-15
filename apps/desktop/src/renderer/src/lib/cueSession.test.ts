@@ -8,8 +8,10 @@ import {
   draftsToSave,
   forgetAutoMark,
   forgetDraft,
+  forgetDrafts,
   keepAutoMark,
   keepDraft,
+  keepDrafts,
   keepPlayhead,
   keptDraft,
   keptPlayhead,
@@ -66,6 +68,51 @@ describe('cue session', () => {
     forgetDraft('103')
     expect([...unsavedCueTracks()]).toEqual(['104'])
     expect(listener).toHaveBeenCalledTimes(3)
+    stop()
+  })
+
+  it('notifies once for a whole batch of drafts and marks them all unsaved, so a big clear does not repaint the app once per track', () => {
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    const ids = ['103', '104', '105', '106']
+    keepDrafts(
+      ids.map((contentId) => ({
+        contentId,
+        draftKey: `${contentId}|f0|null`,
+        value: startDraft([], 'mine'),
+        target: TARGET,
+        base: null,
+      })),
+    )
+    expect([...unsavedCueTracks()]).toEqual(ids)
+    expect(listener).toHaveBeenCalledTimes(1)
+    stop()
+  })
+
+  it('does not notify for an empty batch of drafts', () => {
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    keepDrafts([])
+    expect(listener).not.toHaveBeenCalled()
+    stop()
+  })
+
+  it('forgets a whole batch of drafts with one notification, so discarding a big clear does not repaint the app once per track', () => {
+    for (const id of ['103', '104', '105'])
+      keepDraft(id, `${id}|f0|null`, startDraft([], 'mine'), TARGET)
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    forgetDrafts(['103', '104'])
+    expect([...unsavedCueTracks()]).toEqual(['105'])
+    expect(listener).toHaveBeenCalledTimes(1)
+    stop()
+  })
+
+  it('does not notify when the drafts to forget were never kept', () => {
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    forgetDrafts(['103', '104'])
+    expect(listener).not.toHaveBeenCalled()
     stop()
   })
 

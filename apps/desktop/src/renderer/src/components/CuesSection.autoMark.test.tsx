@@ -103,6 +103,11 @@ function setup({
         ...read,
         contentId: id,
       })),
+      liveCues: vi.fn<Api['cues']['liveCues']>(async (ids) =>
+        Object.fromEntries(
+          ids.map((id) => [id, { cues: read.cues, fingerprint: read.fingerprint }]),
+        ),
+      ),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => words),
       save: saveRekordboxCues,

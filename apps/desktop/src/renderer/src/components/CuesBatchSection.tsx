@@ -20,6 +20,7 @@ import {
   draftsToSave,
   forgetAutoMark,
   forgetDraft,
+  forgetDrafts,
   keptDrafts,
   useAutoMarks,
   useUnsavedCueTracks,
@@ -164,7 +165,7 @@ export function CuesBatchSection({
     }
   }
   const discardCleared = () => {
-    for (const id of shown?.cleared ?? []) forgetDraft(id)
+    forgetDrafts(shown?.cleared ?? [])
     setCleared(null)
   }
   const clearedRows = shown

@@ -41,6 +41,7 @@ import type {
   LimiterGlimpse,
   ListFixRequest,
   ListRemoval,
+  LiveCues,
   LoudnessResult,
   MetaRead,
   MusicFieldFix,
@@ -91,6 +92,7 @@ import type { Verification } from '../shared/verification'
 
 export interface CuesApi {
   trackCues: (contentId: string) => Promise<TrackCues | null>
+  liveCues: (contentIds: string[]) => Promise<Record<string, LiveCues>>
   waveDetail: (contentId: string) => Promise<Uint16Array | null>
   waveFine: (contentId: string) => Promise<FineWave | null>
   dropInput: (contentId: string) => Promise<DropInput | null>

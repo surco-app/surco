@@ -84,6 +84,24 @@ export function keepDraft(
   if (!previous || previous.value.grid !== value.grid) changed()
 }
 
+export function keepDrafts(
+  entries: {
+    contentId: string
+    draftKey: string
+    value: CueDraft
+    target: CueSaveTarget
+    base: QueuedCues | null
+  }[],
+): void {
+  let moved = false
+  for (const { contentId, draftKey, value, target, base } of entries) {
+    const previous = drafts.get(contentId)
+    drafts.set(contentId, { draftKey, value, target, base })
+    if (!previous || previous.value.grid !== value.grid) moved = true
+  }
+  if (moved) changed()
+}
+
 export function keptOnSurcoGrid(contentId: string): boolean {
   return drafts.get(contentId)?.target.provisional === true
 }
@@ -173,6 +191,12 @@ export function keptDrafts(): {
 
 export function forgetDraft(contentId: string): void {
   if (drafts.delete(contentId)) changed()
+}
+
+export function forgetDrafts(contentIds: string[]): void {
+  let removed = false
+  for (const contentId of contentIds) if (drafts.delete(contentId)) removed = true
+  if (removed) changed()
 }
 
 export function autoMarks(): ReadonlyMap<string, AutoMark> {
