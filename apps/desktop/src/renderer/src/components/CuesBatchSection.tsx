@@ -86,6 +86,7 @@ export function CuesBatchSection({
   const ids = targets.map((t) => t.contentId)
   const idsKey = [...ids].sort().join('\n')
   const shown = cleared?.forIds === idsKey ? cleared.result : null
+  const clearDiscardable = !!shown && shown.cleared.length > 0
   const gated = ids.some((id) => cueProgramOf(id).collectionGate !== null)
   const { data: canSave = true } = useQuery({
     queryKey: ['traktor-can-save', settings.traktorNmlPath],
@@ -286,25 +287,13 @@ export function CuesBatchSection({
         </dl>
       )}
       {clearedRows.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-2">
-          <dl data-testid="cues-batch-cleared" className="grid gap-1 text-xs">
-            {clearedRows.map(([kind, label]) => (
-              <div key={kind} data-testid={`cues-batch-cleared-${kind}`}>
-                <dt className={kind === 'unsaved' ? 'text-warn' : 'text-fg-dim'}>{label}</dt>
-              </div>
-            ))}
-          </dl>
-          {shown && shown.cleared.length > 0 && (
-            <button
-              type="button"
-              data-testid="cues-batch-clear-discard"
-              onClick={discardCleared}
-              className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
-            >
-              {tr('editor.cues.batch.clearDiscard')}
-            </button>
-          )}
-        </div>
+        <dl data-testid="cues-batch-cleared" className="mt-3 grid gap-1 text-xs">
+          {clearedRows.map(([kind, label]) => (
+            <div key={kind} data-testid={`cues-batch-cleared-${kind}`}>
+              <dt className={kind === 'unsaved' ? 'text-warn' : 'text-fg-dim'}>{label}</dt>
+            </div>
+          ))}
+        </dl>
       )}
       {confidence.sure > 0 && confidence.doubtful > 0 && (
         <p data-testid="cues-batch-confidence" className="mt-2 text-xs text-fg-dim">
@@ -369,25 +358,33 @@ export function CuesBatchSection({
           </dl>
         </div>
       )}
-      <GridBatchBlock
-        targets={targets}
-        checkOf={gridCheckOf}
-        onShowInList={onShowBadGrid}
-        onOpen={onOpen}
-      />
-      {unsaved.size > 0 && (
+      {(unsaved.size > 0 || clearDiscardable) && (
         <div className="mt-3 grid gap-2">
-          <button
-            type="button"
-            data-testid="cues-batch-save"
-            disabled={busy}
-            onClick={() => void save()}
-            className={PRIMARY}
-          >
-            {tr(reachesOthers ? 'editor.cues.saveAllMixed' : saveAllKey(unsaved), {
-              count: unsaved.size,
-            })}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            {unsaved.size > 0 && (
+              <button
+                type="button"
+                data-testid="cues-batch-save"
+                disabled={busy}
+                onClick={() => void save()}
+                className={PRIMARY}
+              >
+                {tr(reachesOthers ? 'editor.cues.saveAllMixed' : saveAllKey(unsaved), {
+                  count: unsaved.size,
+                })}
+              </button>
+            )}
+            {clearDiscardable && (
+              <button
+                type="button"
+                data-testid="cues-batch-clear-discard"
+                onClick={discardCleared}
+                className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+              >
+                {tr('editor.cues.batch.clearDiscard')}
+              </button>
+            )}
+          </div>
           {saveFailed && (
             <p data-testid="cues-batch-save-failed" className="text-xs text-warn">
               {tr('editor.cues.saveFailed')}
@@ -395,6 +392,12 @@ export function CuesBatchSection({
           )}
         </div>
       )}
+      <GridBatchBlock
+        targets={targets}
+        checkOf={gridCheckOf}
+        onShowInList={onShowBadGrid}
+        onOpen={onOpen}
+      />
     </div>
   )
 }
