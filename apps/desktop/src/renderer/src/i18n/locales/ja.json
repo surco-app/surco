@@ -688,7 +688,7 @@
       "matching": "Matchingに登録",
       "unmatch": "Matchingを解除",
       "reverseMatch": "順序を入れ替える",
-      "leaveMatch": "Matchingから外す",
+      "leaveMatch": "ブロックから外す",
       "mergeMatch": "ブロックを結合",
       "copyMeta": "すべてのメタデータをコピー",
       "pasteMeta": "メタデータを貼り付け",

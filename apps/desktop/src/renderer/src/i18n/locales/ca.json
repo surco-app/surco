@@ -688,7 +688,7 @@
       "matching": "Fer matching",
       "unmatch": "Treure el matching",
       "reverseMatch": "Inverteix l'ordre",
-      "leaveMatch": "Treu del matching",
+      "leaveMatch": "Treu del bloc",
       "mergeMatch": "Fusiona els blocs",
       "copyMeta": "Copiar totes les metadades",
       "pasteMeta": "Enganxar les metadades",

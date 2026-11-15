@@ -688,7 +688,7 @@
       "matching": "Créer un Matching",
       "unmatch": "Retirer le Matching",
       "reverseMatch": "Inverser l'ordre",
-      "leaveMatch": "Retirer du Matching",
+      "leaveMatch": "Retirer du bloc",
       "mergeMatch": "Fusionner les blocs",
       "copyMeta": "Copier toutes les métadonnées",
       "pasteMeta": "Coller les métadonnées",

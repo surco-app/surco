@@ -422,7 +422,7 @@ describe('TrackContextMenu Matching block', () => {
   it('takes the track out of its block from the row', () => {
     const onLeaveMatch = vi.fn()
     renderMenu({ onReverseMatch: vi.fn(), onLeaveMatch })
-    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from Matching')
+    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from block')
     fireEvent.click(screen.getByTestId('track-menu-leave-match'))
     expect(onLeaveMatch).toHaveBeenCalledTimes(1)
   })
