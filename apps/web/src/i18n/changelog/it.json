@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.36",
+    "date": "November 15, 2026",
+    "title": "Matching a blocchi",
+    "items": [
+      {
+        "text": "La playlist Matching ora mostra le tue coppie a blocchi. Ogni blocco è un brano seguito da quelli che hai salvato dopo, nello stesso ordine. Un brano che sta in più blocchi compare in ognuno, e la ricerca trova il blocco intero.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Fai clic destro su un blocco per cambiarlo. «Inverti l'ordine» gira una coppia, «Togli dal blocco» toglie un brano e «Unisci i blocchi» mette insieme quelli che selezioni. La modifica arriva anche in rekordbox.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "L'editor dei cue mantiene la sua forma mentre il brano si carica, quindi niente salta. Una grande importazione non fa più sfarfallare la lista.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Aprire una lista di Traktor con migliaia di brani non chiude più Surco.",
+        "in": "1.36.0"
+      }
+    ]
+  },
+  {
     "version": "1.35",
     "date": "November 14, 2026",
     "title": "Matching in tutti i tuoi programmi",

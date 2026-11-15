@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.36",
+    "date": "November 15, 2026",
+    "title": "Matching en blocs",
+    "items": [
+      {
+        "text": "La playlist Matching mostra ara les teves parelles en blocs. Cada bloc és una pista seguida de les que vas desar després, en el mateix ordre. Una pista que és en diversos blocs surt a cadascun, i en cercar apareix el bloc sencer.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Fes clic dret en un bloc per canviar-lo. «Inverteix l'ordre» gira una parella, «Treu del bloc» en treu una pista i «Fusiona els blocs» ajunta els que seleccionis. El canvi arriba també a rekordbox.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "L'editor de cues manté la seva forma mentre carrega la pista, així que res no salta. Una importació gran ja no fa parpellejar la llista.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Obrir una llista de Traktor amb milers de pistes ja no tanca Surco.",
+        "in": "1.36.0"
+      }
+    ]
+  },
+  {
     "version": "1.35",
     "date": "November 14, 2026",
     "title": "Matching a tots els teus programes",

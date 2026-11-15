@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.36",
+    "date": "November 15, 2026",
+    "title": "Matching in blocks",
+    "items": [
+      {
+        "text": "The Matching playlist now shows your pairs in blocks. Each block is a track followed by the ones you saved after it, in the same order. A track in several blocks shows up in each one, and a search finds the whole block.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Right-click a block to change it. “Reverse order” flips a pair, “Remove from block” takes one track out and “Merge blocks” joins the ones you select. The change reaches rekordbox too.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "The cue editor keeps its shape while a track loads, so nothing jumps. A big import no longer makes the list flicker.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Opening a Traktor list with thousands of tracks no longer closes Surco.",
+        "in": "1.36.0"
+      }
+    ]
+  },
+  {
     "version": "1.35",
     "date": "November 14, 2026",
     "title": "Matching in all your programs",

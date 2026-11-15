@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.36",
+    "date": "November 15, 2026",
+    "title": "Matching in Blöcken",
+    "items": [
+      {
+        "text": "Die Playlist Matching zeigt deine Paare jetzt in Blöcken. Jeder Block ist ein Track mit den Tracks, die du danach gespeichert hast, in derselben Reihenfolge. Ein Track in mehreren Blöcken erscheint in jedem, und die Suche findet den ganzen Block.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Klick mit der rechten Maustaste auf einen Block, um ihn zu ändern. „Reihenfolge umkehren“ dreht ein Paar um, „Aus dem Block entfernen“ nimmt einen Track heraus und „Blöcke zusammenführen“ verbindet die ausgewählten. Die Änderung landet auch in rekordbox.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Der Cue-Editor behält seine Form, während ein Track lädt, also springt nichts. Ein großer Import lässt die Liste nicht mehr flackern.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Eine Traktor-Liste mit Tausenden Tracks zu öffnen, schließt Surco nicht mehr.",
+        "in": "1.36.0"
+      }
+    ]
+  },
+  {
     "version": "1.35",
     "date": "November 14, 2026",
     "title": "Matching in all deinen Programmen",

@@ -1,5 +1,28 @@
 [
   {
+    "version": "1.36",
+    "date": "November 15, 2026",
+    "title": "Matching en blocs",
+    "items": [
+      {
+        "text": "La playlist Matching montre maintenant tes paires en blocs. Chaque bloc est un morceau suivi de ceux que tu as enregistrés après lui, dans le même ordre. Un morceau présent dans plusieurs blocs apparaît dans chacun, et une recherche trouve le bloc entier.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Fais un clic droit sur un bloc pour le modifier. « Inverser l'ordre » retourne une paire, « Retirer du bloc » sort un morceau et « Fusionner les blocs » réunit ceux que tu sélectionnes. Le changement arrive aussi dans rekordbox.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "L'éditeur de cues garde sa forme pendant le chargement d'un morceau, donc rien ne saute. Un gros import ne fait plus clignoter la liste.",
+        "in": "1.36.0"
+      },
+      {
+        "text": "Ouvrir une liste Traktor de plusieurs milliers de morceaux ne ferme plus Surco.",
+        "in": "1.36.0"
+      }
+    ]
+  },
+  {
     "version": "1.35",
     "date": "November 14, 2026",
     "title": "Matching dans tous tes logiciels",
