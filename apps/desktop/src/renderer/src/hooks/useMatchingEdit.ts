@@ -66,14 +66,14 @@ export function useMatchingSteps(
       try {
         if (inRekordbox) await window.api.dj.askToApply(['rekordbox'])
         for (const { action, pair, label, paths } of steps) {
+          if (pair) result = await window.api.dj.match('rekordbox', action, pair, label)
+          if (refused(result)) break
           if (paths) {
             const [a, b] = paths
             await (action === 'add'
               ? window.api.addMatchingPair(a, b)
               : window.api.removeMatchingPair(a, b))
           }
-          if (pair) result = await window.api.dj.match('rekordbox', action, pair, label)
-          if (refused(result)) break
         }
       } catch {
         result = { applied: false, reason: 'write-failed' }

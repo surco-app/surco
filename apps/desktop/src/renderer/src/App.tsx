@@ -2210,7 +2210,11 @@ export default function App(): React.JSX.Element {
   const filterKey = filterSessionKey(filterSelection)
   // Filtering and sorting the crate depend on neither the selection nor the pointer, so
   // they run apart from the hold below: picking a row must not pay for sorting every row.
-  const { rows: sortedTracks, separatorBefore: shownSeparators } = useMemo(() => {
+  const {
+    rows: sortedTracks,
+    separatorBefore: shownSeparators,
+    hidesNone,
+  } = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // rows put even after their verdict flips under the user.
@@ -2233,6 +2237,7 @@ export default function App(): React.JSX.Element {
         sortDir,
       ),
       separatorBefore: found.separatorBefore,
+      hidesNone: filtered.length === scopeRows.length,
     }
   }, [
     scopeRows,
@@ -3026,9 +3031,13 @@ export default function App(): React.JSX.Element {
     })
     return found.length === steps.length ? found : null
   }
-  const matchingBlockEdits = (menu: TrackMenuState) => {
-    if (sourceProgram === null || browser.playlist?.id !== MATCHING_ID || sortBy !== 'import')
-      return null
+  const editsBlocks = () =>
+    sourceProgram !== null &&
+    browser.playlist?.id === MATCHING_ID &&
+    sortBy === 'import' &&
+    hidesNone
+  const matchingBlockEdits = (menu: TrackMenuState, targets: TrackItem[]) => {
+    if (!editsBlocks() || targets.length > 1) return null
     const keys = rowKeys(visibleRows)
     const at = keys.indexOf(menu.rowKey)
     if (at < 0) return null
@@ -3055,16 +3064,16 @@ export default function App(): React.JSX.Element {
           ]),
     }
   }
-  const matchingMergeEdits = () => {
-    if (sourceProgram === null || browser.playlist?.id !== MATCHING_ID || sortBy !== 'import')
-      return null
+  const matchingMergeEdits = (targets: TrackItem[]) => {
+    if (!editsBlocks() || targets.length < 2) return null
+    const chosen = new Set(targets.map((t) => t.id))
     const keys = rowKeys(visibleRows)
     const blocks: TrackItem[][] = []
     visibleRows.forEach((row, i) => {
       if (i === 0 || shownSeparators?.get(keys[i])) blocks.push([])
       blocks[blocks.length - 1].push(row)
     })
-    const touched = blocks.filter((block) => block.some((t) => selectedIdSet.has(t.id)))
+    const touched = blocks.filter((block) => block.some((t) => chosen.has(t.id)))
     if (touched.length < 2) return null
     const [[head, ...followers], ...others] = touched
     const joined = new Set([head.id, ...followers.map((t) => t.id)])
@@ -3487,10 +3496,11 @@ export default function App(): React.JSX.Element {
   const renderTrackMenu = useStableCallback(
     (menu: TrackMenuState, close: () => void): React.ReactNode => {
       const unmatch = unmatchPairOf(menu)
-      const block = matchingBlockEdits(menu)
+      const targets = menuTargets(menu.track.id)
+      const block = matchingBlockEdits(menu, targets)
       const reverse = block?.reverse
       const leave = unmatch ? null : block?.leave
-      const merge = matchingMergeEdits()
+      const merge = matchingMergeEdits(targets)
       return (
         <TrackContextMenu
           track={menu.track}

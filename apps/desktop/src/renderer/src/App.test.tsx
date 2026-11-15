@@ -5179,6 +5179,97 @@ describe('App source playlists', () => {
         expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
       })
 
+      it('offers no merging for one track that sits in two blocks, since merging takes two tracks', async () => {
+        await openSharedBlocks()
+        selectRows(2)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+      })
+
+      it('offers only merging for two tracks of different blocks, since reversing and leaving act on one row', async () => {
+        await openApartBlocks()
+        selectRows(1, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-merge-match')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+      })
+
+      it('keeps the pair of a refused step out of Surco, so Surco never holds a pair rekordbox refused', async () => {
+        const match = await openPair()
+        match
+          .mockResolvedValueOnce({ applied: true })
+          .mockResolvedValueOnce({ applied: false, reason: 'write-failed' })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav')
+        expect(window.api.addMatchingPair).not.toHaveBeenCalled()
+      })
+
+      describe('with a filter hiding the head of a block', () => {
+        const SIX = ['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav', '/m/e.mp3', '/m/f.wav']
+        const openFilteredBlocks = async () => {
+          await openBlock(
+            [
+              ['r1', 'r2'],
+              ['r8', 'r3'],
+              ['r4', 'r6'],
+            ],
+            [
+              entryOf('r1', '/m/a.wav'),
+              entryOf('r2', '/m/b.wav'),
+              separator,
+              entryOf('r8', '/m/e.mp3'),
+              entryOf('r3', '/m/c.wav'),
+              { ...separator, linkId: 'matching-sep-2' },
+              entryOf('r4', '/m/d.wav'),
+              entryOf('r6', '/m/f.wav'),
+            ],
+            SIX,
+          )
+        }
+        const rowOf = (title: string) =>
+          screen
+            .getAllByTestId('track-row')
+            .findIndex((r) => r.textContent?.includes(title)) as number
+        const keepOnlyWav = async () => {
+          fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+          fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+          fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
+          await waitFor(() => expect(titles()).toHaveLength(5))
+        }
+
+        it('offers the block edits while nothing is hidden', async () => {
+          await openFilteredBlocks()
+          selectRows(rowOf('Charlie'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Charlie')])
+          await screen.findByTestId('track-menu-reverse-match')
+          expect(screen.getByTestId('track-menu-leave-match')).toBeInTheDocument()
+          fireEvent.keyDown(window, { key: 'Escape' })
+          selectRows(rowOf('Charlie'), rowOf('Delta'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Delta')])
+          expect(await screen.findByTestId('track-menu-merge-match')).toBeInTheDocument()
+        })
+
+        it('offers no block edits, since the blocks on screen glue together and would write pairs that do not exist', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          selectRows(rowOf('Charlie'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Charlie')])
+          await screen.findByTestId('track-menu-add-to')
+          expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+          expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+          fireEvent.keyDown(window, { key: 'Escape' })
+          selectRows(rowOf('Charlie'), rowOf('Delta'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Delta')])
+          await screen.findByTestId('track-menu-add-to')
+          expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+        })
+      })
+
       it('offers neither outside Matching, where the rows are no blocks', async () => {
         await openFactory({
           dj: djReads({
