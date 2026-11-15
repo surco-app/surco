@@ -1014,7 +1014,11 @@ describe('DiscogsPanel once a match is applied', () => {
   }
 
   function renderApplied(applied: boolean) {
-    render(
+    return render(appliedPanel(applied))
+  }
+
+  function appliedPanel(applied: boolean) {
+    return (
       <DiscogsPanel
         browser={browser({ results, openKey: 'discogs:2', release: dos })}
         matchedTrack={undefined}
@@ -1032,7 +1036,7 @@ describe('DiscogsPanel once a match is applied', () => {
         onResizeStart={vi.fn()}
         onFit={vi.fn()}
         onFold={vi.fn()}
-      />,
+      />
     )
   }
 
@@ -1052,6 +1056,34 @@ describe('DiscogsPanel once a match is applied', () => {
     fireEvent.click(screen.getByTestId('discogs-show-rest'))
     expect(screen.getAllByTestId('result-card')).toHaveLength(4)
     expect(screen.queryByTestId('discogs-show-rest')).toBeNull()
+  })
+
+  // The other results leaving pulled the applied card up in one frame while its tracklist
+  // was still unfolding: a jump, then a grow. It slides up from where it was instead, so the
+  // fold reads as the same gesture as the tracklist opening.
+  it('slides the applied card up from where it sat when the other results fold away', () => {
+    const offsetTop = vi
+      .spyOn(HTMLElement.prototype, 'offsetTop', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        const cards = Array.from(document.querySelectorAll('[data-testid="result-card"]'))
+        return cards.indexOf(this) * 50
+      })
+    const animate = vi.fn()
+    HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
+    try {
+      const { rerender } = renderApplied(false)
+      rerender(appliedPanel(true))
+
+      const slid = animate.mock.contexts.indexOf(screen.getByTestId('result-card'))
+      expect(slid).toBeGreaterThanOrEqual(0)
+      expect(animate.mock.calls[slid][0]).toEqual([
+        { transform: 'translateY(50px)' },
+        { transform: 'none' },
+      ])
+    } finally {
+      offsetTop.mockRestore()
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate
+    }
   })
 
   // Nothing is applied yet: the DJ still has to pick, so folding would hide the choice.
