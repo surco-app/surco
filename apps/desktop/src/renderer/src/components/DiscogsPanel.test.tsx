@@ -679,6 +679,35 @@ describe('DiscogsPanel stable results', () => {
     )
   })
 
+  // A probe that finds nothing gives the slot back without touching the order, so the rows
+  // were left to jump up its height in one frame, seconds after the list had settled. They
+  // slide into the freed slot instead, as they do when the probe's pick reorders them.
+  it('slides the rows up into the top slot when the probe gives it back empty', () => {
+    const offsetTop = vi
+      .spyOn(HTMLElement.prototype, 'offsetTop', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        const cards = Array.from(document.querySelectorAll('[data-testid="result-card"]'))
+        const slot = document.querySelector('[data-testid="best-match-slot"]') ? 43 : 0
+        return slot + cards.indexOf(this) * 50
+      })
+    const animate = vi.fn()
+    HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
+    try {
+      const { rerender } = renderPanel(browser({ query: 'x', results: rows, choosingBest: true }))
+      rerender(panel(browser({ query: 'x', results: rows })))
+
+      const first = animate.mock.contexts.indexOf(screen.getAllByTestId('result-card')[0])
+      expect(first).toBeGreaterThanOrEqual(0)
+      expect(animate.mock.calls[first][0]).toEqual([
+        { transform: 'translateY(43px)' },
+        { transform: 'none' },
+      ])
+    } finally {
+      offsetTop.mockRestore()
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate
+    }
+  })
+
   it('heads the best match at the top of the list', () => {
     renderPanel(
       browser({ query: 'x', results: rows, suggestedKey: 'bandcamp:9', suggestedConfident: true }),

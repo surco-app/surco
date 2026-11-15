@@ -240,10 +240,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   const cardTops = useRef(new Map<string, number>())
   const slidFor = useRef(results)
   const slidFolded = useRef(foldRest)
+  const slidChoosing = useRef(choosingBest)
   useLayoutEffect(() => {
     const cards =
       resultsRef.current?.querySelectorAll<HTMLElement>('[data-testid="result-card"]') ?? []
-    const listChanged = slidFor.current !== results || slidFolded.current !== foldRest
+    const listChanged =
+      slidFor.current !== results ||
+      slidFolded.current !== foldRest ||
+      slidChoosing.current !== choosingBest
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     const tops = new Map<string, number>()
     for (const card of cards) {
@@ -261,6 +265,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     cardTops.current = tops
     slidFor.current = results
     slidFolded.current = foldRest
+    slidChoosing.current = choosingBest
     shownKeys.current = new Set(results.map(resultKeyOf))
   })
   const moveResultFocus = useCallback(
