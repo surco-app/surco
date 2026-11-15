@@ -286,6 +286,28 @@ describe('Cues over several selected tracks', () => {
     await waitFor(() => expect([...unsavedCueTracks()]).toEqual(['999']))
   })
 
+  it('forgets every saved draft with one notification, so saving thousands of tracks does not repaint the app once per track', async () => {
+    const { saveRekordboxCues } = setup()
+    const draft = (id: string) =>
+      keepDraft(
+        id,
+        cueDraftKey(id, 'f0', null),
+        startDraft([{ ms: bar(64), kind: 0, color: null }], 'mine'),
+        { path: `/m/${id}.wav`, label: id, fingerprint: 'f0' },
+      )
+    act(() => {
+      draft('103')
+      draft('104')
+    })
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+    stop()
+    expect(listener).toHaveBeenCalledTimes(1)
+  })
+
   it('teaches Auto from the marks of the tracks it saved, and only once they are saved', async () => {
     recordCueEdits.mockClear()
     const { saveRekordboxCues } = setup()

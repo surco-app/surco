@@ -19,7 +19,6 @@ import { cueProgramOf, programsOfSave } from '../lib/cuePrograms'
 import {
   draftsToSave,
   forgetAutoMark,
-  forgetDraft,
   forgetDrafts,
   keptDrafts,
   useAutoMarks,
@@ -186,11 +185,13 @@ export function CuesBatchSection({
     setBusy(true)
     try {
       await forgetStaleDrafts(queryClient)
-      const mine = draftsToSave().filter((r) => ids.includes(r.contentId) && savable(r.contentId))
+      const wanted = new Set(ids)
+      const mine = draftsToSave().filter((r) => wanted.has(r.contentId) && savable(r.contentId))
       if (mine.length === 0) return
+      const mineIds = new Set(mine.map((r) => r.contentId))
       const others = await twinPlansOf(
         queryClient,
-        keptDrafts().filter((d) => mine.some((r) => r.contentId === d.contentId)),
+        keptDrafts().filter((d) => mineIds.has(d.contentId)),
         settings,
       )
       const reqs = [
@@ -211,10 +212,10 @@ export function CuesBatchSection({
       recordCueEdits(
         queryClient,
         keptDrafts()
-          .filter((d) => mine.some((r) => r.contentId === d.contentId))
+          .filter((d) => mineIds.has(d.contentId))
           .map(({ contentId, draft }) => ({ contentId, draft })),
       )
-      for (const req of reqs) forgetDraft(req.contentId)
+      forgetDrafts(reqs.map((r) => r.contentId))
       setCleared(null)
       await queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
     } finally {
