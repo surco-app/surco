@@ -1078,6 +1078,22 @@ describe('App Traktor cues', () => {
       )
     })
 
+    it('empties the block of the right-clicked row from the Matching entry of Traktor', async () => {
+      openTraktor({ matchingPairs: paired() })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.click(await screen.findByTestId('source-rail-traktor'))
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-remove'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+      )
+      expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+    })
+
     it('unpairs a partner from the editor', async () => {
       openTraktor({ matchingPairs: paired() })
       await openPlaylist()
@@ -3878,6 +3894,44 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String)),
       )
+    })
+
+    it('empties the whole block from Matching in one go, asking about an open rekordbox once', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({
+        dj: djReads(matchingReads.dj, {
+          rekordbox: {
+            match,
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([
+              ['c-l1', 'c-l3'],
+              ['c-l3', 'c-l2'],
+            ]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID
+                  ? [
+                      withPreview('/m/a.wav', 'c-l1'),
+                      withPreview('/m/c.wav', 'c-l3'),
+                      withPreview('/m/b.wav', 'c-l2'),
+                    ]
+                  : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      fireEvent.contextMenu(rowTitled('Alpha'))
+      const remove = await screen.findByTestId('track-menu-remove')
+      expect(remove).toHaveTextContent('Matching')
+      fireEvent.click(remove)
+      await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+      expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String))
+      expect(match).toHaveBeenCalledWith('remove', ['c-l3', 'c-l2'], expect.any(String))
+      expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
+      expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav')
+      expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/c.wav', '/m/b.wav')
     })
 
     it('offers no unpairing on a track that is not a partner of the chosen one', async () => {

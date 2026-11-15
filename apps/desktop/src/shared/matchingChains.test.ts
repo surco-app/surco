@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchingChains } from './matchingChains'
+import { matchingChains, pairsOfBlocks } from './matchingChains'
 
 const byId = (id: string): string => id
 
@@ -91,5 +91,28 @@ describe('matchingChains', () => {
 
   it('ignores a pair of a track with itself', () => {
     expect(matchingChains([['a', 'a']], byId)).toEqual([])
+  })
+})
+
+describe('pairsOfBlocks', () => {
+  const pairs: [string, string][] = [
+    ['a', 'b'],
+    ['b', 'c'],
+    ['x', 'y'],
+  ]
+
+  it('takes every pair of the block a chosen track sits in, so picking A of A+B+C empties the whole block from Matching', () => {
+    expect(pairsOfBlocks(pairs, ['a'])).toEqual([
+      ['a', 'b'],
+      ['b', 'c'],
+    ])
+  })
+
+  it('leaves blocks with no chosen track alone, because the DJ only asked to remove the ones they selected', () => {
+    expect(pairsOfBlocks(pairs, ['y'])).toEqual([['x', 'y']])
+  })
+
+  it('returns nothing for tracks without a pair, so a stray selection writes nothing to rekordbox', () => {
+    expect(pairsOfBlocks(pairs, ['z'])).toEqual([])
   })
 })
