@@ -123,7 +123,7 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
-import { type MatchingAction, useMatchingEdit } from './hooks/useMatchingEdit'
+import { type MatchingAction, useMatchingEdit, useMatchingSteps } from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -2976,6 +2976,7 @@ export default function App(): React.JSX.Element {
     )
   }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
+  const runMatchingEdits = useMatchingSteps(notifyEdit)
   const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     if (!selected) return
     const label = `${selected.listLabel} · ${partner.title}`
@@ -3053,12 +3054,6 @@ export default function App(): React.JSX.Element {
             ...rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['add', first, s]),
           ]),
     }
-  }
-  const runMatchingEdits = async (
-    steps: (NonNullable<ReturnType<typeof pairOfTracks>> & { action: MatchingAction })[],
-  ) => {
-    for (const { action, pair, label, paths } of steps)
-      await editMatching(action, pair, label, paths)
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = inRekordbox

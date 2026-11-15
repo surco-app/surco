@@ -411,16 +411,19 @@ describe('TrackContextMenu submenus on hover', () => {
 })
 
 describe('TrackContextMenu Matching block', () => {
-  it('reverses the pair or takes the track out of its block from the row', () => {
+  it('reverses the pair from the row', () => {
     const onReverseMatch = vi.fn()
-    const onLeaveMatch = vi.fn()
-    renderMenu({ onReverseMatch, onLeaveMatch })
+    renderMenu({ onReverseMatch, onLeaveMatch: vi.fn() })
     expect(screen.getByTestId('track-menu-reverse-match')).toHaveTextContent('Reverse order')
-    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from matching')
     fireEvent.click(screen.getByTestId('track-menu-reverse-match'))
     expect(onReverseMatch).toHaveBeenCalledTimes(1)
-    renderMenu({ onReverseMatch, onLeaveMatch })
-    fireEvent.click(screen.getAllByTestId('track-menu-leave-match')[0])
+  })
+
+  it('takes the track out of its block from the row', () => {
+    const onLeaveMatch = vi.fn()
+    renderMenu({ onReverseMatch: vi.fn(), onLeaveMatch })
+    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from Matching')
+    fireEvent.click(screen.getByTestId('track-menu-leave-match'))
     expect(onLeaveMatch).toHaveBeenCalledTimes(1)
   })
 

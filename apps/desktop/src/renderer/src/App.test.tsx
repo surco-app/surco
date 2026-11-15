@@ -5015,6 +5015,52 @@ describe('App source playlists', () => {
         )
       })
 
+      it('stops after a refused step, so rekordbox never holds a pair both ways round', async () => {
+        const match = await openPair()
+        match.mockResolvedValueOnce({ applied: false, reason: 'write-failed' })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(calls(match)).toEqual([['remove', ['r1', 'r2']]])
+      })
+
+      it('asks about an open rekordbox once for the whole change, not once per pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
+      })
+
+      it('reverses a pair from its first row too, since a block of two is just that pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['add', ['r2', 'r1']],
+          ]),
+        )
+      })
+
+      it('takes the head out of a block of two by dropping its only pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() => expect(calls(match)).toEqual([['remove', ['r1', 'r2']]]))
+      })
+
+      it('offers only the unpairing of two selected tracks when it shows, so the menu never says the same twice', async () => {
+        await openPair()
+        fireEvent.click(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        await screen.findByTestId('track-menu-unmatch')
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+      })
+
       it('takes a follower out of a block of three without touching the other pair', async () => {
         const match = await openTrio()
         fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
