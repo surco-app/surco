@@ -473,6 +473,27 @@ describe('audio:metaCached', () => {
       ['/m/b.flac', false],
     ])
   })
+
+  // Each cached read is a file read whole into memory, ~470 KB for a track carrying
+  // Traktor's TRAKTOR4 blob. Started all at once for a DJ's 8,272-row "Todas las pistas",
+  // their buffers came to ~3.9 GB and the main process died (15/11/2026).
+  it('reads a few cached entries at a time, however many rows the list has', async () => {
+    let inFlight = 0
+    let peak = 0
+    vi.mocked(peekMeta).mockImplementation(async () => {
+      inFlight++
+      peak = Math.max(peak, inFlight)
+      await new Promise((r) => setTimeout(r, 1))
+      inFlight--
+      return null
+    })
+    const rows = Array.from({ length: 200 }, (_, i) => ({ path: `/m/${i}.flac`, light: true }))
+
+    await handlerFor('audio:metaCached')({}, rows)
+
+    expect(vi.mocked(peekMeta)).toHaveBeenCalledTimes(200)
+    expect(peak).toBeLessThanOrEqual(16)
+  })
 })
 
 // A file can date its release to the day ("2020-12-01"). Only a user who turned on the

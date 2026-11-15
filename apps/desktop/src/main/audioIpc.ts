@@ -108,6 +108,8 @@ function spectrogramNamespace(inputPath: string): string {
 // Bumped when what a verdict means changes, so verdicts reached before are probed again.
 const AUTO_MATCH_NAMESPACE = 'automatch-v1'
 
+const META_CACHED_READS_AT_ONCE = 8
+
 const spectrumVerdictOf = ({
   cutoffFailed: _cutoffFailed,
   image: _image,
@@ -204,19 +206,28 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   // The rows a list adds whose read is already on disk, answered in one round trip: a
   // reopened library of thousands went through the import queue one read at a time and
-  // kept the list reading for minutes. A miss is left out and never read here.
+  // kept the list reading for minutes. A miss is left out and never read here. A few
+  // entries are read at a time: each is a whole file in memory, and thousands at once
+  // (8,272 Traktor tracks carrying ~470 KB each) exhausted the main process.
   ipcMain.handle('audio:metaCached', async (_e, rows: { path: string; light: boolean }[]) => {
-    const hits = await Promise.all(
-      rows.map(async ({ path, light }) => {
+    const hits = new Map<string, unknown>()
+    let next = 0
+    const worker = async (): Promise<void> => {
+      while (next < rows.length) {
+        const { path, light } = rows[next++]
         const read = await peekMeta(path, light)
-        if (!read) return null
+        if (!read) continue
         const meta = { ...read, tags: withSettingsYear(read.tags) }
-        if (!meta.cover) return [path, meta] as const
+        if (!meta.cover) {
+          hits.set(path, meta)
+          continue
+        }
         const thumbUrl = await coverThumbUrlFor(meta.cover.thumbUrl)
-        return [path, { ...meta, cover: { ...meta.cover, thumbUrl } }] as const
-      }),
-    )
-    return Object.fromEntries(hits.filter((hit) => hit !== null))
+        hits.set(path, { ...meta, cover: { ...meta.cover, thumbUrl } })
+      }
+    }
+    await Promise.all(Array.from({ length: META_CACHED_READS_AT_ONCE }, worker))
+    return Object.fromEntries(hits)
   })
 
   ipcMain.handle('audio:cover', async (_e, inputPath: string) => {
