@@ -2468,6 +2468,7 @@
     "removeFromPlaylistTitle_one": "Remove this track from “{{name}}”?",
     "removeFromPlaylistTitle_other": "Remove {{count}} tracks from “{{name}}”?",
     "removeFromPlaylistMessage": "They are removed from the playlist in rekordbox. The files and the rest of the collection stay as they are.",
+    "removeFromMatchingMessage": "Their Matching pairs are undone. The files stay as they are.",
     "removeFromPlaylistConfirm": "Remove"
   },
   "activity": {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { matchingBlocks } from './matchingBlocks'
+import { matchingBlocks, pairsOfBlocks } from './matchingBlocks'
 
 const byId = (id: string): string => id
 
@@ -97,5 +97,76 @@ describe('matchingBlocks', () => {
       ['x', 'a'],
       ['y', 'a'],
     ])
+  })
+})
+
+describe('pairsOfBlocks', () => {
+  const pairs: [string, string][] = [
+    ['a', 'b'],
+    ['b', 'c'],
+    ['x', 'y'],
+  ]
+
+  it('takes every pair of the block a chosen head leads, and leaves the block its follower leads, because one level means A then B and B then C are two blocks', () => {
+    expect(pairsOfBlocks(pairs, ['a'])).toEqual([['a', 'b']])
+  })
+
+  it('takes both the block a track leads and the block it follows in, so it leaves Matching entirely', () => {
+    expect(pairsOfBlocks(pairs, ['b'])).toEqual([
+      ['a', 'b'],
+      ['b', 'c'],
+    ])
+  })
+
+  it('empties every block a follower sits in, with all their other followers, since the DJ removes the whole block', () => {
+    expect(
+      pairsOfBlocks(
+        [
+          ['x', 'a'],
+          ['y', 'a'],
+          ['x', 'b'],
+          ['z', 'c'],
+        ],
+        ['a'],
+      ),
+    ).toEqual([
+      ['x', 'a'],
+      ['y', 'a'],
+      ['x', 'b'],
+    ])
+  })
+
+  it('leaves blocks with no chosen track alone, because the DJ only asked to remove the ones they selected', () => {
+    expect(pairsOfBlocks(pairs, ['y'])).toEqual([['x', 'y']])
+  })
+
+  it('returns nothing for tracks without a pair, so a stray selection writes nothing to rekordbox', () => {
+    expect(pairsOfBlocks(pairs, ['z'])).toEqual([])
+  })
+
+  it('lists a pair once when two chosen tracks share its block, so rekordbox is not asked to remove it twice', () => {
+    expect(pairsOfBlocks(pairs, ['a', 'b', 'c'])).toEqual([
+      ['a', 'b'],
+      ['b', 'c'],
+    ])
+  })
+
+  it('takes a pair held in both deck orders both ways, so the block does not come back from the other order', () => {
+    expect(
+      pairsOfBlocks(
+        [
+          ['a', 'b'],
+          ['b', 'a'],
+        ],
+        ['a'],
+      ),
+    ).toEqual([
+      ['a', 'b'],
+      ['b', 'a'],
+    ])
+  })
+
+  it('ignores a pair of a track with itself', () => {
+    expect(pairsOfBlocks([['a', 'a']], ['a'])).toEqual([])
   })
 })

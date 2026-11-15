@@ -14,6 +14,8 @@
 
 @theme {
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-duration: var(--duration-fast);
+  --default-transition-timing-function: var(--ease-standard);
   --text-label: 11px;
   --text-label--letter-spacing: 0.01em;
   --text-section: 13px;
@@ -635,6 +637,31 @@ textarea {
   }
 }
 
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--step-from, 16px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-step-in {
+  animation: step-in var(--duration-state) var(--ease-standard);
+}
+
+.animate-step-in[data-dir="back"] {
+  --step-from: -16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-step-in {
+    animation: overlay-in var(--duration-state) var(--ease-standard);
+  }
+}
+
 /* The convert button's two faces. Blocked, it names the missing field on a neutral
    ground, with the amber dot as the only warning; once the field is filled the accent
    fades in and the action rolls down into place. The fade has no direction on purpose: a left-to-right sweep read as
@@ -787,7 +814,11 @@ button:hover > .process-fill {
 }
 
 .press {
-  transition: transform var(--duration-fast) var(--ease-standard);
+  transition-property:
+    transform, color, background-color, border-color, outline-color, text-decoration-color, fill,
+    stroke, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
 }
 .press:active:not(:disabled) {
   transform: scale(0.97);
@@ -997,9 +1028,13 @@ button:hover > .process-fill {
   /* Movement, not state: the player swaps its layouts in one step (Player.tsx also skips
      the scripted tween, which would otherwise wait forever for a transitionend) and a
      pressed button no longer shrinks. */
-  .player-section,
-  .press {
+  .player-section {
     transition: none;
+  }
+  .press {
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+      opacity;
   }
   .press:active:not(:disabled) {
     transform: none;

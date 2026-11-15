@@ -2468,6 +2468,7 @@
     "removeFromPlaylistTitle_one": "Diesen Track aus „{{name}}“ entfernen?",
     "removeFromPlaylistTitle_other": "{{count}} Tracks aus „{{name}}“ entfernen?",
     "removeFromPlaylistMessage": "Sie werden in rekordbox aus der Playlist entfernt. Die Dateien und der Rest der Sammlung bleiben unverändert.",
+    "removeFromMatchingMessage": "Ihre Matching-Paare werden aufgelöst. Die Dateien bleiben unverändert.",
     "removeFromPlaylistConfirm": "Entfernen"
   },
   "activity": {

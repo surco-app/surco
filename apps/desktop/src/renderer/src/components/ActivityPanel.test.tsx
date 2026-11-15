@@ -235,6 +235,33 @@ describe('ActivityPanel accessibility', () => {
     expect(detail).not.toHaveTextContent('SURCO_ERR')
   })
 
+  it('opens a detail inside the animated body, so it grows into place instead of shoving the rows below', () => {
+    renderRows([
+      { id: 'p', kind: 'match', status: 'done', label: 'Plain', detail: 'GET /x' },
+      {
+        id: 'g',
+        kind: 'discogs',
+        status: 'done',
+        label: 'Searching Discogs',
+        children: [{ id: 'g1', kind: 'discogs', status: 'done', label: 'Page 1', detail: 'GET' }],
+      },
+    ])
+    const [plain, group] = screen.getAllByTestId('activity-row')
+    fireEvent.click(plain)
+    expect(
+      screen.getByTestId('activity-row-detail').closest('[data-testid="section-body"]'),
+    ).not.toBeNull()
+    fireEvent.click(group)
+    const child = screen.getByTestId('activity-child')
+    expect(child.closest('[data-testid="section-body"]')).not.toBeNull()
+    fireEvent.click(child)
+    const ownBody = screen
+      .getByTestId('activity-child-detail')
+      .closest('[data-testid="section-body"]')
+    expect(ownBody).not.toBeNull()
+    expect(child.parentElement?.contains(ownBody)).toBe(true)
+  })
+
   // The open-in-browser button only faded in on mouse hover, so a keyboard user tabbing
   // onto it pressed an invisible control.
   it('shows the open-in-browser button when the keyboard reaches it', () => {

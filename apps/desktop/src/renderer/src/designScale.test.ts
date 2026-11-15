@@ -104,6 +104,13 @@ describe('everything that answers the user moves on one curve and three duration
       .filter((line) => !NOT_A_RESPONSE.some((name) => line.includes(name)))
     expect(literal).toEqual([])
   })
+
+  it('gives a bare Tailwind transition the fast duration and the standard curve, so an untimed hover cannot drift off the scale', () => {
+    const css = readFileSync(join(root, 'index.css'), 'utf8')
+    const theme = css.slice(css.indexOf('@theme {'), css.indexOf('}', css.indexOf('@theme {')))
+    expect(theme).toContain('--default-transition-duration: var(--duration-fast);')
+    expect(theme).toContain('--default-transition-timing-function: var(--ease-standard);')
+  })
 })
 
 describe('every window has the same 16 px corners, so a dialog reads as a window wherever it opens', () => {

@@ -1,4 +1,5 @@
 import type { GridAudit } from '../shared/gridAudit'
+import { START_SLACK_MS } from '../shared/gridEdit'
 import { detectBpm } from './tempo'
 
 const HOP = 32
@@ -276,8 +277,9 @@ export function provisionalGrid(
 ): { ms: number; beat: number }[] {
   const period = 60000 / fit.bpm
   const offset = fit.firstMs + shiftMs + REKORDBOX_BEAT_AFTER_RISE_MS
-  const first = offset - Math.floor(offset / period) * period
+  const first = offset - Math.floor((offset + START_SLACK_MS) / period) * period
   const grid: { ms: number; beat: number }[] = []
-  for (let ms = first; ms < durationMs; ms += period) grid.push({ ms: Math.round(ms), beat: 0 })
+  for (let ms = first; ms < durationMs; ms += period)
+    grid.push({ ms: Math.max(0, Math.round(ms)), beat: 0 })
   return grid
 }

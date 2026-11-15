@@ -963,7 +963,7 @@ const TrackRow = memo(function TrackRow({
                   ) : t.analyzing ? (
                     <span
                       data-testid="track-quality-loading"
-                      className="group/dot relative flex h-4 animate-pulse items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
+                      className="group/dot relative flex h-4 items-center rounded px-[5px] text-fg-faint ring-1 ring-current ring-inset"
                     >
                       {format ? (
                         <span className="text-label font-semibold leading-4">{format}</span>

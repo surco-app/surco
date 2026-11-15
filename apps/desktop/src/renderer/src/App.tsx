@@ -30,6 +30,7 @@ import {
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { MATCHING_ID } from '../../shared/matching'
+import { pairsOfBlocks } from '../../shared/matchingBlocks'
 import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
 import { withPhraseCount } from '../../shared/phraseCount'
@@ -123,7 +124,13 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
-import { type MatchingAction, useMatchingEdit, useMatchingSteps } from './hooks/useMatchingEdit'
+import {
+  type MatchingAction,
+  type MatchingEdit,
+  useMatchingEdit,
+  useMatchingEdits,
+  useMatchingSteps,
+} from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -2982,6 +2989,7 @@ export default function App(): React.JSX.Element {
   }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
   const runMatchingEdits = useMatchingSteps(notifyEdit)
+  const editMatchings = useMatchingEdits(notifyEdit)
   const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     if (!selected) return
     const label = `${selected.listLabel} · ${partner.title}`
@@ -3086,6 +3094,54 @@ export default function App(): React.JSX.Element {
       return [['add', head, t]]
     })
     return planMatching([...removes, ...adds])
+  }
+  const matchingOpen = browser.playlist?.id === MATCHING_ID
+  const confirmRemoveFromMatching = (edits: MatchingEdit[], count: number): void => {
+    if (edits.length === 0) return
+    overlays.openConfirm({
+      title: tr('confirm.removeFromPlaylistTitle', { count, name: browser.playlist?.name }),
+      message: tr('confirm.removeFromMatchingMessage'),
+      confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
+      destructive: true,
+      onConfirm: () => void editMatchings('remove', edits),
+    })
+  }
+  const removeFromMatching = (targets: TrackItem[]): void => {
+    if (inRekordbox) {
+      const entryOf = new Map(
+        (matchingEntries ?? []).flatMap((e) => (e.contentId ? [[e.contentId, e] as const] : [])),
+      )
+      const chosen = targets.flatMap((t) => playlistScope?.contentOf.get(t.id) ?? [])
+      const pairs = pairsOfBlocks(matchingPairs ?? [], chosen)
+      confirmRemoveFromMatching(
+        pairs.map((pair) => {
+          const [a, b] = pair.map((id) => entryOf.get(id))
+          return {
+            pair,
+            label: [a, b].map((e) => e?.preview?.title ?? '').join(' · '),
+            paths: a?.path && b?.path ? [a.path, b.path] : null,
+          }
+        }),
+        new Set(pairs.flat()).size,
+      )
+      return
+    }
+    const labelOf = (path: string): string =>
+      tracks.find((t) => t.inputPath.normalize('NFC') === path)?.listLabel ??
+      path.split(/[\\/]/).pop() ??
+      path
+    const pairs = pairsOfBlocks(
+      matchingPathPairs,
+      targets.map((t) => t.inputPath.normalize('NFC')),
+    )
+    confirmRemoveFromMatching(
+      pairs.map((paths) => ({
+        pair: rekordboxPairOf(paths),
+        label: paths.map(labelOf).join(' · '),
+        paths,
+      })),
+      new Set(pairs.flat()).size,
+    )
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = inRekordbox
@@ -3407,6 +3463,12 @@ export default function App(): React.JSX.Element {
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
   const removablePlaylist =
     editableSource && crateOpen && editCan('remove') ? browser.playlist : null
+  const removeLabel =
+    matchingOpen && browser.playlist
+      ? tr('sources.menu.removeFrom', { name: browser.playlist.name })
+      : removablePlaylist
+        ? tr('sources.menu.removeFrom', { name: removablePlaylist.name })
+        : undefined
   // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
   // remove does, and several ask first, naming the playlist they leave.
   const removeFromPlaylist = (targets: TrackItem[]): void => {
@@ -3429,7 +3491,11 @@ export default function App(): React.JSX.Element {
   // Inside a playlist the program can edit, taking a track out means out of that playlist,
   // whichever way it is asked; the list in Surco is only a view of it.
   const removeTargets = useStableCallback((targets: TrackItem[]): void =>
-    removablePlaylist ? removeFromPlaylist(targets) : askRemoveFromList(targets),
+    matchingOpen
+      ? removeFromMatching(targets)
+      : removablePlaylist
+        ? removeFromPlaylist(targets)
+        : askRemoveFromList(targets),
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
@@ -3528,6 +3594,8 @@ export default function App(): React.JSX.Element {
           onPasteMeta={onPasteMeta}
           canPasteMeta={copiedMeta !== null}
           onRemove={removeFromList}
+          removeLabel={removeLabel}
+          multi={menuTargets(menu.track.id).length > 1}
           onTrash={onTrashRow}
           onInfo={overlays.openInfo}
           hasBackup={backupAtByPath.has(menu.track.inputPath)}
@@ -4424,11 +4492,7 @@ export default function App(): React.JSX.Element {
                             }
                             onClearAll={onClearAll}
                             onRemoveSelected={onRemoveSelected}
-                            removeLabel={
-                              removablePlaylist
-                                ? tr('sources.menu.removeFrom', { name: removablePlaylist.name })
-                                : undefined
-                            }
+                            removeLabel={removeLabel}
                             onTrashSelected={onTrashSelected}
                             onTrashSuspects={onTrashSuspects}
                             onReviewIncomplete={

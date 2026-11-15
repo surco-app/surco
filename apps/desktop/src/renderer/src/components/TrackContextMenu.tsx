@@ -34,6 +34,8 @@ interface Props {
   onReverseMatch?: () => void
   onLeaveMatch?: () => void
   onMergeMatch?: () => void
+  removeLabel?: string
+  multi?: boolean
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -116,6 +118,8 @@ export function TrackContextMenu({
   onReverseMatch,
   onLeaveMatch,
   onMergeMatch,
+  removeLabel,
+  multi = false,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -252,45 +256,49 @@ export function TrackContextMenu({
         style={{ top: pos.y, left: pos.x }}
         className="absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-search"
-          label={tr('trackList.context.search')}
-          onClick={() => run(() => onSearch(track.id))}
-        />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-search-web"
-          label={tr('trackList.context.searchWeb')}
-          onClick={() => run(() => onSearchWeb(track))}
-        />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-copy-meta"
-          label={tr('trackList.context.copyMeta')}
-          onClick={() => run(() => onCopyMeta(track))}
-        />
-        {canPasteMeta && (
-          <MenuItem
-            onHover={leaveSub}
-            testid="track-menu-paste-meta"
-            label={tr('trackList.context.pasteMeta')}
-            onClick={() => run(() => onPasteMeta(track))}
-          />
-        )}
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-startover"
-          label={tr('trackList.context.startOver')}
-          onClick={() => run(() => onStartOver(track))}
-        />
-        {onStartSession && (
-          <MenuItem
-            onHover={leaveSub}
-            testid="track-menu-start-session"
-            label={tr('trackList.context.startSession')}
-            onClick={() => run(() => onStartSession(track))}
-          />
+        {!multi && (
+          <>
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-search"
+              label={tr('trackList.context.search')}
+              onClick={() => run(() => onSearch(track.id))}
+            />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-search-web"
+              label={tr('trackList.context.searchWeb')}
+              onClick={() => run(() => onSearchWeb(track))}
+            />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-copy-meta"
+              label={tr('trackList.context.copyMeta')}
+              onClick={() => run(() => onCopyMeta(track))}
+            />
+            {canPasteMeta && (
+              <MenuItem
+                onHover={leaveSub}
+                testid="track-menu-paste-meta"
+                label={tr('trackList.context.pasteMeta')}
+                onClick={() => run(() => onPasteMeta(track))}
+              />
+            )}
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-startover"
+              label={tr('trackList.context.startOver')}
+              onClick={() => run(() => onStartOver(track))}
+            />
+            {onStartSession && (
+              <MenuItem
+                onHover={leaveSub}
+                testid="track-menu-start-session"
+                label={tr('trackList.context.startSession')}
+                onClick={() => run(() => onStartSession(track))}
+              />
+            )}
+          </>
         )}
         {onMatch && (
           <MenuItem
@@ -334,7 +342,9 @@ export function TrackContextMenu({
         )}
         {playlist && (
           <>
-            <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            {(!multi || onUnmatch || onMergeMatch) && (
+              <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            )}
             <div className="relative">
               <MenuItem
                 testid="track-menu-add-to"
@@ -367,7 +377,7 @@ export function TrackContextMenu({
                 </div>
               )}
             </div>
-            {playlist.openName !== null && (
+            {!multi && playlist.openName !== null && (
               <MenuItem
                 onHover={leaveSub}
                 testid="track-menu-insert-separator"
@@ -379,7 +389,7 @@ export function TrackContextMenu({
                 onClick={() => run(playlist.onInsertSeparator)}
               />
             )}
-            {playlist.openName !== null && playlist.onRemoveSeparatorAbove && (
+            {!multi && playlist.openName !== null && playlist.onRemoveSeparatorAbove && (
               <MenuItem
                 onHover={leaveSub}
                 testid="track-menu-remove-separator"
@@ -389,31 +399,35 @@ export function TrackContextMenu({
             )}
           </>
         )}
-        <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-info"
-          label={tr('trackList.context.info')}
-          onClick={() => run(() => onInfo(track))}
-        />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-reveal"
-          label={tr(isWin ? 'trackList.context.revealWin' : 'trackList.context.reveal')}
-          onClick={() => run(() => window.api.reveal(track.inputPath))}
-        />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-open"
-          label={tr('trackList.context.open')}
-          onClick={() => run(() => window.api.openFile(track.inputPath))}
-        />
-        <MenuItem
-          onHover={leaveSub}
-          testid="track-menu-copy"
-          label={tr('trackList.context.copyPath')}
-          onClick={() => run(() => onCopyPath(track))}
-        />
+        {!multi && (
+          <>
+            <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-info"
+              label={tr('trackList.context.info')}
+              onClick={() => run(() => onInfo(track))}
+            />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-reveal"
+              label={tr(isWin ? 'trackList.context.revealWin' : 'trackList.context.reveal')}
+              onClick={() => run(() => window.api.reveal(track.inputPath))}
+            />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-open"
+              label={tr('trackList.context.open')}
+              onClick={() => run(() => window.api.openFile(track.inputPath))}
+            />
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-copy"
+              label={tr('trackList.context.copyPath')}
+              onClick={() => run(() => onCopyPath(track))}
+            />
+          </>
+        )}
         {view && (
           <>
             <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
@@ -462,7 +476,7 @@ export function TrackContextMenu({
           </>
         )}
         <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-        {hasBackup && onOpenBackup && (
+        {!multi && hasBackup && onOpenBackup && (
           <>
             <MenuItem
               onHover={leaveSub}
@@ -477,7 +491,7 @@ export function TrackContextMenu({
           <MenuItem
             onHover={leaveSub}
             testid="track-menu-remove"
-            label={tr('trackList.context.remove')}
+            label={removeLabel ?? tr('trackList.context.remove')}
             onClick={() => run(() => onRemove(track.id))}
           />
         )}

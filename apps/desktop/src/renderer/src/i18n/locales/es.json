@@ -2468,6 +2468,7 @@
     "removeFromPlaylistTitle_one": "¿Quitar esta pista de «{{name}}»?",
     "removeFromPlaylistTitle_other": "¿Quitar {{count}} pistas de «{{name}}»?",
     "removeFromPlaylistMessage": "Se quitan de la playlist en rekordbox. Los archivos y el resto de la colección no cambian.",
+    "removeFromMatchingMessage": "Se deshacen sus parejas de matching. Los archivos no cambian.",
     "removeFromPlaylistConfirm": "Quitar"
   },
   "activity": {

@@ -252,6 +252,17 @@ describe('OnboardingWizard step focus', () => {
   })
 })
 
+describe('OnboardingWizard step direction', () => {
+  it('tells the step body which way the user went, and does not animate the first step on top of the dialog entrance', () => {
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    expect(screen.getByTestId('onboarding-step-body')).not.toHaveAttribute('data-dir')
+    fireEvent.click(screen.getByTestId('onboarding-next'))
+    expect(screen.getByTestId('onboarding-step-body')).toHaveAttribute('data-dir', 'forward')
+    fireEvent.click(screen.getByTestId('onboarding-back'))
+    expect(screen.getByTestId('onboarding-step-body')).toHaveAttribute('data-dir', 'back')
+  })
+})
+
 describe('OnboardingWizard destination', () => {
   function openFormatStep(onFinish: (patch: Partial<Settings>) => void = () => {}) {
     render(<OnboardingWizard settings={settings} onFinish={onFinish} />)

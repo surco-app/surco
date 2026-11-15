@@ -129,6 +129,15 @@ describe('provisionalGrid', () => {
     expect(provisionalGrid(fit, 0, 10000).every((b) => b.beat === 0)).toBe(true)
   })
 
+  it('keeps a first beat that lands a fraction of a ms before the start, so a cue on the first beat sits on the opening kick and not one beat late', () => {
+    const justBefore = { bpm: 120, firstMs: 500 - REKORDBOX_BEAT_AFTER_RISE_MS - 0.2 }
+    expect(
+      provisionalGrid(justBefore, 0, 2000)
+        .slice(0, 2)
+        .map((b) => b.ms),
+    ).toEqual([0, 500])
+  })
+
   it('covers the whole track and nothing past its end', () => {
     const grid = provisionalGrid(fit, 0, 10000)
     expect(grid.at(-1)?.ms).toBeLessThan(10000)
