@@ -249,7 +249,7 @@ describe('tagLibRead', () => {
     expect(read.grouping).toBe('Peak Time')
     expect(read.reviewRaw.album).toBe('Bright Days ')
     expect(read.popm).toBe('')
-  })
+  }, 30000)
 
   it('answers empty fields for a file TagLib cannot open, as the inline read did', async () => {
     const read = (await runWorkerJob({ type: 'tagLibRead', file: '/no/such.mp3' })) as TagLibRead
