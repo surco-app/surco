@@ -5148,7 +5148,7 @@ describe('App source playlists', () => {
         fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
         fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
         await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        await act(async () => {})
         expect(match).toHaveBeenCalledTimes(1)
         release({ applied: true })
         await waitFor(() =>
