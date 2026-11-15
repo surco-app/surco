@@ -104,6 +104,7 @@ import {
   draftsToSave,
   forgetAutoMark,
   forgetDraft,
+  forgetDrafts,
   keepAutoMark,
   keepDraft,
   keepPlayhead,
@@ -1094,17 +1095,15 @@ function Editing({
     setSaveFailed(!saved)
     if (!saved) return false
     setOverwrite(new Set())
+    const kept = new Map(keptDrafts().map((d) => [d.contentId, d.draft]))
     recordCueEdits(
       queryClient,
       reqs.flatMap(({ contentId }) => {
-        const draft =
-          contentId === cue.contentId
-            ? state
-            : keptDrafts().find((d) => d.contentId === contentId)?.draft
+        const draft = contentId === cue.contentId ? state : kept.get(contentId)
         return draft ? [{ contentId, draft }] : []
       }),
     )
-    for (const req of reqs) forgetDraft(req.contentId)
+    forgetDrafts(reqs.map((r) => r.contentId))
     await refreshQueued()
     return true
   }

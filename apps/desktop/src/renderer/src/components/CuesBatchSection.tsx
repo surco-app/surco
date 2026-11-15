@@ -19,7 +19,6 @@ import { cueProgramOf, programsOfSave } from '../lib/cuePrograms'
 import {
   draftsToSave,
   forgetAutoMark,
-  forgetDraft,
   forgetDrafts,
   keptDrafts,
   useAutoMarks,
@@ -214,7 +213,7 @@ export function CuesBatchSection({
           .filter((d) => mine.some((r) => r.contentId === d.contentId))
           .map(({ contentId, draft }) => ({ contentId, draft })),
       )
-      for (const req of reqs) forgetDraft(req.contentId)
+      forgetDrafts(reqs.map((r) => r.contentId))
       setCleared(null)
       await queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] })
     } finally {

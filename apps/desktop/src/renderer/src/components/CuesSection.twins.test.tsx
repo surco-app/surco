@@ -10,7 +10,13 @@ import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { reduceDraft, startDraft } from '../lib/cueDraft'
-import { cueDraftKey, keepDraft, resetCueSession } from '../lib/cueSession'
+import {
+  cueDraftKey,
+  keepDraft,
+  resetCueSession,
+  subscribeCueDrafts,
+  unsavedCueTracks,
+} from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { saveAllItem } from '../test/cueSaveAll'
@@ -254,6 +260,26 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     expect(savedIds(saveRekordboxCues).sort()).toEqual(
       ['103', '104', TRAKTOR, 'traktor:M/:Music/:h.wav'].sort(),
     )
+  })
+  it('forgets every saved draft with one notification, so saving many tracks does not repaint the app once per track', async () => {
+    keepDraft(
+      '104',
+      cueDraftKey('104', 'f0', null),
+      startDraft([{ ms: bar(64), kind: 0, color: null }], 'mine'),
+      { path: '/m/h.wav', label: 'Hold', fingerprint: 'f0' },
+    )
+    const { saveRekordboxCues } = setup()
+    await ready()
+    markAt(bar(64))
+    await screen.findByTestId('cues-twin-traktor')
+    const item = await saveAllItem()
+    const listener = vi.fn<() => void>()
+    const stop = subscribeCueDrafts(listener)
+    fireEvent.click(item)
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect([...unsavedCueTracks()]).toEqual([]))
+    stop()
+    expect(listener).toHaveBeenCalledTimes(1)
   })
 
   it('keeps the moved grid to the track it was moved on and never sends it to the other program', async () => {
