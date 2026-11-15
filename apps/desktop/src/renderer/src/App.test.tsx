@@ -3759,6 +3759,7 @@ describe('App source playlists', () => {
     '/m/a.wav': 'Alpha',
     '/m/b.wav': 'Bravo',
     '/m/c.wav': 'Charlie',
+    '/m/d.wav': 'Delta',
   }
   const titles = () => screen.getAllByTestId('track-row').map((r) => r.textContent ?? '')
   const expectNoReorderLine = () => {
@@ -3774,7 +3775,7 @@ describe('App source playlists', () => {
     fireEvent.drop(rowWrapper(0), { dataTransfer: dt })
   }
 
-  async function openFactory(over: Record<string, unknown> = {}) {
+  async function openFactory(over: Record<string, unknown> = {}, loaded = 3) {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav']),
       readTags: vi.fn(async (path: string) => ({ title: TITLES[path], artist: 'DJ' })),
@@ -3796,7 +3797,7 @@ describe('App source playlists', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(loaded))
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
     fireEvent.click(await screen.findByTestId('source-node-f'))
     await screen.findByTestId('track-separator-s1')
@@ -3911,7 +3912,7 @@ describe('App source playlists', () => {
       )
     })
 
-    it('empties the whole block from Matching in one go, asking about an open rekordbox once', async () => {
+    it('empties every block a track leads or follows in from Matching in one go, asking about an open rekordbox once', async () => {
       const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
       await openFactory({
         dj: djReads(matchingReads.dj, {
@@ -3937,7 +3938,7 @@ describe('App source playlists', () => {
       })
       fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-      fireEvent.contextMenu(rowTitled('Alpha'))
+      fireEvent.contextMenu(rowTitled('Charlie'))
       const remove = await screen.findByTestId('track-menu-remove')
       expect(remove).toHaveTextContent('Matching')
       fireEvent.click(remove)
@@ -4933,6 +4934,437 @@ describe('App source playlists', () => {
         await waitFor(() => expect(titles()).toHaveLength(2))
         expect(titles().join()).toContain('Charlie')
         expect(titles().join()).not.toContain('Bravo')
+      })
+    })
+
+    describe('with a track in two blocks', () => {
+      const entryOf = (id: string, path: string) => ({
+        path,
+        separator: false,
+        meta: {},
+        linkId: id,
+        contentId: id,
+      })
+      const TWO_BLOCKS = [
+        entryOf('r1', '/m/a.wav'),
+        entryOf('r2', '/m/b.wav'),
+        entryOf('r3', '/m/c.wav'),
+        { path: null, separator: true, meta: {}, linkId: 'matching-sep-1' },
+        entryOf('r3', '/m/c.wav'),
+        entryOf('r4', '/m/d.wav'),
+      ]
+      const openTwoBlocks = async (editPlaylist = vi.fn<ProgramReads['editPlaylist']>()) => {
+        await openFactory(
+          {
+            pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav']),
+            dj: djReads({
+              rekordbox: {
+                matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([
+                  ['r1', 'r2'],
+                  ['r1', 'r3'],
+                  ['r3', 'r4'],
+                ]),
+                playlist: vi
+                  .fn<ProgramReads['playlist']>()
+                  .mockImplementation(async (id) =>
+                    id === MATCHING_ID ? TWO_BLOCKS : FACTORY_ENTRIES,
+                  ),
+                editPlaylist,
+              },
+            }),
+          },
+          4,
+        )
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() => expect(titles()).toHaveLength(5))
+      }
+
+      it('shows it in each block, since each block is one track and the tracks played after it', async () => {
+        await openTwoBlocks()
+        expect(titles().filter((t) => t.includes('Charlie'))).toHaveLength(2)
+        expect(screen.getByTestId('track-separator-matching-sep-1')).toBeInTheDocument()
+      })
+
+      it('puts it in the new playlist once, since the playlist holds tracks, not rows', async () => {
+        const editPlaylist = vi
+          .fn<ProgramReads['editPlaylist']>()
+          .mockResolvedValue({ applied: true, createdId: 'new' })
+        await openTwoBlocks(editPlaylist)
+        fireEvent.click(screen.getByTestId('matching-create-playlist'))
+        await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+        expect(editPlaylist.mock.calls[0][0]).toMatchObject({
+          tracks: [
+            { contentId: 'r1' },
+            { contentId: 'r2' },
+            { contentId: 'r3' },
+            { contentId: 'r4' },
+          ],
+        })
+      })
+
+      it('counts it once in the review the list menu offers, since the review reads tracks', async () => {
+        await openTwoBlocks()
+        fireEvent.click(screen.getByTestId('list-actions-more'))
+        expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent('The 4 tracks')
+      })
+
+      it('shows it once under another sort, where no break tells its two blocks apart', async () => {
+        await openTwoBlocks()
+        fireEvent.click(screen.getByTestId('track-sort'))
+        fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+        await waitFor(() => expect(titles()).toHaveLength(4))
+      })
+
+      it('moves past it with the down arrow instead of stopping on its second row', async () => {
+        await openTwoBlocks()
+        const charlie = screen
+          .getAllByTestId('track-row')
+          .find((r) => r.textContent?.includes('Charlie')) as HTMLElement
+        fireEvent.click(charlie)
+        fireEvent.keyDown(window, { key: 'ArrowDown' })
+        await waitFor(() =>
+          expect(
+            screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('Delta')),
+          ).toHaveAttribute('aria-selected', 'true'),
+        )
+      })
+    })
+
+    describe('editing a block from the row menu', () => {
+      const entryOf = (id: string, path: string) => ({
+        path,
+        separator: false,
+        meta: {},
+        linkId: id,
+        contentId: id,
+      })
+      const separator = { path: null, separator: true, meta: {}, linkId: 'matching-sep-1' }
+      const openBlock = async (
+        pairs: [string, string][],
+        entries: (ReturnType<typeof entryOf> | typeof separator)[],
+        files = ['/m/a.wav', '/m/b.wav', '/m/c.wav'],
+      ) => {
+        const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+        await openFactory(
+          {
+            pickFiles: vi.fn().mockResolvedValue(files),
+            dj: djReads({
+              rekordbox: {
+                matching: vi.fn<ProgramReads['matching']>().mockResolvedValue(pairs),
+                playlist: vi
+                  .fn<ProgramReads['playlist']>()
+                  .mockImplementation(async (id) =>
+                    id === MATCHING_ID ? entries : FACTORY_ENTRIES,
+                  ),
+                match,
+              },
+            }),
+          },
+          files.length,
+        )
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() =>
+          expect(titles()).toHaveLength(entries.filter((e) => !e.separator).length),
+        )
+        return match
+      }
+      const FOUR = ['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav']
+      const openSharedBlocks = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r1', 'r3'],
+            ['r3', 'r4'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            entryOf('r3', '/m/c.wav'),
+            separator,
+            entryOf('r3', '/m/c.wav'),
+            entryOf('r4', '/m/d.wav'),
+          ],
+          FOUR,
+        )
+      const openApartBlocks = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r5', 'r6'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            separator,
+            entryOf('r5', '/m/c.wav'),
+            entryOf('r6', '/m/d.wav'),
+          ],
+          FOUR,
+        )
+      const selectRows = (...at: number[]) => {
+        const rows = () => screen.getAllByTestId('track-row')
+        fireEvent.click(rows()[at[0]])
+        for (const i of at.slice(1)) fireEvent.click(rows()[i], { metaKey: true })
+      }
+      const openPair = () =>
+        openBlock([['r1', 'r2']], [entryOf('r1', '/m/a.wav'), entryOf('r2', '/m/b.wav')])
+      const openTrio = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r1', 'r3'],
+          ],
+          [entryOf('r1', '/m/a.wav'), entryOf('r2', '/m/b.wav'), entryOf('r3', '/m/c.wav')],
+        )
+      const calls = (match: ReturnType<typeof vi.fn>) =>
+        match.mock.calls.map(([action, pair]) => [action, pair])
+
+      it('reverses a pair from its second row, so the DJ plays them the other way round', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['add', ['r2', 'r1']],
+          ]),
+        )
+      })
+
+      it('waits for rekordbox to drop the old pair before saving the reversed one', async () => {
+        const match = await openPair()
+        let release: (value: { applied: true }) => void = () => {}
+        match.mockImplementationOnce(() => new Promise((resolve) => (release = resolve)))
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(match).toHaveBeenCalledTimes(1)
+        release({ applied: true })
+        await waitFor(() =>
+          expect(match).toHaveBeenCalledWith('add', ['r2', 'r1'], expect.any(String)),
+        )
+      })
+
+      it('stops after a refused step, so rekordbox never holds a pair both ways round', async () => {
+        const match = await openPair()
+        match.mockResolvedValueOnce({ applied: false, reason: 'write-failed' })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(calls(match)).toEqual([['remove', ['r1', 'r2']]])
+      })
+
+      it('asks about an open rekordbox once for the whole change, not once per pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
+      })
+
+      it('reverses a pair from its first row too, since a block of two is just that pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['add', ['r2', 'r1']],
+          ]),
+        )
+      })
+
+      it('takes the head out of a block of two by dropping its only pair', async () => {
+        const match = await openPair()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() => expect(calls(match)).toEqual([['remove', ['r1', 'r2']]]))
+      })
+
+      it('offers only the unpairing of two selected tracks when it shows, so the menu never says the same twice', async () => {
+        await openPair()
+        fireEvent.click(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        await screen.findByTestId('track-menu-unmatch')
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+      })
+
+      it('takes a follower out of a block of three without touching the other pair', async () => {
+        const match = await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() => expect(calls(match)).toEqual([['remove', ['r1', 'r3']]]))
+      })
+
+      it('takes the head out of a block of three and keeps the rest together under the next track', async () => {
+        const match = await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(await screen.findByTestId('track-menu-leave-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r1', 'r2']],
+            ['remove', ['r1', 'r3']],
+            ['add', ['r2', 'r3']],
+          ]),
+        )
+      })
+
+      it('offers no reversing on the head of a block of three, since there is no single pair to flip', async () => {
+        await openTrio()
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+      })
+
+      it('merges two blocks under the first head, leaving out the track that already follows it', async () => {
+        const match = await openSharedBlocks()
+        selectRows(1, 4)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[4])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(calls(match)).toEqual([
+          ['remove', ['r3', 'r4']],
+          ['add', ['r1', 'r4']],
+        ])
+      })
+
+      it('merges two separate blocks by moving the second head and its followers under the first head', async () => {
+        const match = await openApartBlocks()
+        selectRows(0, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r5', 'r6']],
+            ['add', ['r1', 'r5']],
+            ['add', ['r1', 'r6']],
+          ]),
+        )
+      })
+
+      it('offers no merging for a single row, since one block has nothing to merge with', async () => {
+        await openApartBlocks()
+        selectRows(3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+      })
+
+      it('offers no merging for rows of the same block, since they are one block already', async () => {
+        await openApartBlocks()
+        selectRows(2, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-unmatch')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+      })
+
+      it('offers no merging for one track that sits in two blocks, since merging takes two tracks', async () => {
+        await openSharedBlocks()
+        selectRows(2)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+      })
+
+      it('offers only merging for two tracks of different blocks, since reversing and leaving act on one row', async () => {
+        await openApartBlocks()
+        selectRows(1, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-merge-match')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+      })
+
+      it('keeps the pair of a refused step out of Surco, so Surco never holds a pair rekordbox refused', async () => {
+        const match = await openPair()
+        match
+          .mockResolvedValueOnce({ applied: true })
+          .mockResolvedValueOnce({ applied: false, reason: 'write-failed' })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav')
+        expect(window.api.addMatchingPair).not.toHaveBeenCalled()
+      })
+
+      describe('with a filter hiding the head of a block', () => {
+        const SIX = ['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav', '/m/e.mp3', '/m/f.wav']
+        const openFilteredBlocks = async () => {
+          await openBlock(
+            [
+              ['r1', 'r2'],
+              ['r8', 'r3'],
+              ['r4', 'r6'],
+            ],
+            [
+              entryOf('r1', '/m/a.wav'),
+              entryOf('r2', '/m/b.wav'),
+              separator,
+              entryOf('r8', '/m/e.mp3'),
+              entryOf('r3', '/m/c.wav'),
+              { ...separator, linkId: 'matching-sep-2' },
+              entryOf('r4', '/m/d.wav'),
+              entryOf('r6', '/m/f.wav'),
+            ],
+            SIX,
+          )
+        }
+        const rowOf = (title: string) =>
+          screen
+            .getAllByTestId('track-row')
+            .findIndex((r) => r.textContent?.includes(title)) as number
+        const keepOnlyWav = async () => {
+          fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+          fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+          fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
+          await waitFor(() => expect(titles()).toHaveLength(5))
+        }
+
+        it('offers the block edits while nothing is hidden', async () => {
+          await openFilteredBlocks()
+          selectRows(rowOf('Charlie'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Charlie')])
+          await screen.findByTestId('track-menu-reverse-match')
+          expect(screen.getByTestId('track-menu-leave-match')).toBeInTheDocument()
+          fireEvent.keyDown(window, { key: 'Escape' })
+          selectRows(rowOf('Charlie'), rowOf('Delta'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Delta')])
+          expect(await screen.findByTestId('track-menu-merge-match')).toBeInTheDocument()
+        })
+
+        it('offers no block edits, since the blocks on screen glue together and would write pairs that do not exist', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          selectRows(rowOf('Charlie'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Charlie')])
+          await screen.findByTestId('track-menu-add-to')
+          expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+          expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+          fireEvent.keyDown(window, { key: 'Escape' })
+          selectRows(rowOf('Charlie'), rowOf('Delta'))
+          fireEvent.contextMenu(screen.getAllByTestId('track-row')[rowOf('Delta')])
+          await screen.findByTestId('track-menu-add-to')
+          expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+        })
+      })
+
+      it('offers neither outside Matching, where the rows are no blocks', async () => {
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r1', 'r2']]),
+            },
+          }),
+        })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        await screen.findByTestId('track-menu-add-to')
+        expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
       })
     })
 

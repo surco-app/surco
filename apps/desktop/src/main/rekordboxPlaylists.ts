@@ -16,7 +16,7 @@ import type {
 import { beatGrid } from './anlz'
 import { insideShare } from './rekordboxArtwork'
 import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
-import { readMatchingChains } from './rekordboxMatching'
+import { readMatchingBlocks } from './rekordboxMatching'
 import { localDate } from './rekordboxRows'
 import { smartListContent } from './rekordboxSmartList'
 
@@ -278,9 +278,9 @@ function gridDriftOf(analysis: string | null, cues: RowCue[]): { gridDriftMs?: n
   return drift === null ? {} : { gridDriftMs: drift }
 }
 
-function inChains(rows: SourcePlaylistEntry[], chains: string[][]): SourcePlaylistEntry[] {
+function inBlocks(rows: SourcePlaylistEntry[], blocks: string[][]): SourcePlaylistEntry[] {
   const byId = new Map(rows.map((r) => [r.contentId, r]))
-  return chains.flatMap((chain, i) => [
+  return blocks.flatMap((block, i) => [
     ...(i > 0
       ? [
           {
@@ -291,7 +291,7 @@ function inChains(rows: SourcePlaylistEntry[], chains: string[][]): SourcePlayli
           } satisfies SourcePlaylistEntry,
         ]
       : []),
-    ...chain.flatMap((id) => byId.get(id) ?? []),
+    ...block.flatMap((id) => byId.get(id) ?? []),
   ])
 }
 
@@ -302,8 +302,8 @@ export function readRekordboxPlaylistWithPreview(
   exists: (p: string) => boolean = existsSync,
   now: Date = new Date(),
 ): SourcePlaylistEntry[] {
-  const chains = id === MATCHING_ID ? readMatchingChains(db) : []
-  const matched = chains.flat()
+  const blocks = id === MATCHING_ID ? readMatchingBlocks(db) : []
+  const matched = blocks.flat()
   const content =
     id === RECENTLY_ADDED_ID
       ? { where: RECENT, params: [recentSince(now)] }
@@ -315,7 +315,7 @@ export function readRekordboxPlaylistWithPreview(
   const read = content
     ? readContent(db, content.where, content.params)
     : readRekordboxPlaylist(db, id)
-  const entries = id === MATCHING_ID ? inChains(read, chains) : read
+  const entries = id === MATCHING_ID ? inBlocks(read, blocks) : read
   const contentIds = content
     ? `SELECT c.ID FROM djmdContent c WHERE ${content.where}`
     : PLAYLIST_CONTENT

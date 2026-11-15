@@ -30,7 +30,7 @@ import {
 } from '../../shared/djProgram'
 import { SAME_CLOCK_FILE } from '../../shared/gridEdit'
 import { MATCHING_ID } from '../../shared/matching'
-import { pairsOfBlocks } from '../../shared/matchingChains'
+import { pairsOfBlocks } from '../../shared/matchingBlocks'
 import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
 import { withPhraseCount } from '../../shared/phraseCount'
@@ -124,7 +124,13 @@ import { useLibraryCheckToast } from './hooks/useLibraryCheckToast'
 import { useLibraryCopyVerdicts } from './hooks/useLibraryCopyVerdicts'
 import { useListNavigation } from './hooks/useListNavigation'
 import { useListReviewNotice } from './hooks/useListReviewNotice'
-import { type MatchingEdit, useMatchingEdit, useMatchingEdits } from './hooks/useMatchingEdit'
+import {
+  type MatchingAction,
+  type MatchingEdit,
+  useMatchingEdit,
+  useMatchingEdits,
+  useMatchingSteps,
+} from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
@@ -217,9 +223,11 @@ import { reopenedPlaylist } from './lib/playlistEdits'
 import {
   blocksOf,
   blocksWith,
+  distinctById,
   type PlaylistScope,
   playlistMembership,
   playlistView,
+  rowKeys,
 } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
@@ -1975,7 +1983,9 @@ export default function App(): React.JSX.Element {
   const playlistScope = useMemo(() => {
     prevPlaylistScope.current =
       browser.playlist && browser.entries
-        ? playlistView(tracksView, browser.entries, prevPlaylistScope.current)
+        ? playlistView(tracksView, browser.entries, prevPlaylistScope.current, {
+            repeats: browser.playlist.id === MATCHING_ID,
+          })
         : null
     return prevPlaylistScope.current
   }, [browser.playlist, browser.entries, tracksView])
@@ -1990,10 +2000,11 @@ export default function App(): React.JSX.Element {
   const filesView = useMemo(() => tracksView.filter(inFiles), [tracksView])
   // A source with no playlist applied yet (none picked, or its entries still loading) shows
   // nothing: the working list's rows there read as tracks of that library.
-  const scopeTracks = useMemo(
+  const scopeRows = useMemo(
     () => playlistScope?.tracks ?? (browser.source ? [] : filesView),
     [playlistScope, browser.source, filesView],
   )
+  const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
   const listedCount = browser.source ? tracks.length : filesView.length
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
@@ -2043,10 +2054,10 @@ export default function App(): React.JSX.Element {
         source: browser.source,
         playlistName,
         entries: browser.entries,
-        playlistTracks: playlistScope?.tracks ?? null,
+        playlistTracks: playlistScope ? scopeTracks : null,
         workingCount: scopeTracks.length,
       }),
-    [browser.source, playlistName, browser.entries, playlistScope, scopeTracks.length],
+    [browser.source, playlistName, browser.entries, playlistScope, scopeTracks],
   )
   // One rule for the list menu and the palette: something to review in the open target,
   // and no conversion writing the same files.
@@ -2206,7 +2217,11 @@ export default function App(): React.JSX.Element {
   const filterKey = filterSessionKey(filterSelection)
   // Filtering and sorting the crate depend on neither the selection nor the pointer, so
   // they run apart from the hold below: picking a row must not pay for sorting every row.
-  const sortedTracks = useMemo(() => {
+  const {
+    rows: sortedTracks,
+    separatorBefore: shownSeparators,
+    hidesNone,
+  } = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // rows put even after their verdict flips under the user.
@@ -2214,14 +2229,25 @@ export default function App(): React.JSX.Element {
       stickyFilter.current = filterKey
       stickyIds.current = new Set()
     }
-    const filtered = filterWithSticky(scopeTracks, filterSelection, stickyIds.current, filterFacts)
+    const filtered = filterWithSticky(scopeRows, filterSelection, stickyIds.current, filterFacts)
     const found =
       sourceProgram !== null && browser.playlist?.id === MATCHING_ID
         ? blocksWith(filtered, playlistScope?.separatorBefore, searchMatcher(deferredSearch))
-        : filtered.filter(searchMatcher(deferredSearch))
-    return sortTracks(found, sortBy, sortDir)
+        : {
+            rows: filtered.filter(searchMatcher(deferredSearch)),
+            separatorBefore: playlistScope?.separatorBefore,
+          }
+    return {
+      rows: sortTracks(
+        sortBy === 'import' ? found.rows : distinctById(found.rows),
+        sortBy,
+        sortDir,
+      ),
+      separatorBefore: found.separatorBefore,
+      hidesNone: filtered.length === scopeRows.length,
+    }
   }, [
-    scopeTracks,
+    scopeRows,
     filterSelection,
     filterKey,
     filterFacts,
@@ -2234,7 +2260,7 @@ export default function App(): React.JSX.Element {
   ])
   const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
-  const visibleTracks = useMemo(() => {
+  const visibleRows = useMemo(() => {
     // While the same track stays selected under the same view, edits re-sort nothing: the
     // row the user is correcting (or one a background match rewrites) keeps its place, and
     // the list catches up when the user picks another track or changes the sort.
@@ -2251,6 +2277,7 @@ export default function App(): React.JSX.Element {
     if (!sameTracks(prevVisibleTracks.current, next)) prevVisibleTracks.current = next
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
+  const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -2961,6 +2988,7 @@ export default function App(): React.JSX.Element {
     )
   }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
+  const runMatchingEdits = useMatchingSteps(notifyEdit)
   const editMatchings = useMatchingEdits(notifyEdit)
   const removeMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     if (!selected) return
@@ -3003,6 +3031,69 @@ export default function App(): React.JSX.Element {
     const pairs = (inRekordbox ? matchingPairs : matchingPathPairs) ?? []
     const paired = pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a))
     return paired ? found : null
+  }
+  const planMatching = (steps: [MatchingAction, TrackItem, TrackItem][]) => {
+    const found = steps.flatMap(([action, a, b]) => {
+      const pair = pairOfTracks(a, b)
+      return pair ? [{ action, ...pair }] : []
+    })
+    return found.length === steps.length ? found : null
+  }
+  const editsBlocks = () =>
+    sourceProgram !== null &&
+    browser.playlist?.id === MATCHING_ID &&
+    sortBy === 'import' &&
+    hidesNone
+  const matchingBlockEdits = (menu: TrackMenuState, targets: TrackItem[]) => {
+    if (!editsBlocks() || targets.length > 1) return null
+    const keys = rowKeys(visibleRows)
+    const at = keys.indexOf(menu.rowKey)
+    if (at < 0) return null
+    let start = at
+    while (start > 0 && !shownSeparators?.get(keys[start])) start--
+    let end = at + 1
+    while (end < visibleRows.length && !shownSeparators?.get(keys[end])) end++
+    const [head, ...followers] = visibleRows.slice(start, end)
+    if (followers.length === 0) return null
+    const x = at > start ? visibleRows[at] : followers.length === 1 ? followers[0] : null
+    const [first, ...rest] = followers
+    return {
+      reverse: x
+        ? planMatching([
+            ['remove', head, x],
+            ['add', x, head],
+          ])
+        : null,
+      leave: x
+        ? planMatching([['remove', head, x]])
+        : planMatching([
+            ...followers.map((s): [MatchingAction, TrackItem, TrackItem] => ['remove', head, s]),
+            ...rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['add', first, s]),
+          ]),
+    }
+  }
+  const matchingMergeEdits = (targets: TrackItem[]) => {
+    if (!editsBlocks() || targets.length < 2) return null
+    const chosen = new Set(targets.map((t) => t.id))
+    const keys = rowKeys(visibleRows)
+    const blocks: TrackItem[][] = []
+    visibleRows.forEach((row, i) => {
+      if (i === 0 || shownSeparators?.get(keys[i])) blocks.push([])
+      blocks[blocks.length - 1].push(row)
+    })
+    const touched = blocks.filter((block) => block.some((t) => chosen.has(t.id)))
+    if (touched.length < 2) return null
+    const [[head, ...followers], ...others] = touched
+    const joined = new Set([head.id, ...followers.map((t) => t.id)])
+    const removes = others.flatMap(([h, ...rest]) =>
+      rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['remove', h, s]),
+    )
+    const adds = others.flat().flatMap((t): [MatchingAction, TrackItem, TrackItem][] => {
+      if (joined.has(t.id)) return []
+      joined.add(t.id)
+      return [['add', head, t]]
+    })
+    return planMatching([...removes, ...adds])
   }
   const matchingOpen = browser.playlist?.id === MATCHING_ID
   const confirmRemoveFromMatching = (edits: MatchingEdit[], count: number): void => {
@@ -3471,6 +3562,11 @@ export default function App(): React.JSX.Element {
   const renderTrackMenu = useStableCallback(
     (menu: TrackMenuState, close: () => void): React.ReactNode => {
       const unmatch = unmatchPairOf(menu)
+      const targets = menuTargets(menu.track.id)
+      const block = matchingBlockEdits(menu, targets)
+      const reverse = block?.reverse
+      const leave = unmatch ? null : block?.leave
+      const merge = matchingMergeEdits(targets)
       return (
         <TrackContextMenu
           track={menu.track}
@@ -3490,6 +3586,9 @@ export default function App(): React.JSX.Element {
               ? () => void editMatching('remove', unmatch.pair, unmatch.label, unmatch.paths)
               : undefined
           }
+          onReverseMatch={reverse ? () => void runMatchingEdits(reverse) : undefined}
+          onLeaveMatch={leave ? () => void runMatchingEdits(leave) : undefined}
+          onMergeMatch={merge ? () => void runMatchingEdits(merge) : undefined}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
           onPasteMeta={onPasteMeta}
@@ -4312,7 +4411,7 @@ export default function App(): React.JSX.Element {
                                         name,
                                         folder: false,
                                         tracks: blocksOf(
-                                          scopeTracks,
+                                          scopeRows,
                                           playlistScope?.separatorBefore,
                                           selectedIdSet,
                                         ).map(trackRef),
@@ -4443,7 +4542,7 @@ export default function App(): React.JSX.Element {
                           ) : (
                             <TrackList
                               showWaves={showListWaves}
-                              tracks={visibleTracks}
+                              tracks={visibleRows}
                               selectedId={selectedId}
                               selectedIds={selectedIdSet}
                               outputFormat={
@@ -4461,9 +4560,7 @@ export default function App(): React.JSX.Element {
                               renderMenu={renderTrackMenu}
                               scrollRootRef={listScrollRef}
                               separatorBefore={
-                                playlistScope && sortBy === 'import'
-                                  ? playlistScope.separatorBefore
-                                  : undefined
+                                playlistScope && sortBy === 'import' ? shownSeparators : undefined
                               }
                               trailingSeparators={
                                 playlistScope && sortBy === 'import'

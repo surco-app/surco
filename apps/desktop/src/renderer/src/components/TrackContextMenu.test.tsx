@@ -410,6 +410,39 @@ describe('TrackContextMenu submenus on hover', () => {
   })
 })
 
+describe('TrackContextMenu Matching block', () => {
+  it('reverses the pair from the row', () => {
+    const onReverseMatch = vi.fn()
+    renderMenu({ onReverseMatch, onLeaveMatch: vi.fn() })
+    expect(screen.getByTestId('track-menu-reverse-match')).toHaveTextContent('Reverse order')
+    fireEvent.click(screen.getByTestId('track-menu-reverse-match'))
+    expect(onReverseMatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes the track out of its block from the row', () => {
+    const onLeaveMatch = vi.fn()
+    renderMenu({ onReverseMatch: vi.fn(), onLeaveMatch })
+    expect(screen.getByTestId('track-menu-leave-match')).toHaveTextContent('Remove from block')
+    fireEvent.click(screen.getByTestId('track-menu-leave-match'))
+    expect(onLeaveMatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('merges the selected blocks into one from the row', () => {
+    const onMergeMatch = vi.fn()
+    renderMenu({ onMergeMatch })
+    expect(screen.getByTestId('track-menu-merge-match')).toHaveTextContent('Merge blocks')
+    fireEvent.click(screen.getByTestId('track-menu-merge-match'))
+    expect(onMergeMatch).toHaveBeenCalledTimes(1)
+  })
+
+  it('offers neither where the row sits in no Matching block', () => {
+    renderMenu()
+    expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+  })
+})
+
 describe('TrackContextMenu with several tracks selected', () => {
   const everything = {
     canPasteMeta: true,
@@ -438,6 +471,18 @@ describe('TrackContextMenu with several tracks selected', () => {
     renderMenu({ ...everything, multi: true })
     expect(shownIds()).toEqual([
       'track-menu-unmatch',
+      'track-menu-add-to',
+      'track-menu-view',
+      'track-menu-remove-from',
+      'track-menu-trash',
+    ])
+  })
+
+  it('keeps merging blocks, because it joins every selected block and not just the clicked row', () => {
+    renderMenu({ ...everything, onMergeMatch: vi.fn(), multi: true })
+    expect(shownIds()).toEqual([
+      'track-menu-unmatch',
+      'track-menu-merge-match',
       'track-menu-add-to',
       'track-menu-view',
       'track-menu-remove-from',

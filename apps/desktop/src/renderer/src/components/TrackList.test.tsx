@@ -229,6 +229,82 @@ describe('TrackList', () => {
     ).toBeTruthy()
   })
 
+  describe('a track in two Matching blocks', () => {
+    const rows = () => [
+      track({ id: 'a' }),
+      track({ id: 'c' }),
+      track({ id: 'c' }),
+      track({ id: 'd' }),
+    ]
+    const breaks = new Map([['c~1', ['s1']]])
+
+    it('draws both rows with the block break between them, with no clashing React keys', () => {
+      const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        renderList(rows(), null, [], { separatorBefore: breaks })
+        const shown = screen.getAllByTestId('track-row')
+        expect(shown).toHaveLength(4)
+        const line = screen.getByTestId('track-separator-s1')
+        expect(
+          shown[1].compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        expect(
+          line.compareDocumentPosition(shown[2]) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+        expect(error.mock.calls.flat().join(' ')).not.toMatch(/same key/)
+      } finally {
+        error.mockRestore()
+      }
+    })
+
+    it('marks both rows selected, since they are one track', () => {
+      renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
+      const shown = screen.getAllByTestId('track-row')
+      expect(shown[1]).toHaveAttribute('aria-selected', 'true')
+      expect(shown[2]).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('keeps one Tab stop for a selected repeated track, on its first row', () => {
+      renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
+      const shown = screen.getAllByTestId('track-row')
+      expect(shown.map((r) => r.tabIndex)).toEqual([-1, 0, -1, -1])
+    })
+
+    it('extends the range past the repeat with Shift+Down, instead of sticking on the same track', () => {
+      const { onSelect } = renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
+      const shown = screen.getAllByTestId('track-row')
+      expect(() => fireEvent.keyDown(shown[1], { key: 'ArrowDown', shiftKey: true })).not.toThrow()
+      expect(onSelect).toHaveBeenLastCalledWith('d', { shift: true })
+      expect(() => fireEvent.keyDown(shown[1], { key: 'ArrowDown' })).not.toThrow()
+    })
+
+    it('hands the menu the row it was opened on, so an action can tell the two blocks apart', () => {
+      const renderMenu = vi.fn(() => null)
+      render(
+        <TrackList
+          tracks={rows()}
+          selectedId={null}
+          selectedIds={new Set()}
+          outputFormat="aiff"
+          bindings={bindings}
+          onSelect={vi.fn()}
+          onActivate={vi.fn()}
+          onRemove={vi.fn()}
+          onSwipeRemove={vi.fn()}
+          onAcceptReview={vi.fn()}
+          onPrefetch={vi.fn()}
+          renderMenu={renderMenu}
+          separatorBefore={breaks}
+        />,
+      )
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+      expect(renderMenu).toHaveBeenLastCalledWith(
+        expect.objectContaining({ rowKey: 'c~1' }),
+        expect.any(Function),
+      )
+    })
+  })
+
   it('shows the track title and artist', () => {
     renderList([track({ id: 'a', meta: { title: 'Song A', artist: 'Artist A' } })])
     expect(screen.getByText('Song A')).toBeInTheDocument()

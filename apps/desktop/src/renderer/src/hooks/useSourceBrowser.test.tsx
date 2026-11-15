@@ -279,7 +279,7 @@ describe('useSourceBrowser', () => {
     expect(result.current.tree?.[2]).toMatchObject({ name: 'sources.matching', count: 3 })
   })
 
-  it('gives Traktor its own Matching entry with the pairs Surco keeps, chain by chain', async () => {
+  it('gives Traktor its own Matching entry with the pairs Surco keeps, block by block', async () => {
     const all = [
       {
         path: '/m/a.wav',
@@ -328,7 +328,7 @@ describe('useSourceBrowser', () => {
       ),
     )
     await waitFor(() =>
-      expect(result.current.entries?.map((e) => e.path)).toEqual(['/m/a.wav', '/m/b.wav']),
+      expect(result.current.entries?.map((e) => e.path)).toEqual(['/m/b.wav', '/m/a.wav']),
     )
     expect(playlist).not.toHaveBeenCalledWith(MATCHING_ID)
   })

@@ -44,7 +44,7 @@ describe('matchingEntriesFor', () => {
     entry('/m/e.wav', 'Echo'),
   ]
 
-  it("lists the program's tracks that have a partner, chain by chain with a separator between", () => {
+  it("lists the program's tracks that have a partner, block by block with a separator between", () => {
     const rows = matchingEntriesFor(ALL, [
       ['/m/d.wav', '/m/e.wav'],
       ['/m/a.wav', '/m/b.wav'],
@@ -52,6 +52,8 @@ describe('matchingEntriesFor', () => {
     ])
     expect(rows.map((r) => (r.separator ? '|' : r.preview?.title))).toEqual([
       'Alpha',
+      'Bravo',
+      '|',
       'Bravo',
       'Charlie',
       '|',

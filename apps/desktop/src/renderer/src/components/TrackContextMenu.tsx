@@ -31,6 +31,9 @@ interface Props {
   onStartSession?: (track: TrackItem) => void
   onMatch?: () => void
   onUnmatch?: () => void
+  onReverseMatch?: () => void
+  onLeaveMatch?: () => void
+  onMergeMatch?: () => void
   removeLabel?: string
   multi?: boolean
   onCopyMeta: (track: TrackItem) => void
@@ -112,6 +115,9 @@ export function TrackContextMenu({
   onStartSession,
   onMatch,
   onUnmatch,
+  onReverseMatch,
+  onLeaveMatch,
+  onMergeMatch,
   removeLabel,
   multi = false,
   onCopyMeta,
@@ -310,9 +316,35 @@ export function TrackContextMenu({
             onClick={() => run(onUnmatch)}
           />
         )}
+        {onReverseMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-reverse-match"
+            label={tr('trackList.context.reverseMatch')}
+            onClick={() => run(onReverseMatch)}
+          />
+        )}
+        {onLeaveMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-leave-match"
+            label={tr('trackList.context.leaveMatch')}
+            onClick={() => run(onLeaveMatch)}
+          />
+        )}
+        {onMergeMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-merge-match"
+            label={tr('trackList.context.mergeMatch')}
+            onClick={() => run(onMergeMatch)}
+          />
+        )}
         {playlist && (
           <>
-            {(!multi || onUnmatch) && <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />}
+            {(!multi || onUnmatch || onMergeMatch) && (
+              <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+            )}
             <div className="relative">
               <MenuItem
                 testid="track-menu-add-to"

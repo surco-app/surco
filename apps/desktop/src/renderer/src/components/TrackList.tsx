@@ -41,6 +41,7 @@ import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum
 import { prefersReducedMotion } from '../lib/motion'
 import { isMacOS } from '../lib/platform'
 import { moveBefore } from '../lib/playlistEdits'
+import { rowKeys } from '../lib/playlistView'
 import { STAGE_PROGRESS } from '../lib/progress'
 import {
   clearDraggedRows,
@@ -141,7 +142,13 @@ interface Props {
   onReorderBlocked?: () => void
 }
 
-export type MenuState = { track: TrackItem; x: number; y: number; chosenId: string | null }
+export type MenuState = {
+  track: TrackItem
+  rowKey: string
+  x: number
+  y: number
+  chosenId: string | null
+}
 
 // Rows below this count all get painted up front (see the content-visibility note on the
 // row wrapper): a small crate scrolls over already-rasterized content instead of paying
@@ -347,7 +354,8 @@ interface RowProps {
   // Shift+↑/↓ on the focused row: extends the range to its neighbour in that direction.
   onExtendKey: (id: string, delta: 1 | -1) => void
   onPrefetch: (id: string) => void
-  onOpenMenu: (track: TrackItem, x: number, y: number) => void
+  rowKey: string
+  onOpenMenu: (track: TrackItem, x: number, y: number, rowKey: string) => void
   // Starts the native drag-out for this row (all selected files when it's part of the
   // selection, just this one otherwise). Stable, so the memoized rows don't re-render.
   onDragOut: (track: TrackItem) => void
@@ -374,6 +382,7 @@ interface RowProps {
 // the whole list. Relies on App passing stable onSelect/onSwipeRemove.
 const TrackRow = memo(function TrackRow({
   track: t,
+  rowKey,
   bindings,
   selected,
   primary,
@@ -647,7 +656,7 @@ const TrackRow = memo(function TrackRow({
               // bottom-left corner.
               const r = e.currentTarget.getBoundingClientRect()
               if (!selected) onSelect(t.id, {})
-              onOpenMenu(t, r.left, r.bottom)
+              onOpenMenu(t, r.left, r.bottom, rowKey)
               return
             }
             // Shift+↑/↓ grows the range from the anchor, the keyboard twin of a Shift-click.
@@ -679,7 +688,7 @@ const TrackRow = memo(function TrackRow({
             // Make the right-clicked row the editor's track unless it's already part of
             // the current selection, so the menu's single-track actions are unambiguous.
             if (!selected) onSelect(t.id, {})
-            onOpenMenu(t, e.clientX, e.clientY)
+            onOpenMenu(t, e.clientX, e.clientY, rowKey)
           }}
           onMouseEnter={() => onPrefetch(t.id)}
           onFocus={() => onPrefetch(t.id)}
@@ -1194,26 +1203,28 @@ export const TrackList = memo(function TrackList({
   // the editor's track (as with a Shift-click), and the focus hops to the new end so the
   // next Shift+↑/↓ keeps growing or shrinking the same range.
   const extendViaKeyboard = useStableCallback((id: string, delta: 1 | -1): void => {
-    const to = tracks[tracks.findIndex((t) => t.id === id) + delta]
+    const i = tracks.findIndex((t) => t.id === id)
+    const to = delta === 1 ? tracks.slice(i + 1).find((t) => t.id !== id) : tracks[i - 1]
     if (!to) return
     onSelect(to.id, { shift: true })
     rowRegistry?.current?.get(to.id)?.focus()
   })
   // Stable so the memoized rows don't all re-render when the menu opens/closes.
-  const openMenu = useStableCallback((track: TrackItem, x: number, y: number) =>
-    setMenu({ track, x, y, chosenId: selectedId }),
+  const openMenu = useStableCallback((track: TrackItem, x: number, y: number, rowKey: string) =>
+    setMenu({ track, rowKey, x, y, chosenId: selectedId }),
   )
   const closeMenu = useCallback(() => setMenu(null), [])
   const { t: tr } = useTranslation()
   // Where a reorder drop would land: before this key, null for the end, undefined while no
   // reorder drag is over the list.
   const [dropBefore, setDropBefore] = useState<string | null | undefined>(undefined)
+  const keys = useMemo(() => rowKeys(tracks), [tracks])
   const orderKeys = useMemo(
     () => [
-      ...tracks.flatMap((t) => [...(separatorBefore?.get(t.id) ?? []), t.id]),
+      ...keys.flatMap((key) => [...(separatorBefore?.get(key) ?? []), key]),
       ...(trailingSeparators ?? []),
     ],
-    [tracks, separatorBefore, trailingSeparators],
+    [keys, separatorBefore, trailingSeparators],
   )
   const endReorder = (): void => setDropBefore(undefined)
   // The rows a drag-out recorded are forgotten when that drag ends, and at the next press
@@ -1390,7 +1401,7 @@ export const TrackList = memo(function TrackList({
     enabled: virtual,
     getScrollElement: () => scrollRootRef?.current ?? null,
     estimateSize: () => ESTIMATED_ROW_PX,
-    getItemKey: (i) => tracks[i]?.id ?? i,
+    getItemKey: (i) => keys[i] ?? i,
     overscan: 8,
     scrollMargin,
   })
@@ -1434,17 +1445,18 @@ export const TrackList = memo(function TrackList({
     })
   }, [tracks, mountedRange])
   const rowFor = (t: TrackItem, i: number): React.JSX.Element => (
-    <Fragment key={t.id}>
-      {separatorBefore?.get(t.id)?.map(separatorLine)}
-      {dropBefore === t.id && insertionLine}
+    <Fragment key={keys[i]}>
+      {separatorBefore?.get(keys[i])?.map(separatorLine)}
+      {dropBefore === keys[i] && insertionLine}
       <TrackRow
         track={t}
+        rowKey={keys[i]}
         bindings={bindings}
         selected={selectedIds.has(t.id)}
         primary={t.id === selectedId}
         // The selection owns the single tab stop; with nothing selected the first row
         // holds it so the list stays reachable by Tab.
-        tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+        tabbable={(t.id === selectedId && keys[i] === t.id) || (selectedId === null && i === 0)}
         deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
         outputFormat={outputFormat}
         showWaves={showWaves}
@@ -1506,7 +1518,7 @@ export const TrackList = memo(function TrackList({
               const t = tracks[item.index]
               return (
                 <div
-                  key={t.id}
+                  key={keys[item.index]}
                   data-index={item.index}
                   ref={virtualizer.measureElement}
                   className="absolute top-0 left-0 flex w-full flex-col gap-0.5 pb-0.5"
