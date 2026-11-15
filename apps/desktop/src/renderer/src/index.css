@@ -787,7 +787,11 @@ button:hover > .process-fill {
 }
 
 .press {
-  transition: transform var(--duration-fast) var(--ease-standard);
+  transition-property:
+    transform, color, background-color, border-color, outline-color, text-decoration-color, fill,
+    stroke, opacity;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
 }
 .press:active:not(:disabled) {
   transform: scale(0.97);
@@ -997,9 +1001,13 @@ button:hover > .process-fill {
   /* Movement, not state: the player swaps its layouts in one step (Player.tsx also skips
      the scripted tween, which would otherwise wait forever for a transitionend) and a
      pressed button no longer shrinks. */
-  .player-section,
-  .press {
+  .player-section {
     transition: none;
+  }
+  .press {
+    transition-property:
+      color, background-color, border-color, outline-color, text-decoration-color, fill, stroke,
+      opacity;
   }
   .press:active:not(:disabled) {
     transform: none;

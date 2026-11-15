@@ -427,6 +427,27 @@ describe('reduced motion', () => {
     const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
     expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
   })
+
+  it('keeps the hover fade on pressable buttons but drops the shrink', () => {
+    const body = reduced.match(/\.press\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(body).toContain('opacity')
+    expect(body).toContain('background-color')
+    expect(body).not.toContain('transform')
+  })
+})
+
+describe('press feedback', () => {
+  const rule = (source: string) => source.match(/(?:^|\n)\.press\s*\{[^}]*\}/)?.[0] ?? ''
+
+  it('fades colour and opacity alongside the press, so a button styled to fade on hover is not silently snapped by the unlayered rule', () => {
+    const body = rule(css)
+    for (const prop of ['transform', 'color', 'background-color', 'border-color', 'opacity']) {
+      expect(body).toMatch(new RegExp(`[\\s,]${prop}[,;]`))
+    }
+    expect(body).not.toContain('box-shadow')
+    expect(body).toContain('var(--duration-fast)')
+    expect(body).toContain('var(--ease-standard)')
+  })
 })
 
 describe('Copias list fold', () => {
