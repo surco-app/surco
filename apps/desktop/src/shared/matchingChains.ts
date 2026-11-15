@@ -39,3 +39,16 @@ export function matchingChains(
   }
   return chains.sort((x, y) => y.length - x.length || byLabel(x[0], y[0]))
 }
+
+export function pairsOfBlocks(
+  pairs: readonly (readonly [string, string])[],
+  chosen: readonly string[],
+): [string, string][] {
+  const picked = new Set(chosen)
+  const members = new Set(
+    matchingChains(pairs, (id) => id)
+      .filter((chain) => chain.some((id) => picked.has(id)))
+      .flat(),
+  )
+  return pairs.flatMap(([a, b]) => (a !== b && members.has(a) ? [[a, b] as [string, string]] : []))
+}

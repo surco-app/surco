@@ -31,6 +31,7 @@ interface Props {
   onStartSession?: (track: TrackItem) => void
   onMatch?: () => void
   onUnmatch?: () => void
+  removeLabel?: string
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -110,6 +111,7 @@ export function TrackContextMenu({
   onStartSession,
   onMatch,
   onUnmatch,
+  removeLabel,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -447,7 +449,7 @@ export function TrackContextMenu({
           <MenuItem
             onHover={leaveSub}
             testid="track-menu-remove"
-            label={tr('trackList.context.remove')}
+            label={removeLabel ?? tr('trackList.context.remove')}
             onClick={() => run(() => onRemove(track.id))}
           />
         )}
