@@ -264,7 +264,7 @@
           {
             "t": "rekordboxのMatching",
             "s": "rekordboxのMatchingで登録したペアを、ひとつのリストとプレイリストに。",
-            "d": "rekordboxソースにチェーンごとにまとまって表示され、ワンクリックでプレイリストになります。エディタでは各トラックのペアが見え、Surcoから登録・解除でき、自動セッションはペアを続けて並べます。Matching機能のないTraktor、Engine DJ、Serato、VirtualDJでは、Surcoがペアを保存します。3つ以上のセットで続けてプレイしたペアも提案します。"
+            "d": "rekordboxソースにブロックごとにまとまって表示され、ワンクリックでプレイリストになります。エディタでは各トラックのペアが見え、Surcoから登録・解除でき、自動セッションはペアを続けて並べます。Matching機能のないTraktor、Engine DJ、Serato、VirtualDJでは、Surcoがペアを保存します。3つ以上のセットで続けてプレイしたペアも提案します。"
           },
           {
             "t": "rekordboxのキュー",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "相性のいいトラックを、ひとつにまとめて。",
-      "lede": "rekordboxのMatchingボタンで、一緒に鳴らすと気持ちいいトラックを登録しておけば、Surcoがそれらをチェーンごとにまとめて一覧にし、ワンクリックでrekordboxのプレイリストにします。",
+      "lede": "rekordboxのMatchingボタンで、一緒に鳴らすと気持ちいいトラックを登録しておけば、Surcoがそれらをブロックごとにまとめて一覧にし、ワンクリックでrekordboxのプレイリストにします。",
       "button": "プレイリストを作成",
       "playlist": "Matchingプレイリスト",
       "points": {
         "chains": {
-          "title": "チェーンで",
-          "text": "AがBと、BがCと合うなら、3曲がその順番で並びます。"
+          "title": "ブロックで",
+          "text": "各ブロックは 1 曲と、その曲とペアにした曲が保存した順に並びます。"
         },
         "track": {
           "title": "トラックごとに",

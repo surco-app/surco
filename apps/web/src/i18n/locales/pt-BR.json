@@ -264,7 +264,7 @@
           {
             "t": "Matching do rekordbox",
             "s": "Os pares que você marca com Matching no rekordbox, juntos numa lista e numa playlist.",
-            "d": "Eles aparecem agrupados em cadeias na fonte do rekordbox e com um clique viram uma playlist. Na ficha você vê os pares de cada faixa, marca ou tira pelo Surco, e a sessão automática coloca uma depois da outra. No Traktor, Engine DJ, Serato e VirtualDJ, que não têm isso, o Surco guarda seus pares. Ele também sugere os que você toca em sequência em três sets ou mais."
+            "d": "Eles aparecem agrupados em blocos na fonte do rekordbox e com um clique viram uma playlist. Na ficha você vê os pares de cada faixa, marca ou tira pelo Surco, e a sessão automática coloca uma depois da outra. No Traktor, Engine DJ, Serato e VirtualDJ, que não têm isso, o Surco guarda seus pares. Ele também sugere os que você toca em sequência em três sets ou mais."
           },
           {
             "t": "Cues do rekordbox",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "As faixas que combinam, todas juntas.",
-      "lede": "No rekordbox você marca com o botão Matching as faixas que soam bem juntas. O Surco mostra todas numa lista, agrupadas em cadeias, e com um clique transforma em uma playlist do rekordbox.",
+      "lede": "No rekordbox você marca com o botão Matching as faixas que soam bem juntas. O Surco mostra todas numa lista, agrupadas em blocos, e com um clique transforma em uma playlist do rekordbox.",
       "button": "Criar playlist",
       "playlist": "Playlist Matching",
       "points": {
         "chains": {
-          "title": "Em cadeias",
-          "text": "Se uma faixa combina com outra e essa com uma terceira, elas aparecem juntas e nessa ordem."
+          "title": "Em blocos",
+          "text": "Cada bloco é uma faixa e as que você juntou com ela, na ordem em que você salvou."
         },
         "track": {
           "title": "Em cada faixa",

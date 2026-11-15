@@ -264,7 +264,7 @@
           {
             "t": "Matching di rekordbox",
             "s": "Le coppie che segni con Matching in rekordbox, insieme in una lista e in una playlist.",
-            "d": "Compaiono raggruppate in catene nella sorgente rekordbox e con un clic diventano una playlist. Nella scheda vedi le coppie di ogni brano, le crei o le togli da Surco, e la sessione automatica le mette una dopo l'altra. In Traktor, Engine DJ, Serato e VirtualDJ, che non ce l'hanno, Surco conserva le tue coppie. Ti suggerisce anche quelle che suoni una dopo l'altra in tre set o più."
+            "d": "Compaiono raggruppate in blocchi nella sorgente rekordbox e con un clic diventano una playlist. Nella scheda vedi le coppie di ogni brano, le crei o le togli da Surco, e la sessione automatica le mette una dopo l'altra. In Traktor, Engine DJ, Serato e VirtualDJ, che non ce l'hanno, Surco conserva le tue coppie. Ti suggerisce anche quelle che suoni una dopo l'altra in tre set o più."
           },
           {
             "t": "Cue di rekordbox",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "I brani che stanno bene insieme, tutti in un posto.",
-      "lede": "In rekordbox segni con il pulsante Matching i brani che suonano bene insieme. Surco te li mostra tutti in una lista, raggruppati in catene, e con un clic li trasforma in una playlist di rekordbox.",
+      "lede": "In rekordbox segni con il pulsante Matching i brani che suonano bene insieme. Surco te li mostra tutti in una lista, raggruppati in blocchi, e con un clic li trasforma in una playlist di rekordbox.",
       "button": "Crea playlist",
       "playlist": "Playlist Matching",
       "points": {
         "chains": {
-          "title": "In catene",
-          "text": "Se un brano va con un altro e questo con un terzo, compaiono insieme e in quell'ordine."
+          "title": "In blocchi",
+          "text": "Ogni blocco è un brano e quelli che hai abbinato a lui, nell'ordine in cui li hai salvati."
         },
         "track": {
           "title": "Su ogni brano",

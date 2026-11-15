@@ -264,7 +264,7 @@
           {
             "t": "Matching de rekordbox",
             "s": "Les paires que tu marques avec Matching dans rekordbox, réunies dans une liste et une playlist.",
-            "d": "Elles apparaissent regroupées en chaînes dans la source rekordbox et un clic en fait une playlist. La fiche montre les partenaires de chaque morceau, tu les crées ou les retires depuis Surco, et la session automatique les enchaîne. Dans Traktor, Engine DJ, Serato et VirtualDJ, qui ne l'ont pas, Surco garde tes paires. Il te propose aussi celles que tu passes à la suite dans trois sets ou plus."
+            "d": "Elles apparaissent regroupées en blocs dans la source rekordbox et un clic en fait une playlist. La fiche montre les partenaires de chaque morceau, tu les crées ou les retires depuis Surco, et la session automatique les enchaîne. Dans Traktor, Engine DJ, Serato et VirtualDJ, qui ne l'ont pas, Surco garde tes paires. Il te propose aussi celles que tu passes à la suite dans trois sets ou plus."
           },
           {
             "t": "Cues rekordbox",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "Les morceaux qui se mixent bien, tous réunis.",
-      "lede": "Dans rekordbox, tu marques avec le bouton Matching les morceaux qui sonnent bien ensemble. Surco te les montre tous dans une liste, regroupés en chaînes, et en fait une playlist rekordbox en un clic.",
+      "lede": "Dans rekordbox, tu marques avec le bouton Matching les morceaux qui sonnent bien ensemble. Surco te les montre tous dans une liste, regroupés en blocs, et en fait une playlist rekordbox en un clic.",
       "button": "Créer une playlist",
       "playlist": "Playlist Matching",
       "points": {
         "chains": {
-          "title": "En chaînes",
-          "text": "Si un morceau va avec un autre et celui-ci avec un troisième, ils apparaissent ensemble et dans cet ordre."
+          "title": "En blocs",
+          "text": "Chaque bloc est un morceau et ceux que tu as associés à lui, dans l'ordre où tu les as enregistrés."
         },
         "track": {
           "title": "Sur chaque morceau",

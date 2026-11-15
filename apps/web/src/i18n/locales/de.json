@@ -264,7 +264,7 @@
           {
             "t": "rekordbox Matching",
             "s": "Die Paare, die du in rekordbox mit Matching markierst, zusammen in einer Liste und einer Playlist.",
-            "d": "Sie erscheinen nach Ketten gruppiert in der rekordbox-Quelle, und ein Klick macht eine Playlist daraus. Im Editor siehst du die Partner jedes Tracks, markierst oder entfernst sie aus Surco, und die automatische Session spielt sie hintereinander. In Traktor, Engine DJ, Serato und VirtualDJ, die es nicht haben, speichert Surco deine Paare. Außerdem schlägt es dir die vor, die du in drei Sets oder mehr direkt hintereinander spielst."
+            "d": "Sie erscheinen nach Blöcken gruppiert in der rekordbox-Quelle, und ein Klick macht eine Playlist daraus. Im Editor siehst du die Partner jedes Tracks, markierst oder entfernst sie aus Surco, und die automatische Session spielt sie hintereinander. In Traktor, Engine DJ, Serato und VirtualDJ, die es nicht haben, speichert Surco deine Paare. Außerdem schlägt es dir die vor, die du in drei Sets oder mehr direkt hintereinander spielst."
           },
           {
             "t": "rekordbox-Cues",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "Die Tracks, die zusammenpassen, alle an einem Ort.",
-      "lede": "In rekordbox markierst du mit dem Matching-Button die Tracks, die gut zusammen klingen. Surco zeigt sie alle in einer Liste, nach Ketten gruppiert, und macht mit einem Klick eine rekordbox-Playlist daraus.",
+      "lede": "In rekordbox markierst du mit dem Matching-Button die Tracks, die gut zusammen klingen. Surco zeigt sie alle in einer Liste, nach Blöcken gruppiert, und macht mit einem Klick eine rekordbox-Playlist daraus.",
       "button": "Playlist erstellen",
       "playlist": "Playlist Matching",
       "points": {
         "chains": {
-          "title": "In Ketten",
-          "text": "Passt ein Track zu einem anderen und dieser zu einem dritten, stehen sie zusammen und in dieser Reihenfolge."
+          "title": "In Blöcken",
+          "text": "Jeder Block ist ein Track mit den Tracks, die du mit ihm gepaart hast, in der Reihenfolge, in der du sie gespeichert hast."
         },
         "track": {
           "title": "Bei jedem Track",

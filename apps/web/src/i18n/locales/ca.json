@@ -264,7 +264,7 @@
           {
             "t": "Matching de rekordbox",
             "s": "Les parelles que marques amb Matching a rekordbox, juntes en una llista i en una playlist.",
-            "d": "Surten agrupades per cadenes a la font de rekordbox i amb un clic les converteixes en una playlist. A la fitxa veus les parelles de cada tema, les marques o les treus des de Surco, i la sessió automàtica les posa seguides. A Traktor, Engine DJ, Serato i VirtualDJ, que no el tenen, Surco guarda les teves parelles. També et suggereix les que punxes seguides en tres sets o més."
+            "d": "Surten agrupades en blocs a la font de rekordbox i amb un clic les converteixes en una playlist. A la fitxa veus les parelles de cada tema, les marques o les treus des de Surco, i la sessió automàtica les posa seguides. A Traktor, Engine DJ, Serato i VirtualDJ, que no el tenen, Surco guarda les teves parelles. També et suggereix les que punxes seguides en tres sets o més."
           },
           {
             "t": "Cues de rekordbox",
@@ -1429,13 +1429,13 @@
     },
     "matching": {
       "title": "Els temes que combinen, tots junts.",
-      "lede": "Marques a rekordbox, amb el botó de Matching, els temes que sonen bé junts. Surco te'ls ensenya tots en una llista, agrupats per cadenes, i amb un clic els converteix en una playlist de rekordbox.",
+      "lede": "Marques a rekordbox, amb el botó de Matching, els temes que sonen bé junts. Surco te'ls ensenya tots en una llista, agrupats en blocs, i amb un clic els converteix en una playlist de rekordbox.",
       "button": "Crear playlist",
       "playlist": "Playlist Matching",
       "points": {
         "chains": {
-          "title": "Per cadenes",
-          "text": "Si un tema va amb un altre i aquest amb un tercer, surten junts i en aquest ordre."
+          "title": "En blocs",
+          "text": "Cada bloc és un tema i els que hi vas aparellar, en l'ordre en què els vas desar."
         },
         "track": {
           "title": "A cada pista",
