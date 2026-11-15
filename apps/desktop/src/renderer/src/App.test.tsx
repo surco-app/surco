@@ -4832,6 +4832,25 @@ describe('App source playlists', () => {
           tracks: [{ contentId: 'r3' }, { contentId: 'r1' }],
         })
       })
+
+      it('finds the searched track with its whole block, since its pairs are why it is there', async () => {
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+              playlist: vi
+                .fn<ProgramReads['playlist']>()
+                .mockImplementation(async (id) => (id === MATCHING_ID ? BLOCKS : FACTORY_ENTRIES)),
+            },
+          }),
+        })
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() => expect(titles()).toHaveLength(3))
+        fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'Alpha' } })
+        await waitFor(() => expect(titles()).toHaveLength(2))
+        expect(titles().join()).toContain('Charlie')
+        expect(titles().join()).not.toContain('Bravo')
+      })
     })
 
     it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
