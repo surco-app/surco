@@ -3934,6 +3934,16 @@ describe('App source playlists', () => {
       expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/c.wav', '/m/b.wav')
     })
 
+    it('drops the one-track items from the menu of a multi-selection, like copying a single path', async () => {
+      await openFactory(matchingReads)
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Bravo'))
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-copy')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-info')).not.toBeInTheDocument()
+    })
+
     it('offers no unpairing on a track that is not a partner of the chosen one', async () => {
       await openFactory(matchingReads)
       fireEvent.click(rowTitled('Alpha'))
