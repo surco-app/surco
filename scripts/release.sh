@@ -23,6 +23,8 @@ if [ "$bump" != beta ] && [ "${SURCO_SKIP_SOAK:-}" != 1 ] &&
   ! git diff --quiet "$(git describe --tags --abbrev=0)" -- apps/desktop/src package-lock.json; then
   (cd apps/desktop && PATH="$(git rev-parse --show-toplevel)/node_modules/.bin:$PATH" electron-vite build)
   node apps/desktop/.claude/skills/run-desktop/soak.mjs --tree "$(git rev-parse --show-toplevel)"
+  node apps/desktop/.claude/skills/run-desktop/soak-traktor.mjs --tree "$(git rev-parse --show-toplevel)"
+  node apps/desktop/.claude/skills/run-desktop/responsiveness.mjs --tree "$(git rev-parse --show-toplevel)"
 fi
 
 # A beta rides the same tag/build pipeline as a stable release; what makes it a beta is

@@ -158,6 +158,30 @@ node soak.mjs [--tree <repo dir>] [--tracks 40] [--budget 600]
 - The app quitting cleanly mid-run (code 0, no signal) is how a SIGTERM from outside ends it:
   another session cleaning up Electron processes. Run it again.
 
+## Memory load test (Traktor)
+
+`soak-traktor.mjs` is the same check on a 25,000-track Traktor collection built by
+`big-fixtures.mjs` (copies of the rekordbox fixture's tracks, real cues, crates, a sessions
+folder and a History folder). Unlike the rekordbox soak it jumps to a different place in the
+list for every track and scrolls 1,500 rows every ten, because a 40-track run at the top of the
+list never found the leak that held 2.4 GB on 14/11/2026. `node soak-traktor.mjs [--tree <repo
+dir>] [--tracks 60] [--budget 600]`; same exit rules as the rekordbox soak, plus two more: a
+lost heap reading fails the run, and "lost its connection to the app" means Playwright dropped
+the page while the app kept running (seen twice around 16 minutes in, on 15/11/2026): run it again.
+
+## Responsiveness gate
+
+`responsiveness.mjs` times this tree against the last tag (`--baseline <tag>` to pick another),
+building the tag once in `.claude/worktrees/gate-baseline-<tag>`. Both run the same steps on a
+rekordbox collection with 150 intelligent playlists and a Traktor collection with a
+180-playlist sessions folder: open the tab, open a big list, come back to the window twice (one
+step, since which return pays a re-read varies from run to run), select a track. For each step it
+keeps the median of `--runs` (3), with background analysis and cue learning off so they cannot land inside one step at random, and fails when the click answers or the main process blocks more
+than 1.5x the baseline and 500 ms more, above 1 s: it is there to catch freezes, and a step that
+went from 50 to 500 ms passes it. Measured
+15/11/2026: v1.35.0 against v1.34.3 fails on opening rekordbox and Traktor, the freeze users
+hit while the memory soak passed.
+
 ## Run (human path)
 
 `electron-vite dev` opens a live window with HMR. Useful for hand-testing, useless for
