@@ -28,7 +28,7 @@ const CONSTANT_TOLERANCE_MS = 2
 const ZONE_BREAK_MS = 3
 const MIN_ZONE_BEATS = 4
 export const SAME_TEMPO_RATIO = 0.01
-const START_SLACK_MS = 0.5
+export const START_SLACK_MS = 0.5
 
 const periodOf = (bpm: number): number => 60000 / bpm
 const barBeat = (k: number): number => (((k % 4) + 4) % 4) + 1
