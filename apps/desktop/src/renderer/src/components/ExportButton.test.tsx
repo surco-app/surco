@@ -433,6 +433,53 @@ describe('ExportButton', () => {
     expect(screen.queryByTestId('process-progress')).not.toBeInTheDocument()
   })
 
+  describe('the fill arriving', () => {
+    const animate = vi.fn()
+    afterEach(() => {
+      animate.mockReset()
+      delete (HTMLElement.prototype as Partial<HTMLElement>).animate
+    })
+
+    // The press turned a full accent button into a 40% track with a fifth already filled, in
+    // one frame: the bar seemed to empty out. Growing the first fill from nothing makes the
+    // press read as the job starting.
+    it('grows the first fill from empty when the conversion starts under the open button', () => {
+      HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
+      const { rerender } = render(
+        <ExportButton {...baseProps} incomplete={false} status="processing" />,
+      )
+      rerender(<ExportButton {...baseProps} incomplete={false} status="processing" stage="cover" />)
+
+      expect(animate).toHaveBeenCalledOnce()
+      expect(animate.mock.contexts[0]).toBe(screen.getByTestId('process-progress'))
+      expect(animate.mock.calls[0][0]).toEqual([
+        { transform: 'scaleX(0)' },
+        { transform: 'scaleX(0.2)' },
+      ])
+    })
+
+    // Opening a track that is already converting is not the job starting: replaying the
+    // grow on every track stepped through would be an entrance toll.
+    it('shows the fill where it is when the track opens mid-conversion', () => {
+      HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
+      render(
+        <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+      )
+      expect(animate).not.toHaveBeenCalled()
+    })
+
+    it('lets the next phases ease on from the fill already drawn', () => {
+      HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
+      const { rerender } = render(
+        <ExportButton {...baseProps} incomplete={false} status="processing" stage="cover" />,
+      )
+      rerender(
+        <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+      )
+      expect(animate).not.toHaveBeenCalled()
+    })
+  })
+
   it('shows no blocked-reason tooltip once the convert is allowed', () => {
     vi.useFakeTimers()
     try {

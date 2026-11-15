@@ -1,6 +1,6 @@
 import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
-import { useId, useState } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
@@ -165,6 +165,19 @@ export function ExportButton({
   const progressText = liveStage
     ? tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[liveStage] * 100) })
     : ''
+  const progressRef = useRef<HTMLSpanElement>(null)
+  const hadStage = useRef(!!liveStage)
+  useLayoutEffect(() => {
+    const started = !hadStage.current && !!liveStage
+    hadStage.current = !!liveStage
+    const fill = progressRef.current
+    if (!started || !fill) return
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    fill.animate?.([{ transform: 'scaleX(0)' }, { transform: fill.style.transform }], {
+      duration: 240,
+      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+    })
+  }, [liveStage])
 
   function pick(format: FormatSetting): void {
     setOpen(false)
@@ -296,6 +309,7 @@ export function ExportButton({
           )}
           {liveStage && (
             <span
+              ref={progressRef}
               data-testid="process-progress"
               aria-hidden="true"
               className="progress-sweep absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-240 ease-standard"
