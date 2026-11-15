@@ -342,3 +342,57 @@ describe('blocksWith', () => {
     expect(blocksWith(rows, breaks, () => false).rows).toEqual([])
   })
 })
+
+describe('blocksWith with rows a filter hides', () => {
+  const rows = ['a', 'b', 'c', 'd', 'e', 'f'].map((id) => ({ id }))
+  const breaks = new Map([
+    ['c', ['s1']],
+    ['e', ['s2']],
+  ])
+  const shown = (r: { id: string }) => r.id !== 'c'
+
+  it('moves the break of a hidden head onto the first row its block still shows, so two blocks never read as one', () => {
+    const found = blocksWith(rows, breaks, () => true, shown)
+    expect(found.rows.map((r) => r.id)).toEqual(['a', 'b', 'd', 'e', 'f'])
+    expect([...found.separatorBefore]).toEqual([
+      ['d', ['s1']],
+      ['e', ['s2']],
+    ])
+  })
+
+  it('drops a block whose rows the filter hides all, with its break', () => {
+    const found = blocksWith(
+      rows,
+      breaks,
+      () => true,
+      (r) => r.id !== 'c' && r.id !== 'd',
+    )
+    expect(found.rows.map((r) => r.id)).toEqual(['a', 'b', 'e', 'f'])
+    expect([...found.separatorBefore]).toEqual([['e', ['s2']]])
+  })
+
+  it('searches only the rows the filter shows, and draws no break before the first block found', () => {
+    const found = blocksWith(rows, breaks, (r) => r.id === 'd' || r.id === 'e', shown)
+    expect(found.rows.map((r) => r.id)).toEqual(['d', 'e', 'f'])
+    expect([...found.separatorBefore]).toEqual([['e', ['s2']]])
+    expect(blocksWith(rows, breaks, (r) => r.id === 'c', shown).rows).toEqual([])
+  })
+
+  it('keys the moved break by the rows left when a repeated track is hidden', () => {
+    const repeated = ['a', 'c', 'c', 'd', 'e', 'c'].map((id) => ({ id }))
+    const found = blocksWith(
+      repeated,
+      new Map([
+        ['c~1', ['s1']],
+        ['e', ['s2']],
+      ]),
+      () => true,
+      (r) => r.id !== 'c',
+    )
+    expect(found.rows.map((r) => r.id)).toEqual(['a', 'd', 'e'])
+    expect([...found.separatorBefore]).toEqual([
+      ['d', ['s1']],
+      ['e', ['s2']],
+    ])
+  })
+})

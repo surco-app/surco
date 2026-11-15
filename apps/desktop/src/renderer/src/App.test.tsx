@@ -5335,6 +5335,55 @@ describe('App source playlists', () => {
           await waitFor(() => expect(titles()).toHaveLength(5))
         }
 
+        const layout = () =>
+          [
+            ...document.querySelectorAll(
+              '[data-testid="track-row"], [data-testid^="track-separator-"]',
+            ),
+          ].map((el) =>
+            el.getAttribute('data-testid') === 'track-row'
+              ? (['Alpha', 'Bravo', 'Charlie', 'Delta'].find((t) => el.textContent?.includes(t)) ??
+                el.textContent?.slice(0, 1))
+              : el.getAttribute('data-testid'),
+          )
+
+        it('keeps the break of a block whose head the filter hides, so the blocks on screen never glue together', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          expect(layout()).toEqual([
+            'Alpha',
+            'Bravo',
+            'track-separator-matching-sep-1',
+            'Charlie',
+            'track-separator-matching-sep-2',
+            'Delta',
+            'f',
+          ])
+        })
+
+        it('keeps the blocks apart under a filter and a search together', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          fireEvent.change(screen.getByTestId('track-search'), {
+            target: { value: 'Charlie' },
+          })
+          await waitFor(() => expect(layout()).toEqual(['Charlie']))
+          fireEvent.change(screen.getByTestId('track-search'), {
+            target: { value: 'a' },
+          })
+          await waitFor(() =>
+            expect(layout()).toEqual([
+              'Alpha',
+              'Bravo',
+              'track-separator-matching-sep-1',
+              'Charlie',
+              'track-separator-matching-sep-2',
+              'Delta',
+              'f',
+            ]),
+          )
+        })
+
         it('offers the block edits while nothing is hidden', async () => {
           await openFilteredBlocks()
           selectRows(rowOf('Charlie'))

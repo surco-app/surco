@@ -162,6 +162,7 @@ export function blocksWith<T extends { id: string }>(
   tracks: readonly T[],
   separatorBefore: ReadonlyMap<string, readonly string[]> | undefined,
   test: (track: T) => boolean,
+  shown: (track: T) => boolean = () => true,
 ): { rows: T[]; separatorBefore: Map<string, readonly string[]> } {
   const blocks: { rows: T[]; breaks: readonly string[] | undefined }[] = []
   const keys = rowKeys(tracks)
@@ -170,7 +171,9 @@ export function blocksWith<T extends { id: string }>(
     if (blocks.length === 0 || breaks) blocks.push({ rows: [], breaks })
     blocks[blocks.length - 1].rows.push(t)
   })
-  const kept = blocks.filter((block) => block.rows.some(test))
+  const kept = blocks
+    .map((block) => ({ ...block, rows: block.rows.filter(shown) }))
+    .filter((block) => block.rows.some(test))
   const rows = kept.flatMap((block) => block.rows)
   const shownKeys = rowKeys(rows)
   const shownBreaks = new Map<string, readonly string[]>()
