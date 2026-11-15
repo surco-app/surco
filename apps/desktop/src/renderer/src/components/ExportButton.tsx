@@ -173,7 +173,7 @@ export function ExportButton({
     const fill = progressRef.current
     if (!started || !fill) return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-    fill.animate?.([{ transform: 'scaleX(0)' }, { transform: fill.style.transform }], {
+    fill.animate?.([{ transform: 'scaleX(0)', offset: 0 }], {
       duration: 240,
       easing: 'cubic-bezier(0.2, 0, 0, 1)',
     })

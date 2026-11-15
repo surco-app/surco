@@ -442,7 +442,8 @@ describe('ExportButton', () => {
 
     // The press turned a full accent button into a 40% track with a fifth already filled, in
     // one frame: the bar seemed to empty out. Growing the first fill from nothing makes the
-    // press read as the job starting.
+    // press read as the job starting. It grows towards the live fill, not a fixed one, so a
+    // short file whose next phase lands mid-grow is not held at 20%.
     it('grows the first fill from empty when the conversion starts under the open button', () => {
       HTMLElement.prototype.animate = animate as unknown as HTMLElement['animate']
       const { rerender } = render(
@@ -452,10 +453,7 @@ describe('ExportButton', () => {
 
       expect(animate).toHaveBeenCalledOnce()
       expect(animate.mock.contexts[0]).toBe(screen.getByTestId('process-progress'))
-      expect(animate.mock.calls[0][0]).toEqual([
-        { transform: 'scaleX(0)' },
-        { transform: 'scaleX(0.2)' },
-      ])
+      expect(animate.mock.calls[0][0]).toEqual([{ transform: 'scaleX(0)', offset: 0 }])
     })
 
     // Opening a track that is already converting is not the job starting: replaying the
