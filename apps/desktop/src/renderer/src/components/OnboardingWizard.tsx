@@ -66,6 +66,7 @@ export function OnboardingWizard({
   // destination that only exists on macOS.
   const isMac = isMacOS()
   const [step, setStep] = useState(0)
+  const [dir, setDir] = useState<'forward' | 'back' | null>(null)
   const [asksMac] = useState(() => shouldShowOnboarding(settings))
   const [otherMac, setOtherMac] = useState(false)
   const [adoptedDir, setAdoptedDir] = useState<string | null>(null)
@@ -261,10 +262,18 @@ export function OnboardingWizard({
           onSubmit={(e) => {
             e.preventDefault()
             if (isLast) finish()
-            else setStep((s) => s + 1)
+            else {
+              setDir('forward')
+              setStep((s) => s + 1)
+            }
           }}
         >
-          <div className="min-h-[min(70vh,592px)]">
+          <div
+            key={step}
+            data-testid="onboarding-step-body"
+            data-dir={dir ?? undefined}
+            className={`min-h-[min(70vh,592px)] ${dir ? 'animate-step-in' : ''}`}
+          >
             {STEPS[step] === 'mac' && (
               <>
                 <h2
@@ -686,7 +695,10 @@ export function OnboardingWizard({
                 <button
                   type="button"
                   data-testid="onboarding-back"
-                  onClick={() => setStep((s) => s - 1)}
+                  onClick={() => {
+                    setDir('back')
+                    setStep((s) => s - 1)
+                  }}
                   className="press rounded-lg px-4 py-2 text-sm text-fg-muted hover:text-fg"
                 >
                   {tr('onboarding.back')}
