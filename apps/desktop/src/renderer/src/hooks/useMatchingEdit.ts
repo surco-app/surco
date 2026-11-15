@@ -38,10 +38,12 @@ export function useMatchingSteps(
     async (steps) => {
       const inRekordbox = steps.some((s) => s.pair)
       let result: RekordboxEditResult = { applied: true }
+      let telling: RekordboxEditResult | null = null
       try {
         if (inRekordbox) await window.api.dj.askToApply(['rekordbox'])
         for (const { action, pair, label, paths } of steps) {
           if (pair) result = await window.api.dj.match('rekordbox', action, pair, label)
+          if (!telling && notable(result)) telling = result
           if (refused(result)) break
           if (paths) {
             const [a, b] = paths
@@ -53,6 +55,7 @@ export function useMatchingSteps(
       } catch {
         result = { applied: false, reason: 'write-failed' }
       }
+      result = telling ?? result
       void queryClient.invalidateQueries({ queryKey: ['matching-pairs'] })
       const adds = steps.some((s) => s.action === 'add')
       if (!inRekordbox) {
@@ -72,6 +75,10 @@ export function useMatchingSteps(
 
 function refused(result: RekordboxEditResult): boolean {
   return !result.applied && !('queued' in result) && result.reason !== 'nothing-to-add'
+}
+
+function notable(result: RekordboxEditResult): boolean {
+  return !result.applied && ('queued' in result || result.reason !== 'nothing-to-add')
 }
 
 function notifyResult(

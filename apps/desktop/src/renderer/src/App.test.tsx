@@ -5148,11 +5148,24 @@ describe('App source playlists', () => {
         fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
         fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
         await waitFor(() => expect(match).toHaveBeenCalledTimes(1))
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        await act(async () => {})
         expect(match).toHaveBeenCalledTimes(1)
         release({ applied: true })
         await waitFor(() =>
           expect(match).toHaveBeenCalledWith('add', ['r2', 'r1'], expect.any(String)),
+        )
+      })
+
+      it('says the change waits for rekordbox when one step is queued, even if the last one lands', async () => {
+        const match = await openPair()
+        match
+          .mockResolvedValueOnce({ applied: false, queued: true, opId: 'op1' })
+          .mockResolvedValueOnce({ applied: true })
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[1])
+        fireEvent.click(await screen.findByTestId('track-menu-reverse-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
+          'rekordbox is still open. The change will apply when you close it',
         )
       })
 
@@ -5256,6 +5269,31 @@ describe('App source playlists', () => {
         )
       })
 
+      it('merges under a head that follows in the other block by dropping that pair before pairing them the other way, so rekordbox never holds both', async () => {
+        const match = await openBlock(
+          [
+            ['r1', 'r2'],
+            ['r3', 'r1'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            separator,
+            entryOf('r3', '/m/c.wav'),
+            entryOf('r1', '/m/a.wav'),
+          ],
+        )
+        selectRows(1, 2)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[2])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r3', 'r1']],
+            ['add', ['r1', 'r3']],
+          ]),
+        )
+      })
+
       it('offers no merging for a single row, since one block has nothing to merge with', async () => {
         await openApartBlocks()
         selectRows(3)
@@ -5334,6 +5372,55 @@ describe('App source playlists', () => {
           fireEvent.click(screen.getByTestId('quality-filter-ext:WAV'))
           await waitFor(() => expect(titles()).toHaveLength(5))
         }
+
+        const layout = () =>
+          [
+            ...document.querySelectorAll(
+              '[data-testid="track-row"], [data-testid^="track-separator-"]',
+            ),
+          ].map((el) =>
+            el.getAttribute('data-testid') === 'track-row'
+              ? (['Alpha', 'Bravo', 'Charlie', 'Delta'].find((t) => el.textContent?.includes(t)) ??
+                el.textContent?.slice(0, 1))
+              : el.getAttribute('data-testid'),
+          )
+
+        it('keeps the break of a block whose head the filter hides, so the blocks on screen never glue together', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          expect(layout()).toEqual([
+            'Alpha',
+            'Bravo',
+            'track-separator-matching-sep-1',
+            'Charlie',
+            'track-separator-matching-sep-2',
+            'Delta',
+            'f',
+          ])
+        })
+
+        it('keeps the blocks apart under a filter and a search together', async () => {
+          await openFilteredBlocks()
+          await keepOnlyWav()
+          fireEvent.change(screen.getByTestId('track-search'), {
+            target: { value: 'Charlie' },
+          })
+          await waitFor(() => expect(layout()).toEqual(['Charlie']))
+          fireEvent.change(screen.getByTestId('track-search'), {
+            target: { value: 'a' },
+          })
+          await waitFor(() =>
+            expect(layout()).toEqual([
+              'Alpha',
+              'Bravo',
+              'track-separator-matching-sep-1',
+              'Charlie',
+              'track-separator-matching-sep-2',
+              'Delta',
+              'f',
+            ]),
+          )
+        })
 
         it('offers the block edits while nothing is hidden', async () => {
           await openFilteredBlocks()

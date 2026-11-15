@@ -2230,9 +2230,15 @@ export default function App(): React.JSX.Element {
       stickyIds.current = new Set()
     }
     const filtered = filterWithSticky(scopeRows, filterSelection, stickyIds.current, filterFacts)
+    const shown = new Set(filtered)
     const found =
       sourceProgram !== null && browser.playlist?.id === MATCHING_ID
-        ? blocksWith(filtered, playlistScope?.separatorBefore, searchMatcher(deferredSearch))
+        ? blocksWith(
+            scopeRows,
+            playlistScope?.separatorBefore,
+            searchMatcher(deferredSearch),
+            (t) => shown.has(t),
+          )
         : {
             rows: filtered.filter(searchMatcher(deferredSearch)),
             separatorBefore: playlistScope?.separatorBefore,
