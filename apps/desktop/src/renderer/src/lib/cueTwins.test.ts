@@ -368,6 +368,14 @@ describe('placing the flows of several drafts in the other programs', () => {
     )
   })
 
+  it('never reads the analysis of a draft that carries nothing, so clearing thousands of tracks does not read and cache every one', async () => {
+    const { api, client } = setup({ traktor: TRAKTOR })
+    const cleared = { ...draftOf('103', []), draft: startDraft([], MIX_IN.id) }
+    const plans = await twinPlansOf(client, [cleared], settings())
+    expect(api.cues.trackCues).not.toHaveBeenCalled()
+    expect(plans).toEqual([])
+  })
+
   it('never plans over a track that is itself being saved', async () => {
     const { client } = setup({ rekordbox: '103', traktor: TRAKTOR })
     const plans = await twinPlansOf(

@@ -248,6 +248,7 @@ export async function twinPlansOf(
   const saving = new Set(drafts.map((d) => d.contentId))
   const plans: TwinPlan[] = []
   for (const { contentId, path, label, draft } of drafts) {
+    if (!draft.cues.some((c) => draft.origin[c.key])) continue
     const read = await client.fetchQuery(trackCuesQuery(contentId)).catch(() => null)
     if (!read?.analysed || read.grid.length === 0) continue
     const breaks = carriedBreaks(draft, contextOf(read, programOf(contentId), settings))
