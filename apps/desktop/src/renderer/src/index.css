@@ -1079,7 +1079,7 @@ button:hover > .process-fill {
 }
 
 .result-in {
-  animation: result-in var(--duration-panel) var(--ease-standard) both;
+  animation: result-in var(--duration-state) var(--ease-standard) both;
 }
 
 /* A result that joined a list already on screen (a late source answering) holds a soft
@@ -1087,7 +1087,7 @@ button:hover > .process-fill {
    user was already reading. Runs alongside .result-in, which only moves and fades it. */
 .result-new {
   animation:
-    result-in var(--duration-panel) var(--ease-standard) both,
+    result-in var(--duration-state) var(--ease-standard) both,
     result-new 1.8s ease-out both;
 }
 

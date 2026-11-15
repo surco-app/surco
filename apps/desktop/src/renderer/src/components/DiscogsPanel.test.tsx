@@ -137,11 +137,20 @@ describe('DiscogsPanel result entrance', () => {
     const rows = screen.getAllByTestId('discogs-result')
 
     expect(rows[0].style.animationDelay).toBe('0ms')
-    expect(rows[1].style.animationDelay).toBe('40ms')
-    expect(rows[5].style.animationDelay).toBe('200ms')
-    // Capped: the seventh row onwards carries no delay at all.
     expect(rows[6].style.animationDelay).toBe('0ms')
     expect(rows[19].style.animationDelay).toBe('0ms')
+  })
+
+  it('closes the gap between rows as it goes, so the arrival reads as one wave and not a metronome', () => {
+    renderPanel(browser({ results: results(20) }))
+    const delays = screen
+      .getAllByTestId('discogs-result')
+      .slice(0, 6)
+      .map((row) => Number.parseInt(row.style.animationDelay, 10))
+    const gaps = delays.slice(1).map((d, i) => d - delays[i])
+
+    expect(gaps.every((g, i) => i === 0 || g < gaps[i - 1])).toBe(true)
+    expect(delays[5]).toBeLessThanOrEqual(100)
   })
 })
 

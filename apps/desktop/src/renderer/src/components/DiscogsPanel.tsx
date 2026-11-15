@@ -43,10 +43,9 @@ import { TopProgressBar } from './TopProgressBar'
 
 // How many result rows ramp in, and how far apart. Six covers roughly what the column shows
 // before the fold, which is the whole point: the stagger exists to make a resolved search
-// read as results arriving, and a row nobody can see yet has nothing to announce. 40ms is
-// brisk enough that six rows are all in within a quarter second.
-const STAGGERED_ROWS = 6
-const STAGGER_STEP_MS = 40
+// read as results arriving, and a row nobody can see yet has nothing to announce. The gaps
+// shrink so the six read as one wave rather than a metronome, all in within 300ms.
+const STAGGER_DELAYS_MS = [0, 30, 55, 75, 90, 100]
 
 const resultKeyOf = (r: { provider: string; id: number | string }): string =>
   `${r.provider}:${r.id}`
@@ -338,12 +337,12 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             data-fresh={freshKeys.has(rk) || undefined}
             aria-expanded={expanded}
             onClick={() => previewRelease(r)}
-            // Only the rows above the fold ramp in; past STAGGERED_ROWS the delay is
+            // Only the rows above the fold ramp in; past the sixth the delay is
             // zero, so a result the user scrolls down to is already there instead of
             // waiting on a queue of animations it can't see. Decoration must never
             // make content arrive later than it could.
             style={{
-              animationDelay: `${i < STAGGERED_ROWS ? i * STAGGER_STEP_MS : 0}ms`,
+              animationDelay: `${STAGGER_DELAYS_MS[i] ?? 0}ms`,
             }}
             className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors compact:py-1 focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)] focus-visible:outline-none ${
               // The open card takes no fill: the tracklist unfolding under it already

@@ -940,3 +940,10 @@ describe('filter count (WCAG 1.4.3 AA)', () => {
     })
   }
 })
+
+describe('search results arrival', () => {
+  it('lands each row in 200ms, so the last of the six staggered rows is in before 300ms', () => {
+    expect(css).toMatch(/\.result-in\s*\{[^}]*animation: result-in var\(--duration-state\)/)
+    expect(css).toMatch(/\.result-new\s*\{[^}]*result-in var\(--duration-state\)/)
+  })
+})
