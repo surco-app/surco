@@ -409,3 +409,70 @@ describe('TrackContextMenu submenus on hover', () => {
     }
   })
 })
+
+describe('TrackContextMenu with several tracks selected', () => {
+  const everything = {
+    canPasteMeta: true,
+    onStartSession: vi.fn(),
+    onUnmatch: vi.fn(),
+    hasBackup: true,
+    onOpenBackup: vi.fn(),
+    view: [{ id: 'waves', label: 'Waves', checked: true, onToggle: vi.fn() }],
+    playlist: {
+      targets: [],
+      openName: 'Factory',
+      canInsertSeparator: true,
+      onAddTo: vi.fn(),
+      onInsertSeparator: vi.fn(),
+      onRemoveSeparatorAbove: vi.fn(),
+      onRemove: vi.fn(),
+    },
+  }
+  const shownIds = () =>
+    screen
+      .getAllByRole('menuitem')
+      .map((el) => el.getAttribute('data-testid'))
+      .filter((id) => id !== 'track-menu-backdrop')
+
+  it('keeps only what acts on the whole selection, because a one-track item would touch just the clicked row', () => {
+    renderMenu({ ...everything, multi: true })
+    expect(shownIds()).toEqual([
+      'track-menu-unmatch',
+      'track-menu-add-to',
+      'track-menu-view',
+      'track-menu-remove-from',
+      'track-menu-trash',
+    ])
+  })
+
+  it('opens on an item, not on a divider left over from the hidden groups', () => {
+    renderMenu({ ...everything, onUnmatch: undefined, multi: true })
+    const first = screen.getByTestId('track-menu').firstElementChild
+    expect(first?.tagName).not.toBe('HR')
+    expect(first).toContainElement(screen.getByTestId('track-menu-add-to'))
+  })
+
+  it('keeps every item for a single track', () => {
+    renderMenu(everything)
+    expect(shownIds()).toEqual([
+      'track-menu-search',
+      'track-menu-search-web',
+      'track-menu-copy-meta',
+      'track-menu-paste-meta',
+      'track-menu-startover',
+      'track-menu-start-session',
+      'track-menu-unmatch',
+      'track-menu-add-to',
+      'track-menu-insert-separator',
+      'track-menu-remove-separator',
+      'track-menu-info',
+      'track-menu-reveal',
+      'track-menu-open',
+      'track-menu-copy',
+      'track-menu-view',
+      'track-menu-backup',
+      'track-menu-remove-from',
+      'track-menu-trash',
+    ])
+  })
+})

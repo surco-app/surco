@@ -3484,6 +3484,7 @@ export default function App(): React.JSX.Element {
           canPasteMeta={copiedMeta !== null}
           onRemove={removeFromList}
           removeLabel={removeLabel}
+          multi={menuTargets(menu.track.id).length > 1}
           onTrash={onTrashRow}
           onInfo={overlays.openInfo}
           hasBackup={backupAtByPath.has(menu.track.inputPath)}
