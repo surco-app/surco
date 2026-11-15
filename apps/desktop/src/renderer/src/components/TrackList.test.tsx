@@ -1285,8 +1285,8 @@ describe('TrackList quality badge', () => {
   })
 
   // While the spectrum worker runs, the empty slot would read as "never analyzed";
-  // the pulsing placeholder tells the user the verdict is on its way.
-  it('shows a pulsing placeholder while the spectrum analysis is in flight', () => {
+  // the outlined placeholder tells the user the verdict is on its way.
+  it('shows a placeholder while the spectrum analysis is in flight', () => {
     renderList([track({ id: 'a', analyzing: true })])
     expect(screen.getByTestId('track-quality-loading')).toBeInTheDocument()
     expect(screen.queryByTestId('track-quality')).not.toBeInTheDocument()
