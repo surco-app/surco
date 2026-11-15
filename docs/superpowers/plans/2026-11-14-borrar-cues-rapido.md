@@ -50,3 +50,16 @@ Tests (lib/cueSession.test.ts if it exists, else next to the existing session te
 - forgetDrafts notifies once and removes them all; forgetDrafts of ids with no draft does not notify;
 - clearCueDrafts on several tracks notifies the draft listeners once;
 - existing clear and discard tests keep passing with their meaning.
+
+## Task 4: stale-draft check reads in bulk
+
+Final review 15/11: `forgetStaleDrafts` (apps/desktop/src/renderer/src/lib/cueDrafts.ts) runs before every batch Save (`CuesBatchSection`), before the editor's `saveAll` (`CuesSection`), and on every cue-queue change (`App.tsx`, the effect over the queue states). For each unsaved track it fetches `trackCuesQuery` with `staleTime: 0` (the slow IPC: reopens master.db and parses the full analysis, waveform included) and `queuedCuesQuery`, then `forgetDraft` per stale track. After a 13,280-track clear this is the same per-track pattern that crashed the renderer in Task 2: Save would take ~45 min or crash.
+
+Change: `forgetStaleDrafts` reads every unsaved track's `{ cues, fingerprint }` through `window.api.cues.liveCues` in chunks of 500 (reuse the chunked helper Task 1 added for `clearCueDrafts`, moving it where both can import it if needed), keeps `queuedCuesQuery` with `staleTime: 0` per track as today, decides staleness with `keptDraftOn(contentId, read, queued)` exactly as today (a track absent from the batch counts as unreadable and its draft is forgotten, as a null read is today), and forgets all stale drafts with ONE `forgetDrafts` call.
+
+Before changing it, find out whether anything relies on the side effect that `forgetStaleDrafts` refreshes the `trackCuesQuery` cache (staleTime 0) for every unsaved track, e.g. the editor showing fresh cues after a queued save is written. Search for where `rekordbox-track-cues` queries are invalidated after queue applies. If the refresh is relied on and not done elsewhere, stop and report NEEDS_CONTEXT with what you found instead of guessing.
+
+Tests (lib/cueDrafts.test.ts or wherever forgetStaleDrafts is tested):
+- many unsaved tracks are checked through one liveCues call per 500 and never through cues.trackCues, so Save after a big clear does not read every track's analysis;
+- a stale draft (fingerprint changed) is forgotten and a current one kept, as before;
+- stale drafts are forgotten with a single draft notification.
