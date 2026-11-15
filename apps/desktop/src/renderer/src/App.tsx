@@ -2046,10 +2046,10 @@ export default function App(): React.JSX.Element {
         source: browser.source,
         playlistName,
         entries: browser.entries,
-        playlistTracks: playlistScope?.tracks ?? null,
+        playlistTracks: playlistScope ? scopeTracks : null,
         workingCount: scopeTracks.length,
       }),
-    [browser.source, playlistName, browser.entries, playlistScope, scopeTracks.length],
+    [browser.source, playlistName, browser.entries, playlistScope, scopeTracks],
   )
   // One rule for the list menu and the palette: something to review in the open target,
   // and no conversion writing the same files.
@@ -2209,7 +2209,7 @@ export default function App(): React.JSX.Element {
   const filterKey = filterSessionKey(filterSelection)
   // Filtering and sorting the crate depend on neither the selection nor the pointer, so
   // they run apart from the hold below: picking a row must not pay for sorting every row.
-  const sortedTracks = useMemo(() => {
+  const { rows: sortedTracks, separatorBefore: shownSeparators } = useMemo(() => {
     // Reset the pinned set the moment any filter axis changes, so each filter session
     // starts from the live verdicts; within a session filterWithSticky keeps already-shown
     // rows put even after their verdict flips under the user.
@@ -2221,8 +2221,18 @@ export default function App(): React.JSX.Element {
     const found =
       sourceProgram !== null && browser.playlist?.id === MATCHING_ID
         ? blocksWith(filtered, playlistScope?.separatorBefore, searchMatcher(deferredSearch))
-        : filtered.filter(searchMatcher(deferredSearch))
-    return sortTracks(found, sortBy, sortDir)
+        : {
+            rows: filtered.filter(searchMatcher(deferredSearch)),
+            separatorBefore: playlistScope?.separatorBefore,
+          }
+    return {
+      rows: sortTracks(
+        sortBy === 'import' ? found.rows : distinctById(found.rows),
+        sortBy,
+        sortDir,
+      ),
+      separatorBefore: found.separatorBefore,
+    }
   }, [
     scopeRows,
     filterSelection,
@@ -4408,9 +4418,7 @@ export default function App(): React.JSX.Element {
                               renderMenu={renderTrackMenu}
                               scrollRootRef={listScrollRef}
                               separatorBefore={
-                                playlistScope && sortBy === 'import'
-                                  ? playlistScope.separatorBefore
-                                  : undefined
+                                playlistScope && sortBy === 'import' ? shownSeparators : undefined
                               }
                               trailingSeparators={
                                 playlistScope && sortBy === 'import'

@@ -1456,7 +1456,7 @@ export const TrackList = memo(function TrackList({
         primary={t.id === selectedId}
         // The selection owns the single tab stop; with nothing selected the first row
         // holds it so the list stays reachable by Tab.
-        tabbable={t.id === selectedId || (selectedId === null && i === 0)}
+        tabbable={(t.id === selectedId && keys[i] === t.id) || (selectedId === null && i === 0)}
         deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
         outputFormat={outputFormat}
         showWaves={showWaves}

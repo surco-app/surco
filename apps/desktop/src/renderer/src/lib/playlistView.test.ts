@@ -315,7 +315,18 @@ describe('blocksWith with a track in two blocks', () => {
   it('reads the break before the second row of a repeated track', () => {
     const rows = ['a', 'c', 'c', 'd'].map((id) => ({ id }))
     const breaks = new Map([['c~1', ['s1']]])
-    expect(blocksWith(rows, breaks, (r) => r.id === 'd').map((r) => r.id)).toEqual(['c', 'd'])
+    expect(blocksWith(rows, breaks, (r) => r.id === 'd').rows.map((r) => r.id)).toEqual(['c', 'd'])
+  })
+
+  it('keys the kept breaks by the rows left, so a search never splits a block', () => {
+    const rows = ['a', 'c', 'c', 'd', 'e', 'c'].map((id) => ({ id }))
+    const breaks = new Map([
+      ['c~1', ['s1']],
+      ['e', ['s2']],
+    ])
+    const found = blocksWith(rows, breaks, (r) => r.id === 'd' || r.id === 'e')
+    expect(found.rows.map((r) => r.id)).toEqual(['c', 'd', 'e', 'c'])
+    expect([...found.separatorBefore]).toEqual([['e', ['s2']]])
   })
 })
 
@@ -324,10 +335,10 @@ describe('blocksWith', () => {
   const breaks = new Map([['c', ['s1']]])
 
   it('shows a searched track with every partner in its block, since the block is the match', () => {
-    expect(blocksWith(rows, breaks, (r) => r.id === 'd').map((r) => r.id)).toEqual(['c', 'd'])
+    expect(blocksWith(rows, breaks, (r) => r.id === 'd').rows.map((r) => r.id)).toEqual(['c', 'd'])
   })
 
   it('shows nothing when no track is found, so an empty search result stays empty', () => {
-    expect(blocksWith(rows, breaks, () => false)).toEqual([])
+    expect(blocksWith(rows, breaks, () => false).rows).toEqual([])
   })
 })

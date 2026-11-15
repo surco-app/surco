@@ -4919,6 +4919,19 @@ describe('App source playlists', () => {
         })
       })
 
+      it('counts it once in the review the list menu offers, since the review reads tracks', async () => {
+        await openTwoBlocks()
+        fireEvent.click(screen.getByTestId('list-actions-more'))
+        expect(screen.getByTestId('list-review-open-detail')).toHaveTextContent('The 4 tracks')
+      })
+
+      it('shows it once under another sort, where no break tells its two blocks apart', async () => {
+        await openTwoBlocks()
+        fireEvent.click(screen.getByTestId('track-sort'))
+        fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+        await waitFor(() => expect(titles()).toHaveLength(4))
+      })
+
       it('moves past it with the down arrow instead of stopping on its second row', async () => {
         await openTwoBlocks()
         const charlie = screen

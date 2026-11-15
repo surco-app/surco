@@ -374,10 +374,14 @@ export function holdOrder<T extends { id: string | number }>(
 ): T[] {
   if (shown.length !== fresh.length) return fresh
   const byKey = new Map(fresh.map((t) => [keyOf(t), t]))
+  if (byKey.size !== fresh.length) return fresh
   const held: T[] = []
+  const taken = new Set<string>()
   for (const t of shown) {
-    const live = byKey.get(keyOf(t))
-    if (!live) return fresh
+    const key = keyOf(t)
+    const live = byKey.get(key)
+    if (!live || taken.has(key)) return fresh
+    taken.add(key)
     held.push(live)
   }
   return held

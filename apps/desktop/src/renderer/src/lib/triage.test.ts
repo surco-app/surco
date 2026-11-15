@@ -1198,6 +1198,13 @@ describe('holdOrder', () => {
     expect(held[0]).toBe(fresh[1])
   })
 
+  it('takes the fresh order when a track shows in two rows, so no row is lost to the repeat', () => {
+    const fresh = [r('c'), r('d'), r('e')]
+    expect(holdOrder([r('c'), r('c'), r('d')], fresh)).toBe(fresh)
+    const repeated = [r('c'), r('d'), r('c')]
+    expect(holdOrder([r('c'), r('d'), r('e')], repeated)).toBe(repeated)
+  })
+
   // A new or vanished row has no shown place to keep, so the fresh order wins.
   it('takes the fresh order when the set of rows changed', () => {
     const fresh = [r('c'), r('a'), r('b')]

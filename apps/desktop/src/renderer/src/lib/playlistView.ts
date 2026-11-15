@@ -162,14 +162,24 @@ export function blocksWith<T extends { id: string }>(
   tracks: readonly T[],
   separatorBefore: ReadonlyMap<string, readonly string[]> | undefined,
   test: (track: T) => boolean,
-): T[] {
-  const blocks: T[][] = []
+): { rows: T[]; separatorBefore: Map<string, readonly string[]> } {
+  const blocks: { rows: T[]; breaks: readonly string[] | undefined }[] = []
   const keys = rowKeys(tracks)
   tracks.forEach((t, i) => {
-    if (blocks.length === 0 || separatorBefore?.has(keys[i])) blocks.push([])
-    blocks[blocks.length - 1].push(t)
+    const breaks = separatorBefore?.get(keys[i])
+    if (blocks.length === 0 || breaks) blocks.push({ rows: [], breaks })
+    blocks[blocks.length - 1].rows.push(t)
   })
-  return blocks.filter((block) => block.some(test)).flat()
+  const kept = blocks.filter((block) => block.rows.some(test))
+  const rows = kept.flatMap((block) => block.rows)
+  const shownKeys = rowKeys(rows)
+  const shownBreaks = new Map<string, readonly string[]>()
+  let at = 0
+  kept.forEach((block, i) => {
+    if (i > 0 && block.breaks) shownBreaks.set(shownKeys[at], block.breaks)
+    at += block.rows.length
+  })
+  return { rows, separatorBefore: shownBreaks }
 }
 
 export function blocksOf<T extends { id: string }>(
@@ -177,6 +187,6 @@ export function blocksOf<T extends { id: string }>(
   separatorBefore: ReadonlyMap<string, readonly string[]> | undefined,
   chosen: ReadonlySet<string>,
 ): T[] {
-  const picked = blocksWith(tracks, separatorBefore, (t) => chosen.has(t.id))
+  const picked = blocksWith(tracks, separatorBefore, (t) => chosen.has(t.id)).rows
   return distinctById(picked.length > 0 ? picked : [...tracks])
 }

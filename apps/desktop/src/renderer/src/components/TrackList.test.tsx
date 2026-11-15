@@ -264,6 +264,12 @@ describe('TrackList', () => {
       expect(shown[2]).toHaveAttribute('aria-selected', 'true')
     })
 
+    it('keeps one Tab stop for a selected repeated track, on its first row', () => {
+      renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
+      const shown = screen.getAllByTestId('track-row')
+      expect(shown.map((r) => r.tabIndex)).toEqual([-1, 0, -1, -1])
+    })
+
     it('extends the range past the repeat with Shift+Down, instead of sticking on the same track', () => {
       const { onSelect } = renderList(rows(), 'c', ['c'], { separatorBefore: breaks })
       const shown = screen.getAllByTestId('track-row')
