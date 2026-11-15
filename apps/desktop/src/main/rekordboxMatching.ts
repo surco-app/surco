@@ -70,25 +70,16 @@ function cutAtGaps(rows: readonly PlayedRow[]): string[][] {
 
 export function readPlayedSequences(db: RekordboxDb, playlistIds: readonly string[]): string[][] {
   const live = `CASE WHEN c.ID IS NULL OR coalesce(c.rb_local_deleted, 0) = 1 OR ${IS_SEPARATOR} THEN 0 ELSE 1 END`
-  const history = db
-    .prepare(
-      `SELECT h.HistoryID AS run, h.ContentID AS contentId, ${live} AS live
-         FROM djmdSongHistory h LEFT JOIN djmdContent c ON c.ID = h.ContentID
-        WHERE coalesce(h.rb_local_deleted, 0) = 0
-        ORDER BY h.HistoryID, h.TrackNo`,
-    )
-    .all() as PlayedRow[]
-  const playlists =
-    playlistIds.length === 0
-      ? []
-      : (db
-          .prepare(
-            `SELECT s.PlaylistID AS run, s.ContentID AS contentId, ${live} AS live
+  if (playlistIds.length === 0) return []
+  return cutAtGaps(
+    db
+      .prepare(
+        `SELECT s.PlaylistID AS run, s.ContentID AS contentId, ${live} AS live
                FROM djmdSongPlaylist s LEFT JOIN djmdContent c ON c.ID = s.ContentID
               WHERE coalesce(s.rb_local_deleted, 0) = 0
                 AND s.PlaylistID IN (${playlistIds.map(() => '?').join(',')})
               ORDER BY s.PlaylistID, s.TrackNo`,
-          )
-          .all(...playlistIds) as PlayedRow[])
-  return [...cutAtGaps(history), ...cutAtGaps(playlists)]
+      )
+      .all(...playlistIds) as PlayedRow[],
+  )
 }

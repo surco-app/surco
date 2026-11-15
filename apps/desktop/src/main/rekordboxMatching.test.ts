@@ -113,20 +113,15 @@ describe('the Matching entry of the rekordbox source', () => {
 describe('readPlayedSequences', () => {
   const SEP = { ID: 'sep', FolderPath: '/Music/_.mp3', FileType: 1, Title: ' ', Length: 1 }
 
-  it('reads each rekordbox history session in the order the tracks were played', async () => {
+  it('leaves out the rekordbox history, which logs tracks heard in the headphones too', async () => {
     const db = await open({
-      content: [LET, TAKE, ACID],
+      content: [LET, TAKE],
       history: [
-        { HistoryID: 'h1', ContentID: TAKE.ID, TrackNo: 2 },
         { HistoryID: 'h1', ContentID: LET.ID, TrackNo: 1 },
-        { HistoryID: 'h2', ContentID: ACID.ID, TrackNo: 1 },
-        { HistoryID: 'h2', ContentID: LET.ID, TrackNo: 2 },
+        { HistoryID: 'h1', ContentID: TAKE.ID, TrackNo: 2 },
       ],
     })
-    expect(readPlayedSequences(db, [])).toEqual([
-      [LET.ID, TAKE.ID],
-      [ACID.ID, LET.ID],
-    ])
+    expect(readPlayedSequences(db, [])).toEqual([])
   })
 
   it('adds the mixed playlists it is given, cut at their separators', async () => {
@@ -150,12 +145,13 @@ describe('readPlayedSequences', () => {
   it('skips a track removed from the collection, so it never joins a suggestion', async () => {
     const db = await open({
       content: [LET, { ...TAKE, deleted: true }, ACID],
-      history: [
-        { HistoryID: 'h1', ContentID: LET.ID, TrackNo: 1 },
-        { HistoryID: 'h1', ContentID: TAKE.ID, TrackNo: 2 },
-        { HistoryID: 'h1', ContentID: ACID.ID, TrackNo: 3 },
+      playlists: [{ ID: 'p1', Name: '90s', Attribute: 0, ParentID: 'root', Seq: 1 }],
+      links: [
+        { PlaylistID: 'p1', ContentID: LET.ID, TrackNo: 1 },
+        { PlaylistID: 'p1', ContentID: TAKE.ID, TrackNo: 2 },
+        { PlaylistID: 'p1', ContentID: ACID.ID, TrackNo: 3 },
       ],
     })
-    expect(readPlayedSequences(db, [])).toEqual([[LET.ID], [ACID.ID]])
+    expect(readPlayedSequences(db, ['p1'])).toEqual([[LET.ID], [ACID.ID]])
   })
 })
