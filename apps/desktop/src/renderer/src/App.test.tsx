@@ -4765,6 +4765,55 @@ describe('App source playlists', () => {
       })
     })
 
+    describe('with tracks selected', () => {
+      const BLOCKS = [
+        { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+        { path: '/m/a.wav', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+        { path: '/m/_.mp3', separator: true, meta: {}, linkId: 'm1', contentId: 'm1' },
+        { path: '/m/b.wav', separator: false, meta: {}, linkId: 'r2', contentId: 'r2' },
+      ]
+      const createFromSelection = async (pick: string) => {
+        const editPlaylist = vi
+          .fn<ProgramReads['editPlaylist']>()
+          .mockResolvedValue({ applied: true, createdId: 'new' })
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+              playlist: vi
+                .fn<ProgramReads['playlist']>()
+                .mockImplementation(async (id) => (id === MATCHING_ID ? BLOCKS : FACTORY_ENTRIES)),
+              editPlaylist,
+            },
+          }),
+        })
+        fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+        await waitFor(() => expect(titles()).toHaveLength(3))
+        fireEvent.click(
+          screen
+            .getAllByTestId('track-row')
+            .find((r) => r.textContent?.includes(pick)) as HTMLElement,
+        )
+        fireEvent.click(screen.getByTestId('matching-create-playlist'))
+        await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+        return editPlaylist.mock.calls[0][0]
+      }
+
+      it('takes only the block of the chosen track, so the DJ builds a playlist from a few pairs', async () => {
+        expect(await createFromSelection('Bravo')).toMatchObject({
+          kind: 'create',
+          tracks: [{ contentId: 'r2' }],
+        })
+      })
+
+      it('takes the whole block even when the chosen track is only one of its pairs', async () => {
+        expect(await createFromSelection('Alpha')).toMatchObject({
+          kind: 'create',
+          tracks: [{ contentId: 'r3' }, { contentId: 'r1' }],
+        })
+      })
+    })
+
     it('never offers Matching as a playlist to add tracks to, since a track joins it by being paired', async () => {
       await openFactory({
         dj: djReads({

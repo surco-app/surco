@@ -138,3 +138,17 @@ export function playlistMembership(
     return paths.has(input) || (!!output && paths.has(output)) || moved.some((p) => paths.has(p))
   }
 }
+
+export function blocksOf<T extends { id: string }>(
+  tracks: readonly T[],
+  separatorBefore: ReadonlyMap<string, readonly string[]> | undefined,
+  chosen: ReadonlySet<string>,
+): T[] {
+  const blocks: T[][] = []
+  for (const t of tracks) {
+    if (blocks.length === 0 || separatorBefore?.has(t.id)) blocks.push([])
+    blocks[blocks.length - 1].push(t)
+  }
+  const picked = blocks.filter((block) => block.some((t) => chosen.has(t.id)))
+  return picked.length > 0 ? picked.flat() : [...tracks]
+}

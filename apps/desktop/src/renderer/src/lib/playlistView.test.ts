@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
-import { playlistMembership, playlistView } from './playlistView'
+import { blocksOf, playlistMembership, playlistView } from './playlistView'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -215,5 +215,23 @@ describe('playlistMembership', () => {
     } finally {
       normalize.mockRestore()
     }
+  })
+})
+
+describe('blocksOf', () => {
+  const rows = ['a', 'b', 'c', 'd'].map((id) => ({ id }))
+  const breaks = new Map([['c', ['s1']]])
+
+  it('keeps every block a chosen track belongs to, whole', () => {
+    expect(blocksOf(rows, breaks, new Set(['b'])).map((r) => r.id)).toEqual(['a', 'b'])
+  })
+
+  it('keeps every track while none is chosen in the list, so the playlist is never empty', () => {
+    expect(blocksOf(rows, breaks, new Set(['elsewhere'])).map((r) => r.id)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
   })
 })

@@ -213,7 +213,7 @@ import { flushPendingEdits } from './lib/pendingEdits'
 import { phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
-import { type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
+import { blocksOf, type PlaylistScope, playlistMembership, playlistView } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
 import { withCachedQualityTag } from './lib/qualityTag'
@@ -4319,6 +4319,7 @@ export default function App(): React.JSX.Element {
                           {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
                             <MatchingBand
                               tracks={scopeTracks.length}
+                              selected={scopeTracks.some((t) => selectedIdSet.has(t.id))}
                               onCreate={() => {
                                 const name = tr('sources.matching')
                                 void editRekordbox(
@@ -4327,7 +4328,11 @@ export default function App(): React.JSX.Element {
                                     parentId: 'root',
                                     name,
                                     folder: false,
-                                    tracks: scopeTracks.map(trackRef),
+                                    tracks: blocksOf(
+                                      scopeTracks,
+                                      playlistScope?.separatorBefore,
+                                      selectedIdSet,
+                                    ).map(trackRef),
                                   },
                                   name,
                                 )

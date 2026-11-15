@@ -2658,6 +2658,7 @@
     "allTracks": "すべてのトラック",
     "matching": "Matching",
     "matchingCreate": "プレイリストを作成",
+    "matchingCreateSelection": "選択からプレイリストを作成",
     "matchingAdded": "rekordboxにMatchingを保存しました",
     "matchingSaved": "Matchingを保存しました",
     "matchingSuggested": "よく続けてかける組み合わせ",

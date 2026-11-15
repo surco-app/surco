@@ -6,9 +6,11 @@ const BUTTON =
 
 export function MatchingBand({
   tracks,
+  selected = false,
   onCreate,
 }: {
   tracks: number
+  selected?: boolean
   onCreate: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -21,7 +23,20 @@ export function MatchingBand({
         onClick={onCreate}
         className={BUTTON}
       >
-        {tr('sources.matchingCreate')}
+        <span className="grid">
+          <span
+            aria-hidden={selected}
+            className={`col-start-1 row-start-1 ${selected ? 'invisible' : ''}`}
+          >
+            {tr('sources.matchingCreate')}
+          </span>
+          <span
+            aria-hidden={!selected}
+            className={`col-start-1 row-start-1 ${selected ? '' : 'invisible'}`}
+          >
+            {tr('sources.matchingCreateSelection')}
+          </span>
+        </span>
       </button>
     </div>
   )
