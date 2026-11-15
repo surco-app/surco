@@ -3019,6 +3019,13 @@ export default function App(): React.JSX.Element {
     const paired = pairs.some(([x, y]) => (x === a && y === b) || (x === b && y === a))
     return paired ? found : null
   }
+  const planMatching = (steps: [MatchingAction, TrackItem, TrackItem][]) => {
+    const found = steps.flatMap(([action, a, b]) => {
+      const pair = pairOfTracks(a, b)
+      return pair ? [{ action, ...pair }] : []
+    })
+    return found.length === steps.length ? found : null
+  }
   const matchingBlockEdits = (menu: TrackMenuState) => {
     if (sourceProgram === null || browser.playlist?.id !== MATCHING_ID || sortBy !== 'import')
       return null
@@ -3032,28 +3039,44 @@ export default function App(): React.JSX.Element {
     const [head, ...followers] = visibleRows.slice(start, end)
     if (followers.length === 0) return null
     const x = at > start ? visibleRows[at] : followers.length === 1 ? followers[0] : null
-    const plan = (steps: [MatchingAction, TrackItem, TrackItem][]) => {
-      const found = steps.flatMap(([action, a, b]) => {
-        const pair = pairOfTracks(a, b)
-        return pair ? [{ action, ...pair }] : []
-      })
-      return found.length === steps.length ? found : null
-    }
     const [first, ...rest] = followers
     return {
       reverse: x
-        ? plan([
+        ? planMatching([
             ['remove', head, x],
             ['add', x, head],
           ])
         : null,
       leave: x
-        ? plan([['remove', head, x]])
-        : plan([
+        ? planMatching([['remove', head, x]])
+        : planMatching([
             ...followers.map((s): [MatchingAction, TrackItem, TrackItem] => ['remove', head, s]),
             ...rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['add', first, s]),
           ]),
     }
+  }
+  const matchingMergeEdits = () => {
+    if (sourceProgram === null || browser.playlist?.id !== MATCHING_ID || sortBy !== 'import')
+      return null
+    const keys = rowKeys(visibleRows)
+    const blocks: TrackItem[][] = []
+    visibleRows.forEach((row, i) => {
+      if (i === 0 || shownSeparators?.get(keys[i])) blocks.push([])
+      blocks[blocks.length - 1].push(row)
+    })
+    const touched = blocks.filter((block) => block.some((t) => selectedIdSet.has(t.id)))
+    if (touched.length < 2) return null
+    const [[head, ...followers], ...others] = touched
+    const joined = new Set([head.id, ...followers.map((t) => t.id)])
+    const removes = others.flatMap(([h, ...rest]) =>
+      rest.map((s): [MatchingAction, TrackItem, TrackItem] => ['remove', h, s]),
+    )
+    const adds = others.flat().flatMap((t): [MatchingAction, TrackItem, TrackItem][] => {
+      if (joined.has(t.id)) return []
+      joined.add(t.id)
+      return [['add', head, t]]
+    })
+    return planMatching([...removes, ...adds])
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
     const track = inRekordbox
@@ -3467,6 +3490,7 @@ export default function App(): React.JSX.Element {
       const block = matchingBlockEdits(menu)
       const reverse = block?.reverse
       const leave = unmatch ? null : block?.leave
+      const merge = matchingMergeEdits()
       return (
         <TrackContextMenu
           track={menu.track}
@@ -3488,6 +3512,7 @@ export default function App(): React.JSX.Element {
           }
           onReverseMatch={reverse ? () => void runMatchingEdits(reverse) : undefined}
           onLeaveMatch={leave ? () => void runMatchingEdits(leave) : undefined}
+          onMergeMatch={merge ? () => void runMatchingEdits(merge) : undefined}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
           onPasteMeta={onPasteMeta}

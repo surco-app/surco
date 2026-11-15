@@ -689,6 +689,7 @@
       "unmatch": "Treure el matching",
       "reverseMatch": "Inverteix l'ordre",
       "leaveMatch": "Treu del matching",
+      "mergeMatch": "Fusiona els blocs",
       "copyMeta": "Copiar totes les metadades",
       "pasteMeta": "Enganxar les metadades",
       "remove": "Treure de Surco",

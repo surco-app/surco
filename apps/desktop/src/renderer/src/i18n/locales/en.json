@@ -689,6 +689,7 @@
       "unmatch": "Remove Matching pair",
       "reverseMatch": "Reverse order",
       "leaveMatch": "Remove from Matching",
+      "mergeMatch": "Merge blocks",
       "copyMeta": "Copy all metadata",
       "pasteMeta": "Paste metadata",
       "remove": "Remove from Surco",

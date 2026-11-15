@@ -33,6 +33,7 @@ interface Props {
   onUnmatch?: () => void
   onReverseMatch?: () => void
   onLeaveMatch?: () => void
+  onMergeMatch?: () => void
   onCopyMeta: (track: TrackItem) => void
   onCopyPath: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
@@ -114,6 +115,7 @@ export function TrackContextMenu({
   onUnmatch,
   onReverseMatch,
   onLeaveMatch,
+  onMergeMatch,
   onCopyMeta,
   onCopyPath,
   onPasteMeta,
@@ -320,6 +322,14 @@ export function TrackContextMenu({
             testid="track-menu-leave-match"
             label={tr('trackList.context.leaveMatch')}
             onClick={() => run(onLeaveMatch)}
+          />
+        )}
+        {onMergeMatch && (
+          <MenuItem
+            onHover={leaveSub}
+            testid="track-menu-merge-match"
+            label={tr('trackList.context.mergeMatch')}
+            onClick={() => run(onMergeMatch)}
           />
         )}
         {playlist && (

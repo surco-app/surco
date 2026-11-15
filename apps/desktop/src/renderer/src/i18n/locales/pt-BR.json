@@ -689,6 +689,7 @@
       "unmatch": "Remover matching",
       "reverseMatch": "Inverter a ordem",
       "leaveMatch": "Tirar do matching",
+      "mergeMatch": "Juntar blocos",
       "copyMeta": "Copiar todos os metadados",
       "pasteMeta": "Colar metadados",
       "remove": "Remover do Surco",

@@ -4955,25 +4955,73 @@ describe('App source playlists', () => {
         linkId: id,
         contentId: id,
       })
+      const separator = { path: null, separator: true, meta: {}, linkId: 'matching-sep-1' }
       const openBlock = async (
         pairs: [string, string][],
-        entries: ReturnType<typeof entryOf>[],
+        entries: (ReturnType<typeof entryOf> | typeof separator)[],
+        files = ['/m/a.wav', '/m/b.wav', '/m/c.wav'],
       ) => {
         const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
-        await openFactory({
-          dj: djReads({
-            rekordbox: {
-              matching: vi.fn<ProgramReads['matching']>().mockResolvedValue(pairs),
-              playlist: vi
-                .fn<ProgramReads['playlist']>()
-                .mockImplementation(async (id) => (id === MATCHING_ID ? entries : FACTORY_ENTRIES)),
-              match,
-            },
-          }),
-        })
+        await openFactory(
+          {
+            pickFiles: vi.fn().mockResolvedValue(files),
+            dj: djReads({
+              rekordbox: {
+                matching: vi.fn<ProgramReads['matching']>().mockResolvedValue(pairs),
+                playlist: vi
+                  .fn<ProgramReads['playlist']>()
+                  .mockImplementation(async (id) =>
+                    id === MATCHING_ID ? entries : FACTORY_ENTRIES,
+                  ),
+                match,
+              },
+            }),
+          },
+          files.length,
+        )
         fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
-        await waitFor(() => expect(titles()).toHaveLength(entries.length))
+        await waitFor(() =>
+          expect(titles()).toHaveLength(entries.filter((e) => !e.separator).length),
+        )
         return match
+      }
+      const FOUR = ['/m/a.wav', '/m/b.wav', '/m/c.wav', '/m/d.wav']
+      const openSharedBlocks = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r1', 'r3'],
+            ['r3', 'r4'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            entryOf('r3', '/m/c.wav'),
+            separator,
+            entryOf('r3', '/m/c.wav'),
+            entryOf('r4', '/m/d.wav'),
+          ],
+          FOUR,
+        )
+      const openApartBlocks = () =>
+        openBlock(
+          [
+            ['r1', 'r2'],
+            ['r5', 'r6'],
+          ],
+          [
+            entryOf('r1', '/m/a.wav'),
+            entryOf('r2', '/m/b.wav'),
+            separator,
+            entryOf('r5', '/m/c.wav'),
+            entryOf('r6', '/m/d.wav'),
+          ],
+          FOUR,
+        )
+      const selectRows = (...at: number[]) => {
+        const rows = () => screen.getAllByTestId('track-row')
+        fireEvent.click(rows()[at[0]])
+        for (const i of at.slice(1)) fireEvent.click(rows()[i], { metaKey: true })
       }
       const openPair = () =>
         openBlock([['r1', 'r2']], [entryOf('r1', '/m/a.wav'), entryOf('r2', '/m/b.wav')])
@@ -5086,6 +5134,49 @@ describe('App source playlists', () => {
         fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
         await screen.findByTestId('track-menu-leave-match')
         expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
+      })
+
+      it('merges two blocks under the first head, leaving out the track that already follows it', async () => {
+        const match = await openSharedBlocks()
+        selectRows(1, 4)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[4])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+        await new Promise((resolve) => setTimeout(resolve, 50))
+        expect(calls(match)).toEqual([
+          ['remove', ['r3', 'r4']],
+          ['add', ['r1', 'r4']],
+        ])
+      })
+
+      it('merges two separate blocks by moving the second head and its followers under the first head', async () => {
+        const match = await openApartBlocks()
+        selectRows(0, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        fireEvent.click(await screen.findByTestId('track-menu-merge-match'))
+        await waitFor(() =>
+          expect(calls(match)).toEqual([
+            ['remove', ['r5', 'r6']],
+            ['add', ['r1', 'r5']],
+            ['add', ['r1', 'r6']],
+          ]),
+        )
+      })
+
+      it('offers no merging for a single row, since one block has nothing to merge with', async () => {
+        await openApartBlocks()
+        selectRows(3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-leave-match')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
+      })
+
+      it('offers no merging for rows of the same block, since they are one block already', async () => {
+        await openApartBlocks()
+        selectRows(2, 3)
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[3])
+        await screen.findByTestId('track-menu-unmatch')
+        expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
       })
 
       it('offers neither outside Matching, where the rows are no blocks', async () => {

@@ -689,6 +689,7 @@
       "unmatch": "Matching entfernen",
       "reverseMatch": "Reihenfolge umkehren",
       "leaveMatch": "Aus dem Matching entfernen",
+      "mergeMatch": "Blöcke zusammenführen",
       "copyMeta": "Alle Metadaten kopieren",
       "pasteMeta": "Metadaten einfügen",
       "remove": "Aus Surco entfernen",

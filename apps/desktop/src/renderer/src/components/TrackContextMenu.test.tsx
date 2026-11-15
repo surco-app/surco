@@ -427,9 +427,18 @@ describe('TrackContextMenu Matching block', () => {
     expect(onLeaveMatch).toHaveBeenCalledTimes(1)
   })
 
+  it('merges the selected blocks into one from the row', () => {
+    const onMergeMatch = vi.fn()
+    renderMenu({ onMergeMatch })
+    expect(screen.getByTestId('track-menu-merge-match')).toHaveTextContent('Merge blocks')
+    fireEvent.click(screen.getByTestId('track-menu-merge-match'))
+    expect(onMergeMatch).toHaveBeenCalledTimes(1)
+  })
+
   it('offers neither where the row sits in no Matching block', () => {
     renderMenu()
     expect(screen.queryByTestId('track-menu-reverse-match')).not.toBeInTheDocument()
     expect(screen.queryByTestId('track-menu-leave-match')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('track-menu-merge-match')).not.toBeInTheDocument()
   })
 })
