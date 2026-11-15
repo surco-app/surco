@@ -4220,6 +4220,31 @@ export default function App(): React.JSX.Element {
                       null : (
                         <>
                           <TrackListHeader
+                            band={
+                              sourceProgram !== null && browser.playlist?.id === MATCHING_ID ? (
+                                <MatchingBand
+                                  tracks={scopeTracks.length}
+                                  selected={scopeTracks.some((t) => selectedIdSet.has(t.id))}
+                                  onCreate={() => {
+                                    const name = tr('sources.matching')
+                                    void editRekordbox(
+                                      {
+                                        kind: 'create',
+                                        parentId: 'root',
+                                        name,
+                                        folder: false,
+                                        tracks: blocksOf(
+                                          scopeTracks,
+                                          playlistScope?.separatorBefore,
+                                          selectedIdSet,
+                                        ).map(trackRef),
+                                      },
+                                      name,
+                                    )
+                                  }}
+                                />
+                              ) : undefined
+                            }
                             showWaves={showListWaves}
                             onToggleWaves={toggleListWaves}
                             showSidebar={showSidebar}
@@ -4316,29 +4341,6 @@ export default function App(): React.JSX.Element {
                                 }}
                               />
                             )}
-                          {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
-                            <MatchingBand
-                              tracks={scopeTracks.length}
-                              selected={scopeTracks.some((t) => selectedIdSet.has(t.id))}
-                              onCreate={() => {
-                                const name = tr('sources.matching')
-                                void editRekordbox(
-                                  {
-                                    kind: 'create',
-                                    parentId: 'root',
-                                    name,
-                                    folder: false,
-                                    tracks: blocksOf(
-                                      scopeTracks,
-                                      playlistScope?.separatorBefore,
-                                      selectedIdSet,
-                                    ).map(trackRef),
-                                  },
-                                  name,
-                                )
-                              }}
-                            />
-                          )}
                           {sourceProgram !== null && browser.playlist?.id === MATCHING_ID && (
                             <MatchingSuggestions
                               suggestions={matchingSuggestions}
