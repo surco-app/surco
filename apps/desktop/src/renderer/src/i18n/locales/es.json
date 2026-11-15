@@ -2658,6 +2658,7 @@
     "allTracks": "Todas las pistas",
     "matching": "Matching",
     "matchingCreate": "Crear playlist",
+    "matchingCreateSelection": "Crear playlist con la selección",
     "matchingAdded": "Matching guardado en rekordbox",
     "matchingSaved": "Matching guardado",
     "matchingSuggested": "Las pinchas juntas a menudo",

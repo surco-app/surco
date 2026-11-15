@@ -2658,6 +2658,7 @@
     "allTracks": "Tous les morceaux",
     "matching": "Matching",
     "matchingCreate": "Créer une playlist",
+    "matchingCreateSelection": "Créer une playlist avec la sélection",
     "matchingAdded": "Matching enregistré dans rekordbox",
     "matchingSaved": "Matching enregistré",
     "matchingSuggested": "Tu les enchaînes souvent",

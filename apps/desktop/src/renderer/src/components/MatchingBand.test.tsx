@@ -15,6 +15,13 @@ describe('MatchingBand', () => {
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
+  it('says it creates from the selection once the DJ has picked blocks', () => {
+    render(<MatchingBand tracks={4} selected onCreate={vi.fn()} />)
+    expect(screen.getByTestId('matching-create-playlist')).toHaveAccessibleName(
+      'Create playlist from selection',
+    )
+  })
+
   it('keeps the button but disables it while there is nothing paired', () => {
     render(<MatchingBand tracks={0} onCreate={vi.fn()} />)
     expect(screen.getByTestId('matching-create-playlist')).toBeDisabled()
