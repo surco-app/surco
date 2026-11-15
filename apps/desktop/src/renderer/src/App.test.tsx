@@ -4765,6 +4765,26 @@ describe('App source playlists', () => {
       })
     })
 
+    it('keeps Create playlist in the sticky list header, so it stays in reach after scrolling to the blocks', async () => {
+      await openFactory({
+        dj: djReads({
+          rekordbox: {
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([['r3', 'r1']]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      expect(
+        within(screen.getByTestId('track-list-header')).getByTestId('matching-create-playlist'),
+      ).toBeInTheDocument()
+    })
+
     describe('with tracks selected', () => {
       const BLOCKS = [
         { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },

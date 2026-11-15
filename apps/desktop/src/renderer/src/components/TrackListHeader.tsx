@@ -47,6 +47,7 @@ import { ViewMenu } from './ViewMenu'
 
 interface Props {
   tr: TFunction
+  band?: React.ReactNode
   // The shortcut chord shown after each action's tooltip label, so a control's key is
   // discoverable on hover without a second visual style per call site.
   hintFor: (id: string) => string
@@ -216,6 +217,7 @@ export function TrackListHeader({
   onToggleSidebar,
   location,
   onOpenLocation,
+  band,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -533,6 +535,7 @@ export function TrackListHeader({
         onChange={setFilterSelection}
         librarySource={librarySource}
       />
+      {band}
       {viewMenu && (
         <ViewMenu
           x={viewMenu.x}
