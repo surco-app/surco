@@ -139,4 +139,18 @@ describe('forgetting stale cue drafts', () => {
     expect(unsavedCueTracks().size).toBe(0)
     expect(listener).toHaveBeenCalledTimes(1)
   })
+
+  it("keeps the drafts of a chunk whose read failed, so a busy database during a queue write never discards the DJ's work", async () => {
+    const client = setup({})
+    for (let i = 0; i < 600; i++) {
+      keepDraft(String(i), cueDraftKey(String(i), 'f0', null), startDraft([], 'mine'), TARGET)
+    }
+    vi.mocked(window.api.cues.liveCues)
+      .mockRejectedValueOnce(new Error('database busy'))
+      .mockImplementation(async (ids) =>
+        Object.fromEntries(ids.map((id) => [id, { cues: [], fingerprint: 'f1' }])),
+      )
+    await forgetStaleDrafts(client)
+    expect([...unsavedCueTracks()]).toEqual(Array.from({ length: 500 }, (_, i) => String(i)))
+  })
 })

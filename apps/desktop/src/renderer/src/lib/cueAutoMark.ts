@@ -189,7 +189,7 @@ export async function clearCueDrafts(
   settings: AutoMarkSettings,
 ): Promise<ClearedCues> {
   const result: ClearedCues = { hot: 0, calls: 0, loops: 0, unsaved: 0, cleared: [] }
-  const reads = await liveCuesOf(targets.map((t) => t.contentId))
+  const { reads } = await liveCuesOf(targets.map((t) => t.contentId))
   const drafts: Parameters<typeof keepDrafts>[0] = []
   for (const target of targets) {
     if (unsavedCueTracks().has(target.contentId)) {
