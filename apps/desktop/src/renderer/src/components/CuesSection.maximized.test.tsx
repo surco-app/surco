@@ -20,7 +20,7 @@ import type { CueQuantize } from '../../../shared/cueQuantize'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
-import { resetEditorSections } from '../hooks/useEditorSections'
+import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
 import { reduceDraft } from '../lib/cueDraft'
@@ -2496,5 +2496,88 @@ describe('CuesSection maximized grid', () => {
     key('ArrowLeft')
     expect(bars()).toContain(2000)
     expect(bars()).not.toContain(2005)
+  })
+})
+
+describe('CuesSection while the track loads', () => {
+  const never = <T,>() => vi.fn(() => new Promise<T>(() => {}))
+  const reading: ApiOverrides = { cues: { trackCues: never<TrackCues>() } }
+  const measuring: ApiOverrides = { cues: { surcoGrid: never<SurcoGrid | null>() } }
+  const UNANALYSED: TrackCues = { ...READ, analysed: false, grid: [] }
+  const blowUp = () => {
+    const { result } = renderHook(() => useMaximizedSection())
+    act(() => result.current.setMaximized('cues'))
+  }
+
+  it('opens full screen straight away, so the editor never drops to a folded header and then jumps into place', async () => {
+    blowUp()
+    setup(null, READ, reading)
+    const skeleton = await screen.findByTestId('cues-skeleton')
+    expect(skeleton).toHaveAttribute('data-maximized', 'true')
+    expect(screen.queryByTestId('section-title')).toBeNull()
+    expect(screen.getByTestId('cues-skeleton-strip')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-skeleton-detail')).toBeInTheDocument()
+  })
+
+  it('shows the title and artist it already knows from the list instead of greying them out', async () => {
+    blowUp()
+    setup(null, READ, reading)
+    expect(await screen.findByTestId('cues-skeleton-title')).toHaveTextContent('Pray')
+    expect(screen.getByTestId('cues-skeleton-artist')).toHaveTextContent('Gowan')
+  })
+
+  it('keeps the restore button while it loads, so a slow track never traps the window full screen', async () => {
+    blowUp()
+    setup(null, READ, reading)
+    await screen.findByTestId('cues-skeleton')
+    const restore = screen.getByTestId('section-maximize')
+    expect(restore).toHaveAccessibleName('Restore the section')
+    fireEvent.click(restore)
+    expect(screen.getByTestId('cues-skeleton')).toHaveAttribute('data-maximized', 'false')
+  })
+
+  it('stays silent while it only reads the track, the skeleton alone says it is on its way', async () => {
+    blowUp()
+    setup(null, READ, reading)
+    await screen.findByTestId('cues-skeleton')
+    expect(screen.queryByTestId('cues-measuring')).toBeNull()
+  })
+
+  it('says it is measuring the grid inside the full-screen skeleton, since that can take a few seconds', async () => {
+    blowUp()
+    setup(null, UNANALYSED, measuring)
+    const note = await screen.findByTestId('cues-measuring')
+    expect(screen.getByTestId('cues-skeleton')).toContainElement(note)
+    expect(screen.getByTestId('cues-skeleton')).toHaveAttribute('data-maximized', 'true')
+  })
+
+  it('draws the folded editor in grey too, where the section used to stay empty', async () => {
+    setup(null, READ, reading)
+    const skeleton = await screen.findByTestId('cues-skeleton')
+    expect(skeleton).toHaveAttribute('data-maximized', 'false')
+    expect(screen.getByTestId('section-title')).toBeInTheDocument()
+    expect(within(skeleton).getByTestId('cues-skeleton-strip')).toBeInTheDocument()
+    expect(within(skeleton).getByTestId('cues-skeleton-detail')).toBeInTheDocument()
+  })
+
+  it('gives way to the real editor the moment the track arrives', async () => {
+    let arrive: (read: TrackCues) => void = () => {}
+    blowUp()
+    setup(null, READ, {
+      cues: {
+        trackCues: vi.fn(
+          () =>
+            new Promise<TrackCues>((r) => {
+              arrive = r
+            }),
+        ),
+      },
+    })
+    await screen.findByTestId('cues-skeleton')
+    act(() => arrive(READ))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    expect(screen.queryByTestId('cues-skeleton')).toBeNull()
   })
 })
