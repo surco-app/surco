@@ -568,7 +568,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           )}
           {/* Mirrors the track list's header (its search row + filter/sort row) so the two
               columns read as one toolbar side by side: same shared SearchInput chrome.
-              Enter searches; the magnifier turns into a spinner while a search is in flight. */}
+              Enter searches. */}
           <div className="flex items-center gap-1.5 px-1.5 pt-2">
             <SearchInput
               className="min-w-0 flex-1"
@@ -577,7 +577,6 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               value={query}
               onChange={setQuery}
               onClear={() => setQuery('')}
-              busy={busy}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   setOpenedFor({ id: trackId })
@@ -606,7 +605,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
               <Tooltip label={tr('editor.resultsFold')} />
             </button>
           </div>
-          {/* Nothing about a search is audible otherwise: the spinner is an icon, the
+          {/* Nothing about a search is audible otherwise: the divider is a line, the
               skeleton is hidden and rows just appear. Mounted empty from the start so
               assistive tech is already listening when the first search runs. Opening a
               release also sets busy, but that is not a search, so it says nothing. */}

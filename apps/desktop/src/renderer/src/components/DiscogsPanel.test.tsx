@@ -210,7 +210,7 @@ describe('DiscogsPanel empty states', () => {
 })
 
 // A screen reader user pressing Enter in the search box heard nothing afterwards: the
-// spinner is an icon, the skeleton is hidden and the rows just appear. A status region,
+// divider is a line, the skeleton is hidden and the rows just appear. A status region,
 // mounted empty before any search so assistive tech is already listening, says each step,
 // and an error interrupts as an alert.
 describe('DiscogsPanel search announcements', () => {
@@ -627,6 +627,14 @@ describe('DiscogsPanel stable results', () => {
     )
     const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
     expect((bar.firstElementChild as HTMLElement).style.transform).toBe('scaleX(0.75)')
+  })
+
+  // The divider and the skeleton already say a search is running; a spinner in the box was
+  // a third indicator for the same wait, moving in a corner the eye is not on.
+  it('keeps the magnifier still while searching, leaving the wait to the divider', () => {
+    renderPanel(browser({ query: 'x', busy: true }))
+    expect(screen.getByTestId('discogs-query-icon')).toBeInTheDocument()
+    expect(screen.queryByTestId('discogs-query-spinner')).toBeNull()
   })
 
   it('slides the divider while a single catalog or the best match is still working', () => {

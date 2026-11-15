@@ -1,4 +1,4 @@
-import { Loader2, Search, X } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import type React from 'react'
 
 interface Props {
@@ -9,9 +9,6 @@ interface Props {
   ariaLabel: string
   clearLabel: string
   testid: string
-  // While a remote search is in flight the magnifier becomes a spinner — this carries
-  // the loading feedback that used to live on a separate "Search" button.
-  busy?: boolean
   inputRef?: React.RefObject<HTMLInputElement | null>
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
   // Lets the caller stretch the field in a flex row (the Discogs column wants flex-1).
@@ -30,7 +27,6 @@ export function SearchInput({
   ariaLabel,
   clearLabel,
   testid,
-  busy = false,
   inputRef,
   onKeyDown,
   className = '',
@@ -39,13 +35,7 @@ export function SearchInput({
   const iconPlace = scope
     ? 'h-3 w-3 shrink-0'
     : 'pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2'
-  const icon = busy ? (
-    <Loader2
-      data-testid={`${testid}-spinner`}
-      className={`${iconPlace} animate-spin text-fg-faint`}
-      aria-hidden="true"
-    />
-  ) : (
+  const icon = (
     <Search
       data-testid={`${testid}-icon`}
       className={`${iconPlace} text-fg-faint`}

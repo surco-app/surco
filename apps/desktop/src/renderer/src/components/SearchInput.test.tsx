@@ -97,27 +97,11 @@ describe('SearchInput', () => {
     expect(onKeyDown).toHaveBeenCalledOnce()
   })
 
-  // While a remote search runs, the magnifier becomes a spinner — this is the feedback
-  // that used to live on the now-removed "Search" button.
-  it('swaps the magnifier for a spinner while busy', () => {
-    renderInput({ busy: true })
-    expect(screen.queryByTestId('track-search-icon')).toBeNull()
-    expect(screen.getByTestId('track-search-spinner')).toBeInTheDocument()
-  })
-
   // Two search fields stand side by side in the same toolbar row. Once a query is typed the
   // placeholder is gone, and nothing said that this one searches the catalogs, not the list.
   it('names what it searches in front of the query, typed or not', () => {
     renderInput({ value: 'DJ Roy', scope: 'Catalogs' })
     expect(screen.getByTestId('track-search-scope')).toHaveTextContent('Catalogs')
-  })
-
-  // The scope sits where the magnifier was, so the in-flight spinner has to live in it too.
-  it('keeps the search spinner inside the scope while a search runs', () => {
-    renderInput({ value: 'DJ Roy', scope: 'Catalogs', busy: true })
-    expect(screen.getByTestId('track-search-scope')).toContainElement(
-      screen.getByTestId('track-search-spinner'),
-    )
   })
 
   it('shows no scope on a field that searches the list in front of it', () => {
