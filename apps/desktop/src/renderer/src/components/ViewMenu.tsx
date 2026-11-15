@@ -58,7 +58,7 @@ export function ViewMenu({
           }
         }}
         style={{ top: y, left: x }}
-        className="animate-pop-flat absolute min-w-[200px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+        className="absolute min-w-[200px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         {items.map((item, i) => (
           <button
