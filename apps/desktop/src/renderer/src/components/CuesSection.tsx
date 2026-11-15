@@ -134,6 +134,7 @@ import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
+import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { SectionBody } from './SectionBody'
@@ -2302,17 +2303,24 @@ export function CuesSection({
     queued !== undefined &&
     shown.analysed &&
     shown.grid.length > 0
-  const full = maximized && editable
+  const measuring = wantsSurcoGrid && surco === undefined
+  const loading =
+    !isError && shown !== null && (shown === undefined || queued === undefined || measuring)
+  const full = maximized && (editable || loading)
   const body =
     isError || shown === null ? (
       <p data-testid="cues-unreadable" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unreadable)}
       </p>
-    ) : shown === undefined || queued === undefined ? null : wantsSurcoGrid &&
-      surco === undefined ? (
-      <p data-testid="cues-measuring" className="text-xs text-fg-dim">
-        {tr('editor.cues.provisional.measuring')}
-      </p>
+    ) : shown === undefined || queued === undefined || measuring ? (
+      <CuesSkeleton
+        maximized={maximized}
+        measuring={measuring}
+        track={track}
+        label={cue.label}
+        headerSlot={headerSlot}
+        onRestore={() => setMaximized(null)}
+      />
     ) : !shown.analysed || shown.grid.length === 0 ? (
       <p data-testid="cues-unanalysed" className="text-xs text-fg-dim">
         {tr(copyOf(cue.contentId).unanalysed)}
