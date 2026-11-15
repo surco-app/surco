@@ -947,3 +947,10 @@ describe('search results arrival', () => {
     expect(css).toMatch(/\.result-new\s*\{[^}]*result-in var\(--duration-state\)/)
   })
 })
+
+describe('conversion progress', () => {
+  it('closes the row ring on the same beat as the convert button fills, since both draw the same job', () => {
+    const ring = css.match(/\.progress-ring\s*\{[^}]*\}/)?.[0] ?? ''
+    expect(ring).toContain('transition: --progress var(--duration-panel) var(--ease-standard)')
+  })
+})
