@@ -213,6 +213,37 @@ export const SourceTree = memo(function SourceTree({
   // folder low in a long tree its items ran past the bottom, as the track menu's did.
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [menuAt, setMenuAt] = useState({ x: 0, y: 0 })
+  const menuOpener = useRef<HTMLElement | null>(null)
+  const menuOpen = menu !== null
+  useEffect(() => {
+    if (!menuOpen) return
+    return () => menuOpener.current?.focus()
+  }, [menuOpen])
+  const onMenuKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      setMenu(null)
+      return
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.stopPropagation()
+      return
+    }
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+    )
+    if (items.length === 0) return
+    const idx = items.indexOf(document.activeElement as HTMLElement)
+    let next = -1
+    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
+    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = items.length - 1
+    if (next === -1) return
+    e.preventDefault()
+    e.stopPropagation()
+    items[next].focus()
+  }
   useLayoutEffect(() => {
     const el = menuRef.current
     if (!menu || !el) return
@@ -455,6 +486,7 @@ export const SourceTree = memo(function SourceTree({
             onContextMenu={(e) => {
               if (!menuEdit && !pasteOnly) return
               e.preventDefault()
+              menuOpener.current = e.currentTarget
               setMenu({ node, x: e.clientX, y: e.clientY, pasteOnly: !menuEdit })
             }}
             data-drop-target={dropOn?.id === node.id || insideHere || undefined}
@@ -726,9 +758,7 @@ export const SourceTree = memo(function SourceTree({
               menu.node.kind === 'folder' ? 'sources.tree.folderMenu' : 'sources.tree.menu',
             )}
             data-testid="source-tree-menu"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setMenu(null)
-            }}
+            onKeyDown={onMenuKeyDown}
             style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
