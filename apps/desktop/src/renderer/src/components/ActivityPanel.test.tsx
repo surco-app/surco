@@ -72,26 +72,20 @@ function startDrag(onGeometryChange = vi.fn()) {
 }
 
 describe('ActivityPanel drag without a render per move', () => {
-  // A render of the whole panel per pointer event made the drag stutter; the card must
-  // follow the pointer through its transform alone and only commit left/top on release.
-  it('moves the panel through its transform and leaves left and top alone mid-drag', () => {
+  it('follows the pointer through its transform without re-rendering left and top mid-drag', () => {
     const { handle, panel } = startDrag()
     fireEvent.pointerMove(handle, { clientX: 130, clientY: 190, pointerId: 1 })
     expect(panel).toHaveStyle({ left: '24px', top: '80px' })
     expect(panel.style.transform).toBe('translate(100px, 100px)')
   })
 
-  // Hitting the viewport edge dead-stops the card like a wall; resisting at a fifth of the
-  // overshoot says there is no more room while still tracking the hand.
-  it('moves only a fifth of the overshoot past the left edge', () => {
+  it('resists at a fifth of the overshoot past the left edge instead of stopping dead', () => {
     const { handle, panel } = startDrag()
     fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
     expect(panel.style.transform).toBe('translate(-44px, 0px)')
   })
 
-  // The persisted position is what the next session opens at; an elastic overshoot saved
-  // as-is would reopen the card partly off-screen.
-  it('reports the position clamped to the viewport when released past the edge', () => {
+  it('persists the clamped position, not the elastic overshoot, when released past the edge', () => {
     const onGeometryChange = vi.fn()
     const { handle } = startDrag(onGeometryChange)
     fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
@@ -102,8 +96,7 @@ describe('ActivityPanel drag without a render per move', () => {
     })
   })
 
-  // A leftover transform would offset the card from its committed left/top forever.
-  it('commits left and top and drops the transform on release', () => {
+  it('commits left and top and leaves no residual transform on release', () => {
     const { handle, panel } = startDrag()
     fireEvent.pointerMove(handle, { clientX: 130, clientY: 190, pointerId: 1 })
     fireEvent.pointerUp(handle, { pointerId: 1 })
