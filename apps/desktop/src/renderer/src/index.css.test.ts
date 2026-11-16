@@ -946,6 +946,23 @@ describe('search results arrival', () => {
     expect(css).toMatch(/\.result-in\s*\{[^}]*animation: result-in var\(--duration-state\)/)
     expect(css).toMatch(/\.result-new\s*\{[^}]*result-in var\(--duration-state\)/)
   })
+
+  it('lets a landed row go back to its own styles, so the press shrink, hover and keyboard focus fill still show on it', () => {
+    for (const selector of ['result-in', 'result-new']) {
+      const body = css.match(new RegExp(`\\.${selector}\\s*\\{[^}]*\\}`))?.[0] ?? ''
+      expect(body).toContain('backwards')
+      expect(body).not.toMatch(/\bboth\b|\bforwards\b/)
+    }
+  })
+
+  it('keeps the late-result highlight under reduced motion, since it is a colour cue and not movement', () => {
+    const reduced = css.slice(
+      css.indexOf('@media (prefers-reduced-motion: reduce) {\n  .result-in'),
+    )
+    const body = reduced.slice(0, reduced.indexOf('\n}')).match(/\.result-new\s*\{[^}]*\}/)?.[0]
+    expect(body).toContain('result-new 1.8s')
+    expect(body).not.toContain('result-in')
+  })
 })
 
 describe('conversion progress', () => {
