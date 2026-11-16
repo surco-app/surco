@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "16 de noviembre de 2026",
+    "title": "Deshacer en vez de preguntar",
+    "items": [
+      {
+        "text": "Quitar pistas de la lista y rellenar las etiquetas desde el nombre del archivo ya no preguntan. Pulsa «Deshacer» en el aviso y todo vuelve, aunque hayas quitado varias seguidas. Mover un archivo a la Papelera tampoco pregunta si su disco tiene Papelera.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Los avisos antes de sobrescribir un original o de recodificar un archivo con pérdida se pueden silenciar con «No volver a preguntar». «Volver a mostrar los avisos», en Ajustes › Avanzado, los recupera.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Haz clic derecho en una lista inteligente de rekordbox para «Renombrar» o «Borrar». El cambio llega también a rekordbox.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Cuando una pista falla, su fila te dice por qué, por ejemplo si el archivo está dañado, si el disco está lleno o si otra app lo tiene abierto.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Con el trackpad, pellizca la onda de «Recorte de silencio» para acercarla, o usa ⌘ y la rueda. Los avisos salen arriba a la derecha, sin tapar el botón de convertir, y se cierran deslizando dos dedos hacia el borde.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Al abrir una carpeta, sus pistas entran en orden, la 2 antes que la 10. Si la carpeta no tiene audio, Surco te lo dice.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Con una biblioteca grande, Surco ya no vuelve a leer todas las etiquetas cada vez que lo abres.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Buscar y convertir se mueven con más suavidad. Los resultados llegan de una vez y nada salta en la pantalla.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "15 de noviembre de 2026",
     "title": "Matching en bloques",

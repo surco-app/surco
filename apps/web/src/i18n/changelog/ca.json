@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Desfer en lloc de preguntar",
+    "items": [
+      {
+        "text": "Treure pistes de la llista i omplir les etiquetes des del nom del fitxer ja no pregunten. Prem «Desfer» a l'avís i tot torna, encara que n'hagis tret diverses seguides. Moure un fitxer a la Paperera tampoc no pregunta si el disc en té.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Els avisos abans de sobreescriure un original o de recodificar un fitxer amb pèrdua es poden silenciar amb «No tornis a preguntar». «Torna a mostrar els avisos», a Configuració › Avançat, els recupera.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Fes clic dret en una llista intel·ligent de rekordbox per «Canviar el nom» o «Esborrar». El canvi arriba també a rekordbox.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quan una pista falla, la seva fila et diu per què, per exemple si el fitxer està malmès, si el disc està ple o si una altra app el té obert.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Amb el trackpad, pessiga l'ona de «Retall de silenci» per apropar-la, o fes servir ⌘ i la roda. Els avisos surten a dalt a la dreta, sense tapar el botó de convertir, i es tanquen lliscant dos dits cap a la vora.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "En obrir una carpeta, les pistes hi entren en ordre, la 2 abans que la 10. Si la carpeta no té àudio, Surco t'ho diu.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Amb una biblioteca gran, Surco ja no torna a llegir totes les etiquetes cada vegada que l'obres.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Cercar i convertir es mouen amb més suavitat. Els resultats arriben de cop i res no salta a la pantalla.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching en blocs",

@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Annulla invece di chiedere",
+    "items": [
+      {
+        "text": "Togliere tracce dalla lista e compilare i tag dal nome del file non chiedono più conferma. Premi «Annulla» nell'avviso e torna tutto, anche dopo averne tolte diverse di fila. Anche spostare un file nel Cestino non chiede più conferma, se il disco ha un Cestino.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Puoi zittire gli avvisi prima di sovrascrivere un originale o di ricodificare un file con perdita con «Non chiedere più». «Mostra di nuovo gli avvisi», in Impostazioni › Avanzate, li riporta.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Fai clic destro su una playlist intelligente di rekordbox per «Rinomina» o «Elimina». La modifica arriva anche a rekordbox.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quando una traccia non riesce, la sua riga ti dice perché, per esempio se il file è danneggiato, se il disco è pieno o se un'altra app ha il file aperto.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Sul trackpad, pizzica l'onda di «Taglio del silenzio» per ingrandirla, oppure usa ⌘ e la rotella. Gli avvisi ora compaiono in alto a destra, senza coprire il pulsante di conversione, e si chiudono scorrendo due dita verso il bordo.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quando apri una cartella, le tracce entrano in ordine, la 2 prima della 10. Se la cartella non ha audio, Surco te lo dice.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Con una libreria grande, Surco non rilegge più tutti i tag ogni volta che lo apri.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Cercare e convertire si muovono con più fluidità. I risultati arrivano tutti insieme e niente salta sullo schermo.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching a blocchi",

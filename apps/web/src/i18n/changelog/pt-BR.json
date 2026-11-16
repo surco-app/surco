@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Desfazer em vez de perguntar",
+    "items": [
+      {
+        "text": "Tirar faixas da lista e preencher as tags a partir do nome do arquivo não perguntam mais. Toque em “Desfazer” no aviso e tudo volta, mesmo depois de tirar várias seguidas. Mover um arquivo para a Lixeira também não pergunta mais quando o disco tem Lixeira.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Você pode silenciar os avisos antes de sobrescrever um original ou de recodificar um arquivo com perda com “Não perguntar de novo”. “Mostrar os avisos de novo”, em Ajustes › Avançado, traz eles de volta.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Clique com o botão direito numa playlist inteligente do rekordbox para “Renomear” ou “Apagar”. A mudança chega ao rekordbox também.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quando uma faixa falha, a linha dela diz o porquê, por exemplo se o arquivo está danificado, se o disco está cheio ou se outro app está com o arquivo aberto.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "No trackpad, faça pinça na onda de “Corte de silêncio” para dar zoom, ou use ⌘ e a roda. Os avisos agora aparecem no canto superior direito, sem cobrir o botão de converter, e fecham deslizando dois dedos para a borda.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Ao abrir uma pasta, as faixas entram em ordem, a 2 antes da 10. Se a pasta não tem áudio, o Surco avisa.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Com uma biblioteca grande, o Surco não lê mais todas as tags de novo toda vez que você abre o app.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Buscar e converter ficaram mais suaves. Os resultados chegam de uma vez e nada pula na tela.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching em blocos",

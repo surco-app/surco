@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Rückgängig statt Nachfragen",
+    "items": [
+      {
+        "text": "Titel aus der Liste entfernen und Tags aus Dateinamen füllen fragen nicht mehr nach. Drück „Rückgängig“ im Hinweis und alles ist wieder da, auch nach mehreren Entfernungen hintereinander. Auch eine Datei in den Papierkorb zu legen fragt nicht mehr, wenn ihr Laufwerk einen hat.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Die Warnungen vor dem Überschreiben eines Originals oder dem Neukodieren einer verlustbehafteten Datei kannst du mit „Nicht mehr fragen“ stummschalten. „Warnungen wieder anzeigen“ unter Einstellungen › Erweitert holt sie zurück.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Klick mit rechts auf eine intelligente Playlist aus rekordbox, um sie mit „Umbenennen“ oder „Löschen“ zu ändern. Die Änderung kommt auch in rekordbox an.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Wenn ein Titel fehlschlägt, sagt dir seine Zeile warum, etwa wenn die Datei beschädigt ist, die Festplatte voll ist oder eine andere App die Datei geöffnet hat.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Auf dem Trackpad zoomst du die Welle von „Stille kürzen“ mit zwei Fingern auf, oder mit ⌘ und dem Mausrad. Hinweise erscheinen jetzt oben rechts, ohne den Konvertieren-Button zu verdecken, und du schließt sie, indem du mit zwei Fingern zum Rand wischst.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Wenn du einen Ordner öffnest, kommen seine Titel in der richtigen Reihenfolge, Titel 2 vor Titel 10. Hat der Ordner kein Audio, sagt Surco dir das.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Bei einer großen Bibliothek liest Surco nicht mehr bei jedem Start alle Tags neu.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Suchen und Konvertieren laufen flüssiger. Die Ergebnisse kommen auf einmal und nichts springt auf dem Bildschirm.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching in Blöcken",

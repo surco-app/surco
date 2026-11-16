@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Undo instead of asking",
+    "items": [
+      {
+        "text": "Removing tracks from the list and filling tags from file names no longer ask first. Press “Undo” in the notice and everything comes back, even after several removals in a row. Moving a file to the Trash doesn't ask either when its disk has one.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "You can silence the warnings before overwriting an original or re-encoding a lossy file with “Don't ask again”. “Show the warnings again” in Settings › Advanced brings them back.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Right-click a rekordbox intelligent playlist to “Rename” or “Delete” it. The change reaches rekordbox too.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "When a track fails, its row tells you why, for example when the file is damaged, the disk is full or another app has the file open.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "On a trackpad, pinch the “Silence trim” wave to zoom in, or hold ⌘ and use the wheel. Notices now sit at the top right, clear of the convert button, and a two-finger swipe towards the edge closes them.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "When you open a folder, its tracks come in order, track 2 before track 10. If the folder has no audio, Surco tells you.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "With a big library, Surco no longer reads all your tags again every time you open it.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Searching and converting move more smoothly. Results arrive in one go and nothing jumps on screen.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching in blocks",

@@ -1,5 +1,44 @@
 [
   {
+    "version": "1.37",
+    "date": "November 16, 2026",
+    "title": "Annuler plutôt que demander",
+    "items": [
+      {
+        "text": "Retirer des morceaux de la liste et remplir les tags depuis le nom du fichier ne demandent plus de confirmation. Appuie sur « Annuler » dans la notification et tout revient, même après plusieurs retraits d'affilée. Mettre un fichier à la Corbeille ne demande plus rien non plus quand son disque en a une.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Tu peux faire taire les avertissements avant d'écraser un original ou de réencoder un fichier avec perte grâce à « Ne plus demander ». « Réafficher les avertissements », dans Réglages › Avancé, les fait revenir.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Fais un clic droit sur une playlist intelligente de rekordbox pour « Renommer » ou « Supprimer ». Le changement arrive aussi dans rekordbox.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quand un morceau échoue, sa ligne te dit pourquoi, par exemple si le fichier est endommagé, si le disque est plein ou si une autre app a ouvert le fichier.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Sur le trackpad, pince l'onde de « Rognage du silence » pour zoomer, ou utilise ⌘ et la molette. Les notifications s'affichent en haut à droite, sans cacher le bouton de conversion, et se ferment en glissant deux doigts vers le bord.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Quand tu ouvres un dossier, ses morceaux arrivent dans l'ordre, le 2 avant le 10. Si le dossier ne contient pas d'audio, Surco te le dit.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "Avec une grande bibliothèque, Surco ne relit plus tous tes tags à chaque ouverture.",
+        "in": "1.37.0"
+      },
+      {
+        "text": "La recherche et la conversion bougent avec plus de douceur. Les résultats arrivent d'un coup et rien ne saute à l'écran.",
+        "in": "1.37.0"
+      }
+    ]
+  },
+  {
     "version": "1.36",
     "date": "November 15, 2026",
     "title": "Matching en blocs",
