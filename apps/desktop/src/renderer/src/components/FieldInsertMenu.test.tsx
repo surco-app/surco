@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -127,6 +127,14 @@ describe('FieldInsertMenu', () => {
     expect(screen.getByTestId('field-insert-option-case-upper')).toHaveFocus()
     fireEvent.keyDown(screen.getByTestId('field-insert-menu'), { key: 'ArrowDown' })
     expect(screen.getByTestId('field-insert-option-year')).toHaveFocus()
+  })
+
+  it('moves the focus fill through the options with no colour transition, so it keeps up with a held arrow key', () => {
+    render(<Harness />)
+    openMenu()
+    const items = within(screen.getByTestId('field-insert-menu')).getAllByRole('menuitem')
+    expect(items.length).toBeGreaterThan(1)
+    for (const item of items) expect(item.className).not.toContain('transition-colors')
   })
 
   it('closes on Escape without changing the value and refocuses the input', () => {

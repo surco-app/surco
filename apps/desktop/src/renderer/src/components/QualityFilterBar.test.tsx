@@ -139,6 +139,17 @@ describe('QualityFilterBar menu', () => {
     focus.mockRestore()
   })
 
+  // The options are walked with the arrows, often with a key held. A colour fade on them
+  // lights the focused option a step behind the cursor and leaves a trail on the ones left.
+  it('moves the focus fill through the options with no colour transition', () => {
+    renderBar({ tally: tally({ suspect: 3, good: 5, unanalyzed: 2 }) })
+    openMenu()
+    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowRight' })
+    const options = within(screen.getByTestId('quality-filter-menu')).getAllByRole('option')
+    expect(options.length).toBeGreaterThan(1)
+    for (const option of options) expect(option.className).not.toContain('transition-colors')
+  })
+
   // Tab leaves the menu like a native one. Left open, its full-window backdrop swallowed
   // the next click wherever the user aimed it.
   it('closes when Tab leaves it', () => {
