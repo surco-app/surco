@@ -3801,6 +3801,23 @@ export default function App(): React.JSX.Element {
     else if (to === 'matches') focusMatches()
     else focusEditor()
   }
+  const removeAndStep = (id: string): void => {
+    const i = visibleTracks.findIndex((t) => t.id === id)
+    const neighbor =
+      visibleTracks.slice(i + 1).find((t) => t.id !== id) ??
+      visibleTracks
+        .slice(0, Math.max(i, 0))
+        .reverse()
+        .find((t) => t.id !== id)
+    removeTargets(
+      tracks.filter((t) => t.id === id),
+      () => {
+        if (!neighbor) return
+        onSelectTrack(neighbor.id, {})
+        requestAnimationFrame(() => rowEls.current.get(neighbor.id)?.focus())
+      },
+    )
+  }
 
   // The command registry is data, rebuilt from the current state each time it's read.
   // Built lazily through a stable getter (rather than every render) because its only
@@ -3859,7 +3876,7 @@ export default function App(): React.JSX.Element {
       cancelAutoMatch,
       enqueueAutoMatch: autoMatchTracks,
       addTrackToAppleMusic,
-      removeTrack: removeOne,
+      removeTrack: removeAndStep,
       reveal: window.api.reveal,
       askClearAll: onClearAll,
       bulkTracks,

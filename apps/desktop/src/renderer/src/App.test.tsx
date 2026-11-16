@@ -8595,6 +8595,27 @@ describe('App keyboard navigation', () => {
     expect(rows[2]).toHaveFocus()
   })
 
+  // The remove shortcut used to drop the focus on the floor, so the next ↓ restarted from
+  // the top of a 400-track list. Like plain ⌫ on a row, the next row takes over.
+  it('keeps the place in the list after the remove shortcut', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+
+    fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true })
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    await waitFor(() => expect(rows[1]).toHaveFocus())
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+    await waitFor(() => expect(rows[2]).toHaveAttribute('aria-selected', 'true'))
+  })
+
   // Auditioning a crate one by one, the DJ wants to see how far along they are: the
   // x/total counter follows the arrow keys.
   it('shows the selected track position and follows navigation', async () => {
