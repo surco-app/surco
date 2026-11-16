@@ -81,6 +81,16 @@ export function ToastStack({
       for (const handle of timers.values()) clearTimeout(handle)
     }
   }, [])
+  const swipeTailRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const swallowingSwipeTail = useRef(false)
+  const waitOutSwipeTail = (): void => {
+    swallowingSwipeTail.current = true
+    clearTimeout(swipeTailRef.current)
+    swipeTailRef.current = setTimeout(() => {
+      swallowingSwipeTail.current = false
+    }, SWIPE_SETTLE_MS)
+  }
+  useEffect(() => () => clearTimeout(swipeTailRef.current), [])
   // The container renders even when empty: a live region must exist BEFORE content
   // arrives or screen readers miss the first toast. Empty it has zero size, so the
   // fixed corner div never intercepts a click.
@@ -91,7 +101,16 @@ export function ToastStack({
     // visible, so the stack sits exactly where it always has.
     // data-above-modals keeps the stack live while a dialog makes the rest of the app
     // inert: a toast's action (Undo) has to stay pressable with a modal open.
-    <div aria-live="polite" data-above-modals className="fixed bottom-5 right-5 z-50 flex flex-col">
+    <div
+      aria-live="polite"
+      data-above-modals
+      className="fixed bottom-5 right-5 z-50 flex flex-col"
+      onWheelCapture={(e) => {
+        if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+        e.stopPropagation()
+        waitOutSwipeTail()
+      }}
+    >
       {cards.map(({ toast, leaving }) => (
         // The card's exit only fades it — the SPACE it held used to vanish at unmount,
         // jumping every surviving toast a full card height in one frame. The grid row
@@ -107,7 +126,13 @@ export function ToastStack({
           {/* overflow-hidden only while collapsing — kept on, it would clip the
               card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
           <div className={`min-h-0 pt-2 ${leaving ? 'overflow-hidden' : ''}`}>
-            <ToastCard toast={toast} leaving={leaving} onExpire={onExpire} onClose={onClose} />
+            <ToastCard
+              toast={toast}
+              leaving={leaving}
+              onExpire={onExpire}
+              onClose={onClose}
+              onSwipeClose={waitOutSwipeTail}
+            />
           </div>
         </div>
       ))}
@@ -120,12 +145,14 @@ function ToastCard({
   leaving,
   onExpire,
   onClose,
+  onSwipeClose,
 }: {
   toast: Toast
   // The card has left the queue and is playing its exit — inert while it fades.
   leaving: boolean
   onExpire: (id: string) => void
   onClose: (id: string) => void
+  onSwipeClose: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const text = (value: ToastText): string =>
@@ -202,6 +229,7 @@ function ToastCard({
     setTracking(false)
     trailRef.current = []
     if (!prefersReducedMotion()) setExitTo(width + SWIPE_EXIT_GAP_PX)
+    onSwipeClose()
     onClose(toast.id)
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {

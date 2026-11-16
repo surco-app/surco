@@ -389,6 +389,29 @@ describe('ToastStack', () => {
       expect(onClose).toHaveBeenCalledWith('s')
     })
 
+    it('swallows the momentum tail of a swipe that closed a card, so it cannot sweep away the card that slides in under the pointer', () => {
+      const onClose = vi.fn()
+      render(
+        <ToastStack
+          toasts={[
+            toast({ id: 'a', testid: 'first-toast' }),
+            toast({ id: 'b', testid: 'swipe-toast' }),
+          ]}
+          onExpire={vi.fn()}
+          onClose={onClose}
+        />,
+      )
+      for (let i = 0; i < 7; i++)
+        fireEvent.wheel(screen.getByTestId('first-toast'), { deltaX: -20 })
+      expect(onClose).toHaveBeenCalledWith('a')
+      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
+      drag(10, -20, 50)
+      letGo()
+      expect(onClose).not.toHaveBeenCalledWith('b')
+      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
+      expect(onClose).toHaveBeenCalledWith('b')
+    })
+
     it('gives a keyed toast re-pushed during the swipe exit a visible card that swipes again', () => {
       const keyed = (id: string) => [toast({ id, key: 'new-tracks', testid: 'swipe-toast' })]
       const { rerender } = render(
