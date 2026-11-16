@@ -93,6 +93,8 @@ export interface LocalDraft {
   virtualdjLibraryDir: string
   betaUpdates: boolean
   autoUpdates: boolean
+  silenceInPlaceWarning: boolean
+  silenceLossyWarning: boolean
   autoMatch: boolean
   beatportUsername: string
   analysisCacheGb: number
@@ -111,6 +113,8 @@ export function pickLocal(s: Settings): LocalDraft {
     virtualdjLibraryDir: s.virtualdjLibraryDir,
     betaUpdates: s.betaUpdates,
     autoUpdates: s.autoUpdates,
+    silenceInPlaceWarning: s.silenceInPlaceWarning,
+    silenceLossyWarning: s.silenceLossyWarning,
     autoMatch: s.autoMatch,
     beatportUsername: s.beatportUsername,
     analysisCacheGb: s.analysisCacheGb,

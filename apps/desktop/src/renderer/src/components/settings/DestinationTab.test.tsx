@@ -113,6 +113,8 @@ const local: LocalDraft = {
   autoMatch: false,
   beatportUsername: '',
   analysisCacheGb: 10,
+  silenceInPlaceWarning: false,
+  silenceLossyWarning: false,
 }
 
 function renderTab(

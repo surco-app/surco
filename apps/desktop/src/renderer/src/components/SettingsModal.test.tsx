@@ -171,6 +171,8 @@ const settings: Settings = {
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
+  silenceInPlaceWarning: false,
+  silenceLossyWarning: false,
   lastSeenChangelogVersion: '',
 }
 

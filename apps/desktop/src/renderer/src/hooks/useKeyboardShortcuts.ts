@@ -78,6 +78,7 @@ export function useKeyboardShortcuts(params: Params): void {
       // Every other command is swallowed while an overlay owns the screen.
       if (p.overlayOpen && id !== 'toggle-language') return
       e.preventDefault()
+      if (e.repeat && id === 'trash-suspects') return
       runCommand(p.getCommands(), id)
     }
     window.addEventListener('keydown', onKey)

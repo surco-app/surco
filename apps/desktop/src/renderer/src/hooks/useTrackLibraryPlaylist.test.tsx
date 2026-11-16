@@ -1207,6 +1207,31 @@ describe('Files and the source playlists keep their own tracks', () => {
     expect(onRemove).toHaveBeenCalledWith([expect.objectContaining({ id: b.id })])
   })
 
+  // A row its playlist kept was only taken out of Files, so Undo flips it back into Files
+  // with the edits it still carries instead of adding a second row.
+  it('puts a row its playlist kept back in Files, edits and all, when restored', async () => {
+    const { result } = setup({}, { filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    const a = result.current.tracks[0]
+    act(() => result.current.updateTrack(a.id, { meta: { ...a.meta, title: 'Hand Typed' } }))
+    const removed = [...result.current.tracksRef.current]
+    act(() => result.current.removeTracks([a.id]))
+    expect(result.current.tracks).toEqual([expect.objectContaining({ inFiles: false })])
+
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({
+        id: a.id,
+        inFiles: true,
+        meta: expect.objectContaining({ title: 'Hand Typed' }),
+      }),
+    ])
+  })
+
   it('keeps a row removed from Files by its ✕ for the playlist that lists it', async () => {
     const { result } = setup({}, { filesOpen: true })
     await act(async () => {

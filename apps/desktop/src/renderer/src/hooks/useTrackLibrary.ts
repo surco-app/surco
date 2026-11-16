@@ -169,6 +169,9 @@ interface TrackLibrary {
   // every row already exists and none is "fresh" — a reopened session restored one of four
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
+  holdTracks: (rows: TrackItem[]) => void
+  dropHeldTracks: (ids: string[]) => void
+  restoreTracks: (rows: TrackItem[]) => void
   prioritizeReads: (ids: string[]) => void
   openSourcePlaylist: (
     entries: SourcePlaylistEntry[],
@@ -1149,9 +1152,18 @@ export function useTrackLibrary({
   // repaints. The replacement flow does exactly that — it stamps the copy to supersede and
   // converts immediately — and without this the conversion ran against the unstamped
   // track, adding a second Apple Music entry and leaving rekordbox on the old file.
+  const heldRows = useRef(new Map<string, TrackItem>())
   const updateTrack = useCallback((id: string, patch: Partial<TrackItem>): void => {
+    const held = heldRows.current.get(id)
+    if (held) heldRows.current.set(id, patchedTrack(held, patch))
     tracksRef.current = patchedRow(tracksRef.current, id, patch)
     setTracks((prev) => patchedRow(prev, id, patch))
+  }, [])
+  const holdTracks = useCallback((rows: TrackItem[]): void => {
+    for (const t of rows) heldRows.current.set(t.id, t)
+  }, [])
+  const dropHeldTracks = useCallback((ids: string[]): void => {
+    for (const id of ids) heldRows.current.delete(id)
   }, [])
 
   // The same ref-then-state publish as updateTrack, for a patch that depends on each row.
@@ -1293,6 +1305,26 @@ export function useTrackLibrary({
     [refreshChangedTrack, removeTracks],
   )
 
+  const restoreTracks = useStableCallback((rows: TrackItem[]): void => {
+    const { paths, inFiles } = crateByPath()
+    const back = rows
+      .filter((t) => !paths.has(t.inputPath))
+      .map((t) => heldRows.current.get(t.id) ?? t)
+    for (const t of rows) heldRows.current.delete(t.id)
+    const rejoin = new Set(
+      rows
+        .filter((t) => t.inFiles && paths.has(t.inputPath) && !inFiles.has(t.inputPath))
+        .map((t) => t.inputPath),
+    )
+    const restore = (list: TrackItem[]): TrackItem[] => [
+      ...list.map((t) => (rejoin.has(t.inputPath) ? { ...t, inFiles: true } : t)),
+      ...back,
+    ]
+    tracksRef.current = restore(tracksRef.current)
+    setTracks(restore)
+    for (const t of back) if (t.loadingMeta) void loadTrackMeta(t)
+  })
+
   function clearTracks(): void {
     const cleared = tracksRef.current
     // An import still reading is reading for a crate that no longer exists: without
@@ -1340,6 +1372,9 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    holdTracks,
+    dropHeldTracks,
+    restoreTracks,
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,

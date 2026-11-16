@@ -281,3 +281,35 @@ describe('useKeyboardShortcuts Space on a focused button', () => {
     button.remove()
   })
 })
+
+// Trashing the flagged rips opens its dialog only after asking each disk about its Trash, so
+// a held chord's key repeat landed before the dialog and asked again. Other chords keep repeating.
+describe('useKeyboardShortcuts key repeat on trashing the flagged rips', () => {
+  it('asks to trash the flagged rips once for a held chord and still repeats other chords', () => {
+    const trashSuspects = vi.fn()
+    const language = vi.fn()
+    const commands: Command[] = [
+      { id: 'trash-suspects', title: '', enabled: true, group: 'library', run: trashSuspects },
+      { id: 'toggle-language', title: '', enabled: true, group: 'app', run: language },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        paletteOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    press({ key: 'Backspace', metaKey: true, shiftKey: true })
+    press({ key: 'Backspace', metaKey: true, shiftKey: true, repeat: true })
+    press({ key: 'Backspace', metaKey: true, shiftKey: true, repeat: true })
+    expect(trashSuspects).toHaveBeenCalledTimes(1)
+    press({ key: 'l', metaKey: true, shiftKey: true })
+    press({ key: 'l', metaKey: true, shiftKey: true, repeat: true })
+    expect(language).toHaveBeenCalledTimes(2)
+  })
+})

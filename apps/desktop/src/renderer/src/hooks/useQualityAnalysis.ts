@@ -45,6 +45,7 @@ interface QualityAnalysis {
   // queued track can stop being worth measuring without ever being measured, and nothing
   // else retires it — see the pendingRef note below.
   forgetTracks: (ids: string[]) => void
+  unforgetTracks: (ids: string[]) => void
   cancelAnalysis: () => void
   // Puts the open playlist first in the sweep (null: no preference). Nothing outside it is
   // dropped: it runs once the open playlist's tracks are done.
@@ -122,6 +123,9 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
       pendingRef.current.delete(id)
       forgottenRef.current.add(id)
     }
+  }, [])
+  const unforgetTracks = useCallback((ids: string[]): void => {
+    for (const id of ids) forgottenRef.current.delete(id)
   }, [])
 
   const [focused, setFocused] = useState(true)
@@ -393,6 +397,7 @@ export function useQualityAnalysis({ targetsRef, onErrors, onMeasured }: Params)
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks,
+    unforgetTracks,
     scopeTo,
   }
 }

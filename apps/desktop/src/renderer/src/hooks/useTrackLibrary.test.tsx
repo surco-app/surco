@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
-import { act, cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -230,6 +230,32 @@ describe('useTrackLibrary cancelling an import', () => {
       readCount: () => reads,
     }
   }
+
+  // A row removed while its read was in flight lost that read: the result landed on a row
+  // that was gone. Restored as it was, it would spin as loading forever, so it reads again.
+  it('reads a restored row again when it left the list before its read landed', async () => {
+    const { result, release } = setupSlowReads()
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const removed = [...result.current.tracksRef.current]
+    expect(removed[0].loadingMeta).toBe(true)
+    act(() => result.current.removeTracks([removed[0].id]))
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    act(() => result.current.restoreTracks(removed))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+      release()
+      await new Promise((r) => setTimeout(r, 50))
+    })
+
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+  })
 
   it('stops reading the rest of the queue when cancelled', async () => {
     const { result, release, readCount } = setupSlowReads()
@@ -591,6 +617,55 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
     act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/c.wav']))
 
     expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
+  })
+
+  // Undo puts back the very rows that left, same id and same state: a conversion, a library
+  // identity or a match is not something the file on disk can give back.
+  it('puts the removed rows back as they were when restored', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+    act(() => result.current.updateTrack(a.id, { status: 'done', outputPath: '/out/a.aiff' }))
+    const removed = result.current.tracksRef.current.filter((t) => t.id === a.id)
+
+    act(() => result.current.removeTracks([a.id]))
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks.find((t) => t.inputPath === '/m/a.wav')).toBe(removed[0])
+    expect(result.current.tracks).toHaveLength(2)
+  })
+
+  // A job still running when its row left keeps writing to that row's id. Held for Undo,
+  // the row takes those writes, so it comes back as the job left it and not frozen mid-run.
+  it('restores a held row with the writes it got while it was out of the list', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const removed = [...result.current.tracksRef.current]
+    const id = removed[0].id
+
+    act(() => result.current.holdTracks(removed))
+    act(() => result.current.removeTracks([id]))
+    act(() => result.current.updateTrack(id, { status: 'done', outputPath: '/out/a.aiff' }))
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({ id, status: 'done', outputPath: '/out/a.aiff' }),
+    ])
+  })
+
+  // A path that came back into the list some other way while the Undo was on offer already
+  // has its row; restoring a second one would show the file twice.
+  it('does not restore a row whose path is in the list again', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const removed = [...result.current.tracksRef.current]
+
+    act(() => result.current.removeTracks([removed[0].id]))
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks).toHaveLength(1)
   })
 })
 

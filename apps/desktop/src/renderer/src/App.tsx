@@ -188,7 +188,7 @@ import {
   runCommand,
 } from './lib/commands'
 import { railAlert } from './lib/copiesView'
-import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
+import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
 import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
@@ -429,8 +429,9 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
-      reportUndo: (message: string, onUndo: () => void) => {
+      reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
         const id = pushToast(store, {
+          key,
           tone: 'neutral',
           message,
           duration: 6000,
@@ -442,6 +443,8 @@ export default function App(): React.JSX.Element {
               onUndo()
             },
           },
+          onDismiss: onSettle,
+          onExpire: onSettle,
         })
       },
     }),
@@ -738,6 +741,9 @@ export default function App(): React.JSX.Element {
   // re-read lands here again and only loads what is new. Stable so that re-read, not every
   // render, runs it.
   const matchingPathPairs = useMatchingPathPairs()
+  const listUndoCovers = useRef<(string | undefined)[][]>([])
+  const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
+  const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
   const browser = useSourceBrowser({
     matchingPathPairs,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
@@ -769,6 +775,9 @@ export default function App(): React.JSX.Element {
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    holdTracks,
+    dropHeldTracks,
+    restoreTracks,
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,
@@ -828,7 +837,7 @@ export default function App(): React.JSX.Element {
         removed.map((t) => t.coverUrl),
         [
           ...tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
-          ...metaUndo.heldCovers(),
+          ...heldCovers(),
         ],
       )
     },
@@ -841,7 +850,10 @@ export default function App(): React.JSX.Element {
         queryClient,
         cleared.map((t) => t.inputPath),
       )
-      for (const t of cleared) revokeCoverUrl(t.coverUrl)
+      revokeDisplacedCovers(
+        cleared.map((t) => t.coverUrl),
+        listUndoCovers.current.flat(),
+      )
     },
     onMetaLoaded: (t) => {
       // A row already on screen when its light read lands never comes into view again.
@@ -1493,6 +1505,7 @@ export default function App(): React.JSX.Element {
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks: forgetAnalysisTracks,
+    unforgetTracks: unforgetAnalysisTracks,
     scopeTo: scopeAnalysis,
   } = useQualityAnalysis({
     // The bulk scope: a deliberate multi-selection when there is one, else the visible
@@ -1792,12 +1805,64 @@ export default function App(): React.JSX.Element {
     return tracksRef.current.find((t) => t.id === id)
   })
 
+  const removeWithUndo = useStableCallback((targets: TrackItem[], remove: () => void) => {
+    if (targets.length === 0) return
+    const pending = listRemoval.current ?? { targets: [], covers: [] }
+    if (!listRemoval.current) {
+      listRemoval.current = pending
+      listUndoCovers.current.push(pending.covers)
+    }
+    pending.targets.push(...targets)
+    pending.covers.push(...targets.map((t) => t.coverUrl))
+    holdTracks(targets)
+    remove()
+    const release = () => {
+      listRemoval.current = null
+      dropHeldTracks(pending.targets.map((t) => t.id))
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== pending.covers)
+      revokeDisplacedCovers(pending.covers, [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...heldCovers(),
+      ])
+    }
+    toastReporter.reportUndo(
+      tr('notices.removedFromList', { count: pending.targets.length }),
+      () => {
+        unforgetAnalysisTracks(pending.targets.map((t) => t.id))
+        restoreTracks(pending.targets)
+        void seedCachedAnalyses(
+          queryClient,
+          pending.targets.map((t) => t.inputPath),
+        )
+        release()
+      },
+      release,
+      'list-removed',
+    )
+  })
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
   // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV
   // tracks survive the click.
-  const emptyTracks = useStableCallback((targets: TrackItem[]) => {
-    if (targets.length === tracksRef.current.length) clearTracks()
-    else removeTracks(targets.map((t) => t.id))
+  const emptyTracks = useStableCallback((targets: TrackItem[]) =>
+    removeWithUndo(targets, () => {
+      if (targets.length === tracksRef.current.length) clearTracks()
+      else removeTracks(targets.map((t) => t.id))
+    }),
+  )
+  const dropFromList = useStableCallback((targets: TrackItem[], onRemoved?: () => void) => {
+    removeWithUndo(targets, () => removeTracks(targets.map((t) => t.id)))
+    onRemoved?.()
+  })
+  const removeTrashed = useStableCallback((ids: string[], everywhere?: boolean) => {
+    const pending = listRemoval.current
+    if (pending) {
+      const gone = new Set(
+        tracksRef.current.filter((t) => ids.includes(t.id)).map((t) => t.inputPath),
+      )
+      dropHeldTracks(pending.targets.filter((t) => gone.has(t.inputPath)).map((t) => t.id))
+      pending.targets = pending.targets.filter((t) => !gone.has(t.inputPath))
+    }
+    removeTracks(ids, everywhere)
   })
 
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
@@ -1811,22 +1876,15 @@ export default function App(): React.JSX.Element {
     },
   )
 
-  // The confirm-before-firing actions (trash, clean up previous files, fill-all, clear-all,
+  // The actions that can confirm before firing (trash, clean up previous files,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
-  const {
-    askTrash,
-    askCleanUp,
-    askFillAll,
-    askClearAll,
-    askRemoveFromList,
-    askConvertAll,
-    askConvertOne,
-  } = useConfirmFlows({
+  const { askTrash, askCleanUp, askFillAll, askConvertAll, askConvertOne } = useConfirmFlows({
     settings,
-    removeTracks,
+    removeTracks: removeTrashed,
     updateTrack,
-    emptyTracks,
     deriveTracks: deriveTracksUndoable,
+    notify: setNotice,
+    saveSettings,
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
@@ -2459,9 +2517,7 @@ export default function App(): React.JSX.Element {
   // whole list behind an active filter, and never scoped to the selection: the toolbar mirrors
   // what's on screen, so a click can't touch rows the user filtered out of view. Removing only
   // a few rows is the right-click menu's "Remove from Surco".
-  const onFillAll = useStableCallback(() =>
-    askFillAll(bulkTracksRef.current, { fromSelection: selectedTracks.length > 1 }),
-  )
+  const onFillAll = useStableCallback(() => askFillAll(bulkTracksRef.current))
   const onFindReplace = useStableCallback(overlays.openFindReplace)
   const onAnalyzeAll = useStableCallback(() => {
     setAnalyzeAsked(true)
@@ -2475,12 +2531,14 @@ export default function App(): React.JSX.Element {
     autoMatchTracks(browser.source === null ? bulkTracks : selectedTracks),
   )
   const onOpenExport = useStableCallback(overlays.openExport)
-  const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
+  const onClearAll = useStableCallback(() => emptyTracks(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
-  // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
+  // them through the same trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
-  const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
-  // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
+  const onTrashSuspects = useStableCallback(() =>
+    askTrash(suspectTracks(visibleTracksRef.current), true),
+  )
+  // The toolbar/palette "Move the selection to Trash": the same flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
   const onRemoveSelected = useStableCallback(() =>
@@ -3527,7 +3585,7 @@ export default function App(): React.JSX.Element {
       ? removeFromMatching(targets, onRemoved)
       : removablePlaylist
         ? removeFromPlaylist(targets, onRemoved)
-        : askRemoveFromList(targets, onRemoved),
+        : dropFromList(targets, onRemoved),
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.

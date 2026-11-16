@@ -18,7 +18,6 @@ import { sourceTrashedPatch } from '../lib/export'
 import { requiredFieldsOf } from '../lib/fields'
 import { jobAudio } from '../lib/reapply'
 import type { SupersededFile } from '../lib/selectionStatus'
-import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
@@ -111,11 +110,9 @@ interface Params {
   settings: Settings | null
   removeTracks: (ids: string[], everywhere?: boolean) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
-  // Empties the given rows: App routes the whole-list case to clearTracks (start over, drops
-  // the folder watch) and the filtered-visible subset to removeTracks, so a format filter never
-  // sweeps in the hidden rows.
-  emptyTracks: (targets: TrackItem[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  notify: (message: string) => void
+  saveSettings: (patch: Partial<Settings>) => void
   processAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -125,8 +122,8 @@ interface Params {
     again?: boolean,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
-  // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
-  // silent failure would read as success.
+  // A trash/delete IPC failure surfaced to the user, since a silent failure would read
+  // as success.
   reportTrashFailure: (fileName: string) => void
   // Fired once the superseded Apple Music copy is gone (deleted, or already missing),
   // so App can refresh the library snapshot and confirm the outcome.
@@ -136,21 +133,18 @@ interface Params {
   // matches the confirmed label (nothing was deleted; the snapshot needs a refresh)
   // from an ordinary failure.
   reportOldCopyRemoveFailure: (mismatch: boolean) => void
-  // The full list, so fill-all/clear-all can tell a filtered-visible subset from the
-  // whole crate and say in the dialog that hidden rows survive.
+  // The full list.
   tracksRef: { current: TrackItem[] }
 }
 
 interface ConfirmFlows {
-  askTrash: (targets: TrackItem[]) => Promise<void>
+  askTrash: (targets: TrackItem[], alwaysAsk?: boolean) => Promise<void>
   // The post-convert "clean up": the original, the files a replacement superseded and the
   // old Apple Music copy, offered together in one dialog that lists each. Async because the
   // wording depends on whether each file's volume keeps a Trash, which only the main
   // process can answer.
   askCleanUp: (track: TrackItem, offer: CleanupOffer) => Promise<void>
-  askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
-  askClearAll: (targets: TrackItem[]) => void
-  askRemoveFromList: (targets: TrackItem[], onRemoved?: () => void) => void
+  askFillAll: (targets: TrackItem[]) => void
   askConvertAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -176,9 +170,14 @@ interface ConfirmFlows {
   ) => void
 }
 
-// The destructive/overwriting actions that confirm before firing: trash, clean up,
-// fill-all, clear-all and in-place convert-all. Each builds its dialog copy and wires the
-// onConfirm into the data layer; App only routes the resulting modal through useOverlays.
+const SILENCE_KEY = {
+  overwrite: 'silenceInPlaceWarning',
+  lossy: 'silenceLossyWarning',
+} as const
+
+// The destructive/overwriting actions that can confirm before firing: trash, clean up and
+// in-place convert-all. Each builds its dialog copy and wires the onConfirm into the data
+// layer; App only routes the resulting modal through useOverlays.
 // The overwrite prompt says what happens to the original under the backup policy: kept
 // as a backup, kept only when the audio changes, or gone for good. Main fills the policy
 // in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
@@ -254,8 +253,9 @@ export function useConfirmFlows({
   settings,
   removeTracks,
   updateTrack,
-  emptyTracks,
   deriveTracks,
+  notify,
+  saveSettings,
   processAll,
   openConfirm,
   reportTrashFailure,
@@ -267,47 +267,56 @@ export function useConfirmFlows({
   // Overwriting and re-encoding in place are choices the user makes once (in Settings or
   // the first prompt). Asked again before every single convert, the prompt stopped a run
   // through a crate at each track, so once confirmed it holds for the session. A batch
-  // still asks every time: its count is what the user is weighing.
+  // still asks: its count is what the user is weighing.
   const consented = useRef(new Set<'overwrite' | 'lossy'>())
 
-  // Right-click "Move to Trash": confirm first, then send each original file to the OS
+  function consentTo(kind: 'overwrite' | 'lossy', dontAskAgain?: boolean): void {
+    consented.current.add(kind)
+    if (dontAskAgain) saveSettings({ [SILENCE_KEY[kind]]: true })
+  }
+
+  // Right-click "Move to Trash": send each original file to the OS
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
   // row untouched. Copy switches on platform because the destination differs, and on
   // count so a multi-selection reads "N files" instead of naming just one. A disk with no
   // Trash (a NAS, every Windows drive) keeps the file in Surco's backups instead, and the
   // dialog says so: promising the Trash there is how a file was lost on 15/09.
-  async function askTrash(targets: TrackItem[]): Promise<void> {
+  async function askTrash(targets: TrackItem[], alwaysAsk = false): Promise<void> {
     if (targets.length === 0) return
     const isWin = window.api.platform === 'win32'
     const count = targets.length
     const keeps = await Promise.all(targets.map((t) => window.api.keepsTrash(t.inputPath)))
+    const moveToTrash = (): void => {
+      const trashed = targets.map((track, i) =>
+        window.api
+          .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
+          .then(() => track.id)
+          // A silent failure here reads as "the file is in the trash" when it isn't.
+          .catch(() => {
+            reportTrashFailure(track.fileName)
+            return null
+          }),
+      )
+      // The rows leave together once every file has settled, so a cover the selection
+      // shared is freed against the rows that remain (see App's onRemove).
+      void Promise.all(trashed).then((ids) =>
+        removeTracks(
+          ids.filter((id) => id !== null),
+          true,
+        ),
+      )
+    }
+    if (!alwaysAsk && keeps.every(Boolean)) {
+      moveToTrash()
+      return
+    }
     const copy = trashCopy(keeps, isWin, settings)
     openConfirm({
       title: tr(copy.title, { count }),
       message: tr(copy.message, { count, name: targets[0].fileName }),
       confirmLabel: tr(copy.confirm),
       destructive: true,
-      onConfirm: () => {
-        const trashed = targets.map((track, i) =>
-          window.api
-            .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
-            .then(() => track.id)
-            // The user confirmed a destructive dialog; a silent failure here reads
-            // as "the file is in the trash" when it isn't.
-            .catch(() => {
-              reportTrashFailure(track.fileName)
-              return null
-            }),
-        )
-        // The rows leave together once every file has settled, so a cover the selection
-        // shared is freed against the rows that remain (see App's onRemove).
-        void Promise.all(trashed).then((ids) =>
-          removeTracks(
-            ids.filter((id) => id !== null),
-            true,
-          ),
-        )
-      },
+      onConfirm: moveToTrash,
     })
   }
 
@@ -388,77 +397,12 @@ export function useConfirmFlows({
     if (patches.length) deriveTracks(patches)
   }
 
-  // Fill-all and Clear-all both overwrite/discard work, so they ask first rather than firing
-  // on the click; the dialog spells out exactly what changes. Targets is the visible (filtered)
-  // set for the toolbar buttons, or the whole list for the palette's "Clear the list" — either
-  // way the count in the copy matches what actually changes.
-  function askFillAll(targets: TrackItem[], opts: { fromSelection?: boolean } = {}): void {
-    const count = deriveTagPatches(targets).length
-    const filtered = targets.length < tracksRef.current.length
-    // A selection and a filter can produce the same count; only the caller knows which
-    // scope it passed, and the dialog must name it ("selected" vs "visible").
-    const messageKey = opts.fromSelection
-      ? 'confirm.fillMessageSelected'
-      : filtered
-        ? 'confirm.fillMessageFiltered'
-        : 'confirm.fillMessage'
-    openConfirm({
-      title: tr('confirm.fillTitle'),
-      message: count > 0 ? tr(messageKey, { count }) : tr('confirm.fillNone'),
-      confirmLabel: tr('confirm.fillConfirm'),
-      confirmDisabled: count === 0,
-      onConfirm: () => deriveFrom(targets),
-    })
-  }
-
-  // Empties the given rows: the visible (filtered) set from the toolbar trash button, or the
-  // whole list from the palette's "Clear the list". Emptying an MP3-filtered view via the
-  // toolbar must not discard the hidden FLAC/WAV rows — the count in the copy says how many go.
-  function askClearAll(targets: TrackItem[]): void {
-    // A filter narrows what the toolbar button empties; the copy must say the hidden
-    // rows stay, or confirming reads like the whole list is about to go.
-    const filtered = targets.length < tracksRef.current.length
-    openConfirm({
-      title: tr('confirm.clearTitle'),
-      message: tr(filtered ? 'confirm.clearMessageFiltered' : 'confirm.clearMessage', {
-        count: targets.length,
-      }),
-      confirmLabel: tr('confirm.clearConfirm'),
-      destructive: true,
-      onConfirm: () => emptyTracks(targets),
-    })
-  }
-
-  // A row's ✕ (and ⌫, and the context menu's Remove) acts on the whole selection when the
-  // clicked row belongs to it — so one click on a hover-revealed target can discard dozens of
-  // rows along with every staged edit on them, and a removal is not undoable (useMetaUndo
-  // filters to rows that still exist and never resurrects a deleted one). Not asking on the
-  // ordinary gesture is the point: a dialog on every single-row ✕ would be a tax on it and
-  // would train the user to dismiss it unread, which is precisely what would let the lossy
-  // case through.
-  //
-  // So the question is what the removal COSTS, not how many rows it spans: a lone track
-  // carrying an hour of tagging is the expensive case, and by count it went straight
-  // through with nothing to say it had anything on it. A clean row still goes in one
-  // click, whether it is one or one of many.
-  function askRemoveFromList(targets: TrackItem[], onRemoved?: () => void): void {
-    if (targets.length === 0) return
-    const ids = targets.map((t) => t.id)
-    const remove = (): void => {
-      removeTracks(ids)
-      onRemoved?.()
-    }
-    if (targets.length === 1 && !targets.some(hasStagedEdits)) {
-      remove()
+  function askFillAll(targets: TrackItem[]): void {
+    if (deriveTagPatches(targets).length === 0) {
+      notify(tr('confirm.fillNone'))
       return
     }
-    openConfirm({
-      title: tr('confirm.removeFromListTitle', { count: targets.length }),
-      message: tr('confirm.removeFromListMessage', { count: targets.length }),
-      confirmLabel: tr('confirm.removeFromListConfirm'),
-      destructive: true,
-      onConfirm: remove,
-    })
+    deriveFrom(targets)
   }
 
   // Overwrite mode rewrites each source in place (the original is unlinked, not
@@ -505,7 +449,10 @@ export function useConfirmFlows({
     )
 
     function confirmConvertAll(lossyReencode: boolean): void {
-      if (!overwriting && !lossyReencode) {
+      if (
+        (!overwriting && !lossyReencode) ||
+        settings?.[SILENCE_KEY[lossyReencode ? 'lossy' : 'overwrite']]
+      ) {
         void processAll(targets, format, normalize, destination, declick, again)
         return
       }
@@ -525,8 +472,9 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
-              onConfirm: () => {
-                consented.current.add('lossy')
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
+              onConfirm: (dontAskAgain) => {
+                consentTo('lossy', dontAskAgain)
                 void processAll(targets, format, normalize, destination, declick, again)
               },
             }
@@ -535,8 +483,9 @@ export function useConfirmFlows({
               message: tr(inPlaceMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
-              onConfirm: () => {
-                consented.current.add('overwrite')
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
+              onConfirm: (dontAskAgain) => {
+                consentTo('overwrite', dontAskAgain)
                 void processAll(targets, format, normalize, destination, declick, again)
               },
             },
@@ -588,12 +537,16 @@ export function useConfirmFlows({
 
     function confirmConvertOne(lossyReencode: boolean): void {
       const kind = lossyReencode ? 'lossy' : 'overwrite'
-      if ((!overwriting && !lossyReencode) || consented.current.has(kind)) {
+      if (
+        (!overwriting && !lossyReencode) ||
+        consented.current.has(kind) ||
+        settings?.[SILENCE_KEY[kind]]
+      ) {
         run()
         return
       }
-      const consent = (): void => {
-        consented.current.add(kind)
+      const consent = (dontAskAgain?: boolean): void => {
+        consentTo(kind, dontAskAgain)
         run()
       }
       openConfirm(
@@ -603,6 +556,7 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
               onConfirm: consent,
             }
           : {
@@ -610,6 +564,7 @@ export function useConfirmFlows({
               message: tr(inPlaceMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
               onConfirm: consent,
             },
       )
@@ -620,8 +575,6 @@ export function useConfirmFlows({
     askTrash,
     askCleanUp,
     askFillAll,
-    askClearAll,
-    askRemoveFromList,
     askConvertAll,
     askConvertOne,
   }

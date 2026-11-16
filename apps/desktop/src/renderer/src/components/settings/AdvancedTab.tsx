@@ -178,6 +178,25 @@ export function AdvancedTab({
           </div>
         </div>
 
+        <SettingsField
+          label={tr('settings.warnings')}
+          hint={tr('settings.warningsHint')}
+          searchId="warnings"
+        >
+          <button
+            type="button"
+            data-testid="settings-warnings-reset"
+            onClick={() => {
+              patchLocal('silenceInPlaceWarning', false)
+              patchLocal('silenceLossyWarning', false)
+            }}
+            disabled={!local.silenceInPlaceWarning && !local.silenceLossyWarning}
+            className="press self-start rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-2 text-sm hover:bg-[var(--color-line-strong)] disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {tr('settings.warningsReset')}
+          </button>
+        </SettingsField>
+
         <SettingsField label={tr('settings.log')} hint={tr('settings.logHint')} searchId="log">
           <button
             type="button"

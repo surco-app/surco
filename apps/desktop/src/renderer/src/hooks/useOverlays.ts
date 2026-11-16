@@ -11,7 +11,8 @@ export interface ConfirmModal {
   confirmLabel: string
   confirmDisabled?: boolean
   destructive?: boolean
-  onConfirm: () => void
+  dontAskAgainLabel?: string
+  onConfirm: (dontAskAgain?: boolean) => void
 }
 
 // The one modal/overlay currently open, or null. A single discriminated union (instead

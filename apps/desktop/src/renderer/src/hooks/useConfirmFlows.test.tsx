@@ -32,6 +32,9 @@ function setup(
     removeTracks?: ReturnType<typeof vi.fn<(ids: string[], everywhere?: boolean) => void>>
     reportTrashFailure?: ReturnType<typeof vi.fn<(fileName: string) => void>>
     settings?: Settings | null
+    deriveTracks?: ReturnType<typeof vi.fn<(patches: unknown[]) => void>>
+    notify?: ReturnType<typeof vi.fn<(message: string) => void>>
+    saveSettings?: ReturnType<typeof vi.fn<(patch: Partial<Settings>) => void>>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
@@ -41,8 +44,9 @@ function setup(
       settings: extra.settings ?? null,
       removeTracks,
       updateTrack: extra.updateTrack ?? vi.fn(),
-      emptyTracks: vi.fn(),
-      deriveTracks: vi.fn(),
+      deriveTracks: extra.deriveTracks ?? vi.fn(),
+      notify: extra.notify ?? vi.fn(),
+      saveSettings: extra.saveSettings ?? vi.fn(),
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
       reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
@@ -54,124 +58,28 @@ function setup(
   return { flows: result.current, opened, removeTracks }
 }
 
-// A track carries staged edits when its live state has diverged from what the file on
-// disk holds — the same test sessionEdits uses to decide what is worth saving across a
-// crash. diskSignature is the snapshot taken when the file was read.
-function edited(id: string): TrackItem {
-  return track(id, { diskSignature: 'what-the-file-had', meta: { ...emptyMetadata(), title: id } })
-}
-
-// Removing is not undoable: useMetaUndo filters to rows that still exist and never
-// resurrects a deleted one. The dialog was asked for by COUNT — one row went straight
-// through — so a single track carrying an hour of tagging was discarded on a stray click
-// of a hover-revealed ✕, with nothing to say it had anything on it. Asking by CONTENT
-// keeps the ordinary gesture free (which is what stops the dialog being trained away)
-// and stops exactly the case that loses work.
-describe('useConfirmFlows removing tracks from the list', () => {
-  it('removes a single untouched track without asking', () => {
-    const t = track('a')
-    const { flows, opened, removeTracks } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(0)
-    expect(removeTracks).toHaveBeenCalledWith(['a'])
-  })
-
-  it('asks before discarding a single track that carries staged edits', () => {
-    const t = edited('a')
-    const { flows, opened, removeTracks } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(1)
-    expect(removeTracks).not.toHaveBeenCalled()
-    opened[0].onConfirm?.()
-    expect(removeTracks).toHaveBeenCalledWith(['a'])
-  })
-
-  // Same batch rule as the trash: the selection leaves in one removal, so a cover shared
-  // by those rows is weighed against what is left, not against its own doomed siblings.
-  it('removes a confirmed selection in one batch', () => {
-    const tracks = [track('a'), track('b'), track('c')]
-    const { flows, opened, removeTracks } = setup(tracks)
-
-    flows.askRemoveFromList(tracks)
-    opened[0].onConfirm?.()
-
-    expect(removeTracks).toHaveBeenCalledTimes(1)
-    expect(removeTracks).toHaveBeenCalledWith(['a', 'b', 'c'])
-  })
-
-  // The strings were written for the many-rows case only. Now that one row can raise the
-  // dialog too, a fixed plural would greet it with "Remove 1 tracks from the list?".
-  it('words the single-track dialog as one track', () => {
-    const t = edited('a')
-    const { flows, opened } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened[0].title).not.toContain('1 tracks')
-    expect(opened[0].message).not.toContain('1 tracks')
-  })
-
-  // The expanded case keeps asking whatever the rows carry: one click on a hover-revealed
-  // ✕ acting on dozens of rows is worth confirming on its own.
-  it('still asks for a multi-row removal with nothing staged', () => {
-    const rows = [track('a'), track('b')]
-    const { flows, opened } = setup(rows)
-
-    flows.askRemoveFromList(rows)
-
-    expect(opened).toHaveLength(1)
-  })
-
-  it('does not ask when a converted track matches what is on disk', () => {
-    // Converted and unchanged since: the signature matches, so there is nothing staged
-    // to lose and the ✕ stays a one-click gesture.
-    const t = track('a', { diskSignature: undefined })
-    const { flows, opened } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(0)
-  })
-})
-
 describe('useConfirmFlows scope wording', () => {
-  // The toolbar's clear acts on the filtered-visible rows while the palette's acts on
-  // everything — two buttons that read the same but sweep different sets. The dialog is
-  // the last chance to say which: with a filter active it must state that hidden tracks
-  // survive, so the user can predict what the list looks like after confirming.
-  it('says hidden tracks survive when clearing a filtered view', () => {
+  it('fills from the file names right away and opens no dialog', () => {
     const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
-    flows.askClearAll(all.slice(0, 2))
-    expect(opened[0].message).toContain('visible')
-    expect(opened[0].message).toContain('2')
-  })
-
-  it('keeps the plain wording when clearing the whole list', () => {
-    const all = [track('a'), track('b')]
-    const { flows, opened } = setup(all)
-    flows.askClearAll(all)
-    expect(opened[0].message).not.toContain('visible')
-  })
-
-  // Fill-all overwrites tags across the visible set; when a filter hides part of the
-  // list the dialog must scope its promise to the visible rows only.
-  it('scopes the fill-all wording to the visible rows under a filter', () => {
-    const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
+    const deriveTracks = vi.fn()
+    const { flows, opened } = setup(all, { deriveTracks })
     flows.askFillAll(all.slice(0, 2))
-    expect(opened[0].message).toContain('visible')
+    expect(opened).toHaveLength(0)
+    expect(deriveTracks).toHaveBeenCalledTimes(1)
+    expect(deriveTracks.mock.calls[0][0]).toHaveLength(2)
   })
 
-  it('keeps the plain fill-all wording without a filter', () => {
-    const all = [track('a'), track('b')]
-    const { flows, opened } = setup(all)
+  it('says there is nothing to fill instead of asking when no name matches', () => {
+    const all = [track('a', { fileName: 'untitled.wav' })]
+    const deriveTracks = vi.fn()
+    const notify = vi.fn()
+    const { flows, opened } = setup(all, { deriveTracks, notify })
     flows.askFillAll(all)
-    expect(opened[0].message).not.toContain('visible')
+    expect(opened).toHaveLength(0)
+    expect(deriveTracks).not.toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(
+      'None of the file names match a known pattern, so there is nothing to fill.',
+    )
   })
 })
 
@@ -213,13 +121,88 @@ describe('useConfirmFlows move to Trash', () => {
     )
   })
 
-  it('keeps the Trash wording when every file has a Trash', async () => {
-    installApi({ keepsTrash: vi.fn().mockResolvedValue(true) })
+  // Moving to the OS Trash is recoverable, like Cmd+Delete in Finder, so asking would only
+  // slow the user down. Dialogs are for what cannot be undone.
+  it('moves files to the Trash without a dialog when every file has a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
-    const { flows, opened } = setup([a])
+    const b = track('b')
+    const { flows, opened, removeTracks } = setup([a, b])
+    await flows.askTrash([a, b])
+    expect(opened).toHaveLength(0)
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    expect(trashFile).toHaveBeenCalledWith('/b.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
+  })
+
+  // With no dialog to show, an empty selection would otherwise run the move over nothing
+  // and still ask the app to remove an empty batch of rows.
+  it('does nothing at all for an empty selection', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const { flows, opened, removeTracks } = setup([])
+    await flows.askTrash([])
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(opened).toHaveLength(0)
+    expect(trashFile).not.toHaveBeenCalled()
+    expect(removeTracks).not.toHaveBeenCalled()
+  })
+
+  it('moves to the Recycle Bin without a dialog on Windows too', async () => {
+    installApi({
+      platform: 'win32',
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+    })
+    const a = track('a')
+    const { flows, opened, removeTracks } = setup([a])
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Trash?')
-    expect(opened[0].confirmLabel).toBe('Move to Trash')
+    expect(opened).toHaveLength(0)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
+  })
+
+  // Trashing the flagged rips reaches every flagged visible row, well beyond what the user
+  // selected, so it keeps its dialog even where every file would land in the Trash.
+  it('still asks before a sweep that must always ask, even when every file has a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const b = track('b')
+    const { flows, opened, removeTracks } = setup([a, b])
+    await flows.askTrash([a, b], true)
+    expect(opened[0].title).toBe('Move 2 files to Trash?')
+    expect(trashFile).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
+  })
+
+  it('reports a failed move and keeps that row when no dialog was shown', async () => {
+    installApi({
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      trashFile: vi.fn<Api['trashFile']>().mockRejectedValue(new Error('busy')),
+    })
+    const a = track('a')
+    const reportTrashFailure = vi.fn()
+    const { flows, removeTracks } = setup([a], { reportTrashFailure })
+    await flows.askTrash([a])
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith([], true))
+    expect(reportTrashFailure).toHaveBeenCalledWith('Artist - a.wav')
+  })
+
+  it('still asks when one file of the selection has no Trash, and moves nothing before the click', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({
+      trashFile,
+      keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
+    })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const { flows, opened } = setup([a, b])
+    await flows.askTrash([a, b])
+    expect(opened).toHaveLength(1)
+    expect(trashFile).not.toHaveBeenCalled()
   })
 })
 
@@ -230,9 +213,8 @@ describe('useConfirmFlows trashed row', () => {
   it('drops a trashed file’s row from every list, a playlist that listed it included', async () => {
     installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined) })
     const a = track('a')
-    const { flows, opened, removeTracks } = setup([a])
+    const { flows, removeTracks } = setup([a])
     await flows.askTrash([a])
-    opened[0].onConfirm()
     await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
   })
 
@@ -246,9 +228,8 @@ describe('useConfirmFlows trashed row', () => {
       ),
     })
     const tracks = [track('a'), track('b'), track('c')]
-    const { flows, opened, removeTracks } = setup(tracks)
+    const { flows, removeTracks } = setup(tracks)
     await flows.askTrash(tracks)
-    opened[0].onConfirm()
     await waitFor(() => expect(removeTracks).toHaveBeenCalled())
     expect(removeTracks).toHaveBeenCalledTimes(1)
     expect(removeTracks).toHaveBeenCalledWith(['a', 'c'], true)
@@ -294,14 +275,13 @@ describe('useConfirmFlows delete for good', () => {
     expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/b.wav', true)
   })
 
-  it('keeps the Trash wording under never when every file has a Trash', async () => {
+  it('moves to the Trash without a dialog under never when every file has a Trash', async () => {
     const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
     const { flows, opened } = setup([a], { settings: never })
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Trash?')
-    opened[0].onConfirm()
+    expect(opened).toHaveLength(0)
     expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
   })
 
@@ -664,6 +644,75 @@ describe('useConfirmFlows single-track overwrite', () => {
   })
 })
 
+describe('useConfirmFlows do not ask again', () => {
+  // The two convert warnings guard files on disk, so they stay, but a DJ who has read them
+  // once must be able to stop seeing them for good, across restarts.
+  it('saves that the overwrite warning is silenced when confirmed with the box ticked', () => {
+    const saveSettings = vi.fn()
+    const { flows, opened } = setup([track('a')], { saveSettings })
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    expect(opened[0].dontAskAgainLabel).toBe("Don't ask again")
+    opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceInPlaceWarning: true })
+  })
+
+  // Ticking the box and then backing out is not consent to anything.
+  it('saves nothing when the box is not ticked on confirm', () => {
+    const saveSettings = vi.fn()
+    const { flows, opened } = setup([track('a')], { saveSettings })
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    opened[0].onConfirm(false)
+    expect(saveSettings).not.toHaveBeenCalled()
+  })
+
+  // Silenced in an earlier session means the saved setting alone decides, no session memory.
+  it('runs an overwrite convert without asking once its warning is silenced', () => {
+    const { flows, opened } = setup([track('a')], {
+      settings: { silenceInPlaceWarning: true } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { destination: 'overwrite', track: track('a') })
+    expect(opened).toHaveLength(0)
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  // Silencing the overwrite warning must not hide the quality-loss one: they warn of
+  // different damage.
+  it('still asks about a lossy re-encode when only the overwrite warning is silenced', () => {
+    const mp3 = track('m', { inputPath: '/m.mp3', fileName: 'm.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], {
+      settings: { silenceInPlaceWarning: true } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'source' })
+    expect(opened).toHaveLength(1)
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  it('saves the lossy warning as silenced on its own key', () => {
+    const saveSettings = vi.fn()
+    const mp3 = track('m', { inputPath: '/m.mp3', fileName: 'm.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], { saveSettings })
+    flows.askConvertOne(vi.fn(), { track: mp3, format: 'source' })
+    opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceLossyWarning: true })
+  })
+
+  it('skips the batch overwrite dialog once silenced and saves the choice when ticked', () => {
+    const saveSettings = vi.fn()
+    const a = track('a')
+    const asked = setup([a], { saveSettings, settings: { overwriteOriginal: true } as Settings })
+    asked.flows.askConvertAll([a])
+    asked.opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceInPlaceWarning: true })
+    const silenced = setup([a], {
+      settings: { overwriteOriginal: true, silenceInPlaceWarning: true } as Settings,
+    })
+    silenced.flows.askConvertAll([a])
+    expect(silenced.opened).toHaveLength(0)
+  })
+})
+
 describe('useConfirmFlows lossy in-place re-encode', () => {
   // 'source' on an .mp3 resolves to mp3 and formatMatchesInput calls that in-place —
   // with normalize active planConversion loses copyOk and re-encodes the only copy,
@@ -954,20 +1003,6 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
       peakDb: -1,
     })
     expect(opened[0]?.destructive).toBe(true)
-  })
-})
-
-describe('useConfirmFlows fill-all selection scope', () => {
-  // Bulk actions follow the shared scope rule: a deliberate multi-selection wins over
-  // the visible rows. The dialog must then say "selected", not "visible" — the count
-  // alone can't tell a selection from a filter, so the caller states it.
-  it('says selected when the fill targets a multi-selection', () => {
-    const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
-    flows.askFillAll(all.slice(0, 2), { fromSelection: true })
-    expect(opened[0].message.toLowerCase()).toContain('selected')
-    expect(opened[0].message).toContain('2')
-    expect(opened[0].message.toLowerCase()).not.toContain('visible')
   })
 })
 

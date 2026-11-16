@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ModalShell } from './ModalShell'
 
@@ -12,7 +12,8 @@ interface Props {
   // Paints the confirm button red for irreversible actions (delete, clear), the macOS
   // convention that warns before the user commits.
   destructive?: boolean
-  onConfirm: () => void
+  dontAskAgainLabel?: string
+  onConfirm: (dontAskAgain: boolean) => void
   onClose: () => void
 }
 
@@ -35,12 +36,14 @@ export function ConfirmDialog({
   confirmLabel,
   confirmDisabled,
   destructive,
+  dontAskAgainLabel,
   onConfirm,
   onClose,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const confirmRef = useRef<HTMLButtonElement>(null)
   const cancelRef = useRef<HTMLButtonElement>(null)
+  const [dontAskAgain, setDontAskAgain] = useState(false)
   // Focus the default button so Enter confirms immediately and the keyboard default
   // matches the native macOS dialog convention (runs after the shell's focus trap).
   // For a destructive action the convention inverts — NSAlert puts the default on
@@ -58,7 +61,7 @@ export function ConfirmDialog({
       labelledBy="confirm-title"
       className={DIALOG_PANEL}
       onSubmit={() => {
-        onConfirm()
+        onConfirm(dontAskAgain)
         onClose()
       }}
     >
@@ -74,6 +77,18 @@ export function ConfirmDialog({
             </li>
           ))}
         </ul>
+      )}
+      {dontAskAgainLabel && (
+        <label className="mt-4 flex cursor-pointer items-center gap-2 text-xs text-fg-dim">
+          <input
+            data-testid="confirm-dont-ask-again"
+            type="checkbox"
+            checked={dontAskAgain}
+            onChange={(e) => setDontAskAgain(e.target.checked)}
+            className="h-4 w-4 shrink-0 accent-[var(--color-accent)]"
+          />
+          {dontAskAgainLabel}
+        </label>
       )}
       <div className="mt-6 flex justify-end gap-2">
         <button
