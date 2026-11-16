@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Toast } from '../lib/toastQueue'
+import { ModalShell } from './ModalShell'
 import { ToastStack } from './ToastStack'
 
 afterEach(cleanup)
@@ -195,6 +196,41 @@ describe('ToastStack', () => {
   describe('with fake timers', () => {
     beforeEach(() => vi.useFakeTimers())
     afterEach(() => vi.useRealTimers())
+
+    const withModal = (open: boolean, toasts: Toast[], onExpire = vi.fn()) => (
+      <>
+        <ToastStack toasts={toasts} onExpire={onExpire} onClose={vi.fn()} />
+        {open && (
+          <ModalShell onClose={vi.fn()} backdropTestId="modal-backdrop" className="" label="Ajustes">
+            <button type="button">Cerrar</button>
+          </ModalShell>
+        )}
+      </>
+    )
+
+    it('steps a plain notice out of the way of an open dialog and brings it back when it closes', () => {
+      const toasts = [
+        toast({ id: 'n', testid: 'notice', message: 'disk full' }),
+        toast({ id: 'u', testid: 'undo', message: 'removed', action: { label: 'Undo', onAction: vi.fn() } }),
+      ]
+      const { rerender } = render(withModal(false, toasts))
+      rerender(withModal(true, toasts))
+      expect(screen.getByTestId('notice')).not.toBeVisible()
+      expect(screen.getByTestId('undo')).toBeVisible()
+      rerender(withModal(false, toasts))
+      expect(screen.getByTestId('notice')).toBeVisible()
+    })
+
+    it('holds a hidden notice’s countdown so it cannot expire unseen behind a dialog', () => {
+      const onExpire = vi.fn()
+      const toasts = [toast({ id: 'n', message: 'saved', duration: 4000 })]
+      const { rerender } = render(withModal(true, toasts, onExpire))
+      act(() => vi.advanceTimersByTime(10000))
+      expect(onExpire).not.toHaveBeenCalled()
+      rerender(withModal(false, toasts, onExpire))
+      act(() => vi.advanceTimersByTime(4000))
+      expect(onExpire).toHaveBeenCalledWith('n')
+    })
 
     // The re-push brings a fresh deadline, so the clock starts over even though the card
     // stays mounted: a count that just grew must not expire on the old toast's leftover time.

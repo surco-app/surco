@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
 import { prefersReducedMotion } from '../lib/motion'
+import { useModalOpen } from '../lib/modalPresence'
 import type { Toast, ToastText } from '../lib/toastQueue'
 
 // How long the copy button shows its "copied" check before reverting to the copy icon.
@@ -35,6 +36,7 @@ export function ToastStack({
   // The user clicked ✕ — remove the card and run the toast's own onDismiss.
   onClose: (id: string) => void
 }): React.JSX.Element {
+  const modalOpen = useModalOpen()
   // Dismissed cards linger briefly in a leaving state so the exit can animate — an
   // instant unmount reads as a rendering glitch now that toasts expire on their own.
   // A keyed re-push (the new-tracks count updating in place) swaps ids in the queue,
@@ -119,6 +121,7 @@ export function ToastStack({
         <div
           key={toast.key ?? toast.id}
           data-testid="toast-slot"
+          hidden={(modalOpen && !toast.action && !leaving) || undefined}
           className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
             leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
           }`}
@@ -129,6 +132,7 @@ export function ToastStack({
             <ToastCard
               toast={toast}
               leaving={leaving}
+              held={modalOpen && !toast.action}
               onExpire={onExpire}
               onClose={onClose}
               onSwipeClose={waitOutSwipeTail}
@@ -143,6 +147,7 @@ export function ToastStack({
 function ToastCard({
   toast,
   leaving,
+  held,
   onExpire,
   onClose,
   onSwipeClose,
@@ -150,6 +155,7 @@ function ToastCard({
   toast: Toast
   // The card has left the queue and is playing its exit — inert while it fades.
   leaving: boolean
+  held: boolean
   onExpire: (id: string) => void
   onClose: (id: string) => void
   onSwipeClose: () => void
@@ -173,7 +179,7 @@ function ToastCard({
   // it, so a slow reader or a keyboard user heading for the action never loses the toast.
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
-  const paused = hovered || focused
+  const paused = hovered || focused || held
   const remaining = useRef(toast.duration ?? 0)
   // biome-ignore lint/correctness/useExhaustiveDependencies: a keyed re-push keeps this card mounted under a new id, and that new id is a fresh deadline, so the clock must restart on it.
   useEffect(() => {

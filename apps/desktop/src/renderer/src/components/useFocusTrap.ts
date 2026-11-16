@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useEffect, useState } from 'react'
+import { enterModal } from '../lib/modalPresence'
 
 let returningFocus = false
 
@@ -39,6 +40,7 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active = 
       }
       branch = branch.parentElement
     }
+    const leaveModal = enterModal()
 
     // Pull focus in if it isn't already inside, so the first Tab/Shift+Tab has a
     // known anchor. Components that focus their own input (e.g. the palette) keep
@@ -65,6 +67,7 @@ export function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active = 
       node.removeEventListener('keydown', onKeyDown)
       // Lifted before the focus goes back: an inert trigger refuses focus.
       for (const el of inerted) el.removeAttribute('inert')
+      leaveModal()
       const back = previouslyFocused?.isConnected ? previouslyFocused : focusedAtOpen
       returningFocus = true
       try {
