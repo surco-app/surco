@@ -390,7 +390,6 @@ export function useConfirmFlows({
     if (patches.length) deriveTracks(patches)
   }
 
-  // Fill-all runs on the click: the undo stack and its toast bring the old values back.
   function askFillAll(targets: TrackItem[]): void {
     if (deriveTagPatches(targets).length === 0) {
       notify(tr('confirm.fillNone'))

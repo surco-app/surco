@@ -1798,7 +1798,7 @@ export default function App(): React.JSX.Element {
     },
   )
 
-  // The confirm-before-firing actions (trash, clean up previous files, fill-all, clear-all,
+  // The confirm-before-firing actions (trash, clean up previous files, clear-all,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const {
     askTrash,

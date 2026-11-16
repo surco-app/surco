@@ -9728,6 +9728,29 @@ describe('App metadata undo', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
   })
 
+  // Filling from file names overwrites tags, which used to be asked about first. The explicit
+  // command is safe to run at once only because the toast's Undo brings the old values back.
+  it('fills tags from the file name at once and Undo restores the previous values', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/Daft Punk - One More Time.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+
+    fireEvent.click(screen.getByTestId('list-actions-more'))
+    fireEvent.click(screen.getByTestId('fill-all'))
+
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('One More Time'))
+    expect(await screen.findByTestId('app-notice-message')).toHaveTextContent(
+      i18n.t('notices.updatedMeta', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+  })
+
   // The ⌘K clear is the Eraser button's twin and has to clear the same things. It set
   // coverRemoved without dropping coverUrl, so the artwork stayed on screen: the clear
   // read as "it didn't touch the cover" while the conversion was already staged to wipe
