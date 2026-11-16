@@ -103,6 +103,8 @@ export async function expandPaths(
   return expanded.flat()
 }
 
+const naturalOrder = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
 export async function collectAudio(dir: string, onBatch?: OnBatch): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true }).catch(() => [])
   // This directory's own audio files, announced before recursing into its subfolders:
@@ -116,9 +118,11 @@ export async function collectAudio(dir: string, onBatch?: OnBatch): Promise<stri
     if (entry.isDirectory()) dirs.push(full)
     else if (AUDIO_EXTS.has(extname(entry.name).toLowerCase())) here.push(full)
   }
+  here.sort(naturalOrder.compare)
+  dirs.sort(naturalOrder.compare)
   if (here.length) onBatch?.(here)
   const nested = await Promise.all(dirs.map((full) => collectAudio(full, onBatch)))
-  // Order matches the pre-streaming walk (a directory's files in readdir order, each
+  // Order matches the pre-streaming walk (a directory's files in natural order, each
   // subtree in place) so an import's row order does not depend on network timing.
   return [...here, ...nested.flat()]
 }

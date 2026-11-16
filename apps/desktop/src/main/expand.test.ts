@@ -169,6 +169,23 @@ describe('expandPaths', () => {
     expect(await expandPaths([join(dir, 'gone.wav')])).toEqual([])
   })
 
+  it('lists a folder’s tracks and subfolders in natural order, as Finder shows them, so track 2 comes before track 10', async () => {
+    for (const n of [1, 2, 10, 100]) await writeFile(join(dir, `pista ${n}.wav`), '')
+    for (const n of [2, 10]) {
+      await mkdir(join(dir, `CD ${n}`))
+      await writeFile(join(dir, `CD ${n}`, 'a.wav'), '')
+    }
+
+    expect(await expandPaths([dir])).toEqual([
+      join(dir, 'pista 1.wav'),
+      join(dir, 'pista 2.wav'),
+      join(dir, 'pista 10.wav'),
+      join(dir, 'pista 100.wav'),
+      join(dir, 'CD 2', 'a.wav'),
+      join(dir, 'CD 10', 'a.wav'),
+    ])
+  })
+
   // The reason this streams at all: on an SMB share a music tree costs one network
   // round trip per directory, so a 560-folder crate takes ~20s to walk while the first
   // audio file is known after ~1s. Reporting files as they are found is what lets the
