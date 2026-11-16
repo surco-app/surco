@@ -535,7 +535,9 @@ const TrackRow = memo(function TrackRow({
   // Shared by each mark's hover tooltip and its sr-only twin, so what a screen reader
   // hears is the same sentence the pointer reveals.
   const statusLabel =
-    t.skipReason ?? tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
+    t.skipReason ??
+    (t.status === 'error' ? t.error : undefined) ??
+    tr(stale ? 'trackList.status.stale' : `trackList.status.${t.status}`)
   const autoMatchLabel = matchTooltip(
     t.matchProvider
       ? tr('trackList.autoMatchedFrom', { source: tr(`settings.provider.${t.matchProvider}`) })

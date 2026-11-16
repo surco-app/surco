@@ -1780,6 +1780,11 @@ describe('TrackList row state for screen readers', () => {
     expect(name).toContain(i18n.t('trackList.metaReadFailed'))
     expect(name).toContain(i18n.t('trackList.autoMatched'))
   })
+
+  it('says why a failed conversion failed, not just that it did, so the user can act from the list', () => {
+    renderList([track({ id: 'a', status: 'error', error: 'No space left on device' })])
+    expect(screen.getByRole('option').textContent).toContain('No space left on device')
+  })
 })
 
 describe('TrackList review spark', () => {
