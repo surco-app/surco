@@ -43,7 +43,6 @@ function setup(
       settings: extra.settings ?? null,
       removeTracks,
       updateTrack: extra.updateTrack ?? vi.fn(),
-      emptyTracks: vi.fn(),
       deriveTracks: extra.deriveTracks ?? vi.fn(),
       notify: extra.notify ?? vi.fn(),
       processAll: vi.fn(),
@@ -57,110 +56,7 @@ function setup(
   return { flows: result.current, opened, removeTracks }
 }
 
-// A track carries staged edits when its live state has diverged from what the file on
-// disk holds — the same test sessionEdits uses to decide what is worth saving across a
-// crash. diskSignature is the snapshot taken when the file was read.
-function edited(id: string): TrackItem {
-  return track(id, { diskSignature: 'what-the-file-had', meta: { ...emptyMetadata(), title: id } })
-}
-
-// Removing is not undoable: useMetaUndo filters to rows that still exist and never
-// resurrects a deleted one. The dialog was asked for by COUNT — one row went straight
-// through — so a single track carrying an hour of tagging was discarded on a stray click
-// of a hover-revealed ✕, with nothing to say it had anything on it. Asking by CONTENT
-// keeps the ordinary gesture free (which is what stops the dialog being trained away)
-// and stops exactly the case that loses work.
-describe('useConfirmFlows removing tracks from the list', () => {
-  it('removes a single untouched track without asking', () => {
-    const t = track('a')
-    const { flows, opened, removeTracks } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(0)
-    expect(removeTracks).toHaveBeenCalledWith(['a'])
-  })
-
-  it('asks before discarding a single track that carries staged edits', () => {
-    const t = edited('a')
-    const { flows, opened, removeTracks } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(1)
-    expect(removeTracks).not.toHaveBeenCalled()
-    opened[0].onConfirm?.()
-    expect(removeTracks).toHaveBeenCalledWith(['a'])
-  })
-
-  // Same batch rule as the trash: the selection leaves in one removal, so a cover shared
-  // by those rows is weighed against what is left, not against its own doomed siblings.
-  it('removes a confirmed selection in one batch', () => {
-    const tracks = [track('a'), track('b'), track('c')]
-    const { flows, opened, removeTracks } = setup(tracks)
-
-    flows.askRemoveFromList(tracks)
-    opened[0].onConfirm?.()
-
-    expect(removeTracks).toHaveBeenCalledTimes(1)
-    expect(removeTracks).toHaveBeenCalledWith(['a', 'b', 'c'])
-  })
-
-  // The strings were written for the many-rows case only. Now that one row can raise the
-  // dialog too, a fixed plural would greet it with "Remove 1 tracks from the list?".
-  it('words the single-track dialog as one track', () => {
-    const t = edited('a')
-    const { flows, opened } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened[0].title).not.toContain('1 tracks')
-    expect(opened[0].message).not.toContain('1 tracks')
-  })
-
-  // The expanded case keeps asking whatever the rows carry: one click on a hover-revealed
-  // ✕ acting on dozens of rows is worth confirming on its own.
-  it('still asks for a multi-row removal with nothing staged', () => {
-    const rows = [track('a'), track('b')]
-    const { flows, opened } = setup(rows)
-
-    flows.askRemoveFromList(rows)
-
-    expect(opened).toHaveLength(1)
-  })
-
-  it('does not ask when a converted track matches what is on disk', () => {
-    // Converted and unchanged since: the signature matches, so there is nothing staged
-    // to lose and the ✕ stays a one-click gesture.
-    const t = track('a', { diskSignature: undefined })
-    const { flows, opened } = setup([t])
-
-    flows.askRemoveFromList([t])
-
-    expect(opened).toHaveLength(0)
-  })
-})
-
 describe('useConfirmFlows scope wording', () => {
-  // The toolbar's clear acts on the filtered-visible rows while the palette's acts on
-  // everything — two buttons that read the same but sweep different sets. The dialog is
-  // the last chance to say which: with a filter active it must state that hidden tracks
-  // survive, so the user can predict what the list looks like after confirming.
-  it('says hidden tracks survive when clearing a filtered view', () => {
-    const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
-    flows.askClearAll(all.slice(0, 2))
-    expect(opened[0].message).toContain('visible')
-    expect(opened[0].message).toContain('2')
-  })
-
-  it('keeps the plain wording when clearing the whole list', () => {
-    const all = [track('a'), track('b')]
-    const { flows, opened } = setup(all)
-    flows.askClearAll(all)
-    expect(opened[0].message).not.toContain('visible')
-  })
-
   it('fills from the file names right away and opens no dialog', () => {
     const all = [track('a'), track('b'), track('c')]
     const deriveTracks = vi.fn()

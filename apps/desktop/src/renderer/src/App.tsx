@@ -188,7 +188,7 @@ import {
   runCommand,
 } from './lib/commands'
 import { railAlert } from './lib/copiesView'
-import { revokeCoverUrl, revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
+import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
 import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
@@ -267,7 +267,7 @@ import {
   reanchorToVisible,
   type Selection,
 } from './lib/selection'
-import { hasStagedEdits } from './lib/sessionEdits'
+import { hasStagedEdits, sessionEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
@@ -733,6 +733,7 @@ export default function App(): React.JSX.Element {
   // re-read lands here again and only loads what is new. Stable so that re-read, not every
   // render, runs it.
   const matchingPathPairs = useMatchingPathPairs()
+  const listUndoCovers = useRef<(string | undefined)[][]>([])
   const browser = useSourceBrowser({
     matchingPathPairs,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
@@ -822,6 +823,7 @@ export default function App(): React.JSX.Element {
         [
           ...tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
           ...metaUndo.heldCovers(),
+          ...listUndoCovers.current.flat(),
         ],
       )
     },
@@ -834,7 +836,10 @@ export default function App(): React.JSX.Element {
         queryClient,
         cleared.map((t) => t.inputPath),
       )
-      for (const t of cleared) revokeCoverUrl(t.coverUrl)
+      revokeDisplacedCovers(
+        cleared.map((t) => t.coverUrl),
+        listUndoCovers.current.flat(),
+      )
     },
     onMetaLoaded: (t) => {
       // A row already on screen when its light read lands never comes into view again.
@@ -1779,13 +1784,59 @@ export default function App(): React.JSX.Element {
     return tracksRef.current.find((t) => t.id === id)
   })
 
+  const removeWithUndo = useStableCallback((targets: TrackItem[], remove: () => void) => {
+    if (targets.length === 0) return
+    const edits = sessionEdits(targets)
+    for (const t of targets)
+      if (t.coverUrl?.startsWith('blob:') && edits[t.inputPath])
+        edits[t.inputPath].coverUrl = t.coverUrl
+    const covers = targets.map((t) => t.coverUrl)
+    listUndoCovers.current.push(covers)
+    remove()
+    const letGo = () => {
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
+    }
+    const release = () => {
+      letGo()
+      revokeDisplacedCovers(covers, [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...metaUndo.heldCovers(),
+        ...listUndoCovers.current.flat(),
+      ])
+    }
+    const pathsOf = (inFiles: boolean) =>
+      targets.filter((t) => !!t.inFiles === inFiles).map((t) => t.inputPath)
+    const id = pushToast(store, {
+      tone: 'neutral',
+      message: tr('notices.removedFromList', { count: targets.length }),
+      duration: 6000,
+      testid: 'app-notice',
+      action: {
+        label: { key: 'notices.undo' },
+        onAction: () => {
+          dismissToast(store, id)
+          void Promise.all([
+            addPaths(pathsOf(true), edits),
+            addPaths(pathsOf(false), edits, false, false),
+          ]).finally(letGo)
+        },
+      },
+      onDismiss: release,
+      onExpire: release,
+    })
+  })
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
   // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV
   // tracks survive the click.
-  const emptyTracks = useStableCallback((targets: TrackItem[]) => {
-    if (targets.length === tracksRef.current.length) clearTracks()
-    else removeTracks(targets.map((t) => t.id))
-  })
+  const emptyTracks = useStableCallback((targets: TrackItem[]) =>
+    removeWithUndo(targets, () => {
+      if (targets.length === tracksRef.current.length) clearTracks()
+      else removeTracks(targets.map((t) => t.id))
+    }),
+  )
+  const dropFromList = useStableCallback((targets: TrackItem[]) =>
+    removeWithUndo(targets, () => removeTracks(targets.map((t) => t.id))),
+  )
 
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
@@ -1798,21 +1849,12 @@ export default function App(): React.JSX.Element {
     },
   )
 
-  // The confirm-before-firing actions (trash, clean up previous files, clear-all,
+  // The confirm-before-firing actions (trash, clean up previous files,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
-  const {
-    askTrash,
-    askCleanUp,
-    askFillAll,
-    askClearAll,
-    askRemoveFromList,
-    askConvertAll,
-    askConvertOne,
-  } = useConfirmFlows({
+  const { askTrash, askCleanUp, askFillAll, askConvertAll, askConvertOne } = useConfirmFlows({
     settings,
     removeTracks,
     updateTrack,
-    emptyTracks,
     deriveTracks: deriveTracksUndoable,
     notify: setNotice,
     processAll,
@@ -2459,7 +2501,7 @@ export default function App(): React.JSX.Element {
     autoMatchTracks(browser.source === null ? bulkTracks : selectedTracks),
   )
   const onOpenExport = useStableCallback(overlays.openExport)
-  const onClearAll = useStableCallback(() => askClearAll(visibleTracksRef.current))
+  const onClearAll = useStableCallback(() => emptyTracks(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
   // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
@@ -3500,7 +3542,7 @@ export default function App(): React.JSX.Element {
       ? removeFromMatching(targets)
       : removablePlaylist
         ? removeFromPlaylist(targets)
-        : askRemoveFromList(targets),
+        : dropFromList(targets),
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.

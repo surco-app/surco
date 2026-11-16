@@ -39,6 +39,7 @@ import type {
 } from '../../shared/types'
 import { resetEditorSections } from './hooks/useEditorSections'
 import { resetGridChecks } from './hooks/useGridChecks'
+import { MAX_META_UNDO } from './hooks/useMetaUndo'
 import { NEW_TRACKS_PROMPT_TIMEOUT_MS } from './hooks/useTrackLibrary'
 import i18n from './i18n'
 import { startDraft } from './lib/cueDraft'
@@ -3427,10 +3428,38 @@ describe('App source playlists', () => {
 
     fireEvent.contextMenu(screen.getByTestId('track-row'))
     fireEvent.click(screen.getByTestId('track-menu-remove'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
 
     fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('track-row'))
+    expect(await screen.findByTestId('field-title')).toHaveValue('Hand Typed')
+  })
+
+  // A row a playlist still lists is only taken out of Tracks, never out of the collection.
+  // Undo has to put it back in Tracks too, or the DJ would find it only in the playlist.
+  it('puts a row its playlist kept back in Tracks, edits included, when the removal is undone', async () => {
+    const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
+    factoryWithAlpha({ pickFiles })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    runMenu('add')
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    fireEvent.click(screen.getByTestId('track-row'))
+    fireEvent.change(await screen.findByTestId('field-title'), {
+      target: { value: 'Hand Typed' },
+    })
+    fireEvent.blur(screen.getByTestId('field-title'))
+
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('track-row'))
     expect(await screen.findByTestId('field-title')).toHaveValue('Hand Typed')
@@ -6728,8 +6757,8 @@ describe('App multi-select field edit', () => {
 describe('App multi-select removal', () => {
   // The right-click row stays selected when it's already part of the selection, so the
   // menu's list actions follow what's highlighted. "Remove from Surco" on one of several
-  // selected rows must drop the whole selection, not just the clicked row — behind one
-  // confirm, like Move to Trash below, because dropping rows also drops their staged edits.
+  // selected rows must drop the whole selection, not just the clicked row, at once: the
+  // toast's Undo brings the rows back with their staged edits.
   it('removes every selected track, not just the right-clicked one', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -6743,7 +6772,7 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.contextMenu(rows[1])
     fireEvent.click(screen.getByTestId('track-menu-remove'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
@@ -6844,14 +6873,13 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     runMenu('remove-all')
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
     // The two-row selection doesn't narrow it: all three visible rows go.
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
   })
 
   // The swipe is the row's own gesture, the way Mail's swipe deletes one message: it takes
   // the swiped row and nothing else, and it never stops to ask. Vicent 24/09: "no debe salir
-  // el modal". The selection-wide removal with its confirm stays on ⌫ and the menu.
+  // el modal". The selection-wide removal stays on ⌫ and the menu.
   it('removes only the swiped row, without asking, even inside a selection', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -8471,21 +8499,35 @@ describe('App command palette list-wide actions', () => {
     expect(screen.getByTestId('palette-item')).toHaveAttribute('aria-disabled', 'false')
   })
 
-  // "Clear the list" discards every unsaved edit in the session (matches, covers, tags
-  // live only in memory), so the palette — and the native menu, which fires the same
-  // command — must ask first, exactly like the toolbar button it mirrors. Its label
-  // matches that button so searching "clear" surfaces it.
-  it('asks for confirmation before clearing the list from the palette', async () => {
+  // Asking "are you sure?" after the DJ explicitly picked "Clear the list" questions an order
+  // they just gave. The edits that live only in memory are what a clear could cost, so the
+  // toast's Undo is the net that has to bring them back instead.
+  it('clears at once from the palette and Undo brings the rows back with their unsaved edits', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
     await renderApp()
-    await addTwoTracks()
+    await addOneTrack()
+    const title = await screen.findByTestId('field-title')
+    fireEvent.change(title, { target: { value: 'Hand Typed' } })
+    fireEvent.blur(title)
     fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
     fireEvent.change(await screen.findByTestId('palette-input'), {
       target: { value: 'Clear the list' },
     })
     fireEvent.click(screen.getByTestId('palette-item'))
-    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
+
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    expect(await screen.findByTestId('app-notice-message')).toHaveTextContent(
+      i18n.t('notices.removedFromList', { count: 1 }),
+    )
+    fireEvent.click(screen.getByTestId('app-notice-action'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('track-row'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Hand Typed'))
   })
 
   // The header button and the palette share one name, "Clear the list", so they must share
@@ -8508,7 +8550,6 @@ describe('App command palette list-wide actions', () => {
       target: { value: 'Clear the list' },
     })
     fireEvent.click(screen.getByTestId('palette-item'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(screen.getByTestId('track-row')).toHaveTextContent('WAV')
   })
@@ -8876,7 +8917,6 @@ describe('App per-format filter', () => {
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     runMenu('remove-all')
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
     // The mp3 is gone. The format axis, now MP3-less, falls back to every format, so the wav
     // that was hidden behind the filter shows — proof Empty didn't sweep it in. Had Empty
     // cleared the whole list, no row would remain.
@@ -10104,7 +10144,6 @@ describe('App metadata undo', () => {
 
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(screen.getByTestId('track-menu-remove'))
-      fireEvent.click(await screen.findByTestId('confirm-ok'))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
       expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:shared')
 
@@ -10113,6 +10152,94 @@ describe('App metadata undo', () => {
       await waitFor(() =>
         expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:shared'),
       )
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  // The cover the DJ picked lives only as a blob URL in memory, and clearing the list used to
+  // free it on the spot. Undo would then bring the row back with its art gone, so the clear
+  // holds the blob for as long as its Undo is on offer. The row's own thumbnail stays the
+  // file's art, as it was before the clear.
+  it('brings a picked cover back when clearing the list is undone', async () => {
+    const createObjectURL = vi.fn().mockReturnValueOnce('blob:picked')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      await addOneTrack()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'picked.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      expect(within(screen.getByTestId('track-row')).queryByTestId('track-cover')).toBeNull()
+
+      fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+      fireEvent.change(await screen.findByTestId('palette-input'), {
+        target: { value: 'Clear the list' },
+      })
+      fireEvent.click(screen.getByTestId('palette-item'))
+      await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+      fireEvent.click(await screen.findByTestId('app-notice-action'))
+
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      fireEvent.click(screen.getByTestId('track-row'))
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      expect(within(screen.getByTestId('track-row')).queryByTestId('track-cover')).toBeNull()
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  // Holding the blob for the Undo must not turn into holding it for the session: an
+  // unreleased blob URL pins the whole image file in memory until quit. Twenty-one
+  // numberings push the pick out of the ⌘Z history, so only the removal's Undo holds it.
+  it("holds a removed row's picked cover while its Undo is on offer and frees it after", async () => {
+    const createObjectURL = vi.fn().mockReturnValueOnce('blob:picked')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'picked.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      for (let i = 0; i <= MAX_META_UNDO; i++) runMenu('number-tracks')
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-remove'))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+        expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+        act(() => vi.advanceTimersByTime(7000))
+        await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:picked'))
+      } finally {
+        vi.useRealTimers()
+      }
     } finally {
       Object.assign(url, original)
     }
@@ -12284,9 +12411,9 @@ describe('App list header', () => {
     await waitFor(() => expect(screen.getByTestId('trash-selected')).toBeDisabled())
   })
 
-  // The visible button only drops rows from the list, so it must never reach the files and
-  // must go through the same confirm as the context menu's Remove from Surco.
-  it('removes the selection from the list with the visible button, asking once and never trashing files', async () => {
+  // The visible button only drops rows from the list, so it must never reach the files. It
+  // takes the selection at once, like the context menu's Remove, since Undo brings it back.
+  it('removes the selection from the list with the visible button at once, never trashing files', async () => {
     const trashFile = vi.fn().mockResolvedValue(undefined)
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -12300,7 +12427,7 @@ describe('App list header', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.click(screen.getByTestId('remove-selected'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(trashFile).not.toHaveBeenCalled()
   })

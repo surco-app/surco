@@ -8,6 +8,7 @@ import type { Release, TrackMetadata } from '../../../shared/types'
 import { coverSourceOf, keepCoverArg } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
 import { buildReleaseMeta } from '../lib/release'
+import { sessionEdits } from '../lib/sessionEdits'
 import { useTrackLibrary } from './useTrackLibrary'
 
 // readMeta resolves the whole tag shape in the real app; a partial object makes
@@ -1205,6 +1206,31 @@ describe('Files and the source playlists keep their own tracks', () => {
     act(() => result.current.removeTracks([a.id, b.id]))
     expect(result.current.tracks).toEqual([expect.objectContaining({ id: a.id, inFiles: false })])
     expect(onRemove).toHaveBeenCalledWith([expect.objectContaining({ id: b.id })])
+  })
+
+  // Undoing a removal adds the paths again. A row its playlist kept was only taken out of
+  // Files, so that add has to put it back in Files with the edits it still carries.
+  it('puts a row its playlist kept back in Files, edits and all, when its path is added again', async () => {
+    const { result } = setup({}, { filesOpen: true })
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+    const a = result.current.tracks[0]
+    act(() => result.current.updateTrack(a.id, { meta: { ...a.meta, title: 'Hand Typed' } }))
+    const edits = sessionEdits(result.current.tracks)
+    act(() => result.current.removeTracks([a.id]))
+    expect(result.current.tracks).toEqual([expect.objectContaining({ inFiles: false })])
+
+    await act(() => result.current.addPaths(['/m/a.aiff'], edits))
+
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({
+        id: a.id,
+        inFiles: true,
+        meta: expect.objectContaining({ title: 'Hand Typed' }),
+      }),
+    ])
   })
 
   it('keeps a row removed from Files by its ✕ for the playlist that lists it', async () => {

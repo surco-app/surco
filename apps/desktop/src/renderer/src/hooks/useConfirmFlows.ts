@@ -18,7 +18,6 @@ import { sourceTrashedPatch } from '../lib/export'
 import { requiredFieldsOf } from '../lib/fields'
 import { jobAudio } from '../lib/reapply'
 import type { SupersededFile } from '../lib/selectionStatus'
-import { hasStagedEdits } from '../lib/sessionEdits'
 import type { TrackItem } from '../types'
 import type { ConfirmModal } from './useOverlays'
 
@@ -111,10 +110,6 @@ interface Params {
   settings: Settings | null
   removeTracks: (ids: string[], everywhere?: boolean) => void
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
-  // Empties the given rows: App routes the whole-list case to clearTracks (start over, drops
-  // the folder watch) and the filtered-visible subset to removeTracks, so a format filter never
-  // sweeps in the hidden rows.
-  emptyTracks: (targets: TrackItem[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   notify: (message: string) => void
   processAll: (
@@ -150,8 +145,6 @@ interface ConfirmFlows {
   // process can answer.
   askCleanUp: (track: TrackItem, offer: CleanupOffer) => Promise<void>
   askFillAll: (targets: TrackItem[]) => void
-  askClearAll: (targets: TrackItem[]) => void
-  askRemoveFromList: (targets: TrackItem[]) => void
   askConvertAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -255,7 +248,6 @@ export function useConfirmFlows({
   settings,
   removeTracks,
   updateTrack,
-  emptyTracks,
   deriveTracks,
   notify,
   processAll,
@@ -396,52 +388,6 @@ export function useConfirmFlows({
       return
     }
     deriveFrom(targets)
-  }
-
-  // Empties the given rows: the visible (filtered) set from the toolbar trash button, or the
-  // whole list from the palette's "Clear the list". Emptying an MP3-filtered view via the
-  // toolbar must not discard the hidden FLAC/WAV rows — the count in the copy says how many go.
-  function askClearAll(targets: TrackItem[]): void {
-    // A filter narrows what the toolbar button empties; the copy must say the hidden
-    // rows stay, or confirming reads like the whole list is about to go.
-    const filtered = targets.length < tracksRef.current.length
-    openConfirm({
-      title: tr('confirm.clearTitle'),
-      message: tr(filtered ? 'confirm.clearMessageFiltered' : 'confirm.clearMessage', {
-        count: targets.length,
-      }),
-      confirmLabel: tr('confirm.clearConfirm'),
-      destructive: true,
-      onConfirm: () => emptyTracks(targets),
-    })
-  }
-
-  // A row's ✕ (and ⌫, and the context menu's Remove) acts on the whole selection when the
-  // clicked row belongs to it — so one click on a hover-revealed target can discard dozens of
-  // rows along with every staged edit on them, and a removal is not undoable (useMetaUndo
-  // filters to rows that still exist and never resurrects a deleted one). Not asking on the
-  // ordinary gesture is the point: a dialog on every single-row ✕ would be a tax on it and
-  // would train the user to dismiss it unread, which is precisely what would let the lossy
-  // case through.
-  //
-  // So the question is what the removal COSTS, not how many rows it spans: a lone track
-  // carrying an hour of tagging is the expensive case, and by count it went straight
-  // through with nothing to say it had anything on it. A clean row still goes in one
-  // click, whether it is one or one of many.
-  function askRemoveFromList(targets: TrackItem[]): void {
-    if (targets.length === 0) return
-    const ids = targets.map((t) => t.id)
-    if (targets.length === 1 && !targets.some(hasStagedEdits)) {
-      removeTracks(ids)
-      return
-    }
-    openConfirm({
-      title: tr('confirm.removeFromListTitle', { count: targets.length }),
-      message: tr('confirm.removeFromListMessage', { count: targets.length }),
-      confirmLabel: tr('confirm.removeFromListConfirm'),
-      destructive: true,
-      onConfirm: () => removeTracks(ids),
-    })
   }
 
   // Overwrite mode rewrites each source in place (the original is unlinked, not
@@ -603,8 +549,6 @@ export function useConfirmFlows({
     askTrash,
     askCleanUp,
     askFillAll,
-    askClearAll,
-    askRemoveFromList,
     askConvertAll,
     askConvertOne,
   }

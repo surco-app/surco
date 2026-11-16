@@ -719,7 +719,8 @@ export function useTrackLibrary({
     // editor showed the art, for every track whose cover came from the library rather
     // than the file. The file's own art still wins: the row is a view of the file on
     // disk, and this only fills the gap when the file carries none.
-    if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
+    if (!cover?.thumbUrl && saved?.coverUrl && !saved.coverUrl.startsWith('blob:'))
+      patch.embeddedCover = saved.coverUrl
     // A restored edit replaces the read wholesale (it was itself built on a read of
     // this same file, plus everything the user staged since); the matched flag rides
     // in the patch so the auto-match sweep skips the row instead of overwriting it.

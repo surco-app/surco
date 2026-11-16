@@ -1329,7 +1329,6 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         settings,
         removeTracks: library.removeTracks,
         updateTrack: library.updateTrack,
-        emptyTracks: (targets) => library.removeTracks(targets.map((t) => t.id)),
         deriveTracks: () => {},
         notify: () => {},
         processAll: (...args) => {

@@ -592,6 +592,21 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
 
     expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
   })
+
+  // A removal from the list is undone by adding its paths again, and the removal has put
+  // them in the set the watcher ignores. If the add consulted that set, Undo would bring
+  // nothing back.
+  it('takes a removed track back when its path is added again', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.removeTracks([a.id]))
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(result.current.tracks.map((t) => t.inputPath).sort()).toEqual(['/m/a.wav', '/m/b.wav'])
+  })
 })
 
 describe('useTrackLibrary own outputs vs watcher', () => {
