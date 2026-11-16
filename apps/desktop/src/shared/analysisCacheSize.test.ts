@@ -4,6 +4,7 @@ import {
   CACHE_GB_MIN,
   cacheBytesOf,
   sanitizeCacheGb,
+  smallCacheBytesFor,
   tracksThatFit,
 } from './analysisCacheSize'
 
@@ -26,5 +27,14 @@ describe('analysis cache size', () => {
 
   it('turns the setting into the prune budget', () => {
     expect(cacheBytesOf(10)).toBe(10 * 1024 ** 3)
+  })
+
+  // Tag reads, BPM, key and loudness are what a reopen serves for every row, about 40 KB a
+  // track (measured 16/11). A fixed 1 GB held some 25,000 tracks, so a bigger library lost
+  // its oldest reads on every launch and read them again off the NAS.
+  it('gives the small results room for every track Surco knows, never less than 1 GB', () => {
+    expect(smallCacheBytesFor(0)).toBe(1024 ** 3)
+    expect(smallCacheBytesFor(10_000)).toBe(1024 ** 3)
+    expect(smallCacheBytesFor(50_000)).toBe(50_000 * 64 * 1024)
   })
 })

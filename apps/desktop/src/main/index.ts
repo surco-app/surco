@@ -41,7 +41,7 @@ import {
 } from 'electron'
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
-import { cacheBytesOf } from '../shared/analysisCacheSize'
+import { cacheBytesOf, smallCacheBytesFor } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
@@ -2567,7 +2567,13 @@ app.whenReady().then(() => {
   }
   // Bound the on-disk analysis cache at launch, before any new entries land, and again
   // every half hour: an "analyze all" over a big library writes gigabytes in one session.
-  const pruneToSetting = () => pruneAnalysisCache(cacheBytesOf(getSettings().analysisCacheGb))
+  const pruneToSetting = () =>
+    pruneAnalysisCache(
+      cacheBytesOf(getSettings().analysisCacheGb),
+      undefined,
+      undefined,
+      smallCacheBytesFor(fileSignatures.count()),
+    )
   void pruneToSetting()
   // Storing a thumbnail waits for this, so no URL handed out can be pruned afterwards.
   void pruneCoverThumbs()

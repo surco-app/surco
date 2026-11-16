@@ -13,6 +13,8 @@ export interface FileSignatures {
   // Whether the file's date is remembered: a file Surco has read, taken as there without
   // asking the disk; the background check reports it gone if it went.
   knows: (path: string) => boolean
+  // How many files have a remembered date: the library as Surco has read it.
+  count: () => number
   flush: () => void
 }
 
@@ -110,6 +112,9 @@ export function createFileSignatures(deps: Deps): FileSignatures {
       if (!dates.has(path)) return false
       checkLater(path)
       return true
+    },
+    count() {
+      return dates.size
     },
     flush() {
       if (!dirty) return
