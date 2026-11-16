@@ -327,6 +327,7 @@ export const TRACKLIST_SCENE = {
     await page.waitForTimeout(3000)
     const first = await page.evaluate(() =>
       [...document.querySelectorAll('[data-testid^="source-node-"]')]
+        .filter((e) => !e.querySelector('[data-testid="source-node-smart-icon"]'))
         .map((e) => e.dataset.testid)
         .find((id) => /^source-node-\d+$/.test(id)),
     )
