@@ -21,7 +21,7 @@ const SWIPE_MIN_OPACITY = 0.4
 const SWIPE_EXIT_GAP_PX = 24
 
 // The single home for every transient notification: notices, failures, update prompts and
-// new-track prompts. They stack bottom-right, newest at the bottom, so a status line and an
+// new-track prompts. They stack top-right, newest on top, so a status line and an
 // action prompt coexist instead of fighting over a corner. Each card auto-dismisses if it
 // carries a duration; prompts and failures stay until acted on.
 export function ToastStack({
@@ -95,23 +95,23 @@ export function ToastStack({
   // arrives or screen readers miss the first toast. Empty it has zero size, so the
   // fixed corner div never intercepts a click.
   return (
-    // Spacing lives INSIDE each collapsing wrapper (pt-2 on the inner div), not as a
+    // Spacing lives INSIDE each collapsing wrapper (pb-2 on the inner div), not as a
     // container gap: a gap would survive the row collapse and leave an 8px jump the
-    // moment the card unmounts. Padding above the topmost card falls outside anything
+    // moment the card unmounts. Padding below the bottom card falls outside anything
     // visible, so the stack sits exactly where it always has.
     // data-above-modals keeps the stack live while a dialog makes the rest of the app
     // inert: a toast's action (Undo) has to stay pressable with a modal open.
     <div
       aria-live="polite"
       data-above-modals
-      className="fixed bottom-5 right-5 z-50 flex flex-col"
+      className="fixed top-14 right-5 z-50 flex flex-col"
       onWheelCapture={(e) => {
         if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
         e.stopPropagation()
         waitOutSwipeTail()
       }}
     >
-      {cards.map(({ toast, leaving }) => (
+      {[...cards].reverse().map(({ toast, leaving }) => (
         // The card's exit only fades it — the SPACE it held used to vanish at unmount,
         // jumping every surviving toast a full card height in one frame. The grid row
         // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
@@ -125,7 +125,7 @@ export function ToastStack({
         >
           {/* overflow-y-clip only while collapsing — kept on, it would clip the
               card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
-          <div className={`min-h-0 pt-2 ${leaving ? 'overflow-y-clip' : ''}`}>
+          <div className={`min-h-0 pb-2 ${leaving ? 'overflow-y-clip' : ''}`}>
             <ToastCard
               toast={toast}
               leaving={leaving}
@@ -288,7 +288,7 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}

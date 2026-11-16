@@ -971,3 +971,18 @@ describe('conversion progress', () => {
     expect(ring).toContain('transition: --progress var(--duration-panel) var(--ease-standard)')
   })
 })
+
+describe('toast motion follows the top-right stack', () => {
+  const keyframes = (name: string): string =>
+    css.match(new RegExp(`@keyframes ${name} \\{[\\s\\S]*?\\n\\}`))?.[0] ?? ''
+
+  it('enters from above and leaves back up, the edge the stack hangs from', () => {
+    expect(keyframes('toast-in')).toContain('translateY(-8px)')
+    expect(keyframes('toast-leave')).toContain('translateY(-8px)')
+  })
+
+  it('only fades a toast in when motion is reduced', () => {
+    const reduced = css.slice(css.indexOf('@media (prefers-reduced-motion: reduce)'))
+    expect(reduced).toMatch(/\.animate-toast-in[\s\S]*?animation: overlay-in/)
+  })
+})

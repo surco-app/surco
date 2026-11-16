@@ -41,15 +41,36 @@ describe('ToastStack', () => {
     expect(region.querySelectorAll('[role="status"], [role="alert"], [aria-live]')).toHaveLength(0)
   })
 
-  // The stack always sits in the same corner — bottom-right — so a toast never surprises
-  // the user by appearing somewhere else. It stays put even when a modal is open (its
-  // Cancel/Save bar can sit under a toast; a predictable position wins over dodging it).
-  it('always anchors the stack bottom-right', () => {
+  it('anchors the stack top-right under the toolbar, clear of the editor footer and its Convert button', () => {
     const { container } = render(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
     const region = container.firstElementChild as HTMLElement
     expect(region.className).toContain('right-5')
-    expect(region.className).toContain('bottom-5')
+    expect(region.className).toContain('top-14')
+    expect(region.className).not.toContain('bottom-5')
     expect(region.className).not.toContain('left-5')
+  })
+
+  it('puts the newest toast on top, nearest the corner it appears from', () => {
+    render(
+      <ToastStack
+        toasts={[
+          toast({ id: 'old', message: 'first notice' }),
+          toast({ id: 'new', message: 'second notice' }),
+        ]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const slots = screen.getAllByTestId('toast-slot')
+    expect(slots[0]).toHaveTextContent('second notice')
+    expect(slots[1]).toHaveTextContent('first notice')
+  })
+
+  it('drops a card in from above, the side the stack hangs from, instead of the modal pop', () => {
+    render(<ToastStack toasts={[toast({ id: 'a', message: 'hola' })]} onExpire={vi.fn()} onClose={vi.fn()} />)
+    const card = screen.getByTestId('toast-slot').querySelector('.rounded-xl') as HTMLElement
+    expect(card.className).toContain('animate-toast-in')
+    expect(card.className).not.toContain('animate-pop')
   })
 
   it('stacks every queued toast so a notice and a prompt show at once', () => {
@@ -295,7 +316,10 @@ describe('ToastStack', () => {
       const two = [toast({ id: 'a', testid: 'a-toast' }), toast({ id: 'b', testid: 'b-toast' })]
       const { rerender } = render(<ToastStack toasts={two} onExpire={vi.fn()} onClose={vi.fn()} />)
       rerender(<ToastStack toasts={[two[1]]} onExpire={vi.fn()} onClose={vi.fn()} />)
-      const [leavingSlot, liveSlot] = screen.getAllByTestId('toast-slot')
+      const slotOf = (id: string) =>
+        screen.getAllByTestId('toast-slot').find((s) => s.querySelector(`[data-testid="${id}"]`))
+      const leavingSlot = slotOf('a-toast') as HTMLElement
+      const liveSlot = slotOf('b-toast') as HTMLElement
       expect(liveSlot.className).toContain('starting:grid-rows-[0fr]')
       expect(leavingSlot.className).not.toContain('starting:grid-rows-[0fr]')
     })

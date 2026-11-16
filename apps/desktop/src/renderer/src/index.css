@@ -796,8 +796,19 @@ button:hover > .process-fill {
 @keyframes toast-leave {
   to {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px);
   }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+.animate-toast-in {
+  animation: toast-in var(--duration-panel) var(--ease-standard);
 }
 
 .animate-toast-leave {
@@ -1003,7 +1014,8 @@ button:hover > .process-fill {
      up, and listing it here too would win on source order and silently override whatever
      that rule says the day someone tunes it. */
   .animate-pop,
-  .animate-pop-flat {
+  .animate-pop-flat,
+  .animate-toast-in {
     animation: overlay-in var(--duration-state) var(--ease-standard);
   }
 
