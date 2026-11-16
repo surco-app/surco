@@ -636,6 +636,24 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
     expect(result.current.tracks).toHaveLength(2)
   })
 
+  // A job still running when its row left keeps writing to that row's id. Held for Undo,
+  // the row takes those writes, so it comes back as the job left it and not frozen mid-run.
+  it('restores a held row with the writes it got while it was out of the list', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const removed = [...result.current.tracksRef.current]
+    const id = removed[0].id
+
+    act(() => result.current.holdTracks(removed))
+    act(() => result.current.removeTracks([id]))
+    act(() => result.current.updateTrack(id, { status: 'done', outputPath: '/out/a.aiff' }))
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks).toEqual([
+      expect.objectContaining({ id, status: 'done', outputPath: '/out/a.aiff' }),
+    ])
+  })
+
   // A path that came back into the list some other way while the Undo was on offer already
   // has its row; restoring a second one would show the file twice.
   it('does not restore a row whose path is in the list again', async () => {

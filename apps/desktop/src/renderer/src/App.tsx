@@ -766,6 +766,8 @@ export default function App(): React.JSX.Element {
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    holdTracks,
+    dropHeldTracks,
     restoreTracks,
     prioritizeReads,
     openSourcePlaylist,
@@ -1492,6 +1494,7 @@ export default function App(): React.JSX.Element {
     analyzeAllQuality,
     cancelAnalysis,
     forgetTracks: forgetAnalysisTracks,
+    unforgetTracks: unforgetAnalysisTracks,
     scopeTo: scopeAnalysis,
   } = useQualityAnalysis({
     // The bulk scope: a deliberate multi-selection when there is one, else the visible
@@ -1790,15 +1793,19 @@ export default function App(): React.JSX.Element {
   const removeWithUndo = useStableCallback((targets: TrackItem[], remove: () => void) => {
     if (targets.length === 0) return
     const covers = targets.map((t) => t.coverUrl)
+    const ids = targets.map((t) => t.id)
     listUndoCovers.current.push(covers)
+    holdTracks(targets)
     remove()
     const release = () => {
+      dropHeldTracks(ids)
       listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
       revokeDisplacedCovers(covers, [...tracksRef.current.map((t) => t.coverUrl), ...heldCovers()])
     }
     toastReporter.reportUndo(
       tr('notices.removedFromList', { count: targets.length }),
       () => {
+        unforgetAnalysisTracks(ids)
         restoreTracks(targets)
         void seedCachedAnalyses(
           queryClient,

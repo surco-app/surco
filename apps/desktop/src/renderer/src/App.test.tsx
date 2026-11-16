@@ -8625,6 +8625,94 @@ describe('App command palette list-wide actions', () => {
     expect(loadCachedAnalyses.mock.calls.at(-1)?.[0]).toEqual(['/music/a.wav'])
   })
 
+  // Removing a row takes it out of the quality sweep for good, so a row Undo brought back
+  // was skipped by Analyze all and counted as measured with no verdict ever shown.
+  it('measures a row Undo brought back when Analyze all runs', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(within(screen.getByTestId('track-row')).queryByTestId('track-quality')).toBeNull()
+
+    runMenu('analyze-quality')
+
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('track-row')).getByTestId('track-quality'),
+      ).toBeInTheDocument(),
+    )
+  })
+
+  // A row can be removed mid-conversion. The job's last write targets a row that is gone,
+  // so without carrying it onto the held row, Undo brought back a row busy for the session
+  // that Convert skipped and Convert all left out.
+  it('brings back a row removed mid-conversion as converted once its job finished', async () => {
+    let finish: (r: { outputPath: string; inPlace: boolean }) => void = () => {}
+    const processTrack = vi.fn(
+      () => new Promise<{ outputPath: string; inPlace: boolean }>((r) => (finish = r)),
+    )
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    await addOneTrack()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    await act(async () => finish({ outputPath: '/out/a.aiff', inPlace: false }))
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(within(screen.getByTestId('track-row')).queryByTestId('track-status-badge')).toBeNull()
+    fireEvent.click(screen.getByTestId('track-row'))
+    expect(await screen.findByTestId('done-more')).toBeInTheDocument()
+  })
+
+  // Undone before the job ends, the row comes back still converting and the job's own last
+  // write lands on it like on any row in the list.
+  it('lets a row restored mid-conversion finish as converted', async () => {
+    let finish: (r: { outputPath: string; inPlace: boolean }) => void = () => {}
+    const processTrack = vi.fn(
+      () => new Promise<{ outputPath: string; inPlace: boolean }>((r) => (finish = r)),
+    )
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    await addOneTrack()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    await act(async () => finish({ outputPath: '/out/a.aiff', inPlace: false }))
+
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('track-row')).queryByTestId('track-status-badge'),
+      ).toBeNull(),
+    )
+    fireEvent.click(screen.getByTestId('track-row'))
+    expect(await screen.findByTestId('done-more')).toBeInTheDocument()
+  })
+
   // The header button and the palette share one name, "Clear the list", so they must share
   // one scope: what the DJ sees. A filtered view that the palette wiped entirely would take
   // rows the DJ had hidden, not rows they had decided to drop.
