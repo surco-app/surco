@@ -179,6 +179,17 @@ function ToastCard({
   useEffect(() => {
     if (leaving) clearTimeout(settleRef.current)
   }, [leaving])
+  const swipedId = useRef(toast.id)
+  useEffect(() => {
+    if (swipedId.current === toast.id) return
+    swipedId.current = toast.id
+    clearTimeout(settleRef.current)
+    swipeRef.current = 0
+    trailRef.current = []
+    setSwipe({ x: 0, opacity: 1 })
+    setTracking(false)
+    setExitTo(undefined)
+  }, [toast.id])
   const moveSwipe = (px: number): void => {
     swipeRef.current = px
     const width = cardRef.current?.offsetWidth ?? 0
@@ -186,6 +197,12 @@ function ToastCard({
       x: px < 0 ? px * SWIPE_RESISTANCE : px,
       opacity: px > 0 && width > 0 ? 1 - (1 - SWIPE_MIN_OPACITY) * Math.min(px / width, 1) : 1,
     })
+  }
+  const closeBySwipe = (width: number): void => {
+    setTracking(false)
+    trailRef.current = []
+    if (!prefersReducedMotion()) setExitTo(width + SWIPE_EXIT_GAP_PX)
+    onClose(toast.id)
   }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (leaving || exitTo !== undefined || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
@@ -195,16 +212,19 @@ function ToastCard({
     trailRef.current.push({ at: swipeRef.current, t: now })
     flingRef.current = releaseVelocity(trailRef.current, now)
     clearTimeout(settleRef.current)
+    const width = cardRef.current?.offsetWidth ?? 0
+    if (width > 0 && swipeRef.current >= width * SWIPE_CLOSE_SHARE) {
+      closeBySwipe(width)
+      return
+    }
     settleRef.current = setTimeout(() => {
-      setTracking(false)
-      trailRef.current = []
-      const width = cardRef.current?.offsetWidth ?? 0
-      if (swipeRef.current + coastDistance(flingRef.current) < width * SWIPE_CLOSE_SHARE) {
-        moveSwipe(0)
+      if (swipeRef.current + coastDistance(flingRef.current) >= width * SWIPE_CLOSE_SHARE) {
+        closeBySwipe(width)
         return
       }
-      if (!prefersReducedMotion()) setExitTo(width + SWIPE_EXIT_GAP_PX)
-      onClose(toast.id)
+      setTracking(false)
+      trailRef.current = []
+      moveSwipe(0)
     }, SWIPE_SETTLE_MS)
   }
 

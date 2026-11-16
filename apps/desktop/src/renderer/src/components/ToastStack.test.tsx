@@ -383,6 +383,28 @@ describe('ToastStack', () => {
       expect(onClose).toHaveBeenCalledWith('s')
     })
 
+    it('closes as soon as the swipe crosses 40% of the card, without waiting out the trackpad momentum', () => {
+      const onClose = renderCard()
+      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
+      expect(onClose).toHaveBeenCalledWith('s')
+    })
+
+    it('gives a keyed toast re-pushed during the swipe exit a visible card that swipes again', () => {
+      const keyed = (id: string) => [toast({ id, key: 'new-tracks', testid: 'swipe-toast' })]
+      const { rerender } = render(
+        <ToastStack toasts={keyed('t1')} onExpire={vi.fn()} onClose={vi.fn()} />,
+      )
+      drag(8, -30, 8)
+      letGo()
+      rerender(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
+      act(() => vi.advanceTimersByTime(50))
+      rerender(<ToastStack toasts={keyed('t2')} onExpire={vi.fn()} onClose={vi.fn()} />)
+      expect(card().style.transform).toBe('')
+      expect(card().style.opacity).toBe('')
+      fireEvent.wheel(card(), { deltaX: -20 })
+      expect(card().style.transform).toBe('translateX(20px)')
+    })
+
     it('springs back without closing when a short distance is covered slowly', () => {
       const onClose = renderCard()
       drag(3, -10, 100)
@@ -432,8 +454,7 @@ describe('ToastStack', () => {
         )
       }
       render(<Live />)
-      drag(8, -30, 8)
-      letGo()
+      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
       expect(card()).toHaveAttribute('aria-hidden', 'true')
       expect(card().className).not.toContain('animate-toast-leave')
       expect(card().style.transform).toBe('translateX(324px)')
