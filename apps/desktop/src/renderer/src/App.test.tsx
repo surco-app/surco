@@ -3467,6 +3467,41 @@ describe('App source playlists', () => {
     expect(await screen.findByTestId('field-title')).toHaveValue('Hand Typed')
   })
 
+  // The Undo of a removal holds the row while it is on offer. Once that file goes to the
+  // Trash from the playlist, Undo would bring back a row whose file is gone.
+  it('does not bring back a row whose file was trashed while its removal could be undone', async () => {
+    const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    factoryWithAlpha({ pickFiles, trashFile })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    runMenu('add')
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(trashFile).toHaveBeenCalledWith('/m/a.wav', false))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    const removal = screen
+      .getAllByTestId('app-notice')
+      .find((card) => card.textContent?.includes('removed from the list'))
+    if (!removal) throw new Error('no removal toast')
+    fireEvent.click(within(removal).getByTestId('app-notice-action'))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await act(async () => {})
+    expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
+  })
+
   // A file rekordbox still lists but the disk no longer has is a row that silently vanishes
   // from the playlist; the notice is what tells the user the gap is not Surco losing it.
   it('counts a playlist file that is gone from disk in the missing-file notice', async () => {

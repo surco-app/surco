@@ -1839,6 +1839,17 @@ export default function App(): React.JSX.Element {
   const dropFromList = useStableCallback((targets: TrackItem[]) =>
     removeWithUndo(targets, () => removeTracks(targets.map((t) => t.id))),
   )
+  const removeTrashed = useStableCallback((ids: string[], everywhere?: boolean) => {
+    const pending = listRemoval.current
+    if (pending) {
+      const gone = new Set(
+        tracksRef.current.filter((t) => ids.includes(t.id)).map((t) => t.inputPath),
+      )
+      dropHeldTracks(pending.targets.filter((t) => gone.has(t.inputPath)).map((t) => t.id))
+      pending.targets = pending.targets.filter((t) => !gone.has(t.inputPath))
+    }
+    removeTracks(ids, everywhere)
+  })
 
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
@@ -1855,7 +1866,7 @@ export default function App(): React.JSX.Element {
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const { askTrash, askCleanUp, askFillAll, askConvertAll, askConvertOne } = useConfirmFlows({
     settings,
-    removeTracks,
+    removeTracks: removeTrashed,
     updateTrack,
     deriveTracks: deriveTracksUndoable,
     notify: setNotice,
