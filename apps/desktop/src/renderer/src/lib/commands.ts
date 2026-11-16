@@ -295,10 +295,10 @@ export interface CommandDeps {
   bulkTracks: TrackItem[]
   // What Convert-all runs on: the bulk scope in Tracks, only the picked rows in a library.
   convertTracks: TrackItem[]
-  // Sends every flagged (suspect) visible rip to the OS Trash after a confirm — the one-click
+  // Sends every flagged (suspect) visible rip to the OS Trash — the one-click
   // "clean the fakes" that turns the quality sweep into an action, not just a filter.
   askTrashSuspects: () => void
-  // Sends the selected tracks' files to the OS Trash after a confirm — the palette/toolbar
+  // Sends the selected tracks' files to the OS Trash — the palette/toolbar
   // counterpart of the context menu's "Move to Trash".
   askTrashSelected: () => void
   openSettings: (tab?: 'general' | 'stats' | 'naming' | 'shortcuts') => void
@@ -964,7 +964,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       },
     },
     {
-      // The payoff of the quality sweep: move every flagged rip to the Trash in one confirmed
+      // The payoff of the quality sweep: move every flagged rip to the Trash in one
       // step, instead of right-clicking each row. Scoped to the visible set, so a filter narrows
       // what it deletes; disabled when nothing visible is flagged, so it never fires on an empty set.
       id: 'trash-suspects',
@@ -975,7 +975,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
       run: askTrashSuspects,
     },
     {
-      // Sends the selection's files to the OS Trash after a confirm — the same flow as the
+      // Sends the selection's files to the OS Trash — the same flow as the
       // context menu's "Move to Trash", surfaced where the keyboard can reach it.
       id: 'trash-selected',
       group: 'library',

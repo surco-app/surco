@@ -12676,9 +12676,16 @@ describe('App list header', () => {
     expect(screen.queryByTestId('confirm-ok')).toBeNull()
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.keyDown(window, { key: 'Escape' })
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false'),
+    )
     trashFile.mockClear()
     runMenu('trash-selected')
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
     expect(trashFile).not.toHaveBeenCalled()
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
   })
 })
 

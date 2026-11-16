@@ -136,6 +136,19 @@ describe('useConfirmFlows move to Trash', () => {
     await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
   })
 
+  // With no dialog to show, an empty selection would otherwise run the move over nothing
+  // and still ask the app to remove an empty batch of rows.
+  it('does nothing at all for an empty selection', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const { flows, opened, removeTracks } = setup([])
+    await flows.askTrash([])
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(opened).toHaveLength(0)
+    expect(trashFile).not.toHaveBeenCalled()
+    expect(removeTracks).not.toHaveBeenCalled()
+  })
+
   it('moves to the Recycle Bin without a dialog on Windows too', async () => {
     installApi({
       platform: 'win32',

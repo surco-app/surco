@@ -2495,10 +2495,10 @@ export default function App(): React.JSX.Element {
   const onOpenExport = useStableCallback(overlays.openExport)
   const onClearAll = useStableCallback(() => emptyTracks(visibleTracksRef.current))
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
-  // them through the same confirmed trash flow as the right-click menu, so a filter narrows what
+  // them through the same trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
   const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
-  // The toolbar/palette "Move the selection to Trash": the same confirmed flow as the
+  // The toolbar/palette "Move the selection to Trash": the same flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))
   const onRemoveSelected = useStableCallback(() =>
