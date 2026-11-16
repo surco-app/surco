@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { setFlagsFromString } from 'node:v8'
 import { runInNewContext } from 'node:vm'
-import { act, cleanup, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -230,6 +230,32 @@ describe('useTrackLibrary cancelling an import', () => {
       readCount: () => reads,
     }
   }
+
+  // A row removed while its read was in flight lost that read: the result landed on a row
+  // that was gone. Restored as it was, it would spin as loading forever, so it reads again.
+  it('reads a restored row again when it left the list before its read landed', async () => {
+    const { result, release } = setupSlowReads()
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const removed = [...result.current.tracksRef.current]
+    expect(removed[0].loadingMeta).toBe(true)
+    act(() => result.current.removeTracks([removed[0].id]))
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    act(() => result.current.restoreTracks(removed))
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0))
+      release()
+      await new Promise((r) => setTimeout(r, 50))
+    })
+
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+  })
 
   it('stops reading the rest of the queue when cancelled', async () => {
     const { result, release, readCount } = setupSlowReads()
@@ -593,19 +619,35 @@ describe('useTrackLibrary removed tracks vs watcher', () => {
     expect(result.current.pendingNew).toEqual({ root: '/m', paths: ['/m/c.wav'] })
   })
 
-  // A removal from the list is undone by adding its paths again, and the removal has put
-  // them in the set the watcher ignores. If the add consulted that set, Undo would bring
-  // nothing back.
-  it('takes a removed track back when its path is added again', async () => {
+  // Undo puts back the very rows that left, same id and same state: a conversion, a library
+  // identity or a match is not something the file on disk can give back.
+  it('puts the removed rows back as they were when restored', async () => {
     const { result } = setupWithTracks()
     await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
     const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
     if (!a) throw new Error('track not loaded')
+    act(() => result.current.updateTrack(a.id, { status: 'done', outputPath: '/out/a.aiff' }))
+    const removed = result.current.tracksRef.current.filter((t) => t.id === a.id)
 
     act(() => result.current.removeTracks([a.id]))
-    await act(() => result.current.addPaths(['/m/a.wav']))
+    act(() => result.current.restoreTracks(removed))
 
-    expect(result.current.tracks.map((t) => t.inputPath).sort()).toEqual(['/m/a.wav', '/m/b.wav'])
+    expect(result.current.tracks.find((t) => t.inputPath === '/m/a.wav')).toBe(removed[0])
+    expect(result.current.tracks).toHaveLength(2)
+  })
+
+  // A path that came back into the list some other way while the Undo was on offer already
+  // has its row; restoring a second one would show the file twice.
+  it('does not restore a row whose path is in the list again', async () => {
+    const { result } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const removed = [...result.current.tracksRef.current]
+
+    act(() => result.current.removeTracks([removed[0].id]))
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    act(() => result.current.restoreTracks(removed))
+
+    expect(result.current.tracks).toHaveLength(1)
   })
 })
 

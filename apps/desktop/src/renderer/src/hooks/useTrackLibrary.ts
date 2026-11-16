@@ -169,6 +169,7 @@ interface TrackLibrary {
   // every row already exists and none is "fresh" — a reopened session restored one of four
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
+  restoreTracks: (rows: TrackItem[]) => void
   prioritizeReads: (ids: string[]) => void
   openSourcePlaylist: (
     entries: SourcePlaylistEntry[],
@@ -719,8 +720,7 @@ export function useTrackLibrary({
     // editor showed the art, for every track whose cover came from the library rather
     // than the file. The file's own art still wins: the row is a view of the file on
     // disk, and this only fills the gap when the file carries none.
-    if (!cover?.thumbUrl && saved?.coverUrl && !saved.coverUrl.startsWith('blob:'))
-      patch.embeddedCover = saved.coverUrl
+    if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
     // A restored edit replaces the read wholesale (it was itself built on a read of
     // this same file, plus everything the user staged since); the matched flag rides
     // in the patch so the auto-match sweep skips the row instead of overwriting it.
@@ -1294,6 +1294,23 @@ export function useTrackLibrary({
     [refreshChangedTrack, removeTracks],
   )
 
+  const restoreTracks = useStableCallback((rows: TrackItem[]): void => {
+    const { paths, inFiles } = crateByPath()
+    const back = rows.filter((t) => !paths.has(t.inputPath))
+    const rejoin = new Set(
+      rows
+        .filter((t) => t.inFiles && paths.has(t.inputPath) && !inFiles.has(t.inputPath))
+        .map((t) => t.inputPath),
+    )
+    const restore = (list: TrackItem[]): TrackItem[] => [
+      ...list.map((t) => (rejoin.has(t.inputPath) ? { ...t, inFiles: true } : t)),
+      ...back,
+    ]
+    tracksRef.current = restore(tracksRef.current)
+    setTracks(restore)
+    for (const t of back) if (t.loadingMeta) void loadTrackMeta(t)
+  })
+
   function clearTracks(): void {
     const cleared = tracksRef.current
     // An import still reading is reading for a crate that no longer exists: without
@@ -1341,6 +1358,7 @@ export function useTrackLibrary({
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    restoreTracks,
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,

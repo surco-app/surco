@@ -267,7 +267,7 @@ import {
   reanchorToVisible,
   type Selection,
 } from './lib/selection'
-import { hasStagedEdits, sessionEdits } from './lib/sessionEdits'
+import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
@@ -429,7 +429,7 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
-      reportUndo: (message: string, onUndo: () => void) => {
+      reportUndo: (message: string, onUndo: () => void, onSettle?: () => void) => {
         const id = pushToast(store, {
           tone: 'neutral',
           message,
@@ -442,6 +442,8 @@ export default function App(): React.JSX.Element {
               onUndo()
             },
           },
+          onDismiss: onSettle,
+          onExpire: onSettle,
         })
       },
     }),
@@ -734,6 +736,7 @@ export default function App(): React.JSX.Element {
   // render, runs it.
   const matchingPathPairs = useMatchingPathPairs()
   const listUndoCovers = useRef<(string | undefined)[][]>([])
+  const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
   const browser = useSourceBrowser({
     matchingPathPairs,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
@@ -763,6 +766,7 @@ export default function App(): React.JSX.Element {
     tracksRef,
     addPaths,
     seedRestoredEdits,
+    restoreTracks,
     prioritizeReads,
     openSourcePlaylist,
     updateTrack,
@@ -822,8 +826,7 @@ export default function App(): React.JSX.Element {
         removed.map((t) => t.coverUrl),
         [
           ...tracksRef.current.filter((t) => !gone.has(t.id)).map((t) => t.coverUrl),
-          ...metaUndo.heldCovers(),
-          ...listUndoCovers.current.flat(),
+          ...heldCovers(),
         ],
       )
     },
@@ -1786,44 +1789,25 @@ export default function App(): React.JSX.Element {
 
   const removeWithUndo = useStableCallback((targets: TrackItem[], remove: () => void) => {
     if (targets.length === 0) return
-    const edits = sessionEdits(targets)
-    for (const t of targets)
-      if (t.coverUrl?.startsWith('blob:') && edits[t.inputPath])
-        edits[t.inputPath].coverUrl = t.coverUrl
     const covers = targets.map((t) => t.coverUrl)
     listUndoCovers.current.push(covers)
     remove()
-    const letGo = () => {
-      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
-    }
     const release = () => {
-      letGo()
-      revokeDisplacedCovers(covers, [
-        ...tracksRef.current.map((t) => t.coverUrl),
-        ...metaUndo.heldCovers(),
-        ...listUndoCovers.current.flat(),
-      ])
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
+      revokeDisplacedCovers(covers, [...tracksRef.current.map((t) => t.coverUrl), ...heldCovers()])
     }
-    const pathsOf = (inFiles: boolean) =>
-      targets.filter((t) => !!t.inFiles === inFiles).map((t) => t.inputPath)
-    const id = pushToast(store, {
-      tone: 'neutral',
-      message: tr('notices.removedFromList', { count: targets.length }),
-      duration: 6000,
-      testid: 'app-notice',
-      action: {
-        label: { key: 'notices.undo' },
-        onAction: () => {
-          dismissToast(store, id)
-          void Promise.all([
-            addPaths(pathsOf(true), edits),
-            addPaths(pathsOf(false), edits, false, false),
-          ]).finally(letGo)
-        },
+    toastReporter.reportUndo(
+      tr('notices.removedFromList', { count: targets.length }),
+      () => {
+        restoreTracks(targets)
+        void seedCachedAnalyses(
+          queryClient,
+          targets.map((t) => t.inputPath),
+        )
+        release()
       },
-      onDismiss: release,
-      onExpire: release,
-    })
+      release,
+    )
   })
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
   // the filtered-visible subset removes those rows and keeps watching, so the hidden FLAC/WAV

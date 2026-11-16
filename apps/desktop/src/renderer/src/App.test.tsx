@@ -8530,6 +8530,101 @@ describe('App command palette list-wide actions', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Hand Typed'))
   })
 
+  // The toast offers Undo right after converting, which is exactly when a DJ clears. A row
+  // that came back looking unconverted would be converted again by the next Convert all,
+  // writing a second "(2)" copy beside the first or asking about a conflict for every file.
+  it('brings a converted row back still converted, so Convert all does not redo it', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    await addOneTrack()
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    await screen.findByTestId('done-more')
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Clear the list' },
+    })
+    fireEvent.click(screen.getByTestId('palette-item'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('track-row'))
+    expect(await screen.findByTestId('done-more')).toBeInTheDocument()
+    runMenu('process-all')
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50))
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+  })
+
+  // A row read from an Apple Music playlist carries its library identity, and nothing on
+  // disk says so. Lost on Undo, the next convert re-encodes the import to the default format
+  // and offers to add a song the library already has. Kept, the WAV stays a WAV and its
+  // in-place export reads as up to date until forced.
+  it("keeps an Apple Music row's identity when its removal is undone", async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
+    setApi({
+      platform: 'darwin',
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'aiff' })),
+      readTags: vi.fn().mockResolvedValue({ title: 'Bravo', artist: 'DJ' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Friday', count: 1 }]),
+      loadAppleMusicPlaylistTracks: vi.fn<Api['loadAppleMusicPlaylistTracks']>().mockResolvedValue({
+        paths: ['/m/b.wav'],
+        persistentIds: { '/m/b.wav': 'PID1' },
+        meta: {},
+        missing: 0,
+      }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    fireEvent.click(await screen.findByTestId('source-node-p1'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(await screen.findByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('track-row'))
+    fireEvent.click(await screen.findByTestId('convert-update-anyway'))
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    expect(processTrack.mock.calls[0][0]).toMatchObject({
+      format: 'wav',
+      musicPersistentId: 'PID1',
+    })
+  })
+
+  // The row's quality dot reads verdicts from the analysis cache, which the removal evicted.
+  // Undo has to fetch them back from disk, or a measured track would come back unmeasured.
+  it('fetches the cached analyses again for the rows Undo brings back', async () => {
+    const loadCachedAnalyses = vi.fn<Api['loadCachedAnalyses']>().mockResolvedValue({})
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      loadCachedAnalyses,
+    })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.contextMenu(screen.getByTestId('track-row'))
+    fireEvent.click(screen.getByTestId('track-menu-remove'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    const before = loadCachedAnalyses.mock.calls.length
+
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+
+    await waitFor(() => expect(loadCachedAnalyses.mock.calls.length).toBeGreaterThan(before))
+    expect(loadCachedAnalyses.mock.calls.at(-1)?.[0]).toEqual(['/music/a.wav'])
+  })
+
   // The header button and the palette share one name, "Clear the list", so they must share
   // one scope: what the DJ sees. A filtered view that the palette wiped entirely would take
   // rows the DJ had hidden, not rows they had decided to drop.
@@ -10240,6 +10335,49 @@ describe('App metadata undo', () => {
       } finally {
         vi.useRealTimers()
       }
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  // When the file came back into the list some other way while Undo was on offer, Undo has
+  // no row to put back, so the blob it was holding for that row has nobody left to show it.
+  it('frees the held cover of a row Undo cannot put back', async () => {
+    const createObjectURL = vi.fn().mockReturnValueOnce('blob:picked')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'picked.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      for (let i = 0; i <= MAX_META_UNDO; i++) runMenu('number-tracks')
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getByTestId('track-menu-remove'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      runMenu('add')
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+
+      const removal = screen
+        .getAllByTestId('app-notice')
+        .find((card) => card.textContent?.includes(i18n.t('notices.removedFromList', { count: 1 })))
+      if (!removal) throw new Error('no removal toast')
+      fireEvent.click(within(removal).getByTestId('app-notice-action'))
+
+      await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:picked'))
+      expect(screen.getAllByTestId('track-row')).toHaveLength(2)
     } finally {
       Object.assign(url, original)
     }
