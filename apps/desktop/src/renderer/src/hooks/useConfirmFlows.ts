@@ -139,7 +139,7 @@ interface Params {
 }
 
 interface ConfirmFlows {
-  askTrash: (targets: TrackItem[]) => Promise<void>
+  askTrash: (targets: TrackItem[], alwaysAsk?: boolean) => Promise<void>
   // The post-convert "clean up": the original, the files a replacement superseded and the
   // old Apple Music copy, offered together in one dialog that lists each. Async because the
   // wording depends on whether each file's volume keeps a Trash, which only the main
@@ -282,7 +282,7 @@ export function useConfirmFlows({
   // count so a multi-selection reads "N files" instead of naming just one. A disk with no
   // Trash (a NAS, every Windows drive) keeps the file in Surco's backups instead, and the
   // dialog says so: promising the Trash there is how a file was lost on 15/09.
-  async function askTrash(targets: TrackItem[]): Promise<void> {
+  async function askTrash(targets: TrackItem[], alwaysAsk = false): Promise<void> {
     if (targets.length === 0) return
     const isWin = window.api.platform === 'win32'
     const count = targets.length
@@ -307,7 +307,7 @@ export function useConfirmFlows({
         ),
       )
     }
-    if (keeps.every(Boolean)) {
+    if (!alwaysAsk && keeps.every(Boolean)) {
       moveToTrash()
       return
     }

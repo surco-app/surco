@@ -162,6 +162,22 @@ describe('useConfirmFlows move to Trash', () => {
     await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
   })
 
+  // Trashing the flagged rips reaches every flagged visible row, well beyond what the user
+  // selected, so it keeps its dialog even where every file would land in the Trash.
+  it('still asks before a sweep that must always ask, even when every file has a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const b = track('b')
+    const { flows, opened, removeTracks } = setup([a, b])
+    await flows.askTrash([a, b], true)
+    expect(opened[0].title).toBe('Move 2 files to Trash?')
+    expect(trashFile).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
+  })
+
   it('reports a failed move and keeps that row when no dialog was shown', async () => {
     installApi({
       keepsTrash: vi.fn().mockResolvedValue(true),

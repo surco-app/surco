@@ -2497,7 +2497,9 @@ export default function App(): React.JSX.Element {
   // The one-click "trash the fakes": collect the flagged rips out of the visible rows and route
   // them through the same trash flow as the right-click menu, so a filter narrows what
   // it deletes and a failure per file is still surfaced.
-  const onTrashSuspects = useStableCallback(() => askTrash(suspectTracks(visibleTracksRef.current)))
+  const onTrashSuspects = useStableCallback(() =>
+    askTrash(suspectTracks(visibleTracksRef.current), true),
+  )
   // The toolbar/palette "Move the selection to Trash": the same flow as the
   // context menu, over the multi-selection or the single selected row.
   const onTrashSelected = useStableCallback(() => askTrash(editScope(selectedTracks, selected)))

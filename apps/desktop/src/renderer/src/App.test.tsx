@@ -12687,6 +12687,24 @@ describe('App list header', () => {
     expect(trashFile).not.toHaveBeenCalled()
     expect(screen.getAllByTestId('track-row')).toHaveLength(1)
   })
+
+  // Trashing the flagged rips reaches every flagged visible row, not just the selection, so
+  // it is the one Trash move that still asks even when every file keeps its Trash.
+  it('asks before trashing the flagged rips even when every file has a Trash', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+      trashFile,
+    })
+    await renderApp()
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-quality')).toHaveLength(2))
+    runMenu('trash-suspects')
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
 })
 
 // The page shipped with lang="es" baked into index.html and nothing ever touched it, so
