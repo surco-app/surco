@@ -1717,7 +1717,7 @@
     "logReveal": "Mostrar arquivo",
     "logHint": "Se algo falhar, os detalhes ficam neste arquivo. Anexe-o ao seu relato para que possa ser investigado.",
     "warnings": "Avisos de conversão",
-    "warningsHint": "Os avisos antes de sobrescrever um original ou recodificar um com perda. Você pode silenciar cada um com Não perguntar de novo no diálogo.",
+    "warningsHint": "Os avisos antes de sobrescrever um original ou recodificar um com perda. Você pode silenciar cada um com “Não perguntar de novo” no diálogo.",
     "warningsReset": "Mostrar os avisos de novo",
     "backups": "Cópias das coleções",
     "backupsReveal": "Mostrar pasta",

@@ -1717,7 +1717,7 @@
     "logReveal": "Show file",
     "logHint": "If something fails, the details land in this file. Attach it to your report so it can be investigated.",
     "warnings": "Convert warnings",
-    "warningsHint": "The warnings before overwriting an original or re-encoding a lossy one. You can silence each one with Don't ask again in the dialog.",
+    "warningsHint": "The warnings before overwriting an original or re-encoding a lossy one. You can silence each one with “Don’t ask again” in the dialog.",
     "warningsReset": "Show the warnings again",
     "backups": "Collection backups",
     "backupsReveal": "Show folder",

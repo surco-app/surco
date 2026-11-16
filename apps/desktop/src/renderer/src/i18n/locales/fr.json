@@ -1717,7 +1717,7 @@
     "logReveal": "Afficher le fichier",
     "logHint": "Si quelque chose échoue, les détails atterrissent dans ce fichier. Joins-le à ton rapport pour qu’il puisse être examiné.",
     "warnings": "Avertissements de conversion",
-    "warningsHint": "Les avertissements avant d’écraser un original ou de réencoder un fichier avec perte. Tu peux faire taire chacun avec Ne plus demander dans la boîte de dialogue.",
+    "warningsHint": "Les avertissements avant d’écraser un original ou de réencoder un fichier avec perte. Tu peux faire taire chacun avec « Ne plus demander » dans la boîte de dialogue.",
     "warningsReset": "Réafficher les avertissements",
     "backups": "Sauvegardes des collections",
     "backupsReveal": "Afficher le dossier",

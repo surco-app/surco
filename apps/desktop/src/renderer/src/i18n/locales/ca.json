@@ -1717,7 +1717,7 @@
     "logReveal": "Mostrar el fitxer",
     "logHint": "Si alguna cosa falla, els detalls queden en aquest fitxer. Adjunta'l al teu informe perquè es pugui investigar.",
     "warnings": "Avisos de convertir",
-    "warningsHint": "Els avisos abans de sobreescriure un original o recodificar-ne un amb pèrdua. Pots silenciar cadascun amb No tornis a preguntar al diàleg.",
+    "warningsHint": "Els avisos abans de sobreescriure un original o recodificar-ne un amb pèrdua. Pots silenciar cadascun amb «No tornis a preguntar» al diàleg.",
     "warningsReset": "Torna a mostrar els avisos",
     "backups": "Còpies de les col·leccions",
     "backupsReveal": "Mostrar la carpeta",

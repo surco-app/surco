@@ -1717,7 +1717,7 @@
     "logReveal": "Datei anzeigen",
     "logHint": "Wenn etwas fehlschlägt, landen die Details in dieser Datei. Häng sie an deine Meldung an, damit der Fehler untersucht werden kann.",
     "warnings": "Warnungen beim Konvertieren",
-    "warningsHint": "Die Warnungen vor dem Überschreiben eines Originals oder dem erneuten Kodieren einer verlustbehafteten Datei. Du kannst jede im Dialog mit Nicht mehr fragen stummschalten.",
+    "warningsHint": "Die Warnungen vor dem Überschreiben eines Originals oder dem erneuten Kodieren einer verlustbehafteten Datei. Du kannst jede im Dialog mit „Nicht mehr fragen“ stummschalten.",
     "warningsReset": "Warnungen wieder anzeigen",
     "backups": "Sicherungen der Sammlungen",
     "backupsReveal": "Ordner anzeigen",

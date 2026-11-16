@@ -1717,7 +1717,7 @@
     "logReveal": "Mostra il file",
     "logHint": "Se qualcosa non va, i dettagli finiscono in questo file. Allegalo alla tua segnalazione per permettere di indagare.",
     "warnings": "Avvisi di conversione",
-    "warningsHint": "Gli avvisi prima di sovrascrivere un originale o ricodificarne uno con perdita. Puoi silenziare ciascuno con Non chiedere più nella finestra.",
+    "warningsHint": "Gli avvisi prima di sovrascrivere un originale o ricodificarne uno con perdita. Puoi silenziare ciascuno con «Non chiedere più» nella finestra.",
     "warningsReset": "Mostra di nuovo gli avvisi",
     "backups": "Copie delle collezioni",
     "backupsReveal": "Mostra la cartella",
