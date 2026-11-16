@@ -116,6 +116,7 @@ interface Params {
   // sweeps in the hidden rows.
   emptyTracks: (targets: TrackItem[]) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  notify: (message: string) => void
   processAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -148,7 +149,7 @@ interface ConfirmFlows {
   // wording depends on whether each file's volume keeps a Trash, which only the main
   // process can answer.
   askCleanUp: (track: TrackItem, offer: CleanupOffer) => Promise<void>
-  askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
+  askFillAll: (targets: TrackItem[]) => void
   askClearAll: (targets: TrackItem[]) => void
   askRemoveFromList: (targets: TrackItem[]) => void
   askConvertAll: (
@@ -256,6 +257,7 @@ export function useConfirmFlows({
   updateTrack,
   emptyTracks,
   deriveTracks,
+  notify,
   processAll,
   openConfirm,
   reportTrashFailure,
@@ -388,27 +390,13 @@ export function useConfirmFlows({
     if (patches.length) deriveTracks(patches)
   }
 
-  // Fill-all and Clear-all both overwrite/discard work, so they ask first rather than firing
-  // on the click; the dialog spells out exactly what changes. Targets is the visible (filtered)
-  // set for the toolbar buttons, or the whole list for the palette's "Clear the list" — either
-  // way the count in the copy matches what actually changes.
-  function askFillAll(targets: TrackItem[], opts: { fromSelection?: boolean } = {}): void {
-    const count = deriveTagPatches(targets).length
-    const filtered = targets.length < tracksRef.current.length
-    // A selection and a filter can produce the same count; only the caller knows which
-    // scope it passed, and the dialog must name it ("selected" vs "visible").
-    const messageKey = opts.fromSelection
-      ? 'confirm.fillMessageSelected'
-      : filtered
-        ? 'confirm.fillMessageFiltered'
-        : 'confirm.fillMessage'
-    openConfirm({
-      title: tr('confirm.fillTitle'),
-      message: count > 0 ? tr(messageKey, { count }) : tr('confirm.fillNone'),
-      confirmLabel: tr('confirm.fillConfirm'),
-      confirmDisabled: count === 0,
-      onConfirm: () => deriveFrom(targets),
-    })
+  // Fill-all runs on the click: the undo stack and its toast bring the old values back.
+  function askFillAll(targets: TrackItem[]): void {
+    if (deriveTagPatches(targets).length === 0) {
+      notify(tr('confirm.fillNone'))
+      return
+    }
+    deriveFrom(targets)
   }
 
   // Empties the given rows: the visible (filtered) set from the toolbar trash button, or the

@@ -32,6 +32,8 @@ function setup(
     removeTracks?: ReturnType<typeof vi.fn<(ids: string[], everywhere?: boolean) => void>>
     reportTrashFailure?: ReturnType<typeof vi.fn<(fileName: string) => void>>
     settings?: Settings | null
+    deriveTracks?: ReturnType<typeof vi.fn<(patches: unknown[]) => void>>
+    notify?: ReturnType<typeof vi.fn<(message: string) => void>>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
@@ -42,7 +44,8 @@ function setup(
       removeTracks,
       updateTrack: extra.updateTrack ?? vi.fn(),
       emptyTracks: vi.fn(),
-      deriveTracks: vi.fn(),
+      deriveTracks: extra.deriveTracks ?? vi.fn(),
+      notify: extra.notify ?? vi.fn(),
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
       reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
@@ -158,20 +161,27 @@ describe('useConfirmFlows scope wording', () => {
     expect(opened[0].message).not.toContain('visible')
   })
 
-  // Fill-all overwrites tags across the visible set; when a filter hides part of the
-  // list the dialog must scope its promise to the visible rows only.
-  it('scopes the fill-all wording to the visible rows under a filter', () => {
+  it('fills from the file names right away and opens no dialog', () => {
     const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
+    const deriveTracks = vi.fn()
+    const { flows, opened } = setup(all, { deriveTracks })
     flows.askFillAll(all.slice(0, 2))
-    expect(opened[0].message).toContain('visible')
+    expect(opened).toHaveLength(0)
+    expect(deriveTracks).toHaveBeenCalledTimes(1)
+    expect(deriveTracks.mock.calls[0][0]).toHaveLength(2)
   })
 
-  it('keeps the plain fill-all wording without a filter', () => {
-    const all = [track('a'), track('b')]
-    const { flows, opened } = setup(all)
+  it('says there is nothing to fill instead of asking when no name matches', () => {
+    const all = [track('a', { fileName: 'untitled.wav' })]
+    const deriveTracks = vi.fn()
+    const notify = vi.fn()
+    const { flows, opened } = setup(all, { deriveTracks, notify })
     flows.askFillAll(all)
-    expect(opened[0].message).not.toContain('visible')
+    expect(opened).toHaveLength(0)
+    expect(deriveTracks).not.toHaveBeenCalled()
+    expect(notify).toHaveBeenCalledWith(
+      'None of the file names match a known pattern, so there is nothing to fill.',
+    )
   })
 })
 
@@ -954,20 +964,6 @@ describe('useConfirmFlows lossy in-place re-encode', () => {
       peakDb: -1,
     })
     expect(opened[0]?.destructive).toBe(true)
-  })
-})
-
-describe('useConfirmFlows fill-all selection scope', () => {
-  // Bulk actions follow the shared scope rule: a deliberate multi-selection wins over
-  // the visible rows. The dialog must then say "selected", not "visible" — the count
-  // alone can't tell a selection from a filter, so the caller states it.
-  it('says selected when the fill targets a multi-selection', () => {
-    const all = [track('a'), track('b'), track('c')]
-    const { flows, opened } = setup(all)
-    flows.askFillAll(all.slice(0, 2), { fromSelection: true })
-    expect(opened[0].message.toLowerCase()).toContain('selected')
-    expect(opened[0].message).toContain('2')
-    expect(opened[0].message.toLowerCase()).not.toContain('visible')
   })
 })
 

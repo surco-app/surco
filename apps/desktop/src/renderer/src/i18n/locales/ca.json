@@ -2386,15 +2386,7 @@
     "ok": "Entesos"
   },
   "confirm": {
-    "fillTitle": "Vols omplir les etiquetes a partir del nom?",
-    "fillMessage_one": "Llegeix el títol, l'artista i el núm. de pista del nom del fitxer i sobreescriu aquests camps en {{count}} pista. La resta d'etiquetes no es toca.",
-    "fillMessage_other": "Llegeix el títol, l'artista i el núm. de pista del nom de cada fitxer i sobreescriu aquests camps en {{count}} pistes. La resta d'etiquetes no es toca.",
-    "fillMessageFiltered_one": "Llegeix el títol, l'artista i el núm. de pista del nom del fitxer i sobreescriu aquests camps a l'única pista visible. Les que amaga el filtre no es toquen.",
-    "fillMessageFiltered_other": "Llegeix el títol, l'artista i el núm. de pista del nom de cada fitxer i sobreescriu aquests camps a les {{count}} pistes visibles. Les que amaga el filtre no es toquen.",
-    "fillMessageSelected_one": "Llegeix el títol, l'artista i el núm. de pista del nom del fitxer i sobreescriu aquests camps a la pista seleccionada. La resta d'etiquetes no es toca.",
-    "fillMessageSelected_other": "Llegeix el títol, l'artista i el núm. de pista del nom de cada fitxer i sobreescriu aquests camps a les {{count}} pistes seleccionades. La resta d'etiquetes no es toca.",
     "fillNone": "Cap nom no encaixa amb un patró conegut, així que no hi ha res per omplir.",
-    "fillConfirm": "Omplir les etiquetes",
     "clearTitle": "Vols buidar la llista?",
     "clearMessage_one": "Treu l'única pista de la llista. El fitxer del disc no s'esborra.",
     "clearMessage_other": "Treu les {{count}} pistes de la llista. Els fitxers del disc no s'esborren.",

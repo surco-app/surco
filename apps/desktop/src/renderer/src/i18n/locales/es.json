@@ -2386,15 +2386,7 @@
     "ok": "Entendido"
   },
   "confirm": {
-    "fillTitle": "¿Rellenar etiquetas desde el nombre?",
-    "fillMessage_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en {{count}} pista. El resto de etiquetas no se toca.",
-    "fillMessage_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en {{count}} pistas. El resto de etiquetas no se toca.",
-    "fillMessageFiltered_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en la única pista visible. Las que el filtro oculta no se tocan.",
-    "fillMessageFiltered_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en las {{count}} pistas visibles. Las que el filtro oculta no se tocan.",
-    "fillMessageSelected_one": "Lee el título, artista y nº de pista del nombre del archivo y sobrescribe esos campos en la pista seleccionada. El resto de etiquetas no se toca.",
-    "fillMessageSelected_other": "Lee el título, artista y nº de pista del nombre de cada archivo y sobrescribe esos campos en las {{count}} pistas seleccionadas. El resto de etiquetas no se toca.",
     "fillNone": "Ningún nombre encaja con un patrón conocido, así que no hay nada que rellenar.",
-    "fillConfirm": "Rellenar etiquetas",
     "clearTitle": "¿Vaciar la lista?",
     "clearMessage_one": "Quita la única pista de la lista. El archivo en disco no se borra.",
     "clearMessage_other": "Quita las {{count}} pistas de la lista. Los archivos en disco no se borran.",

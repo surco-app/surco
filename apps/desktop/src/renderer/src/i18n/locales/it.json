@@ -2386,15 +2386,7 @@
     "ok": "Ho capito"
   },
   "confirm": {
-    "fillTitle": "Compilare i tag dal nome?",
-    "fillMessage_one": "Legge titolo, artista e n. di traccia dal nome del file e sovrascrive quei campi in {{count}} brano. Gli altri tag restano come sono.",
-    "fillMessage_other": "Legge titolo, artista e n. di traccia dal nome di ogni file e sovrascrive quei campi in {{count}} brani. Gli altri tag restano come sono.",
-    "fillMessageFiltered_one": "Legge titolo, artista e n. di traccia dal nome del file e sovrascrive quei campi nell'unico brano visibile. Quelli nascosti dal filtro restano come sono.",
-    "fillMessageFiltered_other": "Legge titolo, artista e n. di traccia dal nome di ogni file e sovrascrive quei campi nei {{count}} brani visibili. Quelli nascosti dal filtro restano come sono.",
-    "fillMessageSelected_one": "Legge titolo, artista e n. di traccia dal nome del file e sovrascrive quei campi nel brano selezionato. Gli altri tag restano come sono.",
-    "fillMessageSelected_other": "Legge titolo, artista e n. di traccia dal nome di ogni file e sovrascrive quei campi nei {{count}} brani selezionati. Gli altri tag restano come sono.",
     "fillNone": "Nessun nome corrisponde a uno schema conosciuto, quindi non c'è niente da compilare.",
-    "fillConfirm": "Compila i tag",
     "clearTitle": "Svuotare l'elenco?",
     "clearMessage_one": "Toglie l'unico brano dall'elenco. Il file sul disco non viene eliminato.",
     "clearMessage_other": "Toglie i {{count}} brani dall'elenco. I file sul disco non vengono eliminati.",

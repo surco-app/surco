@@ -2386,15 +2386,7 @@
     "ok": "Alles klar"
   },
   "confirm": {
-    "fillTitle": "Tags aus Dateinamen füllen?",
-    "fillMessage_one": "Liest Titel, Künstler und Tracknummer aus dem Dateinamen und überschreibt diese Felder in {{count}} Track. Andere Tags bleiben unangetastet.",
-    "fillMessage_other": "Liest Titel, Künstler und Tracknummer aus jedem Dateinamen und überschreibt diese Felder in {{count}} Tracks. Andere Tags bleiben unangetastet.",
-    "fillMessageFiltered_one": "Liest Titel, Künstler und Tracknummer aus dem Dateinamen und überschreibt diese Felder im einzigen sichtbaren Track. Vom Filter ausgeblendete Tracks bleiben unangetastet.",
-    "fillMessageFiltered_other": "Liest Titel, Künstler und Tracknummer aus jedem Dateinamen und überschreibt diese Felder in den {{count}} sichtbaren Tracks. Vom Filter ausgeblendete Tracks bleiben unangetastet.",
-    "fillMessageSelected_one": "Liest Titel, Künstler und Tracknummer aus dem Dateinamen und überschreibt diese Felder beim ausgewählten Track. Alle anderen Tags bleiben unberührt.",
-    "fillMessageSelected_other": "Liest Titel, Künstler und Tracknummer aus jedem Dateinamen und überschreibt diese Felder bei den {{count}} ausgewählten Tracks. Alle anderen Tags bleiben unberührt.",
     "fillNone": "Kein Dateiname passt zu einem bekannten Muster, es gibt also nichts zu füllen.",
-    "fillConfirm": "Tags füllen",
     "clearTitle": "Liste leeren?",
     "clearMessage_one": "Entfernt den einzigen Track aus der Liste. Die Datei auf der Festplatte wird nicht gelöscht.",
     "clearMessage_other": "Entfernt alle {{count}} Tracks aus der Liste. Die Dateien auf der Festplatte werden nicht gelöscht.",
