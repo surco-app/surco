@@ -17,6 +17,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import { useWaveform } from '../hooks/useWaveform'
 import { useWaveformWindow } from '../hooks/useWaveformWindow'
 import { holdForAudition } from '../lib/auditionHolds'
+import { wheelZoom } from '../lib/cuePlayhead'
 import { formatTime } from '../lib/duration'
 import { editorPlace } from '../lib/editorPlace'
 import { formatFixed } from '../lib/numberFormat'
@@ -255,6 +256,24 @@ function Lane({
   }, [askedFrom, askedSpan])
   const { data: win } = useWaveformWindow(inputPath, settled.from, settled.span, enabled)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const zoomRef = useRef({ contextIndex, contextCount, onContextChange })
+  zoomRef.current = { contextIndex, contextCount, onContextChange }
+  useEffect(() => {
+    const overlay = overlayRef.current
+    if (!overlay) return
+    let pending = 0
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      e.preventDefault()
+      const step = wheelZoom(pending, e.deltaY)
+      pending = step.pending
+      const { contextIndex: at, contextCount: count, onContextChange: change } = zoomRef.current
+      if (step.dir === 'in' && at > 0) change(at - 1)
+      if (step.dir === 'out' && at < count - 1) change(at + 1)
+    }
+    overlay.addEventListener('wheel', onWheel, { passive: false })
+    return () => overlay.removeEventListener('wheel', onWheel)
+  }, [overlayRef])
   const tall = useTallLanes()
   useEffect(() => {
     const canvas = canvasRef.current
@@ -459,6 +478,7 @@ function Lane({
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onWheel={(e) => {
+            if (e.ctrlKey || e.metaKey) return
             if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
             onWheelPan(e.deltaX)
           }}

@@ -382,6 +382,76 @@ describe('TrimSection', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  describe('pinch to zoom', () => {
+    const spanOf = (side: 'start' | 'end') => {
+      const [from, to] = (screen.getByTestId(`trim-lane-${side}`).getAttribute('data-window') ?? '')
+        .split('-')
+        .map(Number)
+      return to - from
+    }
+
+    it('narrows the lane with a pinch in and cancels the event so the window does not zoom', async () => {
+      render(section({ value: { startSec: 9.7 } }))
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const before = spanOf('start')
+
+      const notCancelled = fireEvent.wheel(screen.getByTestId('trim-overlay-start'), {
+        deltaY: -60,
+        ctrlKey: true,
+      })
+
+      expect(notCancelled).toBe(false)
+      expect(spanOf('start')).toBeLessThan(before)
+    })
+
+    it('widens the lane with command and the wheel out', async () => {
+      render(section({ value: { startSec: 9.7 } }))
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const before = spanOf('start')
+
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaY: 60, metaKey: true })
+
+      expect(spanOf('start')).toBeGreaterThan(before)
+    })
+
+    it('waits for small steps to add up, so one swipe is one zoom step', async () => {
+      render(section({ value: { startSec: 9.7 } }))
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const overlay = screen.getByTestId('trim-overlay-start')
+      const before = spanOf('start')
+
+      fireEvent.wheel(overlay, { deltaY: -25, ctrlKey: true })
+      expect(spanOf('start')).toBe(before)
+      fireEvent.wheel(overlay, { deltaY: -25, ctrlKey: true })
+      expect(spanOf('start')).toBeLessThan(before)
+    })
+
+    it('leaves a plain vertical wheel alone so the editor can still scroll', async () => {
+      render(section({ value: { startSec: 9.7 } }))
+      await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+      const before = spanOf('start')
+
+      const notCancelled = fireEvent.wheel(screen.getByTestId('trim-overlay-start'), {
+        deltaY: -200,
+      })
+
+      expect(notCancelled).toBe(true)
+      expect(spanOf('start')).toBe(before)
+    })
+
+    it('zooms only the lane that was pinched', async () => {
+      render(section({ value: { startSec: 9.7 } }))
+      await screen.findByTestId('trim-lane-end', undefined, { timeout: 3000 })
+      const endBefore = spanOf('end')
+      const startBefore = spanOf('start')
+
+      fireEvent.wheel(screen.getByTestId('trim-overlay-start'), { deltaY: -60, ctrlKey: true })
+
+      expect(spanOf('end')).toBe(endBefore)
+      expect(spanOf('start')).toBeLessThan(startBefore)
+    })
+  })
+
   // El paneo tiene que AGUANTAR. La ventana se recentra sola sobre el corte cuando
   // éste se sale de plano (contain), así que un paneo que se alejara del corte se
   // desharía solo en el siguiente render — un gesto que parece funcionar y no
