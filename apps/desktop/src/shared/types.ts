@@ -417,6 +417,8 @@ export interface Settings {
   // appeared (ISO date, '' = never), which lib/donateNudge gates on.
   donateNudgeDismissed: boolean
   donateNudgeLastShown: string
+  silenceInPlaceWarning: boolean
+  silenceLossyWarning: boolean
   // The app version whose changelog the user last saw ('' = never stamped), which
   // lib/whatsNew gates the post-update "what's new" popup on.
   lastSeenChangelogVersion: string

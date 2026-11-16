@@ -34,6 +34,7 @@ function setup(
     settings?: Settings | null
     deriveTracks?: ReturnType<typeof vi.fn<(patches: unknown[]) => void>>
     notify?: ReturnType<typeof vi.fn<(message: string) => void>>
+    saveSettings?: ReturnType<typeof vi.fn<(patch: Partial<Settings>) => void>>
   } = {},
 ) {
   const opened: ConfirmModal[] = []
@@ -45,6 +46,7 @@ function setup(
       updateTrack: extra.updateTrack ?? vi.fn(),
       deriveTracks: extra.deriveTracks ?? vi.fn(),
       notify: extra.notify ?? vi.fn(),
+      saveSettings: extra.saveSettings ?? vi.fn(),
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
       reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
@@ -567,6 +569,75 @@ describe('useConfirmFlows single-track overwrite', () => {
     flows.askConvertOne(run)
     expect(opened[0].destructive).toBe(true)
     expect(run).not.toHaveBeenCalled()
+  })
+})
+
+describe('useConfirmFlows do not ask again', () => {
+  // The two convert warnings guard files on disk, so they stay, but a DJ who has read them
+  // once must be able to stop seeing them for good, across restarts.
+  it('saves that the overwrite warning is silenced when confirmed with the box ticked', () => {
+    const saveSettings = vi.fn()
+    const { flows, opened } = setup([track('a')], { saveSettings })
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    expect(opened[0].dontAskAgainLabel).toBe("Don't ask again")
+    opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceInPlaceWarning: true })
+  })
+
+  // Ticking the box and then backing out is not consent to anything.
+  it('saves nothing when the box is not ticked on confirm', () => {
+    const saveSettings = vi.fn()
+    const { flows, opened } = setup([track('a')], { saveSettings })
+    flows.askConvertOne(vi.fn(), { destination: 'overwrite', track: track('a') })
+    opened[0].onConfirm(false)
+    expect(saveSettings).not.toHaveBeenCalled()
+  })
+
+  // Silenced in an earlier session means the saved setting alone decides, no session memory.
+  it('runs an overwrite convert without asking once its warning is silenced', () => {
+    const { flows, opened } = setup([track('a')], {
+      settings: { silenceInPlaceWarning: true } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { destination: 'overwrite', track: track('a') })
+    expect(opened).toHaveLength(0)
+    expect(run).toHaveBeenCalledTimes(1)
+  })
+
+  // Silencing the overwrite warning must not hide the quality-loss one: they warn of
+  // different damage.
+  it('still asks about a lossy re-encode when only the overwrite warning is silenced', () => {
+    const mp3 = track('m', { inputPath: '/m.mp3', fileName: 'm.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], {
+      settings: { silenceInPlaceWarning: true } as Settings,
+    })
+    const run = vi.fn()
+    flows.askConvertOne(run, { track: mp3, format: 'source' })
+    expect(opened).toHaveLength(1)
+    expect(run).not.toHaveBeenCalled()
+  })
+
+  it('saves the lossy warning as silenced on its own key', () => {
+    const saveSettings = vi.fn()
+    const mp3 = track('m', { inputPath: '/m.mp3', fileName: 'm.mp3', trim: { startSec: 1 } })
+    const { flows, opened } = setup([mp3], { saveSettings })
+    flows.askConvertOne(vi.fn(), { track: mp3, format: 'source' })
+    opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceLossyWarning: true })
+  })
+
+  it('skips the batch overwrite dialog once silenced and saves the choice when ticked', () => {
+    const saveSettings = vi.fn()
+    const a = track('a')
+    const asked = setup([a], { saveSettings, settings: { overwriteOriginal: true } as Settings })
+    asked.flows.askConvertAll([a])
+    asked.opened[0].onConfirm(true)
+    expect(saveSettings).toHaveBeenCalledWith({ silenceInPlaceWarning: true })
+    const silenced = setup([a], {
+      settings: { overwriteOriginal: true, silenceInPlaceWarning: true } as Settings,
+    })
+    silenced.flows.askConvertAll([a])
+    expect(silenced.opened).toHaveLength(0)
   })
 })
 

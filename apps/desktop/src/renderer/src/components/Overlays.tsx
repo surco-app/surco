@@ -248,6 +248,7 @@ export function Overlays({
             confirmLabel={activeModal.confirm.confirmLabel}
             confirmDisabled={activeModal.confirm.confirmDisabled}
             destructive={activeModal.confirm.destructive}
+            dontAskAgainLabel={activeModal.confirm.dontAskAgainLabel}
             onConfirm={activeModal.confirm.onConfirm}
             onClose={close}
           />

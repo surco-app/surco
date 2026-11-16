@@ -77,7 +77,7 @@ const SETTINGS_IDS: [SettingsTab, string[]][] = [
       'virtualdjLibraryDir',
     ],
   ],
-  ['advanced', ['configDir', 'backup', 'backups', 'cache', 'log']],
+  ['advanced', ['configDir', 'backup', 'backups', 'cache', 'warnings', 'log']],
 ]
 
 const ANCHORS: Record<string, string> = { completeCues: 'rekordboxSync' }

@@ -145,6 +145,8 @@ export const testSettings: Settings = {
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
+  silenceInPlaceWarning: false,
+  silenceLossyWarning: false,
   lastSeenChangelogVersion: '',
 }
 

@@ -1331,6 +1331,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         updateTrack: library.updateTrack,
         deriveTracks: () => {},
         notify: () => {},
+        saveSettings: () => {},
         processAll: (...args) => {
           running = processing.processAll(...args)
           return running

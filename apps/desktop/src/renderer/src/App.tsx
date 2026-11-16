@@ -1848,6 +1848,7 @@ export default function App(): React.JSX.Element {
     updateTrack,
     deriveTracks: deriveTracksUndoable,
     notify: setNotice,
+    saveSettings,
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),

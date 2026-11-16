@@ -207,6 +207,8 @@ export const defaults: Settings = {
   listReviewIgnored: [],
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
+  silenceInPlaceWarning: false,
+  silenceLossyWarning: false,
   lastSeenChangelogVersion: '',
   betaUpdates: false,
   autoUpdates: true,
@@ -243,6 +245,8 @@ export const LOCAL_KEYS = [
   // beta while another stays on stable.
   'betaUpdates',
   'autoUpdates',
+  'silenceInPlaceWarning',
+  'silenceLossyWarning',
   // A pixel position or a column proportion only means something on the screen it was saved on.
   'activityPanel',
   'resultsWidth',

@@ -49,3 +49,46 @@ describe('AdvancedTab analysis cache size', () => {
     expect(patchLocal).toHaveBeenCalledWith('analysisCacheGb', 40)
   })
 })
+
+describe('AdvancedTab convert warnings', () => {
+  function renderWarnings(local: Partial<LocalDraft>) {
+    const patchLocal = vi.fn()
+    render(
+      <AdvancedTab
+        configDir={null}
+        defaultDir={null}
+        onChangeConfigDir={vi.fn()}
+        onResetConfigDir={vi.fn()}
+        onExportSettings={vi.fn()}
+        onImportSettings={vi.fn()}
+        settingsFileError=""
+        local={{ analysisCacheGb: 10, ...local } as LocalDraft}
+        patchLocal={patchLocal}
+      />,
+    )
+    return { patchLocal }
+  }
+
+  // Silencing is a one-way door from the dialog; this button is the way back, and it must
+  // bring both warnings back at once.
+  it('turns both convert warnings back on', () => {
+    const { patchLocal } = renderWarnings({
+      silenceInPlaceWarning: true,
+      silenceLossyWarning: true,
+    })
+    fireEvent.click(screen.getByTestId('settings-warnings-reset'))
+    expect(patchLocal).toHaveBeenCalledWith('silenceInPlaceWarning', false)
+    expect(patchLocal).toHaveBeenCalledWith('silenceLossyWarning', false)
+  })
+
+  // Nothing to restore means nothing to press, but the button keeps its place.
+  it('disables the button while no warning is silenced', () => {
+    renderWarnings({ silenceInPlaceWarning: false, silenceLossyWarning: false })
+    expect(screen.getByTestId('settings-warnings-reset')).toBeDisabled()
+  })
+
+  it('enables the button when only one warning is silenced', () => {
+    renderWarnings({ silenceInPlaceWarning: false, silenceLossyWarning: true })
+    expect(screen.getByTestId('settings-warnings-reset')).toBeEnabled()
+  })
+})

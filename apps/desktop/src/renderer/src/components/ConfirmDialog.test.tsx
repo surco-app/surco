@@ -113,3 +113,35 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).not.toHaveBeenCalled()
   })
 })
+
+describe('ConfirmDialog do not ask again', () => {
+  // Every other warning must stay exactly as it was: only the two convert warnings offer
+  // to be silenced.
+  it('shows no checkbox unless the caller offers one', () => {
+    renderDialog()
+    expect(screen.queryByTestId('confirm-dont-ask-again')).not.toBeInTheDocument()
+  })
+
+  // Silencing a warning is a decision taken together with confirming it, never on its own.
+  it('hands the ticked box to onConfirm', () => {
+    const { onConfirm } = renderDialog({ dontAskAgainLabel: "Don't ask again" })
+    fireEvent.click(screen.getByTestId('confirm-dont-ask-again'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(onConfirm).toHaveBeenCalledWith(true)
+  })
+
+  it('confirms with the box unticked by default', () => {
+    const { onConfirm } = renderDialog({ dontAskAgainLabel: "Don't ask again" })
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(onConfirm).toHaveBeenCalledWith(false)
+  })
+
+  // Backing out with the box ticked must not silence anything.
+  it('does not confirm when cancelled with the box ticked', () => {
+    const { onConfirm, onClose } = renderDialog({ dontAskAgainLabel: "Don't ask again" })
+    fireEvent.click(screen.getByTestId('confirm-dont-ask-again'))
+    fireEvent.click(screen.getByTestId('confirm-cancel'))
+    expect(onConfirm).not.toHaveBeenCalled()
+    expect(onClose).toHaveBeenCalled()
+  })
+})

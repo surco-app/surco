@@ -284,6 +284,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     },
     donateNudgeDismissed: false,
     donateNudgeLastShown: '',
+    silenceInPlaceWarning: false,
+    silenceLossyWarning: false,
     // Matches setApi's version so unrelated tests never trigger the launch stamp.
     lastSeenChangelogVersion: '0.0.0-test',
     ...over,

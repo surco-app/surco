@@ -631,6 +631,21 @@ describe('configurable settings folder', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  // A DJ who silenced the convert warnings must not see them again after a restart, and a
+  // warning silenced on one machine says nothing about another.
+  it('keeps the silenced convert warnings on this machine and off by default', () => {
+    expect(defaults.silenceInPlaceWarning).toBe(false)
+    expect(defaults.silenceLossyWarning).toBe(false)
+    const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))
+    setConfigDir(dir)
+    saveSettings({ silenceInPlaceWarning: true })
+    expect(read(syncedFile(dir))).not.toHaveProperty('silenceInPlaceWarning')
+    expect(read(localFile()).silenceInPlaceWarning).toBe(true)
+    expect(getSettings().silenceInPlaceWarning).toBe(true)
+    expect(getSettings().silenceLossyWarning).toBe(false)
+    rmSync(dir, { recursive: true, force: true })
+  })
+
   // The ignored groups name this Mac's Music library; on another Mac they mean nothing.
   it('keeps the ignored review groups on this machine', () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-config-'))

@@ -112,6 +112,7 @@ interface Params {
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   deriveTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   notify: (message: string) => void
+  saveSettings: (patch: Partial<Settings>) => void
   processAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -177,6 +178,11 @@ interface ConfirmFlows {
 // as a backup, kept only when the audio changes, or gone for good. Main fills the policy
 // in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
 // A lossy re-encode always changes the audio, so every policy but 'never' keeps a backup.
+const SILENCE_KEY = {
+  overwrite: 'silenceInPlaceWarning',
+  lossy: 'silenceLossyWarning',
+} as const
+
 function lossyReencodeMessageKey(settings: Settings | null): string {
   return settings?.backupPolicy === 'never'
     ? 'confirm.convertLossyReencodeMessage'
@@ -250,6 +256,7 @@ export function useConfirmFlows({
   updateTrack,
   deriveTracks,
   notify,
+  saveSettings,
   processAll,
   openConfirm,
   reportTrashFailure,
@@ -263,6 +270,11 @@ export function useConfirmFlows({
   // through a crate at each track, so once confirmed it holds for the session. A batch
   // still asks every time: its count is what the user is weighing.
   const consented = useRef(new Set<'overwrite' | 'lossy'>())
+
+  function consentTo(kind: 'overwrite' | 'lossy', dontAskAgain?: boolean): void {
+    consented.current.add(kind)
+    if (dontAskAgain) saveSettings({ [SILENCE_KEY[kind]]: true })
+  }
 
   // Right-click "Move to Trash": confirm first, then send each original file to the OS
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
@@ -434,7 +446,10 @@ export function useConfirmFlows({
     )
 
     function confirmConvertAll(lossyReencode: boolean): void {
-      if (!overwriting && !lossyReencode) {
+      if (
+        (!overwriting && !lossyReencode) ||
+        settings?.[SILENCE_KEY[lossyReencode ? 'lossy' : 'overwrite']]
+      ) {
         void processAll(targets, format, normalize, destination, declick, again)
         return
       }
@@ -454,8 +469,9 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
-              onConfirm: () => {
-                consented.current.add('lossy')
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
+              onConfirm: (dontAskAgain) => {
+                consentTo('lossy', dontAskAgain)
                 void processAll(targets, format, normalize, destination, declick, again)
               },
             }
@@ -464,8 +480,9 @@ export function useConfirmFlows({
               message: tr(inPlaceMessageKey(settings), { count }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
-              onConfirm: () => {
-                consented.current.add('overwrite')
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
+              onConfirm: (dontAskAgain) => {
+                consentTo('overwrite', dontAskAgain)
                 void processAll(targets, format, normalize, destination, declick, again)
               },
             },
@@ -517,12 +534,16 @@ export function useConfirmFlows({
 
     function confirmConvertOne(lossyReencode: boolean): void {
       const kind = lossyReencode ? 'lossy' : 'overwrite'
-      if ((!overwriting && !lossyReencode) || consented.current.has(kind)) {
+      if (
+        (!overwriting && !lossyReencode) ||
+        consented.current.has(kind) ||
+        settings?.[SILENCE_KEY[kind]]
+      ) {
         run()
         return
       }
-      const consent = (): void => {
-        consented.current.add(kind)
+      const consent = (dontAskAgain?: boolean): void => {
+        consentTo(kind, dontAskAgain)
         run()
       }
       openConfirm(
@@ -532,6 +553,7 @@ export function useConfirmFlows({
               message: tr(lossyReencodeMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertLossyReencodeConfirm'),
               destructive: true,
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
               onConfirm: consent,
             }
           : {
@@ -539,6 +561,7 @@ export function useConfirmFlows({
               message: tr(inPlaceMessageKey(settings), { count: 1 }),
               confirmLabel: tr('confirm.convertInPlaceConfirm'),
               destructive: true,
+              dontAskAgainLabel: tr('confirm.dontAskAgain'),
               onConfirm: consent,
             },
       )
