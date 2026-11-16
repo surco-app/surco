@@ -6305,7 +6305,7 @@ describe('App import skeleton', () => {
 })
 
 describe('App error surfacing', () => {
-  // The user confirmed a destructive dialog; if the OS trash call then fails, the row
+  // If the OS trash call fails, the row
   // must stay AND the failure must be said out loud — a silent catch reads as success
   // and the user walks away believing the file is gone.
   it('surfaces a failed trash instead of pretending the file was deleted', async () => {
@@ -6319,7 +6319,6 @@ describe('App error surfacing', () => {
 
     fireEvent.contextMenu(screen.getByTestId('track-row'))
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
 
     expect(await screen.findByTestId('app-error')).toBeInTheDocument()
     expect(screen.getByTestId('track-row')).toBeInTheDocument()
@@ -6779,7 +6778,7 @@ describe('App multi-select removal', () => {
   })
 
   // Same selection rule for the destructive action: "Move to Trash" sends every selected
-  // file to the OS trash behind one confirm, not just the row under the cursor.
+  // file to the OS trash, not just the row under the cursor.
   it('trashes every selected file from the right-click menu', async () => {
     const trashFile = vi.fn().mockResolvedValue(undefined)
     setApi({
@@ -6795,7 +6794,6 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.contextMenu(rows[1])
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.wav', '/music/b.wav'])
   })
@@ -6823,7 +6821,6 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
 
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual([
@@ -6854,7 +6851,6 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
     fireEvent.click(screen.getByTestId('track-menu-trash'))
-    fireEvent.click(await screen.findByTestId('confirm-ok'))
 
     await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
     expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual(['/music/a.mp3', '/music/c.mp3'])
@@ -12668,21 +12664,21 @@ describe('App list header', () => {
     await waitFor(() => expect(screen.getByTestId('remove-selected')).toBeDisabled())
   })
 
-  // From the menu the selection goes to the OS Trash after a confirm; with nothing
-  // selected there is nothing to move, so no dialog asks about an empty set.
+  // The OS Trash is recoverable, so the menu moves the selection there at once with no
+  // dialog; with nothing selected there is nothing to move and trashFile is never called.
   it('moves the selection to the Trash from the menu, and nothing without one', async () => {
+    const trashFile = vi.fn().mockResolvedValue(undefined)
+    setApi({ trashFile })
     await renderApp()
     await addTwoTracks()
     runMenu('trash-selected')
-    expect(await screen.findByTestId('confirm-ok')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('confirm-cancel'))
-    await waitFor(() => expect(screen.queryByTestId('confirm-ok')).toBeNull())
-    fireEvent.keyDown(window, { key: 'Escape' })
-    await waitFor(() =>
-      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'false'),
-    )
-    runMenu('trash-selected')
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(1))
     expect(screen.queryByTestId('confirm-ok')).toBeNull()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.keyDown(window, { key: 'Escape' })
+    trashFile.mockClear()
+    runMenu('trash-selected')
+    expect(trashFile).not.toHaveBeenCalled()
   })
 })
 

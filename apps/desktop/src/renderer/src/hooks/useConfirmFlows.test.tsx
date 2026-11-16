@@ -121,13 +121,59 @@ describe('useConfirmFlows move to Trash', () => {
     )
   })
 
-  it('keeps the Trash wording when every file has a Trash', async () => {
-    installApi({ keepsTrash: vi.fn().mockResolvedValue(true) })
+  // Moving to the OS Trash is recoverable, like Cmd+Delete in Finder, so asking would only
+  // slow the user down. Dialogs are for what cannot be undone.
+  it('moves files to the Trash without a dialog when every file has a Trash', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
-    const { flows, opened } = setup([a])
+    const b = track('b')
+    const { flows, opened, removeTracks } = setup([a, b])
+    await flows.askTrash([a, b])
+    expect(opened).toHaveLength(0)
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    expect(trashFile).toHaveBeenCalledWith('/b.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
+  })
+
+  it('moves to the Recycle Bin without a dialog on Windows too', async () => {
+    installApi({
+      platform: 'win32',
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+    })
+    const a = track('a')
+    const { flows, opened, removeTracks } = setup([a])
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Trash?')
-    expect(opened[0].confirmLabel).toBe('Move to Trash')
+    expect(opened).toHaveLength(0)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
+  })
+
+  it('reports a failed move and keeps that row when no dialog was shown', async () => {
+    installApi({
+      keepsTrash: vi.fn().mockResolvedValue(true),
+      trashFile: vi.fn<Api['trashFile']>().mockRejectedValue(new Error('busy')),
+    })
+    const a = track('a')
+    const reportTrashFailure = vi.fn()
+    const { flows, removeTracks } = setup([a], { reportTrashFailure })
+    await flows.askTrash([a])
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith([], true))
+    expect(reportTrashFailure).toHaveBeenCalledWith('Artist - a.wav')
+  })
+
+  it('still asks when one file of the selection has no Trash, and moves nothing before the click', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    installApi({
+      trashFile,
+      keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
+    })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const { flows, opened } = setup([a, b])
+    await flows.askTrash([a, b])
+    expect(opened).toHaveLength(1)
+    expect(trashFile).not.toHaveBeenCalled()
   })
 })
 
@@ -138,9 +184,8 @@ describe('useConfirmFlows trashed row', () => {
   it('drops a trashed file’s row from every list, a playlist that listed it included', async () => {
     installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined) })
     const a = track('a')
-    const { flows, opened, removeTracks } = setup([a])
+    const { flows, removeTracks } = setup([a])
     await flows.askTrash([a])
-    opened[0].onConfirm()
     await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
   })
 
@@ -154,9 +199,8 @@ describe('useConfirmFlows trashed row', () => {
       ),
     })
     const tracks = [track('a'), track('b'), track('c')]
-    const { flows, opened, removeTracks } = setup(tracks)
+    const { flows, removeTracks } = setup(tracks)
     await flows.askTrash(tracks)
-    opened[0].onConfirm()
     await waitFor(() => expect(removeTracks).toHaveBeenCalled())
     expect(removeTracks).toHaveBeenCalledTimes(1)
     expect(removeTracks).toHaveBeenCalledWith(['a', 'c'], true)
@@ -202,14 +246,13 @@ describe('useConfirmFlows delete for good', () => {
     expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/b.wav', true)
   })
 
-  it('keeps the Trash wording under never when every file has a Trash', async () => {
+  it('moves to the Trash without a dialog under never when every file has a Trash', async () => {
     const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
     const { flows, opened } = setup([a], { settings: never })
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Trash?')
-    opened[0].onConfirm()
+    expect(opened).toHaveLength(0)
     expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
   })
 

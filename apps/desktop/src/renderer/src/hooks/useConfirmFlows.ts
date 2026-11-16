@@ -276,7 +276,7 @@ export function useConfirmFlows({
     if (dontAskAgain) saveSettings({ [SILENCE_KEY[kind]]: true })
   }
 
-  // Right-click "Move to Trash": confirm first, then send each original file to the OS
+  // Right-click "Move to Trash": send each original file to the OS
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
   // row untouched. Copy switches on platform because the destination differs, and on
   // count so a multi-selection reads "N files" instead of naming just one. A disk with no
@@ -287,33 +287,37 @@ export function useConfirmFlows({
     const isWin = window.api.platform === 'win32'
     const count = targets.length
     const keeps = await Promise.all(targets.map((t) => window.api.keepsTrash(t.inputPath)))
+    const moveToTrash = (): void => {
+      const trashed = targets.map((track, i) =>
+        window.api
+          .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
+          .then(() => track.id)
+          // A silent failure here reads as "the file is in the trash" when it isn't.
+          .catch(() => {
+            reportTrashFailure(track.fileName)
+            return null
+          }),
+      )
+      // The rows leave together once every file has settled, so a cover the selection
+      // shared is freed against the rows that remain (see App's onRemove).
+      void Promise.all(trashed).then((ids) =>
+        removeTracks(
+          ids.filter((id) => id !== null),
+          true,
+        ),
+      )
+    }
+    if (keeps.every(Boolean)) {
+      moveToTrash()
+      return
+    }
     const copy = trashCopy(keeps, isWin, settings)
     openConfirm({
       title: tr(copy.title, { count }),
       message: tr(copy.message, { count, name: targets[0].fileName }),
       confirmLabel: tr(copy.confirm),
       destructive: true,
-      onConfirm: () => {
-        const trashed = targets.map((track, i) =>
-          window.api
-            .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
-            .then(() => track.id)
-            // The user confirmed a destructive dialog; a silent failure here reads
-            // as "the file is in the trash" when it isn't.
-            .catch(() => {
-              reportTrashFailure(track.fileName)
-              return null
-            }),
-        )
-        // The rows leave together once every file has settled, so a cover the selection
-        // shared is freed against the rows that remain (see App's onRemove).
-        void Promise.all(trashed).then((ids) =>
-          removeTracks(
-            ids.filter((id) => id !== null),
-            true,
-          ),
-        )
-      },
+      onConfirm: moveToTrash,
     })
   }
 
