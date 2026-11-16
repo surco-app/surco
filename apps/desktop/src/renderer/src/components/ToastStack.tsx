@@ -2,6 +2,8 @@ import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
+import { prefersReducedMotion } from '../lib/motion'
 import type { Toast, ToastText } from '../lib/toastQueue'
 
 // How long the copy button shows its "copied" check before reverting to the copy icon.
@@ -11,6 +13,12 @@ const COPIED_FEEDBACK_MS = 1500
 // .animate-toast-leave duration, with the timer (not animationend) as the source of
 // truth so a test environment that never fires animation events still drops the card.
 const TOAST_LEAVE_MS = 200
+
+const SWIPE_SETTLE_MS = 160
+const SWIPE_CLOSE_SHARE = 0.4
+const SWIPE_RESISTANCE = 0.2
+const SWIPE_MIN_OPACITY = 0.4
+const SWIPE_EXIT_GAP_PX = 24
 
 // The single home for every transient notification: notices, failures, update prompts and
 // new-track prompts. They stack bottom-right, newest at the bottom, so a status line and an
@@ -159,6 +167,47 @@ function ToastCard({
     }
   }, [toast.id, toast.duration, leaving, paused, onExpire])
 
+  const cardRef = useRef<HTMLDivElement>(null)
+  const [swipe, setSwipe] = useState({ x: 0, opacity: 1 })
+  const [tracking, setTracking] = useState(false)
+  const [exitTo, setExitTo] = useState<number>()
+  const swipeRef = useRef(0)
+  const trailRef = useRef<TrailPoint[]>([])
+  const flingRef = useRef(0)
+  const settleRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(settleRef.current), [])
+  useEffect(() => {
+    if (leaving) clearTimeout(settleRef.current)
+  }, [leaving])
+  const moveSwipe = (px: number): void => {
+    swipeRef.current = px
+    const width = cardRef.current?.offsetWidth ?? 0
+    setSwipe({
+      x: px < 0 ? px * SWIPE_RESISTANCE : px,
+      opacity: px > 0 && width > 0 ? 1 - (1 - SWIPE_MIN_OPACITY) * Math.min(px / width, 1) : 1,
+    })
+  }
+  const onSwipeWheel = (e: React.WheelEvent): void => {
+    if (leaving || exitTo !== undefined || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+    setTracking(true)
+    moveSwipe(swipeRef.current - e.deltaX)
+    const now = performance.now()
+    trailRef.current.push({ at: swipeRef.current, t: now })
+    flingRef.current = releaseVelocity(trailRef.current, now)
+    clearTimeout(settleRef.current)
+    settleRef.current = setTimeout(() => {
+      setTracking(false)
+      trailRef.current = []
+      const width = cardRef.current?.offsetWidth ?? 0
+      if (swipeRef.current + coastDistance(flingRef.current) < width * SWIPE_CLOSE_SHARE) {
+        moveSwipe(0)
+        return
+      }
+      if (!prefersReducedMotion()) setExitTo(width + SWIPE_EXIT_GAP_PX)
+      onClose(toast.id)
+    }, SWIPE_SETTLE_MS)
+  }
+
   const danger = toast.tone === 'danger'
   // Single-line toasts read best vertically centred; only a long, scrollable error message
   // (no action, danger tone) pins to the top so its ✕ stays reachable as the body grows.
@@ -167,15 +216,31 @@ function ToastCard({
     // No status/alert role here: the stack container is the one live region, and a role on
     // the card nested a second one inside it, so every toast was read twice.
     <div
+      ref={cardRef}
       aria-hidden={leaving || undefined}
       data-testid={toast.testid}
+      onWheel={onSwipeWheel}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
       onFocus={() => setFocused(true)}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false)
       }}
-      className={`${leaving ? 'animate-toast-leave pointer-events-none' : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
+      style={{
+        transform:
+          exitTo !== undefined
+            ? `translateX(${exitTo}px)`
+            : swipe.x !== 0
+              ? `translateX(${swipe.x}px)`
+              : undefined,
+        opacity: exitTo !== undefined ? 0 : swipe.opacity < 1 ? swipe.opacity : undefined,
+        transition: tracking
+          ? 'none'
+          : exitTo !== undefined
+            ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
+            : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
+      }}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-pop'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}

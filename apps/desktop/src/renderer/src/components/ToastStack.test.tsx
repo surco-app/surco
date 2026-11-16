@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Toast } from '../lib/toastQueue'
@@ -336,6 +337,106 @@ describe('ToastStack', () => {
       )
       expect(screen.getByText('3 new tracks')).toBeInTheDocument()
       expect(screen.queryByText('2 new tracks')).toBeNull()
+    })
+  })
+
+  describe('swipe to dismiss, like a Mac notification slid off towards its edge', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+    })
+    afterEach(() => {
+      vi.useRealTimers()
+      vi.restoreAllMocks()
+    })
+
+    const card = () => screen.getByTestId('swipe-toast')
+    const drag = (steps: number, deltaX: number, everyMs: number, deltaY = 0) => {
+      for (let i = 0; i < steps; i++) {
+        fireEvent.wheel(card(), { deltaX, deltaY })
+        act(() => vi.advanceTimersByTime(everyMs))
+      }
+    }
+    const letGo = () => act(() => vi.advanceTimersByTime(500))
+    const renderCard = (onClose = vi.fn()) => {
+      render(
+        <ToastStack
+          toasts={[toast({ id: 's', testid: 'swipe-toast' })]}
+          onExpire={vi.fn()}
+          onClose={onClose}
+        />,
+      )
+      return onClose
+    }
+
+    it('closes the toast through onClose on a long swipe to the right', () => {
+      const onClose = renderCard()
+      drag(8, -30, 8)
+      letGo()
+      expect(onClose).toHaveBeenCalledWith('s')
+    })
+
+    it('closes it on a short quick flick, because how fast the hand moved says where it was going', () => {
+      const onClose = renderCard()
+      drag(3, -20, 8)
+      letGo()
+      expect(onClose).toHaveBeenCalledWith('s')
+    })
+
+    it('springs back without closing when a short distance is covered slowly', () => {
+      const onClose = renderCard()
+      drag(3, -10, 100)
+      letGo()
+      expect(onClose).not.toHaveBeenCalled()
+      expect(['', 'translateX(0px)']).toContain(card().style.transform)
+    })
+
+    it('ignores a vertical swipe, which is the long error message scrolling', () => {
+      const onClose = renderCard()
+      fireEvent.wheel(card(), { deltaX: -5, deltaY: 40 })
+      expect(card().style.transform).toBe('')
+      drag(8, -10, 8, 60)
+      letGo()
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('never closes on a swipe to the left, away from the edge the toast sits on', () => {
+      const onClose = renderCard()
+      drag(8, 60, 8)
+      const slid = Number.parseFloat(card().style.transform.replace('translateX(', ''))
+      expect(slid).toBeLessThan(0)
+      expect(slid).toBeGreaterThan(-100)
+      letGo()
+      expect(onClose).not.toHaveBeenCalled()
+      expect(['', 'translateX(0px)']).toContain(card().style.transform)
+    })
+
+    it('follows the fingers one to one, with no transition lagging behind them', () => {
+      renderCard()
+      fireEvent.wheel(card(), { deltaX: -20 })
+      fireEvent.wheel(card(), { deltaX: -20 })
+      fireEvent.wheel(card(), { deltaX: -20 })
+      expect(card().style.transform).toBe('translateX(60px)')
+      expect(card().style.transition).toBe('none')
+    })
+
+    it('slides the swiped card on from where it is, since the leave keyframes would jump it back to the start', () => {
+      function Live() {
+        const [toasts, setToasts] = useState([toast({ id: 's', testid: 'swipe-toast' })])
+        return (
+          <ToastStack
+            toasts={toasts}
+            onExpire={vi.fn()}
+            onClose={(id) => setToasts((all) => all.filter((t) => t.id !== id))}
+          />
+        )
+      }
+      render(<Live />)
+      drag(8, -30, 8)
+      letGo()
+      expect(card()).toHaveAttribute('aria-hidden', 'true')
+      expect(card().className).not.toContain('animate-toast-leave')
+      expect(card().style.transform).toBe('translateX(324px)')
     })
   })
 })
