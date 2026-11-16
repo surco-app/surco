@@ -105,6 +105,49 @@ describe('ActivityPanel drag without a render per move', () => {
   })
 })
 
+describe('ActivityPanel spring back after an edge release', () => {
+  const frames = new Map<number, FrameRequestCallback>()
+  let nextFrame = 0
+  const flushFrames = () => {
+    for (const [id, run] of frames) {
+      frames.delete(id)
+      run(0)
+    }
+  }
+  afterEach(() => {
+    frames.clear()
+    vi.unstubAllGlobals()
+  })
+  const stubFrames = () => {
+    vi.stubGlobal('requestAnimationFrame', (run: FrameRequestCallback) => {
+      nextFrame += 1
+      frames.set(nextFrame, run)
+      return nextFrame
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => frames.delete(id))
+  }
+
+  it('keeps a drag grabbed within a frame of the release free of the spring transition, so it still tracks the pointer one to one', () => {
+    stubFrames()
+    const { handle, panel } = startDrag()
+    fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    fireEvent.pointerDown(handle, { clientX: 30, clientY: 90, pointerId: 1 })
+    flushFrames()
+    expect(panel.style.transition).toBe('')
+  })
+
+  it('drops the pending spring when the panel closes right after the release', () => {
+    stubFrames()
+    const { handle } = startDrag()
+    fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(frames.size).toBe(1)
+    cleanup()
+    expect(frames.size).toBe(0)
+  })
+})
+
 describe('ActivityPanel copy', () => {
   // The feed's whole trail — verdicts, per-step timings, the technical details folded
   // behind each row — pastes as plain text, so sharing it in a bug report or a chat

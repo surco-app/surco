@@ -22,7 +22,7 @@ import {
   X,
 } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
@@ -352,6 +352,8 @@ export function ActivityPanel({
     raw: { x: number; y: number }
   } | null>(null)
   const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
+  const springFrame = useRef(0)
+  useEffect(() => () => cancelAnimationFrame(springFrame.current), [])
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -360,6 +362,7 @@ export function ActivityPanel({
       // that lands on a button is left alone and only bare-header presses drag.
       if ((e.target as HTMLElement).closest('button')) return
       drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, start: pos, raw: pos }
+      cancelAnimationFrame(springFrame.current)
       if (panelRef.current) panelRef.current.style.transition = ''
       e.currentTarget.setPointerCapture(e.pointerId)
     },
@@ -397,7 +400,7 @@ export function ActivityPanel({
         return
       }
       panel.style.transform = `translate(${seen.x - x}px, ${seen.y - y}px)`
-      requestAnimationFrame(() => {
+      springFrame.current = requestAnimationFrame(() => {
         panel.getBoundingClientRect()
         panel.style.transition = 'transform var(--duration-fast) var(--ease-standard)'
         panel.style.transform = ''
