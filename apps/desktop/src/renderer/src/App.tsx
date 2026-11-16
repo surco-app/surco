@@ -1624,8 +1624,8 @@ export default function App(): React.JSX.Element {
       : tracks.filter((t) => t.id === id),
   )
 
-  const removeFromList = useStableCallback((id: string): void => {
-    removeTargets(menuTargets(id))
+  const removeFromList = useStableCallback((id: string, onRemoved?: () => void): void => {
+    removeTargets(menuTargets(id), onRemoved)
   })
 
   const removeOne = useStableCallback((id: string): void => {
@@ -3102,17 +3102,24 @@ export default function App(): React.JSX.Element {
     return planMatching([...removes, ...adds])
   }
   const matchingOpen = browser.playlist?.id === MATCHING_ID
-  const confirmRemoveFromMatching = (edits: MatchingEdit[], count: number): void => {
+  const confirmRemoveFromMatching = (
+    edits: MatchingEdit[],
+    count: number,
+    onRemoved?: () => void,
+  ): void => {
     if (edits.length === 0) return
     overlays.openConfirm({
       title: tr('confirm.removeFromPlaylistTitle', { count, name: browser.playlist?.name }),
       message: tr('confirm.removeFromMatchingMessage'),
       confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
       destructive: true,
-      onConfirm: () => void editMatchings('remove', edits),
+      onConfirm: () => {
+        void editMatchings('remove', edits)
+        onRemoved?.()
+      },
     })
   }
-  const removeFromMatching = (targets: TrackItem[]): void => {
+  const removeFromMatching = (targets: TrackItem[], onRemoved?: () => void): void => {
     if (inRekordbox) {
       const entryOf = new Map(
         (matchingEntries ?? []).flatMap((e) => (e.contentId ? [[e.contentId, e] as const] : [])),
@@ -3129,6 +3136,7 @@ export default function App(): React.JSX.Element {
           }
         }),
         new Set(pairs.flat()).size,
+        onRemoved,
       )
       return
     }
@@ -3147,6 +3155,7 @@ export default function App(): React.JSX.Element {
         paths,
       })),
       new Set(pairs.flat()).size,
+      onRemoved,
     )
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
@@ -3477,11 +3486,13 @@ export default function App(): React.JSX.Element {
         : undefined
   // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
   // remove does, and several ask first, naming the playlist they leave.
-  const removeFromPlaylist = (targets: TrackItem[]): void => {
+  const removeFromPlaylist = (targets: TrackItem[], onRemoved?: () => void): void => {
     const playlist = removablePlaylist
     if (!playlist) return
-    const remove = () =>
+    const remove = () => {
       removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
+      onRemoved?.()
+    }
     if (targets.length <= 1) {
       remove()
       return
@@ -3496,12 +3507,12 @@ export default function App(): React.JSX.Element {
   }
   // Inside a playlist the program can edit, taking a track out means out of that playlist,
   // whichever way it is asked; the list in Surco is only a view of it.
-  const removeTargets = useStableCallback((targets: TrackItem[]): void =>
+  const removeTargets = useStableCallback((targets: TrackItem[], onRemoved?: () => void): void =>
     matchingOpen
-      ? removeFromMatching(targets)
+      ? removeFromMatching(targets, onRemoved)
       : removablePlaylist
-        ? removeFromPlaylist(targets)
-        : askRemoveFromList(targets),
+        ? removeFromPlaylist(targets, onRemoved)
+        : askRemoveFromList(targets, onRemoved),
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.

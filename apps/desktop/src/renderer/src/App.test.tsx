@@ -6747,6 +6747,51 @@ describe('App multi-select removal', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
   })
 
+  // Cancel means nothing happened: a DJ who built a range with Shift+↓, pressed ⌫ and
+  // thought better of it must get the same range back, not a lone row past it.
+  it('keeps the keyboard range selected and focused when the removal is cancelled', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    fireEvent.keyDown(rows[1], { key: 'Backspace' })
+    fireEvent.click(await screen.findByTestId('confirm-cancel'))
+
+    await waitFor(() => expect(screen.queryByTestId('confirm-cancel')).not.toBeInTheDocument())
+    expect(screen.getAllByTestId('track-row')).toHaveLength(3)
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[1]).toHaveFocus()
+  })
+
+  // Once the range is really gone, ⌫ still walks on: the row after it takes the selection
+  // and the focus, so the next arrow or ⌫ continues from there.
+  it('hands selection and focus to the row after the range once the removal is confirmed', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    fireEvent.keyDown(rows[1], { key: 'Backspace' })
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(rows[2]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(rows[2]).toHaveFocus())
+  })
+
   // Same selection rule for the destructive action: "Move to Trash" sends every selected
   // file to the OS trash behind one confirm, not just the row under the cursor.
   it('trashes every selected file from the right-click menu', async () => {

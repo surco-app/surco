@@ -86,7 +86,7 @@ interface Props {
   onSelect: (id: string, mods: ClickMods) => void
   // Double-clicking a row plays it: opens the floating player straight on that track.
   onActivate: (track: TrackItem) => void
-  onRemove: (id: string) => void
+  onRemove: (id: string, onRemoved?: () => void) => void
   // The swipe's removal: that one row, never the selection around it, and without asking,
   // the way Mail's swipe deletes one message. ⌫ and the menu keep onRemove and its confirm.
   onSwipeRemove: (id: string) => void
@@ -1180,6 +1180,12 @@ export const TrackList = memo(function TrackList({
   onReorderBlocked,
 }: Props): React.JSX.Element {
   const [menu, setMenu] = useState<MenuState | null>(null)
+  const [refocusId, setRefocusId] = useState<string | null>(null)
+  useEffect(() => {
+    if (refocusId === null) return
+    rowRegistry?.current?.get(refocusId)?.focus()
+    setRefocusId(null)
+  }, [refocusId, rowRegistry])
   // The keyboard ✕ (plain ⌫/Supr on a focused row). Removal deselects, which would
   // strand the keyboard on a dead row: hop selection — and focus, via the registry —
   // to the first row OUTSIDE the doomed set (onRemove is selection-aware in App), so
@@ -1193,11 +1199,11 @@ export const TrackList = memo(function TrackList({
         .slice(0, Math.max(i, 0))
         .reverse()
         .find((t) => !doomed.has(t.id))
-    onRemove(id)
-    if (neighbor) {
+    onRemove(id, () => {
+      if (!neighbor) return
       onSelect(neighbor.id, {})
-      rowRegistry?.current?.get(neighbor.id)?.focus()
-    }
+      setRefocusId(neighbor.id)
+    })
   })
   // The moving end of a keyboard range is the focused row, not the anchor: the anchor stays
   // the editor's track (as with a Shift-click), and the focus hops to the new end so the

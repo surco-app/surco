@@ -133,7 +133,7 @@ function renderList(
 ) {
   const onSelect = vi.fn()
   const onActivate = vi.fn()
-  const onRemove = vi.fn()
+  const onRemove = vi.fn((_id: string, onRemoved?: () => void) => onRemoved?.())
   const onSwipeRemove = vi.fn()
   const onAcceptReview = vi.fn()
   const onPrefetch = vi.fn()
@@ -966,14 +966,14 @@ describe('TrackList', () => {
       'b',
     )
     fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'Backspace' })
-    expect(onRemove).toHaveBeenCalledWith('b')
+    expect(onRemove).toHaveBeenCalledWith('b', expect.any(Function))
     expect(onSelect).toHaveBeenCalledWith('c', {})
   })
 
   it('falls back to the previous row when the last row is removed with Delete', () => {
     const { onSelect, onRemove } = renderList([track({ id: 'a' }), track({ id: 'b' })], 'b')
     fireEvent.keyDown(screen.getAllByTestId('track-row')[1], { key: 'Delete' })
-    expect(onRemove).toHaveBeenCalledWith('b')
+    expect(onRemove).toHaveBeenCalledWith('b', expect.any(Function))
     expect(onSelect).toHaveBeenCalledWith('a', {})
   })
 
@@ -987,7 +987,7 @@ describe('TrackList', () => {
       ['a', 'b'],
     )
     fireEvent.keyDown(screen.getAllByTestId('track-row')[0], { key: 'Backspace' })
-    expect(onRemove).toHaveBeenCalledWith('a')
+    expect(onRemove).toHaveBeenCalledWith('a', expect.any(Function))
     expect(onSelect).toHaveBeenCalledWith('c', {})
   })
 

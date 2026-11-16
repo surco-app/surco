@@ -150,7 +150,7 @@ interface ConfirmFlows {
   askCleanUp: (track: TrackItem, offer: CleanupOffer) => Promise<void>
   askFillAll: (targets: TrackItem[], opts?: { fromSelection?: boolean }) => void
   askClearAll: (targets: TrackItem[]) => void
-  askRemoveFromList: (targets: TrackItem[]) => void
+  askRemoveFromList: (targets: TrackItem[], onRemoved?: () => void) => void
   askConvertAll: (
     targets: TrackItem[],
     format?: FormatSetting,
@@ -441,11 +441,15 @@ export function useConfirmFlows({
   // carrying an hour of tagging is the expensive case, and by count it went straight
   // through with nothing to say it had anything on it. A clean row still goes in one
   // click, whether it is one or one of many.
-  function askRemoveFromList(targets: TrackItem[]): void {
+  function askRemoveFromList(targets: TrackItem[], onRemoved?: () => void): void {
     if (targets.length === 0) return
     const ids = targets.map((t) => t.id)
-    if (targets.length === 1 && !targets.some(hasStagedEdits)) {
+    const remove = (): void => {
       removeTracks(ids)
+      onRemoved?.()
+    }
+    if (targets.length === 1 && !targets.some(hasStagedEdits)) {
+      remove()
       return
     }
     openConfirm({
@@ -453,7 +457,7 @@ export function useConfirmFlows({
       message: tr('confirm.removeFromListMessage', { count: targets.length }),
       confirmLabel: tr('confirm.removeFromListConfirm'),
       destructive: true,
-      onConfirm: () => removeTracks(ids),
+      onConfirm: remove,
     })
   }
 
