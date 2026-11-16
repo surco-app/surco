@@ -653,6 +653,7 @@
     },
     "matchReview": "Coincidència per confirmar",
     "metaReadFailed": "No s'han pogut llegir les metadades del fitxer, així que només es mostra el nom",
+    "audioReadFailed": "No s'ha pogut llegir l'àudio d'aquest fitxer",
     "unsaved": "Canvis sense desar",
     "verifyMismatch": "Alguna cosa no quadra",
     "remove": "Treure",

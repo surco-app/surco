@@ -653,6 +653,7 @@
     },
     "matchReview": "Associação a confirmar",
     "metaReadFailed": "Não foi possível ler as tags deste arquivo, então só os dados do nome aparecem",
+    "audioReadFailed": "Não foi possível ler o áudio deste arquivo",
     "unsaved": "Alterações não salvas",
     "verifyMismatch": "Algo não bate",
     "remove": "Remover",

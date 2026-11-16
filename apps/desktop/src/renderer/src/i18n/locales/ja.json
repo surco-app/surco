@@ -653,6 +653,7 @@
     },
     "matchReview": "要確認のマッチ",
     "metaReadFailed": "ファイルのタグを読み取れなかったため、ファイル名のデータのみ表示しています",
+    "audioReadFailed": "このファイルのオーディオを読み取れませんでした",
     "unsaved": "未保存の変更",
     "verifyMismatch": "一致しない項目があります",
     "remove": "リストから削除",

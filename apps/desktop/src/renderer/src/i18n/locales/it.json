@@ -653,6 +653,7 @@
     },
     "matchReview": "Abbinamento da confermare",
     "metaReadFailed": "Non è stato possibile leggere i metadati del file, quindi viene mostrato solo il nome",
+    "audioReadFailed": "Non è stato possibile leggere l'audio di questo file",
     "unsaved": "Modifiche non salvate",
     "verifyMismatch": "Qualcosa non torna",
     "remove": "Rimuovi",

@@ -653,6 +653,7 @@
     },
     "matchReview": "Coincidencia por confirmar",
     "metaReadFailed": "No se pudieron leer los metadatos del archivo, así que solo se muestra el nombre",
+    "audioReadFailed": "No se pudo leer el audio de este archivo",
     "unsaved": "Cambios sin guardar",
     "verifyMismatch": "Algo no cuadra",
     "remove": "Quitar",

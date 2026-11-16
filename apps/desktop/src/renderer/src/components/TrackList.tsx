@@ -426,6 +426,11 @@ const TrackRow = memo(function TrackRow({
   // needs a conversion without opening each track. Shared with the per-format filter
   // and sort, so the pill, the filter chip and the sort order all agree.
   const format = sourceFormat(t)
+  const readFailedLabel = t.analyzeFailed
+    ? tr('trackList.audioReadFailed')
+    : t.metaReadFailed
+      ? tr('trackList.metaReadFailed')
+      : ''
   const backupLabel =
     backupAt === undefined
       ? ''
@@ -838,14 +843,14 @@ const TrackRow = memo(function TrackRow({
                 )}
                 {/* A failed tag read leaves the row showing only its file-name parse; the mark
                     tells that apart from a file that genuinely carries no tags. */}
-                {t.metaReadFailed && (
+                {readFailedLabel && (
                   <span
-                    data-testid="track-meta-failed"
+                    data-testid={t.analyzeFailed ? 'track-audio-failed' : 'track-meta-failed'}
                     className="group/dot relative flex shrink-0 items-center text-warn"
                   >
                     <TriangleAlert className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={tr('trackList.metaReadFailed')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.metaReadFailed')}</span>
+                    <Tooltip label={readFailedLabel} align="end" scope="dot" />
+                    <span className="sr-only">{readFailedLabel}</span>
                   </span>
                 )}
                 {/* The re-read after converting found something wrong: the same amber as the

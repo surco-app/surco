@@ -373,6 +373,18 @@ describe('TrackList', () => {
     expect(screen.getAllByTestId('track-meta-failed')).toHaveLength(1)
   })
 
+  it('marks a row whose audio could not be read, so the files the quality sweep skipped can be found in a long list', () => {
+    renderList([track({ id: 'a', analyzeFailed: true }), track({ id: 'b' })])
+    expect(screen.getAllByTestId('track-audio-failed')).toHaveLength(1)
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent(i18n.t('trackList.audioReadFailed'))
+  })
+
+  it('shows a single mark naming the audio when both the tags and the audio failed, so the row never stacks two warnings', () => {
+    renderList([track({ id: 'a', analyzeFailed: true, metaReadFailed: true })])
+    expect(screen.getAllByTestId('track-audio-failed')).toHaveLength(1)
+    expect(screen.queryByTestId('track-meta-failed')).not.toBeInTheDocument()
+  })
+
   it('shows the stable list label, not in-progress metadata edits', () => {
     // The label freezes what the row was when imported (or last applied a match), so typing
     // a new title into the editor on the right never renames the pill on the left mid-edit.

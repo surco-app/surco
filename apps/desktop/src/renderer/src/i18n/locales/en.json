@@ -653,6 +653,7 @@
     },
     "matchReview": "Match to confirm",
     "metaReadFailed": "Couldn't read this file's tags, so only data from the file name is shown",
+    "audioReadFailed": "Couldn't read this file's audio",
     "unsaved": "Unsaved changes",
     "verifyMismatch": "Something doesn’t add up",
     "remove": "Remove",
