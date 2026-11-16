@@ -6244,6 +6244,18 @@ describe('App import skeleton', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)
   })
 
+  it('tells the user when an opened folder holds no audio at all, instead of doing nothing visible', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/no-audio']),
+      expandPaths: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.noAudioFound'),
+    )
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.
@@ -6745,6 +6757,51 @@ describe('App multi-select removal', () => {
     fireEvent.click(screen.getByTestId('track-menu-remove'))
     fireEvent.click(await screen.findByTestId('confirm-ok'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+  })
+
+  // Cancel means nothing happened: a DJ who built a range with Shift+↓, pressed ⌫ and
+  // thought better of it must get the same range back, not a lone row past it.
+  it('keeps the keyboard range selected and focused when the removal is cancelled', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    fireEvent.keyDown(rows[1], { key: 'Backspace' })
+    fireEvent.click(await screen.findByTestId('confirm-cancel'))
+
+    await waitFor(() => expect(screen.queryByTestId('confirm-cancel')).not.toBeInTheDocument())
+    expect(screen.getAllByTestId('track-row')).toHaveLength(3)
+    expect(rows[0]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    expect(rows[2]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[1]).toHaveFocus()
+  })
+
+  // Once the range is really gone, ⌫ still walks on: the row after it takes the selection
+  // and the focus, so the next arrow or ⌫ continues from there.
+  it('hands selection and focus to the row after the range once the removal is confirmed', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    fireEvent.keyDown(rows[1], { key: 'Backspace' })
+    fireEvent.click(await screen.findByTestId('confirm-ok'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(rows[2]).toHaveAttribute('aria-selected', 'true')
+    await waitFor(() => expect(rows[2]).toHaveFocus())
   })
 
   // Same selection rule for the destructive action: "Move to Trash" sends every selected
@@ -7815,6 +7872,53 @@ describe('App conversion failure notice', () => {
     expect(toast).toHaveTextContent('2')
   })
 
+  it('gives the reason of the track it names, not of the latest failure, so the user fixes the right problem', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn(async ({ inputPath }: { inputPath: string }) => {
+        if (inputPath === '/music/a.wav') throw new Error('file is missing')
+        if (inputPath === '/music/c.wav') throw new Error('disk is full')
+        return { outputPath: '/out/x.aiff', inPlace: false }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toHaveTextContent('2'))
+    const toast = screen.getByTestId('process-error')
+    expect(toast).toHaveTextContent('Pray')
+    expect(toast).toHaveTextContent('file is missing')
+    expect(toast).not.toHaveTextContent('disk is full')
+  })
+
+  it('counts only the failures of the latest run, so a retry does not report the old run as new damage', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn().mockRejectedValue(new Error('came out unreadable')),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getByTestId('process-error')).toHaveTextContent('and 2 more'))
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toBeInTheDocument())
+    runMenu('process-all')
+    await waitFor(() => expect(window.api.processTrack).toHaveBeenCalledTimes(6))
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toBeInTheDocument())
+    expect(screen.getByTestId('process-error')).toHaveTextContent('and 2 more')
+  })
+
   // The run summary counts the failures ("2 failed") and the list already has a bucket
   // that isolates exactly those rows — but the count was inert text, so the user read
   // the number and still had to scan for red rings. Clicking it filters the list down
@@ -8526,6 +8630,49 @@ describe('App keyboard navigation', () => {
 
     await waitFor(() => expect(rows[1]).toHaveAttribute('aria-selected', 'true'))
     expect(rows[1]).toHaveFocus()
+  })
+
+  // After Shift+↓ the user is at the bottom of the range; a plain ↓ must continue from there,
+  // like Finder and Music, not jump back to the row under where the range started.
+  it('moves a plain ArrowDown on from the focused end of a Shift-extended range', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    await waitFor(() => expect(rows[1]).toHaveFocus())
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+
+    await waitFor(() => expect(rows[2]).toHaveAttribute('aria-selected', 'true'))
+    expect(rows[0]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[2]).toHaveFocus()
+  })
+
+  // The remove shortcut used to drop the focus on the floor, so the next ↓ restarted from
+  // the top of a 400-track list. Like plain ⌫ on a row, the next row takes over.
+  it('keeps the place in the list after the remove shortcut', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+
+    fireEvent.keyDown(window, { key: 'Backspace', ctrlKey: true })
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    await waitFor(() => expect(rows[1]).toHaveFocus())
+    expect(rows[1]).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+    await waitFor(() => expect(rows[2]).toHaveAttribute('aria-selected', 'true'))
   })
 
   // Auditioning a crate one by one, the DJ wants to see how far along they are: the

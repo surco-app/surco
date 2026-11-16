@@ -9,7 +9,7 @@ import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
 const ROW_CLASS =
-  'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg transition-colors hover:bg-[var(--color-hover)] group data-[empty]:text-fg-faint'
+  'flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)] group data-[empty]:text-fg-faint'
 
 export interface MeasureProgress {
   fraction: number

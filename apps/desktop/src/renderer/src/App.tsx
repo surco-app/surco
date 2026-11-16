@@ -668,7 +668,7 @@ export default function App(): React.JSX.Element {
   // of the old message that named the reason and left the user hunting for the row. Reset
   // when the card goes (its onDismiss), so the next run counts from zero rather than
   // adding onto a tally the user already read and closed.
-  const convertFailures = useRef<{ first: string; count: number } | null>(null)
+  const convertFailures = useRef<{ first: string; reason: string; count: number } | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. The editor reports every pick and resets it to null on
   // mount (it remounts per track), so null means nothing picked by hand: each track then
@@ -746,6 +746,8 @@ export default function App(): React.JSX.Element {
       }),
   })
 
+  const reportNoAudioFound = (): void =>
+    pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound'))
   // The track collection (import pipeline, write paths, removal) lives in the hook;
   // App supplies the per-track registry cleanup and the auto-match opt-in, which is
   // gated on a token and only fires once a file's own metadata is read so the search
@@ -859,7 +861,7 @@ export default function App(): React.JSX.Element {
       pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
     // Same keying: a drop of several folders resolves one call per folder, and the user
     // needs one card saying "nothing came in", not one per directory.
-    onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
+    onNoAudioFound: reportNoAudioFound,
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // Same card as the files missing when the playlist opened: the background check found
@@ -1312,7 +1314,9 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
-    await addPaths(await window.api.expandPaths(paths, true))
+    const expanded = await window.api.expandPaths(paths, true)
+    if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
+    await addPaths(expanded)
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
@@ -1624,8 +1628,8 @@ export default function App(): React.JSX.Element {
       : tracks.filter((t) => t.id === id),
   )
 
-  const removeFromList = useStableCallback((id: string): void => {
-    removeTargets(menuTargets(id))
+  const removeFromList = useStableCallback((id: string, onRemoved?: () => void): void => {
+    removeTargets(menuTargets(id), onRemoved)
   })
 
   const removeOne = useStableCallback((id: string): void => {
@@ -1742,7 +1746,9 @@ export default function App(): React.JSX.Element {
     // failed and still has to find which row it was in a crate of hundreds.
     onProcessError: (message, name) => {
       const prev = convertFailures.current
-      const tally = prev ? { first: prev.first, count: prev.count + 1 } : { first: name, count: 1 }
+      const tally = prev
+        ? { ...prev, count: prev.count + 1 }
+        : { first: name, reason: message, count: 1 }
       convertFailures.current = tally
       pushToast(store, {
         key: 'process-error',
@@ -1756,9 +1762,9 @@ export default function App(): React.JSX.Element {
             ? tr('notices.convertFailedMany', {
                 name: tally.first,
                 count: tally.count - 1,
-                reason: message,
+                reason: tally.reason,
               })
-            : tr('notices.convertFailed', { name: tally.first, reason: message }),
+            : tr('notices.convertFailed', { name: tally.first, reason: tally.reason }),
         testid: 'process-error',
         onDismiss: () => {
           convertFailures.current = null
@@ -1766,6 +1772,10 @@ export default function App(): React.JSX.Element {
       })
     },
   })
+
+  useEffect(() => {
+    if (batching) convertFailures.current = null
+  }, [batching])
 
   const partialSelected = useMemo(
     () => tracks.filter((t) => t.metaPartial && selectedIdSet.has(t.id)).map((t) => t.id),
@@ -2328,6 +2338,7 @@ export default function App(): React.JSX.Element {
   } = useListNavigation({
     visibleTracks,
     selectedId,
+    selectedIds: selectedIdSet,
     setSelection,
     continuousPlayback: settings?.continuousPlayback ?? false,
     playerVisible,
@@ -3102,17 +3113,24 @@ export default function App(): React.JSX.Element {
     return planMatching([...removes, ...adds])
   }
   const matchingOpen = browser.playlist?.id === MATCHING_ID
-  const confirmRemoveFromMatching = (edits: MatchingEdit[], count: number): void => {
+  const confirmRemoveFromMatching = (
+    edits: MatchingEdit[],
+    count: number,
+    onRemoved?: () => void,
+  ): void => {
     if (edits.length === 0) return
     overlays.openConfirm({
       title: tr('confirm.removeFromPlaylistTitle', { count, name: browser.playlist?.name }),
       message: tr('confirm.removeFromMatchingMessage'),
       confirmLabel: tr('confirm.removeFromPlaylistConfirm'),
       destructive: true,
-      onConfirm: () => void editMatchings('remove', edits),
+      onConfirm: () => {
+        void editMatchings('remove', edits)
+        onRemoved?.()
+      },
     })
   }
-  const removeFromMatching = (targets: TrackItem[]): void => {
+  const removeFromMatching = (targets: TrackItem[], onRemoved?: () => void): void => {
     if (inRekordbox) {
       const entryOf = new Map(
         (matchingEntries ?? []).flatMap((e) => (e.contentId ? [[e.contentId, e] as const] : [])),
@@ -3129,6 +3147,7 @@ export default function App(): React.JSX.Element {
           }
         }),
         new Set(pairs.flat()).size,
+        onRemoved,
       )
       return
     }
@@ -3147,6 +3166,7 @@ export default function App(): React.JSX.Element {
         paths,
       })),
       new Set(pairs.flat()).size,
+      onRemoved,
     )
   }
   const pickMatchingPartner = useStableCallback((partner: MatchingPartner) => {
@@ -3477,11 +3497,13 @@ export default function App(): React.JSX.Element {
         : undefined
   // The DJ's playlist has no undo in Surco: one row goes in one click, as the list's own
   // remove does, and several ask first, naming the playlist they leave.
-  const removeFromPlaylist = (targets: TrackItem[]): void => {
+  const removeFromPlaylist = (targets: TrackItem[], onRemoved?: () => void): void => {
     const playlist = removablePlaylist
     if (!playlist) return
-    const remove = () =>
+    const remove = () => {
       removeFromRekordbox(targets.flatMap((t) => playlistScope?.linksOf.get(t.id) ?? []))
+      onRemoved?.()
+    }
     if (targets.length <= 1) {
       remove()
       return
@@ -3496,12 +3518,12 @@ export default function App(): React.JSX.Element {
   }
   // Inside a playlist the program can edit, taking a track out means out of that playlist,
   // whichever way it is asked; the list in Surco is only a view of it.
-  const removeTargets = useStableCallback((targets: TrackItem[]): void =>
+  const removeTargets = useStableCallback((targets: TrackItem[], onRemoved?: () => void): void =>
     matchingOpen
-      ? removeFromMatching(targets)
+      ? removeFromMatching(targets, onRemoved)
       : removablePlaylist
-        ? removeFromPlaylist(targets)
-        : askRemoveFromList(targets),
+        ? removeFromPlaylist(targets, onRemoved)
+        : askRemoveFromList(targets, onRemoved),
   )
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
@@ -3789,6 +3811,23 @@ export default function App(): React.JSX.Element {
     else if (to === 'matches') focusMatches()
     else focusEditor()
   }
+  const removeAndStep = (id: string): void => {
+    const i = visibleTracks.findIndex((t) => t.id === id)
+    const neighbor =
+      visibleTracks.slice(i + 1).find((t) => t.id !== id) ??
+      visibleTracks
+        .slice(0, Math.max(i, 0))
+        .reverse()
+        .find((t) => t.id !== id)
+    removeTargets(
+      tracks.filter((t) => t.id === id),
+      () => {
+        if (!neighbor) return
+        onSelectTrack(neighbor.id, {})
+        requestAnimationFrame(() => rowEls.current.get(neighbor.id)?.focus())
+      },
+    )
+  }
 
   // The command registry is data, rebuilt from the current state each time it's read.
   // Built lazily through a stable getter (rather than every render) because its only
@@ -3847,7 +3886,7 @@ export default function App(): React.JSX.Element {
       cancelAutoMatch,
       enqueueAutoMatch: autoMatchTracks,
       addTrackToAppleMusic,
-      removeTrack: removeOne,
+      removeTrack: removeAndStep,
       reveal: window.api.reveal,
       askClearAll: onClearAll,
       bulkTracks,

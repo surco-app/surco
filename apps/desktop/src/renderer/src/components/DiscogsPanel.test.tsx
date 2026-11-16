@@ -152,6 +152,24 @@ describe('DiscogsPanel result entrance', () => {
     expect(gaps.every((g, i) => i === 0 || g < gaps[i - 1])).toBe(true)
     expect(delays[5]).toBeLessThanOrEqual(100)
   })
+
+  it('shows the results already there when the editor remounts on a track switch, so holding an arrow key does not replay the entrance on every step', () => {
+    renderPanel(browser({ results: results(3) }))
+
+    for (const row of screen.getAllByTestId('discogs-result')) {
+      expect(row.className).not.toContain('result-in')
+    }
+  })
+
+  it('still ramps in results that arrive after the panel is on screen', () => {
+    const { rerender } = renderPanel(browser({ query: 'x', results: [] }))
+
+    rerender(panel(browser({ query: 'x', results: results(3) })))
+
+    for (const row of screen.getAllByTestId('discogs-result')) {
+      expect(row.className).toContain('result-in')
+    }
+  })
 })
 
 // A late answer takes its ranked place among rows already on screen. Without a mark it

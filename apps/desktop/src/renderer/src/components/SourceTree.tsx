@@ -164,6 +164,17 @@ export const SourceTree = memo(function SourceTree({
   const [renaming, setRenaming] = useState<string | null>(null)
   const renameTarget = useRef<string | null>(null)
   const [deleting, setDeleting] = useState<SourceNode | null>(null)
+  const askingDelete = deleting !== null
+  useEffect(() => {
+    if (!askingDelete) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setDeleting(null)
+      else if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [askingDelete])
   const startRename = (node: SourceNode): void => {
     setMenu(null)
     renameTarget.current = node.id
@@ -213,6 +224,37 @@ export const SourceTree = memo(function SourceTree({
   // folder low in a long tree its items ran past the bottom, as the track menu's did.
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [menuAt, setMenuAt] = useState({ x: 0, y: 0 })
+  const menuOpener = useRef<HTMLElement | null>(null)
+  const menuOpen = menu !== null
+  useEffect(() => {
+    if (!menuOpen) return
+    return () => menuOpener.current?.focus()
+  }, [menuOpen])
+  const onMenuKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key === 'Escape') {
+      e.stopPropagation()
+      setMenu(null)
+      return
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.stopPropagation()
+      return
+    }
+    const items = Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [],
+    )
+    if (items.length === 0) return
+    const idx = items.indexOf(document.activeElement as HTMLElement)
+    let next = -1
+    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
+    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = items.length - 1
+    if (next === -1) return
+    e.preventDefault()
+    e.stopPropagation()
+    items[next].focus()
+  }
   useLayoutEffect(() => {
     const el = menuRef.current
     if (!menu || !el) return
@@ -317,7 +359,10 @@ export const SourceTree = memo(function SourceTree({
           placeholder={tr('sources.tree.name')}
           onKeyDown={(e) => {
             if (e.key === 'Enter') commit(e.currentTarget.value)
-            if (e.key === 'Escape') cancel()
+            if (e.key === 'Escape') {
+              e.stopPropagation()
+              cancel()
+            }
           }}
           onBlur={(e) => {
             // Cmd-Tab or a click on another app blurs the field with the user mid-name; the
@@ -423,7 +468,10 @@ export const SourceTree = memo(function SourceTree({
               defaultValue={node.name}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
-                if (e.key === 'Escape') cancelRename()
+                if (e.key === 'Escape') {
+                  e.stopPropagation()
+                  cancelRename()
+                }
               }}
               onBlur={(e) => {
                 if (!document.hasFocus()) return
@@ -455,6 +503,7 @@ export const SourceTree = memo(function SourceTree({
             onContextMenu={(e) => {
               if (!menuEdit && !pasteOnly) return
               e.preventDefault()
+              menuOpener.current = e.currentTarget
               setMenu({ node, x: e.clientX, y: e.clientY, pasteOnly: !menuEdit })
             }}
             data-drop-target={dropOn?.id === node.id || insideHere || undefined}
@@ -726,9 +775,7 @@ export const SourceTree = memo(function SourceTree({
               menu.node.kind === 'folder' ? 'sources.tree.folderMenu' : 'sources.tree.menu',
             )}
             data-testid="source-tree-menu"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setMenu(null)
-            }}
+            onKeyDown={onMenuKeyDown}
             style={{ top: menuAt.y, left: menuAt.x }}
             className="absolute min-w-[190px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >

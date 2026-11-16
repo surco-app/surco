@@ -10,6 +10,7 @@ interface Params {
   // The on-screen order (after the quality filter and search) the keyboard steps through.
   visibleTracks: TrackItem[]
   selectedId: string | null
+  selectedIds: ReadonlySet<string>
   setSelection: (selection: Selection) => void
   continuousPlayback: boolean
   // The floating player reserves the list's bottom strip, so paging must account for it.
@@ -45,6 +46,7 @@ interface ListNavigation {
 export function useListNavigation({
   visibleTracks,
   selectedId,
+  selectedIds,
   setSelection,
   continuousPlayback,
   playerVisible,
@@ -97,7 +99,11 @@ export function useListNavigation({
     // Step through the rows the user can actually see (after the quality filter and the
     // search), so arrow/j-k navigation never lands on a track hidden by the current view —
     // and so the index lines up with the rendered rows queried below.
-    const current = visibleTracks.findIndex((t) => t.id === selectedId)
+    const focused = [...rowEls.current.entries()].find(
+      ([, el]) => el === document.activeElement,
+    )?.[0]
+    const from = focused && selectedIds.has(focused) ? focused : selectedId
+    const current = visibleTracks.findIndex((t) => t.id === from)
     selectIndex(moveIndex(visibleTracks.length, current, delta), delta)
   }
 

@@ -230,6 +230,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   // that just arrived are marked for a moment so they don't slip in unnoticed. A new search
   // is a new list, not a late arrival: when none of its rows was on screen, nothing is marked.
   const shownKeys = useRef<ReadonlySet<string>>(new Set())
+  const [mountedKeys] = useState(() => new Set(results.map(resultKeyOf)))
   const freshKeys = useMemo(() => {
     const keys = results.map(resultKeyOf)
     const shown = shownKeys.current
@@ -351,7 +352,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             style={{
               animationDelay: `${STAGGER_DELAYS_MS[i] ?? 0}ms`,
             }}
-            className={`press result-in ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors compact:py-1 focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)] focus-visible:outline-none ${
+            className={`press ${mountedKeys.has(rk) ? '' : 'result-in'} ${freshKeys.has(rk) ? 'result-new' : ''} group relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors compact:py-1 focus-visible:bg-[var(--color-accent-soft)] focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)] focus-visible:outline-none ${
               // The open card takes no fill: the tracklist unfolding under it already
               // says which one is open, and the applied track keeps the column's only fill.
               expanded ? '' : 'hover:bg-[var(--color-hover)]/85'

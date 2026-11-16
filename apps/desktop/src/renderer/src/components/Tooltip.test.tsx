@@ -145,6 +145,12 @@ describe('Tooltip', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful hint')
   })
 
+  it('shows at once on a keyboard focus, so tabbing along a toolbar does not wait on a fade at every icon', () => {
+    renderTooltip()
+    fireEvent.focusIn(screen.getByTestId('trigger'))
+    expect(screen.getByRole('tooltip').className).not.toContain('animate-overlay')
+  })
+
   it('hides again when focus leaves the trigger', () => {
     renderTooltip()
     fireEvent.focusIn(screen.getByTestId('trigger'))
@@ -189,6 +195,18 @@ describe('Tooltip', () => {
       expect(screen.queryByRole('tooltip')).toBeNull()
       act(() => vi.advanceTimersByTime(400))
       expect(screen.getByRole('tooltip')).toHaveTextContent('Helpful hint')
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('still fades in after the hover pause, since only keyboard focus skips the fade', () => {
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      hover(screen.getByTestId('trigger'))
+      act(() => vi.advanceTimersByTime(400))
+      expect(screen.getByRole('tooltip').className).toContain('animate-overlay')
     } finally {
       vi.useRealTimers()
     }
