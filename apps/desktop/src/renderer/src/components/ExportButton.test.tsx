@@ -71,6 +71,26 @@ describe('ExportButton', () => {
     expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
   })
 
+  it('shows an already converted track as up to date without a rise, since the footer remounts on every track switch and an arrow key held through the list would replay it each step', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    expect(screen.getByTestId('convert-up-to-date-row').className).not.toContain(
+      'animate-footer-swap',
+    )
+  })
+
+  it('rises into up to date when the track becomes up to date while on screen', () => {
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate={false} />)
+    rerender(<ExportButton {...props} upToDate />)
+    expect(screen.getByTestId('convert-up-to-date-row').className).toContain('animate-footer-swap')
+  })
+
   // A disabled convert with no explanation leaves the user guessing; the tooltip must
   // name the empty required fields. The button itself fires no events while disabled, so
   // the wrapper carries the hover — this guards that wiring, not just the copy.

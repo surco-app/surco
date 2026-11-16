@@ -166,6 +166,8 @@ export function ExportButton({
     ? tr('trackList.progress', { percent: Math.round(STAGE_PROGRESS[liveStage] * 100) })
     : ''
   const progressRef = useRef<HTMLSpanElement>(null)
+  const prevUpToDate = useRef(upToDate)
+  const upToDateSwapped = useRef(false)
   const hadStage = useRef(!!liveStage)
   useLayoutEffect(() => {
     const started = !hadStage.current && !!liveStage
@@ -189,9 +191,18 @@ export function ExportButton({
     onSelectDestination(d)
   }
 
+  if (prevUpToDate.current !== upToDate) {
+    upToDateSwapped.current = true
+    prevUpToDate.current = upToDate
+  }
+
   if (upToDate && !processing && !quiet) {
     return (
-      <div key="up-to-date" className="animate-footer-swap flex h-10 items-center gap-3">
+      <div
+        key="up-to-date"
+        data-testid="convert-up-to-date-row"
+        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center gap-3`}
+      >
         <span
           data-testid="convert-up-to-date"
           className="flex flex-1 items-center justify-center gap-1.5 text-sm text-fg-dim"
