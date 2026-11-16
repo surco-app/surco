@@ -122,8 +122,8 @@ interface Params {
     again?: boolean,
   ) => Promise<void>
   openConfirm: (confirm: ConfirmModal) => void
-  // A trash/delete IPC failure surfaced to the user — the action was confirmed, so a
-  // silent failure would read as success.
+  // A trash/delete IPC failure surfaced to the user, since a silent failure would read
+  // as success.
   reportTrashFailure: (fileName: string) => void
   // Fired once the superseded Apple Music copy is gone (deleted, or already missing),
   // so App can refresh the library snapshot and confirm the outcome.
@@ -133,8 +133,7 @@ interface Params {
   // matches the confirmed label (nothing was deleted; the snapshot needs a refresh)
   // from an ordinary failure.
   reportOldCopyRemoveFailure: (mismatch: boolean) => void
-  // The full list, so fill-all/clear-all can tell a filtered-visible subset from the
-  // whole crate and say in the dialog that hidden rows survive.
+  // The full list.
   tracksRef: { current: TrackItem[] }
 }
 
@@ -171,18 +170,18 @@ interface ConfirmFlows {
   ) => void
 }
 
-// The destructive/overwriting actions that confirm before firing: trash, clean up,
-// fill-all, clear-all and in-place convert-all. Each builds its dialog copy and wires the
-// onConfirm into the data layer; App only routes the resulting modal through useOverlays.
-// The overwrite prompt says what happens to the original under the backup policy: kept
-// as a backup, kept only when the audio changes, or gone for good. Main fills the policy
-// in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
-// A lossy re-encode always changes the audio, so every policy but 'never' keeps a backup.
 const SILENCE_KEY = {
   overwrite: 'silenceInPlaceWarning',
   lossy: 'silenceLossyWarning',
 } as const
 
+// The destructive/overwriting actions that can confirm before firing: trash, clean up and
+// in-place convert-all. Each builds its dialog copy and wires the onConfirm into the data
+// layer; App only routes the resulting modal through useOverlays.
+// The overwrite prompt says what happens to the original under the backup policy: kept
+// as a backup, kept only when the audio changes, or gone for good. Main fills the policy
+// in on load ('audioChanges' by default), so a missing one only means settings not loaded yet.
+// A lossy re-encode always changes the audio, so every policy but 'never' keeps a backup.
 function lossyReencodeMessageKey(settings: Settings | null): string {
   return settings?.backupPolicy === 'never'
     ? 'confirm.convertLossyReencodeMessage'
@@ -268,7 +267,7 @@ export function useConfirmFlows({
   // Overwriting and re-encoding in place are choices the user makes once (in Settings or
   // the first prompt). Asked again before every single convert, the prompt stopped a run
   // through a crate at each track, so once confirmed it holds for the session. A batch
-  // still asks every time: its count is what the user is weighing.
+  // still asks: its count is what the user is weighing.
   const consented = useRef(new Set<'overwrite' | 'lossy'>())
 
   function consentTo(kind: 'overwrite' | 'lossy', dontAskAgain?: boolean): void {

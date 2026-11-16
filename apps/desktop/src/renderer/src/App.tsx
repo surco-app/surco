@@ -1851,7 +1851,7 @@ export default function App(): React.JSX.Element {
     },
   )
 
-  // The confirm-before-firing actions (trash, clean up previous files,
+  // The actions that can confirm before firing (trash, clean up previous files,
   // in-place convert-all): each builds its dialog and wires onConfirm into the data layer.
   const { askTrash, askCleanUp, askFillAll, askConvertAll, askConvertOne } = useConfirmFlows({
     settings,
