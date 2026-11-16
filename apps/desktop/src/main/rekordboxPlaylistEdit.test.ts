@@ -497,6 +497,15 @@ const live = (id: string) =>
     | { ID: string; Name: string; Seq: number; usn: number; updated_at: string }
     | undefined
 
+const WITH_SMART: PlaylistFixture = {
+  ...ORGANISE_FIXTURE,
+  playlists: [
+    ...ORGANISE_FIXTURE.playlists,
+    { ID: '6000', Name: 'Smart', Attribute: 4, ParentID: 'root', Seq: 4 },
+    { ID: '7000', Name: 'After', Attribute: 0, ParentID: 'root', Seq: 5 },
+  ],
+}
+
 describe('renameNode', () => {
   it('renames the row and stamps it as a change of its own', () => {
     renameNode(db, '3000', '  House 2026 ', ctx)
@@ -506,6 +515,13 @@ describe('renameNode', () => {
   it('renames a folder too', () => {
     renameNode(db, '1000', 'COMBOS VIEJOS', ctx)
     expect(live('1000')?.Name).toBe('COMBOS VIEJOS')
+  })
+
+  it('renames a smart playlist, since only its rules are off limits', async () => {
+    db.close()
+    db = await openFixture(WITH_SMART)
+    renameNode(db, '6000', 'Electronic 2026', ctx)
+    expect(live('6000')).toMatchObject({ Name: 'Electronic 2026', updated_at: STAMP })
   })
 
   it('refuses a node that is gone or a blank name', () => {
@@ -538,6 +554,14 @@ describe('deleteNode', () => {
     deleteNode(db, '1000', ctx)
     expect(live('3000')).toMatchObject({ Seq: 1, updated_at: STAMP })
     expect(live('4000')?.Seq).toBe(2)
+  })
+
+  it('deletes a smart playlist and closes its gap, so a DJ whose rekordbox is all smart playlists can tidy it from Surco', async () => {
+    db.close()
+    db = await openFixture(WITH_SMART)
+    expect(deleteNode(db, '6000', ctx)).toEqual(['6000'])
+    expect(live('6000')).toBeUndefined()
+    expect(live('7000')?.Seq).toBe(4)
   })
 
   it('refuses a node that is gone', () => {
@@ -610,6 +634,14 @@ describe('editProblem for rename and delete', () => {
     expect(
       editProblem(db, { kind: 'moveNode', playlistId: '3000', parentId: 'root', beforeId: null }),
     ).toBeNull()
+  })
+
+  it('passes a smart playlist renamed or deleted, and still flags tracks added to it', async () => {
+    db.close()
+    db = await openFixture(WITH_SMART)
+    expect(editProblem(db, { kind: 'rename', playlistId: '6000', name: 'X' })).toBeNull()
+    expect(editProblem(db, { kind: 'delete', playlistId: '6000' })).toBeNull()
+    expect(editProblem(db, { kind: 'remove', playlistId: '6000', linkIds: [] })).toBe('stale')
   })
 
   it('passes a folder and a playlist', () => {

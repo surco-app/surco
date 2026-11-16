@@ -903,12 +903,27 @@ describe('SourceTree smart playlists', () => {
     expect(onSelect).toHaveBeenCalledWith(SMART, [])
   })
 
-  // rekordbox refuses an edit on anything that is not a plain playlist, so a rename or delete
-  // offered here would only fail.
-  it('offers no rename or delete', () => {
+  it('offers only Rename and Delete, since adding tracks to it would fight its rules', () => {
     setup(null, true, [SMART, ...NODES])
     fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
-    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    const items = within(screen.getByTestId('source-tree-menu'))
+      .getAllByRole('menuitem')
+      .map((item) => item.dataset.testid)
+    expect(items).toEqual(['source-tree-rename', 'source-tree-delete'])
+  })
+
+  it('renames it in place and deletes it after the confirmation', () => {
+    const { edit } = setup(null, true, [SMART, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: 'Electronic 2027' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(edit.onRename).toHaveBeenCalledWith(SMART, 'Electronic 2027')
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    fireEvent.click(screen.getByTestId('confirm-ok'))
+    expect(edit.onDelete).toHaveBeenCalledWith(SMART)
   })
 
   it('takes no drop, since its rules decide what is in it', () => {
