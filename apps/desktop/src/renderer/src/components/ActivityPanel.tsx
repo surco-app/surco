@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
 import { type ActivityRow, activityFeedText, rowDetailText } from '../lib/activityLog'
+import { prefersReducedMotion } from '../lib/motion'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 import { SectionBody } from './SectionBody'
 
@@ -313,6 +314,14 @@ export function LiveActivityPanel({
   return <ActivityPanel rows={useActivityRows(store)} {...props} />
 }
 
+const EDGE_RESISTANCE = 0.2
+
+function resisted(value: number, max: number): number {
+  if (value < 0) return value * EDGE_RESISTANCE
+  if (value > max) return max + (value - max) * EDGE_RESISTANCE
+  return value
+}
+
 export function ActivityPanel({
   rows,
   onClear,
@@ -335,7 +344,13 @@ export function ActivityPanel({
   const persistGeometry = useCallback(() => {
     onGeometryChange({ pos: posRef.current, size: sizeRef.current })
   }, [onGeometryChange])
-  const drag = useRef<{ dx: number; dy: number } | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const drag = useRef<{
+    dx: number
+    dy: number
+    start: { x: number; y: number }
+    raw: { x: number; y: number }
+  } | null>(null)
   const resize = useRef<{ x: number; y: number; width: number; height: number } | null>(null)
 
   const onPointerDown = useCallback(
@@ -344,25 +359,49 @@ export function ActivityPanel({
       // swallow the click on the clear/close buttons sitting inside it — so a press
       // that lands on a button is left alone and only bare-header presses drag.
       if ((e.target as HTMLElement).closest('button')) return
-      drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y }
+      drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y, start: pos, raw: pos }
+      if (panelRef.current) panelRef.current.style.transition = ''
       e.currentTarget.setPointerCapture(e.pointerId)
     },
     [pos],
   )
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!drag.current) return
-    // Clamp to the viewport so the card can never be dragged fully off-screen and
-    // become unreachable (its header must stay grabbable).
-    const x = Math.max(0, Math.min(window.innerWidth - 120, e.clientX - drag.current.dx))
-    const y = Math.max(0, Math.min(window.innerHeight - 40, e.clientY - drag.current.dy))
-    setPos({ x, y })
+    const current = drag.current
+    if (!current || !panelRef.current) return
+    const raw = { x: e.clientX - current.dx, y: e.clientY - current.dy }
+    current.raw = raw
+    const x = resisted(raw.x, window.innerWidth - 120)
+    const y = resisted(raw.y, window.innerHeight - 40)
+    panelRef.current.style.transform = `translate(${x - current.start.x}px, ${y - current.start.y}px)`
   }, [])
   const onPointerUp = useCallback(
     (e: React.PointerEvent) => {
-      if (!drag.current) return
+      const current = drag.current
+      if (!current) return
       drag.current = null
       e.currentTarget.releasePointerCapture(e.pointerId)
+      const x = Math.max(0, Math.min(window.innerWidth - 120, current.raw.x))
+      const y = Math.max(0, Math.min(window.innerHeight - 40, current.raw.y))
+      const panel = panelRef.current
+      const sprung = x !== current.raw.x || y !== current.raw.y
+      const seen = {
+        x: resisted(current.raw.x, window.innerWidth - 120),
+        y: resisted(current.raw.y, window.innerHeight - 40),
+      }
+      setPos({ x, y })
+      posRef.current = { x, y }
       persistGeometry()
+      if (!panel) return
+      if (!sprung || prefersReducedMotion()) {
+        panel.style.transform = ''
+        return
+      }
+      panel.style.transform = `translate(${seen.x - x}px, ${seen.y - y}px)`
+      requestAnimationFrame(() => {
+        panel.getBoundingClientRect()
+        panel.style.transition = 'transform var(--duration-fast) var(--ease-standard)'
+        panel.style.transform = ''
+      })
     },
     [persistGeometry],
   )
@@ -411,6 +450,7 @@ export function ActivityPanel({
     // and toasts, so a dialog covers the card instead of the card floating over its blur.
     <section
       data-testid="activity-panel"
+      ref={panelRef}
       aria-label={tr('activity.title')}
       className="fixed z-[45] flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
       style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}

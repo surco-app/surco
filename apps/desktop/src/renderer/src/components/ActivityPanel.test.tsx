@@ -62,6 +62,56 @@ describe('ActivityPanel geometry persistence', () => {
   })
 })
 
+function startDrag(onGeometryChange = vi.fn()) {
+  renderPanel({ pos: { x: 24, y: 80 }, size: { width: 320, height: 360 } }, onGeometryChange)
+  const handle = screen.getByTestId('activity-panel-handle')
+  handle.setPointerCapture = vi.fn()
+  handle.releasePointerCapture = vi.fn()
+  fireEvent.pointerDown(handle, { clientX: 30, clientY: 90, pointerId: 1 })
+  return { handle, panel: screen.getByTestId('activity-panel') }
+}
+
+describe('ActivityPanel drag without a render per move', () => {
+  // A render of the whole panel per pointer event made the drag stutter; the card must
+  // follow the pointer through its transform alone and only commit left/top on release.
+  it('moves the panel through its transform and leaves left and top alone mid-drag', () => {
+    const { handle, panel } = startDrag()
+    fireEvent.pointerMove(handle, { clientX: 130, clientY: 190, pointerId: 1 })
+    expect(panel).toHaveStyle({ left: '24px', top: '80px' })
+    expect(panel.style.transform).toBe('translate(100px, 100px)')
+  })
+
+  // Hitting the viewport edge dead-stops the card like a wall; resisting at a fifth of the
+  // overshoot says there is no more room while still tracking the hand.
+  it('moves only a fifth of the overshoot past the left edge', () => {
+    const { handle, panel } = startDrag()
+    fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
+    expect(panel.style.transform).toBe('translate(-44px, 0px)')
+  })
+
+  // The persisted position is what the next session opens at; an elastic overshoot saved
+  // as-is would reopen the card partly off-screen.
+  it('reports the position clamped to the viewport when released past the edge', () => {
+    const onGeometryChange = vi.fn()
+    const { handle } = startDrag(onGeometryChange)
+    fireEvent.pointerMove(handle, { clientX: -94, clientY: 90, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(onGeometryChange).toHaveBeenCalledExactlyOnceWith({
+      pos: { x: 0, y: 80 },
+      size: { width: 320, height: 360 },
+    })
+  })
+
+  // A leftover transform would offset the card from its committed left/top forever.
+  it('commits left and top and drops the transform on release', () => {
+    const { handle, panel } = startDrag()
+    fireEvent.pointerMove(handle, { clientX: 130, clientY: 190, pointerId: 1 })
+    fireEvent.pointerUp(handle, { pointerId: 1 })
+    expect(panel).toHaveStyle({ left: '124px', top: '180px' })
+    expect(panel.style.transform).toBe('')
+  })
+})
+
 describe('ActivityPanel copy', () => {
   // The feed's whole trail — verdicts, per-step timings, the technical details folded
   // behind each row — pastes as plain text, so sharing it in a bug report or a chat
