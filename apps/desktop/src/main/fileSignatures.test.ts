@@ -146,6 +146,20 @@ describe('fileSignatures', () => {
 
   // Opening a playlist asks which of its files are on disk: a file whose date is remembered
   // counts as there at once, and the background check takes back the ones that went.
+  // The library's size sets how much room the analysis cache gives its small results.
+  describe('count', () => {
+    it('counts the files whose date is remembered, and forgets the ones gone', async () => {
+      const { signatures, verify } = setup({ '/a.wav': 1, '/b.wav': 2 }, { '/a.wav': 1 })
+      await signatures.mtimeOf('/c.wav').catch(() => {})
+      expect(signatures.count()).toBe(2)
+
+      await signatures.mtimeOf('/b.wav')
+      await verify()
+
+      expect(signatures.count()).toBe(1)
+    })
+  })
+
   describe('knows', () => {
     it('knows a file with a remembered date, and checks it in the background', async () => {
       const { signatures, verify, onChanged } = setup({ '/nas/a.wav': 100 }, {})
