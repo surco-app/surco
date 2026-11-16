@@ -8573,6 +8573,28 @@ describe('App keyboard navigation', () => {
     expect(rows[1]).toHaveFocus()
   })
 
+  // After Shift+↓ the user is at the bottom of the range; a plain ↓ must continue from there,
+  // like Finder and Music, not jump back to the row under where the range started.
+  it('moves a plain ArrowDown on from the focused end of a Shift-extended range', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.keyDown(rows[0], { key: 'ArrowDown', shiftKey: true })
+    await waitFor(() => expect(rows[1]).toHaveFocus())
+
+    fireEvent.keyDown(window, { key: 'ArrowDown', cancelable: true })
+
+    await waitFor(() => expect(rows[2]).toHaveAttribute('aria-selected', 'true'))
+    expect(rows[0]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[1]).toHaveAttribute('aria-selected', 'false')
+    expect(rows[2]).toHaveFocus()
+  })
+
   // Auditioning a crate one by one, the DJ wants to see how far along they are: the
   // x/total counter follows the arrow keys.
   it('shows the selected track position and follows navigation', async () => {

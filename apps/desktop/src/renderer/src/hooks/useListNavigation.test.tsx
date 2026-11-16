@@ -25,6 +25,7 @@ function setup(selectedId: string | null, selectedMounted = true) {
     useListNavigation({
       visibleTracks: tracks,
       selectedId,
+      selectedIds: new Set(selectedId ? [selectedId] : []),
       setSelection,
       continuousPlayback: false,
       playerVisible: false,
@@ -62,6 +63,57 @@ describe('useListNavigation on a list that mounts only the rows on screen', () =
   })
 })
 
+describe('useListNavigation after a keyboard range', () => {
+  function rangeSetup(selectedIds: string[], focusedId: string) {
+    const rowEls = { current: new Map<string, HTMLButtonElement>() }
+    for (const t of tracks.slice(0, 10)) {
+      const el = document.createElement('button')
+      document.body.append(el)
+      rowEls.current.set(t.id, el)
+    }
+    rowEls.current.get(focusedId)?.focus()
+    const setSelection = vi.fn()
+    const { result } = renderHook(() =>
+      useListNavigation({
+        visibleTracks: tracks,
+        selectedId: selectedIds[0],
+        selectedIds: new Set(selectedIds),
+        setSelection,
+        continuousPlayback: false,
+        playerVisible: false,
+        playerTrack: null,
+        closePlayer: vi.fn(),
+        rowEls,
+        listScrollRef: { current: document.createElement('div') },
+        qualityFilterRef: { current: null },
+      }),
+    )
+    return { result, setSelection }
+  }
+
+  // Shift+↓ grew the range down to the focused row; a plain ↓ then carries on past that end,
+  // as in Finder and Music, instead of throwing the user back next to where the range began.
+  it('steps a plain Down from the focused end of the range, not from its anchor', () => {
+    const { result, setSelection } = rangeSetup(['t2', 't3', 't4', 't5'], 't5')
+    act(() => result.current.moveSelection(1))
+    expect(setSelection).toHaveBeenCalledWith({ ids: ['t6'], anchor: 't6' })
+  })
+
+  it('steps a plain Up from the focused end of the range, not from its anchor', () => {
+    const { result, setSelection } = rangeSetup(['t5', 't4', 't3', 't2'], 't2')
+    act(() => result.current.moveSelection(-1))
+    expect(setSelection).toHaveBeenCalledWith({ ids: ['t1'], anchor: 't1' })
+  })
+
+  // Focus left on a row outside the selection says nothing about where the user is: the
+  // selected track stays the starting point.
+  it('steps from the selected track when the focused row is not selected', () => {
+    const { result, setSelection } = rangeSetup(['t2'], 't7')
+    act(() => result.current.moveSelection(1))
+    expect(setSelection).toHaveBeenCalledWith({ ids: ['t3'], anchor: 't3' })
+  })
+})
+
 describe('useListNavigation across renders', () => {
   // App re-renders on every metadata flush and runs an effect keyed on scrollToSelected,
   // and memoized children take these as props; a new function each render re-ran that
@@ -72,6 +124,7 @@ describe('useListNavigation across renders', () => {
       useListNavigation({
         visibleTracks: tracks,
         selectedId,
+        selectedIds: new Set([selectedId]),
         setSelection: vi.fn(),
         continuousPlayback: false,
         playerVisible: false,

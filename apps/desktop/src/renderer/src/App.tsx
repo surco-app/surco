@@ -2328,6 +2328,7 @@ export default function App(): React.JSX.Element {
   } = useListNavigation({
     visibleTracks,
     selectedId,
+    selectedIds: selectedIdSet,
     setSelection,
     continuousPlayback: settings?.continuousPlayback ?? false,
     playerVisible,
