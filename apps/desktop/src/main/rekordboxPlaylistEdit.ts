@@ -2,7 +2,7 @@ import { randomInt, randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { PlaylistTrackRef, RekordboxPlaylistEdit } from '../shared/types'
 import { type FindOptions, findTrackByPath, isAmbiguous, STREAMING_FILE_TYPE } from './rekordboxDb'
-import { IS_SEPARATOR } from './rekordboxPlaylists'
+import { IS_SEPARATOR, SMART } from './rekordboxPlaylists'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 // The organising edits, each on a collection already opened read-write and inside the
@@ -295,8 +295,7 @@ export function editProblem(db: Db, edit: RekordboxPlaylistEdit): 'stale' | 'no-
     return edit.parentId === 'root' || nodeAttribute(db, edit.parentId) === 1 ? null : 'stale'
   }
   if (edit.kind === 'rename' || edit.kind === 'delete') {
-    const attribute = nodeAttribute(db, edit.playlistId)
-    if (attribute !== 0 && attribute !== 1) return 'stale'
+    if (!renamable(nodeAttribute(db, edit.playlistId))) return 'stale'
     return edit.kind === 'rename' && edit.name.trim() === '' ? 'stale' : null
   }
   if (edit.kind === 'moveNode') {
@@ -359,9 +358,11 @@ export function createNode(
   return { id, attribute }
 }
 
+const renamable = (attribute: number | null): boolean =>
+  attribute === 0 || attribute === 1 || attribute === SMART
+
 function requireNode(db: Db, id: string): void {
-  const attribute = nodeAttribute(db, id)
-  if (attribute !== 0 && attribute !== 1) throw new EditRefused('stale')
+  if (!renamable(nodeAttribute(db, id))) throw new EditRefused('stale')
 }
 
 export function renameNode(db: Db, id: string, name: string, ctx: EditContext): void {

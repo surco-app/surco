@@ -405,7 +405,7 @@ export const SourceTree = memo(function SourceTree({
       !pendingNode &&
       renaming !== node.id
     const dropEdit = fixedAs === 'locked' ? undefined : nodeEdit
-    const menuEdit = fixedAs === null ? nodeEdit : undefined
+    const menuEdit = fixedAs === null ? (smart ? edit : nodeEdit) : undefined
     const pasteOnly = fixedAs === 'tracks-only' && nodeEdit?.onPasteTracklist ? nodeEdit : undefined
     const open = opened.has(node.id)
     const selected = node.id === selectedId
@@ -805,7 +805,7 @@ export const SourceTree = memo(function SourceTree({
                 )}
               </>
             )}
-            {edit?.onPasteTracklist && (
+            {edit?.onPasteTracklist && !menu.node.smart && (
               <button
                 type="button"
                 role="menuitem"

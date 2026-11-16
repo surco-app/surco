@@ -41,7 +41,7 @@ interface PlaylistRow {
   n: number
 }
 
-const SMART = 4
+export const SMART = 4
 const SMART_ROWS = `coalesce(c.rb_local_deleted, 0) = 0 AND c.FileType <> ${STREAMING_FILE_TYPE}`
 
 export function smartPlaylistContent(
