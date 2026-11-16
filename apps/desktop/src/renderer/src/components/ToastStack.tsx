@@ -123,9 +123,9 @@ export function ToastStack({
             leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
           }`}
         >
-          {/* overflow-hidden only while collapsing — kept on, it would clip the
+          {/* overflow-y-clip only while collapsing — kept on, it would clip the
               card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
-          <div className={`min-h-0 pt-2 ${leaving ? 'overflow-hidden' : ''}`}>
+          <div className={`min-h-0 pt-2 ${leaving ? 'overflow-y-clip' : ''}`}>
             <ToastCard
               toast={toast}
               leaving={leaving}

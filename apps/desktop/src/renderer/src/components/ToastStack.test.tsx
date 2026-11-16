@@ -482,5 +482,23 @@ describe('ToastStack', () => {
       expect(card().className).not.toContain('animate-toast-leave')
       expect(card().style.transform).toBe('translateX(324px)')
     })
+
+    it('collapses the row of a swiped card without clipping its sideways exit, which would cut it off mid-slide', () => {
+      function Live() {
+        const [toasts, setToasts] = useState([toast({ id: 's', testid: 'swipe-toast' })])
+        return (
+          <ToastStack
+            toasts={toasts}
+            onExpire={vi.fn()}
+            onClose={(id) => setToasts((all) => all.filter((t) => t.id !== id))}
+          />
+        )
+      }
+      render(<Live />)
+      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
+      const wrapper = screen.getByTestId('toast-slot').firstElementChild as HTMLElement
+      expect(wrapper.className).toContain('overflow-y-clip')
+      expect(wrapper.className).not.toMatch(/\boverflow-(hidden|clip|x-hidden|x-clip)\b/)
+    })
   })
 })
