@@ -775,6 +775,24 @@ describe('SourceTree rename and delete', () => {
     expect(node).toHaveFocus()
   })
 
+  it('closes the delete confirmation on Escape and keeps it and the arrows from the track selection behind it', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-delete'))
+    const reachesApp = vi.fn()
+    const appShortcuts = (e: KeyboardEvent) => {
+      if (!e.defaultPrevented) reachesApp(e.key)
+    }
+    window.addEventListener('keydown', appShortcuts)
+    fireEvent.keyDown(screen.getByTestId('confirm-cancel'), { key: 'ArrowDown' })
+    fireEvent.keyDown(screen.getByTestId('confirm-cancel'), { key: 'ArrowUp' })
+    fireEvent.keyDown(screen.getByTestId('confirm-cancel'), { key: 'Escape' })
+    window.removeEventListener('keydown', appShortcuts)
+    expect(reachesApp).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
+    expect(edit.onDelete).not.toHaveBeenCalled()
+  })
+
   it('confirms a playlist delete before anything is sent', () => {
     const { edit } = setup(null, true)
     openMenu('house')

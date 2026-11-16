@@ -164,6 +164,17 @@ export const SourceTree = memo(function SourceTree({
   const [renaming, setRenaming] = useState<string | null>(null)
   const renameTarget = useRef<string | null>(null)
   const [deleting, setDeleting] = useState<SourceNode | null>(null)
+  const askingDelete = deleting !== null
+  useEffect(() => {
+    if (!askingDelete) return
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setDeleting(null)
+      else if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return
+      e.preventDefault()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [askingDelete])
   const startRename = (node: SourceNode): void => {
     setMenu(null)
     renameTarget.current = node.id
