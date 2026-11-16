@@ -10469,6 +10469,91 @@ describe('App metadata undo', () => {
     }
   })
 
+  // Tidying a crate row by row stacked one Undo card per removal, a wall of toasts where each
+  // Undo took back a single row. One card counts them all, and its Undo brings them all back.
+  it('gathers removals made in a row into one Undo that brings them all back', async () => {
+    const paths = Array.from({ length: 10 }, (_, i) => `/music/t${i}.wav`)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(paths),
+      readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(10))
+    for (let left = 9; left >= 0; left--) {
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(screen.getByTestId('track-menu-remove'))
+      await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(left))
+    }
+    const removals = screen
+      .getAllByTestId('app-notice')
+      .filter((card) => card.textContent?.includes('removed from the list'))
+    expect(removals).toHaveLength(1)
+    expect(removals[0]).toHaveTextContent(i18n.t('notices.removedFromList', { count: 10 }))
+    fireEvent.click(within(removals[0]).getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(10))
+    await waitFor(() => expect(screen.queryAllByTestId('app-notice')).toHaveLength(0))
+  })
+
+  // A removal folded into the live Undo restarts its countdown, so the earlier row's cover must
+  // stay held until the shared card goes: freeing it with the replaced card would bring that
+  // row back without its art. When the card does go, each blob is freed once.
+  it('holds every cover of gathered removals until the shared Undo goes, then frees each once', async () => {
+    const createObjectURL = vi
+      .fn()
+      .mockReturnValueOnce('blob:first')
+      .mockReturnValueOnce('blob:second')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'first.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:first'),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      fireEvent.change(screen.getByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'second.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:second'),
+      )
+      for (let i = 0; i <= MAX_META_UNDO; i++) runMenu('number-tracks')
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-remove'))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+        act(() => vi.advanceTimersByTime(4000))
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-remove'))
+        await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+        act(() => vi.advanceTimersByTime(4000))
+        expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:first')
+        expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:second')
+        act(() => vi.advanceTimersByTime(3000))
+        await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:second'))
+        act(() => vi.advanceTimersByTime(7000))
+      } finally {
+        vi.useRealTimers()
+      }
+      expect(revokeObjectURL.mock.calls.filter(([u]) => u === 'blob:first')).toHaveLength(1)
+      expect(revokeObjectURL.mock.calls.filter(([u]) => u === 'blob:second')).toHaveLength(1)
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
   it('gives every selected track its own cover back after one was pasted over all of them', async () => {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),

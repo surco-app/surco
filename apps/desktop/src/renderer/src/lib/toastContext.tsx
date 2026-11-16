@@ -17,7 +17,7 @@ export interface ToastReporter {
   // see it before it goes.
   reportError: (message: string) => void
   // A quiet notice for something the user just did, with Undo to take it back.
-  reportUndo: (message: string, onUndo: () => void, onSettle?: () => void) => void
+  reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => void
 }
 
 // Outside a provider the report still goes SOMEWHERE — the console — rather than throwing.

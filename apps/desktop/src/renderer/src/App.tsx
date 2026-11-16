@@ -429,8 +429,9 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
-      reportUndo: (message: string, onUndo: () => void, onSettle?: () => void) => {
+      reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
         const id = pushToast(store, {
+          key,
           tone: 'neutral',
           message,
           duration: 6000,
@@ -736,6 +737,7 @@ export default function App(): React.JSX.Element {
   // render, runs it.
   const matchingPathPairs = useMatchingPathPairs()
   const listUndoCovers = useRef<(string | undefined)[][]>([])
+  const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
   const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
   const browser = useSourceBrowser({
     matchingPathPairs,
@@ -1792,28 +1794,37 @@ export default function App(): React.JSX.Element {
 
   const removeWithUndo = useStableCallback((targets: TrackItem[], remove: () => void) => {
     if (targets.length === 0) return
-    const covers = targets.map((t) => t.coverUrl)
-    const ids = targets.map((t) => t.id)
-    listUndoCovers.current.push(covers)
+    const pending = listRemoval.current ?? { targets: [], covers: [] }
+    if (!listRemoval.current) {
+      listRemoval.current = pending
+      listUndoCovers.current.push(pending.covers)
+    }
+    pending.targets.push(...targets)
+    pending.covers.push(...targets.map((t) => t.coverUrl))
     holdTracks(targets)
     remove()
     const release = () => {
-      dropHeldTracks(ids)
-      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
-      revokeDisplacedCovers(covers, [...tracksRef.current.map((t) => t.coverUrl), ...heldCovers()])
+      listRemoval.current = null
+      dropHeldTracks(pending.targets.map((t) => t.id))
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== pending.covers)
+      revokeDisplacedCovers(pending.covers, [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...heldCovers(),
+      ])
     }
     toastReporter.reportUndo(
-      tr('notices.removedFromList', { count: targets.length }),
+      tr('notices.removedFromList', { count: pending.targets.length }),
       () => {
-        unforgetAnalysisTracks(ids)
-        restoreTracks(targets)
+        unforgetAnalysisTracks(pending.targets.map((t) => t.id))
+        restoreTracks(pending.targets)
         void seedCachedAnalyses(
           queryClient,
-          targets.map((t) => t.inputPath),
+          pending.targets.map((t) => t.inputPath),
         )
         release()
       },
       release,
+      'list-removed',
     )
   })
   // Emptying every row starts over — clearTracks also drops the folder watcher. Emptying just
