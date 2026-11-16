@@ -984,8 +984,16 @@ describe('QualityFilterBar', () => {
   // counter shows "N selected" in place of the single-track position/reveal control.
   it('shows the selection size instead of the position when multiple are selected', () => {
     renderBar({ selectedCount: 3, selectedPosition: 2, visibleCount: 498 })
-    expect(screen.getByTestId('track-selected-count')).toHaveTextContent('3 selected')
+    expect(screen.getByTestId('track-selected-count')).toHaveAccessibleName('3 selected')
     expect(screen.queryByTestId('track-position')).toBeNull()
+  })
+
+  it('shows the bare number with several selected so the filter label beside it is never cut, while still announcing what it counts', () => {
+    renderBar({ selectedCount: 400, selectedPosition: 2, visibleCount: 400 })
+    const counter = screen.getByTestId('track-selected-count')
+    expect(counter).toHaveTextContent('400')
+    expect(counter).not.toHaveTextContent(i18n.t('sidebar.selectedCount', { count: 400 }))
+    expect(counter).toHaveAccessibleName(i18n.t('sidebar.selectedCount', { count: 400 }))
   })
 
   // The header's crosshair is gone, so the counter is the one way back to the open track

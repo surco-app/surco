@@ -562,7 +562,7 @@ export function FilterBar({
           // hid which view the list is in and didn't match the words on screen.
           aria-label={tr('sidebar.filter.current', { filter: trigger.label, count: trigger.count })}
           onClick={toggle}
-          className="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md pr-1.5 pl-2 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
+          className="flex h-8 w-full min-w-0 items-center gap-1 rounded-md pr-1 pl-1.5 text-xs font-medium text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
         >
           <span className="relative shrink-0">
             <trigger.Icon className="h-4 w-4" aria-hidden="true" />
@@ -621,9 +621,10 @@ export function FilterBar({
           type="button"
           data-testid={`${counterTestId}-selected-count`}
           onClick={onRevealSelected}
+          aria-label={tr('sidebar.selectedCount', { count: selectedCount })}
           className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-dim outline-none hover:text-fg"
         >
-          {tr('sidebar.selectedCount', { count: selectedCount })}
+          {selectedCount}
           <Tooltip label={tr('header.revealSelected')} />
         </button>
       ) : (

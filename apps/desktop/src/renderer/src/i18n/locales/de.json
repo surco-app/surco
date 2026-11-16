@@ -308,7 +308,7 @@
     },
     "sort": {
       "label": "Tracks sortieren",
-      "import": "Reihenfolge",
+      "import": "Abfolge",
       "name": "Name",
       "artist": "Künstler",
       "duration": "Dauer",
@@ -2811,7 +2811,7 @@
     },
     "reorder": {
       "removeSeparator": "Trenner entfernen",
-      "hint": "Zum Umsortieren nach „Reihenfolge“ sortieren und Suche und Filter leeren"
+      "hint": "Zum Umsortieren nach „Abfolge“ sortieren und Suche und Filter leeren"
     },
     "menu": {
       "addTo": "Zu Playlist hinzufügen",

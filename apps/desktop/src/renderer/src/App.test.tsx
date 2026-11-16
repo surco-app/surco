@@ -10363,7 +10363,7 @@ describe('App reopen last session', () => {
         screen.getAllByTestId('track-row').map((row) => row.getAttribute('aria-selected')),
       ).toEqual(['true', 'false', 'true']),
     )
-    expect(screen.getByTestId('track-selected-count')).toHaveTextContent('2 selected')
+    expect(screen.getByTestId('track-selected-count')).toHaveAccessibleName('2 selected')
   })
 
   // Accepting must retire the prompt itself: it once stayed up after the click (the
