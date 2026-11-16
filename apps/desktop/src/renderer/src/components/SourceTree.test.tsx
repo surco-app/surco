@@ -793,6 +793,31 @@ describe('SourceTree rename and delete', () => {
     expect(edit.onDelete).not.toHaveBeenCalled()
   })
 
+  it('gives up a rename on Escape without the key reaching the window, where it would clear the track selection', () => {
+    const { edit } = setup(null, true)
+    openMenu('house')
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    fireEvent.keyDown(screen.getByTestId('source-tree-rename-field'), { key: 'Escape' })
+    window.removeEventListener('keydown', seen)
+    expect(seen).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('source-tree-rename-field')).toBeNull()
+    expect(edit.onRename).not.toHaveBeenCalled()
+  })
+
+  it('gives up a new name on Escape without the key reaching the window, where it would clear the track selection', () => {
+    const { edit } = setup(null, true)
+    fireEvent.click(screen.getByTestId('source-tree-new-playlist'))
+    const seen = vi.fn()
+    window.addEventListener('keydown', seen)
+    fireEvent.keyDown(screen.getByTestId('source-tree-name'), { key: 'Escape' })
+    window.removeEventListener('keydown', seen)
+    expect(seen).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('source-tree-name')).toBeNull()
+    expect(edit.onCreate).not.toHaveBeenCalled()
+  })
+
   it('confirms a playlist delete before anything is sent', () => {
     const { edit } = setup(null, true)
     openMenu('house')

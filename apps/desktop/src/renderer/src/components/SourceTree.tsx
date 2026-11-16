@@ -359,7 +359,10 @@ export const SourceTree = memo(function SourceTree({
           placeholder={tr('sources.tree.name')}
           onKeyDown={(e) => {
             if (e.key === 'Enter') commit(e.currentTarget.value)
-            if (e.key === 'Escape') cancel()
+            if (e.key === 'Escape') {
+              e.stopPropagation()
+              cancel()
+            }
           }}
           onBlur={(e) => {
             // Cmd-Tab or a click on another app blurs the field with the user mid-name; the
@@ -465,7 +468,10 @@ export const SourceTree = memo(function SourceTree({
               defaultValue={node.name}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') commitRename(node, e.currentTarget.value)
-                if (e.key === 'Escape') cancelRename()
+                if (e.key === 'Escape') {
+                  e.stopPropagation()
+                  cancelRename()
+                }
               }}
               onBlur={(e) => {
                 if (!document.hasFocus()) return
