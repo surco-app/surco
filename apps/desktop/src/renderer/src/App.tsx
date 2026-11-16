@@ -668,7 +668,7 @@ export default function App(): React.JSX.Element {
   // of the old message that named the reason and left the user hunting for the row. Reset
   // when the card goes (its onDismiss), so the next run counts from zero rather than
   // adding onto a tally the user already read and closed.
-  const convertFailures = useRef<{ first: string; count: number } | null>(null)
+  const convertFailures = useRef<{ first: string; reason: string; count: number } | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. The editor reports every pick and resets it to null on
   // mount (it remounts per track), so null means nothing picked by hand: each track then
@@ -1742,7 +1742,9 @@ export default function App(): React.JSX.Element {
     // failed and still has to find which row it was in a crate of hundreds.
     onProcessError: (message, name) => {
       const prev = convertFailures.current
-      const tally = prev ? { first: prev.first, count: prev.count + 1 } : { first: name, count: 1 }
+      const tally = prev
+        ? { ...prev, count: prev.count + 1 }
+        : { first: name, reason: message, count: 1 }
       convertFailures.current = tally
       pushToast(store, {
         key: 'process-error',
@@ -1756,9 +1758,9 @@ export default function App(): React.JSX.Element {
             ? tr('notices.convertFailedMany', {
                 name: tally.first,
                 count: tally.count - 1,
-                reason: message,
+                reason: tally.reason,
               })
-            : tr('notices.convertFailed', { name: tally.first, reason: message }),
+            : tr('notices.convertFailed', { name: tally.first, reason: tally.reason }),
         testid: 'process-error',
         onDismiss: () => {
           convertFailures.current = null
@@ -1766,6 +1768,10 @@ export default function App(): React.JSX.Element {
       })
     },
   })
+
+  useEffect(() => {
+    if (batching) convertFailures.current = null
+  }, [batching])
 
   const partialSelected = useMemo(
     () => tracks.filter((t) => t.metaPartial && selectedIdSet.has(t.id)).map((t) => t.id),

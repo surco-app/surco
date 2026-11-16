@@ -7860,6 +7860,53 @@ describe('App conversion failure notice', () => {
     expect(toast).toHaveTextContent('2')
   })
 
+  it('gives the reason of the track it names, not of the latest failure, so the user fixes the right problem', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn(async ({ inputPath }: { inputPath: string }) => {
+        if (inputPath === '/music/a.wav') throw new Error('file is missing')
+        if (inputPath === '/music/c.wav') throw new Error('disk is full')
+        return { outputPath: '/out/x.aiff', inPlace: false }
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toHaveTextContent('2'))
+    const toast = screen.getByTestId('process-error')
+    expect(toast).toHaveTextContent('Pray')
+    expect(toast).toHaveTextContent('file is missing')
+    expect(toast).not.toHaveTextContent('disk is full')
+  })
+
+  it('counts only the failures of the latest run, so a retry does not report the old run as new damage', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi
+        .fn()
+        .mockResolvedValueOnce({ title: 'Pray', artist: 'A' })
+        .mockResolvedValueOnce({ title: 'Second', artist: 'B' })
+        .mockResolvedValueOnce({ title: 'Third', artist: 'C' }),
+      processTrack: vi.fn().mockRejectedValue(new Error('came out unreadable')),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getByTestId('process-error')).toHaveTextContent('and 2 more'))
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toBeInTheDocument())
+    runMenu('process-all')
+    await waitFor(() => expect(window.api.processTrack).toHaveBeenCalledTimes(6))
+    await waitFor(() => expect(screen.getByTestId('batch-failed-count')).toBeInTheDocument())
+    expect(screen.getByTestId('process-error')).toHaveTextContent('and 2 more')
+  })
+
   // The run summary counts the failures ("2 failed") and the list already has a bucket
   // that isolates exactly those rows — but the count was inert text, so the user read
   // the number and still had to scan for red rings. Clicking it filters the list down
