@@ -12,6 +12,7 @@ export interface Toast {
   key?: string
   tone: 'neutral' | 'danger'
   message: ToastText
+  copyText?: ToastText
   action?: { label: ToastText; onAction: () => void }
   duration?: number
   testid?: string

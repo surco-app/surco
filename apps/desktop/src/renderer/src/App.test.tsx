@@ -7849,6 +7849,29 @@ describe('App conversion failure notice', () => {
     expect(toast.textContent).not.toMatch(/more/)
   })
 
+  it('says a full disk in the user language while the copy button and the report keep the raw text a bug report needs', async () => {
+    const raw = "ENOSPC: no space left on device, write '/Volumes/USB/a.aiff'"
+    const copyText = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Pray', artist: 'W.I.P.' }),
+      processTrack: vi.fn().mockRejectedValue(new Error(raw)),
+      copyText,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('process-btn'))
+    const toast = await screen.findByTestId('process-error')
+    expect(toast).toHaveTextContent(i18n.t('errors.diskFull'))
+    expect(toast).not.toHaveTextContent('ENOSPC')
+    fireEvent.click(screen.getByTestId('process-error-copy'))
+    expect(copyText).toHaveBeenCalledWith(expect.stringContaining(raw))
+    fireEvent.click(screen.getByTestId('report-error'))
+    expect(await screen.findByTestId('feedback-error')).toHaveTextContent(raw)
+  })
+
   // Several failures in one run must still be one card, and it has to say how many —
   // naming only the first would understate the damage, and naming all thirty would be
   // the wall of cards the key exists to prevent.

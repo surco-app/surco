@@ -91,6 +91,27 @@ describe('mainErrorMessage', () => {
     )
   })
 
+  it.each([
+    ['[mp3 @ 0x14f] Invalid data found when processing input', 'errors.audioDamaged'],
+    ['MPEG audio header not found', 'errors.audioDamaged'],
+    ['Could not find codec parameters for stream 0 (Audio: mp3)', 'errors.audioDamaged'],
+    ["ENOSPC: no space left on device, write '/Volumes/USB/a.aiff'", 'errors.diskFull'],
+    ['av_interleaved_write_frame(): No space left on device', 'errors.diskFull'],
+    ["EACCES: permission denied, open '/Volumes/Music/a.aiff'", 'errors.noPermission'],
+    ['/Volumes/Music/a.aiff: Permission denied', 'errors.noPermission'],
+    ["EPERM: operation not permitted, rename '/m/a.tmp' -> '/m/a.flac'", 'errors.fileLocked'],
+    ["EBUSY: resource busy or locked, unlink 'D:\\a.flac'", 'errors.fileLocked'],
+    ["EROFS: read-only file system, open '/Volumes/CD/a.aiff'", 'errors.readOnlyDisk'],
+    ['/Volumes/CD/a.aiff: Read-only file system', 'errors.readOnlyDisk'],
+  ])(
+    'says "%s" in the user language, since ffmpeg and OS wording tells a DJ nothing to act on',
+    (raw, key) => {
+      expect(mainErrorMessage(new Error(`${IPC_PREFIX}${raw}`), translate, 'fallback')).toBe(
+        `translated:${key}`,
+      )
+    },
+  )
+
   // A rejection that is not an Error at all (or carries no message) has nothing to
   // show, so the caller's own wording stands in.
   it('falls back when there is no message to show', () => {

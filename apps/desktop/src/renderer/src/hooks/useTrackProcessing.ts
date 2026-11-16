@@ -103,7 +103,7 @@ interface Params {
   // shows for the track the editor happens to have open. The label rides along because
   // the toast is keyed: a batch raises one card for the whole run, so without a name the
   // user is told a conversion failed and left to guess which of thirty rows it was.
-  onProcessError?: (message: string, name: string) => void
+  onProcessError?: (message: string, name: string, detail: string) => void
   // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (all cores
   // but one); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
@@ -376,6 +376,7 @@ export function useTrackProcessing({
       updateTrack(id, {
         status: 'processing',
         error: undefined,
+        errorDetail: undefined,
         skipReason: undefined,
         stage: undefined,
         format: jobFormat,
@@ -528,8 +529,8 @@ export function useTrackProcessing({
             tr,
             tr('editor.processError'),
           )
-          updateTrack(id, { status: 'error', error: message })
-          onProcessError?.(message, track.listLabel)
+          updateTrack(id, { status: 'error', error: message, errorDetail: result.engineDjError })
+          onProcessError?.(message, track.listLabel, result.engineDjError)
           return 'failed'
         }
         return 'converted'
@@ -554,9 +555,10 @@ export function useTrackProcessing({
         updateTrack(id, {
           status: 'error',
           error: message,
+          errorDetail: raw,
           stage: undefined,
         })
-        onProcessError?.(message, track.listLabel)
+        onProcessError?.(message, track.listLabel, raw)
         return 'failed'
       } finally {
         if (!moved) reclaimFile?.(track.inputPath)

@@ -25,6 +25,17 @@ export function isFileInUseMessage(message: string): boolean {
 const NETWORK_FAILURE =
   /fetch failed|ENOTFOUND|ECONNREFUSED|ECONNRESET|EAI_AGAIN|ERR_INTERNET_DISCONNECTED|ERR_NETWORK|aborted due to timeout|TimeoutError/
 
+const KNOWN_FAILURES: [RegExp, string][] = [
+  [/EROFS|read-only file system/i, 'errors.readOnlyDisk'],
+  [/ENOSPC|no space left on device/i, 'errors.diskFull'],
+  [/EACCES|permission denied/i, 'errors.noPermission'],
+  [/EPERM|operation not permitted|EBUSY|resource busy/i, 'errors.fileLocked'],
+  [
+    /invalid data found when processing input|header not found|could not find codec parameters/i,
+    'errors.audioDamaged',
+  ],
+]
+
 // One way to turn a rejected IPC call into something worth showing: peel the plumbing,
 // name a dropped connection (even inside a stamped "unavailable" detail), translate a key
 // the main process stamped, and otherwise keep the raw text — ffmpeg's own stderr says
@@ -39,5 +50,7 @@ export function mainErrorMessage(
   if (!raw) return fallback
   if (NETWORK_FAILURE.test(raw)) return translate('errors.offline')
   const key = errorKeyOf(raw)
-  return key ? translate(`errors.${key}`) : raw
+  if (key) return translate(`errors.${key}`)
+  const known = KNOWN_FAILURES.find(([pattern]) => pattern.test(raw))
+  return known ? translate(known[1]) : raw
 }

@@ -439,7 +439,7 @@ export function ConvertFooter({
           <button
             type="button"
             data-testid="report-error"
-            onClick={() => openFeedback(item.error)}
+            onClick={() => openFeedback(item.errorDetail || item.error)}
             className="press shrink-0 text-xs text-fg-dim underline-offset-2 hover:text-fg hover:underline"
           >
             {tr('editor.reportError')}

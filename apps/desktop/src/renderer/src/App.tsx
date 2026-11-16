@@ -668,7 +668,12 @@ export default function App(): React.JSX.Element {
   // of the old message that named the reason and left the user hunting for the row. Reset
   // when the card goes (its onDismiss), so the next run counts from zero rather than
   // adding onto a tally the user already read and closed.
-  const convertFailures = useRef<{ first: string; reason: string; count: number } | null>(null)
+  const convertFailures = useRef<{
+    first: string
+    reason: string
+    detail: string
+    count: number
+  } | null>(null)
   // The format picked in the editor's split-button menu, so the keyboard convert
   // shortcuts export in it too. The editor reports every pick and resets it to null on
   // mount (it remounts per track), so null means nothing picked by hand: each track then
@@ -1744,12 +1749,16 @@ export default function App(): React.JSX.Element {
     // card, not thirty; persistent like every failure toast. The card names the track
     // because the key collapses the run: without a name the user reads why a conversion
     // failed and still has to find which row it was in a crate of hundreds.
-    onProcessError: (message, name) => {
+    onProcessError: (message, name, detail) => {
       const prev = convertFailures.current
       const tally = prev
         ? { ...prev, count: prev.count + 1 }
-        : { first: name, reason: message, count: 1 }
+        : { first: name, reason: message, detail: detail || message, count: 1 }
       convertFailures.current = tally
+      const failureText = (reason: string): string =>
+        tally.count > 1
+          ? tr('notices.convertFailedMany', { name: tally.first, count: tally.count - 1, reason })
+          : tr('notices.convertFailed', { name: tally.first, reason })
       pushToast(store, {
         key: 'process-error',
         tone: 'danger',
@@ -1757,14 +1766,8 @@ export default function App(): React.JSX.Element {
         // the number of OTHER failures, which is zero for a lone failure, and i18next
         // routes an English 0 to the plural — so a single broken track was announced as
         // "and 0 more". The singular text takes no count at all, so it cannot recur.
-        message:
-          tally.count > 1
-            ? tr('notices.convertFailedMany', {
-                name: tally.first,
-                count: tally.count - 1,
-                reason: tally.reason,
-              })
-            : tr('notices.convertFailed', { name: tally.first, reason: tally.reason }),
+        message: failureText(tally.reason),
+        copyText: failureText(tally.detail),
         testid: 'process-error',
         onDismiss: () => {
           convertFailures.current = null

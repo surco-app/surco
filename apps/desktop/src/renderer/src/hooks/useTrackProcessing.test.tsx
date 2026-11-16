@@ -162,7 +162,7 @@ describe('useTrackProcessing', () => {
       status: 'error',
       error: 'biblioteca abierta',
     })
-    expect(onProcessError).toHaveBeenCalledWith('biblioteca abierta', 'a.wav')
+    expect(onProcessError).toHaveBeenCalledWith('biblioteca abierta', 'a.wav', 'biblioteca abierta')
   })
 
   it('asks to close the open programs before converting, once for the whole batch', async () => {
@@ -905,7 +905,7 @@ describe('useTrackProcessing', () => {
       'a',
       expect.objectContaining({ status: 'error', error: clean }),
     )
-    expect(onProcessError).toHaveBeenCalledWith(clean, 'a.wav')
+    expect(onProcessError).toHaveBeenCalledWith(clean, 'a.wav', clean)
   })
 
   // The failure toast is keyed, so a batch where thirty tracks fail raises one card
@@ -947,6 +947,38 @@ describe('useTrackProcessing', () => {
     expect(outcome).toBe('skipped')
   })
 
+  it('shows a full disk in the user language but keeps the raw text for the copy and the bug report', async () => {
+    const raw = "ENOSPC: no space left on device, write '/Volumes/USB/a.aiff'"
+    setApi({
+      processTrack: vi
+        .fn()
+        .mockRejectedValue(
+          new Error(`Error invoking remote method 'process:track': Error: ${raw}`),
+        ),
+    })
+    const updateTrack = vi.fn()
+    const onProcessError = vi.fn()
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: [track({ id: 'a' })],
+          settings: null,
+          updateTrack,
+          onProcessError,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const shown = i18n.t('errors.diskFull')
+    expect(updateTrack).toHaveBeenLastCalledWith(
+      'a',
+      expect.objectContaining({ status: 'error', error: shown, errorDetail: raw }),
+    )
+    expect(onProcessError).toHaveBeenCalledWith(shown, 'a.wav', raw)
+  })
+
   it('passes the failing track label to the error callback', async () => {
     setApi({ processTrack: vi.fn().mockRejectedValue(new Error('disk full')) })
     const onProcessError = vi.fn()
@@ -963,7 +995,11 @@ describe('useTrackProcessing', () => {
     await act(async () => {
       await result.current.processOne('a')
     })
-    expect(onProcessError).toHaveBeenCalledWith('disk full', 'Pray (W.I.P. In The Church Mix)')
+    expect(onProcessError).toHaveBeenCalledWith(
+      'disk full',
+      'Pray (W.I.P. In The Church Mix)',
+      'disk full',
+    )
   })
 
   // A double press of convert-all (or the shortcut and the button together) lands twice

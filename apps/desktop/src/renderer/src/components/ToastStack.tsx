@@ -2,9 +2,9 @@ import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useModalOpen } from '../lib/modalPresence'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
 import { prefersReducedMotion } from '../lib/motion'
-import { useModalOpen } from '../lib/modalPresence'
 import type { Toast, ToastText } from '../lib/toastQueue'
 
 // How long the copy button shows its "copied" check before reverting to the copy icon.
@@ -169,7 +169,7 @@ function ToastCard({
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
 
   const onCopy = () => {
-    void window.api.copyText(message)
+    void window.api.copyText(toast.copyText ? text(toast.copyText) : message)
     setCopied(true)
     clearTimeout(copiedTimer.current)
     copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
