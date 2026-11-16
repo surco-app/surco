@@ -6244,6 +6244,18 @@ describe('App import skeleton', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(2)
   })
 
+  it('tells the user when an opened folder holds no audio at all, instead of doing nothing visible', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/no-audio']),
+      expandPaths: vi.fn().mockResolvedValue([]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.noAudioFound'),
+    )
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.

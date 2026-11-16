@@ -746,6 +746,8 @@ export default function App(): React.JSX.Element {
       }),
   })
 
+  const reportNoAudioFound = (): void =>
+    pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound'))
   // The track collection (import pipeline, write paths, removal) lives in the hook;
   // App supplies the per-track registry cleanup and the auto-match opt-in, which is
   // gated on a token and only fires once a file's own metadata is read so the search
@@ -859,7 +861,7 @@ export default function App(): React.JSX.Element {
       pushImportNotice(store, 'duplicates-skipped', tr('notices.duplicatesSkipped', { count })),
     // Same keying: a drop of several folders resolves one call per folder, and the user
     // needs one card saying "nothing came in", not one per directory.
-    onNoAudioFound: () => pushImportNotice(store, 'no-audio-found', tr('notices.noAudioFound')),
+    onNoAudioFound: reportNoAudioFound,
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
     // Same card as the files missing when the playlist opened: the background check found
@@ -1312,7 +1314,9 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
-    await addPaths(await window.api.expandPaths(paths, true))
+    const expanded = await window.api.expandPaths(paths, true)
+    if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
+    await addPaths(expanded)
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
