@@ -159,7 +159,7 @@ export function Tooltip({
       if (pointerFocus || isReturningFocus()) return
       clearTimer()
       shown = true
-      setInstant(false)
+      setInstant(true)
       const { x, y } = anchor()
       showAt(x, y)
     }
