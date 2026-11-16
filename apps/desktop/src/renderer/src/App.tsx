@@ -2427,7 +2427,8 @@ export default function App(): React.JSX.Element {
       region.querySelector<HTMLElement>(FOCUSABLE.join(', ')) ??
       document.querySelector<HTMLElement>(
         '[data-testid="source-tree"] [data-testid^="source-node-"]',
-      )
+      ) ??
+      document.querySelector<HTMLElement>('[data-testid="track-row"][tabindex="0"]')
     target?.focus()
   })
   const batchStrip = (
@@ -4817,6 +4818,25 @@ export default function App(): React.JSX.Element {
                                     ? 'sources.emptyPlaylist'
                                     : 'sources.pickTrack',
                               )}
+                            </p>
+                          </div>
+                        </div>
+                      ) : libraryHasRows ? (
+                        <div className="flex h-full items-center justify-center p-8 text-center">
+                          <div
+                            data-testid="empty-dropzone"
+                            data-drop-over={dragging || undefined}
+                            className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
+                          >
+                            <div className="mb-4 flex justify-center">
+                              <EmptyDisc />
+                            </div>
+                            <p
+                              data-testid="source-pick-track"
+                              className="empty-copy-in text-sm text-pretty text-fg-dim"
+                              style={{ animationDelay: '0.10s' }}
+                            >
+                              {tr('sources.pickTrack')}
                             </p>
                           </div>
                         </div>

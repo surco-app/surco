@@ -1888,6 +1888,26 @@ describe('App sidebar divider', () => {
     expect(screen.getAllByRole('separator').length).toBeGreaterThan(0)
   })
 
+  it('asks to pick a track, not to drop files, beside a loaded list with nothing selected, and a click there opens no file dialog', async () => {
+    setApi({ getPathForFile: vi.fn(() => '/music/c.wav') })
+    await renderApp()
+    expect(await screen.findByTestId('add-files')).toBeInTheDocument()
+    await addTwoTracks()
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(await screen.findByTestId('source-pick-track')).toHaveTextContent(
+      i18n.t('sources.pickTrack'),
+    )
+    expect(within(screen.getByRole('main')).queryByTestId('add-files')).toBeNull()
+    vi.mocked(window.api.pickFiles).mockClear()
+    fireEvent.click(screen.getByTestId('empty-dropzone'))
+    await act(async () => {})
+    expect(window.api.pickFiles).not.toHaveBeenCalled()
+    fireEvent.drop(screen.getByTestId('empty-dropzone'), {
+      dataTransfer: fakeDataTransfer([new File([''], 'c.wav')]),
+    })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+  })
+
   it('offers the fit hint once the list has tracks', async () => {
     await renderApp()
     await addTwoTracks()
