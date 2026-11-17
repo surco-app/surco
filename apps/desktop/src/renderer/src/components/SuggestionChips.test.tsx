@@ -129,8 +129,10 @@ describe('SuggestionChips', () => {
     expect(screen.getByTestId('chip-more')).toBeInTheDocument()
   })
 
-  // "+N" must never stand for a tag the track carries, however many it carries.
-  it('opens the row by itself when the applied tags do not fit in one line', () => {
+  // "+N" must never stand for a tag the track carries, however many it carries. The row
+  // grows to hold the applied ones and nothing else: opening the whole list for them
+  // pushed the form down with tags nobody asked to see, and there was no way to fold it.
+  it('shows every applied tag when they do not fit in one line, and keeps the rest folded', () => {
     overflow.visibleCount = 1
     render(
       <SuggestionChips
@@ -141,6 +143,7 @@ describe('SuggestionChips', () => {
     )
     expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
     expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
-    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('chip-Acid')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('+2')
   })
 })

@@ -8098,7 +8098,10 @@ describe('App multi-select convert', () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings()),
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.endsWith('a.wav') ? 'Alpha' : path.endsWith('b.wav') ? 'Bravo' : 'Charlie',
+        artist: 'A',
+      })),
       processTrack,
     })
     await renderApp()
@@ -8115,9 +8118,12 @@ describe('App multi-select convert', () => {
           ),
       ).toHaveLength(1),
     )
-    expect(
-      screen.getAllByTestId('app-notice').filter((card) => /clicks/i.test(card.textContent ?? '')),
-    ).toHaveLength(1)
+    const cards = screen
+      .getAllByTestId('app-notice')
+      .filter((card) => /clicks/i.test(card.textContent ?? ''))
+    expect(cards).toHaveLength(1)
+    // A count alone left the DJ to guess which tracks it was about.
+    for (const name of ['Alpha', 'Bravo', 'Charlie']) expect(cards[0]).toHaveTextContent(name)
   })
 
   // One repaired track still says which one and how much: the count only replaces the
