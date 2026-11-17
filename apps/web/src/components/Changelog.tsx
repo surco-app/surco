@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { type Item, splitByPatch } from '../lib/changelogPatches'
 import DownloadButton from './DownloadButton'
 import Footer from './Footer'
 import Header from './Header'
@@ -8,8 +9,7 @@ import ScrollProgress from './ScrollProgress'
 
 // Items are plain strings historically; newer ones carry the exact patch they
 // shipped in ({text, in}) so the desktop "what's new" popup can filter by version.
-// The page shows the text either way.
-type Item = string | { text: string; in: string }
+// The page lists what came with the minor first and each later patch under its number.
 
 type Beta = {
   kicker: string
@@ -48,6 +48,24 @@ function ItemList({ items }: { items: Item[] }) {
         </li>
       ))}
     </ul>
+  )
+}
+
+function ReleaseItems({ items }: { items: Item[] }) {
+  const { base, patches } = splitByPatch(items)
+  return (
+    <>
+      <ItemList items={base} />
+      {patches.map((patch) => (
+        <div key={patch.version} className="mt-7">
+          <div className="flex items-center gap-3 font-mono text-xs text-faint tabular-nums">
+            <span data-testid="changelog-patch">v{patch.version}</span>
+            <span className="h-px flex-1 bg-line/60" />
+          </div>
+          <ItemList items={patch.items} />
+        </div>
+      ))}
+    </>
   )
 }
 
@@ -127,7 +145,7 @@ export default function Changelog() {
             <Reveal eager>
               <div className="max-w-2xl">
                 <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{r.title}</h2>
-                <ItemList items={r.items} />
+                <ReleaseItems items={r.items} />
               </div>
             </Reveal>
           </section>
@@ -159,7 +177,7 @@ export default function Changelog() {
                         +
                       </span>
                     </summary>
-                    <ItemList items={r.items} />
+                    <ReleaseItems items={r.items} />
                   </details>
                 ))}
               </div>
