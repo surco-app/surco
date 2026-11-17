@@ -3,6 +3,8 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { describe, expect, it } from 'vitest'
+import { engineContentId } from '../shared/engineContent'
+import { readEngineTrackCues } from './engineCues'
 import { openEngineDb, readEnginePlaylist, readEngineTree } from './enginePlaylists'
 import { engineDbPath, writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { type EngineReadName, emptyEngineRead, runEngineRead } from './engineReads'
@@ -70,6 +72,22 @@ describe('runEngineRead', () => {
     db.close()
     await utimes(engineDbPath(dir), new Date(), new Date(Date.now() + 5000))
     expect(runEngineRead(dir, 'membership', [a])).toEqual({ [a]: ['7'] })
+  })
+
+  it('hands the cues of a whole selection and of one track from the thread, since clearing thousands of tracks one database open at a time froze the app for minutes', async () => {
+    const dir = await library()
+    const ids = [engineContentId(1), engineContentId(2), engineContentId(99)]
+    const db = openEngineDb(dir)
+    if (!db) throw new Error('did not open')
+    const one = readEngineTrackCues(db, ids[0])
+    db.close()
+    const live = runEngineRead(dir, 'liveCues', ids)
+    expect(Object.keys(live)).toEqual(ids.slice(0, 2))
+    expect(live[ids[0]]).toEqual({ cues: one?.cues, fingerprint: one?.fingerprint })
+    expect(runEngineRead(dir, 'trackCues', ids[0])).toEqual(one)
+    expect(runEngineRead(dir, 'trackCues', ids[2])).toBeNull()
+    expect(runEngineRead(dir, 'file', ids[0])).toBe(resolve(dir, '../Music/a.mp3'))
+    expect(runEngineRead(dir, 'file', ids[2])).toBeNull()
   })
 
   it('answers the empty read without a library, the normal case for a DJ who does not use Engine DJ', () => {
