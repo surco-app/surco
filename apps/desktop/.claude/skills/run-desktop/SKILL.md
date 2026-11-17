@@ -175,7 +175,11 @@ the page while the app kept running (seen twice around 16 minutes in, on 15/11/2
 building the tag once in `.claude/worktrees/gate-baseline-<tag>`. Both run the same steps on a
 rekordbox collection with 150 intelligent playlists and a Traktor collection with a
 180-playlist sessions folder: open the tab, open a big list, come back to the window twice (one
-step, since which return pays a re-read varies from run to run), select a track. For each step it
+step, since which return pays a re-read varies from run to run), select a track. Engine DJ,
+VirtualDJ and Serato run on a 13,280-track library each (built once under `$TMPDIR/surco-gate-*`
+from the rekordbox soak fixture; the Engine DJ one is a clone of this Mac's own Engine Library, so
+it needs one): open the tab, open the big list, select a track, select every track. `--only
+engine,serato` runs just the programs named. For each step it
 keeps the median of `--runs` (3), with background analysis and cue learning off so they cannot land inside one step at random, and fails when the click answers or the main process blocks more
 than 1.5x the baseline and 500 ms more, above 1 s: it is there to catch freezes, and a step that
 went from 50 to 500 ms passes it. Measured

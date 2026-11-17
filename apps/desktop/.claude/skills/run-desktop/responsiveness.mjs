@@ -3,7 +3,14 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
-import { bigRekordbox, bigTraktor, repoRoot } from './big-fixtures.mjs'
+import {
+  bigEngine,
+  bigRekordbox,
+  bigSerato,
+  bigTraktor,
+  bigVirtualdj,
+  repoRoot,
+} from './big-fixtures.mjs'
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -44,6 +51,13 @@ const refocusTwice = async (app, page) => {
   }
 }
 
+const bigListPhases = (program) => [
+  ['open tab', (page) => page.locator(`[data-testid="source-rail-${program}"]`).click({ timeout: ACT_TIMEOUT }), 8000],
+  ['open big list', (page) => page.getByText('SOAK BIG', { exact: true }).first().click({ timeout: ACT_TIMEOUT }), 10000],
+  ['select a track', (page) => page.locator('[data-testid="track-row"]').nth(3).click({ timeout: ACT_TIMEOUT }), 5000],
+  ['select every track', (page) => page.keyboard.press('Meta+a'), 8000],
+]
+
 const SCENARIOS = {
   rekordbox: {
     settings: () => ({ rekordboxDbPath: bigRekordbox() }),
@@ -60,6 +74,19 @@ const SCENARIOS = {
       ['open tab', (page) => page.locator('[data-testid="source-rail-traktor"]').click({ timeout: ACT_TIMEOUT }), 15000],
       ['come back to the window twice', null, 8000],
     ],
+  },
+  engine: {
+    settings: (ud) => ({ engineLibraryDir: bigEngine(), rekordboxDbPath: join(ud, 'none', 'master.db') }),
+    phases: bigListPhases('engine'),
+  },
+  virtualdj: {
+    settings: (ud) => ({ virtualdjLibraryDir: bigVirtualdj(), rekordboxDbPath: join(ud, 'none', 'master.db') }),
+    phases: bigListPhases('virtualdj'),
+  },
+  serato: {
+    home: () => bigSerato(),
+    settings: (ud) => ({ rekordboxDbPath: join(ud, 'none', 'master.db') }),
+    phases: bigListPhases('serato'),
   },
 }
 
@@ -86,6 +113,7 @@ async function measure(appTree, name) {
     args: [join(appTree, 'apps/desktop/out/main/index.js'), '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
     env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
+  if (scenario.home) await app.evaluate(({ app }, home) => app.setPath('home', home), scenario.home())
   const page = await app.firstWindow()
   await page.waitForTimeout(6000)
   const result = {}
@@ -134,7 +162,8 @@ const tooSlow = (now, before) => now > FLOOR_MS && now > Math.max(before * RATIO
 const base = baselineTree()
 console.log(`responsiveness: ${tree} against ${baselineTag}, median of ${runs} runs each`)
 const failures = []
-for (const name of Object.keys(SCENARIOS)) {
+const only = arg('only', '').split(',').filter(Boolean)
+for (const name of Object.keys(SCENARIOS).filter((n) => only.length === 0 || only.includes(n))) {
   const before = await typical(base, name)
   const now = await typical(tree, name)
   for (const [label] of SCENARIOS[name].phases) {
