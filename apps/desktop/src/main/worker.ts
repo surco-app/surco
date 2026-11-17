@@ -1,5 +1,11 @@
 import os from 'node:os'
 import type { Transferable, Worker } from 'node:worker_threads'
+import {
+  type EngineReadAnswer,
+  type EngineReadArg,
+  type EngineReadName,
+  emptyEngineRead,
+} from './engineReads'
 import type { PathMatchOptions } from './libraryPathKey'
 import type { AmbiguousMatch, FindOptions, RekordboxTrack } from './rekordboxDb'
 import {
@@ -78,6 +84,20 @@ export async function readRekordbox<N extends RekordboxReadName>(
     ? await client.run(job)
     : await (await import('./workerJobs')).runWorkerJob(job)
   return answer as unknown as RekordboxReadAnswer<N>
+}
+
+export async function readEngine<N extends EngineReadName>(
+  dir: string,
+  name: N,
+  arg: EngineReadArg<N>,
+): Promise<EngineReadAnswer<N>> {
+  if (!dir) return emptyEngineRead(name)
+  const job: WorkerJob = { type: 'engineRead', dir, name, arg }
+  const client = await getCollectionClient()
+  const answer = client
+    ? await client.run(job)
+    : await (await import('./workerJobs')).runWorkerJob(job)
+  return answer as unknown as EngineReadAnswer<N>
 }
 
 export async function readTraktor<N extends TraktorReadName>(
