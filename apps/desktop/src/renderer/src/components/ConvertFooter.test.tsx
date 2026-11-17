@@ -1220,16 +1220,43 @@ describe('ConvertFooter up to date', () => {
   })
 })
 
-describe('ConvertFooter batch plan', () => {
-  it('names only the count, format and destination, since Activity tells where each file went', () => {
-    render(
-      cloneElement(footer(false), {
-        isMulti: true,
-        selectedCount: 2,
-        status: { ...status(false), superseded: [] },
-      }),
-    )
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^2 tracks → AIFF · [^·]+$/)
+describe('ConvertFooter batch format and destination', () => {
+  function plan(over: Record<string, unknown> = {}): React.JSX.Element {
+    return cloneElement(footer(false), {
+      isMulti: true,
+      selectedCount: 2,
+      status: { ...status(false), superseded: [] },
+      ...over,
+    })
+  }
+
+  // Switching between MP3 for the phone and FLAC for home meant opening a menu each time,
+  // with the current format only named in a sentence above it.
+  it('offers every format one press away and marks the one in use', () => {
+    const onSelectFormat = vi.fn()
+    render(plan({ onSelectFormat }))
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-source')).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(onSelectFormat).toHaveBeenCalledWith('mp3')
+  })
+
+  it('names the destination on its own menu and picks another from it', () => {
+    const onSelectDestination = vi.fn()
+    render(plan({ destinations: ['beside', 'overwrite'] as Destination[], onSelectDestination }))
+    const toggle = screen.getByTestId('batch-destination-toggle')
+    expect(toggle).toHaveTextContent(i18n.t('settings.destinations.beside'))
+    fireEvent.click(toggle)
+    expect(screen.queryByTestId('process-format-toggle')).toBeNull()
+    fireEvent.click(screen.getByTestId('process-destination-overwrite'))
+    expect(onSelectDestination).toHaveBeenCalledWith('overwrite')
+  })
+
+  // The sentence repeated what the selector, the menu and the button already say, and
+  // was the line the selector takes the place of: the footer must not grow.
+  it('carries no summary sentence', () => {
+    render(plan())
+    expect(screen.queryByTestId('batch-plan')).toBeNull()
   })
 })
 

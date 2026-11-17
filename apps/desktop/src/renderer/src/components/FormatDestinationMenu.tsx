@@ -11,6 +11,7 @@ export function FormatDestinationMenu({
   menuRef,
   onMenuKeyDown,
   offerSource,
+  formats = true,
   outputFormat,
   exportedFormat,
   destination,
@@ -22,6 +23,7 @@ export function FormatDestinationMenu({
   menuRef: React.RefObject<HTMLDivElement | null>
   onMenuKeyDown: (e: React.KeyboardEvent) => void
   offerSource: boolean
+  formats?: boolean
   outputFormat: FormatSetting
   exportedFormat: OutputFormat | null | undefined
   destination: Destination
@@ -41,36 +43,40 @@ export function FormatDestinationMenu({
       onKeyDown={onMenuKeyDown}
       className={className}
     >
-      <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
-        <p id={formatHeadingId} className="px-3 pt-1 pb-0.5 text-label font-medium text-fg-dim">
-          {tr('editor.menuFormat')}
-        </p>
-        {/* "Same as source" only means something over several files at once — a single
-            track's own format IS its own format, so resolving it there is equivalent
-            and more informative. Offered only when converting a selection. */}
-        {(offerSource ? FORMAT_SETTINGS : OUTPUT_FORMATS).map((id) => (
-          <button
-            key={id}
-            type="button"
-            data-testid={`process-format-${id}`}
-            role="menuitemradio"
-            aria-checked={id === outputFormat}
-            onClick={() => onPickFormat(id)}
-            className={`${SPLIT_ITEM} ${
-              id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
-            }`}
-          >
-            {tr(`settings.formats.${id}`)}
-            {id === exportedFormat && (
-              <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
-            )}
-          </button>
-        ))}
-      </fieldset>
+      {formats && (
+        <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
+          <p id={formatHeadingId} className="px-3 pt-1 pb-0.5 text-label font-medium text-fg-dim">
+            {tr('editor.menuFormat')}
+          </p>
+          {/* "Same as source" only means something over several files at once — a single
+              track's own format IS its own format, so resolving it there is equivalent
+              and more informative. Offered only when converting a selection. */}
+          {(offerSource ? FORMAT_SETTINGS : OUTPUT_FORMATS).map((id) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={`process-format-${id}`}
+              role="menuitemradio"
+              aria-checked={id === outputFormat}
+              onClick={() => onPickFormat(id)}
+              className={`${SPLIT_ITEM} ${
+                id === outputFormat ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
+            >
+              {tr(`settings.formats.${id}`)}
+              {id === exportedFormat && (
+                <Check className="h-3.5 w-3.5 text-good" strokeWidth={2.5} aria-hidden="true" />
+              )}
+            </button>
+          ))}
+        </fieldset>
+      )}
       <fieldset aria-labelledby={destinationHeadingId} className="min-w-0">
         <p
           id={destinationHeadingId}
-          className="mt-1 border-t border-[var(--color-line)] px-3 pt-2 pb-0.5 text-label font-medium text-fg-dim"
+          className={`px-3 pb-0.5 text-label font-medium text-fg-dim ${
+            formats ? 'mt-1 border-t border-[var(--color-line)] pt-2' : 'pt-1'
+          }`}
         >
           {tr('editor.menuDestination')}
         </p>
