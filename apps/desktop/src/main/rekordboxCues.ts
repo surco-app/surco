@@ -51,6 +51,18 @@ export function liveCues(db: Db, contentId: string): TrackCueRow[] {
   return liveCuesQuery(db)(contentId)
 }
 
+export function readLiveCues(
+  db: Db,
+  contentId: string,
+): { cues: TrackCueRow[]; fingerprint: string } | null {
+  const row = db
+    .prepare('SELECT 1 FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0')
+    .get(contentId)
+  if (!row) return null
+  const cues = liveCues(db, contentId)
+  return { cues, fingerprint: cueFingerprint(cues) }
+}
+
 function read(path: string): Buffer | null {
   return existsSync(path) ? readFileSync(path) : null
 }
