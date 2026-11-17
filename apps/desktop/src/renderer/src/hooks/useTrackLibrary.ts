@@ -193,6 +193,7 @@ interface TrackLibrary {
   rereadTrackMeta: (id: string) => Promise<boolean>
   refreshChangedTrack: (id: string) => Promise<boolean>
   completeTrackMeta: (id: string) => Promise<void>
+  completeTracksMeta: (ids: string[]) => void
   readCoversOnScreen: (ids: string[]) => void
   readCoversInBackground: (ids: string[]) => void
   // Re-reads the file after an in-place export rewrote it, so the row stops describing
@@ -825,6 +826,16 @@ export function useTrackLibrary({
     return completeRow(current, true)
   })
 
+  const completeTracksMeta = useStableCallback((ids: string[]): void => {
+    const waiting = ids.filter((id) => !completing.current.has(id))
+    if (waiting.length === 0) return
+    const byId = new Map(tracksRef.current.map((t) => [t.id, t]))
+    for (const id of waiting) {
+      const current = byId.get(id)
+      if (current?.metaPartial) void completeRow(current, true)
+    }
+  })
+
   // The rows that came on screen with nothing to paint: a light read left their file's art
   // unread, and their library holds none.
   const artUnread = (t: TrackItem): boolean =>
@@ -1388,6 +1399,7 @@ export function useTrackLibrary({
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
+    completeTracksMeta,
     readCoversOnScreen,
     readCoversInBackground,
     refreshTrackFromDisk,

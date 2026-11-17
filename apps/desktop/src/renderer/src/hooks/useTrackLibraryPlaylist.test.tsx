@@ -912,6 +912,24 @@ describe('the light read of a rekordbox row', () => {
     expect(result.current.tracks[0].metaPartial).toBe(true)
   })
 
+  it('reads a half-read row of the selection once however often the selection is handed over, since every row that lands hands the whole selection over again', async () => {
+    const readMetaLight = vi.fn<Api['readMetaLight']>().mockResolvedValue(light)
+    const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue(full)
+    const { result } = setup({ readMetaLight, readMeta })
+    await act(async () => {
+      await result.current.openSourcePlaylist([entry], 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    const selection = result.current.tracks.map((t) => t.id)
+    await act(async () => {
+      result.current.completeTracksMeta(selection)
+      result.current.completeTracksMeta(selection)
+    })
+    await waitFor(() => expect(result.current.tracks[0].metaPartial).toBe(false))
+    expect(readMeta).toHaveBeenCalledTimes(1)
+    expect(result.current.tracks[0].embeddedCover).toBe('surco://cover/a.jpg')
+  })
+
   // The full read costs three times the light one, and a first read of a big Serato or
   // VirtualDJ collection, which hand Surco no art at all, paid it for every row. A row with
   // nothing to paint takes the light read and its file's art once it comes on screen.
