@@ -9,6 +9,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       slots: ALL_SLOTS,
       readsAudio: false,
       surcoGrid: true,
+      provisionalHelp: 'editor.cues.provisional.help',
       writesCalls: true,
       fixedColour: null,
       colourHelp: null,
@@ -27,6 +28,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       slots: TRAKTOR_SLOTS,
       readsAudio: true,
       surcoGrid: true,
+      provisionalHelp: null,
       writesCalls: false,
       fixedColour: TRAKTOR_CUE_COLOR,
       colourHelp: 'editor.cues.traktor.colours',
@@ -45,6 +47,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       slots: ALL_SLOTS,
       readsAudio: true,
       surcoGrid: false,
+      provisionalHelp: null,
       writesCalls: false,
       fixedColour: null,
       colourHelp: null,
@@ -63,6 +66,7 @@ describe('CUE_PROGRAMS keeps what the cue editor does for each DJ program', () =
       slots: { kinds: HOT_KINDS, pairCalls: false },
       readsAudio: true,
       surcoGrid: false,
+      provisionalHelp: null,
       writesCalls: false,
       fixedColour: null,
       colourHelp: null,
@@ -81,6 +85,11 @@ describe('cueProgramOf picks the entry by the track’s program', () => {
   it('lets a cue flow reach VirtualDJ, and places it on Surco’s grid where VirtualDJ has not analysed the track, since VirtualDJ counts on Surco’s clock', () => {
     expect(CUE_PROGRAMS.virtualdj.takesFlows).toBe(true)
     expect(CUE_PROGRAMS.virtualdj.twinsOnSurcoGrid).toBe(true)
+  })
+
+  it('opens a track VirtualDJ has not scanned on Surco’s grid, with a help that names VirtualDJ and promises no later move', () => {
+    expect(CUE_PROGRAMS.virtualdj.surcoGrid).toBe(true)
+    expect(CUE_PROGRAMS.virtualdj.provisionalHelp).toBe('editor.cues.virtualdj.provisionalHelp')
   })
 
   it('gives a Traktor track the Traktor slots', () => {

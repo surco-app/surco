@@ -1260,6 +1260,7 @@
         "unreadable": "No s'han pogut llegir els cues de VirtualDJ",
         "save": "Desar a VirtualDJ",
         "unanalysed": "VirtualDJ encara no ha analitzat aquesta pista",
+        "provisionalHelp": "VirtualDJ encara no ha analitzat aquesta pista. Surco n'ha calculat el tempo i la graella, així que ja pots posar els cues.",
         "queuedStale": "El desament pendent es va fer abans que la pista canviés a VirtualDJ i ja no val. Ara veus el que té VirtualDJ.",
         "saveFailed": "No s'ha pogut desar a VirtualDJ. Els cues continuen sense desar",
         "autoUnreadable": "Surco no ha pogut llegir l'àudio d'aquesta pista",

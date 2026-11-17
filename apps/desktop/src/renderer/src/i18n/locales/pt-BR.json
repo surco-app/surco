@@ -1260,6 +1260,7 @@
         "unreadable": "Não foi possível ler os cues do VirtualDJ",
         "save": "Salvar no VirtualDJ",
         "unanalysed": "O VirtualDJ ainda não analisou esta faixa",
+        "provisionalHelp": "O VirtualDJ ainda não analisou esta faixa. O Surco mediu o andamento e a grade, então você já pode colocar os cues.",
         "queuedStale": "O salvamento pendente foi feito antes de a faixa mudar no VirtualDJ e não vale mais. Você vê o que o VirtualDJ tem agora.",
         "saveFailed": "Não foi possível salvar no VirtualDJ. Os cues continuam sem salvar",
         "autoUnreadable": "O Surco não conseguiu ler o áudio desta faixa",

@@ -724,7 +724,7 @@ function Editing({
     setProposed(found)
   }
   const autoMark = () => {
-    if (!readsAudio) {
+    if (!readsAudio || provisional) {
       if (words) proposeFrom({ grid: barGrid, phrases: read.phrases, words })
       return
     }
@@ -2231,7 +2231,7 @@ export function CuesSection({
   const { data: read, isError } = useTrackCues(cue.contentId)
   const { data: queued } = useQueuedCues(cue.contentId)
   const wantsSurcoGrid = !!read && !read.analysed && cueProgramOf(cue.contentId).surcoGrid
-  const { colourHelp } = cueProgramOf(cue.contentId)
+  const { colourHelp, provisionalHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
@@ -2376,7 +2376,7 @@ export function CuesSection({
           onToggle={onToggle}
           help={[
             tr('editor.cues.help'),
-            ...(provisional ? [tr('editor.cues.provisional.help')] : []),
+            ...(provisional && provisionalHelp ? [tr(provisionalHelp)] : []),
             ...(colourHelp ? [tr(colourHelp)] : []),
           ].join(' ')}
           status={

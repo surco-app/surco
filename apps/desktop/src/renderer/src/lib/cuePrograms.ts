@@ -6,6 +6,7 @@ export interface CueProgram {
   slots: CueSlots
   readsAudio: boolean
   surcoGrid: boolean
+  provisionalHelp: string | null
   writesCalls: boolean
   fixedColour: number | null
   colourHelp: string | null
@@ -23,6 +24,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     slots: ALL_SLOTS,
     readsAudio: false,
     surcoGrid: true,
+    provisionalHelp: 'editor.cues.provisional.help',
     writesCalls: true,
     fixedColour: null,
     colourHelp: null,
@@ -38,6 +40,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     slots: TRAKTOR_SLOTS,
     readsAudio: true,
     surcoGrid: true,
+    provisionalHelp: null,
     writesCalls: false,
     fixedColour: TRAKTOR_CUE_COLOR,
     colourHelp: 'editor.cues.traktor.colours',
@@ -53,6 +56,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     slots: ALL_SLOTS,
     readsAudio: true,
     surcoGrid: false,
+    provisionalHelp: null,
     writesCalls: false,
     fixedColour: null,
     colourHelp: null,
@@ -68,6 +72,7 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
     slots: { kinds: HOT_KINDS, pairCalls: false },
     readsAudio: true,
     surcoGrid: false,
+    provisionalHelp: null,
     writesCalls: false,
     fixedColour: null,
     colourHelp: null,
@@ -82,7 +87,8 @@ export const CUE_PROGRAMS: Record<DjProgram, CueProgram> = {
   virtualdj: {
     slots: { kinds: HOT_KINDS, pairCalls: false },
     readsAudio: true,
-    surcoGrid: false,
+    surcoGrid: true,
+    provisionalHelp: 'editor.cues.virtualdj.provisionalHelp',
     writesCalls: false,
     fixedColour: null,
     colourHelp: null,

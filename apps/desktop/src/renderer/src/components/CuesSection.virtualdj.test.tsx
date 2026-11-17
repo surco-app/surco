@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { HOT_KINDS } from '../../../shared/cueRules'
-import type { TrackCues } from '../../../shared/types'
+import type { SurcoGrid, TrackCues } from '../../../shared/types'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { resetCueSession } from '../lib/cueSession'
@@ -50,13 +50,23 @@ const READ: TrackCues = {
   gridFingerprint: '',
 }
 
-function setup(read: TrackCues | null = READ, running = false) {
+const UNSCANNED: TrackCues = { ...READ, analysed: false, grid: [], cues: [], loops: [] }
+const SURCO: SurcoGrid = {
+  bpm: 120,
+  grid: Array.from({ length: 800 }, (_, i) => ({ ms: 37 + i * 500, beat: 0 })),
+  words: new Uint16Array(4000),
+}
+
+function setup(read: TrackCues | null = READ, running = false, surco: SurcoGrid | null = null) {
   const save = vi.fn<Api['cues']['save']>(async () => {})
+  const dropInput = vi.fn<Api['cues']['dropInput']>(async () => null)
   installApi({
     dj: djReads({ virtualdj: { running: vi.fn<ProgramReads['running']>(async () => running) } }),
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async () => read),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
+      surcoGrid: vi.fn<Api['cues']['surcoGrid']>(async () => surco),
+      dropInput,
       save,
     },
   })
@@ -72,7 +82,7 @@ function setup(read: TrackCues | null = READ, running = false) {
       </SettingsProvider>
     </QueryClientProvider>,
   )
-  return { save }
+  return { save, dropInput }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
@@ -147,7 +157,39 @@ describe('CuesSection on a VirtualDJ track', () => {
     )
   })
 
-  it('offers no saving on a track VirtualDJ has not analysed, and says so', async () => {
+  it('opens the editor on Surco’s grid for a track VirtualDJ has not scanned, so its cues can be set and saved without loading it in VirtualDJ first', async () => {
+    const { save } = setup(UNSCANNED, false, SURCO)
+    await ready()
+    expect(screen.getByTestId('cues-provisional')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-unanalysed')).toBeNull()
+    markAt(128000)
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(save).toHaveBeenCalled())
+    const wanted = save.mock.calls[0][0][0].wanted ?? []
+    expect(wanted.length).toBeGreaterThan(0)
+    expect(wanted.every((c) => (c.ms - 37) % 500 === 0)).toBe(true)
+  })
+
+  it('explains in the section help that the grid is Surco’s because VirtualDJ has not analysed the track, without promising a move VirtualDJ does not need', async () => {
+    setup(UNSCANNED, false, SURCO)
+    await ready()
+    expect(screen.getByTestId('section-help')).toHaveTextContent(
+      i18n.t('editor.cues.virtualdj.provisionalHelp'),
+    )
+    expect(screen.getByTestId('section-help')).not.toHaveTextContent(/rekordbox/)
+  })
+
+  it('auto marks an unscanned track on Surco’s grid instead of asking main for VirtualDJ’s, which has none and would answer that the track is not analysed', async () => {
+    const { dropInput } = setup(UNSCANNED, false, SURCO)
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-auto-mark'))
+    expect(await screen.findByTestId('cues-auto-none')).toBeInTheDocument()
+    expect(dropInput).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cues-auto-unreadable')).toBeNull()
+  })
+
+  it('offers no saving on a track VirtualDJ has not analysed and Surco cannot measure, and says so', async () => {
     setup({ ...READ, analysed: false, grid: [] })
     expect(await screen.findByTestId('cues-unanalysed')).toHaveTextContent(
       i18n.t('editor.cues.virtualdj.unanalysed'),

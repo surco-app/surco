@@ -134,7 +134,7 @@ export function registerCuesIpc(host: {
     for (const t of targets) {
       t.queue.enqueue(t.mine.map((req) => ({ ...req, id: randomUUID(), kind: 'cues' })))
       for (const req of t.mine)
-        if (req.provisional)
+        if (req.provisional && t.program === 'rekordbox')
           host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
       t.applyQuietly()
     }
