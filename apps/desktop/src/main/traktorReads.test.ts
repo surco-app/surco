@@ -2,6 +2,7 @@ import { mkdtemp, utimes, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { traktorContentId } from '../shared/traktorContent'
 import { readTraktorPlaylist, readTraktorTree } from './traktorPlaylists'
 import { emptyTraktorRead, runTraktorRead, type TraktorReadName } from './traktorReads'
 import { runWorkerJob } from './workerJobs'
@@ -64,6 +65,23 @@ describe('runTraktorRead', () => {
     expect(runTraktorRead(file, 'HD', 'membership', ['/Music/a.mp3'])).toEqual({
       '/Music/a.mp3': [],
     })
+  })
+
+  it('says whether the collection holds a file and which track it is, so a file Traktor still plays is never retired and its cues reach the same track', async () => {
+    const file = await collection()
+    expect(runTraktorRead(file, 'HD', 'holdsFile', { path: '/Music/a.mp3', resolve: false })).toBe(
+      true,
+    )
+    expect(runTraktorRead(file, 'HD', 'holdsFile', { path: '/Music/z.mp3', resolve: false })).toBe(
+      false,
+    )
+    expect(
+      runTraktorRead(file, 'HD', 'trackOf', { dir: '/:Music/:', file: 'a.mp3', volume: 'HD' }),
+    ).toBe(traktorContentId('HD/:Music/:a.mp3'))
+    expect(
+      runTraktorRead(file, 'HD', 'trackOf', { dir: '/:Music/:', file: 'z.mp3', volume: 'HD' }),
+    ).toBeUndefined()
+    expect(runTraktorRead(file, 'HD', 'hasSeparator', undefined)).toBe(false)
   })
 
   it('answers the empty read without a collection, the normal case for a DJ who does not use Traktor', () => {

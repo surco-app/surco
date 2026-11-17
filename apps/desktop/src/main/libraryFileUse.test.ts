@@ -11,6 +11,15 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 // Records every file read, so a test can assert a library was loaded once per run.
 const { reads } = vi.hoisted(() => ({ reads: [] as string[] }))
+vi.mock('node:fs', async (importOriginal) => {
+  const real = await importOriginal<typeof import('node:fs')>()
+  const readFileSync = ((...args: Parameters<typeof real.readFileSync>) => {
+    reads.push(String(args[0]))
+    return real.readFileSync(...args)
+  }) as typeof real.readFileSync
+  return { ...real, readFileSync }
+})
+
 vi.mock('node:fs/promises', async (importOriginal) => {
   const real = await importOriginal<typeof import('node:fs/promises')>()
   const readFile = ((...args: Parameters<typeof real.readFile>) => {
