@@ -55,8 +55,12 @@ export function SuggestionChips({
     const next = appliedFirst()
     if (next.join('\n') !== chips.join('\n')) setLead({ key: listKey, chips: next })
   }
-  // With more applied tags than one line holds, the row opens rather than hide any.
-  const showAll = chipsExpanded || appliedHidden
+  // With more applied tags than one line holds, the row grows to hold them all, and only
+  // them: the rest stay behind "+N", so the form is pushed down by what the track carries
+  // and not by every suggestion there is.
+  const lastApplied = chips.reduce((last, s, i) => (stateOf(s) !== 'off' ? i : last), -1)
+  const shownCount = chipsExpanded ? chips.length : Math.max(visibleCount, lastApplied + 1)
+  const showAll = chipsExpanded || shownCount > visibleCount
   // Pressing "+N" unmounts it, so focus would fall to the body. Land it on the first chip
   // the expansion revealed, which is where the keyboard user was heading anyway.
   useEffect(() => {
@@ -88,7 +92,7 @@ export function SuggestionChips({
         showAll ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
       }`}
     >
-      {(showAll ? chips : chips.slice(0, visibleCount)).map((s, i) => {
+      {chips.slice(0, shownCount).map((s, i) => {
         const state = stateOf(s)
         return (
           <button
@@ -125,20 +129,20 @@ export function SuggestionChips({
           </button>
         )
       })}
-      {!showAll && chips.length > visibleCount && (
+      {!chipsExpanded && chips.length > shownCount && (
         <button
           type="button"
           data-testid="chip-more"
           onClick={() => {
-            revealFromRef.current = visibleCount
+            revealFromRef.current = shownCount
             setChipsExpanded(true)
           }}
           aria-label={tr('fields.suggestionsMore', {
-            count: chips.length - visibleCount,
+            count: chips.length - shownCount,
           })}
           className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
         >
-          +{chips.length - visibleCount}
+          +{chips.length - shownCount}
         </button>
       )}
       {!chipsExpanded && (
