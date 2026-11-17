@@ -2163,6 +2163,8 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           batchTagsOnly={batchTagsOnly}
+          batchFormatByHand={batchFormatPicked}
+          batchDestinationByHand={destinationPicked}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
           destination={isMulti ? batchDestination : destination}
@@ -2173,6 +2175,24 @@ export const Editor = memo(function Editor({
           normalizeCfg={normalizeCfg}
           onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
+            // A second press on the format picked for a batch lets go of it: the batch is
+            // back on what Settings say, the only way to undo a pick made by mistake.
+            if (isMulti && batchFormatPicked && f === formatPick) {
+              setFormatPick(outputFormat)
+              setBatchFormatPicked(false)
+              formatByHand.current = false
+              setFormat(
+                resolveJobFormat(
+                  outputFormat,
+                  item.inputPath,
+                  'aiff',
+                  keepMp3Sources,
+                  item.fromAppleMusic,
+                ),
+              )
+              onFormatChange?.(null)
+              return
+            }
             setFormatPick(f)
             setBatchFormatPicked(true)
             // 'source' is only ever offered in the multi menu, so a real pick always

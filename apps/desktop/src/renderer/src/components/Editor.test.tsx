@@ -1827,6 +1827,7 @@ describe('Editor multi-select', () => {
       fileB?: string
       settings?: Partial<Settings>
       onChangeSelection?: (patch: Partial<TrackItem>) => void
+      onFormatChange?: (format: FormatSetting | null) => void
     } = {},
   ) {
     if (opts.platform)
@@ -1874,6 +1875,7 @@ describe('Editor multi-select', () => {
         onResultsFit={vi.fn()}
         selectedTracks={[a, b]}
         onChangeSelection={opts.onChangeSelection}
+        onFormatChange={opts.onFormatChange}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}
         onAddAllToAppleMusic={onAddAllToAppleMusic}
@@ -2112,15 +2114,15 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('field-title')).toBeNull()
     expect(screen.queryByTestId('process-btn')).toBeNull()
     expect(screen.getByTestId('batch-convert')).toHaveTextContent('2')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
     expect(screen.getByTestId('batch-destination-toggle')).toBeInTheDocument()
   })
 
   it('picks the batch format in the footer and marks it as the one in use', () => {
     renderMulti()
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('data-state', 'picked')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'off')
   })
 
   // The footer said "Convert" over MP3s that the keep setting leaves as MP3: with AIFF only
@@ -2131,10 +2133,42 @@ describe('Editor multi-select', () => {
       fileB: '/music/b.mp3',
       settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
     })
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
     expect(screen.getByTestId('batch-convert')).toHaveTextContent(
       i18n.t('header.updateSelected', { count: 2 }),
     )
+  })
+
+  // There was no way back from a format picked by mistake: every press was another pick,
+  // so the batch could not return to what Settings say.
+  it('lets go of a picked format on a second press and returns to the Settings one', () => {
+    const onFormatChange = vi.fn()
+    renderMulti({
+      fileA: '/music/a.mp3',
+      fileB: '/music/b.mp3',
+      settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
+      onFormatChange,
+    })
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('data-state', 'off')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
+    expect(onFormatChange).toHaveBeenLastCalledWith(null)
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.updateSelected', { count: 2 }),
+    )
+  })
+
+  it('paints the destination as picked only once one is chosen from its menu', () => {
+    renderMulti()
+    const toggle = (): HTMLElement => screen.getByTestId('batch-destination-toggle')
+    expect(toggle()).toHaveAttribute('data-state', 'default')
+    fireEvent.click(toggle())
+    fireEvent.click(screen.getByTestId('process-destination-beside'))
+    expect(toggle()).toHaveAttribute('data-state', 'picked')
   })
 
   it('says it converts those MP3s once another format is picked by hand', () => {

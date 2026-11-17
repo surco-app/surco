@@ -87,6 +87,8 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   tagsOnly: boolean
   batchTagsOnly?: boolean
+  batchFormatByHand?: boolean
+  batchDestinationByHand?: boolean
   sameFormat: boolean
   upToDate: boolean
   // The editor's one-shot destination pick and the choices its split-button menu
@@ -158,6 +160,8 @@ export function ConvertFooter({
   willEditInPlace,
   tagsOnly,
   batchTagsOnly,
+  batchFormatByHand,
+  batchDestinationByHand,
   sameFormat,
   upToDate,
   destination,
@@ -725,6 +729,8 @@ export function ConvertFooter({
                 onConvert={onConvertSelection}
                 convertHint={convertHint}
                 tagsOnly={batchTagsOnly}
+                formatByHand={batchFormatByHand}
+                destinationByHand={batchDestinationByHand}
                 format={format}
                 destination={destination}
                 destinations={destinations}

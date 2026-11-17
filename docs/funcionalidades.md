@@ -81,7 +81,10 @@ la conversión (`batchWritesTagsOnly`, `lib/batch.ts`): el formato en que acaba 
 fichero, adónde va de verdad y si se escribe donde está. Eso incluye que un formato solo
 resaltado por ser el de Ajustes no es un formato elegido a mano: con «Conservar los MP3 y M4A»
 los MP3 se quedan como están, y las pistas abiertas desde una playlist de Apple Music conservan
-su formato, hasta que se pulsa un formato. Con destino «Editar el original» o Apple Music el
+su formato, hasta que se pulsa un formato. El selector los distingue sin texto: el formato de
+Ajustes va en contorno y el elegido a mano relleno, y pulsar otra vez el elegido lo suelta y
+vuelve al de Ajustes. El destino sigue la misma regla, tenue si viene de Ajustes y en el color
+de acento si se eligió en su menú. Con destino «Editar el original» o Apple Music el
 fichero se etiqueta en su sitio; con «Junto al original» siempre hay copia; con la carpeta de
 salida depende de si alguna biblioteca tiene el fichero, y el pie se lo pregunta al proceso
 principal (hasta 200 ficheros sueltos; por encima cuentan como copia). El destino que muestra
