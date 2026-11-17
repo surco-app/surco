@@ -27,7 +27,7 @@ export function collectionAvailable(path: string): boolean {
 
 export interface PlaylistEditHost {
   isRunning: () => Promise<boolean>
-  queue: Pick<RekordboxQueue, 'enqueue' | 'apply' | 'drop' | 'outcomeOf'>
+  queue: Pick<RekordboxQueue, 'applyNew' | 'drop' | 'outcomeOf'>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
   beginLoose?: (collectionPath: string) => void
@@ -83,9 +83,8 @@ export function rekordboxRead(
 // the override in Settings while Surco runs.
 export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
   const run = async (path: string, op: QueueOp): Promise<RekordboxEditResult> => {
-    host.queue.enqueue([op])
     host.beginLoose?.(path)
-    const result = await host.queue.apply(async () => !(await host.isRunning()))
+    const result = await host.queue.applyNew([op], async () => !(await host.isRunning()))
     if (result.status === 'applied') {
       const others = withoutOp(result, op.id)
       if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)

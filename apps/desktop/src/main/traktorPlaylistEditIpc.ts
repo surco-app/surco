@@ -14,7 +14,7 @@ import { readTraktor } from './worker'
 // the DJ confirmed in Settings; without one there is nothing to edit.
 export function traktorEdit(host: {
   collection: () => string
-  queue: Pick<RekordboxQueue, 'apply' | 'drop' | 'outcomeOf'> & { enqueue: (ops: EditOp[]) => void }
+  queue: Pick<RekordboxQueue, 'applyNew' | 'drop' | 'outcomeOf'>
   isRunning: () => Promise<boolean>
   onApplied?: (result: QueueApply) => void
   onWaiting?: () => void
@@ -44,9 +44,8 @@ export function traktorEdit(host: {
           stamps,
           ...(label ? { label } : {}),
         }
-        host.queue.enqueue([op])
         host.beginLoose?.(path)
-        const result = await host.queue.apply(async () => !(await host.isRunning()))
+        const result = await host.queue.applyNew([op], async () => !(await host.isRunning()))
         if (result.status === 'applied') {
           const others = withoutOp(result, op.id)
           if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
