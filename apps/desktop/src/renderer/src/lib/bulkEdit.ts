@@ -59,6 +59,32 @@ export function tagListState(tracks: TrackItem[], list: TagList, tag: string): T
   return count === tracks.length ? 'all' : 'some'
 }
 
+export interface TagListStates {
+  (tag: string): TagListState
+  count: (tag: string) => number
+}
+
+export function tagsOf(track: TrackItem, list: TagList): Set<string> {
+  return new Set(
+    splitCsv(track.meta[list.key] ?? '', list.whole, list.separator).map((tag) =>
+      tag.toLowerCase(),
+    ),
+  )
+}
+
+export function tagListStates(tracks: TrackItem[], list: TagList): TagListStates {
+  const counts = new Map<string, number>()
+  for (const track of tracks)
+    for (const tag of tagsOf(track, list)) counts.set(tag, (counts.get(tag) ?? 0) + 1)
+  const count = (tag: string): number => counts.get(tag.toLowerCase()) ?? 0
+  const stateOf = (tag: string): TagListState => {
+    const carrying = count(tag)
+    if (carrying === 0) return 'none'
+    return carrying === tracks.length ? 'all' : 'some'
+  }
+  return Object.assign(stateOf, { count })
+}
+
 export function toggleTagListAll(
   tracks: TrackItem[],
   list: TagList,
