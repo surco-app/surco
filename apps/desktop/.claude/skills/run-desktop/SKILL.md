@@ -171,9 +171,10 @@ the page while the app kept running (seen twice around 16 minutes in, on 15/11/2
 
 ## Gates run in the background
 
-On macOS `soak.mjs`, `soak-traktor.mjs` and `responsiveness.mjs` never bring the app to the
-front, launch after launch: an app that activates switches the screen to the desktop its window
-sits on. `quiet-launch.mjs` runs them on a copy of the Electron bundle marked as a background
+On macOS every script here that launches the app (`driver.mjs`, the three gates, the guide,
+use-case and audit captures) never brings it to the front: an app that activates switches the
+screen to the desktop its window sits on, launch after launch. Screenshots come from the page,
+so they need no window on screen. `quiet-launch.mjs` runs them on a copy of the Electron bundle marked as a background
 app (`LSUIElement`, ad-hoc signed, built once under `$TMPDIR/surco-background-electron-*`),
 because an app is activated at launch before any of its code runs, and through
 `background-entry.mjs`, which never shows the window and answers "is a window focused" with
