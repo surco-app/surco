@@ -218,6 +218,7 @@ export function createCueTaste(
     },
     async refresh(learnNow) {
       if (!learnNow || learning) return
+      await rest()
       const count = othersEdits().length
       const othersChanged = count > 0 && count !== (saved.othersSeen ?? 0)
       const firstTime = !saved.profile && (saved.edits.length > 0 || (await markedCount()) > 0)

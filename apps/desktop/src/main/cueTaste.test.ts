@@ -171,6 +171,19 @@ describe('createCueTaste', () => {
       await vi.waitFor(() => expect(rested).toBe(true))
     })
 
+    it('leaves counting the rekordbox marks for a quiet moment too, since the count alone reads every cue of the collection', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const marked = vi.fn(async () => 1576)
+      const { whenIdle, arrive } = quiet()
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked, whenIdle }))
+      const refreshed = taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(marked).not.toHaveBeenCalled()
+      arrive()
+      await refreshed
+      await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+    })
+
     it('learns at once when the DJ presses Learn, even with a learning of its own waiting for a quiet moment', async () => {
       const tune = vi.fn(async () => TUNED)
       const readCollection = vi.fn(async (rest: () => Promise<void>) => {
