@@ -452,6 +452,8 @@ function libraryHost(errors: string[]): LibraryHost {
   }
 }
 
+const WATCH_DEBOUNCE_MS = 500
+const WATCH_SWEEP_MS = 1_000
 let watcher: FolderWatcher | undefined
 let djAsk: DjAsk | undefined
 let asked: DjProgram[][] = []
@@ -882,16 +884,22 @@ function scenarioApi(
   const expandedListeners = new Set<(paths: string[]) => void>()
   const notAudioListeners = new Set<(count: number) => void>()
   const folderListeners = new Set<(root: string, files: string[]) => void>()
-  watcher = new FolderWatcher((root, files) =>
-    onWatchedFilesChanged(
-      mediaAccess,
-      reservations.isReserved,
-      (r, f) => {
-        for (const listener of folderListeners) listener(r, f)
-      },
-      root,
-      files,
-    ),
+  watcher = new FolderWatcher(
+    (root, files) =>
+      onWatchedFilesChanged(
+        mediaAccess,
+        reservations.isReserved,
+        (r, f) => {
+          for (const listener of folderListeners) listener(r, f)
+        },
+        root,
+        files,
+      ),
+    // The OS watch loses a file that lands in the instant it is starting, which is what
+    // the app's periodic sweep is for. At the app's one minute a scenario would time out
+    // waiting for it, so the sweep runs every second here.
+    WATCH_DEBOUNCE_MS,
+    WATCH_SWEEP_MS,
   )
   const wired: Partial<Api> = {
     platform: process.platform,
