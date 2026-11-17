@@ -285,6 +285,7 @@ export const REKORDBOX_SCENE = {
     await page.keyboard.press('ArrowRight')
     await wait(page, 500)
     await page.keyboard.press('ArrowRight')
+    await page.locator('[data-testid="cues-grid-offsets"]').waitFor({ timeout: 90000 })
     await wait(page, 1500)
   },
 }
