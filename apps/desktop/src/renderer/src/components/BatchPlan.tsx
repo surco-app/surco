@@ -57,11 +57,11 @@ export function BatchPlan({
           {leftOut}
         </button>
       )}
-      <div className="flex items-center justify-between gap-x-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div
           role="radiogroup"
           aria-label={tr('editor.menuFormat')}
-          className="flex shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5"
+          className="flex max-w-full shrink-0 flex-wrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5"
         >
           {FORMAT_SETTINGS.map((id) => (
             // biome-ignore lint/a11y/useSemanticElements: a segmented control, drawn as buttons and announced as one radio group.
@@ -83,7 +83,7 @@ export function BatchPlan({
             </button>
           ))}
         </div>
-        <div ref={ref} className="relative min-w-0">
+        <div ref={ref} className="relative flex min-w-0 flex-1 basis-16 justify-end">
           <button
             type="button"
             data-testid="batch-destination-toggle"

@@ -7825,6 +7825,32 @@ describe('App multi-select convert', () => {
     )
   })
 
+  // A folder walk hands its files over while it is still walking, before the add itself
+  // returns: those rows arrived with this drop too, and one of three stayed unselected.
+  it('selects the files a walk delivered before it finished', async () => {
+    let deliver: (paths: string[]) => void = () => {}
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      onExpandedBatch: (listener: (paths: string[]) => void) => {
+        deliver = listener
+        return () => {}
+      },
+      expandPaths: vi.fn(async (paths: string[]) => {
+        deliver(paths.slice(0, 1))
+        await new Promise((r) => setTimeout(r, 0))
+        return paths
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 3 }),
+    )
+  })
+
   // A drop that lands while a field is being typed in must not swap the form under the
   // cursor for a bulk one.
   it('leaves the selection alone when files arrive while a field has the cursor', async () => {
