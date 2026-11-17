@@ -122,3 +122,14 @@ export function isDeclickStale(track: TrackItem, current: DeclickConfig): boolea
     !sameDeclick(track.processedDeclick, current)
   )
 }
+
+// Both dial halves judged by the track's own staged dial, for the callers that have no
+// editor to ask: a batch, the keyboard shortcut, the palette. A track with no dial of its
+// own is never stale this way, so another track's pick or a changed Settings default
+// cannot send a finished file through the converter again.
+export function isDialStale(track: TrackItem): boolean {
+  return (
+    (track.normalize !== undefined && isNormalizeStale(track, track.normalize)) ||
+    (track.declick !== undefined && isDeclickStale(track, track.declick))
+  )
+}

@@ -109,6 +109,21 @@ describe('selectionStatus', () => {
     expect(selectionStatus(a, [a, edited], true).showDone).toBe(false)
   })
 
+  // A new loudness dialled over a converted album must bring the convert button back too.
+  it('drops the done block in multi-select once a converted track is given another loudness', () => {
+    const loud = (targetLufs: number) =>
+      ({ mode: 'loudness', targetLufs, truePeakDb: -1, peakDb: -1 }) as const
+    const a = track({ id: 'a', status: 'done', outputPath: '/out/a.aiff' })
+    const redialled = track({
+      id: 'b',
+      status: 'done',
+      outputPath: '/out/b.aiff',
+      processedNormalize: loud(-14),
+      normalize: loud(-9),
+    })
+    expect(selectionStatus(a, [a, redialled], true).showDone).toBe(false)
+  })
+
   // "Apple Music only" conversions leave no file in the output folder: a done track
   // without a path must confirm the library add instead of offering a dead reveal.
   it('flags a done selection with no output file as in-library-only', () => {

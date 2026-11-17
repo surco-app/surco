@@ -2,7 +2,7 @@ import type { MusicOp } from '../../../shared/types'
 import { PLACE_ORDER, type VerifyPlace } from '../../../shared/verification'
 import type { TrackItem } from '../types'
 import { autoRetiredFile } from './autoRetiredFile'
-import { isStale } from './dirty'
+import { isDialStale, isStale } from './dirty'
 import { supersededFile } from './supersededFile'
 
 // A stranded file and the track whose replacement stranded it, so trashing it marks
@@ -74,7 +74,8 @@ export function selectionStatus(
   const isMulti = (selectedTracks?.length ?? 0) > 1
   const multiTracks = selectedTracks ?? []
   const showDone = isMulti
-    ? multiTracks.length > 0 && multiTracks.every((t) => t.status === 'done' && !isStale(t))
+    ? multiTracks.length > 0 &&
+      multiTracks.every((t) => t.status === 'done' && !isStale(t) && !isDialStale(t))
     : done
   const revealPath = isMulti ? multiTracks.find((t) => t.outputPath)?.outputPath : item.outputPath
   // "Apple Music only": the conversion left no file in the output folder, so a finished
