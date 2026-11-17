@@ -292,3 +292,29 @@ describe('batchWritesTagsOnly', () => {
     expect(batchWritesTagsOnly([], 'source', 'overwrite', untouched)).toBe(false)
   })
 })
+
+// Ten converted tracks given a new loudness target together must be offered again: the
+// batch took them for finished and there was no way to apply the change.
+describe('a converted track whose own dial changed', () => {
+  const loud = (targetLufs: number) =>
+    ({ mode: 'loudness', targetLufs, truePeakDb: -1, peakDb: -1 }) as const
+  const redialled = {
+    ...track('a', 'done', { title: 'x', artist: 'y' }),
+    processedNormalize: loud(-14),
+    normalize: loud(-9),
+  }
+  const untouched = {
+    ...track('b', 'done', { title: 'x', artist: 'y' }),
+    processedNormalize: loud(-14),
+  }
+
+  it('can be converted again from the shortcut', () => {
+    expect(canProcessTrack(redialled, [])).toBe(true)
+    expect(canProcessTrack(untouched, [])).toBe(false)
+  })
+
+  it('enters a batch, and the one left as it was stays out', () => {
+    expect(eligibleForBatch([redialled, untouched], [])).toEqual(['a'])
+    expect(convertGate([redialled, untouched], []).ready.map((t) => t.id)).toEqual(['a'])
+  })
+})

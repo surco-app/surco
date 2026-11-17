@@ -7,7 +7,7 @@ import type { CustomField, FormatSetting } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
 import type { Destination } from './destination'
-import { isStale } from './dirty'
+import { isDialStale, isStale } from './dirty'
 import { missingRequiredOf } from './fields'
 import { selectionReplaceMode } from './replaceSelection'
 
@@ -16,7 +16,7 @@ import { selectionReplaceMode } from './replaceSelection'
 // editor, e.g. a year filled in across the selection after a Discogs apply). A done track
 // still in sync, or one mid-process, is skipped so "Convert all" never re-runs duplicate work.
 function isConvertible(track: TrackItem): boolean {
-  return track.status === 'idle' || track.status === 'error' || isStale(track)
+  return track.status === 'idle' || track.status === 'error' || isStale(track) || isDialStale(track)
 }
 
 // Whether a batch may take the track at all: a convertible state, or any settled state
