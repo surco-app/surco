@@ -197,6 +197,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     outputDir: '',
     outputFormat: 'aiff',
     keepMp3Sources: false,
+    clearListAfterConvert: false,
     addToAppleMusic: false,
     keepOutputCopy: true,
     overwriteOriginal: false,
@@ -500,9 +501,12 @@ async function renderApp(): Promise<QueryClient> {
   return client
 }
 
+// Adding files selects them all; these tests are about one open track, so the first row is
+// opened the way a user would after the drop.
 async function addTwoTracks(): Promise<HTMLElement[]> {
   fireEvent.click(await screen.findByTestId('add-files'))
   await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  fireEvent.click(screen.getAllByTestId('track-row')[0])
   return screen.getAllByTestId('track-row')
 }
 
@@ -7800,6 +7804,103 @@ describe('App multi-select convert', () => {
     expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
   })
 
+  // Tagging an album starts by dropping it: the files that just arrived are the ones the
+  // next edit is for, and selecting them by hand was a step before every single album.
+  it('selects the files that were just added, leaving the earlier ones out', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.wav'])
+        .mockResolvedValueOnce(['/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+  })
+
+  // A folder walk hands its files over while it is still walking, before the add itself
+  // returns: those rows arrived with this drop too, and one of three stayed unselected.
+  it('selects the files a walk delivered before it finished', async () => {
+    let deliver: (paths: string[]) => void = () => {}
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      onExpandedBatch: (listener: (paths: string[]) => void) => {
+        deliver = listener
+        return () => {}
+      },
+      expandPaths: vi.fn(async (paths: string[]) => {
+        deliver(paths.slice(0, 1))
+        await new Promise((r) => setTimeout(r, 0))
+        return paths
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 3 }),
+    )
+  })
+
+  // A drop that lands while a field is being typed in must not swap the form under the
+  // cursor for a bulk one.
+  it('leaves the selection alone when files arrive while a field has the cursor', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.wav'])
+        .mockResolvedValueOnce(['/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    const title = await screen.findByTestId('field-title')
+    title.focus()
+    runMenu('add')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(screen.getByTestId('field-title')).toBeInTheDocument()
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+  })
+
+  // With the setting on, the converted rows leave the list on their own and can be brought
+  // back; the row that failed stays, so the failure is still there to look at.
+  it('clears the converted tracks when the batch ends and keeps the one that failed', async () => {
+    const processTrack = vi
+      .fn()
+      .mockImplementation((job: { inputPath: string }) =>
+        job.inputPath === '/music/b.wav'
+          ? Promise.reject(new Error('disk full'))
+          : Promise.resolve({ outputPath: '/out/x', inPlace: false }),
+      )
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const removal = screen
+      .getAllByTestId('app-notice')
+      .find((card) => card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })))
+    if (!removal) throw new Error('no removal toast')
+    fireEvent.click(within(removal).getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+  })
+
   it('applies a format and destination picked by hand to the whole selection', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
     setApi({
@@ -7817,9 +7918,8 @@ describe('App multi-select convert', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     await screen.findByTestId('batch-convert')
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('batch-destination-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
     fireEvent.click(screen.getByTestId('batch-convert'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
@@ -9395,6 +9495,7 @@ describe('App filter selection', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-section-format'))
@@ -9438,6 +9539,7 @@ describe('App select all', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
     // Narrow to MP3 — only the two mp3 rows show.
     fireEvent.click(screen.getByTestId('quality-filter-trigger'))
     fireEvent.click(screen.getByTestId('quality-filter-section-format'))
@@ -10699,6 +10801,7 @@ describe('App metadata undo', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(10))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
     for (let left = 9; left >= 0; left--) {
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(screen.getByTestId('track-menu-remove'))

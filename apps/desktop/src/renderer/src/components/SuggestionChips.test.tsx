@@ -81,4 +81,66 @@ describe('SuggestionChips', () => {
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
     expect(screen.getByTestId('chip-Cantaditas')).toHaveFocus()
   })
+
+  // A user with their own genres per folder could not see which ones a track carried: the
+  // ones past the cut hid behind "+N" and the row read as if nothing else was applied.
+  it('keeps the applied tags in view when the row collapses', () => {
+    overflow.visibleCount = 2
+    render(
+      <SuggestionChips
+        suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
+        isOn={(s) => s === 'Trance'}
+        isPartial={(s) => s === 'Cierre'}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-Acid')).not.toBeInTheDocument()
+  })
+
+  // Reordering on every toggle would slide the chip out from under the pointer.
+  it('leaves a chip where it is when it is toggled', () => {
+    overflow.visibleCount = 3
+    const on = new Set<string>()
+    const props = { suggestions: ['Acid', 'Bases', 'Cierre', 'Trance'], onPick: () => {} }
+    const { rerender } = render(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    on.add('Bases')
+    rerender(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    const row = screen.getByTestId('field-suggestions')
+    expect([...row.querySelectorAll('[data-state]')].map((c) => c.textContent)).toEqual([
+      'Acid',
+      'Bases',
+      'Cierre',
+    ])
+  })
+
+  // A genre filled in by a release match or typed in the field lands while the row is
+  // already up: it has to come into view the same as one the track arrived with.
+  it('brings a tag applied past the cut into view', () => {
+    overflow.visibleCount = 2
+    const on = new Set<string>()
+    const props = { suggestions: ['Acid', 'Bases', 'Cierre', 'Trance'], onPick: () => {} }
+    const { rerender } = render(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    expect(screen.queryByTestId('chip-Trance')).not.toBeInTheDocument()
+    on.add('Trance')
+    rerender(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toBeInTheDocument()
+  })
+
+  // "+N" must never stand for a tag the track carries, however many it carries.
+  it('opens the row by itself when the applied tags do not fit in one line', () => {
+    overflow.visibleCount = 1
+    render(
+      <SuggestionChips
+        suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
+        isOn={(s) => s === 'Cierre' || s === 'Trance'}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
 })

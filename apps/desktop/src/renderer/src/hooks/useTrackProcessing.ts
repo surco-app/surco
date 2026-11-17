@@ -104,6 +104,7 @@ interface Params {
   // the toast is keyed: a batch raises one card for the whole run, so without a name the
   // user is told a conversion failed and left to guess which of thirty rows it was.
   onProcessError?: (message: string, name: string, detail: string) => void
+  onBatchConverted?: (ids: string[]) => void
   // How many conversions overlap in a bulk run. Defaults to CONVERT_CONCURRENCY (all cores
   // but one); only overridden in tests, which pin it to make the concurrency deterministic.
   concurrency?: number
@@ -173,6 +174,7 @@ export function useTrackProcessing({
   refreshChangedTrack,
   completeTrackMeta,
   onConversion,
+  onBatchConverted,
   onProcessError,
   concurrency = CONVERT_CONCURRENCY,
   releaseFile,
@@ -799,6 +801,8 @@ export function useTrackProcessing({
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.
       if (results.includes('converted')) onConversion?.()
+      const converted = ids.filter((_, i) => results[i] === 'converted')
+      if (converted.length > 0) onBatchConverted?.(converted)
     },
   )
 

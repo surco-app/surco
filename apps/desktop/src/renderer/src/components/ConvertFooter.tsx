@@ -86,6 +86,7 @@ interface ConvertFooterProps {
   onBlockedPress?: () => void
   willEditInPlace: boolean
   tagsOnly: boolean
+  batchTagsOnly?: boolean
   sameFormat: boolean
   upToDate: boolean
   // The editor's one-shot destination pick and the choices its split-button menu
@@ -156,6 +157,7 @@ export function ConvertFooter({
   onBlockedPress,
   willEditInPlace,
   tagsOnly,
+  batchTagsOnly,
   sameFormat,
   upToDate,
   destination,
@@ -722,6 +724,7 @@ export function ConvertFooter({
                 total={selectedCount}
                 onConvert={onConvertSelection}
                 convertHint={convertHint}
+                tagsOnly={batchTagsOnly}
                 format={format}
                 destination={destination}
                 destinations={destinations}

@@ -1332,9 +1332,13 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
+    const before = new Set(tracksRef.current.map((t) => t.id))
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
     await addPaths(expanded)
+    const added = tracksRef.current.filter((t) => !before.has(t.id)).map((t) => t.id)
+    if (added.length > 0 && !isTypingTarget(document.activeElement))
+      setSelection({ ids: added, anchor: added[0] })
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
@@ -1722,6 +1726,11 @@ export default function App(): React.JSX.Element {
     onConversion: () => {
       maybeShowDonateNudge()
       void refreshTrash()
+    },
+    onBatchConverted: (ids) => {
+      if (!settings?.clearListAfterConvert) return
+      const converted = new Set(ids)
+      dropFromList(tracksRef.current.filter((t) => converted.has(t.id)))
     },
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
     // Only when the repair actually touched samples: a clean track reporting "0

@@ -29,6 +29,7 @@ const synced: SyncedDraft = {
   language: 'system',
   outputFormat: 'aiff',
   keepMp3Sources: false,
+  clearListAfterConvert: false,
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,

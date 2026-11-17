@@ -2103,16 +2103,16 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
     expect(screen.queryByTestId('field-title')).toBeNull()
     expect(screen.queryByTestId('process-btn')).toBeNull()
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent('2')
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent('AIFF')
-    expect(screen.getByTestId('process-format-toggle')).toBeInTheDocument()
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent('2')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('batch-destination-toggle')).toBeInTheDocument()
   })
 
-  it('picks the batch format from the footer menu and names it in the plan', () => {
+  it('picks the batch format in the footer and marks it as the one in use', () => {
     renderMulti()
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent('WAV')
+    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
   })
 
   // The bulk form must honour the same visible-fields setting as the single editor:
@@ -2174,7 +2174,9 @@ describe('Editor multi-select', () => {
   // skips; the plan counts what the click converts, and the amber line says what stays out.
   it('counts in the plan only the tracks the batch will convert, like the header', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^1 track /)
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSomeSelected', { ready: 1, total: 2 }),
+    )
   })
 
   // The one case with no honest subset: the header's Convert is held back for it, and the
@@ -2187,7 +2189,7 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
       i18n.t('editor.mixedReplaceSelection'),
     )
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent(/^0 tracks /)
+    expect(screen.getByTestId('batch-convert')).toBeDisabled()
   })
 
   it('names the missing fields in the batch plan', () => {
@@ -2216,7 +2218,7 @@ describe('Editor multi-select', () => {
   // single-track button does, so the user knows the batch will be added too.
   it('says the batch is added to Apple Music when the setting is on', () => {
     renderMulti({ platform: 'darwin', music: true })
-    expect(screen.getByTestId('batch-plan')).toHaveTextContent('Apple Music')
+    expect(screen.getByTestId('batch-destination-toggle')).toHaveTextContent('Apple Music')
   })
 
   it('writes a shared-field edit to every selected track', () => {

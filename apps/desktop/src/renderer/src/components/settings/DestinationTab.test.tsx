@@ -40,6 +40,7 @@ const synced: SyncedDraft = {
   language: 'system',
   outputFormat: 'aiff',
   keepMp3Sources: false,
+  clearListAfterConvert: false,
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
@@ -1221,5 +1222,17 @@ describe('DJ software one program at a time', () => {
     expect(shown('rekordbox')).toBeVisible()
     rerender(<ProgramsTab {...props} searchAnchor="engineSync" />)
     expect(shown('engine')).toBeVisible()
+  })
+})
+
+// Someone tagging album after album empties the list by hand after every run; the choice
+// is made once here so the convert footer carries no extra control.
+describe('DestinationTab clearing the list after converting', () => {
+  it('is off until asked for and patches the setting when ticked', () => {
+    const patch = renderTab()
+    const box = screen.getByTestId('settings-clear-list-after-convert')
+    expect(box).not.toBeChecked()
+    fireEvent.click(box)
+    expect(patch).toHaveBeenCalledWith('clearListAfterConvert', true)
   })
 })

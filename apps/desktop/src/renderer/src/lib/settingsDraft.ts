@@ -18,6 +18,7 @@ export interface SyncedDraft extends Record<DjAddKey | DjSyncKey, boolean> {
   language: Settings['language']
   outputFormat: Settings['outputFormat']
   keepMp3Sources: boolean
+  clearListAfterConvert: boolean
   addToAppleMusic: boolean
   keepOutputCopy: boolean
   overwriteOriginal: boolean
@@ -128,6 +129,7 @@ export function pickSynced(s: Settings): SyncedDraft {
     language: s.language,
     outputFormat: s.outputFormat,
     keepMp3Sources: s.keepMp3Sources,
+    clearListAfterConvert: s.clearListAfterConvert,
     discogsFormats: s.discogsFormats,
     discogsMaxResults: s.discogsMaxResults,
     searchProviders: s.searchProviders,

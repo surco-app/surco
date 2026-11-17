@@ -63,7 +63,7 @@ import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
-import { convertGate, leftOutNote } from '../lib/batch'
+import { batchWritesTagsOnly, convertGate, leftOutNote } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
@@ -1088,6 +1088,13 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  const batchTagsOnly = useMemo(
+    () =>
+      batchWritesTagsOnly(multiGate?.ready ?? [], formatPick, destination, (t) =>
+        jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
+      ),
+    [multiGate, formatPick, destination, normalizeCfg, declickCfg, normalize, declick],
+  )
   const upToDate =
     !isMulti &&
     !incomplete &&
@@ -2064,6 +2071,7 @@ export const Editor = memo(function Editor({
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
+          batchTagsOnly={batchTagsOnly}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
           destination={destination}

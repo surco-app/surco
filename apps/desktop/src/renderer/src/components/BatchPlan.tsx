@@ -1,6 +1,7 @@
 import { ChevronDown } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
+import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
 import type { FormatSetting } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
@@ -19,6 +20,7 @@ export function BatchPlan({
   onSelectDestination,
   onConvert,
   convertHint,
+  tagsOnly = false,
 }: {
   count: number
   total: number
@@ -31,49 +33,71 @@ export function BatchPlan({
   onSelectDestination: (destination: Destination) => void
   onConvert?: () => void
   convertHint?: string
+  tagsOnly?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
-  const formatLabel = format === 'source' ? tr('settings.formats.source') : format.toUpperCase()
   const convertLabel =
     count < total
-      ? tr('header.convertSomeSelected', { ready: count, total })
-      : tr('header.convertSelected', { count })
+      ? tr(tagsOnly ? 'header.updateSomeSelected' : 'header.convertSomeSelected', {
+          ready: count,
+          total,
+        })
+      : tr(tagsOnly ? 'header.updateSelected' : 'header.convertSelected', { count })
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-        {leftOut && (
+      {leftOut && (
+        <button
+          type="button"
+          data-testid="batch-plan-blocked"
+          onClick={onBlockedPress}
+          className="press flex w-full items-center gap-1.5 text-left text-xs text-fg-dim hover:text-fg"
+        >
+          <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
+          {leftOut}
+        </button>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <div
+          role="radiogroup"
+          aria-label={tr('editor.menuFormat')}
+          className="flex max-w-full shrink-0 flex-wrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5"
+        >
+          {FORMAT_SETTINGS.map((id) => (
+            // biome-ignore lint/a11y/useSemanticElements: a segmented control, drawn as buttons and announced as one radio group.
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              data-testid={`process-format-${id}`}
+              aria-checked={id === format}
+              onClick={() => onSelectFormat(id)}
+              className={`press group relative rounded-md px-2 py-0.5 text-label ${
+                id === format
+                  ? 'bg-[var(--color-accent-soft)] text-fg'
+                  : 'text-fg-dim hover:text-fg'
+              }`}
+            >
+              {id === 'source' ? tr('editor.formatSourceShort') : tr(`settings.formats.${id}`)}
+              {id === 'source' && <Tooltip label={tr('settings.formats.source')} />}
+            </button>
+          ))}
+        </div>
+        <div ref={ref} className="relative flex min-w-0 flex-1 basis-16 justify-end">
           <button
             type="button"
-            data-testid="batch-plan-blocked"
-            onClick={onBlockedPress}
-            className="press mr-auto flex items-center gap-1.5 text-xs text-fg-dim hover:text-fg"
-          >
-            <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
-            {leftOut}
-          </button>
-        )}
-        <span data-testid="batch-plan" className="text-xs text-fg-dim">
-          {tr('editor.batchPlan', {
-            count,
-            format: formatLabel,
-            destination: tr(`settings.destinations.${destination}`),
-          })}
-        </span>
-        <div ref={ref} className="relative">
-          <button
-            type="button"
-            data-testid="process-format-toggle"
+            data-testid="batch-destination-toggle"
             ref={toggleRef}
             aria-haspopup="menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="press flex h-8 items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+            className="press group relative flex h-8 max-w-full items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
           >
-            {tr('editor.formatAndDestination')}
+            <span className="min-w-0 truncate">{tr(`settings.destinations.${destination}`)}</span>
+            <Tooltip label={tr(`settings.destinations.${destination}`)} />
             <ChevronDown
               aria-hidden="true"
-              className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
+              className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
             />
           </button>
           {open && (
@@ -81,14 +105,12 @@ export function BatchPlan({
               menuRef={menuRef}
               onMenuKeyDown={onMenuKeyDown}
               offerSource
+              formats={false}
               outputFormat={format}
               exportedFormat={null}
               destination={destination}
               destinations={destinations}
-              onPickFormat={(f) => {
-                setOpen(false)
-                onSelectFormat(f)
-              }}
+              onPickFormat={onSelectFormat}
               onPickDestination={(d) => {
                 setOpen(false)
                 onSelectDestination(d)

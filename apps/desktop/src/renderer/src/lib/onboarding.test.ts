@@ -57,6 +57,7 @@ const settings: Settings = {
   outputDir: '/out',
   outputFormat: 'aiff',
   keepMp3Sources: false,
+  clearListAfterConvert: false,
   addToAppleMusic: false,
   keepOutputCopy: true,
   overwriteOriginal: false,
