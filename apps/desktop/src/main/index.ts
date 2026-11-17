@@ -260,7 +260,7 @@ import { sourceStat } from './sourceStat'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
-import { useLog } from './threadLog'
+import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
 import { traktorCueQueueSection } from './traktorCueQueueIpc'
@@ -714,7 +714,7 @@ const provisionalCues = createProvisionalList(
 )
 const markedRekordboxTracks = async (): Promise<number> =>
   markedTracks(rekordboxCollectionPath(), await keyOf(rekordboxCollectionPath()))
-useLog(log)
+sendLogsTo(log)
 const DJ_IDLE_AFTER_S = 60
 const DJ_IDLE_CHECK_MS = 2000
 const djIdle = (): boolean =>

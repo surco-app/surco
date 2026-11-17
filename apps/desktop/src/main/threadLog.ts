@@ -16,7 +16,7 @@ const toMainProcess: ThreadLog = {
 
 let sink: ThreadLog | null = isMainThread ? null : toMainProcess
 
-export function useLog(log: ThreadLog): void {
+export function sendLogsTo(log: ThreadLog): void {
   sink = log
 }
 

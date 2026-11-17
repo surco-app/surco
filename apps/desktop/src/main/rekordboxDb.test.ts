@@ -12,7 +12,7 @@ import {
   rekordboxRawKey,
   trackFinder,
 } from './rekordboxDb'
-import { useLog } from './threadLog'
+import { sendLogsTo } from './threadLog'
 
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
 
@@ -23,7 +23,7 @@ vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), e
 // playlists reference a track by ID rather than by path.
 let dbPath: string
 
-beforeAll(() => useLog(log))
+beforeAll(() => sendLogsTo(log))
 
 const TRACKS = [
   {
