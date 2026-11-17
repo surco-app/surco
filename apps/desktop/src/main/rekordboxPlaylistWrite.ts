@@ -101,7 +101,11 @@ export interface PlaylistWriteDeps extends FindOptions {
   onRollback?: () => void
   writeXml?: (path: string, text: string) => Promise<void>
   stillQueued?: (id: string) => boolean
+  pause?: () => Promise<void>
 }
+
+const OPS_PER_PAUSE = 100
+const nextTurn = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))
 
 export { replaceFile }
 
@@ -525,12 +529,14 @@ export async function applyRekordboxBatch(
   const hasXml = existsSync(xmlPath)
   const outcomes = new Map<string, OpOutcome>()
   const planned: Planned[] = []
+  const pause = deps.pause ?? nextTurn
   const key = await rekordboxRawKey(collectionPath).catch(() => undefined)
   const probe = openRekordboxDb(collectionPath, { readonly: true, key })
   if (!probe) return { ok: false, reason: 'unreadable' }
   try {
     const current = hasXml ? await readFile(xmlPath, 'utf8') : null
-    for (const op of ops) {
+    for (const [i, op] of ops.entries()) {
+      if (i > 0 && i % OPS_PER_PAUSE === 0) await pause()
       const plan = planOp(probe, current, op, deps, shareDir)
       if ('outcome' in plan) outcomes.set(op.id, plan.outcome)
       else planned.push(plan)
@@ -564,7 +570,8 @@ export async function applyRekordboxBatch(
   const db = openRekordboxDb(collectionPath, { key })
   if (!db) return { ok: false, reason: 'unreadable' }
   const stillPlanned: Planned[] = []
-  for (const p of planned) {
+  for (const [i, p] of planned.entries()) {
+    if (i > 0 && i % OPS_PER_PAUSE === 0) await pause()
     if (deps.stillQueued && !deps.stillQueued(p.op.id)) {
       outcomes.set(p.op.id, { id: p.op.id, applied: false, reason: 'cancelled', notices: [] })
       continue
