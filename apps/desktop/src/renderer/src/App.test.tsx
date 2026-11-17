@@ -4002,12 +4002,14 @@ describe('App source playlists', () => {
       )
     })
 
-    it('empties every block a track leads or follows in from Matching in one go, asking about an open rekordbox once', async () => {
-      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+    it('empties every block a track leads or follows in from Matching in one write, asking about an open rekordbox once', async () => {
+      const matchAll = vi
+        .fn<ProgramReads['matchAll']>()
+        .mockImplementation(async (_action, pairs) => pairs.map(() => ({ applied: true })))
       await openFactory({
         dj: djReads(matchingReads.dj, {
           rekordbox: {
-            match,
+            matchAll,
             matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([
               ['c-l1', 'c-l3'],
               ['c-l3', 'c-l2'],
@@ -4034,11 +4036,13 @@ describe('App source playlists', () => {
       fireEvent.click(remove)
       await screen.findByTestId('confirm-ok')
       expect(document.getElementById('confirm-title')).toHaveTextContent('3')
-      expect(match).not.toHaveBeenCalled()
+      expect(matchAll).not.toHaveBeenCalled()
       fireEvent.click(screen.getByTestId('confirm-ok'))
-      await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
-      expect(match).toHaveBeenCalledWith('remove', ['c-l1', 'c-l3'], expect.any(String))
-      expect(match).toHaveBeenCalledWith('remove', ['c-l3', 'c-l2'], expect.any(String))
+      await waitFor(() => expect(matchAll).toHaveBeenCalledTimes(1))
+      expect(matchAll).toHaveBeenCalledWith('remove', [
+        { pair: ['c-l1', 'c-l3'], label: expect.any(String) },
+        { pair: ['c-l3', 'c-l2'], label: expect.any(String) },
+      ])
       expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
       expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav')
       expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/c.wav', '/m/b.wav')

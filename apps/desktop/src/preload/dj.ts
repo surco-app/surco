@@ -34,6 +34,7 @@ export function createDjApi(ipc: DjIpc): DjApi {
     editPlaylist: (p, ...args) => ipc.invoke('dj:editPlaylist', p, ...args),
     hasSeparator: (p) => ipc.invoke('dj:hasSeparator', p),
     match: (p, ...args) => ipc.invoke('dj:match', p, ...args),
+    matchAll: (p, ...args) => ipc.invoke('dj:matchAll', p, ...args),
     cueQueue: (p) => ipc.invoke('dj:cueQueue', p),
     applyCueQueue: (p) => ipc.invoke('dj:applyCueQueue', p),
     discardCueQueue: (p) => ipc.invoke('dj:discardCueQueue', p),

@@ -154,6 +154,67 @@ describe('rekordboxEdit Matching', () => {
     expect(told.mock.calls.filter(([s]) => s.changes > 0)).toEqual([])
   })
 
+  it('unpairs many tracks in one write, so clearing Matching does not take one write per pair', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      matches: [
+        { ContentID1: '101', ContentID2: '102' },
+        { ContentID1: '102', ContentID2: '103' },
+      ],
+    })
+    const queue = queueFor(path)
+    const applyNew = vi.spyOn(queue, 'applyNew')
+    register(() => path, { isRunning: async () => false, queue })
+    expect(
+      await section.matchAll?.('remove', [
+        { pair: ['101', '102'], label: 'a' },
+        { pair: ['102', '103'], label: 'b' },
+      ]),
+    ).toEqual([{ applied: true }, { applied: true }])
+    expect(applyNew).toHaveBeenCalledTimes(1)
+    const db = openRekordboxDb(path, { readonly: true })
+    expect(db && readMatchingPairs(db)).toEqual([])
+  })
+
+  it('answers for each pair on its own, so one that is gone from rekordbox does not hide the ones unpaired', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      matches: [{ ContentID1: '101', ContentID2: '102' }],
+    })
+    register(() => path, { isRunning: async () => false, queue: queueFor(path) })
+    expect(
+      await section.matchAll?.('remove', [
+        { pair: ['101', '999'], label: 'gone' },
+        { pair: ['101', '102'], label: 'a' },
+      ]),
+    ).toEqual([{ applied: false, reason: 'stale' }, { applied: true }])
+  })
+
+  it('leaves every pair waiting when rekordbox is open', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      matches: [
+        { ContentID1: '101', ContentID2: '102' },
+        { ContentID1: '102', ContentID2: '103' },
+      ],
+    })
+    const queue = queueFor(path)
+    register(() => path, { isRunning: async () => true, queue })
+    expect(
+      await section.matchAll?.('remove', [
+        { pair: ['101', '102'], label: 'a' },
+        { pair: ['102', '103'], label: 'b' },
+      ]),
+    ).toEqual([
+      { applied: false, queued: true, opId: expect.any(String) },
+      { applied: false, queued: true, opId: expect.any(String) },
+    ])
+    expect(queue.queuedOps()).toHaveLength(2)
+  })
+
   it('leaves the pair waiting for rekordbox to close, like any other write', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, {
