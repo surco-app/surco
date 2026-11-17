@@ -145,7 +145,7 @@ describe('MetadataForm', () => {
   it('puts the labels beside the inputs once the column reaches 24rem', () => {
     renderForm([spec('title', 'Illusion'), spec('year', '2007')])
     expect(screen.getByTestId('field-title').parentElement?.className).toContain(
-      '@[24rem]:grid-cols-[auto_minmax(0,1fr)]',
+      'beside:grid-cols-[auto_minmax(0,1fr)]',
     )
   })
 

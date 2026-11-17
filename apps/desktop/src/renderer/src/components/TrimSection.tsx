@@ -1185,7 +1185,10 @@ export function TrimSection({
   }
 
   return (
-    <div data-testid="editor-trim" className="mt-6 border-t border-[var(--color-line)] pt-6">
+    <div
+      data-testid="editor-trim"
+      className="mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3"
+    >
       <SectionHeader
         sectionId="trim"
         maximizable

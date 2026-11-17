@@ -213,7 +213,7 @@ export function LoudnessReadout({
               key={c.id}
               data-testid={`loudness-pill-${c.id}`}
               data-grade={c.grade}
-              className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 ${lastOdd ? '@[30rem]:col-span-2' : ''}`}
+              className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 compact:py-1 ${lastOdd ? '@[30rem]:col-span-2' : ''}`}
             >
               <span className="flex min-w-0 items-center gap-1.5">
                 <span

@@ -224,7 +224,10 @@ export function CuesBatchSection({
     }
   }
   return (
-    <div data-testid="cues-multi" className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div
+      data-testid="cues-multi"
+      className="mt-6 border-t border-[var(--color-line)] pt-5 compact:mt-3 compact:pt-3"
+    >
       <p className="text-sm font-medium text-fg-muted">{tr('editor.cues.title')}</p>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <Select

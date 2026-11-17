@@ -2360,7 +2360,11 @@ export function CuesSection({
   return (
     <div
       data-testid="cues-section"
-      className={full ? 'flex h-full flex-col' : 'mt-6 border-t border-[var(--color-line)] pt-6'}
+      className={
+        full
+          ? 'flex h-full flex-col'
+          : 'mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3'
+      }
       ref={sectionRef}
     >
       {!full && (

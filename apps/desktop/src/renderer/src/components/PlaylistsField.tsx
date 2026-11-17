@@ -140,17 +140,17 @@ function TreeField({
   const app = tr(`sources.${library}`)
   const Icon = LIBRARY_ICON[library]
   return (
-    <div data-testid={fieldTestId(library, testId)} className="group block @[24rem]:contents">
+    <div data-testid={fieldTestId(library, testId)} className="group block beside:contents">
       <label
         htmlFor={buttonId}
         data-testid="playlists-field-label"
-        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim @[24rem]:col-start-1 @[24rem]:mb-0 @[24rem]:min-h-[34px] @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right"
+        className="mb-1.5 compact:mb-0.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim beside:col-start-1 beside:mb-0 beside:min-h-[34px] compact:beside:min-h-[30px] beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right"
       >
         <span aria-hidden="true">{app}</span>
         <span className="sr-only">{label}</span>
         <Icon size={12} />
       </label>
-      <div ref={rootRef} className="relative min-w-0 @[24rem]:col-start-2">
+      <div ref={rootRef} className="relative min-w-0 beside:col-start-2">
         <button
           ref={buttonRef}
           id={buttonId}

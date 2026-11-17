@@ -295,7 +295,7 @@ export function TrackListHeader({
           {location}
         </button>
       )}
-      <div className="flex items-center gap-1.5 px-1.5 pt-2">
+      <div className="flex items-center gap-1.5 px-1.5 pt-2 compact:pt-1.5">
         <SearchInput
           className="flex-1"
           testid="track-search"
@@ -329,7 +329,7 @@ export function TrackListHeader({
             data-testid="add-files"
             onClick={onAdd}
             aria-label={tr('header.add')}
-            className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+            className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
           >
             <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
             <Tooltip label={tr('header.add')} hint={hintFor('add')} />
@@ -348,7 +348,7 @@ export function TrackListHeader({
               data-testid="select-all"
               onClick={onSelectAllTracks}
               aria-label={tr('header.selectAll')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
@@ -405,7 +405,7 @@ export function TrackListHeader({
               aria-label={tr('sidebar.sort.descending')}
               onClick={toggleSortDir}
               disabled={sortBy === 'import'}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
             >
               {sortDir === 'asc' ? (
                 <ArrowDownNarrowWide className="h-4 w-4" aria-hidden="true" />
@@ -432,7 +432,7 @@ export function TrackListHeader({
               onClick={onRemoveSelected}
               disabled={!selectedId && selectedIds.length === 0}
               aria-label={removeLabel ?? tr('trackList.context.remove')}
-              className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
             >
               <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={removeLabel ?? tr('trackList.context.remove')} />
@@ -446,7 +446,7 @@ export function TrackListHeader({
                 aria-label={tr('header.moreActions')}
                 aria-haspopup="menu"
                 aria-expanded={open}
-                className="press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
+                className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
               >
                 <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
                 <Tooltip label={tr('header.moreActions')} />
