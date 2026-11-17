@@ -10,6 +10,7 @@ import {
   openRekordboxDb,
   REKORDBOX_KEY,
   rekordboxRawKey,
+  trackFinder,
 } from './rekordboxDb'
 
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
@@ -200,7 +201,13 @@ describe('rekordboxRawKey', () => {
   })
 })
 
-describe('findTrackByPath', () => {
+describe.each([
+  ['findTrackByPath', findTrackByPath],
+  [
+    'trackFinder, which answers many lookups from one read',
+    ((db, path, options) => trackFinder(db)(path, options)) as typeof findTrackByPath,
+  ],
+])('%s', (_name, find) => {
   it('finds a Windows track rekordbox stores with forward slashes from the backslashed path', async () => {
     const winPath = join(await mkdtemp(join(tmpdir(), 'surco-rb-win-')), 'master.db')
     const writer = new Database(winPath)
@@ -218,13 +225,13 @@ describe('findTrackByPath', () => {
     writer.close()
     const db = openRekordboxDb(winPath)
     if (!db) throw new Error('fixture did not decrypt')
-    expect(single(findTrackByPath(db, 'C:\\Users\\dj\\Music\\Win Track.mp3')).id).toBe('600000001')
+    expect(single(find(db, 'C:\\Users\\dj\\Music\\Win Track.mp3')).id).toBe('600000001')
     db.close()
   })
 
   it('finds the track that a conversion is about to replace', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Acid Tribute/02 Everybody.mp3')
+    const found = find(db, '/Volumes/Public/Music/Acid Tribute/02 Everybody.mp3')
     expect(found).toEqual({
       id: '127110986',
       folderPath: '/Volumes/Public/Music/Acid Tribute/02 Everybody.mp3',
@@ -239,7 +246,7 @@ describe('findTrackByPath', () => {
   // match is an answer, not a failure.
   it('returns null when the collection does not have the track', () => {
     const db = open()
-    expect(findTrackByPath(db, '/Volumes/Public/Music/Never/Imported.mp3')).toBeNull()
+    expect(find(db, '/Volumes/Public/Music/Never/Imported.mp3')).toBeNull()
     db?.close()
   })
 
@@ -247,7 +254,7 @@ describe('findTrackByPath', () => {
   // a later write stamp a real file path onto a track that has no file.
   it('never returns a streaming track', () => {
     const db = open()
-    expect(findTrackByPath(db, 'spotify:track:0OTO8ZF2YqFQVw9hnZylTd')).toBeNull()
+    expect(find(db, 'spotify:track:0OTO8ZF2YqFQVw9hnZylTd')).toBeNull()
     db?.close()
   })
 
@@ -256,7 +263,7 @@ describe('findTrackByPath', () => {
   // spellings of the same file must resolve to one track.
   it('matches a path that differs only in case', () => {
     const db = open()
-    const found = findTrackByPath(db, '/volumes/public/music/acid tribute/02 everybody.MP3')
+    const found = find(db, '/volumes/public/music/acid tribute/02 everybody.MP3')
     expect(single(found).id).toBe('127110986')
     db.close()
   })
@@ -267,7 +274,7 @@ describe('findTrackByPath', () => {
   // path, so comparing the strings alone misses every track imported through the link.
   it('finds a track stored under a symlinked path', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Linked/Through Link.mp3', {
+    const found = find(db, '/Volumes/Public/Music/Linked/Through Link.mp3', {
       realPath: (p) => p.replace('/Users/vicent/Music/Music/', '/Volumes/Public/Music/'),
     })
     expect(single(found).id).toBe('400000001')
@@ -281,7 +288,7 @@ describe('findTrackByPath', () => {
   // the right one is the user's call, so an ambiguous match refuses rather than guesses.
   it('refuses to choose when two rows point at one real file', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
+    const found = find(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
       realPath: (p) => p.replace('/Users/vicent/Music/Music/', '/Volumes/Public/Music/'),
     })
     expect(found).toEqual({ ambiguous: ['500000001', '500000002'] })
@@ -295,7 +302,7 @@ describe('findTrackByPath', () => {
   // exists to prevent, reappearing precisely where the collection is already damaged.
   it('still refuses when the file is gone and paths cannot be resolved', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
+    const found = find(db, '/Volumes/Public/Music/Twin/Both Ways.wav', {
       // The link itself resolves — it is the tracks under it that no longer exist, which
       // is the real shape: the folder is fine, the files were deleted or renamed.
       realPath: (p) => {
@@ -313,14 +320,14 @@ describe('findTrackByPath', () => {
   // a conversion, cues and playlists stranded behind a "!".
   it('finds a composed row from the decomposed path macOS hands over', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Señor/Café Noir.mp3'.normalize('NFD'))
+    const found = find(db, '/Volumes/Public/Music/Señor/Café Noir.mp3'.normalize('NFD'))
     expect(single(found).id).toBe('700000001')
     db.close()
   })
 
   it('finds a decomposed row from a composed path', () => {
     const db = open()
-    const found = findTrackByPath(db, '/Volumes/Public/Music/Björk/Jóga.wav'.normalize('NFC'))
+    const found = find(db, '/Volumes/Public/Music/Björk/Jóga.wav'.normalize('NFC'))
     expect(single(found).id).toBe('700000002')
     db.close()
   })

@@ -1,7 +1,7 @@
 import log from 'electron-log/main'
 import type { DuplicatePair } from '../shared/types'
 import { backupOf } from './libraryBackups'
-import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
+import { type FindOptions, isAmbiguous, openRekordboxDb, trackFinder } from './rekordboxDb'
 import { repointTracks } from './rekordboxLibrary'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { checkpointCollection, writeBackup } from './rekordboxSessionBackup'
@@ -92,9 +92,10 @@ export async function replaceRekordboxDuplicates(
   const repoints: number[] = []
   const replaces: { index: number; fromId: string; toId: string }[] = []
   try {
+    const trackOf = trackFinder(db)
     for (const [index, { from, to }] of pairs.entries()) {
-      const source = findTrackByPath(db, from, options)
-      const kept = findTrackByPath(db, to, options)
+      const source = trackOf(from, options)
+      const kept = trackOf(to, options)
       if (isAmbiguous(source) || isAmbiguous(kept))
         results[index] = { written: false, reason: 'ambiguous' }
       else if (source === null || source.id === kept?.id)

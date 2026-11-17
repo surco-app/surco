@@ -102,6 +102,23 @@ describe('readCollectionMarksAt', () => {
     expect(readFileSync(path).equals(before)).toBe(true)
   })
 
+  it('rests between batches of tracks as the caller asks, so a read started in a quiet moment stops when the DJ comes back', async () => {
+    const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
+    const rest = vi.fn(async () => {})
+    await readCollectionMarksAt(path, rest)
+    expect(rest).toHaveBeenCalled()
+  })
+
+  it('counts again once the collection changes, so the count it keeps between asks never goes stale', async () => {
+    const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
+    expect(markedTracks(path)).toBe(1)
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    db.prepare('UPDATE djmdCue SET Kind = 1').run()
+    db.close()
+    expect(markedTracks(path)).toBe(0)
+  })
+
   it('reads nothing without a collection', async () => {
     expect(await readCollectionMarksAt('')).toBeNull()
   })

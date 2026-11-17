@@ -190,10 +190,12 @@ export function findTrackByPath(
 
 const asciiFolded = (name: string): string => name.replace(/[A-Z]/g, (c) => c.toLowerCase())
 
-export function trackFinder(
-  db: RekordboxDb,
-  options: FindOptions = {},
-): (path: string) => RekordboxTrack | AmbiguousMatch | null {
+export type TrackFinder = (
+  path: string,
+  options?: FindOptions,
+) => RekordboxTrack | AmbiguousMatch | null
+
+export function trackFinder(db: RekordboxDb): TrackFinder {
   const byName = new Map<string, ContentRow[]>()
   const rows = db
     .prepare(
@@ -206,9 +208,11 @@ export function trackFinder(
     .all(STREAMING_FILE_TYPE) as ContentRow[]
   for (const row of rows) {
     const name = asciiFolded(row.FileNameL)
-    byName.set(name, [...(byName.get(name) ?? []), row])
+    const sameName = byName.get(name)
+    if (sameName) sameName.push(row)
+    else byName.set(name, [row])
   }
-  return (path) => {
+  return (path, options = {}) => {
     const names = new Set(fileNameForms(path).map(asciiFolded))
     return matchOf(
       [...names].flatMap((name) => byName.get(name) ?? []),

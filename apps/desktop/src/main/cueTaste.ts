@@ -22,7 +22,8 @@ export interface SharedEdits {
 }
 
 export interface CueTasteDeps {
-  readCollection: () => Promise<CollectionMarks | null>
+  readCollection: (rest: () => Promise<void>) => Promise<CollectionMarks | null>
+  whenIdle?: () => Promise<void>
   tune: (tracks: TasteTrack[]) => Promise<TunedTaste | null>
   shared?: SharedEdits
   marked?: () => number | Promise<number>
@@ -88,6 +89,8 @@ export function createCueTaste(
   const machine = saved.machine ?? (deps.newId ?? randomUUID)()
   saved = { ...saved, machine }
   let learning: Promise<CueProfile> | null = null
+  let asked = false
+  let hurry = (): void => {}
   const save = () => store.write(JSON.stringify({ version: 1, ...saved }))
   const now = deps.now ?? (() => new Date())
 
@@ -135,9 +138,22 @@ export function createCueTaste(
     shareEdits()
   }
 
+  const rest = (): Promise<void> => {
+    const idle = deps.whenIdle
+    if (asked || !idle) return Promise.resolve()
+    return Promise.race([
+      idle(),
+      new Promise<void>((resolve) => {
+        hurry = resolve
+      }),
+    ])
+  }
+
   const run = async (): Promise<CueProfile> => {
+    await rest()
     saved = { ...saved, sinceLearn: 0, corrections: 0 }
-    const collection = (await deps.readCollection()) ?? { learn: [], taste: [] }
+    const collection = (await deps.readCollection(rest)) ?? { learn: [], taste: [] }
+    await rest()
     const byKey = new Map(collection.taste.map((t) => [t.key, t]))
     const others = othersEdits()
     saved = { ...saved, othersSeen: others.length }
@@ -157,15 +173,24 @@ export function createCueTaste(
     return profile
   }
 
-  const learn = (): Promise<CueProfile> => {
+  const learnWhenIdle = (): Promise<CueProfile> => {
     learning ??= run().finally(() => {
       learning = null
+      asked = false
     })
     return learning
   }
 
+  const learn = (): Promise<CueProfile> => {
+    asked = true
+    hurry()
+    return learnWhenIdle()
+  }
+
   const learnInBackground = (): void => {
-    learn().catch((err) => log.warn(`cue taste: learning from edits failed: ${String(err)}`))
+    learnWhenIdle().catch((err) =>
+      log.warn(`cue taste: learning from edits failed: ${String(err)}`),
+    )
   }
 
   return {
@@ -193,6 +218,7 @@ export function createCueTaste(
     },
     async refresh(learnNow) {
       if (!learnNow || learning) return
+      await rest()
       const count = othersEdits().length
       const othersChanged = count > 0 && count !== (saved.othersSeen ?? 0)
       const firstTime = !saved.profile && (saved.edits.length > 0 || (await markedCount()) > 0)
