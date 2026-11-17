@@ -190,10 +190,10 @@ export const Field = memo(function Field({
       htmlFor={inputId}
       className={`flex items-center gap-1.5 text-xs font-medium text-fg-dim ${
         inline
-          ? 'min-h-[34px] flex-row-reverse whitespace-nowrap'
+          ? 'min-h-[34px] compact:min-h-[30px] flex-row-reverse whitespace-nowrap'
           : width
-            ? 'min-h-[34px] @[24rem]:col-start-1 @[24rem]:self-start @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right'
-            : 'mb-1.5 @[24rem]:col-start-1 @[24rem]:mb-0 @[24rem]:min-h-[34px] @[24rem]:max-w-32 @[24rem]:flex-row-reverse @[24rem]:justify-start @[24rem]:text-right'
+            ? 'min-h-[34px] compact:min-h-[30px] beside:col-start-1 beside:self-start beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right'
+            : 'mb-1.5 compact:mb-0.5 beside:col-start-1 beside:mb-0 beside:min-h-[34px] compact:beside:min-h-[30px] beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right'
       }`}
     >
       {label}
@@ -213,7 +213,7 @@ export const Field = memo(function Field({
     <>
       <span
         ref={valuesRef}
-        className={`relative block ${width ? WIDTH_CLASS[width] : '@[24rem]:col-start-2'}`}
+        className={`relative block ${width ? WIDTH_CLASS[width] : 'beside:col-start-2'}`}
       >
         <input
           ref={inputRef}
@@ -313,7 +313,7 @@ export const Field = memo(function Field({
       {cleaned && (
         <span
           data-testid={`field-cleaned-${name}`}
-          className={`mt-1 block text-xs text-fg-faint ${width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+          className={`mt-1 block text-xs text-fg-faint ${width ? '' : 'beside:col-start-2 beside:-mt-1'}`}
         >
           <span className="inline-flex items-center gap-1 font-medium text-good">
             <CleanSpark />
@@ -354,7 +354,7 @@ export const Field = memo(function Field({
           of the real one, so the detected value swaps in without popping into empty space.
           Drops out the moment a real suggestion arrives (or the probe fails → no chip). */}
       {suggesting && !(suggestions && suggestions.length > 0) && (
-        <span className={`mt-1.5 flex ${width ? '' : '@[24rem]:col-start-2 @[24rem]:mt-0'}`}>
+        <span className={`mt-1.5 flex ${width ? '' : 'beside:col-start-2 beside:mt-0'}`}>
           <span
             data-testid={`suggestion-loading-${name}`}
             aria-hidden="true"
@@ -363,7 +363,7 @@ export const Field = memo(function Field({
         </span>
       )}
       {suggestions && suggestions.length > 0 && (
-        <div className={width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1.5'}>
+        <div className={width ? '' : 'beside:col-start-2 beside:-mt-1.5'}>
           <SuggestionChips
             suggestions={suggestions}
             isOn={(s) =>
@@ -386,7 +386,7 @@ export const Field = memo(function Field({
       {previous && (
         <span
           data-testid={`field-${name}-previous`}
-          className={`mt-1 block text-xs text-fg-faint ${width ? 'whitespace-nowrap' : '@[24rem]:col-start-2 @[24rem]:-mt-1'}`}
+          className={`mt-1 block text-xs text-fg-faint ${width ? 'whitespace-nowrap' : 'beside:col-start-2 beside:-mt-1'}`}
         >
           <span className="sr-only">{`${tr('editor.previous.label')} `}</span>
           <span className="line-through">{previous.value}</span>
@@ -410,7 +410,7 @@ export const Field = memo(function Field({
       // From 24rem the field's parts join the form's two-track grid directly (contents), so
       // every label shares one column and every input the other; the chips sit under their
       // input.
-      <div className="group block @[24rem]:contents">
+      <div className="group block beside:contents">
         {labelEl}
         {control}
       </div>
@@ -434,9 +434,9 @@ export const Field = memo(function Field({
   // The first field of a row: its label takes the form's label column and the fields that
   // follow it (trailing) line up beside its box, wrapping when the column runs out.
   return (
-    <div className="group flex items-start gap-2 @[24rem]:contents">
+    <div className="group flex items-start gap-2 beside:contents">
       {labelEl}
-      <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 @[24rem]:col-start-2">
+      <div className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-2 beside:col-start-2">
         {column}
         {trailing}
       </div>

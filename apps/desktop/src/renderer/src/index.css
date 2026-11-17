@@ -1,6 +1,16 @@
 @import "tailwindcss";
 
 @custom-variant compact (&:where([data-density="compact"] *));
+@custom-variant beside {
+  @container (min-width: 24rem) {
+    @slot;
+  }
+  @container (min-width: 19rem) {
+    &:where([data-density="compact"] *) {
+      @slot;
+    }
+  }
+}
 
 /* Tokyo Night. Dark values are the defaults; the light palette overrides the
    same custom properties under [data-theme='light'] below, so every utility

@@ -156,7 +156,7 @@ export function MetadataForm({
   const ratingLabelId = useId()
   return (
     <div className="mt-4 @container">
-      <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-7">
+      <div className="flex flex-col gap-5 @[26rem]:flex-row @[26rem]:gap-7 compact:@[26rem]:gap-5">
         {/* The artwork column: the cover and, under it, the rating, both facts about the
             record rather than fields to type, so the fields column opens on the first one. */}
         <div className="flex shrink-0 flex-col items-start gap-3 @[26rem]:items-center">
@@ -192,7 +192,7 @@ export function MetadataForm({
             go back on top and each input gets the column's full width. The column stops at
             48rem: past that an input only moves its end further from its label. */}
         <div className="@container min-w-0 flex-1">
-          <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 @[24rem]:grid-cols-[auto_minmax(0,1fr)] @[24rem]:gap-x-3 @[24rem]:gap-y-2">
+          <div className="grid max-w-[48rem] grid-cols-1 gap-y-4 beside:grid-cols-[auto_minmax(0,1fr)] beside:gap-x-3 beside:gap-y-2 compact:gap-y-2 compact:beside:gap-y-1">
             {toRows(fields).map(([f, ...rest]) =>
               f.width ? (
                 <Fragment key={f.key}>
@@ -203,11 +203,11 @@ export function MetadataForm({
                   })}
                 </Fragment>
               ) : f.perTrack ? (
-                <div key={f.key} className="@[24rem]:col-span-2">
+                <div key={f.key} className="beside:col-span-2">
                   {renderField(f)}
                 </div>
               ) : f.key === 'compilation' ? (
-                <div key={f.key} className="flex @[24rem]:col-start-2">
+                <div key={f.key} className="flex beside:col-start-2">
                   {renderField(f)}
                 </div>
               ) : (
