@@ -327,3 +327,68 @@ describe('cues operations', () => {
     ])
   })
 })
+
+describe('a batch over many tracks', () => {
+  const TRACKS = 250
+  const idOf = (i: number) => String(5000 + i)
+
+  async function bigCollection(): Promise<string> {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-rbqcues-big-'))
+    const path = join(dir, 'master.db')
+    const [seed] = ORGANISE_FIXTURE.content
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: Array.from({ length: TRACKS }, (_, i) => ({
+        ...seed,
+        ID: idOf(i),
+        FolderPath: `/Volumes/Public/Music/Big ${i}.wav`,
+        FileNameL: `Big ${i}.wav`,
+      })),
+      cueRows: Array.from({ length: TRACKS }, (_, i) => ({
+        ID: `cue-${i}`,
+        ContentID: idOf(i),
+        InMsec: 1000 + i,
+        Kind: 1,
+        ColorTableIndex: 1,
+      })),
+    })
+    return path
+  }
+
+  const liveOfAll = (path: string): Map<string, ReturnType<typeof liveCues>> => {
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    try {
+      return new Map(
+        Array.from({ length: TRACKS }, (_, i) => [idOf(i), liveCues(db, idOf(i))] as const),
+      )
+    } finally {
+      db.close()
+    }
+  }
+
+  it('lets the rest of the app run between groups of tracks while it checks them, and still writes every one in a single transaction, since a save of thousands held Surco still for seconds', async () => {
+    const path = await bigCollection()
+    const before = liveOfAll(path)
+    const ops = Array.from(
+      { length: TRACKS },
+      (_, i): CuesOp => ({
+        id: `c${i}`,
+        kind: 'cues',
+        contentId: idOf(i),
+        path: `/Volumes/Public/Music/Big ${i}.wav`,
+        label: `Big ${i}`,
+        wanted: [],
+        fingerprint: cueFingerprint(before.get(idOf(i)) ?? []),
+      }),
+    )
+    const pause = vi.fn(async () => {})
+    const result = await applyRekordboxBatch(path, ops, { ...deps(), pause })
+    expect(result.ok && result.wrote).toBe(true)
+    expect(result.ok && result.outcomes.every((o) => o.applied)).toBe(true)
+    expect(result.ok && result.outcomes.map((o) => o.id)).toEqual(ops.map((o) => o.id))
+    expect([...before.values()].every((cues) => cues.length === 1)).toBe(true)
+    expect([...liveOfAll(path).values()].every((cues) => cues.length === 0)).toBe(true)
+    expect(pause).toHaveBeenCalledTimes(4)
+  })
+})
