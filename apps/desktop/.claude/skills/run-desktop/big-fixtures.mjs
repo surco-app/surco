@@ -1,8 +1,8 @@
 import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
-import { tmpdir } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { homedir, tmpdir } from 'node:os'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -183,4 +183,153 @@ export function bigTraktor({ entries = 25000, sessions = 60, history = 180 } = {
   )
   writeFileSync(join(dir, 'ready'), String(entries))
   return nml
+}
+
+function soakRows() {
+  requireSoakFixture()
+  const db = openDb(join(rekordboxSoakFixture, 'master.db'), true)
+  const rows = db
+    .prepare(
+      `SELECT c.FolderPath, c.Title, a.Name Artist FROM djmdSongPlaylist s
+       JOIN djmdContent c ON c.ID = s.ContentID LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
+       WHERE s.PlaylistID = ? ORDER BY s.TrackNo`,
+    )
+    .all(SOAK_BIG)
+    .map((r) => ({ ...r, file: realpathSync(r.FolderPath) }))
+  db.close()
+  return rows
+}
+
+export function bigEngine() {
+  const dir = join(tmpdir(), 'surco-gate-engine-13280', 'Engine Library')
+  if (existsSync(join(dir, 'ready'))) return dir
+  const real = join(homedir(), 'Music', 'Engine Library')
+  if (!existsSync(join(real, 'Database2', 'm.db')))
+    throw new Error('the Engine DJ fixture is cloned from this Mac\'s Engine Library, and there is none')
+  mkdirSync(dirname(dir), { recursive: true })
+  execFileSync('cp', ['-c', '-R', real, dirname(dir)])
+  const rows = soakRows()
+  const db = new Database(join(dir, 'Database2', 'm.db'))
+  const kept = ['id', 'path', 'filename', 'title', 'originTrackId']
+  const cols = db
+    .prepare("SELECT name FROM pragma_table_info('Track')")
+    .all()
+    .map((r) => r.name)
+    .filter((n) => !kept.includes(n))
+    .join(', ')
+  const seeds = db.prepare('SELECT id FROM Track WHERE isAnalyzed = 1').all().map((r) => r.id)
+  const cued = db.prepare('SELECT trackId FROM PerformanceData ORDER BY length(quickCues) DESC LIMIT 1').get().trackId
+  const uuid = db.prepare('SELECT uuid FROM Information').get().uuid
+  const insert = db.prepare(
+    `INSERT INTO Track (path, filename, title, ${cols}) SELECT ?, ?, ?, ${cols} FROM Track WHERE id = ?`,
+  )
+  const perf = db.prepare(
+    `UPDATE PerformanceData SET trackData = s.trackData, overviewWaveFormData = s.overviewWaveFormData,
+       beatData = s.beatData, quickCues = s.quickCues, loops = s.loops
+     FROM (SELECT * FROM PerformanceData WHERE trackId = ?) s WHERE PerformanceData.trackId = ?`,
+  )
+  const library = realpathSync(dir)
+  const ids = []
+  db.transaction(() => {
+    rows.forEach((r, i) => {
+      const name = r.file.slice(r.file.lastIndexOf('/') + 1)
+      const added = insert.run(relative(library, r.file), name, r.Title ?? `Track ${i}`, seeds[i % seeds.length])
+      const id = Number(added.lastInsertRowid)
+      perf.run(cued, id)
+      ids.push(id)
+    })
+  })()
+  const list = Number(
+    db
+      .prepare(
+        "INSERT INTO Playlist (title, parentListId, isPersisted, nextListId, lastEditTime, isExplicitlyExported) VALUES ('SOAK BIG', 0, 1, 0, datetime('now'), 1)",
+      )
+      .run().lastInsertRowid,
+  )
+  const base = db.prepare('SELECT coalesce(max(id), 0) m FROM PlaylistEntity').get().m
+  const entity = db.prepare(
+    'INSERT INTO PlaylistEntity (id, listId, trackId, databaseUuid, nextEntityId, membershipReference) VALUES (?, ?, ?, ?, ?, 0)',
+  )
+  db.transaction(() => {
+    ids.forEach((id, k) => entity.run(base + k + 1, list, id, uuid, k === ids.length - 1 ? 0 : base + k + 2))
+  })()
+  db.close()
+  writeFileSync(join(dir, 'ready'), String(ids.length))
+  return dir
+}
+
+export function bigVirtualdj() {
+  const dir = join(tmpdir(), 'surco-gate-virtualdj-13280', 'VirtualDJ')
+  if (existsSync(join(dir, 'ready'))) return dir
+  mkdirSync(join(dir, 'MyLists'), { recursive: true })
+  const rows = soakRows()
+  const seen = Math.floor(Date.now() / 1000) - 90 * 86400
+  const song = (r, i) =>
+    [
+      ` <Song FilePath="${esc(r.file)}" FileSize="1000000" Flag="268435456">`,
+      `  <Tags Author="${esc(r.Artist)}" Title="${esc(r.Title)}" Genre="House" Bpm="0.468750" Key="Am" Flag="1" />`,
+      `  <Infos SongLength="300.000000" LastModified="${seen}" FirstSeen="${seen}" Bitrate="320" />`,
+      '  <Scan Version="801" Bpm="0.468750" Phase="0.100000" Volume="1.000000" Key="Am" Flag="32768" />',
+      `  <Poi Name="A" Pos="${10 + (i % 50)}.000000" Num="1" Type="cue" />`,
+      `  <Poi Name="B" Pos="${70 + (i % 50)}.000000" Num="2" Type="cue" />`,
+      ' </Song>',
+    ].join('\r\n')
+  writeFileSync(
+    join(dir, 'database.xml'),
+    `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${rows.map(song).join('\r\n')}\r\n</VirtualDJ_Database>\r\n`,
+  )
+  writeFileSync(
+    join(dir, 'MyLists', 'SOAK BIG.vdjfolder'),
+    `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualFolder>\r\n${rows.map((r, i) => ` <song path="${esc(r.file)}" idx="${i}" />`).join('\r\n')}\r\n</VirtualFolder>\r\n`,
+  )
+  writeFileSync(join(dir, 'MyLists', 'order'), 'SOAK BIG\r\n')
+  writeFileSync(join(dir, 'ready'), String(rows.length))
+  return dir
+}
+
+const utf16be = (text) => {
+  const bytes = Buffer.alloc(text.length * 2)
+  for (let i = 0; i < text.length; i++) bytes.writeUInt16BE(text.charCodeAt(i), i * 2)
+  return bytes
+}
+
+const seratoFrame = (tag, body) => {
+  const head = Buffer.alloc(8)
+  head.write(tag, 0, 'latin1')
+  head.writeUInt32BE(body.length, 4)
+  return Buffer.concat([head, body])
+}
+
+export function bigSerato() {
+  const home = join(tmpdir(), 'surco-gate-serato-13280', 'home')
+  const dir = join(home, 'Music', '_Serato_')
+  if (existsSync(join(dir, 'ready'))) return home
+  mkdirSync(join(dir, 'Subcrates'), { recursive: true })
+  const rows = soakRows()
+  const added = String(Math.floor(Date.now() / 1000) - 90 * 86400)
+  const stored = (file) => file.replace(/^\//, '')
+  const track = (r) =>
+    seratoFrame(
+      'otrk',
+      Buffer.concat([
+        seratoFrame('ttyp', utf16be('mp3')),
+        seratoFrame('pfil', utf16be(stored(r.file))),
+        seratoFrame('tsng', utf16be(r.Title ?? '')),
+        seratoFrame('tart', utf16be(r.Artist ?? '')),
+        seratoFrame('tadd', utf16be(added)),
+      ]),
+    )
+  writeFileSync(
+    join(dir, 'database V2'),
+    Buffer.concat([seratoFrame('vrsn', utf16be('2.0/Serato Scratch LIVE Database')), ...rows.map(track)]),
+  )
+  writeFileSync(
+    join(dir, 'Subcrates', 'SOAK BIG.crate'),
+    Buffer.concat([
+      seratoFrame('vrsn', utf16be('1.0/Serato ScratchLive Crate')),
+      ...rows.map((r) => seratoFrame('otrk', seratoFrame('ptrk', utf16be(stored(r.file))))),
+    ]),
+  )
+  writeFileSync(join(dir, 'ready'), String(rows.length))
+  return home
 }
