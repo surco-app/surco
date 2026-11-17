@@ -12,6 +12,7 @@ import {
   rekordboxRawKey,
   trackFinder,
 } from './rekordboxDb'
+import { useLog } from './threadLog'
 
 vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() } }))
 
@@ -21,6 +22,8 @@ vi.mock('electron-log/main', () => ({ default: { info: vi.fn(), warn: vi.fn(), e
 // part the code depends on: the SQLCipher settings, the path columns, and the fact that
 // playlists reference a track by ID rather than by path.
 let dbPath: string
+
+beforeAll(() => useLog(log))
 
 const TRACKS = [
   {

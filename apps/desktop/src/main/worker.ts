@@ -1,5 +1,5 @@
 import os from 'node:os'
-import type { Transferable } from 'node:worker_threads'
+import type { Transferable, Worker } from 'node:worker_threads'
 import type { AmbiguousMatch, FindOptions, RekordboxTrack } from './rekordboxDb'
 import {
   emptyRekordboxRead,
@@ -8,8 +8,16 @@ import {
   type RekordboxReadName,
   trackOfCollection,
 } from './rekordboxReads'
+import { type ThreadLogMessage, threadLog } from './threadLog'
 import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
+
+function logging(worker: Worker): Worker {
+  worker.on('message', (message: Partial<ThreadLogMessage>) => {
+    if (message.log) threadLog[message.log[0]](message.log[1])
+  })
+  return worker
+}
 
 let clientPromise: Promise<WorkerClient | null> | null = null
 
@@ -33,7 +41,9 @@ function poolSize(): number {
 // which is exactly the pre-worker behavior the integration tests exercise.
 function getClient(): Promise<WorkerClient | null> {
   clientPromise ??= import('./analysisWorker?nodeWorker').then((mod) =>
-    typeof mod.default === 'function' ? createWorkerPool(() => mod.default({}), poolSize()) : null,
+    typeof mod.default === 'function'
+      ? createWorkerPool(() => logging(mod.default({})), poolSize())
+      : null,
   )
   return clientPromise
 }
@@ -42,7 +52,7 @@ let collectionClient: Promise<WorkerClient | null> | null = null
 
 function getCollectionClient(): Promise<WorkerClient | null> {
   collectionClient ??= import('./analysisWorker?nodeWorker').then((mod) =>
-    typeof mod.default === 'function' ? createWorkerClient(() => mod.default({})) : null,
+    typeof mod.default === 'function' ? createWorkerClient(() => logging(mod.default({}))) : null,
   )
   return collectionClient
 }

@@ -4,8 +4,8 @@ import { open } from 'node:fs/promises'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import Database from 'better-sqlite3-multiple-ciphers'
-import log from 'electron-log/main'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
+import { threadLog } from './threadLog'
 
 // Reads the user's real rekordbox collection (master.db). rekordbox 6 and 7 keep it as
 // SQLite encrypted with SQLCipher, so nothing here works without the three pragmas
@@ -239,7 +239,7 @@ function matchOf(
   // three facts that separate a wrong filename from a wrong prefix from a real absence.
   if (matches.length === 0) {
     if (!options.quiet)
-      log.info(
+      threadLog.info(
         `rekordbox lookup miss: name=${JSON.stringify(fileName)} target=${JSON.stringify(target)} rows=${rows.length}` +
           rows
             .map((r) => ` | row ${r.ID} -> ${JSON.stringify(safeResolve(r.FolderPath))}`)
