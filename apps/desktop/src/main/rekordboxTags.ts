@@ -3,7 +3,7 @@ import log from 'electron-log/main'
 import type { LibraryTagUpdate, MusicReviewField, TagChange } from '../shared/types'
 import { backupOf } from './libraryBackups'
 import type { LibraryRepointResult } from './libraryRepointFlush'
-import { type FindOptions, findTrackByPath, isAmbiguous, openRekordboxDb } from './rekordboxDb'
+import { type FindOptions, isAmbiguous, openRekordboxDb, trackFinder } from './rekordboxDb'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { checkpointCollection, writeBackup } from './rekordboxSessionBackup'
 
@@ -164,8 +164,9 @@ export async function updateRekordboxTags(
   if (!db) return settle({ written: false, reason: 'unreadable' })
   const writes: { index: number; id: string; current: Current; fields: Fields }[] = []
   try {
+    const trackOf = trackFinder(db)
     for (const [index, update] of updates.entries()) {
-      const match = findTrackByPath(db, update.path, options)
+      const match = trackOf(update.path, options)
       if (match === null) results[index] = { written: false, reason: 'no-match' }
       else if (isAmbiguous(match)) results[index] = { written: false, reason: 'ambiguous' }
       else {

@@ -9,7 +9,13 @@ import { loadSqlJs } from './engine'
 import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
-import { findTrackByPath, isAmbiguous, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
+import {
+  findTrackByPath,
+  isAmbiguous,
+  openRekordboxDb,
+  rekordboxRawKey,
+  trackFinder,
+} from './rekordboxDb'
 import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
@@ -177,16 +183,20 @@ async function readEngineRows(libraryDir: string) {
 
 const LIVE = '(rb_local_deleted IS NULL OR rb_local_deleted = 0)'
 
-function rekordboxInfo(
+async function rekordboxInfo(
   collection: string,
   paths: string[],
   options: PathMatchOptions,
-): LibraryCopyPresence[] {
-  const db = openRekordboxDb(collection, { readonly: true })
+): Promise<LibraryCopyPresence[]> {
+  const db = openRekordboxDb(collection, {
+    readonly: true,
+    key: await rekordboxRawKey(collection),
+  })
   if (!db) throw new Error(`rekordbox collection unreadable: ${collection}`)
   try {
+    const trackOf = trackFinder(db)
     return paths.map((path) => {
-      const match = findTrackByPath(db, path, options)
+      const match = trackOf(path, options)
       if (match === null || isAmbiguous(match)) return null
       const count = (sql: string) => (db.prepare(sql).get(match.id) as { n: number }).n
       return {
@@ -331,13 +341,14 @@ export async function libraryGenresOf(
       })
       if (db)
         try {
+          const trackOf = trackFinder(db)
           const genre = db.prepare(
             'SELECT g.Name AS name FROM djmdContent c JOIN djmdGenre g ON g.ID = c.GenreID WHERE c.ID = ?',
           )
           add(
             'rekordbox',
             paths.map((p) => {
-              const match = findTrackByPath(db, p, { ...options, quiet: true })
+              const match = trackOf(p, { ...options, quiet: true })
               if (match === null || isAmbiguous(match)) return null
               return (genre.get(match.id) as { name: string } | undefined)?.name ?? null
             }),

@@ -14,11 +14,12 @@ import { shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
   type FindOptions,
-  findTrackByPath,
   isAmbiguous,
   openRekordboxDb,
   rekordboxStoredPath,
   sameFileOnDisk,
+  type TrackFinder,
+  trackFinder,
 } from './rekordboxDb'
 import { applyRekordboxMeta, type RekordboxMeta } from './rekordboxMetadata'
 import { isRekordboxRunning } from './rekordboxProcess'
@@ -120,7 +121,7 @@ const twinPaths = (db: NonNullable<ReturnType<typeof openRekordboxDb>>, ids: str
   return ids.map((id) => (folder.get(id) as { FolderPath: string }).FolderPath)
 }
 
-const heldByAnother = (holder: ReturnType<typeof findTrackByPath>, ids: string[]): boolean =>
+const heldByAnother = (holder: ReturnType<TrackFinder>, ids: string[]): boolean =>
   holder !== null && (isAmbiguous(holder) || !ids.includes(holder.id))
 
 // A whole run at once: one check that rekordbox is closed, one read to find every track,
@@ -176,9 +177,10 @@ export async function repointTracks(
   const writes: { index: number; id: string; size: number; fileType: number }[] = []
   let folded = false
   try {
+    const trackOf = trackFinder(db)
     for (const p of pending) {
       const repoint = repoints[p.index]
-      const match = findTrackByPath(db, repoint.from, repoint)
+      const match = trackOf(repoint.from, repoint)
       // A collection that never had this track is the normal case for a partly-imported
       // library, and nothing — not even a backup — should be written for it.
       if (match === null) {
@@ -193,7 +195,7 @@ export async function repointTracks(
         continue
       }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
-      if (heldByAnother(findTrackByPath(db, repoint.to, repoint), ids))
+      if (heldByAnother(trackOf(repoint.to, repoint), ids))
         results[p.index] = { written: false, reason: 'occupied' }
       else {
         const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))

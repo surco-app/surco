@@ -1,7 +1,13 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3-multiple-ciphers'
 import type { PlaylistTrackRef, RekordboxPlaylistEdit } from '../shared/types'
-import { type FindOptions, findTrackByPath, isAmbiguous, STREAMING_FILE_TYPE } from './rekordboxDb'
+import {
+  type FindOptions,
+  isAmbiguous,
+  STREAMING_FILE_TYPE,
+  type TrackFinder,
+  trackFinder,
+} from './rekordboxDb'
 import { IS_SEPARATOR, SMART } from './rekordboxPlaylists'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
@@ -124,6 +130,7 @@ export function resolveTracks(
     `SELECT 1 FROM djmdContent c WHERE c.ID = ? AND coalesce(c.rb_local_deleted, 0) = 0
         AND c.FileType <> ? AND NOT ${IS_SEPARATOR}`,
   )
+  let trackOf: TrackFinder | undefined
   const found: string[] = []
   let notInCollection = 0
   let ambiguous = 0
@@ -135,7 +142,8 @@ export function resolveTracks(
     let id: string | null = null
     let twins = false
     for (const path of track.paths) {
-      const match = findTrackByPath(db, path, options)
+      trackOf ??= trackFinder(db)
+      const match = trackOf(path, options)
       if (match === null) continue
       if (isAmbiguous(match)) {
         twins = true
