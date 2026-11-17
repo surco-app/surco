@@ -177,7 +177,7 @@ import {
   tracksToAutoMatch,
 } from './lib/autoMatch'
 import { baseName } from './lib/baseName'
-import { canProcessTrack, convertGate } from './lib/batch'
+import { canProcessTrack, convertGate, leavesListAfterBatch } from './lib/batch'
 import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
@@ -1765,7 +1765,9 @@ export default function App(): React.JSX.Element {
       void refreshTrash()
     },
     onBatchConverted: (ids) => {
-      if (!settings?.clearListAfterConvert) return
+      // The setting is about the working list. In a library tab the rows are the
+      // playlist the DJ opened, and taking them off the screen would read as removing them.
+      if (!settings?.clearListAfterConvert || browser.source !== null) return
       for (const id of ids) clearWhenChecked.current.add(id)
       clearChecked()
     },
@@ -1921,9 +1923,7 @@ export default function App(): React.JSX.Element {
     const converted = tracksRef.current.filter((t) => waiting.has(t.id))
     if (converted.some((t) => t.verification?.status === 'checking')) return
     waiting.clear()
-    dropFromList(
-      converted.filter((t) => t.verification === undefined || t.verification.status === 'ok'),
-    )
+    dropFromList(converted.filter(leavesListAfterBatch))
   })
   useEffect(() => {
     if (tracks.length > 0) clearChecked()

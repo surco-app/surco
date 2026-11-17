@@ -9,6 +9,7 @@ import {
   canProcessTrack,
   convertGate,
   eligibleForBatch,
+  leavesListAfterBatch,
   leftOutForMissing,
   summarizeBatch,
 } from './batch'
@@ -444,5 +445,37 @@ describe('a converted track whose own dial changed', () => {
   it('enters a batch, and the one left as it was stays out', () => {
     expect(eligibleForBatch([redialled, untouched], [])).toEqual(['a'])
     expect(convertGate([redialled, untouched], []).ready.map((t) => t.id)).toEqual(['a'])
+  })
+})
+
+// "Clear the list when a batch finishes" takes the finished tracks away. Anything the DJ
+// still has to look at or act on must stay: once the row is gone there is nowhere left
+// that says it.
+describe('leavesListAfterBatch', () => {
+  const done = { ...track('a', 'done', { title: 'x' }), outputPath: '/out/a.aiff' }
+
+  it('lets go of a converted track with nothing left to say', () => {
+    expect(leavesListAfterBatch(done)).toBe(true)
+    expect(leavesListAfterBatch({ ...done, verification: { status: 'ok', checks: [] } })).toBe(true)
+  })
+
+  it('keeps a track whose check did not add up, is still running or waits for a DJ app', () => {
+    for (const status of ['mismatch', 'checking', 'pending'] as const)
+      expect(leavesListAfterBatch({ ...done, verification: { status, checks: [] } })).toBe(false)
+  })
+
+  // The row is where "Add to Apple Music" can be tried again.
+  it('keeps a track Apple Music refused', () => {
+    expect(leavesListAfterBatch({ ...done, musicStatus: 'error' })).toBe(false)
+  })
+
+  // A tag fixed while the batch was still running has not been written anywhere yet.
+  it('keeps a track edited since it converted', () => {
+    expect(leavesListAfterBatch({ ...done, processedSignature: 'before-the-edit' })).toBe(false)
+  })
+
+  it('keeps a track that did not finish', () => {
+    expect(leavesListAfterBatch(track('b', 'error'))).toBe(false)
+    expect(leavesListAfterBatch(track('c', 'idle'))).toBe(false)
   })
 })

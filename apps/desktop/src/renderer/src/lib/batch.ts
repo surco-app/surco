@@ -257,3 +257,13 @@ export function batchWritesTagsOnly(
   }
   return written > 0
 }
+
+export function leavesListAfterBatch(track: TrackItem): boolean {
+  return (
+    track.status === 'done' &&
+    (track.verification === undefined || track.verification.status === 'ok') &&
+    track.musicStatus !== 'error' &&
+    !isStale(track) &&
+    !isDialStale(track)
+  )
+}
