@@ -624,10 +624,9 @@ describe('a write that cannot keep a way back', () => {
     const keeper = vi.fn(async () => ({ id: 'b1' }) as never)
     configureOriginalKeeper(keeper)
     const tracking = { track: vi.fn(), untrack: vi.fn() }
+    const fingerprint = await fingerprintOf(file)
     vi.mocked(runInWorker).mockRejectedValueOnce(new Error('worker died'))
-    expect(await writeSeratoCues(file, WANTED, await fingerprintOf(file), { tracking })).toBe(
-      'failed',
-    )
+    expect(await writeSeratoCues(file, WANTED, fingerprint, { tracking })).toBe('failed')
     const [tmp] = tracking.track.mock.calls[0]
     expect(tracking.untrack).toHaveBeenCalledWith(tmp)
     expect(existsSync(tmp)).toBe(false)
