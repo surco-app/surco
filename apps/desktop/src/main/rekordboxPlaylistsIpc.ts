@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, realpathSync } from 'node:fs'
+import { existsSync, realpathSync, statSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
@@ -12,7 +12,7 @@ import { rekordboxShareDir } from './rekordboxArtwork'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
 import { readMatchingPairs, readPlayedSequences } from './rekordboxMatching'
-import { readMembership } from './rekordboxMembership'
+import { membershipFrom, membershipSnapshot } from './rekordboxMembership'
 import { separatorContent } from './rekordboxPlaylistEdit'
 import {
   readRecentlyAddedCount,
@@ -47,6 +47,33 @@ export function withCollection<T>(
     throw err
   } finally {
     db.close()
+  }
+}
+
+const stampOf = (path: string): string =>
+  [path, `${path}-wal`]
+    .map((file) => {
+      try {
+        const { mtimeMs, size } = statSync(file)
+        return `${mtimeMs}:${size}`
+      } catch {
+        return ''
+      }
+    })
+    .join('|')
+
+export function collectionMemo<T>(
+  build: (db: NonNullable<ReturnType<typeof openRekordboxDb>>) => T,
+): (path: string, key?: string) => T | null {
+  let held: { path: string; stamp: string; value: T } | null = null
+  return (path, key) => {
+    if (!path) return null
+    const stamp = stampOf(path)
+    if (held?.path === path && held.stamp === stamp) return held.value
+    held = null
+    const value = withCollection<T | null>(path, build, null, key)
+    if (value !== null) held = { path, stamp, value }
+    return value
   }
 }
 
@@ -85,6 +112,7 @@ export function rekordboxRead(
   membershipCollection: () => string,
   host: RekordboxReadHost,
 ): DjReadMain {
+  const membership = collectionMemo(membershipSnapshot)
   return {
     available: () => collectionAvailable(collection()),
     tree: async () => {
@@ -134,12 +162,10 @@ export function rekordboxRead(
     },
     membership: async (paths: string[]) => {
       const path = membershipCollection()
-      return withCollection(
-        path,
-        (db) => readMembership(db, paths, { realPath: (p: string) => realpathSync(p) }),
-        {},
-        await keyOf(path),
-      )
+      const snapshot = membership(path, await keyOf(path))
+      return snapshot
+        ? membershipFrom(snapshot, paths, { realPath: (p: string) => realpathSync(p) })
+        : {}
     },
   }
 }

@@ -25,6 +25,7 @@ import { readMatchingPairs } from './rekordboxMatching'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   collectionAvailable,
+  collectionMemo,
   type PlaylistEditHost,
   rekordboxEdit,
   rekordboxRead,
@@ -527,6 +528,36 @@ describe('rekordboxEdit', () => {
     expect(await read.membership(['/Volumes/Public/Music/Night Train.aiff'])).toEqual({
       '/Volumes/Public/Music/Night Train.aiff': ['2000'],
     })
+  })
+
+  it('answers the next selection from the same read while the collection is untouched, since every selection change asks', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const build = vi.fn(
+      (db: NonNullable<ReturnType<typeof openRekordboxDb>>) =>
+        (db.prepare('SELECT count(*) AS n FROM djmdSongPlaylist').get() as { n: number }).n,
+    )
+    const links = collectionMemo(build)
+    const first = links(path)
+    expect(links(path)).toBe(first)
+    expect(build).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows a playlist change written after the first answer, so a kept read never hides what the DJ just did', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      {},
+    )
+    const file = '/Volumes/Public/Music/Night Train.aiff'
+    expect(await read.membership([file])).toEqual({ [file]: ['2000'] })
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    db.prepare('UPDATE djmdSongPlaylist SET rb_local_deleted = 1 WHERE PlaylistID = ?').run('2000')
+    db.close()
+    expect(await read.membership([file])).toEqual({ [file]: [] })
   })
 
   it('answers no membership without a collection', async () => {
