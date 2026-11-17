@@ -370,6 +370,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     matchingPairs: async () => [],
     addMatchingPair: async () => {},
     removeMatchingPair: async () => {},
+    removeMatchingPairs: async () => {},
     holdsInLibrary: async () => true,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,

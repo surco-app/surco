@@ -4,6 +4,7 @@ export interface MatchingStore {
   list(): [string, string][]
   add(a: string, b: string): void
   remove(a: string, b: string): void
+  removeAll(pairs: [string, string][]): void
   movePath(from: string, to: string): void
 }
 
@@ -45,13 +46,15 @@ export function createMatchingStore(file: string): MatchingStore {
     renameSync(tmp, file)
   }
   const nfc = (p: string): string => p.normalize('NFC')
+  const removeAll = (pairs: [string, string][]): void => {
+    const gone = new Set(pairs.map(([a, b]) => key(nfc(a), nfc(b))))
+    save(load().filter(([x, y]) => !gone.has(key(x, y))))
+  }
   return {
     list: load,
     add: (a, b) => save([...load(), [nfc(a), nfc(b)]]),
-    remove: (a, b) => {
-      const gone = key(nfc(a), nfc(b))
-      save(load().filter(([x, y]) => key(x, y) !== gone))
-    },
+    remove: (a, b) => removeAll([[a, b]]),
+    removeAll,
     movePath: (from, to) => {
       const [f, t] = [nfc(from), nfc(to)]
       save(load().map(([x, y]) => [x === f ? t : x, y === f ? t : y]))
