@@ -37,6 +37,10 @@ function setup(path: string, result: (op: QueueOp) => QueueApply) {
       await ensureClosed()
       return result(queued[queued.length - 1])
     }),
+    applyNew: vi.fn<RekordboxQueue['applyNew']>(async (ops, ensureClosed): Promise<QueueApply> => {
+      queue.enqueue(ops)
+      return queue.apply(ensureClosed)
+    }),
     drop: vi.fn<RekordboxQueue['drop']>(),
     outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }

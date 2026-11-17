@@ -131,6 +131,49 @@ describe('rekordbox queue', () => {
     })
   })
 
+  it('never says a change waits for rekordbox to close while Surco is writing it, since the DJ closed it already', async () => {
+    let finish: (r: BatchResult) => void = () => {}
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(
+        () => new Promise<BatchResult>((r) => (finish = r)),
+      ),
+    })
+    const q = createRekordboxQueue(d)
+    const running = q.applyNew([rename], closed)
+    await new Promise((r) => setTimeout(r, 5))
+    expect(q.state().changes).toBe(0)
+    expect(savedQueue<QueueOp>(d.store).ops).toEqual([rename])
+    finish(applied([rename]))
+    await running
+    expect(d.onChange.mock.calls.every(([s]) => s.changes === 0)).toBe(true)
+  })
+
+  it('says the change waits once rekordbox turned out to be open, so the DJ knows it is not saved yet', async () => {
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(async () => ({ ok: false, reason: 'cancelled' })),
+    })
+    const q = createRekordboxQueue(d)
+    await q.applyNew([rename], async () => false)
+    expect(d.onChange.mock.lastCall?.[0].changes).toBe(1)
+    expect(q.state().changes).toBe(1)
+  })
+
+  it('keeps showing what already waited while a new change is written', async () => {
+    let finish: (r: BatchResult) => void = () => {}
+    const d = deps({
+      applyBatch: vi.fn<QueueDeps['applyBatch']>(
+        () => new Promise<BatchResult>((r) => (finish = r)),
+      ),
+    })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    const running = q.applyNew([rename], closed)
+    await new Promise((r) => setTimeout(r, 5))
+    expect(q.state()).toMatchObject({ tracks: 1, changes: 0 })
+    finish(applied([rename]))
+    await running
+  })
+
   it('says it is writing while an apply runs and lets a quit wait for it to finish', async () => {
     let finish: (r: BatchResult) => void = () => {}
     const d = deps({
