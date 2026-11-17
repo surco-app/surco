@@ -84,6 +84,7 @@ describe('createDjApi', () => {
     ['editPlaylist', 'dj:editPlaylist', [{ kind: 'delete', playlistId: 'p' }, 'Friday']],
     ['hasSeparator', 'dj:hasSeparator', []],
     ['match', 'dj:match', ['add', ['1', '2'], 'x']],
+    ['matchAll', 'dj:matchAll', ['remove', [{ pair: ['1', '2'], label: 'x' }]]],
     ['cueQueue', 'dj:cueQueue', []],
     ['applyCueQueue', 'dj:applyCueQueue', []],
     ['discardCueQueue', 'dj:discardCueQueue', []],

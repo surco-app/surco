@@ -26,6 +26,11 @@ export interface DjReadMain {
   playedTogether?(playlistIds: string[]): Awaitable<string[][]>
 }
 
+export interface MatchingPairEdit {
+  pair: [string, string]
+  label: string
+}
+
 export interface DjEditMain {
   save(edit: RekordboxPlaylistEdit, label: string | undefined): Promise<RekordboxEditResult>
   hasSeparator?(): Awaitable<boolean>
@@ -34,6 +39,7 @@ export interface DjEditMain {
     pair: [string, string],
     label: string,
   ): Promise<RekordboxEditResult>
+  matchAll?(action: 'add' | 'remove', pairs: MatchingPairEdit[]): Promise<RekordboxEditResult[]>
 }
 
 export interface DjCueQueueMain {
@@ -93,6 +99,11 @@ export interface DjApi {
     pair: [string, string],
     label: string,
   ): Promise<RekordboxEditResult>
+  matchAll(
+    p: DjProgram,
+    action: 'add' | 'remove',
+    pairs: MatchingPairEdit[],
+  ): Promise<RekordboxEditResult[]>
   cueQueue(p: DjProgram): Promise<RekordboxQueueState>
   applyCueQueue(p: DjProgram): Promise<RekordboxQueueApplied | null>
   discardCueQueue(p: DjProgram): Promise<void>

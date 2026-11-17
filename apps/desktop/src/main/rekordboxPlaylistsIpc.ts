@@ -82,23 +82,28 @@ export function rekordboxRead(
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
-  const run = async (path: string, op: QueueOp): Promise<RekordboxEditResult> => {
+  const run = async (path: string, ops: QueueOp[]): Promise<RekordboxEditResult[]> => {
     host.beginLoose?.(path)
-    const result = await host.queue.applyNew([op], async () => !(await host.isRunning()))
+    const result = await host.queue.applyNew(ops, async () => !(await host.isRunning()))
     if (result.status === 'applied') {
-      const others = withoutOp(result, op.id)
+      const others = ops.reduce((rest, op) => withoutOp(rest, op.id), result)
       if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
         host.onApplied?.(others)
     }
     if (stillWaiting(result)) {
       host.onWaiting?.()
-      return { applied: false, queued: true, opId: op.id }
-    } else if (result.status === 'refused') host.queue.drop(op.id)
-    if (result.status === 'refused') return { applied: false, reason: result.reason }
-    const written = host.queue.outcomeOf(op.id)
-    const outcome =
-      result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-    return editResultOfOutcome(outcome ?? written)
+      return ops.map((op) => ({ applied: false, queued: true, opId: op.id }))
+    }
+    if (result.status === 'refused') {
+      for (const op of ops) host.queue.drop(op.id)
+      return ops.map(() => ({ applied: false, reason: result.reason }))
+    }
+    return ops.map((op) => {
+      const written = host.queue.outcomeOf(op.id)
+      const outcome =
+        result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
+      return editResultOfOutcome(outcome ?? written)
+    })
   }
   return {
     hasSeparator: async () => {
@@ -119,13 +124,28 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
           stamps: editStamps(path, edit),
           ...(label ? { label } : {}),
         }
-        return run(path, op)
+        return (await run(path, [op]))[0]
       }),
     match: (action, pair, label) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = collection()
         if (!path) return { applied: false, reason: 'unreadable' }
-        return run(path, { id: randomUUID(), kind: 'match', action, pair, label })
+        return (await run(path, [{ id: randomUUID(), kind: 'match', action, pair, label }]))[0]
+      }),
+    matchAll: (action, pairs) =>
+      serialLibraryFlush(async (): Promise<RekordboxEditResult[]> => {
+        const path = collection()
+        if (!path) return pairs.map(() => ({ applied: false, reason: 'unreadable' }))
+        return run(
+          path,
+          pairs.map(({ pair, label }) => ({
+            id: randomUUID(),
+            kind: 'match',
+            action,
+            pair,
+            label,
+          })),
+        )
       }),
   }
 }

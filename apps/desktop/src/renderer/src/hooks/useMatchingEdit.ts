@@ -15,10 +15,22 @@ export interface MatchingEdit {
 export function useMatchingEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
 ): (action: MatchingAction, edits: MatchingEdit[]) => Promise<RekordboxEditResult> {
-  const runSteps = useMatchingSteps(notify)
+  const run = useMatchingRun(notify)
   return useCallback(
-    (action, edits) => runSteps(edits.map((edit) => ({ action, ...edit }))),
-    [runSteps],
+    (action, edits) => {
+      const steps = edits.map((edit) => ({ action, ...edit }))
+      const inRekordbox = steps.filter((s) => s.pair)
+      let written: Promise<RekordboxEditResult[]> | null = null
+      return run(steps, async (step) => {
+        written ??= window.api.dj.matchAll(
+          'rekordbox',
+          action,
+          inRekordbox.map(({ pair, label }) => ({ pair: pair as [string, string], label })),
+        )
+        return (await written)[inRekordbox.indexOf(step)]
+      })
+    },
+    [run],
   )
 }
 
@@ -32,17 +44,34 @@ export interface MatchingStep {
 export function useMatchingSteps(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
 ): (steps: MatchingStep[]) => Promise<RekordboxEditResult> {
+  const run = useMatchingRun(notify)
+  return useCallback(
+    (steps) =>
+      run(steps, ({ action, pair, label }) =>
+        window.api.dj.match('rekordbox', action, pair as [string, string], label),
+      ),
+    [run],
+  )
+}
+
+function useMatchingRun(
+  notify: (text: string, tone: 'neutral' | 'danger') => void,
+): (
+  steps: MatchingStep[],
+  write: (step: MatchingStep) => Promise<RekordboxEditResult>,
+) => Promise<RekordboxEditResult> {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
   return useCallback(
-    async (steps) => {
+    async (steps, write) => {
       const inRekordbox = steps.some((s) => s.pair)
       let result: RekordboxEditResult = { applied: true }
       let telling: RekordboxEditResult | null = null
       try {
         if (inRekordbox) await window.api.dj.askToApply(['rekordbox'])
-        for (const { action, pair, label, paths } of steps) {
-          if (pair) result = await window.api.dj.match('rekordbox', action, pair, label)
+        for (const step of steps) {
+          const { action, paths } = step
+          if (step.pair) result = await write(step)
           if (!telling && notable(result)) telling = result
           if (refused(result)) break
           if (paths) {
@@ -104,9 +133,9 @@ export function useMatchingEdit(
   label: string,
   paths: [string, string] | null,
 ) => Promise<RekordboxEditResult> {
-  const editAll = useMatchingEdits(notify)
+  const runSteps = useMatchingSteps(notify)
   return useCallback(
-    (action, pair, label, paths) => editAll(action, [{ pair, label, paths }]),
-    [editAll],
+    (action, pair, label, paths) => runSteps([{ action, pair, label, paths }]),
+    [runSteps],
   )
 }

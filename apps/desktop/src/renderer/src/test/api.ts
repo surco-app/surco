@@ -1,7 +1,7 @@
 import { vi } from 'vitest'
 import type { Api, CuesApi } from '../../../preload/api'
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
-import type { DjApi, DjExportPayload, ExportProgram } from '../../../shared/djApi'
+import type { DjApi, DjExportPayload, ExportProgram, MatchingPairEdit } from '../../../shared/djApi'
 import type { CueProgram, DjProgram } from '../../../shared/djProgram'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -168,6 +168,7 @@ export interface ProgramReads {
     pair: [string, string],
     label: string,
   ): Promise<RekordboxEditResult>
+  matchAll(action: 'add' | 'remove', pairs: MatchingPairEdit[]): Promise<RekordboxEditResult[]>
   cueQueue(): Promise<RekordboxQueueState>
   applyCueQueue(): Promise<RekordboxQueueApplied | null>
   discardCueQueue(): Promise<void>
@@ -193,6 +194,7 @@ const EMPTY_READS: ProgramReads = {
   editPlaylist: async () => ({ applied: false, reason: 'unreadable' }),
   hasSeparator: async () => false,
   match: async () => ({ applied: false, reason: 'unreadable' }),
+  matchAll: async (_action, pairs) => pairs.map(() => ({ applied: false, reason: 'unreadable' })),
   cueQueue: async () => ({ tracks: 0, changes: 0, items: [] }),
   applyCueQueue: async () => null,
   discardCueQueue: async () => {},
@@ -231,6 +233,7 @@ export function djReads(...layers: (DjReads | DjApi | undefined)[]): DjApi {
     ),
     hasSeparator: vi.fn((p) => of(p).hasSeparator()),
     match: vi.fn((p, ...args: Parameters<ProgramReads['match']>) => of(p).match(...args)),
+    matchAll: vi.fn((p, ...args: Parameters<ProgramReads['matchAll']>) => of(p).matchAll(...args)),
     cueQueue: vi.fn((p) => of(p).cueQueue()),
     applyCueQueue: vi.fn((p) => of(p).applyCueQueue()),
     discardCueQueue: vi.fn((p) => of(p).discardCueQueue()),
