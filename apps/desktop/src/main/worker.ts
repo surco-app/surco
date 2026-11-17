@@ -1,6 +1,12 @@
 import os from 'node:os'
 import type { Transferable } from 'node:worker_threads'
-import { createWorkerPool, type WorkerClient } from './workerClient'
+import {
+  emptyRekordboxRead,
+  type RekordboxReadAnswer,
+  type RekordboxReadArg,
+  type RekordboxReadName,
+} from './rekordboxReads'
+import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
 let clientPromise: Promise<WorkerClient | null> | null = null
@@ -28,6 +34,30 @@ function getClient(): Promise<WorkerClient | null> {
     typeof mod.default === 'function' ? createWorkerPool(() => mod.default({}), poolSize()) : null,
   )
   return clientPromise
+}
+
+let collectionClient: Promise<WorkerClient | null> | null = null
+
+function getCollectionClient(): Promise<WorkerClient | null> {
+  collectionClient ??= import('./analysisWorker?nodeWorker').then((mod) =>
+    typeof mod.default === 'function' ? createWorkerClient(() => mod.default({})) : null,
+  )
+  return collectionClient
+}
+
+export async function readRekordbox<N extends RekordboxReadName>(
+  path: string,
+  key: string | undefined,
+  name: N,
+  arg: RekordboxReadArg<N>,
+): Promise<RekordboxReadAnswer<N>> {
+  if (!path) return emptyRekordboxRead(name)
+  const job: WorkerJob = { type: 'rekordboxRead', path, key, name, arg }
+  const client = await getCollectionClient()
+  const answer = client
+    ? await client.run(job)
+    : await (await import('./workerJobs')).runWorkerJob(job)
+  return answer as unknown as RekordboxReadAnswer<N>
 }
 
 // The production seam behind measureBpm/measureKey and the conversion tag passes:

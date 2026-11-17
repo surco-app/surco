@@ -85,11 +85,11 @@ describe('markedTracks', () => {
       { ID: 'd', InMsec: 16000, Kind: 0 },
       { ID: 'e', InMsec: 20000, Kind: 0 },
     ])
-    expect(markedTracks(path)).toBe(1)
+    expect(await markedTracks(path)).toBe(1)
   })
 
-  it('counts nothing without a collection', () => {
-    expect(markedTracks('')).toBe(0)
+  it('counts nothing without a collection', async () => {
+    expect(await markedTracks('')).toBe(0)
   })
 })
 
@@ -111,12 +111,12 @@ describe('readCollectionMarksAt', () => {
 
   it('counts again once the collection changes, so the count it keeps between asks never goes stale', async () => {
     const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
-    expect(markedTracks(path)).toBe(1)
+    expect(await markedTracks(path)).toBe(1)
     const db = openRekordboxDb(path)
     if (!db) throw new Error('did not open')
     db.prepare('UPDATE djmdCue SET Kind = 1').run()
     db.close()
-    expect(markedTracks(path)).toBe(0)
+    expect(await markedTracks(path)).toBe(0)
   })
 
   it('reads nothing without a collection', async () => {

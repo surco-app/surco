@@ -9,6 +9,7 @@ import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
+import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
 import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
 import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
@@ -32,6 +33,7 @@ import { computePeaks } from './waveform'
 // 100MB+ AIFF synchronously when it grows the ID3 header. Each job is plain
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
+  | { type: 'rekordboxRead'; path: string; key?: string; name: RekordboxReadName; arg: unknown }
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
   | { type: 'beatGrid'; pcm: Float32Array; sampleRate: number }
   | {
@@ -156,6 +158,13 @@ export type WorkerJobResult =
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'rekordboxRead':
+      return runRekordboxRead(
+        job.path,
+        job.key,
+        job.name,
+        job.arg as never,
+      ) as unknown as WorkerJobResult
     case 'channelScan':
       return runChannelScan(
         job.input,
