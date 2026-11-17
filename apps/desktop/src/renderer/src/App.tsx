@@ -1334,7 +1334,11 @@ export default function App(): React.JSX.Element {
     if (paths.length > 0) selectSource(null)
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
+    const before = new Set(tracksRef.current.map((t) => t.id))
     await addPaths(expanded)
+    const added = tracksRef.current.filter((t) => !before.has(t.id)).map((t) => t.id)
+    if (added.length > 0 && !isTypingTarget(document.activeElement))
+      setSelection({ ids: added, anchor: added[0] })
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
