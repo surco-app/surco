@@ -1257,6 +1257,7 @@ export function useTrackLibrary({
       setSelection((s) => deselect(s, id))
       if (removed) {
         ignoredPaths.current.add(removed.inputPath)
+        if (removed.outputPath) ignoredPaths.current.add(removed.outputPath)
         if (!stays) onRemoveRef.current([removed])
       }
     },
@@ -1286,7 +1287,10 @@ export function useTrackLibrary({
         ids: s.ids.filter((id) => !drop.has(id)),
         anchor: s.anchor && drop.has(s.anchor) ? null : s.anchor,
       }))
-      for (const track of leaving) ignoredPaths.current.add(track.inputPath)
+      for (const track of leaving) {
+        ignoredPaths.current.add(track.inputPath)
+        if (track.outputPath) ignoredPaths.current.add(track.outputPath)
+      }
       onRemoveRef.current(removed)
     },
     [setSelection],
