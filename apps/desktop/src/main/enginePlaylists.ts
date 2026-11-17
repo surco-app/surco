@@ -16,7 +16,7 @@ import type {
   TrackCues,
 } from '../shared/types'
 import { engineCuesOf, readEnginePerformance } from './engineCues'
-import { engineRowFinder } from './engineRepoint'
+import { engineRowFinder } from './engineRows'
 
 export type EngineDb = Database.Database
 
