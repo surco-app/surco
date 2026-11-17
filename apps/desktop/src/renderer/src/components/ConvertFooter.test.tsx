@@ -1235,8 +1235,8 @@ describe('ConvertFooter batch format and destination', () => {
   it('offers every format one press away and marks the one in use', () => {
     const onSelectFormat = vi.fn()
     render(plan({ onSelectFormat }))
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByTestId('process-format-source')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('process-format-source')).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onSelectFormat).toHaveBeenCalledWith('mp3')
   })

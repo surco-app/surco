@@ -1,12 +1,18 @@
 import type { TFunction } from 'i18next'
 import { type AudioProcessing, processesAudio } from '../../../shared/audioProcessing'
 import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
-import { formatMatchesInput, hasFormatEquivalent } from '../../../shared/format'
+import {
+  batchKeepMp3,
+  editsInPlace,
+  formatMatchesInput,
+  hasFormatEquivalent,
+  resolveJobFormat,
+} from '../../../shared/format'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
-import type { CustomField, FormatSetting } from '../../../shared/types'
+import type { CustomField, FormatSetting, OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
-import type { Destination } from './destination'
+import { type Destination, fromDestination } from './destination'
 import { isDialStale, isStale } from './dirty'
 import { missingRequiredOf } from './fields'
 import { selectionReplaceMode } from './replaceSelection'
@@ -159,32 +165,95 @@ export function summarizeBatch(results: BatchOutcome[]): BatchSummary {
   }
 }
 
-// Whether converting the track rewrites its own file, mirroring what main decides. A same
-// format file is tagged where it is, except a loose one bound for the output folder, which
-// lands there as a new copy. Main asks every library whether it holds the file; here only
-// what the track itself says counts, so an unknown file reads as a copy, never as an update.
-function writesItsOwnFile(track: TrackItem, destination: Destination): boolean {
-  if (destination === 'beside') return false
-  if (destination === 'overwrite') return true
-  const toMusic = destination === 'appleMusic' && !formatMatchesInput('flac', track.inputPath)
-  return toMusic || (track.programs?.length ?? 0) > 0 || track.fromAppleMusic === true
+// What the editor's batch footer holds: the format shown, whether it was picked by hand or
+// is only the Settings default, the destination when one was picked by hand, and the
+// Settings the run falls back to. The same inputs processAll gets, so the footer can work
+// out what the run will do instead of describing the open track.
+export interface BatchPick {
+  format: FormatSetting
+  formatByHand: boolean
+  destination?: Destination
+  settings: {
+    outputFormat: FormatSetting
+    keepMp3Sources: boolean
+    overwriteOriginal: boolean
+    convertBesideOriginal: boolean
+    addToAppleMusic: boolean
+  }
+}
+
+interface TrackPlan {
+  format: OutputFormat
+  sameFormat: boolean
+  overwrite: boolean
+  beside: boolean
+  toMusic: boolean
+}
+
+// One track of the batch resolved the way useTrackProcessing.processOne and main's
+// processTrack resolve it, or null when the run skips the track. Kept beside the gate so
+// the label and the count read one answer; the tests pin each rule against the run's.
+function planOf(track: TrackItem, pick: BatchPick, audio: AudioProcessing): TrackPlan | null {
+  const { settings } = pick
+  if (pick.format === 'source' && !hasFormatEquivalent(track.inputPath)) return null
+  const keep = batchKeepMp3(
+    pick.formatByHand ? pick.format : undefined,
+    settings.outputFormat,
+    settings.keepMp3Sources,
+  )
+  const format = resolveJobFormat(
+    pick.format,
+    track.inputPath,
+    'aiff',
+    keep,
+    track.fromAppleMusic,
+    pick.formatByHand,
+  )
+  const facets = pick.destination ? fromDestination(pick.destination) : settings
+  const overwrite = facets.overwriteOriginal
+  const beside = facets.convertBesideOriginal && !overwrite
+  if (keep && format !== pick.format && beside && !processesAudio(audio)) return null
+  return {
+    format,
+    sameFormat: formatMatchesInput(format, track.inputPath),
+    overwrite,
+    beside,
+    toMusic: facets.addToAppleMusic,
+  }
+}
+
+// Main sends a file staying in its format to the output folder as a new copy when no
+// library holds it, and only then. The one question the renderer cannot answer alone.
+function needsLibrary(plan: TrackPlan): boolean {
+  return !plan.beside && !plan.overwrite && !plan.toMusic && plan.sameFormat
+}
+
+export function asksLibrary(track: TrackItem, pick: BatchPick): boolean {
+  const plan = planOf(track, pick, {})
+  return plan !== null && needsLibrary(plan)
+}
+
+export function batchSkips(track: TrackItem, pick: BatchPick, audio: AudioProcessing): boolean {
+  return planOf(track, pick, audio) === null
 }
 
 export function batchWritesTagsOnly(
   ready: TrackItem[],
-  format: FormatSetting,
-  destination: Destination,
+  pick: BatchPick,
   audioOf: (track: TrackItem) => AudioProcessing,
+  heldByLibrary: (track: TrackItem) => boolean,
 ): boolean {
-  return (
-    ready.length > 0 &&
-    ready.every(
-      (t) =>
-        writesItsOwnFile(t, destination) &&
-        (format === 'source'
-          ? hasFormatEquivalent(t.inputPath)
-          : formatMatchesInput(format, t.inputPath)) &&
-        !processesAudio(audioOf(t)),
-    )
-  )
+  let written = 0
+  for (const track of ready) {
+    const audio = audioOf(track)
+    const plan = planOf(track, pick, audio)
+    if (plan === null) continue
+    written += 1
+    const inPlace =
+      !plan.beside &&
+      !(needsLibrary(plan) && !heldByLibrary(track)) &&
+      editsInPlace(plan.format, track.inputPath, plan.overwrite)
+    if (!inPlace || !plan.sameFormat || processesAudio(audio)) return false
+  }
+  return written > 0
 }

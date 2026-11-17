@@ -1823,6 +1823,10 @@ describe('Editor multi-select', () => {
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       libraryIndex?: AppleMusicIndex | null
+      fileA?: string
+      fileB?: string
+      settings?: Partial<Settings>
+      onChangeSelection?: (patch: Partial<TrackItem>) => void
     } = {},
   ) {
     if (opts.platform)
@@ -1838,6 +1842,7 @@ describe('Editor multi-select', () => {
     const a = item({
       id: 'a',
       fileName: 'kumara - one.flac',
+      ...(opts.fileA && { inputPath: opts.fileA }),
       status,
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared', ...opts.metaA },
@@ -1847,6 +1852,7 @@ describe('Editor multi-select', () => {
     const b = item({
       id: 'b',
       fileName: 'cortina - two.flac',
+      ...(opts.fileB && { inputPath: opts.fileB }),
       status,
       outputPath: opts.done ? '/out/b.aiff' : undefined,
       meta: { title: 'B', album: 'Shared', ...opts.metaB },
@@ -1867,6 +1873,7 @@ describe('Editor multi-select', () => {
         onResultsResizeStart={vi.fn()}
         onResultsFit={vi.fn()}
         selectedTracks={[a, b]}
+        onChangeSelection={opts.onChangeSelection}
         onApplyMatches={vi.fn()}
         onProcessAll={onProcessAll}
         onAddAllToAppleMusic={onAddAllToAppleMusic}
@@ -1899,6 +1906,7 @@ describe('Editor multi-select', () => {
         requiredFields: opts.requiredFields ?? ['title'],
         showSpectrum: true,
         showLoudness: opts.loudness ?? false,
+        ...opts.settings,
       },
     )
     return {
@@ -2104,15 +2112,82 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('field-title')).toBeNull()
     expect(screen.queryByTestId('process-btn')).toBeNull()
     expect(screen.getByTestId('batch-convert')).toHaveTextContent('2')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByTestId('batch-destination-toggle')).toBeInTheDocument()
   })
 
   it('picks the batch format in the footer and marks it as the one in use', () => {
     renderMulti()
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  // The footer said "Convert" over MP3s that the keep setting leaves as MP3: with AIFF only
+  // highlighted as the Settings default, the run rewrites their tags and nothing else.
+  it('says it updates when the default format leaves every selected MP3 as it is', () => {
+    renderMulti({
+      fileA: '/music/a.mp3',
+      fileB: '/music/b.mp3',
+      settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
+    })
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.updateSelected', { count: 2 }),
+    )
+  })
+
+  it('says it converts those MP3s once another format is picked by hand', () => {
+    renderMulti({
+      fileA: '/music/a.mp3',
+      fileB: '/music/b.mp3',
+      settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
+    })
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+  })
+
+  // The destination came from the open track: with a FLAC open it read "Output folder"
+  // while the batch sent the other tracks to Apple Music, where Settings point.
+  it('shows where Settings send the batch, not where the open track would go', () => {
+    renderMulti({
+      platform: 'darwin',
+      fileA: '/music/a.flac',
+      fileB: '/music/b.wav',
+      settings: { outputFormat: 'source', addToAppleMusic: true },
+    })
+    expect(screen.getByTestId('batch-destination-toggle')).toHaveTextContent(
+      i18n.t('settings.destinations.appleMusic'),
+    )
+  })
+
+  // The section says it applies to every selected track, but only the open one took the
+  // level: the rest converted with whatever they had.
+  it('gives the click repair picked over a selection to every selected track', () => {
+    const onChangeSelection = vi.fn()
+    renderMulti({
+      onChangeSelection,
+      settings: { editorSections: [{ id: 'declick' as const, open: true }] },
+    })
+    fireEvent.click(screen.getByTestId('declick-mode-standard'))
+    expect(onChangeSelection).toHaveBeenCalledWith({
+      declick: expect.objectContaining({ mode: 'standard' }),
+    })
+  })
+
+  // "Same as source" skips a file that has no format of its own to stay in, so the button
+  // must not count it among the ones it will write.
+  it('leaves out of the count a file the batch will skip', () => {
+    renderMulti({
+      fileA: '/music/a.wav',
+      fileB: '/music/b.opus',
+      settings: { outputFormat: 'source', overwriteOriginal: true },
+    })
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.updateSomeSelected', { ready: 1, total: 2 }),
+    )
   })
 
   // The bulk form must honour the same visible-fields setting as the single editor:

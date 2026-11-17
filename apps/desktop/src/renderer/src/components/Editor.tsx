@@ -63,7 +63,14 @@ import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
-import { batchWritesTagsOnly, convertGate, leftOutNote } from '../lib/batch'
+import {
+  asksLibrary,
+  type BatchPick,
+  batchSkips,
+  batchWritesTagsOnly,
+  convertGate,
+  leftOutNote,
+} from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
@@ -271,6 +278,8 @@ const holdsInLibraryOf =
   (path: string, title: string): (() => Promise<boolean>) =>
   () =>
     window.api.holdsInLibrary(path, title ? [title] : [])
+
+const LIBRARY_ASK_LIMIT = 200
 
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'transcode',
@@ -480,6 +489,10 @@ export const Editor = memo(function Editor({
   // anchor itself does. Without this, formatPick would keep the single-track seed
   // (already resolved against the anchor) instead of the raw setting multi-select
   // needs to offer 'source' and carry it unresolved to processAll.
+  // Whether the batch format was picked by hand or is only the Settings default: the run
+  // treats them differently (kept MP3s, tracks from an Apple Music playlist), so the footer
+  // has to know which one it is showing.
+  const [batchFormatPicked, setBatchFormatPicked] = useState(false)
   const wasMulti = useRef(isMulti)
   // Whether `format` is a hand pick rather than the Settings seed, so narrowing back to
   // one track reports what the button says: a null there converted in the Settings
@@ -490,6 +503,7 @@ export const Editor = memo(function Editor({
     if (wasMulti.current === isMulti) return
     wasMulti.current = isMulti
     setFormatPick(isMulti ? outputFormat : format)
+    setBatchFormatPicked(false)
     onFormatChange?.(!isMulti && formatByHand.current ? format : null)
   }, [isMulti])
   // The chosen destination, same per-track contract as the format: seeded from this
@@ -512,6 +526,9 @@ export const Editor = memo(function Editor({
         convertBesideOriginal,
       ),
   )
+  // Whether the destination was picked by hand. A batch only carries a hand pick: without
+  // one each track goes where Settings say, which is not always where the open track does.
+  const [destinationPicked, setDestinationPicked] = useState(rememberedDestination !== undefined)
   // Changing the Default format (or the destination) in Settings while this same
   // track's editor is still open must reach it — otherwise `format` stays whatever
   // the track mounted with, and it's not just a stale label: it's what the convert
@@ -552,6 +569,7 @@ export const Editor = memo(function Editor({
       formatByHand.current = false
       setFormat(seededFormat)
       setFormatPick(isMulti ? outputFormat : seededFormat)
+      setBatchFormatPicked(false)
       onFormatChange?.(null)
     }
     const seededDestination = toDestination(
@@ -561,6 +579,7 @@ export const Editor = memo(function Editor({
       convertBesideOriginal,
     )
     setDestination(seededDestination)
+    setDestinationPicked(false)
     onDestinationChange?.(seededDestination)
   }, [outputFormat, addToAppleMusic, overwriteOriginal, convertBesideOriginal, keepMp3Sources])
   // The facets the picked destination means, replacing the raw Settings reads below
@@ -1088,12 +1107,83 @@ export const Editor = memo(function Editor({
       formatMatchesInput(format, item.inputPath),
       jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
     )
+  // What a batch over the selection will really do, resolved per track the way the run
+  // resolves it, so the destination shown, the count and the verb all describe the run.
+  const batchPick = useMemo<BatchPick>(
+    () => ({
+      format: formatPick,
+      formatByHand: batchFormatPicked,
+      ...(destinationPicked && { destination }),
+      settings: {
+        outputFormat,
+        keepMp3Sources,
+        overwriteOriginal,
+        convertBesideOriginal,
+        addToAppleMusic,
+      },
+    }),
+    [
+      formatPick,
+      batchFormatPicked,
+      destinationPicked,
+      destination,
+      outputFormat,
+      keepMp3Sources,
+      overwriteOriginal,
+      convertBesideOriginal,
+      addToAppleMusic,
+    ],
+  )
+  const batchDestination = destinationPicked
+    ? destination
+    : toDestination(
+        addToAppleMusic && isMacOS(),
+        formatPick === 'flac',
+        overwriteOriginal,
+        convertBesideOriginal,
+      )
+  const batchReady = useMemo(
+    () =>
+      (multiGate?.ready ?? []).filter(
+        (t) =>
+          !batchSkips(t, batchPick, jobAudio(t, normalizeCfg, declickCfg, { normalize, declick })),
+      ),
+    [multiGate, batchPick, normalizeCfg, declickCfg, normalize, declick],
+  )
+  // Only a file staying in its format on its way to the output folder needs a library's
+  // word. A track opened from a library has it already; the loose ones are asked for, up
+  // to a number a tooltip-sized question can afford, and past it they count as loose.
+  const libraryAsked = useMemo(
+    () =>
+      batchReady.filter(
+        (t) =>
+          asksLibrary(t, batchPick) && (t.programs?.length ?? 0) === 0 && t.fromAppleMusic !== true,
+      ),
+    [batchReady, batchPick],
+  )
+  const { data: heldPaths } = useQuery({
+    queryKey: ['holdsInLibraryBatch', libraryAsked.map((t) => t.inputPath)],
+    queryFn: async () => {
+      const held = await Promise.all(
+        libraryAsked.map((t) => holdsInLibraryOf(t.inputPath, t.meta.title)()),
+      )
+      return new Set(libraryAsked.filter((_, i) => held[i]).map((t) => t.inputPath))
+    },
+    enabled: isMulti && libraryAsked.length > 0 && libraryAsked.length <= LIBRARY_ASK_LIMIT,
+    staleTime: 30_000,
+  })
   const batchTagsOnly = useMemo(
     () =>
-      batchWritesTagsOnly(multiGate?.ready ?? [], formatPick, destination, (t) =>
-        jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
+      batchWritesTagsOnly(
+        batchReady,
+        batchPick,
+        (t) => jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
+        (t) =>
+          (t.programs?.length ?? 0) > 0 ||
+          t.fromAppleMusic === true ||
+          heldPaths?.has(t.inputPath) === true,
       ),
-    [multiGate, formatPick, destination, normalizeCfg, declickCfg, normalize, declick],
+    [batchReady, batchPick, heldPaths, normalizeCfg, declickCfg, normalize, declick],
   )
   const upToDate =
     !isMulti &&
@@ -1945,7 +2035,8 @@ export const Editor = memo(function Editor({
                             onDeclickChange?.(d)
                             // Stage it on the track so coming back to it finds the level
                             // as it was left, the way normalize and the trim already do.
-                            onChange({ declick: d })
+                            if (isMulti && onChangeSelection) onChangeSelection({ declick: d })
+                            else onChange({ declick: d })
                           }}
                           inputPath={item.inputPath}
                           selectedCount={selectedTracks?.length ?? 1}
@@ -2048,7 +2139,7 @@ export const Editor = memo(function Editor({
           spectrum={spectrumInHand}
           isMulti={isMulti}
           selectedCount={multiTracks.length}
-          readyCount={multiGate?.ready.length}
+          readyCount={isMulti ? batchReady.length : undefined}
           status={footerStatus}
           stale={stale}
           replaces={
@@ -2074,7 +2165,7 @@ export const Editor = memo(function Editor({
           batchTagsOnly={batchTagsOnly}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
-          destination={destination}
+          destination={isMulti ? batchDestination : destination}
           destinations={destinationChoices}
           format={isMulti ? formatPick : format}
           exportedFormat={exportedFormat}
@@ -2083,6 +2174,7 @@ export const Editor = memo(function Editor({
           onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
             setFormatPick(f)
+            setBatchFormatPicked(true)
             // 'source' is only ever offered in the multi menu, so a real pick always
             // resolves for the single-track state everything else here still reads.
             if (f !== 'source') {
@@ -2093,13 +2185,15 @@ export const Editor = memo(function Editor({
             // Music can't ingest FLAC: picking it while Apple Music is the destination
             // silently falls back to the output folder — the same pin Settings applies —
             // and the button label updates to say so.
-            if (f === 'flac' && destination === 'appleMusic') {
+            if (f === 'flac' && destination === 'appleMusic' && (!isMulti || destinationPicked)) {
               setDestination('folder')
+              setDestinationPicked(true)
               onDestinationChange?.('folder', true)
             }
           }}
           onSelectDestination={(d) => {
             setDestination(d)
+            setDestinationPicked(true)
             onDestinationChange?.(d, true)
           }}
           onExportCollection={onExportCollection}
