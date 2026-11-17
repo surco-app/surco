@@ -183,6 +183,8 @@ export interface ClearedCues {
   cleared: string[]
 }
 
+const QUEUED_CHUNK = 500
+
 export async function clearCueDrafts(
   client: QueryClient,
   targets: AutoMarkTarget[],
@@ -190,6 +192,17 @@ export async function clearCueDrafts(
 ): Promise<ClearedCues> {
   const result: ClearedCues = { hot: 0, calls: 0, loops: 0, unsaved: 0, cleared: [] }
   const { reads } = await liveCuesOf(targets.map((t) => t.contentId))
+  const readable = targets.filter((t) => reads[t.contentId])
+  const queuedOf = new Map<string, Awaited<ReturnType<typeof window.api.cues.queued>>>()
+  for (let i = 0; i < readable.length; i += QUEUED_CHUNK) {
+    const chunk = readable.slice(i, i + QUEUED_CHUNK)
+    const answers = await Promise.all(
+      chunk.map((t) => client.fetchQuery(queuedCuesQuery(t.contentId))),
+    )
+    chunk.forEach((t, at) => {
+      queuedOf.set(t.contentId, answers[at])
+    })
+  }
   const drafts: Parameters<typeof keepDrafts>[0] = []
   for (const target of targets) {
     if (unsavedCueTracks().has(target.contentId)) {
@@ -198,7 +211,7 @@ export async function clearCueDrafts(
     }
     const read = reads[target.contentId]
     if (!read) continue
-    const queued = await client.fetchQuery(queuedCuesQuery(target.contentId))
+    const queued = queuedOf.get(target.contentId) ?? null
     const fresh = queued !== null && queued.fingerprint === read.fingerprint
     const baseline = fresh
       ? queued.wanted

@@ -436,6 +436,26 @@ describe('clearing the cues of several tracks', () => {
     ])
   })
 
+  it('asks for the queued cues of the whole batch together and not one after another, since each answer waits behind a redraw of the selection', async () => {
+    const { api, client } = setup({
+      reads: {
+        '103': withCues('103', [hot('a', 1000, 1)]),
+        '104': withCues('104', [hot('b', 2000, 1)]),
+        '105': withCues('105', [hot('c', 3000, 1)]),
+      },
+    })
+    const answers: ((queued: null) => void)[] = []
+    vi.mocked(api.cues.queued).mockImplementation(
+      () => new Promise((resolve) => answers.push(resolve)),
+    )
+
+    const clearing = clearCueDrafts(client, [target('103'), target('104'), target('105')], settings)
+    await vi.waitFor(() => expect(answers).toHaveLength(3))
+    for (const answer of answers) answer(null)
+
+    expect((await clearing).cleared).toEqual(['103', '104', '105'])
+  })
+
   it('leaves a track with an unsaved draft untouched, so clearing never throws away work in progress', async () => {
     const { client } = setup({ reads: { '103': withCues('103', [hot('a', 1000, 1)]) } })
     const draft = startDraft([{ id: 'a', ms: 1000, kind: 1, color: null }], MIX_IN.id)
