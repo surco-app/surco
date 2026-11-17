@@ -153,6 +153,9 @@ export interface BatchSummary {
   // and a declined file conflict — five causes collapsed into one number, which made a
   // cancelled batch read exactly like a run that finished normally.
   cancelled?: boolean
+  // True when every track the run wrote only had its tags rewritten, so the summary can
+  // say "updated" where "converted" would claim a re-encode that never happened.
+  updatedOnly?: boolean
 }
 
 // Reduces a batch run (one outcome per track) to per-bucket counts, so the UI can

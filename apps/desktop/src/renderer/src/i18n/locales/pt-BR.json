@@ -166,6 +166,7 @@
   "header": {
     "add": "Adicionar arquivos",
     "batchConverted": "{{count}} convertidas",
+    "batchUpdated": "{{count}} atualizadas",
     "batchSkipped": "{{count}} puladas",
     "batchFailed": "{{count}} com erro",
     "batchCancelled": "Cancelado",

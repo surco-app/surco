@@ -8001,6 +8001,47 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
   })
 
+  // The button said "Update" and the summary then said "converted": the DJ was left
+  // wondering whether the files had been re-encoded after all.
+  it('says the tracks were updated when the batch only rewrote tags', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/music/a.wav', inPlace: true, tagsOnly: true })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    expect(await screen.findByTestId('batch-summary')).toHaveTextContent(
+      i18n.t('header.batchUpdated', { count: 2 }),
+    )
+  })
+
+  it('still says converted when any track of the batch was converted', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValueOnce({ outputPath: '/music/a.wav', inPlace: true, tagsOnly: true })
+      .mockResolvedValue({ outputPath: '/out/b.aiff', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    expect(await screen.findByTestId('batch-summary')).toHaveTextContent(
+      i18n.t('header.batchConverted', { count: 2 }),
+    )
+  })
+
   // A batch raised one card per repaired track, each for four seconds: a folder of vinyl
   // rips covered the corner of the app with the same sentence over and over.
   it('gathers the click repairs of a batch into one notice that counts the tracks', async () => {

@@ -166,6 +166,7 @@
   "header": {
     "add": "ファイル追加",
     "batchConverted": "{{count}} 変換済み",
+    "batchUpdated": "{{count}} 更新済み",
     "batchSkipped": "{{count}} スキップ",
     "batchFailed": "{{count}} 失敗",
     "batchCancelled": "キャンセルしました",
