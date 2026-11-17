@@ -7851,6 +7851,63 @@ describe('App multi-select convert', () => {
     )
   })
 
+  // A folder on a NAS can take many seconds to walk. A track picked meanwhile is what the
+  // DJ is working on now, and the walk finishing must not take the editor away from it.
+  it('keeps a selection made while the added files were still arriving', async () => {
+    let finish: () => void = () => {}
+    const walking = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.wav', '/music/b.wav'])
+        .mockResolvedValueOnce(['/music/c.wav', '/music/d.wav']),
+      expandPaths: vi.fn(async (paths: string[]) => {
+        if (paths.includes('/music/c.wav')) await walking
+        return paths
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('add-files'))
+    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await act(async () => {
+      finish()
+      await walking
+    })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // With a filter on, some of what arrives may not be on screen: selecting it would leave
+  // the convert button acting on rows nobody can see.
+  it('leaves the selection alone when files are added under an active filter', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.mp3', '/music/z.wav'])
+        .mockResolvedValueOnce(['/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    runMenu('add')
+    await waitFor(() => expect(window.api.readTags).toHaveBeenCalledTimes(4))
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+  })
+
   // A drop that lands while a field is being typed in must not swap the form under the
   // cursor for a bulk one.
   it('leaves the selection alone when files arrive while a field has the cursor', async () => {

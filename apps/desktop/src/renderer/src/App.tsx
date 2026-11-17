@@ -1357,12 +1357,25 @@ export default function App(): React.JSX.Element {
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
     const before = new Set(tracksRef.current.map((t) => t.id))
+    const selectedBefore = selection
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
     await addPaths(expanded)
     const added = tracksRef.current.filter((t) => !before.has(t.id)).map((t) => t.id)
-    if (added.length > 0 && !isTypingTarget(document.activeElement))
-      setSelection({ ids: added, anchor: added[0] })
+    // What arrived becomes the selection, unless that would pull the editor away from
+    // something: a field being typed in, a filter or search that may hide the new rows, or
+    // a selection the user made while a slow folder was still being walked. The first row
+    // addPaths opens on an empty list is the add's own doing and does not count as one.
+    if (added.length === 0 || isTypingTarget(document.activeElement) || search || filterActive)
+      return
+    const fresh = new Set(added)
+    setSelection((current) => {
+      const untouched =
+        current.anchor === selectedBefore.anchor && current.ids.length === selectedBefore.ids.length
+      const openedByTheAdd =
+        selectedBefore.anchor === null && current.ids.every((id) => fresh.has(id))
+      return untouched || openedByTheAdd ? { ids: added, anchor: added[0] } : current
+    })
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
