@@ -13,6 +13,8 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path'
 import log from 'electron-log/main'
 import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
+import { parseVirtualdjDatabase, type VirtualdjSong } from './virtualdjDatabase'
+import { editedBody, type SongSpan, songSpans } from './virtualdjDatabaseWrite'
 import { type VirtualdjRoot, virtualdjRootLabel } from './virtualdjLibrary'
 
 export const virtualdjDatabaseOf = (root: VirtualdjRoot): string => join(root.dir, 'database.xml')
@@ -23,6 +25,9 @@ const sameStamp = (a: FileStamp | null, b: FileStamp | null): boolean =>
 export interface VirtualdjDraft {
   read(file: string): string | null
   write(file: string, xml: string): void
+  songsOf(file: string): VirtualdjSong[] | null
+  songEdited(file: string, path: string): boolean
+  editSong(file: string, path: string, edit: (lines: string[]) => string[]): boolean
   stamps(): Map<string, FileStamp | null>
   changes(): { file: string; xml: string }[]
   notUtf8(file: string): boolean
@@ -43,17 +48,68 @@ export function createVirtualdjDraft(): VirtualdjDraft {
     }
     return disk.get(file) ?? null
   }
+  const pending = new Map<
+    string,
+    { base: string; spans: Map<string, SongSpan>; bodies: Map<string, string> }
+  >()
+  const parsed = new Map<string, { xml: string; songs: VirtualdjSong[] }>()
+  const settled = (file: string): string | null => {
+    const waiting = pending.get(file)
+    if (!waiting || waiting.bodies.size === 0) return layer.get(file) ?? fromDisk(file)
+    const parts: string[] = []
+    let from = 0
+    const edited = [...waiting.bodies]
+      .map(([path, body]) => ({ span: waiting.spans.get(path) as SongSpan, body }))
+      .sort((a, b) => a.span.openEnd - b.span.openEnd)
+    for (const { span, body } of edited) {
+      parts.push(waiting.base.slice(from, span.openEnd), body)
+      from = span.bodyEnd
+    }
+    parts.push(waiting.base.slice(from))
+    pending.delete(file)
+    layer.set(file, parts.join(''))
+    return layer.get(file) ?? null
+  }
+  const unsettled = (file: string): string | null =>
+    pending.get(file)?.base ?? layer.get(file) ?? fromDisk(file)
   return {
-    read: (file) => layer.get(file) ?? fromDisk(file),
+    read: settled,
     write(file, xml) {
       fromDisk(file)
+      pending.delete(file)
       layer.set(file, xml)
     },
+    songsOf(file) {
+      const xml = unsettled(file)
+      if (xml === null) return null
+      const known = parsed.get(file)
+      if (known?.xml === xml) return known.songs
+      const songs = parseVirtualdjDatabase(xml)
+      parsed.set(file, { xml, songs })
+      return songs
+    },
+    songEdited: (file, path) => pending.get(file)?.bodies.has(path) ?? false,
+    editSong(file, path, edit) {
+      const base = unsettled(file)
+      if (base === null) return false
+      let waiting = pending.get(file)
+      if (!waiting) {
+        waiting = { base, spans: songSpans(base), bodies: new Map() }
+        pending.set(file, waiting)
+      }
+      const span = waiting.spans.get(path)
+      if (!span) return false
+      const body = waiting.bodies.get(path) ?? base.slice(span.openEnd, span.bodyEnd)
+      waiting.bodies.set(path, editedBody(body, edit))
+      return true
+    },
     stamps: () => new Map(stamps),
-    changes: () =>
-      [...layer]
+    changes: () => {
+      for (const file of [...pending.keys()]) settled(file)
+      return [...layer]
         .filter(([file, xml]) => disk.get(file) !== xml)
-        .map(([file, xml]) => ({ file, xml })),
+        .map(([file, xml]) => ({ file, xml }))
+    },
     notUtf8: (file) => notUtf8.has(file),
   }
 }
