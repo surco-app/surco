@@ -197,6 +197,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     outputDir: '',
     outputFormat: 'aiff',
     keepMp3Sources: false,
+    clearListAfterConvert: false,
     addToAppleMusic: false,
     keepOutputCopy: true,
     overwriteOriginal: false,
@@ -7798,6 +7799,35 @@ describe('App multi-select convert', () => {
     fireEvent.click(cancel)
     await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
     expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
+  })
+
+  // With the setting on, the converted rows leave the list on their own and can be brought
+  // back; the row that failed stays, so the failure is still there to look at.
+  it('clears the converted tracks when the batch ends and keeps the one that failed', async () => {
+    const processTrack = vi
+      .fn()
+      .mockImplementation((job: { inputPath: string }) =>
+        job.inputPath === '/music/b.wav'
+          ? Promise.reject(new Error('disk full'))
+          : Promise.resolve({ outputPath: '/out/x', inPlace: false }),
+      )
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const removal = screen
+      .getAllByTestId('app-notice')
+      .find((card) => card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })))
+    if (!removal) throw new Error('no removal toast')
+    fireEvent.click(within(removal).getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
   })
 
   it('applies a format and destination picked by hand to the whole selection', async () => {

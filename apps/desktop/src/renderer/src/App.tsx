@@ -1723,6 +1723,11 @@ export default function App(): React.JSX.Element {
       maybeShowDonateNudge()
       void refreshTrash()
     },
+    onBatchConverted: (ids) => {
+      if (!settings?.clearListAfterConvert) return
+      const converted = new Set(ids)
+      dropFromList(tracksRef.current.filter((t) => converted.has(t.id)))
+    },
     onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.

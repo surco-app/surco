@@ -1792,6 +1792,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "«Igual que l'origen» manté cada fitxer en el seu propi format, així que un lot mixt no es reconverteix mai. AIFF/WAV/FLAC/ALAC són sense pèrdua (FLAC i ALAC comprimits). MP3 ocupa menys. Un fitxer que ja és en aquest format es copia sense recodificar.",
+    "clearListAfterConvert": "Buidar la llista en acabar un lot",
+    "clearListAfterConvertHint": "Les pistes convertides surten de la llista, amb Desfer. Les que fallin s'hi queden.",
     "keepMp3Sources": "Mantenir els MP3 i M4A tal com són",
     "keepMp3SourcesHint": "Convertir un MP3 o un M4A a un format sense pèrdua no recupera qualitat, només ocupa més. Amb això activat es queden en el seu format i Surco escriu les seves etiquetes a la destinació que tinguis triada. Amb «Al costat de l'original» no els toca. Si iguales el volum, repares clics o retalles, l'àudio sí que es torna a codificar.",
     "keepMp3SourcesOff": "No cal amb MP3 o «Igual que l'origen». Els MP3 ja es queden com a MP3.",

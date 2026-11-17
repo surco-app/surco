@@ -1792,6 +1792,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "„Wie die Quelle“ behält jede Datei in ihrem eigenen Format, sodass ein gemischter Stapel nie neu kodiert wird. AIFF/WAV/FLAC/ALAC sind verlustfrei (FLAC und ALAC komprimiert); MP3 ist kleiner. Eine Datei, die schon im Format vorliegt, wird ohne Neukodierung kopiert.",
+    "clearListAfterConvert": "Liste leeren, wenn ein Stapel fertig ist",
+    "clearListAfterConvertHint": "Die konvertierten Tracks verlassen die Liste, mit Rückgängig. Fehlgeschlagene bleiben.",
     "keepMp3Sources": "MP3- und M4A-Dateien behalten",
     "keepMp3SourcesHint": "Die Umwandlung einer MP3 oder M4A in ein verlustfreies Format bringt keine Qualität zurück, die Datei wird nur größer. Ist dies aktiv, behalten sie ihr Format und Surco schreibt ihre Tags an das gewählte Ziel. Mit „Neben dem Original“ bleiben sie unberührt. Wenn du die Lautheit angleichst, Knackser reparierst oder Stille kürzt, wird das Audio trotzdem neu kodiert.",
     "keepMp3SourcesOff": "Bei MP3 oder „Wie die Quelle“ nicht nötig: MP3s bleiben ohnehin MP3.",

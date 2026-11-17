@@ -1792,6 +1792,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "«Igual que el origen» mantiene cada archivo en su propio formato, así que un lote mixto nunca se reconvierte. AIFF/WAV/FLAC/ALAC sin pérdida (FLAC y ALAC comprimidos); MP3 ocupa menos. Un archivo ya en ese formato se copia sin recodificar.",
+    "clearListAfterConvert": "Vaciar la lista al terminar un lote",
+    "clearListAfterConvertHint": "Las pistas convertidas salen de la lista, con Deshacer. Las que fallen se quedan.",
     "keepMp3Sources": "Mantener MP3 y M4A como están",
     "keepMp3SourcesHint": "Convertir un MP3 o un M4A a un formato sin pérdida no recupera calidad, solo ocupa más. Con esto activo se quedan en su formato y Surco escribe sus etiquetas en el destino que tengas elegido. Con «Junto al original» no los toca. Si igualas el volumen, reparas clics o recortas, el audio sí se vuelve a codificar.",
     "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen»: los MP3 ya se quedan como MP3.",

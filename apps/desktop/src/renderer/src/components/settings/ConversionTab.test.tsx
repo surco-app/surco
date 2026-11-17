@@ -92,6 +92,7 @@ const synced: SyncedDraft = {
   autoCleanSpacing: false,
   autoCleanCase: false,
   keepMp3Sources: false,
+  clearListAfterConvert: false,
 }
 
 function renderTab(over: Partial<SyncedDraft> = {}) {

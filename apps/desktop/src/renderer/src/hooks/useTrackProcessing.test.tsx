@@ -1132,6 +1132,34 @@ describe('useTrackProcessing', () => {
     expect(onConversion).toHaveBeenCalledTimes(1)
   })
 
+  // Clearing the list after a run must leave behind what did not convert: a failed track
+  // that vanished with the rest could never be found again.
+  it('reports which tracks of a run converted, leaving out the ones that failed', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValueOnce({ outputPath: '/out/a.aiff', inPlace: false })
+        .mockRejectedValueOnce(new Error('disk full')),
+    })
+    const onBatchConverted = vi.fn()
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks,
+          settings: null,
+          updateTrack: vi.fn(),
+          onBatchConverted,
+          concurrency: 1,
+        }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(onBatchConverted).toHaveBeenCalledExactlyOnceWith(['a'])
+  })
+
   // A run that wrote nothing (every track skipped or failed) is no moment of value:
   // asking for a donation right after it produced no result reads as nagware, so the
   // nudge must stay silent unless at least one track actually converted.

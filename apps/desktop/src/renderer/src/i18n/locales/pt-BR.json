@@ -1792,6 +1792,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "“Igual à origem” mantém cada arquivo em seu próprio formato, então um lote misto nunca é recodificado. AIFF/WAV/FLAC/ALAC são sem perdas (FLAC e ALAC comprimidos); MP3 ocupa menos. Um arquivo que já está no formato é copiado sem recodificar.",
+    "clearListAfterConvert": "Esvaziar a lista ao terminar um lote",
+    "clearListAfterConvertHint": "As faixas convertidas saem da lista, com Desfazer. As que falharem ficam.",
     "keepMp3Sources": "Manter arquivos MP3 e M4A como estão",
     "keepMp3SourcesHint": "Converter um MP3 ou M4A para um formato sem perdas não recupera qualidade, o arquivo só fica maior. Com isso ativo, eles mantêm o formato e o Surco grava as tags no destino que você escolheu. Com “Ao lado do original”, não mexe neles. Se você igualar o volume, reparar cliques ou cortar o silêncio, o áudio é recodificado mesmo assim.",
     "keepMp3SourcesOff": "Não é necessário com MP3 ou “Igual à origem”: os MP3 já continuam MP3.",

@@ -17,7 +17,13 @@ import { OutputFolderField } from '../OutputFolderField'
 import { PathField } from '../PathField'
 import { SegmentedControl } from '../SegmentedControl'
 import { CheckboxRow } from './CheckboxRow'
-import { SettingsField, SettingsHint, SettingsLabel, SettingsSection } from './SettingsPrimitives'
+import {
+  SettingsCheckboxField,
+  SettingsField,
+  SettingsHint,
+  SettingsLabel,
+  SettingsSection,
+} from './SettingsPrimitives'
 
 // The grey line states what each level DOES, in one register. 'never' gets a line of
 // its own rather than reusing its warning text: the amber box below already carries the
@@ -193,6 +199,16 @@ function OutputSettings({
             details={{ folder: folderDetail }}
           />
         </SettingsField>
+      )}
+      {part === 'output' && (
+        <SettingsCheckboxField
+          testid="settings-clear-list-after-convert"
+          checked={synced.clearListAfterConvert}
+          onChange={(v) => patch('clearListAfterConvert', v)}
+          label={tr('settings.clearListAfterConvert')}
+          hint={tr('settings.clearListAfterConvertHint')}
+          searchId="clearListAfterConvert"
+        />
       )}
       {part === 'programs' && (
         <>
