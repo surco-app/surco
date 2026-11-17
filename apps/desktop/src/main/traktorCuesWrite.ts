@@ -7,13 +7,12 @@ import type { RekordboxEditRefusal, RekordboxQueueNotice } from '../shared/types
 import type { BatchResult, CuesOp, MatchOp, OpOutcome, QueueOp, TagsOp } from './rekordboxQueueOps'
 import type { SessionBackup } from './rekordboxSessionBackup'
 import {
-  readTraktorTrackCues,
   traktorCueElements,
   traktorCueRows,
   traktorCuesIntact,
-  traktorEntryBlock,
+  traktorTrackCuesOf,
 } from './traktorCues'
-import { withAttr } from './traktorNml'
+import { findEntries, withAttr } from './traktorNml'
 import { bootVolumeName, markNewerThanCollection, writeCollection } from './traktorNmlLibrary'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 
@@ -146,7 +145,13 @@ function planBatch(
     ),
     bootVolume,
   )
-  let nml = edits.nml
+  const blocks = new Map<string, { start: number; end: number; block: string }>()
+  for (const e of findEntries(edits.nml)) {
+    const key = `${e.volume}${e.dir}${e.file}`
+    if (!blocks.has(key))
+      blocks.set(key, { start: e.start, end: e.end, block: edits.nml.slice(e.start, e.end) })
+  }
+  const rewritten = new Set<string>()
   const outcomes: OpOutcome[] = ops.map((op) => {
     const edited = edits.outcomes.get(op.id)
     if (edited) return edited
@@ -157,8 +162,8 @@ function planBatch(
     })
     if (op.kind !== 'cues') return refused('cues-invalid')
     const key = traktorKey(op.contentId)
-    const entry = key === null ? null : traktorEntryBlock(nml, key)
-    const read = entry && readTraktorTrackCues(nml, op.contentId)
+    const entry = key === null ? undefined : blocks.get(key)
+    const read = entry && traktorTrackCuesOf(entry.block, op.contentId)
     if (!entry || !read || read.fingerprint !== op.fingerprint) return refused('cues-changed')
     if (!traktorCuesIntact(entry.block)) {
       log.warn(`Traktor cues: an unreadable CUE_V2 in ${op.contentId}, left as it was`)
@@ -178,10 +183,24 @@ function planBatch(
     if (op.grid && read.gridFingerprint !== op.gridFingerprint) return refused('cues-changed')
     const cued = withTraktorCues(entry.block, op.wanted)
     const next = op.grid ? withTraktorGrid(cued, op.grid, now) : cued
-    nml = `${nml.slice(0, entry.start)}${next}${nml.slice(entry.end)}`
+    if (next !== entry.block && key !== null) {
+      entry.block = next
+      rewritten.add(key)
+    }
     return { id: op.id, applied: true, notices }
   })
-  return { nml, outcomes, added: edits.added }
+  if (rewritten.size === 0) return { nml: edits.nml, outcomes, added: edits.added }
+  const parts: string[] = []
+  let from = 0
+  for (const entry of [...rewritten]
+    .map((key) => blocks.get(key))
+    .filter((entry) => entry !== undefined)
+    .sort((a, b) => a.start - b.start)) {
+    parts.push(edits.nml.slice(from, entry.start), entry.block)
+    from = entry.end
+  }
+  parts.push(edits.nml.slice(from))
+  return { nml: parts.join(''), outcomes, added: edits.added }
 }
 
 // Playlist edits and cue saves queued while Traktor was open go out together, in one
