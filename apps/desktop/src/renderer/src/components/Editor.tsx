@@ -282,6 +282,7 @@ const holdsInLibraryOf =
     window.api.holdsInLibrary(path, title ? [title] : [])
 
 const LIBRARY_ASK_LIMIT = 200
+const NARROW_EDITOR_PX = 400
 
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'transcode',
@@ -418,6 +419,16 @@ export const Editor = memo(function Editor({
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = editorPlace.scrollTop
+  }, [scrollRef])
+  const [narrow, setNarrow] = useState(false)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(([entry]) =>
+      setNarrow(entry.contentRect.width < NARROW_EDITOR_PX),
+    )
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [scrollRef])
   const { t: tr, i18n } = useTranslation()
   // A refined search is persisted on the track, so flipping away and back re-seeds
@@ -1395,10 +1406,10 @@ export const Editor = memo(function Editor({
       data-testid="clear-meta-btn"
       aria-label={tr('editor.clearMeta')}
       onClick={clearAllMeta}
-      className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger"
+      className={`press group relative flex h-7 items-center gap-1.5 rounded-md ${narrow ? 'px-1' : 'px-2'} text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-danger`}
     >
       <Eraser className="h-3 w-3" aria-hidden="true" />
-      {tr('editor.clearMetaShort')}
+      {!narrow && tr('editor.clearMetaShort')}
       <Tooltip label={tr('editor.clearMetaHint')} align="end" />
     </button>
   )
@@ -1410,10 +1421,10 @@ export const Editor = memo(function Editor({
       data-testid="derive-btn"
       aria-label={tr('editor.deriveFromName')}
       onClick={deriveFromNames}
-      className="press group relative flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      className={`press group relative flex h-7 items-center gap-1.5 rounded-md ${narrow ? 'px-1' : 'px-2'} text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`}
     >
       <Tag className="h-3 w-3" aria-hidden="true" />
-      {tr('editor.deriveFromName')}
+      {!narrow && tr('editor.deriveFromName')}
       <Tooltip label={tr('editor.deriveFromNameHint')} align="end" />
     </button>
   ) : null
@@ -2139,6 +2150,7 @@ export const Editor = memo(function Editor({
         />
 
         <ConvertFooter
+          narrow={narrow}
           item={item}
           spectrum={spectrumInHand}
           isMulti={isMulti}

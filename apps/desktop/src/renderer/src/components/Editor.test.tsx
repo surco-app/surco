@@ -649,6 +649,30 @@ const openMore = (): void => {
 }
 
 describe('Editor metadata header', () => {
+  // With a library tree and the results column open in the smallest window the editor is
+  // 262 px wide: the two named actions ran over the section title and off the panel's edge.
+  it('keeps the fill and clear actions as bare icons with their names when the editor is too narrow for the words', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(private cb: ResizeObserverCallback) {}
+        observe(): void {
+          this.cb(
+            [{ contentRect: { width: 262 } } as ResizeObserverEntry],
+            this as unknown as ResizeObserver,
+          )
+        }
+        disconnect(): void {}
+      },
+    )
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav')
+    expect(screen.getByTestId('derive-btn')).not.toHaveTextContent('Fill from filename')
+    expect(screen.getByTestId('derive-btn')).toHaveAccessibleName('Fill from filename')
+    expect(screen.getByTestId('clear-meta-btn')).not.toHaveTextContent('Clear')
+    expect(screen.getByTestId('clear-meta-btn')).toHaveAccessibleName(/clear/i)
+    vi.unstubAllGlobals()
+  })
+
   // Eight bare glyphs in a row told nobody which one empties every field: the two tag
   // actions are named in the header and the file and clipboard ones wait in one menu, so
   // the eraser is never a pixel away from "paste".
