@@ -306,6 +306,7 @@ const PEEK_TREE_WIDTH = 240
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
+const NOTICE_NAMES = 3
 const QUEUE_PILL_ORDER = CUE_PROGRAMS
 const inFiles = (t: TrackItem): boolean => !!t.inFiles
 
@@ -411,18 +412,21 @@ export default function App(): React.JSX.Element {
   // A notice a batch raises once per track: the cards share a key, so a run over a folder
   // shows one that counts the tracks instead of the same sentence stacked for each. The
   // count starts over once the card is gone.
-  const noticeTallies = useRef(new Map<string, number>())
+  const noticeTallies = useRef(new Map<string, string[]>())
   const tallyNotice = useCallback(
-    (kind: string, message: (tracks: number) => string) => {
-      const tracks = (noticeTallies.current.get(kind) ?? 0) + 1
-      noticeTallies.current.set(kind, tracks)
+    (kind: string, name: string, message: (tracks: number) => string) => {
+      const names = [...(noticeTallies.current.get(kind) ?? []), name]
+      noticeTallies.current.set(kind, names)
       const forget = (): void => {
         noticeTallies.current.delete(kind)
       }
+      // Past one track the sentence counts them, and the first few names follow it so the
+      // card still says which tracks it is about.
+      const named = `${names.slice(0, NOTICE_NAMES).join(', ')}${names.length > NOTICE_NAMES ? '…' : ''}`
       pushToast(store, {
         key: `notice-${kind}`,
         tone: 'neutral',
-        message: message(tracks),
+        message: names.length === 1 ? message(1) : `${message(names.length)} ${named}`,
         duration: 4000,
         testid: 'app-notice',
         onDismiss: forget,
@@ -1772,7 +1776,7 @@ export default function App(): React.JSX.Element {
       clearChecked()
     },
     onNormalizeSkipped: (name) =>
-      tallyNotice('normalizeSkipped', (tracks) =>
+      tallyNotice('normalizeSkipped', name, (tracks) =>
         tracks === 1
           ? tr('notices.normalizeSkipped', { name })
           : tr('notices.normalizeSkippedMany', { count: tracks }),
@@ -1780,7 +1784,7 @@ export default function App(): React.JSX.Element {
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
     onDeclicked: (name, count) =>
-      tallyNotice('declicked', (tracks) =>
+      tallyNotice('declicked', name, (tracks) =>
         tracks === 1
           ? tr('notices.declicked', { name, count })
           : tr('notices.declickedMany', { count: tracks }),

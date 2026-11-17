@@ -68,7 +68,13 @@ describe('ToastStack', () => {
   })
 
   it('drops a card in from above, the side the stack hangs from, instead of the modal pop', () => {
-    render(<ToastStack toasts={[toast({ id: 'a', message: 'hola' })]} onExpire={vi.fn()} onClose={vi.fn()} />)
+    render(
+      <ToastStack
+        toasts={[toast({ id: 'a', message: 'hola' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
     const card = screen.getByTestId('toast-slot').querySelector('.rounded-xl') as HTMLElement
     expect(card.className).toContain('animate-toast-in')
     expect(card.className).not.toContain('animate-pop')
@@ -201,7 +207,12 @@ describe('ToastStack', () => {
       <>
         <ToastStack toasts={toasts} onExpire={onExpire} onClose={vi.fn()} />
         {open && (
-          <ModalShell onClose={vi.fn()} backdropTestId="modal-backdrop" className="" label="Ajustes">
+          <ModalShell
+            onClose={vi.fn()}
+            backdropTestId="modal-backdrop"
+            className=""
+            label="Ajustes"
+          >
             <button type="button">Cerrar</button>
           </ModalShell>
         )}
@@ -211,7 +222,12 @@ describe('ToastStack', () => {
     it('steps a plain notice out of the way of an open dialog and brings it back when it closes', () => {
       const toasts = [
         toast({ id: 'n', testid: 'notice', message: 'disk full' }),
-        toast({ id: 'u', testid: 'undo', message: 'removed', action: { label: 'Undo', onAction: vi.fn() } }),
+        toast({
+          id: 'u',
+          testid: 'undo',
+          message: 'removed',
+          action: { label: 'Undo', onAction: vi.fn() },
+        }),
       ]
       const { rerender } = render(withModal(false, toasts))
       rerender(withModal(true, toasts))
