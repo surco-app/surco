@@ -66,9 +66,12 @@ function parseSong(open: string, body: string): VirtualdjSong | null {
   const infos = body.match(tagRe('Infos'))?.[0] ?? ''
   const scan = body.match(tagRe('Scan'))?.[0] ?? ''
   const pois: VirtualdjPoi[] = []
+  let beatgridSeconds: number | null = null
   for (const m of body.matchAll(poiRe())) {
     const poi = parsePoi(m[0])
-    if (poi) pois.push(poi)
+    if (!poi) continue
+    pois.push(poi)
+    if (beatgridSeconds === null && attr(m[0], 'Type') === 'beatgrid') beatgridSeconds = poi.seconds
   }
   return {
     path,
@@ -83,7 +86,7 @@ function parseSong(open: string, body: string): VirtualdjSong | null {
     lengthSeconds: number(attr(infos, 'SongLength')),
     firstSeen: number(attr(infos, 'FirstSeen')),
     secondsPerBeat: number(attr(scan, 'Bpm')) ?? number(attr(tags, 'Bpm')),
-    phaseSeconds: number(attr(scan, 'Phase')),
+    phaseSeconds: number(attr(scan, 'Phase')) ?? beatgridSeconds,
     pois,
   }
 }
