@@ -13,6 +13,7 @@ import { createRequire } from 'node:module'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { quietLaunch } from './quiet-launch.mjs'
 import { APP_LANGUAGES } from './recipe-labels.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -53,10 +54,11 @@ export async function launch(lang, extra = {}) {
       ...extra,
     }),
   )
+  const quiet = quietLaunch(mainEntry, electronPath)
   const app = await electron.launch({
-    executablePath: electronPath,
-    args: [mainEntry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
-    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+    executablePath: quiet.executablePath,
+    args: [quiet.entry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
+    env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
   const page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')

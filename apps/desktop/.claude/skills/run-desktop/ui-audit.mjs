@@ -13,6 +13,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { quietLaunch } from './quiet-launch.mjs'
 
 const require = createRequire(import.meta.url)
 const { _electron: electron } = require('playwright-core')
@@ -218,10 +219,11 @@ const MEASURE = (scopeSelector) => {
 }
 
 async function main() {
+  const quiet = quietLaunch(resolve(appDir, 'out/main/index.js'), electronPath)
   const app = await electron.launch({
-    executablePath: electronPath,
-    args: [resolve(appDir, 'out/main/index.js'), '--force-device-scale-factor=1'],
-    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+    executablePath: quiet.executablePath,
+    args: [quiet.entry, '--force-device-scale-factor=1'],
+    env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
   const page = await app.firstWindow()
   await page.waitForLoadState('domcontentloaded')
