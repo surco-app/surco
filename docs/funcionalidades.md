@@ -76,9 +76,13 @@ con un clic, y a su derecha el menú de destino con el nombre del destino elegid
 «N pistas → formato · destino». Debajo va «Convertir N seleccionadas», o «Convertir N de M
 seleccionadas» si alguna se queda fuera (`batch-convert`; `header.convertSelected`,
 `header.convertSomeSelected`). El botón dice «Actualizar N seleccionadas» solo cuando el lote
-reescribe etiquetas sin tocar el audio: destino «Editar el original», cada fichero en su propio
-formato y sin normalizar, reparar ni recortar (`batchWritesTagsOnly`, `lib/batch.ts`). Con
-cualquier otro destino sigue diciendo «Convertir». Con una sola pista el pie no cambia: el
+reescribe etiquetas sin tocar el audio: cada fichero se queda en su propio formato, sin
+normalizar, reparar ni recortar, y se escribe donde está (`batchWritesTagsOnly`,
+`lib/batch.ts`). Eso pasa con el destino «Editar el original», con Apple Music (se etiqueta en
+su sitio y luego se añade; un FLAC suelto no, porque Music no lo admite y va a la carpeta) y con
+la carpeta de salida cuando todas las pistas vienen de una biblioteca. Con «Junto al original»,
+o con ficheros sueltos hacia la carpeta de salida, sigue diciendo «Convertir», porque ahí se
+crea una copia. Con una sola pista el pie no cambia: el
 formato y el destino siguen en la flecha del botón. Si se edita una selección ya convertida, el
 pie deja la línea de hechas y vuelve a ofrecer el botón (`selectionStatus.ts`).
 Para convertir toda la lista quedan ⌘A y el botón, ⌘⇧⏎ y «Convertir todas» en la paleta o en el
