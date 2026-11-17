@@ -106,6 +106,7 @@ export interface RekordboxQueue<R extends QueuedRepoint = RekordboxRepoint> {
   busy: () => boolean
   settled: () => Promise<void>
   apply: (ensureClosed: () => Promise<boolean>, opts?: { manual?: boolean }) => Promise<QueueApply>
+  applyNew: (ops: QueueOp[], ensureClosed: () => Promise<boolean>) => Promise<QueueApply>
 }
 
 export const COLLECTION_WIDE: ReadonlySet<string> = new Set([
@@ -218,6 +219,7 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   // The repoints an apply has read and is writing: a later one for the same file waits on
   // its own, measured from what that write leaves, instead of stacking onto it.
   const writing = new Set<R>()
+  const beingWritten = new Set<string>()
   let editOutcomes = new Map<string, OpOutcome>()
   let olderEditOutcomes = new Map<string, OpOutcome>()
 
@@ -239,7 +241,8 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         const s = stateOf(q, 0, deps.addsTracks ?? true)
         return sum + s.tracks + s.changes
       }, 0)
-    const waiting = stateOf(own, elsewhere, deps.addsTracks ?? true)
+    const told = own && { ...own, ops: own.ops.filter((o) => !beingWritten.has(o.id)) }
+    const waiting = stateOf(told, elsewhere, deps.addsTracks ?? true)
     const unplugged =
       !deps.collection() && !!deps.configured?.() && waiting.tracks + waiting.changes > 0
     return unplugged ? { ...waiting, unplugged: true } : waiting
@@ -488,6 +491,18 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         })
       chain = next.catch(() => undefined)
       return next
+    },
+    async applyNew(ops, ensureClosed) {
+      for (const op of ops) beingWritten.add(op.id)
+      try {
+        this.enqueue(ops)
+        const result = await this.apply(ensureClosed)
+        for (const op of ops) beingWritten.delete(op.id)
+        if (stillWaiting(result)) deps.onChange(state())
+        return result
+      } finally {
+        for (const op of ops) beingWritten.delete(op.id)
+      }
     },
   }
 }

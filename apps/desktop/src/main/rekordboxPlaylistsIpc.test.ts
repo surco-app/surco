@@ -16,7 +16,12 @@ vi.mock('./rekordboxDb', async (importOriginal) => {
 })
 
 import type { DjEditMain } from '../shared/djApi'
-import type { CollectionTrack, RekordboxPlaylistEdit, SourcePlaylistEntry } from '../shared/types'
+import type {
+  CollectionTrack,
+  RekordboxPlaylistEdit,
+  RekordboxQueueState,
+  SourcePlaylistEntry,
+} from '../shared/types'
 import { registerCuesIpc } from './cuesIpc'
 import { queueWithApplyInFlight } from './editRaceFixture'
 import { rekordboxCueSource } from './rekordboxCueSource'
@@ -32,7 +37,7 @@ import {
   withCollection,
 } from './rekordboxPlaylistsIpc'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
-import { createRekordboxQueue, type RekordboxQueue } from './rekordboxQueue'
+import { createRekordboxQueue, type QueueApply, type RekordboxQueue } from './rekordboxQueue'
 
 describe('withCollection', () => {
   it('falls back when there is no collection, the normal case for a user without rekordbox', () => {
@@ -84,7 +89,11 @@ describe('collectionAvailable', () => {
   })
 })
 
-function queueFor(path: string, sessionBackup = vi.fn(async () => {})) {
+function queueFor(
+  path: string,
+  sessionBackup = vi.fn(async () => {}),
+  onChange: (state: RekordboxQueueState) => void = () => {},
+) {
   let text: string | null = null
   return createRekordboxQueue({
     store: {
@@ -101,7 +110,7 @@ function queueFor(path: string, sessionBackup = vi.fn(async () => {})) {
       applyRekordboxBatch(c, ops, { ensureClosed, sessionBackup }),
     repoint: async () => [],
     nodeStamps: async () => ({}),
-    onChange: () => {},
+    onChange,
   })
 }
 
@@ -131,6 +140,18 @@ describe('rekordboxEdit Matching', () => {
     })
     const db = openRekordboxDb(path, { readonly: true })
     expect(db && readMatchingPairs(db)).toEqual([['101', '102']])
+  })
+
+  it('never tells the window a pair waits for rekordbox to close while it is closed, however many are removed', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      matches: [{ ContentID1: '101', ContentID2: '102' }],
+    })
+    const told = vi.fn<(state: RekordboxQueueState) => void>()
+    register(() => path, { isRunning: async () => false, queue: queueFor(path, undefined, told) })
+    expect(await section.match?.('remove', ['101', '102'], 'x')).toEqual({ applied: true })
+    expect(told.mock.calls.filter(([s]) => s.changes > 0)).toEqual([])
   })
 
   it('leaves the pair waiting for rekordbox to close, like any other write', async () => {
@@ -378,8 +399,7 @@ describe('rekordboxEdit', () => {
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const onWaiting = vi.fn()
     const queue = {
-      enqueue: vi.fn(),
-      apply: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
+      applyNew: vi.fn(async () => ({ status: 'refused', reason: 'backup-failed' }) as const),
       drop: vi.fn(),
       outcomeOf: vi.fn(),
     }
@@ -426,25 +446,22 @@ describe('rekordboxEdit', () => {
     writeRekordboxPlaylistFixture(path, { ...ORGANISE_FIXTURE, xml: true })
     const other = { code: 'playlist-changed', track: 'Bam Bam', playlist: 'House' } as const
     const own = { code: 'edit-changed', playlist: 'House' } as const
-    const enqueue = vi.fn<RekordboxQueue['enqueue']>()
-    const ownId = () => enqueue.mock.calls[0][0][0].id
-    const queue = {
-      enqueue,
-      drop: vi.fn(),
-      outcomeOf: vi.fn(),
-      apply: vi.fn(async () => ({
-        status: 'applied' as const,
+    const applyNew = vi.fn<RekordboxQueue['applyNew']>(
+      async (): Promise<QueueApply> => ({
+        status: 'applied',
         tracks: 0,
         changes: 1,
         notices: [own, other],
         written: [{ path: '/m/a.wav', wanted: [] }],
         outcomes: [
-          { id: ownId(), applied: false, reason: 'stale' as const, notices: [own] },
+          { id: ownId(), applied: false, reason: 'stale', notices: [own] },
           { id: 'e2', applied: true, notices: [] },
           { id: 't', applied: false, notices: [other] },
         ],
-      })),
-    }
+      }),
+    )
+    const ownId = (): string => applyNew.mock.calls[0][0][0].id
+    const queue = { applyNew, drop: vi.fn(), outcomeOf: vi.fn() }
     const onApplied = vi.fn()
     register(() => path, {
       isRunning: async () => false,

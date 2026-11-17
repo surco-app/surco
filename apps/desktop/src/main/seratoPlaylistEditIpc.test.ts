@@ -46,6 +46,10 @@ function registerWith({
     apply: vi.fn<RekordboxQueue['apply']>(async (ensureClosed) =>
       result(queued[queued.length - 1], await ensureClosed()),
     ),
+    applyNew: vi.fn<RekordboxQueue['applyNew']>(async (ops, ensureClosed): Promise<QueueApply> => {
+      queue.enqueue(ops as EditOp[])
+      return queue.apply(ensureClosed)
+    }),
     drop: vi.fn<RekordboxQueue['drop']>(),
     outcomeOf: vi.fn<RekordboxQueue['outcomeOf']>(),
   }
