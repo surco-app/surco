@@ -35,9 +35,9 @@ writeFileSync(
   }),
 )
 
-const quiet = quietLaunch(join(tree, 'apps/desktop/out/main/index.js'))
+const quiet = quietLaunch(join(tree, 'apps/desktop/out/main/index.js'), electronPath)
 const app = await electron.launch({
-  executablePath: electronPath,
+  executablePath: quiet.executablePath,
   args: [quiet.entry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
   env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
 })

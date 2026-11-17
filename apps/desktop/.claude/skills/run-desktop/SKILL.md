@@ -171,12 +171,15 @@ the page while the app kept running (seen twice around 16 minutes in, on 15/11/2
 
 ## Gates run in the background
 
-`soak.mjs`, `soak-traktor.mjs` and `responsiveness.mjs` launch the app through
-`background-entry.mjs`: on macOS the app never becomes the active one, so a run does not pull
-the person at the keyboard to the desktop the test window sits on, launch after launch. The
-entry also answers "is a window focused" with yes, as in a real session, and the refocus step
-of the responsiveness gate fires the window's own blur and focus events instead of taking the
-focus. `SURCO_TEST_FOREGROUND=1` launches the app as before.
+On macOS `soak.mjs`, `soak-traktor.mjs` and `responsiveness.mjs` never bring the app to the
+front, launch after launch: an app that activates switches the screen to the desktop its window
+sits on. `quiet-launch.mjs` runs them on a copy of the Electron bundle marked as a background
+app (`LSUIElement`, ad-hoc signed, built once under `$TMPDIR/surco-background-electron-*`),
+because an app is activated at launch before any of its code runs, and through
+`background-entry.mjs`, which never shows the window and answers "is a window focused" with
+yes, as in a real session. The refocus step of the responsiveness gate fires the window's own
+blur and focus events instead of taking the focus. `SURCO_TEST_FOREGROUND=1` launches the app
+as before.
 
 ## Responsiveness gate
 
