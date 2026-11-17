@@ -1274,6 +1274,29 @@ describe('ConvertFooter batch format and destination', () => {
     expect(screen.getByTestId('batch-destination-toggle')).toHaveAttribute('data-state', 'picked')
   })
 
+  // The setting lived only in Settings, across the app from the button that starts the
+  // batch: someone clearing the list after every album had to cross the window to switch it.
+  it('switches clearing the list after a batch from the footer, with no label of its own', () => {
+    const onToggleClearAfterBatch = vi.fn()
+    const { rerender } = render(plan({ clearAfterBatch: false, onToggleClearAfterBatch }))
+    const toggle = (): HTMLElement => screen.getByTestId('batch-clear-toggle')
+    expect(toggle()).toHaveAttribute('role', 'switch')
+    expect(toggle()).toHaveAttribute('aria-checked', 'false')
+    expect(toggle()).toHaveAccessibleName(i18n.t('settings.clearListAfterConvert'))
+    expect(toggle()).toHaveTextContent('')
+    fireEvent.click(toggle())
+    expect(onToggleClearAfterBatch).toHaveBeenCalledOnce()
+    rerender(plan({ clearAfterBatch: true, onToggleClearAfterBatch }))
+    expect(toggle()).toHaveAttribute('aria-checked', 'true')
+  })
+
+  // The setting only acts on the working list, so a library tab must not offer a switch
+  // that would do nothing there.
+  it('offers no switch where clearing does not apply', () => {
+    render(plan())
+    expect(screen.queryByTestId('batch-clear-toggle')).toBeNull()
+  })
+
   // The sentence repeated what the selector, the menu and the button already say, and
   // was the line the selector takes the place of: the footer must not grow.
   it('carries no summary sentence', () => {

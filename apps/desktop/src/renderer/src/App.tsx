@@ -2865,6 +2865,9 @@ export default function App(): React.JSX.Element {
   // The X on the plan card: the same synced flag the Settings checkbox writes, so one
   // click quiets every inline explanation and Settings > Editor brings them back.
   const onHideEditorHints = useStableCallback(() => saveSettings({ showEditorHints: false }))
+  const onToggleClearList = useStableCallback(() =>
+    saveSettings({ clearListAfterConvert: !(settings?.clearListAfterConvert ?? false) }),
+  )
   const onCueJumpBars = useStableCallback((cueJumpBars: CueJumpBars) =>
     saveSettings({ cueJumpBars }),
   )
@@ -4903,6 +4906,9 @@ export default function App(): React.JSX.Element {
                               onResultsFit={onResultsFit}
                               onShowLoudnessHelp={onShowLoudnessHelp}
                               onHideEditorHints={onHideEditorHints}
+                              onToggleClearList={
+                                browser.source === null ? onToggleClearList : undefined
+                              }
                               onOpenRename={onOpenRename}
                               onRegenerateName={onRegenerateName}
                               onTrimDetectedAll={onTrimDetectedAll}

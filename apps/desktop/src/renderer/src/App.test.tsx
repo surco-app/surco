@@ -8150,6 +8150,24 @@ describe('App multi-select convert', () => {
     )
   })
 
+  it('saves the clear-after-batch setting from the switch in the batch footer', async () => {
+    const saveSettings = vi.fn().mockResolvedValue(undefined)
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      saveSettings,
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    const toggle = await screen.findByTestId('batch-clear-toggle')
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(toggle)
+    expect(saveSettings).toHaveBeenCalledWith(
+      expect.objectContaining({ clearListAfterConvert: true }),
+    )
+  })
+
   // With the setting on, the converted rows leave the list on their own and can be brought
   // back; the row that failed stays, so the failure is still there to look at.
   it('clears the converted tracks when the batch ends and keeps the one that failed', async () => {
