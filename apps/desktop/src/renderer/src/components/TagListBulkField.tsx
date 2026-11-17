@@ -1,9 +1,16 @@
 import { ChevronRight } from 'lucide-react'
 import type React from 'react'
-import { useId, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TrackMetadata } from '../../../shared/types'
-import { type TagList, tagListState, tagListTags, toggleTagListAll } from '../lib/bulkEdit'
+import {
+  type TagList,
+  type TagListStates,
+  tagListStates,
+  tagListTags,
+  tagsOf,
+  toggleTagListAll,
+} from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
 import type { TrackItem } from '../types'
 import { SuggestionChips } from './SuggestionChips'
@@ -22,22 +29,27 @@ interface TagOrder {
   rows: Record<string, string[]>
 }
 
-function tagOrder(selection: string, tags: string[], tracks: TrackItem[], list: TagList): TagOrder {
+function tagOrder(
+  selection: string,
+  tags: string[],
+  tracks: TrackItem[],
+  list: TagList,
+  stateOf: TagListStates,
+): TagOrder {
   const rank = { all: 0, some: 1, none: 2 }
   return {
     selection,
-    summary: [...tags].sort(
-      (a, b) => rank[tagListState(tracks, list, a)] - rank[tagListState(tracks, list, b)],
-    ),
+    summary: [...tags].sort((a, b) => rank[stateOf(a)] - rank[stateOf(b)]),
     rows: Object.fromEntries(
-      tracks.map((t) => [
-        t.id,
-        [...tags].sort(
-          (a, b) =>
-            Number(csvHas(t.meta[list.key] ?? '', b, list.whole, list.separator)) -
-            Number(csvHas(t.meta[list.key] ?? '', a, list.whole, list.separator)),
-        ),
-      ]),
+      tracks.map((t) => {
+        const carried = tagsOf(t, list)
+        return [
+          t.id,
+          [...tags].sort(
+            (a, b) => Number(carried.has(b.toLowerCase())) - Number(carried.has(a.toLowerCase())),
+          ),
+        ]
+      }),
     ),
   }
 }
@@ -62,10 +74,11 @@ export function TagListBulkField({
   const [open, setOpen] = useState(false)
   const tags = tagListTags(presets, tracks, list)
   const selection = tracks.map((t) => t.id).join('\n')
-  const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks, list))
-  if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks, list))
+  const stateOf = useMemo(() => tagListStates(tracks, list), [tracks, list])
+  const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks, list, stateOf))
+  if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks, list, stateOf))
   const summaryTags = sortedAs(tags, order.summary)
-  const varying = tags.filter((tag) => tagListState(tracks, list, tag) === 'some').length
+  const varying = tags.filter((tag) => stateOf(tag) === 'some').length
   // Every row repeats the same chips, so each row is a group named by what it edits: the
   // summary by the field's label, a track's row by its number and title. min-w-0 undoes a
   // fieldset's min-content floor, which would stop the chip row and titles from shrinking.
@@ -82,11 +95,9 @@ export function TagListBulkField({
         </span>
         <SuggestionChips
           suggestions={summaryTags}
-          isOn={(tag) => tagListState(tracks, list, tag) === 'all'}
-          isPartial={(tag) => tagListState(tracks, list, tag) === 'some'}
-          partialLabel={(tag) =>
-            `${tracks.filter((t) => csvHas(t.meta[list.key] ?? '', tag, list.whole, list.separator)).length}/${tracks.length}`
-          }
+          isOn={(tag) => stateOf(tag) === 'all'}
+          isPartial={(tag) => stateOf(tag) === 'some'}
+          partialLabel={(tag) => `${stateOf.count(tag)}/${tracks.length}`}
           addable
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />

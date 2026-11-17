@@ -791,6 +791,7 @@ export default function App(): React.JSX.Element {
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
+    completeTracksMeta,
     readCoversOnScreen,
     readCoversInBackground,
     refreshTrackFromDisk,
@@ -1798,8 +1799,8 @@ export default function App(): React.JSX.Element {
     [tracks, selectedIdSet],
   )
   useEffect(() => {
-    for (const id of partialSelected) void completeTrackMeta(id)
-  }, [partialSelected, completeTrackMeta])
+    completeTracksMeta(partialSelected)
+  }, [partialSelected, completeTracksMeta])
   const readFullTrack = useStableCallback(async (id: string) => {
     await completeTrackMeta(id)
     return tracksRef.current.find((t) => t.id === id)

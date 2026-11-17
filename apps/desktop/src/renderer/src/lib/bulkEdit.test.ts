@@ -6,6 +6,7 @@ import {
   GENRE_TAGS,
   GROUPING_TAGS,
   tagListState,
+  tagListStates,
   tagListTags,
   toggleTagListAll,
 } from './bulkEdit'
@@ -89,6 +90,28 @@ describe('tagListState', () => {
 
   it('matches whole tags, not substrings', () => {
     expect(tagListState([track({ grouping: 'Bases' })], GROUPING_TAGS, 'Base')).toBe('none')
+  })
+})
+
+describe('tagListStates', () => {
+  it('answers every tag as tagListState does from one pass over the selection, since each chip asking on its own froze a selection of thousands', () => {
+    const tracks = [
+      track({ grouping: 'Bases, Discazos', genre: 'Folk, World, & Country, House' }),
+      track({ grouping: 'cantaditas, DISCAZOS, Discazos', genre: 'House' }),
+      track({ grouping: '', genre: '' }),
+    ]
+    const grouping = tagListStates(tracks, GROUPING_TAGS)
+    for (const tag of ['Discazos', 'discazos', 'Bases', 'Base', 'Cantaditas', 'Cierre'])
+      expect(grouping(tag), tag).toBe(tagListState(tracks, GROUPING_TAGS, tag))
+    const genre = tagListStates(tracks, GENRE_TAGS)
+    for (const tag of ['Folk, World, & Country', 'House', 'World', 'Folk'])
+      expect(genre(tag), tag).toBe(tagListState(tracks, GENRE_TAGS, tag))
+    expect(tagListStates(tracks.slice(0, 2), GROUPING_TAGS)('Discazos')).toBe('all')
+  })
+
+  it('counts the tracks that carry a tag once each, for the "3/12" a partial chip shows', () => {
+    const tracks = [track({ grouping: 'Discazos, discazos' }), track({ grouping: 'Bases' })]
+    expect(tagListStates(tracks, GROUPING_TAGS).count('DISCAZOS')).toBe(1)
   })
 })
 
