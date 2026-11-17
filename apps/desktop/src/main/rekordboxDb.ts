@@ -185,10 +185,47 @@ export function findTrackByPath(
   path: string,
   options: FindOptions = {},
 ): RekordboxTrack | AmbiguousMatch | null {
+  return matchOf(candidateRows(db, path), path, options)
+}
+
+const asciiFolded = (name: string): string => name.replace(/[A-Z]/g, (c) => c.toLowerCase())
+
+export function trackFinder(
+  db: RekordboxDb,
+  options: FindOptions = {},
+): (path: string) => RekordboxTrack | AmbiguousMatch | null {
+  const byName = new Map<string, ContentRow[]>()
+  const rows = db
+    .prepare(
+      `SELECT ID, FolderPath, FileNameL, FileType, FileSize
+         FROM djmdContent
+        WHERE FileNameL IS NOT NULL
+          AND FileType <> ?
+          AND coalesce(rb_local_deleted, 0) = 0`,
+    )
+    .all(STREAMING_FILE_TYPE) as ContentRow[]
+  for (const row of rows) {
+    const name = asciiFolded(row.FileNameL)
+    byName.set(name, [...(byName.get(name) ?? []), row])
+  }
+  return (path) => {
+    const names = new Set(fileNameForms(path).map(asciiFolded))
+    return matchOf(
+      [...names].flatMap((name) => byName.get(name) ?? []),
+      path,
+      options,
+    )
+  }
+}
+
+function matchOf(
+  rows: ContentRow[],
+  path: string,
+  options: FindOptions,
+): RekordboxTrack | AmbiguousMatch | null {
   const safeResolve = rekordboxPathKey(options)
   const target = safeResolve(path)
   const [fileName] = fileNameForms(path)
-  const rows = candidateRows(db, path)
   const matches = rows.filter((r) => safeResolve(r.FolderPath) === target)
   // Logged on every miss, because a miss is indistinguishable from "the collection never
   // had this track" without it: the user hit "none of these tracks are in the collection"

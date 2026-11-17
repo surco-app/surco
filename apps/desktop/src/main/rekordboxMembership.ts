@@ -1,4 +1,4 @@
-import { type FindOptions, findTrackByPath, isAmbiguous, type openRekordboxDb } from './rekordboxDb'
+import { type FindOptions, isAmbiguous, type openRekordboxDb, trackFinder } from './rekordboxDb'
 import { trackPlaylists } from './rekordboxPlaylistEdit'
 
 type Db = NonNullable<ReturnType<typeof openRekordboxDb>>
@@ -9,8 +9,9 @@ export function readMembership(
   find: FindOptions,
 ): Record<string, string[]> {
   const out: Record<string, string[]> = {}
+  const trackOf = trackFinder(db, { ...find, quiet: true })
   for (const path of paths) {
-    const match = findTrackByPath(db, path, { ...find, quiet: true })
+    const match = trackOf(path)
     if (match === null || isAmbiguous(match)) continue
     out[path] = trackPlaylists(db, match.id)
   }
