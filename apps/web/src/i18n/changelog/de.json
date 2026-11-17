@@ -51,6 +51,22 @@
       {
         "text": "Ändere die Lautheit bereits konvertierter Tracks, mehrere auf einmal, und der Button kommt zurück, um sie anzuwenden.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Setze Cues in einem Track, den VirtualDJ noch nicht analysiert hat. Surco misst Tempo und Raster selbst.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Schalte „Liste leeren, wenn ein Stapel fertig ist“ in derselben Zeile wie die Stapelformate ein oder aus, ohne die Einstellungen zu öffnen.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Die Vorschlagszeile eines Feldes lässt sich nach dem Öffnen wieder einklappen. Surco merkt sich, wie du sie verlassen hast.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Die Dichte Kompakt nutzt das Fenster besser, mit engerem Editor, Listenkopf und Zeilen. Ist der Editor schmal, bleiben seine Buttons sichtbar.",
+        "in": "1.38.2"
       }
     ]
   },

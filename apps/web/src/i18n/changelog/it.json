@@ -51,6 +51,22 @@
       {
         "text": "Cambia il volume di brani già convertiti, più di uno alla volta, e il pulsante torna per applicarlo.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Metti i cue su un brano che VirtualDJ non ha ancora analizzato. Surco ne calcola il tempo e la griglia.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Attiva o disattiva «Svuota l'elenco al termine di un lotto» dalla stessa riga dei formati del lotto, senza passare dalle Impostazioni.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La riga di suggerimenti di un campo si richiude dopo averla aperta. Surco ricorda come l'hai lasciata.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La densità Compatta sfrutta meglio la finestra, con editor, intestazione dell'elenco e righe più stretti. Quando l'editor è stretto, i suoi pulsanti restano visibili.",
+        "in": "1.38.2"
       }
     ]
   },

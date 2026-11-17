@@ -51,6 +51,22 @@
       {
         "text": "Canvia el volum de pistes que ja havies convertit, diverses alhora, i el botó torna per aplicar-ho.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Posa cues en una pista que VirtualDJ encara no ha analitzat. Surco en calcula el tempo i la graella.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Activa o desactiva «Buidar la llista en acabar un lot» des de la mateixa línia dels formats del lot, sense passar per Configuració.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La fila de suggeriments d’un camp es torna a plegar després d’obrir-la. Surco recorda com la vas deixar.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La densitat Compacta aprofita millor la finestra, amb l’editor, la capçalera de la llista i les files més ajustats. Amb l’editor estret, els seus botons continuen a la vista.",
+        "in": "1.38.2"
       }
     ]
   },

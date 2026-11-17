@@ -51,6 +51,22 @@
       {
         "text": "Change the loudness of tracks you already converted, several at once, and the button comes back to apply it.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Set cues on a track VirtualDJ has not analysed yet. Surco measures its tempo and its grid.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Turn “Clear the list when a batch finishes” on or off from the same line as the batch formats, without going to Settings.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "A field’s row of suggestions folds back after you open it. Surco remembers how you left it.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Compact density makes better use of the window, with a tighter editor, list header and rows. When the editor is narrow, its buttons stay in view.",
+        "in": "1.38.2"
       }
     ]
   },

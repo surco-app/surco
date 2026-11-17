@@ -51,6 +51,22 @@
       {
         "text": "Change le volume de morceaux déjà convertis, plusieurs à la fois, et le bouton revient pour l’appliquer.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Place des cues sur un morceau que VirtualDJ n’a pas encore analysé. Surco mesure son tempo et sa grille.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Active ou désactive « Vider la liste à la fin d’un lot » depuis la même ligne que les formats du lot, sans passer par les Réglages.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La rangée de suggestions d’un champ se replie après l’avoir ouverte. Surco se souvient de l’état dans lequel tu l’as laissée.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "La densité Compacte utilise mieux la fenêtre, avec un éditeur, un en-tête de liste et des lignes plus serrés. Quand l’éditeur est étroit, ses boutons restent visibles.",
+        "in": "1.38.2"
       }
     ]
   },

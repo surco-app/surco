@@ -51,6 +51,22 @@
       {
         "text": "Mude o volume de faixas que você já converteu, várias de uma vez, e o botão volta para aplicar.",
         "in": "1.38.1"
+      },
+      {
+        "text": "Coloque cues em uma faixa que o VirtualDJ ainda não analisou. O Surco mede o andamento e a grade.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "Ative ou desative “Esvaziar a lista ao terminar um lote” na mesma linha dos formatos do lote, sem ir aos Ajustes.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "A fileira de sugestões de um campo volta a se recolher depois de aberta. O Surco lembra como você a deixou.",
+        "in": "1.38.2"
+      },
+      {
+        "text": "A densidade Compacta aproveita melhor a janela, com editor, cabeçalho da lista e linhas mais ajustados. Com o editor estreito, os botões continuam à vista.",
+        "in": "1.38.2"
       }
     ]
   },
