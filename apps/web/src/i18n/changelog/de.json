@@ -35,6 +35,10 @@
       {
         "text": "Suchen und Konvertieren laufen flüssiger. Die Ergebnisse kommen auf einmal und nichts springt auf dem Bildschirm.",
         "in": "1.37.0"
+      },
+      {
+        "text": "Surco bleibt mit einer großen rekordbox-Bibliothek flüssig. Tausende Tracks auswählen, eine lange Liste öffnen und ihre Cues auf einmal löschen oder speichern friert die App nicht mehr ein. Surco lernt aus deinen Cues nur, wenn du gerade nicht darin arbeitest.",
+        "in": "1.37.1"
       }
     ]
   },

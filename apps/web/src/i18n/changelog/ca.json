@@ -35,6 +35,10 @@
       {
         "text": "Cercar i convertir es mouen amb més suavitat. Els resultats arriben de cop i res no salta a la pantalla.",
         "in": "1.37.0"
+      },
+      {
+        "text": "Surco respon amb una biblioteca gran de rekordbox. Seleccionar milers de pistes, obrir una llista llarga i esborrar o desar els seus cues d'un cop ja no deixen l'app aturada. Surco aprèn dels teus cues només quan no hi estàs treballant.",
+        "in": "1.37.1"
       }
     ]
   },

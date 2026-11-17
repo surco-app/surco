@@ -35,6 +35,10 @@
       {
         "text": "La recherche et la conversion bougent avec plus de douceur. Les résultats arrivent d'un coup et rien ne saute à l'écran.",
         "in": "1.37.0"
+      },
+      {
+        "text": "Surco reste réactif avec une grande bibliothèque rekordbox. Sélectionner des milliers de morceaux, ouvrir une longue liste et effacer ou enregistrer leurs cues d'un coup ne figent plus l'app. Surco apprend de tes cues seulement quand tu n'es pas en train d'y travailler.",
+        "in": "1.37.1"
       }
     ]
   },

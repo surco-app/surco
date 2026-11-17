@@ -35,6 +35,10 @@
       {
         "text": "Searching and converting move more smoothly. Results arrive in one go and nothing jumps on screen.",
         "in": "1.37.0"
+      },
+      {
+        "text": "Surco stays responsive with a big rekordbox library. Selecting thousands of tracks, opening a long list and clearing or saving their cues at once no longer freeze the app. Surco learns from your cues only while you are not working in it.",
+        "in": "1.37.1"
       }
     ]
   },

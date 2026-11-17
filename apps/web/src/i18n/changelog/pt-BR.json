@@ -35,6 +35,10 @@
       {
         "text": "Buscar e converter ficaram mais suaves. Os resultados chegam de uma vez e nada pula na tela.",
         "in": "1.37.0"
+      },
+      {
+        "text": "O Surco continua respondendo com uma biblioteca grande do rekordbox. Selecionar milhares de faixas, abrir uma lista longa e apagar ou salvar os cues de uma vez não travam mais o app. O Surco aprende com seus cues só quando você não está trabalhando nele.",
+        "in": "1.37.1"
       }
     ]
   },

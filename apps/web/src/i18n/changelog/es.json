@@ -35,6 +35,10 @@
       {
         "text": "Buscar y convertir se mueven con más suavidad. Los resultados llegan de una vez y nada salta en la pantalla.",
         "in": "1.37.0"
+      },
+      {
+        "text": "Surco responde con una biblioteca grande de rekordbox. Seleccionar miles de pistas, abrir una lista larga y borrar o guardar sus cues de una vez ya no dejan la app parada. Surco aprende de tus cues solo cuando no estás trabajando en él.",
+        "in": "1.37.1"
       }
     ]
   },
