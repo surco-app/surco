@@ -81,4 +81,37 @@ describe('SuggestionChips', () => {
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
     expect(screen.getByTestId('chip-Cantaditas')).toHaveFocus()
   })
+
+  // A user with their own genres per folder could not see which ones a track carried: the
+  // ones past the cut hid behind "+N" and the row read as if nothing else was applied.
+  it('keeps the applied tags in view when the row collapses', () => {
+    overflow.visibleCount = 2
+    render(
+      <SuggestionChips
+        suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
+        isOn={(s) => s === 'Trance'}
+        isPartial={(s) => s === 'Cierre'}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-Acid')).not.toBeInTheDocument()
+  })
+
+  // Reordering on every toggle would slide the chip out from under the pointer.
+  it('leaves a chip where it is when it is toggled', () => {
+    overflow.visibleCount = 3
+    const on = new Set<string>()
+    const props = { suggestions: ['Acid', 'Bases', 'Cierre', 'Trance'], onPick: () => {} }
+    const { rerender } = render(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    on.add('Bases')
+    rerender(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    const row = screen.getByTestId('field-suggestions')
+    expect([...row.querySelectorAll('[data-state]')].map((c) => c.textContent)).toEqual([
+      'Acid',
+      'Bases',
+      'Cierre',
+    ])
+  })
 })

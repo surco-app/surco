@@ -33,9 +33,25 @@ export function SuggestionChips({
   const [chipsExpanded, setChipsExpanded] = useState(false)
   const firstRevealedRef = useRef<HTMLButtonElement>(null)
   const revealFromRef = useRef<number | null>(null)
+  const stateOf = (s: string) => (isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off')
+  // Applied tags lead the row so the collapse never hides them. The order is taken once
+  // per list of suggestions, not per toggle: a chip that moved when pressed would slide
+  // out from under the pointer.
+  const listKey = suggestions.join('\n')
+  const lead = useRef<{ key: string; chips: string[] } | null>(null)
+  if (lead.current?.key !== listKey) {
+    lead.current = {
+      key: listKey,
+      chips: [
+        ...suggestions.filter((s) => stateOf(s) !== 'off'),
+        ...suggestions.filter((s) => stateOf(s) === 'off'),
+      ],
+    }
+  }
+  const chips = lead.current.chips
   const { containerRef, measureRef, visibleCount } = useChipOverflow(
-    suggestions,
-    !chipsExpanded && suggestions.length > 0,
+    chips,
+    !chipsExpanded && chips.length > 0,
   )
   // Pressing "+N" unmounts it, so focus would fall to the body. Land it on the first chip
   // the expansion revealed, which is where the keyboard user was heading anyway.
@@ -44,7 +60,6 @@ export function SuggestionChips({
     revealFromRef.current = null
     firstRevealedRef.current?.focus()
   }, [chipsExpanded])
-  const stateOf = (s: string) => (isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off')
   const content = (s: string): React.ReactNode => {
     const state = stateOf(s)
     return (
@@ -69,7 +84,7 @@ export function SuggestionChips({
         chipsExpanded ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
       }`}
     >
-      {(chipsExpanded ? suggestions : suggestions.slice(0, visibleCount)).map((s, i) => {
+      {(chipsExpanded ? chips : chips.slice(0, visibleCount)).map((s, i) => {
         const state = stateOf(s)
         return (
           <button
@@ -106,7 +121,7 @@ export function SuggestionChips({
           </button>
         )
       })}
-      {!chipsExpanded && suggestions.length > visibleCount && (
+      {!chipsExpanded && chips.length > visibleCount && (
         <button
           type="button"
           data-testid="chip-more"
@@ -115,11 +130,11 @@ export function SuggestionChips({
             setChipsExpanded(true)
           }}
           aria-label={tr('fields.suggestionsMore', {
-            count: suggestions.length - visibleCount,
+            count: chips.length - visibleCount,
           })}
           className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
         >
-          +{suggestions.length - visibleCount}
+          +{chips.length - visibleCount}
         </button>
       )}
       {!chipsExpanded && (
@@ -132,14 +147,12 @@ export function SuggestionChips({
           aria-hidden="true"
           className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
         >
-          {suggestions.map((s) => (
+          {chips.map((s) => (
             <span key={s} className="rounded-full border px-2 py-0.5 text-label">
               {content(s)}
             </span>
           ))}
-          <span className="rounded-full border px-2 py-0.5 text-label">
-            +{suggestions.length - 1}
-          </span>
+          <span className="rounded-full border px-2 py-0.5 text-label">+{chips.length - 1}</span>
         </span>
       )}
     </span>
