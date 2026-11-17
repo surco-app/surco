@@ -1,15 +1,6 @@
-import { readFileSync } from 'node:fs'
 import type { DjReadMain } from '../shared/djApi'
-import { traktorCoverFile, traktorCoverUrl } from './traktorCoverCache'
-import {
-  readTraktorCollection,
-  readTraktorMembership,
-  readTraktorPlayedTogether,
-  readTraktorPlaylist,
-  readTraktorRecentCount,
-  readTraktorTrackCount,
-  readTraktorTree,
-} from './traktorPlaylists'
+import type { TraktorReadAnswer, TraktorReadArg, TraktorReadName } from './traktorReads'
+import { readTraktor } from './worker'
 
 export interface TraktorPlaylistsHost {
   bootVolume: () => string
@@ -17,30 +8,22 @@ export interface TraktorPlaylistsHost {
 }
 
 export function traktorRead(collection: () => string, host: TraktorPlaylistsHost): DjReadMain {
-  const read = <T>(use: (nml: string) => T, fallback: T): T => {
-    const file = collection()
-    return file === '' ? fallback : use(readFileSync(file, 'utf8'))
-  }
+  const read = <N extends TraktorReadName>(
+    name: N,
+    arg: TraktorReadArg<N>,
+  ): Promise<TraktorReadAnswer<N>> => readTraktor(collection(), host.bootVolume(), name, arg)
   return {
     available: () => collection() !== '',
-    tree: () => read(readTraktorTree, []),
-    recentCount: () => read((nml) => readTraktorRecentCount(nml), 0),
-    trackCount: () => read(readTraktorTrackCount, 0),
-    collection: () => read((nml) => readTraktorCollection(nml, host.bootVolume()), []),
-    playlist: (id: string) => {
-      const file = collection()
-      const coverUrlOf = (coverId: string) =>
-        traktorCoverFile(file, coverId) ? traktorCoverUrl(coverId) : undefined
-      const entries = read(
-        (nml) => readTraktorPlaylist(nml, id, host.bootVolume(), undefined, coverUrlOf),
-        [],
-      )
+    tree: () => read('tree', undefined),
+    recentCount: () => read('recentCount', undefined),
+    trackCount: () => read('trackCount', undefined),
+    collection: () => read('collection', undefined),
+    playlist: async (id: string) => {
+      const entries = await read('playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
       return entries
     },
-    membership: (paths: string[]) =>
-      read((nml) => readTraktorMembership(nml, paths, host.bootVolume()), {}),
-    playedTogether: (ids: string[]) =>
-      read((nml) => readTraktorPlayedTogether(nml, ids, host.bootVolume()), []),
+    membership: (paths: string[]) => read('membership', paths),
+    playedTogether: (ids: string[]) => read('playedTogether', ids),
   }
 }

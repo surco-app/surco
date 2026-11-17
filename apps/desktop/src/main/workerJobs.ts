@@ -27,6 +27,7 @@ import {
   writeTags,
 } from './tags'
 import { detectBpm } from './tempo'
+import { runTraktorRead, type TraktorReadName } from './traktorReads'
 import { computePeaks } from './waveform'
 
 // The CPU-bound work that must never run on the main process's event loop: the
@@ -34,6 +35,7 @@ import { computePeaks } from './waveform'
 // 100MB+ AIFF synchronously when it grows the ID3 header. Each job is plain
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
+  | { type: 'traktorRead'; file: string; bootVolume: string; name: TraktorReadName; arg: unknown }
   | { type: 'fftBands'; slices: Uint8Array[]; specs: BandSpec[]; sampleRateHz: number }
   | { type: 'rekordboxRead'; path: string; key?: string; name: RekordboxReadName; arg: unknown }
   | { type: 'bpm'; pcm: Float32Array; sampleRate: number }
@@ -161,6 +163,13 @@ export type WorkerJobResult =
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'traktorRead':
+      return runTraktorRead(
+        job.file,
+        job.bootVolume,
+        job.name,
+        job.arg as never,
+      ) as unknown as WorkerJobResult
     case 'fftBands':
       return sliceLevels(job.slices, job.specs, job.sampleRateHz)
     case 'rekordboxRead':

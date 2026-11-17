@@ -17,6 +17,7 @@ import {
   readTraktorTrackCount,
   readTraktorTree,
   TRAKTOR_TYPE_COLOR,
+  traktorMembershipOf,
   traktorSeparatorKey,
 } from './traktorPlaylists'
 
@@ -381,6 +382,14 @@ describe('readTraktorMembership', () => {
       '/Users/dj/Music/b.flac': ['fri'],
       '/Volumes/Stick/Sets/c.aiff': [],
     })
+  })
+
+  it('answers a whole selection from one pass over the playlists, since asking each file against every list froze a selection of thousands', () => {
+    const playlistsOf = traktorMembershipOf(doc, 'Macintosh HD')
+    expect(playlistsOf('/Users/dj/Music/a.mp3')).toEqual(['fri', 'warm'])
+    expect(playlistsOf('/Users/dj/Music/b.flac')).toEqual(['fri'])
+    expect(playlistsOf('/Volumes/Stick/Sets/c.aiff')).toEqual([])
+    expect(playlistsOf('/Users/dj/Music/z.mp3')).toBeUndefined()
   })
 
   it('leaves out a file Traktor does not have, so the field can say it is not in Traktor', () => {
