@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs'
-import log from 'electron-log/main'
 import { openRekordboxDb } from './rekordboxDb'
+import { threadLog } from './threadLog'
 
 type RekordboxDb = NonNullable<ReturnType<typeof openRekordboxDb>>
 
@@ -22,7 +22,7 @@ export function withCollection<T>(
   try {
     return read(db)
   } catch (err) {
-    log.warn(`rekordbox playlist read failed: ${String(err)}`)
+    threadLog.warn(`rekordbox playlist read failed: ${String(err)}`)
     throw err
   } finally {
     db.close()
