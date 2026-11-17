@@ -32,6 +32,40 @@ const hover = (el: HTMLElement): void => {
 }
 
 describe('ExportButton', () => {
+  // In a 262 px editor the words pushed the format menu's button off the panel, so the
+  // tick alone stays in sight and the words are still read out.
+  it('shows only the tick of an up-to-date track when the editor is narrow, so the buttons beside it stay on the panel', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        inPlace
+        tagsOnly
+        sameFormat
+        upToDate
+        narrow
+        onProcess={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('No changes').className).toContain('sr-only')
+    expect(screen.getByTestId('convert-update-anyway')).toBeInTheDocument()
+  })
+
+  it('spells out that a track is up to date when there is room', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        inPlace
+        tagsOnly
+        sameFormat
+        upToDate
+        onProcess={vi.fn()}
+      />,
+    )
+    expect(screen.getByText('No changes').className).not.toContain('sr-only')
+  })
+
   it('goes quiet when there is nothing to write', () => {
     const onProcess = vi.fn()
     render(

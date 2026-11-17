@@ -52,6 +52,7 @@ interface ExportButtonProps {
   tagsOnly?: boolean
   sameFormat?: boolean
   upToDate?: boolean
+  narrow?: boolean
   count?: number
   // The export phase the track is in while processing. With it, the button mirrors the
   // track list's row: the stage as its label and a fill at that phase's progress mark.
@@ -98,6 +99,7 @@ export function ExportButton({
   tagsOnly = false,
   sameFormat = false,
   upToDate = false,
+  narrow = false,
   count,
   quiet,
   destination,
@@ -201,7 +203,7 @@ export function ExportButton({
       <div
         key="up-to-date"
         data-testid="convert-up-to-date-row"
-        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center gap-3`}
+        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center ${narrow ? 'gap-2' : 'gap-3'}`}
       >
         <span
           data-testid="convert-up-to-date"
@@ -210,13 +212,13 @@ export function ExportButton({
           <span aria-hidden="true" className="text-good">
             ✓
           </span>
-          {tr('editor.upToDate')}
+          <span className={narrow ? 'sr-only' : undefined}>{tr('editor.upToDate')}</span>
         </span>
         <button
           type="button"
           data-testid="convert-update-anyway"
           onClick={() => onProcess(outputFormat)}
-          className="press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] px-3 text-xs text-fg-dim hover:bg-[var(--color-hover)]"
+          className={`press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
         >
           {tr('editor.updateAnyway')}
         </button>

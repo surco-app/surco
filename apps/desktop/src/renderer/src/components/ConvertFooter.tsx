@@ -93,6 +93,7 @@ interface ConvertFooterProps {
   onToggleClearAfterBatch?: () => void
   sameFormat: boolean
   upToDate: boolean
+  narrow?: boolean
   // The editor's one-shot destination pick and the choices its split-button menu
   // offers, pre-filtered by the editor (platform, configured overwrite).
   destination: Destination
@@ -168,6 +169,7 @@ export function ConvertFooter({
   onToggleClearAfterBatch,
   sameFormat,
   upToDate,
+  narrow,
   destination,
   destinations,
   format,
@@ -763,6 +765,7 @@ export function ConvertFooter({
                 tagsOnly={tagsOnly}
                 sameFormat={sameFormat}
                 upToDate={upToDate}
+                narrow={narrow}
                 destination={destination}
                 destinations={destinations}
                 count={isMulti ? selectedCount : undefined}

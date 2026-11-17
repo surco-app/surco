@@ -71,19 +71,21 @@ describe('FolderWatcher', () => {
     const onChange = vi.fn()
     const watcher = new FolderWatcher(onChange, 50)
     watcher.watch([dir])
-    // macOS FSEvents takes a beat to arm; writing too soon races the watch setup.
-    await new Promise((r) => setTimeout(r, 300))
-
-    await writeFile(join(dir, 'new.flac'), '')
+    // macOS FSEvents takes a beat to arm, and how long depends on how busy the machine is:
+    // a write that lands before it is armed is never reported. A fixed pause lost that race
+    // in three of seven full-suite runs, so the file is written again until the watch sees it.
+    const rewrite = setInterval(() => void writeFile(join(dir, 'new.flac'), ''), 100)
     // FSEvents also replays the pre-existing file as an arm-time event, so wait for the
     // rescan that actually includes the newly written track, not merely the first fire.
-    await vi.waitFor(
-      () =>
-        expect(onChange.mock.calls.some(([, files]) => files.includes(join(dir, 'new.flac')))).toBe(
-          true,
-        ),
-      { timeout: 4000 },
-    )
+    await vi
+      .waitFor(
+        () =>
+          expect(
+            onChange.mock.calls.some(([, files]) => files.includes(join(dir, 'new.flac'))),
+          ).toBe(true),
+        { timeout: 8000 },
+      )
+      .finally(() => clearInterval(rewrite))
 
     const [root, files] = onChange.mock.calls.find(([, f]) =>
       f.includes(join(dir, 'new.flac')),
