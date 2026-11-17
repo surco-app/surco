@@ -6,12 +6,13 @@ import type { TrackItem } from '../types'
 interface Params {
   tracksRef: RefObject<TrackItem[]>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
+  heldTrack?: (id: string) => TrackItem | undefined
 }
 
-export function useVerificationUpdates({ tracksRef, updateTrack }: Params): void {
+export function useVerificationUpdates({ tracksRef, updateTrack, heldTrack }: Params): void {
   useEffect(() => {
     const off = window.api.onVerifyUpdate((trackId: string, verification: Verification) => {
-      const track = tracksRef.current.find((t) => t.id === trackId)
+      const track = tracksRef.current.find((t) => t.id === trackId) ?? heldTrack?.(trackId)
       if (!track) return
       const held = track.verification
       if (held && held.job !== verification.job) {
@@ -25,5 +26,5 @@ export function useVerificationUpdates({ tracksRef, updateTrack }: Params): void
       off()
       clearDroppedVerifications()
     }
-  }, [tracksRef, updateTrack])
+  }, [tracksRef, updateTrack, heldTrack])
 }
