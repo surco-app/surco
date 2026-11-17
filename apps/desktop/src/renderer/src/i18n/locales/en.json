@@ -1260,6 +1260,7 @@
         "unreadable": "Could not read the cues from VirtualDJ",
         "save": "Save to VirtualDJ",
         "unanalysed": "VirtualDJ has not analysed this track yet",
+        "provisionalHelp": "VirtualDJ has not analysed this track yet. Surco measured the tempo and the grid, so you can set the cues now.",
         "queuedStale": "The queued save was made before the track changed in VirtualDJ and is out of date. You see what VirtualDJ holds now.",
         "saveFailed": "Could not save to VirtualDJ. The cues are still not saved",
         "autoUnreadable": "Surco could not read the audio of this track",

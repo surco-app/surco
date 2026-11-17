@@ -127,6 +127,15 @@ describe('virtualdjCueSource', () => {
     expect(read?.grid[0]?.ms).toBeCloseTo(57559.456 - 128 * 447.778, 3)
   })
 
+  it('lays the grid on the beatgrid Poi of a song whose Scan has no Phase, so its cues can be edited', async () => {
+    const dir = library(
+      song('/m/a.wav', `  <Scan Bpm="0.5" />\r\n  <Poi Type="beatgrid" Pos="1.25" />\r\n`),
+    )
+    const read = await source(dir).trackCues('virtualdj:/m/a.wav')
+    expect(read?.analysed).toBe(true)
+    expect(read?.grid.map((b) => b.ms).slice(0, 4)).toEqual([250, 750, 1250, 1750])
+  })
+
   it('counts a track VirtualDJ has not scanned as unanalysed, with no grid', async () => {
     const dir = library(song('/m/a.wav', `  <Poi Pos="3.5" Num="1" Type="cue" />\r\n`))
     const read = await source(dir).trackCues('virtualdj:/m/a.wav')

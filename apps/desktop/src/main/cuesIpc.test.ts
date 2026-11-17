@@ -507,6 +507,39 @@ describe('registerCuesIpc', () => {
     expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox', 'virtualdj'])
   })
 
+  it('keeps a VirtualDJ save set on Surco’s grid out of the list that moves cues onto rekordbox’s beats, since VirtualDJ shares Surco’s clock', async () => {
+    const add = vi.fn()
+    const vdjEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add },
+      twins: async () => ({}),
+      virtualdj: {
+        dir: join(__dirname, 'virtualdjFixtures'),
+        queue: queue({ enqueue: vdjEnqueue }),
+        applyQuietly: quietly(),
+      },
+    })
+    const wanted = [{ ms: 1000, kind: HOT_KINDS[0], color: null }]
+    await handler('cues:save')({}, [
+      {
+        contentId: 'virtualdj:/Music/VirtualDJ Pruebas/Pray.mp3',
+        path: '/m/v.mp3',
+        label: 'v',
+        wanted,
+        fingerprint: 'f',
+        provisional: true,
+      },
+    ])
+    expect(vdjEnqueue).toHaveBeenCalledTimes(1)
+    expect(add).not.toHaveBeenCalled()
+  })
+
   it('queues several tracks together and applies once, so master.db is written in one batch', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const applyQuietly = quietly()

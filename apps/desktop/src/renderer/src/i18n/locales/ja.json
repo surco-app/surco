@@ -1260,6 +1260,7 @@
         "unreadable": "VirtualDJ からキューを読み取れませんでした",
         "save": "VirtualDJ に保存",
         "unanalysed": "VirtualDJ はまだこのトラックを解析していません",
+        "provisionalHelp": "VirtualDJ はまだこのトラックを解析していません。Surco がテンポとグリッドを計測したので、今すぐキューを設定できます。",
         "queuedStale": "保留中の保存は VirtualDJ でトラックが変更される前のもので、すでに古くなっています。現在 VirtualDJ にある内容を表示しています。",
         "saveFailed": "VirtualDJ に保存できませんでした。キューはまだ保存されていません",
         "autoUnreadable": "Surco はこのトラックの音声を読み取れませんでした",

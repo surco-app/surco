@@ -1260,6 +1260,7 @@
         "unreadable": "No se pudieron leer los cues de VirtualDJ",
         "save": "Guardar en VirtualDJ",
         "unanalysed": "VirtualDJ aún no ha analizado esta pista",
+        "provisionalHelp": "VirtualDJ aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya.",
         "queuedStale": "El guardado pendiente se hizo antes de que la pista cambiara en VirtualDJ y ya no vale. Ves lo que tiene VirtualDJ ahora.",
         "saveFailed": "No se pudo guardar en VirtualDJ. Los cues siguen sin guardar",
         "autoUnreadable": "Surco no ha podido leer el audio de esta pista",

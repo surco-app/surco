@@ -132,6 +132,22 @@ describe('parseVirtualdjDatabase', () => {
     expect(song.phaseSeconds).toBeNull()
   })
 
+  it('takes the phase from the beatgrid Poi when Scan has none, as the databases VirtualDJ writes on Windows do, so a scanned track is not taken for an unscanned one', () => {
+    const [song] = parseVirtualdjDatabase(
+      '<Song FilePath="C:\\m\\a.mp3"><Scan Version="801" Flag="32768" Key="C" Volume="1.159943" AltBpm="0.901451" Bpm="0.600952"/><Poi Type="beatgrid" Pos="2.586893"/><Poi Type="cue" Pos="0.261313" Num="1" Name="Cue 1"/></Song>',
+    )
+    expect(song.secondsPerBeat).toBe(0.600952)
+    expect(song.phaseSeconds).toBe(2.586893)
+    expect(song.pois.map((p) => p.kind)).toEqual(['other', 'cue'])
+  })
+
+  it('keeps the Scan Phase when the song also has a beatgrid Poi, so the tracks measured on macOS read as before', () => {
+    const [song] = parseVirtualdjDatabase(
+      '<Song FilePath="/a.mp3"><Scan Bpm="0.5" Phase="1.25" /><Poi Pos="9" Type="beatgrid" /></Song>',
+    )
+    expect(song.phaseSeconds).toBe(1.25)
+  })
+
   it('skips a Poi without Pos instead of inventing a position of zero', () => {
     const [song] = parseVirtualdjDatabase(
       '<Song FilePath="/a.mp3"><Poi Num="1" Type="cue" /><Poi Pos="2" Num="2" Type="cue" /></Song>',

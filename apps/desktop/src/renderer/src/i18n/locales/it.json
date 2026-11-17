@@ -1260,6 +1260,7 @@
         "unreadable": "Impossibile leggere i cue di VirtualDJ",
         "save": "Salva in VirtualDJ",
         "unanalysed": "VirtualDJ non ha ancora analizzato questo brano",
+        "provisionalHelp": "VirtualDJ non ha ancora analizzato questo brano. Surco ha calcolato il tempo e la griglia, così puoi mettere subito i cue.",
         "queuedStale": "Il salvataggio in sospeso è stato fatto prima che il brano cambiasse in VirtualDJ e non vale più. Vedi quello che ha VirtualDJ adesso.",
         "saveFailed": "Impossibile salvare in VirtualDJ. I cue restano non salvati",
         "autoUnreadable": "Surco non è riuscito a leggere l'audio di questo brano",
