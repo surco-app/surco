@@ -4,6 +4,7 @@ import { createRequire } from 'node:module'
 import { homedir, tmpdir } from 'node:os'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { quietLaunch } from './quiet-launch.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const arg = (name, fallback) => {
@@ -124,10 +125,11 @@ writeFileSync(
   }),
 )
 
+const quiet = quietLaunch(join(tree, 'apps/desktop/out/main/index.js'))
 const app = await electron.launch({
   executablePath: electronPath,
-  args: [join(tree, 'apps/desktop/out/main/index.js'), '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
-  env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+  args: [quiet.entry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
+  env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
 })
 const page = await app.firstWindow()
 await app.evaluate(({ BrowserWindow, app: a, dialog }) => {
