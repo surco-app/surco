@@ -40,6 +40,32 @@ describe('useVerificationUpdates', () => {
     expect(updateTrack).not.toHaveBeenCalled()
   })
 
+  // A row taken off the list is kept for Undo. Its check kept running in main, and a result
+  // thrown away here left the row "Checking…" forever once Undo brought it back.
+  it('an update for a row held for Undo lands on it', () => {
+    const onVerifyUpdate = vi.fn<Api['onVerifyUpdate']>((cb) => {
+      push = cb
+      return () => {}
+    })
+    let push: (id: string, v: Verification) => void = () => {}
+    ;(window as unknown as { api: unknown }).api = { onVerifyUpdate }
+    const updateTrack = vi.fn()
+    const held = {
+      id: 'held',
+      verification: { status: 'checking', checks: [], job: 'j1', seq: 0 },
+    } as unknown as TrackItem
+    renderHook(() =>
+      useVerificationUpdates({
+        tracksRef: { current: [] },
+        updateTrack,
+        heldTrack: (id) => (id === held.id ? held : undefined),
+      }),
+    )
+    const settled: Verification = { ...ok, job: 'j1', seq: 1 }
+    push('held', settled)
+    expect(updateTrack).toHaveBeenCalledWith('held', { verification: settled })
+  })
+
   // A check of an older conversion must not repaint the row of the newer one.
   it('a late update from an older job is ignored', () => {
     const { push, updateTrack } = setup(['a'], {

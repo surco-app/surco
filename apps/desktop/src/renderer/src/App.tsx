@@ -776,6 +776,7 @@ export default function App(): React.JSX.Element {
     addPaths,
     seedRestoredEdits,
     holdTracks,
+    heldTrack,
     dropHeldTracks,
     restoreTracks,
     prioritizeReads,
@@ -1692,7 +1693,7 @@ export default function App(): React.JSX.Element {
     })
   }
 
-  useVerificationUpdates({ tracksRef, updateTrack })
+  useVerificationUpdates({ tracksRef, updateTrack, heldTrack })
   const reportRetireFailure = useStableCallback((fileName: string) =>
     setAppError({ kind: 'trash', detail: fileName }),
   )

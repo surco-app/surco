@@ -170,6 +170,7 @@ interface TrackLibrary {
   // saved tracks. Same fix the playlist import needed for its own seed.
   seedRestoredEdits: (edits: Record<string, SessionEdit>) => void
   holdTracks: (rows: TrackItem[]) => void
+  heldTrack: (id: string) => TrackItem | undefined
   dropHeldTracks: (ids: string[]) => void
   restoreTracks: (rows: TrackItem[]) => void
   prioritizeReads: (ids: string[]) => void
@@ -1173,6 +1174,7 @@ export function useTrackLibrary({
   const holdTracks = useCallback((rows: TrackItem[]): void => {
     for (const t of rows) heldRows.current.set(t.id, t)
   }, [])
+  const heldTrack = useCallback((id: string) => heldRows.current.get(id), [])
   const dropHeldTracks = useCallback((ids: string[]): void => {
     for (const id of ids) heldRows.current.delete(id)
   }, [])
@@ -1384,6 +1386,7 @@ export function useTrackLibrary({
     addPaths,
     seedRestoredEdits,
     holdTracks,
+    heldTrack,
     dropHeldTracks,
     restoreTracks,
     prioritizeReads,
