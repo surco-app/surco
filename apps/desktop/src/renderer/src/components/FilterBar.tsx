@@ -550,7 +550,11 @@ export function FilterBar({
   }
 
   return (
-    <div ref={filterRef} data-testid={testid} className="flex items-center gap-1.5 px-1.5 py-2">
+    <div
+      ref={filterRef}
+      data-testid={testid}
+      className="flex items-center gap-1.5 px-1.5 py-2 compact:py-0.5"
+    >
       <div className="relative min-w-0 flex-1">
         <button
           ref={triggerRef}

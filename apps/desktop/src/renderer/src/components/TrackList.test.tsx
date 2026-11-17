@@ -776,6 +776,14 @@ describe('TrackList', () => {
     expect(within(row).getAllByTestId('track-wave-proposal')).toHaveLength(1)
   })
 
+  it('shrinks the cover with the row when the waves are off in Compact, or a 40 px cover would hold the row at its old height', () => {
+    renderList([track({ id: 'a', embeddedCover: 'file:///cover.jpg' })], null, [], {
+      showWaves: false,
+    })
+    expect(screen.getByTestId('track-cover').className).toContain('compact:h-8')
+    expect(screen.getByTestId('track-row').className).toContain('compact:py-0.5')
+  })
+
   // Hiding the waves is asking for short rows: the cue marks go with them, and what still
   // needs the user (unsaved cues, Auto's proposals) moves up to the artist line.
   it('drops the cue marks with the waves and keeps what still needs a look on the artist line', () => {

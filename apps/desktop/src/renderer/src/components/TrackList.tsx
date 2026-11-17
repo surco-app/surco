@@ -704,7 +704,7 @@ const TrackRow = memo(function TrackRow({
           // just left trails behind a held key. Only the swipe position eases, and only the
           // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
           // the fingers with no easing (inline transition: none).
-          className={`${listRowClass(primary, selected)}${outsideFilter && !selected ? ' opacity-50' : ''}`}
+          className={`${listRowClass(primary, selected, !showWaves)}${outsideFilter && !selected ? ' opacity-50' : ''}`}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
               ones want attention before you read a single glyph. Hidden on the primary row,
@@ -741,7 +741,7 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10 compact:h-8 compact:w-8'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -770,7 +770,7 @@ const TrackRow = memo(function TrackRow({
           <span
             data-fit
             className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${
-              showWaves ? 'h-16 compact:h-[52px]' : 'h-10'
+              showWaves ? 'h-16 compact:h-[52px]' : 'h-10 compact:h-9'
             }`}
           >
             <span className="flex flex-col gap-px">
@@ -993,7 +993,7 @@ const TrackRow = memo(function TrackRow({
               </span>
             </span>
             {showWaves ? (
-              <span data-testid="track-wave-line" className="relative block h-5">
+              <span data-testid="track-wave-line" className="relative block h-5 compact:h-[15px]">
                 {shown.waiting ? (
                   <span
                     data-testid="track-loading"
@@ -1091,7 +1091,7 @@ const TrackRow = memo(function TrackRow({
             data-confidence="review"
             aria-label={tr('commands.acceptReview')}
             onClick={() => onAcceptReview(t.id)}
-            className="group/dot press absolute right-[58px] top-[23px] flex h-6 w-6 compact:top-[19px] items-center justify-center text-warn"
+            className={`group/dot press absolute right-[58px] top-[23px] flex h-6 w-6 ${showWaves ? 'compact:top-[19px]' : 'compact:top-[17px]'} items-center justify-center text-warn`}
           >
             <Spark />
             <Tooltip
@@ -1116,7 +1116,7 @@ const TrackRow = memo(function TrackRow({
             // overlay to a render surface even at opacity-0, and dozens of backdrop-filter
             // layers inside the scroller are a known compositor jank source. A slightly
             // denser plain fill keeps the glyph readable over any cover.
-            className={`absolute top-1/2 left-2.5 flex ${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10'} -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-[opacity,scale] motion-safe:active:scale-[0.97] pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100`}
+            className={`absolute top-1/2 left-2.5 flex ${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10 compact:h-8 compact:w-8'} -translate-y-1/2 items-center justify-center rounded-md bg-scrim/65 text-on-scrim opacity-0 transition-[opacity,scale] motion-safe:active:scale-[0.97] pointer-events-none hover:bg-scrim/75 group-hover:pointer-events-auto group-hover:opacity-100`}
           >
             <Play className="h-5 w-5 fill-current" aria-hidden="true" />
           </button>
