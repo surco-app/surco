@@ -169,6 +169,15 @@ dir>] [--tracks 60] [--budget 600]`; same exit rules as the rekordbox soak, plus
 lost heap reading fails the run, and "lost its connection to the app" means Playwright dropped
 the page while the app kept running (seen twice around 16 minutes in, on 15/11/2026): run it again.
 
+## Gates run in the background
+
+`soak.mjs`, `soak-traktor.mjs` and `responsiveness.mjs` launch the app through
+`background-entry.mjs`: on macOS the app never becomes the active one, so a run does not pull
+the person at the keyboard to the desktop the test window sits on, launch after launch. The
+entry also answers "is a window focused" with yes, as in a real session, and the refocus step
+of the responsiveness gate fires the window's own blur and focus events instead of taking the
+focus. `SURCO_TEST_FOREGROUND=1` launches the app as before.
+
 ## Responsiveness gate
 
 `responsiveness.mjs` times this tree against the last tag (`--baseline <tag>` to pick another),

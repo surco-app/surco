@@ -11,6 +11,7 @@ import {
   bigVirtualdj,
   repoRoot,
 } from './big-fixtures.mjs'
+import { foreground, quietLaunch } from './quiet-launch.mjs'
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -41,11 +42,12 @@ function baselineTree() {
 const refocusTwice = async (app, page) => {
   for (let i = 0; i < 2; i++) {
     await app
-      .evaluate(({ BrowserWindow }) => {
+      .evaluate(({ BrowserWindow }, real) => {
         const w = BrowserWindow.getAllWindows()[0]
-        w.blur()
-        setTimeout(() => w.focus(), 300)
-      })
+        if (real) w.blur()
+        else w.emit('blur')
+        setTimeout(() => (real ? w.focus() : w.emit('focus')), 300)
+      }, foreground)
       .catch(() => {})
     if (i === 0) await page.waitForTimeout(6000).catch(() => {})
   }
@@ -108,10 +110,11 @@ async function measure(appTree, name) {
       ...scenario.settings(ud),
     }),
   )
+  const quiet = quietLaunch(join(appTree, 'apps/desktop/out/main/index.js'))
   const app = await electron.launch({
     executablePath: electronPath,
-    args: [join(appTree, 'apps/desktop/out/main/index.js'), '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
-    env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+    args: [quiet.entry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
+    env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
   })
   if (scenario.home) await app.evaluate(({ app }, home) => app.setPath('home', home), scenario.home())
   const page = await app.firstWindow()

@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { bigTraktor, repoRoot } from './big-fixtures.mjs'
+import { quietLaunch } from './quiet-launch.mjs'
 
 const arg = (name, fallback) => {
   const i = process.argv.indexOf(`--${name}`)
@@ -34,10 +35,11 @@ writeFileSync(
   }),
 )
 
+const quiet = quietLaunch(join(tree, 'apps/desktop/out/main/index.js'))
 const app = await electron.launch({
   executablePath: electronPath,
-  args: [join(tree, 'apps/desktop/out/main/index.js'), '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
-  env: { ...process.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
+  args: [quiet.entry, '--force-device-scale-factor=1', `--user-data-dir=${ud}`],
+  env: { ...process.env, ...quiet.env, ELECTRON_DISABLE_SECURITY_WARNINGS: '1' },
 })
 const page = await app.firstWindow()
 await app.evaluate(({ BrowserWindow, app: a, dialog }) => {
