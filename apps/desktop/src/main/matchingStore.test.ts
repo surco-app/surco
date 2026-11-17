@@ -43,6 +43,18 @@ describe('createMatchingStore', () => {
     expect(store.list()).toEqual([['/m/a.wav', '/m/c.wav']])
   })
 
+  it('removes many pairs at once, each in either order, so emptying Matching is one change to the file', async () => {
+    const store = createMatchingStore(await fileIn())
+    store.add('/m/a.wav', '/m/b.wav')
+    store.add('/m/a.wav', '/m/c.wav')
+    store.add('/m/c.wav', '/m/d.wav')
+    store.removeAll([
+      ['/m/b.wav', '/m/a.wav'],
+      ['/m/c.wav', '/m/d.wav'],
+    ])
+    expect(store.list()).toEqual([['/m/a.wav', '/m/c.wav']])
+  })
+
   it('moves every pair of a file to its new path, as when a conversion replaced it', async () => {
     const store = createMatchingStore(await fileIn())
     store.add('/m/a.mp3', '/m/b.wav')

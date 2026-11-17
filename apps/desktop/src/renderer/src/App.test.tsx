@@ -337,6 +337,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     matchingPairs: vi.fn<Api['matchingPairs']>().mockResolvedValue([]),
     addMatchingPair: vi.fn<Api['addMatchingPair']>().mockResolvedValue(undefined),
     removeMatchingPair: vi.fn<Api['removeMatchingPair']>().mockResolvedValue(undefined),
+    removeMatchingPairs: vi.fn<Api['removeMatchingPairs']>().mockResolvedValue(undefined),
     getSettings: vi.fn().mockResolvedValue(settings()),
     loadAppleMusicLibraryPlaylistTracks: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
@@ -1097,7 +1098,7 @@ describe('App Traktor cues', () => {
       fireEvent.click(await screen.findByTestId('track-menu-remove'))
       fireEvent.click(await screen.findByTestId('confirm-ok'))
       await waitFor(() =>
-        expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
+        expect(window.api.removeMatchingPairs).toHaveBeenCalledWith([['/m/a.wav', '/m/b.wav']]),
       )
       expect(screen.getAllByTestId('track-row')).toHaveLength(2)
     })
@@ -1113,7 +1114,7 @@ describe('App Traktor cues', () => {
       fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
       fireEvent.click(await screen.findByTestId('track-menu-remove'))
       fireEvent.click(await screen.findByTestId('confirm-cancel'))
-      expect(window.api.removeMatchingPair).not.toHaveBeenCalled()
+      expect(window.api.removeMatchingPairs).not.toHaveBeenCalled()
     })
 
     it('unpairs a partner from the editor', async () => {
@@ -4044,8 +4045,50 @@ describe('App source playlists', () => {
         { pair: ['c-l3', 'c-l2'], label: expect.any(String) },
       ])
       expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
-      expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/c.wav')
-      expect(window.api.removeMatchingPair).toHaveBeenCalledWith('/m/c.wav', '/m/b.wav')
+      expect(window.api.removeMatchingPairs).toHaveBeenCalledWith([
+        ['/m/a.wav', '/m/c.wav'],
+        ['/m/c.wav', '/m/b.wav'],
+      ])
+    })
+
+    it('still drops from Surco the pairs rekordbox unpaired when one of them was already gone from it', async () => {
+      const matchAll = vi
+        .fn<ProgramReads['matchAll']>()
+        .mockResolvedValue([{ applied: false, reason: 'stale' }, { applied: true }])
+      await openFactory({
+        dj: djReads(matchingReads.dj, {
+          rekordbox: {
+            matchAll,
+            matching: vi.fn<ProgramReads['matching']>().mockResolvedValue([
+              ['c-l1', 'c-l3'],
+              ['c-l3', 'c-l2'],
+            ]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === MATCHING_ID
+                  ? [
+                      withPreview('/m/a.wav', 'c-l1'),
+                      withPreview('/m/c.wav', 'c-l3'),
+                      withPreview('/m/b.wav', 'c-l2'),
+                    ]
+                  : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      fireEvent.contextMenu(rowTitled('Charlie'))
+      const remove = await screen.findByTestId('track-menu-remove')
+      expect(remove).toHaveTextContent('Matching')
+      fireEvent.click(remove)
+      await screen.findByTestId('confirm-ok')
+      expect(document.getElementById('confirm-title')).toHaveTextContent('3')
+      fireEvent.click(screen.getByTestId('confirm-ok'))
+      await waitFor(() =>
+        expect(window.api.removeMatchingPairs).toHaveBeenCalledWith([['/m/c.wav', '/m/b.wav']]),
+      )
     })
 
     it('drops the one-track items from the menu of a multi-selection, like copying a single path', async () => {

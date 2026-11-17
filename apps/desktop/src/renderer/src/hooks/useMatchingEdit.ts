@@ -15,22 +15,33 @@ export interface MatchingEdit {
 export function useMatchingEdits(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
 ): (action: MatchingAction, edits: MatchingEdit[]) => Promise<RekordboxEditResult> {
-  const run = useMatchingRun(notify)
+  const finish = useMatchingFinish(notify)
   return useCallback(
-    (action, edits) => {
-      const steps = edits.map((edit) => ({ action, ...edit }))
-      const inRekordbox = steps.filter((s) => s.pair)
-      let written: Promise<RekordboxEditResult[]> | null = null
-      return run(steps, async (step) => {
-        written ??= window.api.dj.matchAll(
-          'rekordbox',
-          action,
-          inRekordbox.map(({ pair, label }) => ({ pair: pair as [string, string], label })),
-        )
-        return (await written)[inRekordbox.indexOf(step)]
-      })
+    async (action, edits) => {
+      const inRekordbox = edits.flatMap(({ pair, label }) => (pair ? [{ pair, label }] : []))
+      let result: RekordboxEditResult = { applied: true }
+      let telling: RekordboxEditResult | null = null
+      try {
+        if (inRekordbox.length > 0) await window.api.dj.askToApply(['rekordbox'])
+        const written =
+          inRekordbox.length > 0
+            ? await window.api.dj.matchAll('rekordbox', action, inRekordbox)
+            : []
+        const kept: [string, string][] = []
+        let at = 0
+        for (const { pair, paths } of edits) {
+          if (pair) result = written[at++]
+          if (!telling && notable(result)) telling = result
+          if (!refused(result) && paths) kept.push(paths)
+        }
+        if (action === 'remove') await window.api.removeMatchingPairs(kept)
+        else for (const [a, b] of kept) await window.api.addMatchingPair(a, b)
+      } catch {
+        result = { applied: false, reason: 'write-failed' }
+      }
+      return finish(inRekordbox.length > 0, action === 'add', telling ?? result)
     },
-    [run],
+    [finish],
   )
 }
 
@@ -44,34 +55,17 @@ export interface MatchingStep {
 export function useMatchingSteps(
   notify: (text: string, tone: 'neutral' | 'danger') => void,
 ): (steps: MatchingStep[]) => Promise<RekordboxEditResult> {
-  const run = useMatchingRun(notify)
+  const finish = useMatchingFinish(notify)
   return useCallback(
-    (steps) =>
-      run(steps, ({ action, pair, label }) =>
-        window.api.dj.match('rekordbox', action, pair as [string, string], label),
-      ),
-    [run],
-  )
-}
-
-function useMatchingRun(
-  notify: (text: string, tone: 'neutral' | 'danger') => void,
-): (
-  steps: MatchingStep[],
-  write: (step: MatchingStep) => Promise<RekordboxEditResult>,
-) => Promise<RekordboxEditResult> {
-  const queryClient = useQueryClient()
-  const { t: tr } = useTranslation()
-  return useCallback(
-    async (steps, write) => {
+    async (steps) => {
       const inRekordbox = steps.some((s) => s.pair)
       let result: RekordboxEditResult = { applied: true }
       let telling: RekordboxEditResult | null = null
       try {
         if (inRekordbox) await window.api.dj.askToApply(['rekordbox'])
         for (const step of steps) {
-          const { action, paths } = step
-          if (step.pair) result = await write(step)
+          const { action, pair, label, paths } = step
+          if (pair) result = await window.api.dj.match('rekordbox', action, pair, label)
           if (!telling && notable(result)) telling = result
           if (refused(result)) break
           if (paths) {
@@ -84,9 +78,28 @@ function useMatchingRun(
       } catch {
         result = { applied: false, reason: 'write-failed' }
       }
-      result = telling ?? result
+      return finish(
+        inRekordbox,
+        steps.some((s) => s.action === 'add'),
+        telling ?? result,
+      )
+    },
+    [finish],
+  )
+}
+
+function useMatchingFinish(
+  notify: (text: string, tone: 'neutral' | 'danger') => void,
+): (
+  inRekordbox: boolean,
+  adds: boolean,
+  result: RekordboxEditResult,
+) => Promise<RekordboxEditResult> {
+  const queryClient = useQueryClient()
+  const { t: tr } = useTranslation()
+  return useCallback(
+    async (inRekordbox, adds, result) => {
       void queryClient.invalidateQueries({ queryKey: ['matching-pairs'] })
-      const adds = steps.some((s) => s.action === 'add')
       if (!inRekordbox) {
         if (adds) notify(tr('sources.matchingSaved'), 'neutral')
         return result

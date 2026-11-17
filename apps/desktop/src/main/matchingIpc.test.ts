@@ -25,6 +25,21 @@ describe('registerMatchingIpc', () => {
     expect(await handler('matching:list')({})).toEqual([])
   })
 
+  it('removes many Surco pairs at once, leaving out whatever does not name two paths', async () => {
+    const store = createMatchingStore(join(await mkdtemp(join(tmpdir(), 'surco-mipc-')), 'm.json'))
+    registerMatchingIpc(store)
+    await handler('matching:add')({}, '/m/a.wav', '/m/b.wav')
+    await handler('matching:add')({}, '/m/a.wav', '/m/c.wav')
+    await handler('matching:add')({}, '/m/c.wav', '/m/d.wav')
+    await handler('matching:removeAll')({}, [
+      ['/m/a.wav', '/m/b.wav'],
+      ['/m/c.wav', 7],
+      'x',
+      ['/m/d.wav', '/m/c.wav'],
+    ])
+    expect(await handler('matching:list')({})).toEqual([['/m/a.wav', '/m/c.wav']])
+  })
+
   it('ignores a call that does not name two paths, so a bad message cannot break the file', async () => {
     const store = createMatchingStore(join(await mkdtemp(join(tmpdir(), 'surco-mipc-')), 'm.json'))
     registerMatchingIpc(store)
