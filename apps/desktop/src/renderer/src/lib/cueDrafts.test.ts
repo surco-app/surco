@@ -64,6 +64,21 @@ describe('forgetting stale cue drafts', () => {
     expect([...unsavedCueTracks()]).toEqual([])
   })
 
+  it('asks for the queued saves of all the drafts together and not one after another, since each answer waits behind a redraw and a save of thousands took minutes', async () => {
+    const client = setup({})
+    for (const id of ['103', '104', '105'])
+      keepDraft(id, cueDraftKey(id, 'f0', null), startDraft([], 'mine'), TARGET)
+    const answers: ((queued: null) => void)[] = []
+    vi.mocked(window.api.cues.queued).mockImplementation(
+      () => new Promise((resolve) => answers.push(resolve)),
+    )
+    const forgetting = forgetStaleDrafts(client)
+    await vi.waitFor(() => expect(answers).toHaveLength(3))
+    for (const answer of answers) answer(null)
+    await forgetting
+    expect([...unsavedCueTracks()]).toEqual(['103', '104', '105'])
+  })
+
   it('forgets a draft built on a read rekordbox has changed since', async () => {
     const client = setup({ '103': Q1 }, 'f1')
     keepDraft('103', cueDraftKey('103', 'f0', Q1), startDraft([], 'mine'), TARGET)
