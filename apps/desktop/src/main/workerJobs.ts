@@ -1,5 +1,5 @@
 import { type TasteTrack, type TunedTaste, tuneDropTaste } from '../shared/dropTaste'
-import type { BpmResult, KeyResult, TrackMetadata } from '../shared/types'
+import type { BpmResult, KeyResult, TrackCues, TrackMetadata } from '../shared/types'
 import { auditGrid, type BeatGridFit, fitBeatGrid, type GridAuditRun } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
@@ -12,6 +12,7 @@ import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
+import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
 import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
@@ -40,6 +41,7 @@ import { computePeaks } from './waveform'
 // 100MB+ AIFF synchronously when it grows the ID3 header. Each job is plain
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
+  | { type: 'seratoTrackCues'; contentIds: string[] }
   | { type: 'seratoRead'; roots: SeratoLibraryRoot[]; name: SeratoReadName; arg: unknown }
   | { type: 'virtualdjRead'; roots: VirtualdjRoot[]; name: VirtualdjReadName; arg: unknown }
   | { type: 'engineRead'; dir: string; name: EngineReadName; arg: unknown }
@@ -150,6 +152,7 @@ export type WorkerJob =
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
 
 export type WorkerJobResult =
+  | Record<string, TrackCues | null>
   | Map<string, number>
   | BpmResult
   | BeatGridFit
@@ -171,6 +174,8 @@ export type WorkerJobResult =
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'seratoTrackCues':
+      return readSeratoTrackCues(job.contentIds)
     case 'seratoRead':
       return runSeratoRead(job.roots, job.name, job.arg as never) as unknown as WorkerJobResult
     case 'virtualdjRead':

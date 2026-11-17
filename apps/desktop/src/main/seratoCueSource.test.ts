@@ -183,6 +183,16 @@ describe('seratoCueSource', () => {
     expect(read?.contentId).toBe(`serato:${file}`)
   })
 
+  it('hands the cues of a whole selection off the main process, since reading every file there froze Surco while it cleared a crate', async () => {
+    const marked = withMarkers(mp3())
+    const ids = [`serato:${marked}`, `serato:${mp3()}`, 'serato:/nowhere/gone.mp3']
+    const live = await source().liveCues?.(ids)
+    const one = await source().trackCues(ids[0])
+    expect(Object.keys(live ?? {})).toEqual(ids.slice(0, 2))
+    expect(live?.[ids[0]]).toEqual({ cues: one?.cues, fingerprint: one?.fingerprint })
+    expect(one?.cues.length).toBeGreaterThan(0)
+  })
+
   it('reads the loops Serato saved beside the hot cues, with their start and end', async () => {
     const read = await source().trackCues(`serato:${withMarkers(mp3())}`)
     expect(read?.loops?.map((l) => [l.startMs, l.endMs])).toEqual([
