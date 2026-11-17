@@ -95,6 +95,20 @@ describe('selectionStatus', () => {
     expect(selectionStatus(a, [a, b], true).showDone).toBe(true)
   })
 
+  // A genre changed across a converted album has to bring the convert button back: with
+  // the done block still up, the only way to write the change was clearing the list and
+  // dropping the same files again.
+  it('drops the done block in multi-select once a converted track is edited', () => {
+    const a = track({ id: 'a', status: 'done', outputPath: '/out/a.aiff' })
+    const edited = track({
+      id: 'b',
+      status: 'done',
+      outputPath: '/out/b.aiff',
+      processedSignature: 'before-the-edit',
+    })
+    expect(selectionStatus(a, [a, edited], true).showDone).toBe(false)
+  })
+
   // "Apple Music only" conversions leave no file in the output folder: a done track
   // without a path must confirm the library add instead of offering a dead reveal.
   it('flags a done selection with no output file as in-library-only', () => {
