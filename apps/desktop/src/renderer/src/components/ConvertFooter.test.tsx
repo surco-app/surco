@@ -1235,8 +1235,8 @@ describe('ConvertFooter batch format and destination', () => {
   it('offers every format one press away and marks the one in use', () => {
     const onSelectFormat = vi.fn()
     render(plan({ onSelectFormat }))
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('process-format-source')).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
+    expect(screen.getByTestId('process-format-source')).toHaveAttribute('data-state', 'off')
     fireEvent.click(screen.getByTestId('process-format-mp3'))
     expect(onSelectFormat).toHaveBeenCalledWith('mp3')
   })
@@ -1250,6 +1250,28 @@ describe('ConvertFooter batch format and destination', () => {
     expect(screen.queryByTestId('process-format-toggle')).toBeNull()
     fireEvent.click(screen.getByTestId('process-destination-overwrite'))
     expect(onSelectDestination).toHaveBeenCalledWith('overwrite')
+  })
+
+  // A format that is only the Settings default and one picked by hand do not do the same
+  // to MP3s kept as they are or to tracks from an Apple Music playlist. Painted alike, a
+  // press on the highlighted format changed what the batch did with nothing to show for it.
+  it('paints the Settings format apart from one picked by hand', () => {
+    const { rerender } = render(plan())
+    const aiff = (): HTMLElement => screen.getByTestId('process-format-aiff')
+    expect(aiff()).toHaveAttribute('data-state', 'default')
+    expect(aiff()).toHaveAttribute('aria-pressed', 'false')
+    expect(aiff()).toHaveAttribute('aria-current', 'true')
+    rerender(plan({ batchFormatByHand: true }))
+    expect(aiff()).toHaveAttribute('data-state', 'picked')
+    expect(aiff()).toHaveAttribute('aria-pressed', 'true')
+    expect(aiff()).not.toHaveAttribute('aria-current')
+  })
+
+  it('paints the Settings destination apart from one picked by hand', () => {
+    const { rerender } = render(plan())
+    expect(screen.getByTestId('batch-destination-toggle')).toHaveAttribute('data-state', 'default')
+    rerender(plan({ batchDestinationByHand: true }))
+    expect(screen.getByTestId('batch-destination-toggle')).toHaveAttribute('data-state', 'picked')
   })
 
   // The sentence repeated what the selector, the menu and the button already say, and

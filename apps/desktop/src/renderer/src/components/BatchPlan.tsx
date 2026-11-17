@@ -21,6 +21,8 @@ export function BatchPlan({
   onConvert,
   convertHint,
   tagsOnly = false,
+  formatByHand = false,
+  destinationByHand = false,
 }: {
   count: number
   total: number
@@ -34,6 +36,8 @@ export function BatchPlan({
   onConvert?: () => void
   convertHint?: string
   tagsOnly?: boolean
+  formatByHand?: boolean
+  destinationByHand?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
@@ -64,33 +68,46 @@ export function BatchPlan({
           aria-label={tr('editor.menuFormat')}
           className="flex max-w-full shrink-0 flex-wrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5"
         >
-          {FORMAT_SETTINGS.map((id) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={`process-format-${id}`}
-              aria-pressed={id === format}
-              onClick={() => onSelectFormat(id)}
-              className={`press group relative rounded-md px-2 py-0.5 text-label ${
-                id === format
-                  ? 'bg-[var(--color-accent-soft)] text-fg'
-                  : 'text-fg-dim hover:text-fg'
-              }`}
-            >
-              {id === 'source' ? tr('editor.formatSourceShort') : tr(`settings.formats.${id}`)}
-              {id === 'source' && <Tooltip label={tr('settings.formats.source')} />}
-            </button>
-          ))}
+          {FORMAT_SETTINGS.map((id) => {
+            // The Settings format is drawn as an outline and one picked by hand filled: they
+            // do not do the same to every track, so they must not look the same. The outline
+            // is a shadow, not a border, so a segment keeps its width in every state.
+            const state = id !== format ? 'off' : formatByHand ? 'picked' : 'default'
+            return (
+              <button
+                key={id}
+                type="button"
+                data-testid={`process-format-${id}`}
+                data-state={state}
+                aria-pressed={state === 'picked'}
+                aria-current={state === 'default' ? 'true' : undefined}
+                onClick={() => onSelectFormat(id)}
+                className={`press group relative rounded-md px-2 py-0.5 text-label ${
+                  state === 'picked'
+                    ? 'bg-[var(--color-accent-soft)] text-fg'
+                    : state === 'default'
+                      ? 'text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+                      : 'text-fg-dim hover:text-fg'
+                }`}
+              >
+                {id === 'source' ? tr('editor.formatSourceShort') : tr(`settings.formats.${id}`)}
+                {id === 'source' && <Tooltip label={tr('settings.formats.source')} />}
+              </button>
+            )
+          })}
         </div>
         <div ref={ref} className="relative flex min-w-0 flex-1 basis-16 justify-end">
           <button
             type="button"
             data-testid="batch-destination-toggle"
+            data-state={destinationByHand ? 'picked' : 'default'}
             ref={toggleRef}
             aria-haspopup="menu"
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
-            className="press group relative flex h-8 max-w-full items-center gap-1 rounded-lg px-2 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
+            className={`press group relative flex h-8 max-w-full items-center gap-1 rounded-lg px-2 text-xs hover:bg-[var(--color-hover)] ${
+              destinationByHand ? 'text-[var(--color-accent)]' : 'text-fg-dim'
+            }`}
           >
             <span className="min-w-0 truncate">{tr(`settings.destinations.${destination}`)}</span>
             <Tooltip label={tr(`settings.destinations.${destination}`)} />
