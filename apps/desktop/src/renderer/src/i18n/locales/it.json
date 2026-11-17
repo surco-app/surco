@@ -1792,8 +1792,8 @@
       "flac": "FLAC"
     },
     "outputFormatHint": "«Come l'originale» mantiene ogni file nel suo formato, così un lotto misto non viene mai riconvertito. AIFF/WAV/FLAC/ALAC sono lossless (FLAC e ALAC compressi). MP3 occupa meno. Un file già in quel formato viene copiato senza ricodifica.",
-    "clearListAfterConvert": "Svuota l'elenco al termine di un gruppo",
-    "clearListAfterConvertHint": "Le tracce convertite escono dall'elenco, con Annulla. Quelle non riuscite restano.",
+    "clearListAfterConvert": "Svuota l'elenco al termine di un lotto",
+    "clearListAfterConvertHint": "I brani convertiti escono dall'elenco, con Annulla. Quelli non riusciti restano.",
     "keepMp3Sources": "Lascia MP3 e M4A come sono",
     "keepMp3SourcesHint": "Convertire un MP3 o un M4A in un formato lossless non recupera qualità, occupa solo più spazio. Con questa opzione attiva restano nel loro formato e Surco scrive i loro tag nella destinazione che hai scelto. Con «Accanto all'originale» non li tocca. Se uniformi il volume, ripari i clic o tagli, l'audio viene ricodificato.",
     "keepMp3SourcesOff": "Non serve con MP3 o «Come l'originale», perché gli MP3 restano già MP3.",
