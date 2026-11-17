@@ -31,6 +31,26 @@
       {
         "text": "Surco reagiert mit einer großen Traktor-Bibliothek genauso schnell. Tausende Tracks auswählen, eine lange Liste öffnen und ihre Cues auf einmal löschen oder speichern lassen die App nicht mehr einfrieren.",
         "in": "1.38.0"
+      },
+      {
+        "text": "Surco reagiert mit großen Bibliotheken von Engine DJ, Serato und VirtualDJ genauso schnell. Tausende Tracks auswählen und ihre Cues auf einmal löschen lassen die App nicht mehr einfrieren, und die Cues tausender Tracks in VirtualDJ zu speichern dauert Sekunden.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "In der Formatauswahl des Stapels erscheint das Format aus den Einstellungen als Umriss und das von dir gewählte gefüllt. Drück es noch einmal, um zu den Einstellungen zurückzukehren.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Der Stapel-Button sagt immer „aktualisieren“, wenn das Audio unberührt bleibt, egal bei welchem Ziel. Die Zusammenfassung am Ende sagt dasselbe.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "„Liste leeren, wenn ein Stapel fertig ist“ nimmt nur die Tracks mit, bei denen alles geklappt hat. Die, bei denen die Prüfung nach dem Konvertieren etwas findet, bleiben in der Liste.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Ändere die Lautheit bereits konvertierter Tracks, mehrere auf einmal, und der Button kommt zurück, um sie anzuwenden.",
+        "in": "1.38.1"
       }
     ]
   },

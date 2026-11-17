@@ -31,6 +31,26 @@
       {
         "text": "O Surco responde com a mesma rapidez com uma biblioteca grande do Traktor. Selecionar milhares de faixas, abrir uma lista longa e apagar ou salvar os cues de uma vez não travam mais o app.",
         "in": "1.38.0"
+      },
+      {
+        "text": "O Surco responde com a mesma rapidez com bibliotecas grandes do Engine DJ, Serato e VirtualDJ. Selecionar milhares de faixas e apagar os cues de uma vez não travam mais o app, e salvar os cues de milhares de faixas no VirtualDJ leva segundos.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "No seletor de formato do lote, o formato dos Ajustes aparece em contorno e o que você escolhe, preenchido. Pressione de novo para voltar ao dos Ajustes.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "O botão do lote diz “Atualizar” sempre que o áudio não é tocado, seja qual for o destino. O resumo final diz o mesmo.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "“Esvaziar a lista ao terminar um lote” só leva as faixas que deram certo. As que a verificação após converter aponta ficam na lista.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Mude o volume de faixas que você já converteu, várias de uma vez, e o botão volta para aplicar.",
+        "in": "1.38.1"
       }
     ]
   },

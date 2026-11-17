@@ -31,6 +31,26 @@
       {
         "text": "Surco risponde con la stessa rapidità con una grande libreria di Traktor. Selezionare migliaia di brani, aprire un elenco lungo e cancellare o salvare i loro cue in una volta non bloccano più l'app.",
         "in": "1.38.0"
+      },
+      {
+        "text": "Surco risponde con la stessa rapidità con grandi librerie di Engine DJ, Serato e VirtualDJ. Selezionare migliaia di brani e cancellare i loro cue in una volta non bloccano più l'app, e salvare i cue di migliaia di brani in VirtualDJ richiede pochi secondi.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Nel selettore di formato del lotto, il formato delle Impostazioni appare come contorno e quello che scegli tu, pieno. Premilo di nuovo per tornare a quello delle Impostazioni.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Il pulsante del lotto dice «Aggiorna» ogni volta che l'audio non viene toccato, qualunque sia la destinazione. Il riepilogo finale dice lo stesso.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "«Svuota l'elenco al termine di un lotto» porta via solo i brani andati a buon fine. Quelli segnalati dalla verifica dopo la conversione restano nell'elenco.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Cambia il volume di brani già convertiti, più di uno alla volta, e il pulsante torna per applicarlo.",
+        "in": "1.38.1"
       }
     ]
   },

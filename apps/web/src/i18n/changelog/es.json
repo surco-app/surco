@@ -31,6 +31,26 @@
       {
         "text": "Surco responde igual de rápido con una biblioteca grande de Traktor. Seleccionar miles de pistas, abrir una lista larga y borrar o guardar sus cues de una vez ya no dejan la app parada.",
         "in": "1.38.0"
+      },
+      {
+        "text": "Surco responde igual de rápido con bibliotecas grandes de Engine DJ, Serato y VirtualDJ. Seleccionar miles de pistas y borrar sus cues de una vez ya no dejan la app parada, y guardar los cues de miles de pistas en VirtualDJ tarda segundos.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "En el selector de formato del lote, el formato de Ajustes sale en contorno y el que eliges tú, relleno. Púlsalo otra vez para volver al de Ajustes.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "El botón del lote dice «Actualizar» siempre que el audio no se toca, sea cual sea el destino. El resumen del final dice lo mismo.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "«Vaciar la lista al terminar un lote» solo se lleva las pistas que salieron bien. Las que la comprobación tras convertir señala se quedan en la lista.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Cambia el volumen de pistas que ya habías convertido, varias a la vez, y el botón vuelve para aplicarlo.",
+        "in": "1.38.1"
       }
     ]
   },

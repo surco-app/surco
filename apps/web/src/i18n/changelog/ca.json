@@ -31,6 +31,26 @@
       {
         "text": "Surco respon igual de ràpid amb una biblioteca gran de Traktor. Seleccionar milers de pistes, obrir una llista llarga i esborrar o desar els seus cues de cop ja no deixen l'app aturada.",
         "in": "1.38.0"
+      },
+      {
+        "text": "Surco respon igual de ràpid amb biblioteques grans d'Engine DJ, Serato i VirtualDJ. Seleccionar milers de pistes i esborrar els seus cues de cop ja no deixen l'app aturada, i desar els cues de milers de pistes a VirtualDJ triga segons.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Al selector de format del lot, el format de Configuració surt en contorn i el que tries tu, ple. Prem-lo una altra vegada per tornar al de Configuració.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "El botó del lot diu «Actualitzar» sempre que l'àudio no es toca, sigui quina sigui la destinació. El resum del final diu el mateix.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "«Buidar la llista en acabar un lot» només s'emporta les pistes que han sortit bé. Les que la comprovació després de convertir assenyala es queden a la llista.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Canvia el volum de pistes que ja havies convertit, diverses alhora, i el botó torna per aplicar-ho.",
+        "in": "1.38.1"
       }
     ]
   },

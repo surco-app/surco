@@ -31,6 +31,26 @@
       {
         "text": "Surco réagit aussi vite avec une grande bibliothèque Traktor. Sélectionner des milliers de morceaux, ouvrir une longue liste et effacer ou enregistrer leurs cues d’un coup ne figent plus l’app.",
         "in": "1.38.0"
+      },
+      {
+        "text": "Surco réagit aussi vite avec de grandes bibliothèques Engine DJ, Serato et VirtualDJ. Sélectionner des milliers de morceaux et effacer leurs cues d’un coup ne figent plus l’app, et enregistrer les cues de milliers de morceaux dans VirtualDJ prend quelques secondes.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Dans le sélecteur de format du lot, le format des Réglages apparaît en contour et celui que tu choisis, rempli. Appuie dessus à nouveau pour revenir à celui des Réglages.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Le bouton du lot dit « Mettre à jour » dès que l’audio n’est pas touché, quelle que soit la destination. Le résumé final dit la même chose.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "« Vider la liste à la fin d’un lot » n’emporte que les morceaux qui se sont bien passés. Ceux que la vérification après conversion signale restent dans la liste.",
+        "in": "1.38.1"
+      },
+      {
+        "text": "Change le volume de morceaux déjà convertis, plusieurs à la fois, et le bouton revient pour l’appliquer.",
+        "in": "1.38.1"
       }
     ]
   },
