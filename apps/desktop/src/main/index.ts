@@ -33,6 +33,7 @@ import {
   type NativeImage,
   nativeImage,
   type OpenDialogOptions,
+  powerMonitor,
   protocol,
   screen,
   session,
@@ -712,9 +713,22 @@ const provisionalCues = createProvisionalList(
 )
 const markedRekordboxTracks = async (): Promise<number> =>
   markedTracks(rekordboxCollectionPath(), await keyOf(rekordboxCollectionPath()))
+const DJ_IDLE_AFTER_S = 60
+const DJ_IDLE_CHECK_MS = 2000
+const djIdle = (): boolean =>
+  BrowserWindow.getFocusedWindow() === null || powerMonitor.getSystemIdleTime() >= DJ_IDLE_AFTER_S
+const whenDjIdle = (): Promise<void> =>
+  new Promise((resolve) => {
+    const check = (): void => {
+      if (djIdle()) resolve()
+      else setTimeout(check, DJ_IDLE_CHECK_MS).unref()
+    }
+    check()
+  })
 const cueTaste = createCueTaste(fileStore(join(app.getPath('userData'), 'cue-taste.json')), {
   marked: markedRekordboxTracks,
-  readCollection: () => readCollectionMarksAt(rekordboxCollectionPath()),
+  readCollection: (rest) => readCollectionMarksAt(rekordboxCollectionPath(), rest),
+  whenIdle: whenDjIdle,
   tune: (tracks) => runInWorker<TunedTaste | null>({ type: 'tuneDrops', tracks }),
   shared: createSharedEdits(getConfigDir),
   onLearned: () => broadcast('cues:profileChanged', null),

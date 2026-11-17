@@ -5,7 +5,7 @@ import type { LearnTrack } from '../shared/learnFlow'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
-import { keyOf, withCollection } from './rekordboxPlaylistsIpc'
+import { collectionMemo, keyOf } from './rekordboxPlaylistsIpc'
 
 type Db = InstanceType<typeof Database>
 
@@ -59,19 +59,27 @@ export async function readCollectionMarks(
   return out
 }
 
+const markedCount = collectionMemo((db) => markedIds(db).length)
+
 export function markedTracks(path: string, key?: string): number {
-  return withCollection(path, (db) => markedIds(db).length, 0, key)
+  return markedCount(path, key) ?? 0
 }
 
 const nextTurn = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))
 
-export async function readCollectionMarksAt(path: string): Promise<CollectionMarks | null> {
+export async function readCollectionMarksAt(
+  path: string,
+  rest: () => Promise<void> = async () => {},
+): Promise<CollectionMarks | null> {
   if (!path) return null
   const key = await keyOf(path)
   const db = openRekordboxDb(path, key ? { readonly: true, key } : { readonly: true })
   if (!db) return null
   try {
-    return await readCollectionMarks(db, rekordboxShareDir(path), nextTurn)
+    return await readCollectionMarks(db, rekordboxShareDir(path), async () => {
+      await nextTurn()
+      await rest()
+    })
   } finally {
     db.close()
   }

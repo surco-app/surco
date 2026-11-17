@@ -124,6 +124,69 @@ describe('createCueTaste', () => {
     await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
   })
 
+  describe('while the DJ is working', () => {
+    const quiet = () => {
+      let settle = () => {}
+      const moment = new Promise<void>((resolve) => {
+        settle = resolve
+      })
+      return { whenIdle: () => moment, arrive: () => settle() }
+    }
+    const dueEdits = (taste: ReturnType<typeof createCueTaste>) => {
+      for (let i = 0; i < RELEARN_EVERY; i++) taste.record(track(`t${i}`), true)
+    }
+
+    it('waits for a quiet moment before learning on its own, because reading the whole collection makes the app stutter under the DJ', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const readCollection = vi.fn(async () => null)
+      const { whenIdle, arrive } = quiet()
+      const taste = createCueTaste(memoryStore(), deps({ tune, readCollection, whenIdle }))
+      dueEdits(taste)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(readCollection).not.toHaveBeenCalled()
+      arrive()
+      await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+    })
+
+    it('stops between batches of a long read when the DJ comes back, and goes on at the next quiet moment', async () => {
+      const { whenIdle, arrive } = quiet()
+      const second = quiet()
+      let rested = false
+      const readCollection = vi.fn(async (rest: () => Promise<void>) => {
+        await rest()
+        rested = true
+        return null
+      })
+      const moments = [whenIdle, second.whenIdle]
+      const taste = createCueTaste(
+        memoryStore(),
+        deps({ readCollection, whenIdle: () => (moments.shift() ?? second.whenIdle)() }),
+      )
+      dueEdits(taste)
+      arrive()
+      await vi.waitFor(() => expect(readCollection).toHaveBeenCalledTimes(1))
+      await new Promise((r) => setTimeout(r, 0))
+      expect(rested).toBe(false)
+      second.arrive()
+      await vi.waitFor(() => expect(rested).toBe(true))
+    })
+
+    it('learns at once when the DJ presses Learn, even with a learning of its own waiting for a quiet moment', async () => {
+      const tune = vi.fn(async () => TUNED)
+      const readCollection = vi.fn(async (rest: () => Promise<void>) => {
+        await rest()
+        return null
+      })
+      const taste = createCueTaste(
+        memoryStore(),
+        deps({ tune, readCollection, whenIdle: () => new Promise<void>(() => {}) }),
+      )
+      dueEdits(taste)
+      await taste.learn()
+      expect(tune).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('the first time', () => {
     it('learns from the rekordbox marks on its own, so the DJ never has to press Learn', async () => {
       const tune = vi.fn(async () => TUNED)
