@@ -1753,8 +1753,8 @@ export default function App(): React.JSX.Element {
     },
     onBatchConverted: (ids) => {
       if (!settings?.clearListAfterConvert) return
-      const converted = new Set(ids)
-      dropFromList(tracksRef.current.filter((t) => converted.has(t.id)))
+      for (const id of ids) clearWhenChecked.current.add(id)
+      clearChecked()
     },
     onNormalizeSkipped: (name) =>
       tallyNotice('normalizeSkipped', (tracks) =>
@@ -1897,6 +1897,24 @@ export default function App(): React.JSX.Element {
     removeWithUndo(targets, () => removeTracks(targets.map((t) => t.id)))
     onRemoved?.()
   })
+  // The tracks a batch converted, waiting to leave the list. Only the ones whose check came
+  // back good go: a mismatch, or a library write still queued, is exactly what the DJ has to
+  // see, so those rows stay. They all leave together once no check is still running, so
+  // the notice offers one Undo for the lot.
+  const clearWhenChecked = useRef(new Set<string>())
+  const clearChecked = useStableCallback(() => {
+    const waiting = clearWhenChecked.current
+    if (waiting.size === 0) return
+    const converted = tracksRef.current.filter((t) => waiting.has(t.id))
+    if (converted.some((t) => t.verification?.status === 'checking')) return
+    waiting.clear()
+    dropFromList(
+      converted.filter((t) => t.verification === undefined || t.verification.status === 'ok'),
+    )
+  })
+  useEffect(() => {
+    if (tracks.length > 0) clearChecked()
+  }, [tracks, clearChecked])
   const removeTrashed = useStableCallback((ids: string[], everywhere?: boolean) => {
     const pending = listRemoval.current
     if (pending) {

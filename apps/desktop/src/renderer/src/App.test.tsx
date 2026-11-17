@@ -7872,6 +7872,78 @@ describe('App multi-select convert', () => {
     expect(screen.queryByTestId('batch-convert')).toBeNull()
   })
 
+  // The check after converting is how Surco says a file did not come out right. Clearing
+  // the list took those tracks with the good ones, and the warning went with them.
+  it('keeps in the list a converted track whose check did not add up', async () => {
+    const processTrack = vi.fn().mockImplementation((job: { inputPath: string }) =>
+      Promise.resolve({
+        outputPath: '/out/x',
+        inPlace: false,
+        verification:
+          job.inputPath === '/music/b.wav'
+            ? {
+                status: 'mismatch',
+                checks: [{ place: 'file', state: 'mismatch', detail: { key: 'fileTruncated' } }],
+              }
+            : { status: 'ok', checks: [] },
+      }),
+    )
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(
+      screen
+        .getAllByTestId('app-notice')
+        .some((card) =>
+          card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
+        ),
+    ).toBe(true)
+  })
+
+  // A check still running has not said anything yet: the track waits in the list for its
+  // answer and only leaves once the answer is good.
+  it('waits for a running check before clearing its track', async () => {
+    let push: Parameters<Api['onVerifyUpdate']>[0] = () => {}
+    const processTrack = vi.fn().mockResolvedValue({
+      outputPath: '/out/x',
+      inPlace: false,
+      verification: {
+        status: 'checking',
+        checks: [{ place: 'file', state: 'checking', detail: { key: 'checking' } }],
+        job: 'j1',
+        seq: 0,
+      },
+    })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>((cb) => {
+        push = cb
+        return () => {}
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+    for (const [job] of processTrack.mock.calls)
+      act(() => push(job.id, { status: 'ok', checks: [], job: 'j1', seq: 1 }))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+
   // A batch raised one card per repaired track, each for four seconds: a folder of vinyl
   // rips covered the corner of the app with the same sentence over and over.
   it('gathers the click repairs of a batch into one notice that counts the tracks', async () => {
