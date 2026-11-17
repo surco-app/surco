@@ -62,6 +62,14 @@ lectura. Se vuelve a comprobar en el bloque de escritura, abriendo en VirtualDJ 
 `Phase` es la posición de una negra y la rejilla son `Phase + k × Bpm`, a +4,7 ms de la rejilla de Surco en
 los cinco formatos.
 
+### Rejilla en un `Poi beatgrid` (sin medir, visto en el foro de VirtualDJ)
+
+Dos entradas publicadas en el foro (Scan `Version="800"` y `"801"`, una de Windows) no llevan `Phase`
+en `Scan` y guardan el ancla en `<Poi Type="beatgrid" Pos="2.586893"/>`, con los atributos en otro
+orden (`Type` antes que `Pos`). Desde el 17/11 Surco usa ese `Pos` como fase cuando `Scan` no trae
+`Phase`. Sin medir en un VirtualDJ real: qué manda si una pista tiene las dos cosas (Surco se queda con
+`Phase`), y las pistas con varios `Poi beatgrid` de tempo variable (Surco usa solo el primero).
+
 ## Listas
 
 - `MyLists/<n>.vdjfolder` (CRLF) con `<VirtualFolder noDuplicates="no">` y `<song path size idx ...>`;
