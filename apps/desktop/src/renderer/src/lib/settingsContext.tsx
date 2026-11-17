@@ -70,6 +70,7 @@ interface ResolvedSettings extends Record<DjAddKey, boolean> {
   autoMatch: boolean
   outputFormat: FormatSetting
   keepMp3Sources: boolean
+  clearListAfterConvert: boolean
   // Named on the convert button so where the file lands shows before the click.
   outputDir: string
   // The quality pins, read by the editor's "re-encode this one" offer: a same-format
@@ -136,6 +137,7 @@ const DEFAULTS: ResolvedSettings = {
   autoMatch: false,
   outputFormat: 'aiff',
   keepMp3Sources: true,
+  clearListAfterConvert: false,
   outputDir: '',
   outputBitDepth: 'source',
   outputSampleRate: 'source',
@@ -203,6 +205,7 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     autoMatch: settings.autoMatch ?? DEFAULTS.autoMatch,
     outputFormat: settings.outputFormat ?? DEFAULTS.outputFormat,
     keepMp3Sources: settings.keepMp3Sources ?? DEFAULTS.keepMp3Sources,
+    clearListAfterConvert: settings.clearListAfterConvert ?? DEFAULTS.clearListAfterConvert,
     outputDir: settings.outputDir ?? DEFAULTS.outputDir,
     outputBitDepth: settings.outputBitDepth ?? DEFAULTS.outputBitDepth,
     outputSampleRate: settings.outputSampleRate ?? DEFAULTS.outputSampleRate,

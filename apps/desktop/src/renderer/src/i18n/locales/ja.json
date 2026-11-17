@@ -1396,6 +1396,7 @@
     "quality": "品質",
     "qualityFromAnalysis": "品質分析から入力",
     "suggestionsMore": "さらに {{count}} 件を表示",
+    "suggestionsLess": "表示を減らす",
     "suggestionDetected": "音声から検出：{{value}}",
     "rowAutoFill": "{{name}} を自動入力",
     "rowRequired": "{{name}} 必須",

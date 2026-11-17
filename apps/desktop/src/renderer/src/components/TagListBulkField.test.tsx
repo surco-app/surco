@@ -99,7 +99,7 @@ describe('TagListBulkField', () => {
     )
     expect(screen.getByTestId('chip-Cantaditas')).toHaveTextContent('Cantaditas2/3')
     expect(screen.getByTestId('chip-Vocals')).toHaveAttribute('data-state', 'off')
-    expect(screen.getByTestId('chip-Vocals')).toHaveTextContent('+Vocals')
+    expect(screen.getByTestId('chip-Vocals')).toHaveTextContent(/^Vocals$/)
   })
 
   it('completes a partial tag on the tracks missing it without touching the rest', () => {

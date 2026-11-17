@@ -1,4 +1,4 @@
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, ListX } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS } from '../../../shared/outputFormats'
@@ -23,6 +23,8 @@ export function BatchPlan({
   tagsOnly = false,
   formatByHand = false,
   destinationByHand = false,
+  clearAfter = false,
+  onToggleClearAfter,
 }: {
   count: number
   total: number
@@ -38,6 +40,8 @@ export function BatchPlan({
   tagsOnly?: boolean
   formatByHand?: boolean
   destinationByHand?: boolean
+  clearAfter?: boolean
+  onToggleClearAfter?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
@@ -134,6 +138,27 @@ export function BatchPlan({
             />
           )}
         </div>
+        {onToggleClearAfter && (
+          // The same capsule as the format selector, so both ends of the line read as one
+          // family: empty when off, filled like a picked format when on. It carries no
+          // label, only the list glyph the list's own "clear" action uses.
+          <div className="flex shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5">
+            <button
+              type="button"
+              role="switch"
+              data-testid="batch-clear-toggle"
+              aria-checked={clearAfter}
+              aria-label={tr('settings.clearListAfterConvert')}
+              onClick={onToggleClearAfter}
+              className={`press group relative grid place-items-center rounded-md px-2 py-0.5 text-label ${
+                clearAfter ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-dim hover:text-fg'
+              }`}
+            >
+              <ListX className="h-[1lh] w-3.5" strokeWidth={2.2} aria-hidden="true" />
+              <Tooltip label={tr('settings.clearListAfterConvert')} />
+            </button>
+          </div>
+        )}
       </div>
       <button
         type="button"

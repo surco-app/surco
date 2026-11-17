@@ -84,7 +84,10 @@ los MP3 se quedan como están, y las pistas abiertas desde una playlist de Apple
 su formato, hasta que se pulsa un formato. El selector los distingue sin texto: el formato de
 Ajustes va en contorno y el elegido a mano relleno, y pulsar otra vez el elegido lo suelta y
 vuelve al de Ajustes. El destino sigue la misma regla, tenue si viene de Ajustes y en el color
-de acento si se eligió en su menú. Con destino «Editar el original» o Apple Music el
+de acento si se eligió en su menú. Al final de esa línea, solo en la pestaña de ficheros, un interruptor
+de icono sin texto enciende y apaga «Vaciar la lista al terminar un lote» (`batch-clear-toggle`):
+es el mismo ajuste de Ajustes › Destino, se guarda al pulsarlo y va en una cápsula igual a la
+del selector, vacía apagado y rellena encendido. Con destino «Editar el original» o Apple Music el
 fichero se etiqueta en su sitio; con «Junto al original» siempre hay copia; con la carpeta de
 salida depende de si alguna biblioteca tiene el fichero, y el pie se lo pregunta al proceso
 principal (hasta 200 ficheros sueltos; por encima cuentan como copia). El destino que muestra
@@ -828,8 +831,10 @@ principal. Un plegado «Por
 pista · N» lista cada pista con sus propias pastillas, y las activas se ordenan
 delante para que el recorte «+N» no las esconda. Desde v1.38.0 pasa lo mismo en la fila
 de sugerencias de cualquier campo, como Género: las pastillas aplicadas van delante y, si no
-caben en una línea, la fila se despliega sola, así que «+N» nunca esconde una aplicada
-(`SuggestionChips.tsx`).
+caben en una línea, la fila crece solo para ellas, así que «+N» nunca esconde una aplicada
+(`SuggestionChips.tsx`). Desde v1.38.2 la fila se vuelve a plegar con la pastilla «−» que
+ocupa el sitio de «+N», recuerda por campo si se dejó abierta (entre pistas y al reabrir
+Surco) y las pastillas por añadir ya no llevan «+» delante: el borde punteado lo dice.
 
 **«Comentario» con varias pistas** (v1.33.0). Comentario se ofrece también en el editor de
 varias pistas, para escribir uno para todas o vaciarlo en todas a la vez, por ejemplo la nota de

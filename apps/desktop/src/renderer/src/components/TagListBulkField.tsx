@@ -95,6 +95,7 @@ export function TagListBulkField({
         </span>
         <SuggestionChips
           suggestions={summaryTags}
+          foldKey={list.key}
           isOn={(tag) => stateOf(tag) === 'all'}
           isPartial={(tag) => stateOf(tag) === 'some'}
           partialLabel={(tag) => `${stateOf.count(tag)}/${tracks.length}`}

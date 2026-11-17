@@ -239,6 +239,8 @@ interface Props {
   onOpenCueTrack?: (contentId: string) => void
   cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
+  // Switches "clear the list when a batch finishes"; absent where it does not apply.
+  onToggleClearList?: () => void
   // Opens the output-name pattern builder for this track (App owns the modal so the
   // ⌘⇧R shortcut and the menu can open it too).
   onOpenRename: () => void
@@ -349,6 +351,7 @@ export const Editor = memo(function Editor({
   onOpenCueTrack,
   cueActionsRef,
   onHideEditorHints,
+  onToggleClearList,
   onOpenRename,
   onRegenerateName,
   onTrimDetectedAll,
@@ -378,6 +381,7 @@ export const Editor = memo(function Editor({
     addToAppleMusic,
     addToEngineDj,
     keepMp3Sources,
+    clearListAfterConvert,
     overwriteOriginal,
     backupPolicy,
     convertBesideOriginal,
@@ -2165,6 +2169,8 @@ export const Editor = memo(function Editor({
           batchTagsOnly={batchTagsOnly}
           batchFormatByHand={batchFormatPicked}
           batchDestinationByHand={destinationPicked}
+          clearAfterBatch={clearListAfterConvert}
+          onToggleClearAfterBatch={onToggleClearList}
           sameFormat={formatMatchesInput(format, item.inputPath)}
           upToDate={upToDate}
           destination={isMulti ? batchDestination : destination}
