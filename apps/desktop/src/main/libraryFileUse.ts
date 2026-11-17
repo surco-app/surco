@@ -9,18 +9,13 @@ import { loadSqlJs } from './engine'
 import { engineRowFinder } from './engineRepoint'
 import { toNmlLocation } from './ffmpeg'
 import { type PathMatchOptions, pathKey } from './libraryPathKey'
-import {
-  findTrackByPath,
-  isAmbiguous,
-  openRekordboxDb,
-  rekordboxRawKey,
-  trackFinder,
-} from './rekordboxDb'
+import { isAmbiguous, openRekordboxDb, rekordboxRawKey, trackFinder } from './rekordboxDb'
 import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
 import { traktorFileOf } from './traktorPlaylists'
 import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
+import { findRekordboxTrack } from './worker'
 
 interface LocationOf {
   rekordbox: string
@@ -67,13 +62,12 @@ const FILE_USE: FileUseOf = {
     let rekordboxKey: Promise<string> | undefined
     return async (path) => {
       rekordboxKey ??= rekordboxRawKey(collection)
-      const db = openRekordboxDb(collection, { readonly: true, key: await rekordboxKey })
-      if (!db) throw new Error(`rekordbox collection unreadable: ${collection}`)
-      try {
-        return findTrackByPath(db, path, options) !== null
-      } finally {
-        db.close()
-      }
+      const match = await findRekordboxTrack(collection, await rekordboxKey, path, options).catch(
+        () => {
+          throw new Error(`rekordbox collection unreadable: ${collection}`)
+        },
+      )
+      return match !== null
     }
   },
   engine: (libraryDir, options) => {
@@ -414,18 +408,11 @@ type TrackOf = {
 
 const TRACK_OF: TrackOf = {
   rekordbox: async (collection, path, options) => {
-    const db = openRekordboxDb(collection, {
-      readonly: true,
-      key: await rekordboxRawKey(collection),
+    const match = await findRekordboxTrack(collection, await rekordboxRawKey(collection), path, {
+      ...options,
+      quiet: true,
     })
-    if (db)
-      try {
-        const match = findTrackByPath(db, path, { ...options, quiet: true })
-        if (match !== null && !isAmbiguous(match)) return match.id
-      } finally {
-        db.close()
-      }
-    return undefined
+    return match !== null && !isAmbiguous(match) ? match.id : undefined
   },
   engine: async (libraryDir, path, options) => {
     const SQL = await loadSqlJs()

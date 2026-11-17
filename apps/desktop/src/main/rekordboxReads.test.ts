@@ -42,6 +42,7 @@ describe('runRekordboxRead', () => {
       ['hasSeparator', undefined],
       ['membership', [FILE]],
       ['marked', undefined],
+      ['track', { file: FILE, resolve: false, quiet: true }],
     ]
     for (const [name, arg] of reads) {
       const answer = runRekordboxRead(path, undefined, name, arg as never)
@@ -57,6 +58,20 @@ describe('runRekordboxRead', () => {
     db.prepare('UPDATE djmdSongPlaylist SET rb_local_deleted = 1 WHERE PlaylistID = ?').run('2000')
     db.close()
     expect(runRekordboxRead(path, undefined, 'membership', [FILE])).toEqual({ [FILE]: [] })
+  })
+
+  it('finds the collection entry of one file and stops finding it once rekordbox drops it, so a file is never taken for in use from an old read', async () => {
+    const path = await collection()
+    const lookup = { file: FILE, resolve: false, quiet: true }
+    const found = runRekordboxRead(path, undefined, 'track', lookup)
+    expect(found && 'id' in found ? found.fileName : null).toBe('Night Train.aiff')
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    db.prepare('UPDATE djmdContent SET rb_local_deleted = 1 WHERE FileNameL = ?').run(
+      'Night Train.aiff',
+    )
+    db.close()
+    expect(runRekordboxRead(path, undefined, 'track', lookup)).toBeNull()
   })
 
   it('answers the empty read without a collection, the normal case for a DJ who does not use rekordbox', () => {

@@ -1,10 +1,12 @@
 import os from 'node:os'
 import type { Transferable } from 'node:worker_threads'
+import type { AmbiguousMatch, FindOptions, RekordboxTrack } from './rekordboxDb'
 import {
   emptyRekordboxRead,
   type RekordboxReadAnswer,
   type RekordboxReadArg,
   type RekordboxReadName,
+  trackOfCollection,
 } from './rekordboxReads'
 import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
@@ -58,6 +60,21 @@ export async function readRekordbox<N extends RekordboxReadName>(
     ? await client.run(job)
     : await (await import('./workerJobs')).runWorkerJob(job)
   return answer as unknown as RekordboxReadAnswer<N>
+}
+
+export async function findRekordboxTrack(
+  collection: string,
+  key: string | undefined,
+  file: string,
+  options: FindOptions,
+): Promise<RekordboxTrack | AmbiguousMatch | null> {
+  if (!(await getCollectionClient())) return trackOfCollection(collection, key, file, options)
+  return readRekordbox(collection, key, 'track', {
+    file,
+    resolve: options.realPath !== undefined,
+    homeMusicDir: options.homeMusicDir,
+    quiet: options.quiet,
+  })
 }
 
 // The production seam behind measureBpm/measureKey and the conversion tag passes:

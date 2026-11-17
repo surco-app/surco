@@ -1,6 +1,13 @@
 import { realpathSync } from 'node:fs'
 import { collectionMemo, withCollection } from './rekordboxCollection'
-import { type openRekordboxDb, rekordboxShareDir } from './rekordboxDb'
+import {
+  type AmbiguousMatch,
+  type FindOptions,
+  type openRekordboxDb,
+  type RekordboxTrack,
+  rekordboxShareDir,
+  trackFinder,
+} from './rekordboxDb'
 import { readMatchingPairs, readPlayedSequences } from './rekordboxMatching'
 import { membershipFrom, membershipSnapshot } from './rekordboxMembership'
 import { separatorContent } from './rekordboxPlaylistEdit'
@@ -25,6 +32,24 @@ export const markedIds = (db: Db): string[] =>
 
 const membership = collectionMemo(membershipSnapshot)
 const marked = collectionMemo((db) => markedIds(db).length)
+
+const finder = collectionMemo(trackFinder)
+
+export function trackOfCollection(
+  path: string,
+  key: string | undefined,
+  file: string,
+  options: FindOptions,
+): RekordboxTrack | AmbiguousMatch | null {
+  return finder(path, key)?.(file, options) ?? null
+}
+
+export interface TrackLookup {
+  file: string
+  resolve: boolean
+  homeMusicDir?: string
+  quiet?: boolean
+}
 
 const fresh =
   <A, T>(read: (db: Db, arg: A, path: string) => T) =>
@@ -59,6 +84,15 @@ const READS = {
         ? membershipFrom(snapshot, paths, { realPath: (p: string) => realpathSync(p) })
         : {}
     },
+  },
+  track: {
+    empty: null,
+    run: (path: string, key: string | undefined, lookup: TrackLookup) =>
+      trackOfCollection(path, key, lookup.file, {
+        ...(lookup.resolve ? { realPath: (p: string) => realpathSync(p) } : {}),
+        homeMusicDir: lookup.homeMusicDir,
+        quiet: lookup.quiet,
+      }),
   },
   marked: {
     empty: 0,
