@@ -687,6 +687,24 @@ describe('useTrackLibrary own outputs vs watcher', () => {
   })
 })
 
+describe('useTrackLibrary removed conversions vs watcher', () => {
+  // A converted track taken off the list leaves its conversion in the folder. With the
+  // list cleared after a batch that is every finished track at once, and the watcher then
+  // offered Surco's own files back as new ones.
+  it('does not offer the conversion of a removed track as a new one', async () => {
+    const { result, fire } = setupWithTracks()
+    await act(() => result.current.addPaths(['/m/a.wav', '/m/b.wav']))
+    const a = result.current.tracks.find((t) => t.inputPath === '/m/a.wav')
+    if (!a) throw new Error('track not loaded')
+
+    act(() => result.current.updateTrack(a.id, { outputPath: '/m/a.aiff', status: 'done' }))
+    act(() => result.current.removeTracks([a.id]))
+    act(() => fire('/m', ['/m/a.wav', '/m/b.wav', '/m/a.aiff']))
+
+    expect(result.current.pendingNew).toBeNull()
+  })
+})
+
 describe('useTrackLibrary updateTrack with nothing to change', () => {
   it('keeps the same tracks array so every measured track does not re-run the whole-library chain', async () => {
     const { result } = setupWithTracks()

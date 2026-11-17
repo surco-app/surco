@@ -191,6 +191,7 @@ export function useTrackProcessing({
   const [batchSummary, setBatchSummary] = useState<BatchSummary | null>(null)
   // Set by cancelBatch to break the convert-all loop between tracks.
   const cancelBatchRef = useRef(false)
+  const tagsOnlyRuns = useRef(new Set<string>())
   // The ids the current run started with — cancelBatch also asks main to kill any
   // of these whose encode is already in flight, since the flag above only stops
   // ones not yet started (see main/activeConversions.ts).
@@ -472,6 +473,8 @@ export function useTrackProcessing({
         }
         // Converted, but the requested loudness normalization couldn't be measured, so the
         // file went out at its original level — tell the user rather than letting it pass.
+        if (result.tagsOnly) tagsOnlyRuns.current.add(id)
+        else tagsOnlyRuns.current.delete(id)
         if (result.normalizeSkipped) onNormalizeSkipped?.(track.listLabel)
         // Repaired clicks are the feature's visible proof-of-work, so the count is
         // surfaced; a clean track stays quiet (see onDeclicked's contract).
@@ -791,7 +794,13 @@ export function useTrackProcessing({
         setBatchProgress({ done: 0, total: 0 })
         // cancelBatchRef is still true here when the user stopped the run — the next
         // batch resets it — so the summary can say which kind of end this was.
-        setBatchSummary({ ...summarizeBatch(results), cancelled: cancelBatchRef.current })
+        const written = ids.filter((_, i) => results[i] === 'converted')
+        setBatchSummary({
+          ...summarizeBatch(results),
+          cancelled: cancelBatchRef.current,
+          ...(written.length > 0 &&
+            written.every((id) => tagsOnlyRuns.current.has(id)) && { updatedOnly: true }),
+        })
         // In the finally, not after: a cancelled or failed run must still flush main's
         // recorded Traktor patches, or they linger and get applied to the collection
         // during the NEXT batch instead.

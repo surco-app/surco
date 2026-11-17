@@ -76,13 +76,19 @@ con un clic, y a su derecha el menú de destino con el nombre del destino elegid
 «N pistas → formato · destino». Debajo va «Convertir N seleccionadas», o «Convertir N de M
 seleccionadas» si alguna se queda fuera (`batch-convert`; `header.convertSelected`,
 `header.convertSomeSelected`). El botón dice «Actualizar N seleccionadas» solo cuando el lote
-reescribe etiquetas sin tocar el audio: cada fichero se queda en su propio formato, sin
-normalizar, reparar ni recortar, y se escribe donde está (`batchWritesTagsOnly`,
-`lib/batch.ts`). Eso pasa con el destino «Editar el original», con Apple Music (se etiqueta en
-su sitio y luego se añade; un FLAC suelto no, porque Music no lo admite y va a la carpeta) y con
-la carpeta de salida cuando todas las pistas vienen de una biblioteca. Con «Junto al original»,
-o con ficheros sueltos hacia la carpeta de salida, sigue diciendo «Convertir», porque ahí se
-crea una copia. Con una sola pista el pie no cambia: el
+reescribe etiquetas sin tocar el audio, y lo calcula pista a pista con las mismas reglas que
+la conversión (`batchWritesTagsOnly`, `lib/batch.ts`): el formato en que acaba de verdad cada
+fichero, adónde va de verdad y si se escribe donde está. Eso incluye que un formato solo
+resaltado por ser el de Ajustes no es un formato elegido a mano: con «Conservar los MP3 y M4A»
+los MP3 se quedan como están, y las pistas abiertas desde una playlist de Apple Music conservan
+su formato, hasta que se pulsa un formato. Con destino «Editar el original» o Apple Music el
+fichero se etiqueta en su sitio; con «Junto al original» siempre hay copia; con la carpeta de
+salida depende de si alguna biblioteca tiene el fichero, y el pie se lo pregunta al proceso
+principal (hasta 200 ficheros sueltos; por encima cuentan como copia). El destino que muestra
+el pie, si no se ha elegido uno a mano, es el de Ajustes y no el de la pista abierta. La cuenta
+deja fuera las pistas que el lote va a saltar. El resumen al terminar dice «N actualizadas»
+cuando todo lo escrito fueron etiquetas (`header.batchUpdated`).
+Con una sola pista el pie no cambia: el
 formato y el destino siguen en la flecha del botón. Si se edita una selección ya convertida, el
 pie deja la línea de hechas y vuelve a ofrecer el botón (`selectionStatus.ts`).
 Para convertir toda la lista quedan ⌘A y el botón, ⌘⇧⏎ y «Convertir todas» en la paleta o en el
@@ -95,14 +101,19 @@ panel derecho mientras dure el lote (`App.tsx:4249`).
 **Vaciar la lista al terminar un lote** (v1.38.0). Con el ajuste «Vaciar la lista al terminar un
 lote» (Ajustes › Destino, apagado de fábrica, `clearListAfterConvert`), al acabar un lote las
 pistas convertidas salen de la lista con el aviso «N pistas quitadas de la lista» y su
-«Deshacer». Las que fallan o se saltan se quedan. Solo actúa en lotes: convertir una pista suelta
-con su botón no la quita (`onBatchConverted`, `useTrackProcessing.ts`). Probado en la app el 17
+«Deshacer». Solo salen las que no tienen nada pendiente (`leavesListAfterBatch`, `lib/batch.ts`):
+se quedan las que fallan o se saltan, las que la comprobación tras convertir da por no
+cuadradas o deja esperando a un programa de DJ, las que Apple Music rechazó y las editadas
+mientras corría el lote. Si alguna comprobación sigue en marcha, la lista espera a que acabe.
+Solo actúa en lotes y solo en la pestaña de ficheros, nunca en una pestaña de biblioteca;
+convertir una pista suelta con su botón no la quita (`onBatchConverted`, `useTrackProcessing.ts`). Probado en la app el 17
 de noviembre de 2026 con destino «Junto al original» y con Apple Music.
 
 **Lo que se añade queda seleccionado** (v1.38.0). Los archivos que se sueltan, se eligen con el
 selector o llegan con «Abrir con» pasan a ser la selección, de modo que un álbum recién soltado
-se edita en lote sin seleccionarlo a mano. Si el cursor está en un campo, la selección no cambia
-(`addToWorkingList`, `App.tsx`).
+se edita en lote sin seleccionarlo a mano. La selección no cambia si el cursor está en un
+campo, si hay un filtro o una búsqueda activos, o si se seleccionó otra cosa mientras la
+carpeta se estaba leyendo (`addToWorkingList`, `App.tsx`).
 
 Desde v1.28.0, en las pestañas de rekordbox, Traktor, Engine DJ y Serato solo se convierten
 las filas seleccionadas, y sin selección no hay nada que convertir (`convertTracks`,

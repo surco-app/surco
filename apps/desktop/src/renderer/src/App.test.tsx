@@ -7855,6 +7855,63 @@ describe('App multi-select convert', () => {
     )
   })
 
+  // A folder on a NAS can take many seconds to walk. A track picked meanwhile is what the
+  // DJ is working on now, and the walk finishing must not take the editor away from it.
+  it('keeps a selection made while the added files were still arriving', async () => {
+    let finish: () => void = () => {}
+    const walking = new Promise<void>((resolve) => {
+      finish = resolve
+    })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.wav', '/music/b.wav'])
+        .mockResolvedValueOnce(['/music/c.wav', '/music/d.wav']),
+      expandPaths: vi.fn(async (paths: string[]) => {
+        if (paths.includes('/music/c.wav')) await walking
+        return paths
+      }),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('add-files'))
+    await waitFor(() => expect(window.api.expandPaths).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await act(async () => {
+      finish()
+      await walking
+    })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // With a filter on, some of what arrives may not be on screen: selecting it would leave
+  // the convert button acting on rows nobody can see.
+  it('leaves the selection alone when files are added under an active filter', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/a.mp3', '/music/z.wav'])
+        .mockResolvedValueOnce(['/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-format'))
+    fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
+    runMenu('add')
+    await waitFor(() => expect(window.api.readTags).toHaveBeenCalledTimes(4))
+    expect(screen.queryByTestId('batch-convert')).toBeNull()
+  })
+
   // A drop that lands while a field is being typed in must not swap the form under the
   // cursor for a bulk one.
   it('leaves the selection alone when files arrive while a field has the cursor', async () => {
@@ -7874,6 +7931,119 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('field-title')).toBeInTheDocument()
     expect(screen.queryByTestId('batch-convert')).toBeNull()
+  })
+
+  // The check after converting is how Surco says a file did not come out right. Clearing
+  // the list took those tracks with the good ones, and the warning went with them.
+  it('keeps in the list a converted track whose check did not add up', async () => {
+    const processTrack = vi.fn().mockImplementation((job: { inputPath: string }) =>
+      Promise.resolve({
+        outputPath: '/out/x',
+        inPlace: false,
+        verification:
+          job.inputPath === '/music/b.wav'
+            ? {
+                status: 'mismatch',
+                checks: [{ place: 'file', state: 'mismatch', detail: { key: 'fileTruncated' } }],
+              }
+            : { status: 'ok', checks: [] },
+      }),
+    )
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(
+      screen
+        .getAllByTestId('app-notice')
+        .some((card) =>
+          card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
+        ),
+    ).toBe(true)
+  })
+
+  // A check still running has not said anything yet: the track waits in the list for its
+  // answer and only leaves once the answer is good.
+  it('waits for a running check before clearing its track', async () => {
+    let push: Parameters<Api['onVerifyUpdate']>[0] = () => {}
+    const processTrack = vi.fn().mockResolvedValue({
+      outputPath: '/out/x',
+      inPlace: false,
+      verification: {
+        status: 'checking',
+        checks: [{ place: 'file', state: 'checking', detail: { key: 'checking' } }],
+        job: 'j1',
+        seq: 0,
+      },
+    })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ clearListAfterConvert: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+      onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>((cb) => {
+        push = cb
+        return () => {}
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.getAllByTestId('track-row')).toHaveLength(2)
+    for (const [job] of processTrack.mock.calls)
+      act(() => push(job.id, { status: 'ok', checks: [], job: 'j1', seq: 1 }))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+  })
+
+  // The button said "Update" and the summary then said "converted": the DJ was left
+  // wondering whether the files had been re-encoded after all.
+  it('says the tracks were updated when the batch only rewrote tags', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/music/a.wav', inPlace: true, tagsOnly: true })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    expect(await screen.findByTestId('batch-summary')).toHaveTextContent(
+      i18n.t('header.batchUpdated', { count: 2 }),
+    )
+  })
+
+  it('still says converted when any track of the batch was converted', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValueOnce({ outputPath: '/music/a.wav', inPlace: true, tagsOnly: true })
+      .mockResolvedValue({ outputPath: '/out/b.aiff', inPlace: false })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    runMenu('process-all')
+    expect(await screen.findByTestId('batch-summary')).toHaveTextContent(
+      i18n.t('header.batchConverted', { count: 2 }),
+    )
   })
 
   // A batch raised one card per repaired track, each for four seconds: a folder of vinyl

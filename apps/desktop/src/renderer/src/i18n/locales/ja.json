@@ -166,6 +166,7 @@
   "header": {
     "add": "ファイル追加",
     "batchConverted": "{{count}} 変換済み",
+    "batchUpdated": "{{count}} 更新済み",
     "batchSkipped": "{{count}} スキップ",
     "batchFailed": "{{count}} 失敗",
     "batchCancelled": "キャンセルしました",
@@ -897,7 +898,7 @@
     "damagedSource": "このファイルは破損しているか不完全なため、コピーも同様になります。",
     "exportAgain": "再度変換",
     "chooseFormat": "フォーマットを選択",
-    "formatSourceShort": "元の形式",
+    "formatSourceShort": "ソース",
     "menuFormat": "フォーマット",
     "menuDestination": "保存先",
     "menuOverwriteNote": "ファイルを上書きします",

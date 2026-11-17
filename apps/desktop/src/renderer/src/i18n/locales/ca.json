@@ -166,6 +166,7 @@
   "header": {
     "add": "Afegir fitxers",
     "batchConverted": "{{count}} convertides",
+    "batchUpdated": "{{count}} actualitzades",
     "batchSkipped": "{{count}} saltades",
     "batchFailed": "{{count}} amb error",
     "batchCancelled": "Cancel·lat",

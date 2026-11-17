@@ -3,13 +3,17 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import { buildLibraryIndex } from './appleMusicLibrary'
 import {
+  asksLibrary,
+  type BatchPick,
   batchWritesTagsOnly,
   canProcessTrack,
   convertGate,
   eligibleForBatch,
+  leavesListAfterBatch,
   leftOutForMissing,
   summarizeBatch,
 } from './batch'
+import type { Destination } from './destination'
 
 function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {}): TrackItem {
   return {
@@ -257,61 +261,164 @@ describe('a Serato track', () => {
   })
 })
 
-// A batch that only rewrites tags must not be called a conversion: a user fixing the genre
-// of a folder read "Convert" and could not tell whether their files would be re-encoded.
+// The batch button says what the run will do, so it has to work it out the way the run
+// does, track by track: the format each file really ends in, where it really goes, and
+// whether a library already holds it. Every case here was once answered by a shortcut
+// that read "Convert" over a batch that only rewrote tags, or the other way round.
 describe('batchWritesTagsOnly', () => {
-  const untouched = (): object => ({})
+  const quiet = (): object => ({})
+  const held = (): boolean => true
+  const loose = (): boolean => false
+  const base = {
+    outputFormat: 'aiff' as const,
+    keepMp3Sources: false,
+    overwriteOriginal: false,
+    convertBesideOriginal: false,
+    addToAppleMusic: false,
+  }
+  const pick = (over: Partial<BatchPick> = {}): BatchPick => ({
+    format: 'source',
+    formatByHand: true,
+    settings: base,
+    ...over,
+  })
   const wav = track('a', 'idle')
   const mp3 = { ...track('b', 'idle'), inputPath: '/b.mp3' }
+  const flac = { ...track('f', 'idle'), inputPath: '/f.flac' }
 
-  it('holds when every file is overwritten in the format it already has', () => {
-    expect(batchWritesTagsOnly([wav, mp3], 'source', 'overwrite', untouched)).toBe(true)
-    expect(batchWritesTagsOnly([wav], 'wav', 'overwrite', untouched)).toBe(true)
+  it('holds when every file keeps its format and is rewritten where it is', () => {
+    expect(batchWritesTagsOnly([wav, mp3], pick({ destination: 'overwrite' }), quiet, held)).toBe(
+      true,
+    )
+    expect(
+      batchWritesTagsOnly([wav], pick({ format: 'wav', destination: 'overwrite' }), quiet, held),
+    ).toBe(true)
   })
 
   it('fails as soon as one file changes format', () => {
-    expect(batchWritesTagsOnly([wav, mp3], 'wav', 'overwrite', untouched)).toBe(false)
+    expect(
+      batchWritesTagsOnly(
+        [wav, mp3],
+        pick({ format: 'wav', destination: 'overwrite' }),
+        quiet,
+        held,
+      ),
+    ).toBe(false)
   })
 
   it('fails when the audio is processed', () => {
     const normalized = (): object => ({ normalize: { mode: 'peak' } })
-    expect(batchWritesTagsOnly([wav], 'source', 'overwrite', normalized)).toBe(false)
+    expect(batchWritesTagsOnly([wav], pick({ destination: 'overwrite' }), normalized, held)).toBe(
+      false,
+    )
   })
 
-  it('fails when the destination leaves a new file instead of rewriting the source', () => {
-    expect(batchWritesTagsOnly([wav], 'source', 'folder', untouched)).toBe(false)
-    expect(batchWritesTagsOnly([wav], 'source', 'beside', untouched)).toBe(false)
+  it('fails next to the original, which always leaves a new file', () => {
+    expect(batchWritesTagsOnly([wav], pick({ destination: 'beside' }), quiet, held)).toBe(false)
   })
 
-  // Two rekordbox tracks left in their own format and sent to Apple Music are not
-  // re-encoded either: the button read "Convert" and the DJ could not tell.
-  it('holds when Apple Music is the destination, since the file is tagged where it is and then added', () => {
-    expect(batchWritesTagsOnly([wav, mp3], 'source', 'appleMusic', untouched)).toBe(true)
+  // The file is tagged where it is and then added: Music does not get a copy made for it.
+  // That holds for a FLAC too, which is tagged and simply not added.
+  it('holds for Apple Music, FLAC included', () => {
+    expect(
+      batchWritesTagsOnly([wav, mp3, flac], pick({ destination: 'appleMusic' }), quiet, loose),
+    ).toBe(true)
   })
 
-  // Music cannot take FLAC, so that file goes to the output folder instead, where a
-  // loose file lands as a new copy.
-  it('fails for a loose FLAC bound for Apple Music', () => {
-    const flac = { ...track('f', 'idle'), inputPath: '/f.flac' }
-    expect(batchWritesTagsOnly([flac], 'source', 'appleMusic', untouched)).toBe(false)
+  // The output folder is the one destination that depends on the file: one a library holds
+  // is tagged where it is, a loose one lands in the folder as a new copy.
+  it('holds for the output folder only when a library holds every file', () => {
+    expect(batchWritesTagsOnly([wav, mp3], pick({ destination: 'folder' }), quiet, held)).toBe(true)
+    expect(batchWritesTagsOnly([wav, mp3], pick({ destination: 'folder' }), quiet, loose)).toBe(
+      false,
+    )
   })
 
-  // With the output folder as destination, a track a library already holds is tagged where
-  // it is; a loose file gets a new copy in the folder, which is not just an update.
-  it('holds for the output folder only when every track comes from a library', () => {
-    const inRekordbox = { ...track('r', 'idle'), programs: ['rekordbox' as const] }
-    const fromMusic = { ...track('m', 'idle'), fromAppleMusic: true }
-    expect(batchWritesTagsOnly([inRekordbox, fromMusic], 'source', 'folder', untouched)).toBe(true)
-    expect(batchWritesTagsOnly([inRekordbox, wav], 'source', 'folder', untouched)).toBe(false)
+  // A destination nobody picked is not the one the selector shows for the open track: the
+  // run reads Settings for it, so the label has to as well.
+  it('reads the destination from Settings when none was picked by hand', () => {
+    const toMusic = { ...base, addToAppleMusic: true }
+    expect(batchWritesTagsOnly([wav], pick({ settings: toMusic }), quiet, loose)).toBe(true)
+    expect(batchWritesTagsOnly([wav], pick({ settings: base }), quiet, loose)).toBe(false)
+    const beside = { ...base, convertBesideOriginal: true }
+    expect(batchWritesTagsOnly([wav], pick({ settings: beside }), quiet, held)).toBe(false)
   })
 
-  it('fails for a source with no format of its own to stay in', () => {
+  // AIFF highlighted because it is the Settings default is not AIFF asked for: with "keep
+  // MP3" on, the MP3s stay MP3 and only get their tags.
+  it('holds for MP3s the keep setting leaves as they are under a default format', () => {
+    const keeps = { ...base, keepMp3Sources: true, overwriteOriginal: true }
+    const byDefault = pick({ format: 'aiff', formatByHand: false, settings: keeps })
+    expect(batchWritesTagsOnly([mp3], byDefault, quiet, held)).toBe(true)
+    expect(batchWritesTagsOnly([mp3, wav], byDefault, quiet, held)).toBe(false)
+  })
+
+  it('fails for the same MP3s once another format is picked by hand', () => {
+    const keeps = { ...base, keepMp3Sources: true, overwriteOriginal: true }
+    const byHand = pick({ format: 'wav', formatByHand: true, settings: keeps })
+    expect(batchWritesTagsOnly([mp3], byHand, quiet, held)).toBe(false)
+  })
+
+  // A track opened from an Apple Music playlist keeps its own format until a format is
+  // picked for it by hand.
+  it('holds for Apple Music playlist tracks under a default format, and fails once one is picked', () => {
+    const fromMusic = { ...wav, fromAppleMusic: true }
+    const over = { ...base, overwriteOriginal: true }
+    expect(
+      batchWritesTagsOnly(
+        [fromMusic],
+        pick({ format: 'aiff', formatByHand: false, settings: over }),
+        quiet,
+        held,
+      ),
+    ).toBe(true)
+    expect(
+      batchWritesTagsOnly(
+        [fromMusic],
+        pick({ format: 'aiff', formatByHand: true, settings: over }),
+        quiet,
+        held,
+      ),
+    ).toBe(false)
+  })
+
+  // "Same as source" skips a file with no format of its own to stay in: it is not part of
+  // what the run writes, so it does not decide the label.
+  it('leaves out a file the run will skip', () => {
     const opus = { ...track('c', 'idle'), inputPath: '/c.opus' }
-    expect(batchWritesTagsOnly([opus], 'source', 'overwrite', untouched)).toBe(false)
+    expect(batchWritesTagsOnly([wav, opus], pick({ destination: 'overwrite' }), quiet, held)).toBe(
+      true,
+    )
+    expect(batchWritesTagsOnly([opus], pick({ destination: 'overwrite' }), quiet, held)).toBe(false)
   })
 
   it('fails with nothing to write', () => {
-    expect(batchWritesTagsOnly([], 'source', 'overwrite', untouched)).toBe(false)
+    expect(batchWritesTagsOnly([], pick({ destination: 'overwrite' }), quiet, held)).toBe(false)
+  })
+})
+
+// Only the output folder needs a library's word, and only for a file staying in its format.
+describe('asksLibrary', () => {
+  const base = {
+    outputFormat: 'aiff' as const,
+    keepMp3Sources: false,
+    overwriteOriginal: false,
+    convertBesideOriginal: false,
+    addToAppleMusic: false,
+  }
+  const wav = track('a', 'idle')
+
+  it('asks for a file staying in its format on its way to the output folder', () => {
+    expect(asksLibrary(wav, { format: 'source', formatByHand: true, settings: base })).toBe(true)
+  })
+
+  it('does not ask when the destination already decides, or the format changes', () => {
+    const at = (destination: Destination) =>
+      asksLibrary(wav, { format: 'source', formatByHand: true, destination, settings: base })
+    expect(at('overwrite')).toBe(false)
+    expect(at('appleMusic')).toBe(false)
+    expect(at('beside')).toBe(false)
+    expect(asksLibrary(wav, { format: 'mp3', formatByHand: true, settings: base })).toBe(false)
   })
 })
 
@@ -338,5 +445,37 @@ describe('a converted track whose own dial changed', () => {
   it('enters a batch, and the one left as it was stays out', () => {
     expect(eligibleForBatch([redialled, untouched], [])).toEqual(['a'])
     expect(convertGate([redialled, untouched], []).ready.map((t) => t.id)).toEqual(['a'])
+  })
+})
+
+// "Clear the list when a batch finishes" takes the finished tracks away. Anything the DJ
+// still has to look at or act on must stay: once the row is gone there is nowhere left
+// that says it.
+describe('leavesListAfterBatch', () => {
+  const done = { ...track('a', 'done', { title: 'x' }), outputPath: '/out/a.aiff' }
+
+  it('lets go of a converted track with nothing left to say', () => {
+    expect(leavesListAfterBatch(done)).toBe(true)
+    expect(leavesListAfterBatch({ ...done, verification: { status: 'ok', checks: [] } })).toBe(true)
+  })
+
+  it('keeps a track whose check did not add up, is still running or waits for a DJ app', () => {
+    for (const status of ['mismatch', 'checking', 'pending'] as const)
+      expect(leavesListAfterBatch({ ...done, verification: { status, checks: [] } })).toBe(false)
+  })
+
+  // The row is where "Add to Apple Music" can be tried again.
+  it('keeps a track Apple Music refused', () => {
+    expect(leavesListAfterBatch({ ...done, musicStatus: 'error' })).toBe(false)
+  })
+
+  // A tag fixed while the batch was still running has not been written anywhere yet.
+  it('keeps a track edited since it converted', () => {
+    expect(leavesListAfterBatch({ ...done, processedSignature: 'before-the-edit' })).toBe(false)
+  })
+
+  it('keeps a track that did not finish', () => {
+    expect(leavesListAfterBatch(track('b', 'error'))).toBe(false)
+    expect(leavesListAfterBatch(track('c', 'idle'))).toBe(false)
   })
 })

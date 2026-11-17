@@ -58,19 +58,18 @@ export function BatchPlan({
         </button>
       )}
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        {/* biome-ignore lint/a11y/useSemanticElements: an inline pill row; the group role names it without a fieldset's own layout, as SegmentedControl does */}
         <div
-          role="radiogroup"
+          role="group"
           aria-label={tr('editor.menuFormat')}
           className="flex max-w-full shrink-0 flex-wrap rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] p-0.5"
         >
           {FORMAT_SETTINGS.map((id) => (
-            // biome-ignore lint/a11y/useSemanticElements: a segmented control, drawn as buttons and announced as one radio group.
             <button
               key={id}
               type="button"
-              role="radio"
               data-testid={`process-format-${id}`}
-              aria-checked={id === format}
+              aria-pressed={id === format}
               onClick={() => onSelectFormat(id)}
               className={`press group relative rounded-md px-2 py-0.5 text-label ${
                 id === format

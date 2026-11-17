@@ -177,7 +177,7 @@ import {
   tracksToAutoMatch,
 } from './lib/autoMatch'
 import { baseName } from './lib/baseName'
-import { canProcessTrack, convertGate } from './lib/batch'
+import { canProcessTrack, convertGate, leavesListAfterBatch } from './lib/batch'
 import { railWidth } from './lib/columnLayout'
 import {
   buildCommands,
@@ -1357,12 +1357,25 @@ export default function App(): React.JSX.Element {
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     if (paths.length > 0) selectSource(null)
     const before = new Set(tracksRef.current.map((t) => t.id))
+    const selectedBefore = selection
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
     await addPaths(expanded)
     const added = tracksRef.current.filter((t) => !before.has(t.id)).map((t) => t.id)
-    if (added.length > 0 && !isTypingTarget(document.activeElement))
-      setSelection({ ids: added, anchor: added[0] })
+    // What arrived becomes the selection, unless that would pull the editor away from
+    // something: a field being typed in, a filter or search that may hide the new rows, or
+    // a selection the user made while a slow folder was still being walked. The first row
+    // addPaths opens on an empty list is the add's own doing and does not count as one.
+    if (added.length === 0 || isTypingTarget(document.activeElement) || search || filterActive)
+      return
+    const fresh = new Set(added)
+    setSelection((current) => {
+      const untouched =
+        current.anchor === selectedBefore.anchor && current.ids.length === selectedBefore.ids.length
+      const openedByTheAdd =
+        selectedBefore.anchor === null && current.ids.every((id) => fresh.has(id))
+      return untouched || openedByTheAdd ? { ids: added, anchor: added[0] } : current
+    })
   })
   const pickFiles = useStableCallback(
     async (): Promise<void> => addToWorkingList(await window.api.pickFiles()),
@@ -1752,9 +1765,11 @@ export default function App(): React.JSX.Element {
       void refreshTrash()
     },
     onBatchConverted: (ids) => {
-      if (!settings?.clearListAfterConvert) return
-      const converted = new Set(ids)
-      dropFromList(tracksRef.current.filter((t) => converted.has(t.id)))
+      // The setting is about the working list. In a library tab the rows are the
+      // playlist the DJ opened, and taking them off the screen would read as removing them.
+      if (!settings?.clearListAfterConvert || browser.source !== null) return
+      for (const id of ids) clearWhenChecked.current.add(id)
+      clearChecked()
     },
     onNormalizeSkipped: (name) =>
       tallyNotice('normalizeSkipped', (tracks) =>
@@ -1897,6 +1912,22 @@ export default function App(): React.JSX.Element {
     removeWithUndo(targets, () => removeTracks(targets.map((t) => t.id)))
     onRemoved?.()
   })
+  // The tracks a batch converted, waiting to leave the list. Only the ones whose check came
+  // back good go: a mismatch, or a library write still queued, is exactly what the DJ has to
+  // see, so those rows stay. They all leave together once no check is still running, so
+  // the notice offers one Undo for the lot.
+  const clearWhenChecked = useRef(new Set<string>())
+  const clearChecked = useStableCallback(() => {
+    const waiting = clearWhenChecked.current
+    if (waiting.size === 0) return
+    const converted = tracksRef.current.filter((t) => waiting.has(t.id))
+    if (converted.some((t) => t.verification?.status === 'checking')) return
+    waiting.clear()
+    dropFromList(converted.filter(leavesListAfterBatch))
+  })
+  useEffect(() => {
+    if (tracks.length > 0) clearChecked()
+  }, [tracks, clearChecked])
   const removeTrashed = useStableCallback((ids: string[], everywhere?: boolean) => {
     const pending = listRemoval.current
     if (pending) {
