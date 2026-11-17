@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { MatchingSuggestions } from './MatchingSuggestions'
 
 afterEach(cleanup)
@@ -41,6 +41,23 @@ describe('MatchingSuggestions', () => {
     expect(card).toHaveTextContent('In The Evening')
     expect(card).toHaveTextContent('Get Down')
     expect(card).toHaveTextContent('27')
+  })
+
+  it('shortens the count to a figure and still says it in full to a screen reader', () => {
+    setup()
+    const times = screen.getByTestId('matching-suggestion-times')
+    expect(times).toHaveTextContent('27×')
+    expect(times).toHaveTextContent(i18n.t('sources.matchingTimes', { count: 27 }))
+  })
+
+  it('names its two icon buttons, since neither carries a word', () => {
+    setup()
+    expect(screen.getByTestId('matching-suggestion-match')).toHaveAccessibleName(
+      i18n.t('trackList.context.matching'),
+    )
+    expect(screen.getByTestId('matching-suggestion-dismiss')).toHaveAccessibleName(
+      i18n.t('sources.matchingDismiss'),
+    )
   })
 
   it('pairs the two tracks in one click', () => {
