@@ -434,10 +434,16 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
         if (at === -1) q.repoints.push(r)
         else q.repoints[at] = deps.stack ? deps.stack(q.repoints[at], r) : r
       }
+      const placeOf = new Map<string, number>()
+      q.ops.forEach((x, at) => {
+        if (!placeOf.has(keyOf(x))) placeOf.set(keyOf(x), at)
+      })
       for (const op of ops) {
-        const at = q.ops.findIndex((x) => keyOf(x) === keyOf(op))
-        if (at === -1) q.ops.push(op)
-        else q.ops[at] = op
+        const at = placeOf.get(keyOf(op))
+        if (at === undefined) {
+          placeOf.set(keyOf(op), q.ops.length)
+          q.ops.push(op)
+        } else q.ops[at] = op
       }
       save()
     },
