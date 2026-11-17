@@ -408,6 +408,29 @@ export default function App(): React.JSX.Element {
       pushToast(store, { tone: 'neutral', message, duration: 4000, testid: 'app-notice' }),
     [store],
   )
+  // A notice a batch raises once per track: the cards share a key, so a run over a folder
+  // shows one that counts the tracks instead of the same sentence stacked for each. The
+  // count starts over once the card is gone.
+  const noticeTallies = useRef(new Map<string, number>())
+  const tallyNotice = useCallback(
+    (kind: string, message: (tracks: number) => string) => {
+      const tracks = (noticeTallies.current.get(kind) ?? 0) + 1
+      noticeTallies.current.set(kind, tracks)
+      const forget = (): void => {
+        noticeTallies.current.delete(kind)
+      }
+      pushToast(store, {
+        key: `notice-${kind}`,
+        tone: 'neutral',
+        message: message(tracks),
+        duration: 4000,
+        testid: 'app-notice',
+        onDismiss: forget,
+        onExpire: forget,
+      })
+    },
+    [store],
+  )
   // A surfaced background failure: red, keyed so a repeat collapses onto one card, and
   // persistent (no duration) since the user should see it before it goes.
   const setAppError = useCallback(
@@ -1733,10 +1756,20 @@ export default function App(): React.JSX.Element {
       const converted = new Set(ids)
       dropFromList(tracksRef.current.filter((t) => converted.has(t.id)))
     },
-    onNormalizeSkipped: (name) => setNotice(tr('notices.normalizeSkipped', { name })),
+    onNormalizeSkipped: (name) =>
+      tallyNotice('normalizeSkipped', (tracks) =>
+        tracks === 1
+          ? tr('notices.normalizeSkipped', { name })
+          : tr('notices.normalizeSkippedMany', { count: tracks }),
+      ),
     // Only when the repair actually touched samples: a clean track reporting "0
     // clicks" on every convert would train the user to ignore the notice.
-    onDeclicked: (name, count) => setNotice(tr('notices.declicked', { name, count })),
+    onDeclicked: (name, count) =>
+      tallyNotice('declicked', (tracks) =>
+        tracks === 1
+          ? tr('notices.declicked', { name, count })
+          : tr('notices.declickedMany', { count: tracks }),
+      ),
     onOldMusicCopyKept: (reason) =>
       reason === 'carry'
         ? pushToast(store, {

@@ -5,11 +5,11 @@
     "title": "Il formato, a un clic",
     "items": [
       {
-        "text": "Con più tracce selezionate, i formati sono subito sopra il pulsante di conversione e ne scegli uno con un clic. La destinazione è nel menu accanto.",
+        "text": "Con più brani selezionati, i formati sono subito sopra il pulsante di conversione e ne scegli uno con un clic. La destinazione è nel menu accanto.",
         "in": "1.38.0"
       },
       {
-        "text": "Attiva «Svuota l'elenco al termine di un gruppo» in Impostazioni › Destinazione e le tracce convertite escono dall'elenco da sole. Quelle non riuscite restano, e «Annulla» riporta le altre.",
+        "text": "Attiva «Svuota l'elenco al termine di un lotto» in Impostazioni › Destinazione e i brani convertiti escono dall'elenco da soli. Quelli non riusciti restano, e «Annulla» riporta gli altri.",
         "in": "1.38.0"
       },
       {
@@ -17,19 +17,19 @@
         "in": "1.38.0"
       },
       {
-        "text": "Quando un gruppo riscrive solo i tag dei tuoi originali, il pulsante dice «Aggiorna» invece di «Converti».",
+        "text": "Quando un lotto riscrive solo i tag dei tuoi originali, il pulsante dice «Aggiorna» invece di «Converti».",
         "in": "1.38.0"
       },
       {
-        "text": "Modifica insieme tracce già convertite e il pulsante torna. Non devi più svuotare l'elenco e aggiungerle di nuovo.",
+        "text": "Modifica insieme brani già convertiti e il pulsante torna. Non devi più svuotare l'elenco e aggiungerli di nuovo.",
         "in": "1.38.0"
       },
       {
-        "text": "I generi di una traccia si vedono sempre, per quanto lungo sia il tuo elenco di generi.",
+        "text": "I generi di un brano si vedono sempre, per quanto lungo sia il tuo elenco di generi.",
         "in": "1.38.0"
       },
       {
-        "text": "Surco risponde con la stessa rapidità con una grande libreria di Traktor. Selezionare migliaia di tracce, aprire un elenco lungo e cancellare o salvare i loro cue in una volta non bloccano più l'app.",
+        "text": "Surco risponde con la stessa rapidità con una grande libreria di Traktor. Selezionare migliaia di brani, aprire un elenco lungo e cancellare o salvare i loro cue in una volta non bloccano più l'app.",
         "in": "1.38.0"
       }
     ]

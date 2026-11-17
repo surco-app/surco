@@ -7,7 +7,7 @@ import type { CustomField, FormatSetting } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
 import type { Destination } from './destination'
-import { isStale } from './dirty'
+import { isDialStale, isStale } from './dirty'
 import { missingRequiredOf } from './fields'
 import { selectionReplaceMode } from './replaceSelection'
 
@@ -16,7 +16,7 @@ import { selectionReplaceMode } from './replaceSelection'
 // editor, e.g. a year filled in across the selection after a Discogs apply). A done track
 // still in sync, or one mid-process, is skipped so "Convert all" never re-runs duplicate work.
 function isConvertible(track: TrackItem): boolean {
-  return track.status === 'idle' || track.status === 'error' || isStale(track)
+  return track.status === 'idle' || track.status === 'error' || isStale(track) || isDialStale(track)
 }
 
 // Whether a batch may take the track at all: a convertible state, or any settled state
@@ -159,6 +159,17 @@ export function summarizeBatch(results: BatchOutcome[]): BatchSummary {
   }
 }
 
+// Whether converting the track rewrites its own file, mirroring what main decides. A same
+// format file is tagged where it is, except a loose one bound for the output folder, which
+// lands there as a new copy. Main asks every library whether it holds the file; here only
+// what the track itself says counts, so an unknown file reads as a copy, never as an update.
+function writesItsOwnFile(track: TrackItem, destination: Destination): boolean {
+  if (destination === 'beside') return false
+  if (destination === 'overwrite') return true
+  const toMusic = destination === 'appleMusic' && !formatMatchesInput('flac', track.inputPath)
+  return toMusic || (track.programs?.length ?? 0) > 0 || track.fromAppleMusic === true
+}
+
 export function batchWritesTagsOnly(
   ready: TrackItem[],
   format: FormatSetting,
@@ -167,12 +178,13 @@ export function batchWritesTagsOnly(
 ): boolean {
   return (
     ready.length > 0 &&
-    destination === 'overwrite' &&
     ready.every(
       (t) =>
+        writesItsOwnFile(t, destination) &&
         (format === 'source'
           ? hasFormatEquivalent(t.inputPath)
-          : formatMatchesInput(format, t.inputPath)) && !processesAudio(audioOf(t)),
+          : formatMatchesInput(format, t.inputPath)) &&
+        !processesAudio(audioOf(t)),
     )
   )
 }

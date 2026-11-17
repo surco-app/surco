@@ -7872,6 +7872,61 @@ describe('App multi-select convert', () => {
     expect(screen.queryByTestId('batch-convert')).toBeNull()
   })
 
+  // A batch raised one card per repaired track, each for four seconds: a folder of vinyl
+  // rips covered the corner of the app with the same sentence over and over.
+  it('gathers the click repairs of a batch into one notice that counts the tracks', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/out/x', inPlace: false, declickedSamples: 12 })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .filter((card) =>
+            card.textContent?.includes(i18n.t('notices.declickedMany', { count: 3 })),
+          ),
+      ).toHaveLength(1),
+    )
+    expect(
+      screen.getAllByTestId('app-notice').filter((card) => /clicks/i.test(card.textContent ?? '')),
+    ).toHaveLength(1)
+  })
+
+  // One repaired track still says which one and how much: the count only replaces the
+  // name when there is more than one to name.
+  it('names the track when a single one had clicks repaired', async () => {
+    const processTrack = vi
+      .fn()
+      .mockResolvedValue({ outputPath: '/out/x', inPlace: false, declickedSamples: 12 })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Solo', artist: 'A' }),
+      processTrack,
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    runMenu('process-all')
+    await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+    await waitFor(() =>
+      expect(
+        screen.getAllByTestId('app-notice').some((card) => card.textContent?.includes('12')),
+      ).toBe(true),
+    )
+  })
+
   // With the setting on, the converted rows leave the list on their own and can be brought
   // back; the row that failed stays, so the failure is still there to look at.
   it('clears the converted tracks when the batch ends and keeps the one that failed', async () => {

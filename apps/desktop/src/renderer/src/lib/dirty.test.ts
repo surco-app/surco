@@ -3,6 +3,7 @@ import type { NormalizeConfig } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import {
   isDeclickStale,
+  isDialStale,
   isNormalizeStale,
   isStale,
   trackSignature,
@@ -319,5 +320,37 @@ describe('withSignatureCover', () => {
         coverUrl: 'surco://cover/a.jpg',
       }),
     )
+  })
+})
+
+// The loudness and click repair picked for a track are staged on the track itself. Only the
+// open track's editor compared them with what the file was converted with, so a batch and
+// the keyboard shortcut took a re-dialled track for finished and did nothing.
+describe('isDialStale', () => {
+  it('is true once the track is given another loudness than it was converted with', () => {
+    const t = converted({
+      processedNormalize: cfg({ mode: 'loudness', targetLufs: -14 }),
+      normalize: cfg({ mode: 'loudness', targetLufs: -9 }),
+    })
+    expect(isDialStale(t)).toBe(true)
+  })
+
+  it('is false while the track keeps the loudness it was converted with', () => {
+    const applied = cfg({ mode: 'loudness', targetLufs: -14 })
+    expect(isDialStale(converted({ processedNormalize: applied, normalize: applied }))).toBe(false)
+  })
+
+  // Another track's dial, or a Settings default changed since, is no reason to convert
+  // this file again: only a dial set on the track itself is.
+  it('is false for a track that carries no dial of its own', () => {
+    expect(isDialStale(converted({ processedNormalize: cfg({ mode: 'loudness' }) }))).toBe(false)
+  })
+
+  it('is true once the track is given another click repair than it was converted with', () => {
+    const t = converted({
+      processedDeclick: { mode: 'off', noise: 'off' },
+      declick: { mode: 'standard', noise: 'off' },
+    })
+    expect(isDialStale(t)).toBe(true)
   })
 })

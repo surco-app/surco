@@ -283,6 +283,28 @@ describe('batchWritesTagsOnly', () => {
     expect(batchWritesTagsOnly([wav], 'source', 'beside', untouched)).toBe(false)
   })
 
+  // Two rekordbox tracks left in their own format and sent to Apple Music are not
+  // re-encoded either: the button read "Convert" and the DJ could not tell.
+  it('holds when Apple Music is the destination, since the file is tagged where it is and then added', () => {
+    expect(batchWritesTagsOnly([wav, mp3], 'source', 'appleMusic', untouched)).toBe(true)
+  })
+
+  // Music cannot take FLAC, so that file goes to the output folder instead, where a
+  // loose file lands as a new copy.
+  it('fails for a loose FLAC bound for Apple Music', () => {
+    const flac = { ...track('f', 'idle'), inputPath: '/f.flac' }
+    expect(batchWritesTagsOnly([flac], 'source', 'appleMusic', untouched)).toBe(false)
+  })
+
+  // With the output folder as destination, a track a library already holds is tagged where
+  // it is; a loose file gets a new copy in the folder, which is not just an update.
+  it('holds for the output folder only when every track comes from a library', () => {
+    const inRekordbox = { ...track('r', 'idle'), programs: ['rekordbox' as const] }
+    const fromMusic = { ...track('m', 'idle'), fromAppleMusic: true }
+    expect(batchWritesTagsOnly([inRekordbox, fromMusic], 'source', 'folder', untouched)).toBe(true)
+    expect(batchWritesTagsOnly([inRekordbox, wav], 'source', 'folder', untouched)).toBe(false)
+  })
+
   it('fails for a source with no format of its own to stay in', () => {
     const opus = { ...track('c', 'idle'), inputPath: '/c.opus' }
     expect(batchWritesTagsOnly([opus], 'source', 'overwrite', untouched)).toBe(false)
@@ -290,5 +312,31 @@ describe('batchWritesTagsOnly', () => {
 
   it('fails with nothing to write', () => {
     expect(batchWritesTagsOnly([], 'source', 'overwrite', untouched)).toBe(false)
+  })
+})
+
+// Ten converted tracks given a new loudness target together must be offered again: the
+// batch took them for finished and there was no way to apply the change.
+describe('a converted track whose own dial changed', () => {
+  const loud = (targetLufs: number) =>
+    ({ mode: 'loudness', targetLufs, truePeakDb: -1, peakDb: -1 }) as const
+  const redialled = {
+    ...track('a', 'done', { title: 'x', artist: 'y' }),
+    processedNormalize: loud(-14),
+    normalize: loud(-9),
+  }
+  const untouched = {
+    ...track('b', 'done', { title: 'x', artist: 'y' }),
+    processedNormalize: loud(-14),
+  }
+
+  it('can be converted again from the shortcut', () => {
+    expect(canProcessTrack(redialled, [])).toBe(true)
+    expect(canProcessTrack(untouched, [])).toBe(false)
+  })
+
+  it('enters a batch, and the one left as it was stays out', () => {
+    expect(eligibleForBatch([redialled, untouched], [])).toEqual(['a'])
+    expect(convertGate([redialled, untouched], []).ready.map((t) => t.id)).toEqual(['a'])
   })
 })
