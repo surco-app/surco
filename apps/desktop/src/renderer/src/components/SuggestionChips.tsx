@@ -34,25 +34,29 @@ export function SuggestionChips({
   const firstRevealedRef = useRef<HTMLButtonElement>(null)
   const revealFromRef = useRef<number | null>(null)
   const stateOf = (s: string) => (isOn(s) ? 'on' : isPartial?.(s) ? 'some' : 'off')
-  // Applied tags lead the row so the collapse never hides them. The order is taken once
-  // per list of suggestions, not per toggle: a chip that moved when pressed would slide
-  // out from under the pointer.
+  // Applied tags lead the row so "+N" never stands for one. The order only changes when
+  // an applied tag would otherwise be hidden, never on a toggle of a chip in view: a chip
+  // that moved when pressed would slide out from under the pointer.
   const listKey = suggestions.join('\n')
-  const lead = useRef<{ key: string; chips: string[] } | null>(null)
-  if (lead.current?.key !== listKey) {
-    lead.current = {
-      key: listKey,
-      chips: [
-        ...suggestions.filter((s) => stateOf(s) !== 'off'),
-        ...suggestions.filter((s) => stateOf(s) === 'off'),
-      ],
-    }
-  }
-  const chips = lead.current.chips
+  const appliedFirst = (): string[] => [
+    ...suggestions.filter((s) => stateOf(s) !== 'off'),
+    ...suggestions.filter((s) => stateOf(s) === 'off'),
+  ]
+  const [lead, setLead] = useState(() => ({ key: listKey, chips: appliedFirst() }))
+  if (lead.key !== listKey) setLead({ key: listKey, chips: appliedFirst() })
+  const chips = lead.chips
   const { containerRef, measureRef, visibleCount } = useChipOverflow(
     chips,
     !chipsExpanded && chips.length > 0,
   )
+  const appliedHidden =
+    !chipsExpanded && chips.slice(visibleCount).some((s) => stateOf(s) !== 'off')
+  if (appliedHidden && lead.key === listKey) {
+    const next = appliedFirst()
+    if (next.join('\n') !== chips.join('\n')) setLead({ key: listKey, chips: next })
+  }
+  // With more applied tags than one line holds, the row opens rather than hide any.
+  const showAll = chipsExpanded || appliedHidden
   // Pressing "+N" unmounts it, so focus would fall to the body. Land it on the first chip
   // the expansion revealed, which is where the keyboard user was heading anyway.
   useEffect(() => {
@@ -81,10 +85,10 @@ export function SuggestionChips({
       // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y
       // desperdiciaba hueco en las anchas. Expandida vuelve al wrap multilínea.
       className={`relative flex items-center gap-1.5 ${dim ? 'mt-1' : 'mt-1.5'} ${
-        chipsExpanded ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
+        showAll ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
       }`}
     >
-      {(chipsExpanded ? chips : chips.slice(0, visibleCount)).map((s, i) => {
+      {(showAll ? chips : chips.slice(0, visibleCount)).map((s, i) => {
         const state = stateOf(s)
         return (
           <button
@@ -99,7 +103,7 @@ export function SuggestionChips({
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
             className={`press rounded-full border px-2 py-0.5 text-label transition-colors ${
-              chipsExpanded ? 'shrink-0' : 'min-w-0 truncate'
+              showAll ? 'shrink-0' : 'min-w-0 truncate'
             } ${
               state === 'on'
                 ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
@@ -121,7 +125,7 @@ export function SuggestionChips({
           </button>
         )
       })}
-      {!chipsExpanded && chips.length > visibleCount && (
+      {!showAll && chips.length > visibleCount && (
         <button
           type="button"
           data-testid="chip-more"

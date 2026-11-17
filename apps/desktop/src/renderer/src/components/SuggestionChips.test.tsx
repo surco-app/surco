@@ -114,4 +114,33 @@ describe('SuggestionChips', () => {
       'Cierre',
     ])
   })
+
+  // A genre filled in by a release match or typed in the field lands while the row is
+  // already up: it has to come into view the same as one the track arrived with.
+  it('brings a tag applied past the cut into view', () => {
+    overflow.visibleCount = 2
+    const on = new Set<string>()
+    const props = { suggestions: ['Acid', 'Bases', 'Cierre', 'Trance'], onPick: () => {} }
+    const { rerender } = render(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    expect(screen.queryByTestId('chip-Trance')).not.toBeInTheDocument()
+    on.add('Trance')
+    rerender(<SuggestionChips {...props} isOn={(s) => on.has(s)} />)
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toBeInTheDocument()
+  })
+
+  // "+N" must never stand for a tag the track carries, however many it carries.
+  it('opens the row by itself when the applied tags do not fit in one line', () => {
+    overflow.visibleCount = 1
+    render(
+      <SuggestionChips
+        suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
+        isOn={(s) => s === 'Cierre' || s === 'Trance'}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
 })
