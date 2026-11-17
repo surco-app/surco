@@ -14,7 +14,12 @@ import {
 import type { CuesOp } from './rekordboxQueueOps'
 
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
+vi.mock('./anlz', async (actual) => {
+  const real = await actual<typeof import('./anlz')>()
+  return { ...real, beatGrid: vi.fn(real.beatGrid) }
+})
 
+import { beatGrid } from './anlz'
 import { cueFingerprint, liveCues } from './rekordboxCues'
 import { applyRekordboxBatch } from './rekordboxPlaylistWrite'
 
@@ -114,6 +119,15 @@ describe('cues operations', () => {
     const wanted = [{ id: 'm', ms: bar(64), kind: 0, color: null }]
     const result = await applyRekordboxBatch(path, [op(path, { wanted, notices })], deps())
     expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices })
+  })
+
+  it('leaves the analysis files unread for a save that already names its cues, since reading them for thousands of tracks held the app for minutes', async () => {
+    const path = await collection([{ ID: 'm', InMsec: bar(64), Kind: 0, ColorTableIndex: null }])
+    vi.mocked(beatGrid).mockClear()
+    const result = await applyRekordboxBatch(path, [op(path, { wanted: [] })], deps())
+    expect(result.ok && result.outcomes[0]).toEqual({ id: 'c', applied: true, notices: [] })
+    expect(cuesOf(path)).toEqual([])
+    expect(beatGrid).not.toHaveBeenCalled()
   })
 
   it("writes the set the editor built on Surco's grid to a track rekordbox has not analysed yet, which keeps it through its first analysis", async () => {

@@ -23,7 +23,7 @@ import type {
 import { backupOf } from './libraryBackups'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { type ContentFacts, insertContent } from './rekordboxContentAdd'
-import { applyCueChanges, readTrackCues } from './rekordboxCues'
+import { applyCueChanges, readLiveCues, readTrackCues } from './rekordboxCues'
 import { type FindOptions, openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
 import {
   type AnlzPaths,
@@ -299,23 +299,25 @@ function planCuesOp(probe: Db, op: CuesOp, shareDir: string): Plan {
   const changed = (code: 'cues-changed' | 'cues-too-many' | 'cues-invalid'): Plan => ({
     outcome: { id: op.id, applied: false, notices: [{ code, track: op.label }] },
   })
-  const read = readTrackCues(probe, shareDir, op.contentId, { wave: false })
-  if (!read || read.fingerprint !== op.fingerprint) return changed('cues-changed')
+  const read =
+    op.wanted && !op.grid ? null : readTrackCues(probe, shareDir, op.contentId, { wave: false })
+  const live = read ?? readLiveCues(probe, op.contentId)
+  if (!live || live.fingerprint !== op.fingerprint) return changed('cues-changed')
   const anlz = op.grid ? anlzPathsOf(probe, shareDir, op.contentId) : null
-  if (op.grid && (!read.analysed || read.gridFingerprint !== op.gridFingerprint || !anlz))
+  if (op.grid && (!read?.analysed || read.gridFingerprint !== op.gridFingerprint || !anlz))
     return changed('cues-changed')
-  if (!read.analysed && op.wanted === undefined) return changed('cues-changed')
+  if (!read?.analysed && op.wanted === undefined) return changed('cues-changed')
   if (op.wanted === undefined && op.drops === undefined) return changed('cues-invalid')
-  const wanted = queuedWanted(op, read)
+  const wanted = op.wanted ?? (read ? queuedWanted(op, read) : null)
   if (wanted === null) return changed('cues-too-many')
-  const valid = validWantedSet(wanted, read.cues)
+  const valid = validWantedSet(wanted, live.cues)
   if (!valid.ok) {
     log.warn(`rekordbox cues: refused the queued set for ${op.contentId} (${valid.reason})`)
     return changed('cues-invalid')
   }
   if (wanted.filter((c) => c.kind !== 0).length > MAX_HOT_CUES) return changed('cues-too-many')
-  const cues = diffCues(read.cues, wanted)
-  if (!op.grid || !anlz) {
+  const cues = diffCues(live.cues, wanted)
+  if (!op.grid || !anlz || !read) {
     if (isEmptyChange(cues))
       return { outcome: { id: op.id, applied: true, notices: op.notices ?? [] } }
     return { op, cues }
