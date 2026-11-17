@@ -303,7 +303,10 @@ export function DeclickSection({
       : undefined
 
   return (
-    <div data-testid="editor-declick" className="mt-6 border-t border-[var(--color-line)] pt-6">
+    <div
+      data-testid="editor-declick"
+      className="mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3"
+    >
       <SectionHeader
         title={tr('declick.title')}
         open={open}

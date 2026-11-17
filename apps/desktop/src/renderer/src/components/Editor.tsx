@@ -951,7 +951,7 @@ export const Editor = memo(function Editor({
       <div
         key={id}
         data-testid={`${id}-single-only`}
-        className="mt-6 border-t border-[var(--color-line)] pt-6"
+        className="mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3"
       >
         <SectionHeader
           sectionId={id}

@@ -24,7 +24,10 @@ export function BulkActionSection({
   onClick: () => void
 }): React.JSX.Element {
   return (
-    <div data-testid={testid} className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div
+      data-testid={testid}
+      className="mt-6 border-t border-[var(--color-line)] pt-5 compact:mt-3 compact:pt-3"
+    >
       <p className="text-sm font-medium text-fg-muted">{title}</p>
       <button
         type="button"
@@ -52,7 +55,10 @@ export function OverwriteNotice({
   lossy: boolean
 }): React.JSX.Element {
   return (
-    <div data-testid="overwrite-notice" className="mt-6 border-t border-[var(--color-line)] pt-5">
+    <div
+      data-testid="overwrite-notice"
+      className="mt-6 border-t border-[var(--color-line)] pt-5 compact:mt-3 compact:pt-3"
+    >
       <p className="text-sm font-medium text-fg-muted">{title}</p>
       <p
         className={`mt-2 text-xs ${lossy ? 'text-danger' : 'text-fg-dim'}`}

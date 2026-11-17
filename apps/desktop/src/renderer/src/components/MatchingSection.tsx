@@ -62,7 +62,10 @@ export function MatchingSection({
     [query, collection, skip],
   )
   return (
-    <div data-testid="matching-section" className="mt-6 border-t border-[var(--color-line)] pt-6">
+    <div
+      data-testid="matching-section"
+      className="mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3"
+    >
       <SectionHeader
         sectionId="matching"
         title={tr('editor.matchingTitle')}
