@@ -16,7 +16,7 @@ import type {
   TrackCues,
 } from '../shared/types'
 import { engineCuesOf, readEnginePerformance } from './engineCues'
-import { engineRowFinder } from './engineRepoint'
+import { engineRowFinder } from './engineRows'
 
 export type EngineDb = Database.Database
 
@@ -285,28 +285,53 @@ export function readEnginePlaylist(
   })
 }
 
+export interface EngineMembership {
+  find: (file: string, key: (path: string) => string) => { id: number; path: string }[]
+  listsOf: Map<number, string[]>
+}
+
+export function engineMembership(db: EngineDb, libraryDir: string): EngineMembership {
+  const rows = db.prepare('SELECT id, path FROM Track WHERE path IS NOT NULL').all() as {
+    id: number
+    path: string
+  }[]
+  const links = db
+    .prepare(
+      `SELECT DISTINCT e.trackId AS trackId, e.listId AS id
+         FROM PlaylistEntity e JOIN Playlist p ON p.id = e.listId
+        WHERE e.membershipReference = 0 AND coalesce(p.isPersisted, 1) = 1
+          AND NOT EXISTS (SELECT 1 FROM Playlist c WHERE c.parentListId = p.id)
+        ORDER BY e.listId`,
+    )
+    .all() as { trackId: number; id: number }[]
+  const listsOf = new Map<number, string[]>()
+  for (const link of links) {
+    const held = listsOf.get(link.trackId)
+    if (held) held.push(String(link.id))
+    else listsOf.set(link.trackId, [String(link.id)])
+  }
+  return { find: engineRowFinder(libraryDir, rows), listsOf }
+}
+
+export function engineMembershipOf(
+  membership: EngineMembership,
+  paths: string[],
+  key: (path: string) => string,
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {}
+  for (const path of paths) {
+    const found = membership.find(path, key)
+    if (found.length !== 1) continue
+    out[path] = membership.listsOf.get(found[0].id) ?? []
+  }
+  return out
+}
+
 export function readEngineMembership(
   db: EngineDb,
   libraryDir: string,
   paths: string[],
   key: (path: string) => string,
 ): Record<string, string[]> {
-  const rows = db.prepare('SELECT id, path FROM Track WHERE path IS NOT NULL').all() as {
-    id: number
-    path: string
-  }[]
-  const find = engineRowFinder(libraryDir, rows)
-  const lists = db.prepare(
-    `SELECT DISTINCT e.listId AS id FROM PlaylistEntity e JOIN Playlist p ON p.id = e.listId
-      WHERE e.trackId = ? AND e.membershipReference = 0 AND coalesce(p.isPersisted, 1) = 1
-        AND NOT EXISTS (SELECT 1 FROM Playlist c WHERE c.parentListId = p.id)
-      ORDER BY e.listId`,
-  )
-  const out: Record<string, string[]> = {}
-  for (const path of paths) {
-    const found = find(path, key)
-    if (found.length !== 1) continue
-    out[path] = (lists.all(found[0].id) as { id: number }[]).map((l) => String(l.id))
-  }
-  return out
+  return engineMembershipOf(engineMembership(db, libraryDir), paths, key)
 }

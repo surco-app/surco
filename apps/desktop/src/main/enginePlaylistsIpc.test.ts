@@ -32,9 +32,9 @@ describe('engineRead', () => {
     let configured = ''
     const read = engineRead(() => configured, { artDir: () => join(dir, 'art') })
     const a = resolve(dir, '../Music/a.mp3')
-    expect(read.membership([a])).toEqual({})
+    expect(await read.membership([a])).toEqual({})
     configured = dir
-    expect(read.membership([a])).toEqual({ [a]: ['7'] })
+    expect(await read.membership([a])).toEqual({ [a]: ['7'] })
   })
 
   it('says the library is there only when its database is, so the tab can explain where to set it', async () => {
@@ -52,16 +52,16 @@ describe('engineRead', () => {
     const dir = await library()
     let configured = ''
     const read = engineRead(() => configured, { artDir: () => join(dir, 'art') })
-    expect(read.tree()).toEqual([])
+    expect(await read.tree()).toEqual([])
     configured = dir
-    expect((read.tree() as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
+    expect(((await read.tree()) as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
   })
 
   it('fails on a library that is there but does not read, so the tab says so instead of showing no playlists', async () => {
     const dir = await library()
     await writeFile(engineDbPath(dir), 'not a database')
     const read = engineRead(() => dir, { artDir: () => join(dir, 'art') })
-    expect(() => read.tree()).toThrow()
+    await expect(read.tree()).rejects.toThrow()
   })
 
   it('counts the tracks added in the last 30 days, the number the tree shows beside Recently added', async () => {
@@ -78,16 +78,16 @@ describe('engineRead', () => {
     }).close()
     let configured = ''
     const read = engineRead(() => configured, { artDir: () => join(dir, 'art') })
-    expect(read.recentCount()).toBe(0)
+    expect(await read.recentCount()).toBe(0)
     configured = dir
-    expect(read.recentCount()).toBe(2)
+    expect(await read.recentCount()).toBe(2)
   })
 
   it('grants the files and covers of the playlist it read, so the rows can play and paint before any disk walk', async () => {
     const dir = await library()
     const allowMedia = vi.fn()
     const read = engineRead(() => dir, { artDir: () => join(dir, 'art'), allowMedia })
-    const entries = read.playlist('7') as SourcePlaylistEntry[]
+    const entries = (await read.playlist('7')) as SourcePlaylistEntry[]
     const paths = entries.map((e) => e.path)
     const cover = mediaPathFromUrl(entries[0].preview?.coverUrl as string)
     expect(paths).toHaveLength(2)
@@ -98,8 +98,8 @@ describe('engineRead', () => {
     const dir = await library()
     let configured = ''
     const read = engineRead(() => configured, { artDir: () => join(dir, 'art') })
-    expect(read.trackCount()).toBe(0)
+    expect(await read.trackCount()).toBe(0)
     configured = dir
-    expect(read.trackCount()).toBe(2)
+    expect(await read.trackCount()).toBe(2)
   })
 })

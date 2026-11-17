@@ -5,6 +5,7 @@ import { type FullScan, killScansFor, runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
 import { runCueWaveFine } from './cueWaveFine'
 import { runCueWaveWords } from './cueWaveWords'
+import { type EngineReadName, runEngineRead } from './engineReads'
 import { type BandSpec, sliceLevels } from './fftLevels'
 import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
@@ -35,6 +36,7 @@ import { computePeaks } from './waveform'
 // 100MB+ AIFF synchronously when it grows the ID3 header. Each job is plain
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
+  | { type: 'engineRead'; dir: string; name: EngineReadName; arg: unknown }
   | { type: 'traktorRead'; file: string; bootVolume: string; name: TraktorReadName; arg: unknown }
   | { type: 'fftBands'; slices: Uint8Array[]; specs: BandSpec[]; sampleRateHz: number }
   | { type: 'rekordboxRead'; path: string; key?: string; name: RekordboxReadName; arg: unknown }
@@ -163,6 +165,8 @@ export type WorkerJobResult =
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'engineRead':
+      return runEngineRead(job.dir, job.name, job.arg as never) as unknown as WorkerJobResult
     case 'traktorRead':
       return runTraktorRead(
         job.file,
