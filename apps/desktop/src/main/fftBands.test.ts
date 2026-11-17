@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
-import { bandLevels, probeOffsets } from './fftBands'
+import { bandLevels, probeOffsets, sliceLevels } from './fftBands'
+import { runWorkerJob } from './workerJobs'
 
 const FFT_SIZE = 4096
 const SAMPLE_RATE = 44100
@@ -106,5 +107,34 @@ describe('bandLevels', () => {
     // Outside it, on both sides.
     expect(at(14000)).toBe(silent)
     expect(at(16000)).toBe(silent)
+  })
+})
+
+describe('sliceLevels', () => {
+  const tone = (hz: number): Buffer => {
+    const samples = SAMPLE_RATE * 2
+    const slice = Buffer.alloc(samples * 4)
+    for (let i = 0; i < samples; i++)
+      slice.writeFloatLE(0.5 * Math.sin((2 * Math.PI * hz * i) / SAMPLE_RATE), i * 4)
+    return slice
+  }
+  const specs = [
+    { freqHz: 5000, widthHz: 500 },
+    { freqHz: 15000, widthHz: 500 },
+  ]
+
+  it('finds the energy in the band the audio has it, so a wall in the spectrum is read where it is', () => {
+    const levels = sliceLevels([tone(5000)], specs, SAMPLE_RATE)
+    expect(levels.get('5000x500')).toBeGreaterThan((levels.get('15000x500') as number) + 60)
+  })
+
+  it('reads the same from the bytes a thread receives as from the decoder buffers, since the transform runs off the main process', async () => {
+    const slices = [tone(5000), tone(15000)]
+    const here = sliceLevels(slices, specs, SAMPLE_RATE)
+    const copies = slices.map((s) => structuredClone(new Uint8Array(s)))
+    expect(sliceLevels(copies, specs, SAMPLE_RATE)).toEqual(here)
+    expect(
+      await runWorkerJob({ type: 'fftBands', slices: copies, specs, sampleRateHz: SAMPLE_RATE }),
+    ).toEqual(here)
   })
 })
