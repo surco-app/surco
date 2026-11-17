@@ -1,6 +1,14 @@
 import os from 'node:os'
 import type { Transferable } from 'node:worker_threads'
-import { createWorkerPool, type WorkerClient } from './workerClient'
+import type { AmbiguousMatch, FindOptions, RekordboxTrack } from './rekordboxDb'
+import {
+  emptyRekordboxRead,
+  type RekordboxReadAnswer,
+  type RekordboxReadArg,
+  type RekordboxReadName,
+  trackOfCollection,
+} from './rekordboxReads'
+import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
 let clientPromise: Promise<WorkerClient | null> | null = null
@@ -28,6 +36,45 @@ function getClient(): Promise<WorkerClient | null> {
     typeof mod.default === 'function' ? createWorkerPool(() => mod.default({}), poolSize()) : null,
   )
   return clientPromise
+}
+
+let collectionClient: Promise<WorkerClient | null> | null = null
+
+function getCollectionClient(): Promise<WorkerClient | null> {
+  collectionClient ??= import('./analysisWorker?nodeWorker').then((mod) =>
+    typeof mod.default === 'function' ? createWorkerClient(() => mod.default({})) : null,
+  )
+  return collectionClient
+}
+
+export async function readRekordbox<N extends RekordboxReadName>(
+  path: string,
+  key: string | undefined,
+  name: N,
+  arg: RekordboxReadArg<N>,
+): Promise<RekordboxReadAnswer<N>> {
+  if (!path) return emptyRekordboxRead(name)
+  const job: WorkerJob = { type: 'rekordboxRead', path, key, name, arg }
+  const client = await getCollectionClient()
+  const answer = client
+    ? await client.run(job)
+    : await (await import('./workerJobs')).runWorkerJob(job)
+  return answer as unknown as RekordboxReadAnswer<N>
+}
+
+export async function findRekordboxTrack(
+  collection: string,
+  key: string | undefined,
+  file: string,
+  options: FindOptions,
+): Promise<RekordboxTrack | AmbiguousMatch | null> {
+  if (!(await getCollectionClient())) return trackOfCollection(collection, key, file, options)
+  return readRekordbox(collection, key, 'track', {
+    file,
+    resolve: options.realPath !== undefined,
+    homeMusicDir: options.homeMusicDir,
+    quiet: options.quiet,
+  })
 }
 
 // The production seam behind measureBpm/measureKey and the conversion tag passes:

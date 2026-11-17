@@ -5,7 +5,9 @@ import type { LearnTrack } from '../shared/learnFlow'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb } from './rekordboxDb'
-import { collectionMemo, keyOf } from './rekordboxPlaylistsIpc'
+import { keyOf } from './rekordboxPlaylistsIpc'
+import { markedIds } from './rekordboxReads'
+import { readRekordbox } from './worker'
 
 type Db = InstanceType<typeof Database>
 
@@ -16,21 +18,10 @@ export interface LearnRead {
   notAnalysed: string[]
 }
 
-const TRACKS_PER_PAUSE = 25
-
 export interface CollectionMarks {
   learn: LearnTrack[]
   taste: TasteTrack[]
 }
-
-const markedIds = (db: Db): string[] =>
-  (
-    db
-      .prepare(
-        'SELECT DISTINCT ContentID FROM djmdCue WHERE coalesce(rb_local_deleted, 0) = 0 AND Kind = 0',
-      )
-      .all() as { ContentID: string }[]
-  ).map((r) => String(r.ContentID))
 
 export async function readCollectionMarks(
   db: Db,
@@ -38,8 +29,8 @@ export async function readCollectionMarks(
   pause: () => Promise<void>,
 ): Promise<CollectionMarks> {
   const out: CollectionMarks = { learn: [], taste: [] }
-  for (const [i, contentId] of markedIds(db).entries()) {
-    if (i % TRACKS_PER_PAUSE === 0) await pause()
+  for (const contentId of markedIds(db)) {
+    await pause()
     const read = readTrackCues(db, shareDir, contentId, { wave: false })
     if (!read?.analysed) continue
     out.learn.push({
@@ -59,10 +50,8 @@ export async function readCollectionMarks(
   return out
 }
 
-const markedCount = collectionMemo((db) => markedIds(db).length)
-
-export function markedTracks(path: string, key?: string): number {
-  return markedCount(path, key) ?? 0
+export function markedTracks(path: string, key?: string): Promise<number> {
+  return readRekordbox(path, key, 'marked', undefined)
 }
 
 const nextTurn = (): Promise<void> => new Promise((resolve) => setImmediate(resolve))

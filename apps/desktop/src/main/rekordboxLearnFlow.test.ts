@@ -78,6 +78,29 @@ describe('readCollectionMarks', () => {
   })
 })
 
+describe('readCollectionMarks over several tracks', () => {
+  it('pauses after every track, so a DJ who comes back mid-read waits for one track and not for a batch', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rblearn-')), 'master.db')
+    const [first, second] = ORGANISE_FIXTURE.content
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      cueRows: [first, second].map((c, i) => ({
+        ID: `call-${i}`,
+        ContentID: c.ID,
+        InMsec: 16000,
+        Kind: 0,
+        ColorTableIndex: null,
+      })),
+    })
+    const db = openRekordboxDb(path, { readonly: true })
+    if (!db) throw new Error('did not open')
+    const pause = vi.fn(async () => {})
+    await readCollectionMarks(db, join(path, '..', 'share'), pause)
+    expect(pause).toHaveBeenCalledTimes(2)
+    db.close()
+  })
+})
+
 describe('markedTracks', () => {
   it('counts the tracks with a CALL, the ones Surco can learn from, before the DJ asks it to', async () => {
     const { path } = await collectionAt([
@@ -85,11 +108,11 @@ describe('markedTracks', () => {
       { ID: 'd', InMsec: 16000, Kind: 0 },
       { ID: 'e', InMsec: 20000, Kind: 0 },
     ])
-    expect(markedTracks(path)).toBe(1)
+    expect(await markedTracks(path)).toBe(1)
   })
 
-  it('counts nothing without a collection', () => {
-    expect(markedTracks('')).toBe(0)
+  it('counts nothing without a collection', async () => {
+    expect(await markedTracks('')).toBe(0)
   })
 })
 
@@ -111,12 +134,12 @@ describe('readCollectionMarksAt', () => {
 
   it('counts again once the collection changes, so the count it keeps between asks never goes stale', async () => {
     const { path } = await collectionAt([{ ID: 'd', InMsec: 16000, Kind: 0 }])
-    expect(markedTracks(path)).toBe(1)
+    expect(await markedTracks(path)).toBe(1)
     const db = openRekordboxDb(path)
     if (!db) throw new Error('did not open')
     db.prepare('UPDATE djmdCue SET Kind = 1').run()
     db.close()
-    expect(markedTracks(path)).toBe(0)
+    expect(await markedTracks(path)).toBe(0)
   })
 
   it('reads nothing without a collection', async () => {

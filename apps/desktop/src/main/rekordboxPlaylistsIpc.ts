@@ -1,81 +1,21 @@
 import { randomUUID } from 'node:crypto'
-import { existsSync, realpathSync, statSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { ipcMain } from 'electron'
-import log from 'electron-log/main'
 import type { DjEditMain, DjReadMain } from '../shared/djApi'
 import { mediaPathFromUrl } from '../shared/media'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
-import { rekordboxShareDir } from './rekordboxArtwork'
-import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'
+import { rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
-import { readMatchingPairs, readPlayedSequences } from './rekordboxMatching'
-import { membershipFrom, membershipSnapshot } from './rekordboxMembership'
-import { separatorContent } from './rekordboxPlaylistEdit'
-import {
-  readRecentlyAddedCount,
-  readRekordboxCollection,
-  readRekordboxPlaylistWithPreview,
-  readRekordboxTrackCount,
-  readRekordboxTree,
-} from './rekordboxPlaylists'
 import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
 import { type EditOp, editResultOfOutcome, type QueueOp } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
+import type { RekordboxReadAnswer, RekordboxReadArg, RekordboxReadName } from './rekordboxReads'
+import { readRekordbox } from './worker'
 
-// Opens the collection read-only for one read and always closes it: rekordbox may be
-// running, and a handle left open is a lock it never asked for. No collection on this
-// machine answers with the fallback, the empty answer. A collection that is there but
-// does not read (not decryptable, rekordbox mid-write, a column a future rekordbox
-// renamed) throws instead: the renderer's query turns it into "could not read", which
-// is not "no playlists", and must not close an open playlist as if it had been deleted.
-export function withCollection<T>(
-  path: string,
-  read: (db: NonNullable<ReturnType<typeof openRekordboxDb>>) => T,
-  fallback: T,
-  key?: string,
-): T {
-  if (!path) return fallback
-  const db = openRekordboxDb(path, key ? { readonly: true, key } : { readonly: true })
-  if (!db) throw new Error('rekordbox collection could not be opened')
-  try {
-    return read(db)
-  } catch (err) {
-    log.warn(`rekordbox playlist read failed: ${String(err)}`)
-    throw err
-  } finally {
-    db.close()
-  }
-}
-
-const stampOf = (path: string): string =>
-  [path, `${path}-wal`]
-    .map((file) => {
-      try {
-        const { mtimeMs, size } = statSync(file)
-        return `${mtimeMs}:${size}`
-      } catch {
-        return ''
-      }
-    })
-    .join('|')
-
-export function collectionMemo<T>(
-  build: (db: NonNullable<ReturnType<typeof openRekordboxDb>>) => T,
-): (path: string, key?: string) => T | null {
-  let held: { path: string; stamp: string; value: T } | null = null
-  return (path, key) => {
-    if (!path) return null
-    const stamp = stampOf(path)
-    if (held?.path === path && held.stamp === stamp) return held.value
-    held = null
-    const value = withCollection<T | null>(path, build, null, key)
-    if (value !== null) held = { path, stamp, value }
-    return value
-  }
-}
+export { collectionMemo, withCollection } from './rekordboxCollection'
 
 // Whether to offer rekordbox in the rail. Asked on every focus, so it only looks for the
 // file: decrypting it runs the SQLCipher key derivation in the main process, for every
@@ -112,46 +52,21 @@ export function rekordboxRead(
   membershipCollection: () => string,
   host: RekordboxReadHost,
 ): DjReadMain {
-  const membership = collectionMemo(membershipSnapshot)
+  const read = async <N extends RekordboxReadName>(
+    path: string,
+    name: N,
+    arg: RekordboxReadArg<N>,
+  ): Promise<RekordboxReadAnswer<N>> => readRekordbox(path, await keyOf(path), name, arg)
   return {
     available: () => collectionAvailable(collection()),
-    tree: async () => {
-      const path = collection()
-      return withCollection(path, readRekordboxTree, [], await keyOf(path))
-    },
-    recentCount: async () => {
-      const path = collection()
-      return withCollection(path, (db) => readRecentlyAddedCount(db), 0, await keyOf(path))
-    },
-    trackCount: async () => {
-      const path = collection()
-      return withCollection(path, readRekordboxTrackCount, 0, await keyOf(path))
-    },
-    collection: async () => {
-      const path = collection()
-      return withCollection(path, readRekordboxCollection, [], await keyOf(path))
-    },
-    matching: async () => {
-      const path = collection()
-      return withCollection(path, readMatchingPairs, [], await keyOf(path))
-    },
-    playedTogether: async (playlistIds: string[]) => {
-      const path = collection()
-      return withCollection(
-        path,
-        (db) => readPlayedSequences(db, playlistIds),
-        [],
-        await keyOf(path),
-      )
-    },
+    tree: () => read(collection(), 'tree', undefined),
+    recentCount: () => read(collection(), 'recentCount', undefined),
+    trackCount: () => read(collection(), 'trackCount', undefined),
+    collection: () => read(collection(), 'collection', undefined),
+    matching: () => read(collection(), 'matching', undefined),
+    playedTogether: (playlistIds: string[]) => read(collection(), 'playedTogether', playlistIds),
     playlist: async (id: string) => {
-      const path = collection()
-      const entries = withCollection(
-        path,
-        (db) => readRekordboxPlaylistWithPreview(db, rekordboxShareDir(path), id),
-        [],
-        await keyOf(path),
-      )
+      const entries = await read(collection(), 'playlist', id)
       host.allowMedia?.(
         entries.flatMap((e) => [
           ...(e.path && !e.separator ? [e.path] : []),
@@ -160,13 +75,7 @@ export function rekordboxRead(
       )
       return entries
     },
-    membership: async (paths: string[]) => {
-      const path = membershipCollection()
-      const snapshot = membership(path, await keyOf(path))
-      return snapshot
-        ? membershipFrom(snapshot, paths, { realPath: (p: string) => realpathSync(p) })
-        : {}
-    },
+    membership: (paths: string[]) => read(membershipCollection(), 'membership', paths),
   }
 }
 
@@ -195,7 +104,7 @@ export function rekordboxEdit(collection: () => string, host: PlaylistEditHost):
   return {
     hasSeparator: async () => {
       const path = collection()
-      return withCollection(path, (db) => separatorContent(db) !== null, false, await keyOf(path))
+      return readRekordbox(path, await keyOf(path), 'hasSeparator', undefined)
     },
     // Queued behind any other library write (a conversion's repoint, a review's sync): they
     // touch the same master.db, and the write's transaction spans an await, so two at once

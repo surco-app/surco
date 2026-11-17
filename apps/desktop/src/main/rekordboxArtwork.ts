@@ -1,7 +1,10 @@
 import { randomUUID } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join, relative, resolve, sep } from 'node:path'
+import { join, resolve } from 'node:path'
 import { nativeImage } from 'electron'
+import { insideShare } from './rekordboxDb'
+
+export { insideShare, rekordboxShareDir } from './rekordboxDb'
 
 const SIZES: [name: string, max: number][] = [
   ['artwork.jpg', 800],
@@ -14,10 +17,6 @@ const JPEG_QUALITY = 90
 export interface StagedArtwork {
   imagePath: string
   folder: string
-}
-
-export function rekordboxShareDir(collectionPath: string): string {
-  return join(dirname(collectionPath), 'share')
 }
 
 export function renderArtwork(cover: Buffer): Map<string, Buffer> | null {
@@ -42,11 +41,6 @@ export function renderArtwork(cover: Buffer): Map<string, Buffer> | null {
   } catch {
     return null
   }
-}
-
-export function insideShare(share: string, candidate: string): boolean {
-  const rel = relative(resolve(share), candidate)
-  return rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep)
 }
 
 function sameAsCurrent(share: string, currentImagePath: string | null, large: Buffer): boolean {

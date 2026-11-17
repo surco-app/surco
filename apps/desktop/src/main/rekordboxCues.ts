@@ -12,7 +12,7 @@ import { type CueChangeSet, type StrongPart, strongParts } from '../shared/cueRu
 import { gridFingerprint } from '../shared/gridEdit'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, colorWaveSpanMs, colorWaveWords, phrases, wavePreview } from './anlz'
-import { insideShare } from './rekordboxArtwork'
+import { insideShare } from './rekordboxDb'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 type Db = InstanceType<typeof Database>

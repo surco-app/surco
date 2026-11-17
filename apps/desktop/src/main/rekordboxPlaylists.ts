@@ -14,8 +14,7 @@ import type {
   SourcePreview,
 } from '../shared/types'
 import { beatGrid } from './anlz'
-import { insideShare } from './rekordboxArtwork'
-import { type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
+import { insideShare, type openRekordboxDb, STREAMING_FILE_TYPE } from './rekordboxDb'
 import { readMatchingBlocks } from './rekordboxMatching'
 import { localDate } from './rekordboxRows'
 import { smartListContent } from './rekordboxSmartList'

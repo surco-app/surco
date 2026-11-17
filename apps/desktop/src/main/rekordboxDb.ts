@@ -1,6 +1,7 @@
 import { pbkdf2 } from 'node:crypto'
 import { statSync } from 'node:fs'
 import { open } from 'node:fs/promises'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { promisify } from 'node:util'
 import Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
@@ -255,4 +256,13 @@ function matchOf(
     fileType: row.FileType,
     fileSize: row.FileSize,
   }
+}
+
+export function rekordboxShareDir(collectionPath: string): string {
+  return join(dirname(collectionPath), 'share')
+}
+
+export function insideShare(share: string, candidate: string): boolean {
+  const rel = relative(resolve(share), candidate)
+  return rel !== '' && !rel.startsWith('..') && !rel.startsWith(sep)
 }

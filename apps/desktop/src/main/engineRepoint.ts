@@ -112,10 +112,10 @@ export function engineRowFinder<T extends { path: string }>(
   }
   return (file, key) => {
     const nfc = file.normalize('NFC')
+    const sameName = byName.get(basename(nfc).toLowerCase())
+    if (!sameName) return []
     const target = key(nfc)
-    return (byName.get(basename(nfc).toLowerCase()) ?? [])
-      .filter((c) => key(c.at) === target)
-      .map((c) => c.row)
+    return sameName.filter((c) => key(c.at) === target).map((c) => c.row)
   }
 }
 

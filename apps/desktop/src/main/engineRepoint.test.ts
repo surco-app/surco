@@ -19,7 +19,12 @@ import {
 } from './engineBlobs'
 import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
-import { engineBitrateKbps, engineLengthOf, repointEngineTracks } from './engineRepoint'
+import {
+  engineBitrateKbps,
+  engineLengthOf,
+  engineRowFinder,
+  repointEngineTracks,
+} from './engineRepoint'
 import { backupOf } from './libraryBackups'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
@@ -948,5 +953,15 @@ describe('engineBitrateKbps', () => {
 
   it.each(['flac', 'alac'])('says nothing for %s', (codecName) => {
     expect(engineBitrateKbps({ codecName, bitRate: 900_000 })).toBeUndefined()
+  })
+})
+
+describe('engineRowFinder', () => {
+  it('resolves a file on disk only when the library has a row of that name, since a selection of thousands asks for files Engine DJ never held', () => {
+    const key = vi.fn((path: string) => path.toLowerCase())
+    const find = engineRowFinder('/lib/Engine Library', [{ path: '/music/Held.wav' }])
+    expect(find('/music/Never Imported.wav', key)).toEqual([])
+    expect(key).not.toHaveBeenCalled()
+    expect(find('/MUSIC/held.wav', key)).toEqual([{ path: '/music/Held.wav' }])
   })
 })
