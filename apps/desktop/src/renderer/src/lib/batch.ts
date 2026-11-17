@@ -1,9 +1,12 @@
 import type { TFunction } from 'i18next'
+import { type AudioProcessing, processesAudio } from '../../../shared/audioProcessing'
 import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
+import { formatMatchesInput, hasFormatEquivalent } from '../../../shared/format'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
-import type { CustomField } from '../../../shared/types'
+import type { CustomField, FormatSetting } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
+import type { Destination } from './destination'
 import { isStale } from './dirty'
 import { missingRequiredOf } from './fields'
 import { selectionReplaceMode } from './replaceSelection'
@@ -154,4 +157,22 @@ export function summarizeBatch(results: BatchOutcome[]): BatchSummary {
     skipped: results.filter((r) => r === 'skipped').length,
     failed: results.filter((r) => r === 'failed').length,
   }
+}
+
+export function batchWritesTagsOnly(
+  ready: TrackItem[],
+  format: FormatSetting,
+  destination: Destination,
+  audioOf: (track: TrackItem) => AudioProcessing,
+): boolean {
+  return (
+    ready.length > 0 &&
+    destination === 'overwrite' &&
+    ready.every(
+      (t) =>
+        (format === 'source'
+          ? hasFormatEquivalent(t.inputPath)
+          : formatMatchesInput(format, t.inputPath)) && !processesAudio(audioOf(t)),
+    )
+  )
 }

@@ -3,6 +3,7 @@ import type { TrackMetadata } from '../../../shared/types'
 import type { TrackItem, TrackStatus } from '../types'
 import { buildLibraryIndex } from './appleMusicLibrary'
 import {
+  batchWritesTagsOnly,
   canProcessTrack,
   convertGate,
   eligibleForBatch,
@@ -253,5 +254,41 @@ describe('a Serato track', () => {
     expect(canProcessTrack({ ...track('r', 'idle'), programs: ['rekordbox' as const] }, [])).toBe(
       true,
     )
+  })
+})
+
+// A batch that only rewrites tags must not be called a conversion: a user fixing the genre
+// of a folder read "Convert" and could not tell whether their files would be re-encoded.
+describe('batchWritesTagsOnly', () => {
+  const untouched = (): object => ({})
+  const wav = track('a', 'idle')
+  const mp3 = { ...track('b', 'idle'), inputPath: '/b.mp3' }
+
+  it('holds when every file is overwritten in the format it already has', () => {
+    expect(batchWritesTagsOnly([wav, mp3], 'source', 'overwrite', untouched)).toBe(true)
+    expect(batchWritesTagsOnly([wav], 'wav', 'overwrite', untouched)).toBe(true)
+  })
+
+  it('fails as soon as one file changes format', () => {
+    expect(batchWritesTagsOnly([wav, mp3], 'wav', 'overwrite', untouched)).toBe(false)
+  })
+
+  it('fails when the audio is processed', () => {
+    const normalized = (): object => ({ normalize: { mode: 'peak' } })
+    expect(batchWritesTagsOnly([wav], 'source', 'overwrite', normalized)).toBe(false)
+  })
+
+  it('fails when the destination leaves a new file instead of rewriting the source', () => {
+    expect(batchWritesTagsOnly([wav], 'source', 'folder', untouched)).toBe(false)
+    expect(batchWritesTagsOnly([wav], 'source', 'beside', untouched)).toBe(false)
+  })
+
+  it('fails for a source with no format of its own to stay in', () => {
+    const opus = { ...track('c', 'idle'), inputPath: '/c.opus' }
+    expect(batchWritesTagsOnly([opus], 'source', 'overwrite', untouched)).toBe(false)
+  })
+
+  it('fails with nothing to write', () => {
+    expect(batchWritesTagsOnly([], 'source', 'overwrite', untouched)).toBe(false)
   })
 })

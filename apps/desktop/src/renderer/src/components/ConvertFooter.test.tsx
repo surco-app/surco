@@ -1255,6 +1255,23 @@ describe('ConvertFooter convert of a selection', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 
+  it('says it updates, not converts, when the batch only rewrites tags', () => {
+    render(multi({ batchTagsOnly: true, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.updateSelected', { count: 3 }),
+    )
+    expect(screen.getByTestId('batch-convert')).not.toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 3 }),
+    )
+  })
+
+  it('says out of how many it updates when a tags-only batch leaves some out', () => {
+    render(multi({ batchTagsOnly: true, readyCount: 2, onConvertSelection: vi.fn() }))
+    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.updateSomeSelected', { ready: 2, total: 3 }),
+    )
+  })
+
   it('says out of how many it converts when the plan leaves some out', () => {
     render(multi({ readyCount: 2, onConvertSelection: vi.fn() }))
     expect(screen.getByTestId('batch-convert')).toHaveTextContent(

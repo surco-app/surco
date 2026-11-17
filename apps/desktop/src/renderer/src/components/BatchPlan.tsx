@@ -19,6 +19,7 @@ export function BatchPlan({
   onSelectDestination,
   onConvert,
   convertHint,
+  tagsOnly = false,
 }: {
   count: number
   total: number
@@ -31,14 +32,18 @@ export function BatchPlan({
   onSelectDestination: (destination: Destination) => void
   onConvert?: () => void
   convertHint?: string
+  tagsOnly?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const formatLabel = format === 'source' ? tr('settings.formats.source') : format.toUpperCase()
   const convertLabel =
     count < total
-      ? tr('header.convertSomeSelected', { ready: count, total })
-      : tr('header.convertSelected', { count })
+      ? tr(tagsOnly ? 'header.updateSomeSelected' : 'header.convertSomeSelected', {
+          ready: count,
+          total,
+        })
+      : tr(tagsOnly ? 'header.updateSelected' : 'header.convertSelected', { count })
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
