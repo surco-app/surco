@@ -38,20 +38,20 @@ describe('traktorRead', () => {
     const file = await collection()
     let found = ''
     const read = traktorRead(() => found, { bootVolume: () => 'HD' })
-    expect(read.tree()).toEqual([])
-    expect(read.recentCount()).toBe(0)
+    expect(await read.tree()).toEqual([])
+    expect(await read.recentCount()).toBe(0)
     found = file
-    expect((read.tree() as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
-    expect(read.recentCount()).toBe(1)
+    expect(((await read.tree()) as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
+    expect(await read.recentCount()).toBe(1)
   })
 
   it('answers which playlists hold each file, and nothing without a collection, so the field can fill in', async () => {
     const file = await collection()
     let found = ''
     const read = traktorRead(() => found, { bootVolume: () => 'HD' })
-    expect(read.membership(['/Music/a.mp3'])).toEqual({})
+    expect(await read.membership(['/Music/a.mp3'])).toEqual({})
     found = file
-    expect(read.membership(['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
+    expect(await read.membership(['/Music/a.mp3'])).toEqual({ '/Music/a.mp3': ['u1'] })
   })
 
   it('points a row at the thumbnail Traktor keeps beside the collection, so its file needs only the light read', async () => {
@@ -68,21 +68,21 @@ describe('traktorRead', () => {
     await writeFile(join(cache, 'ABC000'), 'thumb')
     const read = traktorRead(() => file, { bootVolume: () => 'HD' })
 
-    const entries = read.playlist('u1') as SourcePlaylistEntry[]
+    const entries = (await read.playlist('u1')) as SourcePlaylistEntry[]
 
     expect(entries.map((e) => e.preview?.coverUrl)).toEqual([traktorCoverUrl('042/ABC'), undefined])
   })
 
   it('fails on a collection it cannot read, so the tab says so instead of showing no playlists', async () => {
     const read = traktorRead(() => '/nowhere/collection.nml', { bootVolume: () => 'HD' })
-    expect(() => read.tree()).toThrow()
+    await expect(read.tree()).rejects.toThrow()
   })
 
   it('grants the files of the playlist it read, so the rows can play before any disk walk', async () => {
     const file = await collection()
     const allowMedia = vi.fn()
     const read = traktorRead(() => file, { bootVolume: () => 'HD', allowMedia })
-    const entries = read.playlist('u1') as SourcePlaylistEntry[]
+    const entries = (await read.playlist('u1')) as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
   })
@@ -91,9 +91,9 @@ describe('traktorRead', () => {
     const file = await collection()
     let found = ''
     const read = traktorRead(() => found, { bootVolume: () => 'HD' })
-    expect(read.collection?.()).toEqual([])
+    expect(await read.collection?.()).toEqual([])
     found = file
-    const rows = read.collection?.() as CollectionTrack[]
+    const rows = (await read.collection?.()) as CollectionTrack[]
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })

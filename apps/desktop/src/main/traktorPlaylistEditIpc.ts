@@ -7,7 +7,7 @@ import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueu
 import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
 import { stillWaiting } from './rekordboxQueueWatch'
 import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
-import { traktorSeparatorKey } from './traktorPlaylists'
+import { readTraktor } from './worker'
 
 // The twin of the rekordbox edit for Traktor: the edit joins the Traktor queue, applies at once
 // when Traktor is closed, and otherwise waits for it to close. The collection is the one
@@ -21,10 +21,7 @@ export function traktorEdit(host: {
   beginLoose?: (collectionPath: string) => void
 }): DjEditMain {
   return {
-    hasSeparator: () => {
-      const path = host.collection()
-      return path !== '' && traktorSeparatorKey(readFileSync(path, 'utf8')) !== null
-    },
+    hasSeparator: () => readTraktor(host.collection(), '', 'hasSeparator', undefined),
     save: (edit: RekordboxPlaylistEdit, label: string | undefined) =>
       serialLibraryFlush(async (): Promise<RekordboxEditResult> => {
         const path = host.collection()

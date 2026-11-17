@@ -1,6 +1,7 @@
 import { realpathSync } from 'node:fs'
 import { readFile, stat } from 'node:fs/promises'
 import { traktorKey } from '../shared/traktorContent'
+import type { LiveCues } from '../shared/types'
 import type { CueQueue, CueSource } from './cueSource'
 import { CUE_WAVE_FINE_PER_SECOND } from './cueWaveFine'
 import { shiftedWords } from './cueWords'
@@ -71,6 +72,16 @@ export function traktorCueSource(
       if (!block) return null
       const read = traktorTrackCuesOf(block, contentId)
       return { ...read, clockLeadMs: await leadOf(fileOfBlock(block)) }
+    },
+    liveCues: async (contentIds) => {
+      const out: Record<string, LiveCues> = {}
+      for (const contentId of contentIds) {
+        const block = await blockOf(contentId)
+        if (!block) continue
+        const { cues, fingerprint } = traktorTrackCuesOf(block, contentId)
+        out[contentId] = { cues, fingerprint }
+      }
+      return out
     },
     waveDetail: async (contentId) => {
       const file = await traktorFile(contentId)

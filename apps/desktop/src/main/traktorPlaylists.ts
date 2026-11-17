@@ -313,25 +313,39 @@ export function readTraktorPlayedTogether(
   return sequences
 }
 
+export function traktorMembershipOf(
+  nml: string,
+  bootVolume: string,
+): (path: string) => string[] | undefined {
+  const { byPath } = traktorCollectionIndex(nml, bootVolume)
+  const listsOf = new Map<string, string[]>()
+  const walk = (node: ModelNode): void => {
+    if (node.kind === 'playlist' && !(node.parent?.id === 'root' && node.name === TRAKTOR_HISTORY))
+      for (const key of new Set(node.rows.map((r) => r.key))) {
+        const held = listsOf.get(key)
+        if (held) held.push(node.id)
+        else listsOf.set(key, [node.id])
+      }
+    node.children.forEach(walk)
+  }
+  const model = parsePlaylists(nml)
+  if (model) walk(model.root)
+  return (path) => {
+    const keys = byPath.get(path.normalize('NFC')) ?? []
+    return keys.length === 1 ? (listsOf.get(keys[0]) ?? []) : undefined
+  }
+}
+
 export function readTraktorMembership(
   nml: string,
   paths: string[],
   bootVolume: string,
 ): Record<string, string[]> {
-  const { byPath } = traktorCollectionIndex(nml, bootVolume)
-  const lists: ModelNode[] = []
-  const walk = (node: ModelNode): void => {
-    if (node.kind === 'playlist' && !(node.parent?.id === 'root' && node.name === TRAKTOR_HISTORY))
-      lists.push(node)
-    node.children.forEach(walk)
-  }
-  const model = parsePlaylists(nml)
-  if (model) walk(model.root)
+  const playlistsOf = traktorMembershipOf(nml, bootVolume)
   const out: Record<string, string[]> = {}
   for (const path of paths) {
-    const keys = byPath.get(path.normalize('NFC')) ?? []
-    if (keys.length !== 1) continue
-    out[path] = lists.filter((l) => l.rows.some((r) => r.key === keys[0])).map((l) => l.id)
+    const playlists = playlistsOf(path)
+    if (playlists) out[path] = playlists
   }
   return out
 }

@@ -1,5 +1,6 @@
 import os from 'node:os'
 import type { Transferable, Worker } from 'node:worker_threads'
+import type { PathMatchOptions } from './libraryPathKey'
 import type { AmbiguousMatch, FindOptions, RekordboxTrack } from './rekordboxDb'
 import {
   emptyRekordboxRead,
@@ -9,6 +10,13 @@ import {
   trackOfCollection,
 } from './rekordboxReads'
 import { type ThreadLogMessage, threadLog } from './threadLog'
+import {
+  emptyTraktorRead,
+  type TraktorReadAnswer,
+  type TraktorReadArg,
+  type TraktorReadName,
+  traktorHolds,
+} from './traktorReads'
 import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
@@ -70,6 +78,34 @@ export async function readRekordbox<N extends RekordboxReadName>(
     ? await client.run(job)
     : await (await import('./workerJobs')).runWorkerJob(job)
   return answer as unknown as RekordboxReadAnswer<N>
+}
+
+export async function readTraktor<N extends TraktorReadName>(
+  file: string,
+  bootVolume: string,
+  name: N,
+  arg: TraktorReadArg<N>,
+): Promise<TraktorReadAnswer<N>> {
+  if (!file) return emptyTraktorRead(name)
+  const job: WorkerJob = { type: 'traktorRead', file, bootVolume, name, arg }
+  const client = await getCollectionClient()
+  const answer = client
+    ? await client.run(job)
+    : await (await import('./workerJobs')).runWorkerJob(job)
+  return answer as unknown as TraktorReadAnswer<N>
+}
+
+export async function traktorHoldsFile(
+  file: string,
+  path: string,
+  options: PathMatchOptions,
+): Promise<boolean> {
+  if (!(await getCollectionClient())) return traktorHolds(file, path, options)
+  return readTraktor(file, '', 'holdsFile', {
+    path,
+    resolve: options.realPath !== undefined,
+    homeMusicDir: options.homeMusicDir,
+  })
 }
 
 export async function findRekordboxTrack(

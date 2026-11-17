@@ -3,7 +3,6 @@ import { basename, join } from 'node:path'
 import type { LibraryProgram, WritableProgram } from '../shared/djProgram'
 import { programsInOrder, writableInOrder } from '../shared/djProgram'
 import { engineContentId } from '../shared/engineContent'
-import { traktorContentId } from '../shared/traktorContent'
 import type { LibraryCopyInfo, LibraryCopyPresence, LibraryTracks } from '../shared/types'
 import { loadSqlJs } from './engine'
 import { engineRowFinder } from './engineRepoint'
@@ -12,10 +11,9 @@ import { type PathMatchOptions, pathKey } from './libraryPathKey'
 import { isAmbiguous, openRekordboxDb, rekordboxRawKey, trackFinder } from './rekordboxDb'
 import { readSeratoLibrary, type SeratoLibraryRoot } from './seratoLibrary'
 import { attr, findEntries, nmlCopyInfo } from './traktorNml'
-import { traktorFileOf } from './traktorPlaylists'
 import { readVirtualdjLibrary, type VirtualdjRoot } from './virtualdjLibrary'
 import type { VirtualdjNode } from './virtualdjLists'
-import { findRekordboxTrack } from './worker'
+import { findRekordboxTrack, readTraktor, traktorHoldsFile } from './worker'
 
 interface LocationOf {
   rekordbox: string
@@ -78,17 +76,7 @@ const FILE_USE: FileUseOf = {
       return (await engineRows)(path, key).length > 0
     }
   },
-  traktor: (nmlPath, options) => {
-    const key = pathKey(options)
-    let nmlFiles: Promise<Map<string, string[]>> | undefined
-    return async (path) => {
-      nmlFiles ??= readFile(nmlPath, 'utf8').then(traktorFiles)
-      const nfc = path.normalize('NFC')
-      const target = key(nfc)
-      const sameName = (await nmlFiles).get(basename(nfc).toLowerCase()) ?? []
-      return sameName.some((file) => key(file) === target)
-    }
-  },
+  traktor: (nmlPath, options) => (path) => traktorHoldsFile(nmlPath, path, options),
   serato: (roots, options) => {
     let seratoFile: ((path: string) => string | undefined) | undefined
     return async (path) => {
@@ -145,21 +133,6 @@ export function djLibraryFileUse(
     for (const holds of asked) if (await holds(path)) return true
     return false
   }
-}
-
-// Every file the collection holds, by lowercased composed name, so only the entries that
-// share the name pay a resolve. An entry on a named volume may be the boot disk under its
-// own name or a mounted one, and the boot disk's name is not asked: both spellings are kept.
-function traktorFiles(nml: string): Map<string, string[]> {
-  const byName = new Map<string, string[]>()
-  for (const entry of findEntries(nml)) {
-    if (!entry.file) continue
-    const block = nml.slice(entry.start, entry.end)
-    const name = entry.file.normalize('NFC').toLowerCase()
-    const spellings = [traktorFileOf(block, entry.volume), traktorFileOf(block, '')]
-    byName.set(name, [...(byName.get(name) ?? []), ...new Set(spellings)])
-  }
-  return byName
 }
 
 async function readEngineRows(libraryDir: string) {
@@ -428,18 +401,7 @@ const TRACK_OF: TrackOf = {
       db.close()
     }
   },
-  traktor: async (nmlPath, path) => {
-    const entries = findEntries(await readFile(nmlPath, 'utf8'))
-    const at = toNmlLocation(path)
-    const same = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
-    const found = entries.filter(
-      (e) =>
-        same(e.dir, at.dir) && same(e.file, at.file) && (!at.volume || same(e.volume, at.volume)),
-    )
-    return found.length === 1
-      ? traktorContentId(`${found[0].volume}${found[0].dir}${found[0].file}`)
-      : undefined
-  },
+  traktor: (nmlPath, path) => readTraktor(nmlPath, '', 'trackOf', toNmlLocation(path)),
   serato: async (roots, path, options) => {
     const found = fileFinder(
       readSeratoLibrary(roots).tracks.map((t) => t.file),
