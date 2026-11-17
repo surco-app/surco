@@ -2213,6 +2213,14 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByTestId('cue-wave-call-32000')).toBeInTheDocument()
   })
 
+  it('reads the grid offsets in whole milliseconds, never a raw float with a decimal point the language does not use', async () => {
+    setup(null, READ, { cues: { gridFit: fitAt(453.166015625) } })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toHaveTextContent('+47 ms'))
+    expect(screen.getByTestId('cues-grid-end')).toHaveTextContent('+47 ms')
+    expect(screen.getByTestId('cues-grid-here').textContent).not.toMatch(/[.,]/)
+  })
+
   it('keeps Auto calm when the grid already sits within the tolerance', async () => {
     setup(null, READ, { cues: { gridFit: fitAt(5) } })
     await maximize()

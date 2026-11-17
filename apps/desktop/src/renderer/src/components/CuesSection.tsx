@@ -2171,7 +2171,10 @@ function Editing({
   )
 }
 
-const signedMs = (ms: number): string => `${ms > 0 ? '+' : ms < 0 ? '−' : ''}${Math.abs(ms)} ms`
+const signedMs = (ms: number): string => {
+  const whole = Math.round(ms)
+  return `${whole > 0 ? '+' : whole < 0 ? '−' : ''}${Math.abs(whole)} ms`
+}
 
 function GridOffset({
   testid,
