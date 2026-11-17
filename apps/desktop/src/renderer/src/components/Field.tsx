@@ -366,6 +366,7 @@ export const Field = memo(function Field({
         <div className={width ? '' : '@[24rem]:col-start-2 @[24rem]:-mt-1.5'}>
           <SuggestionChips
             suggestions={suggestions}
+            foldKey={name}
             isOn={(s) =>
               tagList ? csvHas(draft, s, tagList.whole, tagList.separator) : draft === s
             }

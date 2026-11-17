@@ -21,6 +21,7 @@ vi.mock('../hooks/useChipOverflow', () => ({
 
 afterEach(() => {
   overflow.visibleCount = Number.POSITIVE_INFINITY
+  window.localStorage.clear()
 })
 
 describe('SuggestionChips', () => {
@@ -145,5 +146,58 @@ describe('SuggestionChips', () => {
     expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-Acid')).not.toBeInTheDocument()
     expect(screen.getByTestId('chip-more')).toHaveTextContent('+2')
+  })
+
+  // Someone with a fixed list of their own genres opens the row to see them all. There was
+  // no way to close it again when the form needed the room.
+  it('folds the row again from the chip that takes the place of "+N"', () => {
+    overflow.visibleCount = 2
+    render(
+      <SuggestionChips
+        suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
+        isOn={() => false}
+        onPick={() => {}}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('chip-more'))
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('chip-less'))
+    expect(screen.queryByTestId('chip-Trance')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toBeInTheDocument()
+  })
+
+  // And it had to be opened on every track: the row forgot how it was left.
+  it('remembers per field whether the row was left open', () => {
+    overflow.visibleCount = 2
+    const props = {
+      suggestions: ['Acid', 'Bases', 'Cierre', 'Trance'],
+      isOn: () => false,
+      onPick: () => {},
+    }
+    const first = render(<SuggestionChips {...props} foldKey="genre" />)
+    fireEvent.click(screen.getByTestId('chip-more'))
+    first.unmount()
+    render(<SuggestionChips {...props} foldKey="genre" />)
+    expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
+    cleanup()
+    render(<SuggestionChips {...props} foldKey="grouping" />)
+    expect(screen.queryByTestId('chip-Trance')).not.toBeInTheDocument()
+  })
+
+  // A row left open on a track with many tags must not show a fold chip where every tag
+  // fits in one line anyway: it would fold nothing.
+  it('offers no fold when the whole row fits', () => {
+    const props = { suggestions: ['Acid', 'Bases'], isOn: () => false, onPick: () => {} }
+    window.localStorage.setItem('surco.chips.open.genre', '1')
+    render(<SuggestionChips {...props} foldKey="genre" />)
+    expect(screen.queryByTestId('chip-less')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
+
+  // The dashed outline already says a tag is not applied; a "+" in front of each of
+  // twenty-seven chips only added noise.
+  it('draws an addable tag without a plus sign', () => {
+    render(<SuggestionChips suggestions={['Bases']} isOn={() => false} addable onPick={() => {}} />)
+    expect(screen.getByTestId('chip-Bases')).toHaveTextContent(/^Bases$/)
   })
 })

@@ -1396,6 +1396,7 @@
     "quality": "Calidad",
     "qualityFromAnalysis": "Rellenado con el análisis de calidad",
     "suggestionsMore": "Mostrar {{count}} más",
+    "suggestionsLess": "Mostrar menos",
     "suggestionDetected": "Detectado en el audio: {{value}}",
     "rowAutoFill": "Rellenar {{name}} automáticamente",
     "rowRequired": "{{name}} obligatorio",
