@@ -1,14 +1,6 @@
 import type { DjReadMain } from '../shared/djApi'
-import {
-  readSeratoLibrary,
-  type SeratoLibraryRoot,
-  seratoCollection,
-  seratoMembership,
-  seratoPlaylist,
-  seratoRecentCount,
-  seratoTrackCount,
-  seratoTree,
-} from './seratoLibrary'
+import type { SeratoLibraryRoot } from './seratoLibrary'
+import { readSerato } from './worker'
 
 export interface SeratoPlaylistsHost {
   roots: () => SeratoLibraryRoot[]
@@ -16,18 +8,17 @@ export interface SeratoPlaylistsHost {
 }
 
 export function seratoRead(host: SeratoPlaylistsHost): DjReadMain {
-  const library = () => readSeratoLibrary(host.roots())
   return {
     available: () => host.roots().length > 0,
-    tree: () => seratoTree(library()),
-    recentCount: () => seratoRecentCount(library()),
-    trackCount: () => seratoTrackCount(library()),
-    collection: () => seratoCollection(library()),
-    playlist: (id: string) => {
-      const entries = seratoPlaylist(library(), id)
+    tree: () => readSerato(host.roots(), 'tree', undefined),
+    recentCount: () => readSerato(host.roots(), 'recentCount', undefined),
+    trackCount: () => readSerato(host.roots(), 'trackCount', undefined),
+    collection: () => readSerato(host.roots(), 'collection', undefined),
+    playlist: async (id: string) => {
+      const entries = await readSerato(host.roots(), 'playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
       return entries
     },
-    membership: (paths: string[]) => seratoMembership(library(), paths),
+    membership: (paths: string[]) => readSerato(host.roots(), 'membership', paths),
   }
 }

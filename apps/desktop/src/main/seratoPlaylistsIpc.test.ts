@@ -31,7 +31,7 @@ function library(): SeratoLibraryRoot {
 }
 
 describe('seratoRead', () => {
-  it('says Serato is there only while a library is found, so the tab shows only where Serato ran', () => {
+  it('says Serato is there only while a library is found, so the tab shows only where Serato ran', async () => {
     let roots: SeratoLibraryRoot[] = [library()]
     const read = seratoRead({ roots: () => roots })
     expect(read.available()).toBe(true)
@@ -39,41 +39,41 @@ describe('seratoRead', () => {
     expect(read.available()).toBe(false)
   })
 
-  it('reads the libraries found now, since a drive can be plugged in while Surco runs', () => {
+  it('reads the libraries found now, since a drive can be plugged in while Surco runs', async () => {
     let roots: SeratoLibraryRoot[] = []
     const read = seratoRead({ roots: () => roots })
-    expect(read.tree()).toEqual([])
-    expect(read.recentCount()).toBe(0)
-    expect(read.trackCount()).toBe(0)
+    expect(await read.tree()).toEqual([])
+    expect(await read.recentCount()).toBe(0)
+    expect(await read.trackCount()).toBe(0)
     roots = [library()]
-    expect((read.tree() as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
-    expect(read.recentCount()).toBe(1)
-    expect(read.trackCount()).toBe(2)
+    expect(((await read.tree()) as SourceNode[]).map((n) => n.name)).toEqual(['Friday'])
+    expect(await read.recentCount()).toBe(1)
+    expect(await read.trackCount()).toBe(2)
   })
 
-  it('answers which crates hold each file', () => {
+  it('answers which crates hold each file', async () => {
     const roots = [library()]
     const read = seratoRead({ roots: () => roots })
-    expect(read.membership(['/Music/a.mp3'])).toEqual({
+    expect(await read.membership(['/Music/a.mp3'])).toEqual({
       '/Music/a.mp3': ['Friday'],
     })
   })
 
-  it('grants the files of the crate it read, so the rows can play before any disk walk', () => {
+  it('grants the files of the crate it read, so the rows can play before any disk walk', async () => {
     const roots = [library()]
     const allowMedia = vi.fn()
     const read = seratoRead({ roots: () => roots, allowMedia })
-    const entries = read.playlist('Friday') as SourcePlaylistEntry[]
+    const entries = (await read.playlist('Friday')) as SourcePlaylistEntry[]
     expect(entries.map((e) => e.path)).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
     expect(allowMedia).toHaveBeenCalledWith(['/Music/a.mp3', '/Music/b.mp3'])
   })
 
-  it('lists the whole collection as rows to match against, read from the libraries found now', () => {
+  it('lists the whole collection as rows to match against, read from the libraries found now', async () => {
     let roots: SeratoLibraryRoot[] = []
     const read = seratoRead({ roots: () => roots })
-    expect(read.collection?.()).toEqual([])
+    expect(await read.collection?.()).toEqual([])
     roots = [library()]
-    const rows = read.collection?.() as CollectionTrack[]
+    const rows = (await read.collection?.()) as CollectionTrack[]
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
 })

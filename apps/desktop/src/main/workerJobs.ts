@@ -12,6 +12,8 @@ import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
+import type { SeratoLibraryRoot } from './seratoLibrary'
+import { runSeratoRead, type SeratoReadName } from './seratoReads'
 import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
 import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
@@ -29,6 +31,8 @@ import {
 } from './tags'
 import { detectBpm } from './tempo'
 import { runTraktorRead, type TraktorReadName } from './traktorReads'
+import type { VirtualdjRoot } from './virtualdjLibrary'
+import { runVirtualdjRead, type VirtualdjReadName } from './virtualdjReads'
 import { computePeaks } from './waveform'
 
 // The CPU-bound work that must never run on the main process's event loop: the
@@ -36,6 +40,8 @@ import { computePeaks } from './waveform'
 // 100MB+ AIFF synchronously when it grows the ID3 header. Each job is plain
 // structured-cloneable data so it can cross a worker_threads boundary.
 export type WorkerJob =
+  | { type: 'seratoRead'; roots: SeratoLibraryRoot[]; name: SeratoReadName; arg: unknown }
+  | { type: 'virtualdjRead'; roots: VirtualdjRoot[]; name: VirtualdjReadName; arg: unknown }
   | { type: 'engineRead'; dir: string; name: EngineReadName; arg: unknown }
   | { type: 'traktorRead'; file: string; bootVolume: string; name: TraktorReadName; arg: unknown }
   | { type: 'fftBands'; slices: Uint8Array[]; specs: BandSpec[]; sampleRateHz: number }
@@ -165,6 +171,10 @@ export type WorkerJobResult =
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
+    case 'seratoRead':
+      return runSeratoRead(job.roots, job.name, job.arg as never) as unknown as WorkerJobResult
+    case 'virtualdjRead':
+      return runVirtualdjRead(job.roots, job.name, job.arg as never) as unknown as WorkerJobResult
     case 'engineRead':
       return runEngineRead(job.dir, job.name, job.arg as never) as unknown as WorkerJobResult
     case 'traktorRead':

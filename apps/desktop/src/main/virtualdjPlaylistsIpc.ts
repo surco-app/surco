@@ -1,16 +1,7 @@
 import type { DjReadMain } from '../shared/djApi'
 import { PROGRAM_CAN } from '../shared/djProgram'
-import {
-  isVirtualdjHome,
-  readVirtualdjLibrary,
-  type VirtualdjRoot,
-  virtualdjCollection,
-  virtualdjMembership,
-  virtualdjPlaylist,
-  virtualdjRecentCount,
-  virtualdjTrackCount,
-  virtualdjTree,
-} from './virtualdjLibrary'
+import { isVirtualdjHome, type VirtualdjRoot } from './virtualdjLibrary'
+import { readVirtualdj } from './worker'
 
 export interface VirtualdjPlaylistsHost {
   roots: () => VirtualdjRoot[]
@@ -18,20 +9,19 @@ export interface VirtualdjPlaylistsHost {
 }
 
 export function virtualdjRead(host: VirtualdjPlaylistsHost): DjReadMain {
-  const library = () => readVirtualdjLibrary(host.roots())
   return {
     available: () =>
       (process.platform !== 'win32' || PROGRAM_CAN.virtualdj.windows) &&
       host.roots().some(isVirtualdjHome),
-    tree: () => virtualdjTree(library()),
-    recentCount: () => virtualdjRecentCount(library()),
-    trackCount: () => virtualdjTrackCount(library()),
-    collection: () => virtualdjCollection(library()),
-    playlist: (id: string) => {
-      const entries = virtualdjPlaylist(library(), id)
+    tree: () => readVirtualdj(host.roots(), 'tree', undefined),
+    recentCount: () => readVirtualdj(host.roots(), 'recentCount', undefined),
+    trackCount: () => readVirtualdj(host.roots(), 'trackCount', undefined),
+    collection: () => readVirtualdj(host.roots(), 'collection', undefined),
+    playlist: async (id: string) => {
+      const entries = await readVirtualdj(host.roots(), 'playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))
       return entries
     },
-    membership: (paths: string[]) => virtualdjMembership(library(), paths),
+    membership: (paths: string[]) => readVirtualdj(host.roots(), 'membership', paths),
   }
 }

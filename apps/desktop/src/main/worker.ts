@@ -15,6 +15,8 @@ import {
   type RekordboxReadName,
   trackOfCollection,
 } from './rekordboxReads'
+import type { SeratoLibraryRoot } from './seratoLibrary'
+import type { SeratoReadAnswer, SeratoReadArg, SeratoReadName } from './seratoReads'
 import { type ThreadLogMessage, threadLog } from './threadLog'
 import {
   emptyTraktorRead,
@@ -23,6 +25,8 @@ import {
   type TraktorReadName,
   traktorHolds,
 } from './traktorReads'
+import type { VirtualdjRoot } from './virtualdjLibrary'
+import type { VirtualdjReadAnswer, VirtualdjReadArg, VirtualdjReadName } from './virtualdjReads'
 import { createWorkerClient, createWorkerPool, type WorkerClient } from './workerClient'
 import type { WorkerJob, WorkerJobResult } from './workerJobs'
 
@@ -84,6 +88,29 @@ export async function readRekordbox<N extends RekordboxReadName>(
     ? await client.run(job)
     : await (await import('./workerJobs')).runWorkerJob(job)
   return answer as unknown as RekordboxReadAnswer<N>
+}
+
+async function onCollectionThread(job: WorkerJob): Promise<unknown> {
+  const client = await getCollectionClient()
+  return client ? client.run(job) : (await import('./workerJobs')).runWorkerJob(job)
+}
+
+export async function readSerato<N extends SeratoReadName>(
+  roots: SeratoLibraryRoot[],
+  name: N,
+  arg: SeratoReadArg<N>,
+): Promise<SeratoReadAnswer<N>> {
+  const answer = await onCollectionThread({ type: 'seratoRead', roots, name, arg })
+  return answer as SeratoReadAnswer<N>
+}
+
+export async function readVirtualdj<N extends VirtualdjReadName>(
+  roots: VirtualdjRoot[],
+  name: N,
+  arg: VirtualdjReadArg<N>,
+): Promise<VirtualdjReadAnswer<N>> {
+  const answer = await onCollectionThread({ type: 'virtualdjRead', roots, name, arg })
+  return answer as VirtualdjReadAnswer<N>
 }
 
 export async function readEngine<N extends EngineReadName>(
