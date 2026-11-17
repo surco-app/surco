@@ -21,7 +21,7 @@ const NL = '\r\n'
 const SONG_CLOSE = '</Song>'
 const DATABASE_CLOSE = '</VirtualDJ_Database>'
 
-interface SongSpan {
+export interface SongSpan {
   openStart: number
   openEnd: number
   bodyEnd: number
@@ -43,10 +43,27 @@ function findSong(xml: string, path: string): SongSpan | null {
   return null
 }
 
+export function songSpans(xml: string): Map<string, SongSpan> {
+  const spans = new Map<string, SongSpan>()
+  if (!xml.includes(NL)) return spans
+  for (const m of xml.matchAll(songOpenRe())) {
+    if (m[1].trimEnd().endsWith('/')) continue
+    const path = attr(m[1], 'FilePath')
+    if (spans.has(path)) continue
+    const openEnd = m.index + m[0].length
+    const bodyEnd = xml.indexOf(SONG_CLOSE, openEnd)
+    if (bodyEnd >= 0) spans.set(path, { openStart: m.index, openEnd, bodyEnd })
+  }
+  return spans
+}
+
+export const editedBody = (body: string, edit: (lines: string[]) => string[]): string =>
+  edit(body.split(NL)).join(NL)
+
 function withBody(xml: string, path: string, edit: (lines: string[]) => string[]): string | null {
   const span = findSong(xml, path)
   if (!span) return null
-  const body = edit(xml.slice(span.openEnd, span.bodyEnd).split(NL)).join(NL)
+  const body = editedBody(xml.slice(span.openEnd, span.bodyEnd), edit)
   return `${xml.slice(0, span.openEnd)}${body}${xml.slice(span.bodyEnd)}`
 }
 
@@ -99,18 +116,16 @@ function replacePois<T>(
   return [...kept, ...[...pending.values()].map(render), close]
 }
 
-export function withVirtualdjCues(
-  xml: string,
-  path: string,
+export function virtualdjCueEdit(
   cues: VirtualdjCueWrite[],
   loops?: VirtualdjLoopWrite[],
-): string | null {
+): ((lines: string[]) => string[]) | null {
   const cuesOk = cues.every(
     (c) => Number.isInteger(c.num) && c.num >= 1 && c.num <= 8 && placeable(c.seconds),
   )
   const loopsOk = (loops ?? []).every((l) => placeable(l.seconds) && placeable(l.sizeBeats))
   if (!cuesOk || !loopsOk) return null
-  return withBody(xml, path, (lines) => {
+  return (lines) => {
     const withCues = replacePois(
       lines,
       (poi) =>
@@ -132,7 +147,17 @@ export function withVirtualdjCues(
         sameLabel(poi, l),
       loopLine,
     )
-  })
+  }
+}
+
+export function withVirtualdjCues(
+  xml: string,
+  path: string,
+  cues: VirtualdjCueWrite[],
+  loops?: VirtualdjLoopWrite[],
+): string | null {
+  const edit = virtualdjCueEdit(cues, loops)
+  return edit && withBody(xml, path, edit)
 }
 
 function secondsPerBeat(lines: string[]): number {

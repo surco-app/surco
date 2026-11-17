@@ -7,7 +7,7 @@ import { cueFingerprint } from './rekordboxCues'
 import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
 import { virtualdjCueRows } from './virtualdjCueSource'
 import { parseVirtualdjDatabase, type VirtualdjPoi, type VirtualdjSong } from './virtualdjDatabase'
-import { type VirtualdjCueWrite, withVirtualdjCues } from './virtualdjDatabaseWrite'
+import { type VirtualdjCueWrite, virtualdjCueEdit } from './virtualdjDatabaseWrite'
 import { type VirtualdjRoot, virtualdjPathOf } from './virtualdjLibrary'
 import {
   applyVirtualdjDraftOps,
@@ -72,6 +72,36 @@ export function songIn(
   return null
 }
 
+const songsByKey = new WeakMap<VirtualdjSong[], Map<string, VirtualdjSong>>()
+
+function cueSongIn(
+  draft: VirtualdjDraft,
+  roots: VirtualdjRoot[],
+  path: string,
+): { file: string; song: VirtualdjSong } | null {
+  const wanted = virtualdjPathKey(path)
+  for (const root of roots) {
+    const file = virtualdjDatabaseOf(root)
+    const songs = draft.songsOf(file)
+    if (!songs) continue
+    let byKey = songsByKey.get(songs)
+    if (!byKey) {
+      byKey = new Map()
+      for (const s of songs) {
+        const key = virtualdjPathKey(virtualdjPathOf(root, s.path))
+        if (!byKey.has(key)) byKey.set(key, s)
+      }
+      songsByKey.set(songs, byKey)
+    }
+    const song = byKey.get(wanted)
+    if (!song) continue
+    if (!draft.songEdited(file, song.path)) return { file, song }
+    draft.read(file)
+    return cueSongIn(draft, roots, path)
+  }
+  return null
+}
+
 export function applyVirtualdjCueOp(
   draft: VirtualdjDraft,
   op: QueueOp,
@@ -85,9 +115,9 @@ export function applyVirtualdjCueOp(
     notices: [{ code, track: op.kind === 'edit' ? '' : op.label }],
   })
   if (op.kind !== 'cues' || op.wanted === undefined || op.grid) return refused('cues-invalid')
-  const found = songIn(draft, roots, virtualdjFileOf(op.contentId))
+  const found = cueSongIn(draft, roots, virtualdjFileOf(op.contentId))
   if (!found) return refused('not-in-library')
-  const { file, xml, song } = found
+  const { file, song } = found
   const rows = virtualdjCueRows(song)
   const calls = op.wanted.filter((c) => c.kind === 0).map((c) => c.ms)
   const notices: RekordboxQueueNotice[] =
@@ -102,9 +132,8 @@ export function applyVirtualdjCueOp(
     return refused('cues-invalid')
   }
   const cues = op.wanted.filter((c) => c.kind !== 0).map((c) => cueOf(c, song))
-  const next = withVirtualdjCues(xml, song.path, cues)
-  if (next === null) return refused('cues-write-failed')
-  draft.write(file, next)
+  const body = virtualdjCueEdit(cues)
+  if (!body || !draft.editSong(file, song.path, body)) return refused('cues-write-failed')
   return { id: op.id, applied: true, notices }
 }
 
