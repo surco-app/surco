@@ -18,8 +18,6 @@ export interface LearnRead {
   notAnalysed: string[]
 }
 
-const TRACKS_PER_PAUSE = 25
-
 export interface CollectionMarks {
   learn: LearnTrack[]
   taste: TasteTrack[]
@@ -31,8 +29,8 @@ export async function readCollectionMarks(
   pause: () => Promise<void>,
 ): Promise<CollectionMarks> {
   const out: CollectionMarks = { learn: [], taste: [] }
-  for (const [i, contentId] of markedIds(db).entries()) {
-    if (i % TRACKS_PER_PAUSE === 0) await pause()
+  for (const contentId of markedIds(db)) {
+    await pause()
     const read = readTrackCues(db, shareDir, contentId, { wave: false })
     if (!read?.analysed) continue
     out.learn.push({
