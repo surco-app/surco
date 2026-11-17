@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.38",
+    "date": "November 17, 2026",
+    "title": "El format, a un clic",
+    "items": [
+      {
+        "text": "Amb diverses pistes seleccionades, els formats són just damunt del botó de convertir i es trien amb un clic. La destinació és al menú del costat.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Activa «Buidar la llista en acabar un lot» a Configuració › Destinació i les pistes convertides surten soles de la llista. Les que fallen s'hi queden, i «Desfer» torna la resta.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Els fitxers que afegeixes a la llista entren seleccionats, a punt per editar-los junts.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Quan un lot només reescriu les etiquetes dels teus originals, el botó diu «Actualitzar» en lloc de «Convertir».",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Edita alhora pistes que ja havies convertit i el botó torna. Ja no cal buidar la llista i afegir-les de nou.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Els gèneres que té una pista es veuen sempre, per llarga que sigui la teva llista de gèneres.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Surco respon igual de ràpid amb una biblioteca gran de Traktor. Seleccionar milers de pistes, obrir una llista llarga i esborrar o desar els seus cues de cop ja no deixen l'app aturada.",
+        "in": "1.38.0"
+      }
+    ]
+  },
+  {
     "version": "1.37",
     "date": "November 17, 2026",
     "title": "Desfer en lloc de preguntar",

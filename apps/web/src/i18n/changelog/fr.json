@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.38",
+    "date": "November 17, 2026",
+    "title": "Le format, à un clic",
+    "items": [
+      {
+        "text": "Avec plusieurs pistes sélectionnées, les formats sont juste au-dessus du bouton de conversion et un clic suffit pour en choisir un. La destination est dans le menu à côté.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Active « Vider la liste à la fin d’un lot » dans Réglages › Sortie et les pistes converties quittent la liste toutes seules. Celles qui échouent restent, et « Annuler » ramène les autres.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Les fichiers que tu ajoutes à la liste arrivent sélectionnés, prêts à être modifiés ensemble.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Quand un lot ne fait que réécrire les tags de tes originaux, le bouton dit « Mettre à jour » au lieu de « Convertir ».",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Modifie ensemble des pistes déjà converties et le bouton revient. Plus besoin de vider la liste et de les ajouter à nouveau.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Les genres d’une piste sont toujours visibles, même si ta liste de genres est longue.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Surco réagit aussi vite avec une grande bibliothèque Traktor. Sélectionner des milliers de pistes, ouvrir une longue liste et effacer ou enregistrer leurs cues d’un coup ne figent plus l’app.",
+        "in": "1.38.0"
+      }
+    ]
+  },
+  {
     "version": "1.37",
     "date": "November 17, 2026",
     "title": "Annuler plutôt que demander",

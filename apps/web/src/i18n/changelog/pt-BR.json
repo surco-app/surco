@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.38",
+    "date": "November 17, 2026",
+    "title": "O formato, a um clique",
+    "items": [
+      {
+        "text": "Com várias faixas selecionadas, os formatos ficam logo acima do botão de converter e um clique escolhe um. O destino está no menu ao lado.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Ative “Esvaziar a lista ao terminar um lote” em Ajustes › Saída e as faixas convertidas saem da lista sozinhas. As que falharem ficam, e “Desfazer” traz as outras de volta.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Os arquivos que você adiciona à lista entram selecionados, prontos para editar juntos.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Quando um lote só reescreve as tags dos seus originais, o botão diz “Atualizar” em vez de “Converter”.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Edite juntas faixas que você já converteu e o botão volta. Não é mais preciso esvaziar a lista e adicioná-las de novo.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Os gêneros de uma faixa aparecem sempre, por mais longa que seja a sua lista de gêneros.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "O Surco responde com a mesma rapidez com uma biblioteca grande do Traktor. Selecionar milhares de faixas, abrir uma lista longa e apagar ou salvar os cues de uma vez não travam mais o app.",
+        "in": "1.38.0"
+      }
+    ]
+  },
+  {
     "version": "1.37",
     "date": "November 17, 2026",
     "title": "Desfazer em vez de perguntar",

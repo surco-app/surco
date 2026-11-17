@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.38",
+    "date": "November 17, 2026",
+    "title": "The format, one click away",
+    "items": [
+      {
+        "text": "With several tracks selected, the formats sit right above the convert button and one click picks one. The destination is in the menu beside them.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Turn on “Clear the list when a batch finishes” in Settings › Output and the converted tracks leave the list on their own. The ones that fail stay, and “Undo” brings the rest back.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "The files you add to the list come in selected, ready to edit together.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "When a batch only rewrites the tags of your originals, the button says “Update” instead of “Convert”.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Edit tracks you already converted together and the button comes back. You no longer have to clear the list and add them again.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "The genres a track has always show, however long your own list of genres is.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Surco is just as responsive with a big Traktor library. Selecting thousands of tracks, opening a long list and clearing or saving their cues at once no longer freeze the app.",
+        "in": "1.38.0"
+      }
+    ]
+  },
+  {
     "version": "1.37",
     "date": "November 17, 2026",
     "title": "Undo instead of asking",

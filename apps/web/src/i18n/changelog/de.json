@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.38",
+    "date": "November 17, 2026",
+    "title": "Das Format, einen Klick entfernt",
+    "items": [
+      {
+        "text": "Sind mehrere Tracks ausgewählt, stehen die Formate direkt über dem Konvertieren-Button und ein Klick wählt eines. Das Ziel findest du im Menü daneben.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Schalte unter Einstellungen › Ausgabe „Liste leeren, wenn ein Stapel fertig ist“ ein und die konvertierten Tracks verlassen die Liste von selbst. Fehlgeschlagene bleiben, und „Rückgängig“ holt die anderen zurück.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Dateien, die du zur Liste hinzufügst, sind gleich ausgewählt und lassen sich zusammen bearbeiten.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Schreibt ein Stapel nur die Tags deiner Originale neu, steht auf dem Button „aktualisieren“ statt „konvertieren“.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Bearbeite bereits konvertierte Tracks gemeinsam und der Button kommt zurück. Du musst die Liste nicht mehr leeren und die Tracks neu hinzufügen.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Die Genres eines Tracks sind immer zu sehen, egal wie lang deine eigene Genreliste ist.",
+        "in": "1.38.0"
+      },
+      {
+        "text": "Surco reagiert mit einer großen Traktor-Bibliothek genauso schnell. Tausende Tracks auswählen, eine lange Liste öffnen und ihre Cues auf einmal löschen oder speichern lassen die App nicht mehr einfrieren.",
+        "in": "1.38.0"
+      }
+    ]
+  },
+  {
     "version": "1.37",
     "date": "November 17, 2026",
     "title": "Rückgängig statt Nachfragen",
