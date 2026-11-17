@@ -3553,7 +3553,7 @@
           },
           {
             "title": "Pick the format",
-            "text": "In “Format and destination”, at the bottom of the editor, AIFF for example, or MP3 if it's going to a USB stick with little room. Otherwise each track keeps its format."
+            "text": "At the bottom of the editor, AIFF for example, or MP3 if it's going to a USB stick with little room. Otherwise each track keeps its format."
           },
           {
             "title": "Click “Convert”",

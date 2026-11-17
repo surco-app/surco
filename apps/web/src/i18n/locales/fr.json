@@ -3553,7 +3553,7 @@
           },
           {
             "title": "Choisis le format",
-            "text": "Dans « Format et destination », en bas de l’éditeur, AIFF par exemple, ou MP3 si ça part sur une clé USB avec peu de place. Sinon, chaque morceau garde son format."
+            "text": "En bas de l’éditeur, AIFF par exemple, ou MP3 si ça part sur une clé USB avec peu de place. Sinon, chaque morceau garde son format."
           },
           {
             "title": "Clique sur « Convertir »",

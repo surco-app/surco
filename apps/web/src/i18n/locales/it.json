@@ -3553,7 +3553,7 @@
           },
           {
             "title": "Scegli il formato",
-            "text": "In «Formato e destinazione», in fondo all'editor, per esempio AIFF, o MP3 se va su una USB con poco spazio. Altrimenti ogni brano resta nel suo formato."
+            "text": "In fondo all'editor, per esempio AIFF, o MP3 se va su una USB con poco spazio. Altrimenti ogni brano resta nel suo formato."
           },
           {
             "title": "Premi «Converti»",
