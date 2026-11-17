@@ -122,6 +122,16 @@ describe('traktorCueSource', () => {
     expect((await cues.trackCues(id))?.cues[0]?.ms).toBe(2500)
   })
 
+  it('hands the cues of a whole selection from the collection alone, since clearing thousands of tracks one read at a time opened every audio file', async () => {
+    const cues = source()
+    const ids = [...FILES.map((f) => traktorContentId(keyOf(f))), traktorContentId(keyOf('z.flac'))]
+    const live = await cues.liveCues?.(ids)
+    expect(Object.keys(live ?? {})).toEqual(ids.slice(0, FILES.length))
+    expect(reads.count).toBe(1)
+    const one = await cues.trackCues(ids[0])
+    expect(live?.[ids[0]]).toEqual({ cues: one?.cues, fingerprint: one?.fingerprint })
+  })
+
   it('has nothing to say about a track when no collection is set', async () => {
     nmlPath = ''
     expect(await source().trackCues(traktorContentId(keyOf('a.flac')))).toBeNull()
