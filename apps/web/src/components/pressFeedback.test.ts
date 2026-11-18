@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { I18nextProvider } from 'react-i18next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadI18n } from '../i18n'
+import { pressFeedback } from '../lib/ui'
 import Changelog from './Changelog'
 import Faq from './Faq'
 import Features from './Features'
@@ -52,14 +53,10 @@ function all(container: HTMLElement, testId: string) {
   return found
 }
 
-const PRESS_SCALE = 'active:scale-[0.97]'
-const PRESS_TRANSITION = 'transition-[color,background-color,border-color,scale]'
-
 function expectScaleFeedback(container: HTMLElement, testId: string) {
   for (const el of all(container, testId)) {
-    expect(el.className, testId).toContain(PRESS_SCALE)
-    expect(el.className, testId).toContain(PRESS_TRANSITION)
-    expect(el.className, testId).toContain('duration-[160ms]')
+    for (const utility of pressFeedback.split(' '))
+      expect(el.className.split(/\s+/), testId).toContain(utility)
   }
 }
 
@@ -91,7 +88,6 @@ describe('taps answer on touch, where hover never fires', () => {
 
   it('presses the hero anchors in', async () => {
     const container = await render(createElement(HeroAnchors))
-    for (const el of all(container, 'hero-anchors')) expect(el).toBeTruthy()
     for (const key of ['quality', 'tag', 'export'])
       expectScaleFeedback(container, `hero-anchor-${key}`)
   })
