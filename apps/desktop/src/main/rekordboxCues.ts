@@ -13,7 +13,7 @@ import { gridFingerprint } from '../shared/gridEdit'
 import type { CueWaveColumn, TrackCueRow, TrackCues } from '../shared/types'
 import { beatGrid, colorWave, colorWaveSpanMs, colorWaveWords, phrases, wavePreview } from './anlz'
 import { insideShare } from './rekordboxDb'
-import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
+import { rekordboxStamp, statementOf, takeLocalUsn, unusedRowId } from './rekordboxRows'
 
 type Db = InstanceType<typeof Database>
 
@@ -214,12 +214,11 @@ const isoOf = (stamp: unknown): unknown =>
 
 function liveEntries(db: Db, contentId: string): Record<string, unknown>[] {
   return (
-    db
-      .prepare(
-        `SELECT ${CUE_JSON_KEYS.join(', ')} FROM djmdCue
+    statementOf(
+      db,
+      `SELECT ${CUE_JSON_KEYS.join(', ')} FROM djmdCue
           WHERE ContentID = ? AND coalesce(rb_local_deleted, 0) = 0`,
-      )
-      .all(contentId) as Record<string, unknown>[]
+    ).all(contentId) as Record<string, unknown>[]
   ).map((e) => ({ ...e, created_at: isoOf(e.created_at), updated_at: isoOf(e.updated_at) }))
 }
 
@@ -351,9 +350,9 @@ export function applyCueChanges(
   if (count === 0) return 0
   const stamp = rekordboxStamp(ctx.now)
   const iso = ctx.now.toISOString().replace('Z', '+00:00')
-  const track = db
-    .prepare('SELECT UUID, CueUpdated FROM djmdContent WHERE ID = ?')
-    .get(contentId) as { UUID: string; CueUpdated: string | null }
+  const track = statementOf(db, 'SELECT UUID, CueUpdated FROM djmdContent WHERE ID = ?').get(
+    contentId,
+  ) as { UUID: string; CueUpdated: string | null }
 
   const inserted: Record<string, string | number | null>[] = []
   for (const c of changes.insert) {
@@ -383,36 +382,41 @@ export function applyCueChanges(
       updated_at: stamp,
     }
     const names = Object.keys(row)
-    db.prepare(
+    statementOf(
+      db,
       `INSERT INTO djmdCue (${names.join(', ')}) VALUES (${names.map(() => '?').join(', ')})`,
     ).run(...Object.values(row))
     inserted.push(row)
   }
-  const update = db.prepare(
+  const update = statementOf(
+    db,
     `UPDATE djmdCue SET Kind = ?, ColorTableIndex = ?, rb_local_usn = ?, updated_at = ?
       WHERE ID = ? AND ContentID = ?`,
   )
-  const move = db.prepare(
+  const move = statementOf(
+    db,
     'UPDATE djmdCue SET InMsec = ?, InFrame = ? WHERE ID = ? AND ContentID = ?',
   )
   for (const u of changes.update) {
     update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id, contentId)
     if (u.ms !== undefined) move.run(u.ms, frameOf(u.ms), u.id, contentId)
   }
-  const remove = db.prepare('DELETE FROM djmdCue WHERE ID = ? AND ContentID = ?')
+  const remove = statementOf(db, 'DELETE FROM djmdCue WHERE ID = ? AND ContentID = ?')
   for (const id of changes.remove) remove.run(id, contentId)
 
-  const cc = db.prepare('SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(contentId) as
-    | { ID: string; Cues: string | null }
-    | undefined
+  const cc = statementOf(db, 'SELECT ID, Cues FROM contentCue WHERE ContentID = ?').get(
+    contentId,
+  ) as { ID: string; Cues: string | null } | undefined
   const entries = cc ? changedEntries(cc.Cues, changes, inserted, iso) : liveEntries(db, contentId)
   const ccUsn = takeLocalUsn(db, stamp)
   if (cc)
-    db.prepare(
+    statementOf(
+      db,
       'UPDATE contentCue SET Cues = ?, rb_cue_count = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
     ).run(JSON.stringify(entries), entries.length, ccUsn, stamp, cc.ID)
   else
-    db.prepare(
+    statementOf(
+      db,
       `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count, UUID, rb_data_status,
          rb_local_data_status, rb_local_deleted, rb_local_synced, usn, rb_local_usn, created_at,
          updated_at) VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, NULL, ?, ?, ?)`,
@@ -426,7 +430,8 @@ export function applyCueChanges(
       stamp,
       stamp,
     )
-  db.prepare(
+  statementOf(
+    db,
     'UPDATE djmdContent SET CueUpdated = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
   ).run(String(Number(track.CueUpdated ?? 0) + count), takeLocalUsn(db, stamp), stamp, contentId)
   return count

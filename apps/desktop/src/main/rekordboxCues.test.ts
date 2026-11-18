@@ -2,7 +2,7 @@ import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { ExistingCue } from '../shared/cueRules'
 import { gridFingerprint } from '../shared/gridEdit'
 import {
@@ -304,6 +304,43 @@ describe('applyCueChanges', () => {
         InFrame: 1800,
         updated_at: '2026-10-18T19:00:00.000+00:00',
       },
+    ])
+    db.close()
+  })
+
+  it('writes the next track with the statements it compiled for the first, and still writes it whole, since compiling them again for each of thousands of tracks kept the window frozen longer', async () => {
+    const db = await writable()
+    applyCueChanges(db, '103', changes, { now: NOW })
+    const prepare = vi.spyOn(db, 'prepare')
+    expect(
+      applyCueChanges(
+        db,
+        '104',
+        {
+          insert: [{ ms: 2000, kind: 1, color: 42 }],
+          update: [{ id: 'other', kind: 0, color: null, ms: 3000 }],
+          remove: [],
+        },
+        { now: NOW },
+      ),
+    ).toBe(2)
+    expect(prepare).not.toHaveBeenCalled()
+    prepare.mockRestore()
+    expect(
+      db.prepare(`SELECT InMsec, Kind FROM djmdCue WHERE ContentID = '104' ORDER BY InMsec`).all(),
+    ).toEqual([
+      { InMsec: 2000, Kind: 1 },
+      { InMsec: 3000, Kind: 0 },
+    ])
+    const cc = db
+      .prepare(`SELECT Cues, rb_cue_count FROM contentCue WHERE ContentID = '104'`)
+      .get() as {
+      Cues: string
+      rb_cue_count: number
+    }
+    expect(cc.rb_cue_count).toBe(2)
+    expect((JSON.parse(cc.Cues) as { InMsec: number }[]).map((e) => e.InMsec).sort()).toEqual([
+      2000, 3000,
     ])
     db.close()
   })

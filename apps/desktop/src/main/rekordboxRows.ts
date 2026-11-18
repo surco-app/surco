@@ -2,6 +2,22 @@ import type Database from 'better-sqlite3-multiple-ciphers'
 
 type Db = InstanceType<typeof Database>
 
+const compiled = new WeakMap<Db, Map<string, Database.Statement>>()
+
+export function statementOf(db: Db, sql: string): Database.Statement {
+  let ofDb = compiled.get(db)
+  if (!ofDb) {
+    ofDb = new Map()
+    compiled.set(db, ofDb)
+  }
+  let statement = ofDb.get(sql)
+  if (!statement) {
+    statement = db.prepare(sql)
+    ofDb.set(sql, statement)
+  }
+  return statement
+}
+
 // What every row Surco writes into a rekordbox collection shares with the rows rekordbox
 // writes itself. Kept in one place because each writer (the metadata sync, the playlist
 // edits) must make rows rekordbox cannot tell from its own.
@@ -20,11 +36,13 @@ export function localDate(d: Date): string {
 // and stamps the row with it (rb_local_usn). Taking the next number and moving the counter
 // on keeps a row Surco writes ordered after every change rekordbox already made.
 export function takeLocalUsn(db: Db, stamp: string): number {
-  const { int_1 } = db
-    .prepare(`SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
-    .get() as { int_1: number }
+  const { int_1 } = statementOf(
+    db,
+    `SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'`,
+  ).get() as { int_1: number }
   const usn = Number(int_1) + 1
-  db.prepare(
+  statementOf(
+    db,
     `UPDATE agentRegistry SET int_1 = ?, updated_at = ? WHERE registry_id = 'localUpdateCount'`,
   ).run(usn, stamp)
   return usn
@@ -33,7 +51,7 @@ export function takeLocalUsn(db: Db, stamp: string): number {
 // rekordbox picks row IDs at random, so a generated one can collide with a row already
 // there; drawing again until it is free is what rekordbox and pyrekordbox both do.
 export function unusedRowId(db: Db, table: string, next: () => string): string {
-  const taken = db.prepare(`SELECT 1 FROM ${table} WHERE ID = ?`)
+  const taken = statementOf(db, `SELECT 1 FROM ${table} WHERE ID = ?`)
   for (;;) {
     const id = next()
     if (!taken.get(id)) return id
