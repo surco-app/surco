@@ -113,6 +113,24 @@ describe('everything that answers the user moves on one curve and three duration
   })
 })
 
+const scripts = (readdirSync(root, { recursive: true }) as string[])
+  .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+  .map((f) => f.split('\\').join('/'))
+  .filter((f) => f !== 'lib/motion.ts')
+
+describe('motion written in script reads the tokens, so a retuned token moves the whole app', () => {
+  it('writes no literal curve, no millisecond transition and no numeric animation duration', () => {
+    const literal = scripts.flatMap((file) =>
+      [
+        ...readFileSync(join(root, file), 'utf8').matchAll(
+          /cubic-bezier\(|duration:\s*\d+,\s*easing|['"`][^'"`\n]*\b\d+ms\b[^'"`\n]*['"`]/g,
+        ),
+      ].map((m) => `${file}: ${m[0]}`),
+    )
+    expect(literal).toEqual([])
+  })
+})
+
 describe('every window has the same 16 px corners, so a dialog reads as a window wherever it opens', () => {
   it('rounds every ModalShell panel with rounded-2xl', () => {
     const corners = sources.flatMap((file) =>

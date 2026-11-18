@@ -1254,7 +1254,7 @@ button:hover > .process-fill {
 }
 
 .empty-disc-in {
-  animation: empty-disc-in 0.34s cubic-bezier(0.2, 0, 0, 1) both;
+  animation: empty-disc-in 0.34s var(--ease-standard) both;
 }
 
 @keyframes empty-copy-in {
@@ -1267,7 +1267,7 @@ button:hover > .process-fill {
 /* The three lines follow the disc in reading order, each a beat behind the last, so the eye
    is walked down to the steps instead of meeting the whole block at once. */
 .empty-copy-in {
-  animation: empty-copy-in 0.28s cubic-bezier(0.2, 0, 0, 1) both;
+  animation: empty-copy-in 0.28s var(--ease-standard) both;
 }
 
 /* The arrival is pure presentation — every element is already in its final place, so cutting

@@ -6,6 +6,7 @@ import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
+import { panelDurationMs, standardEasing } from '../lib/motion'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
@@ -178,8 +179,8 @@ export function ExportButton({
     if (!started || !fill) return
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
     fill.animate?.([{ transform: 'scaleX(0)', offset: 0 }], {
-      duration: 240,
-      easing: 'cubic-bezier(0.2, 0, 0, 1)',
+      duration: panelDurationMs(),
+      easing: standardEasing(),
     })
   }, [liveStage])
 

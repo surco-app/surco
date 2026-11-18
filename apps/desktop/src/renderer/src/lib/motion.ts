@@ -12,3 +12,21 @@ export function prefersReducedMotion(): boolean {
 export function scrollBehavior(): ScrollBehavior {
   return prefersReducedMotion() ? 'auto' : 'smooth'
 }
+
+const PANEL_FALLBACK_MS = 240
+const STANDARD_FALLBACK = 'cubic-bezier(0.2, 0, 0, 1)'
+
+function rootToken(name: string): string {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+}
+
+// WAAPI and timers cannot resolve var(), so script reads the tokens' computed values. An
+// empty property (jsdom) falls back to the token's current value.
+export function panelDurationMs(): number {
+  const token = rootToken('--duration-panel')
+  return Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || PANEL_FALLBACK_MS
+}
+
+export function standardEasing(): string {
+  return rootToken('--ease-standard') || STANDARD_FALLBACK
+}

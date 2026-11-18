@@ -13,7 +13,7 @@ import type React from 'react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatTime } from '../lib/duration'
-import { prefersReducedMotion } from '../lib/motion'
+import { panelDurationMs, prefersReducedMotion } from '../lib/motion'
 import type { TrackItem } from '../types'
 import { MarqueeText } from './MarqueeText'
 import { Tooltip } from './Tooltip'
@@ -247,10 +247,7 @@ export function Player({
     if (card) reserve(card.offsetHeight - prev + next)
     tweeningRef.current = true
     el.style.height = `${next}px`
-    const token = getComputedStyle(document.documentElement)
-      .getPropertyValue('--duration-panel')
-      .trim()
-    const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || 0
+    const ms = panelDurationMs()
     const settle = (): void => {
       clearTimeout(timer)
       el.style.height = ''

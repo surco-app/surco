@@ -56,7 +56,7 @@ export function TrackWave({
         opacity={state === 'kept' ? 0.55 : 1}
         style={{
           clipPath: `inset(0 ${Math.round((1 - shown) * 100)}% 0 0)`,
-          transition: prefersReducedMotion() ? 'none' : 'clip-path 250ms linear',
+          transition: prefersReducedMotion() ? 'none' : 'clip-path var(--duration-panel) linear',
         }}
       />
     </svg>

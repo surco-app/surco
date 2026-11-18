@@ -9,6 +9,7 @@ import type { PlaylistRole, SessionAnswers } from '../../../shared/sessionTypes'
 import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { SessionRows } from '../hooks/useSessionRows'
 import type { BuildResult } from '../hooks/useSessionRun'
+import { panelDurationMs } from '../lib/motion'
 import { toCandidates } from '../lib/sessionCandidates'
 import { sessionPool } from '../lib/sessionRun'
 import { libraryRoles, withoutSeparators } from '../lib/sessionTree'
@@ -234,10 +235,7 @@ export function SessionWizard({
 
   useEffect(() => {
     if (!leaving) return
-    const token = getComputedStyle(document.documentElement)
-      .getPropertyValue('--duration-panel')
-      .trim()
-    const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || 0
+    const ms = panelDurationMs()
     const timer = setTimeout(() => setLeaving(null), ms)
     return () => clearTimeout(timer)
   }, [leaving])

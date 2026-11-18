@@ -23,6 +23,7 @@ import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { formatTime } from '../lib/duration'
 import { editorPlace } from '../lib/editorPlace'
 import { useOpenSettings } from '../lib/openSettingsContext'
+import { panelDurationMs, standardEasing } from '../lib/motion'
 import {
   durationDiffers,
   joinArtists,
@@ -258,8 +259,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       const was = cardTops.current.get(key)
       if (listChanged && !still && was !== undefined && was !== top) {
         card.animate?.([{ transform: `translateY(${was - top}px)` }, { transform: 'none' }], {
-          duration: 260,
-          easing: 'cubic-bezier(0.2, 0, 0, 1)',
+          duration: panelDurationMs(),
+          easing: standardEasing(),
         })
       }
     }
