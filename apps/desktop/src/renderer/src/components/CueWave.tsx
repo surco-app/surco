@@ -18,7 +18,7 @@ import {
   placeCues,
   visibleGhost,
 } from '../lib/cueMarks'
-import { snapToBeat } from '../lib/cuePlayhead'
+import { type Playhead, snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
@@ -40,6 +40,14 @@ const ROW_BAR_PITCH_PX = 3
 const WAVE_HEIGHT = '90%'
 const SLIM_WAVE_HEIGHT = `calc(100% - ${HOT_MARK_PX.row + 2}px)`
 
+const pctOf = (ms: number, durationMs: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
+const viewPctOf = (ms: number, durationMs: number): string =>
+  `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
+const shownOf = (view: { fromMs: number; toMs: number }, durationMs: number) => ({
+  from: Math.max(view.fromMs, 0),
+  to: Math.min(view.toMs, durationMs),
+})
+
 export function CueWave({
   wave,
   grid,
@@ -57,9 +65,11 @@ export function CueWave({
   onMenu,
   onMarkMenu,
   playheadMs,
+  head,
   onSeek,
   slim,
   view,
+  viewOf,
   ghost: rawGhost,
   cursorMs,
   detail,
@@ -80,9 +90,11 @@ export function CueWave({
   onMenu?: (at: { ms: number; x: number; y: number }) => void
   onMarkMenu?: (at: { key: string; clientX: number; clientY: number }) => void
   playheadMs?: number
+  head?: Playhead
   onSeek?: (ms: number) => void
   slim?: boolean
   view?: { fromMs: number; toMs: number }
+  viewOf?: (ms: number) => { fromMs: number; toMs: number }
   ghost?: CueGhost
   cursorMs?: number
   detail?: Uint16Array | null
@@ -138,6 +150,22 @@ export function CueWave({
       window.removeEventListener('blur', up)
     }
   }, [seeking, seekAt])
+  const playheadRef = useRef<HTMLSpanElement>(null)
+  const viewRef = useRef<HTMLSpanElement>(null)
+  const follow = useRef(() => {})
+  follow.current = () => {
+    if (!head) return
+    const ms = head.get()
+    const playhead = playheadRef.current
+    if (playhead) playhead.style.transform = `translateX(${pctOf(ms, durationMs)})`
+    const rect = viewRef.current
+    if (!rect || !viewOf) return
+    const shown = shownOf(viewOf(ms), durationMs)
+    rect.style.left = viewPctOf(shown.from, durationMs)
+    rect.style.width = viewPctOf(shown.to - shown.from, durationMs)
+  }
+  useLayoutEffect(() => follow.current())
+  useLayoutEffect(() => head?.subscribe(() => follow.current()), [head])
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const waveHeight = slim ? SLIM_WAVE_HEIGHT : WAVE_HEIGHT
   // The canvas reads its colours as it paints, so a theme switch has to repaint it.
@@ -217,15 +245,11 @@ export function CueWave({
   const { hot, calls } = placeCues(cues, durationMs)
   const pendingOf = new Map(cues.map((c) => [c.key, c.pending]))
   const ghost = visibleGhost(rawGhost, cues)
-  const pct = (ms: number): string => `${(ms / Math.max(durationMs, 1)) * 100}%`
-  const viewPct = (ms: number): string =>
-    `${Math.round((ms / Math.max(durationMs, 1)) * 1e6) / 1e4}%`
+  const pct = (ms: number): string => pctOf(ms, durationMs)
+  const viewPct = (ms: number): string => viewPctOf(ms, durationMs)
   const gone = new Set(ghost?.gone ?? [])
   const ghostMarks = ghost ? placeCues(ghost.added, durationMs) : null
-  const shown = view && {
-    from: Math.max(view.fromMs, 0),
-    to: Math.min(view.toMs, durationMs),
-  }
+  const shown = view && shownOf(view, durationMs)
   const selectMark = (key: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onSelect?.(key)
@@ -268,10 +292,15 @@ export function CueWave({
         style={{ top: '0px', bottom: '0px' }}
         className="pointer-events-none absolute inset-x-0"
       >
-        {shown && (
+        {(shown || (head && viewOf)) && (
           <span
+            ref={viewRef}
             data-testid="cue-wave-view"
-            style={{ left: viewPct(shown.from), width: viewPct(shown.to - shown.from) }}
+            style={
+              shown
+                ? { left: viewPct(shown.from), width: viewPct(shown.to - shown.from) }
+                : undefined
+            }
             className="absolute top-0 bottom-0 bg-[var(--color-fg)]/10"
           />
         )}
@@ -293,12 +322,23 @@ export function CueWave({
             className="pointer-events-none absolute top-0 bottom-0 w-0.5 bg-[var(--color-accent)]"
           />
         ))}
-        {playheadMs !== undefined && (
+        {head ? (
           <span
+            ref={playheadRef}
             data-testid="cue-wave-playhead"
-            style={{ left: pct(playheadMs) }}
-            className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]"
-          />
+            style={{ left: 0 }}
+            className="absolute inset-y-0 w-full"
+          >
+            <span className="absolute top-0 bottom-0 left-0 w-px bg-[var(--color-fg)]" />
+          </span>
+        ) : (
+          playheadMs !== undefined && (
+            <span
+              data-testid="cue-wave-playhead"
+              style={{ left: pct(playheadMs) }}
+              className="absolute top-0 bottom-0 w-px bg-[var(--color-fg)]"
+            />
+          )
         )}
       </div>
       {(trimmed ?? []).map((ms) => (
