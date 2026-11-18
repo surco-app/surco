@@ -264,9 +264,10 @@ function TooltipBubble({
   children: string
 }): React.JSX.Element {
   const ref = useRef<HTMLSpanElement>(null)
+  const content = hint ? `${children} ${hint}` : children
   useLayoutEffect(() => {
-    if (ref.current) onHeight(ref.current.offsetHeight)
-  })
+    if (ref.current && content) onHeight(ref.current.offsetHeight)
+  }, [onHeight, content])
   return (
     <span
       ref={ref}
