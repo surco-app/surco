@@ -20,25 +20,27 @@ export default function Reveal({
   className?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [shown, setShown] = useState(false)
+  const [state, setState] = useState<'idle' | 'hidden' | 'shown'>('idle')
 
   useEffect(() => {
     // Eager reveals (above the fold) animate on mount instead of waiting for the
     // observer, so they never sit hidden behind hydration or out-of-view scroll.
     if (eager) {
-      setShown(true)
+      setState('shown')
       return
     }
     const el = ref.current
     if (!el) return
+    if (el.getBoundingClientRect().top < window.innerHeight) return
+    setState('hidden')
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          setShown(true)
+          setState('shown')
           io.disconnect()
         }
       },
-      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' },
+      { threshold: 0, rootMargin: '0px 0px -8% 0px' },
     )
     io.observe(el)
     return () => io.disconnect()
@@ -47,7 +49,7 @@ export default function Reveal({
   return (
     <div
       ref={ref}
-      className={`${eager ? 'reveal-eager' : `reveal-init ${FROM_CLASS[from]}`} ${shown ? 'reveal-in' : ''} ${className}`}
+      className={`${eager ? 'reveal-eager' : state === 'idle' ? '' : `reveal-init ${FROM_CLASS[from]}`} ${state === 'shown' ? 'reveal-in' : ''} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
