@@ -20,7 +20,7 @@ const SWIPE_CLOSE_SHARE = 0.4
 const SWIPE_RESISTANCE = 0.2
 const SWIPE_MIN_OPACITY = 0.4
 const SWIPE_EXIT_GAP_PX = 24
-const PILE_WIDTH_PX = 288
+const PILE_WIDTH_PX = 240
 const PILE_MARGIN_PX = 12
 const PILE_PEEK_PX = 7
 const PILE_SHRINK = 0.05
@@ -411,11 +411,11 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-2 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 pl-3 pr-1 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-1.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
-        className={`max-h-[40vh] min-w-0 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
+        className={`max-h-[40vh] min-w-0 flex-1 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
           danger ? 'text-danger' : 'text-fg'
         }`}
       >
@@ -437,7 +437,7 @@ function ToastCard({
           data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
           aria-label={tr('common.copy')}
           onClick={onCopy}
-          className="press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {copied ? (
             <Check className="h-3 w-3 text-good" aria-hidden="true" />
@@ -451,7 +451,7 @@ function ToastCard({
         data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
         aria-label={tr('common.close')}
         onClick={() => onClose(toast.id)}
-        className="press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+        className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
       >
         <X className="h-3 w-3" aria-hidden="true" />
       </button>
