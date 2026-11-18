@@ -359,3 +359,79 @@ describe('Tooltip warm-up', () => {
     }
   })
 })
+
+describe('Tooltip flip', () => {
+  const hoverAt = (y: number): void => {
+    const trigger = screen.getByTestId('trigger')
+    act(() => {
+      for (const type of ['pointerenter', 'pointermove']) {
+        trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: y, bubbles: true }))
+      }
+    })
+    act(() => vi.advanceTimersByTime(400))
+  }
+
+  const withTooltipHeight = (height: number, y: number): string => {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    })
+    const innerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 })
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      hoverAt(y)
+      return screen.getByRole('tooltip').style.transform
+    } finally {
+      vi.useRealTimers()
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: innerHeight })
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+    }
+  }
+
+  it('flips above the pointer when its measured height would run past the bottom edge', () => {
+    expect(withTooltipHeight(120, 500)).toBe('translate(0, -100%)')
+  })
+
+  it('stays below the pointer when its measured height still fits', () => {
+    expect(withTooltipHeight(120, 400)).toBe('translate(0, 0)')
+  })
+
+  it('stays below the pointer near the bottom edge when it is short', () => {
+    expect(withTooltipHeight(40, 500)).toBe('translate(0, 0)')
+  })
+
+  it('flips again when its label grows taller while it is up and the pointer is still', () => {
+    let height = 40
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    })
+    const innerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 })
+    vi.useFakeTimers()
+    try {
+      const view = (label: string) => (
+        <button type="button" data-testid="trigger">
+          Go
+          <Tooltip label={label} />
+        </button>
+      )
+      const { rerender } = render(view('Short'))
+      hoverAt(500)
+      expect(screen.getByRole('tooltip').style.transform).toBe('translate(0, 0)')
+      height = 120
+      rerender(view('A much longer title that now wraps over several lines'))
+      expect(screen.getByRole('tooltip').style.transform).toBe('translate(0, -100%)')
+    } finally {
+      vi.useRealTimers()
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: innerHeight })
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+    }
+  })
+})

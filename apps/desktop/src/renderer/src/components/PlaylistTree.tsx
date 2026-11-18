@@ -9,6 +9,7 @@ import {
   type PlaylistOption,
   targetKey,
 } from '../lib/rekordboxPlaylists'
+import { formatCount } from '../lib/stats'
 import { foldersHolding, playlistIdsUnder } from './CheckTree'
 import { Tooltip } from './Tooltip'
 
@@ -100,7 +101,7 @@ export function PlaylistTree({
     row: { target: RekordboxPlaylistTarget } | { node: SourceNode },
   ) => boolean
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<ReadonlySet<string>>(
     () => new Set(foldersHolding([...tree], chosenIdsOf(tokens))),
@@ -255,7 +256,12 @@ export function PlaylistTree({
         <span className="w-3 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{row.target.name}</span>
         {row.count !== undefined && (
-          <span className="shrink-0 text-label tabular-nums text-fg-faint">{row.count}</span>
+          <span
+            data-testid={`playlists-count-${targetKey(row.target)}`}
+            className="shrink-0 text-label tabular-nums text-fg-faint"
+          >
+            {formatCount(row.count, i18n.language)}
+          </span>
         )}
         {control(row.target)}
       </div>
@@ -286,7 +292,12 @@ export function PlaylistTree({
           {row.target.name}
         </span>
         {row.count !== undefined && (
-          <span className="shrink-0 text-label tabular-nums text-fg-faint">{row.count}</span>
+          <span
+            data-testid={`playlists-count-${targetKey(row.target)}`}
+            className="shrink-0 text-label tabular-nums text-fg-faint"
+          >
+            {formatCount(row.count, i18n.language)}
+          </span>
         )}
       </label>
     )

@@ -75,6 +75,18 @@ describe('UsbExportProgress', () => {
     expect(screen.getByTestId('export-row-2')).toHaveTextContent('no se encuentra el archivo')
   })
 
+  it('shows the full failure reason on hover while the label stays truncated', () => {
+    show([STARTED, { type: 'failed', index: 2, reason: 'missing-file' }])
+    fireEvent.focusIn(screen.getByTestId('export-row-2-status'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('no se encuentra el archivo')
+  })
+
+  it('offers no tooltip on a row that did not fail', () => {
+    show([STARTED, { type: 'track', index: 0, state: 'done' }])
+    fireEvent.focusIn(screen.getByTestId('export-row-0-status'))
+    expect(screen.queryByRole('tooltip')).toBeNull()
+  })
+
   it('names the stick, its free space and filesystem in the footer', () => {
     show([STARTED])
     expect(screen.getByTestId('usb-footer')).toHaveTextContent('Surco')

@@ -3,6 +3,7 @@ import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { formatFileSize } from '../lib/properties'
 import { type UsbExportStore, usbExportStore, useUsbExportState } from '../lib/usbExportStore'
+import { Tooltip } from './Tooltip'
 import { TrackWave } from './TrackWave'
 
 // A row of the export list. It subscribes to its own row: a progress tick replaces one row
@@ -49,9 +50,11 @@ export const ExportTrackRow = memo(function ExportTrackRow({
         fraction={track.size > 0 ? row.bytes / track.size : 0}
       />
       <span
+        data-testid={`export-row-${index}-status`}
         className={`w-32 truncate text-right text-xs tabular-nums ${state === 'failed' ? 'text-danger' : 'text-fg-muted'}`}
       >
         {label}
+        {state === 'failed' && <Tooltip label={label} />}
       </span>
     </li>
   )

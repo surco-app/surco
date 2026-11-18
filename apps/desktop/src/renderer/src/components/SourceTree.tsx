@@ -19,6 +19,7 @@ import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
 import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
+import { formatCount } from '../lib/stats'
 import { ConfirmDialog } from './ConfirmDialog'
 import { ModalExit } from './ModalShell'
 import { MatchingIcon } from './SourceIcons'
@@ -102,7 +103,7 @@ export const SourceTree = memo(function SourceTree({
   onExportUsb?: () => void
   newPlaylistRef?: { current: NewPlaylist | null }
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
   // The folders holding the selected playlist are opened once per selection, during render
@@ -572,7 +573,12 @@ export const SourceTree = memo(function SourceTree({
               </span>
             ) : (
               !isFolder && (
-                <span className="ml-auto text-xs tabular-nums text-fg-faint">{node.count}</span>
+                <span
+                  data-testid={`source-node-count-${node.id}`}
+                  className="ml-auto text-xs tabular-nums text-fg-faint"
+                >
+                  {node.count !== undefined && formatCount(node.count, i18n.language)}
+                </span>
               )
             )}
           </button>

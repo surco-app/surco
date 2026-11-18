@@ -56,6 +56,7 @@ import { spellingGroups } from './lib/musicSpelling'
 import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
+import { formatCount } from './lib/stats'
 import { usbExportStore } from './lib/usbExportStore'
 import { type ApiOverrides, djReads, type ProgramReads, stubApi } from './test/api'
 import { fakeDataTransfer, installDragEvent } from './test/drag'
@@ -4928,7 +4929,7 @@ describe('App source playlists', () => {
         }),
       })
       const all = screen.getByTestId(`source-node-${ALL_TRACKS_ID}`)
-      expect(all).toHaveTextContent('2078')
+      expect(all).toHaveTextContent(formatCount(2078, i18n.language))
       fireEvent.click(all)
       await waitFor(() =>
         expect(titles()).toEqual([

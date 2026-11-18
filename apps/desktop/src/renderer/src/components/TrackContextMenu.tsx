@@ -92,7 +92,9 @@ function MenuItem({
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
-      {label}
+      <span data-testid={`${testid}-label`} className="block min-w-0 truncate">
+        {label}
+      </span>
       {hint && <span className="block text-label text-fg-faint">{hint}</span>}
     </button>
   )
@@ -254,7 +256,7 @@ export function TrackContextMenu({
         data-testid="track-menu"
         onKeyDown={onMenuKeyDown}
         style={{ top: pos.y, left: pos.x }}
-        className="absolute min-w-[210px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+        className="absolute min-w-[210px] max-w-[320px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         {!multi && (
           <>
@@ -467,7 +469,7 @@ export function TrackContextMenu({
                         aria-hidden="true"
                         className={`h-3.5 w-3.5 shrink-0 ${item.checked ? '' : 'invisible'}`}
                       />
-                      {item.label}
+                      <span className="min-w-0 truncate">{item.label}</span>
                     </button>
                   ))}
                 </div>
