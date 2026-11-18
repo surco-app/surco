@@ -298,7 +298,7 @@ function ToastCard({
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
-        className={`max-h-[40vh] overflow-y-auto whitespace-pre-line text-sm ${
+        className={`max-h-[40vh] overflow-y-auto whitespace-pre-line break-words text-sm ${
           danger ? 'text-danger' : 'text-fg'
         }`}
       >

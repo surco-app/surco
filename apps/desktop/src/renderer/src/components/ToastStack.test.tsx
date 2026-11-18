@@ -15,6 +15,22 @@ function toast(over: Partial<Toast> = {}): Toast {
 }
 
 describe('ToastStack', () => {
+  it('breaks an unbreakable file name in the message so it is not cut inside a hidden horizontal scroll', () => {
+    render(
+      <ToastStack
+        toasts={[
+          toast({
+            testid: 'long-name',
+            message: 'Artist_Name_-_Track_Title_(Extended_Mix)_[LABEL123]_WEB_320.aiff',
+          }),
+        ]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('long-name-message')).toHaveClass('break-words')
+  })
+
   // The empty container still mounts: a live region must exist before content arrives
   // or screen readers miss the first toast. No cards means nothing visible or clickable.
   it('keeps an empty, announced live region mounted when the queue is empty', () => {
