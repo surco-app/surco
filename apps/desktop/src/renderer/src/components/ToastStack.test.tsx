@@ -90,7 +90,7 @@ describe('ToastStack', () => {
       show()
       expect(pile().style.left).toBe('88px')
       expect(pile().style.bottom).toBe('12px')
-      expect(pile().style.width).toBe('288px')
+      expect(pile().style.width).toBe('240px')
       for (const slot of slots()) expect(slot.className).toContain('w-full')
     })
 
@@ -110,6 +110,12 @@ describe('ToastStack', () => {
       marked('data-toast-lift', { left: 400, right: 780, top: 500 })
       show()
       expect(pile().style.bottom).toBe('12px')
+    })
+
+    it('keeps the close button at the far end of the card however short the message, so it is always in the same place', () => {
+      show([toast({ id: 'a', testid: 'short', message: 'ok' })])
+      expect(screen.getByTestId('short-message').className).toContain('flex-1')
+      expect(screen.getByTestId('short').lastElementChild).toBe(screen.getByTestId('short-dismiss'))
     })
 
     it('tucks the older notices behind the newest with only their top edge showing, so five notices take the room of one', () => {
