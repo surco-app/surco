@@ -341,6 +341,23 @@ describe('TrackContextMenu playlist submenu placement', () => {
   })
 })
 
+describe('TrackContextMenu in a window shorter than the menu', () => {
+  it('pins its top to the window edge margin instead of going above the window', () => {
+    const size = { width: window.innerWidth, height: window.innerHeight }
+    Object.assign(window, { innerWidth: 800, innerHeight: 620 })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.dataset.testid !== 'track-menu') return new DOMRect(0, 0, 0, 0)
+      return new DOMRect(0, 0, 220, 700)
+    })
+    renderMenu({ x: 100, y: 300 })
+    expect(screen.getByTestId('track-menu').style.top).toBe('8px')
+    vi.restoreAllMocks()
+    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+  })
+})
+
 describe('TrackContextMenu starting a session from the track', () => {
   it('offers nothing when no DJ program can take a session', () => {
     renderMenu()
