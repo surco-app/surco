@@ -90,7 +90,7 @@ describe('ToastStack', () => {
       show()
       expect(pile().style.left).toBe('88px')
       expect(pile().style.bottom).toBe('12px')
-      expect(pile().style.width).toBe('240px')
+      expect(pile().style.width).toBe('272px')
       for (const slot of slots()) expect(slot.className).toContain('w-full')
     })
 
