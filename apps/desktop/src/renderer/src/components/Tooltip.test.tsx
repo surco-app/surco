@@ -404,6 +404,39 @@ describe('Tooltip flip', () => {
     expect(withTooltipHeight(40, 500)).toBe('translate(0, 0)')
   })
 
+  it('does not measure its height again when the pointer moves and the label is unchanged', () => {
+    let reads = 0
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => {
+        reads += 1
+        return 40
+      },
+    })
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      hoverAt(100)
+      const afterShow = reads
+      expect(afterShow).toBeGreaterThan(0)
+      act(() => {
+        for (const y of [110, 120, 130]) {
+          screen
+            .getByTestId('trigger')
+            .dispatchEvent(
+              new MouseEvent('pointermove', { clientX: 20, clientY: y, bubbles: true }),
+            )
+        }
+      })
+      expect(reads).toBe(afterShow)
+    } finally {
+      vi.useRealTimers()
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+    }
+  })
+
   it('flips again when its label grows taller while it is up and the pointer is still', () => {
     let height = 40
     const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')

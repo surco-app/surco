@@ -460,6 +460,13 @@ describe('Player', () => {
       column.remove()
     })
 
+    function endTransition(node: HTMLElement, propertyName: string): void {
+      fireEvent(
+        node,
+        Object.assign(new Event('transitionend', { bubbles: true }), { propertyName }),
+      )
+    }
+
     function writesDuring(action: () => void): string[] {
       const writes: string[] = []
       const original = column.style.setProperty.bind(column.style)
@@ -491,8 +498,59 @@ describe('Player', () => {
       rerender(<Player {...props({ showWaveform: false })} />)
       cardHeight = 95
       fire()
-      fireEvent.transitionEnd(screen.getByTestId('player-section'))
+      endTransition(screen.getByTestId('player-section'), 'height')
       expect(column.style.getPropertyValue('--player-space')).toBe('111px')
+    })
+
+    it('writes the room again when the card resizes after the tween ends', () => {
+      const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />, {
+        container: column,
+      })
+      natural = 40
+      rerender(<Player {...props({ showWaveform: false })} />)
+      endTransition(screen.getByTestId('player-section'), 'height')
+      cardHeight = 120
+      const writes = writesDuring(() => fire())
+      expect(writes).toEqual(['136px'])
+    })
+
+    it('releases the height and writes the measured room by timer when no transition ends', () => {
+      vi.useFakeTimers()
+      try {
+        const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />, {
+          container: column,
+        })
+        natural = 40
+        rerender(<Player {...props({ showWaveform: false })} />)
+        const section = screen.getByTestId('player-section')
+        cardHeight = 95
+        act(() => {
+          vi.advanceTimersByTime(1000)
+        })
+        expect(section.style.height).toBe('')
+        expect(column.style.getPropertyValue('--player-space')).toBe('111px')
+        const writes = writesDuring(() => fire())
+        expect(writes).toEqual(['111px'])
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('keeps tweening when a child element or another property finishes a transition', () => {
+      const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />, {
+        container: column,
+      })
+      natural = 40
+      rerender(<Player {...props({ showWaveform: false })} />)
+      const section = screen.getByTestId('player-section')
+      const child = section.firstElementChild as HTMLElement
+      const writes = writesDuring(() => {
+        endTransition(child, 'height')
+        endTransition(section, 'opacity')
+        fire()
+      })
+      expect(writes).toEqual([])
+      expect(section.style.height).toBe('40px')
     })
 
     it('still follows the card when it resizes outside a tween', () => {

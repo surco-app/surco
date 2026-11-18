@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import es from '../i18n/locales/es.json'
 import {
@@ -66,6 +66,20 @@ describe('formatCount', () => {
 
   it('leaves numbers under a thousand alone', () => {
     expect(formatCount(812, 'es')).toBe('812')
+  })
+
+  describe('on the tree hot path', () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('builds one formatter per language, not one per call', () => {
+      const construct = vi.spyOn(Intl, 'NumberFormat')
+      expect(formatCount(12345, 'sv')).toBe(formatCount(12345, 'sv'))
+      expect(construct).toHaveBeenCalledTimes(1)
+      formatCount(12345, 'nl')
+      expect(construct).toHaveBeenCalledTimes(2)
+    })
   })
 })
 

@@ -296,26 +296,32 @@ describe('SourceRail', () => {
       if (this.dataset.testid !== 'source-rail-menu') return new DOMRect(0, 0, 0, 0)
       return new DOMRect(0, 0, 180, 120)
     })
-    render(
-      <SourceRail
-        width={RAIL_WIDTH}
-        showNames
-        onToggleNames={vi.fn()}
-        sidebarShown
-        onToggleSidebar={vi.fn()}
-        copies={COPIES}
-        onHide={vi.fn()}
-        sources={[]}
-        active={null}
-        onSelect={vi.fn()}
-      />,
-    )
-    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'), { clientX: 780, clientY: 590 })
-    const menu = screen.getByTestId('source-rail-menu')
-    expect(menu.style.left).toBe('612px')
-    expect(menu.style.top).toBe('472px')
-    vi.restoreAllMocks()
-    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    try {
+      render(
+        <SourceRail
+          width={RAIL_WIDTH}
+          showNames
+          onToggleNames={vi.fn()}
+          sidebarShown
+          onToggleSidebar={vi.fn()}
+          copies={COPIES}
+          onHide={vi.fn()}
+          sources={[]}
+          active={null}
+          onSelect={vi.fn()}
+        />,
+      )
+      fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'), {
+        clientX: 780,
+        clientY: 590,
+      })
+      const menu = screen.getByTestId('source-rail-menu')
+      expect(menu.style.left).toBe('612px')
+      expect(menu.style.top).toBe('472px')
+    } finally {
+      vi.restoreAllMocks()
+      Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    }
   })
 
   it('hides the whole sidebar from its own right-click', () => {

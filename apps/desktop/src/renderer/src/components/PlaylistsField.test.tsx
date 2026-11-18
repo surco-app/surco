@@ -88,6 +88,35 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     expect(popover).toHaveClass('animate-pop-flat', 'origin-top')
   })
 
+  it('grows from the bottom edge when it opens upward because the field sits low in the window', () => {
+    const size = window.innerHeight
+    Object.assign(window, { innerHeight: 600 })
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300)
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(0, 500, 300, 30),
+    )
+    try {
+      render(
+        <PlaylistsField
+          library="traktor"
+          label="Traktor playlists"
+          tree={TREE}
+          options={OPTIONS}
+          value={[]}
+          onChange={() => {}}
+        />,
+      )
+      open()
+      const popover = screen.getByTestId('playlists-popover')
+      expect(popover.getAttribute('data-side')).toBe('up')
+      expect(popover).toHaveClass('origin-bottom')
+      expect(popover).not.toHaveClass('origin-top')
+    } finally {
+      vi.restoreAllMocks()
+      Object.assign(window, { innerHeight: size })
+    }
+  })
+
   it('is named by its label alone, which already carries the program', () => {
     render(
       <PlaylistsField

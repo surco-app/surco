@@ -213,6 +213,19 @@ describe('TrackContextMenu playlist actions', () => {
     expect(screen.getByTestId('track-menu-remove-from-label')).toHaveClass('truncate')
   })
 
+  it('wraps a very long folder path in the playlist submenu inside a width cap instead of truncating', () => {
+    const long = { id: 'l', name: 'Deep', kind: 'playlist' as const, count: 1 }
+    renderMenu({
+      playlist: playlist({ targets: [{ node: long, folders: ['F'.repeat(120)] }] }),
+    })
+    fireEvent.click(screen.getByTestId('track-menu-add-to'))
+    const label = screen.getByTestId('track-menu-playlist-l-label')
+    expect(label).not.toHaveClass('truncate')
+    expect(label).toHaveClass('break-words')
+    expect(screen.getByTestId('track-menu-playlists')).toHaveClass('max-w-[320px]')
+    expect(screen.getByTestId('track-menu-remove-from-label')).toHaveClass('truncate')
+  })
+
   // The same "Todas" or "Fijas" sits under several folders in the measured collection;
   // the folder path is what tells the targets apart.
   it('offers the other playlists with their folders and adds to the one picked', () => {
@@ -351,10 +364,13 @@ describe('TrackContextMenu in a window shorter than the menu', () => {
       if (this.dataset.testid !== 'track-menu') return new DOMRect(0, 0, 0, 0)
       return new DOMRect(0, 0, 220, 700)
     })
-    renderMenu({ x: 100, y: 300 })
-    expect(screen.getByTestId('track-menu').style.top).toBe('8px')
-    vi.restoreAllMocks()
-    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    try {
+      renderMenu({ x: 100, y: 300 })
+      expect(screen.getByTestId('track-menu').style.top).toBe('8px')
+    } finally {
+      vi.restoreAllMocks()
+      Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    }
   })
 })
 

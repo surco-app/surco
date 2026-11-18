@@ -65,6 +65,7 @@ function MenuItem({
   danger,
   disabled,
   hint,
+  wrap,
   onClick,
   onHover,
 }: {
@@ -75,6 +76,7 @@ function MenuItem({
   // Why the item cannot be used, in words under it: a greyed item with no reason reads as
   // broken.
   hint?: string
+  wrap?: boolean
   onClick: () => void
   onHover?: () => void
 }): React.JSX.Element {
@@ -92,7 +94,10 @@ function MenuItem({
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
-      <span data-testid={`${testid}-label`} className="block min-w-0 truncate">
+      <span
+        data-testid={`${testid}-label`}
+        className={`block min-w-0 ${wrap ? 'break-words' : 'truncate'}`}
+      >
         {label}
       </span>
       {hint && <span className="block text-label text-fg-faint">{hint}</span>}
@@ -364,7 +369,7 @@ export function TrackContextMenu({
                   onPointerEnter={keepSub}
                   data-side={sub.side}
                   style={{ top: sub.top, maxHeight: window.innerHeight - 2 * EDGE }}
-                  className={`absolute min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
+                  className={`absolute max-w-[320px] min-w-[220px] overflow-y-auto rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)] ${
                     sub.side === 'right' ? 'left-full ml-1' : 'right-full mr-1'
                   }`}
                 >
@@ -373,6 +378,7 @@ export function TrackContextMenu({
                       key={node.id}
                       testid={`track-menu-playlist-${node.id}`}
                       label={[...folders, node.name].join(' › ')}
+                      wrap
                       onClick={() => run(() => playlist.onAddTo(node))}
                     />
                   ))}
