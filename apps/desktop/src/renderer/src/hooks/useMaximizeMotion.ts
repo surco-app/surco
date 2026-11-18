@@ -1,9 +1,7 @@
 import { type RefObject, useLayoutEffect, useRef, useState } from 'react'
-import { prefersReducedMotion } from '../lib/motion'
+import { panelDurationMs, prefersReducedMotion, standardEasing } from '../lib/motion'
 import { type EditorSection, maximizedOrigin } from './useEditorSections'
 
-const MAXIMIZE_MS = 240
-const EASE_STANDARD = 'cubic-bezier(0.2, 0, 0, 1)'
 const FULL: Keyframe = { transform: 'none', clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 }
 
 function frameOf(rect: DOMRect): Keyframe {
@@ -51,11 +49,11 @@ export function useMaximizeMotion(maximized: EditorSection | null): {
       : maximized === null
         ? FULL
         : frameOf(rect)
-    const duration = prev ? Number(prev.currentTime ?? MAXIMIZE_MS) : MAXIMIZE_MS
+    const duration = prev ? Number(prev.currentTime ?? panelDurationMs()) : panelDurationMs()
     prev?.cancel()
     const anim = el.animate([from, maximized === null ? frameOf(rect) : FULL], {
       duration,
-      easing: EASE_STANDARD,
+      easing: standardEasing(),
       fill: 'forwards',
     })
     running.current = anim

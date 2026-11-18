@@ -17,8 +17,8 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 // section's own hooks — this only governs when the body is in the tree and how tall its
 // box is, so a folded section still pays nothing.
 
-const DURATION_MS = 240
-const EASE = 'cubic-bezier(0.2, 0, 0, 1)'
+const DURATION = 'var(--duration-panel)'
+const EASE = 'var(--ease-standard)'
 
 function prefersReducedMotion(): boolean {
   return (
@@ -140,7 +140,7 @@ export function SectionBody({ open, children, id }: Props): React.JSX.Element | 
       style={{
         maxHeight: maxHeight === undefined ? undefined : `${maxHeight}px`,
         overflow: maxHeight === undefined ? undefined : 'hidden',
-        transition: reduce ? undefined : `max-height ${DURATION_MS}ms ${EASE}`,
+        transition: reduce ? undefined : `max-height ${DURATION} ${EASE}`,
       }}
     >
       {/* The inner element is what gets measured; the outer clips it during the tween. A
@@ -153,7 +153,7 @@ export function SectionBody({ open, children, id }: Props): React.JSX.Element | 
             : {
                 opacity: open ? 1 : 0,
                 transform: open ? 'none' : 'translateY(-4px)',
-                transition: `opacity ${DURATION_MS}ms ${EASE}, transform ${DURATION_MS}ms ${EASE}`,
+                transition: `opacity ${DURATION} ${EASE}, transform ${DURATION} ${EASE}`,
               }
         }
       >
