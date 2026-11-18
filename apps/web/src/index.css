@@ -231,6 +231,9 @@ button:not(:disabled) {
     opacity: 1 !important;
     transform: none !important;
   }
+  details::details-content {
+    transition: none;
+  }
   html {
     scroll-behavior: auto;
   }
