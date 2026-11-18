@@ -36,7 +36,6 @@ export function Tooltip({
   hoverOnly?: boolean
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
-  const tooltipRef = useRef<HTMLSpanElement>(null)
   const [pos, setPos] = useState<{ x: number; y: number; flipX: boolean } | null>(null)
   const [height, setHeight] = useState(FALLBACK_HEIGHT)
   const [instant, setInstant] = useState(false)
@@ -45,10 +44,6 @@ export function Tooltip({
   // closure state the trigger's listeners do instead of only clearing the position.
   const hideRef = useRef<() => void>(() => setPos(null))
   const visible = pos !== null && label !== ''
-
-  useLayoutEffect(() => {
-    if (visible && pos && tooltipRef.current) setHeight(tooltipRef.current.offsetHeight)
-  }, [visible, pos])
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
@@ -229,23 +224,64 @@ export function Tooltip({
       {visible &&
         pos &&
         createPortal(
-          <span
-            ref={tooltipRef}
+          <TooltipBubble
             id={id}
-            role="tooltip"
-            style={{
-              left: pos.flipX ? pos.x - OFFSET : pos.x + OFFSET,
-              top: flipY ? pos.y - OFFSET : pos.y + OFFSET,
-              transform: `translate(${pos.flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
-              maxWidth: WIDTH,
-            }}
-            className={`${instant ? '' : 'animate-overlay '}pointer-events-none fixed z-50 w-max rounded-md [overflow-wrap:anywhere] bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]`}
+            x={pos.x}
+            y={pos.y}
+            flipX={pos.flipX}
+            flipY={flipY}
+            instant={instant}
+            hint={hint}
+            onHeight={setHeight}
           >
             {label}
-            {hint && <span className="ml-2 text-fg-dim">{hint}</span>}
-          </span>,
+          </TooltipBubble>,
           document.body,
         )}
+    </span>
+  )
+}
+
+function TooltipBubble({
+  id,
+  x,
+  y,
+  flipX,
+  flipY,
+  instant,
+  hint,
+  onHeight,
+  children,
+}: {
+  id: string
+  x: number
+  y: number
+  flipX: boolean
+  flipY: boolean
+  instant: boolean
+  hint?: string
+  onHeight: (height: number) => void
+  children: string
+}): React.JSX.Element {
+  const ref = useRef<HTMLSpanElement>(null)
+  useLayoutEffect(() => {
+    if (ref.current) onHeight(ref.current.offsetHeight)
+  })
+  return (
+    <span
+      ref={ref}
+      id={id}
+      role="tooltip"
+      style={{
+        left: flipX ? x - OFFSET : x + OFFSET,
+        top: flipY ? y - OFFSET : y + OFFSET,
+        transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
+        maxWidth: WIDTH,
+      }}
+      className={`${instant ? '' : 'animate-overlay '}pointer-events-none fixed z-50 w-max rounded-md [overflow-wrap:anywhere] bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]`}
+    >
+      {children}
+      {hint && <span className="ml-2 text-fg-dim">{hint}</span>}
     </span>
   )
 }

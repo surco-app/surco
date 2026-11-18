@@ -404,21 +404,34 @@ describe('Tooltip flip', () => {
     expect(withTooltipHeight(40, 500)).toBe('translate(0, 0)')
   })
 
-  it('never measures a tooltip that is not showing, however often its parent re-renders', () => {
-    const read = vi.fn(() => 0)
-    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: read })
+  it('flips again when its label grows taller while it is up and the pointer is still', () => {
+    let height = 40
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    })
+    const innerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 })
+    vi.useFakeTimers()
     try {
-      const view = (n: number) => (
+      const view = (label: string) => (
         <button type="button" data-testid="trigger">
-          {n}
-          <Tooltip label="Helpful hint" />
+          Go
+          <Tooltip label={label} />
         </button>
       )
-      const { rerender } = render(view(0))
-      for (let n = 1; n <= 5; n++) rerender(view(n))
-      expect(read).not.toHaveBeenCalled()
+      const { rerender } = render(view('Short'))
+      hoverAt(500)
+      expect(screen.getByRole('tooltip').style.transform).toBe('translate(0, 0)')
+      height = 120
+      rerender(view('A much longer title that now wraps over several lines'))
+      expect(screen.getByRole('tooltip').style.transform).toBe('translate(0, -100%)')
     } finally {
-      Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+      vi.useRealTimers()
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: innerHeight })
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
     }
   })
 })
