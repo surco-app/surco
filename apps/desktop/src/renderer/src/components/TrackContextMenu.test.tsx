@@ -364,10 +364,13 @@ describe('TrackContextMenu in a window shorter than the menu', () => {
       if (this.dataset.testid !== 'track-menu') return new DOMRect(0, 0, 0, 0)
       return new DOMRect(0, 0, 220, 700)
     })
-    renderMenu({ x: 100, y: 300 })
-    expect(screen.getByTestId('track-menu').style.top).toBe('8px')
-    vi.restoreAllMocks()
-    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    try {
+      renderMenu({ x: 100, y: 300 })
+      expect(screen.getByTestId('track-menu').style.top).toBe('8px')
+    } finally {
+      vi.restoreAllMocks()
+      Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    }
   })
 })
 

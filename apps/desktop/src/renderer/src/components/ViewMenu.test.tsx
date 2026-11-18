@@ -17,20 +17,23 @@ describe('ViewMenu', () => {
       if (this.dataset.testid !== 'view-menu') return new DOMRect(0, 0, 0, 0)
       return new DOMRect(0, 0, 180, 120)
     })
-    render(
-      <ViewMenu
-        x={780}
-        y={590}
-        label="View"
-        items={[{ id: 'sidebar', label: 'Sidebar', checked: true, onToggle: () => {} }]}
-        onClose={() => {}}
-      />,
-    )
-    const menu = screen.getByTestId('view-menu')
-    expect(menu.style.left).toBe('612px')
-    expect(menu.style.top).toBe('472px')
-    vi.restoreAllMocks()
-    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    try {
+      render(
+        <ViewMenu
+          x={780}
+          y={590}
+          label="View"
+          items={[{ id: 'sidebar', label: 'Sidebar', checked: true, onToggle: () => {} }]}
+          onClose={() => {}}
+        />,
+      )
+      const menu = screen.getByTestId('view-menu')
+      expect(menu.style.left).toBe('612px')
+      expect(menu.style.top).toBe('472px')
+    } finally {
+      vi.restoreAllMocks()
+      Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+    }
   })
 
   it('opens on the next frame like every other right-click menu, since a context menu answers the click instead of performing', () => {
