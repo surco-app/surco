@@ -30,6 +30,7 @@ interface Props {
   onStartOver: (track: TrackItem) => void
   onStartSession?: (track: TrackItem) => void
   onMatch?: () => void
+  matchesBlock?: boolean
   onUnmatch?: () => void
   onReverseMatch?: () => void
   onLeaveMatch?: () => void
@@ -121,6 +122,7 @@ export function TrackContextMenu({
   onStartOver,
   onStartSession,
   onMatch,
+  matchesBlock = false,
   onUnmatch,
   onReverseMatch,
   onLeaveMatch,
@@ -311,7 +313,9 @@ export function TrackContextMenu({
           <MenuItem
             onHover={leaveSub}
             testid="track-menu-matching"
-            label={tr('trackList.context.matching')}
+            label={tr(
+              matchesBlock ? 'trackList.context.matchingBlock' : 'trackList.context.matching',
+            )}
             onClick={() => run(onMatch)}
           />
         )}

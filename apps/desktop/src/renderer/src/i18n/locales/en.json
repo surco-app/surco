@@ -700,6 +700,7 @@
       "startOver": "Start over",
       "startSession": "Session from this track…",
       "matching": "Make a Matching pair",
+      "matchingBlock": "Make a Matching block",
       "unmatch": "Remove Matching pair",
       "reverseMatch": "Reverse order",
       "leaveMatch": "Remove from block",

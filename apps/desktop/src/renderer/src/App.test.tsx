@@ -4006,6 +4006,22 @@ describe('App source playlists', () => {
       )
     })
 
+    it('matches three or more selected tracks as one block led by the first on screen, so a run picked in a playlist is matched in one go', async () => {
+      const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
+      await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
+      fireEvent.click(rowTitled('Alpha'))
+      fireEvent.click(rowTitled('Bravo'), { metaKey: true })
+      fireEvent.click(rowTitled('Charlie'), { metaKey: true })
+      fireEvent.contextMenu(rowTitled('Charlie'))
+      const item = await screen.findByTestId('track-menu-matching')
+      expect(item).toHaveTextContent('Make a Matching block')
+      fireEvent.click(item)
+      await waitFor(() => expect(match).toHaveBeenCalledTimes(2))
+      expect(match).toHaveBeenNthCalledWith(1, 'add', ['c-l1', 'c-l2'], expect.any(String))
+      expect(match).toHaveBeenNthCalledWith(2, 'add', ['c-l1', 'c-l3'], expect.any(String))
+      expect(window.api.dj.askToApply).toHaveBeenCalledTimes(1)
+    })
+
     it('keeps the pair in Surco by file too, so it holds in every program and after a conversion', async () => {
       const match = vi.fn<ProgramReads['match']>().mockResolvedValue({ applied: true })
       await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match } }) })
