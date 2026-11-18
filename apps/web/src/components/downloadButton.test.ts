@@ -13,6 +13,7 @@ afterEach(async () => {
   root = null
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  sessionStorage.clear()
   document.body.replaceChildren()
 })
 
@@ -45,5 +46,30 @@ describe('DownloadButton leading slot', () => {
     expect(lead).not.toBeNull()
     expect(lead?.getAttribute('aria-hidden')).toBe('true')
     expect(lead?.className).toContain('size-4')
+  })
+
+  it('keeps the same slot when the release resolves to a platform installer', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => [
+          {
+            tag_name: 'v1.2.3',
+            draft: false,
+            assets: [
+              {
+                name: 'Surco-1.2.3-setup.exe',
+                size: 100_000_000,
+                browser_download_url: 'https://example.test/Surco-1.2.3-setup.exe',
+              },
+            ],
+          },
+        ],
+      })),
+    )
+    const container = await render('Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+    const link = container.querySelector('a[href="https://example.test/Surco-1.2.3-setup.exe"]')
+    expect(link?.querySelector('[data-testid="download-cta-lead"]')).not.toBeNull()
   })
 })

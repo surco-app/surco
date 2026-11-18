@@ -171,7 +171,7 @@ export default function DownloadButton({
             aria-disabled="true"
             aria-busy="true"
             data-testid="download-cta-pending"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full transition-colors duration-200 bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
             <svg
               data-testid="download-cta-lead"
@@ -221,7 +221,7 @@ export default function DownloadButton({
             disabled
             aria-disabled="true"
             aria-busy="true"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full transition-colors duration-200 bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
             <svg
               data-testid="download-cta-lead"
