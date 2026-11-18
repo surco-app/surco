@@ -207,6 +207,12 @@ describe('TrackContextMenu playlist actions', () => {
     }
   }
 
+  it('caps the menu width and truncates the label when the playlist name is very long', () => {
+    renderMenu({ playlist: playlist({ openName: 'P'.repeat(120) }) })
+    expect(screen.getByTestId('track-menu')).toHaveClass('max-w-[320px]')
+    expect(screen.getByTestId('track-menu-remove-from-label')).toHaveClass('truncate')
+  })
+
   // The same "Todas" or "Fijas" sits under several folders in the measured collection;
   // the folder path is what tells the targets apart.
   it('offers the other playlists with their folders and adds to the one picked', () => {
