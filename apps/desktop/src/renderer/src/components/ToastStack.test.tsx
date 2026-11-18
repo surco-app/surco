@@ -264,6 +264,23 @@ describe('ToastStack', () => {
       expect(onExpire).toHaveBeenCalledWith('n')
     })
 
+    it('keeps the countdown bar running instead of display-none while a dialog hides the notice', () => {
+      const toasts = [toast({ id: 'n', testid: 'notice', message: 'saved', duration: 6000 })]
+      const { rerender } = render(withModal(false, toasts))
+      const bar = screen.getByTestId('notice-countdown')
+      const slot = screen.getByTestId('toast-slot')
+      rerender(withModal(true, toasts))
+      expect(slot).not.toHaveAttribute('hidden')
+      expect(slot).not.toBeVisible()
+      expect(screen.getByTestId('notice-countdown')).toBe(bar)
+      expect(bar).toHaveStyle({ animationPlayState: 'paused' })
+      rerender(withModal(false, toasts))
+      expect(slot).not.toHaveAttribute('hidden')
+      expect(slot).toBeVisible()
+      expect(screen.getByTestId('notice-countdown')).toBe(bar)
+      expect(bar).toHaveStyle({ animationPlayState: 'running' })
+    })
+
     // The re-push brings a fresh deadline, so the clock starts over even though the card
     // stays mounted: a count that just grew must not expire on the old toast's leftover time.
     it('restarts the auto-dismiss clock when a keyed toast is re-pushed', () => {
