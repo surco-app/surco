@@ -309,7 +309,7 @@ export default function Header({
             <ul
               id="language-menu"
               data-testid="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-(--ease-out) ${
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-(--ease-strong) ${
                 languageOpen ? 'opacity-100' : 'invisible scale-[0.97] opacity-0'
               }`}
             >
@@ -406,7 +406,7 @@ export default function Header({
         data-testid="header-mobile-nav"
         aria-label={t('nav.main')}
         aria-hidden={!open}
-        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-(--ease-out) lg:hidden ${
+        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-(--ease-strong) lg:hidden ${
           open
             ? 'border-line/70 opacity-100'
             : 'invisible -translate-y-2 border-transparent opacity-0'

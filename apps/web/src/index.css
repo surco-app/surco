@@ -39,7 +39,7 @@
 }
 
 :root {
-  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-strong: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* The desktop app's light palette, set on <html> by the theme script in index.html before
@@ -101,7 +101,7 @@ details::details-content {
   height: 0;
   overflow: clip;
   transition:
-    height 0.25s var(--ease-out),
+    height 0.25s var(--ease-strong),
     content-visibility 0.25s allow-discrete;
 }
 details[open]::details-content {
@@ -151,8 +151,8 @@ button:not(:disabled) {
   opacity: 0;
   transform: translateY(12px);
   transition:
-    opacity 0.45s var(--ease-out),
-    transform 0.45s var(--ease-out);
+    opacity 0.45s var(--ease-strong),
+    transform 0.45s var(--ease-strong);
 }
 .reveal-in {
   opacity: 1;
@@ -165,7 +165,7 @@ button:not(:disabled) {
    first paint and only slide up, from a CSS animation that needs no JavaScript, so the
    choreography survives without costing LCP or hiding text when JS is slow/absent. */
 .reveal-eager {
-  animation: reveal-eager 0.4s var(--ease-out) backwards;
+  animation: reveal-eager 0.4s var(--ease-strong) backwards;
 }
 @keyframes reveal-eager {
   from {
@@ -183,7 +183,7 @@ button:not(:disabled) {
   }
 }
 .label-pop {
-  animation: labelPop 0.15s var(--ease-out);
+  animation: labelPop 0.15s var(--ease-strong);
 }
 
 @keyframes offerIn {
@@ -193,7 +193,7 @@ button:not(:disabled) {
   }
 }
 .language-offer {
-  animation: offerIn 0.2s var(--ease-out);
+  animation: offerIn 0.2s var(--ease-strong);
 }
 
 /* blue→cyan gradient text accent */
