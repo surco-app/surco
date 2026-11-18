@@ -85,6 +85,7 @@ export type QueueApply =
       changes: number
       notices: RekordboxQueueNotice[]
       written: RekordboxQueueWritten[]
+      cues?: string[]
       outcomes: OpOutcome[]
     }
 
@@ -417,7 +418,16 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
     const written = appliedOps.flatMap((op) =>
       op?.kind === 'track' ? [{ path: op.path, wanted: op.wanted }] : [],
     )
-    return { status: 'applied', tracks, changes, notices, written, outcomes }
+    const cues = appliedOps.flatMap((op) => (op?.kind === 'cues' ? [op.path] : []))
+    return {
+      status: 'applied',
+      tracks,
+      changes,
+      notices,
+      written,
+      ...(cues.length > 0 && { cues }),
+      outcomes,
+    }
   }
 
   return {

@@ -8,6 +8,7 @@ import type {
   RekordboxQueueState,
   RekordboxQueueWritten,
 } from '../../../shared/types'
+import { claimCueSave } from '../lib/cueSaveEcho'
 import {
   appliedMessage,
   type CueSpot,
@@ -23,6 +24,7 @@ import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
 
 export interface QueueSource {
+  program: CueProgram
   name: string
   read: () => Promise<RekordboxQueueState>
   onChanged: (cb: (state: RekordboxQueueState) => void) => () => void
@@ -35,6 +37,7 @@ export interface QueueSource {
 
 function queueSource(p: CueProgram, name: string, words: QueueWords): QueueSource {
   return {
+    program: p,
     name,
     read: () => window.api.dj.cueQueue(p),
     onChanged: (cb) => window.api.dj.onCueQueueChanged(p, cb),
@@ -118,7 +121,12 @@ export function useRekordboxQueue(
   const announce = useCallback(
     (applied: RekordboxQueueApplied | null) => {
       if (!applied) return
-      const message = appliedMessage(tr, applied, source.words)
+      const confirmedByEditor = !('refused' in applied) && claimCueSave(source.program, applied)
+      const message = appliedMessage(
+        tr,
+        confirmedByEditor ? { ...applied, tracks: 0, changes: 0 } : applied,
+        source.words,
+      )
       if (message?.goTo) notify(message.text, message.tone, message.goTo)
       else if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)

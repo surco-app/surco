@@ -18,6 +18,7 @@ export function appliedNotice(result: QueueApply): RekordboxQueueApplied | null 
     changes: result.changes,
     notices: result.notices,
     written: result.written,
+    ...(result.cues && { cues: result.cues }),
     ...(created.length > 0 && { created }),
   }
 }

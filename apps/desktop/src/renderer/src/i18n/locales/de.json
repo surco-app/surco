@@ -1079,6 +1079,7 @@
       "unreadable": "Die Cues aus rekordbox konnten nicht gelesen werden",
       "discard": "Änderungen verwerfen",
       "unsaved": "Nicht gespeichert",
+      "saved": "Gespeichert",
       "flow": "Ablauf",
       "delete": "Löschen",
       "deleteHot": "Hot Cue {{letter}} löschen",

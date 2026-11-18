@@ -98,6 +98,7 @@ import {
   zoomStep,
 } from '../lib/cuePlayhead'
 import { CUE_PROGRAMS, cueProgramOf, programsOfSave } from '../lib/cuePrograms'
+import { expectCueSave, forgetCueSave, onCueSaveEchoed } from '../lib/cueSaveEcho'
 import {
   autoMarkOf,
   cueDraftKey,
@@ -265,6 +266,58 @@ function UnsavedMark(): React.JSX.Element {
       {tr('editor.cues.unsaved')}
     </span>
   )
+}
+
+function SavedMark(): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <span
+      data-testid="cues-saved"
+      role="status"
+      className="flex items-center gap-1 whitespace-nowrap text-xs text-fg-muted"
+    >
+      <Check className="h-3 w-3 text-good" aria-hidden="true" />
+      {tr('editor.cues.saved')}
+    </span>
+  )
+}
+
+const SAVED_FEEDBACK_MS = 2000
+
+function useCueSaveEcho(cue: { contentId: string; path: string }): {
+  saved: boolean
+  expectSave: (reqs: { contentId: string; path: string }[]) => void
+  forgetSaves: () => void
+} {
+  const program = programOf(cue.contentId)
+  const [savedPath, setSavedPath] = useState<string | null>(null)
+  const sent = useRef<{ program: DjProgram; path: string }[]>([])
+  const forgetSaves = useCallback(() => {
+    for (const { program: sentTo, path } of sent.current) forgetCueSave(sentTo, [path])
+    sent.current = []
+  }, [])
+  const expectSave = useCallback((reqs: { contentId: string; path: string }[]) => {
+    for (const req of reqs) {
+      const sentTo = programOf(req.contentId)
+      expectCueSave(sentTo, [req.path])
+      sent.current.push({ program: sentTo, path: req.path })
+    }
+  }, [])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: leaving a track is what ends the editor's answer for the saves it sent from it.
+  useEffect(() => forgetSaves, [cue.contentId, forgetSaves])
+  useEffect(
+    () =>
+      onCueSaveEchoed((landedIn, paths) => {
+        if (landedIn === program && paths.includes(cue.path)) setSavedPath(cue.path)
+      }),
+    [program, cue.path],
+  )
+  useEffect(() => {
+    if (savedPath === null) return
+    const timer = setTimeout(() => setSavedPath(null), SAVED_FEEDBACK_MS)
+    return () => clearTimeout(timer)
+  }, [savedPath])
+  return { saved: savedPath === cue.path, expectSave, forgetSaves }
 }
 
 const MENU_ITEM =
@@ -476,6 +529,7 @@ function Editing({
   onDiscard,
   onRestore,
   headerSlot,
+  saveEcho,
   provisional,
   actionsRef,
 }: {
@@ -494,6 +548,7 @@ function Editing({
   onDiscard: () => void
   onRestore: () => void
   headerSlot: HTMLElement | null
+  saveEcho: ReturnType<typeof useCueSaveEcho>
   provisional?: SurcoGrid
   actionsRef?: { current: CueActions | null }
 }): React.JSX.Element {
@@ -1086,6 +1141,7 @@ function Editing({
   }))
   const [saveFailed, setSaveFailed] = useState(false)
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
+    saveEcho.expectSave(reqs)
     const saved = await window.api.dj
       .askToApply(programsOfSave(reqs))
       .then(() => window.api.cues.save(reqs))
@@ -1094,7 +1150,10 @@ function Editing({
         () => false,
       )
     setSaveFailed(!saved)
-    if (!saved) return false
+    if (!saved) {
+      saveEcho.forgetSaves()
+      return false
+    }
     setOverwrite(new Set())
     const kept = new Map(keptDrafts().map((d) => [d.contentId, d.draft]))
     recordCueEdits(
@@ -1367,7 +1426,7 @@ function Editing({
   )
   const actions = (
     <div data-testid="cues-actions" className="flex shrink-0 items-center gap-1">
-      {!unchanged && <UnsavedMark />}
+      {!unchanged ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
       {undoButton}
       {discardButton}
       {saveAllButton}
@@ -2241,6 +2300,7 @@ export function CuesSection({
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
   const unsaved = useUnsavedCueTracks().has(cue.contentId)
+  const saveEcho = useCueSaveEcho(cue)
   const [round, setRound] = useState(0)
   const draftKey = cueDraftKey(cue.contentId, read?.fingerprint ?? '', queued)
   const [heads, setHeads] = useState(() => ({
@@ -2350,6 +2410,7 @@ export function CuesSection({
         actionsRef={actionsRef}
         onRestore={() => setMaximized(null)}
         headerSlot={headerSlot}
+        saveEcho={saveEcho}
         onDiscard={() => {
           forgetDraft(cue.contentId)
           setRound((n) => n + 1)
@@ -2383,10 +2444,10 @@ export function CuesSection({
             ...(colourHelp ? [tr(colourHelp)] : []),
           ].join(' ')}
           status={
-            unsaved || provisional ? (
+            unsaved || provisional || saveEcho.saved ? (
               <>
                 {provisional && <ProvisionalMark bpm={provisional.bpm} />}
-                {unsaved && <UnsavedMark />}
+                {unsaved ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
               </>
             ) : undefined
           }
