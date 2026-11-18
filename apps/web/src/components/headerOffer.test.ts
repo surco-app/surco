@@ -80,5 +80,6 @@ describe('header download button', () => {
     const container = await renderOfferedHeader()
     const cta = container.querySelector('[data-testid="header-download"]')
     expect(cta?.className).toContain('transition-[opacity,translate,visibility,filter,scale]')
+    expect(cta?.className).toContain('motion-reduce:transition-[opacity,visibility]!')
   })
 })
