@@ -11,7 +11,7 @@ export default function LibraryReview() {
   const { t } = useTranslation()
 
   return (
-    <section className="pt-24">
+    <section data-testid="library-review" className="pt-24">
       <SectionView location={SECTION_VIEWS.review} />
       <Reveal>
         <div id={SCENE_ANCHORS.review} className="scroll-mt-8 text-center">
@@ -26,25 +26,21 @@ export default function LibraryReview() {
           </p>
         </div>
       </Reveal>
-      <Reveal delay={120} className="mt-8">
+      <div className="mt-8">
         <Replayable>
           <ReviewScene />
         </Replayable>
-      </Reveal>
-      <Reveal delay={160}>
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {POINTS.map((key) => (
-            <li key={key} className="rounded-xl bg-surface p-5">
-              <p className="text-sm font-semibold text-fg">
-                {t(`home.review.points.${key}.title`)}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
-                {t(`home.review.points.${key}.text`)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
+      </div>
+      <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {POINTS.map((key) => (
+          <li key={key} className="rounded-xl bg-surface p-5">
+            <p className="text-sm font-semibold text-fg">{t(`home.review.points.${key}.title`)}</p>
+            <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+              {t(`home.review.points.${key}.text`)}
+            </p>
+          </li>
+        ))}
+      </ul>
     </section>
   )
 }
