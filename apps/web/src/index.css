@@ -225,12 +225,11 @@ button:not(:disabled) {
       opacity, visibility, color, background-color, border-color, outline-color,
       text-decoration-color, fill, stroke, box-shadow !important;
   }
-  /* Deliberately shows the section outright instead of fading it in. Elsewhere reduced
-     motion should keep the fade and drop only the travel, but a reveal is invisible until
-     JS adds .reveal-in — so if opacity stayed at 0 and the observer never fired (JS slow,
-     blocked, or errored), the content would be hidden for good. Starting opaque is the
-     safety net, and it costs the fade: you cannot fade in something that has to be visible
-     before the animation is allowed to run. Safety wins over the flourish. */
+  /* Shows a hidden section outright instead of fading it in. A reveal is visible until JS
+     adds .reveal-init, but if JS then hides a block and never reveals it (observer never
+     fired, script errored), the content would stay hidden for good. Forcing opacity to 1
+     is the safety net for that block, and it costs the fade: you cannot fade in something
+     that has to be visible before the animation is allowed to run. */
   .reveal-init {
     opacity: 1 !important;
     transform: none !important;
