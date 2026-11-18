@@ -36,6 +36,7 @@ import type { AutoMark } from '../lib/cueSession'
 import { isStale } from '../lib/dirty'
 import type { DuplicateRank } from '../lib/duplicateRanks'
 import { formatTime } from '../lib/duration'
+import { edgeScrollStep } from '../lib/edgeScroll'
 import type { GridNote } from '../lib/gridNote'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
 import { prefersReducedMotion } from '../lib/motion'
@@ -1263,7 +1264,36 @@ export const TrackList = memo(function TrackList({
     ],
     [keys, separatorBefore, trailingSeparators],
   )
-  const endReorder = (): void => setDropBefore(undefined)
+  const edgeScroll = useRef<{ step: number; frame: number | null }>({ step: 0, frame: null })
+  const stopEdgeScroll = (): void => {
+    if (edgeScroll.current.frame !== null) cancelAnimationFrame(edgeScroll.current.frame)
+    edgeScroll.current = { step: 0, frame: null }
+  }
+  const followEdge = (pointerY: number): void => {
+    const root = scrollRootRef?.current
+    if (!root) return
+    const box = root.getBoundingClientRect()
+    const listTop = listRef.current?.getBoundingClientRect().top ?? box.top
+    const header = Math.max(0, listTop - box.top + root.scrollTop)
+    const playerRoom = Number.parseFloat(getComputedStyle(root).paddingBottom) || 0
+    edgeScroll.current.step = edgeScrollStep(pointerY, box.top + header, box.bottom - playerRoom)
+    if (edgeScroll.current.step === 0) {
+      stopEdgeScroll()
+      return
+    }
+    if (edgeScroll.current.frame !== null) return
+    const tick = (): void => {
+      root.scrollTop += edgeScroll.current.step
+      edgeScroll.current.frame = requestAnimationFrame(tick)
+    }
+    edgeScroll.current.frame = requestAnimationFrame(tick)
+  }
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once, to stop a scroll still going when the list goes away.
+  useEffect(() => stopEdgeScroll, [])
+  const endReorder = (): void => {
+    stopEdgeScroll()
+    setDropBefore(undefined)
+  }
   // The rows a drag-out recorded are forgotten when that drag ends, and at the next press
   // in the window in case the OS drag ended without telling this window.
   useEffect(() => {
@@ -1279,6 +1309,7 @@ export const TrackList = memo(function TrackList({
   const onReorderOver = (e: React.DragEvent): void => {
     if (!reorder || (!isReorderDrag(e) && draggedRows() === null)) return
     e.preventDefault()
+    followEdge(e.clientY)
     const el = (e.target as Element).closest<HTMLElement>('[data-reorder-key]')
     const key = el?.dataset.reorderKey
     if (!el || !key) return
@@ -1535,7 +1566,7 @@ export const TrackList = memo(function TrackList({
         onDrop={onReorderDrop}
         onDragLeave={(e) => {
           // Crossing from row to row fires leaves too; only leaving the list drops the line.
-          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setDropBefore(undefined)
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) endReorder()
         }}
         onDragEnd={endReorder}
         onWheelCapture={(e) => {
