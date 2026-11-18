@@ -1096,6 +1096,14 @@ describe('ActiveFilters', () => {
     expect(screen.queryByTestId('active-filters')).toBeNull()
   })
 
+  it('gives the remove button a hit area larger than its 16px circle', () => {
+    renderStrip(sel({ quality: 'good', tags: 'noCover' }))
+    const classes = screen.getByTestId('active-filter-tags-remove').className.split(' ')
+    expect(classes).toContain('relative')
+    expect(classes).toContain('after:absolute')
+    expect(classes).toContain('after:-inset-1.5')
+  })
+
   it('drops one filter from its ✕ and keeps the rest', () => {
     const { onChange } = renderStrip(sel({ quality: 'good', tags: 'noCover' }))
     const remove = screen.getByTestId('active-filter-tags-remove')
