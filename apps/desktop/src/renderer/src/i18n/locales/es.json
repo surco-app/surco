@@ -985,7 +985,6 @@
     "otherTagsTitle": "Otros metadatos",
     "matchingTitle": "Matching",
     "matchingRemove": "Quitar",
-    "matchingAdd": "Añadir",
     "matchingSearch": "Buscar en rekordbox",
     "matchingPlayedWith": "Las pinchas con este tema",
     "matchingTimesShort_one": "{{count}} vez",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Mover la rejilla {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "Hacen falta dos CALLs",
         "apply": "Poner en el comentario"
       }

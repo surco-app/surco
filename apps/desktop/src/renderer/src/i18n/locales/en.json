@@ -985,7 +985,6 @@
     "otherTagsTitle": "Other metadata",
     "matchingTitle": "Matching",
     "matchingRemove": "Remove",
-    "matchingAdd": "Add",
     "matchingSearch": "Search rekordbox",
     "matchingPlayedWith": "You play these with this track",
     "matchingTimesShort_one": "{{count}} time",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Move the grid {{ms}} ms"
       },
       "phrases": {
-        "label": "Phrases between CALLs",
+        "label": "Phrases",
         "needsCalls": "Needs two CALLs",
         "apply": "Put in the comment"
       }

@@ -985,7 +985,6 @@
     "otherTagsTitle": "Weitere Metadaten",
     "matchingTitle": "Matching",
     "matchingRemove": "Entfernen",
-    "matchingAdd": "Hinzufügen",
     "matchingSearch": "In rekordbox suchen",
     "matchingPlayedWith": "Spielst du mit diesem Track",
     "matchingTimesShort_one": "{{count}}-mal",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Raster um {{ms}} ms verschieben"
       },
       "phrases": {
-        "label": "Phrasen zwischen CALLs",
+        "label": "Phrasen",
         "needsCalls": "Braucht zwei CALLs",
         "apply": "In den Kommentar setzen"
       }

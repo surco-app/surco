@@ -985,7 +985,6 @@
     "otherTagsTitle": "Altri metadati",
     "matchingTitle": "Matching",
     "matchingRemove": "Rimuovi",
-    "matchingAdd": "Aggiungi",
     "matchingSearch": "Cerca in rekordbox",
     "matchingPlayedWith": "Li metti con questo brano",
     "matchingTimesShort_one": "{{count}} volta",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Sposta la griglia di {{ms}} ms"
       },
       "phrases": {
-        "label": "Frasi tra i CALL",
+        "label": "Frasi",
         "needsCalls": "Servono due CALL",
         "apply": "Metti nel commento"
       }

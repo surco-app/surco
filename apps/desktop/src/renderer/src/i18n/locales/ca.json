@@ -985,7 +985,6 @@
     "otherTagsTitle": "Altres metadades",
     "matchingTitle": "Matching",
     "matchingRemove": "Treu",
-    "matchingAdd": "Afegeix",
     "matchingSearch": "Cerca a rekordbox",
     "matchingPlayedWith": "Les punxes amb aquest tema",
     "matchingTimesShort_one": "{{count}} vegada",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Moure la graella {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "Calen dos CALLs",
         "apply": "Posar al comentari"
       }

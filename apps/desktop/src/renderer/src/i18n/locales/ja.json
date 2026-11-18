@@ -985,7 +985,6 @@
     "otherTagsTitle": "その他のメタデータ",
     "matchingTitle": "Matching",
     "matchingRemove": "解除",
-    "matchingAdd": "追加",
     "matchingSearch": "rekordboxで検索",
     "matchingPlayedWith": "このトラックとよく続けてかける曲",
     "matchingTimesShort_one": "{{count}}回",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "グリッドを {{ms}} ms 動かす"
       },
       "phrases": {
-        "label": "CALL間のフレーズ",
+        "label": "フレーズ",
         "needsCalls": "CALLが2つ必要です",
         "apply": "コメントに入れる"
       }

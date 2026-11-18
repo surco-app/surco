@@ -45,7 +45,6 @@ function setup(
 }
 
 const search = (text: string) => {
-  fireEvent.click(screen.getByTestId('matching-add'))
   fireEvent.change(screen.getByTestId('matching-search'), { target: { value: text } })
 }
 
@@ -78,9 +77,9 @@ describe('MatchingSection', () => {
     expect(onPick).not.toHaveBeenCalled()
   })
 
-  it('offers to add a partner even to a track that has none yet', () => {
+  it('keeps the search in view even on a track with no partner yet, so pairing never costs a click to reveal it', () => {
     setup([])
-    expect(screen.getByTestId('matching-add')).toBeInTheDocument()
+    expect(screen.getByTestId('matching-search')).toBeInTheDocument()
     expect(screen.queryByTestId('matching-partner')).not.toBeInTheDocument()
   })
 
@@ -97,7 +96,8 @@ describe('MatchingSection', () => {
     search('eyes')
     fireEvent.click(screen.getByTestId('matching-result'))
     expect(onAdd).toHaveBeenCalledWith(COLLECTION[3])
-    expect(screen.queryByTestId('matching-search')).not.toBeInTheDocument()
+    expect(screen.getByTestId('matching-search')).toHaveValue('')
+    expect(screen.queryByTestId('matching-result')).not.toBeInTheDocument()
   })
 
   it('leaves out the track itself, its partners and streamed tracks, which cannot be paired', () => {
@@ -110,12 +110,37 @@ describe('MatchingSection', () => {
     expect(shown.some((s) => s?.includes('Acid Groove'))).toBe(true)
   })
 
-  it('closes the search with Escape without pairing anything', () => {
+  it('clears the search with Escape without pairing anything', () => {
     const { onAdd } = setup([])
     search('acid')
     fireEvent.keyDown(screen.getByTestId('matching-search'), { key: 'Escape' })
-    expect(screen.queryByTestId('matching-search')).not.toBeInTheDocument()
+    expect(screen.getByTestId('matching-search')).toHaveValue('')
+    expect(screen.queryByTestId('matching-result')).not.toBeInTheDocument()
     expect(onAdd).not.toHaveBeenCalled()
+  })
+
+  it('keeps Escape inside the field only while there is text to clear, so an empty field never swallows the key', () => {
+    setup([])
+    const onKeyDown = vi.fn()
+    document.addEventListener('keydown', onKeyDown)
+    fireEvent.keyDown(screen.getByTestId('matching-search'), { key: 'Escape' })
+    expect(onKeyDown).toHaveBeenCalledTimes(1)
+    search('acid')
+    fireEvent.keyDown(screen.getByTestId('matching-search'), { key: 'Escape' })
+    expect(onKeyDown).toHaveBeenCalledTimes(1)
+    document.removeEventListener('keydown', onKeyDown)
+  })
+
+  it('drops the results when focus leaves the search, so a half-typed query never hangs open under the section', () => {
+    setup([])
+    search('acid')
+    fireEvent.blur(screen.getByTestId('matching-search'))
+    expect(screen.queryByTestId('matching-result')).not.toBeInTheDocument()
+  })
+
+  it('does not take the focus when a track opens, so the editor shortcuts keep working', () => {
+    setup([])
+    expect(screen.getByTestId('matching-search')).not.toHaveFocus()
   })
 
   it('lists the tracks the DJ often plays with this one and pairs one in a click', () => {

@@ -985,7 +985,6 @@
     "otherTagsTitle": "Outros metadados",
     "matchingTitle": "Matching",
     "matchingRemove": "Remover",
-    "matchingAdd": "Adicionar",
     "matchingSearch": "Buscar no rekordbox",
     "matchingPlayedWith": "Você toca com esta faixa",
     "matchingTimesShort_one": "{{count}} vez",
@@ -1347,7 +1346,7 @@
         "shiftGrid": "Mover a grade {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "São necessários dois CALLs",
         "apply": "Colocar no comentário"
       }
