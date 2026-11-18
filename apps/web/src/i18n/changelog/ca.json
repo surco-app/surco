@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Avisos que no fan nosa",
+    "items": [
+      {
+        "text": "Els avisos surten apilats a baix a l'esquerra, més petits, i ja no tapen els botons que fas servir. Passa-hi el punter per sobre per veure'ls tots.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "En desar els cues, «Desat» apareix al costat del botó.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Selecciona tres pistes o més i tria «Fer matching» al menú del clic dret per aparellar-les totes d'un cop. La primera que veus a la pantalla encapçala el bloc.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "El cercador de Matching és sempre a la vista a l'editor, a punt per escriure.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Les frases entre dos CALLs caben en una línia, i un clic les posa al comentari.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Arrossega una fila fins a la vora de dalt o de baix i la llista es desplaça. Així la pots deixar anar més enllà del que es veu.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Els noms llargs ja no surten de la finestra ni es tallen als menús, als diàlegs i als avisos.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "El format, a un clic",

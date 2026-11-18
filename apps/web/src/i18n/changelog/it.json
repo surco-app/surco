@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Avvisi che non danno fastidio",
+    "items": [
+      {
+        "text": "Gli avvisi si impilano in basso a sinistra, più piccoli, e non coprono più i pulsanti che stai usando. Passaci sopra il puntatore per vederli tutti.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Quando salvi i cue, «Salvato» compare accanto al pulsante.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Seleziona tre o più brani e scegli «Crea un Matching» nel menu del clic destro per abbinarli tutti in una volta. Il primo sullo schermo guida il blocco.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "La ricerca di Matching è sempre in vista nell'editor, pronta per scrivere.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Le frasi tra due CALL stanno su una riga, e un clic le mette nel commento.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Trascina una riga fino al bordo in alto o in basso e l'elenco scorre. Così puoi rilasciarla oltre le righe visibili.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "I nomi lunghi non escono più dalla finestra e non vengono più tagliati nei menu, nelle finestre di dialogo e negli avvisi.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "Il formato, a un clic",

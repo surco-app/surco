@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Avisos que não atrapalham",
+    "items": [
+      {
+        "text": "Os avisos ficam empilhados no canto inferior esquerdo, menores, e não cobrem mais os botões que você está usando. Passe o ponteiro por cima para ver todos.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Ao salvar os cues, “Salvo” aparece ao lado do botão.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Selecione três ou mais faixas e escolha “Fazer matching” no menu do clique direito para juntar todas de uma vez. A primeira na tela lidera o bloco.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "A busca de Matching fica sempre à vista no editor, pronta para digitar.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "As frases entre dois CALLs cabem em uma linha, e um clique as coloca no comentário.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Arraste uma linha até a borda de cima ou de baixo e a lista rola. Assim você pode soltá-la além do que aparece na tela.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Nomes longos não saem mais da janela nem ficam cortados nos menus, nos diálogos e nos avisos.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "O formato, a um clique",

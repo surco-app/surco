@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Notices out of your way",
+    "items": [
+      {
+        "text": "Notices stack at the bottom left, smaller, and no longer cover the buttons you are using. Move the pointer over them to see them all.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "When you save cues, “Saved” appears right beside the button.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Select three or more tracks and choose “Make a Matching block” in the right-click menu to match them all at once. The first one on screen leads the block.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "The Matching search is always in view in the editor, ready to type.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "The phrases between two CALLs fit on one line, and one click puts them in the comment.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Drag a row to the top or bottom edge and the list scrolls. You can drop it beyond the rows on screen.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Long names no longer run off the window or get cut short in menus, dialogs and notices.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "The format, one click away",

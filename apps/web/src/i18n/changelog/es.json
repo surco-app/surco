@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "18 de noviembre de 2026",
+    "title": "Avisos que no estorban",
+    "items": [
+      {
+        "text": "Los avisos salen apilados abajo a la izquierda, más pequeños, y ya no tapan los botones que estás usando. Pasa el puntero por encima para verlos todos.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Al guardar los cues, «Guardado» aparece junto al botón.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Selecciona tres o más pistas y elige «Hacer matching» en el menú de clic derecho para emparejarlas todas de una vez. La primera que ves en pantalla encabeza el bloque.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "El buscador de Matching está siempre a la vista en el editor, listo para escribir.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Las frases entre dos CALLs caben en una línea, y un clic las pone en el comentario.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Arrastra una fila hasta el borde de arriba o de abajo y la lista se desplaza. Así puedes soltarla más allá de lo que se ve.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Los nombres largos ya no se salen de la ventana ni se cortan en los menús, los diálogos y los avisos.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "17 de noviembre de 2026",
     "title": "El formato, a un clic",

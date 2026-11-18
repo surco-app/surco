@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Hinweise, die nicht stören",
+    "items": [
+      {
+        "text": "Hinweise stapeln sich unten links, kleiner, und verdecken nicht mehr die Buttons, die du gerade benutzt. Fahre mit dem Zeiger darüber, um alle zu sehen.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Beim Speichern der Cues erscheint „Gespeichert“ direkt neben dem Button.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Wähle drei oder mehr Tracks aus und klicke im Rechtsklick-Menü auf „Als Matching markieren“, um alle auf einmal zu verbinden. Der erste auf dem Bildschirm führt den Block an.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Die Matching-Suche ist im Editor immer zu sehen und bereit zum Tippen.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Die Phrasen zwischen zwei CALLs passen in eine Zeile, und ein Klick setzt sie in den Kommentar.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Ziehe eine Zeile an den oberen oder unteren Rand und die Liste scrollt. So kannst du sie auch jenseits der sichtbaren Zeilen ablegen.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Lange Namen laufen nicht mehr aus dem Fenster und werden in Menüs, Dialogen und Hinweisen nicht mehr abgeschnitten.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "Das Format, einen Klick entfernt",

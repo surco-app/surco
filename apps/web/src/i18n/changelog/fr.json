@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.39",
+    "date": "November 18, 2026",
+    "title": "Des notifications qui ne gênent plus",
+    "items": [
+      {
+        "text": "Les notifications s’empilent en bas à gauche, plus petites, et ne cachent plus les boutons que tu utilises. Passe le pointeur dessus pour les voir toutes.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Quand tu enregistres les cues, « Enregistré » apparaît juste à côté du bouton.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Sélectionne trois morceaux ou plus et choisis « Créer un Matching » dans le menu du clic droit pour les associer d’un coup. Le premier à l’écran mène le bloc.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "La recherche de Matching est toujours visible dans l’éditeur, prête à la saisie.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Les phrases entre deux CALLs tiennent sur une ligne, et un clic les met dans le commentaire.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Fais glisser une ligne jusqu’au bord du haut ou du bas et la liste défile. Tu peux la déposer au-delà des lignes visibles.",
+        "in": "1.39.0"
+      },
+      {
+        "text": "Les noms longs ne sortent plus de la fenêtre et ne sont plus coupés dans les menus, les dialogues et les notifications.",
+        "in": "1.39.0"
+      }
+    ]
+  },
+  {
     "version": "1.38",
     "date": "November 17, 2026",
     "title": "Le format, à un clic",
