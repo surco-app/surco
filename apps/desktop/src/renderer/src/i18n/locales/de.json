@@ -700,6 +700,7 @@
       "startOver": "Von vorn beginnen",
       "startSession": "Session ab diesem Track…",
       "matching": "Als Matching markieren",
+      "matchingBlock": "Als Matching markieren",
       "unmatch": "Matching entfernen",
       "reverseMatch": "Reihenfolge umkehren",
       "leaveMatch": "Aus dem Block entfernen",

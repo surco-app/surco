@@ -700,6 +700,7 @@
       "startOver": "やり直し",
       "startSession": "この曲からセッションを作る…",
       "matching": "Matchingに登録",
+      "matchingBlock": "Matchingに登録",
       "unmatch": "Matchingを解除",
       "reverseMatch": "順序を入れ替える",
       "leaveMatch": "ブロックから外す",

@@ -1,6 +1,6 @@
 import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useModalOpen } from '../lib/modalPresence'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
@@ -20,9 +20,60 @@ const SWIPE_CLOSE_SHARE = 0.4
 const SWIPE_RESISTANCE = 0.2
 const SWIPE_MIN_OPACITY = 0.4
 const SWIPE_EXIT_GAP_PX = 24
+const PILE_WIDTH_PX = 240
+const PILE_MARGIN_PX = 12
+const PILE_PEEK_PX = 7
+const PILE_SHRINK = 0.05
+const PILE_SHOWN = 3
+const PILE_GAP_PX = 6
+const PLAYER_CLEARANCE_PX = 8
+
+// Where the pile stands: beside the source rail at the bottom of the window, and above the
+// mini-player when that is open under it, since both live in the same corner.
+function usePileAnchor(watching: boolean): { left: number; bottom: number } | undefined {
+  const [anchor, setAnchor] = useState<{ left: number; bottom: number }>()
+  useLayoutEffect(() => {
+    if (!watching) return
+    const rail = document.querySelector('[data-toast-anchor]')
+    const column = document.querySelector('[data-toast-lift-within]')
+    const resized =
+      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
+    let lifting: Element | null = null
+    const measure = (): void => {
+      const left = (rail ? Math.round(rail.getBoundingClientRect().right) : 0) + PILE_MARGIN_PX
+      const player = document.querySelector<HTMLElement>('[data-toast-lift]')
+      if (player !== lifting) {
+        if (lifting) resized?.unobserve(lifting)
+        if (player) resized?.observe(player)
+        lifting = player
+      }
+      const box = player?.getBoundingClientRect()
+      const under = box !== undefined && box.left < left + PILE_WIDTH_PX && box.right > left
+      // The card slides in on a transform, so where it rests is read from the layout, not
+      // from where it is drawn mid-slide.
+      const restsAt =
+        (player?.offsetParent?.getBoundingClientRect().top ?? 0) + (player?.offsetTop ?? 0)
+      const bottom = under
+        ? Math.round(window.innerHeight - restsAt) + PLAYER_CLEARANCE_PX
+        : PILE_MARGIN_PX
+      setAnchor((was) => (was?.left === left && was.bottom === bottom ? was : { left, bottom }))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    if (rail) resized?.observe(rail)
+    const mounted = column ? new MutationObserver(measure) : null
+    if (column) mounted?.observe(column, { childList: true })
+    return () => {
+      window.removeEventListener('resize', measure)
+      resized?.disconnect()
+      mounted?.disconnect()
+    }
+  }, [watching])
+  return anchor
+}
 
 // The single home for every transient notification: notices, failures, update prompts and
-// new-track prompts. They stack top-right, newest on top, so a status line and an
+// new-track prompts. They pile up beside the source rail at the bottom left, newest in front, so a status line and an
 // action prompt coexist instead of fighting over a corner. Each card auto-dismisses if it
 // carries a duration; prompts and failures stay until acted on.
 export function ToastStack({
@@ -93,58 +144,113 @@ export function ToastStack({
     }, SWIPE_SETTLE_MS)
   }
   useEffect(() => () => clearTimeout(swipeTailRef.current), [])
+  const anchor = usePileAnchor(toasts.length > 0)
+  // Hovering the pile or tabbing into it spreads it into a list, so every notice can be read
+  // and reached; left alone it folds back to the newest one with the older ones peeking.
+  const [spread, setSpread] = useState(false)
+  const slots = useRef(new Map<string, HTMLDivElement>())
+  const [heights, setHeights] = useState<Record<string, number>>({})
+  useLayoutEffect(() => {
+    for (const key of placed.current.keys()) if (!slots.current.has(key)) placed.current.delete(key)
+    const next: Record<string, number> = {}
+    for (const [key, slot] of slots.current)
+      next[key] = (slot.firstElementChild as HTMLElement | null)?.offsetHeight ?? 0
+    setHeights((was) => {
+      const keys = Object.keys(next)
+      const same = keys.length === Object.keys(was).length && keys.every((k) => was[k] === next[k])
+      return same ? was : next
+    })
+  })
+  const placed = useRef(new Map<string, React.CSSProperties>())
+  const shown = [...cards].reverse()
+  const standing = shown.filter(({ toast, leaving }) => !leaving && !(modalOpen && !toast.action))
+  const keyOf = (toast: Toast): string => toast.key ?? toast.id
+  const frontHeight = standing[0] ? (heights[keyOf(standing[0].toast)] ?? 0) : 0
+  const listHeight = standing.reduce(
+    (sum, { toast }, i) => sum + (heights[keyOf(toast)] ?? 0) + (i > 0 ? PILE_GAP_PX : 0),
+    0,
+  )
+  const pileHeight = spread
+    ? listHeight
+    : frontHeight + Math.min(Math.max(standing.length - 1, 0), PILE_SHOWN - 1) * PILE_PEEK_PX
+  let climbed = 0
   // The container renders even when empty: a live region must exist BEFORE content
-  // arrives or screen readers miss the first toast. Empty it has zero size, so the
+  // arrives or screen readers miss the first toast. Empty it has zero height, so the
   // fixed corner div never intercepts a click.
   return (
-    // Spacing lives INSIDE each collapsing wrapper (pb-2 on the inner div), not as a
-    // container gap: a gap would survive the row collapse and leave an 8px jump the
-    // moment the card unmounts. Padding below the bottom card falls outside anything
-    // visible, so the stack sits exactly where it always has.
-    // data-above-modals keeps the stack live while a dialog makes the rest of the app
+    // data-above-modals keeps the pile live while a dialog makes the rest of the app
     // inert: a toast's action (Undo) has to stay pressable with a modal open.
+    // biome-ignore lint/a11y/noStaticElementInteractions: the pile spreads for the pointer and for keyboard focus alike, and every control in it is a real button.
     <div
       aria-live="polite"
       data-above-modals
-      className="fixed top-14 right-5 z-50 flex flex-col"
+      data-testid="toast-pile"
+      data-spread={spread || undefined}
+      style={{
+        left: anchor?.left ?? PILE_MARGIN_PX,
+        bottom: anchor?.bottom ?? PILE_MARGIN_PX,
+        width: PILE_WIDTH_PX,
+        height: pileHeight,
+      }}
+      className="fixed z-50 transition-[bottom,height] duration-200 ease-standard motion-reduce:transition-none"
+      onPointerEnter={() => setSpread(true)}
+      onPointerLeave={() => setSpread(false)}
+      onFocus={() => setSpread(true)}
+      onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setSpread(false)
+      }}
       onWheelCapture={(e) => {
         if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
         e.stopPropagation()
         waitOutSwipeTail()
       }}
     >
-      {[...cards].reverse().map(({ toast, leaving }) => {
+      {shown.map(({ toast, leaving }) => {
+        const key = keyOf(toast)
         const stepAside = modalOpen && !toast.action && !leaving
+        const at = standing.findIndex((c) => keyOf(c.toast) === key)
+        const behind = at > 0 && !spread
+        let place = placed.current.get(key)
+        if (at >= 0) {
+          const depth = Math.min(at, PILE_SHOWN - 1)
+          const rise = spread ? climbed : depth * PILE_PEEK_PX
+          place = {
+            transform: `translateY(${-rise}px) scale(${spread ? 1 : 1 - depth * PILE_SHRINK})`,
+            opacity: spread || at < PILE_SHOWN ? undefined : 0,
+            height: behind ? frontHeight : undefined,
+            zIndex: shown.length - at,
+          }
+          placed.current.set(key, place)
+          climbed += (heights[key] ?? 0) + PILE_GAP_PX
+        }
         return (
-          // The card's exit only fades it — the SPACE it held used to vanish at unmount,
-          // jumping every surviving toast a full card height in one frame. The grid row
-          // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
-          // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
+          // Every card stands on the same spot and is moved by transform, so the older ones
+          // tuck behind the newest instead of pushing the pile taller. One behind borrows the
+          // front card's height and shows only its top edge.
           <div
-            key={toast.key ?? toast.id}
+            key={key}
+            ref={(el) => {
+              if (el) slots.current.set(key, el)
+              else slots.current.delete(key)
+            }}
             data-testid="toast-slot"
+            data-behind={behind || undefined}
             aria-hidden={stepAside || undefined}
-            style={stepAside ? { visibility: 'hidden' } : undefined}
-            className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
-              stepAside
-                ? 'pointer-events-none grid-rows-[0fr] transition-none'
-                : leaving
-                  ? 'grid-rows-[0fr]'
-                  : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
-            }`}
+            inert={behind || undefined}
+            style={{ ...place, ...(stepAside ? { visibility: 'hidden' } : null) }}
+            className={`absolute bottom-0 left-0 w-full origin-bottom rounded-xl transition-[transform,opacity,height] duration-200 ease-standard motion-reduce:transition-none ${
+              behind ? 'overflow-hidden' : ''
+            } ${stepAside || leaving ? 'pointer-events-none' : ''}`}
           >
-            {/* overflow-y-clip only while collapsing — kept on, it would clip the
-              card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
-            <div className={`min-h-0 pb-2 ${leaving ? 'overflow-y-clip' : ''}`}>
-              <ToastCard
-                toast={toast}
-                leaving={leaving}
-                held={modalOpen && !toast.action}
-                onExpire={onExpire}
-                onClose={onClose}
-                onSwipeClose={waitOutSwipeTail}
-              />
-            </div>
+            <ToastCard
+              toast={toast}
+              leaving={leaving}
+              behind={behind}
+              held={(modalOpen && !toast.action) || spread}
+              onExpire={onExpire}
+              onClose={onClose}
+              onSwipeClose={waitOutSwipeTail}
+            />
           </div>
         )
       })}
@@ -155,6 +261,7 @@ export function ToastStack({
 function ToastCard({
   toast,
   leaving,
+  behind,
   held,
   onExpire,
   onClose,
@@ -163,6 +270,8 @@ function ToastCard({
   toast: Toast
   // The card has left the queue and is playing its exit — inert while it fades.
   leaving: boolean
+  // Tucked behind the newest notice: only its top edge shows, so what it says is hidden.
+  behind: boolean
   held: boolean
   onExpire: (id: string) => void
   onClose: (id: string) => void
@@ -302,11 +411,11 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-1.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
-        className={`max-h-[40vh] overflow-y-auto whitespace-pre-line break-words text-sm ${
+        className={`max-h-[40vh] min-w-0 flex-1 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
           danger ? 'text-danger' : 'text-fg'
         }`}
       >
@@ -317,7 +426,7 @@ function ToastCard({
           type="button"
           data-testid={toast.testid ? `${toast.testid}-action` : undefined}
           onClick={toast.action.onAction}
-          className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+          className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-0.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
         >
           {text(toast.action.label)}
         </button>
@@ -328,12 +437,12 @@ function ToastCard({
           data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
           aria-label={tr('common.copy')}
           onClick={onCopy}
-          className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {copied ? (
-            <Check className="h-4 w-4 text-good" aria-hidden="true" />
+            <Check className="h-3 w-3 text-good" aria-hidden="true" />
           ) : (
-            <Copy className="h-4 w-4" aria-hidden="true" />
+            <Copy className="h-3 w-3" aria-hidden="true" />
           )}
         </button>
       )}
@@ -342,9 +451,9 @@ function ToastCard({
         data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
         aria-label={tr('common.close')}
         onClick={() => onClose(toast.id)}
-        className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+        className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
       >
-        <X className="h-4 w-4" aria-hidden="true" />
+        <X className="h-3 w-3" aria-hidden="true" />
       </button>
       {toast.duration && (
         <span

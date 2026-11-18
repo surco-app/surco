@@ -58,16 +58,122 @@ describe('ToastStack', () => {
     expect(region.querySelectorAll('[role="status"], [role="alert"], [aria-live]')).toHaveLength(0)
   })
 
-  it('anchors the stack top-right under the toolbar, clear of the editor footer and its Convert button', () => {
-    const { container } = render(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
-    const region = container.firstElementChild as HTMLElement
-    expect(region.className).toContain('right-5')
-    expect(region.className).toContain('top-14')
-    expect(region.className).not.toContain('bottom-5')
-    expect(region.className).not.toContain('left-5')
+  describe('the pile', () => {
+    const tall = 32
+    const three = [
+      toast({ id: 'a', testid: 'first', message: 'first' }),
+      toast({ id: 'b', testid: 'second', message: 'second', duration: 6000 }),
+      toast({ id: 'c', testid: 'third', message: 'third' }),
+    ]
+    const marked = (attr: string, rect: Partial<DOMRect>): HTMLElement => {
+      const el = document.createElement('div')
+      el.setAttribute(attr, '')
+      el.getBoundingClientRect = () => rect as DOMRect
+      document.body.append(el)
+      return el
+    }
+    const pile = () => screen.getByTestId('toast-pile')
+    const slots = () => screen.getAllByTestId('toast-slot')
+    beforeEach(() => {
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(tall)
+    })
+    afterEach(() => {
+      vi.restoreAllMocks()
+      for (const el of document.body.querySelectorAll('[data-toast-anchor], [data-toast-lift]'))
+        el.remove()
+    })
+    const show = (toasts: Toast[] = three) =>
+      render(<ToastStack toasts={toasts} onExpire={vi.fn()} onClose={vi.fn()} />)
+
+    it('stands beside the source rail at the bottom left, the corner that holds nothing but the Backups button, and gives every notice one width', () => {
+      marked('data-toast-anchor', { right: 76 })
+      show()
+      expect(pile().style.left).toBe('88px')
+      expect(pile().style.bottom).toBe('12px')
+      expect(pile().style.width).toBe('240px')
+      for (const slot of slots()) expect(slot.className).toContain('w-full')
+    })
+
+    it('climbs above where the mini-player rests when it is open under the pile, even while the player is still sliding in from below', () => {
+      marked('data-toast-anchor', { right: 76 })
+      const player = marked('data-toast-lift', { left: 84, right: 460, top: 900 })
+      const column = document.createElement('div')
+      column.getBoundingClientRect = () => ({ top: 60 }) as DOMRect
+      Object.defineProperty(player, 'offsetParent', { value: column })
+      Object.defineProperty(player, 'offsetTop', { value: 440 })
+      show()
+      expect(pile().style.bottom).toBe(`${window.innerHeight - 500 + 8}px`)
+    })
+
+    it('stays at the bottom when the mini-player is open somewhere the pile does not reach', () => {
+      marked('data-toast-anchor', { right: 76 })
+      marked('data-toast-lift', { left: 400, right: 780, top: 500 })
+      show()
+      expect(pile().style.bottom).toBe('12px')
+    })
+
+    it('keeps the close button at the far end of the card however short the message, so it is always in the same place', () => {
+      show([toast({ id: 'a', testid: 'short', message: 'ok' })])
+      expect(screen.getByTestId('short-message').className).toContain('flex-1')
+      expect(screen.getByTestId('short').lastElementChild).toBe(screen.getByTestId('short-dismiss'))
+    })
+
+    it('tucks the older notices behind the newest with only their top edge showing, so five notices take the room of one', () => {
+      show([...three, toast({ id: 'd', message: 'fourth' })])
+      const [front, second, third, fourth] = slots()
+      expect(front).toHaveTextContent('fourth')
+      expect(front.style.transform).toBe('translateY(0px) scale(1)')
+      expect(front).not.toHaveAttribute('data-behind')
+      expect(second.style.transform).toBe('translateY(-7px) scale(0.95)')
+      expect(second.style.height).toBe(`${tall}px`)
+      expect(second).toHaveAttribute('data-behind')
+      expect(second).toHaveAttribute('inert')
+      expect(third.style.transform).toBe('translateY(-14px) scale(0.9)')
+      expect(fourth.style.transform).toBe('translateY(-14px) scale(0.9)')
+      expect(fourth.style.opacity).toBe('0')
+      expect(pile().style.height).toBe(`${tall + 14}px`)
+    })
+
+    it('spreads into a list under the pointer and holds every countdown, so each notice can be read and reached, then folds back', () => {
+      show()
+      fireEvent.pointerEnter(pile())
+      const [front, second, third] = slots()
+      expect(front.style.transform).toBe('translateY(0px) scale(1)')
+      expect(second.style.transform).toBe(`translateY(-${tall + 6}px) scale(1)`)
+      expect(third.style.transform).toBe(`translateY(-${2 * (tall + 6)}px) scale(1)`)
+      for (const slot of slots()) {
+        expect(slot).not.toHaveAttribute('data-behind')
+        expect(slot).not.toHaveAttribute('inert')
+      }
+      expect(pile().style.height).toBe(`${3 * tall + 12}px`)
+      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'paused' })
+      fireEvent.pointerLeave(pile())
+      expect(slots()[1]).toHaveAttribute('data-behind')
+      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'running' })
+    })
+
+    it('spreads when the keyboard enters it too, and folds once focus leaves', () => {
+      show()
+      const close = screen.getByTestId('third-dismiss')
+      fireEvent.focus(close)
+      expect(pile()).toHaveAttribute('data-spread', 'true')
+      fireEvent.blur(close, { relatedTarget: document.body })
+      expect(pile()).not.toHaveAttribute('data-spread')
+    })
+
+    it('leaves a dismissed notice where it stood while it fades and moves the rest up at once, so the pile settles instead of jumping', () => {
+      const { rerender } = show()
+      const leaving = slots()[1]
+      expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
+      rerender(<ToastStack toasts={[three[0], three[2]]} onExpire={vi.fn()} onClose={vi.fn()} />)
+      expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
+      expect(leaving.className).toContain('pointer-events-none')
+      const first = slots().find((slot) => slot.textContent?.includes('first')) as HTMLElement
+      expect(first.style.transform).toBe('translateY(-7px) scale(0.95)')
+    })
   })
 
-  it('puts the newest toast on top, nearest the corner it appears from', () => {
+  it('puts the newest toast first, in front of the pile', () => {
     render(
       <ToastStack
         toasts={[
@@ -83,7 +189,7 @@ describe('ToastStack', () => {
     expect(slots[1]).toHaveTextContent('first notice')
   })
 
-  it('drops a card in from above, the side the stack hangs from, instead of the modal pop', () => {
+  it('brings a card in with the toast entrance, rising from the edge the pile stands on, instead of the modal pop', () => {
     render(
       <ToastStack
         toasts={[toast({ id: 'a', message: 'hola' })]}
@@ -96,7 +202,7 @@ describe('ToastStack', () => {
     expect(card.className).not.toContain('animate-pop')
   })
 
-  it('stacks every queued toast so a notice and a prompt show at once', () => {
+  it('keeps every queued toast in the pile so a notice and a prompt coexist', () => {
     // The reason the toasts were unified: independent notifications coexist instead of one
     // corner overwriting another.
     render(
@@ -379,36 +485,6 @@ describe('ToastStack', () => {
       expect(onExpire).not.toHaveBeenCalled()
     })
 
-    // The exit fades the card, but the SPACE it held used to vanish only at unmount —
-    // every surviving toast jumped a full card height in one frame. The wrapper row
-    // collapses in step with the fade, so neighbours settle instead of jumping.
-    it('collapses the leaving card’s row so surviving toasts settle, not jump', () => {
-      const two = [toast({ id: 'a', testid: 'app-notice' }), toast({ id: 'b', testid: 'b-toast' })]
-      const { rerender } = render(<ToastStack toasts={two} onExpire={vi.fn()} onClose={vi.fn()} />)
-      const wrapper = screen.getByTestId('app-notice').parentElement?.parentElement
-      expect(wrapper?.className).toContain('grid-rows-[1fr]')
-      rerender(<ToastStack toasts={[two[1]]} onExpire={vi.fn()} onClose={vi.fn()} />)
-      expect(wrapper?.className).toContain('grid-rows-[0fr]')
-      expect(screen.getByTestId('b-toast').parentElement?.parentElement?.className).toContain(
-        'grid-rows-[1fr]',
-      )
-    })
-
-    // Entry has to mirror the exit: a new row born at 1fr pushed every card above it up a
-    // full height in one frame. @starting-style opens the row from 0fr on mount (jsdom
-    // cannot evaluate it, so this only guards the variant). A leaving row must not carry it.
-    it('opens a new card’s row from zero so the cards above rise, not jump', () => {
-      const two = [toast({ id: 'a', testid: 'a-toast' }), toast({ id: 'b', testid: 'b-toast' })]
-      const { rerender } = render(<ToastStack toasts={two} onExpire={vi.fn()} onClose={vi.fn()} />)
-      rerender(<ToastStack toasts={[two[1]]} onExpire={vi.fn()} onClose={vi.fn()} />)
-      const slotOf = (id: string) =>
-        screen.getAllByTestId('toast-slot').find((s) => s.querySelector(`[data-testid="${id}"]`))
-      const leavingSlot = slotOf('a-toast') as HTMLElement
-      const liveSlot = slotOf('b-toast') as HTMLElement
-      expect(liveSlot.className).toContain('starting:grid-rows-[0fr]')
-      expect(leavingSlot.className).not.toContain('starting:grid-rows-[0fr]')
-    })
-
     // A dismissed card must not blink out of existence — it lingers just long enough
     // for its leave animation, then unmounts. Now that several toasts expire on their
     // own, an instant unmount reads as a rendering glitch, not a dismissal.
@@ -592,7 +668,7 @@ describe('ToastStack', () => {
       expect(card().style.transform).toBe('translateX(324px)')
     })
 
-    it('collapses the row of a swiped card without clipping its sideways exit, which would cut it off mid-slide', () => {
+    it('does not clip the sideways exit of a swiped card, which would cut it off mid-slide', () => {
       function Live() {
         const [toasts, setToasts] = useState([toast({ id: 's', testid: 'swipe-toast' })])
         return (
@@ -605,9 +681,9 @@ describe('ToastStack', () => {
       }
       render(<Live />)
       for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
-      const wrapper = screen.getByTestId('toast-slot').firstElementChild as HTMLElement
-      expect(wrapper.className).toContain('overflow-y-clip')
-      expect(wrapper.className).not.toMatch(/\boverflow-(hidden|clip|x-hidden|x-clip)\b/)
+      expect(screen.getByTestId('toast-slot').className).not.toMatch(
+        /\boverflow-(hidden|clip|x-hidden|x-clip)\b/,
+      )
     })
   })
 })

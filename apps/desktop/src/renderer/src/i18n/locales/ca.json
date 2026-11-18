@@ -700,6 +700,7 @@
       "startOver": "Tornar a començar",
       "startSession": "Sessió a partir d'aquesta pista…",
       "matching": "Fer matching",
+      "matchingBlock": "Fer matching",
       "unmatch": "Treure el matching",
       "reverseMatch": "Inverteix l'ordre",
       "leaveMatch": "Treu del bloc",

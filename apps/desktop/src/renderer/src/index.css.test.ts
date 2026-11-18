@@ -972,13 +972,13 @@ describe('conversion progress', () => {
   })
 })
 
-describe('toast motion follows the top-right stack', () => {
+describe('toast motion follows the pile at the bottom left', () => {
   const keyframes = (name: string): string =>
     css.match(new RegExp(`@keyframes ${name} \\{[\\s\\S]*?\\n\\}`))?.[0] ?? ''
 
-  it('enters from above and leaves back up, the edge the stack hangs from', () => {
-    expect(keyframes('toast-in')).toContain('translateY(-8px)')
-    expect(keyframes('toast-leave')).toContain('translateY(-8px)')
+  it('rises in from below and leaves back down, the edge the pile stands on', () => {
+    expect(keyframes('toast-in')).toContain('translateY(8px)')
+    expect(keyframes('toast-leave')).toContain('translateY(8px)')
   })
 
   it('only fades a toast in when motion is reduced', () => {

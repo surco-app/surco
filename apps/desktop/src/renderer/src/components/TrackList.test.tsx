@@ -113,6 +113,7 @@ function renderList(
     playedPaths,
     keyNotation,
     showWaves,
+    scrollRootRef,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -129,6 +130,7 @@ function renderList(
     playedPaths?: ReadonlySet<string>
     keyNotation?: KeyNotation
     showWaves?: boolean
+    scrollRootRef?: { current: HTMLElement | null }
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -161,6 +163,7 @@ function renderList(
       separatorBefore={separatorBefore}
       trailingSeparators={trailingSeparators}
       reorder={reorder}
+      scrollRootRef={scrollRootRef}
       pendingCuePaths={pendingCuePaths}
       unsavedCueIds={unsavedCueIds}
       autoMarkById={autoMarkById}
@@ -2314,6 +2317,121 @@ describe('TrackList reorder', () => {
     fireEvent.dragOver(wrapperOf('a'), { dataTransfer: finder, clientY: -1 })
     fireEvent.drop(wrapperOf('a'), { dataTransfer: finder })
     expect(reorder.onMove).not.toHaveBeenCalled()
+  })
+
+  describe('carrying a row past the rows on screen', () => {
+    const frames: FrameRequestCallback[] = []
+    const runFrame = (): void => {
+      const due = frames.splice(0)
+      for (const frame of due) frame(0)
+    }
+    const scroller = (scrollTop: number): HTMLElement => {
+      const root = document.createElement('div')
+      root.getBoundingClientRect = () => ({ top: 100, bottom: 600 }) as DOMRect
+      root.scrollTop = scrollTop
+      document.body.append(root)
+      return root
+    }
+    const flush = (root: HTMLElement): void => {
+      screen.getByRole('listbox').getBoundingClientRect = () =>
+        ({ top: 100 - root.scrollTop }) as DOMRect
+    }
+    beforeEach(() => {
+      frames.length = 0
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => frames.push(cb))
+      vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+        frames.splice(id - 1, 1)
+      })
+    })
+    afterEach(() => {
+      vi.restoreAllMocks()
+      for (const el of document.body.querySelectorAll(':scope > div:empty')) el.remove()
+    })
+
+    it('scrolls the list up while a dragged row is held at its top edge, so it can land above the first row on screen', () => {
+      const root = scroller(400)
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      flush(root)
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: 104 })
+      runFrame()
+      runFrame()
+      expect(root.scrollTop).toBeLessThan(400)
+    })
+
+    it('scrolls the list down while a dragged row is held at its bottom edge', () => {
+      const root = scroller(400)
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      flush(root)
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(wrapperOf('a'), { dataTransfer: dt })
+      fireEvent.dragOver(wrapperOf('c'), { dataTransfer: dt, clientY: 596 })
+      runFrame()
+      expect(root.scrollTop).toBeGreaterThan(400)
+    })
+
+    it('counts the top edge from under the search and filter header that covers the first rows, since the pointer can never get above it over a row', () => {
+      const root = scroller(400)
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      screen.getByRole('listbox').getBoundingClientRect = () =>
+        ({ top: 100 + 120 - 400 }) as DOMRect
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: 290 })
+      runFrame()
+      expect(root.scrollTop).toBe(400)
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: 230 })
+      runFrame()
+      runFrame()
+      expect(root.scrollTop).toBeLessThan(400)
+    })
+
+    it('counts the bottom edge from above the room kept for the player, which covers the last rows', () => {
+      const root = scroller(400)
+      root.style.paddingBottom = '150px'
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      flush(root)
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(wrapperOf('a'), { dataTransfer: dt })
+      fireEvent.dragOver(wrapperOf('c'), { dataTransfer: dt, clientY: 440 })
+      runFrame()
+      expect(root.scrollTop).toBeGreaterThan(400)
+    })
+
+    it('stops scrolling once the row is dropped or the drag leaves the list, so the list never keeps moving on its own', () => {
+      const root = scroller(400)
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      flush(root)
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(wrapperOf('c'), { dataTransfer: dt })
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: 104 })
+      runFrame()
+      fireEvent.dragLeave(screen.getByRole('listbox'), {
+        dataTransfer: dt,
+        relatedTarget: document.body,
+      })
+      const left = root.scrollTop
+      runFrame()
+      runFrame()
+      expect(root.scrollTop).toBe(left)
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: dt, clientY: 104 })
+      runFrame()
+      fireEvent.drop(wrapperOf('a'), { dataTransfer: dt })
+      const dropped = root.scrollTop
+      runFrame()
+      runFrame()
+      expect(root.scrollTop).toBe(dropped)
+    })
+
+    it('leaves the list where it is for files dragged in from Finder, which are an import and not a reorder', () => {
+      const root = scroller(400)
+      renderList(abc(), null, [], { reorder: reorderSpy(), scrollRootRef: { current: root } })
+      flush(root)
+      fireEvent.dragOver(wrapperOf('a'), { dataTransfer: fakeDataTransfer(), clientY: 104 })
+      runFrame()
+      expect(root.scrollTop).toBe(400)
+    })
   })
 
   // The line promises where a drop lands; left behind after the drag leaves the list, it

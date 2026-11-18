@@ -700,6 +700,7 @@
       "startOver": "Empezar de nuevo",
       "startSession": "Sesión desde esta pista…",
       "matching": "Hacer matching",
+      "matchingBlock": "Hacer matching",
       "unmatch": "Quitar matching",
       "reverseMatch": "Invertir orden",
       "leaveMatch": "Quitar del bloque",
