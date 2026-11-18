@@ -12,8 +12,15 @@ export function timeSavedSeconds(conversionCount: number): number {
 
 // A tally with its thousands grouped ("29.215" in Spanish). Grouping is forced: Spanish
 // otherwise leaves four digits alone, and "3071" beside "32.533" looks like two formats.
+const countFormatters = new Map<string, Intl.NumberFormat>()
+
 export function formatCount(count: number, language: string): string {
-  return new Intl.NumberFormat(language, { useGrouping: 'always' }).format(count)
+  let formatter = countFormatters.get(language)
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(language, { useGrouping: 'always' })
+    countFormatters.set(language, formatter)
+  }
+  return formatter.format(count)
 }
 
 // A humanized "7 h 56 min" for totals under a workday, distinct from the player's
