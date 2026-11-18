@@ -359,3 +359,50 @@ describe('Tooltip warm-up', () => {
     }
   })
 })
+
+describe('Tooltip flip', () => {
+  const hoverAt = (y: number): void => {
+    const trigger = screen.getByTestId('trigger')
+    act(() => {
+      for (const type of ['pointerenter', 'pointermove']) {
+        trigger.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: y, bubbles: true }))
+      }
+    })
+    act(() => vi.advanceTimersByTime(400))
+  }
+
+  const withTooltipHeight = (height: number, y: number): string => {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight')
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', {
+      configurable: true,
+      get: () => height,
+    })
+    const innerHeight = window.innerHeight
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 })
+    vi.useFakeTimers()
+    try {
+      renderTooltip()
+      hoverAt(y)
+      return screen.getByRole('tooltip').style.transform
+    } finally {
+      vi.useRealTimers()
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: innerHeight })
+      if (original) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', original)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+    }
+  }
+
+  // A long title wraps to a tall tooltip; flipping on a guessed 56px height left it cut off at
+  // the bottom edge, exactly when it is the only way to read the truncated text.
+  it('flips above the pointer when its measured height would run past the bottom edge', () => {
+    expect(withTooltipHeight(120, 500)).toBe('translate(0, -100%)')
+  })
+
+  it('stays below the pointer when its measured height still fits', () => {
+    expect(withTooltipHeight(120, 400)).toBe('translate(0, 0)')
+  })
+
+  it('stays below the pointer near the bottom edge when it is short', () => {
+    expect(withTooltipHeight(40, 500)).toBe('translate(0, 0)')
+  })
+})

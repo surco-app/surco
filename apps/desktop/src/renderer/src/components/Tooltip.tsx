@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { isReturningFocus } from './useFocusTrap'
 
@@ -16,6 +16,7 @@ const OFFSET = 14
 // tag. Keyboard focus still surfaces it at once, where the wait would only get in the way.
 const HOVER_DELAY = 400
 const WARM_MS = 300
+const FALLBACK_HEIGHT = 56
 let warmUntil = 0
 
 export function Tooltip({
@@ -35,13 +36,19 @@ export function Tooltip({
   hoverOnly?: boolean
 }): React.JSX.Element {
   const markerRef = useRef<HTMLSpanElement>(null)
-  const [pos, setPos] = useState<{ left: number; top: number; transform: string } | null>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
+  const [pos, setPos] = useState<{ x: number; y: number; flipX: boolean } | null>(null)
+  const [height, setHeight] = useState(FALLBACK_HEIGHT)
   const [instant, setInstant] = useState(false)
   const id = useId()
   // The mount effect's own hide, so the document-level Escape below resets the same
   // closure state the trigger's listeners do instead of only clearing the position.
   const hideRef = useRef<() => void>(() => setPos(null))
   const visible = pos !== null && label !== ''
+
+  useLayoutEffect(() => {
+    if (tooltipRef.current) setHeight(tooltipRef.current.offsetHeight)
+  })
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement
@@ -50,12 +57,7 @@ export function Tooltip({
     // tooltip flips via a transform so it stays next to the anchor instead of clamping.
     const showAt = (x: number, y: number): void => {
       const flipX = x + OFFSET + WIDTH > window.innerWidth
-      const flipY = y + OFFSET + 56 > window.innerHeight
-      setPos({
-        left: flipX ? x - OFFSET : x + OFFSET,
-        top: flipY ? y - OFFSET : y + OFFSET,
-        transform: `translate(${flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
-      })
+      setPos({ x, y, flipX })
     }
     // Once the tooltip is up it tracks the cursor live; before that, the first moves
     // only arm a timer, so a quick pass-through never flashes it. last holds the latest
@@ -220,15 +222,23 @@ export function Tooltip({
     return () => document.removeEventListener('keydown', onKeyDown)
   }, [visible])
 
+  const flipY = pos !== null && pos.y + OFFSET + height > window.innerHeight
+
   return (
     <span ref={markerRef} className="hidden" aria-hidden="true">
       {visible &&
         pos &&
         createPortal(
           <span
+            ref={tooltipRef}
             id={id}
             role="tooltip"
-            style={{ left: pos.left, top: pos.top, transform: pos.transform, maxWidth: WIDTH }}
+            style={{
+              left: pos.flipX ? pos.x - OFFSET : pos.x + OFFSET,
+              top: flipY ? pos.y - OFFSET : pos.y + OFFSET,
+              transform: `translate(${pos.flipX ? '-100%' : '0'}, ${flipY ? '-100%' : '0'})`,
+              maxWidth: WIDTH,
+            }}
             className={`${instant ? '' : 'animate-overlay '}pointer-events-none fixed z-50 w-max rounded-md [overflow-wrap:anywhere] bg-[var(--color-panel-2)] px-2 py-1 text-left text-xs font-normal text-fg shadow-[var(--shadow-float)] ring-1 ring-[var(--color-line-strong)]`}
           >
             {label}
