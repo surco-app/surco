@@ -4552,6 +4552,7 @@ export default function App(): React.JSX.Element {
                 {showList && (
                   <aside
                     data-testid="sidebar"
+                    data-toast-lift-within
                     aria-label={tr('common.trackList')}
                     // The drag answers here because this is the column the tracks land in. The
                     // styling hangs off a data attribute rather than a class so the drop state

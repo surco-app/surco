@@ -285,6 +285,7 @@ export function Player({
       <div
         ref={cardRef}
         data-testid="player"
+        data-toast-lift
         inert={leaving}
         data-leaving={leaving || undefined}
         className="player-card group/player absolute inset-x-2 bottom-2 overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] shadow-[var(--shadow-float)]"
