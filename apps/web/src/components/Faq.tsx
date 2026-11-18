@@ -18,7 +18,8 @@ export default function Faq() {
           <details key={item.q} className="group border-b border-line/60 py-4">
             <summary
               data-testid="faq-question"
-              className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden">
+              className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden"
+            >
               {item.q}
               <span
                 className="font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"

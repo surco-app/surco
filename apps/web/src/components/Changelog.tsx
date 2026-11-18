@@ -153,15 +153,18 @@ export default function Changelog() {
 
         {older.length > 0 && (
           <section className={`${ROW} py-16 sm:py-20`}>
-            <h2 className="text-lg font-semibold tracking-tight text-faint">
-              {t('changelog.olderTitle')}
-            </h2>
+            <div data-testid="changelog-older-side" className={SIDE}>
+              <h2 className="text-lg font-semibold tracking-tight text-faint">
+                {t('changelog.olderTitle')}
+              </h2>
+            </div>
             <div data-testid="changelog-older" className="max-w-2xl border-t border-line/60">
               {older.map((r) => (
                 <details key={r.version} className="group border-b border-line/60 py-4">
                   <summary
                     data-testid="changelog-older-summary"
-                    className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden">
+                    className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden"
+                  >
                     <span className="rounded-full border border-line bg-surface2/40 px-2.5 py-0.5 font-mono text-xs text-blue tabular-nums">
                       v{r.version}
                     </span>
