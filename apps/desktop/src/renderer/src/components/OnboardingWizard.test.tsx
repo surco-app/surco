@@ -1219,6 +1219,16 @@ describe('OnboardingWizard second Mac', () => {
     expect(screen.getByTestId('onboarding-next')).toBeDisabled()
   })
 
+  it('dims Next and drops its hover while no folder has been adopted, so it does not look pressable', async () => {
+    offerFolder(null, false)
+    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
+    await pickFolder()
+    const nextButton = screen.getByTestId('onboarding-next')
+    expect(nextButton).toBeDisabled()
+    expect(nextButton).toHaveClass('disabled:opacity-40')
+    expect(nextButton).toHaveClass('disabled:hover:bg-[var(--color-accent)]')
+  })
+
   it('goes straight to what belongs to this Mac and skips the steps that synced', async () => {
     offerFolder('/icloud/Surco', true)
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)

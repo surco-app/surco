@@ -620,6 +620,17 @@ describe('SessionWizard new tracks', () => {
     expect(screen.queryByTestId('session-wizard-fresh-hint')).toBeNull()
   })
 
+  it('dims Build and drops its hover while the set is being built', async () => {
+    const { onBuild } = setup({ b90: 'base' })
+    onBuild.mockReturnValue(new Promise(() => {}))
+    await toCharacter()
+    fireEvent.click(screen.getByTestId('session-wizard-build'))
+    const build = screen.getByTestId('session-wizard-build')
+    expect(build).toBeDisabled()
+    expect(build).toHaveClass('disabled:opacity-40')
+    expect(build).toHaveClass('disabled:hover:bg-[var(--color-accent)]')
+  })
+
   it('hands over the share that was chosen when building', async () => {
     const { onBuild } = setup({ b90: 'base' }, INITIAL, withNew())
     await toCharacter()

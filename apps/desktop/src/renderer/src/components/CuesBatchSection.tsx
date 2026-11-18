@@ -257,7 +257,7 @@ export function CuesBatchSection({
           data-testid="cues-batch-clear"
           disabled={busy || (shown?.cleared.length ?? 0) > 0}
           onClick={() => void clear()}
-          className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+          className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg disabled:opacity-40 disabled:hover:text-fg-dim"
         >
           {tr('editor.cues.clearAll')}
         </button>

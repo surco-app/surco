@@ -192,7 +192,7 @@ export function DoneMenu({
                 role="menuitem"
                 disabled={music.busy}
                 onClick={() => run(music.onAdd)}
-                className={`${SPLIT_ITEM} justify-start gap-2`}
+                className={`${SPLIT_ITEM} justify-start gap-2 disabled:opacity-40 disabled:hover:bg-transparent`}
               >
                 <Music className={ITEM_ICON} aria-hidden="true" />
                 {music.label}

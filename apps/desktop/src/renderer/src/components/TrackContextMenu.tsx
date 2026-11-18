@@ -160,8 +160,8 @@ export function TrackContextMenu({
     if (!el) return
     const { width, height } = el.getBoundingClientRect()
     setPos({
-      x: Math.min(x, window.innerWidth - width - 8),
-      y: Math.min(y, window.innerHeight - height - 8),
+      x: Math.max(8, Math.min(x, window.innerWidth - width - 8)),
+      y: Math.max(8, Math.min(y, window.innerHeight - height - 8)),
     })
   }, [x, y])
 

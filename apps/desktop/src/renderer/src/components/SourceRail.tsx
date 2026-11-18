@@ -1,6 +1,6 @@
 import { Check, ListMusic, ShieldAlert, ShieldCheck } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import {
@@ -59,7 +59,19 @@ export function SourceRail({
     y: number
   } | null>(null)
   const itemRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ x: 0, y: 0 })
   const openerRef = useRef<HTMLElement | null>(null)
+
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!menu || !el) return
+    const { width, height } = el.getBoundingClientRect()
+    setPos({
+      x: Math.max(8, Math.min(menu.x, window.innerWidth - width - 8)),
+      y: Math.max(8, Math.min(menu.y, window.innerHeight - height - 8)),
+    })
+  }, [menu])
 
   useEffect(() => {
     if (!menu) return
@@ -207,6 +219,7 @@ export function SourceRail({
             className="absolute inset-0"
           />
           <div
+            ref={menuRef}
             role="menu"
             aria-label={tr('sources.rail')}
             data-testid="source-rail-menu"
@@ -221,7 +234,7 @@ export function SourceRail({
                 setMenu(null)
               }
             }}
-            style={{ top: menu.y, left: menu.x }}
+            style={{ top: pos.y, left: pos.x }}
             className="absolute min-w-[180px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
           >
             {menu.source && (
