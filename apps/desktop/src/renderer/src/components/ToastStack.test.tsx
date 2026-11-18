@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
@@ -58,13 +60,92 @@ describe('ToastStack', () => {
     expect(region.querySelectorAll('[role="status"], [role="alert"], [aria-live]')).toHaveLength(0)
   })
 
-  it('anchors the stack top-right under the toolbar, clear of the editor footer and its Convert button', () => {
+  it('hangs the stack centred in the empty strip at the top of the window, clear of the controls in the corners that a notice used to cover', () => {
     const { container } = render(<ToastStack toasts={[]} onExpire={vi.fn()} onClose={vi.fn()} />)
     const region = container.firstElementChild as HTMLElement
-    expect(region.className).toContain('right-5')
-    expect(region.className).toContain('top-14')
-    expect(region.className).not.toContain('bottom-5')
-    expect(region.className).not.toContain('left-5')
+    expect(region.className).toContain('inset-x-0')
+    expect(region.className).toContain('items-center')
+    expect(region.className).toContain('top-[9px]')
+    expect(region.className).not.toContain('right-5')
+    expect(region.className).not.toContain('top-14')
+  })
+
+  it('lets clicks through the strip around a notice, so the toolbar under it still drags the window and its buttons still answer', () => {
+    const { container } = render(
+      <ToastStack
+        toasts={[toast({ id: 'a', testid: 'notice', message: 'hola' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    expect((container.firstElementChild as HTMLElement).className).toContain('pointer-events-none')
+    const card = screen.getByTestId('notice')
+    expect(card.className).toContain('pointer-events-auto')
+    expect(card.className).toContain('window-no-drag')
+    const css = readFileSync(join(__dirname, '..', 'index.css'), 'utf8')
+    expect(css).toMatch(/\.window-no-drag \{\s*-webkit-app-region: no-drag;/)
+  })
+
+  it('fits the notices into the gap the toolbar leaves between its two groups of buttons, so a notice never lands on one of them however wide the groups get', () => {
+    const edge = (attr: string, rect: Partial<DOMRect>): HTMLElement => {
+      const el = document.createElement('div')
+      el.setAttribute(attr, '')
+      el.getBoundingClientRect = () => rect as DOMRect
+      document.body.append(el)
+      return el
+    }
+    const start = edge('data-toast-gap-start', { right: 400 })
+    const end = edge('data-toast-gap-end', { left: 700 })
+    const { container } = render(
+      <ToastStack
+        toasts={[toast({ id: 'a', message: 'hola' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    start.remove()
+    end.remove()
+    const region = container.firstElementChild as HTMLElement
+    expect(region.style.left).toBe('408px')
+    expect(region.style.right).toBe(`${window.innerWidth - 700 + 8}px`)
+    expect(screen.getByTestId('toast-slot').className).toContain('max-w-[min(28rem,100%)]')
+  })
+
+  it('spreads over the progress pill when the gap beside it is too narrow to read a notice in, rather than folding the notice into a column of words', () => {
+    const edge = (attr: string, rect: Partial<DOMRect>): HTMLElement => {
+      const el = document.createElement('div')
+      el.setAttribute(attr, '')
+      el.getBoundingClientRect = () => rect as DOMRect
+      document.body.append(el)
+      return el
+    }
+    const start = edge('data-toast-gap-start', { right: 386 })
+    const end = edge('data-toast-gap-end', { left: 571 })
+    const firm = edge('data-toast-gap-firm-end', { left: 738 })
+    const { container } = render(
+      <ToastStack
+        toasts={[toast({ id: 'a', message: 'hola' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    for (const el of [start, end, firm]) el.remove()
+    const region = container.firstElementChild as HTMLElement
+    expect(region.style.left).toBe('394px')
+    expect(region.style.right).toBe(`${window.innerWidth - 738 + 8}px`)
+  })
+
+  it('centres the notices in the window when no toolbar is on screen to fit them into', () => {
+    const { container } = render(
+      <ToastStack
+        toasts={[toast({ id: 'a', message: 'hola' })]}
+        onExpire={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    )
+    const region = container.firstElementChild as HTMLElement
+    expect(region.style.left).toBe('')
+    expect(region.style.right).toBe('')
   })
 
   it('puts the newest toast on top, nearest the corner it appears from', () => {

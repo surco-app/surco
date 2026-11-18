@@ -852,6 +852,12 @@ button:hover > .process-fill {
   animation: toast-in var(--duration-panel) var(--ease-standard);
 }
 
+/* A notice hangs over the toolbar, which drags the window: without this its buttons would
+   move the window instead of answering. */
+.window-no-drag {
+  -webkit-app-region: no-drag;
+}
+
 .animate-toast-leave {
   animation: toast-leave var(--duration-state) var(--ease-standard) forwards;
 }

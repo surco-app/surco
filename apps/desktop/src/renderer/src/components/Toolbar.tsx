@@ -138,6 +138,7 @@ export const Toolbar = memo(function Toolbar({
       </div>
       <div
         data-testid="toolbar-list-actions"
+        data-toast-gap-start
         className="flex items-center gap-2"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
@@ -249,6 +250,7 @@ export const Toolbar = memo(function Toolbar({
         )}
       </div>
       <div
+        data-toast-gap-end
         className="flex items-center gap-2"
         style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
       >
@@ -306,6 +308,7 @@ export const Toolbar = memo(function Toolbar({
         <button
           type="button"
           data-testid="open-palette"
+          data-toast-gap-firm-end
           onClick={onPalette}
           className="press group relative flex h-8 items-center gap-1.5 rounded-lg border border-[var(--color-line-strong)] pr-1.5 pl-2.5 text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.palette')}
