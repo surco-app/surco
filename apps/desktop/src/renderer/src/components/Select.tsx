@@ -1,6 +1,6 @@
 import { Check, ChevronDown, type LucideIcon } from 'lucide-react'
 import type React from 'react'
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
@@ -96,6 +96,15 @@ export function Select({
     const item = items?.[openIndex.current]
     if (item) showOption(listRef.current, item)
   }, [open])
+
+  useLayoutEffect(() => {
+    if (!open || !pos || pos.left === undefined || !listRef.current) return
+    const left = Math.max(
+      8,
+      Math.min(pos.left, window.innerWidth - listRef.current.offsetWidth - 8),
+    )
+    if (left !== pos.left) setPos({ ...pos, left })
+  }, [open, pos])
 
   // An inline menu hangs from its trigger and moves with it, so it has nothing to dismiss.
   useCloseOnMove(open && portaled, listRef, setOpen)

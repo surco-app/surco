@@ -240,6 +240,37 @@ describe('Select full-width menu placement', () => {
     expect(Number.parseFloat(style.bottom)).toBe(800 - 760 + 4)
   })
 
+  it('shifts the menu left when its measured width would cross the right edge of the window', () => {
+    const widthOf = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetWidth')
+    const innerWidth = window.innerWidth
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      get: () => 240,
+    })
+    window.innerWidth = 400
+    try {
+      render(
+        <Select
+          value="0"
+          options={many}
+          onChange={vi.fn()}
+          label="Track"
+          testid="pick"
+          fullWidth
+        />,
+      )
+      const trigger = screen.getByTestId('pick')
+      trigger.getBoundingClientRect = () =>
+        ({ top: 100, bottom: 132, left: 350, right: 390, width: 40, height: 32 }) as DOMRect
+      fireEvent.click(trigger)
+      expect(screen.getByTestId('pick-listbox').style.left).toBe('152px')
+    } finally {
+      window.innerWidth = innerWidth
+      if (widthOf) Object.defineProperty(HTMLElement.prototype, 'offsetWidth', widthOf)
+      else Reflect.deleteProperty(HTMLElement.prototype, 'offsetWidth')
+    }
+  })
+
   it('still drops below the trigger when there is room underneath', () => {
     const style = openAt(132).style
     expect(style.bottom).toBe('')
