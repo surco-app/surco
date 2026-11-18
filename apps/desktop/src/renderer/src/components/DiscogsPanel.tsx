@@ -252,6 +252,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       slidChoosing.current !== choosingBest
     const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
     const tops = new Map<string, number>()
+    const duration = panelDurationMs()
+    const easing = standardEasing()
     for (const card of cards) {
       const key = card.dataset.key ?? ''
       const top = card.offsetTop
@@ -259,8 +261,8 @@ export const DiscogsPanel = memo(function DiscogsPanel({
       const was = cardTops.current.get(key)
       if (listChanged && !still && was !== undefined && was !== top) {
         card.animate?.([{ transform: `translateY(${was - top}px)` }, { transform: 'none' }], {
-          duration: panelDurationMs(),
-          easing: standardEasing(),
+          duration,
+          easing,
         })
       }
     }
