@@ -431,6 +431,78 @@ describe('Player', () => {
     column.remove()
   })
 
+  describe('reserving room while the waveform toggles', () => {
+    let fire = (): void => {}
+    let natural = 100
+    let cardHeight = 151
+    let column: HTMLDivElement
+
+    beforeEach(() => {
+      natural = 100
+      cardHeight = 151
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(cb: () => void) {
+            fire = cb
+          }
+          observe(): void {}
+          disconnect(): void {}
+        },
+      )
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(() => cardHeight)
+      vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(() => natural)
+      column = document.createElement('div')
+      document.body.append(column)
+    })
+
+    afterEach(() => {
+      column.remove()
+    })
+
+    function writesDuring(action: () => void): string[] {
+      const writes: string[] = []
+      const original = column.style.setProperty.bind(column.style)
+      vi.spyOn(column.style, 'setProperty').mockImplementation((name, value) => {
+        if (name === '--player-space') writes.push(String(value))
+        original(name, value)
+      })
+      action()
+      return writes
+    }
+
+    it('writes the room once, at its final size, while the height tweens', () => {
+      const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />, {
+        container: column,
+      })
+      natural = 40
+      const writes = writesDuring(() => {
+        rerender(<Player {...props({ showWaveform: false })} />)
+        for (let i = 0; i < 5; i++) fire()
+      })
+      expect(writes).toEqual(['107px'])
+    })
+
+    it('settles on the measured card height when the tween ends', () => {
+      const { rerender } = renderUI(<Player {...props({ showWaveform: true })} />, {
+        container: column,
+      })
+      natural = 40
+      rerender(<Player {...props({ showWaveform: false })} />)
+      cardHeight = 95
+      fire()
+      fireEvent.transitionEnd(screen.getByTestId('player-section'))
+      expect(column.style.getPropertyValue('--player-space')).toBe('111px')
+    })
+
+    it('still follows the card when it resizes outside a tween', () => {
+      renderUI(<Player {...props({ showWaveform: true })} />, { container: column })
+      cardHeight = 200
+      const writes = writesDuring(() => fire())
+      expect(writes).toEqual(['216px'])
+    })
+  })
+
   // Volume lives on the transport row, never over the wave. Auditioning a track means
   // clicking along the waveform to jump around it, and a control floating on the wave
   // both hides the opening seconds and swallows the clicks meant for them — the one

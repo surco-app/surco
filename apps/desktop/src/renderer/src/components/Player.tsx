@@ -205,12 +205,14 @@ export function Player({
   const sectionRef = useRef<HTMLDivElement>(null)
   const sectionHeightRef = useRef<number | undefined>(undefined)
   const cardRef = useRef<HTMLDivElement>(null)
+  const tweeningRef = useRef(false)
 
   useLayoutEffect(() => {
     const card = cardRef.current
     const column = card?.parentElement
     if (!card || !column || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(() => {
+      if (tweeningRef.current) return
       column.style.setProperty('--player-space', `${card.offsetHeight + PLAYER_GAPS_PX}px`)
     })
     observer.observe(card)
@@ -238,13 +240,31 @@ export function Player({
     if (prev === undefined || prev === next || prefersReducedMotion()) return
     el.style.height = `${prev}px`
     void el.scrollHeight
+    const card = cardRef.current
+    const column = card?.parentElement
+    const reserve = (height: number): void =>
+      column?.style.setProperty('--player-space', `${height + PLAYER_GAPS_PX}px`)
+    if (card) reserve(card.offsetHeight - prev + next)
+    tweeningRef.current = true
     el.style.height = `${next}px`
+    const token = getComputedStyle(document.documentElement)
+      .getPropertyValue('--duration-panel')
+      .trim()
+    const ms = Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || 0
     const settle = (): void => {
+      clearTimeout(timer)
       el.style.height = ''
       el.removeEventListener('transitionend', settle)
+      tweeningRef.current = false
+      if (card) reserve(card.offsetHeight)
     }
+    const timer = setTimeout(settle, ms)
     el.addEventListener('transitionend', settle)
-    return () => el.removeEventListener('transitionend', settle)
+    return () => {
+      clearTimeout(timer)
+      el.removeEventListener('transitionend', settle)
+      tweeningRef.current = false
+    }
   }, [showWaveform])
 
   function seekFrom(clientX: number, el: HTMLElement): void {

@@ -465,6 +465,14 @@ const TrackRow = memo(function TrackRow({
   const flingRef = useRef(0)
   const settleRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(settleRef.current), [])
+  const widthRef = useRef<number | undefined>(undefined)
+  const frameRef = useRef<number | undefined>(undefined)
+  useEffect(
+    () => () => {
+      if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current)
+    },
+    [],
+  )
   const [removing, setRemoving] = useState(false)
   const removingRef = useRef(false)
   const exitRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -483,7 +491,8 @@ const TrackRow = memo(function TrackRow({
     exitRef.current = setTimeout(() => onSwipeRemove(t.id), SWIPE_EXIT_MS)
   }
   const swipeBounds = (): { width: number; shown: number; removeAt: number } => {
-    const width = rowRef.current?.offsetWidth ?? 0
+    widthRef.current ??= rowRef.current?.offsetWidth ?? 0
+    const width = widthRef.current
     const shown = Math.max(SWIPE_REMOVE_MIN_PX, width / 2)
     return {
       width,
@@ -491,8 +500,10 @@ const TrackRow = memo(function TrackRow({
       removeAt: SWIPE_ACTION_PX + (shown - SWIPE_ACTION_PX) / SWIPE_RESISTANCE,
     }
   }
-  const moveSwipe = (px: number): void => {
-    swipeRef.current = px
+  const showSwipe = (): void => {
+    if (frameRef.current !== undefined) cancelAnimationFrame(frameRef.current)
+    frameRef.current = undefined
+    const px = swipeRef.current
     const { width, shown, removeAt } = swipeBounds()
     setSwipe(
       px >= removeAt
@@ -502,24 +513,36 @@ const TrackRow = memo(function TrackRow({
           : SWIPE_ACTION_PX + (px - SWIPE_ACTION_PX) * SWIPE_RESISTANCE,
     )
   }
+  const moveSwipe = (px: number): void => {
+    swipeRef.current = px
+    showSwipe()
+  }
+  const showSwipeNextFrame = (): void => {
+    if (frameRef.current !== undefined) return
+    frameRef.current = requestAnimationFrame(showSwipe)
+  }
   const onSwipeWheel = (e: React.WheelEvent): void => {
     if (removingRef.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
     setTracking(true)
-    moveSwipe(Math.max(swipeRef.current + e.deltaX, 0))
+    swipeRef.current = Math.max(swipeRef.current + e.deltaX, 0)
     const now = performance.now()
     trailRef.current.push({ at: swipeRef.current, t: now })
     flingRef.current = releaseVelocity(trailRef.current, now)
     clearTimeout(settleRef.current)
     if (swipeRef.current >= swipeBounds().removeAt) {
+      showSwipe()
+      widthRef.current = undefined
       setTracking(false)
       startRemove()
       return
     }
+    showSwipeNextFrame()
     settleRef.current = setTimeout(() => {
       setTracking(false)
       const heading = swipeRef.current + coastDistance(flingRef.current)
       trailRef.current = []
       moveSwipe(heading < SWIPE_ACTION_PX / 2 ? 0 : SWIPE_ACTION_PX)
+      widthRef.current = undefined
     }, SWIPE_SETTLE_MS)
   }
   const closeSwipe = (): void => {
@@ -527,6 +550,7 @@ const TrackRow = memo(function TrackRow({
     clearTimeout(settleRef.current)
     setTracking(false)
     moveSwipe(0)
+    widthRef.current = undefined
   }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
   const cleaned = activeCleanups(t).length > 0
