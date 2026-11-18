@@ -1,6 +1,6 @@
 import { Check, Copy, X } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useModalOpen } from '../lib/modalPresence'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
@@ -20,9 +20,45 @@ const SWIPE_CLOSE_SHARE = 0.4
 const SWIPE_RESISTANCE = 0.2
 const SWIPE_MIN_OPACITY = 0.4
 const SWIPE_EXIT_GAP_PX = 24
+const TOOLBAR_GAP_MARGIN_PX = 8
+const READABLE_GAP_PX = 288
+
+function useToolbarGap(watching: boolean): { left: number; right: number } | undefined {
+  const [gap, setGap] = useState<{ left: number; right: number }>()
+  useLayoutEffect(() => {
+    if (!watching) return
+    const start = document.querySelector('[data-toast-gap-start]')
+    const end = document.querySelector('[data-toast-gap-end]')
+    if (!start || !end) {
+      setGap(undefined)
+      return
+    }
+    const firm = document.querySelector('[data-toast-gap-firm-end]')
+    const measure = (): void => {
+      const left = Math.round(start.getBoundingClientRect().right) + TOOLBAR_GAP_MARGIN_PX
+      const roomy = Math.round(end.getBoundingClientRect().left) - TOOLBAR_GAP_MARGIN_PX
+      const edge =
+        roomy - left >= READABLE_GAP_PX || !firm
+          ? roomy
+          : Math.round(firm.getBoundingClientRect().left) - TOOLBAR_GAP_MARGIN_PX
+      const right = window.innerWidth - edge
+      setGap((was) => (was?.left === left && was.right === right ? was : { left, right }))
+    }
+    measure()
+    window.addEventListener('resize', measure)
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
+    observer?.observe(start)
+    observer?.observe(end)
+    return () => {
+      window.removeEventListener('resize', measure)
+      observer?.disconnect()
+    }
+  }, [watching])
+  return gap
+}
 
 // The single home for every transient notification: notices, failures, update prompts and
-// new-track prompts. They stack top-right, newest on top, so a status line and an
+// new-track prompts. They stack down from the empty strip at the top centre, newest on top, so a status line and an
 // action prompt coexist instead of fighting over a corner. Each card auto-dismisses if it
 // carries a duration; prompts and failures stay until acted on.
 export function ToastStack({
@@ -93,6 +129,7 @@ export function ToastStack({
     }, SWIPE_SETTLE_MS)
   }
   useEffect(() => () => clearTimeout(swipeTailRef.current), [])
+  const gap = useToolbarGap(toasts.length > 0)
   // The container renders even when empty: a live region must exist BEFORE content
   // arrives or screen readers miss the first toast. Empty it has zero size, so the
   // fixed corner div never intercepts a click.
@@ -106,7 +143,8 @@ export function ToastStack({
     <div
       aria-live="polite"
       data-above-modals
-      className="fixed top-14 right-5 z-50 flex flex-col"
+      style={gap}
+      className="pointer-events-none fixed inset-x-0 top-[9px] z-50 flex flex-col items-center"
       onWheelCapture={(e) => {
         if (!swallowingSwipeTail.current || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
         e.stopPropagation()
@@ -125,7 +163,7 @@ export function ToastStack({
             data-testid="toast-slot"
             aria-hidden={stepAside || undefined}
             style={stepAside ? { visibility: 'hidden' } : undefined}
-            className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
+            className={`grid min-w-0 max-w-[min(28rem,100%)] transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
               stepAside
                 ? 'pointer-events-none grid-rows-[0fr] transition-none'
                 : leaving
@@ -135,7 +173,7 @@ export function ToastStack({
           >
             {/* overflow-y-clip only while collapsing — kept on, it would clip the
               card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
-            <div className={`min-h-0 pb-2 ${leaving ? 'overflow-y-clip' : ''}`}>
+            <div className={`min-h-0 pb-1.5 ${leaving ? 'overflow-y-clip' : ''}`}>
               <ToastCard
                 toast={toast}
                 leaving={leaving}
@@ -302,11 +340,11 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} relative flex max-w-md overflow-hidden ${align} gap-3 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-3 pl-4 pr-3 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'pointer-events-auto animate-toast-in'} window-no-drag relative flex max-w-full overflow-hidden ${align} gap-2 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 pl-3 pr-1 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
-        className={`max-h-[40vh] overflow-y-auto whitespace-pre-line break-words text-sm ${
+        className={`max-h-[40vh] min-w-0 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
           danger ? 'text-danger' : 'text-fg'
         }`}
       >
@@ -317,7 +355,7 @@ function ToastCard({
           type="button"
           data-testid={toast.testid ? `${toast.testid}-action` : undefined}
           onClick={toast.action.onAction}
-          className="press shrink-0 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-3 py-1.5 text-sm font-medium hover:bg-[var(--color-line-strong)]"
+          className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-0.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
         >
           {text(toast.action.label)}
         </button>
@@ -328,12 +366,12 @@ function ToastCard({
           data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
           aria-label={tr('common.copy')}
           onClick={onCopy}
-          className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+          className="press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
         >
           {copied ? (
-            <Check className="h-4 w-4 text-good" aria-hidden="true" />
+            <Check className="h-3 w-3 text-good" aria-hidden="true" />
           ) : (
-            <Copy className="h-4 w-4" aria-hidden="true" />
+            <Copy className="h-3 w-3" aria-hidden="true" />
           )}
         </button>
       )}
@@ -342,9 +380,9 @@ function ToastCard({
         data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
         aria-label={tr('common.close')}
         onClick={() => onClose(toast.id)}
-        className="press relative flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+        className="press relative flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
       >
-        <X className="h-4 w-4" aria-hidden="true" />
+        <X className="h-3 w-3" aria-hidden="true" />
       </button>
       {toast.duration && (
         <span
