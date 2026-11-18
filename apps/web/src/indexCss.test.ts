@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
-const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
+const css = readFileSync(fileURLToPath(new URL('./index.css', import.meta.url)), 'utf8')
 
 function reducedMotionBlock() {
   const start = css.indexOf('@media (prefers-reduced-motion: reduce)')

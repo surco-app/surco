@@ -114,7 +114,7 @@ describe('Reveal', () => {
   })
 
   it('animates only transform in the eager keyframe so the hero text stays opaque for LCP', () => {
-    const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
+    const css = readFileSync(resolve(import.meta.dirname, '../index.css'), 'utf8')
     const frames = /@keyframes reveal-eager\s*\{([\s\S]*?\n\})/.exec(css)?.[1] ?? ''
     expect(frames).toContain('transform')
     expect(frames).not.toContain('opacity')

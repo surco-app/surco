@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import Header from './components/Header'
 import { loadI18n } from './i18n'
 
-const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
+const css = readFileSync(fileURLToPath(new URL('./index.css', import.meta.url)), 'utf8')
 const CURVE = 'cubic-bezier(0.22, 1, 0.36, 1)'
 const i18n = await loadI18n('en')
 
