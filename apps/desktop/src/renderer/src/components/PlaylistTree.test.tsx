@@ -3,9 +3,10 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import '../i18n'
 import type { SourceNode } from '../../../shared/types'
+import i18n from '../i18n'
 import { playlistOptions } from '../lib/rekordboxPlaylists'
+import { formatCount } from '../lib/stats'
 import { PlaylistTree } from './PlaylistTree'
 
 afterEach(cleanup)
@@ -35,6 +36,28 @@ function renderTree(props: Partial<React.ComponentProps<typeof PlaylistTree>> = 
   )
   return onToggle
 }
+
+describe('PlaylistTree track counts', () => {
+  const BIG: SourceNode[] = [{ id: 'big', name: 'Big', kind: 'playlist', count: 30000 }]
+
+  it('groups the thousands of a count beside a checkbox playlist', () => {
+    renderTree({ tree: BIG, options: playlistOptions(BIG) })
+    const grouped = formatCount(30000, i18n.language)
+    expect(grouped).not.toBe('30000')
+    expect(screen.getByTestId('playlists-count-big')).toHaveTextContent(grouped)
+  })
+
+  it('groups the thousands of a count beside a control playlist', () => {
+    renderTree({
+      tree: BIG,
+      options: playlistOptions(BIG),
+      control: (t) => <button type="button" data-testid={`control-${t.id}`} />,
+    })
+    expect(screen.getByTestId('playlists-count-big')).toHaveTextContent(
+      formatCount(30000, i18n.language),
+    )
+  })
+})
 
 describe('PlaylistTree with a control on every playlist', () => {
   it('draws the control instead of a checkbox, so a playlist can take more than a yes or no', () => {

@@ -11,6 +11,7 @@ import i18n from '../i18n'
 import type { NewPlaylist } from '../lib/commands'
 import * as playlistEdits from '../lib/playlistEdits'
 import { clearDraggedRows, setDraggedRows, TREE_NODE_TYPE } from '../lib/reorderDrag'
+import { formatCount } from '../lib/stats'
 import { fakeDataTransfer, installDragEvent } from '../test/drag'
 import { SourceTree } from './SourceTree'
 
@@ -75,6 +76,13 @@ const over = (el: HTMLElement, y: number, dt: ReturnType<typeof fakeDataTransfer
 }
 
 describe('SourceTree', () => {
+  it('groups the thousands of a track count so a big library reads at a glance', () => {
+    setup(null, false, [{ id: 'big', name: 'Big', kind: 'playlist', count: 30000 }])
+    const grouped = formatCount(30000, i18n.language)
+    expect(grouped).not.toBe('30000')
+    expect(screen.getByTestId('source-node-count-big')).toHaveTextContent(grouped)
+  })
+
   it('draws placeholder rows in the shape of the playlists while the tree is read', () => {
     render(
       <SourceTree
@@ -990,7 +998,7 @@ describe('SourceTree All tracks', () => {
 
   it('shows the whole collection’s count', () => {
     setup(null, true, [ALL, ...NODES])
-    expect(node()).toHaveTextContent('2078')
+    expect(node()).toHaveTextContent(formatCount(2078, i18n.language))
   })
 
   // It is the collection, not a playlist in it: a rename or delete would be sent to a
