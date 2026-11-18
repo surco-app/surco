@@ -192,7 +192,7 @@ export default function Header({
             data-testid="theme-toggle"
             aria-label={t('nav.theme')}
             onClick={toggleTheme}
-            className="grid size-9 place-items-center rounded-full text-muted transition-colors hover:text-fg"
+            className="grid size-9 place-items-center rounded-full text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
           >
             <svg
               width="18"
@@ -233,7 +233,7 @@ export default function Header({
               aria-expanded={languageOpen}
               aria-controls="language-menu"
               onClick={() => setLanguageOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-colors hover:text-fg"
+              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
             >
               <svg
                 width="16"
@@ -363,7 +363,7 @@ export default function Header({
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-blue/50 hover:text-fg lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:border-blue/50 hover:text-fg lg:hidden"
           >
             {open ? (
               <svg

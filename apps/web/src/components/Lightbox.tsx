@@ -65,7 +65,8 @@ export default function Lightbox({
         type="button"
         onClick={onClose}
         aria-label={closeLabel}
-        className="absolute top-4 right-4 z-10 flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-bg/60 text-fg backdrop-blur transition hover:border-blue/60 hover:text-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-blue"
+        data-testid="lightbox-close"
+        className="absolute top-4 right-4 z-10 flex size-10 cursor-pointer items-center justify-center rounded-full border border-line bg-bg/60 text-fg backdrop-blur transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:border-blue/60 hover:text-blue focus:outline-none focus-visible:ring-2 focus-visible:ring-blue"
       >
         <svg
           viewBox="0 0 24 24"
