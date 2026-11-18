@@ -1346,7 +1346,7 @@
         "shiftGrid": "Mover la rejilla {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "Hacen falta dos CALLs",
         "apply": "Poner en el comentario"
       }

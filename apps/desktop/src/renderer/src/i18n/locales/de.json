@@ -1346,7 +1346,7 @@
         "shiftGrid": "Raster um {{ms}} ms verschieben"
       },
       "phrases": {
-        "label": "Phrasen zwischen CALLs",
+        "label": "Phrasen",
         "needsCalls": "Braucht zwei CALLs",
         "apply": "In den Kommentar setzen"
       }

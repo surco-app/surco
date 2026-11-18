@@ -1346,7 +1346,7 @@
         "shiftGrid": "Move the grid {{ms}} ms"
       },
       "phrases": {
-        "label": "Phrases between CALLs",
+        "label": "Phrases",
         "needsCalls": "Needs two CALLs",
         "apply": "Put in the comment"
       }

@@ -1,6 +1,8 @@
+import { Check, MessageSquarePlus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { phraseCount, withPhraseCount } from '../../../shared/phraseCount'
 import { useQueuedCues, useTrackCues } from '../hooks/useTrackCues'
+import { Tooltip } from './Tooltip'
 
 export function PhraseCountRow({
   contentId,
@@ -17,29 +19,40 @@ export function PhraseCountRow({
   if (!read?.analysed || queued === undefined) return null
   const count = phraseCount(queued?.wanted ?? read.cues, read.grid)
   const next = count === null ? comment : withPhraseCount(comment, count)
+  const done = count !== null && next === comment
   return (
     <div
       data-testid="phrase-count"
-      className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-[var(--color-line)] pt-3"
+      className="mt-3 flex min-h-7 items-center gap-3"
     >
-      <span className="text-xs text-fg-dim">{tr('editor.cues.phrases.label')}</span>
+      <span className="shrink-0 text-xs text-fg-dim">{tr('editor.cues.phrases.label')}</span>
       {count === null ? (
-        <span data-testid="phrase-count-needs-calls" className="text-xs text-fg-faint">
+        <span data-testid="phrase-count-needs-calls" className="min-w-0 truncate text-xs text-fg-faint">
           {tr('editor.cues.phrases.needsCalls')}
         </span>
       ) : (
-        <span data-testid="phrase-count-value" className="text-sm tabular-nums text-fg">
+        <span data-testid="phrase-count-value" className="min-w-0 truncate text-sm tabular-nums text-fg">
           {count}
         </span>
       )}
       <button
         type="button"
         data-testid="phrase-count-apply"
+        aria-label={tr('editor.cues.phrases.apply')}
         disabled={next === comment}
         onClick={() => onApply(next)}
-        className="press ml-auto rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40"
+        className={`press relative ml-auto flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors ${
+          done
+            ? 'text-[var(--color-good)]'
+            : 'text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
+        }`}
       >
-        {tr('editor.cues.phrases.apply')}
+        {done ? (
+          <Check data-testid="phrase-count-done" className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
+        )}
+        <Tooltip label={tr('editor.cues.phrases.apply')} />
       </button>
     </div>
   )

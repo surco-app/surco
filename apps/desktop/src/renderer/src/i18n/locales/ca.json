@@ -1346,7 +1346,7 @@
         "shiftGrid": "Moure la graella {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "Calen dos CALLs",
         "apply": "Posar al comentari"
       }

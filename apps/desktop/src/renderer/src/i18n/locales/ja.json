@@ -1346,7 +1346,7 @@
         "shiftGrid": "グリッドを {{ms}} ms 動かす"
       },
       "phrases": {
-        "label": "CALL間のフレーズ",
+        "label": "フレーズ",
         "needsCalls": "CALLが2つ必要です",
         "apply": "コメントに入れる"
       }

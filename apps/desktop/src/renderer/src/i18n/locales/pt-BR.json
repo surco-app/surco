@@ -1346,7 +1346,7 @@
         "shiftGrid": "Mover a grade {{ms}} ms"
       },
       "phrases": {
-        "label": "Frases entre CALLs",
+        "label": "Frases",
         "needsCalls": "São necessários dois CALLs",
         "apply": "Colocar no comentário"
       }

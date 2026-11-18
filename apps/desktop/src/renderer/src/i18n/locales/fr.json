@@ -1346,7 +1346,7 @@
         "shiftGrid": "Déplacer la grille de {{ms}} ms"
       },
       "phrases": {
-        "label": "Phrases entre CALLs",
+        "label": "Phrases",
         "needsCalls": "Il faut deux CALLs",
         "apply": "Mettre dans le commentaire"
       }

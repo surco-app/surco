@@ -71,6 +71,26 @@ describe('PhraseCountRow', () => {
     expect(screen.getByTestId('phrase-count-apply')).toBeDisabled()
   })
 
+  it('swaps the icon for a check once the comment carries the count, so the DJ sees it is already there', () => {
+    renderRow(read([0, 64, 320].map(callAt)), '2 - 8 · Vocal fuerte')
+    expect(screen.getByTestId('phrase-count-done')).toBeInTheDocument()
+  })
+
+  it('shows no check while the count is still missing from the comment', () => {
+    renderRow(read([0, 64, 320].map(callAt)), 'Vocal fuerte')
+    expect(screen.queryByTestId('phrase-count-done')).not.toBeInTheDocument()
+  })
+
+  it('names the icon button for a screen reader, since it carries no text of its own', () => {
+    renderRow(read([0, 64, 320].map(callAt)), '')
+    expect(screen.getByTestId('phrase-count-apply')).toHaveAccessibleName('Put in the comment')
+  })
+
+  it('keeps the count and its action on one line, where a wrapped button used to sit alone on a second', () => {
+    renderRow(read([0, 64, 320].map(callAt)), '')
+    expect(screen.getByTestId('phrase-count').className.split(' ')).not.toContain('flex-wrap')
+  })
+
   it('says two CALLs are needed while there are fewer, so the DJ knows where the count comes from', () => {
     renderRow(read([callAt(0)]), '')
     expect(screen.getByTestId('phrase-count-needs-calls')).toBeInTheDocument()
