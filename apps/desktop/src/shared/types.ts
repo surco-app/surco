@@ -1930,6 +1930,7 @@ export type RekordboxQueueApplied =
       changes: number
       notices: RekordboxQueueNotice[]
       written: RekordboxQueueWritten[]
+      cues?: string[]
       created?: QueuedCreate[]
     }
   | { refused: RekordboxEditRefusal }

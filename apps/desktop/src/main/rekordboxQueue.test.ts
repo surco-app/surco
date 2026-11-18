@@ -1070,6 +1070,19 @@ describe('cues in the queue', () => {
     expect(q.isEmpty()).toBe(true)
   })
 
+  it('names the files whose cues it wrote, so the editor that sent them can confirm the save where the button is', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([
+      track('t', '/m/z.wav'),
+      cues('c1', [1000]),
+      cues('c2', [2000], { contentId: '104', path: '/m/b.wav', label: 'b' }),
+    ])
+    expect(await q.apply(closed)).toMatchObject({
+      status: 'applied',
+      cues: ['/m/a.wav', '/m/b.wav'],
+    })
+  })
+
   it('moves no stamp for queued cues after a batch wrote, since cues carry none', async () => {
     const store = memoryStore()
     const nodeStamps = vi

@@ -1079,6 +1079,7 @@
       "unreadable": "rekordbox からキューを読み取れませんでした",
       "discard": "変更を破棄",
       "unsaved": "未保存",
+      "saved": "保存済み",
       "flow": "フロー",
       "delete": "削除",
       "deleteHot": "ホットキュー {{letter}} を削除",

@@ -24,6 +24,7 @@ import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSect
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
 import { reduceDraft } from '../lib/cueDraft'
+import { claimCueSave } from '../lib/cueSaveEcho'
 import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
@@ -2363,6 +2364,55 @@ describe('CuesSection maximized grid', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
+  })
+
+  const LANDED = { tracks: 1, changes: 0, cues: ['/m/g.wav'] }
+  const saveOneMark = async (refused = false) => {
+    let waiting: Awaited<ReturnType<Api['cues']['queued']>> = null
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async (reqs) => {
+      if (refused) throw new Error('refused')
+      waiting = { wanted: reqs[0].wanted, fingerprint: READ.fingerprint }
+    })
+    setup(null, READ, {
+      cues: { save: saveRekordboxCues, queued: vi.fn<Api['cues']['queued']>(async () => waiting) },
+    })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+  }
+
+  it('says Saved beside the Save button once rekordbox wrote the cues it sent and takes it away again, so the save is confirmed where it was asked and leaves no label behind', async () => {
+    await saveOneMark()
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    expect(screen.queryByTestId('cues-saved')).toBeNull()
+    vi.useFakeTimers()
+    try {
+      act(() => {
+        expect(claimCueSave('rekordbox', LANDED)).toBe(true)
+      })
+      expect(screen.getByTestId('cues-saved')).toHaveTextContent('Saved')
+      expect(screen.getByTestId('cues-actions')).toContainElement(screen.getByTestId('cues-saved'))
+      act(() => {
+        vi.advanceTimersByTime(2000)
+      })
+      expect(screen.queryByTestId('cues-saved')).toBeNull()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops answering for a save once the editor is closed, so cues that land later are announced instead of confirmed on a screen nobody sees', async () => {
+    await saveOneMark()
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    cleanup()
+    expect(claimCueSave('rekordbox', LANDED)).toBe(false)
+  })
+
+  it('does not answer for a save that was refused, since nothing of it will land', async () => {
+    await saveOneMark(true)
+    await screen.findByTestId('cues-save-failed')
+    expect(claimCueSave('rekordbox', LANDED)).toBe(false)
   })
 
   it('shows the grid waiting in the queue for rekordbox to close, as the grid it will write, without calling it unsaved', async () => {

@@ -1079,6 +1079,7 @@
       "unreadable": "Impossibile leggere i cue di rekordbox",
       "discard": "Scarta le modifiche",
       "unsaved": "Non salvato",
+      "saved": "Salvato",
       "flow": "Flusso",
       "delete": "Elimina",
       "deleteHot": "Elimina l'hot cue {{letter}}",

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { RekordboxQueueApplied, RekordboxQueueState } from '../../../shared/types'
 import '../i18n'
+import { expectCueSave, forgetCueSave, onCueSaveEchoed } from '../lib/cueSaveEcho'
 import { djReads, installApi, type ProgramReads } from '../test/api'
 import {
   ENGINE_CUE_QUEUE,
@@ -101,6 +102,52 @@ describe('useRekordboxQueue', () => {
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-playlist'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-queued-cues'] })
+  })
+
+  it('says nothing when the cues that landed are the ones the open editor just sent, because the editor confirms them beside its Save button', () => {
+    const { notify, invalidate, applied } = setup()
+    const echoed = vi.fn()
+    const off = onCueSaveEchoed(echoed)
+    expectCueSave('rekordbox', ['/m/a.wav'])
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [], cues: ['/m/a.wav'] }))
+    off()
+    expect(notify).not.toHaveBeenCalled()
+    expect(echoed).toHaveBeenCalledWith('rekordbox', ['/m/a.wav'])
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
+  })
+
+  it('still tells the user when more landed than the open editor sent, because nothing on screen shows the rest', () => {
+    const { notify, applied } = setup()
+    expectCueSave('rekordbox', ['/m/a.wav'])
+    act(() =>
+      applied({ tracks: 2, changes: 0, notices: [], written: [], cues: ['/m/a.wav', '/m/b.wav'] }),
+    )
+    forgetCueSave('rekordbox', ['/m/a.wav'])
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 2 tracks', 'neutral')
+  })
+
+  it('still tells the user when the cues land after the editor that sent them is gone, because nobody is looking at that button', () => {
+    const { notify, applied } = setup()
+    expectCueSave('rekordbox', ['/m/a.wav'])
+    forgetCueSave('rekordbox', ['/m/a.wav'])
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [], cues: ['/m/a.wav'] }))
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 track', 'neutral')
+  })
+
+  it('keeps the warnings of a save the editor confirms, since the Saved mark cannot carry them', () => {
+    const { notify, applied } = setup()
+    expectCueSave('rekordbox', ['/m/a.wav'])
+    act(() =>
+      applied({
+        tracks: 1,
+        changes: 0,
+        notices: [{ code: 'edit-changed', playlist: 'Makina' }],
+        written: [],
+        cues: ['/m/a.wav'],
+      }),
+    )
+    expect(notify).toHaveBeenCalledTimes(1)
+    expect(notify.mock.calls[0][0]).not.toContain('Done in rekordbox')
   })
 
   it('re-reads the crates of every DJ library when a queue lands, so a crate field never shows the membership from before the write', () => {
