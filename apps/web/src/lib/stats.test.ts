@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   type Day,
   installsInLast,
-  lastTwelveMonths,
-  macUpdates,
   recordSnapshot,
   releaseTotals,
   type StatsRelease,
-  weeklyMacInstalls,
+  usage,
+  versions,
+  weeklyInstalls,
 } from './stats'
 
 const asset = (name: string, download_count: number) => ({ name, download_count })
@@ -42,17 +42,26 @@ describe('releaseTotals', () => {
     expect(releaseTotals(r).mac).toBe(0)
   })
 
-  // The Windows and Linux installers have no bot-only twin (the updater reads the .exe
-  // blockmap), so they take off the bot count the same release's dmg blockmaps measured.
-  it('takes the release bot count off the Windows and Linux installers', () => {
+  it('counts a Windows install only when the installer was fetched without its blockmap, which every update downloads', () => {
+    const r = release('v1.0.0', '2026-10-01T00:00:00Z', [
+      asset('Surco-1.0.0-Setup.exe', 12),
+      asset('Surco-1.0.0-Setup.exe.blockmap', 9),
+    ])
+    expect(releaseTotals(r).windows).toBe(3)
+  })
+
+  it('takes the release bot count off a Windows installer published without a blockmap', () => {
     const r = release('v1.0.0', '2026-10-01T00:00:00Z', [
       asset('Surco-1.0.0-arm64.dmg.blockmap', 1),
       asset('Surco-1.0.0-x64.dmg.blockmap', 3),
       asset('Surco-1.0.0-Setup.exe', 12),
-      asset('Surco-1.0.0-Setup.exe.blockmap', 9),
-      asset('Surco-1.0.0-x86_64.AppImage', 5),
     ])
-    expect(releaseTotals(r)).toMatchObject({ windows: 10, linux: 3 })
+    expect(releaseTotals(r).windows).toBe(10)
+  })
+
+  it('leaves Linux out, where automatic fetches outnumber people and cannot be told apart', () => {
+    const r = release('v1.0.0', '2026-10-01T00:00:00Z', [asset('Surco-1.0.0-x86_64.AppImage', 5)])
+    expect(releaseTotals(r)).toEqual({ mac: 0, windows: 0 })
   })
 
   it('leaves out the update feeds and archives the app polls on every launch', () => {
@@ -61,35 +70,62 @@ describe('releaseTotals', () => {
       asset('latest.yml', 300),
       asset('Surco-1.0.0-arm64.zip', 40),
     ])
-    expect(releaseTotals(r)).toMatchObject({ mac: 0, windows: 0, linux: 0 })
+    expect(releaseTotals(r)).toEqual({ mac: 0, windows: 0 })
   })
 })
 
-describe('macUpdates', () => {
-  // The .zip is only ever fetched by the Mac updater, so it counts Macs that moved to each
-  // version: the closest thing to active use without telemetry. Betas reach only opted-in
-  // users and would read as a collapse.
-  it('counts the zips of the newest stable releases, newest first, without bots', () => {
-    const releases = [
-      release('v1.1.0', '2026-10-02T00:00:00Z', [
-        asset('Surco-1.1.0-arm64.zip', 9),
-        asset('Surco-1.1.0-x64.zip', 3),
-        asset('Surco-1.1.0-arm64.dmg.blockmap', 1),
-      ]),
-      release('v1.2.0-beta.0', '2026-10-03T00:00:00Z', [asset('Surco-arm64.zip', 2)], true),
-      release('v1.0.0', '2026-10-01T00:00:00Z', [asset('Surco-1.0.0-arm64.zip', 5)]),
-    ]
-    expect(macUpdates(releases, 8)).toEqual([
-      { version: 'v1.1.0', count: 10 },
-      { version: 'v1.0.0', count: 5 },
+describe('versions', () => {
+  const releases = [
+    release('v1.1.0', '2026-10-02T00:00:00Z', [
+      asset('Surco-1.1.0-arm64.zip', 9),
+      asset('Surco-1.1.0-x64.zip', 3),
+      asset('Surco-1.1.0-arm64.dmg', 5),
+      asset('Surco-1.1.0-arm64.dmg.blockmap', 1),
+      asset('Surco-1.1.0-Setup.exe', 8),
+      asset('Surco-1.1.0-Setup.exe.blockmap', 6),
+    ]),
+    release('v1.2.0-beta.0', '2026-10-03T00:00:00Z', [asset('Surco-arm64.zip', 2)], true),
+    release('v1.0.0', '2026-10-01T00:00:00Z', [asset('Surco-1.0.0-arm64.zip', 5)]),
+  ]
+
+  it('counts the Macs and PCs the updater moved to each stable version, newest first, without bots or betas', () => {
+    expect(versions(releases, 8, '2026-10-02T05:00:00Z')).toMatchObject([
+      { version: 'v1.1.0', mac: 10, windows: 5 },
+      { version: 'v1.0.0', mac: 5, windows: 0 },
     ])
   })
 
+  it('says how long each version was the newest, because a version replaced in two hours cannot reach the Macs a full day does', () => {
+    expect(versions(releases, 8, '2026-10-02T04:30:00Z').map((v) => v.hours)).toEqual([5, 24])
+  })
+
+  it('adds the new installs each version brought on Mac and Windows', () => {
+    expect(versions(releases, 8, '2026-10-02T05:00:00Z')[0].installs).toBe(6)
+  })
+
   it('keeps only as many versions as asked for', () => {
-    const releases = ['1', '2', '3'].map((n) =>
+    const three = ['1', '2', '3'].map((n) =>
       release(`v1.${n}.0`, `2026-10-0${n}T00:00:00Z`, [asset('a.zip', 1)]),
     )
-    expect(macUpdates(releases, 2).map((u) => u.version)).toEqual(['v1.3.0', 'v1.2.0'])
+    expect(versions(three, 2, '2026-10-04T00:00:00Z').map((v) => v.version)).toEqual([
+      'v1.3.0',
+      'v1.2.0',
+    ])
+  })
+})
+
+describe('usage', () => {
+  it('takes the most updated version of each week as the least number of computers running Surco', () => {
+    const releases = [
+      release('v1.0.0', '2026-10-05T00:00:00Z', [asset('a.zip', 4), asset('a.exe.blockmap', 7)]),
+      release('v1.1.0', '2026-10-07T00:00:00Z', [asset('a.zip', 9), asset('a.exe.blockmap', 2)]),
+      release('v1.2.0', '2026-10-12T00:00:00Z', [asset('a.zip', 3)]),
+      release('v1.3.0-beta.0', '2026-10-13T00:00:00Z', [asset('a.zip', 50)], true),
+    ]
+    expect(usage(releases)).toEqual([
+      { week: '2026-10-05', mac: 9, windows: 7 },
+      { week: '2026-10-12', mac: 3, windows: 0 },
+    ])
   })
 })
 
@@ -108,41 +144,57 @@ describe('recordSnapshot', () => {
   it('rebuilds the days before the first snapshot from each release window', () => {
     const { days } = recordSnapshot(null, releases, '2026-10-04')
     expect(days).toEqual([
-      { date: '2026-10-01', mac: 2, windows: 0, linux: 0, estimated: true },
-      { date: '2026-10-02', mac: 4, windows: 0, linux: 0, estimated: true },
-      { date: '2026-10-03', mac: 7, windows: 1, linux: 0, estimated: true },
-      { date: '2026-10-04', mac: 10, windows: 2, linux: 0 },
+      { date: '2026-10-01', mac: 2, windows: 0, estimated: true },
+      { date: '2026-10-02', mac: 4, windows: 0, estimated: true },
+      { date: '2026-10-03', mac: 7, windows: 1, estimated: true },
+      { date: '2026-10-04', mac: 10, windows: 2 },
     ])
   })
 
   it('ends on the measured totals of today, which are not an estimate', () => {
     const { days } = recordSnapshot(null, releases, '2026-10-04')
-    expect(days.at(-1)).toEqual({ date: '2026-10-04', mac: 10, windows: 2, linux: 0 })
+    expect(days.at(-1)).toEqual({ date: '2026-10-04', mac: 10, windows: 2 })
   })
 
   // Once snapshots exist they are the history: rebuilding again would rewrite measured
   // days with an estimate made from later counts.
   it('appends to an existing history instead of rebuilding it', () => {
     const previous = {
-      days: [{ date: '2026-10-03', mac: 9, windows: 1, linux: 0 }],
-      macUpdates: [],
+      days: [{ date: '2026-10-03', mac: 9, windows: 1 }],
+      versions: [],
+      usage: [],
     }
     expect(recordSnapshot(previous, releases, '2026-10-04').days).toEqual([
-      { date: '2026-10-03', mac: 9, windows: 1, linux: 0 },
-      { date: '2026-10-04', mac: 10, windows: 2, linux: 0 },
+      { date: '2026-10-03', mac: 9, windows: 1 },
+      { date: '2026-10-04', mac: 10, windows: 2 },
     ])
   })
 
   it('replaces the entry of a day that runs twice', () => {
     const previous = {
       days: [
-        { date: '2026-10-03', mac: 9, windows: 1, linux: 0 },
-        { date: '2026-10-04', mac: 9, windows: 1, linux: 0 },
+        { date: '2026-10-03', mac: 9, windows: 1 },
+        { date: '2026-10-04', mac: 9, windows: 1 },
       ],
-      macUpdates: [],
+      versions: [],
+      usage: [],
     }
     expect(recordSnapshot(previous, releases, '2026-10-04').days).toHaveLength(2)
     expect(recordSnapshot(previous, releases, '2026-10-04').days.at(-1)?.mac).toBe(10)
+  })
+
+  it('rebuilds a history recorded when Windows counted updates, whose figures cannot continue as installs', () => {
+    const previous = {
+      days: [{ date: '2026-10-03', mac: 9, windows: 40, linux: 3 }],
+      versions: [],
+      usage: [],
+    }
+    expect(recordSnapshot(previous, releases, '2026-10-04').days[2]).toEqual({
+      date: '2026-10-03',
+      mac: 7,
+      windows: 1,
+      estimated: true,
+    })
   })
 
   it('skips drafts, which have no publication date and nobody can download', () => {
@@ -154,19 +206,17 @@ describe('recordSnapshot', () => {
   })
 })
 
-const day = (date: string, mac: number, estimated?: true): Day => ({
-  date,
-  mac,
-  windows: 0,
-  linux: 0,
-  ...(estimated && { estimated }),
-})
+const day = (date: string, mac: number, windows = 0): Day => ({ date, mac, windows })
 
 describe('installsInLast', () => {
-  it('counts the Mac installs of the last days asked for', () => {
-    const days = [day('2026-10-20', 100), day('2026-10-23', 110), day('2026-10-27', 130)]
-    expect(installsInLast(days, 7)).toBe(30)
-    expect(installsInLast(days, 4)).toBe(20)
+  it('counts the Mac and Windows installs of the last days asked for', () => {
+    const days = [
+      day('2026-10-20', 100, 50),
+      day('2026-10-23', 110, 52),
+      day('2026-10-27', 130, 60),
+    ]
+    expect(installsInLast(days, 7)).toBe(40)
+    expect(installsInLast(days, 4)).toBe(28)
   })
 
   it('counts from the first day when the history is shorter than a week', () => {
@@ -174,48 +224,22 @@ describe('installsInLast', () => {
   })
 })
 
-describe('weeklyMacInstalls', () => {
-  // A cumulative curve flattens a change of pace into a gentle bend; new installs per week
-  // show it.
-  it('turns the cumulative curve into new installs per week, starting on Monday', () => {
+describe('weeklyInstalls', () => {
+  it('turns the running totals into new installs per week and system, starting on Monday', () => {
     const days = [
-      day('2026-10-05', 10),
-      day('2026-10-11', 14),
-      day('2026-10-12', 15),
-      day('2026-10-18', 25),
+      day('2026-10-05', 10, 1),
+      day('2026-10-11', 14, 3),
+      day('2026-10-12', 15, 3),
+      day('2026-10-18', 25, 8),
     ]
-    expect(weeklyMacInstalls(days)).toEqual([
-      { week: '2026-10-05', count: 14 },
-      { week: '2026-10-12', count: 11 },
+    expect(weeklyInstalls(days)).toEqual([
+      { week: '2026-10-05', mac: 14, windows: 3 },
+      { week: '2026-10-12', mac: 11, windows: 5 },
     ])
   })
 
   it('carries a week with no snapshot as zero instead of dropping it', () => {
     const days = [day('2026-10-05', 10), day('2026-10-19', 12)]
-    expect(weeklyMacInstalls(days).map((w) => w.count)).toEqual([10, 0, 2])
-  })
-})
-
-describe('lastTwelveMonths', () => {
-  // The curve starts on the first day ever stored, so every month added squeezes the rest
-  // into the same width until the month labels collide. A year keeps the recent pace
-  // readable.
-  it('keeps the days from the same date a year before the latest one', () => {
-    const days = [
-      day('2025-10-29', 1),
-      day('2025-10-30', 2),
-      day('2026-03-01', 50),
-      day('2026-10-30', 273),
-    ]
-    expect(lastTwelveMonths(days).map((d) => d.date)).toEqual([
-      '2025-10-30',
-      '2026-03-01',
-      '2026-10-30',
-    ])
-  })
-
-  it('keeps a history shorter than a year whole', () => {
-    const days = [day('2026-06-02', 4), day('2026-10-30', 273)]
-    expect(lastTwelveMonths(days)).toEqual(days)
+    expect(weeklyInstalls(days).map((w) => w.mac)).toEqual([10, 0, 2])
   })
 })

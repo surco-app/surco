@@ -3,19 +3,19 @@ import { Trans, useTranslation } from 'react-i18next'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import { installsInLast, type Stats } from '../lib/stats'
-import { fetchStats, useFormat } from './Stats'
+import { fetchStats, hasFigures, useFormat } from './Stats'
 
 const SPARK_W = 56
 const SPARK_H = 18
 const SPARK_DAYS = 60
 
 function Sparkline({ stats }: { stats: Stats }) {
-  const days = stats.days.slice(-SPARK_DAYS)
-  const min = days[0].mac
-  const span = Math.max(days[days.length - 1].mac - min, 1)
-  const x = (i: number) => (i / Math.max(days.length - 1, 1)) * (SPARK_W - 2) + 1
-  const y = (mac: number) => SPARK_H - 2 - ((mac - min) / span) * (SPARK_H - 4)
-  const last = days.length - 1
+  const installs = stats.days.slice(-SPARK_DAYS).map((d) => d.mac + d.windows)
+  const min = installs[0]
+  const span = Math.max(installs[installs.length - 1] - min, 1)
+  const x = (i: number) => (i / Math.max(installs.length - 1, 1)) * (SPARK_W - 2) + 1
+  const y = (count: number) => SPARK_H - 2 - ((count - min) / span) * (SPARK_H - 4)
+  const last = installs.length - 1
 
   return (
     <svg
@@ -26,14 +26,14 @@ function Sparkline({ stats }: { stats: Stats }) {
       className="flex-none overflow-visible text-blue"
     >
       <polyline
-        points={days.map((d, i) => `${x(i)},${y(d.mac)}`).join(' ')}
+        points={installs.map((count, i) => `${x(i)},${y(count)}`).join(' ')}
         fill="none"
         stroke="currentColor"
         strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-      <circle cx={x(last)} cy={y(days[last].mac)} r="2" fill="currentColor" />
+      <circle cx={x(last)} cy={y(installs[last])} r="2" fill="currentColor" />
     </svg>
   )
 }
@@ -50,7 +50,7 @@ export function HeroStatsView({ stats }: { stats: Stats }) {
       <span>
         <Trans
           i18nKey="home.heroStatsTotal"
-          values={{ total: format.number(latest.mac + latest.windows + latest.linux) }}
+          values={{ total: format.number(latest.mac + latest.windows) }}
           components={{
             n: <b data-testid="hero-stats-total" className="font-semibold text-fg tabular-nums" />,
           }}
@@ -86,7 +86,7 @@ export default function HeroStats() {
     let cancelled = false
     fetchStats()
       .then((data) => {
-        if (!cancelled && data.days.length > 0) setStats(data)
+        if (!cancelled && hasFigures(data)) setStats(data)
       })
       .catch(() => {})
     return () => {
