@@ -242,81 +242,73 @@ export function StatsView({ stats }: { stats: Stats }) {
       </section>
 
       <section className="py-12" data-testid="stats-mac-installs">
-        <Reveal>
-          <Kicker>{t('stats.macHeading')}</Kicker>
-          <p className="mt-4 leading-relaxed text-muted">{t('stats.macLede')}</p>
-          <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted">
-            <span>
-              <b className="text-xl font-semibold text-fg tabular-nums">
-                +{format.number(installsInLast(days, 7))}
-              </b>{' '}
-              {t('stats.lastWeek')}
-            </span>
-            <span>
-              <b className="text-xl font-semibold text-fg tabular-nums">
-                +{format.number(installsInLast(days, 30))}
-              </b>{' '}
-              {t('stats.lastMonth')}
-            </span>
-          </div>
-          <div className="mt-8">
-            <CumulativeChart days={lastTwelveMonths(days)} />
-          </div>
-          <p className="mt-3 text-xs text-faint">{t('stats.estimatedLegend')}</p>
-        </Reveal>
+        <Kicker>{t('stats.macHeading')}</Kicker>
+        <p className="mt-4 leading-relaxed text-muted">{t('stats.macLede')}</p>
+        <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted">
+          <span>
+            <b className="text-xl font-semibold text-fg tabular-nums">
+              +{format.number(installsInLast(days, 7))}
+            </b>{' '}
+            {t('stats.lastWeek')}
+          </span>
+          <span>
+            <b className="text-xl font-semibold text-fg tabular-nums">
+              +{format.number(installsInLast(days, 30))}
+            </b>{' '}
+            {t('stats.lastMonth')}
+          </span>
+        </div>
+        <div className="mt-8">
+          <CumulativeChart days={lastTwelveMonths(days)} />
+        </div>
+        <p className="mt-3 text-xs text-faint">{t('stats.estimatedLegend')}</p>
       </section>
 
       <section className="py-12" data-testid="stats-weekly">
-        <Reveal>
-          <Kicker>{t('stats.weeklyHeading')}</Kicker>
-          <div className="mt-8">
-            <WeeklyChart days={days} />
-          </div>
-        </Reveal>
+        <Kicker>{t('stats.weeklyHeading')}</Kicker>
+        <div className="mt-8">
+          <WeeklyChart days={days} />
+        </div>
       </section>
 
       <section className="py-12" data-testid="stats-updates">
-        <Reveal>
-          <Kicker>{t('stats.updatesHeading')}</Kicker>
-          <p className="mt-4 leading-relaxed text-muted">{t('stats.updatesLede')}</p>
-          <ul className="mt-6 grid gap-2.5">
-            {stats.macUpdates.map((u) => (
-              <li
-                key={u.version}
-                className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3 text-sm"
-              >
-                <span className="font-mono text-[0.8125rem]">{u.version}</span>
-                <span className="h-2.5 overflow-hidden rounded-full bg-line">
-                  <span
-                    className="block h-full rounded-full bg-blue"
-                    style={{ width: `${(u.count / maxUpdates) * 100}%` }}
-                  />
-                </span>
-                <span className="text-right text-muted tabular-nums">{format.number(u.count)}</span>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
+        <Kicker>{t('stats.updatesHeading')}</Kicker>
+        <p className="mt-4 leading-relaxed text-muted">{t('stats.updatesLede')}</p>
+        <ul className="mt-6 grid gap-2.5">
+          {stats.macUpdates.map((u) => (
+            <li
+              key={u.version}
+              className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3 text-sm"
+            >
+              <span className="font-mono text-[0.8125rem]">{u.version}</span>
+              <span className="h-2.5 overflow-hidden rounded-full bg-line">
+                <span
+                  className="block h-full rounded-full bg-blue"
+                  style={{ width: `${(u.count / maxUpdates) * 100}%` }}
+                />
+              </span>
+              <span className="text-right text-muted tabular-nums">{format.number(u.count)}</span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="py-12" data-testid="stats-how">
-        <Reveal>
-          <Kicker>{t('stats.howHeading')}</Kicker>
-          <ul className="mt-5 space-y-3">
-            {(t('stats.howItems', { returnObjects: true }) as string[]).map((item) => (
-              <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted">
-                <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                <span>{item}</span>
-              </li>
-            ))}
-            <li className="flex gap-3 text-sm leading-relaxed text-muted">
+        <Kicker>{t('stats.howHeading')}</Kicker>
+        <ul className="mt-5 space-y-3">
+          {(t('stats.howItems', { returnObjects: true }) as string[]).map((item) => (
+            <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted">
               <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-              <span data-testid="stats-measured-since">
-                {t('stats.measuredSince', { date: format.day(measuredSince) })}
-              </span>
+              <span>{item}</span>
             </li>
-          </ul>
-        </Reveal>
+          ))}
+          <li className="flex gap-3 text-sm leading-relaxed text-muted">
+            <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+            <span data-testid="stats-measured-since">
+              {t('stats.measuredSince', { date: format.day(measuredSince) })}
+            </span>
+          </li>
+        </ul>
       </section>
     </>
   )

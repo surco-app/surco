@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next'
 import Kicker from './Kicker'
-import Reveal from './Reveal'
 
 // Native <details> so the answers are open to crawlers and keyboard users with no
 // JS; the +/× marker is the only thing the `group-open` state drives.
@@ -10,28 +9,24 @@ export default function Faq() {
 
   return (
     <section id="faq" className="scroll-mt-24 pb-24">
-      <Reveal>
-        <Kicker>{t('faq.kicker')}</Kicker>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          {t('faq.title')}
-        </h2>
-      </Reveal>
+      <Kicker>{t('faq.kicker')}</Kicker>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        {t('faq.title')}
+      </h2>
       <div className="mt-10 grid gap-x-12 md:grid-cols-2">
-        {items.map((item, i) => (
-          <Reveal key={item.q} delay={(i % 2) * 80}>
-            <details className="group border-b border-line/60 py-4">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">
-                {item.q}
-                <span
-                  className="font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
-                  aria-hidden="true"
-                >
-                  +
-                </span>
-              </summary>
-              <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">{item.a}</p>
-            </details>
-          </Reveal>
+        {items.map((item) => (
+          <details key={item.q} className="group border-b border-line/60 py-4">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">
+              {item.q}
+              <span
+                className="font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
+                aria-hidden="true"
+              >
+                +
+              </span>
+            </summary>
+            <p className="mt-3 text-sm leading-relaxed text-pretty text-muted">{item.a}</p>
+          </details>
         ))}
       </div>
     </section>

@@ -180,54 +180,46 @@ export default function Guide() {
               <BlockHeading title={b.title} />
               {b.items.map(({ s, n }) => (
                 <section key={s.id} id={s.id} className="scroll-mt-20 py-14 sm:py-16">
-                  <Reveal>
-                    <p className="font-mono text-sm text-blue">{n}</p>
-                    <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
-                      {s.title}
-                    </h3>
-                    <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">
-                      {s.s}
+                  <p className="font-mono text-sm text-blue">{n}</p>
+                  <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">
+                    {s.title}
+                  </h3>
+                  <p className="mt-3 max-w-2xl text-lg leading-snug text-pretty text-subtle">
+                    {s.s}
+                  </p>
+                  {s.body.map((p) => (
+                    <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
+                      {p}
                     </p>
-                    {s.body.map((p) => (
-                      <p key={p} className="mt-4 max-w-2xl leading-relaxed text-muted">
-                        {p}
-                      </p>
-                    ))}
-                    <StepList steps={s.steps} testid="guide-steps" />
-                    <NotesFold
-                      label={t('guide.notesLabel')}
-                      points={s.points}
-                      testid="guide-notes"
+                  ))}
+                  <StepList steps={s.steps} testid="guide-steps" />
+                  <NotesFold label={t('guide.notesLabel')} points={s.points} testid="guide-notes" />
+                  {s.shot && (
+                    <GuideShot
+                      src={`/guide/${s.shot}`}
+                      caption={s.shotCaption}
+                      placeholder={placeholder}
+                      onZoom={(shot) => {
+                        setLightboxShot(shot)
+                        setLightboxOpen(true)
+                      }}
                     />
-                    {s.shot && (
-                      <GuideShot
-                        src={`/guide/${s.shot}`}
-                        caption={s.shotCaption}
-                        placeholder={placeholder}
-                        onZoom={(shot) => {
-                          setLightboxShot(shot)
-                          setLightboxOpen(true)
-                        }}
-                      />
-                    )}
-                  </Reveal>
+                  )}
                 </section>
               ))}
             </div>
           ))}
 
           <section className="py-20 text-center sm:py-24">
-            <Reveal>
-              <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                {t('guide.outroTitle')}
-              </h2>
-              <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-                {t('guide.outroLede')}
-              </p>
-              <div className="mt-2 flex flex-col items-center text-center">
-                <DownloadButton location="guide" />
-              </div>
-            </Reveal>
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              {t('guide.outroTitle')}
+            </h2>
+            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+              {t('guide.outroLede')}
+            </p>
+            <div className="mt-2 flex flex-col items-center text-center">
+              <DownloadButton location="guide" />
+            </div>
           </section>
         </div>
       </main>

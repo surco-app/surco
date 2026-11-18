@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import BrewCommand from './BrewCommand'
 import DownloadButton from './DownloadButton'
 import Kicker from './Kicker'
-import Reveal from './Reveal'
 import SectionView from './SectionView'
 
 export default function InstallSection() {
@@ -14,18 +13,14 @@ export default function InstallSection() {
     // the band's top border. pb-24 alone was enough while this sat mid-page.
     <section id="instalar" className="scroll-mt-24 py-24">
       <SectionView location="install" />
-      <Reveal>
-        <Kicker>{t('install.kicker')}</Kicker>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-          {t('install.title')}
-        </h2>
-        <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('install.lede')}</p>
-        <DownloadButton location="install" showMeta={false} />
-      </Reveal>
+      <Kicker>{t('install.kicker')}</Kicker>
+      <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+        {t('install.title')}
+      </h2>
+      <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-muted">{t('install.lede')}</p>
+      <DownloadButton location="install" showMeta={false} />
 
-      <Reveal delay={120}>
-        <BrewCommand location="install" className="mt-10 max-w-2xl" />
-      </Reveal>
+      <BrewCommand location="install" className="mt-10 max-w-2xl" />
     </section>
   )
 }
