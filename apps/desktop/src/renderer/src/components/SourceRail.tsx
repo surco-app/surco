@@ -148,6 +148,7 @@ export function SourceRail({
   return (
     <nav
       data-testid="source-rail"
+      data-toast-anchor
       aria-label={tr('sources.rail')}
       style={{ width }}
       onContextMenu={(e) => {

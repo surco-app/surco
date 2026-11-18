@@ -837,25 +837,19 @@ button:hover > .process-fill {
 @keyframes toast-leave {
   to {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translateY(8px);
   }
 }
 
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(-8px) scale(0.98);
+    transform: translateY(8px) scale(0.98);
   }
 }
 
 .animate-toast-in {
   animation: toast-in var(--duration-panel) var(--ease-standard);
-}
-
-/* A notice hangs over the toolbar, which drags the window: without this its buttons would
-   move the window instead of answering. */
-.window-no-drag {
-  -webkit-app-region: no-drag;
 }
 
 .animate-toast-leave {
