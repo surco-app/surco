@@ -10,7 +10,7 @@ import Reveal from './Reveal'
 let root: Root | null = null
 let observers: {
   options: IntersectionObserverInit | undefined
-  fire: () => void
+  fire: (isIntersecting?: boolean) => void
 }[] = []
 
 afterEach(async () => {
@@ -36,9 +36,9 @@ async function mount(top: number): Promise<HTMLElement> {
       ) {
         observers.push({
           options,
-          fire: () =>
+          fire: (isIntersecting = true) =>
             this.onChange(
-              [{ isIntersecting: true } as IntersectionObserverEntry],
+              [{ isIntersecting } as IntersectionObserverEntry],
               this as unknown as IntersectionObserver,
             ),
         })
@@ -73,6 +73,13 @@ describe('Reveal', () => {
     expect(el.classList.contains('reveal-in')).toBe(false)
     await act(async () => observers[0].fire())
     expect(el.classList.contains('reveal-in')).toBe(true)
+  })
+
+  it('keeps a block hidden when the observer reports it is still out of view', async () => {
+    const el = await mount(window.innerHeight + 500)
+    await act(async () => observers[0].fire(false))
+    expect(el.classList.contains('reveal-init')).toBe(true)
+    expect(el.classList.contains('reveal-in')).toBe(false)
   })
 
   it('never hides a block that is already on screen', async () => {
