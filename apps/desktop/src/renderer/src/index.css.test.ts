@@ -986,3 +986,16 @@ describe('toast motion follows the top-right stack', () => {
     expect(reduced).toMatch(/\.animate-toast-in[\s\S]*?animation: overlay-in/)
   })
 })
+
+describe('the track row shimmer stays on the compositor, so a long import does not repaint every waiting row each frame', () => {
+  const keyframes = css.match(/@keyframes skeleton-sweep-row \{[\s\S]*?\n\}/)?.[0] ?? ''
+
+  it('animates only transform', () => {
+    const props = [...keyframes.matchAll(/^\s{4}([a-z-]+)\s*:/gm)].map((m) => m[1])
+    expect(props).toEqual(['transform'])
+  })
+
+  it('hides the band when motion is reduced, so a frozen highlight is not painted', () => {
+    expect(css).toMatch(/\.skeleton-sweep-row::after\s*\{[^}]*animation: none;[^}]*opacity: 0/)
+  })
+})

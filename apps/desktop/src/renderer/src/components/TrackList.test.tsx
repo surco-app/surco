@@ -849,6 +849,13 @@ describe('TrackList', () => {
     expect(screen.queryByTestId('track-loading')).toBeNull()
   })
 
+  it('sweeps the waiting marker on the compositor rather than repainting the row', () => {
+    renderList([track({ id: 'a', loadingMeta: true })])
+    const marker = screen.getByTestId('track-loading')
+    expect(marker).toHaveClass('skeleton-sweep-row')
+    expect(marker).not.toHaveClass('skeleton-sweep')
+  })
+
   // A converted track edited afterwards would look identical to an untouched done
   // one (green dot), making it unsafe to defer Updates: the user could never tell
   // which tracks still carry unapplied changes. The amber dot makes batching
