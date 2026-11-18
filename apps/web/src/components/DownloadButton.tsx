@@ -26,7 +26,7 @@ const LABEL: Record<OS, string> = {
   unknown: '',
 }
 
-const primary = `inline-flex ${btnPrimary} px-7 py-3 text-sm`
+const primary = `inline-flex gap-2 ${btnPrimary} px-7 py-3 text-sm`
 const altLink =
   'inline-block py-1.5 -my-1.5 text-muted underline decoration-muted/35 underline-offset-[3px] transition-colors hover:text-blue hover:decoration-current'
 
@@ -171,9 +171,15 @@ export default function DownloadButton({
             aria-disabled="true"
             aria-busy="true"
             data-testid="download-cta-pending"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full transition-colors duration-200 bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
-            <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg
+              data-testid="download-cta-lead"
+              className="size-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
               <circle
                 className="opacity-25"
                 cx="12"
@@ -197,6 +203,7 @@ export default function DownloadButton({
             className={primary}
             onClick={() => trackDownload({ href: RELEASES, os, location })}
           >
+            <span data-testid="download-cta-lead" className="size-4" aria-hidden="true" />
             {t('download.viewDownloads')}
           </a>
         ) : href ? (
@@ -205,6 +212,7 @@ export default function DownloadButton({
             className={primary}
             onClick={() => trackDownload({ href, os, location, ...(version ? { version } : {}) })}
           >
+            <span data-testid="download-cta-lead" className="size-4" aria-hidden="true" />
             {t('download.cta', { os: LABEL[os] })}
           </a>
         ) : (
@@ -213,9 +221,15 @@ export default function DownloadButton({
             disabled
             aria-disabled="true"
             aria-busy="true"
-            className="inline-flex cursor-wait items-center gap-2 rounded-full bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
+            className="inline-flex cursor-wait items-center gap-2 rounded-full transition-colors duration-200 bg-surface px-7 py-3 text-sm font-semibold text-muted ring-1 ring-line"
           >
-            <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <svg
+              data-testid="download-cta-lead"
+              className="size-4 animate-spin"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true"
+            >
               <circle
                 className="opacity-25"
                 cx="12"
