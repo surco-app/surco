@@ -77,7 +77,7 @@ import { BatchRun } from './components/BatchRun'
 import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { MatchingBand } from './components/MatchingBand'
+import { MatchingCreate } from './components/MatchingCreate'
 import { MatchingSuggestions } from './components/MatchingSuggestions'
 import { ModalExit } from './components/ModalShell'
 import {
@@ -4606,9 +4606,9 @@ export default function App(): React.JSX.Element {
                       null : (
                         <>
                           <TrackListHeader
-                            band={
+                            listAction={
                               sourceProgram !== null && browser.playlist?.id === MATCHING_ID ? (
-                                <MatchingBand
+                                <MatchingCreate
                                   tracks={scopeTracks.length}
                                   selected={scopeTracks.some((t) => selectedIdSet.has(t.id))}
                                   onCreate={() => {
@@ -4729,6 +4729,14 @@ export default function App(): React.JSX.Element {
                               <MatchingSuggestions
                                 suggestions={matchingSuggestions}
                                 tracks={suggestionTracks}
+                                open={settings?.matchingSuggestionsOpen ?? true}
+                                onToggle={() =>
+                                  saveSettings({
+                                    matchingSuggestionsOpen: !(
+                                      settings?.matchingSuggestionsOpen ?? true
+                                    ),
+                                  })
+                                }
                                 onMatch={matchSuggestion}
                                 onDismiss={dismissSuggestion}
                               />

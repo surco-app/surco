@@ -28,9 +28,14 @@ const many = Array.from({ length: 7 }, (_, i) => ({
   times: 10 - i,
 }))
 
-function setup(suggestions = [{ pair: ['1', '2'] as [string, string], times: 27 }]) {
-  const handlers = { onMatch: vi.fn(), onDismiss: vi.fn() }
-  render(<MatchingSuggestions suggestions={suggestions} tracks={TRACKS} {...handlers} />)
+function setup(
+  suggestions = [{ pair: ['1', '2'] as [string, string], times: 27 }],
+  open = true,
+) {
+  const handlers = { onMatch: vi.fn(), onDismiss: vi.fn(), onToggle: vi.fn() }
+  render(
+    <MatchingSuggestions suggestions={suggestions} tracks={TRACKS} open={open} {...handlers} />,
+  )
   return handlers
 }
 
@@ -73,12 +78,38 @@ describe('MatchingSuggestions', () => {
     expect(onMatch).not.toHaveBeenCalled()
   })
 
-  it('shows five at first and the rest on demand, so the chains stay in reach', () => {
+  it('shows three at first and the rest on demand, so the blocks stay in reach', () => {
     setup(many)
-    expect(screen.getAllByTestId('matching-suggestion')).toHaveLength(5)
+    expect(screen.getAllByTestId('matching-suggestion')).toHaveLength(3)
+    fireEvent.click(screen.getByTestId('matching-suggestions-more'))
+    expect(screen.getAllByTestId('matching-suggestion')).toHaveLength(6)
     fireEvent.click(screen.getByTestId('matching-suggestions-more'))
     expect(screen.getAllByTestId('matching-suggestion')).toHaveLength(7)
     expect(screen.queryByTestId('matching-suggestions-more')).not.toBeInTheDocument()
+  })
+
+  it('folds to one line that says how many wait, for the DJ who does not want them now', () => {
+    setup(many, false)
+    expect(screen.queryByTestId('matching-suggestion')).not.toBeInTheDocument()
+    const toggle = screen.getByTestId('matching-suggestions-toggle')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(toggle).toHaveTextContent(i18n.t('sources.matchingSuggested'))
+    expect(screen.getByTestId('matching-suggestions-count')).toHaveTextContent('7')
+  })
+
+  it('drops the count while open, where the rows already say what is there', () => {
+    setup(many)
+    expect(screen.getByTestId('matching-suggestions-toggle')).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.queryByTestId('matching-suggestions-count')).not.toBeInTheDocument()
+  })
+
+  it('folds and unfolds from its own title', () => {
+    const { onToggle } = setup()
+    fireEvent.click(screen.getByTestId('matching-suggestions-toggle'))
+    expect(onToggle).toHaveBeenCalledOnce()
   })
 
   it('leaves out a pair whose tracks it cannot name yet, instead of a blank card', () => {

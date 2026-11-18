@@ -3,27 +3,35 @@ import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import { MatchingBand } from './MatchingBand'
+import { MatchingCreate } from './MatchingCreate'
 
 afterEach(cleanup)
 
-describe('MatchingBand', () => {
+describe('MatchingCreate', () => {
   it('turns the paired tracks into a playlist the DJ can take to the booth', () => {
     const onCreate = vi.fn()
-    render(<MatchingBand tracks={4} onCreate={onCreate} />)
+    render(<MatchingCreate tracks={4} onCreate={onCreate} />)
     fireEvent.click(screen.getByTestId('matching-create-playlist'))
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
+  it('is an icon in the toolbar, so the list starts right under it', () => {
+    render(<MatchingCreate tracks={4} onCreate={vi.fn()} />)
+    const button = screen.getByTestId('matching-create-playlist')
+    expect(button).toHaveAccessibleName('Create playlist')
+    expect(button.querySelector('svg')).not.toBeNull()
+    expect(button.textContent).toBe('')
+  })
+
   it('says it creates from the selection once the DJ has picked blocks', () => {
-    render(<MatchingBand tracks={4} selected onCreate={vi.fn()} />)
+    render(<MatchingCreate tracks={4} selected onCreate={vi.fn()} />)
     expect(screen.getByTestId('matching-create-playlist')).toHaveAccessibleName(
       'Create playlist from selection',
     )
   })
 
   it('keeps the button but disables it while there is nothing paired', () => {
-    render(<MatchingBand tracks={0} onCreate={vi.fn()} />)
+    render(<MatchingCreate tracks={0} onCreate={vi.fn()} />)
     expect(screen.getByTestId('matching-create-playlist')).toBeDisabled()
   })
 })
