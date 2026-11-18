@@ -1451,7 +1451,7 @@
       "title": "速い、とにかく速い。",
       "lede": "ライブラリがどれだけ大きくても、Surcoはすぐに応えます。",
       "figures": {
-        "open": "14,835曲のrekordboxライブラリを開く",
+        "open": "14,835曲のrekordboxタブが応答するまでの時間",
         "select": "Traktorのトラックを一度に選択、待ち時間なし",
         "clear": "Engine DJで13,280曲のキューを消去"
       }

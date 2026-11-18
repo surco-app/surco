@@ -26,7 +26,7 @@ Frase (es): `Surco responde al momento, por grande que sea tu biblioteca.`
 
 | Cifra | Unidad | Pie (es) | Procedencia |
 |---|---|---|---|
-| 44 | ms | Abrir una biblioteca de rekordbox de 14.835 pistas | responsiveness de v1.37.1 contra v1.37.0 (1841 ms antes) |
+| 44 | ms | Lo que tarda en responder la pestaña de rekordbox con 14.835 pistas | responsiveness de v1.37.1 contra v1.37.0 (1841 ms antes); mide el clic sobre la pestaña hasta que la app lo atiende, no la lista pintada |
 | 25.000 | | Pistas de Traktor seleccionadas de golpe, sin esperar | fixture surco-gate-traktor-25000, 17/11, sin bloqueos del main |
 | 5,3 | s | Borrar los cues de 13.280 pistas en Engine DJ | fixture surco-gate-engine-13280, 17/11 |
 
