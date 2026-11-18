@@ -10,6 +10,7 @@ import LatestRelease from './components/LatestRelease'
 import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
 import SectionView from './components/SectionView'
+import Speed from './components/Speed'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
 import GridScene from './components/scenes/GridScene'
@@ -123,6 +124,7 @@ export default function App() {
             points={['chains', 'track', 'session']}
             scene={<MatchingScene />}
           />
+          <Speed />
           <LibraryReview />
         </div>
 

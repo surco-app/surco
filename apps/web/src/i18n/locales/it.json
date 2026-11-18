@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Veloce, molto veloce.",
+      "lede": "Surco risponde all'istante, per quanto grande sia la tua libreria.",
+      "figures": {
+        "open": "Il tempo che impiega la scheda di rekordbox a rispondere con 14.835 brani",
+        "select": "Brani di Traktor selezionati in un colpo solo, senza attese",
+        "clear": "Cancellare i cue di 13.280 brani in Engine DJ"
+      }
+    },
     "review": {
       "title": "Trova i refusi e i duplicati della tua libreria",
       "lede": "Surco passa in rassegna la tua libreria di Apple Music, la cartella che trascini o una playlist di rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, e raggruppa ciò che è scritto in modi diversi, gli spazi e i caratteri invisibili che si infilano quando copi da un sito e i brani ripetuti. Scegli come deve restare e la modifica arriva ai file, ad Apple Music e, se li sincronizzi, a rekordbox, Engine DJ, Traktor, Serato e VirtualDJ.",

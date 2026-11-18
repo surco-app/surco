@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Rápido, muito rápido.",
+      "lede": "O Surco responde na hora, por maior que seja a sua biblioteca.",
+      "figures": {
+        "open": "O tempo que a aba do rekordbox leva para responder com 14.835 faixas",
+        "select": "Faixas do Traktor selecionadas de uma vez, sem esperar",
+        "clear": "Apagar os cues de 13.280 faixas no Engine DJ"
+      }
+    },
     "review": {
       "title": "Encontre os erros e os duplicados da sua biblioteca",
       "lede": "O Surco percorre sua biblioteca do Apple Music, a pasta que você soltar ou uma playlist do rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ e agrupa o que está escrito de mais de um jeito, os espaços e caracteres invisíveis que entram quando você copia de um site e as faixas que você tem em dobro. Você escolhe como deve ficar e a mudança chega aos arquivos, ao Apple Music e, se você os sincroniza, ao rekordbox, Engine DJ, Traktor, Serato e VirtualDJ.",

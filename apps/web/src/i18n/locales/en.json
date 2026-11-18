@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Fast, really fast.",
+      "lede": "Surco responds instantly, however large your library is.",
+      "figures": {
+        "open": "How long the rekordbox tab takes to respond with 14,835 tracks",
+        "select": "Traktor tracks selected at once, with no wait",
+        "clear": "Clearing the cues of 13,280 tracks in Engine DJ"
+      }
+    },
     "review": {
       "title": "Find the typos and duplicates in your library",
       "lede": "Surco goes through your Apple Music library, the folder you drop or a rekordbox, Engine DJ, Traktor, Serato or VirtualDJ playlist, and groups what's spelled more than one way, the invisible spaces and characters that sneak in when you copy from a website, and the tracks you have twice. You choose how it should read and the change reaches the files, Apple Music and, if you sync them, rekordbox, Engine DJ, Traktor, Serato and VirtualDJ.",
