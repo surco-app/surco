@@ -32,7 +32,6 @@ export interface Day extends Totals {
 
 export interface Version extends Totals {
   version: string
-  hours: number
   installs: number
 }
 
@@ -47,7 +46,6 @@ export interface Stats {
 }
 
 const DAY_MS = 86_400_000
-const HOUR_MS = 3_600_000
 
 const net = (count: number, bots: number) => Math.max(0, count - bots)
 
@@ -91,15 +89,12 @@ function updatesOf(release: StatsRelease): Totals {
 
 const stable = (releases: StatsRelease[]) => published(releases).filter((r) => !r.prerelease)
 
-export function versions(releases: StatsRelease[], limit: number, now: string): Version[] {
-  const list = stable(releases)
-  return list
-    .map((r, i) => {
-      const until = Date.parse(list[i + 1]?.published_at ?? now)
+export function versions(releases: StatsRelease[], limit: number): Version[] {
+  return stable(releases)
+    .map((r) => {
       const totals = releaseTotals(r)
       return {
         version: r.tag_name,
-        hours: Math.ceil((until - Date.parse(r.published_at)) / HOUR_MS),
         ...updatesOf(r),
         installs: Math.round(totals.mac + totals.windows),
       }
@@ -191,7 +186,7 @@ export function recordSnapshot(
     previous && comparable ? previous.days.filter((d) => d.date < today) : rebuild(releases, today)
   return {
     days: [...history, rounded(today, totals)],
-    versions: versions(releases, 8, now),
+    versions: versions(releases, 8),
     usage: usage(releases),
   }
 }

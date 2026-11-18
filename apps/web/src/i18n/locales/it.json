@@ -3750,7 +3750,7 @@
     "kicker": "Statistiche",
     "title": "Quante persone installano Surco",
     "lede": "Surco non ha telemetria, quindi non sa chi lo usa. Ciò che è pubblico è quante volte viene scaricato ogni installer da GitHub. Da qui vengono questi numeri.",
-    "total": "nuove installazioni dal {{date}}, senza aggiornamenti né bot",
+    "total": "nuove installazioni, senza aggiornamenti né bot",
     "mac": "Mac",
     "windows": "Windows",
     "lastWeek": "negli ultimi 7 giorni",
@@ -3759,8 +3759,7 @@
     "usageHeading": "Computer che usano Surco",
     "usageLede": "I computer che si sono aggiornati a una stessa versione, la più scaricata di ogni settimana. È un minimo, perché chi non apre Surco in quei giorni non viene contato.",
     "versionsHeading": "Ultime versioni",
-    "versionsLede": "Quante ore ogni versione è stata l'ultima, quanti Mac e PC si sono aggiornati e quante nuove installazioni ha portato. Una versione che dura due ore raggiunge meno computer di una che dura un giorno.",
-    "versionsHours": "Ore",
+    "versionsLede": "Quanti Mac e PC si sono aggiornati a ogni versione e quante nuove installazioni ha portato.",
     "versionsInstalls": "Nuove",
     "howHeading": "Come si conta",
     "howItems": [

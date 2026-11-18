@@ -89,28 +89,25 @@ describe('versions', () => {
   ]
 
   it('counts the Macs and PCs the updater moved to each stable version, newest first, without bots or betas', () => {
-    expect(versions(releases, 8, '2026-10-02T05:00:00Z')).toMatchObject([
+    expect(versions(releases, 8)).toMatchObject([
       { version: 'v1.1.0', mac: 10, windows: 5 },
       { version: 'v1.0.0', mac: 5, windows: 0 },
     ])
   })
 
-  it('says how long each version was the newest, because a version replaced in two hours cannot reach the Macs a full day does', () => {
-    expect(versions(releases, 8, '2026-10-02T04:30:00Z').map((v) => v.hours)).toEqual([5, 24])
+  it('carries no time-as-newest figure, which the page no longer shows', () => {
+    expect(versions(releases, 8)[0]).not.toHaveProperty('hours')
   })
 
   it('adds the new installs each version brought on Mac and Windows', () => {
-    expect(versions(releases, 8, '2026-10-02T05:00:00Z')[0].installs).toBe(6)
+    expect(versions(releases, 8)[0].installs).toBe(6)
   })
 
   it('keeps only as many versions as asked for', () => {
     const three = ['1', '2', '3'].map((n) =>
       release(`v1.${n}.0`, `2026-10-0${n}T00:00:00Z`, [asset('a.zip', 1)]),
     )
-    expect(versions(three, 2, '2026-10-04T00:00:00Z').map((v) => v.version)).toEqual([
-      'v1.3.0',
-      'v1.2.0',
-    ])
+    expect(versions(three, 2).map((v) => v.version)).toEqual(['v1.3.0', 'v1.2.0'])
   })
 })
 
