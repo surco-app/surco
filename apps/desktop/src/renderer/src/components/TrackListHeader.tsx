@@ -47,7 +47,7 @@ import { ViewMenu } from './ViewMenu'
 
 interface Props {
   tr: TFunction
-  band?: React.ReactNode
+  listAction?: React.ReactNode
   // The shortcut chord shown after each action's tooltip label, so a control's key is
   // discoverable on hover without a second visual style per call site.
   hintFor: (id: string) => string
@@ -217,7 +217,7 @@ export function TrackListHeader({
   onToggleSidebar,
   location,
   onOpenLocation,
-  band,
+  listAction,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   // Portaled out of the sticky header, whose layer would hold it under the activity panel
@@ -353,9 +353,10 @@ export function TrackListHeader({
               <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
             </button>
-            <span className="flex-1 @[27rem]:hidden" />
           </>
         )}
+        {listAction}
+        {tracks.length > 0 && <span className="flex-1 @[27rem]:hidden" />}
         <div className="order-first -mx-1.5 min-w-0 basis-full @[27rem]:order-none @[27rem]:mx-0 @[27rem]:flex-1 @[27rem]:basis-0">
           <QualityFilterBar
             librarySource={librarySource}
@@ -535,7 +536,6 @@ export function TrackListHeader({
         onChange={setFilterSelection}
         librarySource={librarySource}
       />
-      {band}
       {viewMenu && (
         <ViewMenu
           x={viewMenu.x}

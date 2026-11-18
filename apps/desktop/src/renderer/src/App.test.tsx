@@ -5097,7 +5097,7 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
       await waitFor(() => expect(titles()).toHaveLength(2))
       expect(
-        within(screen.getByTestId('track-list-header')).getByTestId('matching-create-playlist'),
+        within(screen.getByTestId('track-list-toolbar')).getByTestId('matching-create-playlist'),
       ).toBeInTheDocument()
     })
 
