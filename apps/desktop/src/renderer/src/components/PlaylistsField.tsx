@@ -85,8 +85,8 @@ function TreePopover({
       role="dialog"
       aria-label={tr('editor.playlists.options', { app })}
       style={{ maxHeight: place?.maxHeight }}
-      className={`absolute right-0 left-0 z-20 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)] ${
-        place?.side === 'up' ? 'bottom-full mb-1' : 'top-full mt-1'
+      className={`animate-pop-flat absolute right-0 left-0 z-20 flex flex-col overflow-hidden rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)] ${
+        place?.side === 'up' ? 'bottom-full mb-1 origin-bottom' : 'top-full mt-1 origin-top'
       }`}
     >
       <PlaylistTree

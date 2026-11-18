@@ -593,7 +593,7 @@ export const SourceTree = memo(function SourceTree({
             onDragOver={dragOver}
             onDrop={drop}
             style={{ left: 8 + depth * 18 }}
-            className="press absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint hover:text-fg"
+            className="press absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint after:absolute after:-inset-1.5 after:content-[''] hover:text-fg"
           >
             <Chevron size={12} aria-hidden="true" />
           </button>

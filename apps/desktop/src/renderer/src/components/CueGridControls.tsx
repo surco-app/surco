@@ -41,7 +41,7 @@ function GridGroup({
 const ICON =
   'press flex h-7 w-7 items-center justify-center rounded-md bg-[var(--color-panel-2)] text-fg-muted transition-colors enabled:hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40'
 const MENU_ITEM =
-  'press flex h-7 items-center rounded-md px-2 text-left text-xs text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
+  'flex h-7 items-center rounded-md px-2 text-left text-xs text-fg hover:bg-[var(--color-hover)] disabled:opacity-40 disabled:hover:bg-transparent'
 const STEP_BPM = 0.01
 const STEP_MS = 5
 const FINE_STEP_MS = 1

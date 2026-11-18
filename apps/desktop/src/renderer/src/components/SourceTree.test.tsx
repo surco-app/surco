@@ -1097,6 +1097,13 @@ describe('SourceTree on Serato crates', () => {
     },
   ]
 
+  it('gives the subcrate chevron a hit area larger than its 16px glyph', () => {
+    setupCrates(PARENT)
+    expect(screen.getByTestId('source-node-expand-P').className).toContain(
+      "after:absolute after:-inset-1.5 after:content-['']",
+    )
+  })
+
   it('opens a crate that holds subcrates on a click, listing its own tracks, and expands it from the chevron', () => {
     const { onSelect } = setupCrates(PARENT)
     const parent = screen.getByTestId('source-node-P')

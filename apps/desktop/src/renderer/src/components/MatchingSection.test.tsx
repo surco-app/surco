@@ -50,6 +50,14 @@ const search = (text: string) => {
 }
 
 describe('MatchingSection', () => {
+  it('truncates a free-text key tag so it cannot starve the title and artist', () => {
+    setup([{ ...TAKE, key: 'F#m (11A) Energy 7' }])
+    const classes = screen.getByTestId('matching-partner-key').className.split(' ')
+    expect(classes).toContain('max-w-[5.5rem]')
+    expect(classes).toContain('truncate')
+    expect(classes).toContain('shrink-0')
+  })
+
   it('lists the tracks the DJ paired with this one in rekordbox', () => {
     setup([TAKE])
     expect(screen.getByTestId('matching-partner')).toHaveTextContent('Take Me Home')

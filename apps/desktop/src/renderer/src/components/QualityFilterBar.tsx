@@ -290,7 +290,7 @@ export function ActiveFilters({
             data-testid={`active-filter-${axis}-remove`}
             aria-label={tr('sidebar.filter.remove', { filter: label })}
             onClick={() => onChange({ ...value, [axis]: null })}
-            className="press grid size-4 place-items-center rounded-full text-fg-dim outline-none hover:bg-[var(--color-hover)] hover:text-fg"
+            className="press relative grid size-4 place-items-center rounded-full text-fg-dim outline-none after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
           >
             <X className="size-3" aria-hidden="true" />
           </button>

@@ -480,7 +480,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             : 'hover:bg-[var(--color-hover)]'
                         }`}
                       >
-                        <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                        <span
+                          data-testid="discogs-track-position"
+                          className="min-w-8 shrink-0 text-xs tabular-nums text-fg-dim"
+                        >
                           {t.position}
                         </span>
                         <span data-fit className="min-w-0 flex-1 truncate text-sm text-fg">
@@ -876,7 +879,8 @@ function CollapsibleTracks({
 
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
+      data-testid="discogs-tracks-collapse"
+      className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
         open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       }`}
     >

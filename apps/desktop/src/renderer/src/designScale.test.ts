@@ -216,6 +216,8 @@ const NOT_A_BUTTON_ROLE = /\brole="(?:menuitem\w*|option|tab)"/
 const ROW_BUTTONS = new Set([
   'components/ActivityPanel.tsx: data-testid="activity-child"',
   'components/ActivityPanel.tsx: data-testid="activity-row"',
+  'components/CueGridControls.tsx: data-testid="cues-grid-double"',
+  'components/CueGridControls.tsx: data-testid="cues-grid-half"',
   'components/DiscogsPanel.tsx: data-testid="discogs-track"',
   'components/HelpModal.tsx: data-testid={`help-q-*`}',
   'components/PlaylistTree.tsx: data-testid="playlists-create"',
