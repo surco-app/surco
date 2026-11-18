@@ -9,6 +9,7 @@ const settings: Settings = {
   theme: 'system',
   density: 'normal',
   showListWaves: true,
+  matchingSuggestionsOpen: true,
   showRailNames: true,
   showSidebar: true,
   language: 'system',

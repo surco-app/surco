@@ -360,6 +360,7 @@ export interface Settings {
   // full-file decode entirely. Persisted so the choice sticks across tracks and restarts.
   showWaveform: boolean
   showListWaves: boolean
+  matchingSuggestionsOpen: boolean
   showRailNames: boolean
   showSidebar: boolean
   // When on, dropping files runs a Discogs search per track and auto-applies the

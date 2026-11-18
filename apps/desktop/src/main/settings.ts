@@ -169,6 +169,7 @@ export const defaults: Settings = {
   resultsWidth: null,
   showWaveform: true,
   showListWaves: true,
+  matchingSuggestionsOpen: true,
   showRailNames: true,
   showSidebar: true,
   // On by default so the audio-quality read (spotting fakes and transcodes) surfaces on

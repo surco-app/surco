@@ -4729,6 +4729,14 @@ export default function App(): React.JSX.Element {
                               <MatchingSuggestions
                                 suggestions={matchingSuggestions}
                                 tracks={suggestionTracks}
+                                open={settings?.matchingSuggestionsOpen ?? true}
+                                onToggle={() =>
+                                  saveSettings({
+                                    matchingSuggestionsOpen: !(
+                                      settings?.matchingSuggestionsOpen ?? true
+                                    ),
+                                  })
+                                }
                                 onMatch={matchSuggestion}
                                 onDismiss={dismissSuggestion}
                               />

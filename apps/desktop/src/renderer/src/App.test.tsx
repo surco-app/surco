@@ -166,6 +166,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     theme: 'system',
     density: 'normal',
     showListWaves: true,
+    matchingSuggestionsOpen: true,
     showRailNames: true,
     showSidebar: true,
     cueFlows: BUNDLED_FLOWS,
@@ -4266,6 +4267,26 @@ describe('App source playlists', () => {
       await waitFor(() =>
         expect(window.api.saveSettings).toHaveBeenCalledWith(
           expect.objectContaining({ matchingDismissed: ['c-l1|c-l2'] }),
+        ),
+      )
+    })
+
+    it('remembers the suggestions folded, so a DJ who hides them does it once', async () => {
+      await openFactory({
+        dj: playedReads(),
+        saveSettings: vi.fn((patch) => Promise.resolve({ ...settings(), ...patch })),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
+      fireEvent.click(await screen.findByTestId('matching-suggestions-toggle'))
+      await waitFor(() =>
+        expect(window.api.saveSettings).toHaveBeenCalledWith(
+          expect.objectContaining({ matchingSuggestionsOpen: false }),
+        ),
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('matching-suggestions-toggle')).toHaveAttribute(
+          'aria-expanded',
+          'false',
         ),
       )
     })
