@@ -1,5 +1,6 @@
+import { Search } from 'lucide-react'
 import type React from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CollectionTrack } from '../../../shared/types'
 import type { MatchingPartner } from '../lib/matchingPartners'
@@ -9,8 +10,6 @@ import { SectionHeader } from './SectionHeader'
 import { MatchingIcon } from './SourceIcons'
 
 const RESULTS = 8
-
-const focusOnMount = (el: HTMLInputElement | null): void => el?.focus()
 
 function searchCollection(
   collection: readonly CollectionTrack[],
@@ -52,13 +51,14 @@ export function MatchingSection({
   onToggle: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const [query, setQuery] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLDivElement>(null)
   const skip = useMemo(
     () => new Set([selfId, ...partners.map((p) => p.contentId)]),
     [selfId, partners],
   )
   const results = useMemo(
-    () => (query && collection ? searchCollection(collection, query, skip) : []),
+    () => (collection ? searchCollection(collection, query, skip) : []),
     [query, collection, skip],
   )
   return (
@@ -140,17 +140,9 @@ export function MatchingSection({
             ))}
           </div>
         )}
-        {query === null ? (
-          <button
-            type="button"
-            data-testid="matching-add"
-            onClick={() => setQuery('')}
-            className="press mt-3 rounded-md px-2 py-1 text-xs text-[var(--color-accent)] hover:bg-[var(--color-hover)]"
-          >
-            {tr('editor.matchingAdd')}
-          </button>
-        ) : (
-          <div className="mt-3 flex flex-col gap-1">
+        <div ref={searchRef} className="mt-3 flex flex-col gap-1.5">
+          <label className="flex items-center gap-2 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 focus-within:border-[var(--color-accent)]">
+            <Search size={14} className="shrink-0 text-fg-faint" aria-hidden="true" />
             <input
               data-testid="matching-search"
               aria-label={tr('editor.matchingSearch')}
@@ -158,39 +150,38 @@ export function MatchingSection({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Escape') {
+                if (e.key === 'Escape' && query !== '') {
                   e.stopPropagation()
-                  setQuery(null)
+                  setQuery('')
                 }
               }}
               onBlur={(e) => {
-                if (!e.currentTarget.parentElement?.contains(e.relatedTarget)) setQuery(null)
+                if (!searchRef.current?.contains(e.relatedTarget)) setQuery('')
               }}
-              ref={focusOnMount}
-              className="rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 text-sm text-fg outline-none focus:border-[var(--color-accent)]"
+              className="min-w-0 flex-1 bg-transparent text-sm text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
             />
-            {results.length > 0 && (
-              <ul className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)]">
-                {results.map((track) => (
-                  <li key={track.contentId}>
-                    <button
-                      type="button"
-                      data-testid="matching-result"
-                      onClick={() => {
-                        setQuery(null)
-                        onAdd(track)
-                      }}
-                      className="press flex w-full min-w-0 flex-col px-3 py-1.5 text-left hover:bg-[var(--color-hover)]"
-                    >
-                      <span className="truncate text-sm text-fg">{track.title}</span>
-                      <span className="truncate text-xs text-fg-dim">{track.artist}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
+          </label>
+          {results.length > 0 && (
+            <ul className="flex flex-col overflow-hidden rounded-lg border border-[var(--color-line)]">
+              {results.map((track) => (
+                <li key={track.contentId}>
+                  <button
+                    type="button"
+                    data-testid="matching-result"
+                    onClick={() => {
+                      setQuery('')
+                      onAdd(track)
+                    }}
+                    className="press flex w-full min-w-0 flex-col px-3 py-1.5 text-left hover:bg-[var(--color-hover)]"
+                  >
+                    <span className="truncate text-sm text-fg">{track.title}</span>
+                    <span className="truncate text-xs text-fg-dim">{track.artist}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </SectionBody>
     </div>
   )

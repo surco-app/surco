@@ -1018,8 +1018,7 @@ describe('App Traktor cues', () => {
       openTraktor()
       await openPlaylist()
       fireEvent.click(screen.getAllByTestId('track-row')[0])
-      fireEvent.click(await screen.findByTestId('matching-add'))
-      fireEvent.change(screen.getByTestId('matching-search'), { target: { value: 'b.wav' } })
+      fireEvent.change(await screen.findByTestId('matching-search'), { target: { value: 'b.wav' } })
       fireEvent.click(await screen.findByTestId('matching-result'))
       await waitFor(() =>
         expect(window.api.addMatchingPair).toHaveBeenCalledWith('/m/a.wav', '/m/b.wav'),
@@ -4141,8 +4140,7 @@ describe('App source playlists', () => {
       ])
       await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match, collection } }) })
       fireEvent.click(rowTitled('Bravo'))
-      fireEvent.click(await screen.findByTestId('matching-add'))
-      fireEvent.change(screen.getByTestId('matching-search'), { target: { value: 'brave new' } })
+      fireEvent.change(await screen.findByTestId('matching-search'), { target: { value: 'brave new' } })
       fireEvent.click(await screen.findByTestId('matching-result'))
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith(
