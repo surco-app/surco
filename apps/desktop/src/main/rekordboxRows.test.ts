@@ -1,7 +1,7 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { openRekordboxDb } from './rekordboxDb'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import { rekordboxStamp, takeLocalUsn, unusedRowId } from './rekordboxRows'
@@ -42,6 +42,16 @@ describe('rekordbox row helpers', () => {
         .prepare(`SELECT updated_at FROM agentRegistry WHERE registry_id = 'localUpdateCount'`)
         .get(),
     ).toEqual({ updated_at: '2026-10-15 18:00:00.000 +00:00' })
+    db.close()
+  })
+
+  it('reads and moves the counter with statements it compiled once for the connection, since compiling them again for each of the thousands of rows of a big save kept the window frozen longer', async () => {
+    const db = await open()
+    takeLocalUsn(db, '2026-10-15 18:00:00.000 +00:00')
+    const prepare = vi.spyOn(db, 'prepare')
+    expect(takeLocalUsn(db, '2026-10-15 18:00:00.000 +00:00')).toBe(502)
+    expect(takeLocalUsn(db, '2026-10-15 18:00:00.000 +00:00')).toBe(503)
+    expect(prepare).not.toHaveBeenCalled()
     db.close()
   })
 
