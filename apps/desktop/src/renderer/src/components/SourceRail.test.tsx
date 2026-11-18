@@ -287,6 +287,37 @@ describe('SourceRail', () => {
     })
   })
 
+  it('keeps its right-click menu inside the window when opened at the bottom right corner', () => {
+    const size = { width: window.innerWidth, height: window.innerHeight }
+    Object.assign(window, { innerWidth: 800, innerHeight: 600 })
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      if (this.dataset.testid !== 'source-rail-menu') return new DOMRect(0, 0, 0, 0)
+      return new DOMRect(0, 0, 180, 120)
+    })
+    render(
+      <SourceRail
+        width={RAIL_WIDTH}
+        showNames
+        onToggleNames={vi.fn()}
+        sidebarShown
+        onToggleSidebar={vi.fn()}
+        copies={COPIES}
+        onHide={vi.fn()}
+        sources={[]}
+        active={null}
+        onSelect={vi.fn()}
+      />,
+    )
+    fireEvent.contextMenu(screen.getByTestId('source-rail-tracks'), { clientX: 780, clientY: 590 })
+    const menu = screen.getByTestId('source-rail-menu')
+    expect(menu.style.left).toBe('612px')
+    expect(menu.style.top).toBe('472px')
+    vi.restoreAllMocks()
+    Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
+  })
+
   it('hides the whole sidebar from its own right-click', () => {
     const onHideSidebar = vi.fn()
     render(

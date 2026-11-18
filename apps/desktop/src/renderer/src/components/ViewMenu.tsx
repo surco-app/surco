@@ -1,6 +1,6 @@
 import { Check } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 
@@ -26,6 +26,18 @@ export function ViewMenu({
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const firstRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ x, y })
+
+  useLayoutEffect(() => {
+    const el = menuRef.current
+    if (!el) return
+    const { width, height } = el.getBoundingClientRect()
+    setPos({
+      x: Math.max(8, Math.min(x, window.innerWidth - width - 8)),
+      y: Math.max(8, Math.min(y, window.innerHeight - height - 8)),
+    })
+  }, [x, y])
 
   useEffect(() => {
     const opener = document.activeElement as HTMLElement | null
@@ -47,6 +59,7 @@ export function ViewMenu({
         className="absolute inset-0"
       />
       <div
+        ref={menuRef}
         role="menu"
         aria-label={label}
         data-testid="view-menu"
@@ -57,7 +70,7 @@ export function ViewMenu({
             onClose()
           }
         }}
-        style={{ top: y, left: x }}
+        style={{ top: pos.y, left: pos.x }}
         className="absolute min-w-[200px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         {items.map((item, i) => (
