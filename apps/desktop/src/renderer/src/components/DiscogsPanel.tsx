@@ -480,7 +480,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             : 'hover:bg-[var(--color-hover)]'
                         }`}
                       >
-                        <span className="w-8 shrink-0 text-xs tabular-nums text-fg-dim">
+                        <span
+                          data-testid="discogs-track-position"
+                          className="min-w-8 shrink-0 text-xs tabular-nums text-fg-dim"
+                        >
                           {t.position}
                         </span>
                         <span data-fit className="min-w-0 flex-1 truncate text-sm text-fg">
