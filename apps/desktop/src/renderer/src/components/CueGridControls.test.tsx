@@ -194,6 +194,13 @@ describe('CueGridControls', () => {
     expect(screen.getByTestId('cues-grid-left')).toBeDisabled()
   })
 
+  it('keeps the BPM menu items free of the press scale, as every other menu item is', () => {
+    setup()
+    fireEvent.click(screen.getByTestId('cues-grid-bpm'))
+    expect(screen.getByTestId('cues-grid-double').className.split(' ')).not.toContain('press')
+    expect(screen.getByTestId('cues-grid-half').className.split(' ')).not.toContain('press')
+  })
+
   it('closes the BPM menu on a click outside it, like the other menus of the deck', () => {
     setup()
     fireEvent.click(screen.getByTestId('cues-grid-bpm'))
