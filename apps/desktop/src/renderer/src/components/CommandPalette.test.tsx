@@ -28,6 +28,13 @@ function track(id: string, artist: string, title: string): TrackItem {
 }
 
 describe('CommandPalette', () => {
+  it('truncates a long command title so the row keeps one line while arrowing', () => {
+    render(
+      <CommandPalette commands={[cmd({ id: 'a', title: 'T'.repeat(200) })]} onClose={vi.fn()} />,
+    )
+    expect(screen.getByTestId('palette-item-title')).toHaveClass('truncate')
+  })
+
   it('exposes an accessible name on the dialog and search field', () => {
     render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
     expect(screen.getByRole('dialog')).toHaveAccessibleName()

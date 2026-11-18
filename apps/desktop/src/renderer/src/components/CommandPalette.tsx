@@ -180,7 +180,9 @@ export function CommandPalette({
                   c.enabled ? 'cursor-pointer' : 'opacity-30'
                 } ${i === active ? 'bg-[var(--color-accent-soft)]' : ''}`}
               >
-                <span>{c.title}</span>
+                <span data-testid="palette-item-title" className="min-w-0 truncate">
+                  {c.title}
+                </span>
                 {c.hint && <span className="ml-4 shrink-0 text-xs text-fg-dim">{c.hint}</span>}
               </div>
             </div>
