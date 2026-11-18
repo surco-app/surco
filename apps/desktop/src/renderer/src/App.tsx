@@ -4964,7 +4964,7 @@ export default function App(): React.JSX.Element {
                             </p>
                           </div>
                         </div>
-                      ) : libraryHasRows ? (
+                      ) : filesView.length > 0 ? (
                         <div className="flex h-full items-center justify-center p-8 text-center">
                           <div
                             data-testid="empty-dropzone"
