@@ -3766,10 +3766,55 @@ function decodeAnalysisPcm(input: string): Promise<Float32Array | null> {
 // they freeze IPC, the menu and the surco:// audio stream for the whole analysis, so
 // both ship their PCM to the worker thread. The buffer is structure-cloned by postMessage
 // (not transferred), so the shared single-flight decode stays valid for the other detector.
+interface TempoAndKey {
+  bpm: Promise<BpmResult | null>
+  key: Promise<KeyResult | null>
+}
+
+const REMEMBERED_TEMPO_AND_KEY = 64
+const rememberedTempoAndKey = new Map<string, TempoAndKey>()
+
+async function tempoAndKey(input: string): Promise<TempoAndKey> {
+  const file = await stat(input).catch(() => null)
+  const version = file ? `${input}|${file.mtimeMs}|${file.size}` : null
+  const remembered = version === null ? undefined : rememberedTempoAndKey.get(version)
+  if (remembered) return remembered
+  const pcm = decodeAnalysisPcm(input)
+  const measured: TempoAndKey = {
+    bpm: pcm.then((samples) =>
+      samples === null
+        ? null
+        : runInWorker<BpmResult | null>({
+            type: 'bpm',
+            pcm: samples,
+            sampleRate: TEMPO_SAMPLE_RATE,
+          }),
+    ),
+    key: pcm.then((samples) =>
+      samples === null
+        ? null
+        : runInWorker<KeyResult | null>({
+            type: 'key',
+            pcm: samples,
+            sampleRate: TEMPO_SAMPLE_RATE,
+          }),
+    ),
+  }
+  const forget = (): void => {
+    if (version !== null) rememberedTempoAndKey.delete(version)
+  }
+  measured.bpm.catch(forget)
+  measured.key.catch(forget)
+  if (version !== null) {
+    rememberedTempoAndKey.set(version, measured)
+    if (rememberedTempoAndKey.size > REMEMBERED_TEMPO_AND_KEY)
+      rememberedTempoAndKey.delete(rememberedTempoAndKey.keys().next().value as string)
+  }
+  return measured
+}
+
 export async function measureBpm(input: string): Promise<BpmResult | null> {
-  const pcm = await decodeAnalysisPcm(input)
-  if (pcm === null) return null
-  return runInWorker<BpmResult | null>({ type: 'bpm', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+  return (await tempoAndKey(input)).bpm
 }
 
 export async function measureBeatGrid(input: string): Promise<BeatGridFit | null> {
@@ -3818,9 +3863,7 @@ export async function measureGridAudit(
 }
 
 export async function measureKey(input: string): Promise<KeyResult | null> {
-  const pcm = await decodeAnalysisPcm(input)
-  if (pcm === null) return null
-  return runInWorker<KeyResult | null>({ type: 'key', pcm, sampleRate: TEMPO_SAMPLE_RATE })
+  return (await tempoAndKey(input)).key
 }
 
 // Native 44.1 kHz mono PCM for the HF-shelf probe — unlike the tempo/key decoder's
