@@ -38,27 +38,23 @@ export default function Spotlight({
           </p>
         </div>
       </Reveal>
-      <Reveal delay={120} className="mt-8">
+      <div className="mt-8">
         <Replayable>{scene}</Replayable>
-      </Reveal>
-      <Reveal delay={160}>
-        <ul className="mt-8 grid gap-4 sm:grid-cols-3">
-          {points.map((key) => (
-            <li key={key} className="rounded-xl bg-surface p-5">
-              <p className="text-sm font-semibold text-fg">
-                {t(`home.${copy}.points.${key}.title`)}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
-                {t(`home.${copy}.points.${key}.text`)}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Reveal>
+      </div>
+      <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+        {points.map((key) => (
+          <li key={key} className="rounded-xl bg-surface p-5">
+            <p className="text-sm font-semibold text-fg">{t(`home.${copy}.points.${key}.title`)}</p>
+            <p className="mt-1 text-sm leading-relaxed text-pretty text-muted">
+              {t(`home.${copy}.points.${key}.text`)}
+            </p>
+          </li>
+        ))}
+      </ul>
       {children && (
-        <Reveal delay={200} className="mt-6">
+        <div className="mt-6">
           <Replayable>{children}</Replayable>
-        </Reveal>
+        </div>
       )}
     </section>
   )

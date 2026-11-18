@@ -192,7 +192,7 @@ export default function Header({
             data-testid="theme-toggle"
             aria-label={t('nav.theme')}
             onClick={toggleTheme}
-            className="grid size-9 place-items-center rounded-full text-muted transition-colors hover:text-fg"
+            className="grid size-9 place-items-center rounded-full text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
           >
             <svg
               width="18"
@@ -233,7 +233,7 @@ export default function Header({
               aria-expanded={languageOpen}
               aria-controls="language-menu"
               onClick={() => setLanguageOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-colors hover:text-fg"
+              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
             >
               <svg
                 width="16"
@@ -350,7 +350,7 @@ export default function Header({
           <a
             href={page ? `${home}#instalar` : '#instalar'}
             data-testid="header-download"
-            className={`hidden ${btnPrimary} px-4 py-1.5 text-sm sm:inline-flex ${
+            className={`hidden ${btnPrimary} transition-[opacity,translate,visibility,filter,scale]! duration-200! ease-[cubic-bezier(0.22,1,0.36,1)]! px-4 py-1.5 text-sm sm:inline-flex ${
               heroCtaPassed ? '' : 'pointer-events-none invisible translate-y-1 opacity-0'
             }`}
           >
@@ -363,7 +363,7 @@ export default function Header({
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-colors hover:border-blue/50 hover:text-fg lg:hidden"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:border-blue/50 hover:text-fg lg:hidden"
           >
             {open ? (
               <svg
@@ -414,15 +414,17 @@ export default function Header({
         <div className="mx-auto max-w-6xl px-6 sm:px-10 py-2">
           <a
             href={featuresHref}
+            data-testid="header-mobile-features"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.funciones')}
           </a>
           <a
             href={guideHref}
+            data-testid="header-mobile-guide"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.guia')}
           </a>
@@ -430,14 +432,15 @@ export default function Header({
             href={useCasesHref}
             data-testid="header-mobile-use-cases"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.casos')}
           </a>
           <a
             href={changelogHref}
+            data-testid="header-mobile-changelog"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.cambios')}
           </a>

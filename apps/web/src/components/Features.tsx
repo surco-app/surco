@@ -65,7 +65,8 @@ export default function Features() {
                 <a
                   key={GROUP_IDS[i]}
                   href={`#${GROUP_IDS[i]}`}
-                  className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
+                  data-testid="features-index-link"
+                  className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-blue active:border-blue focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   <span className="text-sm font-semibold text-fg">{g.title}</span>
                   <span className="text-xs text-faint tabular-nums">
@@ -85,33 +86,31 @@ export default function Features() {
                 data-testid={`features-group-${GROUP_IDS[i]}`}
                 className="grid scroll-mt-24 gap-x-14 gap-y-4 pt-16 lg:grid-cols-[16rem_minmax(0,1fr)]"
               >
-                <Reveal className="lg:sticky lg:top-24 lg:self-start">
+                <div className="lg:sticky lg:top-24 lg:self-start">
                   <h2 className="text-2xl font-semibold tracking-tight text-balance text-fg">
                     {g.title}
                   </h2>
                   <p className="mt-1.5 text-sm text-faint">{g.replaces}</p>
-                </Reveal>
-                <Reveal>
-                  <div className="max-w-2xl border-t border-line">
-                    {g.items.map((it) => (
-                      <details key={it.t} className="group border-b border-line">
-                        <summary className="relative cursor-pointer list-none py-3.5 pr-8 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden">
-                          <span className="block font-semibold text-fg">{it.t}</span>
-                          <span className="block text-[15px] text-muted">{it.s}</span>
-                          <span
-                            aria-hidden="true"
-                            className="absolute top-3.5 right-1 font-mono text-lg text-faint transition-transform group-open:rotate-45"
-                          >
-                            +
-                          </span>
-                        </summary>
-                        <p className="pb-4 text-[15px] leading-relaxed text-pretty text-muted">
-                          {it.d}
-                        </p>
-                      </details>
-                    ))}
-                  </div>
-                </Reveal>
+                </div>
+                <div className="max-w-2xl border-t border-line">
+                  {g.items.map((it) => (
+                    <details key={it.t} className="group border-b border-line">
+                      <summary className="relative cursor-pointer list-none py-3.5 pr-8 focus-visible:outline-2 focus-visible:outline-blue [&::-webkit-details-marker]:hidden">
+                        <span className="block font-semibold text-fg">{it.t}</span>
+                        <span className="block text-[15px] text-muted">{it.s}</span>
+                        <span
+                          aria-hidden="true"
+                          className="absolute top-3.5 right-1 font-mono text-lg text-faint transition-transform group-open:rotate-45"
+                        >
+                          +
+                        </span>
+                      </summary>
+                      <p className="pb-4 text-[15px] leading-relaxed text-pretty text-muted">
+                        {it.d}
+                      </p>
+                    </details>
+                  ))}
+                </div>
               </section>
               {GROUP_IDS[i] === 'dj' && (
                 <section
@@ -119,21 +118,19 @@ export default function Features() {
                   data-testid="features-programs"
                   className="scroll-mt-24 pt-16"
                 >
-                  <Reveal>
-                    <Kicker>{t('features.programs.kicker')}</Kicker>
-                    <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                      {t('features.programs.title')}
-                    </h2>
-                    <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-subtle">
-                      {t('features.programs.lede')}
-                    </p>
-                  </Reveal>
-                  <Reveal className="mt-8">
+                  <Kicker>{t('features.programs.kicker')}</Kicker>
+                  <h2 className="mt-3 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                    {t('features.programs.title')}
+                  </h2>
+                  <p className="mt-3 max-w-2xl leading-relaxed text-pretty text-subtle">
+                    {t('features.programs.lede')}
+                  </p>
+                  <div className="mt-8">
                     <ProgramTable />
                     <p className="mt-4 text-sm leading-relaxed text-faint">
                       {t('features.programs.foot')}
                     </p>
-                  </Reveal>
+                  </div>
                 </section>
               )}
             </Fragment>
@@ -141,32 +138,30 @@ export default function Features() {
         </div>
 
         <section id="atajos" className="scroll-mt-24 py-16">
-          <Reveal>
-            <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
-              <div>
-                <Kicker>{t('shortcuts.kicker')}</Kicker>
-                <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-                  {t('shortcuts.title')}
-                </h2>
-                <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>
-              </div>
-              <div className="space-y-2.5">
-                {shortcutLabels.map((label, i) => (
-                  <div
-                    key={label}
-                    className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5"
-                  >
-                    <span className="text-sm text-fg">{label}</span>
-                    <span className="flex items-center gap-1">
-                      {shortcutKeys[i].map((k) => (
-                        <Kbd key={k} k={k} />
-                      ))}
-                    </span>
-                  </div>
-                ))}
-              </div>
+          <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-start">
+            <div>
+              <Kicker>{t('shortcuts.kicker')}</Kicker>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+                {t('shortcuts.title')}
+              </h2>
+              <p className="mt-3 leading-relaxed text-pretty text-muted">{t('shortcuts.lede')}</p>
             </div>
-          </Reveal>
+            <div className="space-y-2.5">
+              {shortcutLabels.map((label, i) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between rounded-xl bg-bg/50 px-4 py-2.5"
+                >
+                  <span className="text-sm text-fg">{label}</span>
+                  <span className="flex items-center gap-1">
+                    {shortcutKeys[i].map((k) => (
+                      <Kbd key={k} k={k} />
+                    ))}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <Band tone="deep">
@@ -175,12 +170,10 @@ export default function Features() {
         </Band>
 
         <section className="py-24 text-center">
-          <Reveal>
-            <div className="flex flex-col items-center gap-4">
-              <DownloadButton location="features" />
-              <p className="text-sm text-faint">{t('home.closeNote')}</p>
-            </div>
-          </Reveal>
+          <div className="flex flex-col items-center gap-4">
+            <DownloadButton location="features" />
+            <p className="text-sm text-faint">{t('home.closeNote')}</p>
+          </div>
         </section>
       </main>
 

@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next'
 import type { Language } from '../i18n'
 import { PAGES } from '../lib/nav'
 import { SCENE_ANCHORS, SECTION_VIEWS } from '../lib/sceneAnchors'
-import Reveal from './Reveal'
 import BatchScene from './scenes/BatchScene'
 import QualityScene from './scenes/QualityScene'
 import SceneLayout from './scenes/SceneLayout'
@@ -42,14 +41,12 @@ export default function Walkthrough() {
         {t('home.batch.lede')}
       </SceneLayout>
 
-      <Reveal>
-        <a
-          href={guideHref}
-          className="inline-flex items-center py-1.5 -my-1.5 text-sm font-medium text-fg transition-colors hover:text-blue"
-        >
-          {t('how.guideCta')}
-        </a>
-      </Reveal>
+      <a
+        href={guideHref}
+        className="inline-flex items-center py-1.5 -my-1.5 text-sm font-medium text-fg transition-colors hover:text-blue"
+      >
+        {t('how.guideCta')}
+      </a>
     </>
   )
 }

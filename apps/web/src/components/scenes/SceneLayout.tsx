@@ -24,6 +24,7 @@ export default function SceneLayout({
   return (
     <section
       id={id}
+      data-testid="scene-layout"
       className={
         field
           ? 'relative isolate my-16 scroll-mt-12 py-20 text-bg before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-screen before:-translate-x-1/2 before:bg-blue sm:my-24 sm:py-28'
@@ -52,9 +53,9 @@ export default function SceneLayout({
           </div>
         </div>
       </Reveal>
-      <Reveal delay={120} className="mt-10">
+      <div className="mt-10">
         <Replayable>{app}</Replayable>
-      </Reveal>
+      </div>
     </section>
   )
 }

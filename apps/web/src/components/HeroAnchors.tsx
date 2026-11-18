@@ -22,7 +22,7 @@ export default function HeroAnchors() {
           key={key}
           href={`#${target}`}
           data-testid={`hero-anchor-${key}`}
-          className="group flex gap-3 rounded-xl border border-line bg-surface2/60 px-4 py-4 transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
+          className="group flex gap-3 rounded-xl border border-line bg-surface2/60 px-4 py-4 transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
         >
           <Icon name={ICONS[key]} className="mt-0.5 size-[17px] flex-none text-blue" />
           <span className="flex flex-col gap-1">

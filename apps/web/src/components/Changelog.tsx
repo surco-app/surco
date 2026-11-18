@@ -153,50 +153,46 @@ export default function Changelog() {
 
         {older.length > 0 && (
           <section className={`${ROW} py-16 sm:py-20`}>
-            <Reveal className={SIDE}>
-              <h2 className="text-lg font-semibold tracking-tight text-faint">
-                {t('changelog.olderTitle')}
-              </h2>
-            </Reveal>
-            <Reveal>
-              <div className="max-w-2xl border-t border-line/60">
-                {older.map((r) => (
-                  <details key={r.version} className="group border-b border-line/60 py-4">
-                    <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue [&::-webkit-details-marker]:hidden">
-                      <span className="rounded-full border border-line bg-surface2/40 px-2.5 py-0.5 font-mono text-xs text-blue tabular-nums">
-                        v{r.version}
-                      </span>
-                      <span className="text-sm font-medium">{r.title}</span>
-                      <span className="font-mono text-xs text-faint tabular-nums">
-                        {releaseDate(r.date)}
-                      </span>
-                      <span
-                        className="ml-auto font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
-                        aria-hidden="true"
-                      >
-                        +
-                      </span>
-                    </summary>
-                    <ReleaseItems items={r.items} />
-                  </details>
-                ))}
-              </div>
-            </Reveal>
+            <h2 className="text-lg font-semibold tracking-tight text-faint">
+              {t('changelog.olderTitle')}
+            </h2>
+            <div data-testid="changelog-older" className="max-w-2xl border-t border-line/60">
+              {older.map((r) => (
+                <details key={r.version} className="group border-b border-line/60 py-4">
+                  <summary
+                    data-testid="changelog-older-summary"
+                    className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden">
+                    <span className="rounded-full border border-line bg-surface2/40 px-2.5 py-0.5 font-mono text-xs text-blue tabular-nums">
+                      v{r.version}
+                    </span>
+                    <span className="text-sm font-medium">{r.title}</span>
+                    <span className="font-mono text-xs text-faint tabular-nums">
+                      {releaseDate(r.date)}
+                    </span>
+                    <span
+                      className="ml-auto font-mono text-lg leading-none text-blue transition-transform duration-200 group-open:rotate-45"
+                      aria-hidden="true"
+                    >
+                      +
+                    </span>
+                  </summary>
+                  <ReleaseItems items={r.items} />
+                </details>
+              ))}
+            </div>
           </section>
         )}
 
         <section className="py-20 text-center sm:py-24">
-          <Reveal>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t('changelog.outroTitle')}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t('changelog.outroLede')}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="changelog" />
-            </div>
-          </Reveal>
+          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t('changelog.outroTitle')}
+          </h2>
+          <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+            {t('changelog.outroLede')}
+          </p>
+          <div className="mt-2 flex flex-col items-center text-center">
+            <DownloadButton location="changelog" />
+          </div>
         </section>
       </main>
 

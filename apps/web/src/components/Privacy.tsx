@@ -55,29 +55,25 @@ export default function Privacy() {
         </section>
 
         <section className="py-16 sm:py-20" data-testid="privacy-app">
-          <Reveal>
-            <Kicker>{t('privacy.privacyHeading')}</Kicker>
-            <p className="mt-4 leading-relaxed text-muted">{t('privacy.privacyLede')}</p>
-            <ul className="mt-5 space-y-3">
-              {privacyItems.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted">
-                  <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-6 text-sm font-semibold">{t('privacy.policiesLabel')}</p>
-            <LinkList links={policies} />
-          </Reveal>
+          <Kicker>{t('privacy.privacyHeading')}</Kicker>
+          <p className="mt-4 leading-relaxed text-muted">{t('privacy.privacyLede')}</p>
+          <ul className="mt-5 space-y-3">
+            {privacyItems.map((item) => (
+              <li key={item} className="flex gap-3 text-sm leading-relaxed text-muted">
+                <span className="mt-2 h-1.5 w-1.5 flex-none rounded-full bg-blue" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-6 text-sm font-semibold">{t('privacy.policiesLabel')}</p>
+          <LinkList links={policies} />
         </section>
 
         <section className="py-16 sm:py-20" data-testid="privacy-web">
-          <Reveal>
-            <Kicker>{t('privacy.webHeading')}</Kicker>
-            <p className="mt-4 leading-relaxed text-muted">{t('privacy.webBody')}</p>
-            <p className="mt-6 text-sm font-semibold">{t('privacy.webPolicies')}</p>
-            <LinkList links={webPolicyLinks} />
-          </Reveal>
+          <Kicker>{t('privacy.webHeading')}</Kicker>
+          <p className="mt-4 leading-relaxed text-muted">{t('privacy.webBody')}</p>
+          <p className="mt-6 text-sm font-semibold">{t('privacy.webPolicies')}</p>
+          <LinkList links={webPolicyLinks} />
         </section>
       </main>
 

@@ -158,118 +158,108 @@ export default function ConvertPage({ page }: { page: Page }) {
         </section>
 
         <section className="py-16 sm:py-20">
-          <Reveal>
-            <Kicker>{t(`${page}.carry.kicker`)}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.carry.title`)}
-            </h2>
-            <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.carry.lede`)}</p>
-            <div className="mt-8 overflow-x-auto">
-              <table className="w-full border-collapse text-left text-sm">
-                <thead>
-                  <tr className="border-b border-line text-xs text-faint">
-                    <th className="py-3 pr-4 font-medium">{t(`${page}.carry.head.what`)}</th>
-                    <th className="hidden py-3 pr-4 font-medium sm:table-cell">
-                      {t(`${page}.carry.head.result`)}
-                    </th>
-                    <th className="py-3 font-medium">{t(`${page}.carry.head.how`)}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr key={row.what} className="border-b border-line/60 align-top">
-                      <td className="py-3 pr-4 font-semibold sm:whitespace-nowrap">
-                        {row.what}
-                        <span className="mt-1 block font-mono text-xs font-normal text-green sm:hidden">
-                          ✓ {row.result}
-                        </span>
-                      </td>
-                      <td className="hidden py-3 pr-4 font-mono text-xs whitespace-nowrap text-green sm:table-cell">
+          <Kicker>{t(`${page}.carry.kicker`)}</Kicker>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.carry.title`)}
+          </h2>
+          <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.carry.lede`)}</p>
+          <div className="mt-8 overflow-x-auto">
+            <table className="w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-line text-xs text-faint">
+                  <th className="py-3 pr-4 font-medium">{t(`${page}.carry.head.what`)}</th>
+                  <th className="hidden py-3 pr-4 font-medium sm:table-cell">
+                    {t(`${page}.carry.head.result`)}
+                  </th>
+                  <th className="py-3 font-medium">{t(`${page}.carry.head.how`)}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.what} className="border-b border-line/60 align-top">
+                    <td className="py-3 pr-4 font-semibold sm:whitespace-nowrap">
+                      {row.what}
+                      <span className="mt-1 block font-mono text-xs font-normal text-green sm:hidden">
                         ✓ {row.result}
-                      </td>
-                      <td className="py-3 leading-relaxed text-muted">{row.how}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Reveal>
+                      </span>
+                    </td>
+                    <td className="hidden py-3 pr-4 font-mono text-xs whitespace-nowrap text-green sm:table-cell">
+                      ✓ {row.result}
+                    </td>
+                    <td className="py-3 leading-relaxed text-muted">{row.how}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="py-16 sm:py-20">
-          <Reveal>
-            <Kicker>{t(`${page}.why.kicker`)}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.why.title`)}
-            </h2>
-            <div className="mt-8 grid gap-8 md:grid-cols-3">
-              {reasons.map((reason) => (
-                <div key={reason.title}>
-                  <h3 className="font-semibold">{reason.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted">{reason.text}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
+          <Kicker>{t(`${page}.why.kicker`)}</Kicker>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.why.title`)}
+          </h2>
+          <div className="mt-8 grid gap-8 md:grid-cols-3">
+            {reasons.map((reason) => (
+              <div key={reason.title}>
+                <h3 className="font-semibold">{reason.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted">{reason.text}</p>
+              </div>
+            ))}
+          </div>
         </section>
 
         <section className="py-16 sm:py-20">
-          <Reveal>
-            <Kicker>{t(`${page}.steps.kicker`)}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.steps.title`)}
-            </h2>
-            <ol className="mt-8 grid gap-5 md:grid-cols-3">
-              {steps.map((step, i) => (
-                <li key={step.title} className="rounded-xl bg-surface2 p-5">
-                  <span className="grid h-6 w-6 place-items-center rounded-full bg-cyan font-mono text-xs font-bold text-bg">
-                    {i + 1}
-                  </span>
-                  <h3 className="mt-3 font-semibold">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">{step.text}</p>
-                </li>
-              ))}
-            </ol>
-            <a
-              href={PAGES.guide[lang]}
-              className="mt-6 inline-block text-sm text-blue transition-colors hover:text-cyan"
-            >
-              {t(`${page}.steps.guide`)} →
-            </a>
-          </Reveal>
+          <Kicker>{t(`${page}.steps.kicker`)}</Kicker>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.steps.title`)}
+          </h2>
+          <ol className="mt-8 grid gap-5 md:grid-cols-3">
+            {steps.map((step, i) => (
+              <li key={step.title} className="rounded-xl bg-surface2 p-5">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-cyan font-mono text-xs font-bold text-bg">
+                  {i + 1}
+                </span>
+                <h3 className="mt-3 font-semibold">{step.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+          <a
+            href={PAGES.guide[lang]}
+            className="mt-6 inline-block text-sm text-blue transition-colors hover:text-cyan"
+          >
+            {t(`${page}.steps.guide`)} →
+          </a>
         </section>
 
         <section className="py-16 sm:py-20">
-          <Reveal>
-            <Kicker>{t(`${page}.quality.kicker`)}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.quality.title`)}
-            </h2>
-            <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.quality.lede`)}</p>
-            <SpectrumDuotone />
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              <Spectrum
-                src="/spectrum/lossless-real.jpg"
-                alt={t('home.quality.goodAlt')}
-                badge={t('home.quality.goodBadge')}
-                good
-              />
-              <Spectrum
-                src="/spectrum/lossless-fake.jpg"
-                alt={t('home.quality.fakeAlt')}
-                badge={t('home.quality.fakeBadge')}
-              />
-            </div>
-          </Reveal>
+          <Kicker>{t(`${page}.quality.kicker`)}</Kicker>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.quality.title`)}
+          </h2>
+          <p className="mt-4 max-w-2xl leading-relaxed text-muted">{t(`${page}.quality.lede`)}</p>
+          <SpectrumDuotone />
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <Spectrum
+              src="/spectrum/lossless-real.jpg"
+              alt={t('home.quality.goodAlt')}
+              badge={t('home.quality.goodBadge')}
+              good
+            />
+            <Spectrum
+              src="/spectrum/lossless-fake.jpg"
+              alt={t('home.quality.fakeAlt')}
+              badge={t('home.quality.fakeBadge')}
+            />
+          </div>
         </section>
 
         <section className="py-16 sm:py-20">
-          <Reveal>
-            <Kicker>{t(`${page}.faq.kicker`)}</Kicker>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.faq.title`)}
-            </h2>
-          </Reveal>
+          <Kicker>{t(`${page}.faq.kicker`)}</Kicker>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.faq.title`)}
+          </h2>
           <div className="mt-8">
             {faq.map((item) => (
               <details key={item.q} className="group border-b border-line/60 py-4">
@@ -291,41 +281,37 @@ export default function ConvertPage({ page }: { page: Page }) {
         </section>
 
         <nav aria-labelledby="convert-more" className="py-16 sm:py-20">
-          <Reveal>
-            <h2
-              id="convert-more"
-              className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
-            >
-              {t('footer.convertMore')}
-            </h2>
-            <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {otherConversions(page).map((other) => (
-                <li key={other}>
-                  <a
-                    href={PAGES[other][lang]}
-                    data-testid={`convert-link-${other}`}
-                    className="block rounded-xl bg-surface2 p-4 font-medium transition-colors hover:text-blue"
-                  >
-                    {t(`footer.${other}`)} →
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
+          <h2
+            id="convert-more"
+            className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl"
+          >
+            {t('footer.convertMore')}
+          </h2>
+          <ul className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {otherConversions(page).map((other) => (
+              <li key={other}>
+                <a
+                  href={PAGES[other][lang]}
+                  data-testid={`convert-link-${other}`}
+                  className="block rounded-xl bg-surface2 p-4 font-medium transition-colors hover:text-blue"
+                >
+                  {t(`footer.${other}`)} →
+                </a>
+              </li>
+            ))}
+          </ul>
         </nav>
 
         <section className="py-20 text-center sm:py-24">
-          <Reveal>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              {t(`${page}.outro.title`)}
-            </h2>
-            <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
-              {t(`${page}.outro.lede`)}
-            </p>
-            <div className="mt-2 flex flex-col items-center text-center">
-              <DownloadButton location="convert-closing" />
-            </div>
-          </Reveal>
+          <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+            {t(`${page}.outro.title`)}
+          </h2>
+          <p className="mx-auto mt-4 max-w-md leading-relaxed text-muted">
+            {t(`${page}.outro.lede`)}
+          </p>
+          <div className="mt-2 flex flex-col items-center text-center">
+            <DownloadButton location="convert-closing" />
+          </div>
         </section>
       </main>
 
