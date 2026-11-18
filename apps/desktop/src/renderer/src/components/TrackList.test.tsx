@@ -578,6 +578,20 @@ describe('TrackList', () => {
     ).toBeTruthy()
   })
 
+  it('truncates a free-text key tag so it cannot take the row from the artist', () => {
+    renderList([
+      track({
+        id: 'a',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: 'F#m (11A) Energy 7' } as TrackMetadata,
+      }),
+    ])
+    const classes = screen.getByTestId('track-key').className.split(' ')
+    expect(classes).toContain('max-w-[5.5rem]')
+    expect(classes).toContain('truncate')
+    expect(classes).toContain('shrink-0')
+  })
+
   it('writes the key in the notation chosen in Settings, so the list reads like the DJ software', () => {
     renderList(
       [

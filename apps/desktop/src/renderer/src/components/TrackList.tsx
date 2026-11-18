@@ -976,7 +976,7 @@ const TrackRow = memo(function TrackRow({
                 {key && (
                   <span
                     data-testid="track-key"
-                    className={`shrink-0 whitespace-nowrap rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+                    className={`max-w-[5.5rem] shrink-0 truncate rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
                   >
                     {key}
                   </span>

@@ -93,7 +93,10 @@ export function MatchingSection({
                     <span className="block truncate text-xs text-fg-dim">{p.artist}</span>
                   </span>
                   {p.key && (
-                    <span className="shrink-0 rounded border border-[var(--color-line-strong)] px-1 text-label text-fg-dim">
+                    <span
+                      data-testid="matching-partner-key"
+                      className="max-w-[5.5rem] shrink-0 truncate rounded border border-[var(--color-line-strong)] px-1 text-label text-fg-dim"
+                    >
                       {p.key}
                     </span>
                   )}
