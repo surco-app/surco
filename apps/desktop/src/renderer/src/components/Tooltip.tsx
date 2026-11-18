@@ -47,8 +47,8 @@ export function Tooltip({
   const visible = pos !== null && label !== ''
 
   useLayoutEffect(() => {
-    if (tooltipRef.current) setHeight(tooltipRef.current.offsetHeight)
-  })
+    if (visible && pos && tooltipRef.current) setHeight(tooltipRef.current.offsetHeight)
+  }, [visible, pos])
 
   useEffect(() => {
     const trigger = markerRef.current?.parentElement

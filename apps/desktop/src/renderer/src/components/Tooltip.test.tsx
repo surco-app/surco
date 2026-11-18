@@ -392,8 +392,6 @@ describe('Tooltip flip', () => {
     }
   }
 
-  // A long title wraps to a tall tooltip; flipping on a guessed 56px height left it cut off at
-  // the bottom edge, exactly when it is the only way to read the truncated text.
   it('flips above the pointer when its measured height would run past the bottom edge', () => {
     expect(withTooltipHeight(120, 500)).toBe('translate(0, -100%)')
   })
@@ -404,5 +402,23 @@ describe('Tooltip flip', () => {
 
   it('stays below the pointer near the bottom edge when it is short', () => {
     expect(withTooltipHeight(40, 500)).toBe('translate(0, 0)')
+  })
+
+  it('never measures a tooltip that is not showing, however often its parent re-renders', () => {
+    const read = vi.fn(() => 0)
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: read })
+    try {
+      const view = (n: number) => (
+        <button type="button" data-testid="trigger">
+          {n}
+          <Tooltip label="Helpful hint" />
+        </button>
+      )
+      const { rerender } = render(view(0))
+      for (let n = 1; n <= 5; n++) rerender(view(n))
+      expect(read).not.toHaveBeenCalled()
+    } finally {
+      Reflect.deleteProperty(HTMLElement.prototype, 'offsetHeight')
+    }
   })
 })
