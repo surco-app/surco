@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { ISSUES_URL } from '../config'
 import type { Language } from '../i18n'
 import { trackUseCaseSearch } from '../lib/analytics'
+import { pressFeedback } from '../lib/ui'
 import {
   filtersFromSearch,
   matchesUseCase,
@@ -116,7 +117,7 @@ export default function UseCases() {
                       data-testid="use-case-source"
                       aria-pressed={source === s}
                       onClick={() => filterBy({ query, source: s })}
-                      className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] ${
+                      className={`h-9 flex-none rounded-full border px-2.5 text-sm whitespace-nowrap ${pressFeedback} ${
                         source === s
                           ? 'border-blue bg-blue font-semibold text-bg'
                           : 'border-line text-muted hover:border-blue/50 hover:text-fg'

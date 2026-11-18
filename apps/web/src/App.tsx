@@ -9,7 +9,6 @@ import HeroStats from './components/HeroStats'
 import LatestRelease from './components/LatestRelease'
 import LibraryReview from './components/LibraryReview'
 import Reveal from './components/Reveal'
-import ScrollProgress from './components/ScrollProgress'
 import SectionView from './components/SectionView'
 import Spotlight from './components/Spotlight'
 import CuesScene from './components/scenes/CuesScene'
@@ -35,8 +34,6 @@ export default function App() {
 
   return (
     <div id="top" className="min-h-screen overflow-x-clip bg-bg text-fg antialiased">
-      <ScrollProgress />
-
       <Header />
 
       <main id="main" className="relative overflow-x-clip">

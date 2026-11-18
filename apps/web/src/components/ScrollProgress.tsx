@@ -28,7 +28,7 @@ export default function ScrollProgress() {
   }, [])
 
   return (
-    <div className="fixed inset-x-0 top-0 z-50 h-0.5 bg-transparent">
+    <div data-testid="scroll-progress" className="fixed inset-x-0 top-0 z-50 h-0.5 bg-transparent">
       <div
         ref={ref}
         className="h-full origin-left bg-gradient-to-r from-blue to-cyan"

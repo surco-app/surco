@@ -5,7 +5,7 @@ import { isCondensed, showsHeaderDownload } from '../lib/header'
 import { HOME, PAGES, type Page } from '../lib/nav'
 import { offerPlacement, showOffer } from '../lib/offerCard'
 import { toggleTheme } from '../lib/theme'
-import { btnPrimary } from '../lib/ui'
+import { btnPrimary, pressFeedback } from '../lib/ui'
 import { rememberLanguage, useAutoLanguage } from '../lib/useAutoLanguage'
 
 const FLOATING_SHADOW = 'shadow-[0_16px_40px_color-mix(in_srgb,var(--color-scrim)_60%,transparent)]'
@@ -192,7 +192,7 @@ export default function Header({
             data-testid="theme-toggle"
             aria-label={t('nav.theme')}
             onClick={toggleTheme}
-            className="grid size-9 place-items-center rounded-full text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
+            className={`grid size-9 place-items-center rounded-full text-muted ${pressFeedback} hover:text-fg`}
           >
             <svg
               width="18"
@@ -233,7 +233,7 @@ export default function Header({
               aria-expanded={languageOpen}
               aria-controls="language-menu"
               onClick={() => setLanguageOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 py-2 text-sm text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:text-fg"
+              className={`inline-flex items-center gap-1.5 py-2 text-sm text-muted ${pressFeedback} hover:text-fg`}
             >
               <svg
                 width="16"
@@ -308,7 +308,8 @@ export default function Header({
             )}
             <ul
               id="language-menu"
-              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-out ${
+              data-testid="language-menu"
+              className={`absolute top-full right-0 z-50 mt-2 w-44 rounded-xl border border-line bg-surface2 p-1.5 ${FLOATING_SHADOW} origin-top-right transition-[opacity,scale,visibility] duration-150 ease-(--ease-strong) ${
                 languageOpen ? 'opacity-100' : 'invisible scale-[0.97] opacity-0'
               }`}
             >
@@ -363,7 +364,7 @@ export default function Header({
             aria-expanded={open}
             aria-controls="mobile-nav"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97] hover:border-blue/50 hover:text-fg lg:hidden"
+            className={`flex h-11 w-11 items-center justify-center rounded-full border border-line text-muted ${pressFeedback} hover:border-blue/50 hover:text-fg lg:hidden`}
           >
             {open ? (
               <svg
@@ -405,7 +406,7 @@ export default function Header({
         data-testid="header-mobile-nav"
         aria-label={t('nav.main')}
         aria-hidden={!open}
-        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-out lg:hidden ${
+        className={`absolute inset-x-0 top-full max-h-[calc(100dvh-4rem)] overflow-y-auto border-t bg-bg transition-[opacity,translate,visibility] duration-200 ease-(--ease-strong) lg:hidden ${
           open
             ? 'border-line/70 opacity-100'
             : 'invisible -translate-y-2 border-transparent opacity-0'

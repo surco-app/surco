@@ -8,3 +8,6 @@
 // Hover brightens the fill, and Tailwind only applies hover where a pointer can hover.
 export const btnPrimary =
   'items-center justify-center rounded-full bg-blue font-semibold text-bg transition-[filter,scale] duration-[160ms] ease-out hover:brightness-110 active:scale-[0.97]'
+
+export const pressFeedback =
+  'transition-[color,background-color,border-color,scale] duration-[160ms] ease-out active:scale-[0.97]'

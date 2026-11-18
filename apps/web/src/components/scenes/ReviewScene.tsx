@@ -182,8 +182,9 @@ export default function ReviewScene() {
                       }`}
                     >
                       <i
-                        className="block size-1 rounded-full bg-blue transition-transform duration-200"
-                        style={{ transform: on ? 'none' : 'scale(0)' }}
+                        data-testid="review-option-dot"
+                        className="block size-1 rounded-full bg-blue transition-[transform,opacity] duration-200"
+                        style={{ opacity: on ? 1 : 0, transform: on ? 'none' : 'scale(0.5)' }}
                       />
                     </span>
                     {name}
