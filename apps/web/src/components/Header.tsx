@@ -414,15 +414,17 @@ export default function Header({
         <div className="mx-auto max-w-6xl px-6 sm:px-10 py-2">
           <a
             href={featuresHref}
+            data-testid="header-mobile-features"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.funciones')}
           </a>
           <a
             href={guideHref}
+            data-testid="header-mobile-guide"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.guia')}
           </a>
@@ -430,14 +432,15 @@ export default function Header({
             href={useCasesHref}
             data-testid="header-mobile-use-cases"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.casos')}
           </a>
           <a
             href={changelogHref}
+            data-testid="header-mobile-changelog"
             onClick={() => setOpen(false)}
-            className="block py-3 text-sm text-muted transition-colors hover:text-fg"
+            className="block py-3 text-sm text-muted transition-colors hover:text-fg active:text-fg"
           >
             {t('nav.cambios')}
           </a>

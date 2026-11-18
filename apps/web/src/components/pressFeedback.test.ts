@@ -4,6 +4,9 @@ import { createRoot, type Root } from 'react-dom/client'
 import { I18nextProvider } from 'react-i18next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadI18n } from '../i18n'
+import Changelog from './Changelog'
+import Faq from './Faq'
+import Features from './Features'
 import Header from './Header'
 import HeroAnchors from './HeroAnchors'
 import Lightbox from './Lightbox'
@@ -60,6 +63,13 @@ function expectScaleFeedback(container: HTMLElement, testId: string) {
   }
 }
 
+function expectColourFeedback(container: HTMLElement, testId: string, utility: string) {
+  for (const el of all(container, testId)) {
+    expect(el.className, testId).toContain(utility)
+    expect(el.className, testId).not.toContain('active:scale')
+  }
+}
+
 describe('taps answer on touch, where hover never fires', () => {
   it('presses the header icon buttons in', async () => {
     const container = await render(createElement(Header))
@@ -68,11 +78,27 @@ describe('taps answer on touch, where hover never fires', () => {
     expectScaleFeedback(container, 'header-menu-toggle')
   })
 
+  it('recolours the mobile menu links without moving them', async () => {
+    const container = await render(createElement(Header))
+    for (const id of [
+      'header-mobile-features',
+      'header-mobile-guide',
+      'header-mobile-use-cases',
+      'header-mobile-changelog',
+    ])
+      expectColourFeedback(container, id, 'active:text-fg')
+  })
+
   it('presses the hero anchors in', async () => {
     const container = await render(createElement(HeroAnchors))
     for (const el of all(container, 'hero-anchors')) expect(el).toBeTruthy()
     for (const key of ['quality', 'tag', 'export'])
       expectScaleFeedback(container, `hero-anchor-${key}`)
+  })
+
+  it('recolours the features index links without moving them', async () => {
+    const container = await render(createElement(Features))
+    expectColourFeedback(container, 'features-index-link', 'active:border-blue')
   })
 
   it('presses the use-case source chips in', async () => {
@@ -93,5 +119,15 @@ describe('taps answer on touch, where hover never fires', () => {
     expectScaleFeedback(container, 'lightbox-close')
     for (const el of all(container, 'lightbox-close'))
       expect(el.className.split(/\s+/)).not.toContain('transition')
+  })
+
+  it('recolours the FAQ questions without moving them', async () => {
+    const container = await render(createElement(Faq))
+    expectColourFeedback(container, 'faq-question', 'active:text-blue')
+  })
+
+  it('recolours the older changelog rows without moving them', async () => {
+    const container = await render(createElement(Changelog))
+    expectColourFeedback(container, 'changelog-older-summary', 'active:text-blue')
   })
 })

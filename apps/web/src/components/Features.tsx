@@ -65,7 +65,8 @@ export default function Features() {
                 <a
                   key={GROUP_IDS[i]}
                   href={`#${GROUP_IDS[i]}`}
-                  className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-blue focus-visible:outline-2 focus-visible:outline-blue"
+                  data-testid="features-index-link"
+                  className="flex flex-col gap-0.5 rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-blue active:border-blue focus-visible:outline-2 focus-visible:outline-blue"
                 >
                   <span className="text-sm font-semibold text-fg">{g.title}</span>
                   <span className="text-xs text-faint tabular-nums">
