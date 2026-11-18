@@ -1400,10 +1400,13 @@ function Editing({
         }
       : ghost
   }
+  const stripViewAt = (ms: number) => detailWindow(ctx.beats, ms, zoom)
+  const stripGhostAt = (ms: number) =>
+    hoverGhost && ghost ? JSON.stringify(stripGhostIn(stripViewAt(ms))) : ''
   const strip = (
-    <AtHead head={head} of={atMs}>
-      {(playheadMs) => {
-        const stripView = detailWindow(ctx.beats, playheadMs, zoom)
+    <AtHead head={head} of={stripGhostAt}>
+      {() => {
+        const stripView = stripViewAt(head.get())
         return (
           <CueWave
             offGrid={offGridKeys}
@@ -1424,9 +1427,9 @@ function Editing({
             onSelect={(key) => dispatch({ type: 'select', key })}
             onMenu={maximized ? setMenu : undefined}
             onMarkMenu={openMarkMenu}
-            playheadMs={playheadMs}
+            head={head}
             onSeek={seekTo}
-            view={stripView}
+            viewOf={stripViewAt}
             slim={!maximized}
             detail={words}
           />

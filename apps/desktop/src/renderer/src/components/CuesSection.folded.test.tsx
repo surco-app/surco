@@ -35,6 +35,21 @@ vi.mock('../lib/cueDraft', async (importOriginal) => {
   return { ...real, ghostOf: vi.fn(real.ghostOf), wantedOfDraft: vi.fn(real.wantedOfDraft) }
 })
 
+const { stripRenders } = vi.hoisted(() => ({ stripRenders: vi.fn() }))
+vi.mock('./CueWave', async (importOriginal) => {
+  const real = await importOriginal<typeof import('./CueWave')>()
+  const { createElement, Profiler } = await import('react')
+  return {
+    ...real,
+    CueWave: (props: Parameters<typeof real.CueWave>[0]) =>
+      createElement(
+        Profiler,
+        { id: 'cue-wave', onRender: stripRenders },
+        createElement(real.CueWave, props),
+      ),
+  }
+})
+
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32]
 const GRID = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const READ: TrackCues = {
@@ -421,6 +436,34 @@ describe('CuesSection folded', () => {
     expect(position()).toBe('1:06.0')
     expect(position()).not.toBe(shown)
     expect(vi.mocked(wantedOfDraft).mock.calls.length - before).toBe(0)
+  })
+
+  it('slides the strip playhead along with the preview without drawing the strip again on every frame, and leaves it where it was on pause', async () => {
+    stubSound()
+    const frames: FrameRequestCallback[] = []
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => frames.push(cb))
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-play'))
+    await act(async () => audios[0].onloadedmetadata?.())
+    const playheadAt = () => screen.getByTestId('cue-wave-playhead').style.transform
+    const playTo = async (sec: number) => {
+      audios[0].currentTime = sec
+      await act(async () => frames.shift()?.(0))
+    }
+    await playTo(64)
+    expect(playheadAt()).toBe('translateX(16%)')
+    const drawn = stripRenders.mock.calls.length
+    await playTo(80)
+    expect(playheadAt()).toBe('translateX(20%)')
+    await playTo(100)
+    expect(playheadAt()).toBe('translateX(25%)')
+    expect(stripRenders.mock.calls.length).toBe(drawn)
+    fireEvent.click(screen.getByTestId('cues-play'))
+    expect(playheadAt()).toBe('translateX(25%)')
+    audios[0].currentTime = 120
+    await act(async () => frames.shift()?.(0))
+    expect(playheadAt()).toBe('translateX(25%)')
   })
 
   it('keeps the cue editor body still while dragging the playhead along the strip', async () => {
