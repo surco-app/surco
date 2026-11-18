@@ -7,6 +7,7 @@ export const SCENE_ANCHORS = {
   replace: 'sustituir',
   sync: 'sincronizar',
   matching: 'matching',
+  speed: 'rapidez',
   cues: 'cues',
   review: 'biblioteca',
 } as const
@@ -19,6 +20,7 @@ export const SECTION_VIEWS: Record<keyof typeof SCENE_ANCHORS, SectionLocation> 
   replace: 'home-replace',
   sync: 'home-sync',
   matching: 'home-matching',
+  speed: 'home-speed',
   review: 'home-review',
 }
 

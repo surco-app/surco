@@ -5,6 +5,7 @@ import { I18nextProvider } from 'react-i18next'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadI18n } from '../i18n'
 import LibraryReview from './LibraryReview'
+import Speed from './Speed'
 import Spotlight from './Spotlight'
 import Walkthrough from './Walkthrough'
 
@@ -47,7 +48,7 @@ async function renderBelowTheFold(...children: ReturnType<typeof createElement>[
 }
 
 const SECTIONS =
-  '[data-testid^="spotlight-"], [data-testid="library-review"], [data-testid="scene-layout"]'
+  '[data-testid^="spotlight-"], [data-testid="speed"], [data-testid="library-review"], [data-testid="scene-layout"]'
 
 describe('home sections', () => {
   it('reveal at most one block each, because the scenes already carry their own motion', async () => {
@@ -63,10 +64,11 @@ describe('home sections', () => {
           scene: createElement('div'),
         }),
       ),
+      createElement(Speed),
       createElement(LibraryReview),
     )
     const sections = [...container.querySelectorAll(SECTIONS)]
-    expect(sections.length).toBe(8)
+    expect(sections.length).toBe(9)
     for (const section of sections) {
       expect(section.querySelectorAll('.reveal-init').length).toBeLessThanOrEqual(1)
     }

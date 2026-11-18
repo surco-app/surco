@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Rapide, très rapide.",
+      "lede": "Surco répond à l'instant, quelle que soit la taille de ta bibliothèque.",
+      "figures": {
+        "open": "Ouvrir une bibliothèque rekordbox de 14 835 morceaux",
+        "select": "Morceaux Traktor sélectionnés d'un coup, sans attendre",
+        "clear": "Effacer les cues de 13 280 morceaux dans Engine DJ"
+      }
+    },
     "review": {
       "title": "Repère les fautes et les doublons de ta bibliothèque",
       "lede": "Surco parcourt ta bibliothèque Apple Music, le dossier que tu déposes ou une playlist rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ, et regroupe ce qui s’écrit de plusieurs façons, les espaces et caractères invisibles qui se glissent quand tu copies depuis un site web, et les morceaux que tu as en double. Tu choisis la bonne écriture et le changement arrive jusqu’aux fichiers, à Apple Music et, si tu les synchronises, à rekordbox, Engine DJ, Traktor, Serato et VirtualDJ.",

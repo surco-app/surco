@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Ràpid, molt ràpid.",
+      "lede": "Surco respon a l'instant, per gran que sigui la teva biblioteca.",
+      "figures": {
+        "open": "Obrir una biblioteca de rekordbox de 14.835 pistes",
+        "select": "Pistes de Traktor seleccionades de cop, sense esperar",
+        "clear": "Esborrar els cues de 13.280 pistes a Engine DJ"
+      }
+    },
     "review": {
       "title": "Troba les errates i els duplicats de la teva biblioteca",
       "lede": "Surco repassa la teva biblioteca d'Apple Music, la carpeta que hi deixis anar o una playlist de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, i agrupa el que està escrit de diverses maneres, els espais i caràcters invisibles que s'hi colen quan copies d'una web i les pistes repetides. Tries com ha de quedar i el canvi arriba als fitxers, a Apple Music i, si els sincronitzes, a rekordbox, Engine DJ, Traktor, Serato i VirtualDJ.",

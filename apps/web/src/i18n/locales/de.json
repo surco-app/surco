@@ -1447,6 +1447,15 @@
         }
       }
     },
+    "speed": {
+      "title": "Schnell, richtig schnell.",
+      "lede": "Surco reagiert sofort, egal wie groß deine Bibliothek ist.",
+      "figures": {
+        "open": "Eine rekordbox-Bibliothek mit 14.835 Tracks öffnen",
+        "select": "Traktor-Tracks auf einmal ausgewählt, ohne Wartezeit",
+        "clear": "Die Cues von 13.280 Tracks in Engine DJ löschen"
+      }
+    },
     "review": {
       "title": "Finde die Tippfehler und Duplikate in deiner Bibliothek",
       "lede": "Surco geht deine Apple-Music-Mediathek durch, den Ordner, den du reinziehst, oder eine Playlist aus rekordbox, Engine DJ, Traktor, Serato oder VirtualDJ. Es gruppiert, was mehrfach unterschiedlich geschrieben ist, die unsichtbaren Leerzeichen und Zeichen, die sich beim Kopieren von einer Website einschleichen, und die Tracks, die du doppelt hast. Du entscheidest, wie es heißen soll, und die Änderung erreicht die Dateien, Apple Music und, wenn du sie synchronisierst, rekordbox, Engine DJ, Traktor, Serato und VirtualDJ.",
