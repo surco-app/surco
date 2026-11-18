@@ -3200,6 +3200,18 @@ export default function App(): React.JSX.Element {
     })
     return found.length === steps.length ? found : null
   }
+  const matchBlockOf = (track: TrackItem) => {
+    if (!cuesOpen) return null
+    const targets = menuTargets(track.id)
+    if (targets.length < 3) return null
+    const shown = new Map(visibleTracksRef.current.map((t, i) => [t.id, i]))
+    const [head, ...followers] = [...targets].sort(
+      (a, b) => (shown.get(a.id) ?? 0) - (shown.get(b.id) ?? 0),
+    )
+    return planMatching(
+      followers.map((t): [MatchingAction, TrackItem, TrackItem] => ['add', head, t]),
+    )
+  }
   const editsBlocks = () =>
     sourceProgram !== null &&
     browser.playlist?.id === MATCHING_ID &&
@@ -3739,6 +3751,7 @@ export default function App(): React.JSX.Element {
       const reverse = block?.reverse
       const leave = unmatch ? null : block?.leave
       const merge = matchingMergeEdits(targets)
+      const matchBlock = merge ? null : matchBlockOf(menu.track)
       return (
         <TrackContextMenu
           track={menu.track}
@@ -3749,10 +3762,15 @@ export default function App(): React.JSX.Element {
           onSearchWeb={searchTrackWeb}
           onStartOver={startOverTrack}
           onStartSession={sessionProgram && browser.playlist ? openSessionFromTrack : undefined}
-          onMatch={((m) =>
-            m && !unmatch ? () => void editMatching('add', m.pair, m.label, m.paths) : undefined)(
-            matchPairOf(menu.track),
-          )}
+          onMatch={
+            matchBlock
+              ? () => void runMatchingEdits(matchBlock)
+              : ((m) =>
+                  m && !unmatch
+                    ? () => void editMatching('add', m.pair, m.label, m.paths)
+                    : undefined)(matchPairOf(menu.track))
+          }
+          matchesBlock={matchBlock !== null}
           onUnmatch={
             unmatch
               ? () => void editMatching('remove', unmatch.pair, unmatch.label, unmatch.paths)
