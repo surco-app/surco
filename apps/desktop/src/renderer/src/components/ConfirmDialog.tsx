@@ -65,10 +65,12 @@ export function ConfirmDialog({
         onClose()
       }}
     >
-      <h2 id="confirm-title" className="text-base font-semibold">
+      <h2 id="confirm-title" className="break-words text-base font-semibold">
         {title}
       </h2>
-      <p className="mt-2 text-sm text-fg-dim">{message}</p>
+      <p data-testid="confirm-message" className="mt-2 break-words text-sm text-fg-dim">
+        {message}
+      </p>
       {items && items.length > 0 && (
         <ul data-testid="confirm-items" className="mt-3 space-y-1 text-sm">
           {items.map((line) => (
