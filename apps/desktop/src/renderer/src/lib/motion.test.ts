@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { prefersReducedMotion, scrollBehavior } from './motion'
+import { panelDurationMs, prefersReducedMotion, scrollBehavior, standardEasing } from './motion'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  document.documentElement.removeAttribute('style')
 })
 
 function stubMotion(reduce: boolean): void {
@@ -45,5 +46,35 @@ describe('scrollBehavior', () => {
   it('glides when motion is allowed', () => {
     stubMotion(false)
     expect(scrollBehavior()).toBe('smooth')
+  })
+})
+
+function setRoot(name: string, value: string): void {
+  document.documentElement.style.setProperty(name, value)
+}
+
+describe('script-driven motion reads the same duration and curve as the CSS, so a retuned token moves both', () => {
+  it.each(['0.24s', '.24s', '240ms', ' 240ms '])('reads the panel duration %j as 240 ms', (value) => {
+    setRoot('--duration-panel', value)
+    expect(panelDurationMs()).toBe(240)
+  })
+
+  it('reads a retuned panel duration instead of the fallback', () => {
+    setRoot('--duration-panel', '0.5s')
+    expect(panelDurationMs()).toBe(500)
+  })
+
+  it.each(['', 'soon'])('falls back to 240 ms when the panel duration is %j', (value) => {
+    setRoot('--duration-panel', value)
+    expect(panelDurationMs()).toBe(240)
+  })
+
+  it('returns the standard curve set on the root', () => {
+    setRoot('--ease-standard', 'cubic-bezier(0.1, 0.2, 0.3, 0.4)')
+    expect(standardEasing()).toBe('cubic-bezier(0.1, 0.2, 0.3, 0.4)')
+  })
+
+  it('falls back to the standard curve when none is set', () => {
+    expect(standardEasing()).toBe('cubic-bezier(0.2, 0, 0, 1)')
   })
 })

@@ -22,8 +22,8 @@ import type { ReleaseTrack, SearchProviderId, SearchResult } from '../../../shar
 import type { DiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { formatTime } from '../lib/duration'
 import { editorPlace } from '../lib/editorPlace'
-import { useOpenSettings } from '../lib/openSettingsContext'
 import { panelDurationMs, standardEasing } from '../lib/motion'
+import { useOpenSettings } from '../lib/openSettingsContext'
 import {
   durationDiffers,
   joinArtists,

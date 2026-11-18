@@ -20,8 +20,6 @@ function rootToken(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim()
 }
 
-// WAAPI and timers cannot resolve var(), so script reads the tokens' computed values. An
-// empty property (jsdom) falls back to the token's current value.
 export function panelDurationMs(): number {
   const token = rootToken('--duration-panel')
   return Number.parseFloat(token) * (token.endsWith('ms') ? 1 : 1000) || PANEL_FALLBACK_MS
