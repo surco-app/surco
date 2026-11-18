@@ -40,6 +40,7 @@ export function SourceRail({
   onToggleNames,
   sidebarShown,
   onToggleSidebar,
+  dropsInTracks = false,
 }: {
   sources: PlaylistSource[]
   active: PlaylistSource | null
@@ -51,6 +52,7 @@ export function SourceRail({
   onToggleNames: () => void
   sidebarShown: boolean
   onToggleSidebar: () => void
+  dropsInTracks?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [menu, setMenu] = useState<{
@@ -96,10 +98,12 @@ export function SourceRail({
       hideable,
       className = '',
       dot,
+      dropOver = false,
     }: {
       hideable?: PlaylistSource
       className?: string
       dot?: React.ReactNode
+      dropOver?: boolean
     } = {},
   ) => (
     <button
@@ -108,6 +112,7 @@ export function SourceRail({
       data-testid={`source-rail-${key}`}
       aria-pressed={on}
       aria-label={label}
+      data-drop-over={dropOver || undefined}
       onClick={pick}
       onContextMenu={(e) => {
         e.preventDefault()
@@ -124,7 +129,7 @@ export function SourceRail({
         showNames ? 'w-[64px] pt-1.5 pb-1 compact:pt-1 compact:pb-0.5' : 'h-10 w-10'
       } ${
         on ? 'bg-[var(--color-accent-soft)] text-fg' : 'text-fg-faint hover:bg-[var(--color-hover)]'
-      }`}
+      } drop-rail`}
     >
       {icon}
       {dot}
@@ -157,6 +162,7 @@ export function SourceRail({
         <ListMusic size={22} strokeWidth={1.6} aria-hidden="true" />,
         !copies.active && active === null,
         () => onSelect(null),
+        { dropOver: dropsInTracks },
       )}
       {sources.map((s) => {
         const Icon = SOURCE_ICON[s]

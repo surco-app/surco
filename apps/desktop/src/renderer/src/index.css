@@ -1300,6 +1300,20 @@ button:hover > .process-fill {
   box-shadow: inset 0 0 0 2px var(--color-accent);
 }
 
+/* Over a DJ library a drop still lands in Tracks, so the drag answers on the Tracks button
+   instead of boxing a playlist the files are not going to. */
+.drop-rail {
+  transition:
+    background-color var(--duration-state) var(--ease-standard),
+    box-shadow var(--duration-state) var(--ease-standard);
+}
+
+.drop-rail[data-drop-over] {
+  background-color: color-mix(in srgb, var(--color-accent) 8%, var(--color-panel));
+  box-shadow: inset 0 0 0 2px var(--color-accent);
+  color: var(--color-fg);
+}
+
 /* The empty screen's own drop target. The rule above deliberately keeps the drag out of the
    detail pane, and that still holds once a track is open — but while the list is empty this
    panel shows no detail, and it is the wide open space anyone aims a dragged folder at.
