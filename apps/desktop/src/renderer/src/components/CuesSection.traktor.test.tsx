@@ -231,6 +231,30 @@ describe('CuesSection on a Traktor track', () => {
     expect(screen.queryByTestId('cues-traktor-no-collection')).not.toBeInTheDocument()
   })
 
+  it('dims Save and drops its hover while the collection is unconfirmed, even with changes waiting', async () => {
+    setup(READ, 'traktor:HD/:m/:e.wav', async () => null, false)
+    await ready()
+    markAt(bar(8))
+    const save = screen.getByTestId('cues-save')
+    expect(save).toBeDisabled()
+    expect(save).toHaveClass('disabled:opacity-40')
+    expect(save).toHaveClass('disabled:hover:bg-[var(--color-accent)]')
+  })
+
+  it('dims the maximized Save and drops its hover while the collection is unconfirmed, even with changes waiting', async () => {
+    setup(READ, 'traktor:HD/:m/:e.wav', async () => null, false)
+    await ready()
+    markAt(bar(8))
+    fireEvent.click(screen.getByTestId('section-maximize'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
+    )
+    const save = screen.getByTestId('cues-save')
+    expect(save).toBeDisabled()
+    expect(save).toHaveClass('disabled:opacity-40')
+    expect(save).toHaveClass('disabled:hover:bg-[var(--color-accent)]')
+  })
+
   it('saves the other libraries’ tracks from Save all but keeps a Traktor track back until the collection is confirmed', async () => {
     for (const id of ['103', '104'])
       keepDraft(

@@ -591,6 +591,16 @@ describe('Clearing the cues of several selected tracks', () => {
     ).toBeTruthy()
   })
 
+  it('dims the clear button and drops its hover while it is off, so a blocked click does not look available', async () => {
+    setup({}, TARGETS, CUES)
+    fireEvent.click(screen.getByTestId('cues-batch-clear'))
+    const clear = screen.getByTestId('cues-batch-clear')
+    expect(clear).toBeDisabled()
+    expect(clear).toHaveClass('disabled:opacity-40')
+    expect(clear).toHaveClass('disabled:hover:text-fg-dim')
+    await screen.findByTestId('cues-batch-cleared')
+  })
+
   it('turns the clear button off while it reads the tracks, so a second click does not read them twice', async () => {
     const { saveRekordboxCues } = setup({}, TARGETS, CUES)
     fireEvent.click(screen.getByTestId('cues-batch-clear'))

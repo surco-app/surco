@@ -446,7 +446,7 @@ export function SessionWizard({
               disabled={building}
               aria-busy={building}
               onClick={build}
-              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+              className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]"
             >
               {tr(building ? 'sessions.wizard.building' : 'sessions.wizard.build')}
             </button>

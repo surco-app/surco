@@ -495,6 +495,23 @@ describe('ConvertFooter done layout', () => {
     expect(onAddToAppleMusic).toHaveBeenCalledOnce()
   })
 
+  it('dims the Apple Music add in the menu and drops its hover while it is adding', () => {
+    render(
+      <ConvertFooter
+        {...footer(true).props}
+        musicExt="aiff"
+        destination="folder"
+        onAddToAppleMusic={vi.fn()}
+        status={{ ...status(true), canDeleteOriginal: false, musicAdding: true }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('done-more'))
+    const add = screen.getByTestId('menu-add-apple-music')
+    expect(add).toBeDisabled()
+    expect(add).toHaveClass('disabled:opacity-40')
+    expect(add).toHaveClass('disabled:hover:bg-transparent')
+  })
+
   it('keeps the Apple Music add the main action when Apple Music is the destination', () => {
     render(convertedTo('appleMusic'))
     expect(

@@ -1380,7 +1380,7 @@ function Editing({
         className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
           unchanged
             ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
-            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
         }`}
       >
         {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
@@ -1572,7 +1572,7 @@ function Editing({
           } ${
             unchanged
               ? 'text-fg-dim'
-              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]'
+              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
           }`}
         >
           {tr('editor.cues.saveShort')}
