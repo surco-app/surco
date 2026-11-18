@@ -41,4 +41,24 @@ describe('changelog older releases', () => {
     expect(older?.querySelectorAll('details').length).toBeGreaterThan(6)
     expect(older?.closest('.reveal-init')).toBeNull()
   })
+
+  it('keeps the heading pinned beside the list on desktop', async () => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    )
+    const i18n = await loadI18n('en', { releases: true })
+    const container = document.createElement('div')
+    document.body.append(container)
+    await act(async () => {
+      root = createRoot(container)
+      root.render(createElement(I18nextProvider, { i18n }, createElement(Changelog)))
+    })
+    const side = container.querySelector('[data-testid="changelog-older-side"]')
+    expect(side?.className).toContain('lg:sticky')
+  })
 })
