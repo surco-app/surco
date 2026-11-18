@@ -25,5 +25,5 @@ const releases = (await fetchAllReleases(
   'surco-app/surco-releases',
   token ? { Authorization: `Bearer ${token}` } : {},
 )) as StatsRelease[]
-const today = new Date().toISOString().slice(0, 10)
-await writeFile(path, `${JSON.stringify(recordSnapshot(await readPrevious(), releases, today))}\n`)
+const now = new Date().toISOString()
+await writeFile(path, `${JSON.stringify(recordSnapshot(await readPrevious(), releases, now))}\n`)

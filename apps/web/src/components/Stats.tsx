@@ -1,12 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  type Day,
-  installsInLast,
-  lastTwelveMonths,
-  type Stats,
-  weeklyMacInstalls,
-} from '../lib/stats'
+import { installsInLast, type Stats, type Week, weeklyInstalls } from '../lib/stats'
 import Footer from './Footer'
 import Header from './Header'
 import Kicker from './Kicker'
@@ -21,6 +15,8 @@ export const fetchStats = () =>
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
     return res.json() as Promise<Stats>
   })
+
+export const hasFigures = (stats: Stats) => stats.days.length > 0 && Boolean(stats.versions)
 
 const W = 720
 const LEFT = 52
@@ -51,96 +47,10 @@ export function useFormat() {
   }
 }
 
-function monthStarts(from: string, to: string): string[] {
-  const starts: string[] = []
-  const d = new Date(from)
-  d.setUTCDate(1)
-  d.setUTCMonth(d.getUTCMonth() + 1)
-  while (d.toISOString().slice(0, 10) <= to) {
-    starts.push(d.toISOString().slice(0, 10))
-    d.setUTCMonth(d.getUTCMonth() + 1)
-  }
-  return starts
-}
-
-function CumulativeChart({ days }: { days: Day[] }) {
-  const { t } = useTranslation()
-  const format = useFormat()
-  const H = 260
-  const first = Date.parse(days[0].date)
-  const span = Math.max(Date.parse(days[days.length - 1].date) - first, 1)
-  const max = niceMax(days[days.length - 1].mac)
-  const x = (date: string) => LEFT + ((Date.parse(date) - first) / span) * (W - LEFT - RIGHT)
-  const y = (v: number) => TOP + (1 - v / max) * (H - TOP - BOTTOM)
-  const points = (list: Day[]) => list.map((d) => `${x(d.date)},${y(d.mac)}`).join(' ')
-  const split = days.findIndex((d) => !d.estimated)
-  const estimated = split === -1 ? days : days.slice(0, split + 1)
-  const measured = split === -1 ? [] : days.slice(split)
-  const last = days[days.length - 1]
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="h-auto w-full overflow-visible"
-      role="img"
-      aria-label={t('stats.chartLabel')}
-    >
-      {ticks(max).map((v) => (
-        <g key={v}>
-          <line x1={LEFT} x2={W - RIGHT} y1={y(v)} y2={y(v)} className="stroke-line" />
-          <text
-            x={LEFT - 8}
-            y={y(v) + 4}
-            textAnchor="end"
-            className="fill-faint font-mono text-[22px] sm:text-[11px]"
-          >
-            {format.number(v)}
-          </text>
-        </g>
-      ))}
-      {monthStarts(days[0].date, last.date).map((m) => (
-        <text
-          key={m}
-          x={x(m)}
-          y={H - 6}
-          textAnchor="middle"
-          className="fill-faint font-mono text-[22px] sm:text-[11px]"
-        >
-          {format.month(m)}
-        </text>
-      ))}
-      <polygon
-        points={`${x(days[0].date)},${y(0)} ${points(days)} ${x(last.date)},${y(0)}`}
-        className="fill-blue opacity-15"
-      />
-      <polyline
-        points={points(estimated)}
-        fill="none"
-        strokeWidth={2}
-        strokeDasharray="5 4"
-        strokeLinejoin="round"
-        className="stroke-blue"
-      />
-      {measured.length > 1 && (
-        <polyline
-          points={points(measured)}
-          fill="none"
-          strokeWidth={2}
-          strokeLinejoin="round"
-          className="stroke-blue"
-        />
-      )}
-      <circle cx={x(last.date)} cy={y(last.mac)} r={4} className="fill-blue" />
-    </svg>
-  )
-}
-
-function WeeklyChart({ days }: { days: Day[] }) {
-  const { t } = useTranslation()
+function WeeklyBars({ weeks, label }: { weeks: Week[]; label: string }) {
   const format = useFormat()
   const H = 180
-  const weeks = weeklyMacInstalls(days)
-  const max = niceMax(Math.max(...weeks.map((w) => w.count)))
+  const max = niceMax(Math.max(...weeks.map((w) => w.mac + w.windows)))
   const band = (W - LEFT - RIGHT) / weeks.length
   const y = (v: number) => TOP + (1 - v / max) * (H - TOP - BOTTOM)
   const firstOfMonth = weeks.filter(
@@ -152,7 +62,7 @@ function WeeklyChart({ days }: { days: Day[] }) {
       viewBox={`0 0 ${W} ${H}`}
       className="h-auto w-full overflow-visible"
       role="img"
-      aria-label={t('stats.weeklyHeading')}
+      aria-label={label}
     >
       {ticks(max).map((v) => (
         <g key={v}>
@@ -168,17 +78,26 @@ function WeeklyChart({ days }: { days: Day[] }) {
         </g>
       ))}
       {weeks.map((w, i) => (
-        <rect
-          key={w.week}
-          x={LEFT + i * band + band * 0.15}
-          y={y(w.count)}
-          width={band * 0.7}
-          height={y(0) - y(w.count)}
-          rx={2}
-          className="fill-blue"
-        >
-          <title>{format.number(w.count)}</title>
-        </rect>
+        <g key={w.week}>
+          <rect
+            x={LEFT + i * band + band * 0.15}
+            y={y(w.mac)}
+            width={band * 0.7}
+            height={y(0) - y(w.mac)}
+            className="fill-blue"
+          >
+            <title>{format.number(w.mac)}</title>
+          </rect>
+          <rect
+            x={LEFT + i * band + band * 0.15}
+            y={y(w.mac + w.windows)}
+            width={band * 0.7}
+            height={y(w.mac) - y(w.mac + w.windows)}
+            className="fill-blue/45"
+          >
+            <title>{format.number(w.windows)}</title>
+          </rect>
+        </g>
       ))}
       {firstOfMonth.map((w) => (
         <text
@@ -192,6 +111,22 @@ function WeeklyChart({ days }: { days: Day[] }) {
         </text>
       ))}
     </svg>
+  )
+}
+
+function Legend() {
+  const { t } = useTranslation()
+  return (
+    <p className="mt-3 flex gap-5 text-xs text-muted">
+      <span className="flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-blue" />
+        {t('stats.mac')}
+      </span>
+      <span className="flex items-center gap-1.5">
+        <span className="h-2 w-2 rounded-full bg-blue/45" />
+        {t('stats.windows')}
+      </span>
+    </p>
   )
 }
 
@@ -212,84 +147,101 @@ export function StatsView({ stats }: { stats: Stats }) {
   const days = stats.days
   const latest = days[days.length - 1]
   const measuredSince = days.find((d) => !d.estimated)?.date ?? latest.date
-  const maxUpdates = Math.max(...stats.macUpdates.map((u) => u.count), 1)
 
   return (
     <>
       <section className="py-10" data-testid="stats-totals">
         <Reveal eager>
           <p className="text-6xl font-semibold tracking-tight tabular-nums sm:text-7xl">
-            <span data-testid="stats-total">
-              {format.number(latest.mac + latest.windows + latest.linux)}
-            </span>
+            <span data-testid="stats-total">{format.number(latest.mac + latest.windows)}</span>
           </p>
           <p className="mt-3 text-muted">{t('stats.total', { date: format.day(days[0].date) })}</p>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <Figure value={format.number(latest.mac)} label={t('stats.mac')} testid="stats-mac" />
             <Figure
               value={format.number(latest.windows)}
               label={t('stats.windows')}
               testid="stats-windows"
             />
-            <Figure
-              value={format.number(latest.linux)}
-              label={t('stats.linux')}
-              testid="stats-linux"
-            />
+          </div>
+          <div className="mt-8 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted">
+            <span>
+              <b className="text-xl font-semibold text-fg tabular-nums">
+                +{format.number(installsInLast(days, 7))}
+              </b>{' '}
+              {t('stats.lastWeek')}
+            </span>
+            <span>
+              <b className="text-xl font-semibold text-fg tabular-nums">
+                +{format.number(installsInLast(days, 30))}
+              </b>{' '}
+              {t('stats.lastMonth')}
+            </span>
           </div>
         </Reveal>
-      </section>
-
-      <section className="py-12" data-testid="stats-mac-installs">
-        <Kicker>{t('stats.macHeading')}</Kicker>
-        <p className="mt-4 leading-relaxed text-muted">{t('stats.macLede')}</p>
-        <div className="mt-5 flex flex-wrap gap-x-8 gap-y-2 text-sm text-muted">
-          <span>
-            <b className="text-xl font-semibold text-fg tabular-nums">
-              +{format.number(installsInLast(days, 7))}
-            </b>{' '}
-            {t('stats.lastWeek')}
-          </span>
-          <span>
-            <b className="text-xl font-semibold text-fg tabular-nums">
-              +{format.number(installsInLast(days, 30))}
-            </b>{' '}
-            {t('stats.lastMonth')}
-          </span>
-        </div>
-        <div className="mt-8">
-          <CumulativeChart days={lastTwelveMonths(days)} />
-        </div>
-        <p className="mt-3 text-xs text-faint">{t('stats.estimatedLegend')}</p>
       </section>
 
       <section className="py-12" data-testid="stats-weekly">
         <Kicker>{t('stats.weeklyHeading')}</Kicker>
         <div className="mt-8">
-          <WeeklyChart days={days} />
+          <WeeklyBars weeks={weeklyInstalls(days)} label={t('stats.weeklyHeading')} />
         </div>
+        <Legend />
       </section>
 
-      <section className="py-12" data-testid="stats-updates">
-        <Kicker>{t('stats.updatesHeading')}</Kicker>
-        <p className="mt-4 leading-relaxed text-muted">{t('stats.updatesLede')}</p>
-        <ul className="mt-6 grid gap-2.5">
-          {stats.macUpdates.map((u) => (
-            <li
-              key={u.version}
-              className="grid grid-cols-[6.5rem_1fr_2.5rem] items-center gap-3 text-sm"
-            >
-              <span className="font-mono text-[0.8125rem]">{u.version}</span>
-              <span className="h-2.5 overflow-hidden rounded-full bg-line">
-                <span
-                  className="block h-full rounded-full bg-blue"
-                  style={{ width: `${(u.count / maxUpdates) * 100}%` }}
-                />
-              </span>
-              <span className="text-right text-muted tabular-nums">{format.number(u.count)}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="py-12" data-testid="stats-usage">
+        <Kicker>{t('stats.usageHeading')}</Kicker>
+        <p className="mt-4 leading-relaxed text-muted">{t('stats.usageLede')}</p>
+        <div className="mt-8">
+          <WeeklyBars weeks={stats.usage} label={t('stats.usageHeading')} />
+        </div>
+        <Legend />
+      </section>
+
+      <section className="py-12" data-testid="stats-versions">
+        <Kicker>{t('stats.versionsHeading')}</Kicker>
+        <p className="mt-4 leading-relaxed text-muted">{t('stats.versionsLede')}</p>
+        <table className="mt-6 w-full text-sm tabular-nums">
+          <thead>
+            <tr className="text-xs text-faint">
+              <td />
+              <th className="pb-2 pl-3 text-right font-medium">{t('stats.versionsHours')}</th>
+              <th className="pb-2 pl-3 text-right font-medium">{t('stats.mac')}</th>
+              <th className="pb-2 pl-3 text-right font-medium">{t('stats.windows')}</th>
+              <th className="pb-2 pl-3 text-right font-medium">{t('stats.versionsInstalls')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stats.versions.map((v) => (
+              <tr key={v.version} className="border-t border-line text-muted">
+                <th className="py-2 text-left font-mono text-[0.8125rem] font-normal text-fg">
+                  {v.version}
+                </th>
+                <td
+                  className="py-2 pl-3 text-right"
+                  data-testid={`stats-version-hours-${v.version}`}
+                >
+                  {format.number(v.hours)}
+                </td>
+                <td className="py-2 pl-3 text-right" data-testid={`stats-version-mac-${v.version}`}>
+                  {format.number(v.mac)}
+                </td>
+                <td
+                  className="py-2 pl-3 text-right"
+                  data-testid={`stats-version-windows-${v.version}`}
+                >
+                  {format.number(v.windows)}
+                </td>
+                <td
+                  className="py-2 pl-3 text-right"
+                  data-testid={`stats-version-installs-${v.version}`}
+                >
+                  +{format.number(v.installs)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </section>
 
       <section className="py-12" data-testid="stats-how">
@@ -321,7 +273,7 @@ export default function StatsPage() {
     let cancelled = false
     fetchStats()
       .then((data) => {
-        if (!cancelled) setStats(data.days.length > 0 ? data : 'error')
+        if (!cancelled) setStats(hasFigures(data) ? data : 'error')
       })
       .catch(() => {
         if (!cancelled) setStats('error')
