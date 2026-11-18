@@ -38,6 +38,10 @@
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 }
 
+:root {
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* The desktop app's light palette, set on <html> by the theme script in index.html before
    the first paint. Every utility resolves to var(--color-*), so it flips with these. */
 :root[data-theme="light"] {
@@ -97,7 +101,7 @@ details::details-content {
   height: 0;
   overflow: clip;
   transition:
-    height 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.25s var(--ease-out),
     content-visibility 0.25s allow-discrete;
 }
 details[open]::details-content {
@@ -147,8 +151,8 @@ button:not(:disabled) {
   opacity: 0;
   transform: translateY(12px);
   transition:
-    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.45s var(--ease-out),
+    transform 0.45s var(--ease-out);
 }
 .reveal-in {
   opacity: 1;
@@ -161,7 +165,7 @@ button:not(:disabled) {
    first paint and only slide up, from a CSS animation that needs no JavaScript, so the
    choreography survives without costing LCP or hiding text when JS is slow/absent. */
 .reveal-eager {
-  animation: reveal-eager 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: reveal-eager 0.4s var(--ease-out) backwards;
 }
 @keyframes reveal-eager {
   from {
@@ -179,7 +183,7 @@ button:not(:disabled) {
   }
 }
 .label-pop {
-  animation: labelPop 0.15s ease-out;
+  animation: labelPop 0.15s var(--ease-out);
 }
 
 @keyframes offerIn {
@@ -189,7 +193,7 @@ button:not(:disabled) {
   }
 }
 .language-offer {
-  animation: offerIn 0.2s ease-out;
+  animation: offerIn 0.2s var(--ease-out);
 }
 
 /* blue→cyan gradient text accent */
