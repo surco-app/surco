@@ -142,20 +142,13 @@ button:not(:disabled) {
   }
 }
 
-/* scroll-triggered reveal. Directional variants are declared before .reveal-in
-   so the shown state wins the transform at equal specificity. */
+/* scroll-triggered reveal */
 .reveal-init {
   opacity: 0;
   transform: translateY(12px);
   transition:
     opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
     transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.reveal-from-left {
-  transform: translateX(-28px);
-}
-.reveal-from-right {
-  transform: translateX(28px);
 }
 .reveal-in {
   opacity: 1;

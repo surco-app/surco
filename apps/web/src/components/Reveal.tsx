@@ -1,21 +1,13 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
 
-const FROM_CLASS = {
-  up: '',
-  left: 'reveal-from-left',
-  right: 'reveal-from-right',
-} as const
-
 export default function Reveal({
   children,
   delay = 0,
-  from = 'up',
   eager = false,
   className = '',
 }: {
   children: ReactNode
   delay?: number
-  from?: keyof typeof FROM_CLASS
   eager?: boolean
   className?: string
 }) {
@@ -49,7 +41,7 @@ export default function Reveal({
   return (
     <div
       ref={ref}
-      className={`${eager ? 'reveal-eager' : state === 'idle' ? '' : `reveal-init ${FROM_CLASS[from]}`} ${state === 'shown' ? 'reveal-in' : ''} ${className}`}
+      className={`${eager ? 'reveal-eager' : state === 'idle' ? '' : 'reveal-init'} ${state === 'shown' ? 'reveal-in' : ''} ${className}`}
       style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
