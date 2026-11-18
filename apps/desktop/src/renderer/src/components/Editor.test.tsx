@@ -2142,6 +2142,13 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('batch-destination-toggle')).toBeInTheDocument()
   })
 
+  it('keeps the keyboard focus ring on the default format pill, whose inset line would otherwise replace it', () => {
+    renderMulti()
+    expect(screen.getByTestId('process-format-aiff').className).toContain(
+      'focus-visible:shadow-[inset_0_0_0_1px_var(--color-line-strong),var(--ring)]',
+    )
+  })
+
   it('picks the batch format in the footer and marks it as the one in use', () => {
     renderMulti()
     fireEvent.click(screen.getByTestId('process-format-wav'))

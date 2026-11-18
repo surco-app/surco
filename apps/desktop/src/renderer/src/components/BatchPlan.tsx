@@ -90,7 +90,7 @@ export function BatchPlan({
                   state === 'picked'
                     ? 'bg-[var(--color-accent-soft)] text-fg'
                     : state === 'default'
-                      ? 'text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+                      ? 'text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-line-strong),var(--ring)]'
                       : 'text-fg-dim hover:text-fg'
                 }`}
               >
