@@ -709,7 +709,7 @@ export function OnboardingWizard({
                 type="submit"
                 data-testid="onboarding-next"
                 disabled={STEPS[step] === 'mac' && otherMac && adoptedDir === null}
-                className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
+                className="press rounded-lg bg-[var(--color-accent)] px-4 py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]"
               >
                 {isLast ? tr('onboarding.finish') : tr('onboarding.next')}
               </button>
