@@ -163,7 +163,8 @@ export default function Changelog() {
                 <details key={r.version} className="group border-b border-line/60 py-4">
                   <summary
                     data-testid="changelog-older-summary"
-                    className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden">
+                    className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 text-fg transition-colors hover:text-blue active:text-blue [&::-webkit-details-marker]:hidden"
+                  >
                     <span className="rounded-full border border-line bg-surface2/40 px-2.5 py-0.5 font-mono text-xs text-blue tabular-nums">
                       v{r.version}
                     </span>
