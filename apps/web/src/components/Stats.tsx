@@ -155,7 +155,9 @@ export function StatsView({ stats }: { stats: Stats }) {
           <p className="text-6xl font-semibold tracking-tight tabular-nums sm:text-7xl">
             <span data-testid="stats-total">{format.number(latest.mac + latest.windows)}</span>
           </p>
-          <p className="mt-3 text-muted">{t('stats.total', { date: format.day(days[0].date) })}</p>
+          <p data-testid="stats-total-label" className="mt-3 text-muted">
+            {t('stats.total')}
+          </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
             <Figure value={format.number(latest.mac)} label={t('stats.mac')} testid="stats-mac" />
             <Figure
@@ -205,7 +207,6 @@ export function StatsView({ stats }: { stats: Stats }) {
           <thead>
             <tr className="text-xs text-faint">
               <td />
-              <th className="pb-2 pl-3 text-right font-medium">{t('stats.versionsHours')}</th>
               <th className="pb-2 pl-3 text-right font-medium">{t('stats.mac')}</th>
               <th className="pb-2 pl-3 text-right font-medium">{t('stats.windows')}</th>
               <th className="pb-2 pl-3 text-right font-medium">{t('stats.versionsInstalls')}</th>
@@ -217,12 +218,6 @@ export function StatsView({ stats }: { stats: Stats }) {
                 <th className="py-2 text-left font-mono text-[0.8125rem] font-normal text-fg">
                   {v.version}
                 </th>
-                <td
-                  className="py-2 pl-3 text-right"
-                  data-testid={`stats-version-hours-${v.version}`}
-                >
-                  {format.number(v.hours)}
-                </td>
                 <td className="py-2 pl-3 text-right" data-testid={`stats-version-mac-${v.version}`}>
                   {format.number(v.mac)}
                 </td>

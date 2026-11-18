@@ -15,8 +15,8 @@ const stats: Stats = {
     { date: '2026-10-30', mac: 273, windows: 757 },
   ],
   versions: [
-    { version: 'v1.17.0', hours: 3, mac: 4, windows: 2, installs: 1 },
-    { version: 'v1.16.0', hours: 26, mac: 8, windows: 5, installs: 9 },
+    { version: 'v1.17.0', mac: 4, windows: 2, installs: 1 },
+    { version: 'v1.16.0', mac: 8, windows: 5, installs: 9 },
   ],
   usage: [{ week: '2026-10-26', mac: 8, windows: 5 }],
 }
@@ -51,6 +51,12 @@ describe('stats page', () => {
     expect(text(render(StatsView, { stats }), 'stats-total')).toBe('1.030')
   })
 
+  it('labels the total without a start date, which reads as an arbitrary cut to someone who does not know when Surco first shipped', () => {
+    expect(text(render(StatsView, { stats }), 'stats-total-label')).toBe(
+      'instalaciones nuevas, sin actualizaciones ni bots',
+    )
+  })
+
   // Spanish leaves four-digit numbers ungrouped by default, which reads as a year next to
   // the five-digit ones that will follow.
   it('groups thousands in every figure', () => {
@@ -71,9 +77,10 @@ describe('stats page', () => {
     expect(html.indexOf('v1.17.0')).toBeLessThan(html.indexOf('v1.16.0'))
   })
 
-  it('puts the hours each version was the newest next to its updates, so a short-lived version does not read as a drop in use', () => {
+  it('gives each version its updates and new installs and nothing else, because how long it stayed the newest tells a visitor nothing', () => {
     const html = render(StatsView, { stats })
-    expect(text(html, 'stats-version-hours-v1.16.0')).toBe('26')
+    expect(html).not.toContain('stats-version-hours')
+    expect(html).not.toContain('Horas')
     expect(text(html, 'stats-version-mac-v1.16.0')).toBe('8')
     expect(text(html, 'stats-version-windows-v1.16.0')).toBe('5')
     expect(text(html, 'stats-version-installs-v1.16.0')).toBe('+9')

@@ -3750,7 +3750,7 @@
     "kicker": "Estadístiques",
     "title": "Quanta gent instal·la Surco",
     "lede": "Surco no té telemetria, així que no sap qui el fa servir. El que sí que és públic és quantes vegades es baixa cada instal·lador a GitHub. D'aquí surten aquestes xifres.",
-    "total": "instal·lacions noves des del {{date}}, sense actualitzacions ni bots",
+    "total": "instal·lacions noves, sense actualitzacions ni bots",
     "mac": "Mac",
     "windows": "Windows",
     "lastWeek": "en els últims 7 dies",
@@ -3759,8 +3759,7 @@
     "usageHeading": "Equips que fan servir Surco",
     "usageLede": "Els equips que s'han actualitzat a una mateixa versió, la més baixada de cada setmana. És un mínim, perquè qui no obre Surco aquells dies no compta.",
     "versionsHeading": "Últimes versions",
-    "versionsLede": "Quantes hores va ser cada versió l'última, quants Mac i PC s'hi van actualitzar i quantes instal·lacions noves va portar. Una versió que dura dues hores arriba a menys equips que una que dura un dia.",
-    "versionsHours": "Hores",
+    "versionsLede": "Quants Mac i PC es van actualitzar a cada versió i quantes instal·lacions noves va portar.",
     "versionsInstalls": "Noves",
     "howHeading": "Com es compta",
     "howItems": [
