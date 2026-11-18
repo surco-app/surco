@@ -1535,7 +1535,71 @@ describe('TrackList swipe to remove', () => {
   const swipeWithoutLetting = (total: number) => {
     const wrapper = screen.getByTestId('track-row').parentElement as Element
     for (let i = 0; i < 8; i++) fireEvent.wheel(wrapper, { deltaX: total / 8 })
+    act(() => vi.advanceTimersToNextFrame())
   }
+
+  const controlFrames = () => {
+    const queue = new Map<number, FrameRequestCallback>()
+    let next = 1
+    vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+      queue.set(next, cb)
+      return next++
+    })
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => queue.delete(id))
+    return {
+      pending: () => queue.size,
+      run: () => {
+        const callbacks = [...queue.values()]
+        queue.clear()
+        act(() => {
+          for (const cb of callbacks) cb(0)
+        })
+      },
+    }
+  }
+
+  it('applies a burst of wheel events in one frame, at their sum', () => {
+    const frames = controlFrames()
+    try {
+      renderList([track({ id: 'a' })])
+      const wrapper = screen.getByTestId('track-row').parentElement as Element
+      for (let i = 0; i < 5; i++) fireEvent.wheel(wrapper, { deltaX: 10 })
+      expect(screen.getByTestId('track-row').style.transform).toBe('')
+      expect(frames.pending()).toBe(1)
+      frames.run()
+      expect(slidBy()).toBe(50)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('reads the row width once for the whole gesture', () => {
+    const frames = controlFrames()
+    try {
+      const reads = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+      renderList([track({ id: 'a' })])
+      reads.mockClear()
+      const wrapper = screen.getByTestId('track-row').parentElement as Element
+      for (let i = 0; i < 5; i++) fireEvent.wheel(wrapper, { deltaX: 10 })
+      frames.run()
+      expect(reads).toHaveBeenCalledTimes(1)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('drops the pending frame when the row goes away', () => {
+    const frames = controlFrames()
+    try {
+      renderList([track({ id: 'a' })])
+      fireEvent.wheel(screen.getByTestId('track-row').parentElement as Element, { deltaX: 10 })
+      expect(frames.pending()).toBe(1)
+      cleanup()
+      expect(frames.pending()).toBe(0)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
 
   it('holds the row back while the swipe is still undecided', () => {
     vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
