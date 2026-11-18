@@ -3,7 +3,6 @@ import Footer from './Footer'
 import Header from './Header'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
-import ScrollProgress from './ScrollProgress'
 
 type Link = { name: string; url: string }
 
@@ -40,8 +39,6 @@ export default function Privacy() {
 
   return (
     <div className="min-h-screen bg-bg text-fg antialiased">
-      <ScrollProgress />
-
       <Header page="privacy" />
 
       <main id="main" className="relative mx-auto max-w-3xl px-6 sm:px-10">
