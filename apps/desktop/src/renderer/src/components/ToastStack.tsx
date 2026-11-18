@@ -113,33 +113,41 @@ export function ToastStack({
         waitOutSwipeTail()
       }}
     >
-      {[...cards].reverse().map(({ toast, leaving }) => (
-        // The card's exit only fades it — the SPACE it held used to vanish at unmount,
-        // jumping every surviving toast a full card height in one frame. The grid row
-        // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
-        // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
-        <div
-          key={toast.key ?? toast.id}
-          data-testid="toast-slot"
-          hidden={(modalOpen && !toast.action && !leaving) || undefined}
-          className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
-            leaving ? 'grid-rows-[0fr]' : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
-          }`}
-        >
-          {/* overflow-y-clip only while collapsing — kept on, it would clip the
+      {[...cards].reverse().map(({ toast, leaving }) => {
+        const stepAside = modalOpen && !toast.action && !leaving
+        return (
+          // The card's exit only fades it — the SPACE it held used to vanish at unmount,
+          // jumping every surviving toast a full card height in one frame. The grid row
+          // tweens 1fr→0fr alongside the fade (same 200ms as TOAST_LEAVE_MS), so the
+          // stack settles smoothly; a transition, so a mid-collapse re-push retargets.
+          <div
+            key={toast.key ?? toast.id}
+            data-testid="toast-slot"
+            aria-hidden={stepAside || undefined}
+            style={stepAside ? { visibility: 'hidden' } : undefined}
+            className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
+              stepAside
+                ? 'pointer-events-none grid-rows-[0fr] transition-none'
+                : leaving
+                  ? 'grid-rows-[0fr]'
+                  : 'grid-rows-[1fr] starting:grid-rows-[0fr]'
+            }`}
+          >
+            {/* overflow-y-clip only while collapsing — kept on, it would clip the
               card's shadow for its whole life. min-h-0 lets the row actually shrink. */}
-          <div className={`min-h-0 pb-2 ${leaving ? 'overflow-y-clip' : ''}`}>
-            <ToastCard
-              toast={toast}
-              leaving={leaving}
-              held={modalOpen && !toast.action}
-              onExpire={onExpire}
-              onClose={onClose}
-              onSwipeClose={waitOutSwipeTail}
-            />
+            <div className={`min-h-0 pb-2 ${leaving ? 'overflow-y-clip' : ''}`}>
+              <ToastCard
+                toast={toast}
+                leaving={leaving}
+                held={modalOpen && !toast.action}
+                onExpire={onExpire}
+                onClose={onClose}
+                onSwipeClose={waitOutSwipeTail}
+              />
+            </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
