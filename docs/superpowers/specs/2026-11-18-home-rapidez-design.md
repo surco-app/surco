@@ -34,9 +34,10 @@ Textos en los 8 idiomas de la web (es, en, de, fr, pt-BR, ja, ca, it), de tú, s
 
 ## Animación
 
-- Las tres cifras cuentan de 0 a su valor una sola vez, cuando la sección entra en pantalla (IntersectionObserver, umbral 0,35), durante 1,2 s con salida suave (`1 - (1 - t)^4`).
+- Las tres cifras cuentan de 0 a su valor una sola vez, cuando esa cifra entra en pantalla (IntersectionObserver, umbral 0,3, el del hook existente), durante 1,2 s con salida suave (`1 - (1 - t)^4`).
 - Función pura `render(t)` como el resto de animaciones de la web, movida por `requestAnimationFrame`. Sin librerías.
-- Cada cifra reserva su ancho final en `ch` con cifras tabulares, así nada se desplaza mientras cuenta.
+- Cada cifra cuenta cuando ella entra en pantalla, no la sección entera. Las que aún están por debajo esperan en cero y las que ya se ven al montar conservan su valor.
+- Cada cifra reserva su ancho con una copia invisible de la cifra final, en cifras tabulares, en lugar de `ch`, así nada se desplaza mientras cuenta y queda centrada.
 - Con `prefers-reduced-motion` y en el HTML prerenderizado se pinta el valor final.
 
 ## Enfoques
