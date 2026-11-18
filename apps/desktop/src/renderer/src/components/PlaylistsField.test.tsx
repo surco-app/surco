@@ -71,6 +71,23 @@ const visiblePlaylists = () =>
   screen.queryAllByTestId(/^playlists-check-/).map((el) => el.getAttribute('data-testid'))
 
 describe('PlaylistsField for Traktor and Engine DJ', () => {
+  it('enters like every other dropdown, growing from the edge its trigger is on', () => {
+    render(
+      <PlaylistsField
+        library="traktor"
+        label="Traktor playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[]}
+        onChange={() => {}}
+      />,
+    )
+    open()
+    const popover = screen.getByTestId('playlists-popover')
+    expect(popover.getAttribute('data-side')).toBe('down')
+    expect(popover).toHaveClass('animate-pop-flat', 'origin-top')
+  })
+
   it('is named by its label alone, which already carries the program', () => {
     render(
       <PlaylistsField
