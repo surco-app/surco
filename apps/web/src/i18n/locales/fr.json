@@ -1449,11 +1449,11 @@
     },
     "speed": {
       "title": "Rapide, très rapide.",
-      "lede": "Surco répond à l'instant, quelle que soit la taille de ta bibliothèque.",
+      "lede": "Surco répond instantanément, quelle que soit la taille de ta bibliothèque.",
       "figures": {
-        "open": "Ouvrir une bibliothèque rekordbox de 14 835 morceaux",
-        "select": "Morceaux Traktor sélectionnés d'un coup, sans attendre",
-        "clear": "Effacer les cues de 13 280 morceaux dans Engine DJ"
+        "open": "Ouvrir une bibliothèque rekordbox de 14 835 morceaux",
+        "select": "Morceaux Traktor sélectionnés d’un coup, sans attendre",
+        "clear": "Effacer les cues de 13 280 morceaux dans Engine DJ"
       }
     },
     "review": {
