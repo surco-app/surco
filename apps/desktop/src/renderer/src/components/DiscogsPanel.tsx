@@ -876,7 +876,8 @@ function CollapsibleTracks({
 
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-200 ease-standard ${
+      data-testid="discogs-tracks-collapse"
+      className={`grid transition-[grid-template-rows] duration-200 ease-standard motion-reduce:transition-none ${
         open ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       }`}
     >

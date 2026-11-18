@@ -404,6 +404,13 @@ describe('DiscogsPanel track length check', () => {
         .find((row) => row.textContent?.includes(title)) as HTMLElement,
     ).queryByTestId('track-length-mismatch')
 
+  it('lets the release collapse skip its height transition when motion is reduced', () => {
+    renderPanel(openRelease, 35)
+    expect(screen.getByTestId('discogs-tracks-collapse')).toHaveClass(
+      'motion-reduce:transition-none',
+    )
+  })
+
   it('warns on a track far longer than the file, so a different edit is not applied unnoticed', () => {
     renderPanel(openRelease, 35)
     expect(mismatchOf('02 Untitled Track')).toHaveAccessibleName(
