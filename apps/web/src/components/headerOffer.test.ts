@@ -74,3 +74,11 @@ describe('language offer and Escape', () => {
     expect(offer(container)).toBeNull()
   })
 })
+
+describe('header download button', () => {
+  it('fades in with opacity and translate instead of a hard cut', async () => {
+    const container = await renderOfferedHeader()
+    const cta = container.querySelector('[data-testid="header-download"]')
+    expect(cta?.className).toContain('transition-[opacity,translate,visibility,filter,scale]')
+  })
+})

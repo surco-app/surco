@@ -350,7 +350,7 @@ export default function Header({
           <a
             href={page ? `${home}#instalar` : '#instalar'}
             data-testid="header-download"
-            className={`hidden ${btnPrimary} px-4 py-1.5 text-sm sm:inline-flex ${
+            className={`hidden ${btnPrimary} transition-[opacity,translate,visibility,filter,scale]! duration-200! ease-[cubic-bezier(0.22,1,0.36,1)]! px-4 py-1.5 text-sm sm:inline-flex ${
               heroCtaPassed ? '' : 'pointer-events-none invisible translate-y-1 opacity-0'
             }`}
           >
