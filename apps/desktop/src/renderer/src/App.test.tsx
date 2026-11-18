@@ -3408,6 +3408,21 @@ describe('App source playlists', () => {
     expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument()
   })
 
+  it('offers to add files in an empty Tracks after a playlist was browsed, since there is no track there to pick', async () => {
+    factoryWithAlpha()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await act(async () => {})
+
+    expect(screen.queryAllByTestId('track-row')).toHaveLength(0)
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
+    expect(within(screen.getByRole('main')).getByTestId('add-files')).toBeInTheDocument()
+  })
+
   // Removing from Tracks is about Tracks: the playlist still lists the file, so its row
   // stays there with what the user typed on it.
   // "pedimos restaurar las de files": browsing a playlist at launch is not starting a new
