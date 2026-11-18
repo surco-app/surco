@@ -158,14 +158,15 @@ button:not(:disabled) {
 /* Above-the-fold (hero) content can't fade in from opacity:0: the browser doesn't
    count an invisible element as painted, so a JS-gated opacity reveal delays LCP and
    leaves the hero blank until hydration. Eager reveals stay fully opaque from the
-   first paint and only slide up, so the choreography survives without costing LCP or
-   hiding text when JS is slow/absent. */
+   first paint and only slide up, from a CSS animation that needs no JavaScript, so the
+   choreography survives without costing LCP or hiding text when JS is slow/absent. */
 .reveal-eager {
-  transform: translateY(8px);
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: reveal-eager 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
 }
-.reveal-eager.reveal-in {
-  transform: none;
+@keyframes reveal-eager {
+  from {
+    transform: translateY(8px);
+  }
 }
 
 /* Copy-button label swap ("Copiar" → "Copiado"): the incoming word pops in from
@@ -228,9 +229,6 @@ button:not(:disabled) {
      before the animation is allowed to run. Safety wins over the flourish. */
   .reveal-init {
     opacity: 1 !important;
-    transform: none !important;
-  }
-  .reveal-eager {
     transform: none !important;
   }
   html {

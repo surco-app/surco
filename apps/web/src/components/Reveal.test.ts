@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
@@ -78,5 +80,38 @@ describe('Reveal', () => {
   it('observes with threshold 0 so a block taller than the viewport still reveals', async () => {
     await mount(window.innerHeight + 500)
     expect(observers[0].options?.threshold).toBe(0)
+  })
+
+  it('renders an eager block with its entrance delay in the prerendered HTML and never as revealed', () => {
+    const html = renderToString(
+      createElement(Reveal, { eager: true, delay: 150, children: 'hola' }),
+    )
+    expect(html).toContain('reveal-eager')
+    expect(html).toContain('animation-delay:150ms')
+    expect(html).not.toContain('reveal-in')
+  })
+
+  it('leaves the class list of an eager block untouched after mount so hydration cannot restart the entrance', async () => {
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    const host = document.createElement('div')
+    host.innerHTML = renderToString(
+      createElement(Reveal, { eager: true, delay: 150, children: 'hola' }),
+    )
+    document.body.append(host)
+    const el = host.firstElementChild as HTMLElement
+    const before = el.className
+    root = createRoot(host)
+    await act(async () => {
+      root?.render(createElement(Reveal, { eager: true, delay: 150, children: 'hola' }))
+    })
+    expect(el.className).toBe(before)
+    expect(el.classList.contains('reveal-in')).toBe(false)
+  })
+
+  it('animates only transform in the eager keyframe so the hero text stays opaque for LCP', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8')
+    const frames = /@keyframes reveal-eager\s*\{([\s\S]*?\n\})/.exec(css)?.[1] ?? ''
+    expect(frames).toContain('transform')
+    expect(frames).not.toContain('opacity')
   })
 })

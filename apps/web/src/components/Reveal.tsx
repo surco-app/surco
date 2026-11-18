@@ -15,12 +15,7 @@ export default function Reveal({
   const [state, setState] = useState<'idle' | 'hidden' | 'shown'>('idle')
 
   useEffect(() => {
-    // Eager reveals (above the fold) animate on mount instead of waiting for the
-    // observer, so they never sit hidden behind hydration or out-of-view scroll.
-    if (eager) {
-      setState('shown')
-      return
-    }
+    if (eager) return
     const el = ref.current
     if (!el) return
     if (el.getBoundingClientRect().top < window.innerHeight) return
@@ -42,7 +37,7 @@ export default function Reveal({
     <div
       ref={ref}
       className={`${eager ? 'reveal-eager' : state === 'idle' ? '' : 'reveal-init'} ${state === 'shown' ? 'reveal-in' : ''} ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
+      style={eager ? { animationDelay: `${delay}ms` } : { transitionDelay: `${delay}ms` }}
     >
       {children}
     </div>
