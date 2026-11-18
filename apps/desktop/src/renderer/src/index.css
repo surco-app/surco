@@ -270,6 +270,9 @@ textarea {
    of each block running its own little animation. That is also why this animates
    background-position — the one place worth stepping outside transform/opacity, since the
    painted area is a handful of small rectangles with no text or layout riding on them.
+   That holds for the editor panels only: a track list stacks a waiting marker per visible
+   row while an import keeps the renderer busy, so rows use .skeleton-sweep-row below, whose
+   band moves by transform alone and never repaints.
    Placeholders keep their own bg-* colour; the gradient only carries the moving highlight. */
 .skeleton-sweep {
   background-image: linear-gradient(
@@ -293,11 +296,39 @@ textarea {
   }
 }
 
+.skeleton-sweep-row {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-sweep-row::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    90deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-fg) 8%, transparent) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
+  animation: skeleton-sweep-row 1.8s linear infinite;
+}
+
+@keyframes skeleton-sweep-row {
+  to {
+    transform: translateX(100%);
+  }
+}
+
 /* Reduced motion keeps the placeholder legible but still: the sweep is pure decoration, and
    a block that stays put still reads as "not content yet" thanks to its fill. */
 @media (prefers-reduced-motion: reduce) {
   .skeleton-sweep {
     animation: none;
+  }
+  .skeleton-sweep-row::after {
+    animation: none;
+    opacity: 0;
   }
 }
 
