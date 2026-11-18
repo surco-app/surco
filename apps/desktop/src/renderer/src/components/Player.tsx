@@ -26,6 +26,7 @@ const SEEK_STEP_SEC = 5
 const SEEK_COARSE_STEP_SEC = 30
 
 const PLAYER_GAPS_PX = 16
+const TWEEN_FALLBACK_MARGIN_MS = 50
 
 // Owns the playback clock by subscribing straight to the shared <audio> element,
 // so the ~4Hz timeupdate stream re-renders only this card — not App, the editor
@@ -251,15 +252,18 @@ export function Player({
     const settle = (): void => {
       clearTimeout(timer)
       el.style.height = ''
-      el.removeEventListener('transitionend', settle)
+      el.removeEventListener('transitionend', onEnd)
       tweeningRef.current = false
       if (card) reserve(card.offsetHeight)
     }
-    const timer = setTimeout(settle, ms)
-    el.addEventListener('transitionend', settle)
+    const onEnd = (e: TransitionEvent): void => {
+      if (e.target === el && e.propertyName === 'height') settle()
+    }
+    const timer = setTimeout(settle, ms + TWEEN_FALLBACK_MARGIN_MS)
+    el.addEventListener('transitionend', onEnd)
     return () => {
       clearTimeout(timer)
-      el.removeEventListener('transitionend', settle)
+      el.removeEventListener('transitionend', onEnd)
       tweeningRef.current = false
     }
   }, [showWaveform])
