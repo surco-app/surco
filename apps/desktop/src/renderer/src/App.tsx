@@ -4453,6 +4453,7 @@ export default function App(): React.JSX.Element {
                   }
                 >
                   <SourceRail
+                    dropsInTracks={dragging && browser.source !== null}
                     sidebarShown={showSidebar}
                     onToggleSidebar={() => {
                       setSidebarPeek(false)
@@ -4537,7 +4538,7 @@ export default function App(): React.JSX.Element {
                     // The drag answers here because this is the column the tracks land in. The
                     // styling hangs off a data attribute rather than a class so the drop state
                     // is readable in the DOM (and in tests) as state, not as styling.
-                    data-drop-over={dragging || undefined}
+                    data-drop-over={(dragging && !browser.source) || undefined}
                     style={{ width: columns.widths.list }}
                     // Clips its own children: the player enters on translateY(100%), so without
                     // this it is briefly drawn a card's height below the column and the page
@@ -4928,13 +4929,11 @@ export default function App(): React.JSX.Element {
                         </ErrorBoundary>
                       ) : browser.source ? (
                         <div className="flex h-full items-center justify-center p-8 text-center">
-                          {/* The drag answers here as well as in the sidebar. The column is the
-                          place the rows land once there are any, but on an empty screen this
-                          panel is the only thing on show, and inviting a drag while the wide
-                          panel refused the drop was this screen's oldest lie. */}
+                          {/* A drop over a DJ library is taken like anywhere else, but it lands
+                          in Tracks, so the drag answers on the Tracks button of the rail and
+                          this panel stays as it is. */}
                           <div
                             data-testid="empty-dropzone"
-                            data-drop-over={dragging || undefined}
                             className="empty-dropzone w-full max-w-[460px] rounded-2xl px-4 py-8"
                           >
                             <div className="mb-4 flex justify-center">

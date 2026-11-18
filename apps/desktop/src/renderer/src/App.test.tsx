@@ -3423,6 +3423,42 @@ describe('App source playlists', () => {
     expect(within(screen.getByRole('main')).getByTestId('add-files')).toBeInTheDocument()
   })
 
+  it('points at Tracks, not at the open playlist, while files are dragged over a DJ library, because Tracks is where a drop puts them', async () => {
+    factoryWithAlpha()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const root = screen.getByTestId('app-root')
+
+    fireEvent.dragEnter(root)
+
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('data-drop-over', 'true'),
+    )
+    expect(screen.getByTestId('sidebar')).not.toHaveAttribute('data-drop-over')
+    expect(screen.getByTestId('empty-dropzone')).not.toHaveAttribute('data-drop-over')
+
+    fireEvent.dragLeave(root)
+
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-tracks')).not.toHaveAttribute('data-drop-over'),
+    )
+  })
+
+  it('leaves the Tracks button alone while files are dragged over Tracks itself, where the list column already answers', async () => {
+    setApi({ pickFiles: vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav']) })
+    await renderApp()
+    await addOneTrack()
+
+    fireEvent.dragEnter(screen.getByTestId('app-root'))
+
+    await waitFor(() =>
+      expect(screen.getByTestId('sidebar')).toHaveAttribute('data-drop-over', 'true'),
+    )
+    expect(screen.getByTestId('source-rail-tracks')).not.toHaveAttribute('data-drop-over')
+  })
+
   // Removing from Tracks is about Tracks: the playlist still lists the file, so its row
   // stays there with what the user typed on it.
   // "pedimos restaurar las de files": browsing a playlist at launch is not starting a new
