@@ -113,7 +113,10 @@ export const ICONS = {
 
 export function Spinner({ size = 13 }: { size?: number }) {
   return (
-    <span className="inline-flex" style={{ animation: 'spin 0.8s linear infinite' }}>
+    <span
+      data-testid="scene-spinner"
+      className="inline-flex animate-spin [animation-duration:0.8s]"
+    >
       <Glyph size={size}>{ICONS.spin}</Glyph>
     </span>
   )
