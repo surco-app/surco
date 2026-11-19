@@ -1815,6 +1815,7 @@ function Editing({
               )}
               <span
                 data-testid="cues-position"
+                style={{ display: 'inline-block', minWidth: '6ch', textAlign: 'right' }}
                 className="shrink-0 text-section font-semibold tabular-nums text-fg"
               >
                 {cueClock(playheadMs)}
@@ -1822,6 +1823,7 @@ function Editing({
               {pointMs.length > 0 && (
                 <span
                   data-testid="cue-to-call-slot"
+                  style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}
                   className="grid shrink-0 whitespace-nowrap text-xs text-fg-dim"
                 >
                   <span
@@ -2259,7 +2261,7 @@ function GridOffset({
       {label}
       <span
         data-testid={testid}
-        style={{ display: 'inline-block', minWidth: '7ch' }}
+        style={{ display: 'inline-block', minWidth: '7ch', textAlign: 'right' }}
         className="font-semibold tabular-nums text-fg"
       >
         {signedMs(ms)}
