@@ -2061,7 +2061,8 @@
           "strong": "Mitten in einem Refrain",
           "point": "Hinter einer anderen Markierung",
           "start": "Vor dem Anfang des Tracks",
-          "end": "Nach dem Ende des Tracks"
+          "end": "Nach dem Ende des Tracks",
+          "section": "Außerhalb dieses Abschnitts"
         }
       },
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
@@ -2112,6 +2113,19 @@
         "room": "Lässt ihn weg, wenn in den gewählten Takten ein anderer Cue kommt",
         "clear": "Lässt ihn weg, wenn ein anderer Cue im selben Takt liegt",
         "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
+      },
+      "whenEach": {
+        "rule": "wie die Regel",
+        "fits": "wenn es passt",
+        "down": "nur in einem Breakdown",
+        "up": "nur in einem Aufbau",
+        "chorus": "nur in einem Refrain"
+      },
+      "whenEachHint": {
+        "fits": "Der bei {{bars}}, nur wenn es passt.",
+        "down": "Der bei {{bars}}, nur in einem Breakdown.",
+        "up": "Der bei {{bars}}, nur in einem Aufbau.",
+        "chorus": "Der bei {{bars}}, nur in einem Refrain."
       },
       "place": {
         "hot": "Hot Cue",

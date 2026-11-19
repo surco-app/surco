@@ -11,6 +11,8 @@ import {
   type FlowDirection,
   type FlowRepeat,
   MAX_RULE_REPEAT,
+  REPEAT_CONDITIONS,
+  type RepeatCondition,
   ROOM_GAP,
   RULE_BARS,
 } from '../../../shared/cueFlows'
@@ -56,6 +58,14 @@ function withCondition(rule: CueRule, when: FlowCondition): CueRule {
   return when === 'room' ? { ...rest, when, gap: gap ?? ROOM_GAP } : { ...rest, when }
 }
 
+function fitted(rule: CueRule, each: RepeatCondition[] = rule.whenEach ?? []): CueRule {
+  const { whenEach: _, ...rest } = rule
+  if (rule.bars === 0 || 'fixed' in rule.color) return rest
+  const kept = each.slice(0, rule.repeat === 'edge' ? MAX_RULE_REPEAT : rule.repeat)
+  while (kept[kept.length - 1] === 'rule') kept.pop()
+  return kept.length === 0 ? rest : { ...rest, whenEach: kept }
+}
+
 function slotCount(rule: CueRule): number {
   if ('fixed' in rule.color) return 1
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
@@ -99,6 +109,8 @@ export function CueRuleRow({
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
   const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
   const showDistance = !('fixed' in rule.color)
+  const ownable = rule.bars > 0 && showDistance
+  const whenAt = (slot: number): RepeatCondition => (ownable && rule.whenEach?.[slot]) || 'rule'
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
@@ -136,12 +148,22 @@ export function CueRuleRow({
     closeToToken()
   }
 
+  const pickWhen = (slot: number, when: RepeatCondition) => {
+    const each = Array.from(
+      { length: Math.max(slot + 1, rule.whenEach?.length ?? 0) },
+      (_, i) => rule.whenEach?.[i] ?? 'rule',
+    )
+    each[slot] = when
+    onChange(fitted(rule, each))
+    closeToToken()
+  }
+
   const setColorMode = (mode: (typeof COLOR_MODES)[number]) => {
     if (mode === 'each') {
       const first = colorAt(rule.color, 0)
       onChange({ ...rule, color: { each: Array.from({ length: 3 }, () => first) } })
     } else {
-      onChange({ ...rule, color: { fixed: colorAt(rule.color, 0) } })
+      onChange(fitted({ ...rule, color: { fixed: colorAt(rule.color, 0) } }))
     }
   }
 
@@ -249,7 +271,7 @@ export function CueRuleRow({
         RULE_BARS.map((b) => ({ value: b, label: barsLabel(b) })),
         rule.bars,
         barsLabel(rule.bars),
-        (bars) => onChange(bars === 0 ? { ...rule, bars, repeat: 1 } : { ...rule, bars }),
+        (bars) => onChange(bars === 0 ? fitted({ ...rule, bars, repeat: 1 }) : { ...rule, bars }),
       )}
       {rule.bars > 0 && (
         <>
@@ -259,7 +281,7 @@ export function CueRuleRow({
             [...REPEATS, 'edge' as const].map((r) => ({ value: r, label: repeatLabel(r) })),
             rule.repeat,
             repeatLabel(rule.repeat),
-            (repeat) => onChange({ ...rule, repeat }),
+            (repeat) => onChange(fitted({ ...rule, repeat })),
           )}
         </>
       )}
@@ -320,12 +342,21 @@ export function CueRuleRow({
                     data-testid={`${id}-color-${slot}`}
                     aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
                     aria-expanded={open === `color-${slot}`}
+                    data-own={whenAt(slot) === 'rule' ? undefined : 'true'}
                     onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
-                    style={{
-                      backgroundColor: hotCueColor(colorAt(rule.color, slot)),
-                      color: '#000',
-                    }}
-                    className="press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1"
+                    style={
+                      whenAt(slot) === 'rule'
+                        ? {
+                            backgroundColor: hotCueColor(colorAt(rule.color, slot)),
+                            color: '#000',
+                          }
+                        : {
+                            backgroundColor: 'transparent',
+                            borderColor: hotCueColor(colorAt(rule.color, slot)),
+                            borderWidth: '1.5px',
+                          }
+                    }
+                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1 ${whenAt(slot) === 'rule' ? '' : 'text-fg'}`}
                   >
                     {showDistance && (
                       <span
@@ -348,6 +379,24 @@ export function CueRuleRow({
                         onPick={(color) => pickColor(slot, color)}
                         label={(i) => tr('editor.cues.colour', { index: i })}
                       />
+                      {ownable && (
+                        <>
+                          <div className="my-2 h-px bg-[var(--color-line)]" />
+                          {REPEAT_CONDITIONS.map((w) => (
+                            <button
+                              key={w}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={w === whenAt(slot)}
+                              data-testid={`${id}-color-${slot}-when-${w}`}
+                              onClick={() => pickWhen(slot, w)}
+                              className={`${ITEM_CLASS} text-xs leading-normal`}
+                            >
+                              {tr(`settings.cueFlows.whenEach.${w}`)}
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   )}
                 </span>
@@ -367,6 +416,16 @@ export function CueRuleRow({
       </button>
       <p data-testid={`${id}-when-line`} className="text-xs leading-normal text-fg-faint">
         {tr(`settings.cueFlows.whenHint.${rule.when}`)}
+        {shownSlots
+          .filter((slot) => whenAt(slot) !== 'rule')
+          .map((slot, i) => (
+            <span key={slot}>
+              {i === 0 ? '. ' : ' '}
+              {tr(`settings.cueFlows.whenEachHint.${whenAt(slot)}`, {
+                bars: rule.bars * (slot + 1),
+              })}
+            </span>
+          ))}
       </p>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">

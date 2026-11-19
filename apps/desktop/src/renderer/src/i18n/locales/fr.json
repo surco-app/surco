@@ -2061,7 +2061,8 @@
           "strong": "Dans un refrain",
           "point": "Au-delà d’une autre marque",
           "start": "Avant le début du morceau",
-          "end": "Après la fin du morceau"
+          "end": "Après la fin du morceau",
+          "section": "Hors de cette section"
         }
       },
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
@@ -2112,6 +2113,19 @@
         "room": "Le laisse de côté si un autre cue arrive dans les mesures que tu choisis",
         "clear": "Le laisse de côté si un autre cue tombe sur la même mesure",
         "first": "Seulement avant la première marque, s’il n’y a encore rien"
+      },
+      "whenEach": {
+        "rule": "comme la règle",
+        "fits": "si ça rentre",
+        "down": "seulement dans une descente",
+        "up": "seulement dans une montée",
+        "chorus": "seulement dans un refrain"
+      },
+      "whenEachHint": {
+        "fits": "Celui de {{bars}}, seulement si ça rentre.",
+        "down": "Celui de {{bars}}, seulement dans une descente.",
+        "up": "Celui de {{bars}}, seulement dans une montée.",
+        "chorus": "Celui de {{bars}}, seulement dans un refrain."
       },
       "place": {
         "hot": "hot cue",

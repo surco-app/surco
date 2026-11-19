@@ -2061,7 +2061,8 @@
           "strong": "Dins d'una tornada",
           "point": "Passa d'una altra marca",
           "start": "Abans que comenci la pista",
-          "end": "Després que acabi la pista"
+          "end": "Després que acabi la pista",
+          "section": "Fora d'aquesta secció"
         }
       },
       "tooMany": "Aquest flux demana {{count}} hot cues i rekordbox n'admet 8",
@@ -2112,6 +2113,19 @@
         "room": "El deixa fora si arriba un altre cue en els compassos que triïs",
         "clear": "El deixa fora si cau un altre cue al mateix compàs",
         "first": "Només abans de la primera marca, si allà no hi ha res"
+      },
+      "whenEach": {
+        "rule": "com la regla",
+        "fits": "si hi cap",
+        "down": "només en una baixada",
+        "up": "només en una pujada",
+        "chorus": "només en una tornada"
+      },
+      "whenEachHint": {
+        "fits": "El de {{bars}}, només si hi cap.",
+        "down": "El de {{bars}}, només en una baixada.",
+        "up": "El de {{bars}}, només en una pujada.",
+        "chorus": "El de {{bars}}, només en una tornada."
       },
       "place": {
         "hot": "hot cue",
