@@ -69,16 +69,16 @@ describe('runWorkerJob', () => {
   })
 
   it('measures a grid and fits the beat from one decode when no fit is kept yet', () => {
-    const pcm = new Float32Array(11025 * 120)
+    const pcm = new Float32Array(100 * 120)
     const out = runWorkerJob({
       type: 'gridAudit',
       pcm,
-      sampleRate: 11025,
+      sampleRate: 100,
       beats: [0, 500],
       leadMs: 51,
       withFit: true,
     })
-    expect(auditGrid).toHaveBeenCalledWith(pcm, 11025, [0, 500], 51)
+    expect(auditGrid).toHaveBeenCalledWith(pcm, 100, [0, 500], 51)
     expect(out).toEqual({
       windows: [{ ms: 9000, offsetMs: 1 }],
       total: 4,
