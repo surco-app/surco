@@ -523,7 +523,12 @@ export function sortTracks(
   if (sort === 'import') return tracks
   const sign = dir === 'desc' ? -1 : 1
   const sortValue =
-    sort === 'dateAdded' ? (t: TrackItem) => addedOf?.get(t.id) ?? null : NUMERIC_SORTS[sort]
+    sort === 'dateAdded'
+      ? (t: TrackItem) => {
+          const added = addedOf?.get(t.id)
+          return added === undefined ? null : -added
+        }
+      : NUMERIC_SORTS[sort]
   if (sortValue) {
     return tracks
       .map((track) => ({ track, value: sortValue(track) }))

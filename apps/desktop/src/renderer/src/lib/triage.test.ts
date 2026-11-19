@@ -750,7 +750,7 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'name').map((t) => t.listLabel)).toEqual(['apple', 'Banana', 'Zoo'])
   })
 
-  it('sorts by the date the DJ program added each track, so a batch of downloads can go to a crate together', () => {
+  it('sorts by the date the DJ program added each track with the newest first, so the last batch of downloads is at the top as soon as the order is picked', () => {
     const list = [mk({ id: 'mid' }), mk({ id: 'none' }), mk({ id: 'new' }), mk({ id: 'old' })]
     const addedOf = new Map([
       ['mid', Date.parse('2026-05-02')],
@@ -758,15 +758,15 @@ describe('sortTracks', () => {
       ['old', Date.parse('2019-01-30')],
     ])
     expect(sortTracks(list, 'dateAdded', 'asc', addedOf).map((t) => t.id)).toEqual([
-      'old',
-      'mid',
       'new',
+      'mid',
+      'old',
       'none',
     ])
     expect(sortTracks(list, 'dateAdded', 'desc', addedOf).map((t) => t.id)).toEqual([
-      'new',
-      'mid',
       'old',
+      'mid',
+      'new',
       'none',
     ])
   })
