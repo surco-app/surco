@@ -325,7 +325,8 @@
       "ascending": "Ascending order",
       "descending": "Descending order",
       "directionNeedsField": "Sort by a field to choose the direction",
-      "rating": "Stars"
+      "rating": "Stars",
+      "dateAdded": "Added"
     },
     "position": "Track {{current}} of {{total}}",
     "selectedCount_one": "{{count}} selected",

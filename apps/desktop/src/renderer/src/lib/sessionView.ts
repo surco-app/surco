@@ -98,6 +98,7 @@ const SORTS: Record<TrackSort, true> = {
   year: true,
   quality: true,
   rating: true,
+  dateAdded: true,
 }
 const QUALITY: Record<QualityFilter, true> = {
   suspect: true,

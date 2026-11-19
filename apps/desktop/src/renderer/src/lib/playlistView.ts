@@ -24,6 +24,7 @@ export interface PlaylistScope {
   linkOf: ReadonlyMap<string, string>
   linksOf: ReadonlyMap<string, readonly string[]>
   contentOf: ReadonlyMap<string, string>
+  addedOf: ReadonlyMap<string, number>
 }
 
 interface ComposedPaths {
@@ -96,6 +97,7 @@ export function playlistView(
   const linkOf = new Map<string, string>()
   const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
+  const addedOf = new Map<string, number>()
   const rows: (string | undefined)[] = []
   let pending: string[] = []
   // A separator with no row id of its own is keyed by the row it follows and its place in
@@ -121,6 +123,8 @@ export function playlistView(
     const key = times === 0 ? t.id : `${t.id}~${times}`
     if (times === 0 && e.linkId) linkOf.set(t.id, e.linkId)
     if (times === 0 && e.contentId) contentOf.set(t.id, e.contentId)
+    const added = e.meta.addedAt ?? Date.parse(e.meta.dateAdded ?? '')
+    if (times === 0 && Number.isFinite(added)) addedOf.set(t.id, added)
     if (pending.length) separatorBefore.set(key, pending)
     pending = []
   })
@@ -128,7 +132,7 @@ export function playlistView(
   const before = previous && laidOutFrom.get(previous)
   const view =
     previous && before && sameLayout(before, from)
-      ? { ...previous, tracks: shown }
+      ? { ...previous, tracks: shown, addedOf }
       : {
           tracks: shown,
           ids: shown.map((t) => t.id),
@@ -138,6 +142,7 @@ export function playlistView(
           linkOf,
           linksOf,
           contentOf,
+          addedOf,
         }
   laidOutFrom.set(view, from)
   return view

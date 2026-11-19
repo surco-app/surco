@@ -750,6 +750,32 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'name').map((t) => t.listLabel)).toEqual(['apple', 'Banana', 'Zoo'])
   })
 
+  it('sorts by the date the DJ program added each track, so a batch of downloads can go to a crate together', () => {
+    const list = [mk({ id: 'mid' }), mk({ id: 'none' }), mk({ id: 'new' }), mk({ id: 'old' })]
+    const addedOf = new Map([
+      ['mid', Date.parse('2026-05-02')],
+      ['new', Date.parse('2026-11-18')],
+      ['old', Date.parse('2019-01-30')],
+    ])
+    expect(sortTracks(list, 'dateAdded', 'asc', addedOf).map((t) => t.id)).toEqual([
+      'old',
+      'mid',
+      'new',
+      'none',
+    ])
+    expect(sortTracks(list, 'dateAdded', 'desc', addedOf).map((t) => t.id)).toEqual([
+      'new',
+      'mid',
+      'old',
+      'none',
+    ])
+  })
+
+  it('keeps the list as it is when no track has a date added to sort by', () => {
+    const list = [mk({ id: 'b' }), mk({ id: 'a' })]
+    expect(sortTracks(list, 'dateAdded', 'desc').map((t) => t.id)).toEqual(['b', 'a'])
+  })
+
   it('sorts by artist and pushes the untagged tracks to the end', () => {
     const list = [
       mk({ id: '1', meta: { artist: 'Mr Fingers' } }),
