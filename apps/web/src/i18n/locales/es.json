@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Lo cambias una vez. Lo ven todos tus programas.",
-      "lede": "Abre la pista desde la pestaña de Apple Music o de rekordbox, corrige el título, el género o el nombre del archivo y pulsa Actualizar etiquetas. Surco lleva el cambio a Apple Music, rekordbox, Traktor, Engine DJ, Serato y VirtualDJ, y en cada uno sigue siendo la misma pista.",
+      "lede": "Abre la pista desde la pestaña de Apple Music o de rekordbox, corrige el título, el género o el nombre del archivo y pulsa Actualizar. Surco lleva el cambio a Apple Music, rekordbox, Traktor, Engine DJ, Serato y VirtualDJ, y en cada uno sigue siendo la misma pista.",
       "tabAppleMusic": "Pestaña Apple Music",
       "tabRekordbox": "Pestaña rekordbox",
       "fieldTitle": "Título",
       "fieldGenre": "Género",
       "fieldFile": "Nombre del archivo",
-      "button": "Actualizar etiquetas",
+      "button": "Actualizar",
       "saved": "Etiquetas actualizadas",
       "origin": "origen",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Reemplaza y guarda",
-            "text": "Pulsa «Reemplazar en…». El cambio aún no está en los archivos hasta que pulses «Actualizar etiquetas» o «Convertir»."
+            "text": "Pulsa «Reemplazar en…». El cambio aún no está en los archivos hasta que pulses «Actualizar» o «Convertir»."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Pulsa «Convertir»",
-            "text": "O «Actualizar etiquetas». Hasta entonces el archivo no cambia."
+            "text": "O «Actualizar». Hasta entonces el archivo no cambia."
           }
         ],
         "points": [

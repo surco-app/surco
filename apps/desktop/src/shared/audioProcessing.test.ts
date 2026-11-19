@@ -4,7 +4,7 @@ import { processesAudio, tagsOnly } from './audioProcessing'
 const loudness = { mode: 'loudness' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
 
 describe('tagsOnly', () => {
-  // The label promises "Update tags" and main stream-copies on the same rule: any filter
+  // The label promises "Update" and main stream-copies on the same rule: any filter
   // that re-renders the samples turns a same-format export into a re-encode.
   it('is a tag update only in the same format with no filter staged', () => {
     expect(tagsOnly(true, {})).toBe(true)

@@ -101,7 +101,7 @@ describe('ExportButton', () => {
     }
     const { rerender } = render(<ExportButton {...props} upToDate />)
     rerender(<ExportButton {...props} upToDate={false} />)
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
     expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
   })
 
@@ -332,7 +332,7 @@ describe('ExportButton', () => {
   })
 
   // Reported 02/11: editing a track already in Music read "Adding to Apple Music…" under
-  // an "Update tags" button. Each step names what the job really does.
+  // an "Update" button. Each step names what the job really does.
   it.each([
     ['tags', 'Writing tags…'],
     ['appleMusicUpdate', 'Updating in Apple Music…'],
