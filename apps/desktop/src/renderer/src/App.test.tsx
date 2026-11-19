@@ -10235,7 +10235,7 @@ describe('App update check failure', () => {
         await i18n.changeLanguage('es')
       })
       expect(screen.getByTestId('update-message')).toHaveTextContent('La versión 9.9.9 está lista')
-      expect(screen.getByTestId('update-action')).toHaveTextContent('Reiniciar para actualizar')
+      expect(screen.getByTestId('update-action')).toHaveTextContent('Reiniciar')
     } finally {
       await act(async () => {
         await i18n.changeLanguage('en')

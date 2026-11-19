@@ -500,7 +500,7 @@
   },
   "update": {
     "ready": "La versió {{version}} està a punt",
-    "restart": "Reiniciar per actualitzar",
+    "restart": "Reiniciar",
     "failed": "Error en actualitzar: {{error}}",
     "checkFailed": "No s'ha pogut comprovar si hi ha actualitzacions",
     "checkFailedStatus": "No s'ha pogut comprovar si hi ha actualitzacions (GitHub ha respost {{status}})",
