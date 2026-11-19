@@ -2601,6 +2601,68 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
   })
 })
 
+describe('Editor convert button for a same-format file going to Apple Music', () => {
+  const read = { title: 'Sometime', artist: 'La Luna' }
+  const track = (meta: Partial<TrackMetadata>, over: Partial<TrackItem> = {}) =>
+    item({
+      id: 'a',
+      inputPath: '/music/a.mp3',
+      fileName: 'a',
+      meta,
+      diskSignature: trackSignature(
+        item({ id: 'a', inputPath: '/music/a.mp3', fileName: 'a', meta: read }),
+      ),
+      ...over,
+    })
+  const without = buildLibraryIndex([
+    { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
+  ])
+
+  beforeEach(() => {
+    Object.assign(window.api, { platform: 'darwin' })
+  })
+
+  // Reported 19/11: an MP3 Music had never seen read "Update tags" with Apple Music as
+  // the destination, and the click also added it to Music.
+  it('offers to add a file Music lacks instead of only updating its tags', () => {
+    renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', { libraryIndex: without })
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Add')
+  })
+
+  // Adding the track to Music is a change even with no tag edited, so the button must
+  // not read as nothing to do.
+  it('offers the add with nothing edited, never "No changes"', () => {
+    renderEditor({ ...track(read) }, 'mp3', { libraryIndex: without })
+    expect(screen.queryByTestId('convert-up-to-date')).not.toBeInTheDocument()
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Add')
+  })
+
+  it('keeps "Update tags" for a track Music already holds', () => {
+    renderEditor(
+      { ...track({ ...read, genre: 'Trance' }, { musicPersistentId: 'AAAAAAAAAAAAAAAA' }) },
+      'mp3',
+      { libraryIndex: without },
+    )
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+  })
+
+  // Until Music has answered there is no telling whether it holds the file, and a
+  // promise to add what is already there would be false.
+  it('keeps "Update tags" while the Music library has not been read', () => {
+    renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', { libraryIndex: null })
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+  })
+
+  it('keeps "Update tags" when the destination is not Apple Music', () => {
+    renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', {
+      libraryIndex: without,
+      addToAppleMusic: false,
+      overwriteOriginal: true,
+    })
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+  })
+})
+
 describe('Editor export control', () => {
   describe('when the file already carries the editor', () => {
     const read = { genre: 'Techno' }

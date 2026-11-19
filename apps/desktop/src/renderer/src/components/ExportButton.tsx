@@ -52,6 +52,7 @@ interface ExportButtonProps {
   // tags" instead of a conversion.
   tagsOnly?: boolean
   sameFormat?: boolean
+  addsToMusic?: boolean
   upToDate?: boolean
   narrow?: boolean
   count?: number
@@ -99,6 +100,7 @@ export function ExportButton({
   inPlace,
   tagsOnly = false,
   sameFormat = false,
+  addsToMusic = false,
   upToDate = false,
   narrow = false,
   count,
@@ -132,6 +134,7 @@ export function ExportButton({
     inPlace,
     tagsOnly,
     sameFormat,
+    addsToMusic,
     stale,
     replaces,
     libraryBetter,

@@ -907,6 +907,7 @@
     "menuOverwriteNote": "ファイルを上書きします",
     "update": "タグを更新",
     "updateAudio": "タグと音声を更新",
+    "add": "追加",
     "upToDate": "変更なし",
     "updateAnyway": "それでも更新",
     "convertAction": "{{format}} に変換",

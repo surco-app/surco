@@ -907,6 +907,7 @@
     "menuOverwriteNote": "Overwrites the file",
     "update": "Update tags",
     "updateAudio": "Update tags and audio",
+    "add": "Add",
     "upToDate": "No changes",
     "updateAnyway": "Update anyway",
     "convertAction": "Convert to {{format}}",

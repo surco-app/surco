@@ -1200,8 +1200,16 @@ export const Editor = memo(function Editor({
       ),
     [batchReady, batchPick, heldPaths, normalizeCfg, declickCfg, normalize, declick],
   )
+  const addsToMusic =
+    !isMulti &&
+    picked.addToAppleMusic &&
+    willEditInPlace &&
+    formatMatchesInput(format, item.inputPath) &&
+    inLibrary === 'no' &&
+    !item.fromAppleMusic
   const upToDate =
     !isMulti &&
+    !addsToMusic &&
     !incomplete &&
     item.status === 'idle' &&
     willEditInPlace &&
@@ -2184,6 +2192,7 @@ export const Editor = memo(function Editor({
           clearAfterBatch={clearListAfterConvert}
           onToggleClearAfterBatch={onToggleClearList}
           sameFormat={formatMatchesInput(format, item.inputPath)}
+          addsToMusic={addsToMusic}
           upToDate={upToDate}
           destination={isMulti ? batchDestination : destination}
           destinations={destinationChoices}
