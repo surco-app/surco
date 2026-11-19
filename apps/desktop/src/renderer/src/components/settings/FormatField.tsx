@@ -66,6 +66,7 @@ export function FormatField({
   preview,
   previewTestId,
   customFields,
+  extraTokens = [],
   onChange,
 }: {
   id: string
@@ -77,6 +78,7 @@ export function FormatField({
   preview: string | undefined
   previewTestId: string
   customFields: readonly CustomField[]
+  extraTokens?: readonly { key: string; label: string }[]
   onChange: (value: string) => void
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -90,6 +92,7 @@ export function FormatField({
   const sources = [
     ...labeledFields(customFields, tr),
     { key: 'rating', label: tr('fields.rating') },
+    ...extraTokens,
   ]
     .map((f) => ({ ...f, value: `{${f.key}}` }))
     .sort((a, b) => a.label.localeCompare(b.label, i18n.language))

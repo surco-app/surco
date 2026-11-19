@@ -326,7 +326,8 @@
       "descending": "Orden descendente",
       "directionNeedsField": "Ordena por un campo para elegir el sentido",
       "rating": "Estrellas",
-      "dateAdded": "Añadida"
+      "dateAdded": "Añadida",
+      "album": "Álbum"
     },
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Formato del título",
     "autoApplyFilename": "Aplicar el patrón automáticamente",
     "autoApplyFilenameHint": "Genera el nombre desde los metadatos al exportar, sin pulsar «Regenerar». Una edición manual siempre tiene prioridad.",
+    "currentYear": "Año actual",
+    "currentMonth": "Mes actual",
     "filenameFolderHint": "Usa «/» para organizar los archivos en carpetas, p. ej.",
     "insertToken": "Insertar un campo",
     "preview": "Vista previa:",

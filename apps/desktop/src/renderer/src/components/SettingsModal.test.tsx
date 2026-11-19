@@ -717,6 +717,21 @@ describe('SettingsModal filename tokens', () => {
     expect(screen.getByTestId('settings-filename-format')).toHaveValue('{albumArtist}')
   })
 
+  it('offers the current year and month for the file name, so exports can be filed by date', () => {
+    openNaming()
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-currentYear'))
+    fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))
+    fireEvent.click(screen.getByTestId('field-insert-option-currentMonth'))
+    expect(screen.getByTestId('settings-filename-format')).toHaveValue(
+      '{currentYear}{currentMonth}',
+    )
+    const now = new Date()
+    expect(screen.getByTestId('settings-format-preview')).toHaveTextContent(
+      `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`,
+    )
+  })
+
   it('previews the rendered file name from the sample track', () => {
     openNaming()
     fireEvent.click(screen.getByTestId('field-insert-settings-filename-format'))

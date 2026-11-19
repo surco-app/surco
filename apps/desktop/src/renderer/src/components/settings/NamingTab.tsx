@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { foldAccents } from '../../../../shared/foldAccents'
 import { formatExtension } from '../../../../shared/format'
 import type { TrackMetadata } from '../../../../shared/types'
-import { renderOutputName } from '../../lib/outputName'
+import { DATE_TOKENS, renderOutputName } from '../../lib/outputName'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { FormatField, SAMPLE_META } from './FormatField'
@@ -44,6 +44,7 @@ export function NamingTab({ synced, patch }: Props): React.JSX.Element {
             synced.outputFormat === 'source' ? 'aiff' : synced.outputFormat,
           )}`}
           customFields={synced.customFields}
+          extraTokens={DATE_TOKENS.map((key) => ({ key, label: tr(`settings.${key}`) }))}
           previewTestId="settings-format-preview"
           onChange={(v) => patch('filenameFormat', v)}
         />

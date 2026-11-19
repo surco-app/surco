@@ -326,7 +326,8 @@
       "descending": "Ordre descendent",
       "directionNeedsField": "Ordena per un camp per triar el sentit",
       "rating": "Estrelles",
-      "dateAdded": "Afegida"
+      "dateAdded": "Afegida",
+      "album": "Àlbum"
     },
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Format del títol",
     "autoApplyFilename": "Aplicar el patró automàticament",
     "autoApplyFilenameHint": "Genera el nom a partir de les metadades en exportar, sense prémer «Regenerar». Una edició manual sempre té prioritat.",
+    "currentYear": "Any actual",
+    "currentMonth": "Mes actual",
     "filenameFolderHint": "Fes servir «/» per organitzar els fitxers en carpetes, p. ex.",
     "insertToken": "Inserir un camp",
     "preview": "Previsualització:",

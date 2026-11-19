@@ -326,7 +326,8 @@
       "descending": "Absteigende Reihenfolge",
       "directionNeedsField": "Nach einem Feld sortieren, um die Richtung zu wählen",
       "rating": "Sterne",
-      "dateAdded": "Hinzugefügt"
+      "dateAdded": "Hinzugefügt",
+      "album": "Album"
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Titelformat",
     "autoApplyFilename": "Muster automatisch anwenden",
     "autoApplyFilenameHint": "Erzeugt den Namen beim Export aus den Metadaten, ohne „Neu erzeugen“ zu drücken. Eine manuelle Änderung gewinnt immer.",
+    "currentYear": "Aktuelles Jahr",
+    "currentMonth": "Aktueller Monat",
     "filenameFolderHint": "Nutz \"/\", um Dateien in Ordner zu sortieren, z. B.",
     "insertToken": "Feld einfügen",
     "preview": "Vorschau:",

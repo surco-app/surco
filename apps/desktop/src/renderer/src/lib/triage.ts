@@ -435,6 +435,7 @@ export type TrackSort =
   | 'import'
   | 'name'
   | 'artist'
+  | 'album'
   | 'duration'
   | 'format'
   | 'trackNumber'
@@ -464,6 +465,16 @@ function compareText(a: string | undefined, b: string | undefined, sign: number)
   const bb = b || ''
   if (!aa || !bb) return (aa ? 0 : 1) - (bb ? 0 : 1)
   return sign * collator.compare(aa, bb)
+}
+
+function compareRunningOrder(a: TrackItem, b: TrackItem, sign: number): number {
+  if (!a.meta.trackNumber || !b.meta.trackNumber)
+    return (a.meta.trackNumber ? 0 : 1) - (b.meta.trackNumber ? 0 : 1)
+  return (
+    sign *
+    (numericCollator.compare(a.meta.discNumber ?? '', b.meta.discNumber ?? '') ||
+      numericCollator.compare(a.meta.trackNumber, b.meta.trackNumber))
+  )
 }
 
 const keyRanks = new Map<string, number>()
@@ -543,15 +554,9 @@ export function sortTracks(
     if (sort === 'name') return sign * collator.compare(a.listLabel, b.listLabel)
     if (sort === 'artist') return compareText(a.meta.artist, b.meta.artist, sign)
     if (sort === 'format') return compareText(sourceFormat(a), sourceFormat(b), sign)
-    if (sort === 'trackNumber') {
-      if (!a.meta.trackNumber || !b.meta.trackNumber)
-        return (a.meta.trackNumber ? 0 : 1) - (b.meta.trackNumber ? 0 : 1)
-      return (
-        sign *
-        (numericCollator.compare(a.meta.discNumber ?? '', b.meta.discNumber ?? '') ||
-          numericCollator.compare(a.meta.trackNumber, b.meta.trackNumber))
-      )
-    }
+    if (sort === 'album')
+      return compareText(a.meta.album, b.meta.album, sign) || compareRunningOrder(a, b, 1)
+    if (sort === 'trackNumber') return compareRunningOrder(a, b, sign)
     if (a.duration == null || b.duration == null)
       return (a.duration == null ? 1 : 0) - (b.duration == null ? 1 : 0)
     return sign * (a.duration - b.duration)

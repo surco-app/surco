@@ -326,7 +326,8 @@
       "descending": "Descending order",
       "directionNeedsField": "Sort by a field to choose the direction",
       "rating": "Stars",
-      "dateAdded": "Added"
+      "dateAdded": "Added",
+      "album": "Album"
     },
     "position": "Track {{current}} of {{total}}",
     "selectedCount_one": "{{count}} selected",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Title format",
     "autoApplyFilename": "Apply the pattern automatically",
     "autoApplyFilenameHint": "Builds the name from metadata on export, without pressing \"Regenerate\". A manual edit always wins.",
+    "currentYear": "Current year",
+    "currentMonth": "Current month",
     "filenameFolderHint": "Use \"/\" to sort files into folders, e.g.",
     "insertToken": "Insert a field",
     "preview": "Preview:",

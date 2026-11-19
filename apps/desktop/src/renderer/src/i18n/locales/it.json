@@ -326,7 +326,8 @@
       "descending": "Ordine decrescente",
       "directionNeedsField": "Ordina per un campo per scegliere il verso",
       "rating": "Stelle",
-      "dateAdded": "Aggiunto"
+      "dateAdded": "Aggiunto",
+      "album": "Album"
     },
     "position": "Brano {{current}} di {{total}}",
     "selectedCount_one": "{{count}} selezionato",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Formato del titolo",
     "autoApplyFilename": "Applica lo schema automaticamente",
     "autoApplyFilenameHint": "Genera il nome dai metadati all'esportazione, senza premere «Rigenera». Una modifica manuale ha sempre la precedenza.",
+    "currentYear": "Anno corrente",
+    "currentMonth": "Mese corrente",
     "filenameFolderHint": "Usa «/» per organizzare i file in cartelle, ad es.",
     "insertToken": "Inserisci un campo",
     "preview": "Anteprima:",

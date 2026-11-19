@@ -326,7 +326,8 @@
       "descending": "Ordre décroissant",
       "directionNeedsField": "Triez par un champ pour choisir le sens",
       "rating": "Étoiles",
-      "dateAdded": "Ajoutée"
+      "dateAdded": "Ajoutée",
+      "album": "Album"
     },
     "position": "Morceau {{current}} sur {{total}}",
     "selectedCount_one": "{{count}} sélectionné",
@@ -1879,6 +1880,8 @@
     "titleFormat": "Format du titre",
     "autoApplyFilename": "Appliquer le modèle automatiquement",
     "autoApplyFilenameHint": "Compose le nom depuis les métadonnées à l’export, sans appuyer sur « Régénérer ». Une modification manuelle gagne toujours.",
+    "currentYear": "Année en cours",
+    "currentMonth": "Mois en cours",
     "filenameFolderHint": "Utilise \"/\" pour ranger les fichiers en dossiers, p. ex.",
     "insertToken": "Insérer un champ",
     "preview": "Aperçu :",

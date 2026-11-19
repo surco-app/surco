@@ -776,6 +776,33 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'dateAdded', 'desc').map((t) => t.id)).toEqual(['b', 'a'])
   })
 
+  it('sorts by album and plays each album in its running order, so a release reads as one block with the untagged tracks last', () => {
+    const list = [
+      mk({ id: 'z-2', meta: { album: 'Zenith', trackNumber: '2' } }),
+      mk({ id: 'none', meta: { album: '' } }),
+      mk({ id: 'a-10', meta: { album: 'Alcachofa', trackNumber: '10/12' } }),
+      mk({ id: 'z-1', meta: { album: 'Zenith', trackNumber: '1' } }),
+      mk({ id: 'a-d2', meta: { album: 'Alcachofa', discNumber: '2', trackNumber: '1' } }),
+      mk({ id: 'a-9', meta: { album: 'Alcachofa', trackNumber: '9/12' } }),
+    ]
+    expect(sortTracks(list, 'album').map((t) => t.id)).toEqual([
+      'a-9',
+      'a-10',
+      'a-d2',
+      'z-1',
+      'z-2',
+      'none',
+    ])
+    expect(sortTracks(list, 'album', 'desc').map((t) => t.id)).toEqual([
+      'z-1',
+      'z-2',
+      'a-9',
+      'a-10',
+      'a-d2',
+      'none',
+    ])
+  })
+
   it('sorts by artist and pushes the untagged tracks to the end', () => {
     const list = [
       mk({ id: '1', meta: { artist: 'Mr Fingers' } }),
