@@ -164,6 +164,7 @@ function metaOf(track: SeratoLibraryTrack | undefined): AppleMusicTrackMeta {
   const bpm = Number(track?.bpm)
   if (bpm > 0) meta.bpm = String(Number(bpm.toFixed(2)))
   if (track?.key) meta.key = track.key
+  if (track?.addedAt) meta.addedAt = track.addedAt * 1000
   return meta
 }
 

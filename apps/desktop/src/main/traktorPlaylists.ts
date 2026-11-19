@@ -107,6 +107,8 @@ function metaOf(block: string): AppleMusicTrackMeta {
   if (ranking > 0) meta.rating = Math.round((ranking * 100) / 255)
   const key = keyOf(block) ?? attr(info, 'KEY').trim()
   if (key) meta.key = key
+  const added = importedAt(attr(info, 'IMPORT_DATE'))
+  if (added) meta.addedAt = added
   return meta
 }
 

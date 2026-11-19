@@ -422,7 +422,7 @@ describe('the recently added list', () => {
     expect(play).toMatchObject({
       path: resolve(dir, 'Music/play.mp3'),
       separator: false,
-      meta: { bpm: '138.07', rating: 80 },
+      meta: { bpm: '138.07', rating: 80, addedAt: at(2026, 9, 20, 18) * 1000 },
       preview: { title: 'Play', artist: 'Fabiola', durationSec: 338, cues: [] },
     })
     expect(readFileSync(mediaPathFromUrl(play.preview?.coverUrl as string))).toEqual(

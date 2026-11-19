@@ -187,7 +187,11 @@ describe('readTraktorPlaylist', () => {
       extra: '<TEMPO BPM="124.000496" BPM_QUALITY="100.000000"></TEMPO>',
     }
     const [entry] = readTraktorPlaylist(nml([rated], [playlist('L', 'p1', [rated])]), 'p1', '')
-    expect(entry.meta).toEqual({ bpm: '124', rating: 60 })
+    expect(entry.meta).toEqual({
+      bpm: '124',
+      rating: 60,
+      addedAt: new Date(2020, 0, 1).getTime(),
+    })
   })
 
   it('reads the key Traktor detected whatever notation it shows, so the session can mix harmonically', () => {

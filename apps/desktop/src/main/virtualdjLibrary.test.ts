@@ -119,7 +119,7 @@ describe('readVirtualdjLibrary', () => {
     expect(entries[1]).toEqual({
       path: '/Music/Serato Pruebas/Pray.flac',
       separator: false,
-      meta: { bpm: '133.99', key: 'Ebm' },
+      meta: { bpm: '133.99', key: 'Ebm', addedAt: 1_794_393_662_000 },
       contentId: 'virtualdj:/Music/Serato Pruebas/Pray.flac',
       linkId: '1:%2FMusic%2FSerato%20Pruebas%2FPray.flac',
     })
