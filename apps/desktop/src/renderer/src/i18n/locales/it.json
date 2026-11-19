@@ -2115,7 +2115,7 @@
         "first": "Solo prima del primo segno, se lì non c'è niente"
       },
       "whenEach": {
-        "rule": "come la regola",
+        "rule": "senza condizione propria",
         "fits": "se c'è spazio",
         "down": "solo in un calo",
         "up": "solo in una salita",

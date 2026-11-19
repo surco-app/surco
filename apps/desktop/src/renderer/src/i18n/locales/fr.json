@@ -2115,7 +2115,7 @@
         "first": "Seulement avant la première marque, s’il n’y a encore rien"
       },
       "whenEach": {
-        "rule": "comme la règle",
+        "rule": "sans condition propre",
         "fits": "si ça rentre",
         "down": "seulement dans une descente",
         "up": "seulement dans une montée",

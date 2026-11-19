@@ -2115,7 +2115,7 @@
         "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
       },
       "whenEach": {
-        "rule": "wie die Regel",
+        "rule": "ohne eigene Bedingung",
         "fits": "wenn es passt",
         "down": "nur in einem Breakdown",
         "up": "nur in einem Aufbau",

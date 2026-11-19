@@ -2115,7 +2115,7 @@
         "first": "Solo antes de la primera marca, si allí no hay nada"
       },
       "whenEach": {
-        "rule": "como la regla",
+        "rule": "sin condición propia",
         "fits": "si cabe",
         "down": "solo en una bajada",
         "up": "solo en una subida",

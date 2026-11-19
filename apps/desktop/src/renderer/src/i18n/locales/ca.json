@@ -2115,7 +2115,7 @@
         "first": "Només abans de la primera marca, si allà no hi ha res"
       },
       "whenEach": {
-        "rule": "com la regla",
+        "rule": "sense condició pròpia",
         "fits": "si hi cap",
         "down": "només en una baixada",
         "up": "només en una pujada",

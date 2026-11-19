@@ -2115,7 +2115,7 @@
         "first": "Only before the first mark, if nothing is there yet"
       },
       "whenEach": {
-        "rule": "like the rule",
+        "rule": "no condition of its own",
         "fits": "if it fits",
         "down": "only in a breakdown",
         "up": "only in a build",
