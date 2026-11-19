@@ -326,7 +326,8 @@
       "descending": "Ordine decrescente",
       "directionNeedsField": "Ordina per un campo per scegliere il verso",
       "rating": "Stelle",
-      "dateAdded": "Aggiunto"
+      "dateAdded": "Aggiunto",
+      "album": "Album"
     },
     "position": "Brano {{current}} di {{total}}",
     "selectedCount_one": "{{count}} selezionato",

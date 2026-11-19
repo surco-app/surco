@@ -442,6 +442,14 @@ describe('TrackListHeader layout', () => {
     expect(within(sort).getByText(i18n.t('sidebar.sort.import')).className).toContain('@[27rem]:')
   })
 
+  it('sorts by album, the order a library of whole releases is browsed in', () => {
+    const setSortBy = vi.fn()
+    renderHeader({ setSortBy })
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-album'))
+    expect(setSortBy).toHaveBeenCalledWith('album')
+  })
+
   it('sorts by date added where the list has dates, and says it cannot where it has none', () => {
     const setSortBy = vi.fn()
     renderHeader({ setSortBy, hasAddedDates: true })

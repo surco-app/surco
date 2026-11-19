@@ -326,7 +326,8 @@
       "descending": "Absteigende Reihenfolge",
       "directionNeedsField": "Nach einem Feld sortieren, um die Richtung zu wählen",
       "rating": "Sterne",
-      "dateAdded": "Hinzugefügt"
+      "dateAdded": "Hinzugefügt",
+      "album": "Album"
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",

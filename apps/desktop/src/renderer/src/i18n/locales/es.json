@@ -326,7 +326,8 @@
       "descending": "Orden descendente",
       "directionNeedsField": "Ordena por un campo para elegir el sentido",
       "rating": "Estrellas",
-      "dateAdded": "Añadida"
+      "dateAdded": "Añadida",
+      "album": "Álbum"
     },
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",

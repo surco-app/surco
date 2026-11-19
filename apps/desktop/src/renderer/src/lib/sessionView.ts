@@ -90,6 +90,7 @@ const SORTS: Record<TrackSort, true> = {
   import: true,
   name: true,
   artist: true,
+  album: true,
   duration: true,
   format: true,
   trackNumber: true,

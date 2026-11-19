@@ -326,7 +326,8 @@
       "descending": "降順",
       "directionNeedsField": "項目で並べ替えると順序を選べます",
       "rating": "星",
-      "dateAdded": "追加"
+      "dateAdded": "追加",
+      "album": "アルバム"
     },
     "position": "トラック {{current}} / {{total}}",
     "selectedCount_one": "{{count}} 件選択中",
