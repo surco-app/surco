@@ -210,7 +210,7 @@ export function CuesBatchSection({
         )
       setSaveFailed(!saved)
       if (!saved) return
-      recordCueEdits(
+      void recordCueEdits(
         queryClient,
         keptDrafts()
           .filter((d) => mineIds.has(d.contentId))

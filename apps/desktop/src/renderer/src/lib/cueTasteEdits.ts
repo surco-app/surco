@@ -12,31 +12,36 @@ import {
 import { type CueDraft, draftDrops } from './cueDraft'
 import { cueProgramOf } from './cuePrograms'
 
-function inputOf(client: QueryClient, contentId: string): DropInput | null {
-  if (cueProgramOf(contentId).readsAudio)
-    return client.getQueryData<DropInput | null>(cueDropInputQuery(contentId).queryKey) ?? null
-  const read = client.getQueryData<TrackCues | null>(trackCuesQuery(contentId).queryKey)
-  const words = client.getQueryData<Uint16Array | null>(cueWaveDetailQuery(contentId).queryKey)
+async function inputOf(client: QueryClient, contentId: string): Promise<DropInput | null> {
+  if (cueProgramOf(contentId).readsAudio) return client.fetchQuery(cueDropInputQuery(contentId))
+  const [read, words] = await Promise.all([
+    client.fetchQuery(trackCuesQuery(contentId)),
+    client.fetchQuery(cueWaveDetailQuery(contentId)),
+  ])
   return read && words ? { grid: read.grid, phrases: read.phrases, words } : null
 }
 
 const tasteOf = (client: QueryClient) =>
   client.getQueryData<CueProfileRead>(cueProfileQuery.queryKey)?.profile?.taste ?? null
 
-export function recordCueEdits(
+export async function recordCueEdits(
   client: QueryClient,
   saved: { contentId: string; draft: CueDraft }[],
-): void {
+): Promise<void> {
   const taste = tasteOf(client)
-  for (const { contentId, draft } of saved) {
-    const input = inputOf(client, contentId)
-    const track =
-      input && tasteTrackOf(input, draftDrops(draft.cues, draft.locked), modelWithTaste(taste))
-    if (track)
-      window.api.recordCueEdit(track).catch((e: unknown) => {
+  await Promise.all(
+    saved.map(async ({ contentId, draft }) => {
+      const drops = draftDrops(draft.cues, draft.locked)
+      if (drops.length === 0) return
+      try {
+        const input = await inputOf(client, contentId)
+        const track = input && tasteTrackOf(input, drops, modelWithTaste(taste))
+        if (track) await window.api.recordCueEdit(track)
+      } catch (e: unknown) {
         window.api.logError(
           `cue taste: recording an edit failed (${e instanceof Error ? e.message : String(e)})`,
         )
-      })
-  }
+      }
+    }),
+  )
 }

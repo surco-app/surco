@@ -1156,7 +1156,7 @@ function Editing({
     }
     setOverwrite(new Set())
     const kept = new Map(keptDrafts().map((d) => [d.contentId, d.draft]))
-    recordCueEdits(
+    void recordCueEdits(
       queryClient,
       reqs.flatMap(({ contentId }) => {
         const draft = contentId === cue.contentId ? state : kept.get(contentId)
