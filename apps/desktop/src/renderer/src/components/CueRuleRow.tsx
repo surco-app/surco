@@ -75,8 +75,9 @@ function clipBox(el: HTMLElement): { top: number; right: number; bottom: number 
   for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
     const style = getComputedStyle(node)
     if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`)) {
-      const { top, right, bottom } = node.getBoundingClientRect()
-      return { top, right, bottom }
+      const { top, left, right, bottom } = node.getBoundingClientRect()
+      const inner = node.clientWidth > 0 ? left + node.clientLeft + node.clientWidth : right
+      return { top, right: inner, bottom }
     }
   }
   return { top: 0, right: window.innerWidth, bottom: window.innerHeight }
@@ -128,7 +129,10 @@ export function CueRuleRow({
     const at = anchor.getBoundingClientRect()
     const clip = clipBox(palette)
     setPaletteRight(at.left + width > clip.right)
-    setMenuUp(at.bottom + height > clip.bottom && at.top - height >= clip.top)
+    const cutBelow = at.bottom + height > clip.bottom
+    const fitsAbove = at.top - height >= clip.top
+    setMenuUp(cutBelow && fitsAbove)
+    if (cutBelow && !fitsAbove) palette.scrollIntoView?.({ block: 'nearest' })
   }, [open])
 
   const closeToToken = () => {
@@ -350,13 +354,12 @@ export function CueRuleRow({
                             backgroundColor: hotCueColor(colorAt(rule.color, slot)),
                             color: '#000',
                           }
-                        : {
+                        : ({
                             backgroundColor: 'transparent',
-                            borderColor: hotCueColor(colorAt(rule.color, slot)),
-                            borderWidth: '1.5px',
-                          }
+                            '--cue': hotCueColor(colorAt(rule.color, slot)),
+                          } as React.CSSProperties)
                     }
-                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1 ${whenAt(slot) === 'rule' ? '' : 'text-fg'}`}
+                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] px-1 ${whenAt(slot) === 'rule' ? 'border border-[var(--color-line)]' : 'border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-fg'}`}
                   >
                     {showDistance && (
                       <span
@@ -372,7 +375,8 @@ export function CueRuleRow({
                       ref={paletteRef}
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
-                      className={`animate-pop-flat absolute ${paletteRight ? 'right-0 origin-top-right' : 'left-0 origin-top-left'} top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                      data-side={menuUp ? 'top' : 'bottom'}
+                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
                         value={colorAt(rule.color, slot)}

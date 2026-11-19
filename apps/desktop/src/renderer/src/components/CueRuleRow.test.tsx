@@ -269,7 +269,7 @@ describe('CueRuleRow condition of each repetition', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
     const own = screen.getByTestId('cue-rule-0-color-2')
     expect(own).toHaveAttribute('data-own', 'true')
-    expect(own).toHaveStyle({ borderColor: hotCueColor(42), borderWidth: '1.5px' })
+    expect(own.style.getPropertyValue('--cue')).toBe(hotCueColor(42))
     expect(own.style.backgroundColor).toBe('transparent')
     for (const slot of [0, 1]) {
       const plain = screen.getByTestId(`cue-rule-0-color-${slot}`)
