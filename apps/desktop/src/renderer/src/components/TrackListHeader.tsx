@@ -47,6 +47,7 @@ import { ViewMenu } from './ViewMenu'
 
 interface Props {
   tr: TFunction
+  viewAction?: React.ReactNode
   listAction?: React.ReactNode
   // The shortcut chord shown after each action's tooltip label, so a control's key is
   // discoverable on hover without a second visual style per call site.
@@ -217,6 +218,7 @@ export function TrackListHeader({
   onToggleSidebar,
   location,
   onOpenLocation,
+  viewAction,
   listAction,
 }: Props): React.JSX.Element {
   const { open, setOpen, ref: moreRef, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
@@ -321,43 +323,9 @@ export function TrackListHeader({
       </div>
       <div
         data-testid="track-list-toolbar"
-        className="relative flex flex-wrap items-center gap-0.5 px-1.5 pb-1.5 @[27rem]:flex-nowrap @[27rem]:pb-0"
+        className="relative flex flex-wrap items-center gap-x-0.5 px-1.5"
       >
-        {tab === null && (
-          <button
-            type="button"
-            data-testid="add-files"
-            onClick={onAdd}
-            aria-label={tr('header.add')}
-            className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-          >
-            <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
-            <Tooltip label={tr('header.add')} hint={hintFor('add')} />
-          </button>
-        )}
-        {tracks.length > 0 && (
-          <>
-            {tab === null && (
-              <span
-                aria-hidden="true"
-                className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
-              />
-            )}
-            <button
-              type="button"
-              data-testid="select-all"
-              onClick={onSelectAllTracks}
-              aria-label={tr('header.selectAll')}
-              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
-            </button>
-          </>
-        )}
-        {listAction}
-        {tracks.length > 0 && <span className="flex-1 @[27rem]:hidden" />}
-        <div className="order-first -mx-1.5 min-w-0 basis-full @[27rem]:order-none @[27rem]:mx-0 @[27rem]:flex-1 @[27rem]:basis-0">
+        <div className="min-w-0 flex-auto">
           <QualityFilterBar
             librarySource={librarySource}
             tab={tab}
@@ -378,6 +346,7 @@ export function TrackListHeader({
           >
             <Select
               testid="track-sort"
+              labelClass="hidden @[27rem]:block"
               bare
               portal
               value={sortBy}
@@ -423,113 +392,145 @@ export function TrackListHeader({
                 )}
               />
             </button>
+            {viewAction}
           </QualityFilterBar>
         </div>
-        {tracks.length > 0 && (
-          <>
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          <span
+            aria-hidden="true"
+            className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
+          />
+          {tab === null && (
             <button
               type="button"
-              data-testid="remove-selected"
-              onClick={onRemoveSelected}
-              disabled={!selectedId && selectedIds.length === 0}
-              aria-label={removeLabel ?? tr('trackList.context.remove')}
-              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+              data-testid="add-files"
+              onClick={onAdd}
+              aria-label={tr('header.add')}
+              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
-              <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={removeLabel ?? tr('trackList.context.remove')} />
+              <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('header.add')} hint={hintFor('add')} />
             </button>
-            <div ref={moreRef} className="shrink-0">
+          )}
+          {tracks.length > 0 && (
+            <button
+              type="button"
+              data-testid="select-all"
+              onClick={onSelectAllTracks}
+              aria-label={tr('header.selectAll')}
+              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
+              <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
+            </button>
+          )}
+          {listAction}
+          {tracks.length > 0 && (
+            <>
               <button
                 type="button"
-                data-testid="list-actions-more"
-                ref={toggleRef}
-                onClick={toggleMenu}
-                aria-label={tr('header.moreActions')}
-                aria-haspopup="menu"
-                aria-expanded={open}
-                className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
+                data-testid="remove-selected"
+                onClick={onRemoveSelected}
+                disabled={!selectedId && selectedIds.length === 0}
+                aria-label={removeLabel ?? tr('trackList.context.remove')}
+                className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
               >
-                <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={tr('header.moreActions')} />
+                <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
+                <Tooltip label={removeLabel ?? tr('trackList.context.remove')} />
               </button>
-              {open &&
-                menuPos &&
-                createPortal(
-                  <div
-                    ref={menuRef}
-                    role="menu"
-                    aria-label={tr('header.moreActions')}
-                    onKeyDown={onMenuKeyDown}
-                    style={{
-                      top: menuPos.top,
-                      bottom: menuPos.bottom,
-                      right: menuPos.right,
-                      maxHeight: menuPos.maxHeight,
-                    }}
-                    className={`animate-pop-flat fixed z-50 w-max max-w-[calc(100vw-1rem)] overflow-y-auto ${menuPos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
-                  >
-                    <MenuAction
-                      testid="list-review-open"
-                      icon={SpellCheck}
-                      label={tr('header.menu.review')}
-                      detail={reviewDetail}
-                      hint={hintFor('list-review')}
-                      disabled={!canReviewList}
-                      onClick={() => run(onReviewList)}
-                    />
-                    {duplicates && (
+              <div ref={moreRef} className="shrink-0">
+                <button
+                  type="button"
+                  data-testid="list-actions-more"
+                  ref={toggleRef}
+                  onClick={toggleMenu}
+                  aria-label={tr('header.moreActions')}
+                  aria-haspopup="menu"
+                  aria-expanded={open}
+                  className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
+                >
+                  <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
+                  <Tooltip label={tr('header.moreActions')} />
+                </button>
+                {open &&
+                  menuPos &&
+                  createPortal(
+                    <div
+                      ref={menuRef}
+                      role="menu"
+                      aria-label={tr('header.moreActions')}
+                      onKeyDown={onMenuKeyDown}
+                      style={{
+                        top: menuPos.top,
+                        bottom: menuPos.bottom,
+                        right: menuPos.right,
+                        maxHeight: menuPos.maxHeight,
+                      }}
+                      className={`animate-pop-flat fixed z-50 w-max max-w-[calc(100vw-1rem)] overflow-y-auto ${menuPos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
+                    >
                       <MenuAction
-                        testid="music-duplicates-open"
-                        icon={Copy}
-                        label={tr('header.menu.showDuplicates')}
-                        detail={duplicates.detail}
+                        testid="list-review-open"
+                        icon={SpellCheck}
+                        label={tr('header.menu.review')}
+                        detail={reviewDetail}
+                        hint={hintFor('list-review')}
                         disabled={!canReviewList}
-                        onClick={() => run(duplicates.onShow)}
+                        onClick={() => run(onReviewList)}
                       />
-                    )}
-                    <MenuAction
-                      testid="fill-all"
-                      icon={Tag}
-                      label={tr('header.menu.fill')}
-                      hint={hintFor('fill-all')}
-                      onClick={() => run(onFillAll)}
-                    />
-                    <MenuAction
-                      testid="open-find-replace"
-                      icon={Replace}
-                      label={tr('header.menu.findReplace')}
-                      hint={hintFor('find-replace')}
-                      onClick={() => run(onFindReplace)}
-                    />
-                    {listTools
-                      .filter(({ command }) => !command.id.startsWith('export'))
-                      .map(listTool)}
-                    {exportTools.length > 0 && (
+                      {duplicates && (
+                        <MenuAction
+                          testid="music-duplicates-open"
+                          icon={Copy}
+                          label={tr('header.menu.showDuplicates')}
+                          detail={duplicates.detail}
+                          disabled={!canReviewList}
+                          onClick={() => run(duplicates.onShow)}
+                        />
+                      )}
+                      <MenuAction
+                        testid="fill-all"
+                        icon={Tag}
+                        label={tr('header.menu.fill')}
+                        hint={hintFor('fill-all')}
+                        onClick={() => run(onFillAll)}
+                      />
+                      <MenuAction
+                        testid="open-find-replace"
+                        icon={Replace}
+                        label={tr('header.menu.findReplace')}
+                        hint={hintFor('find-replace')}
+                        onClick={() => run(onFindReplace)}
+                      />
+                      {listTools
+                        .filter(({ command }) => !command.id.startsWith('export'))
+                        .map(listTool)}
+                      {exportTools.length > 0 && (
+                        <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                      )}
+                      {exportTools.map(listTool)}
                       <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-                    )}
-                    {exportTools.map(listTool)}
-                    <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-                    <MenuAction
-                      testid="trash-selected"
-                      icon={Trash2}
-                      label={tr('header.menu.trash')}
-                      danger
-                      disabled={!selectedId && selectedIds.length === 0}
-                      onClick={() => run(onTrashSelected)}
-                    />
-                    <MenuAction
-                      testid="clear-all"
-                      icon={ListX}
-                      label={tr('header.menu.clear')}
-                      danger
-                      onClick={() => run(onClearAll)}
-                    />
-                  </div>,
-                  document.body,
-                )}
-            </div>
-          </>
-        )}
+                      <MenuAction
+                        testid="trash-selected"
+                        icon={Trash2}
+                        label={tr('header.menu.trash')}
+                        danger
+                        disabled={!selectedId && selectedIds.length === 0}
+                        onClick={() => run(onTrashSelected)}
+                      />
+                      <MenuAction
+                        testid="clear-all"
+                        icon={ListX}
+                        label={tr('header.menu.clear')}
+                        danger
+                        onClick={() => run(onClearAll)}
+                      />
+                    </div>,
+                    document.body,
+                  )}
+              </div>
+            </>
+          )}
+        </div>
       </div>
       <ActiveFilters
         value={filterSelection}

@@ -395,6 +395,53 @@ describe('TrackListHeader layout', () => {
     }
   })
 
+  it('puts what changes the view before what acts on the tracks, and breaks the row only between the two', () => {
+    renderHeader({
+      viewAction: <span data-testid="view-action" />,
+      listAction: <span data-testid="list-action" />,
+    })
+    const row = screen.getByTestId('track-list-toolbar')
+    const order = [
+      'quality-filter-trigger',
+      'track-sort',
+      'track-sort-direction',
+      'view-action',
+      'track-position',
+      'add-files',
+      'select-all',
+      'list-action',
+      'remove-selected',
+      'list-actions-more',
+    ].map((id) => within(row).getByTestId(id))
+    for (let i = 1; i < order.length; i++) {
+      expect(
+        order[i - 1].compareDocumentPosition(order[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    }
+    const actions = screen.getByTestId('add-files').parentElement as HTMLElement
+    expect(actions.parentElement).toBe(row)
+    for (const id of ['select-all', 'list-action', 'remove-selected', 'list-actions-more']) {
+      expect(actions).toContainElement(screen.getByTestId(id))
+    }
+    expect(actions).not.toContainElement(screen.getByTestId('track-position'))
+  })
+
+  it('still says which filter is on once a narrow panel leaves the filter as an icon', () => {
+    renderHeader()
+    const filter = screen.getByTestId('quality-filter-trigger')
+    expect(filter).toHaveAccessibleName(/All/)
+    expect(within(filter).getByText('All').className).toContain('@[27rem]:')
+  })
+
+  it('still says which sort is on once a narrow panel leaves the sort as an icon', () => {
+    renderHeader()
+    const sort = screen.getByTestId('track-sort')
+    expect(sort).toHaveAccessibleName(
+      `${i18n.t('sidebar.sort.label')}: ${i18n.t('sidebar.sort.import')}`,
+    )
+    expect(within(sort).getByText(i18n.t('sidebar.sort.import')).className).toContain('@[27rem]:')
+  })
+
   // The stars are read like any rating column, so they sort the list too.
   it('sorts the list by stars', () => {
     const setSortBy = vi.fn()

@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack } from '../../../shared/types'
 import i18n from '../i18n'
-import { MatchingSuggestions } from './MatchingSuggestions'
+import { MatchingSuggestions, MatchingSuggestionsToggle } from './MatchingSuggestions'
 
 afterEach(cleanup)
 
@@ -28,11 +28,8 @@ const many = Array.from({ length: 7 }, (_, i) => ({
   times: 10 - i,
 }))
 
-function setup(
-  suggestions = [{ pair: ['1', '2'] as [string, string], times: 27 }],
-  open = true,
-) {
-  const handlers = { onMatch: vi.fn(), onDismiss: vi.fn(), onToggle: vi.fn() }
+function setup(suggestions = [{ pair: ['1', '2'] as [string, string], times: 27 }], open = true) {
+  const handlers = { onMatch: vi.fn(), onDismiss: vi.fn() }
   render(
     <MatchingSuggestions suggestions={suggestions} tracks={TRACKS} open={open} {...handlers} />,
   )
@@ -88,28 +85,17 @@ describe('MatchingSuggestions', () => {
     expect(screen.queryByTestId('matching-suggestions-more')).not.toBeInTheDocument()
   })
 
-  it('folds to one line that says how many wait, for the DJ who does not want them now', () => {
+  it('takes no room at all while closed, so the blocks start right under the toolbar', () => {
     setup(many, false)
+    expect(screen.queryByTestId('matching-suggestions')).not.toBeInTheDocument()
     expect(screen.queryByTestId('matching-suggestion')).not.toBeInTheDocument()
-    const toggle = screen.getByTestId('matching-suggestions-toggle')
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(toggle).toHaveTextContent(i18n.t('sources.matchingSuggested'))
-    expect(screen.getByTestId('matching-suggestions-count')).toHaveTextContent('7')
   })
 
-  it('drops the count while open, where the rows already say what is there', () => {
+  it('says what its rows are with a title that is no longer a control', () => {
     setup(many)
-    expect(screen.getByTestId('matching-suggestions-toggle')).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    )
-    expect(screen.queryByTestId('matching-suggestions-count')).not.toBeInTheDocument()
-  })
-
-  it('folds and unfolds from its own title', () => {
-    const { onToggle } = setup()
-    fireEvent.click(screen.getByTestId('matching-suggestions-toggle'))
-    expect(onToggle).toHaveBeenCalledOnce()
+    const title = screen.getByRole('heading', { name: i18n.t('sources.matchingSuggested') })
+    expect(title.querySelector('button')).toBeNull()
+    expect(title).not.toHaveTextContent('7')
   })
 
   it('leaves out a pair whose tracks it cannot name yet, instead of a blank card', () => {
@@ -124,5 +110,27 @@ describe('MatchingSuggestions', () => {
   it('renders nothing when there is nothing to suggest', () => {
     setup([])
     expect(screen.queryByTestId('matching-suggestions')).not.toBeInTheDocument()
+  })
+})
+
+describe('MatchingSuggestionsToggle', () => {
+  it('opens and closes the suggestions from the toolbar and says which way it is', () => {
+    const onToggle = vi.fn()
+    const { rerender } = render(<MatchingSuggestionsToggle open onToggle={onToggle} />)
+    const toggle = screen.getByTestId('matching-suggestions-toggle')
+    expect(toggle).toHaveAccessibleName(i18n.t('sources.matchingSuggested'))
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(toggle)
+    expect(onToggle).toHaveBeenCalledOnce()
+    rerender(<MatchingSuggestionsToggle open={false} onToggle={onToggle} />)
+    expect(screen.getByTestId('matching-suggestions-toggle')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('stays in place but out of use while a search hides the suggestions', () => {
+    render(<MatchingSuggestionsToggle open disabled onToggle={vi.fn()} />)
+    expect(screen.getByTestId('matching-suggestions-toggle')).toBeDisabled()
   })
 })

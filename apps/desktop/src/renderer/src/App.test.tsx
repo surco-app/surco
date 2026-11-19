@@ -4193,7 +4193,9 @@ describe('App source playlists', () => {
       ])
       await openFactory({ dj: djReads(matchingReads.dj, { rekordbox: { match, collection } }) })
       fireEvent.click(rowTitled('Bravo'))
-      fireEvent.change(await screen.findByTestId('matching-search'), { target: { value: 'brave new' } })
+      fireEvent.change(await screen.findByTestId('matching-search'), {
+        target: { value: 'brave new' },
+      })
       fireEvent.click(await screen.findByTestId('matching-result'))
       await waitFor(() =>
         expect(match).toHaveBeenCalledWith(
@@ -4271,13 +4273,16 @@ describe('App source playlists', () => {
       )
     })
 
-    it('remembers the suggestions folded, so a DJ who hides them does it once', async () => {
+    it('remembers the suggestions closed from the toolbar, so a DJ who hides them does it once', async () => {
       await openFactory({
         dj: playedReads(),
         saveSettings: vi.fn((patch) => Promise.resolve({ ...settings(), ...patch })),
       })
       fireEvent.click(await screen.findByTestId(`source-node-${MATCHING_ID}`))
-      fireEvent.click(await screen.findByTestId('matching-suggestions-toggle'))
+      await screen.findByTestId('matching-suggestion')
+      fireEvent.click(
+        within(screen.getByTestId('track-list-toolbar')).getByTestId('matching-suggestions-toggle'),
+      )
       await waitFor(() =>
         expect(window.api.saveSettings).toHaveBeenCalledWith(
           expect.objectContaining({ matchingSuggestionsOpen: false }),
@@ -4285,7 +4290,7 @@ describe('App source playlists', () => {
       )
       await waitFor(() =>
         expect(screen.getByTestId('matching-suggestions-toggle')).toHaveAttribute(
-          'aria-expanded',
+          'aria-pressed',
           'false',
         ),
       )
@@ -5120,6 +5125,7 @@ describe('App source playlists', () => {
       expect(
         within(screen.getByTestId('track-list-toolbar')).getByTestId('matching-create-playlist'),
       ).toBeInTheDocument()
+      expect(screen.queryByTestId('matching-suggestions-toggle')).not.toBeInTheDocument()
     })
 
     describe('with tracks selected', () => {

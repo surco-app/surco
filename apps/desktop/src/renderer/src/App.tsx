@@ -78,7 +78,11 @@ import { Confetti } from './components/Confetti'
 import { EmptyDisc } from './components/EmptyDisc'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { MatchingCreate } from './components/MatchingCreate'
-import { MatchingSuggestions } from './components/MatchingSuggestions'
+import {
+  MatchingSuggestions,
+  MatchingSuggestionsToggle,
+  nameable,
+} from './components/MatchingSuggestions'
 import { ModalExit } from './components/ModalShell'
 import {
   MusicReviewColumn,
@@ -3370,6 +3374,8 @@ export default function App(): React.JSX.Element {
     matched: inRekordbox ? matchingPairs : matchingPathPairs,
     dismissed: settings?.matchingDismissed ?? [],
   })
+  const inMatching = sourceProgram !== null && browser.playlist?.id === MATCHING_ID
+  const suggestionsOpen = settings?.matchingSuggestionsOpen ?? true
   const suggestedForSelected = useMemo(
     () =>
       suggestionSelf
@@ -4606,6 +4612,18 @@ export default function App(): React.JSX.Element {
                       null : (
                         <>
                           <TrackListHeader
+                            viewAction={
+                              inMatching &&
+                              nameable(matchingSuggestions, suggestionTracks).length > 0 ? (
+                                <MatchingSuggestionsToggle
+                                  open={suggestionsOpen}
+                                  disabled={deferredSearch.trim() !== ''}
+                                  onToggle={() =>
+                                    saveSettings({ matchingSuggestionsOpen: !suggestionsOpen })
+                                  }
+                                />
+                              ) : undefined
+                            }
                             listAction={
                               sourceProgram !== null && browser.playlist?.id === MATCHING_ID ? (
                                 <MatchingCreate
@@ -4729,14 +4747,7 @@ export default function App(): React.JSX.Element {
                               <MatchingSuggestions
                                 suggestions={matchingSuggestions}
                                 tracks={suggestionTracks}
-                                open={settings?.matchingSuggestionsOpen ?? true}
-                                onToggle={() =>
-                                  saveSettings({
-                                    matchingSuggestionsOpen: !(
-                                      settings?.matchingSuggestionsOpen ?? true
-                                    ),
-                                  })
-                                }
+                                open={suggestionsOpen}
                                 onMatch={matchSuggestion}
                                 onDismiss={dismissSuggestion}
                               />
