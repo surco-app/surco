@@ -581,6 +581,41 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
+  it('slides the playing wave by fractions of a pixel on its own layers, since a wave that can only land on whole pixels advances in uneven hops', () => {
+    const { rerender } = setup({ playing: true, playheadMs: bar(32) })
+    const layers = () => [
+      screen.getByTestId('cue-detail-wave-layer').style.transform,
+      screen.getByTestId('cue-detail-marks-layer').style.transform,
+    ]
+    const lefts = () => screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)
+    const still = lefts()
+    expect(layers()).toEqual(['translate3d(0px, 0, 0)', 'translate3d(0px, 0, 0)'])
+    rerender({ playing: true, playheadMs: bar(32) + 20 })
+    expect(lefts()).toEqual(still)
+    expect(layers()).toEqual(['translate3d(-0.25px, 0, 0)', 'translate3d(-0.25px, 0, 0)'])
+    rerender({ playing: true, playheadMs: bar(32) + 100 })
+    expect(lefts()).not.toEqual(still)
+    expect(layers()).toEqual(['translate3d(-0.25px, 0, 0)', 'translate3d(-0.25px, 0, 0)'])
+  })
+
+  it('steps the playing wave by device pixels on a Retina screen, so the lines stay sharp where the screen can draw them', () => {
+    vi.stubGlobal('devicePixelRatio', 2)
+    const { rerender } = setup({ playing: true, playheadMs: bar(32) })
+    const still = screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)
+    rerender({ playing: true, playheadMs: bar(32) + 40 })
+    expect(screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)).not.toEqual(still)
+    expect(screen.getByTestId('cue-detail-wave-layer').style.transform).toBe(
+      'translate3d(0px, 0, 0)',
+    )
+    vi.unstubAllGlobals()
+  })
+
+  it('draws a paused wave exactly where it is, with no layer offset to soften its lines', () => {
+    setup({ playheadMs: bar(32) + 20 })
+    expect(screen.getByTestId('cue-detail-wave-layer').style.transform).toBe('')
+    expect(screen.getByTestId('cue-detail-marks-layer').style.transform).toBe('')
+  })
+
   // The playing preview moves the playhead every frame. Measuring the stage and the canvas
   // forces the browser to lay the page out, so the size comes from the resize watcher and a
   // moving playhead only slides the strip it has.

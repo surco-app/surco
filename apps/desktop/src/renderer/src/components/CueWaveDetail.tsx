@@ -96,12 +96,28 @@ export function CueZoom({
   )
 }
 
+function subpixelSlide(
+  beats: number[],
+  playheadMs: number,
+  bars: number,
+  width: number,
+): { viewMs: number; px: number } {
+  const window = detailWindow(beats, playheadMs, bars)
+  const span = window.toMs - window.fromMs
+  if (!(width > 0) || !(span > 0)) return { viewMs: playheadMs, px: 0 }
+  const dpr = globalThis.devicePixelRatio || 1
+  const px = (playheadMs * width) / span
+  const snapped = Math.round(px * dpr) / dpr
+  return { viewMs: (snapped * span) / width, px: Math.round((px - snapped) * 1000) / 1000 }
+}
+
 export function CueWaveDetail({
   source,
   grid,
   cues,
   selected,
   playheadMs,
+  playing,
   bars,
   quantize,
   onScrub,
@@ -127,6 +143,7 @@ export function CueWaveDetail({
   cues: WaveCue[]
   selected: string | null
   playheadMs: number
+  playing?: boolean
   bars: number
   quantize: CueQuantize
   onScrub: (ms: number) => void
@@ -152,8 +169,19 @@ export function CueWaveDetail({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const beats = useMemo(() => grid.map((b) => b.ms), [grid])
   const lines = useMemo(() => barLines(grid).map((b) => b.ms), [grid])
-  const { fromMs, toMs } = detailWindow(beats, playheadMs, bars)
+  const painter = useRef<{
+    g: CanvasRenderingContext2D
+    width: number
+    height: number
+  } | null>(null)
+  const slide = playing
+    ? subpixelSlide(beats, playheadMs, bars, painter.current?.width ?? 0)
+    : { viewMs: playheadMs, px: 0 }
+  const { fromMs, toMs } = detailWindow(beats, slide.viewMs, bars)
   const span = toMs - fromMs
+  const layerStyle = playing
+    ? { transform: `translate3d(${-slide.px || 0}px, 0, 0)`, willChange: 'transform' }
+    : undefined
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
   const latest = useRef({ span, beats, onScrub, onZoom, onPlace })
   latest.current = { span, beats, onScrub, onZoom, onPlace }
@@ -294,11 +322,6 @@ export function CueWaveDetail({
     height: number
     dpr: number
   } | null>(null)
-  const painter = useRef<{
-    g: CanvasRenderingContext2D
-    width: number
-    height: number
-  } | null>(null)
   const sync = (force: boolean) => {
     const canvas = canvasRef.current
     const stage = stageRef.current
@@ -438,243 +461,247 @@ export function CueWaveDetail({
           }}
           className="relative w-full shrink-0 select-none overflow-hidden"
         >
-          {quantize === 'beat' &&
-            grid
-              .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
-              .map((b) => (
+          <div data-testid="cue-detail-wave-layer" className="absolute inset-0" style={layerStyle}>
+            {quantize === 'beat' &&
+              grid
+                .filter((b) => b.beat !== 1 && b.ms >= fromMs && b.ms <= toMs)
+                .map((b) => (
+                  <span
+                    key={b.ms}
+                    data-testid="cue-detail-beat"
+                    aria-hidden="true"
+                    style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
+                    className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/15"
+                  />
+                ))}
+            {lines
+              .filter((ms) => ms >= fromMs && ms <= toMs)
+              .map((ms) => (
                 <span
-                  key={b.ms}
-                  data-testid="cue-detail-beat"
+                  key={ms}
+                  data-testid="cue-detail-bar"
+                  data-ms={ms}
                   aria-hidden="true"
-                  style={{ left: pct(b.ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                  className="absolute bottom-0 w-px bg-[var(--color-fg-dim)]/15"
+                  style={{
+                    left: pct(ms),
+                    top: `${WAVE_MARK_LANE_PX}px`,
+                    width: '1px',
+                    transform: 'translateX(-50%)',
+                    backgroundColor: 'var(--color-fg-dim)',
+                    opacity: BAR_LINE_OPACITY,
+                  }}
+                  className="absolute bottom-0"
                 />
               ))}
-          {lines
-            .filter((ms) => ms >= fromMs && ms <= toMs)
-            .map((ms) => (
-              <span
-                key={ms}
-                data-testid="cue-detail-bar"
-                data-ms={ms}
-                aria-hidden="true"
-                style={{
-                  left: pct(ms),
-                  top: `${WAVE_MARK_LANE_PX}px`,
-                  width: '1px',
-                  transform: 'translateX(-50%)',
-                  backgroundColor: 'var(--color-fg-dim)',
-                  opacity: BAR_LINE_OPACITY,
-                }}
-                className="absolute bottom-0"
-              />
-            ))}
-          <canvas
-            ref={canvasRef}
-            style={{
-              top: `${WAVE_MARK_LANE_PX}px`,
-              height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
-            }}
-            className="absolute"
-          />
-          {(anchors ?? [])
-            .filter((ms) => ms >= fromMs && ms <= toMs)
-            .map((ms) => (
-              <span
-                key={`anchor${ms}`}
-                data-testid={`cue-detail-anchor-${Math.round(ms)}`}
-                aria-hidden="true"
-                style={{ left: pct(ms), top: 0 }}
-                className="pointer-events-none absolute bottom-0 w-0.5 bg-[var(--color-accent)]"
-              />
-            ))}
+            <canvas
+              ref={canvasRef}
+              style={{
+                top: `${WAVE_MARK_LANE_PX}px`,
+                height: `calc(100% - ${WAVE_MARK_LANE_PX}px)`,
+              }}
+              className="absolute"
+            />
+            {(anchors ?? [])
+              .filter((ms) => ms >= fromMs && ms <= toMs)
+              .map((ms) => (
+                <span
+                  key={`anchor${ms}`}
+                  data-testid={`cue-detail-anchor-${Math.round(ms)}`}
+                  aria-hidden="true"
+                  style={{ left: pct(ms), top: 0 }}
+                  className="pointer-events-none absolute bottom-0 w-0.5 bg-[var(--color-accent)]"
+                />
+              ))}
+          </div>
           <span
             data-testid="cue-detail-playhead"
             aria-hidden="true"
             style={{ top: `${WAVE_MARK_LANE_PX}px` }}
             className="pointer-events-none absolute bottom-0 left-1/2 w-px bg-[var(--color-fg)]"
           />
-          {cursorMs !== undefined && (
-            <span
-              data-testid="cue-detail-cursor"
-              aria-hidden="true"
-              style={{ left: pct(cursorMs), top: `${WAVE_MARK_LANE_PX}px` }}
-              className="pointer-events-none absolute bottom-0 w-px bg-[var(--color-fg)]/40"
-            />
-          )}
-          {calls.map((c) => (
-            <span
-              key={`c${c.key}`}
-              role="img"
-              data-testid={`cue-detail-call-${c.ms + fromMs}`}
-              data-mark="true"
-              data-off-grid={offGrid?.includes(c.key) ? 'true' : 'false'}
-              data-gone={gone.has(c.key) ? 'true' : 'false'}
-              data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
-              aria-hidden="true"
-              onContextMenu={(e) => markMenu(c.key, e)}
-              {...grab(c.key)}
-              style={{
-                ...markStyle(c.at),
-                borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
-                ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
-                ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
-              }}
-              className="absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
-            />
-          ))}
-          {hot.map((h) => {
-            return (
+          <div data-testid="cue-detail-marks-layer" className="absolute inset-0" style={layerStyle}>
+            {cursorMs !== undefined && (
               <span
-                key={`h${h.key}`}
-                role="img"
-                data-testid={`cue-detail-hot-${h.letter}`}
-                data-mark="true"
-                data-off-grid={offGrid?.includes(h.key) ? 'true' : 'false'}
-                data-gone={gone.has(h.key) ? 'true' : 'false'}
-                data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
-                data-selected={selected === h.key ? 'true' : 'false'}
+                data-testid="cue-detail-cursor"
                 aria-hidden="true"
-                onContextMenu={(e) => markMenu(h.key, e)}
-                {...grab(h.key)}
+                style={{ left: pct(cursorMs), top: `${WAVE_MARK_LANE_PX}px` }}
+                className="pointer-events-none absolute bottom-0 w-px bg-[var(--color-fg)]/40"
+              />
+            )}
+            {calls.map((c) => (
+              <span
+                key={`c${c.key}`}
+                role="img"
+                data-testid={`cue-detail-call-${c.ms + fromMs}`}
+                data-mark="true"
+                data-off-grid={offGrid?.includes(c.key) ? 'true' : 'false'}
+                data-gone={gone.has(c.key) ? 'true' : 'false'}
+                data-pending={pendingOf.get(c.key) ? 'true' : 'false'}
+                aria-hidden="true"
+                onContextMenu={(e) => markMenu(c.key, e)}
+                {...grab(c.key)}
+                style={{
+                  ...markStyle(c.at),
+                  borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
+                  ...(movable?.includes(c.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                  ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+                }}
+                className="absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
+              />
+            ))}
+            {hot.map((h) => {
+              return (
+                <span
+                  key={`h${h.key}`}
+                  role="img"
+                  data-testid={`cue-detail-hot-${h.letter}`}
+                  data-mark="true"
+                  data-off-grid={offGrid?.includes(h.key) ? 'true' : 'false'}
+                  data-gone={gone.has(h.key) ? 'true' : 'false'}
+                  data-pending={pendingOf.get(h.key) ? 'true' : 'false'}
+                  data-selected={selected === h.key ? 'true' : 'false'}
+                  aria-hidden="true"
+                  onContextMenu={(e) => markMenu(h.key, e)}
+                  {...grab(h.key)}
+                  style={{
+                    ...markStyle(h.at),
+                    backgroundColor: h.colour,
+                    color: '#000',
+                    ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
+                    ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                  }}
+                  className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[14px] ${
+                    selected === h.key
+                      ? 'ring-2 ring-[var(--color-fg)]'
+                      : offGrid?.includes(h.key)
+                        ? 'ring-2 ring-[var(--color-warn)]'
+                        : ''
+                  }`}
+                >
+                  {h.letter}
+                </span>
+              )
+            })}
+            {ghostMarks?.calls.map((c) => (
+              <span
+                key={`gc${c.key}`}
+                data-testid={`cue-detail-ghost-call-${c.ms + fromMs}`}
+                aria-hidden="true"
+                style={{
+                  ...markStyle(c.at),
+                  borderTopColor: MEMORY_CUE_COLOR,
+                  opacity: GHOST_OPACITY,
+                }}
+                className="pointer-events-none absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
+              />
+            ))}
+            {ghostMarks?.hot.map((h) => (
+              <span
+                key={`gh${h.key}`}
+                data-testid={`cue-detail-ghost-hot-${h.letter}`}
+                aria-hidden="true"
                 style={{
                   ...markStyle(h.at),
-                  backgroundColor: h.colour,
-                  color: '#000',
-                  ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
-                  ...(movable?.includes(h.key) && onMoveMark ? { cursor: 'ew-resize' } : {}),
+                  backgroundColor: 'var(--color-panel-2)',
+                  borderColor: h.colour,
+                  borderStyle: 'solid',
+                  borderWidth: '1.5px',
                 }}
-                className={`absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[14px] ${
-                  selected === h.key
-                    ? 'ring-2 ring-[var(--color-fg)]'
-                    : offGrid?.includes(h.key)
-                      ? 'ring-2 ring-[var(--color-warn)]'
-                      : ''
-                }`}
+                className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[11px] text-[var(--color-fg)]"
               >
                 {h.letter}
               </span>
-            )
-          })}
-          {ghostMarks?.calls.map((c) => (
-            <span
-              key={`gc${c.key}`}
-              data-testid={`cue-detail-ghost-call-${c.ms + fromMs}`}
-              aria-hidden="true"
-              style={{
-                ...markStyle(c.at),
-                borderTopColor: MEMORY_CUE_COLOR,
-                opacity: GHOST_OPACITY,
-              }}
-              className="pointer-events-none absolute z-10 h-0 w-0 border-x-[5px] border-x-transparent border-t-[7px]"
-            />
-          ))}
-          {ghostMarks?.hot.map((h) => (
-            <span
-              key={`gh${h.key}`}
-              data-testid={`cue-detail-ghost-hot-${h.letter}`}
-              aria-hidden="true"
-              style={{
-                ...markStyle(h.at),
-                backgroundColor: 'var(--color-panel-2)',
-                borderColor: h.colour,
-                borderStyle: 'solid',
-                borderWidth: '1.5px',
-              }}
-              className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] text-center text-label font-semibold leading-[11px] text-[var(--color-fg)]"
-            >
-              {h.letter}
-            </span>
-          ))}
-          {(ghost?.rejected ?? [])
-            .filter(
-              (r, i, all) =>
-                r.ms >= fromMs && r.ms <= toMs && all.findIndex((o) => o.ms === r.ms) === i,
-            )
-            .map((r) => (
-              <span
-                key={`gd${r.ms}`}
-                data-testid={`cue-detail-ghost-dropped-${r.ms}`}
-                aria-hidden="true"
-                style={droppedStyle(((r.ms - fromMs) / span) * 100, r)}
-                className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
-              />
             ))}
-          {(proposals ?? [])
-            .filter(({ ms }) => ms >= fromMs && ms <= toMs)
-            .map(({ ms, sure, quietBars }) => (
-              <Fragment key={`p${ms}`}>
+            {(ghost?.rejected ?? [])
+              .filter(
+                (r, i, all) =>
+                  r.ms >= fromMs && r.ms <= toMs && all.findIndex((o) => o.ms === r.ms) === i,
+              )
+              .map((r) => (
                 <span
-                  data-testid={`cue-detail-proposal-${ms}`}
-                  data-sure={sure ? 'true' : 'false'}
+                  key={`gd${r.ms}`}
+                  data-testid={`cue-detail-ghost-dropped-${r.ms}`}
                   aria-hidden="true"
-                  style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px` }}
-                  className={`pointer-events-none absolute bottom-0 border-l border-[var(--color-accent)] ${
-                    sure ? '' : 'border-dashed'
-                  }`}
+                  style={droppedStyle(((r.ms - fromMs) / span) * 100, r)}
+                  className="pointer-events-none absolute z-10 h-3.5 w-3.5 rounded-[3px] border"
                 />
-                <span
-                  role="toolbar"
-                  data-testid={`cue-proposal-${ms}`}
-                  data-sure={sure ? 'true' : 'false'}
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onMouseMove={(e) => e.stopPropagation()}
-                  onMouseEnter={() => onHover?.(null)}
-                  style={{
-                    ...(ms - fromMs > span / 2
-                      ? { right: `${100 - ((ms - fromMs) / span) * 100}%` }
-                      : { left: pct(ms) }),
-                    top: `${WAVE_MARK_LANE_PX + 4}px`,
-                  }}
-                  className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-label font-semibold text-[var(--color-accent)] ${
-                    sure ? '' : 'border-dashed'
-                  } ${ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'}`}
-                >
-                  {t(sure ? 'editor.cues.auto.sure' : 'editor.cues.auto.ask', {
-                    time: formatTime(ms / 1000),
-                  })}
-                  {!compact && (
-                    <span
-                      data-testid={`cue-proposal-why-${ms}`}
-                      className="font-normal text-fg-dim"
+              ))}
+            {(proposals ?? [])
+              .filter(({ ms }) => ms >= fromMs && ms <= toMs)
+              .map(({ ms, sure, quietBars }) => (
+                <Fragment key={`p${ms}`}>
+                  <span
+                    data-testid={`cue-detail-proposal-${ms}`}
+                    data-sure={sure ? 'true' : 'false'}
+                    aria-hidden="true"
+                    style={{ left: pct(ms), top: `${WAVE_MARK_LANE_PX}px` }}
+                    className={`pointer-events-none absolute bottom-0 border-l border-[var(--color-accent)] ${
+                      sure ? '' : 'border-dashed'
+                    }`}
+                  />
+                  <span
+                    role="toolbar"
+                    data-testid={`cue-proposal-${ms}`}
+                    data-sure={sure ? 'true' : 'false'}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onMouseMove={(e) => e.stopPropagation()}
+                    onMouseEnter={() => onHover?.(null)}
+                    style={{
+                      ...(ms - fromMs > span / 2
+                        ? { right: `${100 - ((ms - fromMs) / span) * 100}%` }
+                        : { left: pct(ms) }),
+                      top: `${WAVE_MARK_LANE_PX + 4}px`,
+                    }}
+                    className={`absolute z-20 flex cursor-default items-center gap-1 whitespace-nowrap rounded-full border border-[var(--color-accent)] bg-[var(--color-panel)] py-0.5 pr-0.5 pl-2 text-label font-semibold text-[var(--color-accent)] ${
+                      sure ? '' : 'border-dashed'
+                    } ${ms - fromMs > span / 2 ? 'mr-1.5' : 'ml-1.5'}`}
+                  >
+                    {t(sure ? 'editor.cues.auto.sure' : 'editor.cues.auto.ask', {
+                      time: formatTime(ms / 1000),
+                    })}
+                    {!compact && (
+                      <span
+                        data-testid={`cue-proposal-why-${ms}`}
+                        className="font-normal text-fg-dim"
+                      >
+                        ·{' '}
+                        {quietBars > 0
+                          ? t('editor.cues.auto.why', { count: quietBars })
+                          : t('editor.cues.auto.whyNone')}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      data-testid={`cue-proposal-accept-${ms}`}
+                      aria-label={t('editor.cues.auto.acceptOne')}
+                      onClick={() => onAcceptProposal?.(ms)}
+                      className="press relative flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] after:absolute after:-inset-1 after:content-['']"
                     >
-                      ·{' '}
-                      {quietBars > 0
-                        ? t('editor.cues.auto.why', { count: quietBars })
-                        : t('editor.cues.auto.whyNone')}
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    data-testid={`cue-proposal-accept-${ms}`}
-                    aria-label={t('editor.cues.auto.acceptOne')}
-                    onClick={() => onAcceptProposal?.(ms)}
-                    className="press relative flex h-4 w-4 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] after:absolute after:-inset-1 after:content-['']"
-                  >
-                    <Tooltip label={t('editor.cues.auto.acceptOne')} />
-                    <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    data-testid={`cue-proposal-drop-${ms}`}
-                    aria-label={t('editor.cues.auto.drop')}
-                    onClick={() => onDropProposal?.(ms)}
-                    className="press relative flex h-4 w-4 items-center justify-center rounded-full text-fg-dim after:absolute after:-inset-1 after:content-[''] hover:text-fg"
-                  >
-                    <Tooltip label={t('editor.cues.auto.drop')} />
-                    <X className="h-3 w-3" aria-hidden="true" />
-                  </button>
-                </span>
-              </Fragment>
-            ))}
-          {dragAt !== null && (
-            <span
-              data-testid="cue-detail-drag-ghost"
-              aria-hidden="true"
-              style={{ left: `${dragAt}%` }}
-              className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
-            />
-          )}
+                      <Tooltip label={t('editor.cues.auto.acceptOne')} />
+                      <Check className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      data-testid={`cue-proposal-drop-${ms}`}
+                      aria-label={t('editor.cues.auto.drop')}
+                      onClick={() => onDropProposal?.(ms)}
+                      className="press relative flex h-4 w-4 items-center justify-center rounded-full text-fg-dim after:absolute after:-inset-1 after:content-[''] hover:text-fg"
+                    >
+                      <Tooltip label={t('editor.cues.auto.drop')} />
+                      <X className="h-3 w-3" aria-hidden="true" />
+                    </button>
+                  </span>
+                </Fragment>
+              ))}
+            {dragAt !== null && (
+              <span
+                data-testid="cue-detail-drag-ghost"
+                aria-hidden="true"
+                style={{ left: `${dragAt}%` }}
+                className="pointer-events-none absolute top-0 bottom-0 w-px bg-[var(--color-fg)]/70"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

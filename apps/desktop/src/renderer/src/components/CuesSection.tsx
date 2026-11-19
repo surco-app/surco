@@ -1507,6 +1507,7 @@ function Editing({
           cues={waveCues}
           selected={state.selected}
           playheadMs={playheadMs}
+          playing={audition.playing}
           bars={zoom}
           quantize={quantize}
           onScrub={seekTo}
