@@ -1921,6 +1921,8 @@ describe('CuesSection maximized point corrections', () => {
     const slot = screen.getByTestId('cue-to-call-slot')
     expect(slot).toContainElement(screen.getByTestId('cue-detail-to-call'))
     expect(screen.getByTestId('cue-to-call-sizer')).toHaveTextContent('88 bars to the CALL')
+    expect(slot.style.textAlign).toBe('right')
+    expect(slot.style.fontVariantNumeric).toBe('tabular-nums')
     seek(140000)
     expect(screen.queryByTestId('cue-detail-to-call')).not.toBeInTheDocument()
     expect(screen.getByTestId('cue-to-call-sizer')).toHaveTextContent('88 bars to the CALL')
@@ -2185,6 +2187,23 @@ describe('CuesSection maximized grid', () => {
       expect(value.style.minWidth).toBe('7ch')
       expect(value.style.display).toBe('inline-block')
     }
+  })
+
+  it('grows each grid offset to the left, so its "ms" holds still while the digits change with the beat', async () => {
+    setup(null, READ, { cues: { gridFit: fitAt(454) } })
+    await maximize()
+    await waitFor(() => expect(screen.getByTestId('cues-grid-here')).toBeInTheDocument())
+    for (const id of ['cues-grid-here', 'cues-grid-end'])
+      expect(screen.getByTestId(id).style.textAlign).toBe('right')
+  })
+
+  it('keeps the clock as wide past ten minutes as before, so a long set does not shove the row when it gets there', async () => {
+    setup()
+    await maximize()
+    const clock = screen.getByTestId('cues-position')
+    expect(clock.style.minWidth).toBe('6ch')
+    expect(clock.style.display).toBe('inline-block')
+    expect(clock.style.textAlign).toBe('right')
   })
 
   it('shows how far the grid is from the beats here and at the end, and Auto fits it', async () => {
