@@ -50,7 +50,8 @@ function composed(t: TrackItem): ComposedPaths {
 
 interface LaidOutFrom {
   entries: readonly SourcePlaylistEntry[]
-  rows: readonly (string | undefined)[]
+  ids: readonly (string | undefined)[]
+  paths: readonly (string | undefined)[]
 }
 
 const laidOutFrom = new WeakMap<PlaylistScope, LaidOutFrom>()
@@ -58,8 +59,8 @@ const laidOutFrom = new WeakMap<PlaylistScope, LaidOutFrom>()
 function sameLayout(a: LaidOutFrom, b: LaidOutFrom): boolean {
   return (
     a.entries === b.entries &&
-    a.rows.length === b.rows.length &&
-    a.rows.every((r, i) => r === b.rows[i])
+    a.ids.length === b.ids.length &&
+    a.ids.every((id, i) => id === b.ids[i] && a.paths[i] === b.paths[i])
   )
 }
 
@@ -98,7 +99,8 @@ export function playlistView(
   const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
   const addedOf = new Map<string, number>()
-  const rows: (string | undefined)[] = []
+  const rowIds: (string | undefined)[] = []
+  const rowPaths: (string | undefined)[] = []
   let pending: string[] = []
   // A separator with no row id of its own is keyed by the row it follows and its place in
   // that run, so a row added elsewhere does not rename it.
@@ -113,7 +115,8 @@ export function playlistView(
     }
     after = e.path ?? ''
     const t = e.path ? byPath.get(e.path.normalize('NFC')) : undefined
-    rows.push(t && `${t.id}\n${t.inputPath}`)
+    rowIds.push(t?.id)
+    rowPaths.push(t?.inputPath)
     if (t && e.linkId) linksOf.set(t.id, [...(linksOf.get(t.id) ?? []), e.linkId])
     if (!t) return
     const times = seen.get(t.id) ?? 0
@@ -128,7 +131,7 @@ export function playlistView(
     if (pending.length) separatorBefore.set(key, pending)
     pending = []
   })
-  const from = { entries, rows }
+  const from = { entries, ids: rowIds, paths: rowPaths }
   const before = previous && laidOutFrom.get(previous)
   const view =
     previous && before && sameLayout(before, from)
