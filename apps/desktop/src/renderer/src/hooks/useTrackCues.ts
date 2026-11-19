@@ -4,6 +4,7 @@ import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { GridAudit } from '../../../shared/gridAudit'
 import type { GridFit } from '../../../shared/gridEdit'
 import type { FineWave, QueuedCues, SurcoGrid, TrackCues } from '../../../shared/types'
+import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
 import { beatsKey } from '../lib/gridAuditCheck'
 
 export const trackCuesQuery = (contentId: string) => ({
@@ -28,6 +29,7 @@ export const cueWaveDetailQuery = (contentId: string) => ({
   queryKey: ['rekordbox-cue-wave-detail', contentId],
   queryFn: () => window.api.cues.waveDetail(contentId),
   staleTime: Number.POSITIVE_INFINITY,
+  gcTime: HEAVY_PROBE_GC_MS,
 })
 
 export const surcoGridQuery = (contentId: string) => ({
@@ -40,6 +42,7 @@ export const cueDropInputQuery = (contentId: string) => ({
   queryKey: ['rekordbox-cue-drop-input', contentId],
   queryFn: () => window.api.cues.dropInput(contentId),
   staleTime: Number.POSITIVE_INFINITY,
+  gcTime: HEAVY_PROBE_GC_MS,
 })
 
 export const gridFitQuery = (contentId: string) => ({
