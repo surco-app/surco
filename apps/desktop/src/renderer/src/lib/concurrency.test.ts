@@ -120,6 +120,26 @@ describe('createPriorityLimit', () => {
     await next
   })
 
+  it('moves a whole selection to the front without freezing the window, since selecting every track of a big library prioritizes thousands of queued reads at once', async () => {
+    const limit = createPriorityLimit(1)
+    const started: string[] = []
+    let releaseFirst: () => void = () => {}
+    const first = limit.run('first', () => new Promise<void>((r) => (releaseFirst = r)))
+    const keys = Array.from({ length: 30000 }, (_, i) => `k${i}`)
+    const rest = keys.map((k) =>
+      limit.run(k, async () => {
+        started.push(k)
+      }),
+    )
+    const wanted = keys.slice(15000).reverse()
+    const t = performance.now()
+    limit.prioritize(wanted)
+    expect(performance.now() - t).toBeLessThan(500)
+    releaseFirst()
+    await Promise.all([first, ...rest])
+    expect(started).toEqual([...wanted, ...keys.slice(0, 15000)])
+  })
+
   it('ignores keys that are running or not queued', async () => {
     const limit = createPriorityLimit(1)
     const started: string[] = []

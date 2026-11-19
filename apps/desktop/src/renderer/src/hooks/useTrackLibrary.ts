@@ -817,24 +817,25 @@ export function useTrackLibrary({
       .finally(() => {
         if (!urgent) backgroundCompletions.current -= 1
       })
-    if (urgent) readSlot.current.prioritize([current.id])
     completing.current.set(current.id, completion)
     return completion
   }
   const completeTrackMeta = useStableCallback((id: string): Promise<void> => {
     const current = tracksRef.current.find((t) => t.id === id)
     if (!current?.metaPartial) return completing.current.get(id) ?? Promise.resolve()
-    return completeRow(current, true)
+    const queued = !completing.current.has(id)
+    const completion = completeRow(current, true)
+    if (queued) readSlot.current.prioritize([id])
+    return completion
   })
 
   const completeTracksMeta = useStableCallback((ids: string[]): void => {
     const waiting = ids.filter((id) => !completing.current.has(id))
     if (waiting.length === 0) return
     const byId = new Map(tracksRef.current.map((t) => [t.id, t]))
-    for (const id of waiting) {
-      const current = byId.get(id)
-      if (current?.metaPartial) void completeRow(current, true)
-    }
+    const queued = waiting.filter((id) => byId.get(id)?.metaPartial)
+    for (const id of queued) void completeRow(byId.get(id) as TrackItem, true)
+    readSlot.current.prioritize(queued)
   })
 
   // The rows that came on screen with nothing to paint: a light read left their file's art
@@ -843,8 +844,11 @@ export function useTrackLibrary({
     !!t.metaPartial && !t.sourcePreview?.coverUrl && !t.embeddedCover
   const readCoversOnScreen = useStableCallback((ids: string[]): void => {
     const wanted = new Set(ids)
-    for (const t of tracksRef.current)
-      if (wanted.has(t.id) && artUnread(t)) void completeRow(t, true)
+    const queued = tracksRef.current.filter(
+      (t) => wanted.has(t.id) && artUnread(t) && !completing.current.has(t.id),
+    )
+    for (const t of queued) void completeRow(t, true)
+    readSlot.current.prioritize(queued.map((t) => t.id))
   })
   // Every row of the list, behind whatever is already queued: the DJ asked for the rows
   // with no cover, and a row whose art is unread is not known to have none.

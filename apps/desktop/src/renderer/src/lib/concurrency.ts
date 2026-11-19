@@ -42,10 +42,13 @@ export function createPriorityLimit(limit: number): PriorityLimit {
       }
     },
     prioritize(keys) {
-      const wanted = new Set(keys)
-      const first = [...wanted].flatMap((k) => waiting.filter((w) => w.key === k))
+      const wanted = new Map<string, typeof waiting>()
+      for (const key of keys) wanted.set(key, [])
+      const rest: typeof waiting = []
+      for (const w of waiting) (wanted.get(w.key) ?? rest).push(w)
+      const first = [...wanted.values()].flat()
       if (first.length === 0) return
-      waiting = [...first, ...waiting.filter((w) => !wanted.has(w.key))]
+      waiting = [...first, ...rest]
     },
   }
 }
