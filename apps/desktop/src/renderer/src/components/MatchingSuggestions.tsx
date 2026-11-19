@@ -1,4 +1,4 @@
-import { ChevronRight, X } from 'lucide-react'
+import { Sparkles, X } from 'lucide-react'
 import type React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -25,54 +25,65 @@ function TrackLine({ track }: { track: CollectionTrack }): React.JSX.Element {
   )
 }
 
+export function nameable(
+  suggestions: readonly PairSuggestion[],
+  tracks: ReadonlyMap<string, CollectionTrack>,
+): PairSuggestion[] {
+  return suggestions.filter((s) => tracks.has(s.pair[0]) && tracks.has(s.pair[1]))
+}
+
+export function MatchingSuggestionsToggle({
+  open,
+  disabled = false,
+  onToggle,
+}: {
+  open: boolean
+  disabled?: boolean
+  onToggle: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  return (
+    <button
+      type="button"
+      data-testid="matching-suggestions-toggle"
+      aria-pressed={open}
+      aria-label={tr('sources.matchingSuggested')}
+      disabled={disabled}
+      onClick={onToggle}
+      className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-[var(--color-accent)]"
+    >
+      <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+      <Tooltip label={tr('sources.matchingSuggested')} />
+    </button>
+  )
+}
+
 export function MatchingSuggestions({
   suggestions,
   tracks,
   open,
-  onToggle,
   onMatch,
   onDismiss,
 }: {
   suggestions: readonly PairSuggestion[]
   tracks: ReadonlyMap<string, CollectionTrack>
   open: boolean
-  onToggle: () => void
   onMatch: (suggestion: PairSuggestion) => void
   onDismiss: (suggestion: PairSuggestion) => void
 }): React.JSX.Element | null {
   const { t: tr } = useTranslation()
   const [shown, setShown] = useState(STEP)
-  const named = suggestions.filter((s) => tracks.has(s.pair[0]) && tracks.has(s.pair[1]))
+  const named = nameable(suggestions, tracks)
   if (named.length === 0) return null
   return (
-    <section
-      data-testid="matching-suggestions"
-      className="mx-3 mb-2 flex flex-col border-b border-[var(--color-line)] pb-1.5"
-    >
-      <h2>
-        <button
-          type="button"
-          data-testid="matching-suggestions-toggle"
-          aria-expanded={open}
-          onClick={onToggle}
-          className="press flex h-7 w-full items-center gap-1.5 rounded-md px-1.5 text-left text-xs font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <ChevronRight
-            aria-hidden="true"
-            className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
-          />
-          <span className="min-w-0 flex-1 truncate">{tr('sources.matchingSuggested')}</span>
-          {!open && (
-            <span
-              data-testid="matching-suggestions-count"
-              className="font-normal text-fg-faint tabular-nums"
-            >
-              {named.length}
-            </span>
-          )}
-        </button>
-      </h2>
-      <SectionBody open={open}>
+    <SectionBody open={open}>
+      <section
+        data-testid="matching-suggestions"
+        className="mx-3 mb-2 flex flex-col border-b border-[var(--color-line)] pb-1.5"
+      >
+        <h2 className="px-2.5 py-1 text-xs font-medium text-fg-dim">
+          {tr('sources.matchingSuggested')}
+        </h2>
         <div className="flex flex-col gap-0.5 pt-1">
           {named.slice(0, shown).map((s) => (
             <div
@@ -134,7 +145,7 @@ export function MatchingSuggestions({
             </button>
           )}
         </div>
-      </SectionBody>
-    </section>
+      </section>
+    </SectionBody>
   )
 }
