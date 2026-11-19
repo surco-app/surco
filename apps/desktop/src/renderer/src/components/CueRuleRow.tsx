@@ -71,16 +71,23 @@ function slotCount(rule: CueRule): number {
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
 }
 
-function clipBox(el: HTMLElement): { top: number; right: number; bottom: number } {
+const MENU_GAP = 4
+
+function clipBox(el: HTMLElement): {
+  top: number
+  right: number
+  bottom: number
+  scroller: HTMLElement | null
+} {
   for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
     const style = getComputedStyle(node)
     if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`)) {
       const { top, left, right, bottom } = node.getBoundingClientRect()
       const inner = node.clientWidth > 0 ? left + node.clientLeft + node.clientWidth : right
-      return { top, right: inner, bottom }
+      return { top, right: inner, bottom, scroller: node }
     }
   }
-  return { top: 0, right: window.innerWidth, bottom: window.innerHeight }
+  return { top: 0, right: window.innerWidth, bottom: window.innerHeight, scroller: null }
 }
 
 function colorAt(color: FlowColor, slot: number): number {
@@ -125,14 +132,16 @@ export function CueRuleRow({
     const palette = paletteRef.current
     const anchor = palette?.parentElement
     if (!open || !palette || !anchor) return
-    const { width, height } = palette.getBoundingClientRect()
+    const popping = palette.getBoundingClientRect()
+    const width = palette.offsetWidth || popping.width
+    const height = (palette.offsetHeight || popping.height) + MENU_GAP
     const at = anchor.getBoundingClientRect()
     const clip = clipBox(palette)
     setPaletteRight(at.left + width > clip.right)
-    const cutBelow = at.bottom + height > clip.bottom
+    const below = at.bottom + height - clip.bottom
     const fitsAbove = at.top - height >= clip.top
-    setMenuUp(cutBelow && fitsAbove)
-    if (cutBelow && !fitsAbove) palette.scrollIntoView?.({ block: 'nearest' })
+    setMenuUp(below > 0 && fitsAbove)
+    if (below > 0 && !fitsAbove && clip.scroller) clip.scroller.scrollTop += below
   }, [open])
 
   const closeToToken = () => {

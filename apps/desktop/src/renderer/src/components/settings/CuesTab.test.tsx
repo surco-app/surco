@@ -609,22 +609,14 @@ describe('CuesTab', () => {
       if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 300)
       return box(500, 20, 100, 20)
     })
-    const revealed: (string | null)[] = []
-    const original = Element.prototype.scrollIntoView
-    Element.prototype.scrollIntoView = function (this: Element) {
-      revealed.push(this.getAttribute('data-testid'))
-    }
-    afterTest = () => {
-      spy.mockRestore()
-      Element.prototype.scrollIntoView = original
-    }
+    afterTest = () => spy.mockRestore()
     render(
       <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
         <Harness />
       </div>,
     )
     fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
-    expect(revealed).toEqual([])
+    expect(screen.getByTestId('scroller').scrollTop).toBe(0)
     fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
     spy.mockImplementation(function (this: Element) {
       if (this.getAttribute('data-testid') === 'scroller') return box(0, 700, 0, 1093)
@@ -632,7 +624,45 @@ describe('CuesTab', () => {
       return box(300, 20, 100, 20)
     })
     fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
-    expect(revealed).toEqual(['cue-rule-0-color-0-palette'])
+    expect(screen.getByTestId('scroller').scrollTop).toBe(104)
+  })
+
+  it('places a rule colour picker by its full size and the gap to its square, not by the size it has while it pops in, so its last condition is never cut by a few pixels', () => {
+    const box = (top: number, height: number, left = 0, width = 300) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top,
+        bottom: top + height,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, 720, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 299)
+      return box(396, 20, 100, 20)
+    })
+    const full = vi
+      .spyOn(HTMLElement.prototype, 'offsetHeight', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette' ? 305 : 0
+      })
+    afterTest = () => {
+      spy.mockRestore()
+      full.mockRestore()
+    }
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toHaveAttribute('data-side', 'top')
   })
 
   it('counts the scrollbar of Settings as outside when placing a rule colour picker, so its right edge never slides under it', () => {
