@@ -73,6 +73,22 @@ export function rowKeys(tracks: readonly { id: string }[]): string[] {
   })
 }
 
+export function playlistPositions(
+  all: readonly { id: string }[],
+  shown: readonly { id: string }[],
+): (number | undefined)[] {
+  let next = 0
+  return shown.map((row) => {
+    for (let i = next; i < all.length; i++) {
+      if (all[i].id === row.id) {
+        next = i + 1
+        return i + 1
+      }
+    }
+    return undefined
+  })
+}
+
 export function distinctById<T extends { id: string }>(tracks: T[]): T[] {
   const seen = new Set<string>()
   const distinct = tracks.filter((t) => !seen.has(t.id) && !!seen.add(t.id))

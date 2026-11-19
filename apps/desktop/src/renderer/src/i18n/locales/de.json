@@ -3814,6 +3814,7 @@
     "submenu": "Ansicht",
     "menu": "Listenansicht",
     "listWaves": "Wellenformen zeigen",
+    "listPositions": "Nummern zeigen",
     "railNames": "Namen zeigen",
     "sidebar": "Seitenleiste zeigen",
     "hideSidebar": "Seitenleiste ausblenden"

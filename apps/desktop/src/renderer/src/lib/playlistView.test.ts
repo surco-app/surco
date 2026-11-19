@@ -6,6 +6,7 @@ import {
   blocksWith,
   distinctById,
   playlistMembership,
+  playlistPositions,
   playlistView,
   rowKeys,
 } from './playlistView'
@@ -310,6 +311,28 @@ describe('blocksOf with a track in two blocks', () => {
 describe('rowKeys', () => {
   it('keys each repeat of a track apart, so React and the separators can tell the rows apart', () => {
     expect(rowKeys(['a', 'c', 'c', 'c'].map((id) => ({ id })))).toEqual(['a', 'c', 'c~1', 'c~2'])
+  })
+})
+
+// The number on a row is where the track sits in the playlist, the one a DJ reads off
+// rekordbox, so a search or a filter must not renumber what is left on screen.
+describe('playlistPositions', () => {
+  const ids = (list: string[]) => list.map((id) => ({ id }))
+
+  it('numbers every row of the playlist from one', () => {
+    expect(playlistPositions(ids(['a', 'b', 'c']), ids(['a', 'b', 'c']))).toEqual([1, 2, 3])
+  })
+
+  it('keeps the playlist number of the rows a search leaves on screen', () => {
+    expect(playlistPositions(ids(['a', 'b', 'c', 'd']), ids(['b', 'd']))).toEqual([2, 4])
+  })
+
+  it('numbers each repeat of a track by its own place', () => {
+    expect(playlistPositions(ids(['a', 'c', 'b', 'c']), ids(['c', 'b', 'c']))).toEqual([2, 3, 4])
+  })
+
+  it('leaves a row the playlist does not hold without a number', () => {
+    expect(playlistPositions(ids(['a', 'b']), ids(['x', 'b']))).toEqual([undefined, 2])
   })
 })
 

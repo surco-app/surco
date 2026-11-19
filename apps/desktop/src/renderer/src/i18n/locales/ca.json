@@ -3814,6 +3814,7 @@
     "submenu": "Visualització",
     "menu": "Visualització de la llista",
     "listWaves": "Mostrar les ones",
+    "listPositions": "Mostrar els números",
     "railNames": "Mostrar els noms",
     "sidebar": "Mostrar la barra lateral",
     "hideSidebar": "Amagar la barra lateral"

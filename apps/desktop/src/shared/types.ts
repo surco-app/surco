@@ -360,6 +360,7 @@ export interface Settings {
   // full-file decode entirely. Persisted so the choice sticks across tracks and restarts.
   showWaveform: boolean
   showListWaves: boolean
+  showListPositions: boolean
   matchingSuggestionsOpen: boolean
   showRailNames: boolean
   showSidebar: boolean

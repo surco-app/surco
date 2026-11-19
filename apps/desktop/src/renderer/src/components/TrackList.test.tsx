@@ -114,6 +114,7 @@ function renderList(
     keyNotation,
     showWaves,
     scrollRootRef,
+    positions,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -131,6 +132,7 @@ function renderList(
     keyNotation?: KeyNotation
     showWaves?: boolean
     scrollRootRef?: { current: HTMLElement | null }
+    positions?: readonly (number | undefined)[]
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -162,6 +164,7 @@ function renderList(
       duplicateRankById={duplicateRankById}
       separatorBefore={separatorBefore}
       trailingSeparators={trailingSeparators}
+      positions={positions}
       reorder={reorder}
       scrollRootRef={scrollRootRef}
       pendingCuePaths={pendingCuePaths}
@@ -230,6 +233,23 @@ describe('TrackList', () => {
     expect(
       wrapperOf('s1').compareDocumentPosition(wrapperOf('b')) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
+  })
+
+  // A playlist is read by its numbers ("the third one"), so each row carries its place on
+  // the cover, where it costs the row no width.
+  it('shows each row its place in the playlist on the cover', () => {
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], { positions: [7, 128] })
+    const shown = screen.getAllByTestId('track-row')
+    expect(within(shown[0]).getByTestId('track-number')).toHaveTextContent(/^7$/)
+    expect(within(shown[1]).getByTestId('track-number')).toHaveTextContent(/^128$/)
+  })
+
+  it('shows no number outside a playlist, or on a row the playlist does not hold', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+    cleanup()
+    renderList([track({ id: 'a' }), track({ id: 'b' })], null, [], { positions: [undefined, 2] })
+    expect(screen.getAllByTestId('track-number')).toHaveLength(1)
   })
 
   describe('a track in two Matching blocks', () => {

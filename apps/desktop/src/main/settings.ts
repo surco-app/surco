@@ -169,6 +169,7 @@ export const defaults: Settings = {
   resultsWidth: null,
   showWaveform: true,
   showListWaves: true,
+  showListPositions: true,
   matchingSuggestionsOpen: true,
   showRailNames: true,
   showSidebar: true,

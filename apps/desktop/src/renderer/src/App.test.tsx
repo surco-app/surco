@@ -166,6 +166,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     theme: 'system',
     density: 'normal',
     showListWaves: true,
+    showListPositions: true,
     matchingSuggestionsOpen: true,
     showRailNames: true,
     showSidebar: true,
@@ -642,6 +643,37 @@ describe('App Engine DJ cues', () => {
     fireEvent.click(await screen.findByTestId('source-node-7'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
+
+  // A playlist is read by its numbers, the files dropped into Tracks are not one.
+  it('numbers the rows of a playlist in its own order, and not the rows of Tracks', async () => {
+    openEngine()
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-number').map((n) => n.textContent)).toEqual(['1', '2']),
+    )
+  })
+
+  // Sorted by artist the rows no longer sit in the playlist's order, and its numbers
+  // down the side would read as a ranking of that sort.
+  it('drops the numbers while the playlist is sorted another way', async () => {
+    openEngine()
+    await openFriday()
+    await waitFor(() => expect(screen.getAllByTestId('track-number')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    await waitFor(() => expect(screen.queryByTestId('track-number')).not.toBeInTheDocument())
+  })
+
+  it('leaves the playlist rows bare once the numbers are turned off', async () => {
+    openEngine({ getSettings: vi.fn().mockResolvedValue(settings({ showListPositions: false })) })
+    await openFriday()
+    expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+  })
 
   // A library is the DJ's collection, not a list dropped to be converted: over a playlist
   // with nothing picked the header's Convert has nothing to do, and the count follows the

@@ -25,6 +25,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
     onTrashSelected: vi.fn(),
     onTrashSuspects: vi.fn(),
     onToggleWaves: vi.fn(),
+    onTogglePositions: vi.fn(),
     onToggleSidebar: vi.fn(),
     onOpenLocation: vi.fn(),
   }
@@ -56,6 +57,7 @@ function renderHeader(over: Partial<Parameters<typeof TrackListHeader>[0]> = {})
       reviewDetail="The 1 track in the list. Changes the file"
       listCommands={() => []}
       showWaves
+      showPositions
       showSidebar
       {...handlers}
       {...over}
@@ -519,6 +521,17 @@ describe('TrackListHeader view menu', () => {
     fireEvent.click(item)
     expect(onToggleWaves).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('menuitemcheckbox')).toBeNull()
+  })
+
+  it('offers to hide the playlist numbers and says they are shown now', () => {
+    const { onTogglePositions } = renderHeader()
+
+    fireEvent.contextMenu(screen.getByTestId('track-list-toolbar'))
+
+    const item = screen.getByRole('menuitemcheckbox', { name: i18n.t('view.listPositions') })
+    expect(item).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(item)
+    expect(onTogglePositions).toHaveBeenCalledTimes(1)
   })
 
   it('leaves the search field its own text menu, so copy and paste still work there', () => {
