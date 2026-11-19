@@ -14,7 +14,7 @@ function build(locale = 'en', mac = true, windows = false) {
     checkForUpdates: vi.fn(),
     mac,
     windows,
-    view: { listWaves: true, railNames: true, sidebar: true },
+    view: { listWaves: true, listPositions: false, railNames: true, sidebar: true },
   })
   return { template, run }
 }
@@ -162,6 +162,18 @@ describe('View menu list waves', () => {
     expect(item.checked).toBe(true)
     click(item)
     expect(run).toHaveBeenCalledWith('toggle-list-waves')
+  })
+})
+
+// The playlist numbers are a view choice too, so the View menu carries them beside the waves.
+describe('View menu playlist numbers', () => {
+  it('ticks the numbers only while they are shown and toggles them through the command', () => {
+    const { template, run } = build()
+    const item = itemFor(menu(template, 'View'), 'Show Playlist Numbers')
+    expect(item.type).toBe('checkbox')
+    expect(item.checked).toBe(false)
+    click(item)
+    expect(run).toHaveBeenCalledWith('toggle-list-positions')
   })
 })
 

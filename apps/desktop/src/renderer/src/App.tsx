@@ -4097,6 +4097,7 @@ export default function App(): React.JSX.Element {
       toggleLanguage: () => void i18n.changeLanguage(nextLocale(i18n.language)),
       toggleTheme,
       toggleListWaves,
+      toggleListPositions,
       toggleRailNames,
       toggleSidebar,
       clearMeta,

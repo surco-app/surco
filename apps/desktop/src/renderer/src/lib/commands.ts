@@ -318,6 +318,7 @@ export interface CommandDeps {
   // Rotates the UI theme through system → light → dark; global chrome, so it's always live.
   toggleTheme: () => void
   toggleListWaves: () => void
+  toggleListPositions: () => void
   toggleRailNames: () => void
   toggleSidebar: () => void
   // Empties every metadata field on the current selection (the Editor's clear button).
@@ -456,6 +457,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleLanguage,
     toggleTheme,
     toggleListWaves,
+    toggleListPositions,
     toggleRailNames,
     toggleSidebar,
     clearMeta,
@@ -1188,6 +1190,14 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('toggle-list-waves'),
       enabled: true,
       run: toggleListWaves,
+    },
+    {
+      id: 'toggle-list-positions',
+      group: 'app',
+      title: tr('commands.toggleListPositions'),
+      hint: hintFor('toggle-list-positions'),
+      enabled: true,
+      run: toggleListPositions,
     },
     {
       id: 'toggle-rail-names',

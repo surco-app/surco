@@ -105,6 +105,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     toggleLanguage: () => {},
     toggleTheme: () => {},
     toggleListWaves: () => {},
+    toggleListPositions: () => {},
     toggleRailNames: () => {},
     toggleSidebar: () => {},
     clearMeta: () => {},
@@ -133,6 +134,17 @@ function commandById(deps: CommandDeps, id: string): Command {
   if (!c) throw new Error(`command ${id} not found`)
   return c
 }
+
+// The native View menu runs the same command, so the palette and the menu cannot drift.
+describe('toggle-list-positions', () => {
+  it('turns the playlist numbers on or off from the palette', () => {
+    const toggle = vi.fn()
+    const command = commandById(makeDeps({ toggleListPositions: toggle }), 'toggle-list-positions')
+    expect(command.enabled).toBe(true)
+    command.run()
+    expect(toggle).toHaveBeenCalledTimes(1)
+  })
+})
 
 const commands = [
   cmd('add', 'Añadir archivos'),
