@@ -949,6 +949,7 @@ function buildAppMenu(win: BrowserWindow): void {
     windows: process.platform === 'win32',
     view: {
       listWaves: getSettings().showListWaves,
+      listPositions: getSettings().showListPositions,
       railNames: getSettings().showRailNames,
       sidebar: getSettings().showSidebar,
     },
@@ -1256,6 +1257,7 @@ function registerIpc(): void {
       patch.shortcutOverrides !== undefined ||
       patch.language !== undefined ||
       patch.showListWaves !== undefined ||
+      patch.showListPositions !== undefined ||
       patch.showRailNames !== undefined ||
       patch.showSidebar !== undefined
     ) {

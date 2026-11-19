@@ -29,6 +29,7 @@ interface MenuStrings {
   activity: string
   backups: string
   listWaves: string
+  listPositions: string
   railNames: string
   sidebar: string
   stats: string
@@ -152,6 +153,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Actividad',
     backups: 'Copias',
     listWaves: 'Mostrar ondas en la lista',
+    listPositions: 'Mostrar números de la playlist',
     railNames: 'Mostrar nombres de las fuentes',
     sidebar: 'Mostrar barra lateral',
     stats: 'Estadísticas',
@@ -289,6 +291,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Activity',
     backups: 'Backups',
     listWaves: 'Show Waveforms in List',
+    listPositions: 'Show Playlist Numbers',
     railNames: 'Show Source Names',
     sidebar: 'Show Sidebar',
     stats: 'Stats',
@@ -426,6 +429,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Aktivität',
     backups: 'Backups',
     listWaves: 'Wellenformen in der Liste zeigen',
+    listPositions: 'Playlist-Nummern zeigen',
     railNames: 'Quellennamen zeigen',
     sidebar: 'Seitenleiste zeigen',
     stats: 'Statistiken',
@@ -565,6 +569,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Activité',
     backups: 'Sauvegardes',
     listWaves: 'Afficher les formes d’onde dans la liste',
+    listPositions: 'Afficher les numéros de playlist',
     railNames: 'Afficher le nom des sources',
     sidebar: 'Afficher la barre latérale',
     stats: 'Statistiques',
@@ -705,6 +710,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     activity: 'Atividade',
     backups: 'Cópias',
     listWaves: 'Mostrar ondas na lista',
+    listPositions: 'Mostrar números da playlist',
     railNames: 'Mostrar nomes das fontes',
     sidebar: 'Mostrar barra lateral',
     stats: 'Estatísticas',

@@ -9,7 +9,7 @@ interface Params {
   checkForUpdates: () => void
   mac: boolean
   windows: boolean
-  view: { listWaves: boolean; railNames: boolean; sidebar: boolean }
+  view: { listWaves: boolean; listPositions: boolean; railNames: boolean; sidebar: boolean }
 }
 
 export function appMenuTemplate({
@@ -110,6 +110,12 @@ export function appMenuTemplate({
           type: 'checkbox',
           checked: view.listWaves,
           click: () => run('toggle-list-waves'),
+        },
+        {
+          label: t('listPositions'),
+          type: 'checkbox',
+          checked: view.listPositions,
+          click: () => run('toggle-list-positions'),
         },
         {
           label: t('railNames'),
