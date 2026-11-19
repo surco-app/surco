@@ -1,8 +1,15 @@
-import { type UseQueryResult, useQueries, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  type QueryClient,
+  skipToken,
+  type UseQueryResult,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Release, SearchProviderId, SearchResult } from '../../../shared/types'
 import { type MatchCleanup, matchTargetOf, probeReleases, searchHintsFor } from '../lib/autoMatch'
-import { fetchRelease } from '../lib/fetchRelease'
+import { releaseQueryOptions } from '../lib/fetchRelease'
 import { cleanIpcError, errorKeyOf, mainErrorMessage } from '../lib/ipcError'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
@@ -32,6 +39,31 @@ const resultKey = (r: SearchResult): string => `${r.provider}:${r.id}`
 
 // Folds the per-provider search queries into what the panel reads. Module-level so its
 // reference is stable and React Query only re-runs it when a query's state changes.
+function searchFn(
+  queryClient: QueryClient,
+  source: SearchProviderId | 'direct',
+  directId: number | null,
+  searchTerm: string,
+  item: TrackItem,
+  cleanup: MatchCleanup,
+  userDroveSearch: { readonly current: boolean },
+) {
+  return async (): Promise<SearchResult[]> => {
+    if (source === 'direct') {
+      const rel = await queryClient.fetchQuery<Release>(
+        releaseQueryOptions({ provider: 'discogs', id: directId as number, title: '' }, 'high'),
+      )
+      return [resultFromRelease(rel)]
+    }
+    // A term the user typed (this visit, or committed on an earlier one) is theirs to
+    // aim, and drops the file's tags when it names another song; the query the app
+    // built always carries them.
+    const typed = userDroveSearch.current || item.queryTyped === true
+    const hints = searchHintsFor(item, cleanup, typed ? searchTerm : undefined)
+    return window.api.search(searchTerm, source, 'high', hints)
+  }
+}
+
 function combineSearches(queries: UseQueryResult<SearchResult[]>[]) {
   const settled =
     queries.length > 0 && queries.every((q) => !q.isFetching && (q.isSuccess || q.isError))
@@ -159,12 +191,9 @@ export function useDiscogsBrowser(
 
   const loadRelease = useCallback(
     (result: SearchResult) =>
-      queryClient.fetchQuery<Release>({
-        queryKey: releaseKey(result),
-        // The track the user is looking at: high priority so it jumps ahead of the
-        // background auto-match sweep at the main process's rate limiter.
-        queryFn: () => fetchRelease(result, 'high'),
-      }),
+      // The track the user is looking at: high priority so it jumps ahead of the
+      // background auto-match sweep at the main process's rate limiter.
+      queryClient.fetchQuery<Release>(releaseQueryOptions(result, 'high')),
     [queryClient],
   )
 
@@ -265,18 +294,7 @@ export function useDiscogsBrowser(
         searchByAlbumFirst,
         formats,
       ],
-      queryFn: async (): Promise<SearchResult[]> => {
-        if (source === 'direct') {
-          const rel = await loadRelease({ provider: 'discogs', id: directId as number, title: '' })
-          return [resultFromRelease(rel)]
-        }
-        // A term the user typed (this visit, or committed on an earlier one) is theirs to
-        // aim, and drops the file's tags when it names another song; the query the app
-        // built always carries them.
-        const typed = userDroveSearch.current || item.queryTyped === true
-        const hints = searchHintsFor(item, cleanup, typed ? searchTerm : undefined)
-        return window.api.search(searchTerm, source, 'high', hints)
-      },
+      queryFn: searchFn(queryClient, source, directId, searchTerm, item, cleanup, userDroveSearch),
       enabled: active && searchTerm.trim() !== '',
     })),
     combine: combineSearches,
@@ -488,7 +506,7 @@ export function useDiscogsBrowser(
 
   const releaseQuery = useQuery({
     queryKey: releaseKey(openResult),
-    queryFn: () => fetchRelease(openResult as SearchResult, 'high'),
+    queryFn: openResult ? releaseQueryOptions(openResult, 'high').queryFn : skipToken,
     enabled: openResult !== null,
   })
   const release = openResult !== null ? (releaseQuery.data ?? null) : null

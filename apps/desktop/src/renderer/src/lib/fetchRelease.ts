@@ -1,4 +1,5 @@
 import type { Release, SearchPriority, SearchResult } from '../../../shared/types'
+import { releaseKey } from './release'
 
 // Loads the full release a search result points at. A result is addressed by its page URL
 // when it carries one (Bandcamp, whose parsed release id can differ from the autocomplete
@@ -8,4 +9,8 @@ import type { Release, SearchPriority, SearchResult } from '../../../shared/type
 // release for one of them.
 export function fetchRelease(result: SearchResult, priority: SearchPriority): Promise<Release> {
   return window.api.getRelease(result.releaseUrl ?? result.id, result.provider, priority)
+}
+
+export function releaseQueryOptions(result: SearchResult, priority: SearchPriority) {
+  return { queryKey: releaseKey(result), queryFn: () => fetchRelease(result, priority) }
 }
