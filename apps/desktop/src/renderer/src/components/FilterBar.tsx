@@ -459,6 +459,7 @@ interface Props {
   options: (close: () => void) => React.ReactNode
   // Controls that share the row, between the filter trigger and the position counter.
   children?: React.ReactNode
+  inline?: boolean
   counterTestId: string
   visibleCount: number
   selectedPosition: number | null
@@ -478,6 +479,7 @@ export function FilterBar({
   focusTestId,
   options,
   children,
+  inline = false,
   counterTestId,
   visibleCount,
   selectedPosition,
@@ -553,9 +555,9 @@ export function FilterBar({
     <div
       ref={filterRef}
       data-testid={testid}
-      className="flex items-center gap-1.5 px-1.5 py-2 compact:py-0.5"
+      className={`flex items-center py-2 compact:py-0.5 ${inline ? 'gap-0.5' : 'gap-1.5 px-1.5'}`}
     >
-      <div className="relative min-w-0 flex-1">
+      <div className={`relative min-w-0 ${inline ? '' : 'flex-1'}`}>
         <button
           ref={triggerRef}
           type="button"
@@ -577,7 +579,9 @@ export function FilterBar({
               />
             )}
           </span>
-          <span className="min-w-0 truncate text-left">{trigger.label}</span>
+          <span className={`min-w-0 truncate text-left ${inline ? 'hidden @[27rem]:block' : ''}`}>
+            {trigger.label}
+          </span>
           <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
         </button>
         {open &&

@@ -36,6 +36,7 @@ interface Props {
   // A trigger the height of a line of text, for a menu that sits inside a list row
   // without making the row taller.
   compact?: boolean
+  labelClass?: string
   // Repeats the label as a title at the top of the open menu, for a menu whose options
   // are too terse to say what they choose.
   heading?: boolean
@@ -63,6 +64,7 @@ export function Select({
   testid,
   fullWidth = false,
   compact = false,
+  labelClass = '',
   heading = false,
   bare = false,
   portal = false,
@@ -306,7 +308,7 @@ export function Select({
         {lead && <span className="shrink-0 text-fg-dim">{lead}</span>}
         {(selected?.short ?? selected?.label) && (
           <span
-            className={`min-w-0 flex-1 truncate text-left ${lead ? 'font-semibold text-fg' : ''}`}
+            className={`min-w-0 flex-1 truncate text-left ${lead ? 'font-semibold text-fg' : ''} ${labelClass}`}
           >
             {selected?.short ?? selected?.label}
           </span>

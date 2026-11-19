@@ -519,6 +519,7 @@ export function QualityFilterBar({
     <FilterBar
       testid="quality-filter"
       filterRef={filterRef}
+      inline
       trigger={{ ...trigger, dot: triggerDot }}
       listLabel={tr('sidebar.filter.label')}
       options={(close) => (
