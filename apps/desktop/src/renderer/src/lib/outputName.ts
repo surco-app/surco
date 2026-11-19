@@ -28,10 +28,26 @@ export function autoNamesFile(
 
 const BARE_SEPARATOR = /^[\s.,:;\-–—·_|]+$/
 
-function fillTokens(format: string, meta: TrackMetadata, clean: (value: string) => string): string {
+export const DATE_TOKENS = ['currentYear', 'currentMonth'] as const
+
+function dateTokens(now: Date): Record<string, string> {
+  return {
+    currentYear: String(now.getFullYear()),
+    currentMonth: String(now.getMonth() + 1).padStart(2, '0'),
+  }
+}
+
+function fillTokens(
+  format: string,
+  meta: TrackMetadata,
+  clean: (value: string) => string,
+  extra: Record<string, string> = {},
+): string {
   const parts = format.split(/\{(\w+)\}/)
   const isToken = (i: number) => i % 2 === 1
-  const filled = parts.map((part, i) => (isToken(i) ? clean(tokenValue(meta, part).trim()) : part))
+  const filled = parts.map((part, i) =>
+    isToken(i) ? clean((tokenValue(meta, part) || extra[part] || '').trim()) : part,
+  )
   for (let i = 1; i < parts.length; i += 2) {
     if (filled[i]) continue
     const fieldAfter = filled.some((value, j) => j > i && isToken(j) && value !== '')
@@ -41,10 +57,14 @@ function fillTokens(format: string, meta: TrackMetadata, clean: (value: string) 
   return filled.join('')
 }
 
-export function renderOutputName(format: string, meta: TrackMetadata): string {
+export function renderOutputName(
+  format: string,
+  meta: TrackMetadata,
+  now: Date = new Date(),
+): string {
   // Strip path separators from a field's value so e.g. "AC/DC" never spills into a
   // folder; only a literal "/" the user writes in the template splits directories.
-  const filled = fillTokens(format, meta, (value) => value.replace(/[/\\]/g, '-'))
+  const filled = fillTokens(format, meta, (value) => value.replace(/[/\\]/g, '-'), dateTokens(now))
   // "/" in the template means a subfolder, so clean each segment on its own (collapsing
   // separators, trimming edges) without touching the slashes, and drop a segment a blank
   // field left empty so no stray "" directory is produced.

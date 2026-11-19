@@ -1880,6 +1880,8 @@
     "titleFormat": "Formato do título",
     "autoApplyFilename": "Aplicar o padrão automaticamente",
     "autoApplyFilenameHint": "Gera o nome a partir dos metadados ao exportar, sem apertar “Regenerar”. Uma edição manual sempre prevalece.",
+    "currentYear": "Ano atual",
+    "currentMonth": "Mês atual",
     "filenameFolderHint": "Use \"/\" para organizar os arquivos em pastas, ex.:",
     "insertToken": "Inserir um campo",
     "preview": "Prévia:",

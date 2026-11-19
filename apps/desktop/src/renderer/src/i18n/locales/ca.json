@@ -1880,6 +1880,8 @@
     "titleFormat": "Format del títol",
     "autoApplyFilename": "Aplicar el patró automàticament",
     "autoApplyFilenameHint": "Genera el nom a partir de les metadades en exportar, sense prémer «Regenerar». Una edició manual sempre té prioritat.",
+    "currentYear": "Any actual",
+    "currentMonth": "Mes actual",
     "filenameFolderHint": "Fes servir «/» per organitzar els fitxers en carpetes, p. ex.",
     "insertToken": "Inserir un camp",
     "preview": "Previsualització:",

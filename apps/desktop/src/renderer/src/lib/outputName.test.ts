@@ -98,6 +98,20 @@ describe('renderOutputName', () => {
     ).toBe('Tidy/Keep Calm')
   })
 
+  it('files a conversion under the year and month it is made in, so downloads archive by date', () => {
+    expect(
+      renderOutputName(
+        '{currentYear}/{currentMonth}/{artist} - {title}',
+        meta({ artist: 'Ricardo Villalobos', title: 'Dexter', year: '2003' }),
+        new Date(2026, 4, 9),
+      ),
+    ).toBe('2026/05/Ricardo Villalobos - Dexter')
+  })
+
+  it('keeps the date of today out of the title, which is a tag and not a place to file under', () => {
+    expect(renderTitle('{title} {currentYear}', meta({ title: 'Dexter' }))).toBe('Dexter')
+  })
+
   it('renders unknown tokens as empty', () => {
     const r = renderOutputName('{artist} {bogus}', meta({ artist: 'Acer' }))
     expect(r).toBe('Acer')

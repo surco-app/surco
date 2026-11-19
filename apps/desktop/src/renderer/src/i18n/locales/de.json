@@ -1880,6 +1880,8 @@
     "titleFormat": "Titelformat",
     "autoApplyFilename": "Muster automatisch anwenden",
     "autoApplyFilenameHint": "Erzeugt den Namen beim Export aus den Metadaten, ohne „Neu erzeugen“ zu drücken. Eine manuelle Änderung gewinnt immer.",
+    "currentYear": "Aktuelles Jahr",
+    "currentMonth": "Aktueller Monat",
     "filenameFolderHint": "Nutz \"/\", um Dateien in Ordner zu sortieren, z. B.",
     "insertToken": "Feld einfügen",
     "preview": "Vorschau:",
