@@ -133,7 +133,7 @@ export function CueRuleRow({
     const anchor = palette?.parentElement
     if (!open || !palette || !anchor) return
     const popping = palette.getBoundingClientRect()
-    const width = palette.offsetWidth || popping.width
+    const width = (palette.offsetWidth || popping.width) + 1
     const height = (palette.offsetHeight || popping.height) + MENU_GAP
     const at = anchor.getBoundingClientRect()
     const clip = clipBox(palette)
@@ -141,7 +141,7 @@ export function CueRuleRow({
     const below = at.bottom + height - clip.bottom
     const fitsAbove = at.top - height >= clip.top
     setMenuUp(below > 0 && fitsAbove)
-    if (below > 0 && !fitsAbove && clip.scroller) clip.scroller.scrollTop += below
+    if (below > 0 && !fitsAbove && clip.scroller) clip.scroller.scrollTop += Math.ceil(below)
   }, [open])
 
   const closeToToken = () => {
