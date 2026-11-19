@@ -312,7 +312,7 @@ export function CueWaveDetail({
     height: number
     dpr: number
   } | null>(null)
-  const sync = (force: boolean) => {
+  const sync = (force: boolean, room?: { width: number; height: number }) => {
     const canvas = canvasRef.current
     const stage = stageRef.current
     if (!canvas || !stage) return
@@ -321,8 +321,13 @@ export function CueWaveDetail({
       if (!g) return
       painter.current = {
         g,
-        width: Math.max(1, Math.round(stage.getBoundingClientRect().width)),
-        height: Math.max(1, Math.round(canvas.getBoundingClientRect().height)),
+        width: Math.max(1, Math.round(room?.width ?? stage.getBoundingClientRect().width)),
+        height: Math.max(
+          1,
+          Math.round(
+            room ? room.height - WAVE_MARK_LANE_PX : canvas.getBoundingClientRect().height,
+          ),
+        ),
       }
     }
     const { g, width, height } = painter.current
@@ -383,7 +388,7 @@ export function CueWaveDetail({
   useEffect(() => {
     const stage = stageRef.current
     if (!stage || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => syncLatest.current(true))
+    const observer = new ResizeObserver(([entry]) => syncLatest.current(true, entry.contentRect))
     observer.observe(stage)
     return () => observer.disconnect()
   }, [])

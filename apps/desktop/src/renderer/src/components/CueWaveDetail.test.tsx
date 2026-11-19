@@ -664,18 +664,48 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
-  it('redraws when the wave is resized', () => {
-    let notify: () => void = () => {}
+  const STAGE_BOX = [{ contentRect: { width: 400, height: 160 } }]
+  function watchResize(): { notify: (entries?: unknown) => void } {
+    const watch = { notify: (_entries: unknown = STAGE_BOX): void => {} }
     vi.stubGlobal(
       'ResizeObserver',
       class {
-        constructor(cb: () => void) {
-          notify = cb
+        constructor(cb: (entries: unknown) => void) {
+          watch.notify = (entries = STAGE_BOX) => cb(entries)
         }
         observe() {}
         disconnect() {}
       },
     )
+    return watch
+  }
+
+  it('sizes the wave from the room the layout gives it, not from how big it looks mid-animation, since a section that scales in as it maximizes left the wave drawn small and stretched for good', () => {
+    const watch = watchResize()
+    const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    setup()
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    vi.mocked(Element.prototype.getBoundingClientRect).mockReturnValue({
+      left: 0,
+      top: 0,
+      width: 123,
+      height: 49,
+      right: 123,
+      bottom: 49,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    })
+    act(() => watch.notify([{ contentRect: { width: 1400, height: 360 } }]))
+    expect(canvas.width).toBe(1400 * 3)
+    expect(canvas.height).toBe(360 - WAVE_MARK_LANE_PX)
+    vi.unstubAllGlobals()
+  })
+
+  it('redraws when the wave is resized', () => {
+    const watch = watchResize()
+    const notify = () => watch.notify()
     const clearRect = vi.fn()
     const fake = { clearRect, fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
