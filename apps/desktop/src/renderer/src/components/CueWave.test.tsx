@@ -426,6 +426,24 @@ describe('CueWave', () => {
     expect(screen.getByTestId('cue-wave-ghost-hot-B')).toBeInTheDocument()
   })
 
+  it('keeps a left out cue silent in the editor, where nothing says why it was left out', () => {
+    setup({ ghost: { added: [], gone: [], rejected: [{ ms: 24000, place: 'both', color: 42 }] } })
+    const dropped = screen.getByTestId('cue-wave-ghost-dropped-24000')
+    expect(dropped).toHaveAttribute('aria-hidden', 'true')
+    expect(dropped).not.toHaveAttribute('title')
+  })
+
+  it('names a left out cue with the reason it is given, so pointing at it or reading it aloud says why', () => {
+    setup({
+      ghost: { added: [], gone: [], rejected: [{ ms: 24000, place: 'both', color: 42 }] },
+      droppedLabel: (ms) => `left out at ${ms}`,
+    })
+    const dropped = screen.getByTestId('cue-wave-ghost-dropped-24000')
+    expect(dropped).toHaveAttribute('title', 'left out at 24000')
+    expect(dropped).toHaveAccessibleName('left out at 24000')
+    expect(dropped).not.toHaveAttribute('aria-hidden')
+  })
+
   it('draws the overview from the detailed wave once it is loaded, one thin column per device pixel, like rekordbox overview', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn<(x: number, y: number, w: number, h: number) => void>()

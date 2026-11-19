@@ -63,15 +63,16 @@ describe('CueFlowPreview', () => {
     const one = ONE_AT_32.rules[0]
     const intoChorus = { ...ONE_AT_32, rules: [{ ...one, from: 'down' as const, bars: 16 }] }
     render(<CueFlowPreview flow={intoChorus} />)
-    expect(screen.getAllByTestId(/^cue-wave-ghost-dropped-/)).toHaveLength(1)
-    expect(screen.getByTestId('cue-preview-left-out')).toHaveTextContent(
-      'Rule 1, 16 bars back. Inside a chorus',
-    )
+    const ghosts = screen.getAllByTestId(/^cue-wave-ghost-dropped-/)
+    expect(ghosts).toHaveLength(1)
+    expect(ghosts[0]).toHaveAttribute('title', 'Rule 1, 16 bars back. Inside a chorus')
+    expect(ghosts[0]).toHaveAccessibleName('Rule 1, 16 bars back. Inside a chorus')
+    expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
   })
 
   it('says nothing about left out cues when the flow places every one', () => {
     render(<CueFlowPreview flow={ONE_AT_32} />)
-    expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
+    expect(screen.queryByTestId(/^cue-wave-ghost-dropped-/)).toBeNull()
   })
 
   describe('on a track of the DJ', () => {

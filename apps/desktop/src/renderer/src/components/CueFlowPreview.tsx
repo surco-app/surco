@@ -68,6 +68,18 @@ export function CueFlowPreview({
         cues={cues}
         trimmed={out.status === 'plan' ? out.trimmed : []}
         ghost={{ added: [], gone: [], rejected: leftOut }}
+        droppedLabel={(ms) =>
+          leftOut
+            .filter((c) => c.ms === ms)
+            .map(
+              (c) =>
+                `${tr(`settings.cueFlows.leftOut.${flow.rules[c.rule].direction}`, {
+                  rule: c.rule + 1,
+                  count: c.bars,
+                })}. ${tr(`settings.cueFlows.leftOut.reason.${c.reason}`)}`,
+            )
+            .join('\n')
+        }
         readOnly
       />
       {!onTrack && (
@@ -89,18 +101,6 @@ export function CueFlowPreview({
             ? tr('settings.cueFlows.compareSame')
             : tr('settings.cueFlows.compareDiffer', { count: differ })}
         </p>
-      )}
-      {leftOut.length > 0 && (
-        <ul data-testid="cue-preview-left-out" className="mt-1 text-xs text-fg-dim">
-          {leftOut.map((c) => (
-            <li key={`${c.rule}-${c.ms}`}>
-              {`${tr(`settings.cueFlows.leftOut.${flow.rules[c.rule].direction}`, {
-                rule: c.rule + 1,
-                count: c.bars,
-              })}. ${tr(`settings.cueFlows.leftOut.reason.${c.reason}`)}`}
-            </li>
-          ))}
-        </ul>
       )}
       {out.status === 'too-many' && (
         <p data-testid="cue-preview-too-many" className="mt-1 text-xs text-warn">
