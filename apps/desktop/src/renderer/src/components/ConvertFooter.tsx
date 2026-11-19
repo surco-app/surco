@@ -92,6 +92,7 @@ interface ConvertFooterProps {
   clearAfterBatch?: boolean
   onToggleClearAfterBatch?: () => void
   sameFormat: boolean
+  addsToMusic?: boolean
   upToDate: boolean
   narrow?: boolean
   // The editor's one-shot destination pick and the choices its split-button menu
@@ -168,6 +169,7 @@ export function ConvertFooter({
   clearAfterBatch,
   onToggleClearAfterBatch,
   sameFormat,
+  addsToMusic = false,
   upToDate,
   narrow,
   destination,
@@ -764,6 +766,7 @@ export function ConvertFooter({
                 inPlace={!isMulti && willEditInPlace}
                 tagsOnly={tagsOnly}
                 sameFormat={sameFormat}
+                addsToMusic={!isMulti && addsToMusic}
                 upToDate={upToDate}
                 narrow={narrow}
                 destination={destination}

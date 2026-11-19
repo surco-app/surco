@@ -906,6 +906,7 @@
     "menuOverwriteNote": "Sobreescriu el fitxer",
     "update": "Actualitzar les etiquetes",
     "updateAudio": "Actualitzar les etiquetes i l'àudio",
+    "add": "Afegir",
     "upToDate": "Sense canvis",
     "updateAnyway": "Actualitzar igualment",
     "convertAction": "Convertir a {{format}}",

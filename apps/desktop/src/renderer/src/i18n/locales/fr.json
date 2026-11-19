@@ -906,6 +906,7 @@
     "menuOverwriteNote": "Écrase le fichier",
     "update": "Mettre à jour les tags",
     "updateAudio": "Mettre à jour les tags et l’audio",
+    "add": "Ajouter",
     "upToDate": "Aucun changement",
     "updateAnyway": "Mettre à jour quand même",
     "convertAction": "Convertir en {{format}}",

@@ -21,6 +21,9 @@ export interface ExportLabelState {
   // real conversion.
   tagsOnly?: boolean
   sameFormat?: boolean
+  // The file is edited where it sits and then added to Apple Music, which lacks it:
+  // "Update tags" told half of the click.
+  addsToMusic?: boolean
 }
 
 // Which label the convert split-button wears, as an i18n key plus its params. The
@@ -43,6 +46,7 @@ export function exportButtonLabel(state: ExportLabelState): {
     if (state.inPlace && state.tagsOnly) return { key: 'editor.updateAgain' }
     return { key: 'editor.reexport' }
   }
+  if (state.addsToMusic) return { key: 'editor.add' }
   if (state.inPlace && state.tagsOnly) return { key: 'editor.update' }
   if (state.stale && state.tagsOnly) return { key: 'editor.update' }
   if (state.sameFormat && !state.tagsOnly && (state.inPlace || state.stale))
