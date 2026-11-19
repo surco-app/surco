@@ -3814,6 +3814,7 @@
     "submenu": "View",
     "menu": "List view",
     "listWaves": "Show Waveforms",
+    "listPositions": "Show Numbers",
     "railNames": "Show Names",
     "sidebar": "Show Sidebar",
     "hideSidebar": "Hide Sidebar"

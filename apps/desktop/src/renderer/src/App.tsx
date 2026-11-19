@@ -230,6 +230,7 @@ import {
   distinctById,
   type PlaylistScope,
   playlistMembership,
+  playlistPositions,
   playlistView,
   rowKeys,
 } from './lib/playlistView'
@@ -2440,6 +2441,15 @@ export default function App(): React.JSX.Element {
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
+  const showListPositions = settings?.showListPositions ?? true
+  const numberedTracks =
+    showListPositions && sortBy === 'import' && browser.playlist?.id !== MATCHING_ID
+      ? playlistScope?.tracks
+      : undefined
+  const listPositions = useMemo(
+    () => (numberedTracks ? playlistPositions(numberedTracks, visibleRows) : undefined),
+    [numberedTracks, visibleRows],
+  )
   // The display order a Shift-click ranges over, read by the (ref-stable) select callback
   // so a range spans the rows the user actually sees — not the import order, which would
   // sweep in tracks hidden by the active filter, sort or search.
@@ -3812,6 +3822,12 @@ export default function App(): React.JSX.Element {
               checked: showListWaves,
               onToggle: toggleListWaves,
             },
+            {
+              id: 'list-positions',
+              label: tr('view.listPositions'),
+              checked: showListPositions,
+              onToggle: toggleListPositions,
+            },
           ]}
         />
       )
@@ -3923,6 +3939,9 @@ export default function App(): React.JSX.Element {
   })
   const showListWaves = settings?.showListWaves ?? true
   const toggleListWaves = useStableCallback(() => saveSettings({ showListWaves: !showListWaves }))
+  const toggleListPositions = useStableCallback(() =>
+    saveSettings({ showListPositions: !showListPositions }),
+  )
   const showRailNames = settings?.showRailNames ?? true
   const toggleRailNames = useStableCallback(() => saveSettings({ showRailNames: !showRailNames }))
   const toggleSidebar = useStableCallback(() => saveSettings({ showSidebar: !showSidebar }))
@@ -4653,6 +4672,8 @@ export default function App(): React.JSX.Element {
                             }
                             showWaves={showListWaves}
                             onToggleWaves={toggleListWaves}
+                            showPositions={showListPositions}
+                            onTogglePositions={toggleListPositions}
                             showSidebar={showSidebar}
                             onToggleSidebar={toggleSidebar}
                             onOpenLocation={() => setSidebarPeek(true)}
@@ -4800,6 +4821,7 @@ export default function App(): React.JSX.Element {
                                   ? playlistScope.trailingSeparators
                                   : undefined
                               }
+                              positions={listPositions}
                               reorder={reorder}
                               onReorderBlocked={
                                 crateOpen && editCan('move') && !reorderEnabled

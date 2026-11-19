@@ -101,6 +101,8 @@ interface Props {
   onReviewIncomplete?: () => void
   showWaves: boolean
   onToggleWaves: () => void
+  showPositions: boolean
+  onTogglePositions: () => void
   showSidebar: boolean
   onToggleSidebar: () => void
   location?: string
@@ -218,6 +220,8 @@ export function TrackListHeader({
   onReviewIncomplete,
   showWaves,
   onToggleWaves,
+  showPositions,
+  onTogglePositions,
   showSidebar,
   onToggleSidebar,
   location,
@@ -565,6 +569,12 @@ export function TrackListHeader({
               label: tr('view.listWaves'),
               checked: showWaves,
               onToggle: onToggleWaves,
+            },
+            {
+              id: 'list-positions',
+              label: tr('view.listPositions'),
+              checked: showPositions,
+              onToggle: onTogglePositions,
             },
           ]}
           onClose={() => setViewMenu(null)}

@@ -111,6 +111,7 @@ export const testSettings: Settings = {
   autoAnalyze: false,
   showWaveform: true,
   showListWaves: true,
+  showListPositions: true,
   matchingSuggestionsOpen: true,
   showRailNames: true,
   showSidebar: true,

@@ -132,6 +132,9 @@ interface Props {
   separatorBefore?: ReadonlyMap<string, readonly string[]>
   // Separators after the last row, drawn under it.
   trailingSeparators?: readonly string[]
+  // Each row's place in the open playlist (lib/playlistView), drawn on its cover. Only
+  // passed while the list shows a playlist in its own order.
+  positions?: readonly (number | undefined)[]
   // Reordering the open rekordbox playlist by hand: a row or separator dragged and let go
   // on the list moves there, with an insertion line, and each separator has a ✕. Only passed while the list shows the
   // playlist in its own order with nothing hidden; keys are track ids and separator keys.
@@ -337,6 +340,7 @@ interface RowProps {
   deferPaint: boolean
   outputFormat: OutputFormat
   showWaves: boolean
+  position?: number
   onSelect: (id: string, mods: ClickMods) => void
   onActivate: (track: TrackItem) => void
   onSwipeRemove: (id: string) => void
@@ -391,6 +395,7 @@ const TrackRow = memo(function TrackRow({
   deferPaint,
   outputFormat,
   showWaves,
+  position,
   onSelect,
   onActivate,
   onSwipeRemove,
@@ -776,6 +781,14 @@ const TrackRow = memo(function TrackRow({
                 round={converting}
                 size={showWaves ? 'large' : 'medium'}
               />
+            )}
+            {!converting && position !== undefined && (
+              <span
+                data-testid="track-number"
+                className="pointer-events-none absolute bottom-0.5 left-0.5 min-w-3.5 rounded bg-scrim/65 px-0.5 text-center text-label font-semibold leading-3.5 tabular-nums text-on-scrim"
+              >
+                {position}
+              </span>
             )}
             {!converting && <StatusBadge track={t} stale={stale} />}
             <Tooltip label={statusLabel} align="start" scope="dot" />
@@ -1208,6 +1221,7 @@ export const TrackList = memo(function TrackList({
   noteOf,
   separatorBefore,
   trailingSeparators,
+  positions,
   reorder,
   onReorderBlocked,
 }: Props): React.JSX.Element {
@@ -1528,6 +1542,7 @@ export const TrackList = memo(function TrackList({
         deferPaint={!virtual && tracks.length >= DEFER_PAINT_MIN_ROWS}
         outputFormat={outputFormat}
         showWaves={showWaves}
+        position={positions?.[i]}
         onSelect={onSelect}
         onActivate={onActivate}
         onSwipeRemove={removeBySwipe}

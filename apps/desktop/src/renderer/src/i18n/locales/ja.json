@@ -3814,6 +3814,7 @@
     "submenu": "表示",
     "menu": "リストの表示",
     "listWaves": "波形を表示",
+    "listPositions": "番号を表示",
     "railNames": "名前を表示",
     "sidebar": "サイドバーを表示",
     "hideSidebar": "サイドバーを隠す"

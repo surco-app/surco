@@ -3814,6 +3814,7 @@
     "submenu": "Visualizar",
     "menu": "Vista da lista",
     "listWaves": "Mostrar ondas",
+    "listPositions": "Mostrar números",
     "railNames": "Mostrar nomes",
     "sidebar": "Mostrar barra lateral",
     "hideSidebar": "Ocultar barra lateral"
