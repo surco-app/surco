@@ -300,9 +300,9 @@ describe('CuesSection maximized', () => {
     expect(screen.getByTestId('cues-deck').parentElement).toBe(screen.getByTestId('cues-editor'))
   })
 
-  // The DJ reads the whole-track wave for where the grid sits, not rekordbox's phrase names,
-  // so the row under it shows how far the grid is from the kick across the track.
-  it('shows how the grid sits across the track right under the overview, in place of the phrase names', async () => {
+  // A rule can ask for a cue only on a breakdown, so the DJ needs rekordbox's phrases in sight
+  // to tell why a cue came out, with how far the grid is from the kick right under them.
+  it('lays rekordbox phrases right under the overview and how the grid sits across the track under them', async () => {
     setup(
       null,
       {
@@ -316,8 +316,25 @@ describe('CuesSection maximized', () => {
     )
     await maximize()
     const checks = await screen.findByTestId('cues-grid-windows')
-    expect(screen.getByTestId('cue-wave').nextElementSibling).toBe(checks)
-    expect(screen.queryByText('Chorus')).toBeNull()
+    const phrases = screen.getByTestId('cue-phrases')
+    expect(screen.getByTestId('cue-wave').nextElementSibling).toBe(phrases)
+    expect(phrases.nextElementSibling).toBe(checks)
+    expect(screen.getAllByTestId('cue-phrase').map((l) => l.textContent)).toEqual([
+      'Intro',
+      'Chorus',
+    ])
+  })
+
+  it('keeps the phrases out of the folded section, which has no room for another row', async () => {
+    setup(null, {
+      ...READ,
+      sections: [
+        { ms: 0, label: 'Intro', kind: 'intro' },
+        { ms: 32000, label: 'Chorus', kind: 'chorus' },
+      ],
+    })
+    await ready()
+    expect(screen.queryByTestId('cue-phrases')).toBeNull()
   })
 
   // Measuring the fine wave decodes the whole file, so it waits for the view where the DJ zooms.

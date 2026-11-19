@@ -135,6 +135,7 @@ import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
 import { CueOffGridBar } from './CueOffGridBar'
 import { CuePalette } from './CuePalette'
+import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
@@ -1883,6 +1884,7 @@ function Editing({
           </div>
           <div className="flex shrink-0 flex-col gap-1">
             {strip}
+            <CuePhraseBand sections={read.sections ?? []} durationMs={read.durationMs} />
             {audit && state.grid && gridOff === null && (
               <AtHead head={head} of={atMs}>
                 {(playheadMs) => (
