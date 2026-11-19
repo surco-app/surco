@@ -22,7 +22,7 @@ export interface ExportLabelState {
   tagsOnly?: boolean
   sameFormat?: boolean
   // The file is edited where it sits and then added to Apple Music, which lacks it:
-  // "Update tags" told half of the click.
+  // "Update" told half of the click.
   addsToMusic?: boolean
 }
 

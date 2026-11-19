@@ -61,7 +61,7 @@ describe('exportButtonLabel', () => {
   })
 
   // A tags update repeats as an update: "Convert again" promised a conversion the next
-  // click never runs, while the button that started it said "Update tags".
+  // click never runs, while the button that started it said "Update".
   it('repeats a tags update as an update, and a conversion as a conversion', () => {
     const again = (over: Partial<ExportLabelState>): string =>
       exportButtonLabel({ ...base, quiet: true, ...over }).key

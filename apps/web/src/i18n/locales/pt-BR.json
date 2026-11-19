@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Você muda uma vez. Todos os seus programas veem.",
-      "lede": "Abra a faixa pela aba do Apple Music ou do rekordbox, corrija o título, o gênero ou o nome do arquivo e clique em Atualizar tags. O Surco leva a mudança ao Apple Music, ao rekordbox, ao Traktor, ao Engine DJ, ao Serato e ao VirtualDJ, e em cada um continua sendo a mesma faixa.",
+      "lede": "Abra a faixa pela aba do Apple Music ou do rekordbox, corrija o título, o gênero ou o nome do arquivo e clique em Atualizar. O Surco leva a mudança ao Apple Music, ao rekordbox, ao Traktor, ao Engine DJ, ao Serato e ao VirtualDJ, e em cada um continua sendo a mesma faixa.",
       "tabAppleMusic": "Aba Apple Music",
       "tabRekordbox": "Aba rekordbox",
       "fieldTitle": "Título",
       "fieldGenre": "Gênero",
       "fieldFile": "Nome do arquivo",
-      "button": "Atualizar tags",
+      "button": "Atualizar",
       "saved": "Tags atualizadas",
       "origin": "origem",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Substitua e salve",
-            "text": "Clique em “Substituir em…”. A mudança não está nos arquivos até você clicar em “Atualizar tags” ou “Converter”."
+            "text": "Clique em “Substituir em…”. A mudança não está nos arquivos até você clicar em “Atualizar” ou “Converter”."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Clique em “Converter”",
-            "text": "Ou em “Atualizar tags”. Até lá o arquivo não muda."
+            "text": "Ou em “Atualizar”. Até lá o arquivo não muda."
           }
         ],
         "points": [

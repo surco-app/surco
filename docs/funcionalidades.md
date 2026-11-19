@@ -50,7 +50,7 @@ si no lo declara), igual que un MP3 se recodifica a MP3, y Surco lo pregunta ant
 (`reencodesLossyInPlace`, que mira el códec real porque la extensión no distingue AAC de ALAC). Con ALAC dentro sigue la regla de WAV, FLAC y AIFF
 (`ffmpeg.ts:1151-1158`; tests `ffmpeg.test.ts:541`, `:566`).
 
-La misma regla decide la etiqueta del botón: «Actualizar etiquetas» solo cuando la
+La misma regla decide la etiqueta del botón: «Actualizar» solo cuando la
 exportación va a copiar el audio; si algo lo cambia, dice «Convertir»
 (`shared/audioProcessing.ts:11-21`, compartida por main y renderer).
 
@@ -1471,7 +1471,7 @@ escriben en `database V2` sobre la misma pista, sin cambiar su ruta, así que Se
 la valoración (`syncSeratoTags`, `seratoTagSync.ts:48`; `withSeratoTrackFields`,
 `seratoDatabaseWrite.ts:55`). Un campo que se cambió en Serato desde la revisión no se pisa.
 Desde v1.34.0, con «Actualizar» encendido, el título, el artista, el álbum y el género que
-cambian al actualizar una pista en su sitio («Actualizar etiquetas») también llegan a Serato,
+cambian al actualizar una pista en su sitio («Actualizar») también llegan a Serato,
 sin pasar por la revisión (`queueSeratoRun`, `libraryFlushes.ts:454`; `seratoTagOps`). Una pista
 convertida a otro fichero no los lleva, porque Serato se queda con el original.
 Con «Actualizar y añadir», un fichero convertido que Serato no tiene entra en su biblioteca
@@ -3184,7 +3184,7 @@ comparación»* (`useDeclickAb.ts:60-67`).
   limpiar a la vez el original, los ficheros sustituidos y la copia vieja de Apple
   Music. El botón de una selección dice «Convertir N seleccionadas», o «Actualizar N
   seleccionadas» si solo reescribe etiquetas sobre el original, y el vocabulario
-  es único en toda la app: Convertir, Actualizar etiquetas (solo cuando se copian
+  es único en toda la app: Convertir, Actualizar (solo cuando se copian
   los bytes), Volumen, Dudosa, Por confirmar (emparejamiento sin corroborar),
   Emparejar y Agrupación. Seleccionar todo, rellenar, vaciar y papelera viven
   también en el menú Pistas.

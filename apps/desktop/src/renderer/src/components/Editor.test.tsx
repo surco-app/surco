@@ -2555,7 +2555,7 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
     await act(async () => {})
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   it('retags its own Music entry on update instead of asking Music to replace the file with itself', async () => {
@@ -2587,7 +2587,7 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
     await waitFor(() =>
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   it('converts its own Music copy to another format without calling it a replacement', async () => {
@@ -2622,7 +2622,7 @@ describe('Editor convert button for a same-format file going to Apple Music', ()
     Object.assign(window.api, { platform: 'darwin' })
   })
 
-  // Reported 19/11: an MP3 Music had never seen read "Update tags" with Apple Music as
+  // Reported 19/11: an MP3 Music had never seen read "Update" with Apple Music as
   // the destination, and the click also added it to Music.
   it('offers to add a file Music lacks instead of only updating its tags', () => {
     renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', { libraryIndex: without })
@@ -2637,29 +2637,29 @@ describe('Editor convert button for a same-format file going to Apple Music', ()
     expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Add')
   })
 
-  it('keeps "Update tags" for a track Music already holds', () => {
+  it('keeps "Update" for a track Music already holds', () => {
     renderEditor(
       { ...track({ ...read, genre: 'Trance' }, { musicPersistentId: 'AAAAAAAAAAAAAAAA' }) },
       'mp3',
       { libraryIndex: without },
     )
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   // Until Music has answered there is no telling whether it holds the file, and a
   // promise to add what is already there would be false.
-  it('keeps "Update tags" while the Music library has not been read', () => {
+  it('keeps "Update" while the Music library has not been read', () => {
     renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', { libraryIndex: null })
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
-  it('keeps "Update tags" when the destination is not Apple Music', () => {
+  it('keeps "Update" when the destination is not Apple Music', () => {
     renderEditor({ ...track({ ...read, genre: 'Trance' }) }, 'mp3', {
       libraryIndex: without,
       addToAppleMusic: false,
       overwriteOriginal: true,
     })
-    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 })
 
@@ -2676,7 +2676,7 @@ describe('Editor export control', () => {
 
     it('offers the update when it shows values a library filled in that the file lacks', () => {
       renderEditor({ id: 'a', meta: read, diskSignature, fillSignature: diskSignature })
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
     })
 
@@ -2687,7 +2687,7 @@ describe('Editor export control', () => {
         diskSignature,
         notInFile: { signature: diskSignature, fields: ['title'] },
       })
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
     })
 
@@ -2704,7 +2704,7 @@ describe('Editor export control', () => {
 
     it('offers the update while an edit is staged', () => {
       renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
     })
 
@@ -2770,7 +2770,7 @@ describe('Editor export control', () => {
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
       typeInto('field-genre', 'House')
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
       typeInto('field-genre', 'Techno')
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
@@ -2783,7 +2783,7 @@ describe('Editor export control', () => {
         { autoApplyFilename: true, filenameFormat: '{artist} - {title}' },
       )
       expect(screen.queryByTestId('convert-up-to-date')).toBeNull()
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
     })
 
     it('goes quiet with the pattern on when it names the file as it already is', () => {
@@ -3213,18 +3213,18 @@ describe('Editor export control', () => {
   // Exporting to the source's own format edits the original in place rather than
   // writing a converted copy, so the button must not promise a conversion that
   // never happens — it offers to update the file instead.
-  it('labels the button "Update tags" when the export format matches the source', () => {
+  it('labels the button "Update" when the export format matches the source', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'wav')
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   // With Keep MP3 on, "converting to AIFF" an mp3 is actually an in-place tag
   // edit: the button must say "Update", not promise an AIFF that never gets written.
-  it('labels the button "Update tags" for an mp3 source when keep mp3 is on', () => {
+  it('labels the button "Update" for an mp3 source when keep mp3 is on', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.mp3', fileName: 'a.mp3' }, 'aiff', {
       keepMp3Sources: true,
     })
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   it.each<[string, Parameters<typeof renderEditor>]>([
@@ -3252,9 +3252,9 @@ describe('Editor export control', () => {
 
   // "Same as source" keeps the file's own format, so with nothing staged it is a tag
   // update like picking that format by hand.
-  it('labels a "Same as source" export with nothing staged "Update tags"', () => {
+  it('labels a "Same as source" export with nothing staged "Update"', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.flac' }, 'source')
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Update tags')
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
   })
 
   // Overwrite mode edits the original's path whatever the format, but a WAV overwritten
@@ -3263,7 +3263,7 @@ describe('Editor export control', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
     expect(button).toHaveAccessibleName('Convert to AIFF')
-    expect(button).not.toHaveTextContent('Update tags')
+    expect(button).not.toHaveAccessibleName('Update')
   })
 
   // Picking a format from the dropdown used to convert on the spot, so a misclick

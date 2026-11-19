@@ -1929,7 +1929,7 @@ describe('runProcessTrack — naming what it did', () => {
   const stagesOf = (deps: ProcessTrackDeps): unknown[] =>
     vi.mocked(deps.sendProgress).mock.calls.map((c) => c[0])
 
-  // The button says "Update tags" for a same-format edit with no filter, so the step in
+  // The button says "Update" for a same-format edit with no filter, so the step in
   // flight and the done line must not claim a conversion that never re-encoded anything.
   it('says it writes tags, not that it converts, when the format stays and no filter runs', async () => {
     const deps = makeDeps()
@@ -3571,7 +3571,7 @@ describe('runProcessTrack — converting a library track to another format', () 
     )
   })
 
-  // Measured 01/11 on the user's library: "Update tags" renamed Es De Puta Madre.mp3 by the
+  // Measured 01/11 on the user's library: "Update" renamed Es De Puta Madre.mp3 by the
   // naming pattern, retagged its entry and retired the old name, and Music was left with an
   // entry whose file was gone. Music never follows a rename on its own.
   it('points the Music entry at the renamed file before retiring the original', async () => {

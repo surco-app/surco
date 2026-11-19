@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Ho canvies un cop. Ho veuen tots els teus programes.",
-      "lede": "Obre la pista des de la pestanya d'Apple Music o de rekordbox, corregeix el títol, el gènere o el nom del fitxer i prem «Actualitzar les etiquetes». Surco porta el canvi a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, i a cadascun continua sent la mateixa pista.",
+      "lede": "Obre la pista des de la pestanya d'Apple Music o de rekordbox, corregeix el títol, el gènere o el nom del fitxer i prem «Actualitzar». Surco porta el canvi a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, i a cadascun continua sent la mateixa pista.",
       "tabAppleMusic": "Pestanya Apple Music",
       "tabRekordbox": "Pestanya rekordbox",
       "fieldTitle": "Títol",
       "fieldGenre": "Gènere",
       "fieldFile": "Nom del fitxer",
-      "button": "Actualitzar les etiquetes",
+      "button": "Actualitzar",
       "saved": "Etiquetes actualitzades",
       "origin": "origen",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Reemplaça i desa",
-            "text": "Prem «Reemplaçar a…». El canvi no és als fitxers fins que prems «Actualitzar les etiquetes» o «Convertir»."
+            "text": "Prem «Reemplaçar a…». El canvi no és als fitxers fins que prems «Actualitzar» o «Convertir»."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Prem «Convertir»",
-            "text": "O «Actualitzar les etiquetes». Fins aleshores el fitxer no canvia."
+            "text": "O «Actualitzar». Fins aleshores el fitxer no canvia."
           }
         ],
         "points": [

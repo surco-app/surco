@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Tu le changes une fois. Tous tes logiciels le voient.",
-      "lede": "Ouvre le morceau depuis l’onglet Apple Music ou rekordbox, corrige le titre, le genre ou le nom du fichier et appuie sur Mettre à jour les tags. Surco porte le changement dans Apple Music, rekordbox, Traktor, Engine DJ, Serato et VirtualDJ, et c’est le même morceau dans chacun.",
+      "lede": "Ouvre le morceau depuis l’onglet Apple Music ou rekordbox, corrige le titre, le genre ou le nom du fichier et appuie sur Mettre à jour. Surco porte le changement dans Apple Music, rekordbox, Traktor, Engine DJ, Serato et VirtualDJ, et c’est le même morceau dans chacun.",
       "tabAppleMusic": "Onglet Apple Music",
       "tabRekordbox": "Onglet rekordbox",
       "fieldTitle": "Titre",
       "fieldGenre": "Genre",
       "fieldFile": "Nom du fichier",
-      "button": "Mettre à jour les tags",
+      "button": "Mettre à jour",
       "saved": "Tags mis à jour",
       "origin": "source",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Remplace et enregistre",
-            "text": "Clique sur « Remplacer dans… ». Le changement n’est dans les fichiers qu’une fois que tu cliques sur « Mettre à jour les tags » ou « Convertir »."
+            "text": "Clique sur « Remplacer dans… ». Le changement n’est dans les fichiers qu’une fois que tu cliques sur « Mettre à jour » ou « Convertir »."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Clique sur « Convertir »",
-            "text": "Ou « Mettre à jour les tags ». D’ici là, le fichier ne change pas."
+            "text": "Ou « Mettre à jour ». D’ici là, le fichier ne change pas."
           }
         ],
         "points": [

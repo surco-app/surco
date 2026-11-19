@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Change it once. Every program sees it.",
-      "lede": "Open the track from the Apple Music or rekordbox tab, fix the title, the genre or the file name and press Update tags. Surco carries the change to Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, and it stays the same track in each one.",
+      "lede": "Open the track from the Apple Music or rekordbox tab, fix the title, the genre or the file name and press Update. Surco carries the change to Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, and it stays the same track in each one.",
       "tabAppleMusic": "Apple Music tab",
       "tabRekordbox": "rekordbox tab",
       "fieldTitle": "Title",
       "fieldGenre": "Genre",
       "fieldFile": "File name",
-      "button": "Update tags",
+      "button": "Update",
       "saved": "Tags updated",
       "origin": "source",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Replace and save",
-            "text": "Click “Replace in…”. The change isn't in the files until you click “Update tags” or “Convert”."
+            "text": "Click “Replace in…”. The change isn't in the files until you click “Update” or “Convert”."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Click “Convert”",
-            "text": "Or “Update tags”. Until then the file doesn't change."
+            "text": "Or “Update”. Until then the file doesn't change."
           }
         ],
         "points": [

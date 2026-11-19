@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "一度変えれば、すべてのアプリに届く。",
-      "lede": "Apple Musicかrekordboxのタブからトラックを開き、タイトル、ジャンル、ファイル名を直して「タグを更新」を押します。SurcoがApple Music、rekordbox、Traktor、Engine DJ、Serato、VirtualDJに変更を届け、どのアプリでも同じトラックのままです。",
+      "lede": "Apple Musicかrekordboxのタブからトラックを開き、タイトル、ジャンル、ファイル名を直して「更新」を押します。SurcoがApple Music、rekordbox、Traktor、Engine DJ、Serato、VirtualDJに変更を届け、どのアプリでも同じトラックのままです。",
       "tabAppleMusic": "Apple Musicタブ",
       "tabRekordbox": "rekordboxタブ",
       "fieldTitle": "タイトル",
       "fieldGenre": "ジャンル",
       "fieldFile": "ファイル名",
-      "button": "タグを更新",
+      "button": "更新",
       "saved": "タグを更新しました",
       "origin": "元",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "置換して保存",
-            "text": "「… を置換」をクリックします。「タグを更新」または「変換」をクリックするまでファイルには変更が反映されません。"
+            "text": "「… を置換」をクリックします。「更新」または「変換」をクリックするまでファイルには変更が反映されません。"
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "「変換」をクリック",
-            "text": "または「タグを更新」。それまでの間ファイルは変更されません。"
+            "text": "または「更新」。それまでの間ファイルは変更されません。"
           }
         ],
         "points": [

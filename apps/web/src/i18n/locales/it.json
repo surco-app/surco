@@ -1350,13 +1350,13 @@
     },
     "sync": {
       "title": "Lo cambi una volta. Lo vedono tutti i tuoi programmi.",
-      "lede": "Apri il brano dalla scheda Apple Music o rekordbox, correggi il titolo, il genere o il nome del file e premi Aggiorna i tag. Surco porta la modifica in Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, e in ognuno resta lo stesso brano.",
+      "lede": "Apri il brano dalla scheda Apple Music o rekordbox, correggi il titolo, il genere o il nome del file e premi Aggiorna. Surco porta la modifica in Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, e in ognuno resta lo stesso brano.",
       "tabAppleMusic": "Scheda Apple Music",
       "tabRekordbox": "Scheda rekordbox",
       "fieldTitle": "Titolo",
       "fieldGenre": "Genere",
       "fieldFile": "Nome del file",
-      "button": "Aggiorna i tag",
+      "button": "Aggiorna",
       "saved": "Tag aggiornati",
       "origin": "origine",
       "points": {
@@ -3049,7 +3049,7 @@
           },
           {
             "title": "Sostituisci e salva",
-            "text": "Premi «Sostituisci in…». La modifica non è nei file finché non premi «Aggiorna i tag» o «Converti»."
+            "text": "Premi «Sostituisci in…». La modifica non è nei file finché non premi «Aggiorna» o «Converti»."
           }
         ],
         "points": [
@@ -3148,7 +3148,7 @@
           },
           {
             "title": "Premi «Converti»",
-            "text": "Oppure «Aggiorna i tag». Fino ad allora il file non cambia."
+            "text": "Oppure «Aggiorna». Fino ad allora il file non cambia."
           }
         ],
         "points": [
