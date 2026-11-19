@@ -581,39 +581,48 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
-  it('slides the playing wave by fractions of a pixel on its own layers, since a wave that can only land on whole pixels advances in uneven hops', () => {
+  const barLefts = () =>
+    new Map(
+      screen
+        .getAllByTestId('cue-detail-bar')
+        .map((b) => [b.dataset.ms, Number.parseFloat(b.style.left)] as const),
+    )
+  const shiftOfEachBar = (from: Map<string | undefined, number>): number[] =>
+    [...barLefts()].flatMap(([ms, left]) => {
+      const was = from.get(ms)
+      return was === undefined ? [] : [was - left]
+    })
+
+  it('moves the playing wave and its lines together by whole pixels, since lines that each round on their own wobble against the wave and a wave drawn between two pixels pulses soft and sharp', () => {
     const { rerender } = setup({ playing: true, playheadMs: bar(32) })
-    const layers = () => [
-      screen.getByTestId('cue-detail-wave-layer').style.transform,
-      screen.getByTestId('cue-detail-marks-layer').style.transform,
-    ]
-    const lefts = () => screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)
-    const still = lefts()
-    expect(layers()).toEqual(['translate3d(0px, 0, 0)', 'translate3d(0px, 0, 0)'])
+    const still = barLefts()
     rerender({ playing: true, playheadMs: bar(32) + 20 })
-    expect(lefts()).toEqual(still)
-    expect(layers()).toEqual(['translate3d(-0.25px, 0, 0)', 'translate3d(-0.25px, 0, 0)'])
+    expect(barLefts()).toEqual(still)
     rerender({ playing: true, playheadMs: bar(32) + 100 })
-    expect(lefts()).not.toEqual(still)
-    expect(layers()).toEqual(['translate3d(-0.25px, 0, 0)', 'translate3d(-0.25px, 0, 0)'])
+    const shifts = shiftOfEachBar(still)
+    expect(shifts.length).toBeGreaterThan(10)
+    for (const shift of shifts) expect(shift).toBeCloseTo(100 / 400, 6)
+    expect(screen.getByTestId('cue-detail').querySelector('[style*="translate3d"]')).toBeNull()
   })
 
-  it('steps the playing wave by device pixels on a Retina screen, so the lines stay sharp where the screen can draw them', () => {
+  it('steps the playing wave by device pixels on a Retina screen, the finest step that screen can draw', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const { rerender } = setup({ playing: true, playheadMs: bar(32) })
-    const still = screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)
+    const still = barLefts()
+    rerender({ playing: true, playheadMs: bar(32) + 10 })
+    expect(barLefts()).toEqual(still)
     rerender({ playing: true, playheadMs: bar(32) + 40 })
-    expect(screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left)).not.toEqual(still)
-    expect(screen.getByTestId('cue-detail-wave-layer').style.transform).toBe(
-      'translate3d(0px, 0, 0)',
-    )
+    const shifts = shiftOfEachBar(still)
+    expect(shifts.length).toBeGreaterThan(10)
+    for (const shift of shifts) expect(shift).toBeCloseTo(50 / 400, 6)
     vi.unstubAllGlobals()
   })
 
-  it('draws a paused wave exactly where it is, with no layer offset to soften its lines', () => {
-    setup({ playheadMs: bar(32) + 20 })
-    expect(screen.getByTestId('cue-detail-wave-layer').style.transform).toBe('')
-    expect(screen.getByTestId('cue-detail-marks-layer').style.transform).toBe('')
+  it('draws a paused wave exactly where the playhead is, so a scrub lands on the beat it was dropped on', () => {
+    const { rerender } = setup({ playheadMs: bar(32) })
+    const first = screen.getAllByTestId('cue-detail-bar')[0].style.left
+    rerender({ playheadMs: bar(32) + 20 })
+    expect(screen.getAllByTestId('cue-detail-bar')[0].style.left).not.toBe(first)
   })
 
   // The playing preview moves the playhead every frame. Measuring the stage and the canvas
