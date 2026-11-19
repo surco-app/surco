@@ -96,9 +96,9 @@ export function CueZoom({
   )
 }
 
-function onDevicePixel(beats: number[], playheadMs: number, bars: number, width: number): number {
-  const window = detailWindow(beats, playheadMs, bars)
-  const span = window.toMs - window.fromMs
+const SAME_TEMPO = 0.01
+
+function onDevicePixel(playheadMs: number, span: number, width: number): number {
   if (!(width > 0) || !(span > 0)) return playheadMs
   const dpr = globalThis.devicePixelRatio || 1
   return (Math.round(((playheadMs * width) / span) * dpr) / dpr / width) * span
@@ -167,11 +167,19 @@ export function CueWaveDetail({
     width: number
     height: number
   } | null>(null)
-  const viewMs = playing
-    ? onDevicePixel(beats, playheadMs, bars, painter.current?.width ?? 0)
-    : playheadMs
-  const { fromMs, toMs } = detailWindow(beats, viewMs, bars)
-  const span = toMs - fromMs
+  const local = detailWindow(beats, playheadMs, bars)
+  const localSpan = local.toMs - local.fromMs
+  const kept = useRef({ beats, bars, span: localSpan })
+  if (
+    kept.current.beats !== beats ||
+    kept.current.bars !== bars ||
+    Math.abs(localSpan - kept.current.span) > kept.current.span * SAME_TEMPO
+  )
+    kept.current = { beats, bars, span: localSpan }
+  const span = kept.current.span
+  const viewMs = playing ? onDevicePixel(playheadMs, span, painter.current?.width ?? 0) : playheadMs
+  const fromMs = viewMs - span / 2
+  const toMs = viewMs + span / 2
   const snapMs = useMemo(() => quantizePoints(grid, quantize), [grid, quantize])
   const latest = useRef({ span, beats, onScrub, onZoom, onPlace })
   latest.current = { span, beats, onScrub, onZoom, onPlace }
@@ -344,7 +352,7 @@ export function CueWaveDetail({
       was.width !== width ||
       was.height !== height ||
       was.dpr !== dpr ||
-      Math.abs(was.span - span) > span * 0.05 ||
+      was.span !== span ||
       fromMs < was.fromMs ||
       toMs > was.toMs
     ) {
