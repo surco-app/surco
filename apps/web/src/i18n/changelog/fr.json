@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Trie par album et par date d’ajout",
+    "items": [
+      {
+        "text": "Trie la liste par « Album ». Chaque album garde son ordre de disque et de piste.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Trie la liste d’un logiciel DJ ou d’Apple Music par « Ajoutée » et les morceaux les plus récents passent en haut.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Classe ce que tu convertis par date. Ajoute {currentYear} et {currentMonth} dans « Format du nom de fichier », par exemple {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Une playlist dans son ordre affiche le numéro de chaque morceau sur sa pochette. Masque-les avec « Afficher les numéros » dans le menu d’affichage.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Quand Apple Music n’a pas encore le morceau, le bouton dit « Ajouter ». Quand seuls les tags changent, il dit « Mettre à jour ».",
+        "in": "1.40.0"
+      },
+      {
+        "text": "La barre de la liste tient sur une ligne. Dans Matching, « Créer une playlist » y est une icône, et une autre replie les suggestions.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "L’onde de l’éditeur de cues avance en douceur à la lecture et occupe toute sa place quand tu l’agrandis.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Des notifications qui ne gênent plus",

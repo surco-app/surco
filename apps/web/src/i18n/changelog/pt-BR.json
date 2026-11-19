@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Ordene por álbum e por data de adição",
+    "items": [
+      {
+        "text": "Ordene a lista por “Álbum”. Cada álbum segue na ordem de disco e faixa.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Ordene a lista de um programa de DJ ou do Apple Music por “Adicionada” e as faixas mais novas ficam no topo.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Arquive por data o que você converte. Coloque {currentYear} e {currentMonth} em “Formato do nome do arquivo”, por exemplo {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Uma playlist na própria ordem mostra o número de cada faixa sobre a capa. Tire com “Mostrar números” no menu de visualização.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Quando o Apple Music ainda não tem a faixa, o botão diz “Adicionar”. Quando só as tags mudam, diz “Atualizar”.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "A barra da lista cabe em uma linha. Em Matching, “Criar playlist” é um ícone dessa barra, e outro recolhe as sugestões.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "A onda do editor de cues avança suave ao tocar e ocupa todo o espaço quando você maximiza.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Avisos que não atrapalham",

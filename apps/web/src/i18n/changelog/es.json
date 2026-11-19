@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "19 de noviembre de 2026",
+    "title": "Ordena por álbum y por fecha de alta",
+    "items": [
+      {
+        "text": "Ordena la lista por «Álbum». Cada álbum sigue en su orden de disco y pista.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Ordena la lista de un programa de DJ o de Apple Music por «Añadida» y las pistas más nuevas salen arriba.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Archiva lo que conviertes por fecha. Pon {currentYear} y {currentMonth} en «Formato del nombre», por ejemplo {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Una playlist en su orden enseña el número de cada pista sobre su carátula. Quítalos con «Mostrar números» en el menú de vista.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Cuando Apple Music aún no tiene la pista, el botón dice «Añadir». Cuando solo cambian las etiquetas, dice «Actualizar».",
+        "in": "1.40.0"
+      },
+      {
+        "text": "La barra de la lista cabe en una fila. En Matching, «Crear playlist» es un icono de esa barra, y otro pliega las sugerencias.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "La onda del editor de cues avanza suave al reproducir y ocupa todo su espacio al maximizarlo.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "18 de noviembre de 2026",
     "title": "Avisos que no estorban",

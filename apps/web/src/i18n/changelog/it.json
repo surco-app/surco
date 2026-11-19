@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Ordina per album e per data di aggiunta",
+    "items": [
+      {
+        "text": "Ordina l'elenco per «Album». Ogni album resta nel suo ordine di disco e traccia.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Ordina l'elenco di un programma DJ o di Apple Music per «Aggiunto» e i brani più recenti vanno in cima.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Archivia per data quello che converti. Metti {currentYear} e {currentMonth} in «Formato del nome», per esempio {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Una playlist nel suo ordine mostra il numero di ogni brano sulla copertina. Toglili con «Mostra numeri» nel menu di vista.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Quando Apple Music non ha ancora il brano, il pulsante dice «Aggiungi». Quando cambiano solo i tag, dice «Aggiorna».",
+        "in": "1.40.0"
+      },
+      {
+        "text": "La barra dell'elenco sta su una riga. In Matching, «Crea playlist» è un'icona di quella barra, e un'altra chiude i suggerimenti.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "L'onda dell'editor dei cue scorre fluida durante la riproduzione e occupa tutto il suo spazio quando lo ingrandisci.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Avvisi che non danno fastidio",

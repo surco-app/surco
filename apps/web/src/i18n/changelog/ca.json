@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Ordena per àlbum i per data d'alta",
+    "items": [
+      {
+        "text": "Ordena la llista per «Àlbum». Cada àlbum segueix en el seu ordre de disc i pista.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Ordena la llista d'un programa de DJ o d'Apple Music per «Afegida» i les pistes més noves surten a dalt.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Arxiva el que converteixes per data. Posa {currentYear} i {currentMonth} a «Format del nom», per exemple {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Una playlist en el seu ordre mostra el número de cada pista sobre la caràtula. Treu-los amb «Mostrar els números» al menú de vista.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Quan Apple Music encara no té la pista, el botó diu «Afegir». Quan només canvien les etiquetes, diu «Actualitzar».",
+        "in": "1.40.0"
+      },
+      {
+        "text": "La barra de la llista cap en una fila. A Matching, «Crear playlist» és una icona d'aquesta barra, i una altra plega els suggeriments.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "L'ona de l'editor de cues avança suau en reproduir i ocupa tot el seu espai en maximitzar-lo.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Avisos que no fan nosa",

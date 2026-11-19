@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Nach Album und Hinzufügedatum sortieren",
+    "items": [
+      {
+        "text": "Sortiere die Liste nach „Album“. Jedes Album bleibt in seiner Reihenfolge nach Disc und Titelnummer.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Sortiere die Liste eines DJ-Programms oder von Apple Music nach „Hinzugefügt“, und die neuesten Tracks stehen oben.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Lege Konvertiertes nach Datum ab. Setze {currentYear} und {currentMonth} in das „Dateinamen-Format“, zum Beispiel {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Eine Playlist in ihrer eigenen Reihenfolge zeigt die Nummer jedes Tracks auf seinem Cover. Mit „Nummern zeigen“ im Ansichtsmenü blendest du sie aus.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Wenn Apple Music den Track noch nicht hat, steht auf dem Button „Hinzufügen“. Wenn sich nur die Tags ändern, steht dort „Aktualisieren“.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Die Leiste der Liste passt in eine Zeile. In Matching ist „Playlist erstellen“ dort ein Symbol, und ein weiteres klappt die Vorschläge ein.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Die Welle im Cue-Editor läuft beim Abspielen gleichmäßig und füllt ihren Platz, wenn du ihn maximierst.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Hinweise, die nicht stören",

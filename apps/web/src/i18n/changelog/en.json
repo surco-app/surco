@@ -1,5 +1,40 @@
 [
   {
+    "version": "1.40",
+    "date": "November 19, 2026",
+    "title": "Sort by album and by date added",
+    "items": [
+      {
+        "text": "Sort the list by “Album”. Each album stays in its disc and track order.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "Sort a DJ program’s list or Apple Music by “Added” and the newest tracks come first.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "File what you convert by date. Add {currentYear} and {currentMonth} to “File name format”, for example {currentYear}/{currentMonth}/{artist} - {title}.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "A playlist in its own order shows each track’s number on its cover. Turn them off with “Show Numbers” in the View menu.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "When Apple Music does not have the track yet, the button says “Add”. When only the tags change, it says “Update”.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "The list toolbar fits on one row. In Matching, “Create playlist” is an icon there, and another one folds the suggestions.",
+        "in": "1.40.0"
+      },
+      {
+        "text": "The wave in the cue editor moves smoothly as it plays and fills its space when you maximize it.",
+        "in": "1.40.0"
+      }
+    ]
+  },
+  {
     "version": "1.39",
     "date": "November 18, 2026",
     "title": "Notices out of your way",
