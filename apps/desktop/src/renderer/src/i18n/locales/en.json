@@ -2121,6 +2121,7 @@
         "up": "only in a build",
         "chorus": "only in a chorus"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "The one at {{bars}}, only if it fits.",
         "down": "The one at {{bars}}, only in a breakdown.",

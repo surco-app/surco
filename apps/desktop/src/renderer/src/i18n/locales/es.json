@@ -2121,6 +2121,7 @@
         "up": "solo en una subida",
         "chorus": "solo en un estribillo"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "El de {{bars}}, solo si cabe.",
         "down": "El de {{bars}}, solo en una bajada.",

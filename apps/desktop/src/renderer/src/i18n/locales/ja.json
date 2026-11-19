@@ -2121,6 +2121,7 @@
         "up": "ビルドアップのみ",
         "chorus": "コーラスのみ"
       },
+      "whenEachLead": "。",
       "whenEachHint": {
         "fits": "{{bars}} のキューは収まる場合のみ。",
         "down": "{{bars}} のキューはブレイクダウンのみ。",

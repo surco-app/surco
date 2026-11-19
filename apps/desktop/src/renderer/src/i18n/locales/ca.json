@@ -2121,6 +2121,7 @@
         "up": "només en una pujada",
         "chorus": "només en una tornada"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "El de {{bars}}, només si hi cap.",
         "down": "El de {{bars}}, només en una baixada.",

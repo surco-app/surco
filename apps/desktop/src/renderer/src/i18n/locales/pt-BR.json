@@ -2121,6 +2121,7 @@
         "up": "só em uma subida",
         "chorus": "só em um refrão"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "O de {{bars}}, só se couber.",
         "down": "O de {{bars}}, só em um breakdown.",

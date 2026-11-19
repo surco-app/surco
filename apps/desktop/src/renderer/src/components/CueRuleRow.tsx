@@ -420,7 +420,7 @@ export function CueRuleRow({
           .filter((slot) => whenAt(slot) !== 'rule')
           .map((slot, i) => (
             <span key={slot}>
-              {i === 0 ? '. ' : ' '}
+              {i === 0 ? tr('settings.cueFlows.whenEachLead') : ' '}
               {tr(`settings.cueFlows.whenEachHint.${whenAt(slot)}`, {
                 bars: rule.bars * (slot + 1),
               })}

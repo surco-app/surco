@@ -2121,6 +2121,7 @@
         "up": "solo in una salita",
         "chorus": "solo in un ritornello"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "Quello da {{bars}}, solo se c'è spazio.",
         "down": "Quello da {{bars}}, solo in un calo.",

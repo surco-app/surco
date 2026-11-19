@@ -2121,6 +2121,7 @@
         "up": "seulement dans une montée",
         "chorus": "seulement dans un refrain"
       },
+      "whenEachLead": ". ",
       "whenEachHint": {
         "fits": "Celui de {{bars}}, seulement si ça rentre.",
         "down": "Celui de {{bars}}, seulement dans une descente.",
