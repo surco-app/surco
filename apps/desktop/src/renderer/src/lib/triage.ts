@@ -443,6 +443,7 @@ export type TrackSort =
   | 'year'
   | 'quality'
   | 'rating'
+  | 'dateAdded'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -517,10 +518,12 @@ export function sortTracks(
   tracks: TrackItem[],
   sort: TrackSort,
   dir: SortDir = 'asc',
+  addedOf?: ReadonlyMap<string, number>,
 ): TrackItem[] {
   if (sort === 'import') return tracks
   const sign = dir === 'desc' ? -1 : 1
-  const sortValue = NUMERIC_SORTS[sort]
+  const sortValue =
+    sort === 'dateAdded' ? (t: TrackItem) => addedOf?.get(t.id) ?? null : NUMERIC_SORTS[sort]
   if (sortValue) {
     return tracks
       .map((track) => ({ track, value: sortValue(track) }))

@@ -113,6 +113,7 @@ interface EntityRow extends Linked {
   rating: number | null
   key: number | null
   albumArtId: number | null
+  dateAdded: number | null
 }
 
 function bpmText(row: EntityRow): string | undefined {
@@ -127,6 +128,7 @@ function metaOf(row: EntityRow): AppleMusicTrackMeta {
   if (row.rating && row.rating > 0) meta.rating = row.rating
   const key = keyName(row.key)
   if (key) meta.key = key
+  if (row.dateAdded && row.dateAdded > 0) meta.addedAt = row.dateAdded * 1000
   return meta
 }
 
@@ -183,7 +185,7 @@ function coverFiles(
 }
 
 const ROW_FIELDS =
-  't.id AS trackId, t.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.key, t.albumArtId'
+  't.id AS trackId, t.path, t.title, t.artist, t.length, t.bpm, t.bpmAnalyzed, t.rating, t.key, t.albumArtId, t.dateAdded'
 
 function recentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime() / 1000

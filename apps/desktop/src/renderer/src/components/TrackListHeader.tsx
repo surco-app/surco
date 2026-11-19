@@ -5,6 +5,7 @@ import {
   ArrowDownUp,
   ArrowUpNarrowWide,
   Calendar,
+  CalendarPlus,
   CaseSensitive,
   Clock,
   Copy,
@@ -69,6 +70,7 @@ interface Props {
   filterFacets: React.ComponentProps<typeof QualityFilterBar>['facets']
   sortBy: TrackSort
   setSortBy: (v: TrackSort) => void
+  hasAddedDates?: boolean
   sortDir: 'asc' | 'desc'
   toggleSortDir: () => void
   tracks: TrackItem[]
@@ -189,6 +191,7 @@ export function TrackListHeader({
   filterFacets,
   sortBy,
   setSortBy,
+  hasAddedDates = false,
   sortDir,
   toggleSortDir,
   tracks,
@@ -364,6 +367,12 @@ export function TrackListHeader({
                 { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
                 { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
                 { value: 'rating', label: tr('sidebar.sort.rating'), icon: Star },
+                {
+                  value: 'dateAdded',
+                  label: tr('sidebar.sort.dateAdded'),
+                  icon: CalendarPlus,
+                  disabled: !hasAddedDates,
+                },
               ]}
             />
             <button

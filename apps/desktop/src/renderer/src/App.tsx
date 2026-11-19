@@ -2402,6 +2402,7 @@ export default function App(): React.JSX.Element {
         sortBy === 'import' ? found.rows : distinctById(found.rows),
         sortBy,
         sortDir,
+        playlistScope?.addedOf,
       ),
       separatorBefore: found.separatorBefore,
       hidesNone: filtered.length === scopeRows.length,
@@ -2417,6 +2418,7 @@ export default function App(): React.JSX.Element {
     sourceProgram,
     browser.playlist?.id,
     playlistScope?.separatorBefore,
+    playlistScope?.addedOf,
   ])
   const viewKey = `${filterKey}|${deferredSearch}|${sortBy}|${sortDir}|${openPlaylistId}|${playlistOrder}`
   // biome-ignore lint/correctness/useExhaustiveDependencies: heldRelease is the re-run trigger for the pointer leaving the list; the hover itself is read from its ref.
@@ -4693,6 +4695,7 @@ export default function App(): React.JSX.Element {
                             filterFacets={filterFacets}
                             sortBy={sortBy}
                             setSortBy={setSortBy}
+                            hasAddedDates={(playlistScope?.addedOf.size ?? 0) > 0}
                             sortDir={sortDir}
                             toggleSortDir={toggleSortDir}
                             tracks={scopeTracks}

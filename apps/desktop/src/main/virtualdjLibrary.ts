@@ -202,6 +202,7 @@ function metaOf(song: VirtualdjSong | undefined): AppleMusicTrackMeta {
   const meta: AppleMusicTrackMeta = {}
   if (song?.secondsPerBeat) meta.bpm = String(Number((60 / song.secondsPerBeat).toFixed(2)))
   if (song?.key) meta.key = song.key
+  if (song?.firstSeen) meta.addedAt = song.firstSeen * 1000
   return meta
 }
 

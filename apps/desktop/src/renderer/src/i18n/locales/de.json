@@ -325,7 +325,8 @@
       "ascending": "Aufsteigende Reihenfolge",
       "descending": "Absteigende Reihenfolge",
       "directionNeedsField": "Nach einem Feld sortieren, um die Richtung zu wählen",
-      "rating": "Sterne"
+      "rating": "Sterne",
+      "dateAdded": "Hinzugefügt"
     },
     "position": "Track {{current}} von {{total}}",
     "selectedCount_one": "{{count}} ausgewählt",

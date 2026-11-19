@@ -325,7 +325,8 @@
       "ascending": "Ordre croissant",
       "descending": "Ordre décroissant",
       "directionNeedsField": "Triez par un champ pour choisir le sens",
-      "rating": "Étoiles"
+      "rating": "Étoiles",
+      "dateAdded": "Ajoutée"
     },
     "position": "Morceau {{current}} sur {{total}}",
     "selectedCount_one": "{{count}} sélectionné",

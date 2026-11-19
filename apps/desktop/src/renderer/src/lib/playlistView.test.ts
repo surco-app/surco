@@ -75,6 +75,23 @@ describe('playlistView', () => {
 
   // A track shown once stands for its first row in the playlist: that is the row a drag
   // moves, and the entry another playlist links to when it is copied.
+  it('gives each shown track the moment its program added it, whichever way the program says it', () => {
+    const view = playlistView(
+      [A, B, C],
+      [
+        { ...entry('/m/A.wav'), meta: { dateAdded: '2026-05-02' } },
+        { ...entry('/m/B.wav'), meta: { addedAt: 1_700_000_000_000 } },
+        entry('/m/C.wav'),
+      ],
+    )
+    expect(view.addedOf).toEqual(
+      new Map([
+        ['a', Date.parse('2026-05-02')],
+        ['b', 1_700_000_000_000],
+      ]),
+    )
+  })
+
   it('gives each shown track the link of its first row and its collection entry', () => {
     const view = playlistView(
       [A, B],

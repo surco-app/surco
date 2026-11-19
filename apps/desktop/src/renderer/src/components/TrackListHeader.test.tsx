@@ -442,6 +442,21 @@ describe('TrackListHeader layout', () => {
     expect(within(sort).getByText(i18n.t('sidebar.sort.import')).className).toContain('@[27rem]:')
   })
 
+  it('sorts by date added where the list has dates, and says it cannot where it has none', () => {
+    const setSortBy = vi.fn()
+    renderHeader({ setSortBy, hasAddedDates: true })
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-dateAdded'))
+    expect(setSortBy).toHaveBeenCalledWith('dateAdded')
+    cleanup()
+    renderHeader({ setSortBy: vi.fn() })
+    fireEvent.click(screen.getByTestId('track-sort'))
+    expect(screen.getByTestId('track-sort-option-dateAdded')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
+  })
+
   // The stars are read like any rating column, so they sort the list too.
   it('sorts the list by stars', () => {
     const setSortBy = vi.fn()
