@@ -618,6 +618,32 @@ describe('CueWaveDetail', () => {
     vi.unstubAllGlobals()
   })
 
+  it('keeps the wave the same width from one beat to the next on a grid stored in whole milliseconds, since a window sized by the beat under the playhead stretched and shrank the wave twice a second', () => {
+    const fake = { clearRect: vi.fn(), fillRect: vi.fn(), setTransform: vi.fn(), fillStyle: '' }
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(fake as never)
+    let at = 0
+    const uneven = Array.from({ length: 800 }, (_, i) => {
+      const beat = { ms: at, beat: (i % 4) + 1 }
+      at += i % 2 === 0 ? 433 : 434
+      return beat
+    })
+    const words = new Uint16Array(60000).fill((7 << 13) | (31 << 2))
+    const { rerender } = setup({ grid: uneven, source: { words }, playheadMs: uneven[200].ms })
+    const canvas = screen.getByTestId('cue-detail').querySelector('canvas') as HTMLCanvasElement
+    const gap = () => {
+      const [a, b] = screen.getAllByTestId('cue-detail-bar').slice(4, 6)
+      return (Number.parseFloat(b.style.left) - Number.parseFloat(a.style.left)).toFixed(6)
+    }
+    const width = canvas.style.width
+    const spacing = gap()
+    for (const beat of [201, 202, 203, 204, 205]) {
+      rerender({ grid: uneven, source: { words }, playheadMs: uneven[beat].ms })
+      expect(canvas.style.width).toBe(width)
+      expect(gap()).toBe(spacing)
+    }
+    expect(fake.clearRect).toHaveBeenCalledTimes(1)
+  })
+
   it('draws a paused wave exactly where the playhead is, so a scrub lands on the beat it was dropped on', () => {
     const { rerender } = setup({ playheadMs: bar(32) })
     const first = screen.getAllByTestId('cue-detail-bar')[0].style.left
