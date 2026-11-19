@@ -500,7 +500,7 @@
   },
   "update": {
     "ready": "Version {{version}} ist bereit",
-    "restart": "Zum Aktualisieren neu starten",
+    "restart": "Neu starten",
     "failed": "Update fehlgeschlagen: {{error}}",
     "checkFailed": "Nach Updates konnte nicht gesucht werden",
     "checkFailedStatus": "Nach Updates konnte nicht gesucht werden (GitHub antwortete {{status}})",

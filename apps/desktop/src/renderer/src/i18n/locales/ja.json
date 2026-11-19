@@ -500,7 +500,7 @@
   },
   "update": {
     "ready": "バージョン {{version}} の準備ができました",
-    "restart": "更新するには再起動してください",
+    "restart": "再起動",
     "failed": "更新に失敗しました：{{error}}",
     "checkFailed": "更新をチェックできませんでした",
     "checkFailedStatus": "更新をチェックできませんでした (GitHub が {{status}} と応答)",

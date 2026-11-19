@@ -500,7 +500,7 @@
   },
   "update": {
     "ready": "Version {{version}} is ready",
-    "restart": "Restart to update",
+    "restart": "Restart",
     "failed": "Update failed: {{error}}",
     "checkFailed": "Could not check for updates",
     "checkFailedStatus": "Could not check for updates (GitHub responded {{status}})",
