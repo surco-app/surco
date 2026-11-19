@@ -169,6 +169,31 @@ dir>] [--tracks 60] [--budget 600]`; same exit rules as the rekordbox soak, plus
 lost heap reading fails the run, and "lost its connection to the app" means Playwright dropped
 the page while the app kept running (seen twice around 16 minutes in, on 15/11/2026): run it again.
 
+## Finding what is slow or what holds memory
+
+The gates say that something got slower or heavier; these three say where. All of them read a
+built tree (`--tree <repo dir>`, this one by default), name functions by their source file and
+line through the build's source maps, and run under `caffeinate -dims` like the gates.
+
+`node profile-select-all.mjs [--program engine|virtualdj|rekordbox]` opens the big list of that
+program, selects one track and presses ⌘A with the CPU profiler on. It prints how long the key
+took and the functions that spent the time, by their own time and by everything under them.
+
+`node profile-memory-traktor.mjs [--tracks 60] [--snapshot <path prefix>] [--snapshot-at 14]`
+walks the Traktor collection as `soak-traktor.mjs` does, with the heap's allocation sampling
+on. It prints the heap after every track and, at the end, which lines allocated what is still
+alive. With `--snapshot` it also writes `<prefix>-mid.heapsnapshot` after the track
+`--snapshot-at` names and `<prefix>-end.heapsnapshot` at the end, about 400 MB each: keep them
+out of the repo.
+
+`node --max-old-space-size=8192 analyze-heap-snapshot.mjs --snapshot <file> --props a,b,c
+[--depth 16] [--buffers]` counts the objects in a snapshot that carry every property named and
+prints the five commonest chains of what keeps them alive, each closure with the line that
+created it. `--buffers` looks for array buffers over 30 KB instead. Compare the count between
+the mid and the end snapshot: a number that grows with the tracks walked is a leak, and the
+chain says who holds it. A closure made in a render holds everything that render could see,
+which is how a query function written inside a hook kept every past editor alive (19/11/2026).
+
 ## Gates run in the background
 
 On macOS every script here that launches the app (`driver.mjs`, the three gates, the guide,
