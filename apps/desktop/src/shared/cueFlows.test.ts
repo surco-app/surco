@@ -269,6 +269,99 @@ describe('normalizeCueFlows', () => {
     expect(flow).toEqual({ id: 'x', name: 'Rota', markPoint: true, rules: [] })
   })
 
+  it('reads the condition of each repetition back from a saved flow, so the 48 stays tied to its breakdown', () => {
+    const rule = { ...MY_FLOW.rules[0], whenEach: ['rule', 'rule', 'down'] }
+    const flows = normalizeCueFlows([{ id: 'x', name: 'Subidón', rules: [rule] }])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([rule])
+  })
+
+  it('cuts the conditions of repetitions the rule no longer has, so a shortened rule carries nothing hidden', () => {
+    const base = MY_FLOW.rules[0]
+    const long = Array.from({ length: 20 }, () => 'up')
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Corta',
+        rules: [
+          { ...base, repeat: 2, whenEach: ['fits', 'up', 'down'] },
+          { ...base, repeat: 'edge', whenEach: long },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules.map((r) => r.whenEach)).toEqual([
+      ['fits', 'up'],
+      long.slice(0, 16),
+    ])
+  })
+
+  it('stores no condition that only repeats the rule, so the same rule always saves the same way', () => {
+    const base = MY_FLOW.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Igual',
+        rules: [
+          { ...base, whenEach: ['chorus', 'rule', 'rule'] },
+          { ...base, whenEach: ['rule', 'rule'] },
+          { ...base, whenEach: [] },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([
+      { ...base, whenEach: ['chorus'] },
+      base,
+      base,
+    ])
+  })
+
+  it('drops the conditions of a rule with no repetitions to tell apart, where no square could show them', () => {
+    const base = MY_FLOW.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Sin cuadros',
+        rules: [
+          { ...base, bars: 0, whenEach: ['down'] },
+          { ...base, color: { fixed: 22 }, whenEach: ['down'] },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules).toEqual([
+      { ...base, bars: 0 },
+      { ...base, color: { fixed: 22 } },
+    ])
+  })
+
+  it('ignores conditions that are not a list of words and keeps the rule, so a hand-edited file loses only that', () => {
+    const base = MY_FLOW.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Rara',
+        rules: [
+          { ...base, whenEach: 'down' },
+          { ...base, whenEach: ['down', 3] },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')).toEqual({
+      id: 'x',
+      name: 'Rara',
+      markPoint: true,
+      rules: [base, base],
+    })
+  })
+
+  it('keeps a rule aside when one repetition has a condition from a newer Surco, so saving here never rewrites it', () => {
+    const good = MY_FLOW.rules[0]
+    const newer = { ...good, whenEach: ['rule', 'bridge'] }
+    const [flow] = normalizeCueFlows([{ id: 'x', name: 'Nueva', rules: [good, newer] }]).filter(
+      (f) => f.id === 'x',
+    )
+    expect(flow.rules).toEqual([good])
+    expect(flow.foreign).toEqual([{ at: 1, rule: newer }])
+  })
+
   it('keeps the first of two flows with the same id', () => {
     const flows = normalizeCueFlows([
       MY_FLOW,

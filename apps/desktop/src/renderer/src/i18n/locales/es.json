@@ -2061,7 +2061,8 @@
           "strong": "Dentro de un estribillo",
           "point": "Pasa de otra marca",
           "start": "Antes de que empiece la pista",
-          "end": "Después de que acabe la pista"
+          "end": "Después de que acabe la pista",
+          "section": "Fuera de esa sección"
         }
       },
       "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
@@ -2112,6 +2113,20 @@
         "room": "Lo deja fuera si otro cue llega en los compases que elijas",
         "clear": "Lo deja fuera si otro cue cae en el mismo compás",
         "first": "Solo antes de la primera marca, si allí no hay nada"
+      },
+      "whenEach": {
+        "rule": "como la regla",
+        "fits": "si cabe",
+        "down": "solo en una bajada",
+        "up": "solo en una subida",
+        "chorus": "solo en un estribillo"
+      },
+      "whenEachLead": ". ",
+      "whenEachHint": {
+        "fits": "El de {{bars}}, solo si cabe.",
+        "down": "El de {{bars}}, solo en una bajada.",
+        "up": "El de {{bars}}, solo en una subida.",
+        "chorus": "El de {{bars}}, solo en un estribillo."
       },
       "place": {
         "hot": "hot cue",

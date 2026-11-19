@@ -5,6 +5,7 @@ export type FlowRepeat = number | 'edge'
 export type FlowCondition = 'always' | 'fits' | 'previous' | 'room' | 'clear' | 'first'
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
+export type RepeatCondition = 'rule' | 'fits' | 'up' | 'down' | 'chorus'
 
 export interface CueRule {
   from: FlowOrigin
@@ -15,6 +16,7 @@ export interface CueRule {
   place: FlowPlace
   color: FlowColor
   gap?: number
+  whenEach?: RepeatCondition[]
 }
 
 export interface ForeignRule {
@@ -63,6 +65,7 @@ export const FLOW_CONDITIONS: FlowCondition[] = [
   'clear',
   'first',
 ]
+export const REPEAT_CONDITIONS: RepeatCondition[] = ['rule', 'fits', 'down', 'up', 'chorus']
 export const ROOM_GAP = 8
 export const FLOW_PLACES: FlowPlace[] = ['hot', 'call', 'both']
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
@@ -216,6 +219,24 @@ function gapOf(value: unknown): number | null {
     : null
 }
 
+const isWordList = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((w) => typeof w === 'string')
+
+const hasNewerWord = (value: unknown): boolean =>
+  isWordList(value) && value.some((w) => !REPEAT_CONDITIONS.includes(w as RepeatCondition))
+
+function whenEachOf(
+  value: unknown,
+  bars: number,
+  repeat: FlowRepeat,
+  color: FlowColor,
+): RepeatCondition[] {
+  if (!isWordList(value) || bars === 0 || 'fixed' in color) return []
+  const each = value.slice(0, repeat === 'edge' ? MAX_RULE_REPEAT : repeat) as RepeatCondition[]
+  while (each[each.length - 1] === 'rule') each.pop()
+  return each
+}
+
 function ruleOf(value: unknown): CueRule | null {
   if (!value || typeof value !== 'object') return null
   const r = value as Record<string, unknown>
@@ -234,9 +255,11 @@ function ruleOf(value: unknown): CueRule | null {
     bars > 128 ||
     color === null ||
     repeat === null ||
-    gap === null
+    gap === null ||
+    hasNewerWord(r.whenEach)
   )
     return null
+  const whenEach = whenEachOf(r.whenEach, bars, repeat, color)
   return {
     from: r.from as FlowOrigin,
     direction: r.direction as FlowDirection,
@@ -246,6 +269,7 @@ function ruleOf(value: unknown): CueRule | null {
     place: r.place as FlowPlace,
     color,
     ...(gap === undefined ? {} : { gap }),
+    ...(whenEach.length === 0 ? {} : { whenEach }),
   }
 }
 
@@ -262,9 +286,9 @@ function isForeign(value: unknown): value is Record<string, unknown> {
   const unknown = WORDS.filter(
     ([key, known]) => typeof r[key] === 'string' && r[key] !== '' && !known.includes(r[key]),
   )
-  if (unknown.length === 0) return false
+  if (unknown.length === 0 && !hasNewerWord(r.whenEach)) return false
   const stand = Object.fromEntries(unknown.map(([key, known]) => [key, known[0]]))
-  return ruleOf({ ...r, ...stand, gap: undefined }) !== null
+  return ruleOf({ ...r, ...stand, gap: undefined, whenEach: undefined }) !== null
 }
 
 function storedRules(f: Record<string, unknown>): unknown[] {

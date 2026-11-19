@@ -126,3 +126,113 @@ describe('points marked by hand', () => {
     expect(evaluateFlow(mixIn, t).cues.map((c) => c.ms)).toEqual([beat(134)])
   })
 })
+
+describe('a condition of its own on one repetition', () => {
+  const bar = (n: number): number => beat(n - 1)
+  const part = (from: number, to: number) => ({ start: bar(from), end: bar(to) })
+  const kinds = {
+    intro: [1],
+    chorus: [9, 33, 109, 181],
+    up: [25, 65, 97, 173, 221],
+    down: [89, 165, 229],
+    outro: [245],
+  } as const
+  const phrases = Object.entries(kinds).flatMap(([kind, bars]) =>
+    bars.map((n) => ({ ms: bar(n), kind: kind as keyof typeof kinds })),
+  )
+  const song = (over: Partial<FlowTrack> = {}): FlowTrack => ({
+    beats: grid(250),
+    drops: [bar(33), bar(109), bar(181)],
+    strong: [
+      part(9, 25),
+      part(33, 41),
+      part(41, 49),
+      part(49, 65),
+      part(109, 125),
+      part(125, 137),
+      part(137, 141),
+      part(141, 157),
+      part(157, 165),
+      part(181, 197),
+      part(197, 213),
+      part(213, 221),
+    ],
+    phrases,
+    ...over,
+  })
+  const buildUp = (over: Partial<CueRule> = {}): CueFlow =>
+    flow(rule({ repeat: 3, when: 'previous', color: { each: [1, 22, 42] }, ...over }))
+  const placedAt = (f: CueFlow, t: FlowTrack) => evaluateFlow(f, t).cues.map((c) => c.ms)
+  const inTrack = (f: CueFlow, t: FlowTrack) =>
+    rejectedCues(f, t)
+      .filter((c) => c.ms >= 0)
+      .map((c) => [c.ms, c.bars, c.reason])
+
+  it('places every repetition of a rule without one, exactly as before it existed', () => {
+    expect(placedAt(buildUp(), song())).toEqual(
+      [1, 17, 61, 77, 93, 133, 149, 165].map((n) => bar(n)),
+    )
+    expect(inTrack(buildUp(), song())).toEqual([])
+  })
+
+  it('keeps the 48 only where it lands in a breakdown, so one rule gives the long run-up without a red cue inside a chorus', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'down'] })
+    expect(placedAt(f, song())).toEqual([1, 17, 77, 93, 149, 165].map((n) => bar(n)))
+    expect(inTrack(f, song())).toEqual([
+      [bar(61), 48, 'section'],
+      [bar(133), 48, 'section'],
+    ])
+  })
+
+  it('keeps the 48 only where it fits outside a strong part, saying the strong part is what left it out', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'fits'] })
+    expect(placedAt(f, song())).toEqual([1, 17, 77, 93, 149, 165].map((n) => bar(n)))
+    expect(inTrack(f, song())).toEqual([
+      [bar(61), 48, 'strong'],
+      [bar(133), 48, 'strong'],
+    ])
+  })
+
+  it('goes on to the next repetition after leaving one out, because the condition belongs to that repetition alone', () => {
+    const f = buildUp({ whenEach: ['rule', 'down'] })
+    expect(placedAt(f, song({ drops: [bar(109)] }))).toEqual([bar(61), bar(93)])
+    expect(inTrack(f, song({ drops: [bar(109)] }))).toEqual([[bar(77), 32, 'section']])
+  })
+
+  it('reads the section in force at the cue, not only the one that starts on it', () => {
+    const f = buildUp({ repeat: 1, whenEach: ['down'] })
+    expect(placedAt(f, song())).toEqual([bar(93), bar(165)])
+  })
+
+  it('places nothing that asks for a section on a track without phrases, since nothing says where it is', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'down'] })
+    const bare = song({ phrases: [] })
+    expect(placedAt(f, bare)).toEqual([1, 17, 77, 93, 149, 165].map((n) => bar(n)))
+    expect(inTrack(f, bare).map(([, , reason]) => reason)).toEqual(['section', 'section'])
+  })
+
+  it('lets the rule cut the countdown first, so a repetition never gets past where the rule stops', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'down'] })
+    const unbroken = song({
+      strong: [part(9, 25), part(33, 65), part(109, 165), part(181, 221)],
+    })
+    expect(placedAt(f, unbroken)).toEqual([1, 17, 77, 93, 165].map((n) => bar(n)))
+    expect(inTrack(f, unbroken)).toEqual([
+      [bar(61), 48, 'strong'],
+      [bar(149), 32, 'strong'],
+      [bar(133), 48, 'strong'],
+    ])
+  })
+
+  it('skips the fitting on a point marked by hand, as the rule does, since the DJ chose that point', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'fits'] })
+    const forced = song({ byHand: [bar(109)] })
+    expect(placedAt(f, forced)).toEqual([1, 17, 61, 77, 93, 149, 165].map((n) => bar(n)))
+  })
+
+  it('still asks for the section on a point marked by hand, because the section is about where the cue lands', () => {
+    const f = buildUp({ whenEach: ['rule', 'rule', 'down'] })
+    const forced = song({ byHand: [bar(109)] })
+    expect(placedAt(f, forced)).toEqual([1, 17, 77, 93, 149, 165].map((n) => bar(n)))
+  })
+})

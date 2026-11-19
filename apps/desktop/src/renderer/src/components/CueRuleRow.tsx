@@ -11,6 +11,8 @@ import {
   type FlowDirection,
   type FlowRepeat,
   MAX_RULE_REPEAT,
+  REPEAT_CONDITIONS,
+  type RepeatCondition,
   ROOM_GAP,
   RULE_BARS,
 } from '../../../shared/cueFlows'
@@ -56,20 +58,36 @@ function withCondition(rule: CueRule, when: FlowCondition): CueRule {
   return when === 'room' ? { ...rest, when, gap: gap ?? ROOM_GAP } : { ...rest, when }
 }
 
+function fitted(rule: CueRule, each: RepeatCondition[] = rule.whenEach ?? []): CueRule {
+  const { whenEach: _, ...rest } = rule
+  if (rule.bars === 0 || 'fixed' in rule.color) return rest
+  const kept = each.slice(0, rule.repeat === 'edge' ? MAX_RULE_REPEAT : rule.repeat)
+  while (kept[kept.length - 1] === 'rule') kept.pop()
+  return kept.length === 0 ? rest : { ...rest, whenEach: kept }
+}
+
 function slotCount(rule: CueRule): number {
   if ('fixed' in rule.color) return 1
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
 }
 
-function clipBox(el: HTMLElement): { top: number; right: number; bottom: number } {
+const MENU_GAP = 4
+
+function clipBox(el: HTMLElement): {
+  top: number
+  right: number
+  bottom: number
+  scroller: HTMLElement | null
+} {
   for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
     const style = getComputedStyle(node)
     if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`)) {
-      const { top, right, bottom } = node.getBoundingClientRect()
-      return { top, right, bottom }
+      const { top, left, right, bottom } = node.getBoundingClientRect()
+      const inner = node.clientWidth > 0 ? left + node.clientLeft + node.clientWidth : right
+      return { top, right: inner, bottom, scroller: node }
     }
   }
-  return { top: 0, right: window.innerWidth, bottom: window.innerHeight }
+  return { top: 0, right: window.innerWidth, bottom: window.innerHeight, scroller: null }
 }
 
 function colorAt(color: FlowColor, slot: number): number {
@@ -99,6 +117,8 @@ export function CueRuleRow({
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
   const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
   const showDistance = !('fixed' in rule.color)
+  const ownable = rule.bars > 0 && showDistance
+  const whenAt = (slot: number): RepeatCondition => (ownable && rule.whenEach?.[slot]) || 'rule'
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
@@ -112,11 +132,16 @@ export function CueRuleRow({
     const palette = paletteRef.current
     const anchor = palette?.parentElement
     if (!open || !palette || !anchor) return
-    const { width, height } = palette.getBoundingClientRect()
+    const popping = palette.getBoundingClientRect()
+    const width = (palette.offsetWidth || popping.width) + 1
+    const height = (palette.offsetHeight || popping.height) + MENU_GAP
     const at = anchor.getBoundingClientRect()
     const clip = clipBox(palette)
     setPaletteRight(at.left + width > clip.right)
-    setMenuUp(at.bottom + height > clip.bottom && at.top - height >= clip.top)
+    const below = at.bottom + height - clip.bottom
+    const fitsAbove = at.top - height >= clip.top
+    setMenuUp(below > 0 && fitsAbove)
+    if (below > 0 && !fitsAbove && clip.scroller) clip.scroller.scrollTop += Math.ceil(below)
   }, [open])
 
   const closeToToken = () => {
@@ -136,12 +161,22 @@ export function CueRuleRow({
     closeToToken()
   }
 
+  const pickWhen = (slot: number, when: RepeatCondition) => {
+    const each = Array.from(
+      { length: Math.max(slot + 1, rule.whenEach?.length ?? 0) },
+      (_, i) => rule.whenEach?.[i] ?? 'rule',
+    )
+    each[slot] = when
+    onChange(fitted(rule, each))
+    closeToToken()
+  }
+
   const setColorMode = (mode: (typeof COLOR_MODES)[number]) => {
     if (mode === 'each') {
       const first = colorAt(rule.color, 0)
       onChange({ ...rule, color: { each: Array.from({ length: 3 }, () => first) } })
     } else {
-      onChange({ ...rule, color: { fixed: colorAt(rule.color, 0) } })
+      onChange(fitted({ ...rule, color: { fixed: colorAt(rule.color, 0) } }))
     }
   }
 
@@ -249,7 +284,7 @@ export function CueRuleRow({
         RULE_BARS.map((b) => ({ value: b, label: barsLabel(b) })),
         rule.bars,
         barsLabel(rule.bars),
-        (bars) => onChange(bars === 0 ? { ...rule, bars, repeat: 1 } : { ...rule, bars }),
+        (bars) => onChange(bars === 0 ? fitted({ ...rule, bars, repeat: 1 }) : { ...rule, bars }),
       )}
       {rule.bars > 0 && (
         <>
@@ -259,7 +294,7 @@ export function CueRuleRow({
             [...REPEATS, 'edge' as const].map((r) => ({ value: r, label: repeatLabel(r) })),
             rule.repeat,
             repeatLabel(rule.repeat),
-            (repeat) => onChange({ ...rule, repeat }),
+            (repeat) => onChange(fitted({ ...rule, repeat })),
           )}
         </>
       )}
@@ -320,12 +355,20 @@ export function CueRuleRow({
                     data-testid={`${id}-color-${slot}`}
                     aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
                     aria-expanded={open === `color-${slot}`}
+                    data-own={whenAt(slot) === 'rule' ? undefined : 'true'}
                     onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
-                    style={{
-                      backgroundColor: hotCueColor(colorAt(rule.color, slot)),
-                      color: '#000',
-                    }}
-                    className="press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] border border-[var(--color-line)] px-1"
+                    style={
+                      whenAt(slot) === 'rule'
+                        ? {
+                            backgroundColor: hotCueColor(colorAt(rule.color, slot)),
+                            color: '#000',
+                          }
+                        : ({
+                            backgroundColor: 'transparent',
+                            '--cue': hotCueColor(colorAt(rule.color, slot)),
+                          } as React.CSSProperties)
+                    }
+                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] px-1 ${whenAt(slot) === 'rule' ? 'border border-[var(--color-line)]' : 'border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-fg'}`}
                   >
                     {showDistance && (
                       <span
@@ -341,13 +384,32 @@ export function CueRuleRow({
                       ref={paletteRef}
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
-                      className={`animate-pop-flat absolute ${paletteRight ? 'right-0 origin-top-right' : 'left-0 origin-top-left'} top-full z-20 mt-1 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                      data-side={menuUp ? 'top' : 'bottom'}
+                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
                         value={colorAt(rule.color, slot)}
                         onPick={(color) => pickColor(slot, color)}
                         label={(i) => tr('editor.cues.colour', { index: i })}
                       />
+                      {ownable && (
+                        <>
+                          <div className="my-2 h-px bg-[var(--color-line)]" />
+                          {REPEAT_CONDITIONS.map((w) => (
+                            <button
+                              key={w}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={w === whenAt(slot)}
+                              data-testid={`${id}-color-${slot}-when-${w}`}
+                              onClick={() => pickWhen(slot, w)}
+                              className={`${ITEM_CLASS} text-xs leading-normal`}
+                            >
+                              {tr(`settings.cueFlows.whenEach.${w}`)}
+                            </button>
+                          ))}
+                        </>
+                      )}
                     </div>
                   )}
                 </span>
@@ -367,6 +429,16 @@ export function CueRuleRow({
       </button>
       <p data-testid={`${id}-when-line`} className="text-xs leading-normal text-fg-faint">
         {tr(`settings.cueFlows.whenHint.${rule.when}`)}
+        {shownSlots
+          .filter((slot) => whenAt(slot) !== 'rule')
+          .map((slot, i) => (
+            <span key={slot}>
+              {i === 0 ? tr('settings.cueFlows.whenEachLead') : ' '}
+              {tr(`settings.cueFlows.whenEachHint.${whenAt(slot)}`, {
+                bars: rule.bars * (slot + 1),
+              })}
+            </span>
+          ))}
       </p>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">

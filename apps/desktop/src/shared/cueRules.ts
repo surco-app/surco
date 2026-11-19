@@ -4,6 +4,7 @@ import {
   type FlowPhrase,
   type FlowPlace,
   MY_FLOW,
+  type RepeatCondition,
   ROOM_GAP,
 } from './cueFlows'
 
@@ -112,7 +113,7 @@ export interface FlowPlan {
   trimmed: FlowCue[]
 }
 
-export type RejectReason = 'strong' | 'point' | 'start' | 'end' | 'limit'
+export type RejectReason = 'strong' | 'point' | 'start' | 'end' | 'limit' | 'section'
 
 export interface RejectedCue extends FlowCue {
   reason: RejectReason
@@ -143,6 +144,11 @@ function startsStrongRun(strong: StrongPart[], ms: number): boolean {
   )
 }
 
+function crowded(strong: StrongPart[], ms: number): boolean {
+  const inside = strong.some((s) => s.start - SAME_POSITION_MS <= ms && ms < s.end)
+  return inside && !startsStrongRun(strong, ms)
+}
+
 function misfit(
   ms: number,
   rule: CueRule,
@@ -160,8 +166,21 @@ function misfit(
       ? 'strong'
       : null
   }
-  const inside = strong.some((s) => s.start - SAME_POSITION_MS <= ms && ms < s.end)
-  return inside && !startsStrongRun(strong, ms) ? 'strong' : null
+  return crowded(strong, ms) ? 'strong' : null
+}
+
+function unmet(
+  each: RepeatCondition,
+  ms: number,
+  strong: StrongPart[],
+  phrases: FlowPhrase[],
+): RejectReason | null {
+  if (each === 'rule') return null
+  if (each === 'fits') return crowded(strong, ms) ? 'strong' : null
+  const current = phrases
+    .filter((p) => p.ms <= ms + SAME_POSITION_MS)
+    .reduce<FlowPhrase | null>((last, p) => (last && last.ms > p.ms ? last : p), null)
+  return current?.kind === each ? null : 'section'
 }
 
 function beatMsAt(beats: number[], at: number): number {
@@ -271,7 +290,10 @@ function walkFlow(
           reject(start, step, k, last ?? k, reason)
           break
         }
-        if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
+        const each = rule.whenEach?.[k - 1] ?? 'rule'
+        const left = unmet(each, ms, hand ? [] : track.strong, track.phrases)
+        if (left) rejected.push({ ...cueOf(ms, k), reason: left })
+        else if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
         if (fits && rule.direction === 'back' && startsStrongRun(track.strong, ms)) {
           if (last !== null) reject(start, step, k + 1, last, 'strong')
           break

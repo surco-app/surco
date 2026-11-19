@@ -2061,7 +2061,8 @@
           "strong": "Inside a chorus",
           "point": "Past another mark",
           "start": "Before the track starts",
-          "end": "After the track ends"
+          "end": "After the track ends",
+          "section": "Outside that section"
         }
       },
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
@@ -2112,6 +2113,20 @@
         "room": "Leaves it out when another cue comes within the bars you choose",
         "clear": "Leaves it out when another cue falls in the same bar",
         "first": "Only before the first mark, if nothing is there yet"
+      },
+      "whenEach": {
+        "rule": "like the rule",
+        "fits": "if it fits",
+        "down": "only in a breakdown",
+        "up": "only in a build",
+        "chorus": "only in a chorus"
+      },
+      "whenEachLead": ". ",
+      "whenEachHint": {
+        "fits": "The one at {{bars}}, only if it fits.",
+        "down": "The one at {{bars}}, only in a breakdown.",
+        "up": "The one at {{bars}}, only in a build.",
+        "chorus": "The one at {{bars}}, only in a chorus."
       },
       "place": {
         "hot": "hot cue",

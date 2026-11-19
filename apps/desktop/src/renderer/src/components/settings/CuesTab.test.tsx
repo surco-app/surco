@@ -554,6 +554,151 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-rule-0-when-menu')).toHaveAttribute('data-side', 'bottom')
   })
 
+  it('opens a rule colour picker upwards when Settings would cut its bottom, so the conditions under the colours stay reachable', () => {
+    const box = (top: number, height: number, left = 0, width = 300) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top,
+        bottom: top + height,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    let scrollerBottom = 700
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, scrollerBottom, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 300)
+      return box(500, 20, 100, 20)
+    })
+    afterTest = () => spy.mockRestore()
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toHaveAttribute('data-side', 'top')
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    scrollerBottom = 1200
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toHaveAttribute('data-side', 'bottom')
+  })
+
+  it('scrolls a rule colour picker into view when it fits neither under nor over its square, so a rule at the top of Settings still shows every condition', () => {
+    const box = (top: number, height: number, left = 0, width = 300) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top,
+        bottom: top + height,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, 700, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 300)
+      return box(500, 20, 100, 20)
+    })
+    afterTest = () => spy.mockRestore()
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('scroller').scrollTop).toBe(0)
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    spy.mockImplementation(function (this: Element) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, 700, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 480)
+      return box(300, 20, 100, 20)
+    })
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('scroller').scrollTop).toBe(104)
+  })
+
+  it('places a rule colour picker by its full size and the gap to its square, not by the size it has while it pops in, so its last condition is never cut by a few pixels', () => {
+    const box = (top: number, height: number, left = 0, width = 300) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top,
+        bottom: top + height,
+        height,
+        x: left,
+        y: top,
+        toJSON: () => ({}),
+      }) as DOMRect
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return box(0, 720, 0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette') return box(0, 299)
+      return box(396, 20, 100, 20)
+    })
+    const full = vi
+      .spyOn(HTMLElement.prototype, 'offsetHeight', 'get')
+      .mockImplementation(function (this: HTMLElement) {
+        return this.getAttribute('data-testid') === 'cue-rule-0-color-0-palette' ? 305 : 0
+      })
+    afterTest = () => {
+      spy.mockRestore()
+      full.mockRestore()
+    }
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
+    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toHaveAttribute('data-side', 'top')
+  })
+
+  it('counts the scrollbar of Settings as outside when placing a rule colour picker, so its right edge never slides under it', () => {
+    const rect = (left: number, width: number) =>
+      ({
+        left,
+        right: left + width,
+        width,
+        top: 0,
+        bottom: 0,
+        height: 0,
+        x: left,
+        y: 0,
+        toJSON: () => ({}),
+      }) as DOMRect
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return rect(0, 1093)
+      if (this.getAttribute('data-testid') === 'cue-rule-1-color-0-palette') return rect(0, 183)
+      return rect(905, 20)
+    })
+    afterTest = () => spy.mockRestore()
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <Harness />
+      </div>,
+    )
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    expect(screen.getByTestId('cue-rule-1-color-0-palette')).toHaveAttribute('data-align', 'left')
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    Object.defineProperty(screen.getByTestId('scroller'), 'clientWidth', { value: 1084 })
+    fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
+    expect(screen.getByTestId('cue-rule-1-color-0-palette')).toHaveAttribute('data-align', 'right')
+  })
+
   it('gives the focus back to the token when its list closes, so Escape closes the list first and Settings only after', () => {
     const settingsEscape = vi.fn<(e: KeyboardEvent) => void>()
     window.addEventListener('keydown', settingsEscape)
