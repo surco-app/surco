@@ -120,14 +120,17 @@ export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {
   })
 }
 
+export const samePosition = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
+
 export function hotDiff(
   planned: number[],
   existing: number[],
 ): { added: number[]; gone: number[] } {
-  const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
   return {
-    added: planned.filter((p) => !existing.some((e) => near(p, e))),
-    gone: existing.filter((e) => !planned.some((p) => near(p, e))),
+    added: planned.filter((p) => !existing.some((e) => samePosition(p, e))),
+    gone: existing
+      .filter((e) => !planned.some((p) => samePosition(p, e)))
+      .filter((e, i, all) => all.findIndex((o) => samePosition(o, e)) === i),
   }
 }
 

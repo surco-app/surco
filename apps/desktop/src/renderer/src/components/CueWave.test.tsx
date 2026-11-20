@@ -532,6 +532,26 @@ describe('CueWave', () => {
       ).toBeTruthy()
     })
 
+    it('draws a single square for two hot cues taken away on the same spot, so one does not hide under the other', () => {
+      setup({
+        readOnly: true,
+        cues,
+        diff: {
+          ...diff,
+          gone: [
+            { key: 'x', ms: 24000, kind: 3, color: 22 },
+            { key: 'y', ms: 24000, kind: 5, color: 42 },
+            { key: 'z', ms: 24040, kind: 6, color: 42 },
+            { key: 'w', ms: 50000, kind: 2, color: 42 },
+          ],
+        },
+      })
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/).map((g) => g.textContent)).toEqual([
+        'C',
+        'B',
+      ])
+    })
+
     it('fades everything but the differences while they are pointed at, so they stand out among the rest', () => {
       setup({
         readOnly: true,

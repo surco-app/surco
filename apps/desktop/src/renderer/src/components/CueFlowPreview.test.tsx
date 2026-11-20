@@ -196,6 +196,23 @@ describe('CueFlowPreview', () => {
       expect(hoverTooltip(gone)).toBe('The track has it and the flow would not place it')
     })
 
+    it('counts and draws once two hot cues the track has on the same spot, and keeps neither as a cue that stays', () => {
+      const twins = onTrack([
+        { id: 'mark', ms: beat(64), kind: 0, color: null },
+        { id: 'hot', ms: beat(48), kind: 1, color: 22 },
+        { id: 'same', ms: beat(48), kind: 2, color: 42 },
+        { id: 'near', ms: beat(48) + 30, kind: 3, color: 42 },
+      ])
+      render(<CueFlowPreview flow={ONE_AT_32} track={twins} />)
+      expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
+        /^1 new and 1 taken away$/,
+      )
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
+      expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
+    })
+
     it('leaves the hot cues the track keeps unmarked, so only what changes is pointed at', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={keepsOne} />)
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(/^1 taken away$/)

@@ -15,6 +15,7 @@ import {
   EXAMPLE_WAVE,
   examplePlan,
   hotDiff,
+  samePosition,
   trackOfCues,
   trackPlan,
 } from '../lib/cueExample'
@@ -193,10 +194,12 @@ export function CueFlowPreview({
   const leftOut = rejectedCues(flow, base).filter((c) => c.reason !== 'limit')
   const has = onTrack ? track.cues.cues.filter((c) => !c.loop) : []
   const hotNow = has.filter((c) => c.kind !== 0)
+  const hotWanted =
+    out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms)
   const diff =
     onTrack && out.status !== 'too-many'
       ? hotDiff(
-          out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms),
+          hotWanted,
           hotNow.map((c) => c.ms),
         )
       : null
@@ -205,7 +208,7 @@ export function CueFlowPreview({
   const view = `${track?.cues.contentId}\n${flow.id}`
   const mode: Mode = differs && nowOf === view ? 'now' : 'flow'
   const goes = (c: { kind: number; ms: number }): boolean =>
-    c.kind !== 0 && (diff?.gone.includes(c.ms) ?? false)
+    c.kind !== 0 && diff !== null && !hotWanted.some((ms) => samePosition(ms, c.ms))
   const shown =
     mode === 'now'
       ? has.filter((c) => !goes(c)).map((c) => ({ ...c, key: c.id, pending: false }))
