@@ -179,11 +179,13 @@ export function CueFlowPreview({
   track,
   tracks = NO_CHOICES,
   onPick,
+  onShown,
 }: {
   flow: CueFlow
   track?: { label: string; cues: TrackCues }
   tracks?: Choice[]
   onPick?: (choice: Choice) => void
+  onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
@@ -286,6 +288,12 @@ export function CueFlowPreview({
     track && marked && !tracks.some((c) => c.contentId === track.cues.contentId)
       ? [{ contentId: track.cues.contentId, label: track.label }, ...tracks]
       : tracks
+
+  const shownLabel = onTrack ? track.label : null
+  const shownCues = onTrack ? track.cues : null
+  useEffect(() => {
+    onShown?.(shownLabel !== null && shownCues ? { label: shownLabel, cues: shownCues } : null)
+  }, [onShown, shownLabel, shownCues])
 
   useEffect(() => {
     if (!open) return
@@ -439,10 +447,12 @@ export function CueFlowTrackPreview({
   flow,
   track,
   tracks,
+  onShown,
 }: {
   flow: CueFlow
   track?: Choice
   tracks?: Choice[]
+  onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState(track)
   const { data } = useTrackCues(picked?.contentId)
@@ -452,6 +462,7 @@ export function CueFlowTrackPreview({
       track={picked && data ? { label: picked.label, cues: data } : undefined}
       tracks={tracks}
       onPick={setPicked}
+      onShown={onShown}
     />
   )
 }

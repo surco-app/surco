@@ -17,8 +17,15 @@ import {
 import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
+import type { TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
-import { EXAMPLE_DROP } from '../../lib/cueExample'
+import {
+  EXAMPLE_DROP,
+  EXAMPLE_DURATION_MS,
+  EXAMPLE_GRID,
+  exampleBar,
+  flowFromTrack,
+} from '../../lib/cueExample'
 import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
@@ -65,10 +72,12 @@ function Harness({
   active = 'mine',
   collection = '',
   flows = KEPT,
+  tracks,
 }: {
   active?: string
   collection?: string
   flows?: CueFlow[]
+  tracks?: { contentId: string; label: string }[]
 }) {
   const [draft, setDraft] = useState({
     cueFlows: flows,
@@ -92,8 +101,34 @@ function Harness({
         synced={draft as unknown as SyncedDraft}
         patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
         rekordboxCollection={collection}
+        cueTracks={tracks}
       />
     </QueryClientProvider>
+  )
+}
+
+const GLUE = { contentId: 'rb:7', label: 'Bicep, Glue' }
+const MARKED_BY_HAND: TrackCues = {
+  contentId: 'rb:7',
+  analysed: true,
+  grid: EXAMPLE_GRID,
+  strong: [{ start: exampleBar(97), end: exampleBar(129) }],
+  phrases: [{ ms: exampleBar(97), kind: 'chorus' }],
+  cues: [
+    { id: 'mark', ms: exampleBar(97), kind: 0, color: null },
+    { id: 'a', ms: exampleBar(81), kind: 1, color: 22 },
+    { id: 'b', ms: exampleBar(65), kind: 2, color: 1 },
+  ],
+  wave: null,
+  durationMs: EXAMPLE_DURATION_MS,
+  fingerprint: '',
+  gridFingerprint: '',
+}
+const previewGlue = async () => {
+  fireEvent.click(screen.getByTestId('cue-preview-track'))
+  fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:7'))
+  await waitFor(() =>
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
   )
 }
 
@@ -1343,6 +1378,99 @@ describe('CuesTab', () => {
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('offers no flow from a track while the preview shows the example track, which nobody marked', async () => {
+    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('cue-flow-name'), { key: 'Enter' })
+    await previewGlue()
+    openAdd()
+    expect(screen.getByTestId('cue-flow-add-track')).toBeInTheDocument()
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+    openAdd()
+    expect(screen.queryByTestId('cue-flow-add-track')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('offers from + a flow from the track in the preview, named by its title so the DJ knows which marks it copies', async () => {
+    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    await previewGlue()
+    openAdd()
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.dataset.testid)).toEqual(['cue-flow-add-new', 'cue-flow-add-track'])
+    expect(items[1]).toHaveAccessibleName('From “Bicep, Glue”')
+  })
+
+  it('selects the flow made from the previewed track and stays on that track, so the comparison says at once that the flow reproduces it', async () => {
+    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    await previewGlue()
+    expect(screen.queryByTestId('cue-preview-same')).toBeNull()
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-flow-add-track'))
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.queryByTestId('cue-flow-name')).toBeNull()
+    expect(chosen()).toHaveTextContent('Like “Bicep, Glue”')
+    expect(last?.cueFlows).toHaveLength(2)
+    expect(last?.cueFlows[1].id).not.toBe(MIX_IN.id)
+    expect(last?.cueFlows[1].rules).toEqual(flowFromTrack(MARKED_BY_HAND)?.rules)
+    expect(screen.getAllByTestId(/^cue-rule-\d+$/)).toHaveLength(1)
+    expect(screen.getByTestId('cue-rule-0')).toHaveTextContent('16')
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue')
+    expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
+  })
+
+  it('offers no flow from a track whose hot cues give no rule, since there would be nothing to make', async () => {
+    installApi({
+      cues: {
+        trackCues: async () => ({ ...MARKED_BY_HAND, cues: MARKED_BY_HAND.cues.slice(0, 1) }),
+      },
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    await previewGlue()
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('offers no flow from a track once a flow with those rules exists, so + never makes the same flow twice', async () => {
+    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    const twin = { ...(flowFromTrack(MARKED_BY_HAND) as CueFlow), id: 'twin', name: 'Twin' }
+    render(<Harness flows={[MIX_IN, twin]} active={MIX_IN.id} tracks={[GLUE]} />)
+    await previewGlue()
+    openAdd()
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
+  })
+
+  it('lists the flow from the track after the learned one, the plain new flow still first', async () => {
+    installApi({
+      cues: { trackCues: async () => MARKED_BY_HAND },
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0, corrected: 0 },
+        marked: 40,
+      })),
+    })
+    render(
+      <Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />,
+    )
+    await screen.findByTestId('cue-profile')
+    await previewGlue()
+    openAdd()
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem')
+    expect(items.map((i) => i.dataset.testid)).toEqual([
+      'cue-flow-add-new',
+      'cue-flow-add-learned',
+      'cue-flow-add-track',
+    ])
   })
 
   it('explains once where the flows also go, behind the (i) of the heading', () => {

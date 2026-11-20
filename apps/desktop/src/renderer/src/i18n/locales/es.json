@@ -2032,6 +2032,7 @@
       "flows": "Flujos",
       "newFlow": "Nuevo flujo",
       "newFromLearned": "Desde cómo marcas",
+      "newFromTrack": "Desde «{{track}}»",
       "newFlowName": "Flujo {{n}}",
       "addFlow": "Añadir flujo",
       "rename": "Cambiar nombre",
@@ -2151,6 +2152,7 @@
         "each": "un color por repetición"
       },
       "learnedName": "Aprendido de mi colección",
+      "fromTrackName": "Como «{{track}}»",
       "learnFailed": "No se pudo leer la colección de rekordbox",
       "sentence": {
         "every": "cada",

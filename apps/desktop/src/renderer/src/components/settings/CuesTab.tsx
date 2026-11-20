@@ -15,7 +15,9 @@ import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../share
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
 import { CUE_QUANTIZE, type CueQuantize } from '../../../../shared/cueQuantize'
 import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
+import type { TrackCues } from '../../../../shared/types'
 import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
+import { flowFromTrack } from '../../lib/cueExample'
 import { flowName } from '../../lib/cueFlowName'
 import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
@@ -174,6 +176,7 @@ export function CuesTab({
   const more = useSplitMenu()
   const add = useSplitMenu()
   const [read, onLearned] = useCueProfileRead()
+  const [previewed, setPreviewed] = useState<{ label: string; cues: TrackCues } | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!renaming) return
@@ -219,11 +222,16 @@ export function CuesTab({
 
   const learnedFlow = read?.profile?.flow ?? null
   const offered = learnedFlow && !flows.some((f) => sameRules(f, learnedFlow)) ? learnedFlow : null
-  const adopt = (learned: CueFlow) => {
+  const trackFlow = previewed ? flowFromTrack(previewed.cues) : null
+  const fromTrack =
+    previewed && trackFlow && !flows.some((f) => sameRules(f, trackFlow))
+      ? { flow: trackFlow, track: previewed.label }
+      : null
+  const adopt = (learned: CueFlow, name: string) => {
     const made: CueFlow = {
       ...learned,
       id: crypto.randomUUID(),
-      name: tr('settings.cueFlows.learnedName'),
+      name,
     }
     patch('cueFlows', [...flows, made])
     patch('activeCueFlow', made.id)
@@ -335,15 +343,15 @@ export function CuesTab({
               data-testid="cue-flow-add"
               ref={add.toggleRef}
               aria-label={tr('settings.cueFlows.newFlow')}
-              aria-haspopup={offered ? 'menu' : undefined}
-              aria-expanded={offered ? add.open : undefined}
-              onClick={() => (offered ? toggle(add) : create())}
+              aria-haspopup={offered || fromTrack ? 'menu' : undefined}
+              aria-expanded={offered || fromTrack ? add.open : undefined}
+              onClick={() => (offered || fromTrack ? toggle(add) : create())}
               className={ICON_BUTTON}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
               <Tooltip label={tr('settings.cueFlows.newFlow')} />
             </button>
-            {offered && add.open && (
+            {(offered || fromTrack) && add.open && (
               <div
                 ref={add.menuRef}
                 role="menu"
@@ -363,18 +371,39 @@ export function CuesTab({
                 >
                   {tr('settings.cueFlows.newFlow')}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  data-testid="cue-flow-add-learned"
-                  onClick={() => {
-                    add.setOpen(false)
-                    adopt(offered)
-                  }}
-                  className={SPLIT_ITEM}
-                >
-                  {tr('settings.cueFlows.newFromLearned')}
-                </button>
+                {offered && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-testid="cue-flow-add-learned"
+                    onClick={() => {
+                      add.setOpen(false)
+                      adopt(offered, tr('settings.cueFlows.learnedName'))
+                    }}
+                    className={SPLIT_ITEM}
+                  >
+                    {tr('settings.cueFlows.newFromLearned')}
+                  </button>
+                )}
+                {fromTrack && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    data-testid="cue-flow-add-track"
+                    onClick={() => {
+                      add.setOpen(false)
+                      adopt(
+                        fromTrack.flow,
+                        tr('settings.cueFlows.fromTrackName', { track: fromTrack.track }),
+                      )
+                    }}
+                    className={SPLIT_ITEM}
+                  >
+                    <span className="min-w-0 truncate">
+                      {tr('settings.cueFlows.newFromTrack', { track: fromTrack.track })}
+                    </span>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -463,7 +492,12 @@ export function CuesTab({
           aria-label={tr('settings.cueFlows.preview')}
           className="sticky top-0 z-10 rounded-t-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 pt-3 pb-1"
         >
-          <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
+          <CueFlowTrackPreview
+            flow={flow}
+            track={cueTrack}
+            tracks={cueTracks}
+            onShown={setPreviewed}
+          />
         </section>
         <section
           aria-label={tr('settings.cueFlows.rules')}

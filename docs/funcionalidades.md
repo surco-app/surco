@@ -2651,6 +2651,9 @@ hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos
 crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM. La
 cuenta atrás aprendida de la colección se puede convertir en flujo desde el + de la lista de
 flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
+El mismo + ofrece «Desde «título de la pista»» (`cue-flow-add-track`) cuando la vista previa está
+sobre una pista marcada a mano de la que se puede deducir un flujo que aún no existe, y lo crea
+con el nombre «Como «título»» sin mover la vista previa de esa pista.
 
 **Dos condiciones más** (v1.26.0). «hasta la marca anterior», solo en reglas que cuentan hacia
 atrás desde el punto, deja que la cuenta atrás cruce los estribillos que no tienen marca y la
