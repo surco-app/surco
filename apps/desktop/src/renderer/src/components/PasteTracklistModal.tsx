@@ -155,6 +155,7 @@ export function PasteTracklistModal({
               className="press flex size-4 shrink-0 items-center justify-center rounded text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
             >
               <Copy className="h-3 w-3" aria-hidden="true" />
+              <Tooltip label={tr('pasteTracklist.copyAbsent')} />
             </button>
           )}
         </p>

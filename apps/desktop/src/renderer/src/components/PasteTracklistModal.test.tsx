@@ -8,6 +8,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack, SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import { djReads, installApi, type ProgramReads } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { PasteTracklistModal } from './PasteTracklistModal'
 
 beforeAll(() => i18n.changeLanguage('es'))
@@ -299,6 +300,15 @@ describe('PasteTracklistModal copy absent', () => {
     const copied = copyText.mock.calls[0][0] as string
     expect(copied.split('\n')).toHaveLength(14)
     expect(copied).not.toContain('Because Of You')
+  })
+
+  it('names the icon on hover, so it is not a mystery button', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(hoverTooltip(screen.getByTestId('paste-tracklist-copy-absent'))).toBe(
+      'Copiar las que faltan',
+    )
   })
 
   it('has no button when nothing is missing', async () => {
