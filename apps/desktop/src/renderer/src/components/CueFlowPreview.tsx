@@ -1,6 +1,6 @@
 import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
@@ -18,6 +18,7 @@ import {
   trackOfCues,
   trackPlan,
 } from '../lib/cueExample'
+import { clipBox, MENU_GAP } from './CueRuleRow'
 import { CueWave } from './CueWave'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
@@ -51,11 +52,21 @@ function TrackChoices({
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
   const wanted = folded(query.trim())
   const found = choices.filter((c) => folded(c.label).includes(wanted)).slice(0, MAX_CHOICES)
 
   useEffect(() => {
     searchRef.current?.focus({ preventScroll: true })
+  }, [])
+
+  useLayoutEffect(() => {
+    const menu = menuRef.current
+    if (!menu) return
+    const box = menu.getBoundingClientRect()
+    const clip = clipBox(menu)
+    const below = box.top + (menu.offsetHeight || box.height) + MENU_GAP - clip.bottom
+    if (below > 0 && clip.scroller) clip.scroller.scrollTop += Math.ceil(below)
   }, [])
 
   function onKeyDown(e: React.KeyboardEvent): void {
@@ -78,7 +89,11 @@ function TrackChoices({
   }
 
   return (
-    <div className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]">
+    <div
+      ref={menuRef}
+      data-testid="cue-preview-track-menu"
+      className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
+    >
       <input
         ref={searchRef}
         data-testid="cue-preview-track-search"

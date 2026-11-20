@@ -72,6 +72,30 @@ describe('CueFlowPreview', () => {
     expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
   })
 
+  it('scrolls Settings down to the whole list when it opens near the bottom edge, so the tracks are not hidden under it', () => {
+    const boxes: Record<string, { top: number; bottom: number }> = {
+      scroller: { top: 0, bottom: 300 },
+      'cue-preview-track-menu': { top: 200, bottom: 466 },
+    }
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const { top, bottom } = boxes[this.dataset.testid ?? ''] ?? { top: 0, bottom: 0 }
+        return { top, bottom, left: 0, right: 0, width: 0, height: bottom - top } as DOMRect
+      })
+    try {
+      render(
+        <div data-testid="scroller" style={{ overflowY: 'auto' }}>
+          <CueFlowPreview flow={MIX_IN} />
+        </div>,
+      )
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      expect(screen.getByTestId('scroller').scrollTop).toBe(170)
+    } finally {
+      rect.mockRestore()
+    }
+  })
+
   it('says nothing about left out cues when the flow places every one', () => {
     render(<CueFlowPreview flow={ONE_AT_32} />)
     expect(screen.queryByTestId(/^cue-wave-ghost-dropped-/)).toBeNull()

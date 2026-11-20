@@ -71,9 +71,9 @@ function slotCount(rule: CueRule): number {
   return rule.repeat === 'edge' ? 3 : Math.min(rule.repeat, MAX_RULE_REPEAT, 8)
 }
 
-const MENU_GAP = 4
+export const MENU_GAP = 4
 
-function clipBox(el: HTMLElement): {
+export function clipBox(el: HTMLElement): {
   top: number
   right: number
   bottom: number
