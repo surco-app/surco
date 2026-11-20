@@ -2063,6 +2063,8 @@
       "rules": "Regras",
       "addRule": "Adicionar regra",
       "removeRule": "Remover regra",
+      "moveRule": "Mover a regra {{n}}",
+      "moveRuleHint": "Arraste para mudar a ordem",
       "noRules": "Sem regras. O fluxo só põe um CALL onde você marca.",
       "preview": "Prévia",
       "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
@@ -2099,7 +2101,8 @@
           "point": "Passa de outra marca",
           "start": "Antes do início da faixa",
           "end": "Depois do fim da faixa",
-          "section": "Fora dessa seção"
+          "section": "Fora dessa seção",
+          "near": "Outro cue perto demais"
         }
       },
       "tooMany": "Este fluxo pede {{count}} hot cues e o rekordbox aceita 8",
@@ -2152,19 +2155,33 @@
         "first": "Só antes da primeira marca, se ainda não houver nada"
       },
       "whenEach": {
-        "rule": "sem condição própria",
         "fits": "se couber",
-        "down": "só em um breakdown",
-        "up": "só em uma subida",
-        "chorus": "só em um refrão"
+        "before_one": "sem outro cue {{bars}} compasso antes",
+        "before_other": "sem outro cue nos {{bars}} compassos anteriores",
+        "after_one": "sem outro cue {{bars}} compasso depois",
+        "after_other": "sem outro cue nos {{bars}} compassos seguintes",
+        "beforeAny": "sem outro cue nos compassos anteriores",
+        "afterAny": "sem outro cue nos compassos seguintes",
+        "in": "em {{sections}}",
+        "only": "Só em",
+        "line": "O de {{bars}}, só {{conditions}}.",
+        "lineAll": "Só {{conditions}}."
+      },
+      "section": {
+        "intro": "intro",
+        "up": "subida",
+        "down": "breakdown",
+        "chorus": "refrão",
+        "outro": "outro"
+      },
+      "inSection": {
+        "intro": "uma intro",
+        "up": "uma subida",
+        "down": "um breakdown",
+        "chorus": "um refrão",
+        "outro": "um outro"
       },
       "whenEachLead": ". ",
-      "whenEachHint": {
-        "fits": "O de {{bars}}, só se couber.",
-        "down": "O de {{bars}}, só em um breakdown.",
-        "up": "O de {{bars}}, só em uma subida.",
-        "chorus": "O de {{bars}}, só em um refrão."
-      },
       "place": {
         "hot": "hot cue",
         "call": "CALL",

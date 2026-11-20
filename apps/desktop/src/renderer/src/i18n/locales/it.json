@@ -2063,6 +2063,8 @@
       "rules": "Regole",
       "addRule": "Aggiungi regola",
       "removeRule": "Rimuovi regola",
+      "moveRule": "Sposta la regola {{n}}",
+      "moveRuleHint": "Trascina per cambiare l'ordine",
       "noRules": "Nessuna regola. Il flusso mette solo un CALL dove marchi.",
       "preview": "Anteprima",
       "previewHint": "Brano di esempio a 128 BPM, marcato alla battuta {{bar}}",
@@ -2099,7 +2101,8 @@
           "point": "Supera un altro segno",
           "start": "Prima che inizi il brano",
           "end": "Dopo che finisce il brano",
-          "section": "Fuori da quella sezione"
+          "section": "Fuori da quella sezione",
+          "near": "Un altro cue troppo vicino"
         }
       },
       "tooMany": "Questo flusso chiede {{count}} hot cue e rekordbox ne ammette 8",
@@ -2152,19 +2155,33 @@
         "first": "Solo prima del primo segno, se lì non c'è niente"
       },
       "whenEach": {
-        "rule": "senza condizione propria",
         "fits": "se c'è spazio",
-        "down": "solo in un calo",
-        "up": "solo in una salita",
-        "chorus": "solo in un ritornello"
+        "before_one": "senza un altro cue {{bars}} battuta prima",
+        "before_other": "senza un altro cue nelle {{bars}} battute precedenti",
+        "after_one": "senza un altro cue {{bars}} battuta dopo",
+        "after_other": "senza un altro cue nelle {{bars}} battute successive",
+        "beforeAny": "senza un altro cue nelle battute precedenti",
+        "afterAny": "senza un altro cue nelle battute successive",
+        "in": "in {{sections}}",
+        "only": "Solo in",
+        "line": "Quello da {{bars}}, solo {{conditions}}.",
+        "lineAll": "Solo {{conditions}}."
+      },
+      "section": {
+        "intro": "intro",
+        "up": "salita",
+        "down": "calo",
+        "chorus": "ritornello",
+        "outro": "outro"
+      },
+      "inSection": {
+        "intro": "un'intro",
+        "up": "una salita",
+        "down": "un calo",
+        "chorus": "un ritornello",
+        "outro": "un outro"
       },
       "whenEachLead": ". ",
-      "whenEachHint": {
-        "fits": "Quello da {{bars}}, solo se c'è spazio.",
-        "down": "Quello da {{bars}}, solo in un calo.",
-        "up": "Quello da {{bars}}, solo in una salita.",
-        "chorus": "Quello da {{bars}}, solo in un ritornello."
-      },
       "place": {
         "hot": "hot cue",
         "call": "CALL",

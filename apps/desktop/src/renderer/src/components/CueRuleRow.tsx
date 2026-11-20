@@ -1,4 +1,4 @@
-import { Minus } from 'lucide-react'
+import { Check, Minus } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -6,18 +6,24 @@ import {
   type CueRule,
   FLOW_ORIGINS,
   FLOW_PLACES,
+  FLOW_SECTIONS,
   type FlowColor,
   type FlowCondition,
   type FlowDirection,
   type FlowRepeat,
+  fitWhenEach,
+  formatRepeatWhen,
   MAX_RULE_REPEAT,
-  REPEAT_CONDITIONS,
-  type RepeatCondition,
+  NEAR_BARS,
+  type RepeatWhen,
   ROOM_GAP,
   RULE_BARS,
+  repeatWhenOf,
+  withRepeatWhen,
 } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
+import { Tooltip } from './Tooltip'
 
 const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
@@ -42,6 +48,10 @@ const MENU_CLASS =
   'absolute z-20 overflow-y-auto rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs leading-normal shadow-[var(--shadow-float)]'
 const ITEM_CLASS =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
+const BOX_CLASS =
+  'press flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-1 py-1 text-left text-xs leading-normal hover:bg-[var(--color-hover)] aria-checked:text-fg'
+const NEAR_DEFAULT = { before: 32, after: 16 }
+type NearSide = keyof typeof NEAR_DEFAULT
 
 function conditionsFor(rule: CueRule): FlowCondition[] {
   const offered: FlowCondition[] =
@@ -56,14 +66,6 @@ function conditionsFor(rule: CueRule): FlowCondition[] {
 function withCondition(rule: CueRule, when: FlowCondition): CueRule {
   const { gap, ...rest } = rule
   return when === 'room' ? { ...rest, when, gap: gap ?? ROOM_GAP } : { ...rest, when }
-}
-
-function fitted(rule: CueRule, each: RepeatCondition[] = rule.whenEach ?? []): CueRule {
-  const { whenEach: _, ...rest } = rule
-  if (rule.bars === 0 || 'fixed' in rule.color) return rest
-  const kept = each.slice(0, rule.repeat === 'edge' ? MAX_RULE_REPEAT : rule.repeat)
-  while (kept[kept.length - 1] === 'rule') kept.pop()
-  return kept.length === 0 ? rest : { ...rest, whenEach: kept }
 }
 
 function slotCount(rule: CueRule): number {
@@ -95,30 +97,66 @@ function colorAt(color: FlowColor, slot: number): number {
   return color.each[slot] ?? color.each[color.each.length - 1] ?? 1
 }
 
+export interface RuleReorder {
+  dragged: number | null
+  onArm: (index: number | null) => void
+  onMove: (from: number, to: number) => void
+}
+
 export function CueRuleRow({
   rule,
   index,
   onChange,
   onRemove,
+  reorder,
 }: {
   rule: CueRule
   index: number
   onChange: (rule: CueRule) => void
   onRemove: () => void
+  reorder?: RuleReorder
 }): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [open, setOpen] = useState<string | null>(null)
   const rowRef = useRef<HTMLFieldSetElement>(null)
   const paletteRef = useRef<HTMLDivElement>(null)
   const [paletteRight, setPaletteRight] = useState(false)
   const [menuUp, setMenuUp] = useState(false)
+  const [dropHere, setDropHere] = useState(false)
+  const dragged = reorder?.dragged ?? null
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
   const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
   const showDistance = !('fixed' in rule.color)
-  const ownable = rule.bars > 0 && showDistance
-  const whenAt = (slot: number): RepeatCondition => (ownable && rule.whenEach?.[slot]) || 'rule'
+  const shared = rule.bars === 0 || !showDistance
+  const [nearBars, setNearBars] = useState<Record<string, number>>({})
+  const whenAt = (slot: number): RepeatWhen => repeatWhenOf(rule, slot + 1)
+  const own = (slot: number): boolean => formatRepeatWhen(whenAt(slot)) !== 'rule'
+  const list = (items: string[], type: 'conjunction' | 'disjunction'): string =>
+    new Intl.ListFormat(i18n.language, { type }).format(items)
+  const conditionsOf = (when: RepeatWhen): string =>
+    list(
+      [
+        ...(when.fits ? [tr('settings.cueFlows.whenEach.fits')] : []),
+        ...(['before', 'after'] as const).flatMap((side) =>
+          when[side] === null
+            ? []
+            : [tr(`settings.cueFlows.whenEach.${side}`, { count: when[side], bars: when[side] })],
+        ),
+        ...(when.sections.length === 0
+          ? []
+          : [
+              tr('settings.cueFlows.whenEach.in', {
+                sections: list(
+                  when.sections.map((s) => tr(`settings.cueFlows.inSection.${s}`)),
+                  'disjunction',
+                ),
+              }),
+            ]),
+      ],
+      'conjunction',
+    )
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
@@ -161,23 +199,87 @@ export function CueRuleRow({
     closeToToken()
   }
 
-  const pickWhen = (slot: number, when: RepeatCondition) => {
-    const each = Array.from(
-      { length: Math.max(slot + 1, rule.whenEach?.length ?? 0) },
-      (_, i) => rule.whenEach?.[i] ?? 'rule',
-    )
-    each[slot] = when
-    onChange(fitted(rule, each))
-    closeToToken()
+  const setWhen = (slot: number, change: Partial<RepeatWhen>) =>
+    onChange(withRepeatWhen(rule, slot, { ...whenAt(slot), ...change }))
+
+  const nearBarsAt = (slot: number, side: NearSide): number =>
+    whenAt(slot)[side] ?? nearBars[`${slot}-${side}`] ?? NEAR_DEFAULT[side]
+
+  const setNear = (slot: number, side: NearSide, bars: number, on: boolean) => {
+    setNearBars({ ...nearBars, [`${slot}-${side}`]: bars })
+    if (on || whenAt(slot)[side] !== null) setWhen(slot, { [side]: on ? bars : null })
+  }
+
+  const toggleSection = (slot: number, section: RepeatWhen['sections'][number]) => {
+    const { sections } = whenAt(slot)
+    setWhen(slot, {
+      sections: sections.includes(section)
+        ? sections.filter((s) => s !== section)
+        : [...sections, section],
+    })
   }
 
   const setColorMode = (mode: (typeof COLOR_MODES)[number]) => {
+    const words = slotNumbers.map((slot) => formatRepeatWhen(whenAt(slot)))
     if (mode === 'each') {
       const first = colorAt(rule.color, 0)
-      onChange({ ...rule, color: { each: Array.from({ length: 3 }, () => first) } })
+      const next = { ...rule, color: { each: Array.from({ length: 3 }, () => first) } }
+      onChange(
+        fitWhenEach(
+          next,
+          Array.from({ length: slotCount(next) }, () => words[0]),
+        ),
+      )
     } else {
-      onChange(fitted({ ...rule, color: { fixed: colorAt(rule.color, 0) } }))
+      const same = words.every((w) => w === words[0])
+      onChange(
+        fitWhenEach({ ...rule, color: { fixed: colorAt(rule.color, 0) } }, same ? [words[0]] : []),
+      )
     }
+  }
+
+  const box = (
+    slot: number,
+    name: string,
+    checked: boolean,
+    label: string,
+    toggle: () => void,
+  ): React.JSX.Element => (
+    <button
+      key={name}
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      data-testid={`${id}-color-${slot}-when-${name}`}
+      onClick={toggle}
+      className={BOX_CLASS}
+    >
+      <Check className={`h-3.5 w-3.5 shrink-0 ${checked ? '' : 'invisible'}`} aria-hidden="true" />
+      {label}
+    </button>
+  )
+
+  const nearBox = (slot: number, side: NearSide): React.JSX.Element => {
+    const on = whenAt(slot)[side] !== null
+    const label = tr(`settings.cueFlows.whenEach.${side}Any`)
+    return (
+      <div className="flex items-center gap-2">
+        {box(slot, side, on, label, () => setNear(slot, side, nearBarsAt(slot, side), !on))}
+        <select
+          data-testid={`${id}-color-${slot}-when-${side}-bars`}
+          aria-label={label}
+          value={nearBarsAt(slot, side)}
+          onChange={(e) => setNear(slot, side, Number(e.target.value), on)}
+          className="h-5 shrink-0 rounded-[3px] border border-[var(--color-line)] bg-[var(--color-field)] px-1 text-xs tabular-nums text-fg"
+        >
+          {NEAR_BARS.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+      </div>
+    )
   }
 
   const barsLabel = (bars: number): string =>
@@ -253,11 +355,48 @@ export function CueRuleRow({
         e.stopPropagation()
         closeToToken()
       }}
-      className="relative m-0 min-w-0 py-2 pr-10 pl-3.5 text-sm leading-8 text-fg-dim"
+      draggable={dragged === index}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', String(index))
+      }}
+      onDragOver={(e) => {
+        if (dragged === null || dragged === index) return
+        e.preventDefault()
+        setDropHere(true)
+      }}
+      onDragLeave={() => setDropHere(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDropHere(false)
+        if (dragged !== null) reorder?.onMove(dragged, index)
+        reorder?.onArm(null)
+      }}
+      onDragEnd={() => reorder?.onArm(null)}
+      onMouseUp={() => reorder?.onArm(null)}
+      className={`relative m-0 min-w-0 py-2 pr-10 pl-3.5 text-sm leading-8 text-fg-dim ${dropHere ? 'bg-[var(--color-accent-soft)]' : ''} ${dragged === index ? 'opacity-40' : ''}`}
     >
-      <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
-        {index + 1}
-      </span>
+      {reorder ? (
+        <button
+          type="button"
+          data-testid={`${id}-move`}
+          aria-label={tr('settings.cueFlows.moveRule', { n: index + 1 })}
+          onMouseDown={() => reorder.onArm(index)}
+          onKeyDown={(e) => {
+            if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+            e.preventDefault()
+            reorder.onMove(index, index + (e.key === 'ArrowUp' ? -1 : 1))
+          }}
+          className="press relative mr-2 cursor-grab rounded-[3px] font-mono text-xs text-fg-faint hover:text-fg"
+        >
+          {index + 1}
+          <Tooltip label={tr('settings.cueFlows.moveRuleHint')} />
+        </button>
+      ) : (
+        <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
+          {index + 1}
+        </span>
+      )}
       {token(
         'from',
         FLOW_ORIGINS.map((o) => ({ value: o, label: tr(`settings.cueFlows.from.${o}`) })),
@@ -284,7 +423,8 @@ export function CueRuleRow({
         RULE_BARS.map((b) => ({ value: b, label: barsLabel(b) })),
         rule.bars,
         barsLabel(rule.bars),
-        (bars) => onChange(bars === 0 ? fitted({ ...rule, bars, repeat: 1 }) : { ...rule, bars }),
+        (bars) =>
+          onChange(fitWhenEach(bars === 0 ? { ...rule, bars, repeat: 1 } : { ...rule, bars })),
       )}
       {rule.bars > 0 && (
         <>
@@ -294,7 +434,7 @@ export function CueRuleRow({
             [...REPEATS, 'edge' as const].map((r) => ({ value: r, label: repeatLabel(r) })),
             rule.repeat,
             repeatLabel(rule.repeat),
-            (repeat) => onChange(fitted({ ...rule, repeat })),
+            (repeat) => onChange(fitWhenEach({ ...rule, repeat })),
           )}
         </>
       )}
@@ -355,20 +495,20 @@ export function CueRuleRow({
                     data-testid={`${id}-color-${slot}`}
                     aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
                     aria-expanded={open === `color-${slot}`}
-                    data-own={whenAt(slot) === 'rule' ? undefined : 'true'}
+                    data-own={own(slot) ? 'true' : undefined}
                     onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
                     style={
-                      whenAt(slot) === 'rule'
-                        ? {
-                            backgroundColor: hotCueColor(colorAt(rule.color, slot)),
-                            color: '#000',
-                          }
-                        : ({
+                      own(slot)
+                        ? ({
                             backgroundColor: 'transparent',
                             '--cue': hotCueColor(colorAt(rule.color, slot)),
                           } as React.CSSProperties)
+                        : {
+                            backgroundColor: hotCueColor(colorAt(rule.color, slot)),
+                            color: '#000',
+                          }
                     }
-                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] px-1 ${whenAt(slot) === 'rule' ? 'border border-[var(--color-line)]' : 'border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-fg'}`}
+                    className={`press flex h-[20px] min-w-[20px] items-center justify-center rounded-[3px] px-1 ${own(slot) ? 'border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-fg' : 'border border-[var(--color-line)]'}`}
                   >
                     {showDistance && (
                       <span
@@ -392,23 +532,31 @@ export function CueRuleRow({
                         onPick={(color) => pickColor(slot, color)}
                         label={(i) => tr('editor.cues.colour', { index: i })}
                       />
-                      {ownable && (
-                        <>
-                          <div className="my-2 h-px bg-[var(--color-line)]" />
-                          {REPEAT_CONDITIONS.map((w) => (
-                            <button
-                              key={w}
-                              type="button"
-                              role="menuitemradio"
-                              aria-checked={w === whenAt(slot)}
-                              data-testid={`${id}-color-${slot}-when-${w}`}
-                              onClick={() => pickWhen(slot, w)}
-                              className={`${ITEM_CLASS} text-xs leading-normal`}
-                            >
-                              {tr(`settings.cueFlows.whenEach.${w}`)}
-                            </button>
-                          ))}
-                        </>
+                      <div className="my-2 h-px bg-[var(--color-line)]" />
+                      {box(
+                        slot,
+                        'fits',
+                        whenAt(slot).fits,
+                        tr('settings.cueFlows.whenEach.fits'),
+                        () => setWhen(slot, { fits: !whenAt(slot).fits }),
+                      )}
+                      {nearBox(slot, 'before')}
+                      {nearBox(slot, 'after')}
+                      <div className="my-2 h-px bg-[var(--color-line)]" />
+                      <p
+                        data-testid={`${id}-color-${slot}-when-only`}
+                        className="px-1 pb-1 text-label leading-normal text-fg-faint"
+                      >
+                        {tr('settings.cueFlows.whenEach.only')}
+                      </p>
+                      {FLOW_SECTIONS.map((section) =>
+                        box(
+                          slot,
+                          `in-${section}`,
+                          whenAt(slot).sections.includes(section),
+                          tr(`settings.cueFlows.section.${section}`),
+                          () => toggleSection(slot, section),
+                        ),
                       )}
                     </div>
                   )}
@@ -429,16 +577,17 @@ export function CueRuleRow({
       </button>
       <p data-testid={`${id}-when-line`} className="text-xs leading-normal text-fg-faint">
         {tr(`settings.cueFlows.whenHint.${rule.when}`)}
-        {shownSlots
-          .filter((slot) => whenAt(slot) !== 'rule')
-          .map((slot, i) => (
-            <span key={slot}>
-              {i === 0 ? tr('settings.cueFlows.whenEachLead') : ' '}
-              {tr(`settings.cueFlows.whenEachHint.${whenAt(slot)}`, {
-                bars: rule.bars * (slot + 1),
-              })}
-            </span>
-          ))}
+        {shownSlots.filter(own).map((slot, i) => (
+          <span key={slot}>
+            {i === 0 ? tr('settings.cueFlows.whenEachLead') : ' '}
+            {shared
+              ? tr('settings.cueFlows.whenEach.lineAll', { conditions: conditionsOf(whenAt(slot)) })
+              : tr('settings.cueFlows.whenEach.line', {
+                  bars: rule.bars * (slot + 1),
+                  conditions: conditionsOf(whenAt(slot)),
+                })}
+          </span>
+        ))}
       </p>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">

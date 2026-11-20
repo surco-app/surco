@@ -236,3 +236,122 @@ describe('a condition of its own on one repetition', () => {
     expect(placedAt(f, forced)).toEqual([1, 17, 77, 93, 149, 165].map((n) => bar(n)))
   })
 })
+
+describe('conditions combined on one repetition', () => {
+  const bar = (n: number): number => beat(n - 1)
+  const yellow = rule({ from: 'first-beat', bars: 0, when: 'always', color: { fixed: 32 } })
+  const countdown = (whenEach: string[]): CueRule =>
+    rule({ repeat: 3, when: 'previous', color: { each: [1, 22, 42] }, whenEach })
+  const placedAt = (f: CueFlow, t: FlowTrack) => evaluateFlow(f, t).cues.map((c) => c.ms)
+  const leftOut = (f: CueFlow, t: FlowTrack) =>
+    rejectedCues(f, t).map((c) => [c.ms, c.bars, c.reason])
+  const marked = (n: number, over: Partial<FlowTrack> = {}): FlowTrack =>
+    track({ drops: [bar(n)], ...over })
+
+  it('leaves out the 48 that lands a few bars after the cue of the first beat, so a short intro does not get two cues on top of each other', () => {
+    const f = flow(yellow, countdown(['rule', 'rule', 'before:32']))
+    expect(placedAt(f, marked(53))).toEqual([bar(1), bar(21), bar(37)])
+    expect(leftOut(f, marked(53))).toEqual([[bar(5), 48, 'near']])
+  })
+
+  it('keeps that 48 where the mark sits far enough into the track, since nothing is near it there', () => {
+    const f = flow(yellow, countdown(['rule', 'rule', 'before:32']))
+    expect(placedAt(f, marked(101))).toEqual([bar(1), bar(53), bar(69), bar(85)])
+    expect(leftOut(f, marked(101))).toEqual([])
+  })
+
+  it('only looks at the cues of the rules above it, so the order of the rules is their priority', () => {
+    const f = flow(countdown(['rule', 'rule', 'before:32']), yellow)
+    expect(placedAt(f, marked(53))).toEqual([bar(1), bar(5), bar(21), bar(37)])
+    expect(leftOut(f, marked(53))).toEqual([])
+  })
+
+  it('lets a cue sit exactly as many bars after another as it asks to be clear, the same edge the room condition has', () => {
+    const at = (word: string) => flow(yellow, rule({ bars: 48, when: 'always', whenEach: [word] }))
+    expect(placedAt(at('all:before:4'), marked(53))).toEqual([bar(1), bar(5)])
+    expect(leftOut(at('all:before:8'), marked(53))).toEqual([[bar(5), 48, 'near']])
+  })
+
+  it('leaves out a cue with another one coming in the bars after it, and lets it sit exactly that many bars before', () => {
+    const ahead = rule({ direction: 'forward', bars: 8, when: 'always' })
+    const at = (word: string) => flow(ahead, rule({ when: 'always', whenEach: [word] }))
+    expect(placedAt(at('all:after:32'), marked(53))).toEqual([bar(61)])
+    expect(leftOut(at('all:after:32'), marked(53))).toEqual([[bar(37), 16, 'near']])
+    expect(placedAt(at('all:after:24'), marked(53))).toEqual([bar(37), bar(61)])
+  })
+
+  it('does not take a cue after it for one before it, nor the other way round', () => {
+    const ahead = rule({ direction: 'forward', bars: 8, when: 'always' })
+    const before = flow(ahead, rule({ when: 'always', whenEach: ['all:before:64'] }))
+    expect(placedAt(before, marked(53))).toEqual([bar(37), bar(61)])
+    const after = flow(yellow, rule({ bars: 48, when: 'always', whenEach: ['all:after:64'] }))
+    expect(placedAt(after, marked(53))).toEqual([bar(1), bar(5)])
+  })
+
+  it('never counts the other repetitions of its own rule as another cue, or a countdown would thin itself out', () => {
+    const f = flow(rule({ repeat: 3, when: 'always', whenEach: ['all:before:32+after:32'] }))
+    expect(placedAt(f, marked(53))).toEqual([bar(5), bar(21), bar(37)])
+  })
+
+  it('gives the first condition that fails as the reason, the strong part before the cue nearby and that before the section', () => {
+    const f = (word: string) => flow(yellow, rule({ when: 'always', whenEach: [word] }))
+    const strong = [{ start: bar(36), end: bar(40) }]
+    expect(leftOut(f('all:fits+before:64'), marked(53, { strong }))).toEqual([
+      [bar(37), 16, 'strong'],
+    ])
+    expect(leftOut(f('all:fits+before:64'), marked(53))).toEqual([[bar(37), 16, 'near']])
+    expect(leftOut(f('all:before:64+in:down'), marked(53))).toEqual([[bar(37), 16, 'near']])
+    expect(leftOut(f('all:fits+in:down'), marked(53))).toEqual([[bar(37), 16, 'section']])
+  })
+
+  const phrases = (['intro', 'up', 'down', 'chorus', 'outro'] as const).map((kind, i) => ({
+    ms: bar([1, 9, 17, 25, 41][i]),
+    kind,
+  }))
+  const steps = (whenEach: string[], over: Partial<CueRule> = {}): CueFlow =>
+    flow(
+      rule({
+        from: 'first-beat',
+        direction: 'forward',
+        bars: 8,
+        repeat: 5,
+        when: 'always',
+        whenEach,
+        ...over,
+      }),
+    )
+
+  it('takes a cue in any of the sections it names, so one square covers the build-up and the breakdown', () => {
+    const t = track({ phrases })
+    expect(placedAt(steps(['all:in:up|down']), t)).toEqual([bar(9), bar(17)])
+    expect(leftOut(steps(['all:in:up|down']), t)).toEqual([
+      [bar(25), 24, 'section'],
+      [bar(33), 32, 'section'],
+      [bar(41), 40, 'section'],
+    ])
+  })
+
+  it('applies the conditions of a one colour rule to every repetition, since its single square stands for them all', () => {
+    const t = track({ phrases })
+    expect(placedAt(steps(['all:in:chorus|outro']), t)).toEqual([bar(25), bar(33), bar(41)])
+    const own = steps(['in:chorus|outro'], { color: { each: [1, 2, 3, 4, 5] } })
+    expect(placedAt(own, t)).toEqual([bar(17), bar(25), bar(33), bar(41)])
+  })
+
+  it('asks a cue placed on the same beat for its conditions too, the intro and the outro among the sections', () => {
+    const t = track({ phrases })
+    const on = (from: CueRule['from'], word: string) =>
+      flow(rule({ from, bars: 0, when: 'always', whenEach: [word] }))
+    expect(placedAt(on('first-beat', 'all:in:intro'), t)).toEqual([bar(1)])
+    expect(placedAt(on('first-beat', 'all:in:outro'), t)).toEqual([])
+    expect(leftOut(on('first-beat', 'all:in:outro'), t)).toEqual([[bar(1), 0, 'section']])
+    expect(placedAt(on('last-beat', 'all:in:outro'), t)).toEqual([t.beats[t.beats.length - 1]])
+  })
+
+  it('leaves the mark without its own cue when another sits in the bars before it', () => {
+    const lead = rule({ bars: 4, when: 'always' })
+    const onMark = (word: string) => flow(lead, rule({ bars: 0, when: 'always', whenEach: [word] }))
+    expect(placedAt(onMark('all:before:8'), marked(53))).toEqual([bar(49)])
+    expect(placedAt(onMark('all:before:4'), marked(53))).toEqual([bar(49), bar(53)])
+  })
+})

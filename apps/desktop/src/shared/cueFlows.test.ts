@@ -5,7 +5,11 @@ import {
   CALLS_ONLY,
   type CueFlow,
   type CueRule,
+  FLOW_SECTIONS,
+  type FlowSection,
+  fitWhenEach,
   followsPoint,
+  formatRepeatWhen,
   keepLegacyFlow,
   MANUAL_CUE_FLOW,
   MIX_IN,
@@ -13,9 +17,13 @@ import {
   MY_FLOW,
   normalizeCueFlows,
   ONE_AT_32,
+  parseRepeatWhen,
   phraseKindOf,
   phraseLabelOf,
+  type RepeatWhen,
+  repeatWhenOf,
   restoreDefaultFlow,
+  withRepeatWhen,
 } from './cueFlows'
 
 describe('bundled flows', () => {
@@ -314,22 +322,58 @@ describe('normalizeCueFlows', () => {
     ])
   })
 
-  it('drops the conditions of a rule with no repetitions to tell apart, where no square could show them', () => {
+  it('keeps the conditions of a rule with one colour or one cue under a word an older Surco sets aside, so opening the flow there never erases them', () => {
     const base = MY_FLOW.rules[0]
     const flows = normalizeCueFlows([
       {
         id: 'x',
-        name: 'Sin cuadros',
+        name: 'Un cuadro',
         rules: [
-          { ...base, bars: 0, whenEach: ['down'] },
-          { ...base, color: { fixed: 22 }, whenEach: ['down'] },
+          { ...base, bars: 0, repeat: 1, whenEach: ['down'] },
+          { ...base, color: { fixed: 22 }, whenEach: ['all:fits+before:32', 'up'] },
+          { ...base, color: { fixed: 22 }, whenEach: ['rule', 'down'] },
         ],
       },
     ])
     expect(flows.find((f) => f.id === 'x')?.rules).toEqual([
-      { ...base, bars: 0 },
+      { ...base, bars: 0, repeat: 1, whenEach: ['all:down'] },
+      { ...base, color: { fixed: 22 }, whenEach: ['all:fits+before:32'] },
       { ...base, color: { fixed: 22 } },
     ])
+  })
+
+  it('writes each set of conditions the one canonical way, so the same flow always saves the same and old flows stay as they were', () => {
+    const base = MY_FLOW.rules[0]
+    const flows = normalizeCueFlows([
+      {
+        id: 'x',
+        name: 'Canon',
+        rules: [
+          { ...base, whenEach: ['in:down', 'in:down|up', 'all:fits'] },
+          { ...base, whenEach: ['before:32', 'rule', 'fits+before:8+after:16+in:down'] },
+        ],
+      },
+    ])
+    expect(flows.find((f) => f.id === 'x')?.rules.map((r) => r.whenEach)).toEqual([
+      ['down', 'in:up|down', 'fits'],
+      ['before:32', 'rule', 'fits+before:8+after:16+in:down'],
+    ])
+  })
+
+  it('keeps a rule aside when its conditions cannot be read, a distance this Surco does not offer included', () => {
+    const good = MY_FLOW.rules[0]
+    const odd = [
+      { ...good, whenEach: ['before:33'] },
+      { ...good, whenEach: ['after:16+before:32'] },
+      { ...good, whenEach: ['in:bridge'] },
+      { ...good, color: { fixed: 1 }, whenEach: ['all:soon'] },
+      { ...good, bars: 0, repeat: 1, whenEach: ['rule', 'later:4'] },
+    ]
+    const [flow] = normalizeCueFlows([{ id: 'x', name: 'Nueva', rules: [good, ...odd] }]).filter(
+      (f) => f.id === 'x',
+    )
+    expect(flow.rules).toEqual([good])
+    expect(flow.foreign).toEqual(odd.map((rule, i) => ({ at: i + 1, rule })))
   })
 
   it('ignores conditions that are not a list of words and keeps the rule, so a hand-edited file loses only that', () => {
@@ -491,5 +535,125 @@ describe('followsPoint', () => {
     expect(followsPoint(only([{ ...MY_FLOW.rules[1], when: 'always' }], false))).toBe(false)
     expect(followsPoint(only([{ ...ONE_AT_32.rules[0], from: 'chorus' }], false))).toBe(false)
     expect(followsPoint(only([], false))).toBe(false)
+  })
+})
+
+describe('the conditions of one repetition as a word', () => {
+  const none: RepeatWhen = { fits: false, before: null, after: null, sections: [] }
+  const subsets = Array.from({ length: 32 }, (_, mask) =>
+    FLOW_SECTIONS.filter((_, i) => mask & (1 << i)),
+  )
+  const every: RepeatWhen[] = [false, true].flatMap((fits) =>
+    [null, 32].flatMap((before) =>
+      [null, 16].flatMap((after) => subsets.map((sections) => ({ fits, before, after, sections }))),
+    ),
+  )
+
+  it('writes the conditions that already existed exactly as before, so an older Surco still reads the flows that use nothing new', () => {
+    expect(formatRepeatWhen(none)).toBe('rule')
+    expect(formatRepeatWhen({ ...none, fits: true })).toBe('fits')
+    for (const kind of ['up', 'down', 'chorus'] as FlowSection[])
+      expect(formatRepeatWhen({ ...none, sections: [kind] })).toBe(kind)
+  })
+
+  it('joins anything else in one fixed order, so two flows that ask the same thing are stored the same', () => {
+    expect(formatRepeatWhen({ ...none, fits: true, before: 32 })).toBe('fits+before:32')
+    expect(formatRepeatWhen({ ...none, before: 32 })).toBe('before:32')
+    expect(formatRepeatWhen({ ...none, sections: ['down', 'up'] })).toBe('in:up|down')
+    expect(formatRepeatWhen({ ...none, sections: ['intro'] })).toBe('in:intro')
+    expect(formatRepeatWhen({ ...none, sections: ['outro'] })).toBe('in:outro')
+    expect(formatRepeatWhen({ fits: true, before: 8, after: 16, sections: ['down'] })).toBe(
+      'fits+before:8+after:16+in:down',
+    )
+    expect(formatRepeatWhen({ ...none, fits: true, sections: ['down'] })).toBe('fits+in:down')
+  })
+
+  it('reads back every combination it writes, so no saved condition changes meaning on the way', () => {
+    expect(every).toHaveLength(256)
+    for (const when of every) {
+      const word = formatRepeatWhen(when)
+      expect(parseRepeatWhen(word), word).toEqual(when)
+      expect(formatRepeatWhen(parseRepeatWhen(word) as RepeatWhen)).toBe(word)
+    }
+    expect(new Set(every.map(formatRepeatWhen)).size).toBe(256)
+  })
+
+  it('refuses a word it cannot read instead of guessing, so the rule is set aside whole', () => {
+    for (const word of [
+      '',
+      'bridge',
+      'fits+',
+      'fits+fits',
+      'before:',
+      'before:3',
+      'before:032',
+      'after:16+before:32',
+      'in:',
+      'in:up|up',
+      'in:up|bridge',
+      'all:fits',
+    ])
+      expect(parseRepeatWhen(word), word).toBeNull()
+  })
+})
+
+describe('the conditions a repetition has in a rule', () => {
+  const none: RepeatWhen = { fits: false, before: null, after: null, sections: [] }
+  const each = MY_FLOW.rules[0]
+  const fixed: CueRule = { ...each, color: { fixed: 22 } }
+  const single: CueRule = { ...MY_FLOW.rules[1], when: 'always' }
+
+  it('gives every repetition of a one colour rule the same conditions, since its one square speaks for all', () => {
+    const rule = { ...fixed, whenEach: ['all:before:32'] }
+    for (const k of [1, 2, 3]) expect(repeatWhenOf(rule, k)).toEqual({ ...none, before: 32 })
+  })
+
+  it('gives each repetition of a colour per repetition rule its own, and none where the rule has none', () => {
+    const rule = { ...each, whenEach: ['rule', 'rule', 'in:up|down'] }
+    expect(repeatWhenOf(rule, 1)).toEqual(none)
+    expect(repeatWhenOf(rule, 3)).toEqual({ ...none, sections: ['up', 'down'] })
+    expect(repeatWhenOf(each, 2)).toEqual(none)
+  })
+
+  it('stores the conditions of a one colour rule under the marked word, the only form an older Surco will not drop', () => {
+    expect(withRepeatWhen(fixed, 0, { ...none, fits: true })).toEqual({
+      ...fixed,
+      whenEach: ['all:fits'],
+    })
+    expect(withRepeatWhen(single, 0, { ...none, after: 16 })).toEqual({
+      ...single,
+      whenEach: ['all:after:16'],
+    })
+    expect(withRepeatWhen({ ...fixed, whenEach: ['all:fits'] }, 0, none)).toEqual(fixed)
+  })
+
+  it('stores the conditions of one repetition at its place and nothing after the last one that has any', () => {
+    expect(withRepeatWhen(each, 2, { ...none, sections: ['down'] })).toEqual({
+      ...each,
+      whenEach: ['rule', 'rule', 'down'],
+    })
+    expect(withRepeatWhen({ ...each, whenEach: ['fits', 'rule', 'down'] }, 2, none)).toEqual({
+      ...each,
+      whenEach: ['fits'],
+    })
+  })
+
+  it('refits the stored conditions when the shape of the rule changes, so a rule never carries a form its shape cannot show', () => {
+    expect(fitWhenEach({ ...each, repeat: 2, whenEach: ['fits', 'rule', 'down'] })).toEqual({
+      ...each,
+      repeat: 2,
+      whenEach: ['fits'],
+    })
+    expect(fitWhenEach({ ...each, bars: 0, repeat: 1, whenEach: ['before:32'] })).toEqual({
+      ...each,
+      bars: 0,
+      repeat: 1,
+      whenEach: ['all:before:32'],
+    })
+    expect(fitWhenEach({ ...each, repeat: 1, whenEach: ['all:before:32'] })).toEqual({
+      ...each,
+      repeat: 1,
+      whenEach: ['before:32'],
+    })
   })
 })

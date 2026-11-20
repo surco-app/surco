@@ -2063,6 +2063,8 @@
       "rules": "ルール",
       "addRule": "ルールを追加",
       "removeRule": "ルールを削除",
+      "moveRule": "ルール {{n}} を移動",
+      "moveRuleHint": "ドラッグして順番を変更",
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
       "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",
@@ -2099,7 +2101,8 @@
           "point": "別のマークを越える",
           "start": "トラックの開始前",
           "end": "トラックの終了後",
-          "section": "そのセクションの外"
+          "section": "そのセクションの外",
+          "near": "他のキューが近すぎる"
         }
       },
       "tooMany": "このフローは {{count}} 個のホットキューを必要としますが、rekordbox は 8 個までです",
@@ -2152,19 +2155,33 @@
         "first": "最初のマークより前で、まだ何もない場合のみ"
       },
       "whenEach": {
-        "rule": "独自の条件なし",
         "fits": "収まる場合",
-        "down": "ブレイクダウンのみ",
-        "up": "ビルドアップのみ",
-        "chorus": "コーラスのみ"
+        "before_one": "前の {{bars}} 小節に他のキューがない場合",
+        "before_other": "前の {{bars}} 小節に他のキューがない場合",
+        "after_one": "次の {{bars}} 小節に他のキューがない場合",
+        "after_other": "次の {{bars}} 小節に他のキューがない場合",
+        "beforeAny": "前の小節に他のキューがない場合",
+        "afterAny": "次の小節に他のキューがない場合",
+        "in": "{{sections}}",
+        "only": "次のセクションのみ",
+        "line": "{{bars}} のキューは{{conditions}}のみ。",
+        "lineAll": "{{conditions}}のみ。"
+      },
+      "section": {
+        "intro": "イントロ",
+        "up": "ビルドアップ",
+        "down": "ブレイクダウン",
+        "chorus": "コーラス",
+        "outro": "アウトロ"
+      },
+      "inSection": {
+        "intro": "イントロ",
+        "up": "ビルドアップ",
+        "down": "ブレイクダウン",
+        "chorus": "コーラス",
+        "outro": "アウトロ"
       },
       "whenEachLead": "。",
-      "whenEachHint": {
-        "fits": "{{bars}} のキューは収まる場合のみ。",
-        "down": "{{bars}} のキューはブレイクダウンのみ。",
-        "up": "{{bars}} のキューはビルドアップのみ。",
-        "chorus": "{{bars}} のキューはコーラスのみ。"
-      },
       "place": {
         "hot": "ホットキュー",
         "call": "CALL",
