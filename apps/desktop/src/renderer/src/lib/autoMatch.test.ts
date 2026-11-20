@@ -849,6 +849,26 @@ describe('acceptReviewPatch', () => {
     expect(patch?.matchProvider).toBe('discogs')
   })
 
+  // Accepting a suggestion from the list is a batch apply too, so the low resolution setting
+  // has to decide the cover here exactly as it does in the editor.
+  it('replaces a small embedded cover only when the setting asks for it', () => {
+    const rel = release(1, {
+      images: [{ type: 'primary', uri: 'https://d/c.jpg', resource_url: '' }],
+    })
+    const t = track({
+      coverUrl: 'thumb',
+      embeddedCover: 'thumb',
+      embeddedCoverDims: { w: 300, h: 300 },
+      reviewMatch: {
+        release: rel,
+        track: { position: '1', title: 'One' },
+        result: searchResult(1),
+      },
+    })
+    expect(acceptReviewPatch(t)?.coverUrl).toBe('thumb')
+    expect(acceptReviewPatch(t, undefined, undefined, false, true)?.coverUrl).not.toBe('thumb')
+  })
+
   // Accepting from the list must date the track exactly as picking it in the editor would.
   it('fills the whole release date when the full release date is on', () => {
     const rel = release(1, { year: 2001, released: '2001-03-12' })

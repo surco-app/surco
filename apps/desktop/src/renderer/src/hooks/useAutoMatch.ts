@@ -55,6 +55,7 @@ interface Params {
   importFieldsRef: { readonly current: MetaTextKey[] }
   genrePresetsRef: { readonly current: string[] }
   fullReleaseDateRef: { readonly current: boolean }
+  replaceLowResCoverRef: { readonly current: boolean }
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
@@ -108,6 +109,7 @@ export function useAutoMatch({
   importFieldsRef,
   genrePresetsRef,
   fullReleaseDateRef,
+  replaceLowResCoverRef,
   matchCleanupRef,
   editingRef,
   reportActivity,
@@ -257,7 +259,7 @@ export function useAutoMatch({
         live.meta,
         m.release,
         m.track,
-        keepCoverArg(live),
+        keepCoverArg(live, replaceLowResCoverRef.current),
         importFieldsRef.current,
         genrePresetsRef.current,
         fullReleaseDateRef.current,
@@ -302,6 +304,7 @@ export function useAutoMatch({
       importFieldsRef,
       genrePresetsRef,
       fullReleaseDateRef,
+      replaceLowResCoverRef,
       matchCleanupRef,
       editingRef,
       reportActivity,

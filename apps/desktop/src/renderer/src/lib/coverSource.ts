@@ -1,4 +1,5 @@
 import type { TrackItem } from '../types'
+import { isLowResCover } from './quality'
 
 interface CoverSourceFields {
   coverUrl?: string
@@ -23,10 +24,24 @@ export function coverSourceOf(
 // the release only when the file carries none. The editor's album match and the
 // background auto-match sweep apply the same non-destructive rule, so they read it from
 // one place rather than each spelling out the `keep: !!coverUrl` predicate.
-export function keepCoverArg(track: Pick<TrackItem, 'coverUrl' | 'coverPath'>): {
+export function keepCoverArg(
+  track: Pick<TrackItem, 'coverUrl' | 'coverPath' | 'embeddedCover' | 'embeddedCoverDims'>,
+  replaceLowRes: boolean,
+): {
   url?: string
   path?: string
   keep: boolean
 } {
-  return { url: track.coverUrl, path: track.coverPath, keep: !!track.coverUrl }
+  const dims = track.embeddedCoverDims
+  const lowResOriginal =
+    !track.coverPath &&
+    !!track.coverUrl &&
+    track.coverUrl === track.embeddedCover &&
+    !!dims &&
+    isLowResCover(dims.w, dims.h)
+  return {
+    url: track.coverUrl,
+    path: track.coverPath,
+    keep: !!track.coverUrl && !(replaceLowRes && lowResOriginal),
+  }
 }

@@ -42,7 +42,7 @@ interface Props {
 // reimplement the same Discogs plumbing.
 export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const { importFields, genrePresets, fullReleaseDate } = useAppSettings()
+  const { importFields, genrePresets, fullReleaseDate, replaceLowResCover } = useAppSettings()
   const [assignments, setAssignments] = useState<Assignment[]>([])
   // Applying is otherwise silent, so flash the button to "Applied" for a moment as the
   // acknowledgement; it reverts so the user can apply again after a correction.
@@ -98,7 +98,7 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
             file.meta,
             release,
             a.track,
-            keepCoverArg(file),
+            keepCoverArg(file, replaceLowResCover),
             importFields,
             genrePresets,
             fullReleaseDate,

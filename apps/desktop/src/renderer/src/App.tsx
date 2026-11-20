@@ -639,6 +639,9 @@ export default function App(): React.JSX.Element {
   const fullReleaseDate = settings?.fullReleaseDate ?? false
   const fullReleaseDateRef = useRef(fullReleaseDate)
   fullReleaseDateRef.current = fullReleaseDate
+  const replaceLowResCover = settings?.replaceLowResCover ?? false
+  const replaceLowResCoverRef = useRef(replaceLowResCover)
+  replaceLowResCoverRef.current = replaceLowResCover
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.
   const matchCleanupRef = useRef<MatchCleanup>({})
@@ -1615,6 +1618,7 @@ export default function App(): React.JSX.Element {
     importFieldsRef,
     genrePresetsRef,
     fullReleaseDateRef,
+    replaceLowResCoverRef,
     matchCleanupRef,
     editingRef,
     reportActivity,
@@ -3919,6 +3923,7 @@ export default function App(): React.JSX.Element {
       importFields,
       genrePresets,
       fullReleaseDate,
+      replaceLowResCover,
     )
     if (!accepted) return
     recordMetaUndo([id], { cover: true })
@@ -4316,6 +4321,7 @@ export default function App(): React.JSX.Element {
           importFieldsRef.current,
           genrePresetsRef.current,
           fullReleaseDateRef.current,
+          replaceLowResCoverRef.current,
         )?.meta,
     }
     if (reviewKind === 'music')
