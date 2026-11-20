@@ -503,15 +503,15 @@ export function CueWave({
           data-diff="gone"
           role="img"
           aria-label={diff?.goneLabel}
-          style={{
-            ...markStyle(h.at),
-            top: `${GONE_ROW_TOP_PX}px`,
-            backgroundColor: 'var(--color-panel-2)',
-            borderColor: h.colour,
-            borderStyle: 'solid',
-            borderWidth: '1.5px',
-          }}
-          className="absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-[9px] text-[var(--color-fg)]"
+          style={
+            {
+              ...markStyle(h.at),
+              top: `${GONE_ROW_TOP_PX}px`,
+              backgroundColor: 'var(--color-panel-2)',
+              '--cue': h.colour,
+            } as React.CSSProperties
+          }
+          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-center text-label font-semibold leading-[8px] text-fg"
         >
           {h.letter}
           <span

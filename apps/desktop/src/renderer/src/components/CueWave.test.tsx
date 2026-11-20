@@ -481,7 +481,7 @@ describe('CueWave', () => {
       expect(kept.style.boxShadow).toBe('')
     })
 
-    it('draws a hot cue the flow would take away hollow, in its own colour and letter, struck through, so it does not read as one left out by a rule', () => {
+    it('draws a hot cue the flow would take away hollow, struck through, with its letter in the text colour and its own colour mixed with it on a thick edge, so it reads on any theme and not as one left out by a rule', () => {
       setup({
         readOnly: true,
         cues,
@@ -491,11 +491,12 @@ describe('CueWave', () => {
       const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
       expect(gone).toHaveAttribute('data-diff', 'gone')
       expect(gone).toHaveTextContent(/^C$/)
-      expect(gone).toHaveStyle({
-        borderStyle: 'solid',
-        borderWidth: '1.5px',
-        borderColor: hotCueColor(22),
-      })
+      expect(gone.style.getPropertyValue('--cue')).toBe(hotCueColor(22))
+      expect(gone).toHaveClass(
+        'border-2',
+        'border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))]',
+        'text-fg',
+      )
       expect(gone.style.opacity).toBe('')
       expect(screen.getByTestId('cue-wave-strike-24000').style.background).toContain(
         'var(--color-warn)',
