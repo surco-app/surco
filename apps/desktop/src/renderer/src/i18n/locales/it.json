@@ -834,7 +834,7 @@
     "qualityCaptionBad": "Tetto a ~{{cutoff}}, tipico di una sorgente lossy.",
     "qualityCaptionProcessed": "Possibili alti rigenerati sopra un taglio a ~{{cutoff}}.",
     "qualityUpsampled": "Nessun contenuto sopra i 22 kHz. Probabilmente ricampionato da 44,1 kHz.",
-    "qualityHiRes": "Hi-res autentico. C'è contenuto reale sopra i 22 kHz, quindi questo file a {{rate}} non è ricampionato dalla qualità CD (44,1 kHz).",
+    "qualityHiRes": "C'è contenuto reale sopra i 22 kHz. Questo file a {{rate}} non deriva dalla qualità CD (44,1 kHz).",
     "qualityResolutionUnknown": "Non è stato possibile verificare se è vera alta risoluzione.",
     "qualityBitsPill": "Bit riempiti",
     "qualityBitsPadded": "Dichiara 24 bit, ma l'audio è a 16 bit riempito.",

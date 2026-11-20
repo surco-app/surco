@@ -834,7 +834,7 @@
     "qualityCaptionBad": "約 {{cutoff}} で頭打ち。非可逆ソースの印です。",
     "qualityCaptionProcessed": "約 {{cutoff}} でカットされた高域が再生成された可能性があります。",
     "qualityUpsampled": "22 kHz 以上のコンテンツなし：おそらく 44.1 kHz からアップサンプリングされています。",
-    "qualityHiRes": "本物のハイレゾ：22 kHz 以上の実際のコンテンツがあるため、この {{rate}} ファイルは CD 品質（44.1 kHz）からアップサンプリングされたものではありません。",
+    "qualityHiRes": "22 kHz を超える実際のコンテンツがあります。この {{rate}} ファイルは CD 品質（44.1 kHz）由来ではありません。",
     "qualityResolutionUnknown": "これが本物のハイレゾか確認できませんでした。",
     "qualityBitsPill": "パディング済み",
     "qualityBitsPadded": "24 ビットと記載されていますが、音声は 16 ビットをパディングしたものです。",

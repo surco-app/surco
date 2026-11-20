@@ -834,7 +834,7 @@
     "qualityCaptionBad": "Sostre a ~{{cutoff}}, típic d'una font amb pèrdua.",
     "qualityCaptionProcessed": "Possibles aguts regenerats sobre un tall a ~{{cutoff}}.",
     "qualityUpsampled": "Sense contingut per sobre de 22 kHz. Probablement s'ha reescalat des de 44,1 kHz.",
-    "qualityHiRes": "Hi-res autèntic. Hi ha contingut real per sobre de 22 kHz, així que aquest fitxer a {{rate}} no s'ha reescalat des de qualitat CD (44,1 kHz).",
+    "qualityHiRes": "Hi ha contingut real per sobre de 22 kHz. Aquest fitxer a {{rate}} no ve de qualitat CD (44,1 kHz).",
     "qualityResolutionUnknown": "No s'ha pogut comprovar si és alta resolució real.",
     "qualityBitsPill": "Bits farcits",
     "qualityBitsPadded": "Declara 24 bits, però l'àudio és de 16 bits farcit.",
