@@ -7,6 +7,7 @@ import {
   SAME_POSITION_MS,
   type StrongPart,
 } from '../../../shared/cueRules'
+import { type LearnTrack, learnFlowFromTrack } from '../../../shared/learnFlow'
 import type { CueWaveColumn, TrackCues } from '../../../shared/types'
 import type { TrackItem } from '../types'
 
@@ -88,6 +89,19 @@ export function trackOfCues(read: TrackCues): FlowTrack {
     strong: read.strong,
     phrases: read.phrases,
   }
+}
+
+export function learnTrackOf(read: TrackCues): LearnTrack {
+  return {
+    beats: read.grid.map((b) => b.ms),
+    cues: read.cues.filter((c) => !c.loop).map(({ ms, kind, color }) => ({ ms, kind, color })),
+    strong: read.strong,
+    phrases: read.phrases,
+  }
+}
+
+export function flowFromTrack(read: TrackCues): CueFlow | null {
+  return learnFlowFromTrack(learnTrackOf(read))
 }
 
 export function previewChoices(

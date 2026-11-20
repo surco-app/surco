@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CALLS_ONLY, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import type { TrackCues } from '../../../shared/types'
 import {
   differingHot,
   EXAMPLE_DROP,
@@ -9,8 +10,12 @@ import {
   EXAMPLE_WAVE,
   exampleBar,
   examplePlan,
+  flowFromTrack,
   hotDiff,
+  learnTrackOf,
   previewChoices,
+  trackOfCues,
+  trackPlan,
 } from './cueExample'
 
 describe('the example wave', () => {
@@ -142,5 +147,77 @@ describe('what a flow changes on a track', () => {
   it('counts as many differing hot cues as it names, so the dot and the breakdown never disagree', () => {
     expect(differingHot([64000, 96000], [96000, 120000])).toBe(2)
     expect(differingHot([64000], [64010])).toBe(0)
+  })
+})
+
+describe('a flow made from the track on screen', () => {
+  const read = (over: Partial<TrackCues> = {}): TrackCues => ({
+    contentId: 'rb:1',
+    analysed: true,
+    grid: EXAMPLE_GRID,
+    strong: [{ start: exampleBar(97), end: exampleBar(129) }],
+    phrases: [{ ms: exampleBar(97), kind: 'chorus' }],
+    cues: [
+      { id: 'mark', ms: exampleBar(97), kind: 0, color: null },
+      { id: 'a', ms: exampleBar(81), kind: 1, color: 22 },
+      { id: 'b', ms: exampleBar(65), kind: 2, color: 1 },
+    ],
+    wave: null,
+    durationMs: EXAMPLE_DURATION_MS,
+    fingerprint: '',
+    gridFingerprint: '',
+    ...over,
+  })
+  const withLoop = read({
+    cues: [...read().cues, { id: 'loop', ms: exampleBar(49), kind: 3, color: 9, loop: true }],
+  })
+
+  it('hands the learning the grid, the sections and each cue with its colour, since the rules it writes count bars and paint cues', () => {
+    expect(learnTrackOf(read())).toEqual({
+      beats: EXAMPLE_GRID.map((b) => b.ms),
+      cues: [
+        { ms: exampleBar(97), kind: 0, color: null },
+        { ms: exampleBar(81), kind: 1, color: 22 },
+        { ms: exampleBar(65), kind: 2, color: 1 },
+      ],
+      strong: read().strong,
+      phrases: read().phrases,
+    })
+  })
+
+  it('leaves loops out, as the preview does when it reads the marks, so a loop is never learned as a hot cue', () => {
+    expect(learnTrackOf(withLoop)).toEqual(learnTrackOf(read()))
+    expect(flowFromTrack(withLoop)).toEqual(flowFromTrack(read()))
+  })
+
+  it('gives a flow the preview finds no difference with on the same track, so the DJ starts from what he already has', () => {
+    const flow = flowFromTrack(read())
+    expect(flow?.rules).toEqual([
+      {
+        from: 'drop',
+        direction: 'back',
+        bars: 16,
+        repeat: 2,
+        when: 'previous',
+        place: 'hot',
+        color: { each: [22, 1] },
+      },
+    ])
+    const plan = flow && trackPlan(flow, trackOfCues(read()))
+    expect(plan?.status === 'plan' && plan.hot.map((h) => [h.ms, h.color])).toEqual([
+      [exampleBar(65), 1],
+      [exampleBar(81), 22],
+    ])
+    expect(
+      plan?.status === 'plan' &&
+        differingHot(
+          plan.hot.map((h) => h.ms),
+          [exampleBar(81), exampleBar(65)],
+        ),
+    ).toBe(0)
+  })
+
+  it('gives nothing for a track without a grid, where no distance can be counted', () => {
+    expect(flowFromTrack(read({ grid: [] }))).toBeNull()
   })
 })
