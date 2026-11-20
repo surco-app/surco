@@ -12,7 +12,6 @@ import {
   leftOutForMissing,
   summarizeBatch,
 } from './batch'
-import type { Destination } from './destination'
 
 function track(id: string, status: TrackStatus, meta: Partial<TrackMetadata> = {}): TrackItem {
   return {
