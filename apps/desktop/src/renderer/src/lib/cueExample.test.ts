@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CALLS_ONLY, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
 import {
+  collectionChoices,
   differingHot,
   EXAMPLE_DROP,
   EXAMPLE_DURATION_MS,
@@ -123,6 +124,73 @@ describe('the tracks the preview offers', () => {
   it('offers a track once even when the list repeats it', () => {
     const tracks = [row('a', [{ ms: 64000, kind: 0 }]), row('again', [{ ms: 64000, kind: 0 }])]
     expect(previewChoices(tracks, contentOf)).toHaveLength(1)
+  })
+})
+
+describe('the tracks of the collection a flow can be tried on', () => {
+  const entry = (
+    contentId: string | undefined,
+    title: string,
+    cues: { ms: number; kind: number }[] | null,
+    path: string | null = `/music/${title}.aiff`,
+  ) => ({
+    path,
+    ...(contentId ? { contentId } : {}),
+    ...(cues
+      ? {
+          preview: {
+            title,
+            artist: 'Bicep',
+            durationSec: 0,
+            cues: cues.map((c) => ({ ...c, color: null })),
+          },
+        }
+      : {}),
+  })
+  const MARK = [{ ms: 64000, kind: 0 }]
+
+  it('offers only tracks with a mark of their own, since a flow has nothing to hang from on the rest', () => {
+    const entries = [
+      entry('rb:1', 'Glue', MARK),
+      entry('rb:2', 'Atlas', []),
+      entry('rb:3', 'Apricots', [
+        { ms: 32000, kind: 1 },
+        { ms: 32000, kind: 0 },
+      ]),
+      entry('rb:4', 'Aura', null),
+    ]
+    expect(collectionChoices(entries)).toEqual([{ contentId: 'rb:1', label: 'Glue' }])
+  })
+
+  it('leaves out an entry the program gives no handle for, whose cues cannot be read', () => {
+    expect(collectionChoices([entry(undefined, 'Glue', MARK)])).toEqual([])
+  })
+
+  it('offers a track once even when the collection repeats it', () => {
+    expect(collectionChoices([entry('rb:1', 'Glue', MARK), entry('rb:1', 'Glue', MARK)])).toEqual([
+      { contentId: 'rb:1', label: 'Glue' },
+    ])
+  })
+
+  it('names a track as its row in the list does, by its title or by its file when it has none, so the DJ finds it under the same name', () => {
+    expect(
+      collectionChoices([entry('rb:1', '', MARK, '/music/Bicep - Glue.aiff')]).map((c) => c.label),
+    ).toEqual(['Bicep - Glue'])
+  })
+
+  it('sorts by name whatever the accents and capitals, so a whole collection can be read down like an index', () => {
+    const entries = [
+      entry('rb:1', 'Zebra', MARK),
+      entry('rb:2', 'Élan', MARK),
+      entry('rb:3', 'atlas', MARK),
+      entry('rb:4', 'Delta', MARK),
+    ]
+    expect(collectionChoices(entries).map((c) => c.label)).toEqual([
+      'atlas',
+      'Delta',
+      'Élan',
+      'Zebra',
+    ])
   })
 })
 

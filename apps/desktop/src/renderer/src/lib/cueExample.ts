@@ -7,9 +7,11 @@ import {
   SAME_POSITION_MS,
   type StrongPart,
 } from '../../../shared/cueRules'
+import { foldAccents } from '../../../shared/foldAccents'
 import { type LearnTrack, learnFlowFromTrack } from '../../../shared/learnFlow'
-import type { CueWaveColumn, TrackCues } from '../../../shared/types'
+import type { CueWaveColumn, SourcePlaylistEntry, TrackCues } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { parseFileName } from './filename'
 
 const BEAT_MS = 60000 / 128
 const BARS = 192
@@ -120,6 +122,26 @@ export function previewChoices(
     seen.add(contentId)
     return [{ contentId, label: t.listLabel }]
   })
+}
+
+export function collectionChoices(
+  entries: Pick<SourcePlaylistEntry, 'path' | 'contentId' | 'preview'>[],
+): { contentId: string; label: string }[] {
+  const seen = new Set<string>()
+  return entries
+    .flatMap(({ path, contentId, preview }) => {
+      const cues = preview?.cues ?? []
+      const marks = findDrops(
+        cues.filter((c) => c.kind === 0).map((c) => c.ms),
+        cues.filter((c) => c.kind !== 0).map((c) => c.ms),
+      )
+      if (!contentId || !preview || marks.length === 0 || seen.has(contentId)) return []
+      seen.add(contentId)
+      const label = preview.title || (path ? parseFileName(path).fileName : '')
+      return [{ contentId, label, name: foldAccents(label).toLowerCase() }]
+    })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .map(({ contentId, label }) => ({ contentId, label }))
 }
 
 export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {
