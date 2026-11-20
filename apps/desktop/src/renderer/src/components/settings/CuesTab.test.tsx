@@ -22,6 +22,7 @@ import type { DjProgram } from '../../../../shared/djProgram'
 import { traktorContentId } from '../../../../shared/traktorContent'
 import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
+import { dropsOnGrid } from '../../lib/cueAutoMark'
 import {
   EXAMPLE_DROP,
   EXAMPLE_DURATION_MS,
@@ -29,7 +30,6 @@ import {
   exampleBar,
   flowFromTrack,
 } from '../../lib/cueExample'
-import { dropsOnGrid } from '../../lib/cueAutoMark'
 import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
