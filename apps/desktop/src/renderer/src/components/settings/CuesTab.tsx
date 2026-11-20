@@ -38,6 +38,7 @@ interface Props {
   patch: PatchSynced
   rekordboxCollection: string
   cueTrack?: { contentId: string; label: string }
+  cueProgram?: DjProgram
 }
 
 const NEW_RULE: CueRule = {
@@ -78,6 +79,7 @@ export function CuesTab({
   patch,
   rekordboxCollection,
   cueTrack,
+  cueProgram,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
@@ -88,7 +90,11 @@ export function CuesTab({
   const more = useSplitMenu()
   const add = useSplitMenu()
   const [read, onLearned] = useCueProfileRead()
-  const [previewed, setPreviewed] = useState<{ label: string; cues: TrackCues } | null>(null)
+  const [previewed, setPreviewed] = useState<{
+    label: string
+    cues: TrackCues
+    marks?: number[]
+  } | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!renaming) return
@@ -107,6 +113,10 @@ export function CuesTab({
     DJ_PROGRAMS.map((p) => [p, available[p] === false]),
   ) as Record<DjProgram, boolean>
   missingBy.rekordbox = !foundBy.rekordbox
+  const probing = DJ_PROGRAMS.some((p) => p !== 'rekordbox' && available[p] === undefined)
+  const previewPrograms = probing
+    ? []
+    : DJ_PROGRAMS.filter((p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows)
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -131,7 +141,7 @@ export function CuesTab({
 
   const learnedFlow = read?.profile?.flow ?? null
   const offered = learnedFlow && !flows.some((f) => sameRules(f, learnedFlow)) ? learnedFlow : null
-  const trackFlow = previewed ? flowFromTrack(previewed.cues) : null
+  const trackFlow = previewed ? flowFromTrack(previewed.cues, previewed.marks) : null
   const fromTrack =
     previewed && trackFlow && !flows.some((f) => sameRules(f, trackFlow))
       ? { flow: trackFlow, track: previewed.label }
@@ -415,7 +425,9 @@ export function CuesTab({
             <CueFlowTrackPreview
               flow={flow}
               track={cueTrack}
-              rekordbox={foundBy.rekordbox}
+              programs={previewPrograms}
+              inWindow={cueProgram}
+              taste={read?.profile?.taste}
               onShown={setPreviewed}
             />
           </section>

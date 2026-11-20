@@ -2,6 +2,7 @@ import { Search, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { DjProgram } from '../../../shared/djProgram'
 import { findConflicts, resolveBindings } from '../../../shared/shortcutDefaults'
 import type { PlaylistLibrary, Settings, ThemePref } from '../../../shared/types'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
@@ -61,6 +62,7 @@ interface Props {
   initialTab?: SettingsTab
   playlistLibraries?: PlaylistLibrary[]
   cueTrack?: { contentId: string; label: string }
+  cueProgram?: DjProgram
 }
 
 export function SettingsModal({
@@ -72,6 +74,7 @@ export function SettingsModal({
   initialTab,
   playlistLibraries,
   cueTrack,
+  cueProgram,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
@@ -577,6 +580,7 @@ export function SettingsModal({
                 patch={patch}
                 rekordboxCollection={rekordboxCollection}
                 cueTrack={cueTrack}
+                cueProgram={cueProgram}
               />
             )}
             {tab === 'fields' && (

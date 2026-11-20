@@ -18,8 +18,11 @@ import {
 import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
+import type { DjProgram } from '../../../../shared/djProgram'
+import { traktorContentId } from '../../../../shared/traktorContent'
 import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
+import { dropsOnGrid } from '../../lib/cueAutoMark'
 import {
   EXAMPLE_DROP,
   EXAMPLE_DURATION_MS,
@@ -74,11 +77,15 @@ function Harness({
   collection = '',
   flows = KEPT,
   queries,
+  track,
+  inWindow,
 }: {
   active?: string
   collection?: string
   flows?: CueFlow[]
   queries?: QueryClient
+  track?: { contentId: string; label: string }
+  inWindow?: DjProgram
 }) {
   const [draft, setDraft] = useState({
     cueFlows: flows,
@@ -102,6 +109,8 @@ function Harness({
         synced={draft as unknown as SyncedDraft}
         patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
         rekordboxCollection={collection}
+        cueTrack={track}
+        cueProgram={inWindow}
       />
     </QueryClientProvider>
   )
@@ -126,6 +135,8 @@ const inCollection = (
 const collectionOf = (...entries: SourcePlaylistEntry[]) =>
   djReads({ rekordbox: { playlist: async () => entries } })
 const glueCollection = () => collectionOf(inCollection('rb:7', 'Bicep, Glue'))
+const FOUND = { available: async () => true }
+const GLUE_IN_TRAKTOR = traktorContentId('Macintosh HD/:Music/:glue.aiff')
 const MARKED_BY_HAND: TrackCues = {
   contentId: 'rb:7',
   analysed: true,
@@ -1646,6 +1657,183 @@ describe('CuesTab', () => {
   })
 })
 
+describe('a track with no mark of its own in the preview', () => {
+  const LOUD = (7 << 13) | (7 << 7) | (31 << 2)
+  const QUIET = (1 << 13) | (1 << 7) | (4 << 2)
+  const entriesAt = (bar: number) => Math.floor(exampleBar(bar) * 0.15)
+  const WORDS = Uint16Array.from({ length: Math.ceil(EXAMPLE_DURATION_MS * 0.15) }, (_, i) =>
+    i >= entriesAt(97) && i < entriesAt(161) ? LOUD : QUIET,
+  )
+  const INPUT = {
+    grid: EXAMPLE_GRID,
+    phrases: [{ ms: exampleBar(97), kind: 'chorus' as const }],
+    words: WORDS,
+  }
+  const FLAT = { grid: EXAMPLE_GRID, phrases: [], words: new Uint16Array(WORDS.length) }
+  const HOT_ONLY = (contentId: string, point = exampleBar(97)): TrackCues => ({
+    ...MARKED_BY_HAND,
+    contentId,
+    cues: [
+      { id: 'a', ms: point - (exampleBar(17) - exampleBar(1)), kind: 1, color: 22 },
+      { id: 'b', ms: point - (exampleBar(33) - exampleBar(1)), kind: 2, color: 1 },
+    ],
+  })
+  const pointsOf = (taste: Parameters<typeof dropsOnGrid>[2] = null) =>
+    dropsOnGrid(INPUT, EXAMPLE_GRID, taste)
+      .map((p) => p.ms)
+      .sort((a, b) => a - b)
+  const inTraktor = (cues: Partial<Api['cues']>, more: Partial<Api> = {}) =>
+    installApi({
+      ...more,
+      cues: { trackCues: async (contentId: string) => HOT_ONLY(contentId), ...cues },
+      dj: djReads({
+        traktor: { ...FOUND, playlist: async () => [inCollection(GLUE_IN_TRAKTOR, 'Glue', [])] },
+      }),
+    })
+  const pickGlue = async (id = GLUE_IN_TRAKTOR) => {
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(await screen.findByTestId(`cue-preview-track-option-${id}`))
+  }
+  const rings = () =>
+    screen
+      .queryAllByTestId(/^cue-wave-call-/)
+      .filter((c) => c.dataset.auto === 'true')
+      .map((c) => Number(c.dataset.testid?.replace('cue-wave-call-', '')))
+
+  it('finds the points of a Traktor track once it is picked, saying so over its own wave meanwhile, and then hangs the flow from them drawn as rings, so a DJ with no CALLs tries the flow on a track of theirs', async () => {
+    let land: (input: typeof INPUT) => void = () => {}
+    const dropInput = vi.fn(() => new Promise<typeof INPUT>((resolve) => (land = resolve)))
+    const waveDetail = vi.fn(async () => null)
+    const api = inTraktor({ dropInput, waveDetail })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    expect(dropInput).not.toHaveBeenCalled()
+    await pickGlue()
+    expect(await screen.findByTestId('cue-preview-finding')).toHaveTextContent(
+      'Finding the points of the track…',
+    )
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Glue')
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    expect(rings()).toEqual([])
+    expect(dropInput.mock.calls).toEqual([[GLUE_IN_TRAKTOR]])
+    await act(async () => land(INPUT))
+    await waitFor(() => expect(screen.queryByTestId('cue-preview-finding')).toBeNull())
+    expect(pointsOf().length).toBeGreaterThan(0)
+    expect(rings()).toEqual(pointsOf())
+    expect(screen.getAllByTestId(/^cue-wave-hot-/).length).toBeGreaterThan(0)
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Glue')
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+    await pickGlue()
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    expect(dropInput).toHaveBeenCalledTimes(1)
+    expect(waveDetail).not.toHaveBeenCalled()
+  })
+
+  it('finds them with what Surco learned of the DJ, as the Auto mark of the editor does, so the preview and the editor never disagree on a track', async () => {
+    const taste = { trees: [], picking: { threshold: -99, spacingBars: 1, maxDrops: 99 } }
+    inTraktor(
+      { dropInput: async () => INPUT },
+      {
+        cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+          profile: { ...LEARNED, taste },
+          edits: { count: 0, sinceLearn: 0, corrected: 0 },
+          marked: 40,
+        })),
+      },
+    )
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    await pickGlue()
+    expect(pointsOf(taste).length).toBeGreaterThan(pointsOf().length)
+    await waitFor(() => expect(rings()).toEqual(pointsOf(taste)))
+  })
+
+  it('reads the wave rekordbox keeps, not the audio, for a rekordbox track with no mark, as the Auto mark of the editor does there', async () => {
+    const waveDetail = vi.fn(async () => WORDS)
+    const dropInput = vi.fn(async () => null)
+    installApi({
+      cues: {
+        trackCues: async (contentId: string) => ({
+          ...HOT_ONLY(contentId),
+          phrases: INPUT.phrases,
+        }),
+        waveDetail,
+        dropInput,
+      },
+      dj: collectionOf(inCollection('rb:7', 'Bicep, Glue', [])),
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
+    await pickGlue('rb:7')
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    expect(waveDetail.mock.calls).toEqual([['rb:7']])
+    expect(dropInput).not.toHaveBeenCalled()
+  })
+
+  it('looks for nothing on a rekordbox track that has its marks, which shows as it always did', async () => {
+    const dropInput = vi.fn(async () => null)
+    const waveDetail = vi.fn(async () => null)
+    installApi({
+      dj: glueCollection(),
+      cues: { trackCues: async () => MARKED_BY_HAND, dropInput, waveDetail },
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
+    await previewGlue()
+    await act(async () => {})
+    expect(dropInput).not.toHaveBeenCalled()
+    expect(waveDetail).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
+    expect(rings()).toEqual([])
+    expect(screen.getByTestId(`cue-wave-call-${exampleBar(97)}`)).not.toHaveAttribute('data-auto')
+  })
+
+  it.each([
+    ['the audio gives no point', async () => FLAT],
+    ['the track cannot be analysed', async () => null],
+    [
+      'the read fails',
+      async () => {
+        throw new Error('ffmpeg exited with 1')
+      },
+    ],
+  ])(
+    'keeps the example track and says the track has no mark when %s, so a track Auto mark cannot read never breaks Settings',
+    async (_, dropInput) => {
+      const read = vi.fn(dropInput)
+      inTraktor({ dropInput: read })
+      render(<Harness flows={[MIX_IN]} active={MIX_IN.id} queries={createQueryClient()} />)
+      await pickGlue()
+      await waitFor(() => expect(read).toHaveBeenCalled())
+      expect(await screen.findByTestId('cue-preview-no-mark')).toHaveTextContent(
+        /^Glue has no mark yet/,
+      )
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+      expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
+      expect(rings()).toEqual([])
+    },
+  )
+
+  it('makes a flow from a Traktor track with no mark of its own counting from the points found, so From “track” works in the programs with no CALLs', async () => {
+    const point = pointsOf()[0]
+    inTraktor({
+      trackCues: async (contentId: string) => HOT_ONLY(contentId, point),
+      dropInput: async () => INPUT,
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await pickGlue()
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    openAdd()
+    expect(screen.getByTestId('cue-flow-add-track')).toHaveAccessibleName('From “Glue”')
+    fireEvent.click(screen.getByTestId('cue-flow-add-track'))
+    const made = flowFromTrack(HOT_ONLY(GLUE_IN_TRAKTOR, point), pointsOf())
+    expect(made?.rules.length).toBeGreaterThan(0)
+    expect(flowFromTrack(HOT_ONLY(GLUE_IN_TRAKTOR, point))).toBeNull()
+    expect(last?.cueFlows).toHaveLength(2)
+    expect(last?.cueFlows[1].rules).toEqual(made?.rules)
+    expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
+  })
+})
+
 describe('the tracks the preview offers', () => {
   const openTracks = () => fireEvent.click(screen.getByTestId('cue-preview-track'))
   const closeTracks = () => fireEvent.mouseDown(document.body)
@@ -1670,6 +1858,140 @@ describe('the tracks the preview offers', () => {
     expect(api.dj.playlist).toHaveBeenCalledTimes(1)
   })
 
+  it('reads the Traktor collection and never the rekordbox one where Traktor is the only program found, and only once the choices open, naming Traktor in the search field with no programs to choose from, so a DJ without rekordbox can try a flow on a track of theirs', async () => {
+    const playlist = vi.fn(async () => [inCollection(GLUE_IN_TRAKTOR, 'Glue', [])])
+    const api = installApi({ dj: djReads({ traktor: { ...FOUND, playlist } }) })
+    render(<Harness />)
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    await act(async () => {})
+    expect(api.dj.playlist).not.toHaveBeenCalled()
+    openTracks()
+    await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+    expect(vi.mocked(api.dj.playlist).mock.calls).toEqual([['traktor', ALL_TRACKS_ID]])
+    expect(screen.queryByRole('radiogroup')).toBeNull()
+    const search = screen.getByTestId('cue-preview-track-search')
+    expect(search).toHaveAttribute('placeholder', 'Search your Traktor collection')
+    expect(search).toHaveAccessibleName('Search your Traktor collection')
+  })
+
+  describe('with rekordbox and Traktor found', () => {
+    const both = () => {
+      const rekordbox = vi.fn(async () => [inCollection('rb:7', 'Bicep, Glue')])
+      const traktor = vi.fn(async () => [inCollection(GLUE_IN_TRAKTOR, 'Rej', [])])
+      const api = installApi({
+        cues: { trackCues: async (contentId: string) => ({ ...MARKED_BY_HAND, contentId }) },
+        dj: djReads({
+          rekordbox: { playlist: rekordbox },
+          traktor: { ...FOUND, playlist: traktor },
+        }),
+      })
+      return { api, read: () => vi.mocked(api.dj.playlist).mock.calls.map(([program]) => program) }
+    }
+    const programs = () =>
+      within(screen.getByRole('radiogroup'))
+        .getAllByRole('radio')
+        .map((r) => [r.textContent, r.getAttribute('aria-checked')])
+    const openOnceFound = async () => {
+      openTracks()
+      await screen.findByRole('radiogroup')
+    }
+
+    it('puts the programs first in the choices, over the search field, in the order of the rest of the tab, and starts on the first when nothing says which one the DJ is working in', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" inWindow="engine" />)
+      await openOnceFound()
+      expect(programs()).toEqual([
+        ['rekordbox', 'true'],
+        ['Traktor', 'false'],
+      ])
+      expect(
+        screen
+          .getByRole('radiogroup')
+          .compareDocumentPosition(screen.getByTestId('cue-preview-track-search')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      await screen.findByTestId('cue-preview-track-option-rb:7')
+      expect(read()).toEqual(['rekordbox'])
+    })
+
+    it('starts on the program open in the main window when no track came with the preview, so the DJ lands on the collection they were looking at and only that one is read', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" inWindow="traktor" />)
+      await openOnceFound()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(read()).toEqual(['traktor'])
+    })
+
+    it('starts on the program of the track the preview opened with, over the one open in the main window, so that track is among the choices', async () => {
+      const { read } = both()
+      render(
+        <Harness
+          collection="/rb/master.db"
+          inWindow="rekordbox"
+          track={{ contentId: GLUE_IN_TRAKTOR, label: 'Rej' }}
+        />,
+      )
+      await openOnceFound()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(read()).toEqual(['traktor'])
+    })
+
+    it('reads the other collection once when the program changes, with its tracks, its name in the search field, the search emptied and the focus on it, and never reads again on the way back', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" />)
+      await openOnceFound()
+      await screen.findByTestId('cue-preview-track-option-rb:7')
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'gl' } })
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      const search = screen.getByTestId('cue-preview-track-search')
+      expect(search).toHaveAttribute('placeholder', 'Search your Traktor collection')
+      expect(search).toHaveValue('')
+      expect(search).toHaveFocus()
+      expect(read()).toEqual(['rekordbox', 'traktor'])
+      fireEvent.click(screen.getByTestId('cue-preview-program-rekordbox'))
+      expect(offered()).toEqual(['Example track', 'Bicep, Glue'])
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
+        'placeholder',
+        'Search your rekordbox collection',
+      )
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      expect(read()).toEqual(['rekordbox', 'traktor'])
+    })
+
+    it('comes back to the program the DJ chose when the choices open again, and keeps showing the track picked while the list of another program is looked at', async () => {
+      both()
+      render(<Harness collection="/rb/master.db" />)
+      await openOnceFound()
+      fireEvent.click(await screen.findByTestId('cue-preview-track-option-rb:7'))
+      await waitFor(() =>
+        expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
+      )
+      openTracks()
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue')
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      closeTracks()
+      openTracks()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue')
+    })
+  })
+
   it('shares the read with the rest of the app, so a collection the list already read is not read twice', async () => {
     const api = installApi({ dj: glueCollection() })
     const queries = createQueryClient()
@@ -1679,7 +2001,7 @@ describe('the tracks the preview offers', () => {
     )
     render(<Harness collection="/rb/master.db" queries={queries} />)
     openTracks()
-    expect(offered()).toEqual(['Example track', 'Atlas'])
+    await waitFor(() => expect(offered()).toEqual(['Example track', 'Atlas']))
     expect(api.dj.playlist).not.toHaveBeenCalled()
   })
 
@@ -1704,7 +2026,7 @@ describe('the tracks the preview offers', () => {
     expect(offered()).toEqual(['Example track', 'Glue'])
   })
 
-  it('offers the marked tracks of the whole collection by name whatever their accents, with no playlist open anywhere', async () => {
+  it('offers every track of the whole collection by name whatever their accents, marked or not, with no playlist open anywhere', async () => {
     installApi({
       dj: collectionOf(
         inCollection('rb:1', 'Zebra'),
@@ -1717,7 +2039,7 @@ describe('the tracks the preview offers', () => {
     render(<Harness collection="/rb/master.db" />)
     openTracks()
     await screen.findByTestId('cue-preview-track-option-rb:1')
-    expect(offered()).toEqual(['Example track', 'atlas', 'Élan', 'Zebra'])
+    expect(offered()).toEqual(['Example track', 'atlas', 'Élan', 'Hot only', 'Unmarked', 'Zebra'])
     expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
       'placeholder',
       'Search your rekordbox collection',
@@ -1761,8 +2083,8 @@ describe('the tracks the preview offers', () => {
     expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
   })
 
-  it('offers only the example when the collection has no marked track, since a search field with nothing to find reads as broken', async () => {
-    const api = installApi({ dj: collectionOf(inCollection('rb:3', 'Unmarked', [])) })
+  it('offers only the example when the collection has no track, since a search field with nothing to find reads as broken', async () => {
+    const api = installApi({ dj: collectionOf() })
     render(<Harness collection="/rb/master.db" />)
     openTracks()
     await waitFor(() => expect(api.dj.playlist).toHaveBeenCalled())

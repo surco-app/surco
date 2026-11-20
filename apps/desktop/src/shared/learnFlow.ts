@@ -125,9 +125,12 @@ function hotBefore(track: LearnTrack, drop: number, after: number): HotBefore[] 
     })
 }
 
-function markedOf(track: LearnTrack, index: number): Marked | null {
+function markedOf(
+  track: LearnTrack,
+  index: number,
+  drops: number[] = dropsOf(track),
+): Marked | null {
   if (track.beats.length === 0) return null
-  const drops = dropsOf(track)
   if (drops.length === 0) return null
   return {
     index,
@@ -138,8 +141,8 @@ function markedOf(track: LearnTrack, index: number): Marked | null {
   }
 }
 
-function marksOf(track: LearnTrack): Marked[] {
-  const whole = markedOf(track, 0)
+function marksOf(track: LearnTrack, drops?: number[]): Marked[] {
+  const whole = markedOf(track, 0, drops)
   if (!whole) return []
   return whole.drops.map((drop, index) => ({
     ...whole,
@@ -377,8 +380,8 @@ function hotDifferences(flow: CueFlow, track: LearnTrack, drops: number[]): numb
 const variants = (rule: CueRule | null, conditions: FlowCondition[]): CueRule[][] =>
   rule ? conditions.map((when) => [{ ...rule, when }]) : [[]]
 
-export function learnFlowFromTrack(track: LearnTrack): CueFlow | null {
-  const marks = marksOf(track)
+export function learnFlowFromTrack(track: LearnTrack, drops?: number[]): CueFlow | null {
+  const marks = marksOf(track, drops)
   if (marks.length === 0) return null
   const distances = trackDistances(marks)
   const countdown = countdownRule(marks, distances)

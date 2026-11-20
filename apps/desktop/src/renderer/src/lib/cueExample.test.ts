@@ -101,7 +101,7 @@ describe('the tracks of the collection a flow can be tried on', () => {
   })
   const MARK = [{ ms: 64000, kind: 0 }]
 
-  it('offers only tracks with a mark of their own, since a flow has nothing to hang from on the rest', () => {
+  it('offers every track the program gives a handle for, marked or not, since the programs without CALLs mark none and Auto mark finds the points of the rest', () => {
     const entries = [
       entry('rb:1', 'Glue', MARK),
       entry('rb:2', 'Atlas', []),
@@ -109,9 +109,12 @@ describe('the tracks of the collection a flow can be tried on', () => {
         { ms: 32000, kind: 1 },
         { ms: 32000, kind: 0 },
       ]),
-      entry('rb:4', 'Aura', null),
+      entry('rb:4', '', null, '/music/Aura.aiff'),
     ]
     expect(collectionChoices(entries)).toEqual([
+      { contentId: 'rb:3', label: 'Apricots', artist: 'Bicep' },
+      { contentId: 'rb:2', label: 'Atlas', artist: 'Bicep' },
+      { contentId: 'rb:4', label: 'Aura' },
       { contentId: 'rb:1', label: 'Glue', artist: 'Bicep' },
     ])
   })
@@ -237,6 +240,18 @@ describe('a flow made from the track on screen', () => {
           [exampleBar(81), exampleBar(65)],
         ),
     ).toBe(0)
+  })
+
+  it('counts from the marks it is handed when the track has none of its own, as in the programs without CALLs, and gives the flow the same track would give with a CALL there', () => {
+    const hotOnly = read({ cues: read().cues.filter((c) => c.kind !== 0) })
+    expect(flowFromTrack(hotOnly)).toBeNull()
+    expect(flowFromTrack(hotOnly, [exampleBar(97)])?.rules).toEqual(flowFromTrack(read())?.rules)
+    expect(learnTrackOf(hotOnly).cues.every((c) => c.kind !== 0)).toBe(true)
+  })
+
+  it('gives nothing when it is handed no mark and the track has none, since there is nothing to count from', () => {
+    const hotOnly = read({ cues: read().cues.filter((c) => c.kind !== 0) })
+    expect(flowFromTrack(hotOnly, [])).toBeNull()
   })
 
   it('gives nothing for a track without a grid, where no distance can be counted', () => {

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import { Suspense, useMemo } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
+import type { DjProgram } from '../../../shared/djProgram'
 import { formatExtension, resolveJobFormat } from '../../../shared/format'
 import type {
   FormatSetting,
@@ -91,6 +92,7 @@ interface Props {
   goToPlaylist: (source: PlaylistSource, node: SourceNode, folders: string[]) => void
   playlistLibraries?: PlaylistLibrary[]
   cueTrack?: { contentId: string; label: string }
+  cueProgram?: DjProgram
 }
 
 // Every overlay the app can raise, and the one place that decides which is up. Split out of
@@ -118,6 +120,7 @@ export function Overlays({
   goToPlaylist,
   playlistLibraries,
   cueTrack,
+  cueProgram,
 }: Props): React.JSX.Element {
   const queryClient = useQueryClient()
   // App hands over the visible list itself when nothing is multi-selected.
@@ -150,6 +153,7 @@ export function Overlays({
             initialTab={activeModal.tab}
             playlistLibraries={playlistLibraries}
             cueTrack={cueTrack}
+            cueProgram={cueProgram}
           />
         )}
       </ModalExit>
