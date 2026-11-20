@@ -107,7 +107,7 @@ export function flowFromTrack(read: TrackCues): CueFlow | null {
 
 export function collectionChoices(
   entries: Pick<SourcePlaylistEntry, 'path' | 'contentId' | 'preview'>[],
-): { contentId: string; label: string }[] {
+): { contentId: string; label: string; artist?: string }[] {
   const seen = new Set<string>()
   return entries
     .flatMap(({ path, contentId, preview }) => {
@@ -119,10 +119,11 @@ export function collectionChoices(
       if (!contentId || !preview || marks.length === 0 || seen.has(contentId)) return []
       seen.add(contentId)
       const label = preview.title || (path ? parseFileName(path).fileName : '')
-      return [{ contentId, label, name: foldAccents(label).toLowerCase() }]
+      const artist = preview.artist ? { artist: preview.artist } : {}
+      return [{ contentId, label, ...artist, name: foldAccents(label).toLowerCase() }]
     })
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
-    .map(({ contentId, label }) => ({ contentId, label }))
+    .map(({ name: _, ...choice }) => choice)
 }
 
 export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {

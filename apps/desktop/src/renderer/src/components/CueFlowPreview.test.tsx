@@ -702,6 +702,19 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-track')).toHaveFocus()
     })
 
+    it('shows the artist beside each track and finds a track by it, since a whole collection repeats titles', () => {
+      const twins = [
+        { contentId: 'rb:2', label: 'Intro', artist: 'Âme' },
+        { contentId: 'rb:3', label: 'Intro', artist: 'Bicep' },
+      ]
+      render(<CueFlowPreview flow={MY_FLOW} tracks={twins} />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-artist-rb:2')).toHaveTextContent('Âme')
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'bic' } })
+      expect(screen.getByTestId('cue-preview-track-option-rb:3')).toBeInTheDocument()
+      expect(screen.queryByTestId('cue-preview-track-option-rb:2')).toBeNull()
+    })
+
     it('finds a track by a name typed without its accents or capitals', () => {
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
       open()

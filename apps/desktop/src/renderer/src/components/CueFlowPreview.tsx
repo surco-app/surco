@@ -47,6 +47,7 @@ const NOTICE_TEXT: Record<Status, string> = {
 interface Choice {
   contentId: string
   label: string
+  artist?: string
 }
 
 const NO_CHOICES: Choice[] = []
@@ -76,7 +77,9 @@ function TrackChoices({
   const listRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const wanted = folded(query.trim())
-  const found = choices.filter((c) => folded(c.label).includes(wanted)).slice(0, MAX_CHOICES)
+  const found = choices
+    .filter((c) => folded(`${c.label} ${c.artist ?? ''}`).includes(wanted))
+    .slice(0, MAX_CHOICES)
   const searchable = loading || choices.length > 0
 
   useEffect(() => {
@@ -170,6 +173,14 @@ function TrackChoices({
             className={OPTION}
           >
             <span className="min-w-0 flex-1 truncate">{c.label}</span>
+            {c.artist && (
+              <span
+                data-testid={`cue-preview-track-artist-${c.contentId}`}
+                className="max-w-[40%] shrink-0 truncate text-fg-dim"
+              >
+                {c.artist}
+              </span>
+            )}
             <Check
               aria-hidden="true"
               className={`size-3 shrink-0 ${c.contentId === inUse ? '' : 'invisible'}`}

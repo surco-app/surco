@@ -111,7 +111,9 @@ describe('the tracks of the collection a flow can be tried on', () => {
       ]),
       entry('rb:4', 'Aura', null),
     ]
-    expect(collectionChoices(entries)).toEqual([{ contentId: 'rb:1', label: 'Glue' }])
+    expect(collectionChoices(entries)).toEqual([
+      { contentId: 'rb:1', label: 'Glue', artist: 'Bicep' },
+    ])
   })
 
   it('leaves out an entry the program gives no handle for, whose cues cannot be read', () => {
@@ -120,7 +122,7 @@ describe('the tracks of the collection a flow can be tried on', () => {
 
   it('offers a track once even when the collection repeats it', () => {
     expect(collectionChoices([entry('rb:1', 'Glue', MARK), entry('rb:1', 'Glue', MARK)])).toEqual([
-      { contentId: 'rb:1', label: 'Glue' },
+      { contentId: 'rb:1', label: 'Glue', artist: 'Bicep' },
     ])
   })
 
