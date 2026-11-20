@@ -310,10 +310,9 @@ describe('CueRuleRow condition of each repetition', () => {
   it('draws a section left off as a pill of its own too, so all five read as things to press and the ticked ones stand out by their fill', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
     openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-when-sections')).toHaveClass(
-      'gap-1',
-      'justify-between',
-    )
+    const row = screen.getByTestId('cue-rule-0-color-2-when-sections')
+    expect(row).toHaveClass('gap-1')
+    expect(row).not.toHaveClass('justify-between')
     expect(box(2, 'in-outro')).not.toHaveClass('grow')
     expect(box(2, 'in-intro')).toHaveAttribute('aria-checked', 'false')
     expect(box(2, 'in-intro')).toHaveClass(
@@ -408,14 +407,10 @@ describe('CueRuleRow condition of each repetition', () => {
     }
   })
 
-  it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
-    const { onChange } = setup(RULE)
+  it('offers no Restablecer among the conditions of a square, where it read as clearing them when it only set the colour', () => {
+    setup(RULE)
     openSquare(2)
-    const reset = screen.getByTestId('cue-palette-reset')
-    expect(reset.previousElementSibling).toBe(box(2, 'fits'))
-    fireEvent.click(reset)
-    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, color: { each: [1, 22, 22] } })
-    expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('cue-palette-reset')).toBeNull()
   })
 
   it('closes on Escape and gives the focus back to the square, so the keyboard never loses its place', () => {
