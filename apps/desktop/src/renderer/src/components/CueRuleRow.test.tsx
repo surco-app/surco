@@ -281,6 +281,16 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(palette.getByTestId('cue-palette')).toHaveClass('grid-cols-8', 'w-full')
   })
 
+  it('keeps the menu of a repetition at one fixed width, so ticking a condition never moves what is under the pointer', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+before:8+in:up|down'] })
+    openSquare(2)
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+    cleanup()
+    setup(RULE)
+    openSquare(2)
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+  })
+
   it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
     const { onChange } = setup(RULE)
     openSquare(2)

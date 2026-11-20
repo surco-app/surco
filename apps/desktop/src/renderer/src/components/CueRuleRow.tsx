@@ -525,7 +525,7 @@ export function CueRuleRow({
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
                       data-side={menuUp ? 'top' : 'bottom'}
-                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 w-72 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
                         value={colorAt(rule.color, slot)}
@@ -533,7 +533,7 @@ export function CueRuleRow({
                         label={(i) => tr('editor.cues.colour', { index: i })}
                         wide
                       />
-                      <div className="my-2 h-px bg-[var(--color-line)]" />
+                      <div className="my-1 h-px bg-[var(--color-line)]" />
                       <div className="flex items-center gap-2">
                         {box(
                           slot,
@@ -553,10 +553,10 @@ export function CueRuleRow({
                       </div>
                       {nearBox(slot, 'before')}
                       {nearBox(slot, 'after')}
-                      <div className="my-2 h-px bg-[var(--color-line)]" />
+                      <div className="my-1 h-px bg-[var(--color-line)]" />
                       <p
                         data-testid={`${id}-color-${slot}-when-only`}
-                        className="px-1 pb-1 text-label leading-normal text-fg-faint"
+                        className="px-1 text-label leading-normal text-fg-faint"
                       >
                         {tr('settings.cueFlows.whenEach.only')}
                       </p>
