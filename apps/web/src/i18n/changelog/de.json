@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Cue-Abläufe aus einem Track erstellen",
+    "items": [
+      {
+        "text": "In Einstellungen › Cues lässt dich die Vorschau des Ablaufs jeden Track deiner Sammlung wählen, aus jedem Programm, das du eingeschaltet hast, auch ohne Markierung. Sie zeigt dir, welche Hot Cues der Ablauf setzen und welche er entfernen würde. Mit „Jetzt“ siehst du die Cues, die der Track heute hat.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Erstelle einen Ablauf aus einem Track, den du von Hand markiert hast. Leg ihn in die Vorschau und wähle ihn im + der Abläufe.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Jede Wiederholung einer Regel kann ihre eigene Bedingung haben, und du kannst mehrere auf einmal ankreuzen. Zum Beispiel der Cue bei 16 Takten nur in einem Breakdown und ohne anderen Cue davor.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ändere die Reihenfolge der Regeln eines Ablaufs, indem du ihre Nummer ziehst, oder mit Alt und den Pfeiltasten.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Die Phrasen von rekordbox sind zurück unter der Übersicht des Cue-Editors, und der Breakdown hebt sich vom Rest ab.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Die automatische Sitzung berücksichtigt, wann du jeden Track hinzugefügt hast, in allen fünf DJ-Programmen, und auch, was du in Traktor gespielt hast. Wenn du eine andere Liste beginnst, holst du die vorige mit „Letzte Sitzung wieder öffnen“ in der Palette (⌘K) zurück.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Füge eine Tracklist ein und Surco sucht ihre Tracks auch in Engine DJ. Die Zeilen, die nicht in deiner Sammlung sind, kopierst du mit „Die fehlenden kopieren“.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Sortiere die Liste nach „Lautheit“ und filtere sie nach „Aufgefüllte Bits“ oder „Evtl. hochgerechnet“. „BPM und Tonart ausfüllen“ füllt die leeren Felder der ausgewählten Tracks mit dem, was Surco schon gemessen hat.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Drück auf eine Zeile der Zählung von „Auto-Markieren“ und die Liste zeigt dir die Tracks dahinter.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Wenn ein Kanal kein Signal hat, sagt dir der Editor, welcher.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Auf einem Laufwerk ohne Papierkorb, etwa einem USB-Stick, fragt das Löschen einer Datei nicht mehr nach. Surco behält eine Kopie und du holst sie mit „Rückgängig“ zurück.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Der Abgleich ersetzt auch niedrig aufgelöste Cover, wenn „Niedrig aufgelöste Cover beim Anwenden eines Releases ersetzen“ an ist.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ein Track, der schon im Ausgabeformat ist, wird in seinem Ordner bearbeitet, auch wenn ihn kein Programm hat. Mit „Original bearbeiten“ und dem automatischen Namen wird er auch umbenannt, und „Wie die Quelle“ bei der Bittiefe springt nicht mehr auf „Korrigiert“ zurück.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Eine neue Playlist aus einer Tracklist verliert ihre Tracks nicht mehr, wenn das DJ-Programm offen ist.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Unter Windows öffnet und schließt Strg+Umschalt+B die Seitenleiste.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Nach Album und Hinzufügedatum sortieren",

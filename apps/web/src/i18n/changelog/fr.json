@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Crée des flux de cues depuis un morceau",
+    "items": [
+      {
+        "text": "Dans Réglages › Cues, l’aperçu du flux te laisse choisir n’importe quel morceau de ta collection, de n’importe quel logiciel activé, même sans repère. Il te dit quels hot cues le flux poserait et lesquels il enlèverait. Avec « Maintenant », tu vois les cues qu’il a aujourd’hui.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Crée un flux à partir d’un morceau que tu as marqué à la main. Mets-le dans l’aperçu et choisis-le dans le + des flux.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Chaque répétition d’une règle peut avoir sa propre condition, et tu peux en cocher plusieurs à la fois. Par exemple, le cue à 16 mesures seulement dans un break et sans autre cue avant.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Change l’ordre des règles d’un flux en faisant glisser leur numéro, ou avec Alt et les flèches.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Les phrases de rekordbox reviennent sous la vue d’ensemble de l’éditeur de cues, et le break se distingue du reste.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "La session automatique tient compte du moment où tu as ajouté chaque morceau dans les cinq logiciels DJ, et aussi de ce que tu as joué dans Traktor. Si tu commences une autre liste, retrouve la précédente avec « Rouvrir la dernière session » dans la palette (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Colle une tracklist et Surco cherche aussi ses morceaux dans Engine DJ. Copie les lignes absentes de ta collection avec « Copier celles qui manquent ».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Trie la liste par « Loudness » et filtre-la par « Bits complétés » ou « Suréchantillonnage possible ». « Remplir le BPM et la tonalité » complète les champs vides des morceaux sélectionnés avec ce que Surco a déjà mesuré.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Appuie sur une ligne du décompte de « Marquage auto » et la liste te montre les morceaux concernés.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Quand un canal n’a pas de signal, l’éditeur te dit lequel.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Sur un disque sans Corbeille, comme une clé USB, supprimer un fichier ne demande plus rien. Surco garde une copie et tu le récupères avec « Annuler ».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Le balayage des correspondances remplace aussi les pochettes basse résolution si « Remplacer les pochettes basse résolution en appliquant une release » est activé.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Un morceau déjà au format de sortie est modifié dans son dossier, même si aucun logiciel ne l’a. Avec « Modifier l’original » et le nom automatique, il est aussi renommé, et « Comme la source » pour la profondeur de bits ne revient plus à « Corrigé ».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Une nouvelle playlist depuis une tracklist ne perd plus ses morceaux quand le logiciel DJ est ouvert.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Sous Windows, Ctrl+Maj+B ouvre et ferme la barre latérale.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Trie par album et par date d’ajout",

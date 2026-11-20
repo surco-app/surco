@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Crie fluxos de cues a partir de uma faixa",
+    "items": [
+      {
+        "text": "Em Ajustes › Cues, a prévia do fluxo deixa você escolher qualquer faixa da sua coleção, de qualquer programa que você tenha ativado, mesmo sem marca. Ela diz quais hot cues o fluxo colocaria e quais tiraria. Com “Agora” você vê os cues que ela tem hoje.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Crie um fluxo a partir de uma faixa que você marcou à mão. Coloque-a na prévia e escolha-a no + dos fluxos.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cada repetição de uma regra pode ter sua própria condição, e você pode marcar várias ao mesmo tempo. Por exemplo, o cue de 16 compassos só num breakdown e sem outro cue antes.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Mude a ordem das regras de um fluxo arrastando o número delas, ou com Alt e as setas.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "As frases do rekordbox voltam para baixo da onda geral do editor de cues, e o breakdown se destaca do resto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "A sessão automática leva em conta quando você adicionou cada faixa nos cinco programas de DJ, e também o que você tocou no Traktor. Se você começar outra lista, recupere a anterior com “Reabrir a última sessão” na paleta (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cole um tracklist e o Surco também procura as faixas no Engine DJ. Copie as linhas que não estão na sua coleção com “Copiar as que faltam”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ordene a lista por “Volume” e filtre por “Bits preenchidos” ou “Possível reamostragem”. “Preencher BPM e tom” completa os campos vazios das faixas selecionadas com o que o Surco já mediu.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Clique numa linha da contagem de “Marcar automático” e a lista mostra as faixas por trás dela.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Quando um canal está sem sinal, o editor diz qual.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Num disco sem Lixeira, como um pendrive, apagar um arquivo não pergunta mais. O Surco guarda uma cópia e você recupera com “Desfazer”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "A varredura de correspondências também troca as capas de baixa resolução se “Substituir capas de baixa resolução ao aplicar um release” estiver ativado.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Uma faixa que já está no formato de saída é editada na própria pasta, mesmo que nenhum programa a tenha. Com “Editar o original” e o nome automático, ela também é renomeada, e “Igual à origem” na profundidade de bits não volta mais para “Corrigido”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Uma playlist nova a partir de um tracklist não perde mais as faixas quando o programa de DJ está aberto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "No Windows, Ctrl+Shift+B abre e fecha a barra lateral.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Ordene por álbum e por data de adição",

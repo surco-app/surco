@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Crea flussi di cue da un brano",
+    "items": [
+      {
+        "text": "In Impostazioni › Cue, l’anteprima del flusso ti fa scegliere qualsiasi brano della tua collezione, da qualsiasi programma che hai attivato, anche senza segno. Ti dice quali hot cue metterebbe il flusso e quali toglierebbe. Con «Adesso» vedi i cue che ha oggi.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Crea un flusso da un brano che hai segnato a mano. Mettilo nell’anteprima e sceglilo nel + dei flussi.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ogni ripetizione di una regola può avere la sua condizione, e puoi spuntarne diverse insieme. Per esempio, il cue a 16 battute solo in un breakdown e senza un altro cue prima.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cambia l’ordine delle regole di un flusso trascinando il loro numero, o con Alt e le frecce.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Le frasi di rekordbox tornano sotto l’onda generale dell’editor dei cue, e il breakdown si distingue dal resto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "La sessione automatica tiene conto di quando hai aggiunto ogni brano nei cinque programmi DJ, e anche di quello che hai suonato in Traktor. Se inizi un altro elenco, recupera il precedente con «Riapri l'ultima sessione» nella palette (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Incolla una tracklist e Surco cerca i brani anche in Engine DJ. Le righe che non sono nella tua collezione si copiano con «Copia quelle che mancano».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ordina l'elenco per «Loudness» e filtralo per «Bit riempiti» o «Forse ricampionato». «Compila BPM e tonalità» completa i campi vuoti dei brani selezionati con quello che Surco ha già misurato.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Premi una riga del conteggio di «Auto marca» e l’elenco ti mostra i brani che ci sono dietro.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Quando un canale non ha segnale, l’editor ti dice quale.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Su un disco senza Cestino, come una chiavetta USB, eliminare un file non chiede più nulla. Surco ne tiene una copia e lo recuperi con «Annulla».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "La ricerca delle corrispondenze in lotto sostituisce anche le copertine a bassa risoluzione se è attivo «Sostituisci le copertine a bassa risoluzione quando applichi un disco».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Un brano già nel formato di uscita si modifica nella sua cartella, anche se nessun programma lo ha. Con «Modifica l’originale» e il nome automatico viene anche rinominato, e «Come l’originale» nella profondità di bit non torna più a «Corretta».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Una nuova playlist da una tracklist non perde più i brani quando il programma DJ è aperto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Su Windows, Ctrl+Maiusc+B apre e chiude la barra laterale.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Ordina per album e per data di aggiunta",

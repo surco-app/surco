@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "20 de noviembre de 2026",
+    "title": "Crea flujos de cues desde una pista",
+    "items": [
+      {
+        "text": "En Ajustes › Cues, la vista previa del flujo te deja elegir cualquier pista de tu colección, de cualquier programa que tengas activado, aunque no tenga marca. Te dice qué hot cues pondría el flujo y cuáles quitaría. Con «Ahora» ves los cues que tiene hoy.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Crea un flujo a partir de una pista que marcaste a mano. Ponla en la vista previa y elígela en el + de los flujos.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cada repetición de una regla puede llevar su propia condición, y puedes marcar varias a la vez. Por ejemplo, el cue de 16 compases solo en una bajada y sin otro cue antes.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cambia el orden de las reglas de un flujo arrastrando su número, o con Alt y las flechas.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Las frases de rekordbox vuelven bajo la onda general del editor de cues, y la bajada se distingue del resto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "La sesión automática tiene en cuenta cuándo añadiste cada pista en los cinco programas de DJ, y también lo que pinchaste en Traktor. Si empiezas otra lista, recupera la anterior con «Reabrir la última sesión» en la paleta (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Pega un tracklist y Surco también busca sus pistas en Engine DJ. Las líneas que no están en tu colección se copian con «Copiar las que faltan».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ordena la lista por «Sonoridad» y fíltrala por «Bits rellenados» o «Posible reescalado». «Rellenar BPM y tonalidad» completa los campos vacíos de las pistas seleccionadas con lo que Surco ya midió.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Pulsa una línea del recuento de «Auto marcar» y la lista te enseña las pistas que hay detrás.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cuando un canal va sin señal, el editor te dice cuál.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "En un disco sin Papelera, como un USB, borrar un archivo ya no pregunta. Surco guarda una copia y lo recuperas con «Deshacer».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "El barrido de coincidencias también cambia las carátulas de baja resolución si tienes activado «Sustituir carátulas de baja resolución al aplicar un disco».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Una pista que ya está en el formato de salida se edita en su carpeta, aunque no esté en ningún programa. Con «Editar el original» y el nombre automático, también se renombra, y «Igual que el origen» en la profundidad de bits ya no vuelve a «Corregido».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Una playlist nueva desde un tracklist ya no pierde sus pistas si el programa de DJ está abierto.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "En Windows, la barra lateral se abre y se cierra con Ctrl+Shift+B.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "19 de noviembre de 2026",
     "title": "Ordena por álbum y por fecha de alta",

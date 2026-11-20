@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Make cue flows from a track",
+    "items": [
+      {
+        "text": "In Settings › Cues, the flow preview lets you pick any track in your collection, from any program you have turned on, even one with no mark. It tells you which hot cues the flow would place and which it would take away. With “Now” you see the cues it has today.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Make a flow from a track you marked by hand. Put it in the preview and pick it from the + of the flows.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Each repeat of a rule can carry its own condition, and you can tick several at once. For example, the 16 bar cue only in a breakdown and with no other cue before it.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Change the order of a flow’s rules by dragging their number, or with Alt and the arrows.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "rekordbox phrases are back under the cue editor’s overview, and the breakdown stands out from the rest.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "The automatic session takes into account when you added each track in all five DJ programs, and also what you played in Traktor. If you start another list, get the previous one back with “Reopen last session” in the palette (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Paste a tracklist and Surco also looks for its tracks in Engine DJ. Copy the lines that are not in your collection with “Copy the missing ones”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Sort the list by “Loudness” and filter it by “Padded bits” or “Possibly upsampled”. “Fill in BPM and key” completes the empty fields of the selected tracks with what Surco has already measured.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Press a line of the “Auto mark” tally and the list shows you the tracks behind it.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "When a channel carries no signal, the editor tells you which one.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "On a drive with no Trash, like a USB stick, deleting a file no longer asks. Surco keeps a copy and you get it back with “Undo”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "The match sweep also replaces low resolution covers when “Replace low-res covers when applying a release” is on.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "A track already in the output format is edited in its own folder, even when no program holds it. With “Edit the original” and the automatic name, it is renamed too, and “Same as source” for bit depth no longer goes back to “Corrected”.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "A new playlist from a tracklist no longer loses its tracks when the DJ program is open.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "On Windows, Ctrl+Shift+B opens and closes the sidebar.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Sort by album and by date added",

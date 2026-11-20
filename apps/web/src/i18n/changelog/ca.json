@@ -1,5 +1,72 @@
 [
   {
+    "version": "1.41",
+    "date": "November 20, 2026",
+    "title": "Crea fluxos de cues a partir d'una pista",
+    "items": [
+      {
+        "text": "A Configuració › Cues, la vista prèvia del flux et deixa triar qualsevol pista de la teva col·lecció, de qualsevol programa que tinguis activat, encara que no tingui marca. Et diu quins hot cues posaria el flux i quins trauria. Amb «Ara» veus els cues que té avui.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Crea un flux a partir d'una pista que vas marcar a mà. Posa-la a la vista prèvia i tria-la al + dels fluxos.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Cada repetició d'una regla pot portar la seva pròpia condició, i en pots marcar diverses alhora. Per exemple, el cue de 16 compassos només en una baixada i sense cap altre cue abans.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Canvia l'ordre de les regles d'un flux arrossegant-ne el número, o amb Alt i les fletxes.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Les frases de rekordbox tornen sota l'ona general de l'editor de cues, i la baixada es distingeix de la resta.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "La sessió automàtica té en compte quan vas afegir cada pista als cinc programes de DJ, i també el que vas punxar a Traktor. Si comences una altra llista, recupera l'anterior amb «Tornar a obrir l'última sessió» a la paleta (⌘K).",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Enganxa un tracklist i Surco també busca les pistes a Engine DJ. Les línies que no són a la teva col·lecció es copien amb «Copiar les que falten».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Ordena la llista per «Sonoritat» i filtra-la per «Bits farcits» o «Possible reescalat». «Omplir el BPM i la tonalitat» completa els camps buits de les pistes seleccionades amb el que Surco ja ha mesurat.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Prem una línia del recompte de «Marcar automàticament» i la llista et mostra les pistes que hi ha darrere.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Quan un canal no porta senyal, l'editor et diu quin.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "En un disc sense Paperera, com un USB, esborrar un fitxer ja no pregunta. Surco en guarda una còpia i el recuperes amb «Desfer».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "L'escombrat de coincidències també canvia les caràtules de baixa resolució si tens activat «Substituir les caràtules de baixa resolució en aplicar un disc».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Una pista que ja està en el format de sortida s'edita a la seva carpeta, encara que no sigui a cap programa. Amb «Editar l'original» i el nom automàtic, també es reanomena, i «Igual que l'origen» en la profunditat de bits ja no torna a «Corregit».",
+        "in": "1.41.0"
+      },
+      {
+        "text": "Una playlist nova des d'un tracklist ja no perd les pistes si el programa de DJ està obert.",
+        "in": "1.41.0"
+      },
+      {
+        "text": "A Windows, Ctrl+Maj+B obre i tanca la barra lateral.",
+        "in": "1.41.0"
+      }
+    ]
+  },
+  {
     "version": "1.40",
     "date": "November 19, 2026",
     "title": "Ordena per àlbum i per data d'alta",
