@@ -1,4 +1,11 @@
-import { type CueFlow, type CueRule, type FlowPhrase, MY_FLOW, RULE_BARS } from './cueFlows'
+import {
+  type CueFlow,
+  type CueRule,
+  type FlowCondition,
+  type FlowPhrase,
+  MY_FLOW,
+  RULE_BARS,
+} from './cueFlows'
 import {
   BAR_TOLERANCE,
   BEATS_PER_BAR,
@@ -18,6 +25,8 @@ export const PATTERN_SHARE = 0.3
 const MAJORITY = 0.5
 const MAX_LEARNED_REPEAT = 8
 const FALLBACK_COLOR = 22
+const COUNTDOWN_CONDITIONS: FlowCondition[] = ['previous', 'fits', 'always']
+const START_CONDITIONS: FlowCondition[] = ['first', 'always']
 
 export interface LearnCue {
   ms: number
@@ -92,18 +101,18 @@ interface Support {
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
-function markedOf(track: LearnTrack, index: number): Marked | null {
-  if (track.beats.length === 0) return null
-  const hot = track.cues.filter((c) => c.kind !== 0)
-  const memory = track.cues.filter((c) => c.kind === 0)
-  const drops = findDrops(
-    memory.map((c) => c.ms),
-    hot.map((c) => c.ms),
+function dropsOf(track: LearnTrack): number[] {
+  return findDrops(
+    track.cues.filter((c) => c.kind === 0).map((c) => c.ms),
+    track.cues.filter((c) => c.kind !== 0).map((c) => c.ms),
   )
-  if (drops.length === 0) return null
-  const dropAt = nearestBeat(track.beats, drops[0])
-  const before = hot
-    .filter((h) => h.ms < drops[0] - SAME_POSITION_MS)
+}
+
+function hotBefore(track: LearnTrack, drop: number, after: number): HotBefore[] {
+  const memory = track.cues.filter((c) => c.kind === 0)
+  const dropAt = nearestBeat(track.beats, drop)
+  return track.cues
+    .filter((h) => h.kind !== 0 && h.ms > after && h.ms < drop - SAME_POSITION_MS)
     .map((h) => {
       const bars = (dropAt - nearestBeat(track.beats, h.ms)) / BEATS_PER_BAR
       const whole = Math.round(bars)
@@ -114,7 +123,30 @@ function markedOf(track: LearnTrack, index: number): Marked | null {
         firstBeat: near(h.ms, track.beats[0]),
       }
     })
-  return { index, track, drops, dropBeat: dropAt, before }
+}
+
+function markedOf(track: LearnTrack, index: number): Marked | null {
+  if (track.beats.length === 0) return null
+  const drops = dropsOf(track)
+  if (drops.length === 0) return null
+  return {
+    index,
+    track,
+    drops,
+    dropBeat: nearestBeat(track.beats, drops[0]),
+    before: hotBefore(track, drops[0], Number.NEGATIVE_INFINITY),
+  }
+}
+
+function marksOf(track: LearnTrack): Marked[] {
+  const whole = markedOf(track, 0)
+  if (!whole) return []
+  return whole.drops.map((drop, index) => ({
+    ...whole,
+    index,
+    dropBeat: nearestBeat(track.beats, drop),
+    before: hotBefore(track, drop, whole.drops[index - 1] ?? Number.NEGATIVE_INFINITY),
+  }))
 }
 
 function dominantColor(colors: (number | null)[]): number {
@@ -147,15 +179,20 @@ function distanceSupport(tracks: Marked[]): Map<number, Support> {
   )
 }
 
+const isStep = (bars: number): boolean => bars > 0 && RULE_BARS.includes(bars)
+
+function runOf(step: number, has: (bars: number) => boolean): number[] {
+  const out: number[] = []
+  for (let k = 1; k <= MAX_LEARNED_REPEAT && has(k * step); k++) out.push(k * step)
+  return out
+}
+
 function learnedDistances(tracks: Marked[], support: Map<number, Support>): number[] {
   const least = Math.max(MIN_SUPPORT_TRACKS, Math.ceil(MIN_SUPPORT_SHARE * tracks.length))
   const kept = [...support]
     .filter(([, s]) => s.tracks >= least && s.tracks >= DISTANCE_SUPPORT * s.eligible)
     .map(([d]) => d)
-  const step = Math.min(...kept.filter((d) => d > 0 && RULE_BARS.includes(d)))
-  const out: number[] = []
-  for (let k = 1; k <= MAX_LEARNED_REPEAT && kept.includes(k * step); k++) out.push(k * step)
-  return out
+  return runOf(Math.min(...kept.filter(isStep)), (d) => kept.includes(d))
 }
 
 function countdownCues(tracks: Marked[], distances: number[]): HotBefore[] {
@@ -181,6 +218,12 @@ function countdownRule(tracks: Marked[], distances: number[]): CueRule | null {
   }
 }
 
+function startCue(t: Marked, distances: number[]): HotBefore[] {
+  return t.before
+    .filter((h) => h.firstBeat && (h.bars === null || !distances.includes(h.bars)))
+    .slice(0, 1)
+}
+
 function startCandidates(
   tracks: Marked[],
   countdown: CueRule | null,
@@ -197,11 +240,7 @@ function startCandidates(
       t.before.length > 0 &&
       !evaluateFlow(flow, { ...t.track, drops: t.drops }).cues.some((c) => c.ms < t.drops[0]),
   )
-  const starts = open.flatMap((t) =>
-    t.before
-      .filter((h) => h.firstBeat && (h.bars === null || !distances.includes(h.bars)))
-      .slice(0, 1),
-  )
+  const starts = open.flatMap((t) => startCue(t, distances))
   return { open, starts }
 }
 
@@ -289,17 +328,21 @@ function mismatchesOf(marked: Marked[], flow: CueFlow): Coverage {
   return out
 }
 
+const learnedFlow = (rules: CueRule[]): CueFlow => ({
+  id: 'learned',
+  name: '',
+  markPoint: true,
+  rules,
+})
+
 function learnMarked(marked: Marked[]) {
   const support = distanceSupport(marked)
   const distances = learnedDistances(marked, support)
   const countdown = countdownRule(marked, distances)
   const { open, starts } = startCandidates(marked, countdown, distances)
-  const flow: CueFlow = {
-    id: 'learned',
-    name: '',
-    markPoint: true,
-    rules: [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
-  }
+  const flow = learnedFlow(
+    [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
+  )
   return { support, distances, flow, open, starts }
 }
 
@@ -311,6 +354,41 @@ export function learnFlow(tracks: LearnTrack[]): LearnedFlow | null {
   const { matching } = mismatchesOf(marked, flow)
   if (matching < PATTERN_SHARE * marked.length) return null
   return { flow, coverage: { matching, marked: marked.length } }
+}
+
+function trackDistances(marks: Marked[]): number[] {
+  const seen = new Set(marks.flatMap((m) => m.before.flatMap((h) => h.bars ?? [])))
+  const reproduced = (distances: number[]): number => countdownCues(marks, distances).length
+  return [...distanceSupport(marks).keys()]
+    .filter(isStep)
+    .map((step) => runOf(step, (d) => seen.has(d)))
+    .reduce<number[]>((best, run) => (reproduced(run) > reproduced(best) ? run : best), [])
+}
+
+function hotDifferences(flow: CueFlow, track: LearnTrack, drops: number[]): number {
+  const planned = evaluateFlow(flow, { ...track, drops }).cues.map((c) => c.ms)
+  const hot = track.cues.filter((c) => c.kind !== 0).map((c) => c.ms)
+  return (
+    planned.filter((p) => !hot.some((h) => near(h, p))).length +
+    hot.filter((h) => !planned.some((p) => near(p, h))).length
+  )
+}
+
+const variants = (rule: CueRule | null, conditions: FlowCondition[]): CueRule[][] =>
+  rule ? conditions.map((when) => [{ ...rule, when }]) : [[]]
+
+export function learnFlowFromTrack(track: LearnTrack): CueFlow | null {
+  const marks = marksOf(track)
+  if (marks.length === 0) return null
+  const distances = trackDistances(marks)
+  const countdown = countdownRule(marks, distances)
+  const start = startRule(marks.slice(0, 1), startCue(marks[0], distances))
+  const candidates = variants(countdown, COUNTDOWN_CONDITIONS).flatMap((c) =>
+    variants(start, START_CONDITIONS).map((s) => learnedFlow([...c, ...s])),
+  )
+  if (candidates[0].rules.length === 0) return null
+  const differences = candidates.map((flow) => hotDifferences(flow, track, marks[0].drops))
+  return candidates[differences.indexOf(Math.min(...differences))]
 }
 
 export function diagnoseLearnFlow(tracks: LearnTrack[]): LearnDiagnosis {
