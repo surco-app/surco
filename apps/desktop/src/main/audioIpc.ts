@@ -558,7 +558,8 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // verdict dots, filter counts and loudness sort read (see tracksSnapshot.ts
   // SNAPSHOT_FAMILIES / useTracksView.ts on the renderer side): spectrogram (the quality
   // verdict), the channel scan (the clipping attention flag) and the integrated loudness
-  // as its one number. The spectrogram goes without its image: the list never draws it, and at ~300 KB a track it made a big reopen clone gigabytes (the
+  // as its one number. The spectrogram goes without its image: the list never draws it,
+  // and at ~300 KB a track it made a big reopen clone gigabytes (the
   // editor fetches the full entry when it opens the track), and the channel scan as its
   // clipping fact alone (its per-channel lanes are ~400 KB a track and only the compare
   // strip draws them). Deliberately EXCLUDES waveform-v5: its

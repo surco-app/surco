@@ -9,9 +9,9 @@ import type { TrackItem } from '../types'
 import { spectrogramOptions, spectrumVerdictKey } from './useSpectrogram'
 import { scanVerdictKey, waveVerdictKey } from './useWaveform'
 
-// The three probe families the list reads, one entry per track, positionally aligned with
+// The four probe families the list reads, one entry per track, positionally aligned with
 // `tracks`. Spectrum carries `fetching` too: a row with an analysis in flight shows a
-// placeholder where its verdict dot will land, which the other two have no equivalent of.
+// placeholder where its verdict dot will land, which the other three have no equivalent of.
 export interface CacheSnapshot {
   spectra: { data: SpectrumVerdict | undefined; fetching: boolean }[]
   waves: (WaveVerdict | undefined)[]
@@ -40,7 +40,7 @@ export function cacheLookup(client: QueryClient): (key: readonly unknown[]) => Q
   return (queryKey) => cache.get(hashKey(queryKey)) as Query | undefined
 }
 
-// Reads one track's slot across all three families out of the cache index. Shared by the full
+// Reads one track's slot across all four families out of the cache index. Shared by the full
 // build and the single-slot patch so a rebuilt slot is byte-for-byte identical to a patched
 // one. Lives here (not inline in the hook) so a test can count slot reads: a full build reads
 // N, a probe patch reads 1 — the assertion that a sweep tick doesn't walk the whole list.
@@ -63,7 +63,7 @@ function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | un
   }
 }
 
-// The full positional snapshot: one pass over every track, three cache lookups each. The O(N)
+// The full positional snapshot: one pass over every track, up to six cache lookups each. The O(N)
 // work that must run only when the track set changes — a probe event patches a single slot
 // (patchSnapshot) instead.
 export function buildCacheSnapshot(
