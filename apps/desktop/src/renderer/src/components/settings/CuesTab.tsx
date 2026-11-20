@@ -38,7 +38,6 @@ interface Props {
   patch: PatchSynced
   rekordboxCollection: string
   cueTrack?: { contentId: string; label: string }
-  cueTracks?: { contentId: string; label: string }[]
 }
 
 const NEW_RULE: CueRule = {
@@ -79,7 +78,6 @@ export function CuesTab({
   patch,
   rekordboxCollection,
   cueTrack,
-  cueTracks,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
@@ -417,7 +415,7 @@ export function CuesTab({
             <CueFlowTrackPreview
               flow={flow}
               track={cueTrack}
-              tracks={cueTracks}
+              rekordbox={foundBy.rekordbox}
               onShown={setPreviewed}
             />
           </section>

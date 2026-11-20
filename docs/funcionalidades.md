@@ -2666,10 +2666,13 @@ y una barra deja volver a la pista de ejemplo; si no tiene marca, lo dice y usa 
 Sobre la pista real dice si sus hot cues saldrían iguales o cuántas cambian, y lista las cues
 que el flujo deja fuera con la regla y el motivo: dentro de un estribillo, pasa de otra marca,
 antes del inicio o después del final (`CueFlowPreview.tsx`, `rejectedCues`).
-El selector de pista lleva un buscador sobre las pistas con marcas de la lista abierta. Si no
-hay ninguna, porque no hay una playlist de rekordbox abierta o ninguna de sus pistas tiene
-marcas, el buscador no sale y bajo «Pista de ejemplo» una línea dice que hay que abrir una
-playlist (`cue-preview-track-none`, `settings.cueFlows.noTracksOpen`).
+El selector de pista ofrece las pistas con marcas de toda la colección de rekordbox, por orden
+alfabético y con un buscador, esté abierta la playlist que esté abierta
+(`collectionChoices`, `cueExample.ts`). La colección se lee la primera vez que se abre el
+desplegable y queda en la caché que comparte con el resto de la app; mientras se lee, bajo
+«Pista de ejemplo» gira una fila de carga (`cue-preview-track-loading`). Sin biblioteca de
+rekordbox, sin ninguna pista con marcas o si la lectura falla, solo sale «Pista de ejemplo»,
+sin buscador ni mensaje.
 
 **La cuenta atrás y los estribillos** (v1.16.0). En una regla que cuenta hacia atrás «si
 cabe», la cue que cae donde empieza una racha de estribillos se queda, porque es donde se

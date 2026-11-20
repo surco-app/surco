@@ -1,13 +1,17 @@
-import { Check, ChevronDown } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
 import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
+import { readPlaylist } from '../hooks/useSourceBrowser'
 import { useTrackCues } from '../hooks/useTrackCues'
 import {
+  collectionChoices,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
   EXAMPLE_POINT_BAR,
@@ -43,6 +47,7 @@ const NOTICE_TEXT: Record<Status, string> = {
 interface Choice {
   contentId: string
   label: string
+  artist?: string
 }
 
 const NO_CHOICES: Choice[] = []
@@ -54,11 +59,13 @@ const folded = (text: string): string => foldAccents(text).toLowerCase()
 
 function TrackChoices({
   choices,
+  loading,
   inUse,
   onChoose,
   onClose,
 }: {
   choices: Choice[]
+  loading: boolean
   inUse: string | null
   onChoose: (choice: Choice | null) => void
   onClose: () => void
@@ -70,21 +77,24 @@ function TrackChoices({
   const listRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const wanted = folded(query.trim())
-  const found = choices.filter((c) => folded(c.label).includes(wanted)).slice(0, MAX_CHOICES)
+  const found = choices
+    .filter((c) => folded(`${c.label} ${c.artist ?? ''}`).includes(wanted))
+    .slice(0, MAX_CHOICES)
+  const searchable = loading || choices.length > 0
 
   useEffect(() => {
-    const first = searchRef.current ?? exampleRef.current
+    const first = searchable ? searchRef.current : exampleRef.current
     first?.focus({ preventScroll: true })
-  }, [])
+  }, [searchable])
 
   useLayoutEffect(() => {
     const menu = menuRef.current
-    if (!menu) return
+    if (!menu || loading) return
     const box = menu.getBoundingClientRect()
     const clip = clipBox(menu)
     const below = box.top + (menu.offsetHeight || box.height) + MENU_GAP - clip.bottom
     if (below > 0 && clip.scroller) clip.scroller.scrollTop += Math.ceil(below)
-  }, [])
+  }, [loading])
 
   function onKeyDown(e: React.KeyboardEvent): void {
     if (e.key === 'Escape') {
@@ -111,15 +121,15 @@ function TrackChoices({
       data-testid="cue-preview-track-menu"
       className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
     >
-      {choices.length > 0 && (
+      {searchable && (
         <input
           ref={searchRef}
           data-testid="cue-preview-track-search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={tr('settings.cueFlows.searchList')}
-          aria-label={tr('settings.cueFlows.searchList')}
+          placeholder={tr('settings.cueFlows.searchCollection')}
+          aria-label={tr('settings.cueFlows.searchCollection')}
           className="mb-1 h-7 w-full min-w-0 border-b border-[var(--color-line)] bg-transparent px-2 text-xs text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
         />
       )}
@@ -146,7 +156,7 @@ function TrackChoices({
             className={`size-3 shrink-0 ${inUse === null ? '' : 'invisible'}`}
           />
         </button>
-        {choices.length > 0 && (
+        {searchable && (
           <hr
             data-testid="cue-preview-track-separator"
             className="my-1 h-px border-0 bg-[var(--color-line)]"
@@ -163,6 +173,14 @@ function TrackChoices({
             className={OPTION}
           >
             <span className="min-w-0 flex-1 truncate">{c.label}</span>
+            {c.artist && (
+              <span
+                data-testid={`cue-preview-track-artist-${c.contentId}`}
+                className="max-w-[40%] shrink-0 truncate text-fg-dim"
+              >
+                {c.artist}
+              </span>
+            )}
             <Check
               aria-hidden="true"
               className={`size-3 shrink-0 ${c.contentId === inUse ? '' : 'invisible'}`}
@@ -170,9 +188,14 @@ function TrackChoices({
           </button>
         ))}
       </div>
-      {choices.length === 0 && (
-        <p data-testid="cue-preview-track-none" className="px-2 py-1.5 text-xs text-fg-dim">
-          {tr('settings.cueFlows.noTracksOpen')}
+      {loading && (
+        <p
+          role="status"
+          data-testid="cue-preview-track-loading"
+          aria-label={tr('settings.cueFlows.loadingTracks')}
+          className="flex h-7 items-center px-2 text-fg-dim"
+        >
+          <Loader2 aria-hidden="true" className="size-3 shrink-0 animate-spin" />
         </p>
       )}
       {choices.length > 0 && found.length === 0 && (
@@ -188,13 +211,17 @@ export function CueFlowPreview({
   flow,
   track,
   tracks = NO_CHOICES,
+  loading = false,
   onPick,
+  onOpenChange,
   onShown,
 }: {
   flow: CueFlow
   track?: { label: string; cues: TrackCues }
   tracks?: Choice[]
+  loading?: boolean
   onPick?: (choice: Choice) => void
+  onOpenChange?: (open: boolean) => void
   onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -305,17 +332,24 @@ export function CueFlowPreview({
     onShown?.(shownLabel !== null && shownCues ? { label: shownLabel, cues: shownCues } : null)
   }, [onShown, shownLabel, shownCues])
 
+  function show(next: boolean): void {
+    setOpen(next)
+    onOpenChange?.(next)
+  }
+
   useEffect(() => {
     if (!open) return
     const onDown = (e: MouseEvent): void => {
-      if (!pickerRef.current?.contains(e.target as Node)) setOpen(false)
+      if (pickerRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+      onOpenChange?.(false)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
+  }, [open, onOpenChange])
 
   function close(): void {
-    setOpen(false)
+    show(false)
     triggerRef.current?.focus()
   }
 
@@ -335,7 +369,7 @@ export function CueFlowPreview({
           data-testid="cue-preview-track"
           aria-haspopup="listbox"
           aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => show(!open)}
           className="press flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
           <span className="min-w-0 truncate text-left">
@@ -359,6 +393,7 @@ export function CueFlowPreview({
         {open && (
           <TrackChoices
             choices={choices}
+            loading={loading}
             inUse={onTrack ? track.cues.contentId : null}
             onChoose={choose}
             onClose={close}
@@ -456,22 +491,37 @@ export function CueFlowPreview({
 export function CueFlowTrackPreview({
   flow,
   track,
-  tracks,
+  rekordbox,
   onShown,
 }: {
   flow: CueFlow
   track?: Choice
-  tracks?: Choice[]
+  rekordbox: boolean
   onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState(track)
+  const [open, setOpen] = useState(false)
   const { data } = useTrackCues(picked?.contentId)
+  const collection = useQuery({
+    queryKey: ['source-playlist', 'rekordbox', ALL_TRACKS_ID],
+    queryFn: () => readPlaylist('rekordbox', ALL_TRACKS_ID),
+    enabled: rekordbox && open,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const tracks = useMemo(() => {
+    const marked = collectionChoices(collection.data ?? [])
+    return track && marked.some((c) => c.contentId === track.contentId)
+      ? [track, ...marked.filter((c) => c.contentId !== track.contentId)]
+      : marked
+  }, [collection.data, track])
   return (
     <CueFlowPreview
       flow={flow}
       track={picked && data ? { label: picked.label, cues: data } : undefined}
       tracks={tracks}
+      loading={collection.isLoading}
       onPick={setPicked}
+      onOpenChange={setOpen}
       onShown={onShown}
     />
   )

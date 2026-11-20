@@ -7,9 +7,10 @@ import {
   SAME_POSITION_MS,
   type StrongPart,
 } from '../../../shared/cueRules'
+import { foldAccents } from '../../../shared/foldAccents'
 import { type LearnTrack, learnFlowFromTrack } from '../../../shared/learnFlow'
-import type { CueWaveColumn, TrackCues } from '../../../shared/types'
-import type { TrackItem } from '../types'
+import type { CueWaveColumn, SourcePlaylistEntry, TrackCues } from '../../../shared/types'
+import { parseFileName } from './filename'
 
 const BEAT_MS = 60000 / 128
 const BARS = 192
@@ -104,22 +105,25 @@ export function flowFromTrack(read: TrackCues): CueFlow | null {
   return learnFlowFromTrack(learnTrackOf(read))
 }
 
-export function previewChoices(
-  tracks: Pick<TrackItem, 'id' | 'listLabel' | 'sourcePreview'>[],
-  contentOf: ReadonlyMap<string, string>,
-): { contentId: string; label: string }[] {
+export function collectionChoices(
+  entries: Pick<SourcePlaylistEntry, 'path' | 'contentId' | 'preview'>[],
+): { contentId: string; label: string; artist?: string }[] {
   const seen = new Set<string>()
-  return tracks.flatMap((t) => {
-    const contentId = contentOf.get(t.id)
-    const cues = t.sourcePreview?.cues ?? []
-    const marks = findDrops(
-      cues.filter((c) => c.kind === 0).map((c) => c.ms),
-      cues.filter((c) => c.kind !== 0).map((c) => c.ms),
-    )
-    if (!contentId || marks.length === 0 || seen.has(contentId)) return []
-    seen.add(contentId)
-    return [{ contentId, label: t.listLabel }]
-  })
+  return entries
+    .flatMap(({ path, contentId, preview }) => {
+      const cues = preview?.cues ?? []
+      const marks = findDrops(
+        cues.filter((c) => c.kind === 0).map((c) => c.ms),
+        cues.filter((c) => c.kind !== 0).map((c) => c.ms),
+      )
+      if (!contentId || !preview || marks.length === 0 || seen.has(contentId)) return []
+      seen.add(contentId)
+      const label = preview.title || (path ? parseFileName(path).fileName : '')
+      const artist = preview.artist ? { artist: preview.artist } : {}
+      return [{ contentId, label, ...artist, name: foldAccents(label).toLowerCase() }]
+    })
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))
+    .map(({ name: _, ...choice }) => choice)
 }
 
 export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {
