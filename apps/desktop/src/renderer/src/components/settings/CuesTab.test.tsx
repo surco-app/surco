@@ -79,6 +79,7 @@ function Harness({
   queries,
   track,
   inWindow,
+  hidden = [],
 }: {
   active?: string
   collection?: string
@@ -86,6 +87,7 @@ function Harness({
   queries?: QueryClient
   track?: { contentId: string; label: string }
   inWindow?: DjProgram
+  hidden?: DjProgram[]
 }) {
   const [draft, setDraft] = useState({
     cueFlows: flows,
@@ -100,6 +102,7 @@ function Harness({
     cueFlowToSerato: true,
     cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
+    hiddenSources: hidden,
   })
   const [client] = useState(() => queries ?? new QueryClient())
   last = draft
@@ -196,7 +199,9 @@ describe('CuesTab', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
         <CuesTab
-          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          synced={
+            { cueFlows: KEPT, activeCueFlow: 'mine', hiddenSources: [] } as unknown as SyncedDraft
+          }
           patch={() => {}}
           rekordboxCollection=""
           cueTrack={{ contentId: 'rb:1', label: 'DJ Made, Millenium Stringz' }}
@@ -227,7 +232,9 @@ describe('CuesTab', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
         <CuesTab
-          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          synced={
+            { cueFlows: KEPT, activeCueFlow: 'mine', hiddenSources: [] } as unknown as SyncedDraft
+          }
           patch={() => {}}
           rekordboxCollection="/rb/master.db"
         />
@@ -386,7 +393,9 @@ describe('CuesTab', () => {
     render(
       <QueryClientProvider client={createQueryClient()}>
         <CuesTab
-          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          synced={
+            { cueFlows: KEPT, activeCueFlow: 'mine', hiddenSources: [] } as unknown as SyncedDraft
+          }
           patch={() => {}}
           rekordboxCollection=""
         />
@@ -402,7 +411,9 @@ describe('CuesTab', () => {
     const tab = () => (
       <QueryClientProvider client={client}>
         <CuesTab
-          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          synced={
+            { cueFlows: KEPT, activeCueFlow: 'mine', hiddenSources: [] } as unknown as SyncedDraft
+          }
           patch={() => {}}
           rekordboxCollection=""
         />
@@ -1914,6 +1925,15 @@ describe('the tracks the preview offers', () => {
       expect(read()).toEqual(['rekordbox'])
     })
 
+    it('leaves out a program the DJ turned off in Settings, so a library they do not use never shows among the choices', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" hidden={['traktor']} />)
+      openTracks()
+      await screen.findByTestId('cue-preview-track-option-rb:7')
+      expect(screen.queryByRole('radiogroup')).toBeNull()
+      expect(read()).toEqual(['rekordbox'])
+    })
+
     it('starts on the program open in the main window when no track came with the preview, so the DJ lands on the collection they were looking at and only that one is read', async () => {
       const { read } = both()
       render(<Harness collection="/rb/master.db" inWindow="traktor" />)
@@ -2054,7 +2074,9 @@ describe('the tracks the preview offers', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>
         <CuesTab
-          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          synced={
+            { cueFlows: KEPT, activeCueFlow: 'mine', hiddenSources: [] } as unknown as SyncedDraft
+          }
           patch={() => {}}
           rekordboxCollection="/rb/master.db"
           cueTrack={{ contentId: 'rb:9', label: 'Zebra' }}

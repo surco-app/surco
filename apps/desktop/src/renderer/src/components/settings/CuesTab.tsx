@@ -116,7 +116,13 @@ export function CuesTab({
   const probing = DJ_PROGRAMS.some((p) => p !== 'rekordbox' && available[p] === undefined)
   const previewPrograms = probing
     ? []
-    : DJ_PROGRAMS.filter((p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows)
+    : DJ_PROGRAMS.filter(
+        (p) =>
+          offeredHere(p) &&
+          foundBy[p] &&
+          CUE_PROGRAMS[p].takesFlows &&
+          !synced.hiddenSources.includes(p),
+      )
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
