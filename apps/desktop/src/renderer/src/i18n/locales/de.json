@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} würde der Ablauf entfernen",
       "diffGoneNow_other": "{{count}} würde der Ablauf entfernen",
       "diffNewHint": "Neu mit diesem Ablauf. Der Track hat ihn nicht",
-      "diffGoneHint": "Der Track hat ihn und der Ablauf würde ihn nicht setzen",
+      "diffGoneHint": "Der Track hat {{letter}} und der Ablauf würde ihn nicht setzen",
       "previewMode": {
         "flow": "Mit dem Ablauf",
         "now": "Jetzt"

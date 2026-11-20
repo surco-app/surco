@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} che il flusso toglierebbe",
       "diffGoneNow_other": "{{count}} che il flusso toglierebbe",
       "diffNewHint": "Nuovo con questo flusso. Il brano non ce l'ha",
-      "diffGoneHint": "Il brano ce l'ha e il flusso non lo metterebbe",
+      "diffGoneHint": "Il brano ha il {{letter}} e il flusso non lo metterebbe",
       "previewMode": {
         "flow": "Con il flusso",
         "now": "Adesso"

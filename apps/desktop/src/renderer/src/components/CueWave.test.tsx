@@ -451,7 +451,7 @@ describe('CueWave', () => {
       fresh: ['a'],
       gone: [{ key: 'x', ms: 24000, kind: 3, color: 22 }],
       freshLabel: 'new with the flow',
-      goneLabel: 'the flow takes it away',
+      goneLabel: (letter: string) => `the flow takes away ${letter}`,
       focused: false,
     }
     const cues = [
@@ -481,7 +481,7 @@ describe('CueWave', () => {
       expect(kept.style.boxShadow).toBe('')
     })
 
-    it('draws a hot cue the flow would take away hollow, struck through, with its letter in the text colour and its own colour mixed with it on a thick edge, so it reads on any theme and not as one left out by a rule', () => {
+    it('draws a hot cue the flow would take away hollow and struck through with no letter inside, which the strike made unreadable, its letter said in its name and its tooltip and its own colour mixed with the text colour on a thick edge, so it reads on any theme and not as one left out by a rule', () => {
       setup({
         readOnly: true,
         cues,
@@ -490,21 +490,21 @@ describe('CueWave', () => {
       })
       const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
       expect(gone).toHaveAttribute('data-diff', 'gone')
-      expect(gone).toHaveTextContent(/^C$/)
+      expect(gone.textContent).toBe('')
+      expect(gone.className).not.toMatch(/(?<![\w-])text-/)
       expect(gone.style.getPropertyValue('--cue')).toBe(hotCueColor(22))
       expect(gone).toHaveClass(
         'border-2',
         'border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))]',
-        'text-fg',
       )
       expect(gone.style.opacity).toBe('')
       expect(screen.getByTestId('cue-wave-strike-24000').style.background).toContain(
         'var(--color-warn)',
       )
       expect(gone).toHaveAttribute('role', 'img')
-      expect(gone).toHaveAccessibleName('the flow takes it away')
+      expect(gone).toHaveAccessibleName('the flow takes away C')
       expect(gone).not.toHaveAttribute('title')
-      expect(hoverTooltip(gone)).toBe('the flow takes it away')
+      expect(hoverTooltip(gone)).toBe('the flow takes away C')
       expect(screen.getByTestId('cue-wave-ghost-dropped-60000')).toHaveStyle({
         borderStyle: 'dashed',
         opacity: '0.3',
@@ -547,10 +547,9 @@ describe('CueWave', () => {
           ],
         },
       })
-      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/).map((g) => g.textContent)).toEqual([
-        'C',
-        'B',
-      ])
+      expect(
+        screen.getAllByTestId(/^cue-wave-ghost-gone-/).map((g) => g.getAttribute('aria-label')),
+      ).toEqual(['the flow takes away C', 'the flow takes away B'])
     })
 
     it('fades everything but the differences while they are pointed at, so they stand out among the rest', () => {

@@ -502,7 +502,7 @@ export function CueWave({
           data-testid={`cue-wave-ghost-gone-${h.ms}`}
           data-diff="gone"
           role="img"
-          aria-label={diff?.goneLabel}
+          aria-label={diff?.goneLabel(h.letter)}
           style={
             {
               ...markStyle(h.at),
@@ -511,16 +511,15 @@ export function CueWave({
               '--cue': h.colour,
             } as React.CSSProperties
           }
-          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-center text-label font-semibold leading-[8px] text-fg"
+          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))]"
         >
-          {h.letter}
           <span
             data-testid={`cue-wave-strike-${h.ms}`}
             aria-hidden="true"
             style={{ background: DIFF_STRIKE }}
             className="pointer-events-none absolute inset-0"
           />
-          <Tooltip label={diff?.goneLabel ?? ''} />
+          <Tooltip label={diff?.goneLabel(h.letter) ?? ''} />
         </span>
       ))}
       {ghostMarks?.calls.map((c) => (

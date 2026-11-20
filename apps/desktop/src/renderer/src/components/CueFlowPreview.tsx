@@ -383,7 +383,7 @@ export function CueFlowPreview({
                     : [],
                 gone: hotNow.filter(goes).map((c) => ({ ...c, key: c.id })),
                 freshLabel: tr('settings.cueFlows.diffNewHint'),
-                goneLabel: tr('settings.cueFlows.diffGoneHint'),
+                goneLabel: (letter) => tr('settings.cueFlows.diffGoneHint', { letter }),
                 focused: pinned || hovered || focused,
               }
             : undefined

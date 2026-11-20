@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} que le flux retirerait",
       "diffGoneNow_other": "{{count}} que le flux retirerait",
       "diffNewHint": "Nouveau avec ce flux. Le morceau ne l’a pas",
-      "diffGoneHint": "Le morceau l’a et le flux ne le placerait pas",
+      "diffGoneHint": "Le morceau a le {{letter}} et le flux ne le placerait pas",
       "previewMode": {
         "flow": "Avec le flux",
         "now": "Maintenant"

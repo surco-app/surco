@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} que el flux trauria",
       "diffGoneNow_other": "{{count}} que el flux trauria",
       "diffNewHint": "Nou amb aquest flux. La pista no el té",
-      "diffGoneHint": "La pista el té i el flux no el posaria",
+      "diffGoneHint": "La pista té el {{letter}} i el flux no el posaria",
       "previewMode": {
         "flow": "Amb el flux",
         "now": "Ara"

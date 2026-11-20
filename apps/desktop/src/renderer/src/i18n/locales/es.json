@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} que el flujo quitaría",
       "diffGoneNow_other": "{{count}} que el flujo quitaría",
       "diffNewHint": "Nuevo con este flujo. La pista no lo tiene",
-      "diffGoneHint": "La pista lo tiene y el flujo no lo pondría",
+      "diffGoneHint": "La pista tiene el {{letter}} y el flujo no lo pondría",
       "previewMode": {
         "flow": "Con el flujo",
         "now": "Ahora"

@@ -191,9 +191,9 @@ describe('CueFlowPreview', () => {
       expect(fresh).toHaveAccessibleName('New with this flow. The track does not have it')
       expect(hoverTooltip(fresh)).toBe('New with this flow. The track does not have it')
       const gone = screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)
-      expect(gone).toHaveTextContent(/^A$/)
-      expect(gone).toHaveAccessibleName('The track has it and the flow would not place it')
-      expect(hoverTooltip(gone)).toBe('The track has it and the flow would not place it')
+      expect(gone.textContent).toBe('')
+      expect(gone).toHaveAccessibleName('The track has A and the flow would not place it')
+      expect(hoverTooltip(gone)).toBe('The track has A and the flow would not place it')
     })
 
     it('counts and draws once two hot cues the track has on the same spot, and keeps neither as a cue that stays', () => {
@@ -310,7 +310,9 @@ describe('CueFlowPreview', () => {
         backgroundColor: hotCueColor(42),
       })
       expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
-      expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toHaveTextContent(/^A$/)
+      expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toHaveAccessibleName(
+        'The track has A and the flow would not place it',
+      )
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
         /^1 the flow would take away$/,
       )

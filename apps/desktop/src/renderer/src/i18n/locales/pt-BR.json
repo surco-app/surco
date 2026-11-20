@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} que o fluxo tiraria",
       "diffGoneNow_other": "{{count}} que o fluxo tiraria",
       "diffNewHint": "Novo com este fluxo. A faixa não tem",
-      "diffGoneHint": "A faixa tem e o fluxo não colocaria",
+      "diffGoneHint": "A faixa tem o {{letter}} e o fluxo não colocaria",
       "previewMode": {
         "flow": "Com o fluxo",
         "now": "Agora"

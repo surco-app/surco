@@ -2062,7 +2062,7 @@
       "diffGoneNow_one": "フローが削除するもの {{count}} 個",
       "diffGoneNow_other": "フローが削除するもの {{count}} 個",
       "diffNewHint": "このフローで新規。トラックにはありません",
-      "diffGoneHint": "トラックにあり、フローでは置かれません",
+      "diffGoneHint": "トラックに {{letter}} があり、フローでは置かれません",
       "previewMode": {
         "flow": "フロー適用",
         "now": "現在"
