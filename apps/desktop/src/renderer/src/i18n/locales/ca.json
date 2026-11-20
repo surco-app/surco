@@ -2099,7 +2099,8 @@
           "point": "Passa d'una altra marca",
           "start": "Abans que comenci la pista",
           "end": "Després que acabi la pista",
-          "section": "Fora d'aquesta secció"
+          "section": "Fora d'aquesta secció",
+          "near": "Un altre cue massa a prop"
         }
       },
       "tooMany": "Aquest flux demana {{count}} hot cues i rekordbox n'admet 8",
@@ -2152,19 +2153,33 @@
         "first": "Només abans de la primera marca, si allà no hi ha res"
       },
       "whenEach": {
-        "rule": "sense condició pròpia",
         "fits": "si hi cap",
-        "down": "només en una baixada",
-        "up": "només en una pujada",
-        "chorus": "només en una tornada"
+        "before_one": "sense cap altre cue {{bars}} compàs abans",
+        "before_other": "sense cap altre cue en els {{bars}} compassos anteriors",
+        "after_one": "sense cap altre cue {{bars}} compàs després",
+        "after_other": "sense cap altre cue en els {{bars}} compassos següents",
+        "beforeAny": "sense cap altre cue en els compassos anteriors",
+        "afterAny": "sense cap altre cue en els compassos següents",
+        "in": "en {{sections}}",
+        "only": "Només en",
+        "line": "El de {{bars}}, només {{conditions}}.",
+        "lineAll": "Només {{conditions}}."
+      },
+      "section": {
+        "intro": "intro",
+        "up": "pujada",
+        "down": "baixada",
+        "chorus": "tornada",
+        "outro": "outro"
+      },
+      "inSection": {
+        "intro": "una intro",
+        "up": "una pujada",
+        "down": "una baixada",
+        "chorus": "una tornada",
+        "outro": "un outro"
       },
       "whenEachLead": ". ",
-      "whenEachHint": {
-        "fits": "El de {{bars}}, només si hi cap.",
-        "down": "El de {{bars}}, només en una baixada.",
-        "up": "El de {{bars}}, només en una pujada.",
-        "chorus": "El de {{bars}}, només en una tornada."
-      },
       "place": {
         "hot": "hot cue",
         "call": "CALL",

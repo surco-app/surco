@@ -2099,7 +2099,8 @@
           "point": "Hinter einer anderen Markierung",
           "start": "Vor dem Anfang des Tracks",
           "end": "Nach dem Ende des Tracks",
-          "section": "Außerhalb dieses Abschnitts"
+          "section": "Außerhalb dieses Abschnitts",
+          "near": "Ein anderer Cue zu nah"
         }
       },
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
@@ -2152,19 +2153,33 @@
         "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
       },
       "whenEach": {
-        "rule": "ohne eigene Bedingung",
         "fits": "wenn es passt",
-        "down": "nur in einem Breakdown",
-        "up": "nur in einem Aufbau",
-        "chorus": "nur in einem Refrain"
+        "before_one": "ohne anderen Cue im {{bars}} Takt davor",
+        "before_other": "ohne anderen Cue in den {{bars}} Takten davor",
+        "after_one": "ohne anderen Cue im {{bars}} Takt danach",
+        "after_other": "ohne anderen Cue in den {{bars}} Takten danach",
+        "beforeAny": "ohne anderen Cue in den Takten davor",
+        "afterAny": "ohne anderen Cue in den Takten danach",
+        "in": "in {{sections}}",
+        "only": "Nur in",
+        "line": "Der bei {{bars}}, nur {{conditions}}.",
+        "lineAll": "Nur {{conditions}}."
+      },
+      "section": {
+        "intro": "Intro",
+        "up": "Aufbau",
+        "down": "Breakdown",
+        "chorus": "Refrain",
+        "outro": "Outro"
+      },
+      "inSection": {
+        "intro": "einem Intro",
+        "up": "einem Aufbau",
+        "down": "einem Breakdown",
+        "chorus": "einem Refrain",
+        "outro": "einem Outro"
       },
       "whenEachLead": ". ",
-      "whenEachHint": {
-        "fits": "Der bei {{bars}}, nur wenn es passt.",
-        "down": "Der bei {{bars}}, nur in einem Breakdown.",
-        "up": "Der bei {{bars}}, nur in einem Aufbau.",
-        "chorus": "Der bei {{bars}}, nur in einem Refrain."
-      },
       "place": {
         "hot": "Hot Cue",
         "call": "CALL",

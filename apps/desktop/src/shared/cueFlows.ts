@@ -5,7 +5,6 @@ export type FlowRepeat = number | 'edge'
 export type FlowCondition = 'always' | 'fits' | 'previous' | 'room' | 'clear' | 'first'
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
-export type RepeatCondition = 'rule' | 'fits' | 'up' | 'down' | 'chorus'
 export type FlowSection = PhraseKind
 
 export interface RepeatWhen {
@@ -73,7 +72,6 @@ export const FLOW_CONDITIONS: FlowCondition[] = [
   'clear',
   'first',
 ]
-export const REPEAT_CONDITIONS: RepeatCondition[] = ['rule', 'fits', 'down', 'up', 'chorus']
 export const FLOW_SECTIONS: FlowSection[] = ['intro', 'up', 'down', 'chorus', 'outro']
 export const NEAR_BARS = RULE_BARS.filter((b) => b > 0)
 export const ROOM_GAP = 8

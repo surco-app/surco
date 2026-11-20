@@ -204,64 +204,135 @@ describe('CueRuleRow open menu', () => {
 })
 
 describe('CueRuleRow condition of each repetition', () => {
-  const whenOptions = (slot: number) =>
-    screen
-      .getAllByRole('menuitemradio')
-      .map((el) => el.getAttribute('data-testid')?.replace(`cue-rule-0-color-${slot}-when-`, ''))
-  const pickWhen = (slot: number, value: string) => {
+  const box = (slot: number, name: string) =>
+    screen.getByTestId(`cue-rule-0-color-${slot}-when-${name}`)
+  const openSquare = (slot: number) =>
     fireEvent.click(screen.getByTestId(`cue-rule-0-color-${slot}`))
-    fireEvent.click(screen.getByTestId(`cue-rule-0-color-${slot}-when-${value}`))
+  const toggle = (slot: number, name: string) => {
+    openSquare(slot)
+    fireEvent.click(box(slot, name))
   }
 
-  it('offers the five conditions under the colours of a repetition, with the one it has checked, so one rule covers what took two', () => {
-    setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
-    fireEvent.click(screen.getByTestId('cue-rule-0-color-2'))
-    expect(whenOptions(2)).toEqual(['rule', 'fits', 'down', 'up', 'chorus'])
-    expect(screen.getByTestId('cue-rule-0-color-2-when-down')).toHaveAttribute(
-      'aria-checked',
-      'true',
-    )
-    expect(screen.getByTestId('cue-rule-0-color-2-when-rule')).toHaveAttribute(
-      'aria-checked',
-      'false',
-    )
-    expect(screen.getByTestId('cue-rule-0-color-2-when-down')).toHaveTextContent(
-      'only in a breakdown',
-    )
+  it('offers the conditions as boxes to tick under the colours of a repetition, with the ones it has ticked, so several can hold at once', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+before:8+in:up|down'] })
+    openSquare(2)
+    const boxes = screen
+      .getAllByRole('menuitemcheckbox')
+      .map((el) => [
+        el.getAttribute('data-testid')?.replace('cue-rule-0-color-2-when-', ''),
+        el.getAttribute('aria-checked'),
+      ])
+    expect(boxes).toEqual([
+      ['fits', 'true'],
+      ['before', 'true'],
+      ['after', 'false'],
+      ['in-intro', 'false'],
+      ['in-up', 'true'],
+      ['in-down', 'true'],
+      ['in-chorus', 'false'],
+      ['in-outro', 'false'],
+    ])
+    expect(box(2, 'before')).toHaveTextContent('with no other cue in the bars before')
+    expect(box(2, 'in-down')).toHaveTextContent('breakdown')
+    expect(screen.getByTestId('cue-rule-0-color-2-when-only')).toHaveTextContent('Only in')
   })
 
-  it('offers no condition under a single colour, which has no repetition of its own to tell apart', () => {
-    setup({ ...RULE, color: { fixed: 22 } })
-    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
-    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toBeInTheDocument()
-    expect(screen.queryAllByRole('menuitemradio')).toEqual([])
+  it('offers them under a single colour too, where they hold for every repetition of the rule', () => {
+    const fixed: CueRule = { ...RULE, color: { fixed: 22 } }
+    const { onChange } = setup(fixed)
+    toggle(0, 'fits')
+    expect(onChange).toHaveBeenLastCalledWith({ ...fixed, whenEach: ['all:fits'] })
   })
 
-  it('offers no condition on a cue placed on the same beat, where nothing is repeated', () => {
-    setup({ ...RULE, bars: 0, repeat: 1 })
-    fireEvent.click(screen.getByTestId('cue-rule-0-color-0'))
-    expect(screen.getByTestId('cue-rule-0-color-0-palette')).toBeInTheDocument()
-    expect(screen.queryAllByRole('menuitemradio')).toEqual([])
+  it('offers them on a cue placed on the same beat, which can also be told to keep away from other cues', () => {
+    const single: CueRule = { ...RULE, bars: 0, repeat: 1 }
+    const { onChange } = setup(single)
+    toggle(0, 'before')
+    expect(onChange).toHaveBeenLastCalledWith({ ...single, whenEach: ['all:before:32'] })
   })
 
-  it('writes the condition at the repetition picked and leaves the closer ones as the rule, then closes back on the square', () => {
+  it('writes the condition at the repetition ticked and leaves the closer ones as the rule', () => {
     const { onChange } = setup(RULE)
-    pickWhen(2, 'down')
+    toggle(2, 'in-down')
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
+  })
+
+  it('stays open after a box is ticked, since the next thing wanted is usually another box', () => {
+    setup(RULE)
+    toggle(2, 'fits')
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toBeInTheDocument()
+    fireEvent.click(box(2, 'in-intro'))
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toBeInTheDocument()
+  })
+
+  it('still closes back on the square when a colour is picked, as it always did', () => {
+    setup(RULE)
+    openSquare(2)
+    fireEvent.click(screen.getAllByTestId(/^cue-palette-\d+$/)[0])
     expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
     expect(screen.getByTestId('cue-rule-0-color-2')).toHaveFocus()
   })
 
+  it('closes on Escape and gives the focus back to the square, so the keyboard never loses its place', () => {
+    setup(RULE)
+    toggle(2, 'fits')
+    fireEvent.keyDown(box(2, 'fits'), { key: 'Escape' })
+    expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cue-rule-0-color-2')).toHaveFocus()
+  })
+
+  it('adds a condition to the ones the repetition already has instead of replacing them', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
+    toggle(2, 'in-up')
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
+    fireEvent.click(box(2, 'fits'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...RULE,
+      whenEach: ['rule', 'rule', 'fits+in:down'],
+    })
+  })
+
+  it('asks for 32 bars clear before and 16 after unless told otherwise, the distances a countdown is usually built on', () => {
+    const { onChange } = setup(RULE)
+    openSquare(1)
+    expect(screen.getByTestId('cue-rule-0-color-1-when-before-bars')).toHaveValue('32')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveValue('16')
+    fireEvent.click(box(1, 'before'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:32'] })
+    fireEvent.click(box(1, 'after'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'after:16'] })
+  })
+
+  it('changes the bars of a ticked condition at once', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['rule', 'before:32'] })
+    openSquare(1)
+    fireEvent.change(screen.getByTestId('cue-rule-0-color-1-when-before-bars'), {
+      target: { value: '8' },
+    })
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:8'] })
+  })
+
+  it('only remembers the bars of a condition not ticked yet, so choosing a number never switches it on', () => {
+    const { onChange } = setup(RULE)
+    openSquare(1)
+    const bars = screen.getByTestId('cue-rule-0-color-1-when-after-bars')
+    fireEvent.change(bars, { target: { value: '64' } })
+    expect(onChange).not.toHaveBeenCalled()
+    expect(bars).toHaveValue('64')
+    fireEvent.click(box(1, 'after'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'after:64'] })
+  })
+
   it('saves no trailing repetitions that only follow the rule, so the same flow is always stored the same way', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['fits', 'rule', 'down'] })
-    pickWhen(2, 'rule')
+    toggle(2, 'in-down')
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['fits'] })
   })
 
   it('drops the field once every repetition is back to the rule, so the rule saves as it did before', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
-    pickWhen(2, 'rule')
+    toggle(2, 'in-down')
     expect(onChange.mock.calls[0][0]).not.toHaveProperty('whenEach')
   })
 
@@ -292,14 +363,95 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, repeat: 2, whenEach: ['fits'] })
   })
 
-  it('drops every condition when the rule stops repeating, since a cue on the same beat has none', () => {
+  it('draws the single square of a one colour rule as an outline once it has conditions', () => {
+    setup({ ...RULE, color: { fixed: 22 }, whenEach: ['all:before:32'] })
+    expect(screen.getByTestId('cue-rule-0-color-0')).toHaveAttribute('data-own', 'true')
+  })
+
+  it('says every condition of a repetition in one sentence, joined the way the language joins a list', () => {
+    setup({ ...RULE, whenEach: ['in:up|down', 'rule', 'fits+before:32+after:1'] })
+    expect(screen.getByTestId('cue-rule-0-when-line')).toHaveTextContent(
+      'The one at 48, only if it fits, with no other cue in the 32 bars before, and with no other cue in the 1 bar after. The one at 16, only in a build or a breakdown.',
+    )
+  })
+
+  it('says the conditions of a one colour rule about the whole rule, since no repetition stands apart', () => {
+    setup({ ...RULE, color: { fixed: 22 }, whenEach: ['all:before:32'] })
+    expect(screen.getByTestId('cue-rule-0-when-line')).toHaveTextContent(
+      'Every repeat, even over another mark. Only with no other cue in the 32 bars before.',
+    )
+  })
+
+  it('builds the sentence in the order each language needs, not the Spanish one', async () => {
+    const line = async (lng: string) => {
+      await i18n.changeLanguage(lng)
+      cleanup()
+      setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+in:up|down'] })
+      return screen.getByTestId('cue-rule-0-when-line').textContent
+    }
+    try {
+      expect(await line('es')).toContain('El de 48, solo si cabe y en una subida o una bajada.')
+      expect(await line('de')).toContain(
+        'Der bei 48, nur wenn es passt und in einem Aufbau oder einem Breakdown.',
+      )
+      expect(await line('ja')).toContain(
+        '48 のキューは収まる場合、ビルドアップまたはブレイクダウンのみ。',
+      )
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  })
+
+  it('keeps the conditions of the only repetition when the rule stops repeating, now said about the rule', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['before:32', 'rule', 'down'] })
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-0'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...RULE,
+      bars: 0,
+      repeat: 1,
+      whenEach: ['all:before:32'],
+    })
+  })
+
+  it('hands the conditions of a single cue to its first repetition when the rule starts repeating', () => {
+    const single: CueRule = { ...RULE, bars: 0, repeat: 1, whenEach: ['all:before:32'] }
+    const { onChange } = setup(single)
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-16'))
+    expect(onChange).toHaveBeenLastCalledWith({ ...single, bars: 16, whenEach: ['before:32'] })
+  })
+
+  it('gives every square the conditions the single colour had when the rule goes to a colour per repetition, so nothing it asked for is lost', () => {
+    const { onChange } = setup({ ...RULE, color: { fixed: 22 }, whenEach: ['all:before:32'] })
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-mode'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-mode-option-each'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...RULE,
+      color: { each: [22, 22, 22] },
+      whenEach: ['before:32', 'before:32', 'before:32'],
+    })
+  })
+
+  it('keeps the conditions when the rule goes to one colour and every square had the same', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['fits', 'fits', 'fits'] })
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-mode'))
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-mode-option-fixed'))
+    expect(onChange).toHaveBeenLastCalledWith({
+      ...RULE,
+      color: { fixed: 1 },
+      whenEach: ['all:fits'],
+    })
+  })
+
+  it('drops every condition when the rule stops repeating and its first repetition had none, since the others are gone', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
     fireEvent.click(screen.getByTestId('cue-rule-0-bars'))
     fireEvent.click(screen.getByTestId('cue-rule-0-bars-option-0'))
     expect(onChange.mock.calls[0][0]).not.toHaveProperty('whenEach')
   })
 
-  it('drops every condition when the rule goes to one colour, since no square is left to show or change it', () => {
+  it('drops the conditions when the rule goes to one colour and the squares differed, since one square cannot say them all', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['rule', 'rule', 'down'] })
     fireEvent.click(screen.getByTestId('cue-rule-0-color-mode'))
     fireEvent.click(screen.getByTestId('cue-rule-0-color-mode-option-fixed'))

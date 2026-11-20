@@ -2099,7 +2099,8 @@
           "point": "Pasa de otra marca",
           "start": "Antes de que empiece la pista",
           "end": "Después de que acabe la pista",
-          "section": "Fuera de esa sección"
+          "section": "Fuera de esa sección",
+          "near": "Otro cue demasiado cerca"
         }
       },
       "tooMany": "Este flujo pide {{count}} hot cues y rekordbox admite 8",
@@ -2152,19 +2153,33 @@
         "first": "Solo antes de la primera marca, si allí no hay nada"
       },
       "whenEach": {
-        "rule": "sin condición propia",
         "fits": "si cabe",
-        "down": "solo en una bajada",
-        "up": "solo en una subida",
-        "chorus": "solo en un estribillo"
+        "before_one": "sin otro cue {{bars}} compás antes",
+        "before_other": "sin otro cue en los {{bars}} compases anteriores",
+        "after_one": "sin otro cue {{bars}} compás después",
+        "after_other": "sin otro cue en los {{bars}} compases siguientes",
+        "beforeAny": "sin otro cue en los compases anteriores",
+        "afterAny": "sin otro cue en los compases siguientes",
+        "in": "en {{sections}}",
+        "only": "Solo en",
+        "line": "El de {{bars}}, solo {{conditions}}.",
+        "lineAll": "Solo {{conditions}}."
+      },
+      "section": {
+        "intro": "intro",
+        "up": "subida",
+        "down": "bajada",
+        "chorus": "estribillo",
+        "outro": "outro"
+      },
+      "inSection": {
+        "intro": "una intro",
+        "up": "una subida",
+        "down": "una bajada",
+        "chorus": "un estribillo",
+        "outro": "un outro"
       },
       "whenEachLead": ". ",
-      "whenEachHint": {
-        "fits": "El de {{bars}}, solo si cabe.",
-        "down": "El de {{bars}}, solo en una bajada.",
-        "up": "El de {{bars}}, solo en una subida.",
-        "chorus": "El de {{bars}}, solo en un estribillo."
-      },
       "place": {
         "hot": "hot cue",
         "call": "CALL",
