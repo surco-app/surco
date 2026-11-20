@@ -2052,8 +2052,19 @@
       "noTrackFound": "Ninguna pista marcada con ese nombre",
       "noMark": "{{label}} aún no tiene ninguna marca, así que la vista previa usa la pista de ejemplo",
       "compareSame": "Los mismos hot cues que tiene ahora esta pista",
-      "compareDiffer_one": "{{count}} hot cue distinto de los que tiene ahora esta pista",
-      "compareDiffer_other": "{{count}} hot cues distintos de los que tiene ahora esta pista",
+      "diffNew_one": "{{count}} nuevo",
+      "diffNew_other": "{{count}} nuevos",
+      "diffGone_one": "{{count}} que se quita",
+      "diffGone_other": "{{count}} que se quitan",
+      "diffBoth": "{{added}} y {{gone}}",
+      "diffGoneNow_one": "{{count}} que el flujo quitaría",
+      "diffGoneNow_other": "{{count}} que el flujo quitaría",
+      "diffNewHint": "Nuevo con este flujo. La pista no lo tiene",
+      "diffGoneHint": "La pista lo tiene y el flujo no lo pondría",
+      "previewMode": {
+        "flow": "Con el flujo",
+        "now": "Ahora"
+      },
       "leftOut": {
         "back_one": "Regla {{rule}}, {{count}} compás atrás",
         "back_other": "Regla {{rule}}, {{count}} compases atrás",

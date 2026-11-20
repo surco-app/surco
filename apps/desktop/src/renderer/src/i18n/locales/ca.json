@@ -2052,8 +2052,19 @@
       "noTrackFound": "Cap pista marcada amb aquest nom",
       "noMark": "{{label}} encara no té cap marca, així que la previsualització fa servir la pista d'exemple",
       "compareSame": "Els mateixos hot cues que té ara aquesta pista",
-      "compareDiffer_one": "{{count}} hot cue diferent dels que té ara aquesta pista",
-      "compareDiffer_other": "{{count}} hot cues diferents dels que té ara aquesta pista",
+      "diffNew_one": "{{count}} nou",
+      "diffNew_other": "{{count}} nous",
+      "diffGone_one": "{{count}} que es treu",
+      "diffGone_other": "{{count}} que es treuen",
+      "diffBoth": "{{added}} i {{gone}}",
+      "diffGoneNow_one": "{{count}} que el flux trauria",
+      "diffGoneNow_other": "{{count}} que el flux trauria",
+      "diffNewHint": "Nou amb aquest flux. La pista no el té",
+      "diffGoneHint": "La pista el té i el flux no el posaria",
+      "previewMode": {
+        "flow": "Amb el flux",
+        "now": "Ara"
+      },
       "leftOut": {
         "back_one": "Regla {{rule}}, {{count}} compàs enrere",
         "back_other": "Regla {{rule}}, {{count}} compassos enrere",

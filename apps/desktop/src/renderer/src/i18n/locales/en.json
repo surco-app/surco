@@ -2052,8 +2052,19 @@
       "noTrackFound": "No marked track with that name",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",
       "compareSame": "Same hot cues this track has now",
-      "compareDiffer_one": "{{count}} hot cue differs from what this track has now",
-      "compareDiffer_other": "{{count}} hot cues differ from what this track has now",
+      "diffNew_one": "{{count}} new",
+      "diffNew_other": "{{count}} new",
+      "diffGone_one": "{{count}} taken away",
+      "diffGone_other": "{{count}} taken away",
+      "diffBoth": "{{added}} and {{gone}}",
+      "diffGoneNow_one": "{{count}} the flow would take away",
+      "diffGoneNow_other": "{{count}} the flow would take away",
+      "diffNewHint": "New with this flow. The track does not have it",
+      "diffGoneHint": "The track has it and the flow would not place it",
+      "previewMode": {
+        "flow": "With the flow",
+        "now": "Now"
+      },
       "leftOut": {
         "back_one": "Rule {{rule}}, {{count}} bar back",
         "back_other": "Rule {{rule}}, {{count}} bars back",
