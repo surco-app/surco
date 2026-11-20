@@ -13542,6 +13542,106 @@ describe('App list header', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   })
 
+  it('keeps the Undo of an earlier move to Backups when a second one follows, and brings both back', async () => {
+    const trashFile = vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` }))
+    const trashRestore = vi.fn(async (id: string) => ({ restoredTo: id.slice('backup-'.length) }))
+    setApi({ keepsTrash: vi.fn().mockResolvedValue(false), trashFile, trashRestore })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 2 })))
+      if (!card) throw new Error('no backups notice for both')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(trashRestore).toHaveBeenCalledWith('backup-/music/a.wav', 'undo')
+    expect(trashRestore).toHaveBeenCalledWith('backup-/music/b.wav', 'undo')
+  })
+
+  it('frees the cover of a row moved to Backups once the notice expires, even after a second move replaced it', async () => {
+    const createObjectURL = vi.fn().mockReturnValueOnce('blob:picked')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+        keepsTrash: vi.fn().mockResolvedValue(false),
+        trashFile: vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` })),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'picked.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      for (let i = 0; i <= MAX_META_UNDO; i++) runMenu('number-tracks')
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-trash'))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-trash'))
+        await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+        expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+        act(() => vi.advanceTimersByTime(7000))
+        await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:picked'))
+      } finally {
+        vi.useRealTimers()
+      }
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  it('says once which files could not be put back from Backups, naming the first and counting the rest', async () => {
+    setApi({
+      keepsTrash: vi.fn().mockResolvedValue(false),
+      trashFile: vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` })),
+      trashRestore: vi.fn().mockRejectedValue(new Error('gone')),
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('select-all')
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 2 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .filter((c) => c.textContent?.includes('Could not restore')),
+      ).toHaveLength(1),
+    )
+    expect(
+      screen.getAllByTestId('app-notice').find((c) => c.textContent?.includes('Could not restore')),
+    ).toHaveTextContent('Could not restore “a” and 1 more: gone')
+  })
+
   it('keeps the row out of the list when its file could not be put back from Backups', async () => {
     const trashRestore = vi.fn().mockRejectedValue(new Error('gone'))
     setApi({

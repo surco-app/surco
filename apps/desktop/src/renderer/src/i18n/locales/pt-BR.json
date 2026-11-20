@@ -425,6 +425,7 @@
     "reveal": "Abrir pasta",
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
+    "restoreFailedMany": "Não foi possível restaurar “{{name}}” e mais {{count}}: {{reason}}",
     "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
     "emptyFailed": "Algumas cópias não puderam ser apagadas e continuam em Cópias › Arquivos de música. {{reason}}",
     "filters": {

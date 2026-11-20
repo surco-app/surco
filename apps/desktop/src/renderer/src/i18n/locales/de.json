@@ -425,6 +425,7 @@
     "reveal": "Ordner öffnen",
     "restored": "„{{name}}“ in seinem Ordner wiederhergestellt",
     "restoreFailed": "„{{name}}“ konnte nicht wiederhergestellt werden: {{reason}}",
+    "restoreFailedMany": "„{{name}}“ und {{count}} weitere konnten nicht wiederhergestellt werden: {{reason}}",
     "removeFailed": "„{{name}}“ konnte nicht gelöscht werden. {{reason}}",
     "emptyFailed": "Einige Kopien konnten nicht gelöscht werden und sind noch in Backups › Musikdateien. {{reason}}",
     "filters": {

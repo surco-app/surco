@@ -315,7 +315,10 @@ export function useConfirmFlows({
         )
       })
     }
-    if (!alwaysAsk && !keeps.some((keep) => confirmsPermanent(keep, settings))) {
+    const recoverable = keeps.every(
+      (keep) => keep || (settings !== null && settings.backupPolicy !== 'never'),
+    )
+    if (!alwaysAsk && recoverable) {
       moveToTrash()
       return
     }

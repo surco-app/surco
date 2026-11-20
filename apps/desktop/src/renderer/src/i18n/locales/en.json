@@ -425,6 +425,7 @@
     "reveal": "Open folder",
     "restored": "Restored “{{name}}” to its folder",
     "restoreFailed": "Could not restore “{{name}}”: {{reason}}",
+    "restoreFailedMany": "Could not restore “{{name}}” and {{count}} more: {{reason}}",
     "removeFailed": "Could not delete “{{name}}”. {{reason}}",
     "emptyFailed": "Some copies could not be deleted and are still in Backups › Music files. {{reason}}",
     "filters": {

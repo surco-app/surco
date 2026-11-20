@@ -425,6 +425,7 @@
     "reveal": "フォルダーを開く",
     "restored": "「{{name}}」をフォルダーに復元しました",
     "restoreFailed": "「{{name}}」の復元に失敗しました：{{reason}}",
+    "restoreFailedMany": "「{{name}}」ほか {{count}} 件の復元に失敗しました：{{reason}}",
     "removeFailed": "「{{name}}」を削除できませんでした。{{reason}}",
     "emptyFailed": "一部のコピーを削除できず、「バックアップ › 音楽ファイル」に残っています。{{reason}}",
     "filters": {

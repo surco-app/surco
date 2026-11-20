@@ -228,6 +228,28 @@ describe('useConfirmFlows move to Backups without asking', () => {
     await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
   })
 
+  it('asks before moving a file on a disk with no Trash while the settings are not loaded, since the policy could be never', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'surco', id: 'k' })
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
+    const { flows, opened } = setup([a], { settings: null })
+    await flows.askTrash([a])
+    expect(opened).toHaveLength(1)
+    expect(trashFile).not.toHaveBeenCalled()
+    opened[0].onConfirm()
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', false)
+  })
+
+  it('moves files that all keep a system Trash without asking even before the settings load', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
+    installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const { flows, opened } = setup([a], { settings: null })
+    await flows.askTrash([a])
+    expect(opened).toHaveLength(0)
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+  })
+
   it('still asks on Windows under never, where the file would be deleted for good', async () => {
     const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'deleted' })
     installApi({ platform: 'win32', trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })

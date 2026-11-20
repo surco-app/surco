@@ -1961,36 +1961,55 @@ export default function App(): React.JSX.Element {
     }
     removeTracks(ids, everywhere)
   })
+  const trashKept = useRef<{
+    kept: { track: TrackItem; backupId: string }[]
+    covers: (string | undefined)[]
+  } | null>(null)
   const offerTrashUndo = useStableCallback((kept: { track: TrackItem; backupId: string }[]) => {
-    const rows = kept.map(({ track }) => track)
-    const covers = rows.map((t) => t.coverUrl)
-    listUndoCovers.current.push(covers)
-    holdTracks(rows)
+    const pending = trashKept.current ?? { kept: [], covers: [] }
+    if (!trashKept.current) {
+      trashKept.current = pending
+      listUndoCovers.current.push(pending.covers)
+    }
+    pending.kept.push(...kept)
+    pending.covers.push(...kept.map(({ track }) => track.coverUrl))
+    holdTracks(kept.map(({ track }) => track))
     const release = () => {
-      dropHeldTracks(rows.map((t) => t.id))
-      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
-      revokeDisplacedCovers(covers, [...tracksRef.current.map((t) => t.coverUrl), ...heldCovers()])
+      if (trashKept.current === pending) trashKept.current = null
+      dropHeldTracks(pending.kept.map(({ track }) => track.id))
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== pending.covers)
+      revokeDisplacedCovers(pending.covers, [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...heldCovers(),
+      ])
     }
     toastReporter.reportUndo(
-      tr('notices.movedToBackups', { count: rows.length }),
+      tr('notices.movedToBackups', { count: pending.kept.length }),
       () => {
+        trashKept.current = null
         void Promise.all(
-          kept.map(({ track, backupId }) =>
+          pending.kept.map(({ track, backupId }) =>
             window.api.trashRestore(backupId, 'undo').then(
-              () => track,
-              (e) => {
-                setNotice(
-                  tr('trash.restoreFailed', {
-                    name: track.fileName,
-                    reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
-                  }),
-                )
-                return null
-              },
+              () => ({ track }),
+              (error: unknown) => ({ track, error }),
             ),
           ),
         ).then((settled) => {
-          const back = settled.filter((t) => t !== null)
+          const failed = settled.filter((s) => 'error' in s)
+          const back = settled.filter((s) => !('error' in s)).map(({ track }) => track)
+          if (failed.length > 0) {
+            const name = failed[0].track.fileName
+            const reason = mainErrorMessage(
+              failed[0].error,
+              tr,
+              tr('errors.unexpected', { detail: '' }),
+            )
+            setNotice(
+              failed.length === 1
+                ? tr('trash.restoreFailed', { name, reason })
+                : tr('trash.restoreFailedMany', { name, count: failed.length - 1, reason }),
+            )
+          }
           unforgetAnalysisTracks(back.map((t) => t.id))
           restoreTracks(back)
           void seedCachedAnalyses(

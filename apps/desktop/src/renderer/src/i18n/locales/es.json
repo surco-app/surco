@@ -425,6 +425,7 @@
     "reveal": "Abrir carpeta",
     "restored": "Restaurado «{{name}}» en su carpeta",
     "restoreFailed": "No se pudo restaurar «{{name}}»: {{reason}}",
+    "restoreFailedMany": "No se pudo restaurar «{{name}}» y {{count}} más: {{reason}}",
     "removeFailed": "No se pudo eliminar «{{name}}». {{reason}}",
     "emptyFailed": "Algunas copias no se pudieron eliminar y siguen en Copias › Archivos de música. {{reason}}",
     "filters": {
