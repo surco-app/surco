@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Info, X } from 'lucide-react'
+import { Copy, Info, X } from 'lucide-react'
 import type React from 'react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,6 +7,7 @@ import type { DjProgram } from '../../../shared/djProgram'
 import type { CollectionTrack, PlaylistTrackRef, SourceNode } from '../../../shared/types'
 import { SOURCE_READ } from '../lib/sourcePrograms'
 import {
+  absentLines,
   chosenTracks,
   type MatchLevel,
   matchTracklist,
@@ -136,12 +137,27 @@ export function PasteTracklistModal({
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
-        <p data-testid="paste-tracklist-hint" className="mt-0.5 text-xs text-fg-dim">
+        <p
+          data-testid="paste-tracklist-hint"
+          className="mt-0.5 flex items-center gap-1.5 text-xs text-fg-dim"
+        >
           {step === 'paste'
             ? tr('pasteTracklist.hint')
             : collection.isError
               ? tr('pasteTracklist.failed')
               : count('absent') > 0 && tr('pasteTracklist.absent', { count: count('absent') })}
+          {step === 'review' && !collection.isError && matches && count('absent') > 0 && (
+            <button
+              type="button"
+              data-testid="paste-tracklist-copy-absent"
+              onClick={() => void window.api.copyText(absentLines(matches))}
+              aria-label={tr('pasteTracklist.copyAbsent')}
+              className="press flex size-4 shrink-0 items-center justify-center rounded text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              <Copy className="h-3 w-3" aria-hidden="true" />
+              <Tooltip label={tr('pasteTracklist.copyAbsent')} />
+            </button>
+          )}
         </p>
       </div>
 

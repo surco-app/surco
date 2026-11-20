@@ -2,7 +2,7 @@
 // index.ts is declared `const api: Api`, so a wrapper whose signature drifts from
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
-import type { PeekableAnalyses } from '../shared/audioIpcContract'
+import type { CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { DjApi } from '../shared/djApi'
@@ -63,7 +63,6 @@ import type {
   ReviewWriteField,
   RowWaveRequest,
   SaveCuesRequest,
-  ScanVerdict,
   SearchHints,
   SearchPriority,
   SearchProviderId,
@@ -72,7 +71,6 @@ import type {
   SessionEdit,
   Settings,
   SpectrumResult,
-  SpectrumVerdict,
   SurcoGrid,
   TrackCues,
   TrackMetadata,
@@ -143,6 +141,8 @@ export interface Api {
   // The same write, blocking until main has it on disk: for the page going away, when an
   // async message might never be handled.
   saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>, view?: unknown) => void
+  loadPreviousSession: () => Promise<SessionData | null>
+  clearPreviousSession: () => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   beatportConnect: (username: string, password: string) => Promise<Settings>
@@ -356,7 +356,10 @@ export interface Api {
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   // `permanentConfirmed`: the dialog said this file is deleted for good and the user agreed.
-  trashFile: (path: string, permanentConfirmed: boolean) => Promise<void>
+  trashFile: (
+    path: string,
+    permanentConfirmed: boolean,
+  ) => Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }>
   // Whether deleting this file can be described to the user as recoverable. Asked of the
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.
@@ -391,12 +394,10 @@ export interface Api {
   sendFeedback: (form: FeedbackForm) => Promise<FeedbackOutcome>
   feedbackReport: (error?: string, stack?: string) => Promise<string>
   spectrogram: (path: string, priority?: 'high' | 'low') => Promise<SpectrumResult>
-  // The list's one-shot warm-up on load: for each path, whatever spectrogram/channel-scan
-  // entries are already on disk, computing nothing on a miss — see audioIpc.ts's
-  // audio:cached-batch for exactly which families and why only those two.
-  loadCachedAnalyses: (
-    paths: string[],
-  ) => Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>>
+  // The list's one-shot warm-up on load: for each path, whatever spectrogram, channel-scan
+  // and loudness entries are already on disk, computing nothing on a miss — see audioIpc.ts's
+  // audio:cached-batch for exactly which families and why only those.
+  loadCachedAnalyses: (paths: string[]) => Promise<Record<string, CachedBatchHit>>
   peekAnalysis: <F extends keyof PeekableAnalyses>(
     family: F,
     path: string,

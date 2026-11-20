@@ -6,6 +6,7 @@ import type { TrackItem, TrackStatus } from '../types'
 import type { CopyVerdict } from './bestCopy'
 import * as normalizeText from './normalizeText'
 import {
+  type AutoMarkKind,
   attentionOffered,
   EMPTY_FILTER,
   type FilterFacts,
@@ -221,12 +222,18 @@ describe('matchesFilter / qualityCounts', () => {
       duplicates: 0,
       silence: 0,
       clipping: 0,
+      paddedBits: 0,
+      upsampled: 0,
       noCues: 0,
       offGrid: 0,
       badGrid: 0,
       betterThanLibrary: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
+      autoMarkProposed: 0,
+      autoMarkMarked: 0,
+      autoMarkNone: 0,
+      autoMarkUnanalysed: 0,
       noCover: 5,
       smallCover: 0,
       noBpm: 5,
@@ -274,6 +281,36 @@ describe('attention filter (silence to trim, clipping)', () => {
         (x) => x.id,
       ),
     ).toEqual(['quiet-tail', 'both'])
+  })
+})
+
+describe('padded bits and upsampled filters', () => {
+  const t = (id: string, spectrum?: Partial<SpectrumResult>): TrackItem =>
+    ({ id, status: 'idle', inputPath: `/m/${id}.flac`, spectrum }) as TrackItem
+  const tracks = [
+    t('padded', { bitsUsage: 'padded16', resolution: 'native' }),
+    t('upsampled-flag', { upsampled: true }),
+    t('upsampled-rate', { resolution: 'upsampled' }),
+    t('real-24', { bitsUsage: 'full', resolution: 'hires' }),
+    t('unclear-bits', { bitsUsage: 'unknown', resolution: 'unknown' }),
+    t('unanalysed'),
+  ]
+
+  it('lists the tracks the editor marks as padded bits and no others, never an unanalysed one', () => {
+    expect(by(tracks, { attention: 'paddedBits' }).map((x) => x.id)).toEqual(['padded'])
+  })
+
+  it('lists the tracks the editor marks as upsampled by either fact, never an unanalysed one', () => {
+    expect(by(tracks, { attention: 'upsampled' }).map((x) => x.id)).toEqual([
+      'upsampled-flag',
+      'upsampled-rate',
+    ])
+  })
+
+  it('counts each bucket so the menu shows how many files are left to look at', () => {
+    const counts = qualityCounts(tracks)
+    expect(counts.paddedBits).toBe(1)
+    expect(counts.upsampled).toBe(2)
   })
 })
 
@@ -513,6 +550,7 @@ describe('filters that read what App knows about a row', () => {
     libraryCopy: () => undefined,
     played: () => false,
     selected: () => false,
+    autoMark: () => undefined,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's
@@ -743,6 +781,27 @@ describe('sortTracks', () => {
     const list = [mk({ id: 'b' }), mk({ id: 'a' })]
     // Returns the same array reference so the drop order is preserved verbatim.
     expect(sortTracks(list, 'import')).toBe(list)
+  })
+
+  it('sorts by integrated loudness, quietest first ascending and loudest first descending, with an unmeasured track last in both', () => {
+    const list = [
+      mk({ id: 'club', lufs: -7.5 }),
+      mk({ id: 'unmeasured' }),
+      mk({ id: 'quiet', lufs: -16 }),
+      mk({ id: 'streaming', lufs: -14 }),
+    ]
+    expect(sortTracks(list, 'loudness', 'asc').map((t) => t.id)).toEqual([
+      'quiet',
+      'streaming',
+      'club',
+      'unmeasured',
+    ])
+    expect(sortTracks(list, 'loudness', 'desc').map((t) => t.id)).toEqual([
+      'club',
+      'streaming',
+      'quiet',
+      'unmeasured',
+    ])
   })
 
   it('sorts by track name, locale-aware so case does not split the alphabet', () => {
@@ -1447,5 +1506,49 @@ describe('filters offered per tab', () => {
     expect(fitFilterToTab(sel, null)).toEqual({ ...sel, attention: null })
     expect(fitFilterToTab(sel, 'appleMusic')).toEqual({ ...sel, attention: null, library: null })
     expect(fitFilterToTab(sel, 'traktor')).toBe(sel)
+  })
+})
+
+describe('the Auto mark filters', () => {
+  const tracks = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, status: 'idle' }) as TrackItem)
+  const kinds: Record<string, AutoMarkKind> = {
+    a: 'proposed',
+    b: 'proposed',
+    c: 'marked',
+    d: 'none',
+  }
+  const facts: FilterFacts = { ...NO_FACTS, autoMark: (t) => kinds[t.id] }
+  const shown = (attention: FilterSelection['attention']) =>
+    tracks.filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention }, facts)).map((t) => t.id)
+
+  it('puts each track only in the filter of its own mark, so a line of the tally shows exactly its tracks', () => {
+    expect(shown('autoMarkProposed')).toEqual(['a', 'b'])
+    expect(shown('autoMarkMarked')).toEqual(['c'])
+    expect(shown('autoMarkNone')).toEqual(['d'])
+    expect(shown('autoMarkUnanalysed')).toEqual([])
+  })
+
+  it('leaves a track with no mark out of all four, since it was not in the Auto mark', () => {
+    for (const attention of [
+      'autoMarkProposed',
+      'autoMarkMarked',
+      'autoMarkNone',
+      'autoMarkUnanalysed',
+    ] as const)
+      expect(shown(attention)).not.toContain('e')
+  })
+
+  it('counts each mark in the same pass as the other filters', () => {
+    const counts = qualityCounts(tracks, facts)
+    expect([
+      counts.autoMarkProposed,
+      counts.autoMarkMarked,
+      counts.autoMarkNone,
+      counts.autoMarkUnanalysed,
+    ]).toEqual([2, 1, 1, 0])
+  })
+
+  it('counts nothing without marks', () => {
+    expect(qualityCounts(tracks).autoMarkProposed).toBe(0)
   })
 })

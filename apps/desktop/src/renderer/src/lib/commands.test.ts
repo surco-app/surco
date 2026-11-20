@@ -119,6 +119,9 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canUndoMeta: () => false,
     redoMeta: () => {},
     canRedoMeta: () => false,
+    canReopenLastSession: () => false,
+    reopenLastSession: () => {},
+    fillMeasured: () => {},
     acceptReview: () => {},
     fireConfetti: () => {},
     sources: [],
@@ -1067,6 +1070,25 @@ describe('buildCommands trash-selected gate', () => {
   })
 })
 
+describe('reopen-last-session', () => {
+  it('follows the session hook for availability and runs its reopen', () => {
+    const reopenLastSession = vi.fn()
+    const off = commandById(makeDeps({ reopenLastSession }), 'reopen-last-session')
+    expect(off.enabled).toBe(false)
+    const on = commandById(
+      makeDeps({ reopenLastSession, canReopenLastSession: () => true }),
+      'reopen-last-session',
+    )
+    expect(on).toMatchObject({
+      enabled: true,
+      group: 'library',
+      title: 'commands.reopenLastSession',
+    })
+    on.run()
+    expect(reopenLastSession).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('buildCommands clear-the-list gate', () => {
   // The palette clears what the DJ sees, like the header button; with a filter hiding every
   // row there is nothing on screen to clear, so the entry must not offer a confirm for none.
@@ -1175,5 +1197,19 @@ describe('F6 region commands', () => {
     runCommand(buildCommands(deps), 'focus-region-next')
     runCommand(buildCommands(deps), 'focus-region-prev')
     expect(focusRegion.mock.calls).toEqual([[1], [-1]])
+  })
+})
+
+describe('fill-measured', () => {
+  it('is disabled without a selection and runs the fill when there is one', () => {
+    const fillMeasured = vi.fn()
+    expect(commandById(makeDeps({ fillMeasured, selected: null }), 'fill-measured').enabled).toBe(
+      false,
+    )
+    const command = commandById(makeDeps({ fillMeasured, selected: track() }), 'fill-measured')
+    expect(command.enabled).toBe(true)
+    expect(command.title).toBe('commands.fillMeasured')
+    command.run()
+    expect(fillMeasured).toHaveBeenCalledOnce()
   })
 })

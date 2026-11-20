@@ -129,6 +129,7 @@ describe('measureLoudness', () => {
       truePeakDb: -0.2,
       lra: 7.1,
       channelBalanceDb: null,
+      silentChannel: null,
       dcOffset: 0.0001,
       // Derived from the astats pass as peak − RMS, not read off its "Crest factor"
       // line: −0.210072 − (−10.587320).

@@ -71,6 +71,32 @@ describe('sessionView', () => {
     })
   })
 
+  it('keeps the padded bits and upsampled filters on reopen instead of letting them go as unknown', () => {
+    expect(parseSessionView({ filters: { attention: 'paddedBits' } })?.filters.attention).toBe(
+      'paddedBits',
+    )
+    expect(parseSessionView({ filters: { attention: 'upsampled' } })?.filters.attention).toBe(
+      'upsampled',
+    )
+  })
+
+  it('does not bring back an Auto mark filter on reopen, since the marks live in memory and the filter would open on an empty list', () => {
+    for (const attention of [
+      'autoMarkProposed',
+      'autoMarkMarked',
+      'autoMarkNone',
+      'autoMarkUnanalysed',
+    ])
+      expect(parseSessionView({ filters: { attention } })?.filters.attention).toBeNull()
+  })
+
+  it('keeps the loudness sort on reopen instead of falling back to the import order', () => {
+    expect(parseSessionView({ sortBy: 'loudness', sortDir: 'desc' })).toMatchObject({
+      sortBy: 'loudness',
+      sortDir: 'desc',
+    })
+  })
+
   // The tracks already heard come back with the list, so a crate gone through over several
   // days picks up with the same ones still to hear.
   it('brings back which tracks were heard', () => {

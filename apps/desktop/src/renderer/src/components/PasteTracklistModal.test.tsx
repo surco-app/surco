@@ -8,6 +8,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack, SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import { djReads, installApi, type ProgramReads } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { PasteTracklistModal } from './PasteTracklistModal'
 
 beforeAll(() => i18n.changeLanguage('es'))
@@ -282,5 +283,38 @@ describe('PasteTracklistModal review step', () => {
     await review()
     fireEvent.click(screen.getByTestId('paste-tracklist-back'))
     expect(screen.getByTestId('paste-tracklist-text')).toHaveValue(SET1)
+  })
+})
+
+describe('PasteTracklistModal copy absent', () => {
+  it('copies the lines the collection lacks, as pasted, so they can be looked for elsewhere', async () => {
+    setup()
+    const copyText = vi.fn().mockResolvedValue(undefined)
+    window.api.copyText = copyText
+    paste(SET1)
+    await review()
+    const button = screen.getByTestId('paste-tracklist-copy-absent')
+    expect(button).toHaveAttribute('aria-label', 'Copiar las que faltan')
+    fireEvent.click(button)
+    expect(copyText).toHaveBeenCalledTimes(1)
+    const copied = copyText.mock.calls[0][0] as string
+    expect(copied.split('\n')).toHaveLength(14)
+    expect(copied).not.toContain('Because Of You')
+  })
+
+  it('names the icon on hover, so it is not a mystery button', async () => {
+    setup()
+    paste(SET1)
+    await review()
+    expect(hoverTooltip(screen.getByTestId('paste-tracklist-copy-absent'))).toBe(
+      'Copiar las que faltan',
+    )
+  })
+
+  it('has no button when nothing is missing', async () => {
+    setup()
+    paste('Sergi M, Solar System - Because Of You')
+    await review()
+    expect(screen.queryByTestId('paste-tracklist-copy-absent')).toBeNull()
   })
 })

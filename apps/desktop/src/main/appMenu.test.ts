@@ -133,6 +133,27 @@ describe('appMenuTemplate', () => {
     ])
   })
 
+  it('reopens the last session from the File menu in every shipped language', () => {
+    for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
+      const { template, run } = build(locale)
+      const t = createMenuT(locale)
+      click(itemFor(menu(template, t('file')), t('reopenLastSession')))
+      expect(run).toHaveBeenCalledWith('reopen-last-session')
+    }
+    expect(createMenuT('es')('reopenLastSession')).toBe('Reabrir la última sesión')
+    expect(createMenuT('en')('reopenLastSession')).toBe('Reopen last session')
+  })
+
+  it('fills the measured BPM and key from the Tracks menu in every shipped language', () => {
+    for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
+      const { template, run } = build(locale)
+      const t = createMenuT(locale)
+      click(itemFor(menu(template, t('tracks')), t('fillMeasured')))
+      expect(run).toHaveBeenCalledWith('fill-measured')
+    }
+    expect(createMenuT('en')('fillMeasured')).toBe('Fill in BPM and key')
+  })
+
   // A custom View menu replaces Electron's default one, and with it went ⌘+ / ⌘- / ⌘0:
   // someone who needs larger text had no way to zoom the interface. The standard roles
   // bring the items and their accelerators back, with the labels the OS localises.
@@ -197,5 +218,11 @@ describe('View menu sidebar', () => {
     expect(item.accelerator).toBe('accel:toggle-sidebar')
     click(item)
     expect(run).toHaveBeenCalledWith('toggle-sidebar')
+  })
+
+  it('carries the accelerator on Windows too, so the shortcut shows in the menu there', () => {
+    const { template } = build('en', false, true)
+    const item = itemFor(menu(template, 'View'), 'Show Sidebar')
+    expect(item.accelerator).toBe('accel:toggle-sidebar')
   })
 })

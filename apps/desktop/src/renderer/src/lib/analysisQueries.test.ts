@@ -73,6 +73,18 @@ describe('seedCachedAnalyses', () => {
     expect(client.getQueryData(['waveformScan', '/m/b.wav'])).toBeUndefined()
   })
 
+  it('seeds the stored loudness as its number alone, never under the editor’s full loudness key', async () => {
+    const client = new QueryClient()
+    setApi({
+      loadCachedAnalyses: vi.fn().mockResolvedValue({ '/m/a.wav': { lufs: -10.3 } }),
+    })
+
+    await seedCachedAnalyses(client, ['/m/a.wav'])
+
+    expect(client.getQueryData(['loudnessVerdict', '/m/a.wav'])).toBe(-10.3)
+    expect(client.getQueryData(['loudness', '/m/a.wav'])).toBeUndefined()
+  })
+
   // A path with no cached entry either family must be left untouched — no placeholder,
   // no empty object — so the normal lazy probe still runs for it exactly like today.
   it('leaves a cache miss unset so the normal lazy probe still runs', async () => {
@@ -160,6 +172,7 @@ describe('removeAnalysisQueries', () => {
       'waveVerdict',
       'waveformScan',
       'scanVerdict',
+      'loudnessVerdict',
     ]
     for (const key of keys) {
       client.setQueryData([key, '/m/a.wav'], { fact: key })

@@ -27,11 +27,17 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   matchedBandcamp: 0,
   silence: 0,
   clipping: 0,
+  paddedBits: 0,
+  upsampled: 0,
   noCues: 0,
   offGrid: 0,
   badGrid: 0,
   unanalysedRekordbox: 0,
   unanalysedEngine: 0,
+  autoMarkProposed: 0,
+  autoMarkMarked: 0,
+  autoMarkNone: 0,
+  autoMarkUnanalysed: 0,
   noCover: 0,
   smallCover: 0,
   noBpm: 0,
@@ -241,11 +247,27 @@ describe('QualityFilterBar sections', () => {
     openMenu('attention')
     const shown = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
     expect(shown).toEqual(
-      ['silence', 'clipping', 'noCues', 'offGrid', 'badGrid', 'unanalysedRekordbox'].map(
-        (m) => `quality-filter-${m}`,
-      ),
+      [
+        'silence',
+        'clipping',
+        'paddedBits',
+        'upsampled',
+        'noCues',
+        'offGrid',
+        'badGrid',
+        'unanalysedRekordbox',
+      ].map((m) => `quality-filter-${m}`),
     )
     expect(screen.queryByTestId('quality-filter-unconverted')).toBeNull()
+  })
+
+  it('offers padded bits and upsampled beside silence and clipping, named as the editor names them, and picks them on the attention axis', () => {
+    const { onChange } = renderBar({ tally: tally({ paddedBits: 3, upsampled: 5 }) })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-paddedBits')).toHaveTextContent(/^Padded bits\s*3$/)
+    expect(screen.getByTestId('quality-filter-upsampled')).toHaveTextContent(/^Possibly upsampled\s*5$/)
+    fireEvent.click(screen.getByTestId('quality-filter-upsampled'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'upsampled' }))
   })
 
   // An empty filter stays where it is, dimmed with its 0, instead of vanishing: the user
@@ -572,6 +594,32 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-silence')).toBeInTheDocument()
     for (const mode of ['noCues', 'offGrid', 'badGrid', 'unanalysedRekordbox', 'unanalysedEngine'])
       expect(screen.queryByTestId(`quality-filter-${mode}`)).toBeNull()
+  })
+
+  it('lists a filter of the Auto mark tally only while it holds tracks, since without a recent Auto mark it means nothing', () => {
+    renderBar({ tally: tally({ autoMarkNone: 4 }) })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-autoMarkNone')).toHaveTextContent(/^No proposals4$/)
+    expect(screen.queryByTestId('quality-filter-autoMarkProposed')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-autoMarkMarked')).toBeNull()
+    expect(screen.queryByTestId('quality-filter-autoMarkUnanalysed')).toBeNull()
+  })
+
+  it('picks an Auto mark filter on the attention axis', () => {
+    const { onChange } = renderBar({ tally: tally({ autoMarkProposed: 2 }) })
+    openMenu('attention')
+    fireEvent.click(screen.getByTestId('quality-filter-autoMarkProposed'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'autoMarkProposed' }))
+  })
+
+  it('keeps the active Auto mark filter in the menu when its count falls to zero, so it can still be switched off', () => {
+    const { onChange } = renderBar({
+      tally: tally(),
+      value: sel({ attention: 'autoMarkMarked' }),
+    })
+    openMenu('attention')
+    fireEvent.click(screen.getByTestId('quality-filter-autoMarkMarked'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: null }))
   })
 
   it('lists only the open program its own unanalysed filter', () => {

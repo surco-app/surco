@@ -50,6 +50,7 @@ export function appMenuTemplate({
       label: t('file'),
       submenu: [
         keymapItem(t('add'), 'add'),
+        { label: t('reopenLastSession'), click: () => run('reopen-last-session') },
         keymapItem(t('info'), 'info'),
         // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
         // its chord is configurable, so the keystroke must reach the keymap, not the menu.
@@ -73,6 +74,7 @@ export function appMenuTemplate({
       submenu: [
         keymapItem(t('selectAllTracks'), 'select-all'),
         keymapItem(t('fillAll'), 'fill-all'),
+        { label: t('fillMeasured'), click: () => run('fill-measured') },
         keymapItem(t('reviewList'), 'list-review'),
         { type: 'separator' },
         keymapItem(t('analyzeQuality'), 'analyze-quality'),
@@ -101,7 +103,6 @@ export function appMenuTemplate({
         { type: 'separator' },
         {
           ...keymapItem(t('sidebar'), 'toggle-sidebar'),
-          accelerator: mac ? accel('toggle-sidebar') : undefined,
           type: 'checkbox',
           checked: view.sidebar,
         },

@@ -105,6 +105,7 @@ export interface TrackItem extends TrackOrigin {
   // hasn't staged; clipping = the decoder's true-clipping flags fired. Undefined
   // until some consumer (player, editor strip, analyze sweep) decodes the wave.
   audioIssues?: { silence: boolean; clipping: boolean }
+  lufs?: number
   // True while this track's spectrum analysis is in flight (hover prefetch, editor
   // open or the toolbar sweep), merged in from the React Query fetch status like
   // spectrum above, so the row can show a placeholder instead of an empty slot.

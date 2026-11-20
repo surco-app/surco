@@ -5,7 +5,7 @@ describe('keepCoverArg', () => {
   // Applying a release match must never overwrite art the file already carries — the
   // release image is often smaller. keep is on exactly when there's a cover to protect.
   it('keeps the file’s own cover when it has one', () => {
-    expect(keepCoverArg({ coverUrl: 'blob:abc', coverPath: '/p/cover.png' })).toEqual({
+    expect(keepCoverArg({ coverUrl: 'blob:abc', coverPath: '/p/cover.png' }, false)).toEqual({
       url: 'blob:abc',
       path: '/p/cover.png',
       keep: true,
@@ -14,10 +14,42 @@ describe('keepCoverArg', () => {
 
   // With no cover to protect, keep is off so buildReleaseMeta fills from the release.
   it('lets the release fill in when the file has no cover', () => {
-    expect(keepCoverArg({ coverUrl: undefined, coverPath: undefined })).toEqual({
+    expect(keepCoverArg({ coverUrl: undefined, coverPath: undefined }, false)).toEqual({
       url: undefined,
       path: undefined,
       keep: false,
+    })
+  })
+
+  describe('with the replace low resolution setting, the editor rule holds in batch so a sweep never leaves low-res art on the rows it matched', () => {
+    const small = { w: 300, h: 300 }
+    const large = { w: 1400, h: 1400 }
+    const embedded = (dims?: { w: number; h: number }) => ({
+      coverUrl: 'blob:own',
+      coverPath: undefined,
+      embeddedCover: 'blob:own',
+      embeddedCoverDims: dims,
+    })
+
+    it('keeps a small embedded cover when the setting is off', () => {
+      expect(keepCoverArg(embedded(small), false).keep).toBe(true)
+    })
+
+    it('lets the release replace a small embedded cover when the setting is on', () => {
+      expect(keepCoverArg(embedded(small), true).keep).toBe(false)
+    })
+
+    it('keeps a large embedded cover when the setting is on', () => {
+      expect(keepCoverArg(embedded(large), true).keep).toBe(true)
+    })
+
+    it('keeps an embedded cover of unknown size when the setting is on', () => {
+      expect(keepCoverArg(embedded(undefined), true).keep).toBe(true)
+    })
+
+    it('keeps a cover the user picked even when it is small', () => {
+      const picked = { ...embedded(small), coverUrl: 'blob:picked', coverPath: '/p/cover.png' }
+      expect(keepCoverArg(picked, true).keep).toBe(true)
     })
   })
 })

@@ -1,6 +1,7 @@
 import type { AppStore } from './appStore'
 import type {
   AttentionFilter,
+  AutoMarkAttention,
   ConversionFilter,
   DuplicatesFilter,
   FilterSelection,
@@ -100,6 +101,7 @@ const SORTS: Record<TrackSort, true> = {
   quality: true,
   rating: true,
   dateAdded: true,
+  loudness: true,
 }
 const QUALITY: Record<QualityFilter, true> = {
   suspect: true,
@@ -124,9 +126,11 @@ const LIBRARY: Record<LibraryFilter, true> = {
   betterThanLibrary: true,
 }
 const DUPLICATES: Record<DuplicatesFilter, true> = { duplicates: true }
-const ATTENTION: Record<AttentionFilter, true> = {
+const ATTENTION: Record<Exclude<AttentionFilter, AutoMarkAttention>, true> = {
   silence: true,
   clipping: true,
+  paddedBits: true,
+  upsampled: true,
   noCues: true,
   offGrid: true,
   badGrid: true,

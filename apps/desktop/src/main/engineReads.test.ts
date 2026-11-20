@@ -90,10 +90,31 @@ describe('runEngineRead', () => {
     expect(runEngineRead(dir, 'file', ids[2])).toBeNull()
   })
 
+  it('lists every track of the library with its title, artist and absolute path, so a pasted tracklist can be matched against the whole collection', async () => {
+    const dir = await library()
+    const rows = runEngineRead(dir, 'collection', undefined)
+    expect(rows).toEqual([
+      {
+        contentId: engineContentId(2),
+        path: resolve(dir, '../Music/b.mp3'),
+        title: 'B',
+        artist: '',
+      },
+      {
+        contentId: engineContentId(1),
+        path: resolve(dir, '../Music/a.mp3'),
+        title: 'A',
+        artist: '',
+      },
+    ])
+    expect(structuredClone(rows)).toEqual(rows)
+  })
+
   it('answers the empty read without a library, the normal case for a DJ who does not use Engine DJ', () => {
     expect(emptyEngineRead('tree')).toEqual([])
     expect(emptyEngineRead('membership')).toEqual({})
     expect(emptyEngineRead('trackCount')).toBe(0)
+    expect(emptyEngineRead('collection')).toEqual([])
   })
 })
 

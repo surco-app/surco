@@ -71,6 +71,7 @@ function setup(
   const importFieldsRef = { current: importFields }
   const genrePresetsRef = { current: genrePresets }
   const fullReleaseDateRef = { current: fullReleaseDate }
+  const replaceLowResCoverRef = { current: false }
   const matchCleanupRef = { current: {} }
   const { result } = renderHook(() =>
     useAutoMatch({
@@ -82,6 +83,7 @@ function setup(
       importFieldsRef,
       genrePresetsRef,
       fullReleaseDateRef,
+      replaceLowResCoverRef,
       matchCleanupRef,
       editingRef,
       reportActivity,
@@ -760,6 +762,7 @@ describe('a row listed before its full read', () => {
     tracks: TrackItem[],
     completeTrackMeta: (id: string) => Promise<void>,
     tracksRef: { current: TrackItem[] } = { current: tracks },
+    replaceLowResCover = false,
   ): {
     result: { current: ReturnType<typeof useAutoMatch> }
     tracksRef: { current: TrackItem[] }
@@ -777,6 +780,7 @@ describe('a row listed before its full read', () => {
         importFieldsRef: { current: [...DEFAULT_IMPORT_FIELDS] },
         genrePresetsRef: { current: [] },
         fullReleaseDateRef: { current: false },
+        replaceLowResCoverRef: { current: replaceLowResCover },
         matchCleanupRef: { current: {} },
         editingRef: { current: null },
         reportActivity: vi.fn(),
@@ -803,6 +807,35 @@ describe('a row listed before its full read', () => {
 
     await waitFor(() => expect(tracksRef.current[0].autoMatched).toBe(true))
     expect(coverSourceOf(tracksRef.current[0])).toEqual({ coverFromFile: '/m/a.wav' })
+  })
+
+  describe('replacing a low resolution cover', () => {
+    const lowResRow = (): TrackItem => ({
+      ...track('a'),
+      embeddedCover: 'file-thumb',
+      coverUrl: 'file-thumb',
+      embeddedCoverDims: { w: 300, h: 300 },
+    })
+
+    async function sweep(replaceLowResCover: boolean): Promise<TrackItem> {
+      setApi({ getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(releaseWithArt) })
+      const tracks = [lowResRow()]
+      const { result, tracksRef } = renderSweep(tracks, vi.fn(), undefined, replaceLowResCover)
+      act(() => result.current.enqueueAutoMatch(tracks))
+      await waitFor(() => expect(tracksRef.current[0].autoMatched).toBe(true))
+      return tracksRef.current[0]
+    }
+
+    it('swaps a small embedded cover for the release image when the setting is on', async () => {
+      expect(coverSourceOf(await sweep(true))).toEqual({
+        coverUrl: 'https://discogs/cover.jpg',
+        coverPath: undefined,
+      })
+    })
+
+    it('keeps a small embedded cover when the setting is off', async () => {
+      expect(coverSourceOf(await sweep(false))).toEqual({ coverFromFile: '/m/a.wav' })
+    })
   })
 
   it('leaves a row whose full read fails unmatched, so its unread art is never replaced', async () => {

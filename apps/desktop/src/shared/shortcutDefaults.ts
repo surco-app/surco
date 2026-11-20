@@ -22,6 +22,7 @@ export interface ShortcutDef {
   // registro —lo ejecuta un componente— y por tanto no tiene grupo del que heredar.
   group?: string
   macOnly?: boolean
+  winChord?: Chord
 }
 
 export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
@@ -76,7 +77,7 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
   { id: 'cues-open-full', chord: ['mod', 'shift', 'c'] },
   { id: 'stats', chord: ['mod', 'shift', 's'] },
   { id: 'toggle-language', chord: ['mod', 'shift', 'l'] },
-  { id: 'toggle-sidebar', chord: ['ctrl', 'mod', 's'], macOnly: true },
+  { id: 'toggle-sidebar', chord: ['ctrl', 'mod', 's'], winChord: ['mod', 'shift', 'b'] },
   // Jump focus between the three columns — list, Discogs matches, editor. mod-combos so
   // they fire while a field is focused (the same key jumps you out of the editor).
   { id: 'focus-list', chord: ['mod', '1'] },
@@ -127,9 +128,12 @@ export const SHORTCUT_DEFAULTS: ShortcutDef[] = [
 // The effective binding per command id: defaults with the user's overrides applied. An
 // override of `[]` deliberately unbinds a command (the matcher never matches an empty
 // chord). Overrides for unknown ids are ignored.
-export function resolveBindings(overrides: Record<string, Chord> = {}): Map<string, Chord> {
+export function resolveBindings(
+  overrides: Record<string, Chord> = {},
+  mac = true,
+): Map<string, Chord> {
   const map = new Map<string, Chord>()
-  for (const def of SHORTCUT_DEFAULTS) map.set(def.id, def.chord)
+  for (const def of SHORTCUT_DEFAULTS) map.set(def.id, mac ? def.chord : (def.winChord ?? def.chord))
   for (const def of SHORTCUT_DEFAULTS) {
     const override = overrides[def.id]
     if (override) map.set(def.id, override)

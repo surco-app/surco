@@ -46,7 +46,6 @@ export interface Cell {
 }
 
 const Y: Cell = { yes: true }
-const N: Cell = { yes: false }
 const y = (note: Note): Cell => ({ yes: true, note })
 const n = (note: Note): Cell => ({ yes: false, note })
 
@@ -68,7 +67,7 @@ export const PROGRAM_TABLE: readonly {
           virtualdj: y('listsFolders'),
         },
       },
-      { id: 'paste', cells: { rekordbox: Y, traktor: Y, engine: N, serato: Y, virtualdj: Y } },
+      { id: 'paste', cells: { rekordbox: Y, traktor: Y, engine: Y, serato: Y, virtualdj: Y } },
       { id: 'session', cells: { rekordbox: Y, traktor: Y, engine: Y, serato: Y, virtualdj: Y } },
     ],
   },

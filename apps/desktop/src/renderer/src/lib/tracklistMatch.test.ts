@@ -3,7 +3,14 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { CollectionTrack } from '../../../shared/types'
 import fixture from './fixtures/tracklistCollection.json'
-import { baseTitle, chosenTracks, matchTracklist, reviewRows, splitArtists } from './tracklistMatch'
+import {
+  absentLines,
+  baseTitle,
+  chosenTracks,
+  matchTracklist,
+  reviewRows,
+  splitArtists,
+} from './tracklistMatch'
 import { parseTracklist } from './tracklistParse'
 
 const SETS = join(
@@ -348,5 +355,21 @@ describe('matchTracklist cost', () => {
     )
     const perLine = (rewritesFor(101, collection) - rewritesFor(1, collection)) / 100
     expect(perLine).toBeLessThan(50)
+  })
+})
+
+describe('absentLines', () => {
+  const absentA = match(line('Rave Allstars', 'Bitte Anschnallen (Charter Mix)'))
+  const absentB = match(line('Nobody', 'Unknown Track'))
+  const found = match(line('Solar System, Sergi M', 'Because of You'))
+
+  it('returns the absent lines as pasted, in order, so they can be searched elsewhere', () => {
+    expect(absentLines([absentA, found, absentB])).toBe(
+      'Rave Allstars - Bitte Anschnallen (Charter Mix)\nNobody - Unknown Track',
+    )
+  })
+
+  it('is empty when every line is in the collection', () => {
+    expect(absentLines([found])).toBe('')
   })
 })

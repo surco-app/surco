@@ -134,6 +134,7 @@ export function acceptReviewPatch(
   importFields?: readonly MetaTextKey[],
   genrePresets?: readonly string[],
   fullReleaseDate = false,
+  replaceLowResCover = false,
 ): Partial<TrackItem> | undefined {
   const rm = track.reviewMatch
   if (!rm) return undefined
@@ -141,7 +142,7 @@ export function acceptReviewPatch(
     track.meta,
     rm.release,
     rm.track,
-    keepCoverArg(track),
+    keepCoverArg(track, replaceLowResCover),
     importFields,
     genrePresets,
     fullReleaseDate,
@@ -187,10 +188,17 @@ export async function acceptReviewOf(
   importFields?: readonly MetaTextKey[],
   genrePresets?: readonly string[],
   fullReleaseDate = false,
+  replaceLowResCover = false,
 ): Promise<{ patch: Partial<TrackItem>; provider: Release['provider'] } | undefined> {
   const track = await readFullTrack(id)
   if (!track?.reviewMatch || track.metaPartial) return undefined
-  const patch = acceptReviewPatch(track, importFields, genrePresets, fullReleaseDate)
+  const patch = acceptReviewPatch(
+    track,
+    importFields,
+    genrePresets,
+    fullReleaseDate,
+    replaceLowResCover,
+  )
   return patch && { patch, provider: track.reviewMatch.release.provider }
 }
 

@@ -1627,6 +1627,7 @@ export interface LoudnessResult {
   // |L − R| RMS difference in dB; null for mono or a dead channel. A large gap
   // means a channel imbalance (e.g. a misaligned phono cartridge on the rip).
   channelBalanceDb: number | null
+  silentChannel?: 'left' | 'right' | null
   // |DC offset| of the Overall mix (0..1 of full scale). A biased capture wastes
   // headroom and adds clicks.
   dcOffset: number | null

@@ -56,7 +56,7 @@ export function listReviewDeps(env: ListReviewEnv): ListReviewIpcDeps {
           }),
           () => null,
         ),
-      trash: (path) => trashRecoverably(path),
+      trash: (path) => trashRecoverably(path).then(({ where }) => where),
       ...(process.platform === 'darwin' && {
         music: {
           transferPlaylists: (fromPid, toPid, label, keepLabel, locations) =>

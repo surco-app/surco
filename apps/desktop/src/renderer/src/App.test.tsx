@@ -379,6 +379,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
+    loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
+    clearPreviousSession: vi.fn<Api['clearPreviousSession']>().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>(() => () => {}),
@@ -802,13 +804,13 @@ describe('App Engine DJ cues', () => {
     expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
   })
 
-  it('never offers pasting a tracklist into Engine DJ, since Surco cannot read its collection to find the tracks', async () => {
+  it('offers pasting a tracklist into Engine DJ, since Surco reads its collection to find the tracks', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     fireEvent.contextMenu(await screen.findByTestId('source-node-7'))
     expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
-    expect(screen.queryByTestId('source-tree-paste-tracklist')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
   })
 
   it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {
@@ -3580,7 +3582,7 @@ describe('App source playlists', () => {
   // Trash from the playlist, Undo would bring back a row whose file is gone.
   it('does not bring back a row whose file was trashed while its removal could be undone', async () => {
     const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     factoryWithAlpha({ pickFiles, trashFile })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -4384,6 +4386,130 @@ describe('App source playlists', () => {
         .getAllByTestId('track-wave-line')
         .map((row) => within(row).queryByTestId('track-auto-mark')?.textContent ?? null)
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals', null]))
+  })
+
+  it('filters by an Auto mark tally line only the tracks of the batch it counts, not those of an earlier batch', async () => {
+    await openFactory({
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+    })
+    act(() => keepAutoMark('c-l1', { kind: 'marked' }))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { metaKey: true })
+    act(() => {
+      keepAutoMark('c-l2', { kind: 'marked' })
+      keepAutoMark('c-l3', { kind: 'marked' })
+    })
+    expect(await screen.findByTestId('cues-batch-tally-marked')).toHaveTextContent(/2$/)
+    fireEvent.click(screen.getByTestId('cues-batch-tally-marked'))
+    await waitFor(() => expect(titles()).toHaveLength(2))
+    expect(titles().join(' ')).not.toContain('Alpha')
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+    expect(await screen.findByTestId('quality-filter-autoMarkMarked')).toHaveTextContent(/2$/)
+  })
+
+  describe('the batch of an Auto mark tally line', () => {
+    const noCues = { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) }
+
+    async function pressMarkedOfBravoAndCharlie() {
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[1])
+      fireEvent.click(rows[2], { metaKey: true })
+      act(() => {
+        keepAutoMark('c-l2', { kind: 'marked' })
+        keepAutoMark('c-l3', { kind: 'marked' })
+      })
+      fireEvent.click(await screen.findByTestId('cues-batch-tally-marked'))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+    }
+
+    function markedFilterOffered(): boolean {
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      const offered = screen.queryByTestId('quality-filter-autoMarkMarked') !== null
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+      return offered
+    }
+
+    it('keeps the filter on the same tracks when one of them is opened, so the DJ can go through them one by one', async () => {
+      await openFactory({ cues: noCues })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await act(async () => {})
+      expect(titles()).toHaveLength(2)
+      expect(titles()[0]).toContain('Bravo')
+      expect(titles()[1]).toContain('Charlie')
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      expect(screen.getByTestId('quality-filter-autoMarkMarked')).toHaveTextContent(/2$/)
+    })
+
+    it('drops the filter on opening another playlist, since its batch belongs to the playlist left', async () => {
+      await openFactory({
+        cues: noCues,
+        dj: djReads({
+          rekordbox: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+              { id: 'h', name: 'House', kind: 'playlist', count: 2 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>(async (id) =>
+              id === 'h' ? [linked('/m/a.wav', 'l1'), linked('/m/b.wav', 'l2')] : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getByTestId('source-node-h'))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      expect(titles()[0]).toContain('Alpha')
+      expect(titles()[1]).toContain('Bravo')
+      expect(markedFilterOffered()).toBe(false)
+    })
+
+    it('drops the filter on opening another program, since its batch belongs to the list left', async () => {
+      await openFactory({
+        cues: noCues,
+        dj: djReads({
+          engine: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([
+                { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+              ]),
+          },
+        }),
+      })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(await screen.findByTestId('source-rail-engine'))
+      fireEvent.click(await screen.findByTestId('source-node-7'))
+      await waitFor(() => expect(titles()).toHaveLength(1))
+      expect(markedFilterOffered()).toBe(false)
+    })
+
+    it('takes the batch anew on the next press once the filter was turned off', async () => {
+      await openFactory({ cues: noCues })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      fireEvent.click(screen.getByTestId('quality-filter-autoMarkMarked'))
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+      await waitFor(() => expect(titles()).toHaveLength(3))
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      act(() => keepAutoMark('c-l1', { kind: 'marked' }))
+      fireEvent.click(await screen.findByTestId('cues-batch-tally-marked'))
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      expect(titles()[0]).toContain('Alpha')
+      expect(titles()[1]).toContain('Bravo')
+    })
   })
 
   // The DJ's own request: put the set in order by dragging. The list must show the new
@@ -7062,7 +7188,7 @@ describe('App multi-select removal', () => {
   // Same selection rule for the destructive action: "Move to Trash" sends every selected
   // file to the OS trash, not just the row under the cursor.
   it('trashes every selected file from the right-click menu', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -7084,7 +7210,7 @@ describe('App multi-select removal', () => {
   // selection" after searching used to also send the selected rows the search was hiding to
   // the OS trash, files the user could not see when they confirmed.
   it('trashes only the selected rows the search still shows', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi
         .fn()
@@ -7114,7 +7240,7 @@ describe('App multi-select removal', () => {
   // Same rule for a filter: narrowing to MP3 and trashing the selection must not take the
   // selected WAV the filter is hiding.
   it('trashes only the selected rows the format filter still shows', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3', '/music/b.wav', '/music/c.mp3']),
       trashFile,
@@ -13466,7 +13592,7 @@ describe('App list header', () => {
   // The visible button only drops rows from the list, so it must never reach the files. It
   // takes the selection at once, like the context menu's Remove, since Undo brings it back.
   it('removes the selection from the list with the visible button at once, never trashing files', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -13495,7 +13621,7 @@ describe('App list header', () => {
   // The OS Trash is recoverable, so the menu moves the selection there at once with no
   // dialog; with nothing selected there is nothing to move and trashFile is never called.
   it('moves the selection to the Trash from the menu, and nothing without one', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({ trashFile })
     await renderApp()
     await addTwoTracks()
@@ -13516,10 +13642,161 @@ describe('App list header', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(1)
   })
 
+  it('moves a file on a disk with no Trash to Backups without asking, and its Undo puts back that backup and the row', async () => {
+    const trashFile = vi.fn().mockResolvedValue({ where: 'surco', id: 'backup-a' })
+    const trashRestore = vi.fn().mockResolvedValue({ restoredTo: '/music/a.wav' })
+    setApi({ keepsTrash: vi.fn().mockResolvedValue(false), trashFile, trashRestore })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(trashFile).toHaveBeenCalledWith('/music/a.wav', false))
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 1 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(trashRestore).toHaveBeenCalledWith('backup-a', 'undo'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  })
+
+  it('keeps the Undo of an earlier move to Backups when a second one follows, and brings both back', async () => {
+    const trashFile = vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` }))
+    const trashRestore = vi.fn(async (id: string) => ({ restoredTo: id.slice('backup-'.length) }))
+    setApi({ keepsTrash: vi.fn().mockResolvedValue(false), trashFile, trashRestore })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 2 })))
+      if (!card) throw new Error('no backups notice for both')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(trashRestore).toHaveBeenCalledWith('backup-/music/a.wav', 'undo')
+    expect(trashRestore).toHaveBeenCalledWith('backup-/music/b.wav', 'undo')
+  })
+
+  it('frees the cover of a row moved to Backups once the notice expires, even after a second move replaced it', async () => {
+    const createObjectURL = vi.fn().mockReturnValueOnce('blob:picked')
+    const revokeObjectURL = vi.fn()
+    const url = URL as unknown as Record<string, unknown>
+    const original = { createObjectURL: url.createObjectURL, revokeObjectURL: url.revokeObjectURL }
+    Object.assign(url, { createObjectURL, revokeObjectURL })
+    try {
+      setApi({
+        readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),
+        prepareCoverDrag: vi.fn().mockResolvedValue(null),
+        getPathForFile: vi.fn((f: File) => `/img/${f.name}`),
+        keepsTrash: vi.fn().mockResolvedValue(false),
+        trashFile: vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` })),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.change(await screen.findByTestId('cover-input'), {
+        target: { files: [new File(['x'], 'picked.png', { type: 'image/png' })] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'blob:picked'),
+      )
+      for (let i = 0; i <= MAX_META_UNDO; i++) runMenu('number-tracks')
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-trash'))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+        fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+        fireEvent.click(screen.getByTestId('track-menu-trash'))
+        await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+        expect(revokeObjectURL).not.toHaveBeenCalledWith('blob:picked')
+        act(() => vi.advanceTimersByTime(7000))
+        await waitFor(() => expect(revokeObjectURL).toHaveBeenCalledWith('blob:picked'))
+      } finally {
+        vi.useRealTimers()
+      }
+    } finally {
+      Object.assign(url, original)
+    }
+  })
+
+  it('says once which files could not be put back from Backups, naming the first and counting the rest', async () => {
+    setApi({
+      keepsTrash: vi.fn().mockResolvedValue(false),
+      trashFile: vi.fn(async (path: string) => ({ where: 'surco', id: `backup-${path}` })),
+      trashRestore: vi.fn().mockRejectedValue(new Error('gone')),
+    })
+    await renderApp()
+    await addTwoTracks()
+    runMenu('select-all')
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.queryAllByTestId('track-row')).toHaveLength(0))
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 2 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .filter((c) => c.textContent?.includes('Could not restore')),
+      ).toHaveLength(1),
+    )
+    expect(
+      screen.getAllByTestId('app-notice').find((c) => c.textContent?.includes('Could not restore')),
+    ).toHaveTextContent('Could not restore “a” and 1 more: gone')
+  })
+
+  it('keeps the row out of the list when its file could not be put back from Backups', async () => {
+    const trashRestore = vi.fn().mockRejectedValue(new Error('gone'))
+    setApi({
+      keepsTrash: vi.fn().mockResolvedValue(false),
+      trashFile: vi.fn().mockResolvedValue({ where: 'surco', id: 'backup-a' }),
+      trashRestore,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 1 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(trashRestore).toHaveBeenCalledWith('backup-a', 'undo'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
   // Trashing the flagged rips reaches every flagged visible row, not just the selection, so
   // it is the one Trash move that still asks even when every file keeps its Trash.
   it('asks before trashing the flagged rips even when every file has a Trash', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),

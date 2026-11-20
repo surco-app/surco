@@ -194,6 +194,17 @@ describe('readTraktorPlaylist', () => {
     })
   })
 
+  it('carries the play count Traktor holds so a session can tell played tracks from new ones', () => {
+    const played: Track = { ...A, info: ' PLAYCOUNT="7"' }
+    const [entry] = readTraktorPlaylist(nml([played], [playlist('L', 'p1', [played])]), 'p1', '')
+    expect(entry.meta.playCount).toBe(7)
+  })
+
+  it('leaves the play count out when Traktor has none', () => {
+    const [entry] = readTraktorPlaylist(nml([A], [playlist('L', 'p1', [A])]), 'p1', '')
+    expect(entry.meta).not.toHaveProperty('playCount')
+  })
+
   it('reads the key Traktor detected whatever notation it shows, so the session can mix harmonically', () => {
     const keyed: Track = {
       ...A,

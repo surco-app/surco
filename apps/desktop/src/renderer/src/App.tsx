@@ -50,9 +50,11 @@ import {
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
+  BpmResult,
   CollectionTrack,
   DeclickConfig,
   FormatSetting,
+  KeyResult,
   MetaTextKey,
   NormalizeConfig,
   PlaylistSource,
@@ -167,7 +169,11 @@ import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
 import { nextLocale } from './i18n/locale'
-import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
+import {
+  analysisKey,
+  removeAnalysisQueries,
+  seedCachedAnalyses,
+} from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { cleanupPatcher, planAutoClean } from './lib/autoClean'
@@ -204,6 +210,7 @@ import {
   useUnsavedCueTracks,
 } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
+import { fillMeasuredPatches } from './lib/fillMeasured'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { onFeedbackRequested } from './lib/feedback'
@@ -282,6 +289,8 @@ import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
 import { latestBackupByPath } from './lib/trashView'
 import {
+  AUTO_MARK_FILTERS,
+  type AutoMarkKind,
   EMPTY_FILTER,
   type FilterFacts,
   type FilterSelection,
@@ -553,10 +562,14 @@ export default function App(): React.JSX.Element {
     setFilterSelection: storeFilterSelection,
     setFormatFilter,
   } = useTriageFilters(store)
+  const [autoMarkBatch, setAutoMarkBatch] = useState<{ list: string; ids: Set<string> } | null>(
+    null,
+  )
   const setFilterSelection = useCallback(
     (next: FilterSelection): void => {
       flushPendingEdits()
       storeFilterSelection(next)
+      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention)) setAutoMarkBatch(null)
     },
     [storeFilterSelection],
   )
@@ -639,6 +652,9 @@ export default function App(): React.JSX.Element {
   const fullReleaseDate = settings?.fullReleaseDate ?? false
   const fullReleaseDateRef = useRef(fullReleaseDate)
   fullReleaseDateRef.current = fullReleaseDate
+  const replaceLowResCover = settings?.replaceLowResCover ?? false
+  const replaceLowResCoverRef = useRef(replaceLowResCover)
+  replaceLowResCoverRef.current = replaceLowResCover
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
   // user's junk phrases), read at probe time like the providers above.
   const matchCleanupRef = useRef<MatchCleanup>({})
@@ -1461,8 +1477,8 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: ids.includes(anchor) ? ids : [anchor, ...ids], anchor })
   })
   // The last session: offered back at launch, written out as it changes. Self-contained —
-  // it hands nothing back.
-  useSessionPersistence({
+  // it hands back only the reopen command.
+  const lastSession = useSessionPersistence({
     tracks,
     tracksRef,
     addPaths,
@@ -1615,6 +1631,7 @@ export default function App(): React.JSX.Element {
     importFieldsRef,
     genrePresetsRef,
     fullReleaseDateRef,
+    replaceLowResCoverRef,
     matchCleanupRef,
     editingRef,
     reportActivity,
@@ -1948,6 +1965,68 @@ export default function App(): React.JSX.Element {
     }
     removeTracks(ids, everywhere)
   })
+  const trashKept = useRef<{
+    kept: { track: TrackItem; backupId: string }[]
+    covers: (string | undefined)[]
+  } | null>(null)
+  const offerTrashUndo = useStableCallback((kept: { track: TrackItem; backupId: string }[]) => {
+    const pending = trashKept.current ?? { kept: [], covers: [] }
+    if (!trashKept.current) {
+      trashKept.current = pending
+      listUndoCovers.current.push(pending.covers)
+    }
+    pending.kept.push(...kept)
+    pending.covers.push(...kept.map(({ track }) => track.coverUrl))
+    holdTracks(kept.map(({ track }) => track))
+    const release = () => {
+      if (trashKept.current === pending) trashKept.current = null
+      dropHeldTracks(pending.kept.map(({ track }) => track.id))
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== pending.covers)
+      revokeDisplacedCovers(pending.covers, [
+        ...tracksRef.current.map((t) => t.coverUrl),
+        ...heldCovers(),
+      ])
+    }
+    toastReporter.reportUndo(
+      tr('notices.movedToBackups', { count: pending.kept.length }),
+      () => {
+        trashKept.current = null
+        void Promise.all(
+          pending.kept.map(({ track, backupId }) =>
+            window.api.trashRestore(backupId, 'undo').then(
+              () => ({ track }),
+              (error: unknown) => ({ track, error }),
+            ),
+          ),
+        ).then((settled) => {
+          const failed = settled.filter((s) => 'error' in s)
+          const back = settled.filter((s) => !('error' in s)).map(({ track }) => track)
+          if (failed.length > 0) {
+            const name = failed[0].track.fileName
+            const reason = mainErrorMessage(
+              failed[0].error,
+              tr,
+              tr('errors.unexpected', { detail: '' }),
+            )
+            setNotice(
+              failed.length === 1
+                ? tr('trash.restoreFailed', { name, reason })
+                : tr('trash.restoreFailedMany', { name, count: failed.length - 1, reason }),
+            )
+          }
+          unforgetAnalysisTracks(back.map((t) => t.id))
+          restoreTracks(back)
+          void seedCachedAnalyses(
+            queryClient,
+            back.map((t) => t.inputPath),
+          )
+          release()
+        })
+      },
+      release,
+      'trash-kept',
+    )
+  })
 
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
@@ -1972,6 +2051,7 @@ export default function App(): React.JSX.Element {
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
+    offerTrashUndo,
     // The old entry left the snapshot's library, so refresh it — that recompute is
     // also what retires the footer's "remove the old copy" link. The toast confirms
     // the outcome meanwhile, since the refetch can take a moment on a big library.
@@ -2291,6 +2371,17 @@ export default function App(): React.JSX.Element {
   // The selection reaches the filter only while it filters by it: every click or arrow
   // moves the selection, and rebuilding the facts recounts every filter over the whole list.
   const filteredSelection = filterSelection.selection ? selectedIdSet : null
+  const autoMarks = useAutoMarks()
+  const deferredAutoMarks = useDeferredValue(autoMarks)
+  const openList = `${browser.source ?? ''}\t${browser.playlist?.id ?? ''}`
+  const markBatch = autoMarkBatch?.list === openList ? autoMarkBatch : null
+  const batchMarks = markBatch ? deferredAutoMarks : null
+  const dropMarkFilter = useStableCallback(() =>
+    setFilterSelection({ ...filterSelection, attention: null }),
+  )
+  useEffect(() => {
+    if (autoMarkBatch && autoMarkBatch.list !== openList) dropMarkFilter()
+  }, [autoMarkBatch, openList, dropMarkFilter])
   // What the filter asks about a row that the row does not carry: the fields Settings
   // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
   const filterFacts = useMemo<FilterFacts>(
@@ -2309,6 +2400,12 @@ export default function App(): React.JSX.Element {
       libraryCopy: libraryCopyVerdicts.verdictOf,
       played: (t) => playedPaths.has(t.inputPath),
       selected: (t) => filteredSelection?.has(t.id) ?? false,
+      autoMark: (t) => {
+        const contentId = playlistContentOf?.get(t.id)
+        return contentId !== undefined && markBatch?.ids.has(contentId)
+          ? batchMarks?.get(contentId)?.kind
+          : undefined
+      },
     }),
     [
       gridCheckOf,
@@ -2320,6 +2417,8 @@ export default function App(): React.JSX.Element {
       unsavedCues,
       playedPaths,
       filteredSelection,
+      markBatch,
+      batchMarks,
     ],
   )
   const filterFactsRef = useRef(filterFacts)
@@ -2594,7 +2693,7 @@ export default function App(): React.JSX.Element {
   // palette hints below and the keydown listener (via a ref, since it subscribes once)
   // both read, so a rebind in Settings updates everywhere at once.
   const bindings = useMemo(
-    () => resolveBindings(settings?.shortcutOverrides),
+    () => resolveBindings(settings?.shortcutOverrides, isMacOS()),
     [settings?.shortcutOverrides],
   )
   const hintFor = useCallback(
@@ -3041,7 +3140,6 @@ export default function App(): React.JSX.Element {
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
   }, [cuesOpen, playlistContentOf, unsavedCues])
-  const autoMarks = useAutoMarks()
   const autoMarkById = useMemo(() => {
     const byId = new Map<string, AutoMark>()
     if (!cuesOpen) return byId
@@ -3070,6 +3168,10 @@ export default function App(): React.JSX.Element {
   const showBadGrid = useStableCallback(() =>
     setFilterSelection({ ...filterSelection, attention: 'badGrid' }),
   )
+  const showMarked = useStableCallback((kind: AutoMarkKind) => {
+    setFilterSelection({ ...filterSelection, attention: AUTO_MARK_FILTERS[kind] })
+    setAutoMarkBatch({ list: openList, ids: new Set(cueTargets.map((t) => t.contentId)) })
+  })
   const openCueTrack = useStableCallback((contentId: string) => {
     const track = selectedTracks.find((t) => playlistScope?.contentOf.get(t.id) === contentId)
     if (track) onSelectTrack(track.id, {})
@@ -3847,6 +3949,20 @@ export default function App(): React.JSX.Element {
     const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracksUndoable(patches)
   })
+  const fillMeasured = useStableCallback(() => {
+    const patches = fillMeasuredPatches(
+      editScope(selectedTracks, selected),
+      {
+        bpm: (path) => queryClient.getQueryData<BpmResult | null>(analysisKey('bpm', path)),
+        key: (path) => queryClient.getQueryData<KeyResult | null>(analysisKey('key', path)),
+      },
+      settings?.keyNotation ?? 'camelot',
+    )
+    if (!patches.length) return
+    recordMetaUndo(patches.map((p) => p.id))
+    deriveTracks(patches)
+    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
+  })
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
   // zero-pad hygiene pass formats them at write time like every other track number.
@@ -3919,6 +4035,7 @@ export default function App(): React.JSX.Element {
       importFields,
       genrePresets,
       fullReleaseDate,
+      replaceLowResCover,
     )
     if (!accepted) return
     recordMetaUndo([id], { cover: true })
@@ -4096,6 +4213,7 @@ export default function App(): React.JSX.Element {
       toggleSidebar,
       clearMeta,
       deriveTags,
+      fillMeasured,
       numberTracks,
       applyTitleFormat,
       regenerateNames: onRegenerateName,
@@ -4105,6 +4223,8 @@ export default function App(): React.JSX.Element {
       canUndoMeta: metaUndo.canUndo,
       redoMeta,
       canRedoMeta: metaUndo.canRedo,
+      canReopenLastSession: lastSession.canReopen,
+      reopenLastSession: lastSession.reopen,
       acceptReview,
       fireConfetti,
       sources: browser.sources,
@@ -4314,6 +4434,7 @@ export default function App(): React.JSX.Element {
           importFieldsRef.current,
           genrePresetsRef.current,
           fullReleaseDateRef.current,
+          replaceLowResCoverRef.current,
         )?.meta,
     }
     if (reviewKind === 'music')
@@ -4924,6 +5045,7 @@ export default function App(): React.JSX.Element {
                               cueTargets={cueTargets}
                               cueGridCheckOf={cueGridCheckOf}
                               onShowBadGrid={showBadGrid}
+                              onShowMarked={showMarked}
                               onOpenCueTrack={openCueTrack}
                               cueActionsRef={cueActionsRef}
                               libraryIndex={libraryIndex}

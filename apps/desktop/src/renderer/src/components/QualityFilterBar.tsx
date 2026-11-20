@@ -2,6 +2,8 @@ import type { TFunction } from 'i18next'
 import {
   Asterisk,
   AudioLines,
+  Binary,
+  ChartSpline,
   CircleAlert,
   CircleCheckBig,
   CircleFadingArrowUp,
@@ -38,6 +40,7 @@ import {
   Store,
   Trash2,
   TriangleAlert,
+  WandSparkles,
   X,
   Zap,
 } from 'lucide-react'
@@ -73,11 +76,17 @@ type DuplicatesMode = 'duplicates'
 type AttentionMode =
   | 'silence'
   | 'clipping'
+  | 'paddedBits'
+  | 'upsampled'
   | 'noCues'
   | 'offGrid'
   | 'badGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
+  | 'autoMarkProposed'
+  | 'autoMarkMarked'
+  | 'autoMarkNone'
+  | 'autoMarkUnanalysed'
 type TagsMode = 'missingRequired' | 'noCover' | 'smallCover' | 'noBpm' | 'noKey'
 type ListenMode = 'unplayed' | 'played'
 type SelectionMode = 'selected'
@@ -113,14 +122,26 @@ const DUPLICATES_MODES: DuplicatesMode[] = ['duplicates']
 const LISTEN_MODES: ListenMode[] = ['unplayed', 'played']
 const SELECTION_MODES: SelectionMode[] = ['selected']
 const STARS_MODES: StarsMode[] = ['noStars', 'stars3', 'stars4', 'stars5']
+const AUTO_MARK_MODES: Mode[] = [
+  'autoMarkProposed',
+  'autoMarkMarked',
+  'autoMarkNone',
+  'autoMarkUnanalysed',
+]
 const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
+  'paddedBits',
+  'upsampled',
   'noCues',
   'offGrid',
   'badGrid',
   'unanalysedRekordbox',
   'unanalysedEngine',
+  'autoMarkProposed',
+  'autoMarkMarked',
+  'autoMarkNone',
+  'autoMarkUnanalysed',
 ]
 
 // One Lucide glyph per quality/provenance/library bucket, kept consistent with the toolbar.
@@ -145,11 +166,17 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   duplicates: CopyIcon,
   silence: Scissors,
   clipping: Zap,
+  paddedBits: Binary,
+  upsampled: ChartSpline,
   noCues: FlagOff,
   offGrid: Magnet,
   badGrid: Grid2x2X,
   unanalysedRekordbox: Hourglass,
   unanalysedEngine: Hourglass,
+  autoMarkProposed: WandSparkles,
+  autoMarkMarked: WandSparkles,
+  autoMarkNone: WandSparkles,
+  autoMarkUnanalysed: WandSparkles,
   missingRequired: Asterisk,
   unsaved: PencilLine,
   noCover: ImageOff,
@@ -496,7 +523,11 @@ export function QualityFilterBar({
       of('tags', TAGS_MODES),
       of(
         'attention',
-        ATTENTION_MODES.filter((m) => attentionOffered(m, tab)),
+        ATTENTION_MODES.filter(
+          (m) =>
+            attentionOffered(m, tab) &&
+            (!AUTO_MARK_MODES.includes(m) || countOf(m) > 0 || isActive(m)),
+        ),
       ),
       of('status', STATUS_MODES),
       {

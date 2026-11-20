@@ -87,11 +87,17 @@ export type DuplicatesFilter = 'duplicates'
 export type AttentionFilter =
   | 'silence'
   | 'clipping'
+  | 'paddedBits'
+  | 'upsampled'
   | 'noCues'
   | 'offGrid'
   | 'badGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
+  | 'autoMarkProposed'
+  | 'autoMarkMarked'
+  | 'autoMarkNone'
+  | 'autoMarkUnanalysed'
 // The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
 // (the editor's own low-res rule), no tempo, no key. A row still being read has no tags
 // yet, so it belongs to none of them.
@@ -106,6 +112,17 @@ export type SelectionFilter = 'selected'
 // The DJ's own rating: the unrated still to judge, or a floor of stars worth a set.
 export type StarsFilter = 'noStars' | 'stars3' | 'stars4' | 'stars5'
 
+export type AutoMarkKind = 'proposed' | 'marked' | 'none' | 'unanalysed'
+
+export const AUTO_MARK_FILTERS = {
+  proposed: 'autoMarkProposed',
+  marked: 'autoMarkMarked',
+  none: 'autoMarkNone',
+  unanalysed: 'autoMarkUnanalysed',
+} as const satisfies Record<AutoMarkKind, AttentionFilter>
+
+export type AutoMarkAttention = (typeof AUTO_MARK_FILTERS)[AutoMarkKind]
+
 // What the list knows about a row that the row itself does not carry: which fields
 // Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
 export interface FilterFacts {
@@ -116,6 +133,7 @@ export interface FilterFacts {
   libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
   played: (track: TrackItem) => boolean
   selected: (track: TrackItem) => boolean
+  autoMark: (track: TrackItem) => AutoMarkKind | undefined
 }
 
 export const NO_FACTS: FilterFacts = {
@@ -126,6 +144,7 @@ export const NO_FACTS: FilterFacts = {
   libraryCopy: () => undefined,
   played: () => false,
   selected: () => false,
+  autoMark: () => undefined,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -161,7 +180,15 @@ export type FilterTab = PlaylistSource | null
 export function attentionOffered(mode: AttentionFilter, tab: FilterTab): boolean {
   if (mode === 'unanalysedRekordbox') return tab === 'rekordbox'
   if (mode === 'unanalysedEngine') return tab === 'engine'
-  if (mode === 'noCues' || mode === 'offGrid' || mode === 'badGrid')
+  if (
+    mode === 'noCues' ||
+    mode === 'offGrid' ||
+    mode === 'badGrid' ||
+    mode === 'autoMarkProposed' ||
+    mode === 'autoMarkMarked' ||
+    mode === 'autoMarkNone' ||
+    mode === 'autoMarkUnanalysed'
+  )
     return tab !== null && tab !== 'appleMusic'
   return true
 }
@@ -254,11 +281,17 @@ export function matchesFilter(
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
+  if (sel.attention === 'paddedBits' && !hasPaddedBits(track)) return false
+  if (sel.attention === 'upsampled' && !isUpsampled(track)) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'offGrid' && !isOffGrid(track, facts)) return false
   if (sel.attention === 'badGrid' && !hasBadGrid(track, facts)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
+  if (sel.attention === 'autoMarkProposed' && facts.autoMark(track) !== 'proposed') return false
+  if (sel.attention === 'autoMarkMarked' && facts.autoMark(track) !== 'marked') return false
+  if (sel.attention === 'autoMarkNone' && facts.autoMark(track) !== 'none') return false
+  if (sel.attention === 'autoMarkUnanalysed' && facts.autoMark(track) !== 'unanalysed') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.listen && facts.played(track) !== (sel.listen === 'played')) return false
   if (sel.selection && !facts.selected(track)) return false
@@ -285,6 +318,14 @@ function matchesStars(track: TrackItem, filter: StarsFilter): boolean {
   const stars = starsOf(track)
   if (stars === null) return false
   return filter === 'noStars' ? stars === 0 : stars >= STARS_FLOOR[filter]
+}
+
+function hasPaddedBits(track: TrackItem): boolean {
+  return track.spectrum?.bitsUsage === 'padded16'
+}
+
+function isUpsampled(track: TrackItem): boolean {
+  return Boolean(track.spectrum?.upsampled || track.spectrum?.resolution === 'upsampled')
 }
 
 function isOffGrid(track: TrackItem, facts: FilterFacts): boolean {
@@ -445,6 +486,7 @@ export type TrackSort =
   | 'quality'
   | 'rating'
   | 'dateAdded'
+  | 'loudness'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -511,6 +553,7 @@ const NUMERIC_SORTS: Partial<Record<TrackSort, (track: TrackItem) => number | nu
   year: (t) => numberOrNull(Number.parseInt(t.meta.year ?? '', 10)),
   key: (t) => keyRanks.get((t.meta.key ?? '').trim().toLowerCase()) ?? null,
   quality: (t) => QUALITY_SEVERITY[trackQuality(t)] ?? null,
+  loudness: (t) => t.lufs ?? null,
   // Negated so the ascending order reads best first, as a rating column does.
   rating: (t) => {
     const stars = starsOf(t)
@@ -587,11 +630,17 @@ export function qualityCounts(
   duplicates: number
   silence: number
   clipping: number
+  paddedBits: number
+  upsampled: number
   noCues: number
   offGrid: number
   badGrid: number
   unanalysedRekordbox: number
   unanalysedEngine: number
+  autoMarkProposed: number
+  autoMarkMarked: number
+  autoMarkNone: number
+  autoMarkUnanalysed: number
   noCover: number
   smallCover: number
   noBpm: number
@@ -623,11 +672,17 @@ export function qualityCounts(
   let duplicates = 0
   let silence = 0
   let clipping = 0
+  let paddedBits = 0
+  let upsampled = 0
   let noCues = 0
   let offGrid = 0
   let badGrid = 0
   let unanalysedRekordbox = 0
   let unanalysedEngine = 0
+  let autoMarkProposed = 0
+  let autoMarkMarked = 0
+  let autoMarkNone = 0
+  let autoMarkUnanalysed = 0
   let noCover = 0
   let smallCover = 0
   let noBpm = 0
@@ -664,12 +719,19 @@ export function qualityCounts(
     if (t.duplicate) duplicates += 1
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
+    if (hasPaddedBits(t)) paddedBits += 1
+    if (isUpsampled(t)) upsampled += 1
     if (hasNoCues(t)) noCues += 1
     if (isOffGrid(t, facts)) offGrid += 1
     if (hasBadGrid(t, facts)) badGrid += 1
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
+    const autoMark = facts.autoMark(t)
+    if (autoMark === 'proposed') autoMarkProposed += 1
+    else if (autoMark === 'marked') autoMarkMarked += 1
+    else if (autoMark === 'none') autoMarkNone += 1
+    else if (autoMark === 'unanalysed') autoMarkUnanalysed += 1
     if (matchesTags(t, 'noCover', facts)) noCover += 1
     if (matchesTags(t, 'smallCover', facts)) smallCover += 1
     if (matchesTags(t, 'noBpm', facts)) noBpm += 1
@@ -696,11 +758,17 @@ export function qualityCounts(
     duplicates,
     silence,
     clipping,
+    paddedBits,
+    upsampled,
     noCues,
     offGrid,
     badGrid,
     unanalysedRekordbox,
     unanalysedEngine,
+    autoMarkProposed,
+    autoMarkMarked,
+    autoMarkNone,
+    autoMarkUnanalysed,
     noCover,
     smallCover,
     noBpm,
@@ -739,11 +807,17 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   duplicates: 'duplicates',
   silence: 'attention',
   clipping: 'attention',
+  paddedBits: 'attention',
+  upsampled: 'attention',
   noCues: 'attention',
   offGrid: 'attention',
   badGrid: 'attention',
   unanalysedRekordbox: 'attention',
   unanalysedEngine: 'attention',
+  autoMarkProposed: 'attention',
+  autoMarkMarked: 'attention',
+  autoMarkNone: 'attention',
+  autoMarkUnanalysed: 'attention',
   noCover: 'tags',
   smallCover: 'tags',
   noBpm: 'tags',

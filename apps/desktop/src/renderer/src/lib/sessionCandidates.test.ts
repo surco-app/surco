@@ -113,6 +113,38 @@ describe('toCandidates spotting new tracks', () => {
     expect(freshOf(tracks, '/m/old.mp3')).toBe(false)
   })
 
+  it('calls a track new from the add time other programs report in milliseconds', () => {
+    const day = 86_400_000
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/played.mp3', {}, known),
+          entry('/m/old.mp3', {}, { addedAt: now.getTime() - 90 * day }),
+          entry('/m/new.mp3', {}, { addedAt: now.getTime() - 5 * day }),
+        ),
+      ],
+      now,
+    )
+    expect(freshOf(tracks, '/m/new.mp3')).toBe(true)
+    expect(freshOf(tracks, '/m/old.mp3')).toBe(false)
+  })
+
+  it('trusts the date added over the add time when a track carries both', () => {
+    const day = 86_400_000
+    const tracks = toCandidates(
+      [
+        source(
+          'base',
+          entry('/m/played.mp3', {}, known),
+          entry('/m/a.mp3', {}, { dateAdded: '2025-01-10', addedAt: now.getTime() - 5 * day }),
+        ),
+      ],
+      now,
+    )
+    expect(freshOf(tracks, '/m/a.mp3')).toBe(false)
+  })
+
   it('does not call a track new when it was added longer ago, even if nobody ever played it', () => {
     const tracks = toCandidates(
       [

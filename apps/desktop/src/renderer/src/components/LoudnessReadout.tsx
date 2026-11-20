@@ -64,8 +64,10 @@ export function LoudnessReadout({
     grade: Grade,
     hint: string,
     estimate?: string | null,
+    rowTestId = `loudness-pill-${id}`,
   ) => ({
     id,
+    rowTestId,
     label,
     value,
     grade,
@@ -149,6 +151,21 @@ export function LoudnessReadout({
         tr('editor.loudnessBalanceHint'),
         balanceEstimate,
       ),
+    loud.channelBalanceDb === null &&
+      loud.silentChannel != null &&
+      cell(
+        'silent-channel',
+        tr('editor.loudnessBalanceLabel'),
+        tr(
+          loud.silentChannel === 'left'
+            ? 'editor.loudnessSilentLeft'
+            : 'editor.loudnessSilentRight',
+        ),
+        'bad',
+        tr('editor.loudnessBalanceHint'),
+        null,
+        'loudness-silent-channel',
+      ),
     loud.dcOffset !== null &&
       cell(
         'dc',
@@ -211,7 +228,7 @@ export function LoudnessReadout({
           return (
             <div
               key={c.id}
-              data-testid={`loudness-pill-${c.id}`}
+              data-testid={c.rowTestId}
               data-grade={c.grade}
               className={`group relative flex items-center justify-between gap-2 bg-[var(--color-field)] px-3 py-2 compact:py-1 ${lastOdd ? '@[30rem]:col-span-2' : ''}`}
             >

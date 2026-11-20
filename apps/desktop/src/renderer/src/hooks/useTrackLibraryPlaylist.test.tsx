@@ -1041,7 +1041,7 @@ describe('the light read of a rekordbox row', () => {
       tracklist: [{ position: '1', title: 'A' }],
       images: [{ uri: 'https://discogs/cover.jpg', type: 'primary', resource_url: '' }],
     }
-    const pick = buildReleaseMeta(row.meta, withArt, withArt.tracklist[0], keepCoverArg(row))
+    const pick = buildReleaseMeta(row.meta, withArt, withArt.tracklist[0], keepCoverArg(row, false))
     const matched = { ...row, meta: pick.meta, coverUrl: pick.coverUrl, coverPath: pick.coverPath }
     expect(coverSourceOf(matched)).toEqual({ coverFromFile: '/m/a.aiff' })
   })

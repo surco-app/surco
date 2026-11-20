@@ -31,6 +31,7 @@ import {
   Trash2,
   Usb,
   User,
+  Volume2,
 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useId, useState } from 'react'
@@ -372,6 +373,7 @@ export function TrackListHeader({
                 { value: 'key', label: tr('sidebar.sort.key'), icon: KeyRound },
                 { value: 'year', label: tr('sidebar.sort.year'), icon: Calendar },
                 { value: 'quality', label: tr('sidebar.sort.quality'), icon: Gauge },
+                { value: 'loudness', label: tr('sidebar.sort.loudness'), icon: Volume2 },
                 { value: 'rating', label: tr('sidebar.sort.rating'), icon: Star },
                 {
                   value: 'dateAdded',

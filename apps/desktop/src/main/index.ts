@@ -237,7 +237,12 @@ import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
-import { loadLastSession, saveLastSession } from './session'
+import {
+  clearPreviousSession,
+  loadLastSession,
+  loadPreviousSession,
+  saveLastSession,
+} from './session'
 import {
   configDirHasSettings,
   defaultConfigDir,
@@ -921,7 +926,7 @@ function buildAppMenu(win: BrowserWindow): void {
   // Menu accelerators are display-only labels generated from the same bindings the
   // renderer keymap uses (registerAccelerator:false leaves the keystroke to it), so a
   // rebind in Settings shows here too. Undefined when the command was unbound.
-  const bindings = resolveBindings(getSettings().shortcutOverrides)
+  const bindings = resolveBindings(getSettings().shortcutOverrides, process.platform === 'darwin')
   const accel = (id: string): string | undefined => {
     const chord = bindings.get(id)
     return chord?.length ? chordToAccelerator(chord) : undefined
@@ -1316,6 +1321,8 @@ function registerIpc(): void {
   // edits as they change and asks for them back at launch to offer restoring the
   // previous crate — edits included, so a crash never loses unapplied metadata.
   ipcMain.handle('session:get', () => loadLastSession())
+  ipcMain.handle('session:get-previous', () => loadPreviousSession())
+  ipcMain.handle('session:clear-previous', () => clearPreviousSession())
   ipcMain.handle(
     'session:set',
     (_e, paths: string[], edits: Record<string, SessionEdit>, view?: unknown) =>
@@ -1985,7 +1992,7 @@ function registerIpc(): void {
           sessions,
           rootLibraries,
         ),
-        trash: (path) => trashRecoverably(path),
+        trash: (path) => trashRecoverably(path).then(({ where }) => where),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
       })
     },

@@ -34,7 +34,7 @@ function sourceRead(p: DjProgram, has: { collection: boolean }): SourceRead {
 export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   rekordbox: sourceRead('rekordbox', { collection: true }),
   traktor: sourceRead('traktor', { collection: true }),
-  engine: sourceRead('engine', { collection: false }),
+  engine: sourceRead('engine', { collection: true }),
   serato: sourceRead('serato', { collection: true }),
   virtualdj: sourceRead('virtualdj', { collection: true }),
 }

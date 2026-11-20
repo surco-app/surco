@@ -10,6 +10,7 @@ import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
   AppleMusicTrackMeta,
+  CollectionTrack,
   SourceNode,
   SourcePlaylistEntry,
   SourcePreview,
@@ -219,6 +220,18 @@ function readAllRows(db: EngineDb): EntityRow[] {
 export function readEngineTrackCount(db: EngineDb): number {
   const row = db.prepare('SELECT count(*) AS n FROM Track').get() as { n: number }
   return row.n
+}
+
+export function readEngineCollection(db: EngineDb, libraryDir: string): CollectionTrack[] {
+  const rows = db
+    .prepare('SELECT id, path, title, artist FROM Track ORDER BY dateAdded DESC, id DESC')
+    .all() as { id: number; path: string | null; title: string | null; artist: string | null }[]
+  return rows.map((row) => ({
+    contentId: engineContentId(row.id),
+    path: row.path ? resolve(libraryDir, row.path) : null,
+    title: row.title ?? '',
+    artist: row.artist ?? '',
+  }))
 }
 
 function readPlaylistRows(db: EngineDb, id: string): EntityRow[] {

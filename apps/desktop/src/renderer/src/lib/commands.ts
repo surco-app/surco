@@ -325,6 +325,7 @@ export interface CommandDeps {
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
   deriveTags: () => void
+  fillMeasured: () => void
   // Stamps 1..N (list order) onto the bulk scope's track numbers.
   numberTracks: () => void
   // Opens the preview for dropping the leading track number from the bulk scope's titles.
@@ -343,6 +344,8 @@ export interface CommandDeps {
   canUndoMeta: () => boolean
   redoMeta: () => void
   canRedoMeta: () => boolean
+  canReopenLastSession: () => boolean
+  reopenLastSession: () => void
   // Applies the selected track's pending 'review' suggestion — the match the sweep flagged
   // but didn't write — without opening the editor. A no-op when there's nothing to accept.
   acceptReview: () => void
@@ -462,6 +465,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleSidebar,
     clearMeta,
     deriveTags,
+    fillMeasured,
     numberTracks,
     openStripNumbering,
     applyTitleFormat,
@@ -472,6 +476,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canUndoMeta,
     redoMeta,
     canRedoMeta,
+    canReopenLastSession,
+    reopenLastSession,
     acceptReview,
     fireConfetti,
     sources,
@@ -645,6 +651,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('derive-tags'),
       enabled: !!selected,
       run: deriveTags,
+    },
+    {
+      id: 'fill-measured',
+      group: 'tags',
+      title: tr('commands.fillMeasured'),
+      enabled: !!selected,
+      run: fillMeasured,
     },
     {
       // Writes the bulk scope's list order into the track numbers (1..N) — for albums
@@ -1121,6 +1134,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.clearAll'),
       enabled: visibleTracks.length > 0,
       run: askClearAll,
+    },
+    {
+      id: 'reopen-last-session',
+      group: 'library',
+      title: tr('commands.reopenLastSession'),
+      enabled: canReopenLastSession(),
+      run: reopenLastSession,
     },
     {
       id: 'settings',

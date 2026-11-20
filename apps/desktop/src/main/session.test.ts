@@ -4,11 +4,15 @@ import { afterAll, describe, expect, it, vi } from 'vitest'
 // throwaway temp dir and exercise the real save/load round-trip. nativeImage backs
 // the cover-preview minting for restored local covers; a fixed data URL is enough
 // to assert the preview was minted from the right file.
-vi.mock('electron', () => {
+const dir = vi.hoisted(() => {
   const { mkdtempSync } = require('node:fs')
   const { tmpdir } = require('node:os')
   const { join } = require('node:path')
-  const dir = mkdtempSync(join(tmpdir(), 'surco-session-'))
+  return mkdtempSync(join(tmpdir(), 'surco-session-')) as string
+})
+const warn = vi.hoisted(() => vi.fn())
+vi.mock('electron-log/main', () => ({ default: { warn, info: vi.fn(), error: vi.fn() } }))
+vi.mock('electron', () => {
   return {
     app: { getPath: () => dir },
     nativeImage: {
@@ -22,7 +26,7 @@ vi.mock('electron', () => {
   }
 })
 
-import { rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { SessionEdit } from '../shared/types'
@@ -338,5 +342,83 @@ describe('session store', () => {
     expect((await loadLastSession()).view).toEqual(view)
     saveLastSession([kept], {})
     expect((await loadLastSession()).view).toBeUndefined()
+  })
+})
+
+describe('previous session', () => {
+  async function launch() {
+    vi.resetModules()
+    return import('./session')
+  }
+
+  function reset(): string[] {
+    rmSync(join(dir, 'session.json'), { force: true })
+    rmSync(join(dir, 'session.prev.json'), { force: true })
+    return ['a', 'b', 'c'].map((name) => {
+      const p = join(dir, `prev-${name}.wav`)
+      writeFileSync(p, 'x')
+      return p
+    })
+  }
+
+  it('keeps the session a new list replaced at launch, so dropping files over the offer loses nothing', async () => {
+    const [a, b] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([b], {})
+    expect((await next.loadPreviousSession())?.paths).toEqual([a])
+  })
+
+  it('keeps the first replaced session for the whole launch, not the list before the latest', async () => {
+    const [a, b, c] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([b], {})
+    next.saveLastSession([c], {})
+    expect((await next.loadPreviousSession())?.paths).toEqual([a])
+  })
+
+  it('forgets the previous session when the offer is declined', async () => {
+    const [a] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([], {})
+    next.clearPreviousSession()
+    expect(await next.loadPreviousSession()).toBeNull()
+  })
+
+  it('makes no previous session when the same list is saved again', async () => {
+    const [a] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([a], { [a]: edit() })
+    expect(await next.loadPreviousSession()).toBeNull()
+  })
+
+  it('keeps the next list of the same launch as previous after the offer is declined', async () => {
+    const [a, b, c] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([], {})
+    next.clearPreviousSession()
+    next.saveLastSession([b], {})
+    next.saveLastSession([c], {})
+    expect((await next.loadPreviousSession())?.paths).toEqual([b])
+  })
+
+  it('still saves the current session when keeping the previous one fails, and says so in the log since the safety net is gone', async () => {
+    const [a, b] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    mkdirSync(join(dir, 'session.prev.json'))
+    warn.mockClear()
+    try {
+      const next = await launch()
+      next.saveLastSession([b], {})
+      expect((await next.loadLastSession()).paths).toEqual([b])
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toMatch(/^previous session not kept: /)
+    } finally {
+      rmSync(join(dir, 'session.prev.json'), { recursive: true, force: true })
+    }
   })
 })

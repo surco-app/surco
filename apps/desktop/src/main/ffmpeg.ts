@@ -3291,8 +3291,17 @@ export function parseLoudness(
   return { integratedLufs, truePeakDb, lra, ...(threshold === null ? {} : { threshold }) }
 }
 
+function silentChannelOf(readings: (number | null)[]): 'left' | 'right' | null {
+  if (readings.length !== 2) return null
+  const [first, second] = readings
+  if (first === null && second !== null) return 'left'
+  if (first !== null && second === null) return 'right'
+  return null
+}
+
 export interface AstatsResult {
   balanceDb: number | null
+  silentChannel: 'left' | 'right' | null
   dcOffset: number | null
   crestDb: number | null
   noiseFloorDb: number | null
@@ -3312,6 +3321,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
     return Number.isFinite(n) ? n : null
   }
   const channelRms: number[] = []
+  const channelReadings: (number | null)[] = []
   const overall: { peak?: number; rms?: number; dc?: number; noise?: number; count?: number } = {}
   let section: 'channel' | 'overall' | null = null
   let seen = false
@@ -3327,6 +3337,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
       const m = line.match(/^RMS level dB:\s*(\S+)/)
       if (m) {
         const v = finite(m[1])
+        channelReadings.push(v)
         if (v !== null) channelRms.push(v)
       }
     } else if (section === 'overall') {
@@ -3349,6 +3360,7 @@ export function parseAstats(stderr: string): AstatsResult | null {
   return {
     // Both channels must be finite; a dropped (silent) channel leaves length < 2.
     balanceDb: channelRms.length >= 2 ? Math.abs(channelRms[0] - channelRms[1]) : null,
+    silentChannel: silentChannelOf(channelReadings),
     dcOffset: overall.dc ?? null,
     crestDb:
       overall.peak !== undefined && overall.rms !== undefined ? overall.peak - overall.rms : null,
@@ -3673,6 +3685,7 @@ export async function measureLoudness(
   return {
     ...loud,
     channelBalanceDb: stats?.balanceDb ?? null,
+    silentChannel: stats?.silentChannel ?? null,
     dcOffset: stats?.dcOffset ?? null,
     crestDb: stats?.crestDb ?? null,
     noiseFloorDb: stats?.noiseFloorDb ?? null,

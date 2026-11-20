@@ -452,6 +452,15 @@ describe('TrackListHeader layout', () => {
     expect(setSortBy).toHaveBeenCalledWith('album')
   })
 
+  it('offers loudness as a sort, named Loudness, so a set can be built from the quietest to the hottest master', () => {
+    const setSortBy = vi.fn()
+    renderHeader({ setSortBy })
+    fireEvent.click(screen.getByTestId('track-sort'))
+    expect(screen.getByTestId('track-sort-option-loudness')).toHaveTextContent('Loudness')
+    fireEvent.click(screen.getByTestId('track-sort-option-loudness'))
+    expect(setSortBy).toHaveBeenCalledWith('loudness')
+  })
+
   it('sorts by date added where the list has dates, and says it cannot where it has none', () => {
     const setSortBy = vi.fn()
     renderHeader({ setSortBy, hasAddedDates: true })

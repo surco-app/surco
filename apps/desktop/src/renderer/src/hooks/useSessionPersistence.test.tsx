@@ -17,6 +17,8 @@ async function offer(session: SessionData) {
   ;(window as unknown as { api: Partial<Api> }).api = {
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue(session),
     saveLastSession,
+    loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
+    clearPreviousSession: vi.fn<Api['clearPreviousSession']>().mockResolvedValue(undefined),
   }
   const store = createAppStore()
   renderHook(() =>
@@ -76,6 +78,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
     }
@@ -116,6 +119,7 @@ describe('useSessionPersistence', () => {
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
       saveLastSessionSync,
@@ -155,6 +159,7 @@ describe('useSessionPersistence', () => {
 
   it('keeps offering Files back while only a source playlist has rows', async () => {
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi
         .fn<Api['getLastSession']>()
         .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
@@ -226,6 +231,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
     }
@@ -270,6 +276,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
     }
@@ -312,6 +319,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
     }
@@ -360,6 +368,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSession = vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined)
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession,
     }
@@ -410,6 +419,7 @@ describe('useSessionPersistence', () => {
     vi.useFakeTimers()
     const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession: vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined),
       saveLastSessionSync,
@@ -449,6 +459,7 @@ describe('useSessionPersistence', () => {
   it('writes nothing as the window goes away when nothing was saved this run', async () => {
     const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
       saveLastSession: vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined),
       saveLastSessionSync,
@@ -475,6 +486,7 @@ describe('useSessionPersistence', () => {
   it('hands the saved spot in the track to the player when the reopen is accepted', async () => {
     const resumePlayback = vi.fn()
     ;(window as unknown as { api: Partial<Api> }).api = {
+      loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
       getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
         ...withEdits,
         view: { playback: { path: '/music/a.wav', time: 199 } },
@@ -501,5 +513,160 @@ describe('useSessionPersistence', () => {
     await waitFor(() => expect(store.getState().toasts).toHaveLength(1))
     await act(async () => store.getState().toasts[0].action?.onAction())
     expect(resumePlayback).toHaveBeenCalledWith('/music/a.wav', 199)
+  })
+
+  describe('reopen command', () => {
+    const files = (path: string): TrackItem =>
+      ({ id: path, inputPath: path, inFiles: true, meta: emptyMetadata() }) as TrackItem
+
+    async function mount(
+      session: SessionData,
+      previous: SessionData | null,
+      tracks: TrackItem[] = [],
+    ) {
+      const addPaths = vi.fn<(paths: string[]) => Promise<void>>().mockResolvedValue(undefined)
+      ;(window as unknown as { api: Partial<Api> }).api = {
+        getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue(session),
+        saveLastSession: vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined),
+        loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(previous),
+        clearPreviousSession: vi.fn<Api['clearPreviousSession']>().mockResolvedValue(undefined),
+        expandPaths: vi.fn<Api['expandPaths']>((paths) => Promise.resolve(paths)),
+      }
+      const store = createAppStore()
+      const { result } = renderHook(() =>
+        useSessionPersistence({
+          tracks,
+          tracksRef: { current: tracks },
+          addPaths,
+          seedRestoredEdits: vi.fn(),
+          store,
+          withdrawOffer: false,
+          selectedPath: null,
+          selectedPaths: [],
+          selectRestored: vi.fn(),
+          playbackPosition: () => null,
+          resumePlayback: vi.fn(),
+        }),
+      )
+      await waitFor(() => expect(window.api.loadPreviousSession).toHaveBeenCalled())
+      await act(async () => {})
+      return { store, result, addPaths }
+    }
+
+    it('reopens the offered session after the offer aged out unseen, while Files is empty', async () => {
+      const { store, result, addPaths } = await mount(withEdits, null)
+      dismissToastByExpiry(store, store.getState().toasts[0].id)
+      expect(result.current.canReopen()).toBe(true)
+      await act(async () => result.current.reopen())
+      expect(addPaths).toHaveBeenCalledWith(withEdits.paths, withEdits.edits)
+    })
+
+    it('falls back to the session a new list replaced, since that list is what was lost', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { result, addPaths } = await mount({ paths: [], edits: {} }, previous)
+      expect(result.current.canReopen()).toBe(true)
+      await act(async () => result.current.reopen())
+      expect(addPaths).toHaveBeenCalledWith(previous.paths, previous.edits)
+    })
+
+    it('is unavailable while Files has a row, so two sessions never mix', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { result } = await mount(withEdits, previous, [files('/music/new.wav')])
+      expect(result.current.canReopen()).toBe(false)
+    })
+
+    it('loads once when run twice in a row, so a double press never imports every track twice', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { store, result, addPaths } = await mount(withEdits, previous)
+      dismissToastByExpiry(store, store.getState().toasts[0].id)
+      await act(async () => {
+        result.current.reopen()
+        result.current.reopen()
+      })
+      expect(addPaths).toHaveBeenCalledTimes(1)
+    })
+
+    it('loads once when the offer is accepted and the command runs before the import lands', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { store, result, addPaths } = await mount(withEdits, previous)
+      let expand: (paths: string[]) => void = () => {}
+      window.api.expandPaths = vi.fn<Api['expandPaths']>(
+        () =>
+          new Promise<string[]>((resolve) => {
+            expand = resolve
+          }),
+      )
+      await act(async () => {
+        void store.getState().toasts[0].action?.onAction()
+        await result.current.reopen()
+      })
+      await act(async () => expand(withEdits.paths))
+      expect(addPaths).toHaveBeenCalledTimes(1)
+      expect(addPaths).toHaveBeenCalledWith(withEdits.paths, withEdits.edits)
+    })
+
+    it('reopens the previous session as it is on disk when run, not as it was at launch', async () => {
+      const atLaunch: SessionData = { paths: ['/music/launch.wav'], edits: {} }
+      const now: SessionData = { paths: ['/music/now.wav'], edits: {} }
+      const { result, addPaths } = await mount({ paths: [], edits: {} }, atLaunch)
+      vi.mocked(window.api.loadPreviousSession).mockResolvedValue(now)
+      await act(async () => result.current.reopen())
+      expect(addPaths).toHaveBeenCalledWith(now.paths, now.edits)
+    })
+
+    it('offers the list just cleared once its empty save lands, not what the slot held at launch', async () => {
+      vi.useFakeTimers()
+      const cleared: SessionData = { paths: ['/music/cleared.wav'], edits: {} }
+      const loadPreviousSession = vi
+        .fn<Api['loadPreviousSession']>()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValue(cleared)
+      const addPaths = vi.fn<(paths: string[]) => Promise<void>>().mockResolvedValue(undefined)
+      ;(window as unknown as { api: Partial<Api> }).api = {
+        getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
+        saveLastSession: vi.fn<Api['saveLastSession']>().mockResolvedValue(undefined),
+        loadPreviousSession,
+        expandPaths: vi.fn<Api['expandPaths']>((paths) => Promise.resolve(paths)),
+      }
+      const tracksRef = { current: [files('/music/cleared.wav')] }
+      const { result, rerender } = renderHook(
+        ({ tracks }) =>
+          useSessionPersistence({
+            tracks,
+            tracksRef,
+            addPaths,
+            seedRestoredEdits: vi.fn(),
+            store: createAppStore(),
+            withdrawOffer: false,
+            selectedPath: null,
+            selectedPaths: [],
+            selectRestored: vi.fn(),
+            playbackPosition: () => null,
+            resumePlayback: vi.fn(),
+          }),
+        { initialProps: { tracks: tracksRef.current } },
+      )
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000)
+      })
+      tracksRef.current = []
+      rerender({ tracks: [] })
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1_000)
+      })
+      vi.useRealTimers()
+      expect(window.api.saveLastSession).toHaveBeenLastCalledWith([], {}, expect.anything())
+      expect(result.current.canReopen()).toBe(true)
+      await act(async () => result.current.reopen())
+      expect(addPaths).toHaveBeenCalledWith(cleared.paths, cleared.edits)
+    })
+
+    it('offers nothing after the offer is closed by hand, since the ✕ said no to that list', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { store, result } = await mount(withEdits, previous)
+      dismissToastByUser(store, store.getState().toasts[0].id)
+      expect(window.api.clearPreviousSession).toHaveBeenCalled()
+      expect(result.current.canReopen()).toBe(false)
+    })
   })
 })

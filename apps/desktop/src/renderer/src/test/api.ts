@@ -310,6 +310,8 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     getLastSession: async () => ({ paths: [], edits: {} }),
     saveLastSession: async () => {},
     saveLastSessionSync: () => {},
+    loadPreviousSession: async () => null,
+    clearPreviousSession: async () => {},
     getSettings: async () => testSettings,
     saveSettings: async () => testSettings,
     beatportConnect: async () => testSettings,
@@ -435,7 +437,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     pathAliases: async (paths) => paths,
     reveal: async () => {},
     openFile: async () => '',
-    trashFile: async () => {},
+    trashFile: async () => ({ where: 'trash' as const }),
     // Local by default in tests: the cautious "may be permanent" wording is the exception,
     // and a test that wants it says so.
     keepsTrash: async () => true,

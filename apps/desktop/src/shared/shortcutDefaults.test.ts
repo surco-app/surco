@@ -230,6 +230,38 @@ describe('sidebar shortcut', () => {
     const b = resolveBindings({})
     expect(matchChord(b, ['ctrl', 'mod', 's'], false)).toBe('toggle-sidebar')
   })
+
+  it('keeps ⌃⌘S as the macOS chord', () => {
+    expect(resolveBindings({}, true).get('toggle-sidebar')).toEqual(['ctrl', 'mod', 's'])
+  })
+
+  it('gives Windows Ctrl+Shift+B, because Ctrl is already mod there and ⌃⌘S cannot exist', () => {
+    const b = resolveBindings({}, false)
+    expect(b.get('toggle-sidebar')).toEqual(['mod', 'shift', 'b'])
+    expect(matchChord(b, ['mod', 'shift', 'b'], false)).toBe('toggle-sidebar')
+  })
+
+  it('never binds Ctrl+Alt on Windows, because AltGr arrives as Ctrl+Alt and typing ś or đ would fire it', () => {
+    const withAltGr = [...resolveBindings({}, false)]
+      .filter(([, chord]) => chord.includes('mod') && chord.includes('alt'))
+      .map(([id]) => id)
+    expect(withAltGr).toEqual([])
+  })
+
+  it('leaves the Windows table without a single clash', () => {
+    expect(findConflicts(resolveBindings({}, false))).toEqual([])
+  })
+
+  it('lets the saved override beat the default on both platforms', () => {
+    for (const mac of [true, false]) {
+      const b = resolveBindings({ 'toggle-sidebar': ['mod', 'shift', 'j'] }, mac)
+      expect(b.get('toggle-sidebar')).toEqual(['mod', 'shift', 'j'])
+    }
+  })
+
+  it('does not hand the Windows chord to the macOS-only Apple Music command', () => {
+    expect(resolveBindings({}, false).get('add-apple-music')).toEqual(['mod', 'shift', 'm'])
+  })
 })
 
 describe('F6 entre regiones', () => {

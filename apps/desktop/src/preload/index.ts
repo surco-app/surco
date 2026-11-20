@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
@@ -28,13 +28,11 @@ import type {
   RestoreResult,
   ReviewWriteField,
   RowWaveRequest,
-  ScanVerdict,
   SearchHints,
   SearchPriority,
   SearchProviderId,
   SessionData,
   SessionEdit,
-  SpectrumVerdict,
   TrackProperties,
   TrashEntry,
   UsbExportEvent,
@@ -105,6 +103,9 @@ const api: Api = {
   ): void => {
     ipcRenderer.sendSync('session:set-sync', paths, edits, view)
   },
+  loadPreviousSession: (): Promise<SessionData | null> =>
+    ipcRenderer.invoke('session:get-previous'),
+  clearPreviousSession: (): Promise<void> => ipcRenderer.invoke('session:clear-previous'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   beatportConnect: (username, password) =>
@@ -285,7 +286,10 @@ const api: Api = {
     ipcRenderer.invoke('library:pathAliases', paths),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
-  trashFile: (path: string, permanentConfirmed: boolean): Promise<void> =>
+  trashFile: (
+    path: string,
+    permanentConfirmed: boolean,
+  ): Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }> =>
     ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
   retireSuperseded: (path: string, titles: string[]): Promise<'retired' | 'used'> =>
@@ -333,9 +337,7 @@ const api: Api = {
     ipcRenderer.invoke('feedback:report', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     invokeAudio('audio:spectrogram', path, priority),
-  loadCachedAnalyses: (
-    paths: string[],
-  ): Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>> =>
+  loadCachedAnalyses: (paths: string[]): Promise<Record<string, CachedBatchHit>> =>
     invokeAudio('audio:cached-batch', paths),
   peekAnalysis: <F extends keyof PeekableAnalyses>(family: F, path: string) =>
     invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,

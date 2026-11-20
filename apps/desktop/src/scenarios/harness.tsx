@@ -1042,7 +1042,7 @@ function scenarioApi(
       replaceDuplicatesInLibraries: (pairs) =>
         replaceDuplicates(pairs, {
           ...duplicateLibraryDeps(libraryHost(errors), sessions, rootLibraries),
-          trash: (path) => trashRecoverably(path),
+          trash: (path) => trashRecoverably(path).then(({ where }) => where),
           log: { track: activity.track, copyOf: musicReviewLog.copyOf },
         }),
       loadAppleMusicPlaylists: () => invokeMain('applemusic:playlists'),
@@ -1347,6 +1347,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         },
         openConfirm: (modal) => prompts.push(modal),
         reportTrashFailure: (fileName) => errors.push(`trash failed: ${fileName}`),
+        offerTrashUndo: () => {},
         onOldMusicCopyRemoved: () => {},
         reportOldCopyRemoveFailure: () => errors.push('old Apple Music copy not removed'),
         tracksRef: library.tracksRef,

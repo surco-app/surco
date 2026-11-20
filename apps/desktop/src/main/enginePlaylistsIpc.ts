@@ -36,6 +36,7 @@ export function engineRead(libraryDir: () => string, host: EnginePlaylistsHost):
     tree: () => readEngine(libraryDir(), 'tree', undefined),
     recentCount: () => readEngine(libraryDir(), 'recentCount', undefined),
     trackCount: () => readEngine(libraryDir(), 'trackCount', undefined),
+    collection: () => readEngine(libraryDir(), 'collection', undefined),
     playlist: async (id: string) => {
       const entries = await readEngine(libraryDir(), 'playlist', { id, artDir: host.artDir() })
       host.allowMedia?.(
