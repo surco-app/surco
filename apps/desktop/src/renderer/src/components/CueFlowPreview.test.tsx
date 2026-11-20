@@ -250,6 +250,17 @@ describe('CueFlowPreview', () => {
       expect(wave).toHaveAttribute('data-focus-diff', 'false')
     })
 
+    it('underlines the count while its fade is held, so a pressed count looks pressed, without growing or moving its text, and gives its focus ring some air', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      expect(count).toHaveClass('aria-pressed:underline', 'underline-offset-2')
+      expect(count).toHaveClass('-mx-1', 'px-1', 'rounded')
+      const resting = count.className
+      fireEvent.click(count)
+      expect(count).toHaveAttribute('aria-pressed', 'true')
+      expect(count.className).toBe(resting)
+    })
+
     it('keeps the fade for a count focused by keyboard when the pointer passes over it and leaves, since the focus is still there', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
       const count = screen.getByTestId('cue-preview-compare')

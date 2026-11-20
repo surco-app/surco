@@ -415,7 +415,7 @@ export function CueFlowPreview({
               onMouseLeave={() => setHovered(false)}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              className={`press min-w-0 truncate rounded-sm text-left ${NOTICE_TEXT[notice.status]}`}
+              className={`press -mx-1 min-w-0 truncate rounded px-1 text-left underline-offset-2 aria-pressed:underline ${NOTICE_TEXT[notice.status]}`}
             >
               {notice.text}
               {others !== '' && <Tooltip label={others} />}
