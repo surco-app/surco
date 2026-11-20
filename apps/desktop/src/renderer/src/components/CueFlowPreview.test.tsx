@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MIX_IN, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
-import '../i18n'
+import i18n from '../i18n'
 import { hoverTooltip } from '../test/tooltip'
 import { CueFlowPreview } from './CueFlowPreview'
 
@@ -70,6 +70,19 @@ describe('CueFlowPreview', () => {
     expect(hoverTooltip(ghosts[0])).toBe('Rule 1, 16 bars back. Inside a chorus')
     expect(ghosts[0]).toHaveAccessibleName('Rule 1, 16 bars back. Inside a chorus')
     expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
+  })
+
+  it('joins the rule and the reason with the full stop of the language, so Japanese does not read with a Latin one', async () => {
+    const one = ONE_AT_32.rules[0]
+    const intoChorus = { ...ONE_AT_32, rules: [{ ...one, from: 'down' as const, bars: 16 }] }
+    await i18n.changeLanguage('ja')
+    try {
+      render(<CueFlowPreview flow={intoChorus} />)
+      const ghost = screen.getAllByTestId(/^cue-wave-ghost-dropped-/)[0]
+      expect(ghost).toHaveAccessibleName('ルール 1、16 小節前。コーラスの中')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 
   it('scrolls Settings down to the whole list when it opens near the bottom edge, so the tracks are not hidden under it', () => {

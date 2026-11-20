@@ -271,7 +271,7 @@ export function CueFlowPreview({
                 `${tr(`settings.cueFlows.leftOut.${flow.rules[c.rule].direction}`, {
                   rule: c.rule + 1,
                   count: c.bars,
-                })}. ${tr(`settings.cueFlows.leftOut.reason.${c.reason}`)}`,
+                })}${tr('settings.cueFlows.whenEachLead')}${tr(`settings.cueFlows.leftOut.reason.${c.reason}`)}`,
             )
             .join('\n')
         }
