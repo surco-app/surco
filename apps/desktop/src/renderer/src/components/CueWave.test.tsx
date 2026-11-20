@@ -7,6 +7,7 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { resetRowWaves } from '../lib/rowWaves'
+import { hoverTooltip } from '../test/tooltip'
 import { CueWave } from './CueWave'
 import { RowWave } from './RowWave'
 
@@ -424,6 +425,25 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-ghost-call-40000')).toBeNull()
     expect(screen.queryByTestId('cue-wave-ghost-dropped-16000')).toBeNull()
     expect(screen.getByTestId('cue-wave-ghost-hot-B')).toBeInTheDocument()
+  })
+
+  it('keeps a left out cue silent in the editor, where nothing says why it was left out', () => {
+    setup({ ghost: { added: [], gone: [], rejected: [{ ms: 24000, place: 'both', color: 42 }] } })
+    const dropped = screen.getByTestId('cue-wave-ghost-dropped-24000')
+    expect(dropped).toHaveAttribute('aria-hidden', 'true')
+    expect(dropped).not.toHaveAttribute('title')
+  })
+
+  it('names a left out cue with the reason it is given, so pointing at it or reading it aloud says why', () => {
+    setup({
+      ghost: { added: [], gone: [], rejected: [{ ms: 24000, place: 'both', color: 42 }] },
+      droppedLabel: (ms) => `left out at ${ms}`,
+    })
+    const dropped = screen.getByTestId('cue-wave-ghost-dropped-24000')
+    expect(dropped).not.toHaveAttribute('title')
+    expect(hoverTooltip(dropped)).toBe('left out at 24000')
+    expect(dropped).toHaveAccessibleName('left out at 24000')
+    expect(dropped).not.toHaveAttribute('aria-hidden')
   })
 
   it('draws the overview from the detailed wave once it is loaded, one thin column per device pixel, like rekordbox overview', () => {

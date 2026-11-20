@@ -2048,6 +2048,8 @@
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "exampleTrack": "Example track",
+      "searchList": "Search the open list",
+      "noTrackFound": "No marked track with that name",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",
       "compareSame": "Same hot cues this track has now",
       "compareDiffer_one": "{{count}} hot cue differs from what this track has now",
@@ -2115,7 +2117,7 @@
         "first": "Only before the first mark, if nothing is there yet"
       },
       "whenEach": {
-        "rule": "like the rule",
+        "rule": "no condition of its own",
         "fits": "if it fits",
         "down": "only in a breakdown",
         "up": "only in a build",

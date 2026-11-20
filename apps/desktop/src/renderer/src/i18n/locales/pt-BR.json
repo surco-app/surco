@@ -2048,6 +2048,8 @@
       "preview": "Prévia",
       "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
       "exampleTrack": "Faixa de exemplo",
+      "searchList": "Buscar na lista aberta",
+      "noTrackFound": "Nenhuma faixa marcada com esse nome",
       "noMark": "{{label}} ainda não tem nenhuma marca, então a prévia usa a faixa de exemplo",
       "compareSame": "Os mesmos hot cues que esta faixa tem agora",
       "compareDiffer_one": "{{count}} hot cue diferente do que esta faixa tem agora",
@@ -2115,7 +2117,7 @@
         "first": "Só antes da primeira marca, se ainda não houver nada"
       },
       "whenEach": {
-        "rule": "como a regra",
+        "rule": "sem condição própria",
         "fits": "se couber",
         "down": "só em um breakdown",
         "up": "só em uma subida",

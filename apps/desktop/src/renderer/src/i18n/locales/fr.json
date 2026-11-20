@@ -2048,6 +2048,8 @@
       "preview": "Aperçu",
       "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
       "exampleTrack": "Morceau d’exemple",
+      "searchList": "Rechercher dans la liste ouverte",
+      "noTrackFound": "Aucun morceau marqué avec ce nom",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
       "compareSame": "Les mêmes hot cues que ce morceau a déjà",
       "compareDiffer_one": "{{count}} hot cue diffère de ce que ce morceau a déjà",
@@ -2115,7 +2117,7 @@
         "first": "Seulement avant la première marque, s’il n’y a encore rien"
       },
       "whenEach": {
-        "rule": "comme la règle",
+        "rule": "sans condition propre",
         "fits": "si ça rentre",
         "down": "seulement dans une descente",
         "up": "seulement dans une montée",

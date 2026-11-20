@@ -22,6 +22,7 @@ import { type Playhead, snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
+import { Tooltip } from './Tooltip'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -73,6 +74,7 @@ export function CueWave({
   ghost: rawGhost,
   cursorMs,
   detail,
+  droppedLabel,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -98,6 +100,7 @@ export function CueWave({
   ghost?: CueGhost
   cursorMs?: number
   detail?: Uint16Array | null
+  droppedLabel?: (ms: number) => string
 }): React.JSX.Element {
   const { t } = useTranslation()
   const [hoverProposal, setHoverProposal] = useState<number | null>(null)
@@ -497,10 +500,14 @@ export function CueWave({
           <span
             key={`gd${r.ms}`}
             data-testid={`cue-wave-ghost-dropped-${r.ms}`}
-            aria-hidden="true"
+            {...(droppedLabel
+              ? { role: 'img', 'aria-label': droppedLabel(r.ms) }
+              : { 'aria-hidden': true })}
             style={droppedStyle((r.ms / Math.max(durationMs, 1)) * 100, r)}
-            className="pointer-events-none absolute z-10 h-3 w-3 rounded-[3px] border"
-          />
+            className={`${droppedLabel ? '' : 'pointer-events-none '}absolute z-10 h-3 w-3 rounded-[3px] border`}
+          >
+            {droppedLabel && <Tooltip label={droppedLabel(r.ms)} />}
+          </span>
         ))}
     </div>
   )

@@ -61,6 +61,7 @@ interface Props {
   initialTab?: SettingsTab
   playlistLibraries?: PlaylistLibrary[]
   cueTrack?: { contentId: string; label: string }
+  cueTracks?: { contentId: string; label: string }[]
 }
 
 export function SettingsModal({
@@ -72,6 +73,7 @@ export function SettingsModal({
   initialTab,
   playlistLibraries,
   cueTrack,
+  cueTracks,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [tab, setTab] = useState<SettingsTab>(initialTab ?? 'general')
@@ -577,6 +579,7 @@ export function SettingsModal({
                 patch={patch}
                 rekordboxCollection={rekordboxCollection}
                 cueTrack={cueTrack}
+                cueTracks={cueTracks}
               />
             )}
             {tab === 'fields' && (
