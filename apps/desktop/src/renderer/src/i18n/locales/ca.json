@@ -2050,7 +2050,7 @@
       "previewHint": "Pista d'exemple a 128 BPM, marcada al compàs {{bar}}",
       "exampleTrack": "Pista d'exemple",
       "searchCollection": "Cerca a la teva col·lecció de rekordbox",
-      "noTrackFound": "Cap pista marcada amb aquest nom",
+      "noTrackFound": "Cap pista amb aquest nom",
       "loadingTracks": "Llegint la teva col·lecció…",
       "noMark": "{{label}} encara no té cap marca, així que la previsualització fa servir la pista d'exemple",
       "compareSame": "Els mateixos hot cues que té ara aquesta pista",

@@ -725,12 +725,12 @@ describe('CueFlowPreview', () => {
       expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
     })
 
-    it('says no marked track has that name instead of leaving the choices blank', () => {
+    it('says no track has that name instead of leaving the choices blank, without calling the tracks marked now that every one is offered', () => {
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
       open()
       fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'zzz' } })
       expect(screen.getByTestId('cue-preview-track-empty')).toHaveTextContent(
-        'No marked track with that name',
+        /^No track with that name$/,
       )
       expect(screen.getByTestId('cue-preview-track-option-example')).toBeInTheDocument()
     })

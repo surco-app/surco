@@ -111,15 +111,10 @@ export function collectionChoices(
   const seen = new Set<string>()
   return entries
     .flatMap(({ path, contentId, preview }) => {
-      const cues = preview?.cues ?? []
-      const marks = findDrops(
-        cues.filter((c) => c.kind === 0).map((c) => c.ms),
-        cues.filter((c) => c.kind !== 0).map((c) => c.ms),
-      )
-      if (!contentId || !preview || marks.length === 0 || seen.has(contentId)) return []
+      if (!contentId || seen.has(contentId)) return []
       seen.add(contentId)
-      const label = preview.title || (path ? parseFileName(path).fileName : '')
-      const artist = preview.artist ? { artist: preview.artist } : {}
+      const label = preview?.title || (path ? parseFileName(path).fileName : '')
+      const artist = preview?.artist ? { artist: preview.artist } : {}
       return [{ contentId, label, ...artist, name: foldAccents(label).toLowerCase() }]
     })
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))

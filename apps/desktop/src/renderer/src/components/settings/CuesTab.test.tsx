@@ -1704,7 +1704,7 @@ describe('the tracks the preview offers', () => {
     expect(offered()).toEqual(['Example track', 'Glue'])
   })
 
-  it('offers the marked tracks of the whole collection by name whatever their accents, with no playlist open anywhere', async () => {
+  it('offers every track of the whole collection by name whatever their accents, marked or not, with no playlist open anywhere', async () => {
     installApi({
       dj: collectionOf(
         inCollection('rb:1', 'Zebra'),
@@ -1717,7 +1717,7 @@ describe('the tracks the preview offers', () => {
     render(<Harness collection="/rb/master.db" />)
     openTracks()
     await screen.findByTestId('cue-preview-track-option-rb:1')
-    expect(offered()).toEqual(['Example track', 'atlas', 'Élan', 'Zebra'])
+    expect(offered()).toEqual(['Example track', 'atlas', 'Élan', 'Hot only', 'Unmarked', 'Zebra'])
     expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
       'placeholder',
       'Search your rekordbox collection',
@@ -1761,8 +1761,8 @@ describe('the tracks the preview offers', () => {
     expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
   })
 
-  it('offers only the example when the collection has no marked track, since a search field with nothing to find reads as broken', async () => {
-    const api = installApi({ dj: collectionOf(inCollection('rb:3', 'Unmarked', [])) })
+  it('offers only the example when the collection has no track, since a search field with nothing to find reads as broken', async () => {
+    const api = installApi({ dj: collectionOf() })
     render(<Harness collection="/rb/master.db" />)
     openTracks()
     await waitFor(() => expect(api.dj.playlist).toHaveBeenCalled())
