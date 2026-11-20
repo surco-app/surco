@@ -30,6 +30,16 @@ type Mode = 'flow' | 'now'
 
 const MODES: readonly Mode[] = ['flow', 'now']
 
+type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'hint'
+
+const NOTICE_TEXT: Record<Status, string> = {
+  'too-many': 'text-xs text-warn',
+  trimmed: 'text-xs text-fg-dim',
+  compare: 'text-xs text-warn',
+  'no-mark': 'text-label text-fg-dim',
+  hint: 'text-label text-fg-dim',
+}
+
 interface Choice {
   contentId: string
   label: string
@@ -234,6 +244,44 @@ export function CueFlowPreview({
         : diff.gone.length === 0
           ? added
           : tr('settings.cueFlows.diffBoth', { added, gone })
+  const notices: { status: Status; text: string }[] = [
+    ...(out.status === 'too-many'
+      ? [
+          {
+            status: 'too-many' as const,
+            text: tr('settings.cueFlows.tooMany', { count: out.needed }),
+          },
+        ]
+      : []),
+    ...(out.status === 'plan' && out.trimmed.length > 0 && mode === 'flow'
+      ? [
+          {
+            status: 'trimmed' as const,
+            text: tr('editor.cues.trimmed', { count: out.trimmed.length }),
+          },
+        ]
+      : []),
+    ...(differs && changes !== '' ? [{ status: 'compare' as const, text: changes }] : []),
+    ...(track && real !== null && !marked
+      ? [
+          {
+            status: 'no-mark' as const,
+            text: tr('settings.cueFlows.noMark', { label: track.label }),
+          },
+        ]
+      : []),
+    ...(onTrack
+      ? []
+      : [
+          {
+            status: 'hint' as const,
+            text: tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR }),
+          },
+        ]),
+  ]
+  const notice = notices.at(0)
+  const others =
+    notices.length > 1 ? notices.map((n) => n.text).join(tr('settings.cueFlows.whenEachLead')) : ''
   const choices =
     track && marked && !tracks.some((c) => c.contentId === track.cues.contentId)
       ? [{ contentId: track.cues.contentId, label: track.label }, ...tracks]
@@ -336,34 +384,36 @@ export function CueFlowPreview({
         }
         readOnly
       />
-      {!onTrack && (
-        <p className="mt-1 text-label text-fg-dim">
-          {tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR })}
-        </p>
-      )}
-      {track && real !== null && !marked && (
-        <p data-testid="cue-preview-no-mark" className="mt-1 text-label text-fg-dim">
-          {tr('settings.cueFlows.noMark', { label: track.label })}
-        </p>
-      )}
-      {differs && (
-        <div data-testid="cue-preview-diff" className="mt-1 flex items-center gap-2">
-          {changes !== '' && (
+      <div data-testid="cue-preview-status" className="mt-1 flex h-10 items-center gap-2">
+        {notice &&
+          (differs ? (
             <button
               type="button"
               data-testid="cue-preview-compare"
+              data-status={notice.status}
               aria-pressed={pinned}
               onClick={() => setPinned((v) => !v)}
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              className="press min-w-0 truncate rounded-sm text-left text-xs text-warn"
+              className={`press min-w-0 truncate rounded-sm text-left ${NOTICE_TEXT[notice.status]}`}
             >
-              {changes}
+              {notice.text}
+              {others !== '' && <Tooltip label={others} />}
             </button>
-          )}
-          <span className="flex-1" />
+          ) : (
+            <p
+              data-testid={`cue-preview-${notice.status}`}
+              data-status={notice.status}
+              className={`min-w-0 truncate ${NOTICE_TEXT[notice.status]}`}
+            >
+              {notice.text}
+              {others !== '' && <Tooltip label={others} />}
+            </p>
+          ))}
+        <span className="flex-1" />
+        {differs && (
           <SegmentedControl
             options={MODES}
             value={mode}
@@ -379,21 +429,8 @@ export function CueFlowPreview({
             label={tr('settings.cueFlows.preview')}
             labelFor={(id) => tr(`settings.cueFlows.previewMode.${id}`)}
           />
-        </div>
-      )}
-      {out.status === 'too-many' && (
-        <p data-testid="cue-preview-too-many" className="mt-1 text-xs text-warn">
-          {tr('settings.cueFlows.tooMany', { count: out.needed })}
-        </p>
-      )}
-      {out.status === 'plan' && out.trimmed.length > 0 && (
-        <p
-          data-testid="cue-preview-trimmed"
-          className={`mt-1 text-xs text-fg-dim${mode === 'now' ? ' invisible' : ''}`}
-        >
-          {tr('editor.cues.trimmed', { count: out.trimmed.length })}
-        </p>
-      )}
+        )}
+      </div>
     </div>
   )
 }

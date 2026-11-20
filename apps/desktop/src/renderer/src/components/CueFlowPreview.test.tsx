@@ -336,7 +336,7 @@ describe('CueFlowPreview', () => {
     it('keeps the line and the switch in place when the flow takes nothing away, so nothing jumps on the way back', () => {
       render(<CueFlowPreview flow={MY_FLOW} track={onlyMark} />)
       fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
-      expect(screen.getByTestId('cue-preview-diff')).toBeInTheDocument()
+      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-10')
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
       expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
       expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(1)
@@ -386,12 +386,14 @@ describe('CueFlowPreview', () => {
         ],
       }
       render(<CueFlowPreview flow={edge} track={onlyMark} />)
-      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
+      const leftOut = /left out by the limit of 8/
+      expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
       fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
-      expect(screen.getByTestId('cue-preview-trimmed')).toHaveClass('invisible')
+      expect(screen.getByTestId('cue-preview-status')).not.toHaveTextContent(leftOut)
+      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-10')
       expect(screen.queryByTestId(/^cue-wave-trimmed-/)).toBeNull()
       fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
-      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
+      expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
     })
 
     it('goes back to the example track on request', () => {
@@ -424,8 +426,79 @@ describe('CueFlowPreview', () => {
           track={onTrack([{ id: 'hot', ms: beat(48), kind: 1, color: 22 }])}
         />,
       )
-      expect(screen.getByTestId('cue-preview-no-mark')).toBeInTheDocument()
-      expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
+      expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
+        /^DJ Made, Millenium Stringz has no mark yet/,
+      )
+      expect(hoverTooltip(screen.getByTestId('cue-preview-no-mark'))).toContain(
+        'Example track at 128 BPM, marked at bar 96',
+      )
+    })
+
+    const edge = {
+      ...ONE_AT_32,
+      rules: [
+        {
+          ...ONE_AT_32.rules[0],
+          from: 'first-beat' as const,
+          direction: 'forward' as const,
+          bars: 8,
+          repeat: 'edge' as const,
+          when: 'always' as const,
+        },
+      ],
+    }
+    const nine = {
+      ...ONE_AT_32,
+      rules: [8, 24, 40, 56, 72, 88, 104, 120, 136].map((bars) => ({
+        ...ONE_AT_32.rules[0],
+        from: 'first-beat' as const,
+        direction: 'forward' as const,
+        bars,
+        when: 'always' as const,
+      })),
+    }
+    const noMark = onTrack([{ id: 'hot', ms: beat(48), kind: 1, color: 22 }])
+
+    it.each([
+      ['the example track', MY_FLOW, undefined, false, 'hint'],
+      ['a flow over the limit on the example track', edge, undefined, false, 'trimmed'],
+      ['a flow that cannot fit', nine, undefined, false, 'too-many'],
+      ['a flow that cannot fit on a marked track', nine, marked, false, 'too-many'],
+      ['the same hot cues the track has', MIX_IN, marked, false, null],
+      ['hot cues that change', ONE_AT_32, marked, false, 'compare'],
+      ['the track as it is now', ONE_AT_32, marked, true, 'compare'],
+      ['the track as it is now with nothing taken away', MY_FLOW, onlyMark, true, null],
+      ['hot cues that change over the limit', edge, onlyMark, false, 'trimmed'],
+      ['a track with no mark', MIX_IN, noMark, false, 'no-mark'],
+    ] as const)(
+      'holds one line of the same height under the wave with %s, so the rules under the preview never jump',
+      (_, flow, track, now, status) => {
+        render(<CueFlowPreview flow={flow} track={track} />)
+        if (now) fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+        const line = screen.getByTestId('cue-preview-status')
+        expect(line).toHaveClass('h-10')
+        const said = Array.from(line.querySelectorAll<HTMLElement>('[data-status]'))
+        expect(said.map((el) => el.dataset.status)).toEqual(status ? [status] : [])
+        expect(said.every((el) => el.classList.contains('truncate'))).toBe(true)
+        const outside = Array.from(screen.getByTestId('cue-flow-preview').children).filter(
+          (el) => el.tagName === 'P',
+        )
+        expect(outside).toEqual([])
+      },
+    )
+
+    it('says the most serious notice when two meet and keeps the other in its tooltip, so the line stays one line and nothing is lost', () => {
+      render(<CueFlowPreview flow={edge} track={onlyMark} />)
+      const line = screen.getByTestId('cue-preview-compare')
+      expect(line).toHaveTextContent(/^\d+ hot cues are left out by the limit of 8$/)
+      expect(hoverTooltip(line)).toMatch(/^\d+ hot cues are left out by the limit of 8\. 8 new$/)
+      fireEvent.mouseEnter(line)
+      expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'true')
+    })
+
+    it('says a lone notice once, with no tooltip repeating it', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      expect(hoverTooltip(screen.getByTestId('cue-preview-compare'))).toBeNull()
     })
   })
   describe('choosing the track', () => {

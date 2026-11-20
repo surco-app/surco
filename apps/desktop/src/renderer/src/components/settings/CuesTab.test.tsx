@@ -1031,6 +1031,41 @@ describe('CuesTab', () => {
     ).toBeTruthy()
   })
 
+  it('keeps the preview and the rules of a flow in one piece, the preview first and Añadir regla after the last rule, so what a rule does is seen right over it', () => {
+    render(<Harness />)
+    const bench = screen.getByTestId('cue-flow-bench')
+    const inside = [
+      'cue-flow-preview',
+      'cue-rule-0',
+      'cue-rule-1',
+      'cue-flow-mark-point',
+      'cue-rule-add',
+    ].map((id) => within(bench).getByTestId(id))
+    for (let i = 1; i < inside.length; i++)
+      expect(
+        inside[i - 1].compareDocumentPosition(inside[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    expect(within(bench).queryAllByRole('heading')).toEqual([])
+    expect(within(bench).getByRole('region', { name: 'Rules' })).toContainElement(inside[1])
+  })
+
+  it('pins the preview to the top of Settings on an opaque ground while the rules scroll under it, below the lists a rule opens', () => {
+    render(<Harness />)
+    const pinned = screen.getByTestId('cue-flow-bench-preview')
+    expect(pinned).toContainElement(screen.getByTestId('cue-flow-preview'))
+    expect(pinned).toHaveClass('sticky', 'top-0', 'z-10', 'bg-[var(--color-field)]')
+    expect(pinned).not.toContainElement(screen.getByTestId('cue-rule-0'))
+  })
+
+  it('never clips the piece of the preview and the rules, so their lists keep placing themselves against the edges of Settings', () => {
+    render(<Harness />)
+    const bench = screen.getByTestId('cue-flow-bench')
+    const clipping = [bench, ...Array.from(bench.querySelectorAll('section'))].filter((el) =>
+      /overflow-/.test(el.className),
+    )
+    expect(clipping).toEqual([])
+  })
+
   it('sets the arrow jump of the manual editor in its own card', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-jump-16')).toHaveAttribute('aria-pressed', 'true')

@@ -405,47 +405,55 @@ export function CuesTab({
         </div>
       </div>
 
-      <section aria-label={tr('settings.cueFlows.preview')}>
-        <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
-      </section>
       <div className="flex flex-col gap-2">
-        <div className="flex items-baseline justify-between gap-3">
-          <h3 className={HEADING}>{tr('settings.cueFlows.rules')}</h3>
-          <button
-            type="button"
-            data-testid="cue-rule-add"
-            onClick={() => setRules([...flow.rules, NEW_RULE])}
-            className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+        <div data-testid="cue-flow-bench">
+          <section
+            data-testid="cue-flow-bench-preview"
+            aria-label={tr('settings.cueFlows.preview')}
+            className="sticky top-0 z-10 rounded-t-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 pt-3 pb-1"
           >
-            {`+ ${tr('settings.cueFlows.addRule')}`}
-          </button>
-        </div>
-        <div className={GROUP}>
-          {rows.map(({ rule, position }) => (
-            <CueRuleRow
-              key={`${flow.id}-${removals}-${position}`}
-              rule={rule}
-              index={position}
-              onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
-              onRemove={() => {
-                setRules(flow.rules.filter((_, j) => j !== position))
-                setRemovals(removals + 1)
-              }}
-            />
-          ))}
-          {flow.rules.length === 0 && (
-            <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
-              {tr('settings.cueFlows.noRules')}
-            </p>
-          )}
-          <div className="px-3.5 py-2.5 text-sm">
-            <CheckboxRow
-              testid="cue-flow-mark-point"
-              checked={flow.markPoint}
-              onChange={(markPoint) => put({ ...flow, markPoint })}
-              label={tr('settings.cueFlows.markPoint')}
-            />
-          </div>
+            <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
+          </section>
+          <section
+            aria-label={tr('settings.cueFlows.rules')}
+            className="divide-y divide-[var(--color-line)] rounded-b-lg border-x border-b border-[var(--color-line)]"
+          >
+            {rows.map(({ rule, position }) => (
+              <CueRuleRow
+                key={`${flow.id}-${removals}-${position}`}
+                rule={rule}
+                index={position}
+                onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
+                onRemove={() => {
+                  setRules(flow.rules.filter((_, j) => j !== position))
+                  setRemovals(removals + 1)
+                }}
+              />
+            ))}
+            {flow.rules.length === 0 && (
+              <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
+                {tr('settings.cueFlows.noRules')}
+              </p>
+            )}
+            <div className="px-3.5 py-2.5 text-sm">
+              <CheckboxRow
+                testid="cue-flow-mark-point"
+                checked={flow.markPoint}
+                onChange={(markPoint) => put({ ...flow, markPoint })}
+                label={tr('settings.cueFlows.markPoint')}
+              />
+            </div>
+            <div className="px-3.5 py-2.5">
+              <button
+                type="button"
+                data-testid="cue-rule-add"
+                onClick={() => setRules([...flow.rules, NEW_RULE])}
+                className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+              >
+                {`+ ${tr('settings.cueFlows.addRule')}`}
+              </button>
+            </div>
+          </section>
         </div>
         {hotCuesOnlyFound && (
           <SettingsHint data-testid="cue-flow-library-note">
