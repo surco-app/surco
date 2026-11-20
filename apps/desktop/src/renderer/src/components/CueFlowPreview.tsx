@@ -250,7 +250,7 @@ export function CueFlowPreview({
   }
 
   return (
-    <div data-testid="cue-flow-preview">
+    <div data-testid="cue-flow-preview" className="pl-1">
       <div ref={pickerRef} className="relative mb-2">
         <button
           ref={triggerRef}
