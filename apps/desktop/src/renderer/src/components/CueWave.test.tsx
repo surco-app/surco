@@ -7,6 +7,7 @@ import '../i18n'
 import type { Api } from '../../../preload/api'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { resetRowWaves } from '../lib/rowWaves'
+import { hoverTooltip } from '../test/tooltip'
 import { CueWave } from './CueWave'
 import { RowWave } from './RowWave'
 
@@ -439,7 +440,8 @@ describe('CueWave', () => {
       droppedLabel: (ms) => `left out at ${ms}`,
     })
     const dropped = screen.getByTestId('cue-wave-ghost-dropped-24000')
-    expect(dropped).toHaveAttribute('title', 'left out at 24000')
+    expect(dropped).not.toHaveAttribute('title')
+    expect(hoverTooltip(dropped)).toBe('left out at 24000')
     expect(dropped).toHaveAccessibleName('left out at 24000')
     expect(dropped).not.toHaveAttribute('aria-hidden')
   })

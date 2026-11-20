@@ -22,6 +22,7 @@ import { type Playhead, snapToBeat } from '../lib/cuePlayhead'
 import { barLines, peakBars, quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { CueDeleteBadge } from './CueDeleteBadge'
+import { Tooltip } from './Tooltip'
 import { WaveBars } from './WaveBars'
 
 export interface WaveCue {
@@ -500,11 +501,13 @@ export function CueWave({
             key={`gd${r.ms}`}
             data-testid={`cue-wave-ghost-dropped-${r.ms}`}
             {...(droppedLabel
-              ? { role: 'img', 'aria-label': droppedLabel(r.ms), title: droppedLabel(r.ms) }
+              ? { role: 'img', 'aria-label': droppedLabel(r.ms) }
               : { 'aria-hidden': true })}
             style={droppedStyle((r.ms / Math.max(durationMs, 1)) * 100, r)}
             className={`${droppedLabel ? '' : 'pointer-events-none '}absolute z-10 h-3 w-3 rounded-[3px] border`}
-          />
+          >
+            {droppedLabel && <Tooltip label={droppedLabel(r.ms)} />}
+          </span>
         ))}
     </div>
   )

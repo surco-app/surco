@@ -20,6 +20,7 @@ import {
 } from '../lib/cueExample'
 import { CueWave } from './CueWave'
 import { showOption } from './Select'
+import { Tooltip } from './Tooltip'
 
 type Source = 'track' | 'example'
 
@@ -222,9 +223,10 @@ export function CueFlowPreview({
                 data-testid="cue-preview-same"
                 role="img"
                 aria-label={tr('settings.cueFlows.compareSame')}
-                title={tr('settings.cueFlows.compareSame')}
                 className="size-1.5 rounded-full bg-[var(--color-good)]"
-              />
+              >
+                <Tooltip label={tr('settings.cueFlows.compareSame')} />
+              </span>
             )}
           </span>
           <span className="flex-1" />

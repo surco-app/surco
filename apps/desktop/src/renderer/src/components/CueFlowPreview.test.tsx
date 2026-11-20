@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MIX_IN, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
+import { hoverTooltip } from '../test/tooltip'
 import { CueFlowPreview } from './CueFlowPreview'
 
 afterEach(cleanup)
@@ -65,7 +66,8 @@ describe('CueFlowPreview', () => {
     render(<CueFlowPreview flow={intoChorus} />)
     const ghosts = screen.getAllByTestId(/^cue-wave-ghost-dropped-/)
     expect(ghosts).toHaveLength(1)
-    expect(ghosts[0]).toHaveAttribute('title', 'Rule 1, 16 bars back. Inside a chorus')
+    expect(ghosts[0]).not.toHaveAttribute('title')
+    expect(hoverTooltip(ghosts[0])).toBe('Rule 1, 16 bars back. Inside a chorus')
     expect(ghosts[0]).toHaveAccessibleName('Rule 1, 16 bars back. Inside a chorus')
     expect(screen.queryByTestId('cue-preview-left-out')).toBeNull()
   })
@@ -106,8 +108,9 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
       const same = screen.getByTestId('cue-preview-same')
       expect(same).toHaveAccessibleName('Same hot cues this track has now')
-      expect(same).toHaveAttribute('title', 'Same hot cues this track has now')
-      expect(same).toBeEmptyDOMElement()
+      expect(same).not.toHaveAttribute('title')
+      expect(hoverTooltip(same)).toBe('Same hot cues this track has now')
+      expect(same).toHaveTextContent('')
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
     })
 
