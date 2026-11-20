@@ -269,7 +269,6 @@ export interface Api {
   addMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPairs: (pairs: [string, string][]) => Promise<void>
-  holdsInLibrary: (path: string, titles: string[]) => Promise<boolean>
   rowWaves: (requests: RowWaveRequest[]) => Promise<Record<string, number[]>>
   rekordboxCountCompletable: () => Promise<number>
   cueProfile: () => Promise<CueProfileRead>

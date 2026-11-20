@@ -1,7 +1,5 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { setFlagsFromString } from 'node:v8'
-import { runInNewContext } from 'node:vm'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
@@ -109,7 +107,6 @@ beforeEach(() => {
     onDeclickPreviewProgress: vi.fn().mockReturnValue(() => {}),
     cancelDeclickPreview: vi.fn().mockResolvedValue(undefined),
     reveal: vi.fn(),
-    holdsInLibrary: vi.fn().mockResolvedValue(true),
     recordStat: vi.fn(),
     // The library verdict reads where an offered replacement's file lives the moment the
     // copy is offered, so this effect mounts wherever a library index is handed in.
@@ -3558,6 +3555,16 @@ describe('Editor output file name', () => {
     expect(screen.queryByTestId('overwrite-notice')).toBeNull()
   })
 
+  it('hides Regenerate when overwriting with the pattern applied automatically, since the conversion already renames the file to the name shown', () => {
+    renderEditor({ id: 'a', meta: { artist: 'Halo', title: 'Sunrise' } }, 'wav', {
+      overwriteOriginal: true,
+      autoApplyFilename: true,
+      filenameFormat: '{artist} - {title}',
+    })
+    expect(screen.getByTestId('output-name')).toHaveValue('Halo - Sunrise')
+    expect(screen.queryByTestId('regenerate-output-name')).toBeNull()
+  })
+
   // Overwrite is a one-shot pick in the menu, so a track the user sent there by hand
   // keeps going there after a visit to another track, even with Settings saying otherwise.
   it('keeps a remembered Overwrite pick with overwrite off in Settings', () => {
@@ -4461,16 +4468,6 @@ describe('Editor in-place hint', () => {
 
   // The default case needs no caption — users already know the pattern lives in
   // Settings — so the slot stays empty and the rare in-place warning stands out more.
-  // A new download already in the format goes to the output folder with the rest of the
-  // batch, so the in-place warning would promise what the conversion no longer does.
-  it('drops the in-place warning for a track no library holds', async () => {
-    const holdsInLibrary = vi.fn<Api['holdsInLibrary']>().mockResolvedValue(false)
-    Object.assign(window.api, { holdsInLibrary })
-    renderEditor({ id: 'a', inputPath: '/music/a.wav', meta: { title: 'A' } }, 'wav')
-    await waitFor(() => expect(holdsInLibrary).toHaveBeenCalledWith('/music/a.wav', ['A']))
-    await waitFor(() => expect(screen.queryByTestId('output-name-hint')).toBeNull())
-  })
-
   it('shows no hint when the export converts to a different format', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'mp3')
     expect(screen.queryByTestId('output-name-hint')).toBeNull()
@@ -5839,80 +5836,5 @@ describe('Editor convert notes from the measured spectrum', () => {
     expect(await screen.findByTestId('convert-damaged-note')).toHaveTextContent(
       i18n.t('editor.damagedSource'),
     )
-  })
-})
-
-describe('Editor library check left in the cache', () => {
-  const gc = (): void => {
-    setFlagsFromString('--expose-gc')
-    ;(runInNewContext('gc') as () => void)()
-  }
-  const noop = (): void => {}
-  const asyncNoop = async (): Promise<undefined> => undefined
-  const searchInputRef = createRef<HTMLInputElement>()
-
-  it('lets go of the render a track was last edited in once another track is open', async () => {
-    const client = createQueryClient()
-    const ui = (crate: number[], track: TrackItem): React.ReactElement => (
-      <QueryClientProvider client={client}>
-        <SettingsProvider
-          settings={{
-            discogsToken: 'tok',
-            showSpectrum: false,
-            outputFormat: 'wav',
-            addToAppleMusic: false,
-          }}
-        >
-          <OpenSettingsProvider open={noop}>
-            <Editor
-              item={track}
-              libraryIndex={null}
-              searchInputRef={searchInputRef}
-              cueGridCheckOf={() => (crate.length ? null : undefined)}
-              onChange={noop}
-              onProcess={noop}
-              onFormatChange={noop}
-              onDestinationChange={noop}
-              onDeriveTags={noop}
-              onApplyTitleFormat={noop}
-              onAddToAppleMusic={noop}
-              onCleanUp={noop}
-              resultsFolded={false}
-              onFoldResults={noop}
-              onResultsResizeStart={noop}
-              onResultsFit={noop}
-              onShowLoudnessHelp={noop}
-              onHideEditorHints={noop}
-              onOpenRename={noop}
-              onRegenerateName={noop}
-              onTrimDetectedAll={noop}
-              onCopyFilename={noop}
-              onSearchWeb={noop}
-              onCopyMeta={noop}
-              onPasteMeta={noop}
-              copiedMetaTitle={null}
-              onExportCollection={noop}
-              onRecordUndo={noop}
-              readFullTrack={asyncNoop}
-            />
-          </OpenSettingsProvider>
-        </SettingsProvider>
-      </QueryClientProvider>
-    )
-    const first = item({ id: 'a', meta: { title: 'A' } })
-    const { rerender } = render(ui([], first))
-    const box: { crate: number[] | null } = { crate: new Array(200_000).fill(1) }
-    const editedWith = new WeakRef(box.crate as number[])
-    rerender(ui(box.crate as number[], first))
-    await waitFor(() =>
-      expect(window.api.holdsInLibrary).toHaveBeenCalledWith('/music/a.wav', ['A']),
-    )
-    box.crate = null
-    const next = item({ id: 'b', meta: { title: 'B' } })
-    for (let i = 0; i < 4; i++) rerender(ui(new Array(10).fill(i), next))
-    await new Promise((r) => setTimeout(r, 0))
-    gc()
-
-    expect(editedWith.deref()).toBeUndefined()
   })
 })

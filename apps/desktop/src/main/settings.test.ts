@@ -446,6 +446,19 @@ describe('bit depth from an install that predates Corrected', () => {
     expect(getSettings().outputBitDepth).toBe('corrected')
   })
 
+  it('keeps Same as source when it is picked after the move, so the choice is not undone on the next read', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputBitDepth: 'source' }))
+    getSettings()
+    saveSettings({ outputBitDepth: 'source' })
+    expect(getSettings().outputBitDepth).toBe('source')
+  })
+
+  it('keeps Same as source picked on an install already moved to Corrected before the marker existed', () => {
+    writeFileSync(localFile(), JSON.stringify({ outputBitDepth: 'corrected' }))
+    saveSettings({ outputBitDepth: 'source' })
+    expect(getSettings().outputBitDepth).toBe('source')
+  })
+
   it('leaves a pinned depth alone', () => {
     writeFileSync(localFile(), JSON.stringify({ outputBitDepth: '24' }))
     expect(getSettings().outputBitDepth).toBe('24')

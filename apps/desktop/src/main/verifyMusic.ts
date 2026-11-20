@@ -6,7 +6,6 @@ import type { TrackMetadata } from '../shared/types'
 import type { PlaceCheck, VerifyDetailKey } from '../shared/verification'
 import {
   appleMusicLimiter,
-  buildMusicRunningScript,
   type FileLike,
   musicFileEntries,
   musicFileLocations,
@@ -107,16 +106,6 @@ export function musicFileHolder(options: {
 }
 
 export const musicHoldsFile = musicFileHolder({ run: runOsascript, realPath })
-
-export const musicEntriesIfOpen = musicEntriesForFile({
-  run: runOsascript,
-  realPath,
-  launch: false,
-})
-
-export async function musicIsOpen(run: typeof runOsascript = runOsascript): Promise<boolean> {
-  return (await run(buildMusicRunningScript()).catch(() => 'false')).trim() === 'true'
-}
 
 export const musicReaders: MusicReaders = {
   entry: readMusicEntryFacts,

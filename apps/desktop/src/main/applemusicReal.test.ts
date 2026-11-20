@@ -365,7 +365,6 @@ const optionalDeps: Record<OptionalDepKey, 'wired' | 'notNeeded'> = {
   followLibrarySize: 'notNeeded',
   librariesKeepingOriginal: 'notNeeded',
   refreshAppleMusicEntry: 'notNeeded',
-  holdsInLibrary: 'notNeeded',
 }
 
 describe('the opt-in Music test deps', () => {

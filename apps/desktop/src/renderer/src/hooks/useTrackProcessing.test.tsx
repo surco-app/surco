@@ -1342,7 +1342,7 @@ describe('useTrackProcessing', () => {
     )
   })
 
-  it('keeps the original name in overwrite mode when the DJ named nothing, even with the name pattern applied automatically', async () => {
+  it('renames the original from the name pattern in overwrite mode when the pattern is applied automatically, since that is the name the editor shows', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true })
     setApi({ processTrack })
     const { result } = renderHook(
@@ -1361,7 +1361,9 @@ describe('useTrackProcessing', () => {
     await act(async () => {
       await result.current.processOne('a')
     })
-    expect(processTrack).toHaveBeenCalledWith(expect.objectContaining({ outputName: 'a.wav' }))
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ outputName: 'Artist - Title' }),
+    )
   })
 
   // The split-button's one-shot destination pick must reach main as the job's own

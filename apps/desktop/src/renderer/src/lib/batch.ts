@@ -190,7 +190,6 @@ interface TrackPlan {
   sameFormat: boolean
   overwrite: boolean
   beside: boolean
-  toMusic: boolean
 }
 
 // One track of the batch resolved the way useTrackProcessing.processOne and main's
@@ -221,19 +220,7 @@ function planOf(track: TrackItem, pick: BatchPick, audio: AudioProcessing): Trac
     sameFormat: formatMatchesInput(format, track.inputPath),
     overwrite,
     beside,
-    toMusic: facets.addToAppleMusic,
   }
-}
-
-// Main sends a file staying in its format to the output folder as a new copy when no
-// library holds it, and only then. The one question the renderer cannot answer alone.
-function needsLibrary(plan: TrackPlan): boolean {
-  return !plan.beside && !plan.overwrite && !plan.toMusic && plan.sameFormat
-}
-
-export function asksLibrary(track: TrackItem, pick: BatchPick): boolean {
-  const plan = planOf(track, pick, {})
-  return plan !== null && needsLibrary(plan)
 }
 
 export function batchSkips(track: TrackItem, pick: BatchPick, audio: AudioProcessing): boolean {
@@ -244,7 +231,6 @@ export function batchWritesTagsOnly(
   ready: TrackItem[],
   pick: BatchPick,
   audioOf: (track: TrackItem) => AudioProcessing,
-  heldByLibrary: (track: TrackItem) => boolean,
 ): boolean {
   let written = 0
   for (const track of ready) {
@@ -252,10 +238,7 @@ export function batchWritesTagsOnly(
     const plan = planOf(track, pick, audio)
     if (plan === null) continue
     written += 1
-    const inPlace =
-      !plan.beside &&
-      !(needsLibrary(plan) && !heldByLibrary(track)) &&
-      editsInPlace(plan.format, track.inputPath, plan.overwrite)
+    const inPlace = !plan.beside && editsInPlace(plan.format, track.inputPath, plan.overwrite)
     if (!inPlace || !plan.sameFormat || processesAudio(audio)) return false
   }
   return written > 0

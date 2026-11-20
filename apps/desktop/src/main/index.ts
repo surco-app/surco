@@ -297,9 +297,7 @@ import {
   checkAppleMusic,
   fileLikeForMusic,
   type MusicExpect,
-  musicEntriesIfOpen,
   musicHoldsFile,
-  musicIsOpen,
   musicReaders,
 } from './verifyMusic'
 import type { FlushOutcome, TraktorWrite } from './verifyRegistry'
@@ -502,17 +500,6 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
     fileTitle: async (file) => (await readTags(file)).title,
     fileLike: fileLikeForMusic,
     ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
-  })
-const holdsForConversion = (path: string, titles: string[]): Promise<boolean> =>
-  usedByAnyLibrary(path, titles, {
-    traktorRead: traktorReadPath,
-    rootLibraries,
-    ...(process.platform === 'darwin' && {
-      musicEntries: musicEntriesIfOpen,
-      musicHolds: () => musicIsOpen(),
-    }),
-    fileTitle: async (file) => (await readTags(file)).title,
-    fileLike: fileLikeForMusic,
   })
 const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
@@ -2279,7 +2266,6 @@ function registerIpc(): void {
         return redirectNmlPatch(to, landed, toNmlLocation(landed))
       },
       verifyFile: (expect, signal) => checkFile(expect, fileReaders, { signal }),
-      holdsInLibrary: holdsForConversion,
       // Read only in the libraries that will follow the file.
       snapshotLibraries: (from) => {
         const s = getSettings()
@@ -2448,9 +2434,6 @@ function registerIpc(): void {
   ipcMain.handle('clipboard:hasImage', () => clipboardHasImage())
 
   ipcMain.handle('djApps:running', () => anyDjProgramRunning())
-  ipcMain.handle('library:holdsFile', (_e, path: string, titles: string[]) =>
-    holdsForConversion(path, titles).catch(() => true),
-  )
   registerShellIpc(mediaAccess, holdsInAnyLibrary)
   registerCopiesIpc(
     {
