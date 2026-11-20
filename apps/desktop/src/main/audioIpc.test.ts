@@ -261,9 +261,21 @@ describe('audio:cached-batch', () => {
     expect(result[file]).toEqual({ lufs: -8.4 })
   })
 
+  it('serves the loudness a library already measured before the silent channel field existed, so updating never makes it measure again', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('loudness-v2', file, async () => ({ integratedLufs: -9.1, channelBalanceDb: 0.4 }))
+
+    const reading = await handlerFor('audio:loudness')({}, file)
+    const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
+
+    expect(measureLoudness).not.toHaveBeenCalled()
+    expect(reading).toEqual({ integratedLufs: -9.1, channelBalanceDb: 0.4 })
+    expect(result[file]).toEqual({ lufs: -9.1 })
+  })
+
   it('leaves the loudness out when the stored reading has no finite integrated loudness', async () => {
     const file = await makeFile()
-    await cachedAnalysis('loudness-v3', file, async () => ({ integratedLufs: null }))
+    await cachedAnalysis('loudness-v2', file, async () => ({ integratedLufs: null }))
 
     const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
 
