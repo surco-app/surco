@@ -1,6 +1,6 @@
 import { Ellipsis, Info, Plus } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -13,7 +13,7 @@ import {
 } from '../../../../shared/cueFlows'
 import { CUE_GRID_TOLERANCE, normalizeCueGridTolerance } from '../../../../shared/cueGrid'
 import { CUE_JUMP_BARS } from '../../../../shared/cueJump'
-import { CUE_QUANTIZE } from '../../../../shared/cueQuantize'
+import { CUE_QUANTIZE, type CueQuantize } from '../../../../shared/cueQuantize'
 import { DJ_PROGRAMS, type DjProgram } from '../../../../shared/djProgram'
 import { useProgramsAvailable } from '../../hooks/useProgramsAvailable'
 import { flowName } from '../../lib/cueFlowName'
@@ -22,9 +22,12 @@ import { FLOW_TO } from '../../lib/cueTwins'
 import { isWindows, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
+import type { CueFold } from '../../lib/settingsSearchIndex'
 import type { PatchSynced } from '../../lib/settingsTabs'
+import { formatCount } from '../../lib/stats'
 import { CueFlowTrackPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
+import { SectionHeader } from '../SectionHeader'
 import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
 import { Tooltip } from '../Tooltip'
@@ -38,6 +41,8 @@ interface Props {
   rekordboxCollection: string
   cueTrack?: { contentId: string; label: string }
   cueTracks?: { contentId: string; label: string }[]
+  folds?: CueFold[]
+  onFolds?: (folds: CueFold[]) => void
 }
 
 const NEW_RULE: CueRule = {
@@ -63,6 +68,10 @@ const UNAVAILABLE: Record<DjProgram, string> = {
   virtualdj: 'settings.sourceVirtualdjUnavailable',
 }
 const MENU_WIDTH = 240
+const QUANTIZE_LABEL: Record<CueQuantize, string> = {
+  bar: 'editor.cues.quantizeBar',
+  beat: 'editor.cues.quantizeBeat',
+}
 const GROUP = 'divide-y divide-[var(--color-line)] rounded-lg border border-[var(--color-line)]'
 
 function FlowPill({
@@ -112,14 +121,50 @@ function FlowPill({
   )
 }
 
+function Fold({
+  id,
+  title,
+  summary,
+  open,
+  onToggle,
+  children,
+}: {
+  id: CueFold
+  title: string
+  summary?: string
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}): React.JSX.Element {
+  const bodyId = useId()
+  return (
+    <div data-testid={`cue-section-${id}`} className="py-3">
+      <SectionHeader
+        title={title}
+        open={open}
+        onToggle={onToggle}
+        summary={summary}
+        summaryTestId={`cue-section-${id}-summary`}
+        bodyId={bodyId}
+      />
+      <div id={bodyId} hidden={!open} className="pt-3">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function CuesTab({
   synced,
   patch,
   rekordboxCollection,
   cueTrack,
   cueTracks,
+  folds,
+  onFolds,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
+  const [ownFolds, setOwnFolds] = useState<CueFold[]>([])
   const [current, setCurrent] = useState(synced.activeCueFlow)
   const [removals, setRemovals] = useState(0)
   const [typed, setTyped] = useState<string | null>(null)
@@ -234,12 +279,19 @@ export function CuesTab({
   const menuSide = menusRightwards ? 'left-0 origin-top-left' : 'right-0 origin-top-right'
 
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
-  const card = read && (
-    <CueProfileCard read={read} onLearned={onLearned} synced={synced} patch={patch} />
+  const reachedNames = DJ_PROGRAMS.filter(
+    (p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows && synced[FLOW_TO[p]],
   )
+    .map((p) => LIBRARY_NAME[p])
+    .join(', ')
+  const learnedFrom = read?.profile
+    ? read.profile.sources.rekordbox + read.profile.sources.edits
+    : 0
+  const open = folds ?? ownFolds
+  const flip = (id: CueFold) =>
+    (onFolds ?? setOwnFolds)(open.includes(id) ? open.filter((f) => f !== id) : [...open, id])
   return (
     <div className="flex flex-col gap-5">
-      {read && !read.profile && card}
       <div className="flex flex-col gap-2" data-search-id="cueFlows.flows">
         <h3 className={HEADING}>{tr('settings.cueFlows.flows')}</h3>
         <div ref={rowRef} data-testid="cue-flows" className="flex flex-wrap items-center gap-1.5">
@@ -405,194 +457,221 @@ export function CuesTab({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div data-testid="cue-flow-bench">
-          <section
-            data-testid="cue-flow-bench-preview"
-            aria-label={tr('settings.cueFlows.preview')}
-            className="sticky top-0 z-10 rounded-t-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 pt-3 pb-1"
-          >
-            <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
-          </section>
-          <section
-            aria-label={tr('settings.cueFlows.rules')}
-            className="divide-y divide-[var(--color-line)] rounded-b-lg border-x border-b border-[var(--color-line)]"
-          >
-            {rows.map(({ rule, position }) => (
-              <CueRuleRow
-                key={`${flow.id}-${removals}-${position}`}
-                rule={rule}
-                index={position}
-                onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
-                onRemove={() => {
-                  setRules(flow.rules.filter((_, j) => j !== position))
-                  setRemovals(removals + 1)
-                }}
-              />
-            ))}
-            {flow.rules.length === 0 && (
-              <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
-                {tr('settings.cueFlows.noRules')}
-              </p>
-            )}
-            <div className="px-3.5 py-2.5 text-sm">
-              <CheckboxRow
-                testid="cue-flow-mark-point"
-                checked={flow.markPoint}
-                onChange={(markPoint) => put({ ...flow, markPoint })}
-                label={tr('settings.cueFlows.markPoint')}
-              />
-            </div>
-            <div className="px-3.5 py-2.5">
-              <button
-                type="button"
-                data-testid="cue-rule-add"
-                onClick={() => setRules([...flow.rules, NEW_RULE])}
-                className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
-              >
-                {`+ ${tr('settings.cueFlows.addRule')}`}
-              </button>
-            </div>
-          </section>
-        </div>
-        {hotCuesOnlyFound && (
-          <SettingsHint data-testid="cue-flow-library-note">
-            {[
-              tr(
-                isWindows()
-                  ? 'settings.cueFlows.callsOnlyRekordboxWin'
-                  : 'settings.cueFlows.callsOnlyRekordbox',
-              ),
-              ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
-            ].join('. ')}
-          </SettingsHint>
-        )}
-      </div>
-
-      {read?.profile && card}
-
-      <div className="flex flex-col gap-2">
-        <h3 className={`${HEADING} flex items-center gap-1.5`}>
-          {tr('settings.cueFlows.targets.title')}
-          <span
-            data-testid="cue-flow-targets-help"
-            role="note"
-            className="relative flex h-5 w-5 items-center justify-center text-fg-dim hover:text-fg-muted"
-          >
-            <Info className="h-3 w-3" aria-hidden="true" />
-            <span className="sr-only">{tr('settings.cueFlows.targets.hint')}</span>
-            <Tooltip label={tr('settings.cueFlows.targets.hint')} />
-          </span>
-        </h3>
-        <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
-          {DJ_PROGRAMS.filter(offeredHere).map((library) => {
-            const name = LIBRARY_NAME[library]
-            const key = FLOW_TO[library]
-            const found = foundBy[library]
-            const reached = found && CUE_PROGRAMS[library].takesFlows
-            return (
-              <div key={library} className="px-3.5 py-2.5">
-                <CheckboxRow
-                  testid={`settings-cue-flow-to-${library}`}
-                  checked={reached && synced[key]}
-                  onChange={(v) => patch(key, v)}
-                  label={name}
-                  disabled={!reached}
-                />
-                <SettingsHint
-                  data-testid={
-                    missingBy[library] ? `settings-cue-flow-to-${library}-missing` : undefined
-                  }
-                  className="mt-1 pl-7"
-                >
-                  {missingBy[library]
-                    ? tr(UNAVAILABLE[library])
-                    : tr(`settings.cueFlows.targets.${library}`)}
-                </SettingsHint>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-      <div className="flex flex-col gap-2">
-        <h3 className={HEADING}>{tr('settings.cueFlows.manual.title')}</h3>
-        <div data-testid="cue-manual" className={`${GROUP} text-sm`}>
-          <div
-            data-search-id="cueFlows.manual.jump"
-            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
-          >
-            <div className="min-w-0">
-              <p className="text-fg">{tr('settings.cueFlows.manual.jump')}</p>
-              <p className="text-xs text-fg-dim">{tr('settings.cueFlows.manual.unit')}</p>
-            </div>
-            <SegmentedControl
-              compact
-              options={CUE_JUMP_BARS.map(String)}
-              value={String(synced.cueJumpBars)}
-              onChange={(bars) =>
-                patch(
-                  'cueJumpBars',
-                  CUE_JUMP_BARS.find((b) => String(b) === bars) ?? synced.cueJumpBars,
-                )
-              }
-              testidPrefix="cue-jump"
-              labelFor={(bars) => bars}
-              label={tr('settings.cueFlows.manual.jump')}
+      <div data-testid="cue-flow-bench">
+        <section
+          data-testid="cue-flow-bench-preview"
+          aria-label={tr('settings.cueFlows.preview')}
+          className="sticky top-0 z-10 rounded-t-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 pt-3 pb-1"
+        >
+          <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
+        </section>
+        <section
+          aria-label={tr('settings.cueFlows.rules')}
+          className="divide-y divide-[var(--color-line)] rounded-b-lg border-x border-b border-[var(--color-line)]"
+        >
+          {rows.map(({ rule, position }) => (
+            <CueRuleRow
+              key={`${flow.id}-${removals}-${position}`}
+              rule={rule}
+              index={position}
+              onChange={(next) => setRules(flow.rules.map((r, j) => (j === position ? next : r)))}
+              onRemove={() => {
+                setRules(flow.rules.filter((_, j) => j !== position))
+                setRemovals(removals + 1)
+              }}
             />
-          </div>
-          <div
-            data-search-id="cueFlows.manual.quantize"
-            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
-          >
-            <p className="min-w-0 text-fg">{tr('settings.cueFlows.manual.quantize')}</p>
-            <SegmentedControl
-              compact
-              options={CUE_QUANTIZE}
-              value={synced.cueQuantize}
-              onChange={(unit) => patch('cueQuantize', unit)}
-              testidPrefix="cue-quantize"
-              labelFor={(unit) =>
-                unit === 'bar' ? tr('editor.cues.quantizeBar') : tr('editor.cues.quantizeBeat')
-              }
-              label={tr('settings.cueFlows.manual.quantize')}
-            />
-          </div>
-          <div
-            data-search-id="cueFlows.manual.gridTolerance"
-            className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
-          >
-            <div className="min-w-0">
-              <p className="text-fg">{tr('settings.cueFlows.manual.gridTolerance')}</p>
-              <p className="text-xs text-fg-dim">
-                {tr('settings.cueFlows.manual.gridToleranceUnit')}
-              </p>
-            </div>
-            <SegmentedControl
-              compact
-              options={CUE_GRID_TOLERANCE.map(String)}
-              value={String(synced.cueGridTolerance)}
-              onChange={(ms) => patch('cueGridTolerance', normalizeCueGridTolerance(Number(ms)))}
-              testidPrefix="cue-grid-tolerance"
-              labelFor={(ms) => `${ms} ms`}
-              label={tr('settings.cueFlows.manual.gridTolerance')}
-            />
-          </div>
-          <div
-            data-testid="cue-letters"
-            data-search-id="cueFlows.lettersByTime"
-            className="px-3.5 py-2.5"
-          >
+          ))}
+          {flow.rules.length === 0 && (
+            <p data-testid="cue-flow-no-rules" className="px-3.5 py-3 text-xs text-fg-dim">
+              {tr('settings.cueFlows.noRules')}
+            </p>
+          )}
+          <div className="px-3.5 py-2.5 text-sm">
             <CheckboxRow
-              testid="settings-cue-letters-by-time"
-              checked={synced.cueLettersByTime}
-              onChange={(v) => patch('cueLettersByTime', v)}
-              label={tr('settings.cueFlows.lettersByTime')}
+              testid="cue-flow-mark-point"
+              checked={flow.markPoint}
+              onChange={(markPoint) => put({ ...flow, markPoint })}
+              label={tr('settings.cueFlows.markPoint')}
             />
-            <SettingsHint data-testid="settings-cue-letters-hint" className="mt-1 pl-7">
-              {tr('settings.cueFlows.lettersByTimeHint')}
-            </SettingsHint>
           </div>
-        </div>
+          <div className="px-3.5 py-2.5">
+            <button
+              type="button"
+              data-testid="cue-rule-add"
+              onClick={() => setRules([...flow.rules, NEW_RULE])}
+              className="press text-xs text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"
+            >
+              {`+ ${tr('settings.cueFlows.addRule')}`}
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <div className="divide-y divide-[var(--color-line)] border-y border-[var(--color-line)]">
+        <Fold
+          id="programs"
+          title={tr('settings.tabs.programs')}
+          summary={reachedNames}
+          open={open.includes('programs')}
+          onToggle={() => flip('programs')}
+        >
+          <div className="flex flex-col gap-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-fg-dim">
+              {tr('settings.cueFlows.targets.title')}
+              <span
+                data-testid="cue-flow-targets-help"
+                role="note"
+                className="relative flex h-5 w-5 items-center justify-center text-fg-dim hover:text-fg-muted"
+              >
+                <Info className="h-3 w-3" aria-hidden="true" />
+                <span className="sr-only">{tr('settings.cueFlows.targets.hint')}</span>
+                <Tooltip label={tr('settings.cueFlows.targets.hint')} />
+              </span>
+            </p>
+            <div data-testid="cue-flow-targets" className={`${GROUP} text-sm`}>
+              {DJ_PROGRAMS.filter(offeredHere).map((library) => {
+                const name = LIBRARY_NAME[library]
+                const key = FLOW_TO[library]
+                const found = foundBy[library]
+                const reached = found && CUE_PROGRAMS[library].takesFlows
+                return (
+                  <div key={library} className="px-3.5 py-2.5">
+                    <CheckboxRow
+                      testid={`settings-cue-flow-to-${library}`}
+                      checked={reached && synced[key]}
+                      onChange={(v) => patch(key, v)}
+                      label={name}
+                      disabled={!reached}
+                    />
+                    <SettingsHint
+                      data-testid={
+                        missingBy[library] ? `settings-cue-flow-to-${library}-missing` : undefined
+                      }
+                      className="mt-1 pl-7"
+                    >
+                      {missingBy[library]
+                        ? tr(UNAVAILABLE[library])
+                        : tr(`settings.cueFlows.targets.${library}`)}
+                    </SettingsHint>
+                  </div>
+                )
+              })}
+            </div>
+            {hotCuesOnlyFound && (
+              <SettingsHint data-testid="cue-flow-library-note">
+                {[
+                  tr(
+                    isWindows()
+                      ? 'settings.cueFlows.callsOnlyRekordboxWin'
+                      : 'settings.cueFlows.callsOnlyRekordbox',
+                  ),
+                  ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
+                ].join('. ')}
+              </SettingsHint>
+            )}
+          </div>
+        </Fold>
+        <Fold
+          id="manual"
+          title={tr('settings.cueFlows.manual.title')}
+          summary={`${tr('settings.cueFlows.bars', { count: synced.cueJumpBars })} · ${tr(QUANTIZE_LABEL[synced.cueQuantize])}`}
+          open={open.includes('manual')}
+          onToggle={() => flip('manual')}
+        >
+          <div data-testid="cue-manual" className={`${GROUP} text-sm`}>
+            <div
+              data-search-id="cueFlows.manual.jump"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+            >
+              <div className="min-w-0">
+                <p className="text-fg">{tr('settings.cueFlows.manual.jump')}</p>
+                <p className="text-xs text-fg-dim">{tr('settings.cueFlows.manual.unit')}</p>
+              </div>
+              <SegmentedControl
+                compact
+                options={CUE_JUMP_BARS.map(String)}
+                value={String(synced.cueJumpBars)}
+                onChange={(bars) =>
+                  patch(
+                    'cueJumpBars',
+                    CUE_JUMP_BARS.find((b) => String(b) === bars) ?? synced.cueJumpBars,
+                  )
+                }
+                testidPrefix="cue-jump"
+                labelFor={(bars) => bars}
+                label={tr('settings.cueFlows.manual.jump')}
+              />
+            </div>
+            <div
+              data-search-id="cueFlows.manual.quantize"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+            >
+              <p className="min-w-0 text-fg">{tr('settings.cueFlows.manual.quantize')}</p>
+              <SegmentedControl
+                compact
+                options={CUE_QUANTIZE}
+                value={synced.cueQuantize}
+                onChange={(unit) => patch('cueQuantize', unit)}
+                testidPrefix="cue-quantize"
+                labelFor={(unit) => tr(QUANTIZE_LABEL[unit])}
+                label={tr('settings.cueFlows.manual.quantize')}
+              />
+            </div>
+            <div
+              data-search-id="cueFlows.manual.gridTolerance"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5"
+            >
+              <div className="min-w-0">
+                <p className="text-fg">{tr('settings.cueFlows.manual.gridTolerance')}</p>
+                <p className="text-xs text-fg-dim">
+                  {tr('settings.cueFlows.manual.gridToleranceUnit')}
+                </p>
+              </div>
+              <SegmentedControl
+                compact
+                options={CUE_GRID_TOLERANCE.map(String)}
+                value={String(synced.cueGridTolerance)}
+                onChange={(ms) => patch('cueGridTolerance', normalizeCueGridTolerance(Number(ms)))}
+                testidPrefix="cue-grid-tolerance"
+                labelFor={(ms) => `${ms} ms`}
+                label={tr('settings.cueFlows.manual.gridTolerance')}
+              />
+            </div>
+            <div
+              data-testid="cue-letters"
+              data-search-id="cueFlows.lettersByTime"
+              className="px-3.5 py-2.5"
+            >
+              <CheckboxRow
+                testid="settings-cue-letters-by-time"
+                checked={synced.cueLettersByTime}
+                onChange={(v) => patch('cueLettersByTime', v)}
+                label={tr('settings.cueFlows.lettersByTime')}
+              />
+              <SettingsHint data-testid="settings-cue-letters-hint" className="mt-1 pl-7">
+                {tr('settings.cueFlows.lettersByTimeHint')}
+              </SettingsHint>
+            </div>
+          </div>
+        </Fold>
+        {read && (
+          <Fold
+            id="profile"
+            title={tr('settings.cueProfile.title')}
+            summary={
+              read.profile
+                ? tr('settings.cueProfile.summary', {
+                    count: learnedFrom,
+                    tracks: formatCount(learnedFrom, i18n.language),
+                  })
+                : undefined
+            }
+            open={open.includes('profile')}
+            onToggle={() => flip('profile')}
+          >
+            <CueProfileCard read={read} onLearned={onLearned} synced={synced} patch={patch} />
+          </Fold>
+        )}
       </div>
     </div>
   )

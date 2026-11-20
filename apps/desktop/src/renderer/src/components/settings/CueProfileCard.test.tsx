@@ -85,6 +85,16 @@ async function openDetails(testid: string): Promise<HTMLElement> {
 }
 
 describe('CueProfileCard', () => {
+  it('leaves its name to the row of Settings that holds it once it learned, so «How you mark» is not said twice, and still heads the invitation before that', async () => {
+    setup(read({ profile: PROFILE }))
+    await screen.findByTestId('cue-profile-summary')
+    expect(screen.queryByRole('heading')).toBeNull()
+    cleanup()
+    setup(read())
+    await screen.findByTestId('cue-profile')
+    expect(screen.getByRole('heading')).toHaveTextContent('Surco will learn how you mark')
+  })
+
   it('keeps what it learned folded under one line, so the flows stay the main thing, and opens it on request', async () => {
     setup(read({ profile: PROFILE }))
     const toggle = await screen.findByTestId('cue-profile-details')
