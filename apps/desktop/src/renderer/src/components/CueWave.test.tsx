@@ -481,7 +481,7 @@ describe('CueWave', () => {
       expect(kept.style.boxShadow).toBe('')
     })
 
-    it('draws a hot cue the flow would take away hollow, in its own colour and letter, struck through, so it does not read as one left out by a rule', () => {
+    it('draws a hot cue the flow would take away hollow, struck through, with its letter in the text colour and its own colour mixed with it on a thick edge, so it reads on any theme and not as one left out by a rule', () => {
       setup({
         readOnly: true,
         cues,
@@ -491,11 +491,12 @@ describe('CueWave', () => {
       const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
       expect(gone).toHaveAttribute('data-diff', 'gone')
       expect(gone).toHaveTextContent(/^C$/)
-      expect(gone).toHaveStyle({
-        borderStyle: 'solid',
-        borderWidth: '1.5px',
-        borderColor: hotCueColor(22),
-      })
+      expect(gone.style.getPropertyValue('--cue')).toBe(hotCueColor(22))
+      expect(gone).toHaveClass(
+        'border-2',
+        'border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))]',
+        'text-fg',
+      )
       expect(gone.style.opacity).toBe('')
       expect(screen.getByTestId('cue-wave-strike-24000').style.background).toContain(
         'var(--color-warn)',
@@ -508,6 +509,48 @@ describe('CueWave', () => {
         borderStyle: 'dashed',
         opacity: '0.3',
       })
+    })
+
+    it('gives the hot cues the flow would take away a row of their own under the cue squares and over the wave, so they never cover a new cue nor sit under one left out by a rule', () => {
+      setup({
+        readOnly: true,
+        cues: [{ key: 'a', ms: 24000, kind: 1, color: 42, pending: false }],
+        diff,
+        ghost: { added: [], gone: [], rejected: [{ ms: 24200, place: 'hot', color: 42 }] },
+      })
+      const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
+      expect(gone.style.top).toBe('14px')
+      expect(screen.getByTestId('cue-wave-hot-A').style.top).toBe('0px')
+      expect(screen.getByTestId('cue-wave-ghost-dropped-24200').style.top).toBe('0px')
+      expect(gone.className).not.toContain('pointer-events-none')
+      expect(
+        screen.getByTestId('cue-wave-area').compareDocumentPosition(gone) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(
+        screen.getByTestId('cue-wave-hot-A').compareDocumentPosition(gone) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('draws a single square for two hot cues taken away on the same spot, so one does not hide under the other', () => {
+      setup({
+        readOnly: true,
+        cues,
+        diff: {
+          ...diff,
+          gone: [
+            { key: 'x', ms: 24000, kind: 3, color: 22 },
+            { key: 'y', ms: 24000, kind: 5, color: 42 },
+            { key: 'z', ms: 24040, kind: 6, color: 42 },
+            { key: 'w', ms: 50000, kind: 2, color: 42 },
+          ],
+        },
+      })
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/).map((g) => g.textContent)).toEqual([
+        'C',
+        'B',
+      ])
     })
 
     it('fades everything but the differences while they are pointed at, so they stand out among the rest', () => {

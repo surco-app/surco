@@ -2,7 +2,7 @@ import type React from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueQuantize } from '../../../shared/cueQuantize'
-import { nearestBeat } from '../../../shared/cueRules'
+import { nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import type { DropProposal } from '../../../shared/dropDetect'
 import { MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { CueWaveColumn } from '../../../shared/types'
@@ -18,6 +18,7 @@ import {
   droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
+  GONE_ROW_TOP_PX,
   HOT_MARK_PX,
   markStyle,
   placeCues,
@@ -263,7 +264,11 @@ export function CueWave({
   const fade = diff ? ' transition-opacity duration-120 motion-reduce:transition-none' : ''
   const rest = diff?.focused ? { opacity: DIFF_REST_OPACITY } : {}
   const fresh = new Set(diff?.fresh ?? [])
-  const goneMarks = diff ? placeCues(diff.gone, durationMs).hot : []
+  const goneMarks = diff
+    ? placeCues(diff.gone, durationMs).hot.filter(
+        (h, i, all) => all.findIndex((o) => Math.abs(o.ms - h.ms) <= SAME_POSITION_MS) === i,
+      )
+    : []
   const selectMark = (key: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onSelect?.(key)
@@ -498,14 +503,15 @@ export function CueWave({
           data-diff="gone"
           role="img"
           aria-label={diff?.goneLabel}
-          style={{
-            ...markStyle(h.at),
-            backgroundColor: 'var(--color-panel-2)',
-            borderColor: h.colour,
-            borderStyle: 'solid',
-            borderWidth: '1.5px',
-          }}
-          className="absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-[9px] text-[var(--color-fg)]"
+          style={
+            {
+              ...markStyle(h.at),
+              top: `${GONE_ROW_TOP_PX}px`,
+              backgroundColor: 'var(--color-panel-2)',
+              '--cue': h.colour,
+            } as React.CSSProperties
+          }
+          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))] text-center text-label font-semibold leading-[8px] text-fg"
         >
           {h.letter}
           <span

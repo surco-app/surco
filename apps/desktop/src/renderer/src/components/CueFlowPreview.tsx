@@ -15,6 +15,7 @@ import {
   EXAMPLE_WAVE,
   examplePlan,
   hotDiff,
+  samePosition,
   trackOfCues,
   trackPlan,
 } from '../lib/cueExample'
@@ -177,8 +178,10 @@ export function CueFlowPreview({
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
   const [open, setOpen] = useState(false)
-  const [nowOf, setNowOf] = useState<string | null>(null)
-  const [pointed, setPointed] = useState(false)
+  const [now, setNow] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const real = track?.cues.analysed ? trackOfCues(track.cues) : null
@@ -193,19 +196,27 @@ export function CueFlowPreview({
   const leftOut = rejectedCues(flow, base).filter((c) => c.reason !== 'limit')
   const has = onTrack ? track.cues.cues.filter((c) => !c.loop) : []
   const hotNow = has.filter((c) => c.kind !== 0)
+  const hotWanted =
+    out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms)
   const diff =
     onTrack && out.status !== 'too-many'
       ? hotDiff(
-          out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms),
+          hotWanted,
           hotNow.map((c) => c.ms),
         )
       : null
   const differ = diff ? diff.added.length + diff.gone.length : null
   const differs = diff !== null && differ !== null && differ > 0
   const view = `${track?.cues.contentId}\n${flow.id}`
-  const mode: Mode = differs && nowOf === view ? 'now' : 'flow'
+  const [seen, setSeen] = useState(view)
+  if (seen !== view) {
+    setSeen(view)
+    setNow(false)
+    setPinned(false)
+  }
+  const mode: Mode = differs && now ? 'now' : 'flow'
   const goes = (c: { kind: number; ms: number }): boolean =>
-    c.kind !== 0 && (diff?.gone.includes(c.ms) ?? false)
+    c.kind !== 0 && diff !== null && !hotWanted.some((ms) => samePosition(ms, c.ms))
   const shown =
     mode === 'now'
       ? has.filter((c) => !goes(c)).map((c) => ({ ...c, key: c.id, pending: false }))
@@ -244,13 +255,13 @@ export function CueFlowPreview({
 
   function choose(choice: Choice | null): void {
     setSource(choice ? 'track' : 'example')
-    setNowOf(null)
+    setNow(false)
     if (choice) onPick?.(choice)
     close()
   }
 
   return (
-    <div data-testid="cue-flow-preview">
+    <div data-testid="cue-flow-preview" className="pl-1">
       <div ref={pickerRef} className="relative mb-2">
         <button
           ref={triggerRef}
@@ -307,7 +318,7 @@ export function CueFlowPreview({
                 gone: hotNow.filter(goes).map((c) => ({ ...c, key: c.id })),
                 freshLabel: tr('settings.cueFlows.diffNewHint'),
                 goneLabel: tr('settings.cueFlows.diffGoneHint'),
-                focused: pointed,
+                focused: pinned || hovered || focused,
               }
             : undefined
         }
@@ -341,11 +352,13 @@ export function CueFlowPreview({
             <button
               type="button"
               data-testid="cue-preview-compare"
-              onMouseEnter={() => setPointed(true)}
-              onMouseLeave={() => setPointed(false)}
-              onFocus={() => setPointed(true)}
-              onBlur={() => setPointed(false)}
-              className="press min-w-0 cursor-default truncate rounded-sm text-left text-xs text-warn"
+              aria-pressed={pinned}
+              onClick={() => setPinned((v) => !v)}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              className="press min-w-0 truncate rounded-sm text-left text-xs text-warn"
             >
               {changes}
             </button>
@@ -354,7 +367,12 @@ export function CueFlowPreview({
           <SegmentedControl
             options={MODES}
             value={mode}
-            onChange={(next) => setNowOf(next === 'now' ? view : null)}
+            onChange={(next) => {
+              setNow(next === 'now')
+              setPinned(false)
+              setHovered(false)
+              setFocused(false)
+            }}
             testidPrefix="cue-preview-mode"
             compact
             className="shrink-0"
@@ -369,7 +387,10 @@ export function CueFlowPreview({
         </p>
       )}
       {out.status === 'plan' && out.trimmed.length > 0 && (
-        <p data-testid="cue-preview-trimmed" className="mt-1 text-xs text-fg-dim">
+        <p
+          data-testid="cue-preview-trimmed"
+          className={`mt-1 text-xs text-fg-dim${mode === 'now' ? ' invisible' : ''}`}
+        >
           {tr('editor.cues.trimmed', { count: out.trimmed.length })}
         </p>
       )}

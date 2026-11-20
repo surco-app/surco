@@ -21,6 +21,11 @@ describe('CueFlowPreview', () => {
     expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
   })
 
+  it('keeps room on its left edge for the ring of a new cue at the very start and for the focus ring of the count, which Settings would clip', () => {
+    render(<CueFlowPreview flow={MY_FLOW} />)
+    expect(screen.getByTestId('cue-flow-preview')).toHaveClass('pl-1')
+  })
+
   it('draws a hot cue without CALL for a flow that places only hot cues', () => {
     render(<CueFlowPreview flow={ONE_AT_32} />)
     expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(1)
@@ -191,6 +196,23 @@ describe('CueFlowPreview', () => {
       expect(hoverTooltip(gone)).toBe('The track has it and the flow would not place it')
     })
 
+    it('counts and draws once two hot cues the track has on the same spot, and keeps neither as a cue that stays', () => {
+      const twins = onTrack([
+        { id: 'mark', ms: beat(64), kind: 0, color: null },
+        { id: 'hot', ms: beat(48), kind: 1, color: 22 },
+        { id: 'same', ms: beat(48), kind: 2, color: 42 },
+        { id: 'near', ms: beat(48) + 30, kind: 3, color: 42 },
+      ])
+      render(<CueFlowPreview flow={ONE_AT_32} track={twins} />)
+      expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
+        /^1 new and 1 taken away$/,
+      )
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
+      expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
+    })
+
     it('leaves the hot cues the track keeps unmarked, so only what changes is pointed at', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={keepsOne} />)
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(/^1 taken away$/)
@@ -211,6 +233,63 @@ describe('CueFlowPreview', () => {
       expect(wave).toHaveAttribute('data-focus-diff', 'true')
       fireEvent.blur(count)
       expect(wave).toHaveAttribute('data-focus-diff', 'false')
+    })
+
+    it('holds the fade when the count is pressed and lets go when pressed again, so the press does something and the differences can be studied without keeping the pointer still', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      const wave = screen.getByTestId('cue-wave')
+      expect(count).toHaveAttribute('aria-pressed', 'false')
+      fireEvent.mouseEnter(count)
+      fireEvent.click(count)
+      fireEvent.mouseLeave(count)
+      expect(count).toHaveAttribute('aria-pressed', 'true')
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+      fireEvent.click(count)
+      expect(count).toHaveAttribute('aria-pressed', 'false')
+      expect(wave).toHaveAttribute('data-focus-diff', 'false')
+    })
+
+    it('keeps the fade for a count focused by keyboard when the pointer passes over it and leaves, since the focus is still there', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      const wave = screen.getByTestId('cue-wave')
+      fireEvent.focus(count)
+      fireEvent.mouseEnter(count)
+      fireEvent.mouseLeave(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+      fireEvent.blur(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'false')
+      fireEvent.mouseEnter(count)
+      fireEvent.focus(count)
+      fireEvent.blur(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+    })
+
+    it('lets go of a held fade when the flow, the track or the view changes, so a new comparison never starts dimmed', () => {
+      const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const held = (): void => {
+        fireEvent.click(screen.getByTestId('cue-preview-compare'))
+        expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'true')
+      }
+      const released = (): void => {
+        expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'false')
+        expect(screen.getByTestId('cue-preview-compare')).toHaveAttribute('aria-pressed', 'false')
+      }
+      held()
+      rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
+      released()
+      held()
+      const other = { ...marked, cues: { ...marked.cues, contentId: 'rb:9' } }
+      rerender(<CueFlowPreview flow={MY_FLOW} track={other} />)
+      released()
+      rerender(<CueFlowPreview flow={ONE_AT_32} track={other} />)
+      held()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      released()
+      held()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
+      released()
     })
 
     it('offers to see the track as it is now only when the flow would change it', () => {
@@ -281,6 +360,38 @@ describe('CueFlowPreview', () => {
       const other = { ...onlyMark, cues: { ...onlyMark.cues, contentId: 'rb:9' } }
       rerender(<CueFlowPreview flow={MY_FLOW} track={other} />)
       expect(screen.getByTestId('cue-preview-mode-flow')).toHaveAttribute('aria-pressed', 'true')
+    })
+
+    it('starts from the flow again on coming back to a flow that was left showing the track as it is now, so the view never returns on its own', () => {
+      const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
+      rerender(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      expect(screen.getByTestId('cue-preview-mode-flow')).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-pressed', 'false')
+    })
+
+    it('hides the line about hot cues left out for lack of room while showing the track as it is now, keeping its place so the preview does not change height', () => {
+      const edge = {
+        ...ONE_AT_32,
+        rules: [
+          {
+            ...ONE_AT_32.rules[0],
+            from: 'first-beat' as const,
+            direction: 'forward' as const,
+            bars: 8,
+            repeat: 'edge' as const,
+            when: 'always' as const,
+          },
+        ],
+      }
+      render(<CueFlowPreview flow={edge} track={onlyMark} />)
+      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      expect(screen.getByTestId('cue-preview-trimmed')).toHaveClass('invisible')
+      expect(screen.queryByTestId(/^cue-wave-trimmed-/)).toBeNull()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
+      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
     })
 
     it('goes back to the example track on request', () => {

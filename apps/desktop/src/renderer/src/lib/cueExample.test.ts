@@ -131,6 +131,14 @@ describe('what a flow changes on a track', () => {
     expect(hotDiff([64000], [64051])).toEqual({ added: [64000], gone: [64051] })
   })
 
+  it('names once two hot cues the track has on the same spot, so the count matches the single square the wave can draw there', () => {
+    expect(hotDiff([64000], [120000, 120000, 120030, 96000])).toEqual({
+      added: [64000],
+      gone: [120000, 96000],
+    })
+    expect(differingHot([64000], [120000, 120000, 120030, 96000])).toBe(3)
+  })
+
   it('counts as many differing hot cues as it names, so the dot and the breakdown never disagree', () => {
     expect(differingHot([64000, 96000], [96000, 120000])).toBe(2)
     expect(differingHot([64000], [64010])).toBe(0)
