@@ -2067,9 +2067,9 @@
       "diffNewHint": "Nou amb aquest flux. La pista no el té",
       "diffGoneHint": "La pista té el {{letter}} i el flux no el posaria",
       "previewMode": {
-        "flow": "Amb el flux",
         "now": "Ara"
       },
+      "previewNowHint": "Veure els cues que la pista té ara",
       "leftOut": {
         "back_one": "Regla {{rule}}, {{count}} compàs enrere",
         "back_other": "Regla {{rule}}, {{count}} compassos enrere",

@@ -2067,9 +2067,9 @@
       "diffNewHint": "Nuevo con este flujo. La pista no lo tiene",
       "diffGoneHint": "La pista tiene el {{letter}} y el flujo no lo pondría",
       "previewMode": {
-        "flow": "Con el flujo",
         "now": "Ahora"
       },
+      "previewNowHint": "Ver los cues que la pista tiene ahora",
       "leftOut": {
         "back_one": "Regla {{rule}}, {{count}} compás atrás",
         "back_other": "Regla {{rule}}, {{count}} compases atrás",

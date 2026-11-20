@@ -2067,9 +2067,9 @@
       "diffNewHint": "このフローで新規。トラックにはありません",
       "diffGoneHint": "トラックに {{letter}} があり、フローでは置かれません",
       "previewMode": {
-        "flow": "フロー適用",
         "now": "現在"
       },
+      "previewNowHint": "トラックに現在あるキューを表示",
       "leftOut": {
         "back_one": "ルール {{rule}}、{{count}} 小節前",
         "back_other": "ルール {{rule}}、{{count}} 小節前",
