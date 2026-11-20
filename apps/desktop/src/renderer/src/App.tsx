@@ -562,10 +562,14 @@ export default function App(): React.JSX.Element {
     setFilterSelection: storeFilterSelection,
     setFormatFilter,
   } = useTriageFilters(store)
+  const [autoMarkBatch, setAutoMarkBatch] = useState<{ list: string; ids: Set<string> } | null>(
+    null,
+  )
   const setFilterSelection = useCallback(
     (next: FilterSelection): void => {
       flushPendingEdits()
       storeFilterSelection(next)
+      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention)) setAutoMarkBatch(null)
     },
     [storeFilterSelection],
   )
@@ -2369,38 +2373,15 @@ export default function App(): React.JSX.Element {
   const filteredSelection = filterSelection.selection ? selectedIdSet : null
   const autoMarks = useAutoMarks()
   const deferredAutoMarks = useDeferredValue(autoMarks)
-  const cueTargets = useMemo(
-    () =>
-      selectedTracks.flatMap((t) => {
-        const contentId = playlistScope?.contentOf.get(t.id)
-        return contentId ? [{ contentId, path: t.inputPath, label: t.listLabel }] : []
-      }),
-    [selectedTracks, playlistScope],
+  const openList = `${browser.source ?? ''}\t${browser.playlist?.id ?? ''}`
+  const markBatch = autoMarkBatch?.list === openList ? autoMarkBatch : null
+  const batchMarks = markBatch ? deferredAutoMarks : null
+  const dropMarkFilter = useStableCallback(() =>
+    setFilterSelection({ ...filterSelection, attention: null }),
   )
-  const batchKeyRef = useRef('')
-  if (batchCuesShown) batchKeyRef.current = cueTargets.map((t) => t.contentId).join('\n')
-  const batchKey = batchKeyRef.current
-  const batchMarksKey = useMemo(
-    () =>
-      batchKey
-        .split('\n')
-        .flatMap((id) => {
-          const kind = deferredAutoMarks.get(id)?.kind
-          return kind ? [`${id}\t${kind}`] : []
-        })
-        .join('\n'),
-    [batchKey, deferredAutoMarks],
-  )
-  const batchMarks = useMemo(
-    () =>
-      new Map(
-        batchMarksKey
-          .split('\n')
-          .filter(Boolean)
-          .map((line) => line.split('\t') as [string, AutoMarkKind]),
-      ),
-    [batchMarksKey],
-  )
+  useEffect(() => {
+    if (autoMarkBatch && autoMarkBatch.list !== openList) dropMarkFilter()
+  }, [autoMarkBatch, openList, dropMarkFilter])
   // What the filter asks about a row that the row does not carry: the fields Settings
   // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
   const filterFacts = useMemo<FilterFacts>(
@@ -2421,7 +2402,9 @@ export default function App(): React.JSX.Element {
       selected: (t) => filteredSelection?.has(t.id) ?? false,
       autoMark: (t) => {
         const contentId = playlistContentOf?.get(t.id)
-        return contentId === undefined ? undefined : batchMarks.get(contentId)
+        return contentId !== undefined && markBatch?.ids.has(contentId)
+          ? batchMarks?.get(contentId)?.kind
+          : undefined
       },
     }),
     [
@@ -2434,6 +2417,7 @@ export default function App(): React.JSX.Element {
       unsavedCues,
       playedPaths,
       filteredSelection,
+      markBatch,
       batchMarks,
     ],
   )
@@ -3165,6 +3149,14 @@ export default function App(): React.JSX.Element {
     }
     return byId
   }, [cuesOpen, playlistContentOf, autoMarks])
+  const cueTargets = useMemo(
+    () =>
+      selectedTracks.flatMap((t) => {
+        const contentId = playlistScope?.contentOf.get(t.id)
+        return contentId ? [{ contentId, path: t.inputPath, label: t.listLabel }] : []
+      }),
+    [selectedTracks, playlistScope],
+  )
   const gridContentIds = useMemo(
     () => new Set(gridEntries.map(([, contentId]) => contentId)),
     [gridEntries],
@@ -3176,9 +3168,10 @@ export default function App(): React.JSX.Element {
   const showBadGrid = useStableCallback(() =>
     setFilterSelection({ ...filterSelection, attention: 'badGrid' }),
   )
-  const showMarked = useStableCallback((kind: AutoMarkKind) =>
-    setFilterSelection({ ...filterSelection, attention: AUTO_MARK_FILTERS[kind] }),
-  )
+  const showMarked = useStableCallback((kind: AutoMarkKind) => {
+    setFilterSelection({ ...filterSelection, attention: AUTO_MARK_FILTERS[kind] })
+    setAutoMarkBatch({ list: openList, ids: new Set(cueTargets.map((t) => t.contentId)) })
+  })
   const openCueTrack = useStableCallback((contentId: string) => {
     const track = selectedTracks.find((t) => playlistScope?.contentOf.get(t.id) === contentId)
     if (track) onSelectTrack(track.id, {})

@@ -4409,6 +4409,109 @@ describe('App source playlists', () => {
     expect(await screen.findByTestId('quality-filter-autoMarkMarked')).toHaveTextContent(/2$/)
   })
 
+  describe('the batch of an Auto mark tally line', () => {
+    const noCues = { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) }
+
+    async function pressMarkedOfBravoAndCharlie() {
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[1])
+      fireEvent.click(rows[2], { metaKey: true })
+      act(() => {
+        keepAutoMark('c-l2', { kind: 'marked' })
+        keepAutoMark('c-l3', { kind: 'marked' })
+      })
+      fireEvent.click(await screen.findByTestId('cues-batch-tally-marked'))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+    }
+
+    function markedFilterOffered(): boolean {
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      const offered = screen.queryByTestId('quality-filter-autoMarkMarked') !== null
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+      return offered
+    }
+
+    it('keeps the filter on the same tracks when one of them is opened, so the DJ can go through them one by one', async () => {
+      await openFactory({ cues: noCues })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await act(async () => {})
+      expect(titles()).toHaveLength(2)
+      expect(titles()[0]).toContain('Bravo')
+      expect(titles()[1]).toContain('Charlie')
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      expect(screen.getByTestId('quality-filter-autoMarkMarked')).toHaveTextContent(/2$/)
+    })
+
+    it('drops the filter on opening another playlist, since its batch belongs to the playlist left', async () => {
+      await openFactory({
+        cues: noCues,
+        dj: djReads({
+          rekordbox: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'f', name: 'Factory', kind: 'playlist', count: 3 },
+              { id: 'h', name: 'House', kind: 'playlist', count: 2 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>(async (id) =>
+              id === 'h' ? [linked('/m/a.wav', 'l1'), linked('/m/b.wav', 'l2')] : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getByTestId('source-node-h'))
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      expect(titles()[0]).toContain('Alpha')
+      expect(titles()[1]).toContain('Bravo')
+      expect(markedFilterOffered()).toBe(false)
+    })
+
+    it('drops the filter on opening another program, since its batch belongs to the list left', async () => {
+      await openFactory({
+        cues: noCues,
+        dj: djReads({
+          engine: {
+            available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+            tree: vi
+              .fn<ProgramReads['tree']>()
+              .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([
+                { path: '/m/b.wav', separator: false, meta: {}, contentId: 'engine:12' },
+              ]),
+          },
+        }),
+      })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(await screen.findByTestId('source-rail-engine'))
+      fireEvent.click(await screen.findByTestId('source-node-7'))
+      await waitFor(() => expect(titles()).toHaveLength(1))
+      expect(markedFilterOffered()).toBe(false)
+    })
+
+    it('takes the batch anew on the next press once the filter was turned off', async () => {
+      await openFactory({ cues: noCues })
+      await pressMarkedOfBravoAndCharlie()
+      fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+      fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+      fireEvent.click(screen.getByTestId('quality-filter-autoMarkMarked'))
+      fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+      await waitFor(() => expect(titles()).toHaveLength(3))
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      act(() => keepAutoMark('c-l1', { kind: 'marked' }))
+      fireEvent.click(await screen.findByTestId('cues-batch-tally-marked'))
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(titles()).toHaveLength(2))
+      expect(titles()[0]).toContain('Alpha')
+      expect(titles()[1]).toContain('Bravo')
+    })
+  })
+
   // The DJ's own request: put the set in order by dragging. The list must show the new
   // order at once and keep it after rekordbox answers, even with the dragged row selected
   // (a held selection otherwise freezes the order on screen).
