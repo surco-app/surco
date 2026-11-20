@@ -387,7 +387,10 @@ export function CueFlowPreview({
         </p>
       )}
       {out.status === 'plan' && out.trimmed.length > 0 && (
-        <p data-testid="cue-preview-trimmed" className="mt-1 text-xs text-fg-dim">
+        <p
+          data-testid="cue-preview-trimmed"
+          className={`mt-1 text-xs text-fg-dim${mode === 'now' ? ' invisible' : ''}`}
+        >
           {tr('editor.cues.trimmed', { count: out.trimmed.length })}
         </p>
       )}

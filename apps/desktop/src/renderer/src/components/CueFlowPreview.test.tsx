@@ -371,6 +371,29 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-pressed', 'false')
     })
 
+    it('hides the line about hot cues left out for lack of room while showing the track as it is now, keeping its place so the preview does not change height', () => {
+      const edge = {
+        ...ONE_AT_32,
+        rules: [
+          {
+            ...ONE_AT_32.rules[0],
+            from: 'first-beat' as const,
+            direction: 'forward' as const,
+            bars: 8,
+            repeat: 'edge' as const,
+            when: 'always' as const,
+          },
+        ],
+      }
+      render(<CueFlowPreview flow={edge} track={onlyMark} />)
+      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      expect(screen.getByTestId('cue-preview-trimmed')).toHaveClass('invisible')
+      expect(screen.queryByTestId(/^cue-wave-trimmed-/)).toBeNull()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
+      expect(screen.getByTestId('cue-preview-trimmed')).not.toHaveClass('invisible')
+    })
+
     it('goes back to the example track on request', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
       fireEvent.click(screen.getByTestId('cue-preview-track'))
