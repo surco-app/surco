@@ -362,6 +362,15 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-mode-flow')).toHaveAttribute('aria-pressed', 'true')
     })
 
+    it('starts from the flow again on coming back to a flow that was left showing the track as it is now, so the view never returns on its own', () => {
+      const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
+      rerender(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      expect(screen.getByTestId('cue-preview-mode-flow')).toHaveAttribute('aria-pressed', 'true')
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-pressed', 'false')
+    })
+
     it('goes back to the example track on request', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
       fireEvent.click(screen.getByTestId('cue-preview-track'))

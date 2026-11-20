@@ -178,7 +178,7 @@ export function CueFlowPreview({
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
   const [open, setOpen] = useState(false)
-  const [nowOf, setNowOf] = useState<string | null>(null)
+  const [now, setNow] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -211,9 +211,10 @@ export function CueFlowPreview({
   const [seen, setSeen] = useState(view)
   if (seen !== view) {
     setSeen(view)
+    setNow(false)
     setPinned(false)
   }
-  const mode: Mode = differs && nowOf === view ? 'now' : 'flow'
+  const mode: Mode = differs && now ? 'now' : 'flow'
   const goes = (c: { kind: number; ms: number }): boolean =>
     c.kind !== 0 && diff !== null && !hotWanted.some((ms) => samePosition(ms, c.ms))
   const shown =
@@ -254,7 +255,7 @@ export function CueFlowPreview({
 
   function choose(choice: Choice | null): void {
     setSource(choice ? 'track' : 'example')
-    setNowOf(null)
+    setNow(false)
     if (choice) onPick?.(choice)
     close()
   }
@@ -367,7 +368,7 @@ export function CueFlowPreview({
             options={MODES}
             value={mode}
             onChange={(next) => {
-              setNowOf(next === 'now' ? view : null)
+              setNow(next === 'now')
               setPinned(false)
               setHovered(false)
               setFocused(false)
