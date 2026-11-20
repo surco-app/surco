@@ -208,6 +208,11 @@ describe('CueRuleRow condition of each repetition', () => {
     screen.getByTestId(`cue-rule-0-color-${slot}-when-${name}`)
   const openSquare = (slot: number) =>
     fireEvent.click(screen.getByTestId(`cue-rule-0-color-${slot}`))
+  const pickBars = (slot: number, side: string, bars: number) => {
+    const testid = `cue-rule-0-color-${slot}-when-${side}-bars`
+    fireEvent.click(screen.getByTestId(testid))
+    fireEvent.click(screen.getByTestId(`${testid}-option-${bars}`))
+  }
   const toggle = (slot: number, name: string) => {
     openSquare(slot)
     fireEvent.click(box(slot, name))
@@ -321,6 +326,68 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(row.querySelector('svg')).toBeNull()
   })
 
+  it('picks the bars from the menu of the app and never from a native select, which the system draws in its own colours', () => {
+    setup(RULE)
+    openSquare(1)
+    const palette = screen.getByTestId('cue-rule-0-color-1-palette')
+    expect(palette.querySelector('select')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-1-when-before-bars'))
+    expect(document.querySelector('select')).toBeNull()
+    expect(
+      within(screen.getByTestId('cue-rule-0-color-1-when-before-bars-listbox'))
+        .getAllByRole('option')
+        .map((el) => el.textContent),
+    ).toEqual(['1', '2', '4', '8', '12', '16', '24', '32', '48', '64', '96', '128'])
+  })
+
+  it('leaves the menu of the repetition open when a number of bars is picked, since the press lands on a list drawn outside it', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['rule', 'before:32'] })
+    openSquare(1)
+    const bars = screen.getByTestId('cue-rule-0-color-1-when-before-bars')
+    fireEvent.click(bars)
+    const option = screen.getByTestId('cue-rule-0-color-1-when-before-bars-option-8')
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).not.toContainElement(option)
+    fireEvent.mouseDown(option)
+    fireEvent.click(option)
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:8'] })
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).toBeInTheDocument()
+    expect(bars).toHaveFocus()
+  })
+
+  it('still closes on a press outside once the list of bars is shut, so the guard for that list never leaves the menu stuck open', () => {
+    setup(RULE)
+    openSquare(1)
+    pickBars(1, 'before', 8)
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-when-line'))
+    expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
+  })
+
+  it('closes the list of bars on the first Escape and the menu of the repetition on the second, one layer at a time', () => {
+    setup(RULE)
+    openSquare(1)
+    const bars = screen.getByTestId('cue-rule-0-color-1-when-after-bars')
+    fireEvent.click(bars)
+    fireEvent.keyDown(screen.getByTestId('cue-rule-0-color-1-when-after-bars-option-16'), {
+      key: 'Escape',
+    })
+    expect(screen.queryByTestId('cue-rule-0-color-1-when-after-bars-listbox')).toBeNull()
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).toBeInTheDocument()
+    expect(bars).toHaveFocus()
+    fireEvent.keyDown(bars, { key: 'Escape' })
+    expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cue-rule-0-color-1')).toHaveFocus()
+  })
+
+  it('holds the bars in a box of one width whatever the number, so 128 takes the room 1 does', () => {
+    setup({ ...RULE, whenEach: ['rule', 'before:128+after:1'] })
+    openSquare(1)
+    for (const side of ['before', 'after']) {
+      const bars = screen.getByTestId(`cue-rule-0-color-1-when-${side}-bars`)
+      expect(bars).toHaveClass('w-full')
+      expect(bars.parentElement?.parentElement).toHaveClass('w-16', 'shrink-0')
+    }
+  })
+
   it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
     const { onChange } = setup(RULE)
     openSquare(2)
@@ -353,8 +420,8 @@ describe('CueRuleRow condition of each repetition', () => {
   it('asks for 32 bars clear before and 16 after unless told otherwise, the distances a countdown is usually built on', () => {
     const { onChange } = setup(RULE)
     openSquare(1)
-    expect(screen.getByTestId('cue-rule-0-color-1-when-before-bars')).toHaveValue('32')
-    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveValue('16')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-before-bars')).toHaveTextContent('32')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveTextContent('16')
     fireEvent.click(box(1, 'before'))
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:32'] })
     fireEvent.click(box(1, 'after'))
@@ -364,19 +431,16 @@ describe('CueRuleRow condition of each repetition', () => {
   it('changes the bars of a ticked condition at once', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['rule', 'before:32'] })
     openSquare(1)
-    fireEvent.change(screen.getByTestId('cue-rule-0-color-1-when-before-bars'), {
-      target: { value: '8' },
-    })
+    pickBars(1, 'before', 8)
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:8'] })
   })
 
   it('only remembers the bars of a condition not ticked yet, so choosing a number never switches it on', () => {
     const { onChange } = setup(RULE)
     openSquare(1)
-    const bars = screen.getByTestId('cue-rule-0-color-1-when-after-bars')
-    fireEvent.change(bars, { target: { value: '64' } })
+    pickBars(1, 'after', 64)
     expect(onChange).not.toHaveBeenCalled()
-    expect(bars).toHaveValue('64')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveTextContent('64')
     fireEvent.click(box(1, 'after'))
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'after:64'] })
   })

@@ -23,6 +23,7 @@ import {
 } from '../../../shared/cueFlows'
 import { HOT_CUE_DEFAULT_INDEX, hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
+import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
 const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -162,7 +163,9 @@ export function CueRuleRow({
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
-      if (!paletteRef.current?.parentElement?.contains(e.target as Node)) setOpen(null)
+      const menu = paletteRef.current
+      if (menu?.querySelector('[aria-haspopup="listbox"][aria-expanded="true"]')) return
+      if (!menu?.parentElement?.contains(e.target as Node)) setOpen(null)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -277,19 +280,18 @@ export function CueRuleRow({
           () => setNear(slot, side, nearBarsAt(slot, side), !on),
           label,
         )}
-        <select
-          data-testid={`${id}-color-${slot}-when-${side}-bars`}
-          aria-label={label}
-          value={nearBarsAt(slot, side)}
-          onChange={(e) => setNear(slot, side, Number(e.target.value), on)}
-          className="h-5 shrink-0 rounded-[3px] border border-[var(--color-line)] bg-[var(--color-field)] px-1 text-xs tabular-nums text-fg"
-        >
-          {NEAR_BARS.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
+        <div className="w-16 shrink-0">
+          <Select
+            testid={`${id}-color-${slot}-when-${side}-bars`}
+            label={label}
+            value={String(nearBarsAt(slot, side))}
+            options={NEAR_BARS.map((b) => ({ value: String(b), label: String(b) }))}
+            onChange={(bars) => setNear(slot, side, Number(bars), on)}
+            labelClass="tabular-nums"
+            fullWidth
+            compact
+          />
+        </div>
       </div>
     )
   }
