@@ -59,6 +59,16 @@ describe('sidebar.filter.upsampled', () => {
     })
   }
 
+  for (const [code, locale] of Object.entries(locales)) {
+    it(`${code} keeps the filter label within its 163 px column so the count stays aligned`, () => {
+      expect([...locale.sidebar.filter.upsampled].length).toBeLessThanOrEqual(27)
+    })
+  }
+
+  it('ja keeps the filter label within 14 characters because wide glyphs are cut off before the count', () => {
+    expect([...ja.sidebar.filter.upsampled].length).toBeLessThanOrEqual(14)
+  })
+
   it('es and en name it as the editor badge names possible reprocessing', () => {
     expect(es.sidebar.filter.upsampled).toBe('Posible reescalado')
     expect(en.sidebar.filter.upsampled).toBe('Possibly upsampled')
