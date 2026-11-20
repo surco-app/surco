@@ -2048,6 +2048,8 @@
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "exampleTrack": "Example track",
+      "searchList": "Search the open list",
+      "noTrackFound": "No marked track with that name",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",
       "compareSame": "Same hot cues this track has now",
       "compareDiffer_one": "{{count}} hot cue differs from what this track has now",

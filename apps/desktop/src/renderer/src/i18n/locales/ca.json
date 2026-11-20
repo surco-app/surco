@@ -2048,6 +2048,8 @@
       "preview": "Previsualització",
       "previewHint": "Pista d'exemple a 128 BPM, marcada al compàs {{bar}}",
       "exampleTrack": "Pista d'exemple",
+      "searchList": "Cerca a la llista oberta",
+      "noTrackFound": "Cap pista marcada amb aquest nom",
       "noMark": "{{label}} encara no té cap marca, així que la previsualització fa servir la pista d'exemple",
       "compareSame": "Els mateixos hot cues que té ara aquesta pista",
       "compareDiffer_one": "{{count}} hot cue diferent dels que té ara aquesta pista",

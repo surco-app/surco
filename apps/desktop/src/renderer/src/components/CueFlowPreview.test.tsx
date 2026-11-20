@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MIX_IN, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { TrackCues } from '../../../shared/types'
 import '../i18n'
@@ -100,11 +100,15 @@ describe('CueFlowPreview', () => {
 
     it('places the flow on the marks the track has and says it gives the hot cues it already has', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
-      expect(screen.getByTestId('cue-preview-source-track')).toHaveAttribute('aria-pressed', 'true')
-      expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
-      expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
-        'Same hot cues this track has now',
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent(
+        'DJ Made, Millenium Stringz',
       )
+      expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+      const same = screen.getByTestId('cue-preview-same')
+      expect(same).toHaveAccessibleName('Same hot cues this track has now')
+      expect(same).toHaveAttribute('title', 'Same hot cues this track has now')
+      expect(same).toBeEmptyDOMElement()
+      expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
     })
 
     it('counts the hot cues the flow would add or take away on that track', () => {
@@ -112,13 +116,30 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
         '2 hot cues differ from what this track has now',
       )
+      expect(screen.queryByTestId('cue-preview-same')).toBeNull()
     })
 
     it('goes back to the example track on request', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
-      fireEvent.click(screen.getByTestId('cue-preview-source-example'))
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
       expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-same')).toBeNull()
+    })
+
+    it('marks the track in use among the choices, so the DJ sees which one the wave is showing', () => {
+      render(<CueFlowPreview flow={MIX_IN} track={marked} />)
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      expect(screen.getByTestId('cue-preview-track-option-rb:1')).toHaveAttribute(
+        'aria-selected',
+        'true',
+      )
+      expect(screen.getByTestId('cue-preview-track-option-example')).toHaveAttribute(
+        'aria-selected',
+        'false',
+      )
     })
 
     it('keeps the example track and says why when the track has no mark to place the flow on', () => {
@@ -130,6 +151,127 @@ describe('CueFlowPreview', () => {
       )
       expect(screen.getByTestId('cue-preview-no-mark')).toBeInTheDocument()
       expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
+    })
+  })
+  describe('choosing the track', () => {
+    const LIST = [
+      { contentId: 'rb:2', label: 'Âme, Rej' },
+      { contentId: 'rb:3', label: 'Bicep, Glue' },
+    ]
+    const open = (): void => {
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+    }
+
+    it('keeps the selector with the example as its only choice when there is no list to pick from', () => {
+      render(<CueFlowPreview flow={MY_FLOW} />)
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+      expect(screen.getByTestId('cue-preview-track')).toHaveAttribute('aria-expanded', 'false')
+      open()
+      expect(screen.getByTestId('cue-preview-track')).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.getAllByRole('option')).toHaveLength(1)
+      expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+    })
+
+    it('offers the example first and the tracks of the open list under it, so any of them can be tried', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-listbox')).toHaveAttribute('role', 'listbox')
+      expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+        'Example track',
+        'Âme, Rej',
+        'Bicep, Glue',
+      ])
+      expect(screen.getByTestId('cue-preview-track-separator')).toBeInTheDocument()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
+        'placeholder',
+        'Search the open list',
+      )
+    })
+
+    it('hands over the track picked, closes the choices and gives the focus back to the selector', () => {
+      const onPick = vi.fn()
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} onPick={onPick} />)
+      open()
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:3'))
+      expect(onPick).toHaveBeenCalledWith({ contentId: 'rb:3', label: 'Bicep, Glue' })
+      expect(screen.queryByTestId('cue-preview-track-listbox')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveFocus()
+    })
+
+    it('finds a track by a name typed without its accents or capitals', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'ame' } })
+      expect(screen.getByTestId('cue-preview-track-option-rb:2')).toBeInTheDocument()
+      expect(screen.queryByTestId('cue-preview-track-option-rb:3')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
+    })
+
+    it('says no marked track has that name instead of leaving the choices blank', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'zzz' } })
+      expect(screen.getByTestId('cue-preview-track-empty')).toHaveTextContent(
+        'No marked track with that name',
+      )
+      expect(screen.getByTestId('cue-preview-track-option-example')).toBeInTheDocument()
+    })
+
+    it('draws only the first hundred of a long list, so it opens at once and the search reaches the rest', () => {
+      const long = Array.from({ length: 150 }, (_, i) => ({
+        contentId: `rb:${i}`,
+        label: `Track ${i}`,
+      }))
+      render(<CueFlowPreview flow={MY_FLOW} tracks={long} />)
+      open()
+      expect(screen.getAllByRole('option')).toHaveLength(101)
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), {
+        target: { value: 'track 149' },
+      })
+      expect(screen.getByTestId('cue-preview-track-option-rb:149')).toBeInTheDocument()
+    })
+
+    it('closes on Escape without the press reaching Settings, which would close with it', () => {
+      const reached = vi.fn()
+      window.addEventListener('keydown', reached)
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      fireEvent.keyDown(screen.getByTestId('cue-preview-track-search'), { key: 'Escape' })
+      window.removeEventListener('keydown', reached)
+      expect(screen.queryByTestId('cue-preview-track-listbox')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveFocus()
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('closes on a click anywhere else and keeps the track it was showing', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      fireEvent.mouseDown(document.body)
+      expect(screen.queryByTestId('cue-preview-track-listbox')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+    })
+
+    it('starts the search empty each time it opens, so an old search does not hide the list', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'zzz' } })
+      fireEvent.mouseDown(document.body)
+      open()
+      expect(screen.getAllByRole('option')).toHaveLength(3)
+    })
+
+    it('walks the choices with the arrow keys from the search field', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      fireEvent.keyDown(screen.getByTestId('cue-preview-track-search'), { key: 'ArrowDown' })
+      expect(screen.getByTestId('cue-preview-track-option-example')).toHaveFocus()
+      fireEvent.keyDown(screen.getByTestId('cue-preview-track-option-example'), {
+        key: 'ArrowDown',
+      })
+      expect(screen.getByTestId('cue-preview-track-option-rb:2')).toHaveFocus()
+      fireEvent.keyDown(screen.getByTestId('cue-preview-track-option-rb:2'), { key: 'ArrowUp' })
+      expect(screen.getByTestId('cue-preview-track-option-example')).toHaveFocus()
     })
   })
 })

@@ -195,6 +195,7 @@ import { railAlert } from './lib/copiesView'
 import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
+import { previewChoices } from './lib/cueExample'
 import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
 import {
   type AutoMark,
@@ -3478,6 +3479,11 @@ export default function App(): React.JSX.Element {
         : undefined,
     [selectedCueId, selectedLabel],
   )
+  const cueTracks = useMemo(
+    () =>
+      settingsOpen && playlistScope ? previewChoices(scopeTracks, playlistScope.contentOf) : [],
+    [settingsOpen, playlistScope, scopeTracks],
+  )
   const rekordboxCue = useMemo(
     () =>
       selectedContentId && selectedPath !== undefined && selectedLabel !== undefined
@@ -5112,6 +5118,7 @@ export default function App(): React.JSX.Element {
               goToPlaylist={goToPlaylist}
               playlistLibraries={playlistLibraries}
               cueTrack={cueTrack}
+              cueTracks={cueTracks}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />

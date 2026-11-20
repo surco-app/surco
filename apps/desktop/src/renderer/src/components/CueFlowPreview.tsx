@@ -1,8 +1,10 @@
+import { Check, ChevronDown } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
+import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
 import { useTrackCues } from '../hooks/useTrackCues'
 import {
@@ -17,19 +19,146 @@ import {
   trackPlan,
 } from '../lib/cueExample'
 import { CueWave } from './CueWave'
-import { SegmentedControl } from './SegmentedControl'
+import { showOption } from './Select'
 
 type Source = 'track' | 'example'
+
+interface Choice {
+  contentId: string
+  label: string
+}
+
+const NO_CHOICES: Choice[] = []
+const MAX_CHOICES = 100
+const OPTION =
+  'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]'
+
+const folded = (text: string): string => foldAccents(text).toLowerCase()
+
+function TrackChoices({
+  choices,
+  inUse,
+  onChoose,
+  onClose,
+}: {
+  choices: Choice[]
+  inUse: string | null
+  onChoose: (choice: Choice | null) => void
+  onClose: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const [query, setQuery] = useState('')
+  const searchRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const wanted = folded(query.trim())
+  const found = choices.filter((c) => folded(c.label).includes(wanted)).slice(0, MAX_CHOICES)
+
+  useEffect(() => {
+    searchRef.current?.focus({ preventScroll: true })
+  }, [])
+
+  function onKeyDown(e: React.KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      onClose()
+      return
+    }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    e.preventDefault()
+    e.stopPropagation()
+    const items = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
+    )
+    const next =
+      items.indexOf(document.activeElement as HTMLElement) + (e.key === 'ArrowDown' ? 1 : -1)
+    if (next < 0) searchRef.current?.focus({ preventScroll: true })
+    else if (next < items.length) showOption(listRef.current, items[next])
+  }
+
+  return (
+    <div className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]">
+      <input
+        ref={searchRef}
+        data-testid="cue-preview-track-search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={onKeyDown}
+        placeholder={tr('settings.cueFlows.searchList')}
+        aria-label={tr('settings.cueFlows.searchList')}
+        className="mb-1 h-7 w-full min-w-0 border-b border-[var(--color-line)] bg-transparent px-2 text-xs text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
+      />
+      <div
+        ref={listRef}
+        role="listbox"
+        data-testid="cue-preview-track-listbox"
+        aria-label={tr('settings.cueFlows.preview')}
+        onKeyDown={onKeyDown}
+        className="relative max-h-56 overflow-y-auto"
+      >
+        <button
+          type="button"
+          role="option"
+          aria-selected={inUse === null}
+          data-testid="cue-preview-track-option-example"
+          onClick={() => onChoose(null)}
+          className={OPTION}
+        >
+          <span className="min-w-0 flex-1 truncate">{tr('settings.cueFlows.exampleTrack')}</span>
+          <Check
+            aria-hidden="true"
+            className={`size-3 shrink-0 ${inUse === null ? '' : 'invisible'}`}
+          />
+        </button>
+        {choices.length > 0 && (
+          <hr
+            data-testid="cue-preview-track-separator"
+            className="my-1 h-px border-0 bg-[var(--color-line)]"
+          />
+        )}
+        {found.map((c) => (
+          <button
+            key={c.contentId}
+            type="button"
+            role="option"
+            aria-selected={c.contentId === inUse}
+            data-testid={`cue-preview-track-option-${c.contentId}`}
+            onClick={() => onChoose(c)}
+            className={OPTION}
+          >
+            <span className="min-w-0 flex-1 truncate">{c.label}</span>
+            <Check
+              aria-hidden="true"
+              className={`size-3 shrink-0 ${c.contentId === inUse ? '' : 'invisible'}`}
+            />
+          </button>
+        ))}
+      </div>
+      {choices.length > 0 && found.length === 0 && (
+        <p data-testid="cue-preview-track-empty" className="px-2 py-1.5 text-xs text-fg-dim">
+          {tr('settings.cueFlows.noTrackFound')}
+        </p>
+      )}
+    </div>
+  )
+}
 
 export function CueFlowPreview({
   flow,
   track,
+  tracks = NO_CHOICES,
+  onPick,
 }: {
   flow: CueFlow
   track?: { label: string; cues: TrackCues }
+  tracks?: Choice[]
+  onPick?: (choice: Choice) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
+  const [open, setOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
   const real = track?.cues.analysed ? trackOfCues(track.cues) : null
   const marked = real !== null && real.drops.length > 0
   const onTrack = track !== undefined && real !== null && marked && source === 'track'
@@ -47,20 +176,69 @@ export function CueFlowPreview({
           track.cues.cues.filter((c) => c.kind !== 0 && !c.loop).map((c) => c.ms),
         )
       : null
+  const choices =
+    track && marked && !tracks.some((c) => c.contentId === track.cues.contentId)
+      ? [{ contentId: track.cues.contentId, label: track.label }, ...tracks]
+      : tracks
+
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent): void => {
+      if (!pickerRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  function close(): void {
+    setOpen(false)
+    triggerRef.current?.focus()
+  }
+
+  function choose(choice: Choice | null): void {
+    setSource(choice ? 'track' : 'example')
+    if (choice) onPick?.(choice)
+    close()
+  }
+
   return (
     <div data-testid="cue-flow-preview">
-      {track && marked && (
-        <SegmentedControl<Source>
-          options={['track', 'example']}
-          value={source}
-          onChange={setSource}
-          testidPrefix="cue-preview-source"
-          labelFor={(s) => (s === 'track' ? track.label : tr('settings.cueFlows.exampleTrack'))}
-          label={tr('settings.cueFlows.preview')}
-          compact
-          className="mb-2"
-        />
-      )}
+      <div ref={pickerRef} className="relative mb-2">
+        <button
+          ref={triggerRef}
+          type="button"
+          data-testid="cue-preview-track"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+          className="press flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
+        >
+          <span className="min-w-0 truncate text-left">
+            {onTrack ? track.label : tr('settings.cueFlows.exampleTrack')}
+          </span>
+          <span className="flex size-1.5 shrink-0">
+            {differ === 0 && (
+              <span
+                data-testid="cue-preview-same"
+                role="img"
+                aria-label={tr('settings.cueFlows.compareSame')}
+                title={tr('settings.cueFlows.compareSame')}
+                className="size-1.5 rounded-full bg-[var(--color-good)]"
+              />
+            )}
+          </span>
+          <span className="flex-1" />
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+        </button>
+        {open && (
+          <TrackChoices
+            choices={choices}
+            inUse={onTrack ? track.cues.contentId : null}
+            onChoose={choose}
+            onClose={close}
+          />
+        )}
+      </div>
       <CueWave
         wave={onTrack ? track.cues.wave : EXAMPLE_WAVE}
         grid={onTrack ? track.cues.grid : EXAMPLE_GRID}
@@ -92,14 +270,9 @@ export function CueFlowPreview({
           {tr('settings.cueFlows.noMark', { label: track.label })}
         </p>
       )}
-      {differ !== null && (
-        <p
-          data-testid="cue-preview-compare"
-          className={`mt-1 text-xs ${differ === 0 ? 'text-good' : 'text-warn'}`}
-        >
-          {differ === 0
-            ? tr('settings.cueFlows.compareSame')
-            : tr('settings.cueFlows.compareDiffer', { count: differ })}
+      {differ !== null && differ > 0 && (
+        <p data-testid="cue-preview-compare" className="mt-1 text-xs text-warn">
+          {tr('settings.cueFlows.compareDiffer', { count: differ })}
         </p>
       )}
       {out.status === 'too-many' && (
@@ -119,12 +292,20 @@ export function CueFlowPreview({
 export function CueFlowTrackPreview({
   flow,
   track,
+  tracks,
 }: {
   flow: CueFlow
-  track: { contentId: string; label: string }
+  track?: Choice
+  tracks?: Choice[]
 }): React.JSX.Element {
-  const { data } = useTrackCues(track.contentId)
+  const [picked, setPicked] = useState(track)
+  const { data } = useTrackCues(picked?.contentId)
   return (
-    <CueFlowPreview flow={flow} track={data ? { label: track.label, cues: data } : undefined} />
+    <CueFlowPreview
+      flow={flow}
+      track={picked && data ? { label: picked.label, cues: data } : undefined}
+      tracks={tracks}
+      onPick={setPicked}
+    />
   )
 }

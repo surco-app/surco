@@ -2048,6 +2048,8 @@
       "preview": "Anteprima",
       "previewHint": "Brano di esempio a 128 BPM, marcato alla battuta {{bar}}",
       "exampleTrack": "Brano di esempio",
+      "searchList": "Cerca nella lista aperta",
+      "noTrackFound": "Nessun brano segnato con questo nome",
       "noMark": "{{label}} non ha ancora nessun segno, quindi l'anteprima usa il brano di esempio",
       "compareSame": "Gli stessi hot cue che ha ora questo brano",
       "compareDiffer_one": "{{count}} hot cue diverso da quelli che ha ora questo brano",

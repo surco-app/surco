@@ -138,9 +138,45 @@ describe('CuesTab', () => {
         />
       </QueryClientProvider>,
     )
-    expect(await screen.findByTestId('cue-preview-source-track')).toHaveTextContent(
-      'DJ Made, Millenium Stringz',
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent(
+        'DJ Made, Millenium Stringz',
+      ),
     )
+  })
+
+  it('previews the flow on another track of the open list once it is picked, read from its library', async () => {
+    const trackCues = vi.fn(async (contentId: string) => ({
+      contentId,
+      analysed: true,
+      grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+      strong: [],
+      phrases: [],
+      cues: [{ id: 'mark', ms: 128000, kind: 0, color: null }],
+      wave: null,
+      durationMs: 400000,
+      fingerprint: 'f',
+      gridFingerprint: 'g',
+    }))
+    installApi({ cues: { trackCues } })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection=""
+          cueTracks={[{ contentId: 'rb:7', label: 'Bicep, Glue' }]}
+        />
+      </QueryClientProvider>,
+    )
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+    expect(trackCues).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:7'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
+    )
+    expect(trackCues).toHaveBeenCalledWith('rb:7')
   })
 
   it('says under the rules what reaches Engine DJ, Traktor and Serato, only where they are installed', async () => {

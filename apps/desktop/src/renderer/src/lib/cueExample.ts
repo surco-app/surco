@@ -8,6 +8,7 @@ import {
   type StrongPart,
 } from '../../../shared/cueRules'
 import type { CueWaveColumn, TrackCues } from '../../../shared/types'
+import type { TrackItem } from '../types'
 
 const BEAT_MS = 60000 / 128
 const BARS = 192
@@ -87,6 +88,24 @@ export function trackOfCues(read: TrackCues): FlowTrack {
     strong: read.strong,
     phrases: read.phrases,
   }
+}
+
+export function previewChoices(
+  tracks: Pick<TrackItem, 'id' | 'listLabel' | 'sourcePreview'>[],
+  contentOf: ReadonlyMap<string, string>,
+): { contentId: string; label: string }[] {
+  const seen = new Set<string>()
+  return tracks.flatMap((t) => {
+    const contentId = contentOf.get(t.id)
+    const cues = t.sourcePreview?.cues ?? []
+    const marks = findDrops(
+      cues.filter((c) => c.kind === 0).map((c) => c.ms),
+      cues.filter((c) => c.kind !== 0).map((c) => c.ms),
+    )
+    if (!contentId || marks.length === 0 || seen.has(contentId)) return []
+    seen.add(contentId)
+    return [{ contentId, label: t.listLabel }]
+  })
 }
 
 export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {

@@ -23,7 +23,7 @@ import { isWindows, offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
-import { CueFlowPreview, CueFlowTrackPreview } from '../CueFlowPreview'
+import { CueFlowTrackPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
 import { SegmentedControl } from '../SegmentedControl'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
@@ -37,6 +37,7 @@ interface Props {
   patch: PatchSynced
   rekordboxCollection: string
   cueTrack?: { contentId: string; label: string }
+  cueTracks?: { contentId: string; label: string }[]
 }
 
 const NEW_RULE: CueRule = {
@@ -68,6 +69,7 @@ export function CuesTab({
   patch,
   rekordboxCollection,
   cueTrack,
+  cueTracks,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
@@ -376,11 +378,7 @@ export function CuesTab({
       </div>
 
       <section aria-label={tr('settings.cueFlows.preview')}>
-        {cueTrack ? (
-          <CueFlowTrackPreview flow={flow} track={cueTrack} />
-        ) : (
-          <CueFlowPreview flow={flow} />
-        )}
+        <CueFlowTrackPreview flow={flow} track={cueTrack} tracks={cueTracks} />
       </section>
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between gap-3">
