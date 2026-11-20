@@ -8,22 +8,26 @@ import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
 import { useTrackCues } from '../hooks/useTrackCues'
 import {
-  differingHot,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
   EXAMPLE_POINT_BAR,
   EXAMPLE_TRACK,
   EXAMPLE_WAVE,
   examplePlan,
+  hotDiff,
   trackOfCues,
   trackPlan,
 } from '../lib/cueExample'
 import { clipBox, MENU_GAP } from './CueRuleRow'
 import { CueWave } from './CueWave'
+import { SegmentedControl } from './SegmentedControl'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
 type Source = 'track' | 'example'
+type Mode = 'flow' | 'now'
+
+const MODES: readonly Mode[] = ['flow', 'now']
 
 interface Choice {
   contentId: string
@@ -173,6 +177,8 @@ export function CueFlowPreview({
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
   const [open, setOpen] = useState(false)
+  const [nowOf, setNowOf] = useState<string | null>(null)
+  const [pointed, setPointed] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const real = track?.cues.analysed ? trackOfCues(track.cues) : null
@@ -185,13 +191,38 @@ export function CueFlowPreview({
       ? []
       : out.wanted.map((c, i) => ({ ...c, key: `${i}`, pending: false }))
   const leftOut = rejectedCues(flow, base).filter((c) => c.reason !== 'limit')
-  const differ =
+  const has = onTrack ? track.cues.cues.filter((c) => !c.loop) : []
+  const hotNow = has.filter((c) => c.kind !== 0)
+  const diff =
     onTrack && out.status !== 'too-many'
-      ? differingHot(
+      ? hotDiff(
           out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms),
-          track.cues.cues.filter((c) => c.kind !== 0 && !c.loop).map((c) => c.ms),
+          hotNow.map((c) => c.ms),
         )
       : null
+  const differ = diff ? diff.added.length + diff.gone.length : null
+  const differs = diff !== null && differ !== null && differ > 0
+  const view = `${track?.cues.contentId}\n${flow.id}`
+  const mode: Mode = differs && nowOf === view ? 'now' : 'flow'
+  const goes = (c: { kind: number; ms: number }): boolean =>
+    c.kind !== 0 && (diff?.gone.includes(c.ms) ?? false)
+  const shown =
+    mode === 'now'
+      ? has.filter((c) => !goes(c)).map((c) => ({ ...c, key: c.id, pending: false }))
+      : cues
+  const added = diff ? tr('settings.cueFlows.diffNew', { count: diff.added.length }) : ''
+  const gone = diff ? tr('settings.cueFlows.diffGone', { count: diff.gone.length }) : ''
+  const changes = !diff
+    ? ''
+    : mode === 'now'
+      ? diff.gone.length > 0
+        ? tr('settings.cueFlows.diffGoneNow', { count: diff.gone.length })
+        : ''
+      : diff.added.length === 0
+        ? gone
+        : diff.gone.length === 0
+          ? added
+          : tr('settings.cueFlows.diffBoth', { added, gone })
   const choices =
     track && marked && !tracks.some((c) => c.contentId === track.cues.contentId)
       ? [{ contentId: track.cues.contentId, label: track.label }, ...tracks]
@@ -213,6 +244,7 @@ export function CueFlowPreview({
 
   function choose(choice: Choice | null): void {
     setSource(choice ? 'track' : 'example')
+    setNowOf(null)
     if (choice) onPick?.(choice)
     close()
   }
@@ -260,9 +292,25 @@ export function CueFlowPreview({
         wave={onTrack ? track.cues.wave : EXAMPLE_WAVE}
         grid={onTrack ? track.cues.grid : EXAMPLE_GRID}
         durationMs={onTrack ? track.cues.durationMs : EXAMPLE_DURATION_MS}
-        cues={cues}
-        trimmed={out.status === 'plan' ? out.trimmed : []}
-        ghost={{ added: [], gone: [], rejected: leftOut }}
+        cues={shown}
+        trimmed={out.status === 'plan' && mode === 'flow' ? out.trimmed : []}
+        ghost={{ added: [], gone: [], rejected: mode === 'flow' ? leftOut : [] }}
+        diff={
+          differs
+            ? {
+                fresh:
+                  mode === 'flow'
+                    ? cues
+                        .filter((c) => c.kind !== 0 && diff.added.includes(c.ms))
+                        .map((c) => c.key)
+                    : [],
+                gone: hotNow.filter(goes).map((c) => ({ ...c, key: c.id })),
+                freshLabel: tr('settings.cueFlows.diffNewHint'),
+                goneLabel: tr('settings.cueFlows.diffGoneHint'),
+                focused: pointed,
+              }
+            : undefined
+        }
         droppedLabel={(ms) =>
           leftOut
             .filter((c) => c.ms === ms)
@@ -287,10 +335,33 @@ export function CueFlowPreview({
           {tr('settings.cueFlows.noMark', { label: track.label })}
         </p>
       )}
-      {differ !== null && differ > 0 && (
-        <p data-testid="cue-preview-compare" className="mt-1 text-xs text-warn">
-          {tr('settings.cueFlows.compareDiffer', { count: differ })}
-        </p>
+      {differs && (
+        <div data-testid="cue-preview-diff" className="mt-1 flex items-center gap-2">
+          {changes !== '' && (
+            <button
+              type="button"
+              data-testid="cue-preview-compare"
+              onMouseEnter={() => setPointed(true)}
+              onMouseLeave={() => setPointed(false)}
+              onFocus={() => setPointed(true)}
+              onBlur={() => setPointed(false)}
+              className="press min-w-0 cursor-default truncate rounded-sm text-left text-xs text-warn"
+            >
+              {changes}
+            </button>
+          )}
+          <span className="flex-1" />
+          <SegmentedControl
+            options={MODES}
+            value={mode}
+            onChange={(next) => setNowOf(next === 'now' ? view : null)}
+            testidPrefix="cue-preview-mode"
+            compact
+            className="shrink-0"
+            label={tr('settings.cueFlows.preview')}
+            labelFor={(id) => tr(`settings.cueFlows.previewMode.${id}`)}
+          />
+        </div>
       )}
       {out.status === 'too-many' && (
         <p data-testid="cue-preview-too-many" className="mt-1 text-xs text-warn">

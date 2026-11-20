@@ -2052,8 +2052,19 @@
       "noTrackFound": "Nenhuma faixa marcada com esse nome",
       "noMark": "{{label}} ainda não tem nenhuma marca, então a prévia usa a faixa de exemplo",
       "compareSame": "Os mesmos hot cues que esta faixa tem agora",
-      "compareDiffer_one": "{{count}} hot cue diferente do que esta faixa tem agora",
-      "compareDiffer_other": "{{count}} hot cues diferentes do que esta faixa tem agora",
+      "diffNew_one": "{{count}} novo",
+      "diffNew_other": "{{count}} novos",
+      "diffGone_one": "{{count}} que sai",
+      "diffGone_other": "{{count}} que saem",
+      "diffBoth": "{{added}} e {{gone}}",
+      "diffGoneNow_one": "{{count}} que o fluxo tiraria",
+      "diffGoneNow_other": "{{count}} que o fluxo tiraria",
+      "diffNewHint": "Novo com este fluxo. A faixa não tem",
+      "diffGoneHint": "A faixa tem e o fluxo não colocaria",
+      "previewMode": {
+        "flow": "Com o fluxo",
+        "now": "Agora"
+      },
       "leftOut": {
         "back_one": "Regra {{rule}}, {{count}} compasso para trás",
         "back_other": "Regra {{rule}}, {{count}} compassos para trás",

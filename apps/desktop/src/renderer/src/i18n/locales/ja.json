@@ -2052,8 +2052,19 @@
       "noTrackFound": "その名前のマーク付きトラックはありません",
       "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
       "compareSame": "このトラックの現在のホットキューと同じ",
-      "compareDiffer_one": "{{count}} 個のホットキューがこのトラックの現在と異なります",
-      "compareDiffer_other": "{{count}} 個のホットキューがこのトラックの現在と異なります",
+      "diffNew_one": "新規 {{count}} 個",
+      "diffNew_other": "新規 {{count}} 個",
+      "diffGone_one": "削除 {{count}} 個",
+      "diffGone_other": "削除 {{count}} 個",
+      "diffBoth": "{{added}}、{{gone}}",
+      "diffGoneNow_one": "フローが削除するもの {{count}} 個",
+      "diffGoneNow_other": "フローが削除するもの {{count}} 個",
+      "diffNewHint": "このフローで新規。トラックにはありません",
+      "diffGoneHint": "トラックにあり、フローでは置かれません",
+      "previewMode": {
+        "flow": "フロー適用",
+        "now": "現在"
+      },
       "leftOut": {
         "back_one": "ルール {{rule}}、{{count}} 小節前",
         "back_other": "ルール {{rule}}、{{count}} 小節前",

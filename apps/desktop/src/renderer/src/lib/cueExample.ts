@@ -120,10 +120,18 @@ export function trackPlan(flow: CueFlow, track: FlowTrack): FlowOutcome {
   })
 }
 
-export function differingHot(planned: number[], existing: number[]): number {
+export function hotDiff(
+  planned: number[],
+  existing: number[],
+): { added: number[]; gone: number[] } {
   const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
-  return (
-    planned.filter((p) => !existing.some((e) => near(p, e))).length +
-    existing.filter((e) => !planned.some((p) => near(p, e))).length
-  )
+  return {
+    added: planned.filter((p) => !existing.some((e) => near(p, e))),
+    gone: existing.filter((e) => !planned.some((p) => near(p, e))),
+  }
+}
+
+export function differingHot(planned: number[], existing: number[]): number {
+  const { added, gone } = hotDiff(planned, existing)
+  return added.length + gone.length
 }

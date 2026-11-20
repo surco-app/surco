@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CALLS_ONLY, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import {
+  differingHot,
   EXAMPLE_DROP,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
@@ -8,6 +9,7 @@ import {
   EXAMPLE_WAVE,
   exampleBar,
   examplePlan,
+  hotDiff,
   previewChoices,
 } from './cueExample'
 
@@ -116,5 +118,21 @@ describe('the tracks the preview offers', () => {
   it('offers a track once even when the list repeats it', () => {
     const tracks = [row('a', [{ ms: 64000, kind: 0 }]), row('again', [{ ms: 64000, kind: 0 }])]
     expect(previewChoices(tracks, contentOf)).toHaveLength(1)
+  })
+})
+
+describe('what a flow changes on a track', () => {
+  it('names the hot cues the flow adds and the ones it takes away, so the preview can point at each', () => {
+    expect(hotDiff([64000, 96000], [96000, 120000])).toEqual({ added: [64000], gone: [120000] })
+  })
+
+  it('takes a hot cue a few milliseconds off as the same one, since programs round positions differently', () => {
+    expect(hotDiff([64000], [64050])).toEqual({ added: [], gone: [] })
+    expect(hotDiff([64000], [64051])).toEqual({ added: [64000], gone: [64051] })
+  })
+
+  it('counts as many differing hot cues as it names, so the dot and the breakdown never disagree', () => {
+    expect(differingHot([64000, 96000], [96000, 120000])).toBe(2)
+    expect(differingHot([64000], [64010])).toBe(0)
   })
 })

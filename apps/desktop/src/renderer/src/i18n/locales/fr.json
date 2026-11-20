@@ -2052,8 +2052,19 @@
       "noTrackFound": "Aucun morceau marqué avec ce nom",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
       "compareSame": "Les mêmes hot cues que ce morceau a déjà",
-      "compareDiffer_one": "{{count}} hot cue diffère de ce que ce morceau a déjà",
-      "compareDiffer_other": "{{count}} hot cues diffèrent de ce que ce morceau a déjà",
+      "diffNew_one": "{{count}} nouveau",
+      "diffNew_other": "{{count}} nouveaux",
+      "diffGone_one": "{{count}} retiré",
+      "diffGone_other": "{{count}} retirés",
+      "diffBoth": "{{added}} et {{gone}}",
+      "diffGoneNow_one": "{{count}} que le flux retirerait",
+      "diffGoneNow_other": "{{count}} que le flux retirerait",
+      "diffNewHint": "Nouveau avec ce flux. Le morceau ne l’a pas",
+      "diffGoneHint": "Le morceau l’a et le flux ne le placerait pas",
+      "previewMode": {
+        "flow": "Avec le flux",
+        "now": "Maintenant"
+      },
       "leftOut": {
         "back_one": "Règle {{rule}}, {{count}} mesure en arrière",
         "back_other": "Règle {{rule}}, {{count}} mesures en arrière",

@@ -2052,8 +2052,19 @@
       "noTrackFound": "Nessun brano segnato con questo nome",
       "noMark": "{{label}} non ha ancora nessun segno, quindi l'anteprima usa il brano di esempio",
       "compareSame": "Gli stessi hot cue che ha ora questo brano",
-      "compareDiffer_one": "{{count}} hot cue diverso da quelli che ha ora questo brano",
-      "compareDiffer_other": "{{count}} hot cue diversi da quelli che ha ora questo brano",
+      "diffNew_one": "{{count}} nuovo",
+      "diffNew_other": "{{count}} nuovi",
+      "diffGone_one": "{{count}} che si toglie",
+      "diffGone_other": "{{count}} che si tolgono",
+      "diffBoth": "{{added}} e {{gone}}",
+      "diffGoneNow_one": "{{count}} che il flusso toglierebbe",
+      "diffGoneNow_other": "{{count}} che il flusso toglierebbe",
+      "diffNewHint": "Nuovo con questo flusso. Il brano non ce l'ha",
+      "diffGoneHint": "Il brano ce l'ha e il flusso non lo metterebbe",
+      "previewMode": {
+        "flow": "Con il flusso",
+        "now": "Adesso"
+      },
       "leftOut": {
         "back_one": "Regola {{rule}}, {{count}} battuta indietro",
         "back_other": "Regola {{rule}}, {{count}} battute indietro",

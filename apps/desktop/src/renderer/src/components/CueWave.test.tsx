@@ -446,6 +446,108 @@ describe('CueWave', () => {
     expect(dropped).not.toHaveAttribute('aria-hidden')
   })
 
+  describe('comparing a flow with the hot cues a track has', () => {
+    const diff = {
+      fresh: ['a'],
+      gone: [{ key: 'x', ms: 24000, kind: 3, color: 22 }],
+      freshLabel: 'new with the flow',
+      goneLabel: 'the flow takes it away',
+      focused: false,
+    }
+    const cues = [
+      { key: 'a', ms: 16000, kind: 1, color: 42, pending: false },
+      { key: 'b', ms: 32000, kind: 2, color: 42, pending: false },
+      { key: 'd', ms: 40000, kind: 0, color: null, pending: false },
+    ]
+
+    it('rings a hot cue the track does not have and says so, so the DJ sees which one the flow brings', () => {
+      setup({ readOnly: true, cues, diff })
+      const fresh = screen.getByTestId('cue-wave-hot-A')
+      expect(fresh).toHaveAttribute('data-diff', 'new')
+      expect(fresh).toHaveAttribute('role', 'img')
+      expect(fresh).toHaveAccessibleName('new with the flow')
+      expect(fresh).not.toHaveAttribute('title')
+      expect(fresh.style.boxShadow).toContain('var(--color-warn)')
+      expect(fresh.style.boxShadow).toContain('var(--color-panel-2)')
+      expect(fresh).toHaveTextContent(/^A$/)
+      expect(hoverTooltip(fresh)).toBe('new with the flow')
+    })
+
+    it('leaves a hot cue the track already has without ring or name, so only the differences call the eye', () => {
+      setup({ readOnly: true, cues, diff })
+      const kept = screen.getByTestId('cue-wave-hot-B')
+      expect(kept).not.toHaveAttribute('data-diff')
+      expect(kept).toHaveAttribute('aria-hidden', 'true')
+      expect(kept.style.boxShadow).toBe('')
+    })
+
+    it('draws a hot cue the flow would take away hollow, in its own colour and letter, struck through, so it does not read as one left out by a rule', () => {
+      setup({
+        readOnly: true,
+        cues,
+        diff,
+        ghost: { added: [], gone: [], rejected: [{ ms: 60000, place: 'hot', color: 42 }] },
+      })
+      const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
+      expect(gone).toHaveAttribute('data-diff', 'gone')
+      expect(gone).toHaveTextContent(/^C$/)
+      expect(gone).toHaveStyle({
+        borderStyle: 'solid',
+        borderWidth: '1.5px',
+        borderColor: hotCueColor(22),
+      })
+      expect(gone.style.opacity).toBe('')
+      expect(screen.getByTestId('cue-wave-strike-24000').style.background).toContain(
+        'var(--color-warn)',
+      )
+      expect(gone).toHaveAttribute('role', 'img')
+      expect(gone).toHaveAccessibleName('the flow takes it away')
+      expect(gone).not.toHaveAttribute('title')
+      expect(hoverTooltip(gone)).toBe('the flow takes it away')
+      expect(screen.getByTestId('cue-wave-ghost-dropped-60000')).toHaveStyle({
+        borderStyle: 'dashed',
+        opacity: '0.3',
+      })
+    })
+
+    it('fades everything but the differences while they are pointed at, so they stand out among the rest', () => {
+      setup({
+        readOnly: true,
+        cues,
+        trimmed: [48000],
+        diff: { ...diff, focused: true },
+        ghost: { added: [], gone: [], rejected: [{ ms: 60000, place: 'hot', color: 42 }] },
+      })
+      expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'true')
+      expect(screen.getByTestId('cue-wave-hot-B').style.opacity).toBe('0.25')
+      expect(screen.getByTestId('cue-wave-call-40000').style.opacity).toBe('0.25')
+      expect(screen.getByTestId('cue-wave-trimmed-48000').style.opacity).toBe('0.25')
+      expect(Number(screen.getByTestId('cue-wave-ghost-dropped-60000').style.opacity)).toBeLessThan(
+        0.1,
+      )
+      expect(screen.getByTestId('cue-wave-hot-A').style.opacity).toBe('')
+      expect(screen.getByTestId('cue-wave-ghost-gone-24000').style.opacity).toBe('')
+    })
+
+    it('brings the rest back at full strength once the differences are no longer pointed at, without motion for who asked for none', () => {
+      setup({ readOnly: true, cues, diff })
+      expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'false')
+      const kept = screen.getByTestId('cue-wave-hot-B')
+      expect(kept.style.opacity).toBe('')
+      expect(kept.className).toContain('transition-opacity')
+      expect(kept.className).toContain('duration-120')
+      expect(kept.className).toContain('motion-reduce:transition-none')
+    })
+
+    it('keeps the editor wave as it was, which compares nothing', () => {
+      setup()
+      expect(screen.getByTestId('cue-wave')).not.toHaveAttribute('data-focus-diff')
+      expect(screen.getByTestId('cue-wave-hot-A')).not.toHaveAttribute('data-diff')
+      expect(screen.getByTestId('cue-wave-hot-A').className).not.toContain('transition-opacity')
+      expect(screen.queryByTestId(/^cue-wave-ghost-gone-/)).toBeNull()
+    })
+  })
+
   it('draws the overview from the detailed wave once it is loaded, one thin column per device pixel, like rekordbox overview', () => {
     vi.stubGlobal('devicePixelRatio', 2)
     const fillRect = vi.fn<(x: number, y: number, w: number, h: number) => void>()
