@@ -2054,6 +2054,8 @@
       "noTrackFound": "Nessun brano con questo nome",
       "loadingTracks": "Lettura della tua collezione…",
       "noMark": "{{label}} non ha ancora nessun segno, quindi l'anteprima usa il brano di esempio",
+      "findingPoints": "Ricerca dei punti del brano…",
+      "autoPoint": "Punto trovato da Auto marca",
       "compareSame": "Gli stessi hot cue che ha ora questo brano",
       "diffNew_one": "{{count}} nuovo",
       "diffNew_other": "{{count}} nuovi",

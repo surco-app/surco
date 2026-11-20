@@ -57,7 +57,7 @@ export async function learnedTaste(client: QueryClient) {
   return read?.profile?.taste ?? null
 }
 
-async function dropInputOf(
+export async function dropInputOf(
   client: QueryClient,
   contentId: string,
   read: { grid: DropInput['grid']; phrases: DropInput['phrases'] },

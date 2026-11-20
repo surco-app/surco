@@ -2054,6 +2054,8 @@
       "noTrackFound": "その名前のトラックはありません",
       "loadingTracks": "コレクションを読み込み中…",
       "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
+      "findingPoints": "トラックのポイントを検索中…",
+      "autoPoint": "自動マークが見つけたポイント",
       "compareSame": "このトラックの現在のホットキューと同じ",
       "diffNew_one": "新規 {{count}} 個",
       "diffNew_other": "新規 {{count}} 個",

@@ -550,6 +550,99 @@ describe('CueFlowPreview', () => {
       },
     )
 
+    describe('without a mark of its own, as in the programs with no CALLs', () => {
+      const hotOnly = onTrack([{ id: 'hot', ms: beat(48), kind: 1, color: 22 }])
+      const POINTS = [beat(64)]
+
+      it('hangs the flow from the points Auto mark finds and draws each as a ring that says so, so the DJ sees the flow on their own track and knows the mark is a guess of Surco', () => {
+        render(<CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} />)
+        expect(screen.getByTestId('cue-preview-track')).toHaveTextContent(
+          'DJ Made, Millenium Stringz',
+        )
+        const found = screen.getByTestId(`cue-wave-call-${beat(64)}`)
+        expect(found).toHaveAttribute('data-auto', 'true')
+        expect(found).toHaveAccessibleName('Point found by Auto mark')
+        expect(hoverTooltip(found)).toBe('Point found by Auto mark')
+        expect(screen.getByTestId('cue-wave-hot-A')).toHaveAttribute('data-diff', 'new')
+        expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
+          /^1 new and 1 taken away$/,
+        )
+        expect(screen.queryByTestId('cue-preview-no-mark')).toBeNull()
+      })
+
+      it('compares with the hot cues the track has as it does on a marked track, the green dot and the look at the track as it is now included, where no ring is drawn since the track has no such mark', () => {
+        const { unmount } = render(<CueFlowPreview flow={MIX_IN} track={hotOnly} points={POINTS} />)
+        expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
+        unmount()
+        render(<CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} />)
+        fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+        expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toBeInTheDocument()
+        expect(screen.queryByTestId(/^cue-wave-call-/)).toBeNull()
+      })
+
+      it('tells whoever makes a flow from the track which marks it is shown with, so the flow counts from the same points the DJ is looking at', () => {
+        const onShown = vi.fn()
+        render(<CueFlowPreview flow={MIX_IN} track={hotOnly} points={POINTS} onShown={onShown} />)
+        expect(onShown).toHaveBeenLastCalledWith({
+          label: hotOnly.label,
+          cues: hotOnly.cues,
+          marks: POINTS,
+        })
+      })
+
+      it('draws the marks of the DJ as always on a track that has them, whatever points come with it, so a found point never replaces a mark', () => {
+        const onShown = vi.fn()
+        render(
+          <CueFlowPreview flow={MIX_IN} track={marked} points={[beat(80)]} onShown={onShown} />,
+        )
+        expect(screen.queryByTestId(`cue-wave-call-${beat(80)}`)).toBeNull()
+        expect(screen.getByTestId(`cue-wave-call-${beat(64)}`)).not.toHaveAttribute('data-auto')
+        expect(onShown).toHaveBeenLastCalledWith({ label: marked.label, cues: marked.cues })
+      })
+
+      it('shows the wave of the track with the cues it has and says it is finding its points while it is, in the same line under the wave, so nothing jumps when they land', () => {
+        const onShown = vi.fn()
+        const { rerender } = render(
+          <CueFlowPreview flow={ONE_AT_32} track={hotOnly} finding onShown={onShown} />,
+        )
+        expect(screen.getByTestId('cue-preview-track')).toHaveTextContent(
+          'DJ Made, Millenium Stringz',
+        )
+        const line = screen.getByTestId('cue-preview-status')
+        expect(line).toHaveClass('h-10')
+        const said = screen.getByTestId('cue-preview-finding')
+        expect(said).toHaveAttribute('role', 'status')
+        expect(said).toHaveTextContent(/^Finding the points of the track…$/)
+        expect(said).toHaveClass('truncate')
+        expect(said.querySelector('svg')).toHaveClass('animate-spin')
+        expect(
+          Array.from(line.querySelectorAll<HTMLElement>('[data-status]')).map(
+            (el) => el.dataset.status,
+          ),
+        ).toEqual(['finding'])
+        expect(screen.getByTestId('cue-wave-hot-A')).not.toHaveAttribute('data-diff')
+        expect(screen.queryByTestId(/^cue-wave-call-/)).toBeNull()
+        expect(screen.queryByTestId(/^cue-wave-ghost-/)).toBeNull()
+        expect(screen.queryByTestId('cue-preview-mode-now')).toBeNull()
+        expect(onShown).toHaveBeenLastCalledWith(null)
+        rerender(
+          <CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} onShown={onShown} />,
+        )
+        expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
+        expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-10')
+        expect(screen.getByTestId(`cue-wave-call-${beat(64)}`)).toHaveAttribute('data-auto', 'true')
+      })
+
+      it('goes back to the example track with the line that says why once no point was found', () => {
+        const { rerender } = render(<CueFlowPreview flow={MIX_IN} track={hotOnly} finding />)
+        rerender(<CueFlowPreview flow={MIX_IN} track={hotOnly} />)
+        expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
+          /^DJ Made, Millenium Stringz has no mark yet/,
+        )
+        expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+      })
+    })
+
     it('says the most serious notice when two meet and keeps the other in its tooltip, so the line stays one line and nothing is lost', () => {
       render(<CueFlowPreview flow={edge} track={onlyMark} />)
       const line = screen.getByTestId('cue-preview-compare')

@@ -2054,6 +2054,8 @@
       "noTrackFound": "Nenhuma faixa com esse nome",
       "loadingTracks": "Lendo sua coleção…",
       "noMark": "{{label}} ainda não tem nenhuma marca, então a prévia usa a faixa de exemplo",
+      "findingPoints": "Procurando os pontos da faixa…",
+      "autoPoint": "Ponto que o Marcar automático encontra",
       "compareSame": "Os mesmos hot cues que esta faixa tem agora",
       "diffNew_one": "{{count}} novo",
       "diffNew_other": "{{count}} novos",

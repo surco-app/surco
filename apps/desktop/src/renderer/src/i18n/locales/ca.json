@@ -2054,6 +2054,8 @@
       "noTrackFound": "Cap pista amb aquest nom",
       "loadingTracks": "Llegint la teva col·lecció…",
       "noMark": "{{label}} encara no té cap marca, així que la previsualització fa servir la pista d'exemple",
+      "findingPoints": "Buscant els punts de la pista…",
+      "autoPoint": "Punt que troba Marcar automàticament",
       "compareSame": "Els mateixos hot cues que té ara aquesta pista",
       "diffNew_one": "{{count}} nou",
       "diffNew_other": "{{count}} nous",

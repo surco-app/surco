@@ -2054,6 +2054,8 @@
       "noTrackFound": "Aucun morceau avec ce nom",
       "loadingTracks": "Lecture de ta collection…",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
+      "findingPoints": "Recherche des points du morceau…",
+      "autoPoint": "Point trouvé par Marquage auto",
       "compareSame": "Les mêmes hot cues que ce morceau a déjà",
       "diffNew_one": "{{count}} nouveau",
       "diffNew_other": "{{count}} nouveaux",

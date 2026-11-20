@@ -90,7 +90,11 @@ export function CuesTab({
   const more = useSplitMenu()
   const add = useSplitMenu()
   const [read, onLearned] = useCueProfileRead()
-  const [previewed, setPreviewed] = useState<{ label: string; cues: TrackCues } | null>(null)
+  const [previewed, setPreviewed] = useState<{
+    label: string
+    cues: TrackCues
+    marks?: number[]
+  } | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!renaming) return
@@ -137,7 +141,7 @@ export function CuesTab({
 
   const learnedFlow = read?.profile?.flow ?? null
   const offered = learnedFlow && !flows.some((f) => sameRules(f, learnedFlow)) ? learnedFlow : null
-  const trackFlow = previewed ? flowFromTrack(previewed.cues) : null
+  const trackFlow = previewed ? flowFromTrack(previewed.cues, previewed.marks) : null
   const fromTrack =
     previewed && trackFlow && !flows.some((f) => sameRules(f, trackFlow))
       ? { flow: trackFlow, track: previewed.label }
@@ -423,6 +427,7 @@ export function CuesTab({
               track={cueTrack}
               programs={previewPrograms}
               inWindow={cueProgram}
+              taste={read?.profile?.taste}
               onShown={setPreviewed}
             />
           </section>

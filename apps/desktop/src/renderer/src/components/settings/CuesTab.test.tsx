@@ -29,6 +29,7 @@ import {
   exampleBar,
   flowFromTrack,
 } from '../../lib/cueExample'
+import { dropsOnGrid } from '../../lib/cueAutoMark'
 import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
@@ -1653,6 +1654,183 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeChecked()
     expect(screen.getByTestId('settings-cue-flow-to-traktor')).not.toBeChecked()
     expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toHaveTextContent('Traktor')
+  })
+})
+
+describe('a track with no mark of its own in the preview', () => {
+  const LOUD = (7 << 13) | (7 << 7) | (31 << 2)
+  const QUIET = (1 << 13) | (1 << 7) | (4 << 2)
+  const entriesAt = (bar: number) => Math.floor(exampleBar(bar) * 0.15)
+  const WORDS = Uint16Array.from({ length: Math.ceil(EXAMPLE_DURATION_MS * 0.15) }, (_, i) =>
+    i >= entriesAt(97) && i < entriesAt(161) ? LOUD : QUIET,
+  )
+  const INPUT = {
+    grid: EXAMPLE_GRID,
+    phrases: [{ ms: exampleBar(97), kind: 'chorus' as const }],
+    words: WORDS,
+  }
+  const FLAT = { grid: EXAMPLE_GRID, phrases: [], words: new Uint16Array(WORDS.length) }
+  const HOT_ONLY = (contentId: string, point = exampleBar(97)): TrackCues => ({
+    ...MARKED_BY_HAND,
+    contentId,
+    cues: [
+      { id: 'a', ms: point - (exampleBar(17) - exampleBar(1)), kind: 1, color: 22 },
+      { id: 'b', ms: point - (exampleBar(33) - exampleBar(1)), kind: 2, color: 1 },
+    ],
+  })
+  const pointsOf = (taste: Parameters<typeof dropsOnGrid>[2] = null) =>
+    dropsOnGrid(INPUT, EXAMPLE_GRID, taste)
+      .map((p) => p.ms)
+      .sort((a, b) => a - b)
+  const inTraktor = (cues: Partial<Api['cues']>, more: Partial<Api> = {}) =>
+    installApi({
+      ...more,
+      cues: { trackCues: async (contentId: string) => HOT_ONLY(contentId), ...cues },
+      dj: djReads({
+        traktor: { ...FOUND, playlist: async () => [inCollection(GLUE_IN_TRAKTOR, 'Glue', [])] },
+      }),
+    })
+  const pickGlue = async (id = GLUE_IN_TRAKTOR) => {
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(await screen.findByTestId(`cue-preview-track-option-${id}`))
+  }
+  const rings = () =>
+    screen
+      .queryAllByTestId(/^cue-wave-call-/)
+      .filter((c) => c.dataset.auto === 'true')
+      .map((c) => Number(c.dataset.testid?.replace('cue-wave-call-', '')))
+
+  it('finds the points of a Traktor track once it is picked, saying so over its own wave meanwhile, and then hangs the flow from them drawn as rings, so a DJ with no CALLs tries the flow on a track of theirs', async () => {
+    let land: (input: typeof INPUT) => void = () => {}
+    const dropInput = vi.fn(() => new Promise<typeof INPUT>((resolve) => (land = resolve)))
+    const waveDetail = vi.fn(async () => null)
+    const api = inTraktor({ dropInput, waveDetail })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    expect(dropInput).not.toHaveBeenCalled()
+    await pickGlue()
+    expect(await screen.findByTestId('cue-preview-finding')).toHaveTextContent(
+      'Finding the points of the track…',
+    )
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Glue')
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    expect(rings()).toEqual([])
+    expect(dropInput.mock.calls).toEqual([[GLUE_IN_TRAKTOR]])
+    await act(async () => land(INPUT))
+    await waitFor(() => expect(screen.queryByTestId('cue-preview-finding')).toBeNull())
+    expect(pointsOf().length).toBeGreaterThan(0)
+    expect(rings()).toEqual(pointsOf())
+    expect(screen.getAllByTestId(/^cue-wave-hot-/).length).toBeGreaterThan(0)
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Glue')
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+    await pickGlue()
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    expect(dropInput).toHaveBeenCalledTimes(1)
+    expect(waveDetail).not.toHaveBeenCalled()
+  })
+
+  it('finds them with what Surco learned of the DJ, as the Auto mark of the editor does, so the preview and the editor never disagree on a track', async () => {
+    const taste = { trees: [], picking: { threshold: -99, spacingBars: 1, maxDrops: 99 } }
+    inTraktor(
+      { dropInput: async () => INPUT },
+      {
+        cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+          profile: { ...LEARNED, taste },
+          edits: { count: 0, sinceLearn: 0, corrected: 0 },
+          marked: 40,
+        })),
+      },
+    )
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    await pickGlue()
+    expect(pointsOf(taste).length).toBeGreaterThan(pointsOf().length)
+    await waitFor(() => expect(rings()).toEqual(pointsOf(taste)))
+  })
+
+  it('reads the wave rekordbox keeps, not the audio, for a rekordbox track with no mark, as the Auto mark of the editor does there', async () => {
+    const waveDetail = vi.fn(async () => WORDS)
+    const dropInput = vi.fn(async () => null)
+    installApi({
+      cues: {
+        trackCues: async (contentId: string) => ({
+          ...HOT_ONLY(contentId),
+          phrases: INPUT.phrases,
+        }),
+        waveDetail,
+        dropInput,
+      },
+      dj: collectionOf(inCollection('rb:7', 'Bicep, Glue', [])),
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
+    await pickGlue('rb:7')
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    expect(waveDetail.mock.calls).toEqual([['rb:7']])
+    expect(dropInput).not.toHaveBeenCalled()
+  })
+
+  it('looks for nothing on a rekordbox track that has its marks, which shows as it always did', async () => {
+    const dropInput = vi.fn(async () => null)
+    const waveDetail = vi.fn(async () => null)
+    installApi({
+      dj: glueCollection(),
+      cues: { trackCues: async () => MARKED_BY_HAND, dropInput, waveDetail },
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
+    await previewGlue()
+    await act(async () => {})
+    expect(dropInput).not.toHaveBeenCalled()
+    expect(waveDetail).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
+    expect(rings()).toEqual([])
+    expect(screen.getByTestId(`cue-wave-call-${exampleBar(97)}`)).not.toHaveAttribute('data-auto')
+  })
+
+  it.each([
+    ['the audio gives no point', async () => FLAT],
+    ['the track cannot be analysed', async () => null],
+    [
+      'the read fails',
+      async () => {
+        throw new Error('ffmpeg exited with 1')
+      },
+    ],
+  ])(
+    'keeps the example track and says the track has no mark when %s, so a track Auto mark cannot read never breaks Settings',
+    async (_, dropInput) => {
+      const read = vi.fn(dropInput)
+      inTraktor({ dropInput: read })
+      render(<Harness flows={[MIX_IN]} active={MIX_IN.id} queries={createQueryClient()} />)
+      await pickGlue()
+      await waitFor(() => expect(read).toHaveBeenCalled())
+      expect(await screen.findByTestId('cue-preview-no-mark')).toHaveTextContent(
+        /^Glue has no mark yet/,
+      )
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+      expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
+      expect(rings()).toEqual([])
+    },
+  )
+
+  it('makes a flow from a Traktor track with no mark of its own counting from the points found, so From “track” works in the programs with no CALLs', async () => {
+    const point = pointsOf()[0]
+    inTraktor({
+      trackCues: async (contentId: string) => HOT_ONLY(contentId, point),
+      dropInput: async () => INPUT,
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} />)
+    await pickGlue()
+    await waitFor(() => expect(rings()).toEqual(pointsOf()))
+    openAdd()
+    expect(screen.getByTestId('cue-flow-add-track')).toHaveAccessibleName('From “Glue”')
+    fireEvent.click(screen.getByTestId('cue-flow-add-track'))
+    const made = flowFromTrack(HOT_ONLY(GLUE_IN_TRAKTOR, point), pointsOf())
+    expect(made?.rules.length).toBeGreaterThan(0)
+    expect(flowFromTrack(HOT_ONLY(GLUE_IN_TRAKTOR, point))).toBeNull()
+    expect(last?.cueFlows).toHaveLength(2)
+    expect(last?.cueFlows[1].rules).toEqual(made?.rules)
+    expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
   })
 })
 

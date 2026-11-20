@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -7,10 +7,13 @@ import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
+import type { DropTaste } from '../../../shared/dropTaste'
 import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
 import { readPlaylist } from '../hooks/useSourceBrowser'
 import { useTrackCues } from '../hooks/useTrackCues'
+import { HEAVY_PROBE_GC_MS } from '../lib/analysisQueries'
+import { dropInputOf, dropsOnGrid, withoutCallInBar } from '../lib/cueAutoMark'
 import {
   collectionChoices,
   EXAMPLE_DURATION_MS,
@@ -36,7 +39,7 @@ type Mode = 'flow' | 'now'
 
 const MODES: readonly Mode[] = ['flow', 'now']
 
-type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'hint'
+type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'hint' | 'finding'
 
 const NOTICE_TEXT: Record<Status, string> = {
   'too-many': 'text-xs text-warn',
@@ -44,6 +47,13 @@ const NOTICE_TEXT: Record<Status, string> = {
   compare: 'text-xs text-warn',
   'no-mark': 'text-label text-fg-dim',
   hint: 'text-label text-fg-dim',
+  finding: 'text-label text-fg-dim',
+}
+
+interface Shown {
+  label: string
+  cues: TrackCues
+  marks?: number[]
 }
 
 interface Choice {
@@ -54,6 +64,7 @@ interface Choice {
 
 const NO_CHOICES: Choice[] = []
 const NO_PROGRAMS: readonly DjProgram[] = []
+const NO_POINTS: number[] = []
 const MAX_CHOICES = 100
 const OPTION =
   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]'
@@ -277,6 +288,8 @@ export function CueFlowPreview({
   program = 'rekordbox',
   onProgram,
   loading = false,
+  points = NO_POINTS,
+  finding = false,
   onPick,
   onOpenChange,
   onShown,
@@ -288,9 +301,11 @@ export function CueFlowPreview({
   program?: DjProgram
   onProgram?: (program: DjProgram) => void
   loading?: boolean
+  points?: number[]
+  finding?: boolean
   onPick?: (choice: Choice) => void
   onOpenChange?: (open: boolean) => void
-  onShown?: (shown: { label: string; cues: TrackCues } | null) => void
+  onShown?: (shown: Shown | null) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [source, setSource] = useState<Source>('track')
@@ -301,9 +316,13 @@ export function CueFlowPreview({
   const [focused, setFocused] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const real = track?.cues.analysed ? trackOfCues(track.cues) : null
+  const own = track?.cues.analysed ? trackOfCues(track.cues) : null
+  const found = own !== null && own.drops.length === 0 && points.length > 0
+  const real = own !== null && found ? { ...own, drops: points } : own
   const marked = real !== null && real.drops.length > 0
   const onTrack = track !== undefined && real !== null && marked && source === 'track'
+  const waiting = finding && own !== null && !marked && source === 'track'
+  const drawn = track !== undefined && (onTrack || waiting) ? track : null
   const base = onTrack ? real : EXAMPLE_TRACK
   const out = onTrack ? trackPlan(flow, real) : examplePlan(flow)
   const cues =
@@ -311,7 +330,7 @@ export function CueFlowPreview({
       ? []
       : out.wanted.map((c, i) => ({ ...c, key: `${i}`, pending: false }))
   const leftOut = rejectedCues(flow, base).filter((c) => c.reason !== 'limit')
-  const has = onTrack ? track.cues.cues.filter((c) => !c.loop) : []
+  const has = drawn ? drawn.cues.cues.filter((c) => !c.loop) : []
   const hotNow = has.filter((c) => c.kind !== 0)
   const hotWanted =
     out.status === 'too-many' ? [] : out.wanted.filter((c) => c.kind !== 0).map((c) => c.ms)
@@ -332,12 +351,12 @@ export function CueFlowPreview({
     setPinned(false)
   }
   const mode: Mode = differs && now ? 'now' : 'flow'
+  const flowing = mode === 'flow' && !waiting
   const goes = (c: { kind: number; ms: number }): boolean =>
     c.kind !== 0 && diff !== null && !hotWanted.some((ms) => samePosition(ms, c.ms))
-  const shown =
-    mode === 'now'
-      ? has.filter((c) => !goes(c)).map((c) => ({ ...c, key: c.id, pending: false }))
-      : cues
+  const shown = flowing
+    ? cues
+    : has.filter((c) => !goes(c)).map((c) => ({ ...c, key: c.id, pending: false }))
   const added = diff ? tr('settings.cueFlows.diffNew', { count: diff.added.length }) : ''
   const gone = diff ? tr('settings.cueFlows.diffGone', { count: diff.gone.length }) : ''
   const changes = !diff
@@ -351,41 +370,43 @@ export function CueFlowPreview({
         : diff.gone.length === 0
           ? added
           : tr('settings.cueFlows.diffBoth', { added, gone })
-  const notices: { status: Status; text: string }[] = [
-    ...(out.status === 'too-many'
-      ? [
-          {
-            status: 'too-many' as const,
-            text: tr('settings.cueFlows.tooMany', { count: out.needed }),
-          },
-        ]
-      : []),
-    ...(out.status === 'plan' && out.trimmed.length > 0 && mode === 'flow'
-      ? [
-          {
-            status: 'trimmed' as const,
-            text: tr('editor.cues.trimmed', { count: out.trimmed.length }),
-          },
-        ]
-      : []),
-    ...(differs && changes !== '' ? [{ status: 'compare' as const, text: changes }] : []),
-    ...(track && real !== null && !marked
-      ? [
-          {
-            status: 'no-mark' as const,
-            text: tr('settings.cueFlows.noMark', { label: track.label }),
-          },
-        ]
-      : []),
-    ...(onTrack
-      ? []
-      : [
-          {
-            status: 'hint' as const,
-            text: tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR }),
-          },
-        ]),
-  ]
+  const notices: { status: Status; text: string }[] = waiting
+    ? [{ status: 'finding', text: tr('settings.cueFlows.findingPoints') }]
+    : [
+        ...(out.status === 'too-many'
+          ? [
+              {
+                status: 'too-many' as const,
+                text: tr('settings.cueFlows.tooMany', { count: out.needed }),
+              },
+            ]
+          : []),
+        ...(out.status === 'plan' && out.trimmed.length > 0 && flowing
+          ? [
+              {
+                status: 'trimmed' as const,
+                text: tr('editor.cues.trimmed', { count: out.trimmed.length }),
+              },
+            ]
+          : []),
+        ...(differs && changes !== '' ? [{ status: 'compare' as const, text: changes }] : []),
+        ...(track && real !== null && !marked
+          ? [
+              {
+                status: 'no-mark' as const,
+                text: tr('settings.cueFlows.noMark', { label: track.label }),
+              },
+            ]
+          : []),
+        ...(onTrack
+          ? []
+          : [
+              {
+                status: 'hint' as const,
+                text: tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR }),
+              },
+            ]),
+      ]
   const notice = notices.at(0)
   const others =
     notices.length > 1 ? notices.map((n) => n.text).join(tr('settings.cueFlows.whenEachLead')) : ''
@@ -399,9 +420,14 @@ export function CueFlowPreview({
 
   const shownLabel = onTrack ? track.label : null
   const shownCues = onTrack ? track.cues : null
+  const shownMarks = found ? points : null
   useEffect(() => {
-    onShown?.(shownLabel !== null && shownCues ? { label: shownLabel, cues: shownCues } : null)
-  }, [onShown, shownLabel, shownCues])
+    onShown?.(
+      shownLabel !== null && shownCues
+        ? { label: shownLabel, cues: shownCues, ...(shownMarks && { marks: shownMarks }) }
+        : null,
+    )
+  }, [onShown, shownLabel, shownCues, shownMarks])
 
   function show(next: boolean): void {
     setOpen(next)
@@ -444,7 +470,7 @@ export function CueFlowPreview({
           className="press flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
         >
           <span className="min-w-0 truncate text-left">
-            {onTrack ? track.label : tr('settings.cueFlows.exampleTrack')}
+            {drawn ? drawn.label : tr('settings.cueFlows.exampleTrack')}
           </span>
           <span className="flex size-1.5 shrink-0">
             {differ === 0 && (
@@ -468,19 +494,22 @@ export function CueFlowPreview({
             program={program}
             onProgram={(next) => onProgram?.(next)}
             loading={loading}
-            inUse={onTrack ? track.cues.contentId : null}
+            inUse={drawn ? drawn.cues.contentId : null}
             onChoose={choose}
             onClose={close}
           />
         )}
       </div>
       <CueWave
-        wave={onTrack ? track.cues.wave : EXAMPLE_WAVE}
-        grid={onTrack ? track.cues.grid : EXAMPLE_GRID}
-        durationMs={onTrack ? track.cues.durationMs : EXAMPLE_DURATION_MS}
+        wave={drawn ? drawn.cues.wave : EXAMPLE_WAVE}
+        grid={drawn ? drawn.cues.grid : EXAMPLE_GRID}
+        durationMs={drawn ? drawn.cues.durationMs : EXAMPLE_DURATION_MS}
         cues={shown}
-        trimmed={out.status === 'plan' && mode === 'flow' ? out.trimmed : []}
-        ghost={{ added: [], gone: [], rejected: mode === 'flow' ? leftOut : [] }}
+        trimmed={out.status === 'plan' && flowing ? out.trimmed : []}
+        ghost={{ added: [], gone: [], rejected: flowing ? leftOut : [] }}
+        autoMarks={
+          found && onTrack ? { at: points, label: tr('settings.cueFlows.autoPoint') } : undefined
+        }
         diff={
           differs
             ? {
@@ -533,8 +562,15 @@ export function CueFlowPreview({
             <p
               data-testid={`cue-preview-${notice.status}`}
               data-status={notice.status}
+              role={notice.status === 'finding' ? 'status' : undefined}
               className={`min-w-0 truncate ${NOTICE_TEXT[notice.status]}`}
             >
+              {notice.status === 'finding' && (
+                <Loader2
+                  aria-hidden="true"
+                  className="mr-1.5 inline-block size-3 animate-spin align-middle"
+                />
+              )}
               {notice.text}
               {others !== '' && <Tooltip label={others} />}
             </p>
@@ -567,17 +603,42 @@ export function CueFlowTrackPreview({
   track,
   programs,
   inWindow,
+  taste = null,
   onShown,
 }: {
   flow: CueFlow
   track?: Choice
   programs: readonly DjProgram[]
   inWindow?: DjProgram
-  onShown?: (shown: { label: string; cues: TrackCues } | null) => void
+  taste?: DropTaste | null
+  onShown?: (shown: Shown | null) => void
 }): React.JSX.Element {
+  const client = useQueryClient()
   const [picked, setPicked] = useState(track)
   const [open, setOpen] = useState(false)
   const { data } = useTrackCues(picked?.contentId)
+  const unmarked =
+    data?.analysed && data.grid.length > 0 && trackOfCues(data).drops.length === 0 ? data : null
+  const input = useQuery({
+    queryKey: ['cue-preview-drop-input', unmarked?.contentId],
+    queryFn: () => dropInputOf(client, (unmarked as TrackCues).contentId, unmarked as TrackCues),
+    enabled: unmarked !== null,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: HEAVY_PROBE_GC_MS,
+  })
+  const points = useMemo(
+    () =>
+      unmarked && input.data
+        ? withoutCallInBar(
+            dropsOnGrid(input.data, unmarked.grid, taste),
+            unmarked.cues,
+            unmarked.grid,
+          )
+            .map((p) => p.ms)
+            .sort((a, b) => a - b)
+        : NO_POINTS,
+    [unmarked, input.data, taste],
+  )
   const [chosen, setChosen] = useState<DjProgram>()
   const program =
     [chosen, track && programOf(track.contentId), inWindow].find(
@@ -604,6 +665,8 @@ export function CueFlowTrackPreview({
       program={program}
       onProgram={setChosen}
       loading={collection.isLoading}
+      points={points}
+      finding={unmarked !== null && input.isLoading}
       onPick={setPicked}
       onOpenChange={setOpen}
       onShown={onShown}

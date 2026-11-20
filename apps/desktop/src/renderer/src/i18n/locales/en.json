@@ -2054,6 +2054,8 @@
       "noTrackFound": "No track with that name",
       "loadingTracks": "Reading your collection…",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",
+      "findingPoints": "Finding the points of the track…",
+      "autoPoint": "Point found by Auto mark",
       "compareSame": "Same hot cues this track has now",
       "diffNew_one": "{{count}} new",
       "diffNew_other": "{{count}} new",
