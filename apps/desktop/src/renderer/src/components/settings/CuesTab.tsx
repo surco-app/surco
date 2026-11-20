@@ -270,7 +270,7 @@ export function CuesTab({
               className={ICON_BUTTON}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('settings.cueFlows.newFlow')} />
+              {!add.open && <Tooltip label={tr('settings.cueFlows.newFlow')} />}
             </button>
             {(offered || fromTrack) && add.open && (
               <div

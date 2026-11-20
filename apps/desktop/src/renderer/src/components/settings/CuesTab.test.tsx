@@ -1295,6 +1295,34 @@ describe('CuesTab', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent('New flow')
   })
 
+  it('keeps the tooltip of + down when its menu closes and the focus comes back to it, so «New flow» is not left hanging over a button nobody is pointing at', async () => {
+    installApi({
+      cueProfile: vi.fn<Api['cueProfile']>(async () => ({
+        profile: LEARNED,
+        edits: { count: 0, sinceLearn: 0, corrected: 0 },
+        marked: 40,
+      })),
+    })
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
+    await screen.findByTestId('cue-profile')
+    const add = screen.getByTestId('cue-flow-add')
+    openAdd()
+    expect(screen.getByTestId('cue-flow-add-new')).toHaveFocus()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('cue-flow-add-new'), { key: 'Escape' })
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(add).toHaveFocus()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-flow-add-learned'))
+    expect(screen.queryByRole('menu')).toBeNull()
+    expect(add).toHaveFocus()
+    expect(screen.queryByRole('tooltip')).toBeNull()
+    act(() => add.blur())
+    act(() => add.focus())
+    expect(screen.getByRole('tooltip')).toHaveTextContent('New flow')
+  })
+
   it('selects the flow made from what was learned, so the DJ sees it right away', async () => {
     const profile = {
       learnedAt: '2026-10-28T10:00:00.000Z',
