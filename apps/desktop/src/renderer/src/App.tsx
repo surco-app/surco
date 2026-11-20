@@ -50,9 +50,11 @@ import {
 import { resolveBindings } from '../../shared/shortcutDefaults'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
+  BpmResult,
   CollectionTrack,
   DeclickConfig,
   FormatSetting,
+  KeyResult,
   MetaTextKey,
   NormalizeConfig,
   PlaylistSource,
@@ -167,7 +169,11 @@ import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
 import { nextLocale } from './i18n/locale'
-import { removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
+import {
+  analysisKey,
+  removeAnalysisQueries,
+  seedCachedAnalyses,
+} from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { cleanupPatcher, planAutoClean } from './lib/autoClean'
@@ -204,6 +210,7 @@ import {
   useUnsavedCueTracks,
 } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
+import { fillMeasuredPatches } from './lib/fillMeasured'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { onFeedbackRequested } from './lib/feedback'
@@ -3851,6 +3858,20 @@ export default function App(): React.JSX.Element {
     const patches = deriveTagPatches(targets)
     if (patches.length) deriveTracksUndoable(patches)
   })
+  const fillMeasured = useStableCallback(() => {
+    const patches = fillMeasuredPatches(
+      editScope(selectedTracks, selected),
+      {
+        bpm: (path) => queryClient.getQueryData<BpmResult | null>(analysisKey('bpm', path)),
+        key: (path) => queryClient.getQueryData<KeyResult | null>(analysisKey('key', path)),
+      },
+      settings?.keyNotation ?? 'camelot',
+    )
+    if (!patches.length) return
+    recordMetaUndo(patches.map((p) => p.id))
+    deriveTracks(patches)
+    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
+  })
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
   // zero-pad hygiene pass formats them at write time like every other track number.
@@ -4101,6 +4122,7 @@ export default function App(): React.JSX.Element {
       toggleSidebar,
       clearMeta,
       deriveTags,
+      fillMeasured,
       numberTracks,
       applyTitleFormat,
       regenerateNames: onRegenerateName,

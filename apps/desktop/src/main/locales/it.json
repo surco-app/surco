@@ -27,6 +27,7 @@
   "analyzeQuality": "Analizza qualità",
   "selectAllTracks": "Seleziona tutti i brani",
   "fillAll": "Compila dal nome del file, tutto l'elenco…",
+  "fillMeasured": "Compila BPM e tonalità",
   "reviewList": "Rivedi metadati…",
   "trashSelected": "Sposta la selezione nel cestino…",
   "search": "Cerca nell'elenco dei brani",

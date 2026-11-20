@@ -325,6 +325,7 @@ export interface CommandDeps {
   clearMeta: () => void
   // Fills tags on the current selection by parsing each file name (the Editor's derive button).
   deriveTags: () => void
+  fillMeasured: () => void
   // Stamps 1..N (list order) onto the bulk scope's track numbers.
   numberTracks: () => void
   // Opens the preview for dropping the leading track number from the bulk scope's titles.
@@ -464,6 +465,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     toggleSidebar,
     clearMeta,
     deriveTags,
+    fillMeasured,
     numberTracks,
     openStripNumbering,
     applyTitleFormat,
@@ -649,6 +651,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       hint: hintFor('derive-tags'),
       enabled: !!selected,
       run: deriveTags,
+    },
+    {
+      id: 'fill-measured',
+      group: 'tags',
+      title: tr('commands.fillMeasured'),
+      enabled: !!selected,
+      run: fillMeasured,
     },
     {
       // Writes the bulk scope's list order into the track numbers (1..N) — for albums

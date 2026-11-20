@@ -121,6 +121,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canRedoMeta: () => false,
     canReopenLastSession: () => false,
     reopenLastSession: () => {},
+    fillMeasured: () => {},
     acceptReview: () => {},
     fireConfetti: () => {},
     sources: [],
@@ -1196,5 +1197,19 @@ describe('F6 region commands', () => {
     runCommand(buildCommands(deps), 'focus-region-next')
     runCommand(buildCommands(deps), 'focus-region-prev')
     expect(focusRegion.mock.calls).toEqual([[1], [-1]])
+  })
+})
+
+describe('fill-measured', () => {
+  it('is disabled without a selection and runs the fill when there is one', () => {
+    const fillMeasured = vi.fn()
+    expect(commandById(makeDeps({ fillMeasured, selected: null }), 'fill-measured').enabled).toBe(
+      false,
+    )
+    const command = commandById(makeDeps({ fillMeasured, selected: track() }), 'fill-measured')
+    expect(command.enabled).toBe(true)
+    expect(command.title).toBe('commands.fillMeasured')
+    command.run()
+    expect(fillMeasured).toHaveBeenCalledOnce()
   })
 })

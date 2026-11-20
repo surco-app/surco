@@ -144,6 +144,16 @@ describe('appMenuTemplate', () => {
     expect(createMenuT('en')('reopenLastSession')).toBe('Reopen last session')
   })
 
+  it('fills the measured BPM and key from the Tracks menu in every shipped language', () => {
+    for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
+      const { template, run } = build(locale)
+      const t = createMenuT(locale)
+      click(itemFor(menu(template, t('tracks')), t('fillMeasured')))
+      expect(run).toHaveBeenCalledWith('fill-measured')
+    }
+    expect(createMenuT('en')('fillMeasured')).toBe('Fill in BPM and key')
+  })
+
   // A custom View menu replaces Electron's default one, and with it went ⌘+ / ⌘- / ⌘0:
   // someone who needs larger text had no way to zoom the interface. The standard roles
   // bring the items and their accelerators back, with the labels the OS localises.

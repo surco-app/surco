@@ -38,6 +38,7 @@ interface MenuStrings {
   analyzeQuality: string
   selectAllTracks: string
   fillAll: string
+  fillMeasured: string
   reviewList: string
   trashSelected: string
   search: string
@@ -163,6 +164,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analizar calidad',
     selectAllTracks: 'Seleccionar todas las pistas',
     fillAll: 'Rellenar desde el nombre del archivo, toda la lista…',
+    fillMeasured: 'Rellenar BPM y tonalidad',
     reviewList: 'Revisar metadatos…',
     trashSelected: 'Mover la selección a la papelera…',
     search: 'Buscar en la lista de pistas',
@@ -302,6 +304,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyze quality',
     selectAllTracks: 'Select all tracks',
     fillAll: 'Fill from file name, whole list…',
+    fillMeasured: 'Fill in BPM and key',
     reviewList: 'Review metadata…',
     trashSelected: 'Move selection to Trash…',
     search: 'Search the track list',
@@ -441,6 +444,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Qualität analysieren',
     selectAllTracks: 'Alle Tracks auswählen',
     fillAll: 'Aus dem Dateinamen füllen, ganze Liste…',
+    fillMeasured: 'BPM und Tonart ausfüllen',
     reviewList: 'Metadaten prüfen…',
     trashSelected: 'Auswahl in den Papierkorb legen…',
     search: 'In der Trackliste suchen',
@@ -582,6 +586,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analyser la qualité',
     selectAllTracks: 'Sélectionner tous les morceaux',
     fillAll: 'Remplir depuis le nom du fichier, toute la liste…',
+    fillMeasured: 'Remplir le BPM et la tonalité',
     reviewList: 'Vérifier les métadonnées…',
     trashSelected: 'Mettre la sélection à la corbeille…',
     search: 'Rechercher dans la liste des morceaux',
@@ -724,6 +729,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     analyzeQuality: 'Analisar qualidade',
     selectAllTracks: 'Selecionar todas as faixas',
     fillAll: 'Preencher a partir do nome do arquivo, lista inteira…',
+    fillMeasured: 'Preencher BPM e tom',
     reviewList: 'Revisar metadados…',
     trashSelected: 'Mover a seleção para a lixeira…',
     search: 'Buscar na lista de faixas',

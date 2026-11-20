@@ -16,9 +16,13 @@ import { type QueryClient, queryOptions } from '@tanstack/react-query'
 export const HEAVY_PROBE_GC_MS = 5 * 60 * 1_000
 const HEAVY_PROBES = new Set(['waveform', 'spectrogram', 'waveformScan'])
 
+export function analysisKey(name: string, inputPath: string): string[] {
+  return [name, inputPath]
+}
+
 export function analysisOptions<T>(name: string, inputPath: string, probe: () => Promise<T>) {
   return queryOptions({
-    queryKey: [name, inputPath],
+    queryKey: analysisKey(name, inputPath),
     queryFn: probe,
     ...(HEAVY_PROBES.has(name) ? { gcTime: HEAVY_PROBE_GC_MS } : {}),
   })

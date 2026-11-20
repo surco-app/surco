@@ -27,6 +27,7 @@
   "analyzeQuality": "Analitzar la qualitat",
   "selectAllTracks": "Seleccionar totes les pistes",
   "fillAll": "Omplir des del nom del fitxer, tota la llista…",
+  "fillMeasured": "Omplir el BPM i la tonalitat",
   "reviewList": "Revisar les metadades…",
   "trashSelected": "Moure la selecció a la paperera…",
   "search": "Cercar a la llista de pistes",
