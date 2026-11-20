@@ -9,7 +9,12 @@ import type { CueWaveColumn } from '../../../shared/types'
 import { useThemeRgb } from '../hooks/useThemeRgb'
 import { paintWave, waveColumns } from '../lib/cueDetail'
 import {
+  type CueDiff,
   type CueGhost,
+  DIFF_REST_OPACITY,
+  DIFF_RING,
+  DIFF_STRIKE,
+  DROPPED_OPACITY,
   droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
@@ -75,6 +80,7 @@ export function CueWave({
   cursorMs,
   detail,
   droppedLabel,
+  diff,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -101,6 +107,7 @@ export function CueWave({
   cursorMs?: number
   detail?: Uint16Array | null
   droppedLabel?: (ms: number) => string
+  diff?: CueDiff
 }): React.JSX.Element {
   const { t } = useTranslation()
   const [hoverProposal, setHoverProposal] = useState<number | null>(null)
@@ -253,6 +260,10 @@ export function CueWave({
   const gone = new Set(ghost?.gone ?? [])
   const ghostMarks = ghost ? placeCues(ghost.added, durationMs) : null
   const shown = view && shownOf(view, durationMs)
+  const fade = diff ? ' transition-opacity duration-120 motion-reduce:transition-none' : ''
+  const rest = diff?.focused ? { opacity: DIFF_REST_OPACITY } : {}
+  const fresh = new Set(diff?.fresh ?? [])
+  const goneMarks = diff ? placeCues(diff.gone, durationMs).hot : []
   const selectMark = (key: string, e: React.MouseEvent) => {
     e.stopPropagation()
     onSelect?.(key)
@@ -285,7 +296,8 @@ export function CueWave({
           y: e.clientY - rect.top,
         })
       }}
-      className={`relative w-full overflow-hidden outline-none focus-visible:shadow-none ${
+      {...(diff ? { 'data-focus-diff': diff.focused ? 'true' : 'false' } : {})}
+      className={`relative w-full ${diff ? '' : 'overflow-hidden '}outline-none focus-visible:shadow-none ${
         slim ? 'h-[44px]' : 'h-11 rounded-md bg-[var(--color-panel-2)]'
       } ${readOnly ? 'cursor-default' : 'cursor-pointer'}`}
     >
@@ -293,7 +305,7 @@ export function CueWave({
         data-testid="cue-wave-area"
         aria-hidden="true"
         style={{ top: '0px', bottom: '0px' }}
-        className="pointer-events-none absolute inset-x-0"
+        className={`pointer-events-none absolute inset-x-0${diff ? ' overflow-hidden rounded-[inherit]' : ''}`}
       >
         {(shown || (head && viewOf)) && (
           <span
@@ -349,8 +361,8 @@ export function CueWave({
           key={`t${ms}`}
           data-testid={`cue-wave-trimmed-${ms}`}
           aria-hidden="true"
-          style={markStyle((ms / Math.max(durationMs, 1)) * 100)}
-          className="absolute h-3 w-3 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]"
+          style={{ ...markStyle((ms / Math.max(durationMs, 1)) * 100), ...rest }}
+          className={`absolute h-3 w-3 rounded-[3px] border border-dashed border-[var(--color-fg-faint)]${fade}`}
         />
       ))}
       {!readOnly &&
@@ -407,10 +419,11 @@ export function CueWave({
             ...markStyle(c.at),
             borderTopColor: offGrid?.includes(c.key) ? 'var(--color-warn)' : MEMORY_CUE_COLOR,
             ...(gone.has(c.key) ? { opacity: GONE_OPACITY } : {}),
+            ...rest,
           },
           className: `absolute z-10 h-0 w-0 border-x-4 border-x-transparent after:absolute after:-left-1 after:h-6 after:w-2 after:content-[''] ${
             isSelected ? 'border-t-[9px] after:-top-[9px]' : 'border-t-[6px] after:-top-[6px]'
-          }`,
+          }${fade}`,
         }
         return readOnly ? (
           <span key={`c${c.key}`} aria-hidden="true" {...common} />
@@ -428,6 +441,7 @@ export function CueWave({
       {hot.map((h) => {
         const pending = pendingOf.get(h.key) ?? false
         const isSelected = selected === h.key
+        const isFresh = fresh.has(h.key)
         const common = {
           'data-testid': `cue-wave-hot-${h.letter}`,
           'data-off-grid': offGrid?.includes(h.key) ? 'true' : 'false',
@@ -439,6 +453,7 @@ export function CueWave({
             backgroundColor: h.colour,
             color: '#000',
             ...(gone.has(h.key) ? { opacity: GONE_OPACITY } : {}),
+            ...(isFresh ? { boxShadow: DIFF_RING } : rest),
           },
           className: `absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-3 after:absolute after:left-0 after:top-0 after:h-6 after:w-full after:content-[''] ${
             isSelected
@@ -446,9 +461,20 @@ export function CueWave({
               : offGrid?.includes(h.key)
                 ? 'ring-2 ring-[var(--color-warn)]'
                 : ''
-          }`,
+          }${fade}`,
         }
-        return readOnly ? (
+        return diff && isFresh ? (
+          <span
+            key={`h${h.key}`}
+            role="img"
+            aria-label={diff.freshLabel}
+            data-diff="new"
+            {...common}
+          >
+            {h.letter}
+            <Tooltip label={diff.freshLabel} />
+          </span>
+        ) : readOnly ? (
           <span key={`h${h.key}`} aria-hidden="true" {...common}>
             {h.letter}
           </span>
@@ -465,6 +491,32 @@ export function CueWave({
           </button>
         )
       })}
+      {goneMarks.map((h) => (
+        <span
+          key={`gg${h.key}`}
+          data-testid={`cue-wave-ghost-gone-${h.ms}`}
+          data-diff="gone"
+          role="img"
+          aria-label={diff?.goneLabel}
+          style={{
+            ...markStyle(h.at),
+            backgroundColor: 'var(--color-panel-2)',
+            borderColor: h.colour,
+            borderStyle: 'solid',
+            borderWidth: '1.5px',
+          }}
+          className="absolute z-10 h-3 w-3 rounded-[3px] text-center text-label font-semibold leading-[9px] text-[var(--color-fg)]"
+        >
+          {h.letter}
+          <span
+            data-testid={`cue-wave-strike-${h.ms}`}
+            aria-hidden="true"
+            style={{ background: DIFF_STRIKE }}
+            className="pointer-events-none absolute inset-0"
+          />
+          <Tooltip label={diff?.goneLabel ?? ''} />
+        </span>
+      ))}
       {ghostMarks?.calls.map((c) => (
         <span
           key={`gc${c.key}`}
@@ -503,8 +555,11 @@ export function CueWave({
             {...(droppedLabel
               ? { role: 'img', 'aria-label': droppedLabel(r.ms) }
               : { 'aria-hidden': true })}
-            style={droppedStyle((r.ms / Math.max(durationMs, 1)) * 100, r)}
-            className={`${droppedLabel ? '' : 'pointer-events-none '}absolute z-10 h-3 w-3 rounded-[3px] border`}
+            style={{
+              ...droppedStyle((r.ms / Math.max(durationMs, 1)) * 100, r),
+              ...(diff?.focused ? { opacity: DROPPED_OPACITY * DIFF_REST_OPACITY } : {}),
+            }}
+            className={`${droppedLabel ? '' : 'pointer-events-none '}absolute z-10 h-3 w-3 rounded-[3px] border${fade}`}
           >
             {droppedLabel && <Tooltip label={droppedLabel(r.ms)} />}
           </span>

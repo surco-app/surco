@@ -23,9 +23,21 @@ export interface CueGhost {
   rejected?: DroppedMark[]
 }
 
+export interface CueDiff {
+  fresh: string[]
+  gone: MarkInput[]
+  freshLabel: string
+  goneLabel: string
+  focused: boolean
+}
+
 export const GHOST_OPACITY = 0.5
 export const GONE_OPACITY = 0.3
 export const DROPPED_OPACITY = 0.3
+export const DIFF_REST_OPACITY = 0.25
+export const DIFF_RING = '0 0 0 1.5px var(--color-panel-2), 0 0 0 3px var(--color-warn)'
+export const DIFF_STRIKE =
+  'linear-gradient(to top right, transparent calc(50% - 0.75px), var(--color-warn) calc(50% - 0.75px), var(--color-warn) calc(50% + 0.75px), transparent calc(50% + 0.75px))'
 
 export function droppedStyle(at: number, mark: DroppedMark): CSSProperties {
   return {
