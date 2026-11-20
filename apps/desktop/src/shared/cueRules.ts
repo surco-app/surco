@@ -290,7 +290,7 @@ function walkFlow(
           reject(start, step, k, last ?? k, reason)
           break
         }
-        const each = rule.whenEach?.[k - 1] ?? 'rule'
+        const each = (rule.whenEach?.[k - 1] ?? 'rule') as RepeatCondition
         const left = unmet(each, ms, hand ? [] : track.strong, track.phrases)
         if (left) rejected.push({ ...cueOf(ms, k), reason: left })
         else if (allowed(rule, ms, placed, drops, beats)) add(ms, k)

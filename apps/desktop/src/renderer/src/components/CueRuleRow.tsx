@@ -58,7 +58,7 @@ function withCondition(rule: CueRule, when: FlowCondition): CueRule {
   return when === 'room' ? { ...rest, when, gap: gap ?? ROOM_GAP } : { ...rest, when }
 }
 
-function fitted(rule: CueRule, each: RepeatCondition[] = rule.whenEach ?? []): CueRule {
+function fitted(rule: CueRule, each: string[] = rule.whenEach ?? []): CueRule {
   const { whenEach: _, ...rest } = rule
   if (rule.bars === 0 || 'fixed' in rule.color) return rest
   const kept = each.slice(0, rule.repeat === 'edge' ? MAX_RULE_REPEAT : rule.repeat)
@@ -118,7 +118,7 @@ export function CueRuleRow({
   const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
   const showDistance = !('fixed' in rule.color)
   const ownable = rule.bars > 0 && showDistance
-  const whenAt = (slot: number): RepeatCondition => (ownable && rule.whenEach?.[slot]) || 'rule'
+  const whenAt = (slot: number): string => (ownable && rule.whenEach?.[slot]) || 'rule'
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {

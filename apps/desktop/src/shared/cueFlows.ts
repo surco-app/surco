@@ -6,6 +6,14 @@ export type FlowCondition = 'always' | 'fits' | 'previous' | 'room' | 'clear' | 
 export type FlowPlace = 'hot' | 'call' | 'both'
 export type FlowColor = { fixed: number } | { each: number[] }
 export type RepeatCondition = 'rule' | 'fits' | 'up' | 'down' | 'chorus'
+export type FlowSection = PhraseKind
+
+export interface RepeatWhen {
+  fits: boolean
+  before: number | null
+  after: number | null
+  sections: FlowSection[]
+}
 
 export interface CueRule {
   from: FlowOrigin
@@ -16,7 +24,7 @@ export interface CueRule {
   place: FlowPlace
   color: FlowColor
   gap?: number
-  whenEach?: RepeatCondition[]
+  whenEach?: string[]
 }
 
 export interface ForeignRule {
@@ -66,6 +74,8 @@ export const FLOW_CONDITIONS: FlowCondition[] = [
   'first',
 ]
 export const REPEAT_CONDITIONS: RepeatCondition[] = ['rule', 'fits', 'down', 'up', 'chorus']
+export const FLOW_SECTIONS: FlowSection[] = ['intro', 'up', 'down', 'chorus', 'outro']
+export const NEAR_BARS = RULE_BARS.filter((b) => b > 0)
 export const ROOM_GAP = 8
 export const FLOW_PLACES: FlowPlace[] = ['hot', 'call', 'both']
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
@@ -222,19 +232,98 @@ function gapOf(value: unknown): number | null {
 const isWordList = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((w) => typeof w === 'string')
 
-const hasNewerWord = (value: unknown): boolean =>
-  isWordList(value) && value.some((w) => !REPEAT_CONDITIONS.includes(w as RepeatCondition))
+const NO_WHEN: RepeatWhen = { fits: false, before: null, after: null, sections: [] }
+const SHARED_MARK = 'all:'
+const LONE_SECTIONS: FlowSection[] = ['up', 'down', 'chorus']
+const WHEN_PARTS = ['fits', 'before', 'after', 'in'] as const
 
-function whenEachOf(
-  value: unknown,
-  bars: number,
-  repeat: FlowRepeat,
-  color: FlowColor,
-): RepeatCondition[] {
-  if (!isWordList(value) || bars === 0 || 'fixed' in color) return []
-  const each = value.slice(0, repeat === 'edge' ? MAX_RULE_REPEAT : repeat) as RepeatCondition[]
+const nearBarsOf = (text: string): number | null => {
+  const bars = Number(text)
+  return NEAR_BARS.includes(bars) && String(bars) === text ? bars : null
+}
+
+function sectionsOf(text: string): FlowSection[] | null {
+  const sections = text.split('|') as FlowSection[]
+  const known = sections.every((s) => FLOW_SECTIONS.includes(s))
+  return known && new Set(sections).size === sections.length
+    ? FLOW_SECTIONS.filter((s) => sections.includes(s))
+    : null
+}
+
+export function parseRepeatWhen(word: string): RepeatWhen | null {
+  if (word === 'rule') return NO_WHEN
+  if (LONE_SECTIONS.includes(word as FlowSection))
+    return { ...NO_WHEN, sections: [word as FlowSection] }
+  const when = { ...NO_WHEN }
+  let reached = -1
+  for (const part of word.split('+')) {
+    const [name, value] = part.split(/:(.*)/s)
+    const at = WHEN_PARTS.indexOf(name as (typeof WHEN_PARTS)[number])
+    if (at <= reached || (name === 'fits') !== (value === undefined)) return null
+    reached = at
+    if (name === 'fits') when.fits = true
+    else if (name === 'in') {
+      const sections = sectionsOf(value)
+      if (sections === null) return null
+      when.sections = sections
+    } else {
+      const bars = nearBarsOf(value)
+      if (bars === null) return null
+      when[name as 'before' | 'after'] = bars
+    }
+  }
+  return when
+}
+
+export function formatRepeatWhen(when: RepeatWhen): string {
+  const sections = FLOW_SECTIONS.filter((s) => when.sections.includes(s))
+  const parts = [
+    ...(when.fits ? ['fits'] : []),
+    ...(when.before === null ? [] : [`before:${when.before}`]),
+    ...(when.after === null ? [] : [`after:${when.after}`]),
+  ]
+  if (parts.length === 0 && sections.length === 1 && LONE_SECTIONS.includes(sections[0]))
+    return sections[0]
+  if (sections.length > 0) parts.push(`in:${sections.join('|')}`)
+  return parts.length === 0 ? 'rule' : parts.join('+')
+}
+
+const readWhen = (word: string): RepeatWhen | null =>
+  parseRepeatWhen(word.startsWith(SHARED_MARK) ? word.slice(SHARED_MARK.length) : word)
+
+const hasNewerWord = (value: unknown): boolean =>
+  isWordList(value) && value.some((w) => readWhen(w) === null)
+
+const sharesWhen = (rule: Pick<CueRule, 'bars' | 'color'>): boolean =>
+  rule.bars === 0 || 'fixed' in rule.color
+
+function whenEachOf(value: unknown, rule: Pick<CueRule, 'bars' | 'repeat' | 'color'>): string[] {
+  if (!isWordList(value)) return []
+  const words = value.map((w) => formatRepeatWhen(readWhen(w) ?? NO_WHEN))
+  if (sharesWhen(rule)) return !words[0] || words[0] === 'rule' ? [] : [SHARED_MARK + words[0]]
+  const each = words.slice(0, rule.repeat === 'edge' ? MAX_RULE_REPEAT : rule.repeat)
   while (each[each.length - 1] === 'rule') each.pop()
   return each
+}
+
+export function fitWhenEach(rule: CueRule, words: string[] = rule.whenEach ?? []): CueRule {
+  const { whenEach: _, ...rest } = rule
+  const each = whenEachOf(words, rule)
+  return each.length === 0 ? rest : { ...rest, whenEach: each }
+}
+
+export function repeatWhenOf(rule: CueRule, repetition: number): RepeatWhen {
+  const word = rule.whenEach?.[sharesWhen(rule) ? 0 : repetition - 1]
+  return (word === undefined ? null : readWhen(word)) ?? NO_WHEN
+}
+
+export function withRepeatWhen(rule: CueRule, slot: number, when: RepeatWhen): CueRule {
+  const words = Array.from(
+    { length: Math.max(slot + 1, rule.whenEach?.length ?? 0) },
+    (_, i) => rule.whenEach?.[i] ?? 'rule',
+  )
+  words[sharesWhen(rule) ? 0 : slot] = formatRepeatWhen(when)
+  return fitWhenEach(rule, words)
 }
 
 function ruleOf(value: unknown): CueRule | null {
@@ -259,7 +348,7 @@ function ruleOf(value: unknown): CueRule | null {
     hasNewerWord(r.whenEach)
   )
     return null
-  const whenEach = whenEachOf(r.whenEach, bars, repeat, color)
+  const whenEach = whenEachOf(r.whenEach, { bars, repeat, color })
   return {
     from: r.from as FlowOrigin,
     direction: r.direction as FlowDirection,
