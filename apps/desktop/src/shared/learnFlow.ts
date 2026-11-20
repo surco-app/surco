@@ -92,18 +92,18 @@ interface Support {
 
 const near = (a: number, b: number): boolean => Math.abs(a - b) <= SAME_POSITION_MS
 
-function markedOf(track: LearnTrack, index: number): Marked | null {
-  if (track.beats.length === 0) return null
-  const hot = track.cues.filter((c) => c.kind !== 0)
-  const memory = track.cues.filter((c) => c.kind === 0)
-  const drops = findDrops(
-    memory.map((c) => c.ms),
-    hot.map((c) => c.ms),
+function dropsOf(track: LearnTrack): number[] {
+  return findDrops(
+    track.cues.filter((c) => c.kind === 0).map((c) => c.ms),
+    track.cues.filter((c) => c.kind !== 0).map((c) => c.ms),
   )
-  if (drops.length === 0) return null
-  const dropAt = nearestBeat(track.beats, drops[0])
-  const before = hot
-    .filter((h) => h.ms < drops[0] - SAME_POSITION_MS)
+}
+
+function hotBefore(track: LearnTrack, drop: number, after: number): HotBefore[] {
+  const memory = track.cues.filter((c) => c.kind === 0)
+  const dropAt = nearestBeat(track.beats, drop)
+  return track.cues
+    .filter((h) => h.kind !== 0 && h.ms > after && h.ms < drop - SAME_POSITION_MS)
     .map((h) => {
       const bars = (dropAt - nearestBeat(track.beats, h.ms)) / BEATS_PER_BAR
       const whole = Math.round(bars)
@@ -114,7 +114,19 @@ function markedOf(track: LearnTrack, index: number): Marked | null {
         firstBeat: near(h.ms, track.beats[0]),
       }
     })
-  return { index, track, drops, dropBeat: dropAt, before }
+}
+
+function markedOf(track: LearnTrack, index: number): Marked | null {
+  if (track.beats.length === 0) return null
+  const drops = dropsOf(track)
+  if (drops.length === 0) return null
+  return {
+    index,
+    track,
+    drops,
+    dropBeat: nearestBeat(track.beats, drops[0]),
+    before: hotBefore(track, drops[0], Number.NEGATIVE_INFINITY),
+  }
 }
 
 function dominantColor(colors: (number | null)[]): number {
@@ -147,15 +159,20 @@ function distanceSupport(tracks: Marked[]): Map<number, Support> {
   )
 }
 
+const isStep = (bars: number): boolean => bars > 0 && RULE_BARS.includes(bars)
+
+function runOf(step: number, has: (bars: number) => boolean): number[] {
+  const out: number[] = []
+  for (let k = 1; k <= MAX_LEARNED_REPEAT && has(k * step); k++) out.push(k * step)
+  return out
+}
+
 function learnedDistances(tracks: Marked[], support: Map<number, Support>): number[] {
   const least = Math.max(MIN_SUPPORT_TRACKS, Math.ceil(MIN_SUPPORT_SHARE * tracks.length))
   const kept = [...support]
     .filter(([, s]) => s.tracks >= least && s.tracks >= DISTANCE_SUPPORT * s.eligible)
     .map(([d]) => d)
-  const step = Math.min(...kept.filter((d) => d > 0 && RULE_BARS.includes(d)))
-  const out: number[] = []
-  for (let k = 1; k <= MAX_LEARNED_REPEAT && kept.includes(k * step); k++) out.push(k * step)
-  return out
+  return runOf(Math.min(...kept.filter(isStep)), (d) => kept.includes(d))
 }
 
 function countdownCues(tracks: Marked[], distances: number[]): HotBefore[] {
@@ -181,6 +198,12 @@ function countdownRule(tracks: Marked[], distances: number[]): CueRule | null {
   }
 }
 
+function startCue(t: Marked, distances: number[]): HotBefore[] {
+  return t.before
+    .filter((h) => h.firstBeat && (h.bars === null || !distances.includes(h.bars)))
+    .slice(0, 1)
+}
+
 function startCandidates(
   tracks: Marked[],
   countdown: CueRule | null,
@@ -197,11 +220,7 @@ function startCandidates(
       t.before.length > 0 &&
       !evaluateFlow(flow, { ...t.track, drops: t.drops }).cues.some((c) => c.ms < t.drops[0]),
   )
-  const starts = open.flatMap((t) =>
-    t.before
-      .filter((h) => h.firstBeat && (h.bars === null || !distances.includes(h.bars)))
-      .slice(0, 1),
-  )
+  const starts = open.flatMap((t) => startCue(t, distances))
   return { open, starts }
 }
 
@@ -289,17 +308,21 @@ function mismatchesOf(marked: Marked[], flow: CueFlow): Coverage {
   return out
 }
 
+const learnedFlow = (rules: CueRule[]): CueFlow => ({
+  id: 'learned',
+  name: '',
+  markPoint: true,
+  rules,
+})
+
 function learnMarked(marked: Marked[]) {
   const support = distanceSupport(marked)
   const distances = learnedDistances(marked, support)
   const countdown = countdownRule(marked, distances)
   const { open, starts } = startCandidates(marked, countdown, distances)
-  const flow: CueFlow = {
-    id: 'learned',
-    name: '',
-    markPoint: true,
-    rules: [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
-  }
+  const flow = learnedFlow(
+    [countdown, startRule(open, starts)].filter((r): r is CueRule => r !== null),
+  )
   return { support, distances, flow, open, starts }
 }
 
