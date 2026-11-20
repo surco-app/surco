@@ -40,3 +40,27 @@ describe('editor.qualityHiRes', () => {
     )
   })
 })
+
+describe('sidebar.filter.upsampled', () => {
+  const bareWord = {
+    ca: 'Reescalat',
+    de: 'Hochgerechnet',
+    en: 'Upsampled',
+    es: 'Reescalado',
+    fr: 'Suréchantillonné',
+    it: 'Ricampionato',
+    ja: 'アップサンプリング',
+    'pt-BR': 'Reamostrado',
+  }
+
+  for (const [code, locale] of Object.entries(locales)) {
+    it(`${code} names the filter as a possibility, because the list cannot claim more than the editor measures`, () => {
+      expect(locale.sidebar.filter.upsampled).not.toBe(bareWord[code as keyof typeof bareWord])
+    })
+  }
+
+  it('es and en name it as the editor badge names possible reprocessing', () => {
+    expect(es.sidebar.filter.upsampled).toBe('Posible reescalado')
+    expect(en.sidebar.filter.upsampled).toBe('Possibly upsampled')
+  })
+})

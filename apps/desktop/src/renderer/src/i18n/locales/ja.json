@@ -262,7 +262,7 @@
       "silence": "トリムする無音",
       "clipping": "クリッピング",
       "paddedBits": "パディングされたビット",
-      "upsampled": "アップサンプリング",
+      "upsampled": "アップサンプリングされた可能性があります",
       "noCues": "キューなし",
       "offGrid": "グリッドからずれたキュー",
       "unanalysedRekordbox": "rekordbox で未分析",

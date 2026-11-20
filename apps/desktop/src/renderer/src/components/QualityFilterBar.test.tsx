@@ -265,7 +265,7 @@ describe('QualityFilterBar sections', () => {
     const { onChange } = renderBar({ tally: tally({ paddedBits: 3, upsampled: 5 }) })
     openMenu('attention')
     expect(screen.getByTestId('quality-filter-paddedBits')).toHaveTextContent(/^Padded bits\s*3$/)
-    expect(screen.getByTestId('quality-filter-upsampled')).toHaveTextContent(/^Upsampled\s*5$/)
+    expect(screen.getByTestId('quality-filter-upsampled')).toHaveTextContent(/^Possibly upsampled\s*5$/)
     fireEvent.click(screen.getByTestId('quality-filter-upsampled'))
     expect(onChange).toHaveBeenCalledWith(sel({ attention: 'upsampled' }))
   })
