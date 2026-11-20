@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CueRule } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -272,6 +272,23 @@ describe('CueRuleRow condition of each repetition', () => {
     fireEvent.click(screen.getAllByTestId(/^cue-palette-\d+$/)[0])
     expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
     expect(screen.getByTestId('cue-rule-0-color-2')).toHaveFocus()
+  })
+
+  it('lays the colours of a repetition in two rows of eight across the menu, which a four column grid left half empty', () => {
+    setup(RULE)
+    openSquare(2)
+    const palette = within(screen.getByTestId('cue-rule-0-color-2-palette'))
+    expect(palette.getByTestId('cue-palette')).toHaveClass('grid-cols-8', 'w-full')
+  })
+
+  it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
+    const { onChange } = setup(RULE)
+    openSquare(2)
+    const reset = screen.getByTestId('cue-palette-reset')
+    expect(reset.previousElementSibling).toBe(box(2, 'fits'))
+    fireEvent.click(reset)
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, color: { each: [1, 22, 22] } })
+    expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
   })
 
   it('closes on Escape and gives the focus back to the square, so the keyboard never loses its place', () => {

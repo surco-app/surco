@@ -21,7 +21,7 @@ import {
   repeatWhenOf,
   withRepeatWhen,
 } from '../../../shared/cueFlows'
-import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { HOT_CUE_DEFAULT_INDEX, hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
 import { Tooltip } from './Tooltip'
 
@@ -531,15 +531,26 @@ export function CueRuleRow({
                         value={colorAt(rule.color, slot)}
                         onPick={(color) => pickColor(slot, color)}
                         label={(i) => tr('editor.cues.colour', { index: i })}
+                        wide
                       />
                       <div className="my-2 h-px bg-[var(--color-line)]" />
-                      {box(
-                        slot,
-                        'fits',
-                        whenAt(slot).fits,
-                        tr('settings.cueFlows.whenEach.fits'),
-                        () => setWhen(slot, { fits: !whenAt(slot).fits }),
-                      )}
+                      <div className="flex items-center gap-2">
+                        {box(
+                          slot,
+                          'fits',
+                          whenAt(slot).fits,
+                          tr('settings.cueFlows.whenEach.fits'),
+                          () => setWhen(slot, { fits: !whenAt(slot).fits }),
+                        )}
+                        <button
+                          type="button"
+                          data-testid="cue-palette-reset"
+                          onClick={() => pickColor(slot, HOT_CUE_DEFAULT_INDEX)}
+                          className="press shrink-0 rounded-md px-2 py-0.5 text-xs text-fg-dim hover:text-fg"
+                        >
+                          {tr('editor.cues.resetColour')}
+                        </button>
+                      </div>
                       {nearBox(slot, 'before')}
                       {nearBox(slot, 'after')}
                       <div className="my-2 h-px bg-[var(--color-line)]" />

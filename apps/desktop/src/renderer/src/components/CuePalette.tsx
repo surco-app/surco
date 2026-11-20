@@ -12,36 +12,45 @@ export function CuePalette({
   value,
   onPick,
   label,
+  wide = false,
 }: {
   value: number | null
   onPick: (index: number) => void
   label: (index: number) => string
+  wide?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const grid = (
+    <div
+      data-testid="cue-palette"
+      className={`grid gap-1.5 ${wide ? 'w-full grid-cols-8' : 'w-max shrink-0 grid-cols-4'}`}
+    >
+      {HOT_CUE_PICKER.map((index) => (
+        <button
+          key={index}
+          type="button"
+          data-testid={`cue-palette-${index}`}
+          aria-label={label(index)}
+          aria-pressed={value === index}
+          onClick={() => onPick(index)}
+          style={{ backgroundColor: hotCueColor(index) }}
+          className={`press flex h-6 ${wide ? 'w-full' : 'w-6'} shrink-0 items-center justify-center rounded-[3px] ${
+            value === index
+              ? 'ring-2 ring-[var(--color-fg)] ring-offset-1 ring-offset-[var(--color-panel)]'
+              : ''
+          }`}
+        >
+          {value === index && (
+            <Check className="h-4 w-4" style={{ color: PAD_LETTER_COLOR }} aria-hidden="true" />
+          )}
+        </button>
+      ))}
+    </div>
+  )
+  if (wide) return grid
   return (
     <div className="flex w-max shrink-0 flex-col gap-1.5">
-      <div data-testid="cue-palette" className="grid w-max shrink-0 grid-cols-4 gap-1.5">
-        {HOT_CUE_PICKER.map((index) => (
-          <button
-            key={index}
-            type="button"
-            data-testid={`cue-palette-${index}`}
-            aria-label={label(index)}
-            aria-pressed={value === index}
-            onClick={() => onPick(index)}
-            style={{ backgroundColor: hotCueColor(index) }}
-            className={`press flex h-6 w-6 shrink-0 items-center justify-center rounded-[3px] ${
-              value === index
-                ? 'ring-2 ring-[var(--color-fg)] ring-offset-1 ring-offset-[var(--color-panel)]'
-                : ''
-            }`}
-          >
-            {value === index && (
-              <Check className="h-4 w-4" style={{ color: PAD_LETTER_COLOR }} aria-hidden="true" />
-            )}
-          </button>
-        ))}
-      </div>
+      {grid}
       <button
         type="button"
         data-testid="cue-palette-reset"
