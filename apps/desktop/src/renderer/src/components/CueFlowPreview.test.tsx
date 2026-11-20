@@ -131,6 +131,37 @@ describe('CueFlowPreview', () => {
     }
   })
 
+  it('scrolls Settings down again when the tracks land and the list grows past the bottom edge, so the collection just read is not hidden under it', () => {
+    const boxes: Record<string, { top: number; bottom: number }> = {
+      scroller: { top: 0, bottom: 300 },
+      'cue-preview-track-menu': { top: 200, bottom: 290 },
+    }
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const { top, bottom } = boxes[this.dataset.testid ?? ''] ?? { top: 0, bottom: 0 }
+        return { top, bottom, left: 0, right: 0, width: 0, height: bottom - top } as DOMRect
+      })
+    try {
+      const { rerender } = render(
+        <div data-testid="scroller" style={{ overflowY: 'auto' }}>
+          <CueFlowPreview flow={MIX_IN} loading />
+        </div>,
+      )
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      expect(screen.getByTestId('scroller').scrollTop).toBe(0)
+      boxes['cue-preview-track-menu'] = { top: 200, bottom: 466 }
+      rerender(
+        <div data-testid="scroller" style={{ overflowY: 'auto' }}>
+          <CueFlowPreview flow={MIX_IN} tracks={[{ contentId: 'rb:3', label: 'Glue' }]} />
+        </div>,
+      )
+      expect(screen.getByTestId('scroller').scrollTop).toBe(170)
+    } finally {
+      rect.mockRestore()
+    }
+  })
+
   it('says nothing about left out cues when the flow places every one', () => {
     render(<CueFlowPreview flow={ONE_AT_32} />)
     expect(screen.queryByTestId(/^cue-wave-ghost-dropped-/)).toBeNull()
@@ -549,19 +580,14 @@ describe('CueFlowPreview', () => {
       expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
     })
 
-    it('draws no search field when there is no marked track to look for, since a field that finds nothing reads as broken, and says how to get tracks to try', () => {
+    it('draws no search field, no separator and no line under the example when there is no marked track to look for, since a field that finds nothing reads as broken and a line about what is missing is noise', () => {
       render(<CueFlowPreview flow={MY_FLOW} />)
       open()
       expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
       expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
       expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
-      const none = screen.getByTestId('cue-preview-track-none')
-      expect(none).toHaveTextContent('Open a rekordbox playlist to try your marked tracks')
-      expect(none).toHaveClass('text-xs', 'text-fg-dim')
-      expect(
-        screen.getByTestId('cue-preview-track-option-example').compareDocumentPosition(none) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
+      expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
     })
 
     it('puts the focus on the example when there is no search field to take it, so Escape and the arrows still answer from the keyboard', () => {
@@ -581,14 +607,73 @@ describe('CueFlowPreview', () => {
       expect(reached).not.toHaveBeenCalled()
     })
 
-    it('keeps the search field and says nothing about opening a playlist once the open list has marked tracks', () => {
+    it('gives the focus to the search field once the collection has marked tracks, so a name can be typed at once', () => {
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
       open()
       expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
-      expect(screen.queryByTestId('cue-preview-track-none')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
     })
 
-    it('offers the example first and the tracks of the open list under it, so any of them can be tried', () => {
+    it('tells whoever reads the collection each time the choices open and close, so the read can wait for the first look', () => {
+      const onOpenChange = vi.fn()
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} onOpenChange={onOpenChange} />)
+      expect(onOpenChange).not.toHaveBeenCalled()
+      open()
+      expect(onOpenChange.mock.calls).toEqual([[true]])
+      fireEvent.mouseDown(document.body)
+      expect(onOpenChange.mock.calls).toEqual([[true], [false]])
+      open()
+      fireEvent.keyDown(screen.getByTestId('cue-preview-track-search'), { key: 'Escape' })
+      open()
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:3'))
+      expect(onOpenChange.mock.calls).toEqual([[true], [false], [true], [false], [true], [false]])
+    })
+
+    it('draws a row as tall as a choice that says the collection is being read, with the search field already there and the example still to pick, so nothing moves when the tracks land', () => {
+      const { rerender } = render(<CueFlowPreview flow={MY_FLOW} loading />)
+      open()
+      const loading = screen.getByTestId('cue-preview-track-loading')
+      expect(loading).toHaveAttribute('role', 'status')
+      expect(loading).toHaveAccessibleName('Reading your collection…')
+      expect(loading).toHaveClass('h-7')
+      expect(loading.querySelector('svg')).toHaveClass('animate-spin')
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      expect(screen.getByTestId('cue-preview-track-search')).toBeEnabled()
+      expect(screen.getByTestId('cue-preview-track-separator')).toBeInTheDocument()
+      expect(
+        screen.getByTestId('cue-preview-track-option-example').compareDocumentPosition(loading) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'gl' } })
+      expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
+      rerender(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+        'Example track',
+        'Bicep, Glue',
+      ])
+    })
+
+    it('moves the focus to the example when the collection turns out to have no marked track and the search field goes, so the keyboard is not left on nothing', () => {
+      const { rerender } = render(<CueFlowPreview flow={MY_FLOW} loading />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      rerender(<CueFlowPreview flow={MY_FLOW} />)
+      expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track-option-example')).toHaveFocus()
+    })
+
+    it('lets the example be picked while the collection is still being read', () => {
+      render(<CueFlowPreview flow={MY_FLOW} loading />)
+      open()
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+      expect(screen.queryByTestId('cue-preview-track-menu')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+    })
+
+    it('offers the example first and the tracks of the collection under it, so any of them can be tried', () => {
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
       open()
       expect(screen.getByTestId('cue-preview-track-listbox')).toHaveAttribute('role', 'listbox')
@@ -600,7 +685,10 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-track-separator')).toBeInTheDocument()
       expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
         'placeholder',
-        'Search the open list',
+        'Search your rekordbox collection',
+      )
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAccessibleName(
+        'Search your rekordbox collection',
       )
     })
 
