@@ -220,8 +220,6 @@ const api: Api = {
     ipcRenderer.invoke('matching:remove', a, b),
   removeMatchingPairs: (pairs: [string, string][]): Promise<void> =>
     ipcRenderer.invoke('matching:removeAll', pairs),
-  holdsInLibrary: (path: string, titles: string[]): Promise<boolean> =>
-    ipcRenderer.invoke('library:holdsFile', path, titles),
   rowWaves: (requests: RowWaveRequest[]): Promise<Record<string, number[]>> =>
     ipcRenderer.invoke('list:rowWaves', requests),
   rekordboxCountCompletable: (): Promise<number> =>

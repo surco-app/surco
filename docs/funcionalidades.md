@@ -148,17 +148,13 @@ como «Where's Your Head At-.mp3», el original iba a las copias y rekordbox o T
 sincronizar perdían la pista. En la carpeta de salida, que puede estar en otro disco, se
 siguen aplicando las reglas de nombre.
 
-### Una pista nueva en el formato va a la carpeta de salida
+### Una pista que ya está en el formato se edita en su sitio
 
-Con destino carpeta de salida, una pista que ya está en el formato elegido y que ninguna
-colección tiene (rekordbox, Engine DJ, Traktor, Serato o Apple Music, con su sincronización
-activa o no) se escribe en la carpeta de salida como el resto de la tanda, y el original se
-queda donde estaba (`processTrack.ts`, `newToCollections`; `usedByAnyLibrary`,
-`libraryFlushes.ts:151`). Si alguna la tiene, o no se puede saber, se sigue editando en su
-sitio. Apple Music solo se consulta si está abierto, para no abrirlo en cada conversión: cerrado
-no cuenta como colección, y abierto con un archivo sin título deja la pista en su sitio
-(`holdsForConversion`, `musicEntriesIfOpen`). Con destino Apple Music, junto al original o
-editando el original no cambia nada.
+Con destino carpeta de salida, una pista que ya está en el formato elegido se retaggea y se
+renombra donde está, la tenga una colección o no, y no deja copia en la carpeta de salida
+(`processTrack.ts`, `inPlaceWrite`; `editsInPlace`). Del 5/11 al 20/11 una pista que ninguna
+colección tenía iba a la carpeta de salida; se retiró porque quien retaggea sus FLAC en su
+carpeta se encontraba una segunda copia y el original sin tocar.
 
 ### ALAC solo sobrescribe un `.m4a`
 

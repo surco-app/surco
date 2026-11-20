@@ -373,7 +373,6 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     addMatchingPair: async () => {},
     removeMatchingPair: async () => {},
     removeMatchingPairs: async () => {},
-    holdsInLibrary: async () => true,
     rowWaves: async () => ({}),
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({

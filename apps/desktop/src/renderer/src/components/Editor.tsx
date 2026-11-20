@@ -64,7 +64,6 @@ import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import {
-  asksLibrary,
   type BatchPick,
   batchSkips,
   batchWritesTagsOnly,
@@ -276,12 +275,6 @@ interface Props {
 // macOS paths compare without case, and Music may hand back the other Unicode form.
 const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
 
-const holdsInLibraryOf =
-  (path: string, title: string): (() => Promise<boolean>) =>
-  () =>
-    window.api.holdsInLibrary(path, title ? [title] : [])
-
-const LIBRARY_ASK_LIMIT = 200
 const NARROW_EDITOR_PX = 400
 
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
@@ -1096,22 +1089,8 @@ export const Editor = memo(function Editor({
   // resolveOutputTarget actually does. Beside-original never edits in place (a
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.
-  const newTrackCandidate =
-    !isMulti &&
-    !picked.convertBesideOriginal &&
-    !picked.overwriteOriginal &&
-    !picked.addToAppleMusic &&
-    formatMatchesInput(format, item.inputPath)
-  const { data: heldByLibrary } = useQuery({
-    queryKey: ['holdsInLibrary', item.inputPath],
-    queryFn: holdsInLibraryOf(item.inputPath, item.meta.title),
-    enabled: newTrackCandidate,
-    staleTime: 30_000,
-  })
   const willEditInPlace =
-    !picked.convertBesideOriginal &&
-    !(newTrackCandidate && heldByLibrary === false) &&
-    editsInPlace(format, item.inputPath, picked.overwriteOriginal)
+    !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
@@ -1165,40 +1144,12 @@ export const Editor = memo(function Editor({
       ),
     [multiGate, batchPick, normalizeCfg, declickCfg, normalize, declick],
   )
-  // Only a file staying in its format on its way to the output folder needs a library's
-  // word. A track opened from a library has it already; the loose ones are asked for, up
-  // to a number a tooltip-sized question can afford, and past it they count as loose.
-  const libraryAsked = useMemo(
-    () =>
-      batchReady.filter(
-        (t) =>
-          asksLibrary(t, batchPick) && (t.programs?.length ?? 0) === 0 && t.fromAppleMusic !== true,
-      ),
-    [batchReady, batchPick],
-  )
-  const { data: heldPaths } = useQuery({
-    queryKey: ['holdsInLibraryBatch', libraryAsked.map((t) => t.inputPath)],
-    queryFn: async () => {
-      const held = await Promise.all(
-        libraryAsked.map((t) => holdsInLibraryOf(t.inputPath, t.meta.title)()),
-      )
-      return new Set(libraryAsked.filter((_, i) => held[i]).map((t) => t.inputPath))
-    },
-    enabled: isMulti && libraryAsked.length > 0 && libraryAsked.length <= LIBRARY_ASK_LIMIT,
-    staleTime: 30_000,
-  })
   const batchTagsOnly = useMemo(
     () =>
-      batchWritesTagsOnly(
-        batchReady,
-        batchPick,
-        (t) => jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
-        (t) =>
-          (t.programs?.length ?? 0) > 0 ||
-          t.fromAppleMusic === true ||
-          heldPaths?.has(t.inputPath) === true,
+      batchWritesTagsOnly(batchReady, batchPick, (t) =>
+        jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
       ),
-    [batchReady, batchPick, heldPaths, normalizeCfg, declickCfg, normalize, declick],
+    [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
   )
   const addsToMusic =
     !isMulti &&
