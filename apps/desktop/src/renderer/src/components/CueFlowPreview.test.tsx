@@ -50,6 +50,22 @@ describe('CueFlowPreview', () => {
     expect(screen.getByTestId('cue-preview-trimmed')).toBeInTheDocument()
   })
 
+  it('says in French the hot cues left out by the limit in no more letters than in Spanish, whose line fits beside the switch, so the French one is not cut', async () => {
+    await i18n.changeLanguage('fr')
+    try {
+      for (const count of [1, 12]) {
+        const french = i18n.t('editor.cues.trimmed', { count })
+        expect(french).toContain(`${count} hot cue`)
+        expect(french).toContain('limite de 8')
+        expect(french.length).toBeLessThanOrEqual(
+          i18n.t('editor.cues.trimmed', { count, lng: 'es' }).length,
+        )
+      }
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  })
+
   it('says when a flow asks for more than 8 hot cues that cannot be left out', () => {
     const one = ONE_AT_32.rules[0]
     const nine = {
