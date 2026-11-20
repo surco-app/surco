@@ -926,7 +926,7 @@ function buildAppMenu(win: BrowserWindow): void {
   // Menu accelerators are display-only labels generated from the same bindings the
   // renderer keymap uses (registerAccelerator:false leaves the keystroke to it), so a
   // rebind in Settings shows here too. Undefined when the command was unbound.
-  const bindings = resolveBindings(getSettings().shortcutOverrides)
+  const bindings = resolveBindings(getSettings().shortcutOverrides, process.platform === 'darwin')
   const accel = (id: string): string | undefined => {
     const chord = bindings.get(id)
     return chord?.length ? chordToAccelerator(chord) : undefined

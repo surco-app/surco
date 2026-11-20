@@ -15,6 +15,7 @@ import {
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
+import { isMacOS } from '../lib/platform'
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
 import { settingsSearchIndexHere } from '../lib/settingsSearchIndex'
 import {
@@ -206,7 +207,7 @@ export function SettingsModal({
     pendingSave.current = null
     const { synced, local } = draft.current
     const next = buildSettingsPatch(synced, local)
-    if (findConflicts(resolveBindings(synced.shortcutOverrides)).length > 0) {
+    if (findConflicts(resolveBindings(synced.shortcutOverrides, isMacOS())).length > 0) {
       delete next.shortcutOverrides
     }
     saveTo.current(next)
@@ -341,7 +342,7 @@ export function SettingsModal({
   }
 
   // Effective bindings shown in the Shortcuts tab, plus the clashes that block saving.
-  const bindings = resolveBindings(synced.shortcutOverrides)
+  const bindings = resolveBindings(synced.shortcutOverrides, isMacOS())
   const conflictIds = new Set(findConflicts(bindings).flat())
 
   return (

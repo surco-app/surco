@@ -103,7 +103,6 @@ export function appMenuTemplate({
         { type: 'separator' },
         {
           ...keymapItem(t('sidebar'), 'toggle-sidebar'),
-          accelerator: mac ? accel('toggle-sidebar') : undefined,
           type: 'checkbox',
           checked: view.sidebar,
         },

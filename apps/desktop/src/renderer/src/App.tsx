@@ -2657,7 +2657,7 @@ export default function App(): React.JSX.Element {
   // palette hints below and the keydown listener (via a ref, since it subscribes once)
   // both read, so a rebind in Settings updates everywhere at once.
   const bindings = useMemo(
-    () => resolveBindings(settings?.shortcutOverrides),
+    () => resolveBindings(settings?.shortcutOverrides, isMacOS()),
     [settings?.shortcutOverrides],
   )
   const hintFor = useCallback(

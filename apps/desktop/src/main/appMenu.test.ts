@@ -219,4 +219,10 @@ describe('View menu sidebar', () => {
     click(item)
     expect(run).toHaveBeenCalledWith('toggle-sidebar')
   })
+
+  it('carries the accelerator on Windows too, so the shortcut shows in the menu there', () => {
+    const { template } = build('en', false, true)
+    const item = itemFor(menu(template, 'View'), 'Show Sidebar')
+    expect(item.accelerator).toBe('accel:toggle-sidebar')
+  })
 })
