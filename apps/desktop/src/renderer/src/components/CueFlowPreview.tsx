@@ -179,7 +179,9 @@ export function CueFlowPreview({
   const [source, setSource] = useState<Source>('track')
   const [open, setOpen] = useState(false)
   const [nowOf, setNowOf] = useState<string | null>(null)
-  const [pointed, setPointed] = useState(false)
+  const [pinned, setPinned] = useState(false)
+  const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const real = track?.cues.analysed ? trackOfCues(track.cues) : null
@@ -206,6 +208,11 @@ export function CueFlowPreview({
   const differ = diff ? diff.added.length + diff.gone.length : null
   const differs = diff !== null && differ !== null && differ > 0
   const view = `${track?.cues.contentId}\n${flow.id}`
+  const [seen, setSeen] = useState(view)
+  if (seen !== view) {
+    setSeen(view)
+    setPinned(false)
+  }
   const mode: Mode = differs && nowOf === view ? 'now' : 'flow'
   const goes = (c: { kind: number; ms: number }): boolean =>
     c.kind !== 0 && diff !== null && !hotWanted.some((ms) => samePosition(ms, c.ms))
@@ -310,7 +317,7 @@ export function CueFlowPreview({
                 gone: hotNow.filter(goes).map((c) => ({ ...c, key: c.id })),
                 freshLabel: tr('settings.cueFlows.diffNewHint'),
                 goneLabel: tr('settings.cueFlows.diffGoneHint'),
-                focused: pointed,
+                focused: pinned || hovered || focused,
               }
             : undefined
         }
@@ -344,11 +351,13 @@ export function CueFlowPreview({
             <button
               type="button"
               data-testid="cue-preview-compare"
-              onMouseEnter={() => setPointed(true)}
-              onMouseLeave={() => setPointed(false)}
-              onFocus={() => setPointed(true)}
-              onBlur={() => setPointed(false)}
-              className="press min-w-0 cursor-default truncate rounded-sm text-left text-xs text-warn"
+              aria-pressed={pinned}
+              onClick={() => setPinned((v) => !v)}
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              className="press min-w-0 truncate rounded-sm text-left text-xs text-warn"
             >
               {changes}
             </button>
@@ -357,7 +366,12 @@ export function CueFlowPreview({
           <SegmentedControl
             options={MODES}
             value={mode}
-            onChange={(next) => setNowOf(next === 'now' ? view : null)}
+            onChange={(next) => {
+              setNowOf(next === 'now' ? view : null)
+              setPinned(false)
+              setHovered(false)
+              setFocused(false)
+            }}
             testidPrefix="cue-preview-mode"
             compact
             className="shrink-0"

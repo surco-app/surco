@@ -235,6 +235,63 @@ describe('CueFlowPreview', () => {
       expect(wave).toHaveAttribute('data-focus-diff', 'false')
     })
 
+    it('holds the fade when the count is pressed and lets go when pressed again, so the press does something and the differences can be studied without keeping the pointer still', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      const wave = screen.getByTestId('cue-wave')
+      expect(count).toHaveAttribute('aria-pressed', 'false')
+      fireEvent.mouseEnter(count)
+      fireEvent.click(count)
+      fireEvent.mouseLeave(count)
+      expect(count).toHaveAttribute('aria-pressed', 'true')
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+      fireEvent.click(count)
+      expect(count).toHaveAttribute('aria-pressed', 'false')
+      expect(wave).toHaveAttribute('data-focus-diff', 'false')
+    })
+
+    it('keeps the fade for a count focused by keyboard when the pointer passes over it and leaves, since the focus is still there', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      const wave = screen.getByTestId('cue-wave')
+      fireEvent.focus(count)
+      fireEvent.mouseEnter(count)
+      fireEvent.mouseLeave(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+      fireEvent.blur(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'false')
+      fireEvent.mouseEnter(count)
+      fireEvent.focus(count)
+      fireEvent.blur(count)
+      expect(wave).toHaveAttribute('data-focus-diff', 'true')
+    })
+
+    it('lets go of a held fade when the flow, the track or the view changes, so a new comparison never starts dimmed', () => {
+      const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const held = (): void => {
+        fireEvent.click(screen.getByTestId('cue-preview-compare'))
+        expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'true')
+      }
+      const released = (): void => {
+        expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'false')
+        expect(screen.getByTestId('cue-preview-compare')).toHaveAttribute('aria-pressed', 'false')
+      }
+      held()
+      rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
+      released()
+      held()
+      const other = { ...marked, cues: { ...marked.cues, contentId: 'rb:9' } }
+      rerender(<CueFlowPreview flow={MY_FLOW} track={other} />)
+      released()
+      rerender(<CueFlowPreview flow={ONE_AT_32} track={other} />)
+      held()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      released()
+      held()
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
+      released()
+    })
+
     it('offers to see the track as it is now only when the flow would change it', () => {
       const { unmount } = render(<CueFlowPreview flow={MIX_IN} track={marked} />)
       expect(screen.queryByTestId('cue-preview-mode-now')).toBeNull()
