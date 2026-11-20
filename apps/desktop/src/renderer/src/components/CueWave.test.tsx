@@ -54,6 +54,34 @@ function setup(over: Partial<React.ComponentProps<typeof CueWave>> = {}) {
 }
 
 describe('CueWave', () => {
+  it('draws every CALL as the same filled triangle with no word about Auto mark when nobody says a point comes from it, so the cue editor shows the marks of the DJ as it always did', () => {
+    setup()
+    for (const ms of [16000, 40000]) {
+      const call = screen.getByTestId(`cue-wave-call-${ms}`)
+      expect(call).not.toHaveAttribute('data-auto')
+      expect(call.tagName).toBe('BUTTON')
+      expect(call).toHaveClass('h-0', 'w-0', 'border-t-[6px]')
+      expect(call).not.toHaveClass('rounded-full')
+      expect(call).toHaveAccessibleName(/^CALL at /)
+    }
+  })
+
+  it('draws the CALL on a point found by Auto mark as a hollow ring that says what it is, and leaves the other CALLs as triangles, so a guess of Surco is never taken for a mark of the DJ', () => {
+    setup({ readOnly: true, autoMarks: { at: [40000], label: 'Point found by Auto mark' } })
+    const found = screen.getByTestId('cue-wave-call-40000')
+    expect(found).toHaveAttribute('data-auto', 'true')
+    expect(found).toHaveClass('h-2', 'w-2', 'rounded-full')
+    expect(found).not.toHaveClass('border-t-[6px]')
+    expect(found.style.borderColor).not.toBe('')
+    expect(found.style.backgroundColor).toBe('')
+    expect(found).not.toHaveAttribute('title')
+    expect(found).toHaveAccessibleName('Point found by Auto mark')
+    expect(hoverTooltip(found)).toBe('Point found by Auto mark')
+    const own = screen.getByTestId('cue-wave-call-16000')
+    expect(own).not.toHaveAttribute('data-auto')
+    expect(own).toHaveClass('h-0', 'w-0', 'border-t-[6px]')
+  })
+
   it('widens the press area of a mark only downward, never past its own drawn width', () => {
     setup()
     expect(screen.getByTestId('cue-wave-hot-A').className).toContain('after:w-full')

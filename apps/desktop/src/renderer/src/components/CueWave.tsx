@@ -82,6 +82,7 @@ export function CueWave({
   detail,
   droppedLabel,
   diff,
+  autoMarks,
 }: {
   wave: CueWaveColumn[] | null
   grid: { ms: number; beat: number }[]
@@ -109,6 +110,7 @@ export function CueWave({
   detail?: Uint16Array | null
   droppedLabel?: (ms: number) => string
   diff?: CueDiff
+  autoMarks?: { at: number[]; label: string }
 }): React.JSX.Element {
   const { t } = useTranslation()
   const [hoverProposal, setHoverProposal] = useState<number | null>(null)
@@ -411,6 +413,20 @@ export function CueWave({
           </span>
         ))}
       {calls.map((c) => {
+        if (autoMarks?.at.includes(c.ms))
+          return (
+            <span
+              key={`c${c.key}`}
+              role="img"
+              aria-label={autoMarks.label}
+              data-testid={`cue-wave-call-${c.ms}`}
+              data-auto="true"
+              style={{ ...markStyle(c.at), borderColor: MEMORY_CUE_COLOR, ...rest }}
+              className={`absolute z-10 h-2 w-2 rounded-full border-[1.5px]${fade}`}
+            >
+              <Tooltip label={autoMarks.label} />
+            </span>
+          )
         const pending = pendingOf.get(c.key) ?? false
         const isSelected = selected === c.key
         const common = {
