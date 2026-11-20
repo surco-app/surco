@@ -603,17 +603,17 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-palette')).toBeNull()
   })
 
-  it('opens rekordbox picker with Restablecer from a rule colour', () => {
+  it('opens the rekordbox picker from a rule colour without Restablecer, whose green is one of the colours to pick', () => {
     render(<Harness />)
     fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
-    expect(screen.getByTestId('cue-palette-reset')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cue-palette-reset'))
+    expect(screen.queryByTestId('cue-palette-reset')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-palette-22'))
     expect(screen.queryByTestId('cue-palette')).toBeNull()
     fireEvent.click(screen.getByTestId('cue-rule-1-color-0'))
     expect(screen.getByTestId('cue-palette-22')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  it('opens a rule colour picker towards the left when Settings would cut its right side, so every colour and Restablecer stay reachable', () => {
+  it('opens a rule colour picker towards the left when Settings would cut its right side, so every colour stays reachable', () => {
     const rect = (left: number, width: number) =>
       ({
         left,

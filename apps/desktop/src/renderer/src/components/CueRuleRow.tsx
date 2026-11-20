@@ -21,7 +21,7 @@ import {
   repeatWhenOf,
   withRepeatWhen,
 } from '../../../shared/cueFlows'
-import { HOT_CUE_DEFAULT_INDEX, hotCueColor } from '../../../shared/rekordboxCueColors'
+import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
 import { Select } from './Select'
 import { Tooltip } from './Tooltip'
@@ -548,23 +548,13 @@ export function CueRuleRow({
                         wide
                       />
                       <div className="my-1 h-px bg-[var(--color-line)]" />
-                      <div className="flex items-center gap-2">
-                        {box(
-                          slot,
-                          'fits',
-                          whenAt(slot).fits,
-                          tr('settings.cueFlows.whenEach.fits'),
-                          () => setWhen(slot, { fits: !whenAt(slot).fits }),
-                        )}
-                        <button
-                          type="button"
-                          data-testid="cue-palette-reset"
-                          onClick={() => pickColor(slot, HOT_CUE_DEFAULT_INDEX)}
-                          className="press shrink-0 rounded-md px-2 py-0.5 text-xs text-fg-dim hover:text-fg"
-                        >
-                          {tr('editor.cues.resetColour')}
-                        </button>
-                      </div>
+                      {box(
+                        slot,
+                        'fits',
+                        whenAt(slot).fits,
+                        tr('settings.cueFlows.whenEach.fits'),
+                        () => setWhen(slot, { fits: !whenAt(slot).fits }),
+                      )}
                       {nearBox(slot, 'before')}
                       {nearBox(slot, 'after')}
                       <div className="my-1 h-px bg-[var(--color-line)]" />
@@ -576,7 +566,7 @@ export function CueRuleRow({
                       </p>
                       <div
                         data-testid={`${id}-color-${slot}-when-sections`}
-                        className="flex flex-wrap justify-between gap-1"
+                        className="flex flex-wrap gap-1"
                       >
                         {FLOW_SECTIONS.map((section) => (
                           <button
