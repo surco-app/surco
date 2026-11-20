@@ -27,6 +27,7 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
     ['engine', 'tree', []],
     ['engine', 'recentCount', []],
     ['engine', 'trackCount', []],
+    ['engine', 'collection', []],
     ['engine', 'playlist', ['7']],
     ['engine', 'membership', [['/m/a.wav']]],
     ['serato', 'available', []],
@@ -52,8 +53,8 @@ describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, namin
     expect(spy).toHaveBeenCalledWith(program, ...args)
   })
 
-  it('leaves Engine DJ without a collection read, as it has none', () => {
-    expect(SOURCE_READ.engine.collection).toBeUndefined()
+  it('gives Engine DJ a collection read, so a pasted tracklist finds its tracks there too', () => {
+    expect(SOURCE_READ.engine.collection).toBeDefined()
   })
 })
 

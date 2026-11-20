@@ -804,13 +804,13 @@ describe('App Engine DJ cues', () => {
     expect(screen.queryByTestId('source-tree-rename')).not.toBeInTheDocument()
   })
 
-  it('never offers pasting a tracklist into Engine DJ, since Surco cannot read its collection to find the tracks', async () => {
+  it('offers pasting a tracklist into Engine DJ, since Surco reads its collection to find the tracks', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     fireEvent.contextMenu(await screen.findByTestId('source-node-7'))
     expect(screen.getByTestId('source-tree-delete')).toBeInTheDocument()
-    expect(screen.queryByTestId('source-tree-paste-tracklist')).not.toBeInTheDocument()
+    expect(screen.getByTestId('source-tree-paste-tracklist')).toBeInTheDocument()
   })
 
   it('lets an Engine DJ row go to another playlist but never offers removing it from the open one', async () => {

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import { mediaPathFromUrl } from '../shared/media'
-import type { SourceNode, SourcePlaylistEntry } from '../shared/types'
+import type { CollectionTrack, SourceNode, SourcePlaylistEntry } from '../shared/types'
 import { engineDbPath, writeEngineLibraryFixture } from './enginePlaylistsFixture'
 import { engineRead } from './enginePlaylistsIpc'
 
@@ -101,5 +101,18 @@ describe('engineRead', () => {
     expect(await read.trackCount()).toBe(0)
     configured = dir
     expect(await read.trackCount()).toBe(2)
+  })
+
+  it('lists the whole collection from the library set now, and nothing without a library', async () => {
+    const dir = await library()
+    let configured = ''
+    const read = engineRead(() => configured, { artDir: () => join(dir, 'art') })
+    expect(await read.collection?.()).toEqual([])
+    configured = dir
+    const rows = (await read.collection?.()) as CollectionTrack[]
+    expect(rows.map((r) => r.path).sort()).toEqual([
+      resolve(dir, '../Music/a.mp3'),
+      resolve(dir, '../Music/b.mp3'),
+    ])
   })
 })

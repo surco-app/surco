@@ -10,6 +10,7 @@ import {
   engineMembership,
   engineMembershipOf,
   openEngineDb,
+  readEngineCollection,
   readEnginePlaylist,
   readEngineRecentCount,
   readEngineTrackCount,
@@ -81,6 +82,11 @@ const READS = {
   trackCount: {
     empty: 0,
     run: (dir: string, _arg: undefined) => withLibrary(dir, readEngineTrackCount, 0),
+  },
+  collection: {
+    empty: [],
+    run: (dir: string, _arg: undefined) =>
+      withLibrary(dir, (db) => readEngineCollection(db, dir), []),
   },
   playlist: {
     empty: [],
