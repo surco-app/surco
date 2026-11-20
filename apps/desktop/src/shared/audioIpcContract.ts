@@ -32,6 +32,12 @@ export interface PeekableAnalyses {
   waveform: WaveformResult
 }
 
+export interface CachedBatchHit {
+  spectrogram?: SpectrumVerdict
+  scanVerdict?: ScanVerdict
+  lufs?: number
+}
+
 export interface AudioAnalysisIpc {
   'audio:spectrogram': {
     args: [inputPath: string, priority?: 'high' | 'low']
@@ -39,7 +45,7 @@ export interface AudioAnalysisIpc {
   }
   'audio:cached-batch': {
     args: [paths: string[]]
-    result: Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>
+    result: Record<string, CachedBatchHit>
   }
   'audio:peek': {
     args: [family: keyof PeekableAnalyses, inputPath: string]

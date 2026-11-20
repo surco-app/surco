@@ -69,6 +69,7 @@ const ANALYSIS_QUERY_KEYS = [
   'waveVerdict',
   'waveformScan',
   'scanVerdict',
+  'loudnessVerdict',
   'clicks',
   'coverFull',
 ] as const
@@ -89,10 +90,10 @@ export function removeAnalysisQueries(client: QueryClient, inputPaths: readonly 
 
 // The list's one-shot warm-up on import: one IPC round trip for the whole new batch,
 // seeding React Query straight from whatever the main process already had on disk so the
-// quality dot and clipping flag can render before any probe runs. Only the two families
-// tracksSnapshot.ts's SNAPSHOT_FAMILIES actually reads for verdicts/filters — spectrogram
-// and waveformScan — round-trip here; loadCachedAnalyses (audio:cached-batch) never
-// returns the others. A path missing from the response, or missing one of the two keys,
+// quality dot, clipping flag and loudness sort can render before any probe runs. Only what
+// tracksSnapshot.ts's SNAPSHOT_FAMILIES reads for verdicts, filters and the sort — spectrogram,
+// waveformScan and the integrated loudness — round-trip here; loadCachedAnalyses
+// (audio:cached-batch) never returns the others. A path missing from the response, or missing a key,
 // is left alone: no placeholder is written, so the family's normal lazy probe still runs
 // for it exactly like before this hydration existed. setQueryData is skipped whenever the
 // key already holds data — an instant re-drop or a hover prefetch that beat this call must
@@ -114,6 +115,12 @@ export async function seedCachedAnalyses(client: QueryClient, paths: string[]): 
         }
         if (hit.scanVerdict && client.getQueryData(['scanVerdict', path]) === undefined) {
           client.setQueryData(['scanVerdict', path], hit.scanVerdict)
+        }
+        if (
+          hit.lufs !== undefined &&
+          client.getQueryData(['loudnessVerdict', path]) === undefined
+        ) {
+          client.setQueryData(['loudnessVerdict', path], hit.lufs)
         }
       }
     }

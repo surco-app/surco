@@ -330,6 +330,7 @@
       "directionNeedsField": "項目で並べ替えると順序を選べます",
       "rating": "星",
       "dateAdded": "追加",
+      "loudness": "ラウドネス",
       "album": "アルバム"
     },
     "position": "トラック {{current}} / {{total}}",

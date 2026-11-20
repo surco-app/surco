@@ -457,6 +457,7 @@ export type TrackSort =
   | 'quality'
   | 'rating'
   | 'dateAdded'
+  | 'loudness'
 
 // The sort direction. 'import' has none (it's the drop order), so the toggle is hidden
 // there; every other mode flips between ascending and descending.
@@ -523,6 +524,7 @@ const NUMERIC_SORTS: Partial<Record<TrackSort, (track: TrackItem) => number | nu
   year: (t) => numberOrNull(Number.parseInt(t.meta.year ?? '', 10)),
   key: (t) => keyRanks.get((t.meta.key ?? '').trim().toLowerCase()) ?? null,
   quality: (t) => QUALITY_SEVERITY[trackQuality(t)] ?? null,
+  loudness: (t) => t.lufs ?? null,
   // Negated so the ascending order reads best first, as a rating column does.
   rating: (t) => {
     const stars = starsOf(t)

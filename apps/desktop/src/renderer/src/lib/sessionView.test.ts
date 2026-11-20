@@ -80,6 +80,13 @@ describe('sessionView', () => {
     )
   })
 
+  it('keeps the loudness sort on reopen instead of falling back to the import order', () => {
+    expect(parseSessionView({ sortBy: 'loudness', sortDir: 'desc' })).toMatchObject({
+      sortBy: 'loudness',
+      sortDir: 'desc',
+    })
+  })
+
   // The tracks already heard come back with the list, so a crate gone through over several
   // days picks up with the same ones still to hear.
   it('brings back which tracks were heard', () => {

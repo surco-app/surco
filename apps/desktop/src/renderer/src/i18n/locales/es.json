@@ -330,6 +330,7 @@
       "directionNeedsField": "Ordena por un campo para elegir el sentido",
       "rating": "Estrellas",
       "dateAdded": "Añadida",
+      "loudness": "Sonoridad",
       "album": "Álbum"
     },
     "position": "Pista {{current}} de {{total}}",

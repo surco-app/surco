@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
-import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
@@ -28,13 +28,11 @@ import type {
   RestoreResult,
   ReviewWriteField,
   RowWaveRequest,
-  ScanVerdict,
   SearchHints,
   SearchPriority,
   SearchProviderId,
   SessionData,
   SessionEdit,
-  SpectrumVerdict,
   TrackProperties,
   TrashEntry,
   UsbExportEvent,
@@ -336,9 +334,7 @@ const api: Api = {
     ipcRenderer.invoke('feedback:report', error, stack),
   spectrogram: (path: string, priority: 'high' | 'low' = 'low') =>
     invokeAudio('audio:spectrogram', path, priority),
-  loadCachedAnalyses: (
-    paths: string[],
-  ): Promise<Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }>> =>
+  loadCachedAnalyses: (paths: string[]): Promise<Record<string, CachedBatchHit>> =>
     invokeAudio('audio:cached-batch', paths),
   peekAnalysis: <F extends keyof PeekableAnalyses>(family: F, path: string) =>
     invokeAudio('audio:peek', family, path) as Promise<PeekableAnalyses[F] | null>,

@@ -352,6 +352,33 @@ describe('useTracksView', () => {
     expect(result.current.tracksView[0].audioIssues?.clipping).toBe(true)
   })
 
+  it('puts a reopened track’s stored loudness on its row as one number, so the list sorts by it before anything is measured', () => {
+    const client = new QueryClient()
+    client.setQueryData(['loudnessVerdict', '/music/a.wav'], -9.5)
+
+    const { result } = setup([track('a'), track('b')], client)
+
+    expect(result.current.tracksView[0].lufs).toBe(-9.5)
+    expect(result.current.tracksView[1].lufs).toBeUndefined()
+  })
+
+  it('puts the loudness measured this session on the row, and only its integrated number', () => {
+    const client = new QueryClient()
+    const tracks = [track('a')]
+    const { result, rerender } = setup(tracks, client)
+    expect(result.current.tracksView[0].lufs).toBeUndefined()
+
+    client.setQueryData(['loudness', '/music/a.wav'], {
+      integratedLufs: -7.2,
+      truePeakDb: -0.1,
+      lra: 4,
+    })
+    rerender({ tracks })
+
+    expect(result.current.tracksView[0].lufs).toBe(-7.2)
+    expect(result.current.tracksView[0]).not.toHaveProperty('loudness')
+  })
+
   // A reopened library hydrates verdicts only, never the images, so a verdict on its own
   // has to be enough for the dot.
   it('shows a hydrated verdict that carries no image', () => {

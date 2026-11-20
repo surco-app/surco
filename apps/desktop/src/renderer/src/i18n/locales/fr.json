@@ -330,6 +330,7 @@
       "directionNeedsField": "Triez par un champ pour choisir le sens",
       "rating": "Étoiles",
       "dateAdded": "Ajoutée",
+      "loudness": "Loudness",
       "album": "Album"
     },
     "position": "Morceau {{current}} sur {{total}}",

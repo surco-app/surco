@@ -2,10 +2,11 @@ import { basename } from 'node:path'
 import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
-import type { AudioAnalysisIpc, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
 import { yearFromDate } from '../shared/tagFields'
 import type {
   DeclickConfig,
+  LoudnessResult,
   RememberedAutoMatch,
   ScanVerdict,
   SpectrumResult,
@@ -553,36 +554,39 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // Batch hydration for the track list on load: one round trip that peeks the disk
   // cache for every dropped path and returns whatever is already warm, computing
   // nothing on a miss (see peekAnalysis) — a cold library must not spawn ffmpeg for
-  // every row just because the list asked. Hydrates exactly the two families the list's
-  // verdict dots and filter counts read (see tracksSnapshot.ts SNAPSHOT_FAMILIES /
-  // useTracksView.ts on the renderer side): spectrogram (the quality verdict) and the
-  // channel scan (the clipping attention flag). The spectrogram goes without its image: the
-  // list never draws it, and at ~300 KB a track it made a big reopen clone gigabytes (the
+  // every row just because the list asked. Hydrates exactly the families the list's
+  // verdict dots, filter counts and loudness sort read (see tracksSnapshot.ts
+  // SNAPSHOT_FAMILIES / useTracksView.ts on the renderer side): spectrogram (the quality
+  // verdict), the channel scan (the clipping attention flag) and the integrated loudness
+  // as its one number. The spectrogram goes without its image: the list never draws it, and at ~300 KB a track it made a big reopen clone gigabytes (the
   // editor fetches the full entry when it opens the track), and the channel scan as its
   // clipping fact alone (its per-channel lanes are ~400 KB a track and only the compare
   // strip draws them). Deliberately EXCLUDES waveform-v5: its
   // peaks/rms payload is ~0.5 MB per track, feeds only the silence attention flag, and
   // that lazy probe already runs cheaply off the player/analyze-sweep paths — hydrating
   // it here would turn a big library's opening batch into a multi-MB read for a filter
-  // bucket few tracks even hit. loudness/properties/bpm/key/clicks are editor-only detail
+  // bucket few tracks even hit. properties/bpm/key/clicks are editor-only detail
   // panels; tracksSnapshot never reads them, so they stay lazy too.
   handleAudio('audio:cached-batch', async (_e, paths: string[]) => {
     const entries = await Promise.all(
       paths.map(async (path) => {
         // Through peekVerdict: the whole entry is parsed once, then only its projection.
-        const [spectrogram, scanVerdict] = await Promise.all([
+        const [spectrogram, scanVerdict, loudness] = await Promise.all([
           peekVerdict(spectrogramNamespace(path), path, spectrumVerdictOf),
           peekVerdict(CHANNELSCAN_NAMESPACE, path, scanVerdictOf),
+          peekAnalysis<LoudnessResult>(LOUDNESS_NAMESPACE, path),
         ])
-        const hit: { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict } = {}
+        const hit: CachedBatchHit = {}
         if (spectrogram) hit.spectrogram = spectrogram
         if (scanVerdict) hit.scanVerdict = scanVerdict
+        const lufs = loudness?.integratedLufs
+        if (typeof lufs === 'number' && Number.isFinite(lufs)) hit.lufs = lufs
         return [path, hit] as const
       }),
     )
-    const result: Record<string, { spectrogram?: SpectrumVerdict; scanVerdict?: ScanVerdict }> = {}
+    const result: Record<string, CachedBatchHit> = {}
     for (const [path, hit] of entries) {
-      if (hit.spectrogram || hit.scanVerdict) result[path] = hit
+      if (hit.spectrogram || hit.scanVerdict || hit.lufs !== undefined) result[path] = hit
     }
     return result
   })

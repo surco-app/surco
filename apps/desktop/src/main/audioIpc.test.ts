@@ -243,6 +243,33 @@ describe('audio:cached-batch', () => {
     expect(result[file]).toEqual({ scanVerdict: { clipping: true } })
   })
 
+  it('returns a measured track’s integrated loudness as one number, so a reopened list sorts by loudness without carrying the whole reading', async () => {
+    const file = await makeFile()
+    vi.mocked(measureLoudness).mockResolvedValue({
+      integratedLufs: -8.4,
+      truePeakDb: -0.3,
+      lra: 5.1,
+      channelBalanceDb: 0.2,
+      dcOffset: null,
+      crestDb: 9,
+      noiseFloorDb: -70,
+    } as Awaited<ReturnType<typeof measureLoudness>>)
+    await handlerFor('audio:loudness')({}, file)
+
+    const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
+
+    expect(result[file]).toEqual({ lufs: -8.4 })
+  })
+
+  it('leaves the loudness out when the stored reading has no finite integrated loudness', async () => {
+    const file = await makeFile()
+    await cachedAnalysis('loudness-v2', file, async () => ({ integratedLufs: null }))
+
+    const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
+
+    expect(result[file]).toBeUndefined()
+  })
+
   // A cold path (never analyzed) is simply absent from the response — never an entry
   // with undefined/null fields the renderer would have to special-case.
   it('omits a path with no cached entry for either family', async () => {
@@ -254,7 +281,7 @@ describe('audio:cached-batch', () => {
   })
 
   // The batch must never fall through to a live compute — no ffmpeg mock is wired to
-  // resolve, so a heavy waveform-v5/loudness/bpm/key/properties/clicks entry (deliberately
+  // resolve, so a heavy waveform-v5/bpm/key/properties/clicks entry (deliberately
   // NOT hydrated — see the handler's comment) must never even be looked up here.
   it('does not hydrate the heavy waveform peaks family', async () => {
     const file = await makeFile()

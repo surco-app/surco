@@ -330,6 +330,7 @@
       "directionNeedsField": "Ordina per un campo per scegliere il verso",
       "rating": "Stelle",
       "dateAdded": "Aggiunto",
+      "loudness": "Loudness",
       "album": "Album"
     },
     "position": "Brano {{current}} di {{total}}",

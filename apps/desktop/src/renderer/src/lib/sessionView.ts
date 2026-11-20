@@ -100,6 +100,7 @@ const SORTS: Record<TrackSort, true> = {
   quality: true,
   rating: true,
   dateAdded: true,
+  loudness: true,
 }
 const QUALITY: Record<QualityFilter, true> = {
   suspect: true,

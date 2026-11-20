@@ -330,6 +330,7 @@
       "directionNeedsField": "Ordena per un camp per triar el sentit",
       "rating": "Estrelles",
       "dateAdded": "Afegida",
+      "loudness": "Sonoritat",
       "album": "Àlbum"
     },
     "position": "Pista {{current}} de {{total}}",

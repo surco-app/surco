@@ -777,6 +777,27 @@ describe('sortTracks', () => {
     expect(sortTracks(list, 'import')).toBe(list)
   })
 
+  it('sorts by integrated loudness, quietest first ascending and loudest first descending, with an unmeasured track last in both', () => {
+    const list = [
+      mk({ id: 'club', lufs: -7.5 }),
+      mk({ id: 'unmeasured' }),
+      mk({ id: 'quiet', lufs: -16 }),
+      mk({ id: 'streaming', lufs: -14 }),
+    ]
+    expect(sortTracks(list, 'loudness', 'asc').map((t) => t.id)).toEqual([
+      'quiet',
+      'streaming',
+      'club',
+      'unmeasured',
+    ])
+    expect(sortTracks(list, 'loudness', 'desc').map((t) => t.id)).toEqual([
+      'club',
+      'streaming',
+      'quiet',
+      'unmeasured',
+    ])
+  })
+
   it('sorts by track name, locale-aware so case does not split the alphabet', () => {
     const list = [mk({ listLabel: 'Zoo' }), mk({ listLabel: 'apple' }), mk({ listLabel: 'Banana' })]
     expect(sortTracks(list, 'name').map((t) => t.listLabel)).toEqual(['apple', 'Banana', 'Zoo'])

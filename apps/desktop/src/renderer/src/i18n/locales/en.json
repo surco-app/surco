@@ -330,6 +330,7 @@
       "directionNeedsField": "Sort by a field to choose the direction",
       "rating": "Stars",
       "dateAdded": "Added",
+      "loudness": "Loudness",
       "album": "Album"
     },
     "position": "Track {{current}} of {{total}}",

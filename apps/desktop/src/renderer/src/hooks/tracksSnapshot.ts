@@ -1,5 +1,10 @@
 import { hashKey, type Query, type QueryClient } from '@tanstack/react-query'
-import type { ScanVerdict, SpectrumVerdict, WaveVerdict } from '../../../shared/types'
+import type {
+  LoudnessResult,
+  ScanVerdict,
+  SpectrumVerdict,
+  WaveVerdict,
+} from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { spectrogramOptions, spectrumVerdictKey } from './useSpectrogram'
 import { scanVerdictKey, waveVerdictKey } from './useWaveform'
@@ -13,6 +18,7 @@ export interface CacheSnapshot {
   // The clip/channel scan lives in its own probe since the split, so the clipping
   // attention fact reads from here rather than off the peaks wave.
   scans: (ScanVerdict | undefined)[]
+  lufs: (number | undefined)[]
 }
 
 // The query-family names, in one place so the build, the per-track slot read and the
@@ -22,6 +28,8 @@ export const SNAPSHOT_FAMILIES = [
   'spectrumVerdict',
   'waveVerdict',
   'scanVerdict',
+  'loudness',
+  'loudnessVerdict',
 ] as const
 
 // A cache lookup by key hash straight into the cache's own hash map, O(1) per key. find()
@@ -48,6 +56,10 @@ function readSlot(inputPath: string, at: (key: readonly unknown[]) => Query | un
     },
     wave: at(waveVerdictKey(inputPath))?.state.data as WaveVerdict | undefined,
     scan: at(scanVerdictKey(inputPath))?.state.data as ScanVerdict | undefined,
+    lufs:
+      (at(['loudnessVerdict', inputPath])?.state.data as number | undefined) ??
+      (at(['loudness', inputPath])?.state.data as LoudnessResult | null | undefined)
+        ?.integratedLufs,
   }
 }
 
@@ -61,13 +73,15 @@ export function buildCacheSnapshot(
   const spectra: CacheSnapshot['spectra'] = []
   const waves: CacheSnapshot['waves'] = []
   const scans: CacheSnapshot['scans'] = []
+  const lufs: CacheSnapshot['lufs'] = []
   for (const t of tracks) {
     const slot = readSlot(t.inputPath, at)
     spectra.push(slot.spectrum)
     waves.push(slot.wave)
     scans.push(slot.scan)
+    lufs.push(slot.lufs)
   }
-  return { spectra, waves, scans }
+  return { spectra, waves, scans, lufs }
 }
 
 // Re-reads one track's slot and, if any family's result actually changed, returns a new
@@ -85,15 +99,18 @@ export function patchSnapshot(
   const spectrumChanged = s.data !== slot.spectrum.data || s.fetching !== slot.spectrum.fetching
   const waveChanged = prev.waves[index] !== slot.wave
   const scanChanged = prev.scans[index] !== slot.scan
-  if (!spectrumChanged && !waveChanged && !scanChanged) return prev
+  const lufsChanged = prev.lufs[index] !== slot.lufs
+  if (!spectrumChanged && !waveChanged && !scanChanged && !lufsChanged) return prev
   // Reuse each unchanged family's array by reference; copy only the one that moved and swap
   // its one entry — so the merge's per-family memo sees a new identity for the changed family
   // alone, and the ~0.5 MB heavy arrays aren't reallocated for a probe that didn't touch them.
   const spectra = spectrumChanged ? prev.spectra.slice() : prev.spectra
   const waves = waveChanged ? prev.waves.slice() : prev.waves
   const scans = scanChanged ? prev.scans.slice() : prev.scans
+  const lufs = lufsChanged ? prev.lufs.slice() : prev.lufs
   if (spectrumChanged) spectra[index] = slot.spectrum
   if (waveChanged) waves[index] = slot.wave
   if (scanChanged) scans[index] = slot.scan
-  return { spectra, waves, scans }
+  if (lufsChanged) lufs[index] = slot.lufs
+  return { spectra, waves, scans, lufs }
 }
