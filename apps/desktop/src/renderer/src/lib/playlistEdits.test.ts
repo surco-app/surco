@@ -107,6 +107,21 @@ describe('editMessage', () => {
     })
   })
 
+  it('says how a new playlist filled up in the words of an add, so the tracks it could not take are not lost in silence', () => {
+    const report = { added: 5, already: 0, notInCollection: 2, ambiguous: 0 }
+    const create: RekordboxPlaylistEdit = {
+      kind: 'create',
+      parentId: 'root',
+      name: 'Set',
+      folder: false,
+      tracks: [],
+    }
+    expect(editMessage(tr, create, { applied: true, report }, 'Set')).toEqual(
+      editMessage(tr, add, { applied: true, report }, 'Set'),
+    )
+    expect(editMessage(tr, create, { applied: true }, 'Set')).toBeNull()
+  })
+
   it('accepts only the message prefixes the source table declares', () => {
     // @ts-expect-error
     editMessage(tr, add, { applied: false, reason: 'write-unknown' }, 'House', 'traktor')

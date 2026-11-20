@@ -3573,18 +3573,12 @@ export default function App(): React.JSX.Element {
       if (!pasteTracklist) return
       const { node, create } = pasteTracklist
       await askToApplyEdit()
-      let playlistId = node.id
-      let name = node.name
-      if (create && newName) {
-        const created = await editRekordboxAfterAsking(
-          { kind: 'create', parentId: node.id, name: newName, folder: false },
+      if (create && newName)
+        await editRekordboxAfterAsking(
+          { kind: 'create', parentId: node.id, name: newName, folder: false, tracks },
           newName,
         )
-        if (!created.applied || !created.createdId) return
-        playlistId = created.createdId
-        name = newName
-      }
-      await editRekordboxAfterAsking({ kind: 'add', playlistId, tracks }, name)
+      else await editRekordboxAfterAsking({ kind: 'add', playlistId: node.id, tracks }, node.name)
     },
   )
   const moveInTree = useStableCallback(
