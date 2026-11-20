@@ -2726,8 +2726,8 @@ lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
   Desde v1.26.0 el flujo aprendido se ofrece en el + de la lista de flujos («Desde cómo
   marcas»), la tarjeta resume en una línea de cuántas pistas aprendió y de dónde (rekordbox,
   guardadas en Surco) y el detalle se abre con «Lo que aprendió Surco»
-  (`cue-profile-details`, `CueProfileCard.tsx:230`). Antes y después de aprender va en la
-  fila plegable «Tu forma de marcar», bajo el flujo.
+  (`cue-profile-details`, `CueProfileCard.tsx:230`). Antes y después de aprender va al
+  final de la pestaña, tras «Aplicar los flujos también en» y «Editor manual», siempre a la vista.
 Traktor y Engine DJ no tienen CALL, así que de ellos solo aprende lo que el DJ guarda en
 Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista guardada
 (`recordCueEdits`, `lib/cueTasteEdits.ts`). Desde v1.30.0 no hay botón de aprender: aprende

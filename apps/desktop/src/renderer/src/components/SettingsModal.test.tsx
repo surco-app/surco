@@ -1727,31 +1727,16 @@ describe('settings search', () => {
     expect(Element.prototype.scrollIntoView).toHaveBeenCalled()
   })
 
-  it('opens the fold of a Cues setting found by the search, so the setting it marks is on screen and not behind a closed row, and leaves it open after the search', async () => {
+  it('marks a Cues setting found by the search where it sits, on screen with the rest of the tab and no row to open first', async () => {
     open()
     search('quantize')
     const found = (): Element | null =>
       screen.getByRole('tabpanel').querySelector('[data-search-id="cueFlows.manual.quantize"]')
     await waitFor(() => expect(found()).toHaveAttribute('data-search-hit', 'true'))
     expect(found()).toBeVisible()
-    expect(screen.getByTestId('cue-flow-targets')).not.toBeVisible()
+    expect(screen.getByTestId('cue-flow-targets')).toBeVisible()
     search('')
     expect(found()).toBeVisible()
-  })
-
-  it('keeps a fold of Cues the DJ opened as it was after a visit to another tab, while Settings stays open', () => {
-    open()
-    fireEvent.click(screen.getByTestId('settings-tab-cues'))
-    expect(screen.getByTestId('cue-manual')).not.toBeVisible()
-    fireEvent.click(
-      within(screen.getByTestId('cue-section-manual')).getByRole('button', {
-        name: i18n.t('settings.cueFlows.manual.title'),
-      }),
-    )
-    expect(screen.getByTestId('cue-manual')).toBeVisible()
-    fireEvent.click(screen.getByTestId('settings-tab-general'))
-    fireEvent.click(screen.getByTestId('settings-tab-cues'))
-    expect(screen.getByTestId('cue-manual')).toBeVisible()
   })
 
   it('opens the program of a DJ software result, so the setting it marks is on screen and not behind another program', async () => {

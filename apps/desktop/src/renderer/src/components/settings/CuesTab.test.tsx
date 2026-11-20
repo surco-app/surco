@@ -1052,24 +1052,22 @@ describe('CuesTab', () => {
     expect(card).toHaveTextContent('Cues fuera de la rejilla')
   })
 
-  it('keeps the invitation to teach Surco in its fold under the flow, since nothing was learned yet and the flow is what the tab is for, and + only makes a new flow', async () => {
+  it('keeps the invitation to teach Surco at the end of the tab while nothing was learned, since the flow is what the tab is for, and + only makes a new flow', async () => {
     installApi()
     render(<Harness collection="/rb/master.db" />)
     const card = await screen.findByTestId('cue-profile')
-    const fold = screen.getByTestId('cue-section-profile')
-    expect(fold).toContainElement(card)
-    expect(card).not.toBeVisible()
+    expect(card).toBeVisible()
     expect(
-      screen.getByTestId('cue-rule-add').compareDocumentPosition(card) &
+      screen.getByTestId('cue-manual').compareDocumentPosition(card) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy()
-    expect(screen.queryByTestId('cue-section-profile-summary')).toBeNull()
+    expect(within(card).getByRole('heading')).toHaveTextContent('Surco will learn how you mark')
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
   })
 
-  it('keeps what Surco learned in the same fold under the rules once it learned, the folded row saying from how many tracks', async () => {
+  it('keeps what Surco learned in the same place at the end of the tab once it learned, under its own section title', async () => {
     installApi({
       cueProfile: vi.fn<Api['cueProfile']>(async () => ({
         profile: LEARNED,
@@ -1079,147 +1077,76 @@ describe('CuesTab', () => {
     })
     render(<Harness collection="/rb/master.db" />)
     const card = await screen.findByTestId('cue-profile')
-    const rules = screen.getByTestId('cue-rule-add')
-    expect(rules.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('cue-section-profile')).toContainElement(card)
-    expect(screen.getByTestId('cue-section-profile-summary')).toHaveTextContent(
-      /^Learned from 40 tracks you already marked$/,
+    expect(card).toBeVisible()
+    expect(
+      screen.getByTestId('cue-manual').compareDocumentPosition(card) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(within(card).getByRole('heading')).toHaveTextContent(/^How you mark$/)
+    expect(screen.getByTestId('cue-profile-summary')).toHaveTextContent(
+      /^Learned from 40 tracks you already marked/,
     )
   })
 
-  describe('the rest of the tab, folded under the flow', () => {
-    const header = (id: string): HTMLElement =>
-      within(screen.getByTestId(`cue-section-${id}`)).getAllByRole('button')[0]
-
-    it('opens on the flow alone, the programs, the manual editor and what Surco learned folded under it in that order', async () => {
+  describe('the rest of the tab, under the flow', () => {
+    it('shows the programs, the manual editor and what Surco learned always open under the flow in that order, since no other tab of Settings folds its sections', async () => {
       installApi()
       render(<Harness collection="/c/master.db" />)
       await screen.findByTestId('cue-profile')
-      const folds = ['programs', 'manual', 'profile'].map((id) =>
-        screen.getByTestId(`cue-section-${id}`),
+      const parts = ['cue-flow-bench', 'cue-flow-targets', 'cue-manual', 'cue-profile'].map((id) =>
+        screen.getByTestId(id),
       )
-      expect(
-        screen.getByTestId('cue-flow-bench').compareDocumentPosition(folds[0]) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-      expect(
-        folds[0].compareDocumentPosition(folds[1]) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-      expect(
-        folds[1].compareDocumentPosition(folds[2]) & Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-      expect(header('programs')).toHaveAccessibleName('DJ software')
-      expect(header('manual')).toHaveAccessibleName('Manual editor')
-      expect(header('profile')).toHaveAccessibleName('How you mark')
-      for (const id of ['programs', 'manual', 'profile'])
-        expect(header(id)).toHaveAttribute('aria-expanded', 'false')
-      expect(screen.getByTestId('cue-flow-targets')).not.toBeVisible()
-      expect(screen.getByTestId('cue-flow-targets-help')).not.toBeVisible()
-      expect(screen.getByTestId('cue-manual')).not.toBeVisible()
-      expect(screen.getByTestId('cue-letters')).not.toBeVisible()
-      expect(screen.getByTestId('cue-profile')).not.toBeVisible()
-    })
-
-    it('shows what a fold holds on a press and puts it away on the next, the row saying so to a screen reader', () => {
-      installApi()
-      render(<Harness collection="/c/master.db" />)
-      fireEvent.click(header('manual'))
-      expect(header('manual')).toHaveAttribute('aria-expanded', 'true')
-      expect(screen.getByTestId('cue-manual')).toBeVisible()
+      for (let i = 1; i < parts.length; i++)
+        expect(
+          parts[i - 1].compareDocumentPosition(parts[i]) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+      for (const part of parts) expect(part).toBeVisible()
+      expect(screen.getByTestId('cue-flow-targets-help')).toBeVisible()
       expect(screen.getByTestId('cue-letters')).toBeVisible()
-      expect(screen.getByTestId('cue-flow-targets')).not.toBeVisible()
-      expect(header('manual')).toHaveAttribute(
-        'aria-controls',
-        screen.getByTestId('cue-manual').parentElement?.id,
-      )
-      fireEvent.click(header('manual'))
-      expect(header('manual')).toHaveAttribute('aria-expanded', 'false')
-      expect(screen.getByTestId('cue-manual')).not.toBeVisible()
+      expect(screen.queryByTestId(/^cue-section-/)).toBeNull()
+      expect(
+        screen
+          .getAllByRole('button')
+          .filter(
+            (b) =>
+              b.closest('[data-testid="cue-flow-bench"]') === null &&
+              b.hasAttribute('aria-controls'),
+          ),
+      ).toEqual([])
     })
 
-    it('says on the folded row of the programs which ones the flows reach, so the DJ need not open it to know', async () => {
-      installApi({
-        dj: djReads({
-          traktor: { available: async () => true },
-          engine: { available: async () => false },
-        }),
-      })
-      render(<Harness collection="/c/master.db" />)
-      const summary = (): HTMLElement => screen.getByTestId('cue-section-programs-summary')
-      await waitFor(() => expect(summary()).toHaveTextContent(/^rekordbox, Traktor$/))
-      expect(summary()).toHaveClass('truncate')
-      fireEvent.click(screen.getByTestId('settings-cue-flow-to-traktor'))
-      expect(summary()).toHaveTextContent(/^rekordbox$/)
-      fireEvent.click(header('programs'))
-      expect(screen.queryByTestId('cue-section-programs-summary')).toBeNull()
-    })
-
-    it('says nothing on the folded row of the programs while the flows reach none, instead of an empty value', async () => {
-      installApi({
-        dj: djReads({
-          traktor: { available: async () => false },
-          engine: { available: async () => false },
-        }),
-      })
-      render(<Harness />)
-      await screen.findByTestId('settings-cue-flow-to-traktor-missing')
-      expect(screen.queryByTestId('cue-section-programs-summary')).toBeNull()
-    })
-
-    it('says on the folded row of the manual editor the jump and the quantize in use, following a change', async () => {
-      await i18n.changeLanguage('es')
-      afterTest = () => i18n.changeLanguage('en')
-      installApi()
-      render(<Harness />)
-      expect(screen.getByTestId('cue-section-manual-summary')).toHaveTextContent(
-        /^16 compases · Compás$/,
-      )
-      fireEvent.click(screen.getByTestId('cue-jump-32'))
-      fireEvent.click(screen.getByTestId('cue-quantize-beat'))
-      expect(screen.getByTestId('cue-section-manual-summary')).toHaveTextContent(
-        /^32 compases · Golpe$/,
-      )
-    })
-
-    it('moves the note about CALLs and Traktor colours in with the programs it talks about, away from the rules', async () => {
+    it('keeps the note about CALLs and Traktor colours with the programs it talks about, away from the rules', async () => {
       installApi({ dj: djReads({ traktor: { available: async () => true } }) })
       render(<Harness />)
       const note = await screen.findByTestId('cue-flow-library-note')
-      expect(screen.getByTestId('cue-section-programs')).toContainElement(note)
+      expect(
+        screen.getByTestId('cue-flow-targets').compareDocumentPosition(note) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(
+        note.compareDocumentPosition(screen.getByTestId('cue-manual')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
       expect(screen.getByTestId('cue-flow-bench')).not.toContainElement(note)
     })
 
-    it('keeps the name of the programs list and its help inside the fold, said once', () => {
+    it('heads the programs list and the manual editor with a section title like the other tabs of Settings, the help of the programs inside its title', () => {
       installApi()
       render(<Harness collection="/c/master.db" />)
-      const fold = screen.getByTestId('cue-section-programs')
-      expect(within(fold).getAllByRole('heading')).toHaveLength(1)
-      expect(fold).toHaveTextContent('Also place the flows in')
-      expect(within(screen.getByTestId('cue-section-manual')).getAllByRole('heading')).toHaveLength(
-        1,
-      )
-    })
-
-    it('lets Settings say which folds are open, so they stay as the DJ left them while Settings is open', () => {
-      installApi()
-      const onFolds = vi.fn()
-      render(
-        <QueryClientProvider client={new QueryClient()}>
-          <CuesTab
-            synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
-            patch={() => {}}
-            rekordboxCollection=""
-            folds={['manual']}
-            onFolds={onFolds}
-          />
-        </QueryClientProvider>,
-      )
-      expect(header('manual')).toHaveAttribute('aria-expanded', 'true')
-      expect(header('programs')).toHaveAttribute('aria-expanded', 'false')
-      fireEvent.click(header('programs'))
-      expect(onFolds).toHaveBeenCalledWith(['manual', 'programs'])
-      fireEvent.click(header('manual'))
-      expect(onFolds).toHaveBeenLastCalledWith([])
+      const programs = screen.getByRole('heading', { name: /^Also place the flows in/ })
+      expect(programs).toHaveClass('text-section', 'font-semibold', 'text-fg-muted')
+      expect(programs).toContainElement(screen.getByTestId('cue-flow-targets-help'))
+      expect(
+        programs.compareDocumentPosition(screen.getByTestId('cue-flow-targets')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      const manual = screen.getByRole('heading', { name: 'Manual editor' })
+      expect(manual).toHaveClass('text-section', 'font-semibold', 'text-fg-muted')
+      expect(
+        manual.compareDocumentPosition(screen.getByTestId('cue-manual')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(screen.queryByRole('heading', { name: 'DJ software' })).toBeNull()
     })
   })
 
@@ -1431,7 +1358,6 @@ describe('CuesTab', () => {
   it('lists the targets as rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, in that order', () => {
     installApi()
     render(<Harness collection="/c/master.db" />)
-    fireEvent.click(within(screen.getByTestId('cue-section-programs')).getAllByRole('button')[0])
     const rows = within(screen.getByTestId('cue-flow-targets')).getAllByRole('checkbox')
     expect(rows.map((row) => row.getAttribute('data-testid'))).toEqual([
       'settings-cue-flow-to-rekordbox',

@@ -175,22 +175,24 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
     <section
       data-testid="cue-profile"
       className={`flex flex-col gap-2.5 ${
-        profile ? '' : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
+        profile
+          ? 'border-t border-[var(--color-line)] pt-4'
+          : 'rounded-xl border border-dashed border-[var(--color-line-strong)] p-4'
       }`}
     >
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
+          <h3 className="text-section font-semibold text-fg-muted">
+            {profile ? tr('settings.cueProfile.title') : tr('settings.cueProfile.firstTitle')}
+          </h3>
           {profile ? (
-            <p data-testid="cue-profile-summary" className="text-xs text-fg-dim">
+            <p data-testid="cue-profile-summary" className="mt-0.5 text-xs text-fg-dim">
               {tr('settings.cueProfile.summary', { count: tracks, tracks: count(tracks) })}
               {sources.length > 0 && ' · '}
               {sources}
             </p>
           ) : (
             <>
-              <h3 className="text-section font-semibold text-fg-muted">
-                {tr('settings.cueProfile.firstTitle')}
-              </h3>
               <p className="mt-0.5 text-xs text-fg-dim">{tr('settings.cueProfile.firstHint')}</p>
               {sources.length > 0 && <p className="mt-1 text-xs text-fg-dim">{sources}</p>}
             </>
