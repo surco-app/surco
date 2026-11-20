@@ -2063,6 +2063,8 @@
       "rules": "Rules",
       "addRule": "Add rule",
       "removeRule": "Remove rule",
+      "moveRule": "Move rule {{n}}",
+      "moveRuleHint": "Drag to change the order",
       "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",

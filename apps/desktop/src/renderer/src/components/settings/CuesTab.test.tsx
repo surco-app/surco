@@ -19,6 +19,7 @@ import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
 import type { DjProgram } from '../../../../shared/djProgram'
+import { hotCueColor } from '../../../../shared/rekordboxCueColors'
 import { traktorContentId } from '../../../../shared/traktorContent'
 import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
@@ -2145,5 +2146,107 @@ describe('the tracks the preview offers', () => {
     expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
     fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
     expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+  })
+})
+
+describe('the order of the rules', () => {
+  const mine = () => last?.cueFlows.find((f) => f.id === 'mine')
+  const handle = (n: number) => screen.getByTestId(`cue-rule-${n}-move`)
+  const alt = (n: number, key: 'ArrowUp' | 'ArrowDown') =>
+    fireEvent.keyDown(handle(n), { key, altKey: true })
+  const [first, second] = MY_FLOW.rules
+  const show = (props: { flows?: CueFlow[]; active?: string } = {}) => {
+    installApi()
+    render(<Harness {...props} />)
+  }
+
+  it('moves a rule down with Alt and the arrow from its number and keeps the focus on it, so the keyboard can carry it further', () => {
+    show()
+    alt(0, 'ArrowDown')
+    expect(mine()?.rules).toEqual([second, first])
+    expect(handle(1)).toHaveFocus()
+  })
+
+  it('moves a rule up the same way, since the rule on top is the one that gets its cues first', () => {
+    show()
+    alt(1, 'ArrowUp')
+    expect(mine()?.rules).toEqual([second, first])
+    expect(handle(0)).toHaveFocus()
+  })
+
+  it('stops at the first and the last place, so a rule never falls off the flow', () => {
+    const third = { ...second, color: { fixed: 5 } }
+    const rules = [first, second, third]
+    show({ flows: [...KEPT.filter((f) => f.id !== 'mine'), { ...MY_FLOW, rules }] })
+    alt(0, 'ArrowUp')
+    alt(2, 'ArrowDown')
+    expect(mine()?.rules).toEqual(rules)
+    expect(handle(2)).not.toHaveFocus()
+  })
+
+  it('leaves the arrows alone without Alt, which belong to moving around the window', () => {
+    show()
+    fireEvent.keyDown(handle(0), { key: 'ArrowDown' })
+    expect(mine()?.rules).toEqual([first, second])
+  })
+
+  it('redraws the preview with the new order, where the rule now on top takes the place both wanted', () => {
+    const at16 = { ...first, repeat: 1, when: 'always' as const, place: 'hot' as const }
+    const flows: CueFlow[] = [
+      ...KEPT.filter((f) => f.id !== 'mine'),
+      {
+        ...MY_FLOW,
+        rules: [
+          { ...at16, color: { fixed: 1 } },
+          { ...at16, color: { fixed: 42 } },
+        ],
+      },
+    ]
+    show({ flows })
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: hotCueColor(1) })
+    alt(1, 'ArrowUp')
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveStyle({ backgroundColor: hotCueColor(42) })
+  })
+
+  it('drops a rule dragged by its number on the place of another, without the focus a mouse never asked for', () => {
+    show()
+    const dataTransfer = { setData: vi.fn(), effectAllowed: '' }
+    fireEvent.mouseDown(handle(1))
+    fireEvent.dragStart(screen.getByTestId('cue-rule-1'), { dataTransfer })
+    fireEvent.dragOver(screen.getByTestId('cue-rule-0'), { dataTransfer })
+    fireEvent.drop(screen.getByTestId('cue-rule-0'), { dataTransfer })
+    expect(mine()?.rules).toEqual([second, first])
+    expect(handle(0)).not.toHaveFocus()
+  })
+
+  it('drags nothing that was not picked up by its number, so pressing anywhere else on a rule stays a plain press', () => {
+    show()
+    expect(screen.getByTestId('cue-rule-1')).not.toHaveAttribute('draggable', 'true')
+    fireEvent.mouseDown(handle(1))
+    expect(screen.getByTestId('cue-rule-1')).toHaveAttribute('draggable', 'true')
+    fireEvent.mouseUp(screen.getByTestId('cue-rule-1'))
+    expect(screen.getByTestId('cue-rule-1')).not.toHaveAttribute('draggable', 'true')
+  })
+
+  it('keeps the rules this Surco cannot read where they were and untouched, so reordering here never rewrites what a newer Surco saved', () => {
+    const foreign = [{ at: 1, rule: { ...first, when: 'someday' } }]
+    const flows: CueFlow[] = [...KEPT.filter((f) => f.id !== 'mine'), { ...MY_FLOW, foreign }]
+    show({ flows })
+    alt(0, 'ArrowDown')
+    expect(mine()?.rules).toEqual([second, first])
+    expect(mine()?.foreign).toEqual(foreign)
+  })
+
+  it('names the number as the handle that moves the rule and says how on hover', () => {
+    show()
+    expect(handle(0)).toHaveAccessibleName('Move rule 1')
+    expect(handle(0)).toHaveTextContent(/^1$/)
+    expect(hoverTooltip(handle(0))).toBe('Drag to change the order')
+  })
+
+  it('offers no handle on the only rule of a flow, where there is nothing to move it past', () => {
+    show({ active: 'mix-in' })
+    expect(screen.getByTestId('cue-rule-0')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-rule-0-move')).toBeNull()
   })
 })

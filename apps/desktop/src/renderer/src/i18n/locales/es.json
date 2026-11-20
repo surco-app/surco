@@ -2063,6 +2063,8 @@
       "rules": "Reglas",
       "addRule": "Añadir regla",
       "removeRule": "Quitar regla",
+      "moveRule": "Mover la regla {{n}}",
+      "moveRuleHint": "Arrastra para cambiar el orden",
       "noRules": "Sin reglas. El flujo solo pone un CALL donde marcas.",
       "preview": "Vista previa",
       "previewHint": "Pista de ejemplo a 128 BPM, marcada en el compás {{bar}}",

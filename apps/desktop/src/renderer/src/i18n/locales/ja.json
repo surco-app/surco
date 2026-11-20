@@ -2063,6 +2063,8 @@
       "rules": "ルール",
       "addRule": "ルールを追加",
       "removeRule": "ルールを削除",
+      "moveRule": "ルール {{n}} を移動",
+      "moveRuleHint": "ドラッグして順番を変更",
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
       "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",

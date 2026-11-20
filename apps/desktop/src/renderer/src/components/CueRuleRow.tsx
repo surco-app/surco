@@ -23,6 +23,7 @@ import {
 } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
+import { Tooltip } from './Tooltip'
 
 const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
 const DIRECTIONS: FlowDirection[] = ['back', 'forward']
@@ -96,16 +97,24 @@ function colorAt(color: FlowColor, slot: number): number {
   return color.each[slot] ?? color.each[color.each.length - 1] ?? 1
 }
 
+export interface RuleReorder {
+  dragged: number | null
+  onArm: (index: number | null) => void
+  onMove: (from: number, to: number) => void
+}
+
 export function CueRuleRow({
   rule,
   index,
   onChange,
   onRemove,
+  reorder,
 }: {
   rule: CueRule
   index: number
   onChange: (rule: CueRule) => void
   onRemove: () => void
+  reorder?: RuleReorder
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [open, setOpen] = useState<string | null>(null)
@@ -113,6 +122,8 @@ export function CueRuleRow({
   const paletteRef = useRef<HTMLDivElement>(null)
   const [paletteRight, setPaletteRight] = useState(false)
   const [menuUp, setMenuUp] = useState(false)
+  const [dropHere, setDropHere] = useState(false)
+  const dragged = reorder?.dragged ?? null
   const id = `cue-rule-${index}`
   const slots = slotCount(rule)
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
@@ -344,11 +355,48 @@ export function CueRuleRow({
         e.stopPropagation()
         closeToToken()
       }}
-      className="relative m-0 min-w-0 py-2 pr-10 pl-3.5 text-sm leading-8 text-fg-dim"
+      draggable={dragged === index}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', String(index))
+      }}
+      onDragOver={(e) => {
+        if (dragged === null || dragged === index) return
+        e.preventDefault()
+        setDropHere(true)
+      }}
+      onDragLeave={() => setDropHere(false)}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDropHere(false)
+        if (dragged !== null) reorder?.onMove(dragged, index)
+        reorder?.onArm(null)
+      }}
+      onDragEnd={() => reorder?.onArm(null)}
+      onMouseUp={() => reorder?.onArm(null)}
+      className={`relative m-0 min-w-0 py-2 pr-10 pl-3.5 text-sm leading-8 text-fg-dim ${dropHere ? 'bg-[var(--color-accent-soft)]' : ''} ${dragged === index ? 'opacity-40' : ''}`}
     >
-      <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
-        {index + 1}
-      </span>
+      {reorder ? (
+        <button
+          type="button"
+          data-testid={`${id}-move`}
+          aria-label={tr('settings.cueFlows.moveRule', { n: index + 1 })}
+          onMouseDown={() => reorder.onArm(index)}
+          onKeyDown={(e) => {
+            if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return
+            e.preventDefault()
+            reorder.onMove(index, index + (e.key === 'ArrowUp' ? -1 : 1))
+          }}
+          className="press relative mr-2 cursor-grab rounded-[3px] font-mono text-xs text-fg-faint hover:text-fg"
+        >
+          {index + 1}
+          <Tooltip label={tr('settings.cueFlows.moveRuleHint')} />
+        </button>
+      ) : (
+        <span aria-hidden="true" className="mr-2 font-mono text-xs text-fg-faint">
+          {index + 1}
+        </span>
+      )}
       {token(
         'from',
         FLOW_ORIGINS.map((o) => ({ value: o, label: tr(`settings.cueFlows.from.${o}`) })),

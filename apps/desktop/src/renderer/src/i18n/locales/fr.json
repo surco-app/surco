@@ -2063,6 +2063,8 @@
       "rules": "Règles",
       "addRule": "Ajouter une règle",
       "removeRule": "Retirer la règle",
+      "moveRule": "Déplacer la règle {{n}}",
+      "moveRuleHint": "Fais glisser pour changer l’ordre",
       "noRules": "Aucune règle. Le flux ne met qu’un CALL là où tu marques.",
       "preview": "Aperçu",
       "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",

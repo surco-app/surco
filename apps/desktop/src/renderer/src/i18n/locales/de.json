@@ -2063,6 +2063,8 @@
       "rules": "Regeln",
       "addRule": "Regel hinzufügen",
       "removeRule": "Regel entfernen",
+      "moveRule": "Regel {{n}} verschieben",
+      "moveRuleHint": "Ziehen, um die Reihenfolge zu ändern",
       "noRules": "Keine Regeln. Der Ablauf setzt nur einen CALL an deine Markierung.",
       "preview": "Vorschau",
       "previewHint": "Beispieltrack mit 128 BPM, markiert in Takt {{bar}}",

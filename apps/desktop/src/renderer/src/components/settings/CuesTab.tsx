@@ -84,6 +84,9 @@ export function CuesTab({
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
   const [removals, setRemovals] = useState(0)
+  const [dragged, setDragged] = useState<number | null>(null)
+  const [moved, setMoved] = useState<number | null>(null)
+  const rulesRef = useRef<HTMLElement>(null)
   const [typed, setTyped] = useState<string | null>(null)
   const [renaming, setRenaming] = useState(false)
   const picker = useSplitMenu()
@@ -96,6 +99,11 @@ export function CuesTab({
     marks?: number[]
   } | null>(null)
   const nameRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (moved === null) return
+    rulesRef.current?.querySelector<HTMLElement>(`[data-testid="cue-rule-${moved}-move"]`)?.focus()
+    setMoved(null)
+  }, [moved])
   useEffect(() => {
     if (!renaming) return
     nameRef.current?.focus()
@@ -132,6 +140,15 @@ export function CuesTab({
     )
   const rows = flow.rules.map((rule, position) => ({ rule, position }))
   const setRules = (rules: CueRule[]) => put({ ...flow, rules })
+  const moveRule = (from: number, to: number) => {
+    if (to < 0 || to >= flow.rules.length || to === from) return
+    const rules = [...flow.rules]
+    const [moved] = rules.splice(from, 1)
+    rules.splice(to, 0, moved)
+    setRules(rules)
+    setRemovals(removals + 1)
+    if (dragged === null) setMoved(to)
+  }
 
   const create = () => {
     const made: CueFlow = {
@@ -439,6 +456,7 @@ export function CuesTab({
           </section>
         </div>
         <section
+          ref={rulesRef}
           aria-label={tr('settings.cueFlows.rules')}
           className="divide-y divide-[var(--color-line)] rounded-b-lg border-x border-b border-[var(--color-line)]"
         >
@@ -452,6 +470,9 @@ export function CuesTab({
                 setRules(flow.rules.filter((_, j) => j !== position))
                 setRemovals(removals + 1)
               }}
+              reorder={
+                flow.rules.length > 1 ? { dragged, onArm: setDragged, onMove: moveRule } : undefined
+              }
             />
           ))}
           {flow.rules.length === 0 && (
