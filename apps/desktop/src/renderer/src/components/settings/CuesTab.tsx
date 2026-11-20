@@ -412,7 +412,7 @@ export function CuesTab({
           <section
             data-testid="cue-flow-bench-preview"
             aria-label={tr('settings.cueFlows.preview')}
-            className="rounded-t-lg border border-[var(--color-line)] border-b-[var(--color-line-strong)] bg-[var(--color-field)] px-3 pt-3 pb-1"
+            className="rounded-t-lg border border-[var(--color-line)] border-b-[var(--color-line-strong)] bg-[var(--color-field)] px-3.5 pt-3 pb-1"
           >
             <CueFlowTrackPreview
               flow={flow}

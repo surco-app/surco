@@ -1035,6 +1035,15 @@ describe('CuesTab', () => {
     expect(pin).not.toContainElement(screen.getByTestId('cue-rule-0'))
   })
 
+  it('insets the preview by the same amount on both sides as the text of a rule, so the selector, the wave, the status line and the rules share one left edge with room for the ring of a new cue', () => {
+    render(<Harness />)
+    const card = screen.getByTestId('cue-flow-bench-preview')
+    expect(card).toHaveClass('px-3.5')
+    expect(card.className).not.toMatch(/(?<![\w-])p[lr]-/)
+    expect(screen.getByTestId('cue-rule-0')).toHaveClass('pl-3.5')
+    expect(screen.getByTestId('cue-flow-preview').className).not.toMatch(/(?<![\w-])[pm][xlr]?-/)
+  })
+
   it('draws a stronger line under the pinned preview, so it stays apart from the rules passing under it on the light theme too', () => {
     render(<Harness />)
     expect(screen.getByTestId('cue-flow-bench-preview')).toHaveClass(

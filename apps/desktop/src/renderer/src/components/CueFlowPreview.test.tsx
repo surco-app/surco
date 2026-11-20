@@ -21,9 +21,9 @@ describe('CueFlowPreview', () => {
     expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
   })
 
-  it('keeps room on its left edge for the ring of a new cue at the very start and for the focus ring of the count, which Settings would clip', () => {
+  it('takes no inset of its own, so its selector, wave and status line start where the piece that holds it says, which is where the room for the ring of a new cue at the very start comes from', () => {
     render(<CueFlowPreview flow={MY_FLOW} />)
-    expect(screen.getByTestId('cue-flow-preview')).toHaveClass('pl-1')
+    expect(screen.getByTestId('cue-flow-preview').className).not.toMatch(/(?<![\w-])p[xlr]?-/)
   })
 
   it('draws a hot cue without CALL for a flow that places only hot cues', () => {
