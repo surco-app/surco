@@ -404,6 +404,7 @@ export interface Settings {
   backupLimitsMigrated: boolean
   trackImportFieldsMigrated: boolean
   mixInBarsMigrated?: boolean
+  bitDepthMigrated?: boolean
   conversionCount: number
   firstConversionAt?: string
   // Lifetime activity tally behind the Stats tab, next to conversionCount. Bumped

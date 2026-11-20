@@ -474,7 +474,11 @@ export function getSettings(): Settings {
   // The one migration that writes: see migrateBitDepth. persist() refreshes the
   // stamps, so the cache is filled from its result rather than the stale read.
   if (migrateBitDepth(storedSettings())) {
-    const migrated = persist({ ...settings, outputBitDepth: 'corrected' })
+    const migrated = persist({
+      ...settings,
+      outputBitDepth: 'corrected',
+      bitDepthMigrated: true,
+    })
     cache = { settings: migrated, stamps: stampsOf() }
     return migrated
   }
@@ -490,7 +494,7 @@ export function getSettings(): Settings {
 // Written back once rather than applied on every read: after this runs, 'source' is a
 // deliberate answer about the container, and a later read must not overturn it.
 function migrateBitDepth(stored: Partial<Settings>): boolean {
-  return stored.outputBitDepth === 'source'
+  return stored.outputBitDepth === 'source' && !stored.bitDepthMigrated
 }
 
 // The file that owns outputBitDepth: with a custom folder active the synced file wins,
@@ -587,6 +591,7 @@ export function saveSettings(patch: Partial<Settings>): Settings {
   // token whenever Discogs is one), whatever the UI sent — so clearing the token or the
   // last source also turns it off.
   if (!autoMatchAvailable(next)) next.autoMatch = false
+  if (patch.outputBitDepth !== undefined) next.bitDepthMigrated = true
   return persist(next)
 }
 
