@@ -2651,6 +2651,9 @@ hay otra antes del punto), si pone hot cue, CALL o ambos, y el color. Los flujos
 crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128 BPM. La
 cuenta atrás aprendida de la colección se puede convertir en flujo desde el + de la lista de
 flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
+El mismo + ofrece «Desde «título de la pista»» (`cue-flow-add-track`) cuando la vista previa está
+sobre una pista marcada a mano de la que se puede deducir un flujo que aún no existe, y lo crea
+con el nombre «Como «título»» sin mover la vista previa de esa pista.
 
 **Dos condiciones más** (v1.26.0). «hasta la marca anterior», solo en reglas que cuentan hacia
 atrás desde el punto, deja que la cuenta atrás cruce los estribillos que no tienen marca y la
@@ -2707,7 +2710,7 @@ seguridad. Medido en pistas apartadas: aciertan el 85 % de las seguras y el 55 %
 dudosas (`autoMarkTasteMeasure.test.ts`). Con varias pistas, «Aceptar las N seguras» acepta
 solo esas y deja las dudosas propuestas (`acceptAutoMarks`, `lib/cueAutoMark.ts:111`).
 
-**Tu forma de marcar** (nuevo en v1.15.0). Arriba de Ajustes → Cues, una tarjeta
+**Tu forma de marcar** (nuevo en v1.15.0). En Ajustes → Cues, una tarjeta
 (`CueProfileCard.tsx`) lee la colección de rekordbox en solo
 lectura, las pistas con CALL (`readCollectionMarks`, `main/rekordboxLearnFlow.ts:35`), y junta
 lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
@@ -2719,8 +2722,8 @@ lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
   Desde v1.26.0 el flujo aprendido se ofrece en el + de la lista de flujos («Desde cómo
   marcas»), la tarjeta resume en una línea de cuántas pistas aprendió y de dónde (rekordbox,
   guardadas en Surco) y el detalle se abre con «Lo que aprendió Surco»
-  (`cue-profile-details`, `CueProfileCard.tsx:230`). Hasta aprender, la invitación va arriba
-  de la pestaña; después la pestaña abre con los flujos.
+  (`cue-profile-details`, `CueProfileCard.tsx:230`). Antes y después de aprender va en la
+  fila plegable «Tu forma de marcar», bajo el flujo.
 Traktor y Engine DJ no tienen CALL, así que de ellos solo aprende lo que el DJ guarda en
 Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista guardada
 (`recordCueEdits`, `lib/cueTasteEdits.ts`). Desde v1.30.0 no hay botón de aprender: aprende

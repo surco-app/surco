@@ -15,7 +15,11 @@ import {
   type SyncedDraft,
 } from '../lib/settingsDraft'
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
-import { settingsSearchIndexHere } from '../lib/settingsSearchIndex'
+import {
+  CUE_FOLD_OF_ANCHOR,
+  type CueFold,
+  settingsSearchIndexHere,
+} from '../lib/settingsSearchIndex'
 import {
   entryOf,
   SETTINGS_ENTRIES,
@@ -125,6 +129,13 @@ export function SettingsModal({
   const selectedTab = selectedHit?.entry.tab
   const selectedId = selectedHit?.entry.id
   const selectedAnchor = selectedHit && (selectedHit.entry.anchor ?? selectedHit.entry.id)
+  const [cueFolds, setCueFolds] = useState<CueFold[]>([])
+  const [seenAnchor, setSeenAnchor] = useState(selectedAnchor)
+  if (seenAnchor !== selectedAnchor) {
+    setSeenAnchor(selectedAnchor)
+    const fold = selectedAnchor && CUE_FOLD_OF_ANCHOR[selectedAnchor]
+    if (fold && !cueFolds.includes(fold)) setCueFolds([...cueFolds, fold])
+  }
   useEffect(() => {
     if (selectedTab) setTab(selectedTab)
   }, [selectedTab])
@@ -580,6 +591,8 @@ export function SettingsModal({
                 rekordboxCollection={rekordboxCollection}
                 cueTrack={cueTrack}
                 cueTracks={cueTracks}
+                folds={cueFolds}
+                onFolds={setCueFolds}
               />
             )}
             {tab === 'fields' && (

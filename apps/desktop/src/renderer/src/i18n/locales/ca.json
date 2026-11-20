@@ -2032,6 +2032,7 @@
       "flows": "Fluxos",
       "newFlow": "Flux nou",
       "newFromLearned": "A partir de com marques",
+      "newFromTrack": "A partir de «{{track}}»",
       "newFlowName": "Flux {{n}}",
       "addFlow": "Afegir un flux",
       "rename": "Canviar el nom",
@@ -2151,6 +2152,7 @@
         "each": "un color per repetició"
       },
       "learnedName": "Après de la meva col·lecció",
+      "fromTrackName": "Com «{{track}}»",
       "learnFailed": "No s'ha pogut llegir la col·lecció de rekordbox",
       "sentence": {
         "every": "cada",

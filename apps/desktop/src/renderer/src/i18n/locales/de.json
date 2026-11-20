@@ -2032,6 +2032,7 @@
       "flows": "Abläufe",
       "newFlow": "Neuer Ablauf",
       "newFromLearned": "Aus deiner Art zu markieren",
+      "newFromTrack": "Aus „{{track}}“",
       "newFlowName": "Ablauf {{n}}",
       "addFlow": "Ablauf hinzufügen",
       "rename": "Umbenennen",
@@ -2151,6 +2152,7 @@
         "each": "eine Farbe pro Wiederholung"
       },
       "learnedName": "Aus meiner Sammlung gelernt",
+      "fromTrackName": "Wie „{{track}}“",
       "learnFailed": "Die rekordbox-Sammlung konnte nicht gelesen werden",
       "sentence": {
         "every": "alle",

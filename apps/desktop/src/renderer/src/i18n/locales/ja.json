@@ -2032,6 +2032,7 @@
       "flows": "フロー",
       "newFlow": "新しいフロー",
       "newFromLearned": "あなたのマークの仕方から",
+      "newFromTrack": "「{{track}}」から",
       "newFlowName": "フロー {{n}}",
       "addFlow": "フローを追加",
       "rename": "名前を変更",
@@ -2151,6 +2152,7 @@
         "each": "繰り返しごとに色を変える"
       },
       "learnedName": "コレクションから学習",
+      "fromTrackName": "「{{track}}」のように",
       "learnFailed": "rekordbox コレクションを読み込めませんでした",
       "sentence": {
         "every": "毎",
