@@ -46,7 +46,6 @@ export interface Cell {
 }
 
 const Y: Cell = { yes: true }
-const N: Cell = { yes: false }
 const y = (note: Note): Cell => ({ yes: true, note })
 const n = (note: Note): Cell => ({ yes: false, note })
 
