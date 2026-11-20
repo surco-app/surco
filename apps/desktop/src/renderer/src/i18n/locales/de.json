@@ -2162,6 +2162,8 @@
         "after_other": "ohne anderen Cue in den {{bars}} Takten danach",
         "beforeAny": "ohne anderen Cue in den Takten davor",
         "afterAny": "ohne anderen Cue in den Takten danach",
+        "beforeShort": "kein Cue davor",
+        "afterShort": "kein Cue danach",
         "in": "in {{sections}}",
         "only": "Nur in",
         "line": "Der bei {{bars}}, nur {{conditions}}.",

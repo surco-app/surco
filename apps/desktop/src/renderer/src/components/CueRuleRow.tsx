@@ -244,18 +244,21 @@ export function CueRuleRow({
     checked: boolean,
     label: string,
     toggle: () => void,
+    full?: string,
   ): React.JSX.Element => (
     <button
       key={name}
       type="button"
       role="menuitemcheckbox"
       aria-checked={checked}
+      aria-label={full}
       data-testid={`${id}-color-${slot}-when-${name}`}
       onClick={toggle}
       className={BOX_CLASS}
     >
       <Check className={`h-3.5 w-3.5 shrink-0 ${checked ? '' : 'invisible'}`} aria-hidden="true" />
       {label}
+      {full && <Tooltip label={full} />}
     </button>
   )
 
@@ -264,7 +267,14 @@ export function CueRuleRow({
     const label = tr(`settings.cueFlows.whenEach.${side}Any`)
     return (
       <div className="flex items-center gap-2">
-        {box(slot, side, on, label, () => setNear(slot, side, nearBarsAt(slot, side), !on))}
+        {box(
+          slot,
+          side,
+          on,
+          tr(`settings.cueFlows.whenEach.${side}Short`),
+          () => setNear(slot, side, nearBarsAt(slot, side), !on),
+          label,
+        )}
         <select
           data-testid={`${id}-color-${slot}-when-${side}-bars`}
           aria-label={label}

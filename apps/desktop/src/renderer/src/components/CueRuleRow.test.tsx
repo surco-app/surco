@@ -232,7 +232,7 @@ describe('CueRuleRow condition of each repetition', () => {
       ['in-chorus', 'false'],
       ['in-outro', 'false'],
     ])
-    expect(box(2, 'before')).toHaveTextContent('with no other cue in the bars before')
+    expect(box(2, 'before')).toHaveTextContent('no cue before')
     expect(box(2, 'in-down')).toHaveTextContent('breakdown')
     expect(screen.getByTestId('cue-rule-0-color-2-when-only')).toHaveTextContent('Only in')
   })
@@ -289,6 +289,17 @@ describe('CueRuleRow condition of each repetition', () => {
     setup(RULE)
     openSquare(2)
     expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+  })
+
+  it('shows the two neighbour conditions in a few words and keeps the whole sentence as their name and hint, so the short row loses no meaning', () => {
+    setup(RULE)
+    openSquare(2)
+    expect(box(2, 'before').textContent).toBe('no cue before')
+    expect(box(2, 'after').textContent).toBe('no cue after')
+    expect(box(2, 'before')).toHaveAccessibleName('with no other cue in the bars before')
+    expect(box(2, 'after')).toHaveAccessibleName('with no other cue in the bars after')
+    fireEvent.focusIn(box(2, 'after'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('with no other cue in the bars after')
   })
 
   it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {

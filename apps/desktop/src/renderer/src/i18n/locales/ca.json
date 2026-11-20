@@ -2162,6 +2162,8 @@
         "after_other": "sense cap altre cue en els {{bars}} compassos següents",
         "beforeAny": "sense cap altre cue en els compassos anteriors",
         "afterAny": "sense cap altre cue en els compassos següents",
+        "beforeShort": "sense cue abans",
+        "afterShort": "sense cue després",
         "in": "en {{sections}}",
         "only": "Només en",
         "line": "El de {{bars}}, només {{conditions}}.",
