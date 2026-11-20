@@ -1,13 +1,17 @@
+import { useQuery } from '@tanstack/react-query'
 import { Check, ChevronDown, Loader2 } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
 import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
+import { readPlaylist } from '../hooks/useSourceBrowser'
 import { useTrackCues } from '../hooks/useTrackCues'
 import {
+  collectionChoices,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
   EXAMPLE_POINT_BAR,
@@ -476,22 +480,37 @@ export function CueFlowPreview({
 export function CueFlowTrackPreview({
   flow,
   track,
-  tracks,
+  rekordbox,
   onShown,
 }: {
   flow: CueFlow
   track?: Choice
-  tracks?: Choice[]
+  rekordbox: boolean
   onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState(track)
+  const [open, setOpen] = useState(false)
   const { data } = useTrackCues(picked?.contentId)
+  const collection = useQuery({
+    queryKey: ['source-playlist', 'rekordbox', ALL_TRACKS_ID],
+    queryFn: () => readPlaylist('rekordbox', ALL_TRACKS_ID),
+    enabled: rekordbox && open,
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+  const tracks = useMemo(() => {
+    const marked = collectionChoices(collection.data ?? [])
+    return track && marked.some((c) => c.contentId === track.contentId)
+      ? [track, ...marked.filter((c) => c.contentId !== track.contentId)]
+      : marked
+  }, [collection.data, track])
   return (
     <CueFlowPreview
       flow={flow}
       track={picked && data ? { label: picked.label, cues: data } : undefined}
       tracks={tracks}
+      loading={collection.isLoading}
       onPick={setPicked}
+      onOpenChange={setOpen}
       onShown={onShown}
     />
   )

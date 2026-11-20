@@ -14,7 +14,6 @@ import {
   flowFromTrack,
   hotDiff,
   learnTrackOf,
-  previewChoices,
   trackOfCues,
   trackPlan,
 } from './cueExample'
@@ -77,53 +76,6 @@ describe('the example track', () => {
     expect(calls.status === 'plan' && calls.wanted).toEqual([
       { ms: EXAMPLE_DROP, kind: 0, color: null },
     ])
-  })
-})
-
-describe('the tracks the preview offers', () => {
-  const row = (id: string, cues: { ms: number; kind: number }[] | null) =>
-    ({
-      id,
-      listLabel: `Track ${id}`,
-      ...(cues
-        ? {
-            sourcePreview: {
-              title: '',
-              artist: '',
-              durationSec: 0,
-              cues: cues.map((c) => ({ ...c, color: null })),
-            },
-          }
-        : {}),
-    }) as never
-  const contentOf = new Map([
-    ['a', 'rb:1'],
-    ['b', 'rb:2'],
-    ['c', 'rb:3'],
-    ['d', 'rb:4'],
-    ['again', 'rb:1'],
-  ])
-
-  it('offers only tracks with a mark of their own, since a flow has nothing to hang from on the rest', () => {
-    const tracks = [
-      row('a', [{ ms: 64000, kind: 0 }]),
-      row('b', []),
-      row('c', [
-        { ms: 32000, kind: 1 },
-        { ms: 32000, kind: 0 },
-      ]),
-      row('d', null),
-    ]
-    expect(previewChoices(tracks, contentOf)).toEqual([{ contentId: 'rb:1', label: 'Track a' }])
-  })
-
-  it('leaves out a track the program does not know, whose cues cannot be read', () => {
-    expect(previewChoices([row('loose', [{ ms: 64000, kind: 0 }])], contentOf)).toEqual([])
-  })
-
-  it('offers a track once even when the list repeats it', () => {
-    const tracks = [row('a', [{ ms: 64000, kind: 0 }]), row('again', [{ ms: 64000, kind: 0 }])]
-    expect(previewChoices(tracks, contentOf)).toHaveLength(1)
   })
 })
 

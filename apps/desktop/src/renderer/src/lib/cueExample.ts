@@ -10,7 +10,6 @@ import {
 import { foldAccents } from '../../../shared/foldAccents'
 import { type LearnTrack, learnFlowFromTrack } from '../../../shared/learnFlow'
 import type { CueWaveColumn, SourcePlaylistEntry, TrackCues } from '../../../shared/types'
-import type { TrackItem } from '../types'
 import { parseFileName } from './filename'
 
 const BEAT_MS = 60000 / 128
@@ -104,24 +103,6 @@ export function learnTrackOf(read: TrackCues): LearnTrack {
 
 export function flowFromTrack(read: TrackCues): CueFlow | null {
   return learnFlowFromTrack(learnTrackOf(read))
-}
-
-export function previewChoices(
-  tracks: Pick<TrackItem, 'id' | 'listLabel' | 'sourcePreview'>[],
-  contentOf: ReadonlyMap<string, string>,
-): { contentId: string; label: string }[] {
-  const seen = new Set<string>()
-  return tracks.flatMap((t) => {
-    const contentId = contentOf.get(t.id)
-    const cues = t.sourcePreview?.cues ?? []
-    const marks = findDrops(
-      cues.filter((c) => c.kind === 0).map((c) => c.ms),
-      cues.filter((c) => c.kind !== 0).map((c) => c.ms),
-    )
-    if (!contentId || marks.length === 0 || seen.has(contentId)) return []
-    seen.add(contentId)
-    return [{ contentId, label: t.listLabel }]
-  })
 }
 
 export function collectionChoices(

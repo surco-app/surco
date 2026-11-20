@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testi
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
+import { ALL_TRACKS_ID } from '../../../../shared/allTracks'
 import {
   BUNDLED_FLOWS,
   CALLS_ONLY,
@@ -17,7 +18,7 @@ import {
 import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
-import type { TrackCues } from '../../../../shared/types'
+import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
 import {
   EXAMPLE_DROP,
@@ -72,12 +73,12 @@ function Harness({
   active = 'mine',
   collection = '',
   flows = KEPT,
-  tracks,
+  queries,
 }: {
   active?: string
   collection?: string
   flows?: CueFlow[]
-  tracks?: { contentId: string; label: string }[]
+  queries?: QueryClient
 }) {
   const [draft, setDraft] = useState({
     cueFlows: flows,
@@ -93,7 +94,7 @@ function Harness({
     cueFlowToVirtualdj: true,
     cueLearnFromEdits: true,
   })
-  const [client] = useState(() => new QueryClient())
+  const [client] = useState(() => queries ?? new QueryClient())
   last = draft
   return (
     <QueryClientProvider client={client}>
@@ -101,13 +102,30 @@ function Harness({
         synced={draft as unknown as SyncedDraft}
         patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
         rekordboxCollection={collection}
-        cueTracks={tracks}
       />
     </QueryClientProvider>
   )
 }
 
-const GLUE = { contentId: 'rb:7', label: 'Bicep, Glue' }
+const inCollection = (
+  contentId: string,
+  title: string,
+  cues: { ms: number; kind: number }[] = [{ ms: 64000, kind: 0 }],
+): SourcePlaylistEntry => ({
+  path: `/music/${contentId}.aiff`,
+  separator: false,
+  meta: {},
+  contentId,
+  preview: {
+    title,
+    artist: '',
+    durationSec: 0,
+    cues: cues.map((c) => ({ ...c, color: null })),
+  },
+})
+const collectionOf = (...entries: SourcePlaylistEntry[]) =>
+  djReads({ rekordbox: { playlist: async () => entries } })
+const glueCollection = () => collectionOf(inCollection('rb:7', 'Bicep, Glue'))
 const MARKED_BY_HAND: TrackCues = {
   contentId: 'rb:7',
   analysed: true,
@@ -126,7 +144,7 @@ const MARKED_BY_HAND: TrackCues = {
 }
 const previewGlue = async () => {
   fireEvent.click(screen.getByTestId('cue-preview-track'))
-  fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:7'))
+  fireEvent.click(await screen.findByTestId('cue-preview-track-option-rb:7'))
   await waitFor(() =>
     expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
   )
@@ -181,7 +199,7 @@ describe('CuesTab', () => {
     )
   })
 
-  it('previews the flow on another track of the open list once it is picked, read from its library', async () => {
+  it('previews the flow on another track of the collection once it is picked, read from its library', async () => {
     const trackCues = vi.fn(async (contentId: string) => ({
       contentId,
       analysed: true,
@@ -194,21 +212,20 @@ describe('CuesTab', () => {
       fingerprint: 'f',
       gridFingerprint: 'g',
     }))
-    installApi({ cues: { trackCues } })
+    installApi({ cues: { trackCues }, dj: glueCollection() })
     render(
       <QueryClientProvider client={new QueryClient()}>
         <CuesTab
           synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
           patch={() => {}}
-          rekordboxCollection=""
-          cueTracks={[{ contentId: 'rb:7', label: 'Bicep, Glue' }]}
+          rekordboxCollection="/rb/master.db"
         />
       </QueryClientProvider>,
     )
     expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
     expect(trackCues).not.toHaveBeenCalled()
     fireEvent.click(screen.getByTestId('cue-preview-track'))
-    fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:7'))
+    fireEvent.click(await screen.findByTestId('cue-preview-track-option-rb:7'))
     await waitFor(() =>
       expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
     )
@@ -1386,8 +1403,8 @@ describe('CuesTab', () => {
   })
 
   it('offers no flow from a track while the preview shows the example track, which nobody marked', async () => {
-    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
-    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.getByTestId('cue-flow-name')).toHaveFocus()
@@ -1404,8 +1421,8 @@ describe('CuesTab', () => {
   })
 
   it('offers from + a flow from the track in the preview, named by its title so the DJ knows which marks it copies', async () => {
-    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
-    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
     await previewGlue()
     openAdd()
     const items = within(screen.getByRole('menu')).getAllByRole('menuitem')
@@ -1414,8 +1431,8 @@ describe('CuesTab', () => {
   })
 
   it('selects the flow made from the previewed track and stays on that track, so the comparison says at once that the flow reproduces it', async () => {
-    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
-    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
     await previewGlue()
     expect(screen.queryByTestId('cue-preview-same')).toBeNull()
     openAdd()
@@ -1433,8 +1450,8 @@ describe('CuesTab', () => {
   })
 
   it('leaves the default flow as it was when a flow is made from the previewed track, since trying one track must not change what every other track gets', async () => {
-    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
-    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
     await previewGlue()
     openAdd()
     fireEvent.click(screen.getByTestId('cue-flow-add-track'))
@@ -1451,11 +1468,12 @@ describe('CuesTab', () => {
 
   it('offers no flow from a track whose hot cues give no rule, since there would be nothing to make', async () => {
     installApi({
+      dj: glueCollection(),
       cues: {
         trackCues: async () => ({ ...MARKED_BY_HAND, cues: MARKED_BY_HAND.cues.slice(0, 1) }),
       },
     })
-    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
     await previewGlue()
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
@@ -1463,9 +1481,9 @@ describe('CuesTab', () => {
   })
 
   it('offers no flow from a track once a flow with those rules exists, so + never makes the same flow twice', async () => {
-    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
     const twin = { ...(flowFromTrack(MARKED_BY_HAND) as CueFlow), id: 'twin', name: 'Twin' }
-    render(<Harness flows={[MIX_IN, twin]} active={MIX_IN.id} tracks={[GLUE]} />)
+    render(<Harness flows={[MIX_IN, twin]} active={MIX_IN.id} collection="/rb/master.db" />)
     await previewGlue()
     openAdd()
     expect(screen.queryByRole('menu')).toBeNull()
@@ -1474,6 +1492,7 @@ describe('CuesTab', () => {
 
   it('lists the flow from the track after the learned one, the plain new flow still first', async () => {
     installApi({
+      dj: glueCollection(),
       cues: { trackCues: async () => MARKED_BY_HAND },
       cueProfile: vi.fn<Api['cueProfile']>(async () => ({
         profile: LEARNED,
@@ -1481,9 +1500,7 @@ describe('CuesTab', () => {
         marked: 40,
       })),
     })
-    render(
-      <Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />,
-    )
+    render(<Harness collection="/rb/master.db" flows={[MIX_IN]} active={MIX_IN.id} />)
     await screen.findByTestId('cue-profile')
     await previewGlue()
     openAdd()
@@ -1626,5 +1643,148 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeChecked()
     expect(screen.getByTestId('settings-cue-flow-to-traktor')).not.toBeChecked()
     expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toHaveTextContent('Traktor')
+  })
+})
+
+describe('the tracks the preview offers', () => {
+  const openTracks = () => fireEvent.click(screen.getByTestId('cue-preview-track'))
+  const closeTracks = () => fireEvent.mouseDown(document.body)
+  const offered = () => screen.getAllByRole('option').map((o) => o.textContent)
+
+  it('reads the collection only when the choices are first opened and never again, so opening Settings costs nothing nobody asked for', async () => {
+    const playlist = vi.fn(async () => [inCollection('rb:7', 'Glue')])
+    const api = installApi({ dj: djReads({ rekordbox: { playlist } }) })
+    render(<Harness collection="/rb/master.db" />)
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    expect(api.dj.playlist).not.toHaveBeenCalled()
+    openTracks()
+    await screen.findByTestId('cue-preview-track-option-rb:7')
+    expect(api.dj.playlist).toHaveBeenCalledTimes(1)
+    expect(api.dj.playlist).toHaveBeenCalledWith('rekordbox', ALL_TRACKS_ID)
+    closeTracks()
+    openTracks()
+    closeTracks()
+    openTracks()
+    expect(screen.getByTestId('cue-preview-track-option-rb:7')).toBeInTheDocument()
+    expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
+    expect(api.dj.playlist).toHaveBeenCalledTimes(1)
+  })
+
+  it('shares the read with the rest of the app, so a collection the list already read is not read twice', async () => {
+    const api = installApi({ dj: glueCollection() })
+    const queries = createQueryClient()
+    queries.setQueryData(
+      ['source-playlist', 'rekordbox', ALL_TRACKS_ID],
+      [inCollection('rb:3', 'Atlas')],
+    )
+    render(<Harness collection="/rb/master.db" queries={queries} />)
+    openTracks()
+    expect(offered()).toEqual(['Example track', 'Atlas'])
+    expect(api.dj.playlist).not.toHaveBeenCalled()
+  })
+
+  it('says the collection is being read while it is, with the example still to pick, so a big library never looks like an empty one', async () => {
+    let land: (entries: SourcePlaylistEntry[]) => void = () => {}
+    const playlist = () =>
+      new Promise<SourcePlaylistEntry[]>((resolve) => {
+        land = resolve
+      })
+    installApi({ dj: djReads({ rekordbox: { playlist } }) })
+    render(<Harness collection="/rb/master.db" />)
+    openTracks()
+    expect(await screen.findByTestId('cue-preview-track-loading')).toBeInTheDocument()
+    expect(offered()).toEqual(['Example track'])
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+    expect(screen.queryByTestId('cue-preview-track-menu')).toBeNull()
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
+    openTracks()
+    expect(screen.getByTestId('cue-preview-track-loading')).toBeInTheDocument()
+    await act(async () => land([inCollection('rb:7', 'Glue')]))
+    await waitFor(() => expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull())
+    expect(offered()).toEqual(['Example track', 'Glue'])
+  })
+
+  it('offers the marked tracks of the whole collection by name whatever their accents, with no playlist open anywhere', async () => {
+    installApi({
+      dj: collectionOf(
+        inCollection('rb:1', 'Zebra'),
+        inCollection('rb:2', 'Élan'),
+        inCollection('rb:3', 'Unmarked', []),
+        inCollection('rb:4', 'atlas'),
+        inCollection('rb:5', 'Hot only', [{ ms: 32000, kind: 1 }]),
+      ),
+    })
+    render(<Harness collection="/rb/master.db" />)
+    openTracks()
+    await screen.findByTestId('cue-preview-track-option-rb:1')
+    expect(offered()).toEqual(['Example track', 'atlas', 'Élan', 'Zebra'])
+    expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
+      'placeholder',
+      'Search your rekordbox collection',
+    )
+  })
+
+  it('keeps first the track the list had selected when it has marks, so the DJ finds the one they came with', async () => {
+    installApi({
+      cues: { trackCues: async () => ({ ...MARKED_BY_HAND, contentId: 'rb:9' }) },
+      dj: collectionOf(inCollection('rb:1', 'Atlas'), inCollection('rb:9', 'Zebra')),
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <CuesTab
+          synced={{ cueFlows: KEPT, activeCueFlow: 'mine' } as unknown as SyncedDraft}
+          patch={() => {}}
+          rekordboxCollection="/rb/master.db"
+          cueTrack={{ contentId: 'rb:9', label: 'Zebra' }}
+        />
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Zebra'))
+    openTracks()
+    await screen.findByTestId('cue-preview-track-option-rb:1')
+    expect(offered()).toEqual(['Example track', 'Zebra', 'Atlas'])
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-rb:1'))
+    await waitFor(() => expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Atlas'))
+    openTracks()
+    expect(offered()).toEqual(['Example track', 'Zebra', 'Atlas'])
+  })
+
+  it('reads nothing and offers only the example where there is no rekordbox library, with no search field and no line about what is missing', async () => {
+    const api = installApi({ dj: glueCollection() })
+    render(<Harness collection="" />)
+    openTracks()
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    expect(api.dj.playlist).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+    expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+    expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
+    expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
+  })
+
+  it('offers only the example when the collection has no marked track, since a search field with nothing to find reads as broken', async () => {
+    const api = installApi({ dj: collectionOf(inCollection('rb:3', 'Unmarked', [])) })
+    render(<Harness collection="/rb/master.db" />)
+    openTracks()
+    await waitFor(() => expect(api.dj.playlist).toHaveBeenCalled())
+    await waitFor(() => expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull())
+    expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+    expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
+    expect(screen.getByTestId('cue-preview-track-option-example')).toHaveFocus()
+  })
+
+  it('falls back to the example alone when the collection cannot be read, so a locked library never breaks Settings', async () => {
+    const playlist = vi.fn(async (): Promise<SourcePlaylistEntry[]> => {
+      throw new Error('database is locked')
+    })
+    installApi({ dj: djReads({ rekordbox: { playlist } }) })
+    render(<Harness collection="/rb/master.db" queries={createQueryClient()} />)
+    openTracks()
+    await waitFor(() => expect(playlist).toHaveBeenCalled())
+    await waitFor(() => expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull())
+    expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+    expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+    expect(screen.getByTestId('cue-preview-track-menu')).toHaveTextContent(/^Example track$/)
+    fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+    expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
   })
 })
