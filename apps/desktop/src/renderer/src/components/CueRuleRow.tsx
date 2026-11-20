@@ -52,7 +52,7 @@ const ITEM_CLASS =
 const BOX_CLASS =
   'press flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-1 py-1 text-left text-xs leading-normal hover:bg-[var(--color-hover)] aria-checked:text-fg'
 const SECTION_CLASS =
-  'press grow rounded-full bg-[var(--color-field)] px-2 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-fg aria-checked:bg-[var(--color-accent-soft)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-accent)]'
+  'press rounded-full bg-[var(--color-field)] px-1.5 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-fg aria-checked:bg-[var(--color-accent-soft)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-accent)]'
 const NEAR_DEFAULT = { before: 32, after: 16 }
 type NearSide = keyof typeof NEAR_DEFAULT
 
@@ -539,7 +539,7 @@ export function CueRuleRow({
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
                       data-side={menuUp ? 'top' : 'bottom'}
-                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 w-72 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 w-76 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
                         value={colorAt(rule.color, slot)}
@@ -576,7 +576,7 @@ export function CueRuleRow({
                       </p>
                       <div
                         data-testid={`${id}-color-${slot}-when-sections`}
-                        className="flex flex-wrap gap-1"
+                        className="flex flex-wrap justify-between gap-1"
                       >
                         {FLOW_SECTIONS.map((section) => (
                           <button
