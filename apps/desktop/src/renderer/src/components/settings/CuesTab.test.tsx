@@ -416,11 +416,26 @@ describe('CuesTab', () => {
     const toggle = screen.getByTestId('settings-cue-letters-by-time')
     expect(toggle).toBeChecked()
     expect(screen.getByText('Letras en orden de la pista')).toBeInTheDocument()
-    expect(screen.getByTestId('settings-cue-letters-hint')).toHaveTextContent(
-      'La A siempre es el primer cue de la pista. Apágalo si cada letra es un pad fijo para ti.',
-    )
     fireEvent.click(toggle)
     expect(last?.cueLettersByTime).toBe(false)
+  })
+
+  it('keeps why the letters follow the track behind an (i) beside the box, so the last row of the manual editor is one line like the rest', async () => {
+    await i18n.changeLanguage('es')
+    afterTest = () => i18n.changeLanguage('en')
+    render(<Harness />)
+    const why =
+      'La A siempre es el primer cue de la pista. Apágalo si cada letra es un pad fijo para ti.'
+    const row = screen.getByTestId('cue-letters')
+    expect(screen.getByTestId('cue-manual').lastElementChild).toBe(row)
+    const info = within(row).getByTestId('settings-cue-letters-hint')
+    expect(info.tagName).toBe('BUTTON')
+    expect(info).toHaveClass('press')
+    expect(info).not.toHaveAttribute('title')
+    expect(info).toHaveAccessibleName(why)
+    expect(info.closest('label')).toBeNull()
+    expect(row.querySelectorAll('p')).toHaveLength(0)
+    expect(hoverTooltip(info)).toBe(why)
   })
 
   it('gives a new DJ the two bundled flows, Mix in 64 marked as the default', async () => {

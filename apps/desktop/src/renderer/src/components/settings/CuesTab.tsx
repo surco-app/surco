@@ -32,7 +32,6 @@ import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
 import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
 import { CueProfileCard, sameRules, useCueProfileRead } from './CueProfileCard'
-import { SettingsHint } from './SettingsPrimitives'
 
 interface Props {
   synced: SyncedDraft
@@ -586,7 +585,7 @@ export function CuesTab({
           <div
             data-testid="cue-letters"
             data-search-id="cueFlows.lettersByTime"
-            className="px-3.5 py-2.5"
+            className="flex items-center gap-1.5 px-3.5 py-2.5"
           >
             <CheckboxRow
               testid="settings-cue-letters-by-time"
@@ -594,9 +593,15 @@ export function CuesTab({
               onChange={(v) => patch('cueLettersByTime', v)}
               label={tr('settings.cueFlows.lettersByTime')}
             />
-            <SettingsHint data-testid="settings-cue-letters-hint" className="mt-1 pl-7">
-              {tr('settings.cueFlows.lettersByTimeHint')}
-            </SettingsHint>
+            <button
+              type="button"
+              data-testid="settings-cue-letters-hint"
+              className="press relative inline-flex rounded text-fg-faint hover:text-fg focus-visible:text-fg"
+            >
+              <Info className="h-3.5 w-3.5" aria-hidden="true" />
+              <span className="sr-only">{tr('settings.cueFlows.lettersByTimeHint')}</span>
+              <Tooltip label={tr('settings.cueFlows.lettersByTimeHint')} />
+            </button>
           </div>
         </div>
       </div>
