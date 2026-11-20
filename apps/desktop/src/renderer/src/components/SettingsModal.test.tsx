@@ -351,6 +351,18 @@ describe('SettingsModal tablist', () => {
     )
   })
 
+  it('leaves room at the top of the scrolling body while Cues is open, so a control focused by Shift+Tab never ends up hidden under the pinned preview, and takes it back on the other tabs', () => {
+    open()
+    expect(screen.getByRole('tabpanel')).not.toHaveClass('scroll-pt-40')
+    fireEvent.click(screen.getByTestId('settings-tab-cues'))
+    expect(screen.getByRole('tabpanel')).toHaveClass('scroll-pt-40')
+    expect(screen.getByRole('tabpanel')).toContainElement(
+      screen.getByTestId('cue-flow-bench-preview'),
+    )
+    fireEvent.click(screen.getByTestId('settings-tab-general'))
+    expect(screen.getByRole('tabpanel')).not.toHaveClass('scroll-pt-40')
+  })
+
   it('keeps the close button in the panel heading, outside the scrolling tab body, so no tab content can run under it', () => {
     open()
     const close = screen.getByTestId('settings-close')
