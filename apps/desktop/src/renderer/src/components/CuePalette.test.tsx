@@ -31,4 +31,12 @@ describe('CuePalette', () => {
     expect(screen.getByTestId('cue-palette-1').querySelector('svg')).not.toBeNull()
     expect(screen.getByTestId('cue-palette-22').querySelector('svg')).toBeNull()
   })
+
+  it('fills a wide menu with two rows of eight and leaves Restablecer to that menu, so no gap opens beside the colours', () => {
+    render(<CuePalette value={1} onPick={vi.fn()} label={(i) => `Color ${i}`} wide />)
+    expect(screen.getByTestId('cue-palette')).toHaveClass('grid-cols-8', 'w-full')
+    expect(screen.getByTestId('cue-palette')).not.toHaveClass('grid-cols-4')
+    expect(screen.getAllByTestId(/^cue-palette-\d+$/)).toHaveLength(16)
+    expect(screen.queryByTestId('cue-palette-reset')).toBeNull()
+  })
 })

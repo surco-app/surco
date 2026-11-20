@@ -2162,6 +2162,8 @@
         "after_other": "sem outro cue nos {{bars}} compassos seguintes",
         "beforeAny": "sem outro cue nos compassos anteriores",
         "afterAny": "sem outro cue nos compassos seguintes",
+        "beforeShort": "sem cue antes",
+        "afterShort": "sem cue depois",
         "in": "em {{sections}}",
         "only": "Só em",
         "line": "O de {{bars}}, só {{conditions}}.",

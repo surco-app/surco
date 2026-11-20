@@ -2162,6 +2162,8 @@
         "after_other": "sans autre cue dans les {{bars}} mesures suivantes",
         "beforeAny": "sans autre cue dans les mesures précédentes",
         "afterAny": "sans autre cue dans les mesures suivantes",
+        "beforeShort": "sans cue avant",
+        "afterShort": "sans cue après",
         "in": "dans {{sections}}",
         "only": "Seulement dans",
         "line": "Celui de {{bars}}, seulement {{conditions}}.",

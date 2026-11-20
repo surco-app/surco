@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CueRule } from '../../../shared/cueFlows'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
@@ -208,6 +208,11 @@ describe('CueRuleRow condition of each repetition', () => {
     screen.getByTestId(`cue-rule-0-color-${slot}-when-${name}`)
   const openSquare = (slot: number) =>
     fireEvent.click(screen.getByTestId(`cue-rule-0-color-${slot}`))
+  const pickBars = (slot: number, side: string, bars: number) => {
+    const testid = `cue-rule-0-color-${slot}-when-${side}-bars`
+    fireEvent.click(screen.getByTestId(testid))
+    fireEvent.click(screen.getByTestId(`${testid}-option-${bars}`))
+  }
   const toggle = (slot: number, name: string) => {
     openSquare(slot)
     fireEvent.click(box(slot, name))
@@ -232,7 +237,7 @@ describe('CueRuleRow condition of each repetition', () => {
       ['in-chorus', 'false'],
       ['in-outro', 'false'],
     ])
-    expect(box(2, 'before')).toHaveTextContent('with no other cue in the bars before')
+    expect(box(2, 'before')).toHaveTextContent('no cue before')
     expect(box(2, 'in-down')).toHaveTextContent('breakdown')
     expect(screen.getByTestId('cue-rule-0-color-2-when-only')).toHaveTextContent('Only in')
   })
@@ -274,6 +279,125 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByTestId('cue-rule-0-color-2')).toHaveFocus()
   })
 
+  it('lays the colours of a repetition in two rows of eight across the menu, which a four column grid left half empty', () => {
+    setup(RULE)
+    openSquare(2)
+    const palette = within(screen.getByTestId('cue-rule-0-color-2-palette'))
+    expect(palette.getByTestId('cue-palette')).toHaveClass('grid-cols-8', 'w-full')
+  })
+
+  it('keeps the menu of a repetition at one fixed width, so ticking a condition never moves what is under the pointer', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+before:8+in:up|down'] })
+    openSquare(2)
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+    cleanup()
+    setup(RULE)
+    openSquare(2)
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+  })
+
+  it('shows the two neighbour conditions in a few words and keeps the whole sentence as their name and hint, so the short row loses no meaning', () => {
+    setup(RULE)
+    openSquare(2)
+    expect(box(2, 'before').textContent).toBe('no cue before')
+    expect(box(2, 'after').textContent).toBe('no cue after')
+    expect(box(2, 'before')).toHaveAccessibleName('with no other cue in the bars before')
+    expect(box(2, 'after')).toHaveAccessibleName('with no other cue in the bars after')
+    fireEvent.focusIn(box(2, 'after'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('with no other cue in the bars after')
+  })
+
+  it('sets the five sections side by side in one row, each the same size ticked or not, so the menu is a row tall instead of five', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
+    openSquare(2)
+    const row = screen.getByTestId('cue-rule-0-color-2-when-sections')
+    expect(row).toHaveClass('flex', 'flex-wrap')
+    const sections = ['intro', 'up', 'down', 'chorus', 'outro'].map((s) => box(2, `in-${s}`))
+    expect(Array.from(row.children)).toEqual(sections)
+    expect(new Set(sections.map((el) => el.className)).size).toBe(1)
+    expect(box(2, 'in-up')).toHaveClass('aria-checked:bg-[var(--color-panel-2)]', 'text-fg-muted')
+    expect(sections.map((el) => el.textContent)).toEqual([
+      'intro',
+      'build',
+      'breakdown',
+      'chorus',
+      'outro',
+    ])
+    expect(row.querySelector('svg')).toBeNull()
+  })
+
+  it('picks the bars from the menu of the app and never from a native select, which the system draws in its own colours', () => {
+    setup(RULE)
+    openSquare(1)
+    const palette = screen.getByTestId('cue-rule-0-color-1-palette')
+    expect(palette.querySelector('select')).toBeNull()
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-1-when-before-bars'))
+    expect(document.querySelector('select')).toBeNull()
+    expect(
+      within(screen.getByTestId('cue-rule-0-color-1-when-before-bars-listbox'))
+        .getAllByRole('option')
+        .map((el) => el.textContent),
+    ).toEqual(['1', '2', '4', '8', '12', '16', '24', '32', '48', '64', '96', '128'])
+  })
+
+  it('leaves the menu of the repetition open when a number of bars is picked, since the press lands on a list drawn outside it', () => {
+    const { onChange } = setup({ ...RULE, whenEach: ['rule', 'before:32'] })
+    openSquare(1)
+    const bars = screen.getByTestId('cue-rule-0-color-1-when-before-bars')
+    fireEvent.click(bars)
+    const option = screen.getByTestId('cue-rule-0-color-1-when-before-bars-option-8')
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).not.toContainElement(option)
+    fireEvent.mouseDown(option)
+    fireEvent.click(option)
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:8'] })
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).toBeInTheDocument()
+    expect(bars).toHaveFocus()
+  })
+
+  it('still closes on a press outside once the list of bars is shut, so the guard for that list never leaves the menu stuck open', () => {
+    setup(RULE)
+    openSquare(1)
+    pickBars(1, 'before', 8)
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-when-line'))
+    expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
+  })
+
+  it('closes the list of bars on the first Escape and the menu of the repetition on the second, one layer at a time', () => {
+    setup(RULE)
+    openSquare(1)
+    const bars = screen.getByTestId('cue-rule-0-color-1-when-after-bars')
+    fireEvent.click(bars)
+    fireEvent.keyDown(screen.getByTestId('cue-rule-0-color-1-when-after-bars-option-16'), {
+      key: 'Escape',
+    })
+    expect(screen.queryByTestId('cue-rule-0-color-1-when-after-bars-listbox')).toBeNull()
+    expect(screen.getByTestId('cue-rule-0-color-1-palette')).toBeInTheDocument()
+    expect(bars).toHaveFocus()
+    fireEvent.keyDown(bars, { key: 'Escape' })
+    expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
+    expect(screen.getByTestId('cue-rule-0-color-1')).toHaveFocus()
+  })
+
+  it('holds the bars in a box of one width whatever the number, so 128 takes the room 1 does', () => {
+    setup({ ...RULE, whenEach: ['rule', 'before:128+after:1'] })
+    openSquare(1)
+    for (const side of ['before', 'after']) {
+      const bars = screen.getByTestId(`cue-rule-0-color-1-when-${side}-bars`)
+      expect(bars).toHaveClass('w-full')
+      expect(bars.parentElement?.parentElement).toHaveClass('w-16', 'shrink-0')
+    }
+  })
+
+  it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
+    const { onChange } = setup(RULE)
+    openSquare(2)
+    const reset = screen.getByTestId('cue-palette-reset')
+    expect(reset.previousElementSibling).toBe(box(2, 'fits'))
+    fireEvent.click(reset)
+    expect(onChange).toHaveBeenLastCalledWith({ ...RULE, color: { each: [1, 22, 22] } })
+    expect(screen.queryByTestId('cue-rule-0-color-2-palette')).not.toBeInTheDocument()
+  })
+
   it('closes on Escape and gives the focus back to the square, so the keyboard never loses its place', () => {
     setup(RULE)
     toggle(2, 'fits')
@@ -296,8 +420,8 @@ describe('CueRuleRow condition of each repetition', () => {
   it('asks for 32 bars clear before and 16 after unless told otherwise, the distances a countdown is usually built on', () => {
     const { onChange } = setup(RULE)
     openSquare(1)
-    expect(screen.getByTestId('cue-rule-0-color-1-when-before-bars')).toHaveValue('32')
-    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveValue('16')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-before-bars')).toHaveTextContent('32')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveTextContent('16')
     fireEvent.click(box(1, 'before'))
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:32'] })
     fireEvent.click(box(1, 'after'))
@@ -307,19 +431,16 @@ describe('CueRuleRow condition of each repetition', () => {
   it('changes the bars of a ticked condition at once', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['rule', 'before:32'] })
     openSquare(1)
-    fireEvent.change(screen.getByTestId('cue-rule-0-color-1-when-before-bars'), {
-      target: { value: '8' },
-    })
+    pickBars(1, 'before', 8)
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'before:8'] })
   })
 
   it('only remembers the bars of a condition not ticked yet, so choosing a number never switches it on', () => {
     const { onChange } = setup(RULE)
     openSquare(1)
-    const bars = screen.getByTestId('cue-rule-0-color-1-when-after-bars')
-    fireEvent.change(bars, { target: { value: '64' } })
+    pickBars(1, 'after', 64)
     expect(onChange).not.toHaveBeenCalled()
-    expect(bars).toHaveValue('64')
+    expect(screen.getByTestId('cue-rule-0-color-1-when-after-bars')).toHaveTextContent('64')
     fireEvent.click(box(1, 'after'))
     expect(onChange).toHaveBeenLastCalledWith({ ...RULE, whenEach: ['rule', 'after:64'] })
   })

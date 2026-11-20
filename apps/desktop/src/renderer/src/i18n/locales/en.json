@@ -2162,6 +2162,8 @@
         "after_other": "with no other cue in the {{bars}} bars after",
         "beforeAny": "with no other cue in the bars before",
         "afterAny": "with no other cue in the bars after",
+        "beforeShort": "no cue before",
+        "afterShort": "no cue after",
         "in": "in {{sections}}",
         "only": "Only in",
         "line": "The one at {{bars}}, only {{conditions}}.",

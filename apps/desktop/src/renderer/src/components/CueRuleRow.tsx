@@ -21,8 +21,9 @@ import {
   repeatWhenOf,
   withRepeatWhen,
 } from '../../../shared/cueFlows'
-import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import { HOT_CUE_DEFAULT_INDEX, hotCueColor } from '../../../shared/rekordboxCueColors'
 import { CuePalette } from './CuePalette'
+import { Select } from './Select'
 import { Tooltip } from './Tooltip'
 
 const REPEATS = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -50,6 +51,8 @@ const ITEM_CLASS =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
 const BOX_CLASS =
   'press flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-1 py-1 text-left text-xs leading-normal hover:bg-[var(--color-hover)] aria-checked:text-fg'
+const SECTION_CLASS =
+  'press grow rounded-[3px] px-1 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted hover:bg-[var(--color-hover)] aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg'
 const NEAR_DEFAULT = { before: 32, after: 16 }
 type NearSide = keyof typeof NEAR_DEFAULT
 
@@ -160,7 +163,9 @@ export function CueRuleRow({
   useEffect(() => {
     if (open === null) return
     const onDown = (e: MouseEvent) => {
-      if (!paletteRef.current?.parentElement?.contains(e.target as Node)) setOpen(null)
+      const menu = paletteRef.current
+      if (menu?.querySelector('[aria-haspopup="listbox"][aria-expanded="true"]')) return
+      if (!menu?.parentElement?.contains(e.target as Node)) setOpen(null)
     }
     document.addEventListener('mousedown', onDown)
     return () => document.removeEventListener('mousedown', onDown)
@@ -244,18 +249,21 @@ export function CueRuleRow({
     checked: boolean,
     label: string,
     toggle: () => void,
+    full?: string,
   ): React.JSX.Element => (
     <button
       key={name}
       type="button"
       role="menuitemcheckbox"
       aria-checked={checked}
+      aria-label={full}
       data-testid={`${id}-color-${slot}-when-${name}`}
       onClick={toggle}
       className={BOX_CLASS}
     >
       <Check className={`h-3.5 w-3.5 shrink-0 ${checked ? '' : 'invisible'}`} aria-hidden="true" />
       {label}
+      {full && <Tooltip label={full} />}
     </button>
   )
 
@@ -264,20 +272,26 @@ export function CueRuleRow({
     const label = tr(`settings.cueFlows.whenEach.${side}Any`)
     return (
       <div className="flex items-center gap-2">
-        {box(slot, side, on, label, () => setNear(slot, side, nearBarsAt(slot, side), !on))}
-        <select
-          data-testid={`${id}-color-${slot}-when-${side}-bars`}
-          aria-label={label}
-          value={nearBarsAt(slot, side)}
-          onChange={(e) => setNear(slot, side, Number(e.target.value), on)}
-          className="h-5 shrink-0 rounded-[3px] border border-[var(--color-line)] bg-[var(--color-field)] px-1 text-xs tabular-nums text-fg"
-        >
-          {NEAR_BARS.map((b) => (
-            <option key={b} value={b}>
-              {b}
-            </option>
-          ))}
-        </select>
+        {box(
+          slot,
+          side,
+          on,
+          tr(`settings.cueFlows.whenEach.${side}Short`),
+          () => setNear(slot, side, nearBarsAt(slot, side), !on),
+          label,
+        )}
+        <div className="w-16 shrink-0">
+          <Select
+            testid={`${id}-color-${slot}-when-${side}-bars`}
+            label={label}
+            value={String(nearBarsAt(slot, side))}
+            options={NEAR_BARS.map((b) => ({ value: String(b), label: String(b) }))}
+            onChange={(bars) => setNear(slot, side, Number(bars), on)}
+            labelClass="tabular-nums"
+            fullWidth
+            compact
+          />
+        </div>
       </div>
     )
   }
@@ -525,39 +539,59 @@ export function CueRuleRow({
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
                       data-side={menuUp ? 'top' : 'bottom'}
-                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
+                      className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 w-72 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
                         value={colorAt(rule.color, slot)}
                         onPick={(color) => pickColor(slot, color)}
                         label={(i) => tr('editor.cues.colour', { index: i })}
+                        wide
                       />
-                      <div className="my-2 h-px bg-[var(--color-line)]" />
-                      {box(
-                        slot,
-                        'fits',
-                        whenAt(slot).fits,
-                        tr('settings.cueFlows.whenEach.fits'),
-                        () => setWhen(slot, { fits: !whenAt(slot).fits }),
-                      )}
+                      <div className="my-1 h-px bg-[var(--color-line)]" />
+                      <div className="flex items-center gap-2">
+                        {box(
+                          slot,
+                          'fits',
+                          whenAt(slot).fits,
+                          tr('settings.cueFlows.whenEach.fits'),
+                          () => setWhen(slot, { fits: !whenAt(slot).fits }),
+                        )}
+                        <button
+                          type="button"
+                          data-testid="cue-palette-reset"
+                          onClick={() => pickColor(slot, HOT_CUE_DEFAULT_INDEX)}
+                          className="press shrink-0 rounded-md px-2 py-0.5 text-xs text-fg-dim hover:text-fg"
+                        >
+                          {tr('editor.cues.resetColour')}
+                        </button>
+                      </div>
                       {nearBox(slot, 'before')}
                       {nearBox(slot, 'after')}
-                      <div className="my-2 h-px bg-[var(--color-line)]" />
+                      <div className="my-1 h-px bg-[var(--color-line)]" />
                       <p
                         data-testid={`${id}-color-${slot}-when-only`}
-                        className="px-1 pb-1 text-label leading-normal text-fg-faint"
+                        className="px-1 text-label leading-normal text-fg-faint"
                       >
                         {tr('settings.cueFlows.whenEach.only')}
                       </p>
-                      {FLOW_SECTIONS.map((section) =>
-                        box(
-                          slot,
-                          `in-${section}`,
-                          whenAt(slot).sections.includes(section),
-                          tr(`settings.cueFlows.section.${section}`),
-                          () => toggleSection(slot, section),
-                        ),
-                      )}
+                      <div
+                        data-testid={`${id}-color-${slot}-when-sections`}
+                        className="flex flex-wrap gap-0.5"
+                      >
+                        {FLOW_SECTIONS.map((section) => (
+                          <button
+                            key={section}
+                            type="button"
+                            role="menuitemcheckbox"
+                            aria-checked={whenAt(slot).sections.includes(section)}
+                            data-testid={`${id}-color-${slot}-when-in-${section}`}
+                            onClick={() => toggleSection(slot, section)}
+                            className={SECTION_CLASS}
+                          >
+                            {tr(`settings.cueFlows.section.${section}`)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </span>

@@ -2162,6 +2162,8 @@
         "after_other": "次の {{bars}} 小節に他のキューがない場合",
         "beforeAny": "前の小節に他のキューがない場合",
         "afterAny": "次の小節に他のキューがない場合",
+        "beforeShort": "前にキューなし",
+        "afterShort": "後にキューなし",
         "in": "{{sections}}",
         "only": "次のセクションのみ",
         "line": "{{bars}} のキューは{{conditions}}のみ。",
