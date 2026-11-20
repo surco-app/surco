@@ -1953,9 +1953,7 @@ export const Editor = memo(function Editor({
                             item={item}
                             format={format}
                             defaultOutputName={defaultOutputName}
-                            autoApply={
-                              !picked.overwriteOriginal && autoNamesFile(autoApplyFilename, item)
-                            }
+                            autoApply={autoNamesFile(autoApplyFilename, item)}
                             willEditInPlace={willEditInPlace && !picked.overwriteOriginal}
                             open={outputOpen}
                             onToggle={() => setSectionOpen('output', !outputOpen)}

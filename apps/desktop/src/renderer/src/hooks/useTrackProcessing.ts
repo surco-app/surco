@@ -404,10 +404,8 @@ export function useTrackProcessing({
       // their filename. A metadata-derived name is used when the editor's "Regenerate from
       // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
       // derived live from the pattern when no manual name was set. A manual edit still wins.
-      // Overwrite mode renames the original only to a name the user typed or regenerated;
-      // the pattern never renames a file being rewritten in place on its own.
       const autoName =
-        !overwriteOriginal && settings && autoNamesFile(settings.autoApplyFilename, track)
+        settings && autoNamesFile(settings.autoApplyFilename, track)
           ? renderOutputName(settings.filenameFormat, meta)
           : ''
       const outputName = track.outputName?.trim() || autoName || track.fileName

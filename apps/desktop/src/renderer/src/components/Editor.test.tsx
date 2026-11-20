@@ -3555,6 +3555,16 @@ describe('Editor output file name', () => {
     expect(screen.queryByTestId('overwrite-notice')).toBeNull()
   })
 
+  it('hides Regenerate when overwriting with the pattern applied automatically, since the conversion already renames the file to the name shown', () => {
+    renderEditor({ id: 'a', meta: { artist: 'Halo', title: 'Sunrise' } }, 'wav', {
+      overwriteOriginal: true,
+      autoApplyFilename: true,
+      filenameFormat: '{artist} - {title}',
+    })
+    expect(screen.getByTestId('output-name')).toHaveValue('Halo - Sunrise')
+    expect(screen.queryByTestId('regenerate-output-name')).toBeNull()
+  })
+
   // Overwrite is a one-shot pick in the menu, so a track the user sent there by hand
   // keeps going there after a visit to another track, even with Settings saying otherwise.
   it('keeps a remembered Overwrite pick with overwrite off in Settings', () => {
