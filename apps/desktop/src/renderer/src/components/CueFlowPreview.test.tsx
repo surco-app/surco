@@ -524,6 +524,51 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
     })
 
+    it('draws the selector as a control of its own, lifted off the box with a note in the accent colour, the title in full ink and a clear arrow, so the DJ sees the track can be changed, without growing', () => {
+      render(<CueFlowPreview flow={MIX_IN} track={marked} />)
+      const selector = screen.getByTestId('cue-preview-track')
+      expect(selector).toHaveClass(
+        'h-8',
+        'w-full',
+        'bg-[var(--color-panel-2)]',
+        'border-[var(--color-line-strong)]',
+      )
+      const icon = screen.getByTestId('cue-preview-track-icon')
+      expect(icon).toHaveAttribute('aria-hidden', 'true')
+      expect(icon).toHaveClass('size-3.5', 'shrink-0', 'text-accent')
+      const title = screen.getByTestId('cue-preview-track-title')
+      expect(title).toHaveTextContent(/^DJ Made, Millenium Stringz$/)
+      expect(title).toHaveClass('truncate', 'font-medium', 'text-fg')
+      expect(selector.firstElementChild).toBe(icon)
+      expect(selector.lastElementChild).toHaveClass('text-fg')
+    })
+
+    it('names the artist of the track after its title in a fainter ink that gives way before the title is cut, since a collection repeats titles and the title is what the DJ looks for', () => {
+      render(<CueFlowPreview flow={MIX_IN} track={{ ...marked, label: 'Glue', artist: 'Bicep' }} />)
+      const title = screen.getByTestId('cue-preview-track-title')
+      const artist = screen.getByTestId('cue-preview-track-artist')
+      expect(title).toHaveTextContent(/^Glue$/)
+      expect(artist).toHaveTextContent(/^Bicep$/)
+      expect(artist).toHaveClass('min-w-0', 'shrink-[9999]', 'truncate', 'text-fg-faint')
+      expect(title).not.toHaveClass('shrink-[9999]')
+      expect(title.compareDocumentPosition(artist) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(
+        artist.compareDocumentPosition(screen.getByTestId('cue-preview-same')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('names no artist for a track whose artist is unknown nor for the example track, so no empty gap or stale name sits beside the title', () => {
+      const { unmount } = render(<CueFlowPreview flow={MIX_IN} track={marked} />)
+      expect(screen.queryByTestId('cue-preview-track-artist')).toBeNull()
+      unmount()
+      render(<CueFlowPreview flow={MIX_IN} track={{ ...marked, label: 'Glue', artist: 'Bicep' }} />)
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+      expect(screen.getByTestId('cue-preview-track-title')).toHaveTextContent(/^Example track$/)
+      expect(screen.queryByTestId('cue-preview-track-artist')).toBeNull()
+    })
+
     it('goes back to the example track on request', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
       fireEvent.click(screen.getByTestId('cue-preview-track'))

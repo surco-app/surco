@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, Clock, Loader2, Wand2 } from 'lucide-react'
+import { Check, ChevronDown, Clock, Loader2, Music, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -300,7 +300,7 @@ export function CueFlowPreview({
   onShown,
 }: {
   flow: CueFlow
-  track?: { label: string; cues: TrackCues }
+  track?: { label: string; artist?: string; cues: TrackCues }
   tracks?: Choice[]
   programs?: readonly DjProgram[]
   program?: DjProgram
@@ -489,11 +489,27 @@ export function CueFlowPreview({
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => show(!open)}
-          className="press flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line)] bg-[var(--color-field)] pr-1.5 pl-2 text-xs text-fg-dim outline-none focus:border-[var(--color-accent)]"
+          className="press flex h-8 w-full min-w-0 items-center gap-1.5 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] pr-1.5 pl-2 text-xs outline-none focus:border-[var(--color-accent)]"
         >
-          <span className="min-w-0 truncate text-left">
+          <Music
+            aria-hidden="true"
+            data-testid="cue-preview-track-icon"
+            className="size-3.5 shrink-0 text-accent"
+          />
+          <span
+            data-testid="cue-preview-track-title"
+            className="min-w-0 truncate text-left font-medium text-fg"
+          >
             {drawn ? drawn.label : tr('settings.cueFlows.exampleTrack')}
           </span>
+          {drawn?.artist && (
+            <span
+              data-testid="cue-preview-track-artist"
+              className="min-w-0 shrink-[9999] truncate text-fg-faint"
+            >
+              {drawn.artist}
+            </span>
+          )}
           <span className="flex size-1.5 shrink-0">
             {differ === 0 && (
               <span
@@ -507,7 +523,7 @@ export function CueFlowPreview({
             )}
           </span>
           <span className="flex-1" />
-          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0" />
+          <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-fg" />
         </button>
         {open && (
           <TrackChoices
@@ -700,7 +716,9 @@ export function CueFlowTrackPreview({
   return (
     <CueFlowPreview
       flow={flow}
-      track={picked && data ? { label: picked.label, cues: data } : undefined}
+      track={
+        picked && data ? { label: picked.label, artist: picked.artist, cues: data } : undefined
+      }
       tracks={tracks}
       programs={programs}
       program={program}

@@ -1452,6 +1452,21 @@ describe('CuesTab', () => {
     expect(items[1]).toHaveAccessibleName('From “Bicep, Glue”')
   })
 
+  it('keeps the artist of the track picked from the collection beside its title in the selector, while the flow made from it is still named by the title alone', async () => {
+    const glue = inCollection('rb:7', 'Glue')
+    installApi({
+      dj: collectionOf({ ...glue, preview: { ...glue.preview, artist: 'Bicep' } } as typeof glue),
+      cues: { trackCues: async () => MARKED_BY_HAND },
+    })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
+    fireEvent.click(screen.getByTestId('cue-preview-track'))
+    fireEvent.click(await screen.findByTestId('cue-preview-track-option-rb:7'))
+    expect(await screen.findByTestId('cue-preview-track-artist')).toHaveTextContent(/^Bicep$/)
+    expect(screen.getByTestId('cue-preview-track-title')).toHaveTextContent(/^Glue$/)
+    openAdd()
+    expect(screen.getByTestId('cue-flow-add-track')).toHaveAccessibleName('From “Glue”')
+  })
+
   it('selects the flow made from the previewed track and stays on that track, so the comparison says at once that the flow reproduces it', async () => {
     installApi({ dj: glueCollection(), cues: { trackCues: async () => MARKED_BY_HAND } })
     render(<Harness flows={[MIX_IN]} active={MIX_IN.id} collection="/rb/master.db" />)
