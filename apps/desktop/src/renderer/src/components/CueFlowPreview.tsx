@@ -66,13 +66,15 @@ function TrackChoices({
   const { t: tr } = useTranslation()
   const [query, setQuery] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const exampleRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const wanted = folded(query.trim())
   const found = choices.filter((c) => folded(c.label).includes(wanted)).slice(0, MAX_CHOICES)
 
   useEffect(() => {
-    searchRef.current?.focus({ preventScroll: true })
+    const first = searchRef.current ?? exampleRef.current
+    first?.focus({ preventScroll: true })
   }, [])
 
   useLayoutEffect(() => {
@@ -109,16 +111,18 @@ function TrackChoices({
       data-testid="cue-preview-track-menu"
       className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
     >
-      <input
-        ref={searchRef}
-        data-testid="cue-preview-track-search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={onKeyDown}
-        placeholder={tr('settings.cueFlows.searchList')}
-        aria-label={tr('settings.cueFlows.searchList')}
-        className="mb-1 h-7 w-full min-w-0 border-b border-[var(--color-line)] bg-transparent px-2 text-xs text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
-      />
+      {choices.length > 0 && (
+        <input
+          ref={searchRef}
+          data-testid="cue-preview-track-search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder={tr('settings.cueFlows.searchList')}
+          aria-label={tr('settings.cueFlows.searchList')}
+          className="mb-1 h-7 w-full min-w-0 border-b border-[var(--color-line)] bg-transparent px-2 text-xs text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
+        />
+      )}
       <div
         ref={listRef}
         role="listbox"
@@ -128,6 +132,7 @@ function TrackChoices({
         className="relative max-h-56 overflow-y-auto"
       >
         <button
+          ref={exampleRef}
           type="button"
           role="option"
           aria-selected={inUse === null}
@@ -165,6 +170,11 @@ function TrackChoices({
           </button>
         ))}
       </div>
+      {choices.length === 0 && (
+        <p data-testid="cue-preview-track-none" className="px-2 py-1.5 text-xs text-fg-dim">
+          {tr('settings.cueFlows.noTracksOpen')}
+        </p>
+      )}
       {choices.length > 0 && found.length === 0 && (
         <p data-testid="cue-preview-track-empty" className="px-2 py-1.5 text-xs text-fg-dim">
           {tr('settings.cueFlows.noTrackFound')}

@@ -2051,6 +2051,7 @@
       "exampleTrack": "Pista d'exemple",
       "searchList": "Cerca a la llista oberta",
       "noTrackFound": "Cap pista marcada amb aquest nom",
+      "noTracksOpen": "Obre una playlist de rekordbox per provar amb les teves pistes marcades",
       "noMark": "{{label}} encara no té cap marca, així que la previsualització fa servir la pista d'exemple",
       "compareSame": "Els mateixos hot cues que té ara aquesta pista",
       "diffNew_one": "{{count}} nou",

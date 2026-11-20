@@ -520,6 +520,45 @@ describe('CueFlowPreview', () => {
       expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
     })
 
+    it('draws no search field when there is no marked track to look for, since a field that finds nothing reads as broken, and says how to get tracks to try', () => {
+      render(<CueFlowPreview flow={MY_FLOW} />)
+      open()
+      expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
+      const none = screen.getByTestId('cue-preview-track-none')
+      expect(none).toHaveTextContent('Open a rekordbox playlist to try your marked tracks')
+      expect(none).toHaveClass('text-xs', 'text-fg-dim')
+      expect(
+        screen.getByTestId('cue-preview-track-option-example').compareDocumentPosition(none) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('puts the focus on the example when there is no search field to take it, so Escape and the arrows still answer from the keyboard', () => {
+      const reached = vi.fn()
+      window.addEventListener('keydown', reached)
+      render(<CueFlowPreview flow={MY_FLOW} />)
+      open()
+      const example = screen.getByTestId('cue-preview-track-option-example')
+      expect(example).toHaveFocus()
+      fireEvent.keyDown(example, { key: 'ArrowDown' })
+      fireEvent.keyDown(example, { key: 'ArrowUp' })
+      expect(example).toHaveFocus()
+      fireEvent.keyDown(example, { key: 'Escape' })
+      window.removeEventListener('keydown', reached)
+      expect(screen.queryByTestId('cue-preview-track-listbox')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveFocus()
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('keeps the search field and says nothing about opening a playlist once the open list has marked tracks', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      expect(screen.queryByTestId('cue-preview-track-none')).toBeNull()
+    })
+
     it('offers the example first and the tracks of the open list under it, so any of them can be tried', () => {
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
       open()

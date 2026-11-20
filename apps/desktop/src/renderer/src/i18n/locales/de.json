@@ -2051,6 +2051,7 @@
       "exampleTrack": "Beispieltrack",
       "searchList": "In der offenen Liste suchen",
       "noTrackFound": "Kein markierter Track mit diesem Namen",
+      "noTracksOpen": "Öffne eine rekordbox-Playlist, um deine markierten Tracks auszuprobieren",
       "noMark": "{{label}} hat noch keine Markierung, daher nutzt die Vorschau den Beispieltrack",
       "compareSame": "Dieselben Hot Cues, die dieser Track jetzt hat",
       "diffNew_one": "{{count}} neu",

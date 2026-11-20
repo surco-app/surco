@@ -2051,6 +2051,7 @@
       "exampleTrack": "Example track",
       "searchList": "Search the open list",
       "noTrackFound": "No marked track with that name",
+      "noTracksOpen": "Open a rekordbox playlist to try your marked tracks",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",
       "compareSame": "Same hot cues this track has now",
       "diffNew_one": "{{count}} new",

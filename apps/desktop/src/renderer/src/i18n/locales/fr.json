@@ -2051,6 +2051,7 @@
       "exampleTrack": "Morceau d’exemple",
       "searchList": "Rechercher dans la liste ouverte",
       "noTrackFound": "Aucun morceau marqué avec ce nom",
+      "noTracksOpen": "Ouvre une playlist rekordbox pour essayer avec tes morceaux marqués",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
       "compareSame": "Les mêmes hot cues que ce morceau a déjà",
       "diffNew_one": "{{count}} nouveau",

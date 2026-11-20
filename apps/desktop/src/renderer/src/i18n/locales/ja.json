@@ -2051,6 +2051,7 @@
       "exampleTrack": "サンプルトラック",
       "searchList": "開いているリストを検索",
       "noTrackFound": "その名前のマーク付きトラックはありません",
+      "noTracksOpen": "rekordbox プレイリストを開くと、マーク付きトラックで試せます",
       "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
       "compareSame": "このトラックの現在のホットキューと同じ",
       "diffNew_one": "新規 {{count}} 個",
