@@ -30,14 +30,11 @@ import {
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { clipBox, MENU_GAP } from './CueRuleRow'
 import { CueWave } from './CueWave'
-import { SegmentedControl } from './SegmentedControl'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
 type Source = 'track' | 'example'
 type Mode = 'flow' | 'now'
-
-const MODES: readonly Mode[] = ['flow', 'now']
 
 type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'hint' | 'finding'
 
@@ -71,6 +68,9 @@ const OPTION =
 
 const PROGRAM =
   'press min-w-0 flex-1 truncate rounded-md px-2 py-1 text-xs text-fg-muted hover:text-fg aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
+
+const NOW =
+  'press h-6 shrink-0 rounded border border-[var(--color-line-strong)] px-2 text-xs text-fg-muted hover:text-fg aria-pressed:bg-[var(--color-panel-2)] aria-pressed:text-fg'
 
 const folded = (text: string): string => foldAccents(text).toLowerCase()
 
@@ -540,7 +540,7 @@ export function CueFlowPreview({
         }
         readOnly
       />
-      <div data-testid="cue-preview-status" className="mt-1 flex h-10 items-center gap-2">
+      <div data-testid="cue-preview-status" className="mt-1 flex h-7 items-center gap-2">
         {notice &&
           (differs ? (
             <button
@@ -577,21 +577,21 @@ export function CueFlowPreview({
           ))}
         <span className="flex-1" />
         {differs && (
-          <SegmentedControl
-            options={MODES}
-            value={mode}
-            onChange={(next) => {
-              setNow(next === 'now')
+          <button
+            type="button"
+            data-testid="cue-preview-now"
+            aria-pressed={mode === 'now'}
+            onClick={() => {
+              setNow((v) => !v)
               setPinned(false)
               setHovered(false)
               setFocused(false)
             }}
-            testidPrefix="cue-preview-mode"
-            compact
-            className="shrink-0"
-            label={tr('settings.cueFlows.preview')}
-            labelFor={(id) => tr(`settings.cueFlows.previewMode.${id}`)}
-          />
+            className={NOW}
+          >
+            {tr('settings.cueFlows.previewMode.now')}
+            <Tooltip label={tr('settings.cueFlows.previewNowHint')} />
+          </button>
         )}
       </div>
     </div>
