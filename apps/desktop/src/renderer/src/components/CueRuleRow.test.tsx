@@ -289,11 +289,11 @@ describe('CueRuleRow condition of each repetition', () => {
   it('keeps the menu of a repetition at one fixed width, so ticking a condition never moves what is under the pointer', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+before:8+in:up|down'] })
     openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-76')
     cleanup()
     setup(RULE)
     openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-72')
+    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-76')
   })
 
   it('shows the two neighbour conditions in a few words and keeps the whole sentence as their name and hint, so the short row loses no meaning', () => {
@@ -310,7 +310,11 @@ describe('CueRuleRow condition of each repetition', () => {
   it('draws a section left off as a pill of its own too, so all five read as things to press and the ticked ones stand out by their fill', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
     openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-when-sections')).toHaveClass('gap-1')
+    expect(screen.getByTestId('cue-rule-0-color-2-when-sections')).toHaveClass(
+      'gap-1',
+      'justify-between',
+    )
+    expect(box(2, 'in-outro')).not.toHaveClass('grow')
     expect(box(2, 'in-intro')).toHaveAttribute('aria-checked', 'false')
     expect(box(2, 'in-intro')).toHaveClass(
       'rounded-full',
