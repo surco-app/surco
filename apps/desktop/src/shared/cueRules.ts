@@ -4,8 +4,9 @@ import {
   type FlowPhrase,
   type FlowPlace,
   MY_FLOW,
-  type RepeatCondition,
+  type RepeatWhen,
   ROOM_GAP,
+  repeatWhenOf,
 } from './cueFlows'
 
 export const SAME_POSITION_MS = 50
@@ -113,7 +114,7 @@ export interface FlowPlan {
   trimmed: FlowCue[]
 }
 
-export type RejectReason = 'strong' | 'point' | 'start' | 'end' | 'limit' | 'section'
+export type RejectReason = 'strong' | 'point' | 'start' | 'end' | 'limit' | 'section' | 'near'
 
 export interface RejectedCue extends FlowCue {
   reason: RejectReason
@@ -170,17 +171,27 @@ function misfit(
 }
 
 function unmet(
-  each: RepeatCondition,
+  when: RepeatWhen,
   ms: number,
   strong: StrongPart[],
   phrases: FlowPhrase[],
+  earlier: FlowCue[],
+  beats: number[],
 ): RejectReason | null {
-  if (each === 'rule') return null
-  if (each === 'fits') return crowded(strong, ms) ? 'strong' : null
+  if (when.fits && crowded(strong, ms)) return 'strong'
+  const at = nearestBeat(beats, ms)
+  const within = (bars: number | null, side: 1 | -1): boolean =>
+    bars !== null &&
+    earlier.some((c) => {
+      const d = (nearestBeat(beats, c.ms) - at) * side
+      return d > 0 && d < bars * BEATS_PER_BAR
+    })
+  if (within(when.before, -1) || within(when.after, 1)) return 'near'
+  if (when.sections.length === 0) return null
   const current = phrases
     .filter((p) => p.ms <= ms + SAME_POSITION_MS)
     .reduce<FlowPhrase | null>((last, p) => (last && last.ms > p.ms ? last : p), null)
-  return current?.kind === each ? null : 'section'
+  return current && when.sections.includes(current.kind) ? null : 'section'
 }
 
 function beatMsAt(beats: number[], at: number): number {
@@ -269,8 +280,19 @@ function walkFlow(
       const hand = rule.from === 'drop' && (track.byHand ?? []).some((p) => near(p, origin))
       const fits = rule.when === 'fits' && !hand
       const checked = rule.when === 'fits' || rule.when === 'previous'
+      const left = (ms: number, repetition: number): RejectReason | null =>
+        unmet(
+          repeatWhenOf(rule, repetition),
+          ms,
+          hand ? [] : track.strong,
+          track.phrases,
+          placed,
+          beats,
+        )
       if (rule.bars === 0) {
-        if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
+        const reason = left(beats[start], 1)
+        if (reason) rejected.push({ ...cueOf(beats[start], 1), reason })
+        else if (allowed(rule, beats[start], placed, drops, beats)) add(beats[start], 1)
         return
       }
       const previous = i > 0 ? origins[i - 1] : null
@@ -290,9 +312,8 @@ function walkFlow(
           reject(start, step, k, last ?? k, reason)
           break
         }
-        const each = (rule.whenEach?.[k - 1] ?? 'rule') as RepeatCondition
-        const left = unmet(each, ms, hand ? [] : track.strong, track.phrases)
-        if (left) rejected.push({ ...cueOf(ms, k), reason: left })
+        const unmetBy = left(ms, k)
+        if (unmetBy) rejected.push({ ...cueOf(ms, k), reason: unmetBy })
         else if (allowed(rule, ms, placed, drops, beats)) add(ms, k)
         if (fits && rule.direction === 'back' && startsStrongRun(track.strong, ms)) {
           if (last !== null) reject(start, step, k + 1, last, 'strong')
