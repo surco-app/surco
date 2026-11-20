@@ -1378,6 +1378,23 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
   })
 
+  it('leaves the default flow as it was when a flow is made from the previewed track, since trying one track must not change what every other track gets', async () => {
+    installApi({ cues: { trackCues: async () => MARKED_BY_HAND } })
+    render(<Harness flows={[MIX_IN]} active={MIX_IN.id} tracks={[GLUE]} />)
+    await previewGlue()
+    openAdd()
+    fireEvent.click(screen.getByTestId('cue-flow-add-track'))
+    expect(last?.cueFlows).toHaveLength(2)
+    expect(last?.activeCueFlow).toBe(MIX_IN.id)
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent(/^Like “Bicep, Glue”$/)
+    openPicker()
+    expect(screen.getByTestId(`cue-flow-${MIX_IN.id}`)).toContainElement(
+      screen.getByTestId('cue-flow-in-use'),
+    )
+    openMore()
+    expect(screen.getByTestId('cue-flow-use')).toBeEnabled()
+  })
+
   it('offers no flow from a track whose hot cues give no rule, since there would be nothing to make', async () => {
     installApi({
       cues: {

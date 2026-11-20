@@ -2653,7 +2653,8 @@ cuenta atrás aprendida de la colección se puede convertir en flujo desde el + 
 flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
 El mismo + ofrece «Desde «título de la pista»» (`cue-flow-add-track`) cuando la vista previa está
 sobre una pista marcada a mano de la que se puede deducir un flujo que aún no existe, y lo crea
-con el nombre «Como «título»» sin mover la vista previa de esa pista.
+con el nombre «Como «título»» sin mover la vista previa de esa pista. Ese flujo queda elegido en
+la pestaña pero no pasa a ser el de por defecto, a diferencia del de «Desde cómo marcas».
 
 **Dos condiciones más** (v1.26.0). «hasta la marca anterior», solo en reglas que cuentan hacia
 atrás desde el punto, deja que la cuenta atrás cruce los estribillos que no tienen marca y la

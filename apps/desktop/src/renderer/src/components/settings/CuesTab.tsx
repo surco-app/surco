@@ -138,15 +138,15 @@ export function CuesTab({
     previewed && trackFlow && !flows.some((f) => sameRules(f, trackFlow))
       ? { flow: trackFlow, track: previewed.label }
       : null
-  const adopt = (learned: CueFlow, name: string) => {
+  const adopt = (learned: CueFlow, name: string): string => {
     const made: CueFlow = {
       ...learned,
       id: crypto.randomUUID(),
       name,
     }
     patch('cueFlows', [...flows, made])
-    patch('activeCueFlow', made.id)
     select(made.id)
+    return made.id
   }
 
   const rename = (name: string) => {
@@ -299,7 +299,7 @@ export function CuesTab({
                     data-testid="cue-flow-add-learned"
                     onClick={() => {
                       add.setOpen(false)
-                      adopt(offered, tr('settings.cueFlows.learnedName'))
+                      patch('activeCueFlow', adopt(offered, tr('settings.cueFlows.learnedName')))
                     }}
                     className={SPLIT_ITEM}
                   >
