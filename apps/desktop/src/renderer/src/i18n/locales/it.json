@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Fattore di cresta (dB). L'impatto tra i picchi e il livello medio",
     "loudnessBalanceLabel": "Bilanciamento",
     "loudnessBalanceHint": "Bilanciamento dei canali (dB). La differenza di livello tra sinistro e destro",
+    "loudnessSilentLeft": "Il canale sinistro non ha segnale",
+    "loudnessSilentRight": "Il canale destro non ha segnale",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset. Uno spostamento costante che decentra la forma d'onda",
     "loudnessNoiseLabel": "Rumore di fondo",

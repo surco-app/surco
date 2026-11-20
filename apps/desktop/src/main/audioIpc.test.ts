@@ -263,7 +263,7 @@ describe('audio:cached-batch', () => {
 
   it('leaves the loudness out when the stored reading has no finite integrated loudness', async () => {
     const file = await makeFile()
-    await cachedAnalysis('loudness-v2', file, async () => ({ integratedLufs: null }))
+    await cachedAnalysis('loudness-v3', file, async () => ({ integratedLufs: null }))
 
     const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>
 

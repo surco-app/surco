@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Crest-Faktor (dB). Der Punch zwischen den Peaks und dem Durchschnittspegel",
     "loudnessBalanceLabel": "Balance",
     "loudnessBalanceHint": "Kanalbalance (dB). Der Pegelunterschied zwischen links und rechts",
+    "loudnessSilentLeft": "Linker Kanal ohne Signal",
+    "loudnessSilentRight": "Rechter Kanal ohne Signal",
     "loudnessDcLabel": "DC-Offset",
     "loudnessDcHint": "DC-Offset. Ein konstanter Versatz, der die Wellenform aus der Mitte schiebt",
     "loudnessNoiseLabel": "Grundrauschen",

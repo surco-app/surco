@@ -862,6 +862,8 @@
     "loudnessCrestHint": "クレストファクター（dB）。ピークと平均レベル間のパンチ感",
     "loudnessBalanceLabel": "バランス",
     "loudnessBalanceHint": "チャンネルバランス (dB)。左右のレベル差",
+    "loudnessSilentLeft": "左チャンネルに信号がありません",
+    "loudnessSilentRight": "右チャンネルに信号がありません",
     "loudnessDcLabel": "DCオフセット",
     "loudnessDcHint": "DCオフセット。波形を中心からずらす一定のバイアス",
     "loudnessNoiseLabel": "ノイズフロア",

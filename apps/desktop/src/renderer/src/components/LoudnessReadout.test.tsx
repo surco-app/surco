@@ -130,6 +130,58 @@ describe('LoudnessReadout estimates that ride the gain', () => {
   })
 })
 
+describe('LoudnessReadout silent channel', () => {
+  it('says the left channel has no signal in place of the balance row', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, channelBalanceDb: null, silentChannel: 'left' }}
+        normalize={off}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    const row = screen.getByTestId('loudness-silent-channel')
+    expect(row.textContent).toContain('Left channel has no signal')
+    expect(row.getAttribute('data-grade')).toBe('bad')
+    expect(screen.queryByTestId('loudness-pill-balance')).not.toBeInTheDocument()
+  })
+
+  it('says the right channel has no signal', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, channelBalanceDb: null, silentChannel: 'right' }}
+        normalize={off}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('loudness-silent-channel').textContent).toContain(
+      'Right channel has no signal',
+    )
+  })
+
+  it('draws no such row when the field is null, so a healthy file claims nothing', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, silentChannel: null }}
+        normalize={off}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('loudness-silent-channel')).not.toBeInTheDocument()
+    expect(screen.getByTestId('loudness-pill-balance')).toBeInTheDocument()
+  })
+
+  it('treats a result cached before the field existed as having no silent channel', () => {
+    render(
+      <LoudnessReadout
+        loudness={{ ...loud, channelBalanceDb: null }}
+        normalize={off}
+        onShowHelp={vi.fn()}
+      />,
+    )
+    expect(screen.queryByTestId('loudness-silent-channel')).not.toBeInTheDocument()
+  })
+})
+
 // The verdict was colour alone (the dot and the figure) and its explanation sits in a
 // hover tooltip no keyboard or screen reader reaches: a colour-blind user saw three
 // identical dots, and assistive tech read a bare number with no judgement. Each cell now

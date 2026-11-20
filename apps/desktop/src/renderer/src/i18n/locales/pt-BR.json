@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Fator de crista (dB): o punch entre os picos e o nível médio",
     "loudnessBalanceLabel": "Balanço",
     "loudnessBalanceHint": "Balanço de canais (dB): a diferença de nível entre esquerdo e direito",
+    "loudnessSilentLeft": "O canal esquerdo está sem sinal",
+    "loudnessSilentRight": "O canal direito está sem sinal",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset: um desvio constante que descentraliza a onda",
     "loudnessNoiseLabel": "Piso de ruído",

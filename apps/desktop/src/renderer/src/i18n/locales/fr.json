@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Facteur de crête (dB). Le punch entre les pics et le niveau moyen",
     "loudnessBalanceLabel": "Balance",
     "loudnessBalanceHint": "Balance des canaux (dB). La différence de niveau entre gauche et droite",
+    "loudnessSilentLeft": "Le canal gauche n'a pas de signal",
+    "loudnessSilentRight": "Le canal droit n'a pas de signal",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset. Un décalage constant qui décentre la forme d’onde",
     "loudnessNoiseLabel": "Bruit de fond",

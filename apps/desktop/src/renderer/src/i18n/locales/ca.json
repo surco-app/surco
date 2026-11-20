@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Factor de cresta (dB). La pegada entre els pics i el nivell mitjà",
     "loudnessBalanceLabel": "Balanç",
     "loudnessBalanceHint": "Balanç de canals (dB). La diferència de nivell entre l'esquerre i el dret",
+    "loudnessSilentLeft": "El canal esquerre no té senyal",
+    "loudnessSilentRight": "El canal dret no té senyal",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset. Un desplaçament constant que descentra l'ona",
     "loudnessNoiseLabel": "Soroll de fons",

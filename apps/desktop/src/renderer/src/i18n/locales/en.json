@@ -862,6 +862,8 @@
     "loudnessCrestHint": "Crest factor (dB). The punch between peaks and the average level",
     "loudnessBalanceLabel": "Balance",
     "loudnessBalanceHint": "Channel balance (dB). The level difference between left and right",
+    "loudnessSilentLeft": "Left channel has no signal",
+    "loudnessSilentRight": "Right channel has no signal",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset. A constant bias that shifts the waveform off centre",
     "loudnessNoiseLabel": "Noise floor",

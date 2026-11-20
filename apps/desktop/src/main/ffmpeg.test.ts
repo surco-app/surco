@@ -1401,6 +1401,60 @@ describe('parseAstats', () => {
     expect(r?.dcOffset).toBeNull()
   })
 
+  describe('silentChannel', () => {
+    const twoChannels = (first: string, second: string): string =>
+      [
+        '[Parsed_astats_0 @ 0x1] Channel: 1',
+        `[Parsed_astats_0 @ 0x1] RMS level dB: ${first}`,
+        '[Parsed_astats_0 @ 0x1] Channel: 2',
+        `[Parsed_astats_0 @ 0x1] RMS level dB: ${second}`,
+        '[Parsed_astats_0 @ 0x1] Overall',
+        '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+      ].join('\n')
+
+    it('names the right channel when only the second one reads -inf', () => {
+      const r = parseAstats(twoChannels('-14.0', '-inf'))
+      expect(r?.silentChannel).toBe('right')
+      expect(r?.balanceDb).toBeNull()
+    })
+
+    it('names the left channel when only the first one reads -inf', () => {
+      const r = parseAstats(twoChannels('-inf', '-14.0'))
+      expect(r?.silentChannel).toBe('left')
+      expect(r?.balanceDb).toBeNull()
+    })
+
+    it('says nothing for mono, where one channel cannot be the silent one of a pair', () => {
+      const mono = [
+        '[Parsed_astats_0 @ 0x1] Channel: 1',
+        '[Parsed_astats_0 @ 0x1] RMS level dB: -inf',
+        '[Parsed_astats_0 @ 0x1] Overall',
+      ].join('\n')
+      expect(parseAstats(mono)?.silentChannel).toBeNull()
+    })
+
+    it('says nothing when both channels are silent, since neither one is the odd one', () => {
+      expect(parseAstats(twoChannels('-inf', '-inf'))?.silentChannel).toBeNull()
+    })
+
+    it('says nothing when both channels carry signal', () => {
+      expect(parseAstats(twoChannels('-14.0', '-15.0'))?.silentChannel).toBeNull()
+    })
+
+    it('says nothing for more than two channels', () => {
+      const three = [
+        '[Parsed_astats_0 @ 0x1] Channel: 1',
+        '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+        '[Parsed_astats_0 @ 0x1] Channel: 2',
+        '[Parsed_astats_0 @ 0x1] RMS level dB: -inf',
+        '[Parsed_astats_0 @ 0x1] Channel: 3',
+        '[Parsed_astats_0 @ 0x1] RMS level dB: -14.0',
+        '[Parsed_astats_0 @ 0x1] Overall',
+      ].join('\n')
+      expect(parseAstats(three)?.silentChannel).toBeNull()
+    })
+  })
+
   it('returns null when no astats block is present so the caller hides the checks', () => {
     expect(parseAstats('ffmpeg version 7.0\n')).toBeNull()
   })
