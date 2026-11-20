@@ -52,7 +52,7 @@ const ITEM_CLASS =
 const BOX_CLASS =
   'press flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-1 py-1 text-left text-xs leading-normal hover:bg-[var(--color-hover)] aria-checked:text-fg'
 const SECTION_CLASS =
-  'press grow rounded-[3px] px-1 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted hover:bg-[var(--color-hover)] aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg'
+  'press grow rounded-full bg-[var(--color-field)] px-2 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-fg aria-checked:bg-[var(--color-accent-soft)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-accent)]'
 const NEAR_DEFAULT = { before: 32, after: 16 }
 type NearSide = keyof typeof NEAR_DEFAULT
 
@@ -576,7 +576,7 @@ export function CueRuleRow({
                       </p>
                       <div
                         data-testid={`${id}-color-${slot}-when-sections`}
-                        className="flex flex-wrap gap-0.5"
+                        className="flex flex-wrap gap-1"
                       >
                         {FLOW_SECTIONS.map((section) => (
                           <button
