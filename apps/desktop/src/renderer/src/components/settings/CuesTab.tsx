@@ -38,6 +38,7 @@ interface Props {
   patch: PatchSynced
   rekordboxCollection: string
   cueTrack?: { contentId: string; label: string }
+  cueProgram?: DjProgram
 }
 
 const NEW_RULE: CueRule = {
@@ -78,6 +79,7 @@ export function CuesTab({
   patch,
   rekordboxCollection,
   cueTrack,
+  cueProgram,
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const [current, setCurrent] = useState(synced.activeCueFlow)
@@ -107,9 +109,10 @@ export function CuesTab({
     DJ_PROGRAMS.map((p) => [p, available[p] === false]),
   ) as Record<DjProgram, boolean>
   missingBy.rekordbox = !foundBy.rekordbox
-  const previewPrograms = DJ_PROGRAMS.filter(
-    (p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows,
-  )
+  const probing = DJ_PROGRAMS.some((p) => p !== 'rekordbox' && available[p] === undefined)
+  const previewPrograms = probing
+    ? []
+    : DJ_PROGRAMS.filter((p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows)
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -419,6 +422,7 @@ export function CuesTab({
               flow={flow}
               track={cueTrack}
               programs={previewPrograms}
+              inWindow={cueProgram}
               onShown={setPreviewed}
             />
           </section>

@@ -53,22 +53,30 @@ interface Choice {
 }
 
 const NO_CHOICES: Choice[] = []
+const NO_PROGRAMS: readonly DjProgram[] = []
 const MAX_CHOICES = 100
 const OPTION =
   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)]'
+
+const PROGRAM =
+  'press min-w-0 flex-1 truncate rounded-md px-2 py-1 text-xs text-fg-muted hover:text-fg aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
 
 const folded = (text: string): string => foldAccents(text).toLowerCase()
 
 function TrackChoices({
   choices,
+  programs,
   program,
+  onProgram,
   loading,
   inUse,
   onChoose,
   onClose,
 }: {
   choices: Choice[]
+  programs: readonly DjProgram[]
   program: DjProgram
+  onProgram: (program: DjProgram) => void
   loading: boolean
   inUse: string | null
   onChoose: (choice: Choice | null) => void
@@ -80,6 +88,8 @@ function TrackChoices({
   const exampleRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const byKeys = useRef(false)
   const wanted = folded(query.trim())
   const found = choices
     .filter((c) => folded(`${c.label} ${c.artist ?? ''}`).includes(wanted))
@@ -88,6 +98,7 @@ function TrackChoices({
   const searchLabel = tr('settings.cueFlows.searchCollection', { program: LIBRARY_NAME[program] })
 
   useEffect(() => {
+    if (byKeys.current && rowRef.current?.contains(document.activeElement)) return
     const first = searchable ? searchRef.current : exampleRef.current
     first?.focus({ preventScroll: true })
   }, [searchable])
@@ -120,12 +131,58 @@ function TrackChoices({
     else if (next < items.length) showOption(listRef.current, items[next])
   }
 
+  function look(next: DjProgram, keys: boolean): void {
+    byKeys.current = keys
+    setQuery('')
+    onProgram(next)
+  }
+
+  function onProgramKey(e: React.KeyboardEvent<HTMLButtonElement>, at: number): void {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+      onKeyDown(e)
+      return
+    }
+    e.preventDefault()
+    e.stopPropagation()
+    const next = (at + (e.key === 'ArrowRight' ? 1 : programs.length - 1)) % programs.length
+    look(programs[next], true)
+    rowRef.current?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus()
+  }
+
   return (
     <div
       ref={menuRef}
       data-testid="cue-preview-track-menu"
       className="animate-pop-flat absolute inset-x-0 top-full z-20 mt-1 origin-top rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
     >
+      {programs.length > 1 && (
+        <div
+          ref={rowRef}
+          role="radiogroup"
+          aria-label={tr('settings.cueFlows.previewProgram')}
+          className="mb-1 flex gap-0.5 rounded-lg border border-[var(--color-line)] bg-[var(--color-field)] p-[3px]"
+        >
+          {programs.map((p, at) => (
+            // biome-ignore lint/a11y/useSemanticElements: a program is a segment of the row; a native radio input cannot draw it and the arrows and roving tab stop are handled here
+            <button
+              key={p}
+              type="button"
+              role="radio"
+              aria-checked={p === program}
+              tabIndex={p === program ? 0 : -1}
+              data-testid={`cue-preview-program-${p}`}
+              onClick={() => {
+                look(p, false)
+                searchRef.current?.focus({ preventScroll: true })
+              }}
+              onKeyDown={(e) => onProgramKey(e, at)}
+              className={PROGRAM}
+            >
+              {LIBRARY_NAME[p]}
+            </button>
+          ))}
+        </div>
+      )}
       {searchable && (
         <input
           ref={searchRef}
@@ -216,7 +273,9 @@ export function CueFlowPreview({
   flow,
   track,
   tracks = NO_CHOICES,
+  programs = NO_PROGRAMS,
   program = 'rekordbox',
+  onProgram,
   loading = false,
   onPick,
   onOpenChange,
@@ -225,7 +284,9 @@ export function CueFlowPreview({
   flow: CueFlow
   track?: { label: string; cues: TrackCues }
   tracks?: Choice[]
+  programs?: readonly DjProgram[]
   program?: DjProgram
+  onProgram?: (program: DjProgram) => void
   loading?: boolean
   onPick?: (choice: Choice) => void
   onOpenChange?: (open: boolean) => void
@@ -403,7 +464,9 @@ export function CueFlowPreview({
         {open && (
           <TrackChoices
             choices={choices}
+            programs={programs}
             program={program}
+            onProgram={(next) => onProgram?.(next)}
             loading={loading}
             inUse={onTrack ? track.cues.contentId : null}
             onChoose={choose}
@@ -503,17 +566,23 @@ export function CueFlowTrackPreview({
   flow,
   track,
   programs,
+  inWindow,
   onShown,
 }: {
   flow: CueFlow
   track?: Choice
   programs: readonly DjProgram[]
+  inWindow?: DjProgram
   onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState(track)
   const [open, setOpen] = useState(false)
   const { data } = useTrackCues(picked?.contentId)
-  const program = programs.at(0)
+  const [chosen, setChosen] = useState<DjProgram>()
+  const program =
+    [chosen, track && programOf(track.contentId), inWindow].find(
+      (p) => p !== undefined && programs.includes(p),
+    ) ?? programs.at(0)
   const collection = useQuery({
     queryKey: ['source-playlist', program, ALL_TRACKS_ID],
     queryFn: () => readPlaylist(program as DjProgram, ALL_TRACKS_ID),
@@ -531,7 +600,9 @@ export function CueFlowTrackPreview({
       flow={flow}
       track={picked && data ? { label: picked.label, cues: data } : undefined}
       tracks={tracks}
+      programs={programs}
       program={program}
+      onProgram={setChosen}
       loading={collection.isLoading}
       onPick={setPicked}
       onOpenChange={setOpen}

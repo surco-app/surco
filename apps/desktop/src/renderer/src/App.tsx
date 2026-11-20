@@ -5106,6 +5106,7 @@ export default function App(): React.JSX.Element {
               goToPlaylist={goToPlaylist}
               playlistLibraries={playlistLibraries}
               cueTrack={cueTrack}
+              cueProgram={sourceProgram ?? undefined}
             />
 
             <ToastStack toasts={toasts} onExpire={expireToast} onClose={closeToast} />

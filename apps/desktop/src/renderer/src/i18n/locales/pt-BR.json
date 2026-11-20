@@ -2050,6 +2050,7 @@
       "previewHint": "Faixa de exemplo a 128 BPM, marcada no compasso {{bar}}",
       "exampleTrack": "Faixa de exemplo",
       "searchCollection": "Buscar na sua coleção do {{program}}",
+      "previewProgram": "Programa",
       "noTrackFound": "Nenhuma faixa com esse nome",
       "loadingTracks": "Lendo sua coleção…",
       "noMark": "{{label}} ainda não tem nenhuma marca, então a prévia usa a faixa de exemplo",

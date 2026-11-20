@@ -18,6 +18,7 @@ import {
 import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
+import type { DjProgram } from '../../../../shared/djProgram'
 import { traktorContentId } from '../../../../shared/traktorContent'
 import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
@@ -75,11 +76,15 @@ function Harness({
   collection = '',
   flows = KEPT,
   queries,
+  track,
+  inWindow,
 }: {
   active?: string
   collection?: string
   flows?: CueFlow[]
   queries?: QueryClient
+  track?: { contentId: string; label: string }
+  inWindow?: DjProgram
 }) {
   const [draft, setDraft] = useState({
     cueFlows: flows,
@@ -103,6 +108,8 @@ function Harness({
         synced={draft as unknown as SyncedDraft}
         patch={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
         rekordboxCollection={collection}
+        cueTrack={track}
+        cueProgram={inWindow}
       />
     </QueryClientProvider>
   )
@@ -1689,6 +1696,124 @@ describe('the tracks the preview offers', () => {
     expect(search).toHaveAccessibleName('Search your Traktor collection')
   })
 
+  describe('with rekordbox and Traktor found', () => {
+    const both = () => {
+      const rekordbox = vi.fn(async () => [inCollection('rb:7', 'Bicep, Glue')])
+      const traktor = vi.fn(async () => [inCollection(GLUE_IN_TRAKTOR, 'Rej', [])])
+      const api = installApi({
+        cues: { trackCues: async (contentId: string) => ({ ...MARKED_BY_HAND, contentId }) },
+        dj: djReads({
+          rekordbox: { playlist: rekordbox },
+          traktor: { ...FOUND, playlist: traktor },
+        }),
+      })
+      return { api, read: () => vi.mocked(api.dj.playlist).mock.calls.map(([program]) => program) }
+    }
+    const programs = () =>
+      within(screen.getByRole('radiogroup'))
+        .getAllByRole('radio')
+        .map((r) => [r.textContent, r.getAttribute('aria-checked')])
+    const openOnceFound = async () => {
+      openTracks()
+      await screen.findByRole('radiogroup')
+    }
+
+    it('puts the programs first in the choices, over the search field, in the order of the rest of the tab, and starts on the first when nothing says which one the DJ is working in', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" inWindow="engine" />)
+      await openOnceFound()
+      expect(programs()).toEqual([
+        ['rekordbox', 'true'],
+        ['Traktor', 'false'],
+      ])
+      expect(
+        screen
+          .getByRole('radiogroup')
+          .compareDocumentPosition(screen.getByTestId('cue-preview-track-search')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      await screen.findByTestId('cue-preview-track-option-rb:7')
+      expect(read()).toEqual(['rekordbox'])
+    })
+
+    it('starts on the program open in the main window when no track came with the preview, so the DJ lands on the collection they were looking at and only that one is read', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" inWindow="traktor" />)
+      await openOnceFound()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(read()).toEqual(['traktor'])
+    })
+
+    it('starts on the program of the track the preview opened with, over the one open in the main window, so that track is among the choices', async () => {
+      const { read } = both()
+      render(
+        <Harness
+          collection="/rb/master.db"
+          inWindow="rekordbox"
+          track={{ contentId: GLUE_IN_TRAKTOR, label: 'Rej' }}
+        />,
+      )
+      await openOnceFound()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(read()).toEqual(['traktor'])
+    })
+
+    it('reads the other collection once when the program changes, with its tracks, its name in the search field, the search emptied and the focus on it, and never reads again on the way back', async () => {
+      const { read } = both()
+      render(<Harness collection="/rb/master.db" />)
+      await openOnceFound()
+      await screen.findByTestId('cue-preview-track-option-rb:7')
+      fireEvent.change(screen.getByTestId('cue-preview-track-search'), { target: { value: 'gl' } })
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      const search = screen.getByTestId('cue-preview-track-search')
+      expect(search).toHaveAttribute('placeholder', 'Search your Traktor collection')
+      expect(search).toHaveValue('')
+      expect(search).toHaveFocus()
+      expect(read()).toEqual(['rekordbox', 'traktor'])
+      fireEvent.click(screen.getByTestId('cue-preview-program-rekordbox'))
+      expect(offered()).toEqual(['Example track', 'Bicep, Glue'])
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
+        'placeholder',
+        'Search your rekordbox collection',
+      )
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      expect(read()).toEqual(['rekordbox', 'traktor'])
+    })
+
+    it('comes back to the program the DJ chose when the choices open again, and keeps showing the track picked while the list of another program is looked at', async () => {
+      both()
+      render(<Harness collection="/rb/master.db" />)
+      await openOnceFound()
+      fireEvent.click(await screen.findByTestId('cue-preview-track-option-rb:7'))
+      await waitFor(() =>
+        expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue'),
+      )
+      openTracks()
+      fireEvent.click(screen.getByTestId('cue-preview-program-traktor'))
+      await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue')
+      expect(offered()).toEqual(['Example track', 'Rej'])
+      closeTracks()
+      openTracks()
+      expect(screen.getByTestId('cue-preview-program-traktor')).toHaveAttribute(
+        'aria-checked',
+        'true',
+      )
+      expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Bicep, Glue')
+    })
+  })
+
   it('shares the read with the rest of the app, so a collection the list already read is not read twice', async () => {
     const api = installApi({ dj: glueCollection() })
     const queries = createQueryClient()
@@ -1698,7 +1823,7 @@ describe('the tracks the preview offers', () => {
     )
     render(<Harness collection="/rb/master.db" queries={queries} />)
     openTracks()
-    expect(offered()).toEqual(['Example track', 'Atlas'])
+    await waitFor(() => expect(offered()).toEqual(['Example track', 'Atlas']))
     expect(api.dj.playlist).not.toHaveBeenCalled()
   })
 
