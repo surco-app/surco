@@ -2051,6 +2051,7 @@
       "exampleTrack": "Brano di esempio",
       "searchList": "Cerca nella lista aperta",
       "noTrackFound": "Nessun brano segnato con questo nome",
+      "noTracksOpen": "Apri una playlist di rekordbox per provare con i tuoi brani segnati",
       "noMark": "{{label}} non ha ancora nessun segno, quindi l'anteprima usa il brano di esempio",
       "compareSame": "Gli stessi hot cue che ha ora questo brano",
       "diffNew_one": "{{count}} nuovo",
@@ -2061,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} che il flusso toglierebbe",
       "diffGoneNow_other": "{{count}} che il flusso toglierebbe",
       "diffNewHint": "Nuovo con questo flusso. Il brano non ce l'ha",
-      "diffGoneHint": "Il brano ce l'ha e il flusso non lo metterebbe",
+      "diffGoneHint": "Il brano ha il {{letter}} e il flusso non lo metterebbe",
       "previewMode": {
         "flow": "Con il flusso",
         "now": "Adesso"
@@ -2173,17 +2174,21 @@
       "lettersByTime": "Lettere in ordine di brano",
       "lettersByTimeHint": "La A è sempre il primo cue del brano. Disattivalo se per te ogni lettera è un pad fisso.",
       "markPoint": "Metti un CALL dove marchi",
-      "traktorColours": "In Traktor questi cue appaiono in blu, perché Traktor colora ogni cue in base al tipo",
-      "callsOnlyRekordbox": "I CALL esistono solo in rekordbox. Engine DJ, Traktor, Serato e VirtualDJ ricevono solo gli hot cue",
-      "callsOnlyRekordboxWin": "I CALL esistono solo in rekordbox. Engine DJ, Traktor e Serato ricevono solo gli hot cue",
       "targets": {
         "title": "Applica i flussi anche in",
         "hint": "Il programma da cui marchi riceve sempre i cue. Surco cerca lo stesso brano negli altri tramite il file e applica il flusso con la griglia e i cue che ha già lì. I cue che metti a mano restano nel programma in cui li marchi.",
-        "rekordbox": "Hot cue e CALL",
-        "traktor": "Solo hot cue, in blu, dalla A alla G. Traktor legge la sua collezione all'avvio, quindi al salvataggio Surco ti chiederà di chiuderlo.",
-        "engine": "Solo hot cue. Engine DJ non ha CALL.",
-        "serato": "Solo hot cue, dalla A alla H. Serato non ha CALL. Se Serato è aperto, Surco li salva quando lo chiudi.",
-        "virtualdj": "Solo hot cue, dalla A alla H. VirtualDJ non ha CALL. Se VirtualDJ è aperto, Surco li salva quando lo chiudi."
+        "gets": {
+          "rekordbox": "Hot cue e CALL",
+          "traktor": "Solo hot cue, in blu, dalla A alla G",
+          "engine": "Solo hot cue",
+          "serato": "Solo hot cue, dalla A alla H",
+          "virtualdj": "Solo hot cue, dalla A alla H"
+        },
+        "caveat": {
+          "traktor": "Traktor legge la sua collezione all'avvio, quindi al salvataggio Surco ti chiederà di chiuderlo",
+          "serato": "Se Serato è aperto, Surco li salva quando lo chiudi",
+          "virtualdj": "Se VirtualDJ è aperto, Surco li salva quando lo chiudi"
+        }
       }
     },
     "cueProfile": {

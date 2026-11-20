@@ -95,15 +95,6 @@ export const PROGRAM_OF_ANCHOR: Record<string, DjProgram> = {
   virtualdjLibraryDir: 'virtualdj',
 }
 
-export type CueFold = 'programs' | 'manual' | 'profile'
-
-export const CUE_FOLD_OF_ANCHOR: Record<string, CueFold> = {
-  'cueFlows.manual.jump': 'manual',
-  'cueFlows.manual.quantize': 'manual',
-  'cueFlows.manual.gridTolerance': 'manual',
-  'cueFlows.lettersByTime': 'manual',
-}
-
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
   ...SETTINGS_TABS.map((tab) => ({ id: `tabs.${tab}`, tab, label: `settings.tabs.${tab}` })),
   ...SETTINGS_IDS.flatMap(([tab, ids]) =>

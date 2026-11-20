@@ -2051,6 +2051,7 @@
       "exampleTrack": "サンプルトラック",
       "searchList": "開いているリストを検索",
       "noTrackFound": "その名前のマーク付きトラックはありません",
+      "noTracksOpen": "rekordbox プレイリストを開くと、マーク付きトラックで試せます",
       "noMark": "{{label}} にはまだマークがないため、プレビューはサンプルトラックを使います",
       "compareSame": "このトラックの現在のホットキューと同じ",
       "diffNew_one": "新規 {{count}} 個",
@@ -2061,7 +2062,7 @@
       "diffGoneNow_one": "フローが削除するもの {{count}} 個",
       "diffGoneNow_other": "フローが削除するもの {{count}} 個",
       "diffNewHint": "このフローで新規。トラックにはありません",
-      "diffGoneHint": "トラックにあり、フローでは置かれません",
+      "diffGoneHint": "トラックに {{letter}} があり、フローでは置かれません",
       "previewMode": {
         "flow": "フロー適用",
         "now": "現在"
@@ -2173,17 +2174,21 @@
       "lettersByTime": "文字をトラック順に割り当て",
       "lettersByTimeHint": "A は常にトラックの最初のキューになります。各文字を固定のパッドとして使っている場合はオフにしてください。",
       "markPoint": "マークした位置に CALL を置く",
-      "traktorColours": "Traktor はキューの種類ごとに色を付けるため、これらのキューは青で表示されます",
-      "callsOnlyRekordbox": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato、VirtualDJ にはホットキューのみが設定されます",
-      "callsOnlyRekordboxWin": "CALL は rekordbox にのみ存在します。Engine DJ、Traktor、Serato にはホットキューのみが設定されます",
       "targets": {
         "title": "フローを次にも配置",
         "hint": "マークしたプログラムには常にキューが設定されます。Surco はファイルをもとに他のプログラムで同じトラックを見つけ、そこにあるグリッドとキューに合わせてフローを配置します。手動で置いたキューは、置いたプログラムにのみ残ります。",
-        "rekordbox": "ホットキューと CALL",
-        "traktor": "ホットキューのみ（青、A から G まで）。Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます。",
-        "engine": "ホットキューのみ。Engine DJ には CALL がありません。",
-        "serato": "ホットキューのみ（A から H）。Serato には CALL がありません。Serato が開いている場合は、閉じたときに Surco が保存します。",
-        "virtualdj": "ホットキューのみ（A から H）。VirtualDJ には CALL がありません。VirtualDJ が開いている場合は、閉じたときに Surco が保存します。"
+        "gets": {
+          "rekordbox": "ホットキューと CALL",
+          "traktor": "ホットキューのみ（青、A から G まで）",
+          "engine": "ホットキューのみ",
+          "serato": "ホットキューのみ（A から H）",
+          "virtualdj": "ホットキューのみ（A から H）"
+        },
+        "caveat": {
+          "traktor": "Traktor は起動時にコレクションを読み込むため、保存時に Surco が Traktor を閉じるよう求めます",
+          "serato": "Serato が開いている場合は、閉じたときに Surco が保存します",
+          "virtualdj": "VirtualDJ が開いている場合は、閉じたときに Surco が保存します"
+        }
       }
     },
     "cueProfile": {

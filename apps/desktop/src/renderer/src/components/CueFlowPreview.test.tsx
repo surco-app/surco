@@ -21,9 +21,9 @@ describe('CueFlowPreview', () => {
     expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
   })
 
-  it('keeps room on its left edge for the ring of a new cue at the very start and for the focus ring of the count, which Settings would clip', () => {
+  it('takes no inset of its own, so its selector, wave and status line start where the piece that holds it says, which is where the room for the ring of a new cue at the very start comes from', () => {
     render(<CueFlowPreview flow={MY_FLOW} />)
-    expect(screen.getByTestId('cue-flow-preview')).toHaveClass('pl-1')
+    expect(screen.getByTestId('cue-flow-preview').className).not.toMatch(/(?<![\w-])p[xlr]?-/)
   })
 
   it('draws a hot cue without CALL for a flow that places only hot cues', () => {
@@ -48,6 +48,22 @@ describe('CueFlowPreview', () => {
     }
     render(<CueFlowPreview flow={many} />)
     expect(screen.getByTestId('cue-preview-trimmed')).toBeInTheDocument()
+  })
+
+  it('says in French the hot cues left out by the limit in no more letters than in Spanish, whose line fits beside the switch, so the French one is not cut', async () => {
+    await i18n.changeLanguage('fr')
+    try {
+      for (const count of [1, 12]) {
+        const french = i18n.t('editor.cues.trimmed', { count })
+        expect(french).toContain(`${count} hot cue`)
+        expect(french).toContain('limite de 8')
+        expect(french.length).toBeLessThanOrEqual(
+          i18n.t('editor.cues.trimmed', { count, lng: 'es' }).length,
+        )
+      }
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 
   it('says when a flow asks for more than 8 hot cues that cannot be left out', () => {
@@ -191,9 +207,9 @@ describe('CueFlowPreview', () => {
       expect(fresh).toHaveAccessibleName('New with this flow. The track does not have it')
       expect(hoverTooltip(fresh)).toBe('New with this flow. The track does not have it')
       const gone = screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)
-      expect(gone).toHaveTextContent(/^A$/)
-      expect(gone).toHaveAccessibleName('The track has it and the flow would not place it')
-      expect(hoverTooltip(gone)).toBe('The track has it and the flow would not place it')
+      expect(gone.textContent).toBe('')
+      expect(gone).toHaveAccessibleName('The track has A and the flow would not place it')
+      expect(hoverTooltip(gone)).toBe('The track has A and the flow would not place it')
     })
 
     it('counts and draws once two hot cues the track has on the same spot, and keeps neither as a cue that stays', () => {
@@ -248,6 +264,17 @@ describe('CueFlowPreview', () => {
       fireEvent.click(count)
       expect(count).toHaveAttribute('aria-pressed', 'false')
       expect(wave).toHaveAttribute('data-focus-diff', 'false')
+    })
+
+    it('underlines the count while its fade is held, so a pressed count looks pressed, without growing or moving its text, and gives its focus ring some air', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
+      const count = screen.getByTestId('cue-preview-compare')
+      expect(count).toHaveClass('aria-pressed:underline', 'underline-offset-2')
+      expect(count).toHaveClass('-mx-1', 'px-1', 'rounded')
+      const resting = count.className
+      fireEvent.click(count)
+      expect(count).toHaveAttribute('aria-pressed', 'true')
+      expect(count.className).toBe(resting)
     })
 
     it('keeps the fade for a count focused by keyboard when the pointer passes over it and leaves, since the focus is still there', () => {
@@ -310,7 +337,9 @@ describe('CueFlowPreview', () => {
         backgroundColor: hotCueColor(42),
       })
       expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
-      expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toHaveTextContent(/^A$/)
+      expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toHaveAccessibleName(
+        'The track has A and the flow would not place it',
+      )
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(
         /^1 the flow would take away$/,
       )
@@ -518,6 +547,45 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-track')).toHaveAttribute('aria-expanded', 'true')
       expect(screen.getAllByRole('option')).toHaveLength(1)
       expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+    })
+
+    it('draws no search field when there is no marked track to look for, since a field that finds nothing reads as broken, and says how to get tracks to try', () => {
+      render(<CueFlowPreview flow={MY_FLOW} />)
+      open()
+      expect(screen.queryByTestId('cue-preview-track-search')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-separator')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-track-empty')).toBeNull()
+      const none = screen.getByTestId('cue-preview-track-none')
+      expect(none).toHaveTextContent('Open a rekordbox playlist to try your marked tracks')
+      expect(none).toHaveClass('text-xs', 'text-fg-dim')
+      expect(
+        screen.getByTestId('cue-preview-track-option-example').compareDocumentPosition(none) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('puts the focus on the example when there is no search field to take it, so Escape and the arrows still answer from the keyboard', () => {
+      const reached = vi.fn()
+      window.addEventListener('keydown', reached)
+      render(<CueFlowPreview flow={MY_FLOW} />)
+      open()
+      const example = screen.getByTestId('cue-preview-track-option-example')
+      expect(example).toHaveFocus()
+      fireEvent.keyDown(example, { key: 'ArrowDown' })
+      fireEvent.keyDown(example, { key: 'ArrowUp' })
+      expect(example).toHaveFocus()
+      fireEvent.keyDown(example, { key: 'Escape' })
+      window.removeEventListener('keydown', reached)
+      expect(screen.queryByTestId('cue-preview-track-listbox')).toBeNull()
+      expect(screen.getByTestId('cue-preview-track')).toHaveFocus()
+      expect(reached).not.toHaveBeenCalled()
+    })
+
+    it('keeps the search field and says nothing about opening a playlist once the open list has marked tracks', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
+      expect(screen.queryByTestId('cue-preview-track-none')).toBeNull()
     })
 
     it('offers the example first and the tracks of the open list under it, so any of them can be tried', () => {

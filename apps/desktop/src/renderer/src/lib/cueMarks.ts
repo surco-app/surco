@@ -27,7 +27,7 @@ export interface CueDiff {
   fresh: string[]
   gone: MarkInput[]
   freshLabel: string
-  goneLabel: string
+  goneLabel: (letter: string) => string
   focused: boolean
 }
 

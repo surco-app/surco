@@ -2051,6 +2051,7 @@
       "exampleTrack": "Beispieltrack",
       "searchList": "In der offenen Liste suchen",
       "noTrackFound": "Kein markierter Track mit diesem Namen",
+      "noTracksOpen": "Öffne eine rekordbox-Playlist, um deine markierten Tracks auszuprobieren",
       "noMark": "{{label}} hat noch keine Markierung, daher nutzt die Vorschau den Beispieltrack",
       "compareSame": "Dieselben Hot Cues, die dieser Track jetzt hat",
       "diffNew_one": "{{count}} neu",
@@ -2061,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} würde der Ablauf entfernen",
       "diffGoneNow_other": "{{count}} würde der Ablauf entfernen",
       "diffNewHint": "Neu mit diesem Ablauf. Der Track hat ihn nicht",
-      "diffGoneHint": "Der Track hat ihn und der Ablauf würde ihn nicht setzen",
+      "diffGoneHint": "Der Track hat {{letter}} und der Ablauf würde ihn nicht setzen",
       "previewMode": {
         "flow": "Mit dem Ablauf",
         "now": "Jetzt"
@@ -2173,17 +2174,21 @@
       "lettersByTime": "Buchstaben nach Position im Track",
       "lettersByTimeHint": "A ist immer der erste Cue im Track. Schalte es aus, wenn jeder Buchstabe für dich ein festes Pad ist.",
       "markPoint": "Einen CALL an deine Markierung setzen",
-      "traktorColours": "In Traktor erscheinen diese Cues blau, denn Traktor färbt jeden Cue nach seinem Typ",
-      "callsOnlyRekordbox": "CALLs gibt es nur in rekordbox. Engine DJ, Traktor, Serato und VirtualDJ bekommen nur die Hot Cues",
-      "callsOnlyRekordboxWin": "CALLs gibt es nur in rekordbox. Engine DJ, Traktor und Serato bekommen nur die Hot Cues",
       "targets": {
         "title": "Abläufe auch setzen in",
         "hint": "Das Programm, in dem du markierst, bekommt die Cues immer. Surco sucht denselben Track in den anderen über seine Datei und setzt den Ablauf auf das Raster und die Cues, die er dort schon hat. Cues, die du von Hand setzt, bleiben in dem Programm, in dem du sie setzt.",
-        "rekordbox": "Hot Cues und CALLs",
-        "traktor": "Nur Hot Cues, in Blau, von A bis G. Traktor liest seine Sammlung beim Start, deshalb bittet Surco dich beim Speichern, es zu schließen.",
-        "engine": "Nur Hot Cues. Engine DJ hat keine CALLs.",
-        "serato": "Nur Hot Cues, von A bis H. Serato hat keine CALLs. Ist Serato geöffnet, speichert Surco sie, wenn du es schließt.",
-        "virtualdj": "Nur Hot Cues, von A bis H. VirtualDJ hat keine CALLs. Ist VirtualDJ geöffnet, speichert Surco sie, wenn du es schließt."
+        "gets": {
+          "rekordbox": "Hot Cues und CALLs",
+          "traktor": "Nur Hot Cues, in Blau, von A bis G",
+          "engine": "Nur Hot Cues",
+          "serato": "Nur Hot Cues, von A bis H",
+          "virtualdj": "Nur Hot Cues, von A bis H"
+        },
+        "caveat": {
+          "traktor": "Traktor liest seine Sammlung beim Start, deshalb bittet Surco dich beim Speichern, es zu schließen",
+          "serato": "Ist Serato geöffnet, speichert Surco sie, wenn du es schließt",
+          "virtualdj": "Ist VirtualDJ geöffnet, speichert Surco sie, wenn du es schließt"
+        }
       }
     },
     "cueProfile": {

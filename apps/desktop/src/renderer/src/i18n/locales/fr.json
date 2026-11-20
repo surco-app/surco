@@ -1102,8 +1102,8 @@
       "menuAddHot": "Ajouter un hot cue ici",
       "menuAddCall": "Ajouter un CALL ici",
       "menuMarkDrop": "Placer le flux ici",
-      "trimmed_one": "{{count}} hot cue reste dehors à cause de la limite de 8",
-      "trimmed_other": "{{count}} hot cues restent dehors à cause de la limite de 8",
+      "trimmed_one": "{{count}} hot cue en trop pour la limite de 8",
+      "trimmed_other": "{{count}} hot cues en trop pour la limite de 8",
       "queuedStale": "L’enregistrement en attente date d’avant la modification du morceau dans rekordbox et n’est plus à jour. Tu vois ce que contient rekordbox maintenant.",
       "loop": "C’est une boucle. Surco ne la déplace pas et ne la modifie pas.",
       "detail": "Onde agrandie",
@@ -2051,6 +2051,7 @@
       "exampleTrack": "Morceau d’exemple",
       "searchList": "Rechercher dans la liste ouverte",
       "noTrackFound": "Aucun morceau marqué avec ce nom",
+      "noTracksOpen": "Ouvre une playlist rekordbox pour essayer avec tes morceaux marqués",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",
       "compareSame": "Les mêmes hot cues que ce morceau a déjà",
       "diffNew_one": "{{count}} nouveau",
@@ -2061,7 +2062,7 @@
       "diffGoneNow_one": "{{count}} que le flux retirerait",
       "diffGoneNow_other": "{{count}} que le flux retirerait",
       "diffNewHint": "Nouveau avec ce flux. Le morceau ne l’a pas",
-      "diffGoneHint": "Le morceau l’a et le flux ne le placerait pas",
+      "diffGoneHint": "Le morceau a le {{letter}} et le flux ne le placerait pas",
       "previewMode": {
         "flow": "Avec le flux",
         "now": "Maintenant"
@@ -2173,17 +2174,21 @@
       "lettersByTime": "Lettres dans l’ordre du morceau",
       "lettersByTimeHint": "A est toujours le premier cue du morceau. Désactive-le si chaque lettre est un pad fixe pour toi.",
       "markPoint": "Mettre un CALL là où tu marques",
-      "traktorColours": "Dans Traktor ces cues s’affichent en bleu, car Traktor colore chaque cue selon son type",
-      "callsOnlyRekordbox": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor, Serato et VirtualDJ ne reçoivent que les hot cues",
-      "callsOnlyRekordboxWin": "Les CALL n’existent que dans rekordbox. Engine DJ, Traktor et Serato ne reçoivent que les hot cues",
       "targets": {
         "title": "Appliquer aussi les flux dans",
         "hint": "Le logiciel dans lequel tu marques reçoit toujours les cues. Surco cherche le même morceau dans les autres par son fichier et y place le flux avec la grille et les cues qu’il a déjà. Les cues placés à la main restent dans le logiciel où tu les places.",
-        "rekordbox": "Hot cues et CALL",
-        "traktor": "Hot cues seulement, en bleu, de A à G. Traktor lit sa collection au démarrage, donc Surco te demandera de le fermer à l’enregistrement.",
-        "engine": "Hot cues seulement. Engine DJ n’a pas de CALL.",
-        "serato": "Hot cues seulement, de A à H. Serato n’a pas de CALL. Si Serato est ouvert, Surco les enregistre quand tu le fermes.",
-        "virtualdj": "Hot cues seulement, de A à H. VirtualDJ n’a pas de CALL. Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes."
+        "gets": {
+          "rekordbox": "Hot cues et CALL",
+          "traktor": "Hot cues seulement, en bleu, de A à G",
+          "engine": "Hot cues seulement",
+          "serato": "Hot cues seulement, de A à H",
+          "virtualdj": "Hot cues seulement, de A à H"
+        },
+        "caveat": {
+          "traktor": "Traktor lit sa collection au démarrage, donc Surco te demandera de le fermer à l’enregistrement",
+          "serato": "Si Serato est ouvert, Surco les enregistre quand tu le fermes",
+          "virtualdj": "Si VirtualDJ est ouvert, Surco les enregistre quand tu le fermes"
+        }
       }
     },
     "cueProfile": {

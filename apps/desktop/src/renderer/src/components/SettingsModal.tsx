@@ -15,11 +15,7 @@ import {
   type SyncedDraft,
 } from '../lib/settingsDraft'
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
-import {
-  CUE_FOLD_OF_ANCHOR,
-  type CueFold,
-  settingsSearchIndexHere,
-} from '../lib/settingsSearchIndex'
+import { settingsSearchIndexHere } from '../lib/settingsSearchIndex'
 import {
   entryOf,
   SETTINGS_ENTRIES,
@@ -129,13 +125,6 @@ export function SettingsModal({
   const selectedTab = selectedHit?.entry.tab
   const selectedId = selectedHit?.entry.id
   const selectedAnchor = selectedHit && (selectedHit.entry.anchor ?? selectedHit.entry.id)
-  const [cueFolds, setCueFolds] = useState<CueFold[]>([])
-  const [seenAnchor, setSeenAnchor] = useState(selectedAnchor)
-  if (seenAnchor !== selectedAnchor) {
-    setSeenAnchor(selectedAnchor)
-    const fold = selectedAnchor && CUE_FOLD_OF_ANCHOR[selectedAnchor]
-    if (fold && !cueFolds.includes(fold)) setCueFolds([...cueFolds, fold])
-  }
   useEffect(() => {
     if (selectedTab) setTab(selectedTab)
   }, [selectedTab])
@@ -511,7 +500,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${entry.id}`}
-            className="-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]"
+            className={`${tab === 'cues' ? 'scroll-pt-40 ' : ''}-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]`}
           >
             {tab === 'general' && (
               <GeneralTab
@@ -591,8 +580,6 @@ export function SettingsModal({
                 rekordboxCollection={rekordboxCollection}
                 cueTrack={cueTrack}
                 cueTracks={cueTracks}
-                folds={cueFolds}
-                onFolds={setCueFolds}
               />
             )}
             {tab === 'fields' && (

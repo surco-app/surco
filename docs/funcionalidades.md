@@ -2649,7 +2649,8 @@ cuenta atrás aprendida de la colección se puede convertir en flujo desde el + 
 flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
 El mismo + ofrece «Desde «título de la pista»» (`cue-flow-add-track`) cuando la vista previa está
 sobre una pista marcada a mano de la que se puede deducir un flujo que aún no existe, y lo crea
-con el nombre «Como «título»» sin mover la vista previa de esa pista.
+con el nombre «Como «título»» sin mover la vista previa de esa pista. Ese flujo queda elegido en
+la pestaña pero no pasa a ser el de por defecto, a diferencia del de «Desde cómo marcas».
 
 **Dos condiciones más** (v1.26.0). «hasta la marca anterior», solo en reglas que cuentan hacia
 atrás desde el punto, deja que la cuenta atrás cruce los estribillos que no tienen marca y la
@@ -2665,6 +2666,10 @@ y una barra deja volver a la pista de ejemplo; si no tiene marca, lo dice y usa 
 Sobre la pista real dice si sus hot cues saldrían iguales o cuántas cambian, y lista las cues
 que el flujo deja fuera con la regla y el motivo: dentro de un estribillo, pasa de otra marca,
 antes del inicio o después del final (`CueFlowPreview.tsx`, `rejectedCues`).
+El selector de pista lleva un buscador sobre las pistas con marcas de la lista abierta. Si no
+hay ninguna, porque no hay una playlist de rekordbox abierta o ninguna de sus pistas tiene
+marcas, el buscador no sale y bajo «Pista de ejemplo» una línea dice que hay que abrir una
+playlist (`cue-preview-track-none`, `settings.cueFlows.noTracksOpen`).
 
 **La cuenta atrás y los estribillos** (v1.16.0). En una regla que cuenta hacia atrás «si
 cabe», la cue que cae donde empieza una racha de estribillos se queda, porque es donde se
@@ -2718,8 +2723,8 @@ lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
   Desde v1.26.0 el flujo aprendido se ofrece en el + de la lista de flujos («Desde cómo
   marcas»), la tarjeta resume en una línea de cuántas pistas aprendió y de dónde (rekordbox,
   guardadas en Surco) y el detalle se abre con «Lo que aprendió Surco»
-  (`cue-profile-details`, `CueProfileCard.tsx:230`). Antes y después de aprender va en la
-  fila plegable «Tu forma de marcar», bajo el flujo.
+  (`cue-profile-details`, `CueProfileCard.tsx:230`). Antes y después de aprender va al
+  final de la pestaña, tras «Aplicar los flujos también en» y «Editor manual», siempre a la vista.
 Traktor y Engine DJ no tienen CALL, así que de ellos solo aprende lo que el DJ guarda en
 Surco. «Aprender mientras corriges» (activado por defecto) suma cada pista guardada
 (`recordCueEdits`, `lib/cueTasteEdits.ts`). Desde v1.30.0 no hay botón de aprender: aprende
@@ -2752,6 +2757,10 @@ pida con «Ponerlo también ahí y perder esos cambios». Si la colección no ti
 tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
 (`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, `cueFlowToSerato`, encendidos,
 `settings.ts:90-93`).
+Cada programa ocupa una fila de «Aplicar los flujos también en» (`cue-flow-targets`), con lo
+que recibe a la derecha (en rekordbox hot cues y CALL, en los demás solo hot cues, en Traktor en
+azul) o, si no está en este equipo, que no se ha encontrado. Lo que hay que saber de Traktor,
+Serato y VirtualDJ al guardar va tras el icono de información de su fila.
 El punto se ajusta al golpe más cercano del otro programa, nunca a su compás
 (`contextOf`, `lib/cueTwins.ts`). Medido sobre 19 pistas que una colección real tiene en
 rekordbox y en Engine DJ (AIFF): las rejillas coinciden a menos de 13 ms en 16 de ellas y a

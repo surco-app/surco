@@ -85,10 +85,15 @@ async function openDetails(testid: string): Promise<HTMLElement> {
 }
 
 describe('CueProfileCard', () => {
-  it('leaves its name to the row of Settings that holds it once it learned, so «How you mark» is not said twice, and still heads the invitation before that', async () => {
+  it('heads what it learned with «How you mark» as a section of Settings, and the invitation with its own title before that', async () => {
     setup(read({ profile: PROFILE }))
     await screen.findByTestId('cue-profile-summary')
-    expect(screen.queryByRole('heading')).toBeNull()
+    expect(screen.getByRole('heading')).toHaveTextContent(/^How you mark$/)
+    expect(screen.getByRole('heading')).toHaveClass(
+      'text-section',
+      'font-semibold',
+      'text-fg-muted',
+    )
     cleanup()
     setup(read())
     await screen.findByTestId('cue-profile')
