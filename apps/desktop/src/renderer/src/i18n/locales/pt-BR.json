@@ -147,7 +147,7 @@
     "add_other": "Adicionar {{count}} faixas",
     "loading": "Buscando na coleção…",
     "failed": "Não foi possível ler a coleção",
-    "copyAbsent": "Copie as que faltam"
+    "copyAbsent": "Copiar as que faltam"
   },
   "info": {
     "title": "Informações"
@@ -425,7 +425,8 @@
     "reveal": "Abrir pasta",
     "restored": "“{{name}}” restaurado na sua pasta",
     "restoreFailed": "Não foi possível restaurar “{{name}}”: {{reason}}",
-    "restoreFailedMany": "Não foi possível restaurar “{{name}}” e mais {{count}}: {{reason}}",
+    "restoreFailedMany_one": "Não foi possível restaurar “{{name}}” e mais {{count}}: {{reason}}",
+    "restoreFailedMany_other": "Não foi possível restaurar “{{name}}” e mais {{count}}: {{reason}}",
     "removeFailed": "Não foi possível apagar “{{name}}”. {{reason}}",
     "emptyFailed": "Algumas cópias não puderam ser apagadas e continuam em Cópias › Arquivos de música. {{reason}}",
     "filters": {

@@ -425,7 +425,8 @@
     "reveal": "Apri cartella",
     "restored": "«{{name}}» ripristinato nella sua cartella",
     "restoreFailed": "Non è stato possibile ripristinare «{{name}}». {{reason}}",
-    "restoreFailedMany": "Non è stato possibile ripristinare «{{name}}» e altri {{count}}. {{reason}}",
+    "restoreFailedMany_one": "Non è stato possibile ripristinare «{{name}}» e un altro. {{reason}}",
+    "restoreFailedMany_other": "Non è stato possibile ripristinare «{{name}}» e altri {{count}}. {{reason}}",
     "removeFailed": "Non è stato possibile eliminare «{{name}}». {{reason}}",
     "emptyFailed": "Alcune copie non sono state eliminate e sono ancora in Copie › File musicali. {{reason}}",
     "filters": {

@@ -147,7 +147,7 @@
     "add_other": "Ajouter {{count}} morceaux",
     "loading": "Recherche dans la collection…",
     "failed": "Impossible de lire la collection",
-    "copyAbsent": "Copie celles qui manquent"
+    "copyAbsent": "Copier celles qui manquent"
   },
   "info": {
     "title": "Informations"
@@ -425,7 +425,8 @@
     "reveal": "Ouvrir le dossier",
     "restored": "« {{name}} » restauré dans son dossier",
     "restoreFailed": "Impossible de restaurer « {{name}} » : {{reason}}",
-    "restoreFailedMany": "Impossible de restaurer « {{name}} » et {{count}} autres : {{reason}}",
+    "restoreFailedMany_one": "Impossible de restaurer « {{name}} » et {{count}} autre : {{reason}}",
+    "restoreFailedMany_other": "Impossible de restaurer « {{name}} » et {{count}} autres : {{reason}}",
     "removeFailed": "Impossible de supprimer « {{name}} ». {{reason}}",
     "emptyFailed": "Certaines copies n’ont pas pu être supprimées et restent dans Sauvegardes › Fichiers de musique. {{reason}}",
     "filters": {
@@ -869,8 +870,8 @@
     "loudnessCrestHint": "Facteur de crête (dB). Le punch entre les pics et le niveau moyen",
     "loudnessBalanceLabel": "Balance",
     "loudnessBalanceHint": "Balance des canaux (dB). La différence de niveau entre gauche et droite",
-    "loudnessSilentLeft": "Le canal gauche n'a pas de signal",
-    "loudnessSilentRight": "Le canal droit n'a pas de signal",
+    "loudnessSilentLeft": "Le canal gauche n’a pas de signal",
+    "loudnessSilentRight": "Le canal droit n’a pas de signal",
     "loudnessDcLabel": "DC offset",
     "loudnessDcHint": "DC offset. Un décalage constant qui décentre la forme d’onde",
     "loudnessNoiseLabel": "Bruit de fond",

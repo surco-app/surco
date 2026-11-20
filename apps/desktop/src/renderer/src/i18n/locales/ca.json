@@ -147,7 +147,7 @@
     "add_other": "Afegir {{count}} pistes",
     "loading": "Cercant a la col·lecció…",
     "failed": "No s'ha pogut llegir la col·lecció",
-    "copyAbsent": "Copia les que falten"
+    "copyAbsent": "Copiar les que falten"
   },
   "info": {
     "title": "Informació"
@@ -425,7 +425,8 @@
     "reveal": "Obrir la carpeta",
     "restored": "«{{name}}» s'ha restaurat a la seva carpeta",
     "restoreFailed": "No s'ha pogut restaurar «{{name}}». {{reason}}",
-    "restoreFailedMany": "No s'ha pogut restaurar «{{name}}» ni {{count}} més. {{reason}}",
+    "restoreFailedMany_one": "No s'ha pogut restaurar «{{name}}» ni {{count}} més. {{reason}}",
+    "restoreFailedMany_other": "No s'ha pogut restaurar «{{name}}» ni {{count}} més. {{reason}}",
     "removeFailed": "No s'ha pogut eliminar «{{name}}». {{reason}}",
     "emptyFailed": "Algunes còpies no s'han pogut eliminar i continuen a Còpies › Fitxers de música. {{reason}}",
     "filters": {
