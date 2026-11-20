@@ -242,6 +242,18 @@ describe('a flow made from the track on screen', () => {
     ).toBe(0)
   })
 
+  it('counts from the marks it is handed when the track has none of its own, as in the programs without CALLs, and gives the flow the same track would give with a CALL there', () => {
+    const hotOnly = read({ cues: read().cues.filter((c) => c.kind !== 0) })
+    expect(flowFromTrack(hotOnly)).toBeNull()
+    expect(flowFromTrack(hotOnly, [exampleBar(97)])?.rules).toEqual(flowFromTrack(read())?.rules)
+    expect(learnTrackOf(hotOnly).cues.every((c) => c.kind !== 0)).toBe(true)
+  })
+
+  it('gives nothing when it is handed no mark and the track has none, since there is nothing to count from', () => {
+    const hotOnly = read({ cues: read().cues.filter((c) => c.kind !== 0) })
+    expect(flowFromTrack(hotOnly, [])).toBeNull()
+  })
+
   it('gives nothing for a track without a grid, where no distance can be counted', () => {
     expect(flowFromTrack(read({ grid: [] }))).toBeNull()
   })

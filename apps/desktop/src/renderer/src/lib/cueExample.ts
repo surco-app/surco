@@ -101,8 +101,8 @@ export function learnTrackOf(read: TrackCues): LearnTrack {
   }
 }
 
-export function flowFromTrack(read: TrackCues): CueFlow | null {
-  return learnFlowFromTrack(learnTrackOf(read))
+export function flowFromTrack(read: TrackCues, marks?: number[]): CueFlow | null {
+  return learnFlowFromTrack(learnTrackOf(read), marks)
 }
 
 export function collectionChoices(
