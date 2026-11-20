@@ -302,6 +302,25 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('with no other cue in the bars after')
   })
 
+  it('sets the five sections side by side in one row, each the same size ticked or not, so the menu is a row tall instead of five', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
+    openSquare(2)
+    const row = screen.getByTestId('cue-rule-0-color-2-when-sections')
+    expect(row).toHaveClass('flex', 'flex-wrap')
+    const sections = ['intro', 'up', 'down', 'chorus', 'outro'].map((s) => box(2, `in-${s}`))
+    expect(Array.from(row.children)).toEqual(sections)
+    expect(new Set(sections.map((el) => el.className)).size).toBe(1)
+    expect(box(2, 'in-up')).toHaveClass('aria-checked:bg-[var(--color-panel-2)]', 'text-fg-muted')
+    expect(sections.map((el) => el.textContent)).toEqual([
+      'intro',
+      'build',
+      'breakdown',
+      'chorus',
+      'outro',
+    ])
+    expect(row.querySelector('svg')).toBeNull()
+  })
+
   it('puts Restablecer on the line of the first condition instead of a row of its own under the colours', () => {
     const { onChange } = setup(RULE)
     openSquare(2)

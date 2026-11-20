@@ -50,6 +50,8 @@ const ITEM_CLASS =
   'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-checked:font-semibold aria-checked:text-fg'
 const BOX_CLASS =
   'press flex min-w-0 flex-1 items-center gap-1.5 whitespace-nowrap rounded-[3px] px-1 py-1 text-left text-xs leading-normal hover:bg-[var(--color-hover)] aria-checked:text-fg'
+const SECTION_CLASS =
+  'press grow rounded-[3px] px-1 py-1 text-center text-xs leading-normal whitespace-nowrap text-fg-muted hover:bg-[var(--color-hover)] aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg'
 const NEAR_DEFAULT = { before: 32, after: 16 }
 type NearSide = keyof typeof NEAR_DEFAULT
 
@@ -570,15 +572,24 @@ export function CueRuleRow({
                       >
                         {tr('settings.cueFlows.whenEach.only')}
                       </p>
-                      {FLOW_SECTIONS.map((section) =>
-                        box(
-                          slot,
-                          `in-${section}`,
-                          whenAt(slot).sections.includes(section),
-                          tr(`settings.cueFlows.section.${section}`),
-                          () => toggleSection(slot, section),
-                        ),
-                      )}
+                      <div
+                        data-testid={`${id}-color-${slot}-when-sections`}
+                        className="flex flex-wrap gap-0.5"
+                      >
+                        {FLOW_SECTIONS.map((section) => (
+                          <button
+                            key={section}
+                            type="button"
+                            role="menuitemcheckbox"
+                            aria-checked={whenAt(slot).sections.includes(section)}
+                            data-testid={`${id}-color-${slot}-when-in-${section}`}
+                            onClick={() => toggleSection(slot, section)}
+                            className={SECTION_CLASS}
+                          >
+                            {tr(`settings.cueFlows.section.${section}`)}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </span>
