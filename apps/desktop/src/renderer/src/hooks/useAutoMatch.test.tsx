@@ -827,7 +827,10 @@ describe('a row listed before its full read', () => {
     }
 
     it('swaps a small embedded cover for the release image when the setting is on', async () => {
-      expect(coverSourceOf(await sweep(true))).not.toEqual({ coverFromFile: '/m/a.wav' })
+      expect(coverSourceOf(await sweep(true))).toEqual({
+        coverUrl: 'https://discogs/cover.jpg',
+        coverPath: undefined,
+      })
     })
 
     it('keeps a small embedded cover when the setting is off', async () => {

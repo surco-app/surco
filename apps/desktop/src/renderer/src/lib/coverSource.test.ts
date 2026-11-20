@@ -21,10 +21,7 @@ describe('keepCoverArg', () => {
     })
   })
 
-  // The setting promises a bigger release image wins over a small embedded one. A sweep that
-  // ignored it would leave the low-res art on every row it matched, so the editor's rule
-  // (original cover, known size, below the low-res bar) has to hold in batch too.
-  describe('with the replace low resolution setting', () => {
+  describe('with the replace low resolution setting, the editor rule holds in batch so a sweep never leaves low-res art on the rows it matched', () => {
     const small = { w: 300, h: 300 }
     const large = { w: 1400, h: 1400 }
     const embedded = (dims?: { w: number; h: number }) => ({

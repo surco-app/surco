@@ -849,9 +849,7 @@ describe('acceptReviewPatch', () => {
     expect(patch?.matchProvider).toBe('discogs')
   })
 
-  // Accepting a suggestion from the list is a batch apply too, so the low resolution setting
-  // has to decide the cover here exactly as it does in the editor.
-  it('replaces a small embedded cover only when the setting asks for it', () => {
+  it('replaces a small embedded cover only when the setting asks for it, since accepting from the list is a batch apply like the editor', () => {
     const rel = release(1, {
       images: [{ type: 'primary', uri: 'https://d/c.jpg', resource_url: '' }],
     })
@@ -866,7 +864,9 @@ describe('acceptReviewPatch', () => {
       },
     })
     expect(acceptReviewPatch(t)?.coverUrl).toBe('thumb')
-    expect(acceptReviewPatch(t, undefined, undefined, false, true)?.coverUrl).not.toBe('thumb')
+    expect(acceptReviewPatch(t, undefined, undefined, false, true)?.coverUrl).toBe(
+      'https://d/c.jpg',
+    )
   })
 
   // Accepting from the list must date the track exactly as picking it in the editor would.
