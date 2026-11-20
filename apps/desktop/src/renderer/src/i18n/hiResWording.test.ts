@@ -11,7 +11,7 @@ import ptBR from './locales/pt-BR.json'
 const locales = { ca, de, en, es, fr, it: it_, ja, 'pt-BR': ptBR }
 
 const verdictAdjectives =
-  /aut[eéèê]ntic|authentique|vrai|genuin|genu[ií]no|echt|verdader|verdadeiro|本物|真の|real hi-res/i
+  /auth?[eéèê]ntic|authentique|\bvraie?s?\b|genuin|genu[ií]no|\bechte?[nrsm]?\b|verdader|verdadeiro|本物|真の|real hi-res/i
 
 describe('editor.qualityHiRes', () => {
   for (const [code, locale] of Object.entries(locales)) {
