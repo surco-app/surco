@@ -1,4 +1,11 @@
-import { type CueFlow, type CueRule, type FlowPhrase, MY_FLOW, RULE_BARS } from './cueFlows'
+import {
+  type CueFlow,
+  type CueRule,
+  type FlowCondition,
+  type FlowPhrase,
+  MY_FLOW,
+  RULE_BARS,
+} from './cueFlows'
 import {
   BAR_TOLERANCE,
   BEATS_PER_BAR,
@@ -18,6 +25,8 @@ export const PATTERN_SHARE = 0.3
 const MAJORITY = 0.5
 const MAX_LEARNED_REPEAT = 8
 const FALLBACK_COLOR = 22
+const COUNTDOWN_CONDITIONS: FlowCondition[] = ['previous', 'fits', 'always']
+const START_CONDITIONS: FlowCondition[] = ['first', 'always']
 
 export interface LearnCue {
   ms: number
@@ -127,6 +136,17 @@ function markedOf(track: LearnTrack, index: number): Marked | null {
     dropBeat: nearestBeat(track.beats, drops[0]),
     before: hotBefore(track, drops[0], Number.NEGATIVE_INFINITY),
   }
+}
+
+function marksOf(track: LearnTrack): Marked[] {
+  const whole = markedOf(track, 0)
+  if (!whole) return []
+  return whole.drops.map((drop, index) => ({
+    ...whole,
+    index,
+    dropBeat: nearestBeat(track.beats, drop),
+    before: hotBefore(track, drop, whole.drops[index - 1] ?? Number.NEGATIVE_INFINITY),
+  }))
 }
 
 function dominantColor(colors: (number | null)[]): number {
@@ -334,6 +354,41 @@ export function learnFlow(tracks: LearnTrack[]): LearnedFlow | null {
   const { matching } = mismatchesOf(marked, flow)
   if (matching < PATTERN_SHARE * marked.length) return null
   return { flow, coverage: { matching, marked: marked.length } }
+}
+
+function trackDistances(marks: Marked[]): number[] {
+  const seen = new Set(marks.flatMap((m) => m.before.flatMap((h) => h.bars ?? [])))
+  const reproduced = (distances: number[]): number => countdownCues(marks, distances).length
+  return [...distanceSupport(marks).keys()]
+    .filter(isStep)
+    .map((step) => runOf(step, (d) => seen.has(d)))
+    .reduce<number[]>((best, run) => (reproduced(run) > reproduced(best) ? run : best), [])
+}
+
+function hotDifferences(flow: CueFlow, track: LearnTrack, drops: number[]): number {
+  const planned = evaluateFlow(flow, { ...track, drops }).cues.map((c) => c.ms)
+  const hot = track.cues.filter((c) => c.kind !== 0).map((c) => c.ms)
+  return (
+    planned.filter((p) => !hot.some((h) => near(h, p))).length +
+    hot.filter((h) => !planned.some((p) => near(p, h))).length
+  )
+}
+
+const variants = (rule: CueRule | null, conditions: FlowCondition[]): CueRule[][] =>
+  rule ? conditions.map((when) => [{ ...rule, when }]) : [[]]
+
+export function learnFlowFromTrack(track: LearnTrack): CueFlow | null {
+  const marks = marksOf(track)
+  if (marks.length === 0) return null
+  const distances = trackDistances(marks)
+  const countdown = countdownRule(marks, distances)
+  const start = startRule(marks.slice(0, 1), startCue(marks[0], distances))
+  const candidates = variants(countdown, COUNTDOWN_CONDITIONS).flatMap((c) =>
+    variants(start, START_CONDITIONS).map((s) => learnedFlow([...c, ...s])),
+  )
+  if (candidates[0].rules.length === 0) return null
+  const differences = candidates.map((flow) => hotDifferences(flow, track, marks[0].drops))
+  return candidates[differences.indexOf(Math.min(...differences))]
 }
 
 export function diagnoseLearnFlow(tracks: LearnTrack[]): LearnDiagnosis {
