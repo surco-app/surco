@@ -13875,53 +13875,55 @@ describe('paste tracklist from the tree', () => {
     expect(screen.getByTestId('paste-tracklist-dialog')).toBeInTheDocument()
   })
 
-  it('creates the playlist inside the folder first, then adds to the new one', async () => {
+  it('sends a new playlist and its tracks in one edit, so a create queued behind an open program still carries them', async () => {
     const edit = openRekordboxTree(
       vi
         .fn<ProgramReads['editPlaylist']>()
-        .mockResolvedValueOnce({ applied: true, createdId: 'new' })
-        .mockResolvedValue({ applied: true }),
+        .mockResolvedValue({ applied: false, queued: true, opId: 'op1' }),
     )
     await pasteAndAdd('sets', 'Mi set')
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
-    expect(edit.mock.calls[0][0]).toEqual({
-      kind: 'create',
-      parentId: 'sets',
-      name: 'Mi set',
-      folder: false,
-    })
-    expect(edit.mock.calls[1][0]).toEqual({
-      kind: 'add',
-      playlistId: 'new',
-      tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
-    })
+    await waitFor(() => expect(edit).toHaveBeenCalled())
+    await act(async () => {})
+    expect(edit).toHaveBeenCalledExactlyOnceWith(
+      {
+        kind: 'create',
+        parentId: 'sets',
+        name: 'Mi set',
+        folder: false,
+        tracks: [{ contentId: '41', paths: ['/m/a.wav'] }],
+      },
+      'Mi set',
+    )
   })
 
-  it('asks once to close rekordbox before it creates the playlist and adds to it, not once per edit', async () => {
+  it('asks once to close rekordbox before it creates the playlist with its tracks', async () => {
     const edit = openRekordboxTree(
-      vi
-        .fn<ProgramReads['editPlaylist']>()
-        .mockResolvedValueOnce({ applied: true, createdId: 'new' })
-        .mockResolvedValue({ applied: true }),
+      vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true, createdId: 'new' }),
     )
     await pasteAndAdd('sets', 'Mi set')
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
     expect(window.api.dj.askToApply).toHaveBeenCalledExactlyOnceWith(['rekordbox'])
     expect(vi.mocked(window.api.dj.askToApply).mock.invocationCallOrder[0]).toBeLessThan(
       edit.mock.invocationCallOrder[0],
     )
   })
 
-  it('adds nothing when the playlist could not be created', async () => {
+  it('tells the user why a playlist with its tracks could not be created, and says nothing went in', async () => {
     const edit = openRekordboxTree(
       vi
         .fn<ProgramReads['editPlaylist']>()
         .mockResolvedValue({ applied: false, reason: 'rekordbox-running' }),
     )
     await pasteAndAdd('sets', 'Mi set')
-    await waitFor(() => expect(edit).toHaveBeenCalledTimes(1))
+    expect(await screen.findByTestId('rekordbox-edit-notice')).toHaveTextContent(
+      i18n.t('sources.edit.refused.running'),
+    )
     await act(async () => {})
     expect(edit).toHaveBeenCalledTimes(1)
+    expect(screen.getAllByTestId('rekordbox-edit-notice')).toHaveLength(1)
+    expect(screen.getByTestId('rekordbox-edit-notice')).not.toHaveTextContent(
+      i18n.t('sources.edit.added', { count: 1, name: 'Mi set' }),
+    )
   })
 })
 

@@ -89,7 +89,7 @@ export function editMessage(
       text: tr(own(REFUSED[result.reason])),
       tone: WAITING.has(result.reason) ? 'neutral' : 'danger',
     }
-  if (edit.kind !== 'add' || !result.report) return null
+  if ((edit.kind !== 'add' && edit.kind !== 'create') || !result.report) return null
   const r = result.report
   const parts = [
     r.added > 0
