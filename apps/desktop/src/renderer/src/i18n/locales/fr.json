@@ -547,6 +547,7 @@
     "search": "Rechercher dans la liste des morceaux",
     "settings": "Réglages",
     "clearAll": "Vider la liste",
+    "reopenLastSession": "Rouvrir la dernière session",
     "info": "Informations sur le morceau",
     "reveal": "Afficher dans le Finder",
     "revealWin": "Afficher dans l’Explorateur",

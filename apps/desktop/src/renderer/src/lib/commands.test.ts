@@ -119,6 +119,8 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     canUndoMeta: () => false,
     redoMeta: () => {},
     canRedoMeta: () => false,
+    canReopenLastSession: () => false,
+    reopenLastSession: () => {},
     acceptReview: () => {},
     fireConfetti: () => {},
     sources: [],
@@ -1064,6 +1066,27 @@ describe('buildCommands trash-selected gate', () => {
     const askTrashSelected = vi.fn()
     commandById(makeDeps({ askTrashSelected, selected: track() }), 'trash-selected').run()
     expect(askTrashSelected).toHaveBeenCalled()
+  })
+})
+
+describe('reopen-last-session', () => {
+  // The session hook alone knows whether Files is empty and a session is waiting, so the
+  // palette follows its answer instead of offering a reopen that would mix two lists.
+  it('follows the session hook for availability and runs its reopen', () => {
+    const reopenLastSession = vi.fn()
+    const off = commandById(makeDeps({ reopenLastSession }), 'reopen-last-session')
+    expect(off.enabled).toBe(false)
+    const on = commandById(
+      makeDeps({ reopenLastSession, canReopenLastSession: () => true }),
+      'reopen-last-session',
+    )
+    expect(on).toMatchObject({
+      enabled: true,
+      group: 'library',
+      title: 'commands.reopenLastSession',
+    })
+    on.run()
+    expect(reopenLastSession).toHaveBeenCalledTimes(1)
   })
 })
 

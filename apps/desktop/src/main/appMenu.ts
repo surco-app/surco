@@ -50,6 +50,7 @@ export function appMenuTemplate({
       label: t('file'),
       submenu: [
         keymapItem(t('add'), 'add'),
+        { label: t('reopenLastSession'), click: () => run('reopen-last-session') },
         keymapItem(t('info'), 'info'),
         // Reveal is renderer-owned like the others now (it used to register ⌘R itself):
         // its chord is configurable, so the keystroke must reach the keymap, not the menu.

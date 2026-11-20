@@ -143,6 +143,8 @@ export interface Api {
   // The same write, blocking until main has it on disk: for the page going away, when an
   // async message might never be handled.
   saveLastSessionSync: (paths: string[], edits: Record<string, SessionEdit>, view?: unknown) => void
+  loadPreviousSession: () => Promise<SessionData | null>
+  clearPreviousSession: () => Promise<void>
   getSettings: () => Promise<Settings>
   saveSettings: (patch: Partial<Settings>) => Promise<Settings>
   beatportConnect: (username: string, password: string) => Promise<Settings>

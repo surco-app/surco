@@ -547,6 +547,7 @@
     "search": "Search the track list",
     "settings": "Settings",
     "clearAll": "Clear the list",
+    "reopenLastSession": "Reopen last session",
     "info": "Track info",
     "reveal": "Reveal in Finder",
     "revealWin": "Show in File Explorer",

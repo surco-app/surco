@@ -1461,8 +1461,8 @@ export default function App(): React.JSX.Element {
     setSelection({ ids: ids.includes(anchor) ? ids : [anchor, ...ids], anchor })
   })
   // The last session: offered back at launch, written out as it changes. Self-contained —
-  // it hands nothing back.
-  useSessionPersistence({
+  // it hands back only the reopen command.
+  const lastSession = useSessionPersistence({
     tracks,
     tracksRef,
     addPaths,
@@ -4105,6 +4105,8 @@ export default function App(): React.JSX.Element {
       canUndoMeta: metaUndo.canUndo,
       redoMeta,
       canRedoMeta: metaUndo.canRedo,
+      canReopenLastSession: lastSession.canReopen,
+      reopenLastSession: lastSession.reopen,
       acceptReview,
       fireConfetti,
       sources: browser.sources,

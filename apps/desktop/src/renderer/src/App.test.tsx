@@ -379,6 +379,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     takePendingFiles: vi.fn().mockResolvedValue([]),
     getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({ paths: [], edits: {} }),
     saveLastSession: vi.fn().mockResolvedValue(undefined),
+    loadPreviousSession: vi.fn<Api['loadPreviousSession']>().mockResolvedValue(null),
+    clearPreviousSession: vi.fn<Api['clearPreviousSession']>().mockResolvedValue(undefined),
     expandPaths: vi.fn((paths: string[]) => Promise.resolve(paths)),
     pathAliases: vi.fn((paths: string[]) => Promise.resolve(paths)),
     onVerifyUpdate: vi.fn<Api['onVerifyUpdate']>(() => () => {}),

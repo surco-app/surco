@@ -343,6 +343,8 @@ export interface CommandDeps {
   canUndoMeta: () => boolean
   redoMeta: () => void
   canRedoMeta: () => boolean
+  canReopenLastSession: () => boolean
+  reopenLastSession: () => void
   // Applies the selected track's pending 'review' suggestion — the match the sweep flagged
   // but didn't write — without opening the editor. A no-op when there's nothing to accept.
   acceptReview: () => void
@@ -472,6 +474,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     canUndoMeta,
     redoMeta,
     canRedoMeta,
+    canReopenLastSession,
+    reopenLastSession,
     acceptReview,
     fireConfetti,
     sources,
@@ -1121,6 +1125,13 @@ export function buildCommands(deps: CommandDeps): Command[] {
       title: tr('commands.clearAll'),
       enabled: visibleTracks.length > 0,
       run: askClearAll,
+    },
+    {
+      id: 'reopen-last-session',
+      group: 'library',
+      title: tr('commands.reopenLastSession'),
+      enabled: canReopenLastSession(),
+      run: reopenLastSession,
     },
     {
       id: 'settings',

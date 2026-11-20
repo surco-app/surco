@@ -237,7 +237,12 @@ import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
-import { loadLastSession, saveLastSession } from './session'
+import {
+  clearPreviousSession,
+  loadLastSession,
+  loadPreviousSession,
+  saveLastSession,
+} from './session'
 import {
   configDirHasSettings,
   defaultConfigDir,
@@ -1316,6 +1321,8 @@ function registerIpc(): void {
   // edits as they change and asks for them back at launch to offer restoring the
   // previous crate — edits included, so a crash never loses unapplied metadata.
   ipcMain.handle('session:get', () => loadLastSession())
+  ipcMain.handle('session:get-previous', () => loadPreviousSession())
+  ipcMain.handle('session:clear-previous', () => clearPreviousSession())
   ipcMain.handle(
     'session:set',
     (_e, paths: string[], edits: Record<string, SessionEdit>, view?: unknown) =>

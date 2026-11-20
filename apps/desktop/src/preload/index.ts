@@ -105,6 +105,9 @@ const api: Api = {
   ): void => {
     ipcRenderer.sendSync('session:set-sync', paths, edits, view)
   },
+  loadPreviousSession: (): Promise<SessionData | null> =>
+    ipcRenderer.invoke('session:get-previous'),
+  clearPreviousSession: (): Promise<void> => ipcRenderer.invoke('session:clear-previous'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (patch) => ipcRenderer.invoke('settings:set', patch),
   beatportConnect: (username, password) =>

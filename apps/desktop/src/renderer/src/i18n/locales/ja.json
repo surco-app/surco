@@ -547,6 +547,7 @@
     "search": "トラックリストを検索",
     "settings": "設定",
     "clearAll": "リストをクリア",
+    "reopenLastSession": "最後のセッションを再開",
     "info": "トラック情報",
     "reveal": "Finderで表示",
     "revealWin": "エクスプローラーで表示",

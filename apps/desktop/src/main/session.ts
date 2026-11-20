@@ -1,4 +1,4 @@
-import { existsSync, renameSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
@@ -20,6 +20,10 @@ import { isMissing, sourceStat } from './sourceStat'
 // meaningless on another machine.
 function sessionPath(): string {
   return join(app.getPath('userData'), 'session.json')
+}
+
+function previousSessionPath(): string {
+  return join(app.getPath('userData'), 'session.prev.json')
 }
 
 // Restored previews stay small: a locally picked cover can be a print-size scan, and
@@ -162,9 +166,9 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
 // The awaits let the event loop (and the paint) run. The network volume answers the stats
 // one after another however many are in flight, so sending them all at once saved nothing
 // and held every other file read behind them.
-export async function loadLastSession(): Promise<SessionData> {
+async function loadSessionFile(file: string): Promise<SessionData> {
   try {
-    const raw = JSON.parse(await readFile(sessionPath(), 'utf-8')) as {
+    const raw = JSON.parse(await readFile(file, 'utf-8')) as {
       paths?: unknown
       edits?: unknown
       view?: unknown
@@ -199,6 +203,41 @@ export async function loadLastSession(): Promise<SessionData> {
   }
 }
 
+export function loadLastSession(): Promise<SessionData> {
+  return loadSessionFile(sessionPath())
+}
+
+export async function loadPreviousSession(): Promise<SessionData | null> {
+  const session = await loadSessionFile(previousSessionPath())
+  return session.paths.length > 0 ? session : null
+}
+
+export function clearPreviousSession(): void {
+  rmSync(previousSessionPath(), { force: true })
+}
+
+let storedPaths: string[] | null = null
+let previousKept = false
+
+function readStoredPaths(path: string): string[] {
+  try {
+    const raw = JSON.parse(readFileSync(path, 'utf-8')) as { paths?: unknown }
+    return Array.isArray(raw.paths) ? raw.paths.filter((p) => typeof p === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function keepPreviousSession(path: string, paths: string[]): void {
+  if (previousKept) return
+  const stored = storedPaths ?? readStoredPaths(path)
+  const next = new Set(paths)
+  if (stored.length === 0 || (stored.length === next.size && stored.every((p) => next.has(p))))
+    return
+  copyFileSync(path, previousSessionPath())
+  previousKept = true
+}
+
 // Write-then-rename like the settings store: a crash mid-write must never truncate
 // the file into unparseable JSON that would silently discard the session.
 export function saveLastSession(
@@ -208,6 +247,8 @@ export function saveLastSession(
 ): void {
   const path = sessionPath()
   const tmp = `${path}.tmp`
+  keepPreviousSession(path, paths)
   writeFileSync(tmp, JSON.stringify({ paths, edits, view }), 'utf-8')
   renameSync(tmp, path)
+  storedPaths = paths
 }

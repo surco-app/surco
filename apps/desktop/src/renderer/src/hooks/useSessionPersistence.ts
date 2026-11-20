@@ -37,7 +37,7 @@ interface Params {
 
 // The last session: offered back at launch, and written out as it changes.
 //
-// A self-contained subsystem — it returns nothing and App reads nothing from it — that was
+// A self-contained subsystem — it returns only the reopen command's pair — that was
 // living as three refs, two constants, three callbacks and four effects strewn through App's
 // body. Two rules carry the whole thing and are easy to break by accident, so they are
 // spelled out where they live:
@@ -57,7 +57,7 @@ export function useSessionPersistence({
   selectRestored,
   playbackPosition,
   resumePlayback,
-}: Params): void {
+}: Params): { canReopen: () => boolean; reopen: () => void } {
   // The launch-time "reopen last session" offer. Asked once, and only while Files is
   // still empty — restoring the old list on top of a fresh import would mix two sessions,
   // so the offer withdraws itself the moment Files has rows (the effect below). Accepting
@@ -68,6 +68,9 @@ export function useSessionPersistence({
   // an unwatched countdown to run out before the user ever saw it.
   const LAST_SESSION_PROMPT_TIMEOUT_MS = 6_000
   const lastSessionToastId = useRef<string | null>(null)
+  const pendingSessionRef = useRef<SessionData | null>(null)
+  const previousSessionRef = useRef<SessionData | null>(null)
+  const reopeningRef = useRef(false)
   const withdrawnRef = useRef(withdrawOffer)
   withdrawnRef.current = withdrawOffer
   const reopenLastSession = useStableCallback(async (session: SessionData) => {
@@ -76,6 +79,7 @@ export function useSessionPersistence({
     // null that effect can no longer find the toast — it would stay up forever.
     if (lastSessionToastId.current) dismissToast(store, lastSessionToastId.current)
     lastSessionToastId.current = null
+    pendingSessionRef.current = null
     // Seeded BEFORE the expand: the walk streams its paths first, so the rows exist by the
     // time addPaths' own restore argument arrives and none of them counts as new any more.
     // Measured in the app, that dropped the edits for every track but one — the covers,
@@ -97,7 +101,10 @@ export function useSessionPersistence({
   // settings apply the user's language, so the card renders it in whatever is current.
   const declineLastSession = useStableCallback(() => {
     lastSessionToastId.current = null
+    pendingSessionRef.current = null
+    previousSessionRef.current = null
     void window.api.saveLastSession([], {})
+    void window.api.clearPreviousSession()
   })
   const forgetLastSessionOffer = useStableCallback(() => {
     lastSessionToastId.current = null
@@ -126,7 +133,12 @@ export function useSessionPersistence({
   useEffect(() => {
     let cancelled = false
     void window.api.getLastSession().then((session) => {
-      if (!cancelled) offerLastSession(session)
+      if (cancelled) return
+      if (session.paths.length > 0) pendingSessionRef.current = session
+      offerLastSession(session)
+    })
+    void window.api.loadPreviousSession().then((previous) => {
+      if (!cancelled) previousSessionRef.current = previous
     })
     return () => {
       cancelled = true
@@ -197,7 +209,15 @@ export function useSessionPersistence({
     if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     sessionSaveTimer.current = setTimeout(() => {
       sessionSaveTimer.current = null
-      writeSettled((paths, edits, view) => void window.api.saveLastSession(paths, edits, view))
+      writeSettled((paths, edits, view) => {
+        const saved = window.api.saveLastSession(paths, edits, view)
+        if (paths.length > 0) return
+        void saved
+          .then(() => window.api.loadPreviousSession())
+          .then((previous) => {
+            previousSessionRef.current = previous
+          })
+      })
     }, SESSION_SAVE_DEBOUNCE_MS)
   }, [tracks, viewSig])
   // A quit or a closed window inside the debounce kills the timer with the page, losing
@@ -218,4 +238,20 @@ export function useSessionPersistence({
       if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
     }
   }, [writeSettled])
+
+  const canReopen = useStableCallback(
+    () =>
+      !reopeningRef.current &&
+      !tracksRef.current.some((t) => t.inFiles) &&
+      (pendingSessionRef.current ?? previousSessionRef.current) !== null,
+  )
+  const reopen = useStableCallback(() => {
+    const session = pendingSessionRef.current ?? previousSessionRef.current
+    if (!session || !canReopen()) return
+    reopeningRef.current = true
+    void reopenLastSession(session).finally(() => {
+      reopeningRef.current = false
+    })
+  })
+  return { canReopen, reopen }
 }

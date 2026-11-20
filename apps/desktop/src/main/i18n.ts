@@ -22,6 +22,7 @@ interface MenuStrings {
   addAppleMusic: string
   remove: string
   removeAll: string
+  reopenLastSession: string
   processCurrent: string
   processAll: string
   view: string
@@ -146,6 +147,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     addAppleMusic: 'Añadir a Apple Music',
     remove: 'Quitar de Surco',
     removeAll: 'Vaciar la lista',
+    reopenLastSession: 'Reabrir la última sesión',
     processCurrent: 'Convertir pista',
     processAll: 'Convertir todo',
     view: 'Ver',
@@ -284,6 +286,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     addAppleMusic: 'Add to Apple Music',
     remove: 'Remove from Surco',
     removeAll: 'Remove all',
+    reopenLastSession: 'Reopen last session',
     processCurrent: 'Convert track',
     processAll: 'Convert all',
     view: 'View',
@@ -422,6 +425,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     addAppleMusic: 'Zu Apple Music hinzufügen',
     remove: 'Aus Surco entfernen',
     removeAll: 'Liste leeren',
+    reopenLastSession: 'Letzte Sitzung wieder öffnen',
     processCurrent: 'Track konvertieren',
     processAll: 'Alle konvertieren',
     view: 'Ansicht',
@@ -562,6 +566,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     addAppleMusic: 'Ajouter à Apple Music',
     remove: 'Retirer de Surco',
     removeAll: 'Vider la liste',
+    reopenLastSession: 'Rouvrir la dernière session',
     processCurrent: 'Convertir le morceau',
     processAll: 'Tout convertir',
     view: 'Présentation',
@@ -703,6 +708,7 @@ const strings: Record<MenuLang, MenuStrings> = {
     addAppleMusic: 'Adicionar ao Apple Music',
     remove: 'Remover do Surco',
     removeAll: 'Limpar a lista',
+    reopenLastSession: 'Reabrir a última sessão',
     processCurrent: 'Converter faixa',
     processAll: 'Converter tudo',
     view: 'Visualizar',

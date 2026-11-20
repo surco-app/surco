@@ -2,7 +2,12 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, configure, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { createRoot } from 'react-dom/client'
 import { vi } from 'vitest'
-import { loadLastSession, saveLastSession } from '../main/session'
+import {
+  clearPreviousSession,
+  loadLastSession,
+  loadPreviousSession,
+  saveLastSession,
+} from '../main/session'
 import {
   getSettings,
   sanitizeSettingsPatch,
@@ -65,6 +70,8 @@ function shellApi(
     getLastSession: loadLastSession,
     saveLastSession: async (paths, edits, view) => saveLastSession(paths, edits, view),
     saveLastSessionSync: saveLastSession,
+    loadPreviousSession,
+    clearPreviousSession: async () => clearPreviousSession(),
     logError: (message, stack) => errors.push(`renderer: ${message}${stack ? `\n${stack}` : ''}`),
     onOpenFiles: (cb) => {
       openFiles.current = cb
