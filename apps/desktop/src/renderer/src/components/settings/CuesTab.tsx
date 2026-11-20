@@ -408,18 +408,20 @@ export function CuesTab({
       </div>
 
       <div data-testid="cue-flow-bench">
-        <section
-          data-testid="cue-flow-bench-preview"
-          aria-label={tr('settings.cueFlows.preview')}
-          className="sticky top-0 z-10 rounded-t-lg border border-[var(--color-line)] bg-[var(--color-field)] px-3 pt-3 pb-1"
-        >
-          <CueFlowTrackPreview
-            flow={flow}
-            track={cueTrack}
-            tracks={cueTracks}
-            onShown={setPreviewed}
-          />
-        </section>
+        <div data-testid="cue-flow-bench-pin" className="sticky top-0 z-10 bg-[var(--color-panel)]">
+          <section
+            data-testid="cue-flow-bench-preview"
+            aria-label={tr('settings.cueFlows.preview')}
+            className="rounded-t-lg border border-[var(--color-line)] border-b-[var(--color-line-strong)] bg-[var(--color-field)] px-3 pt-3 pb-1"
+          >
+            <CueFlowTrackPreview
+              flow={flow}
+              track={cueTrack}
+              tracks={cueTracks}
+              onShown={setPreviewed}
+            />
+          </section>
+        </div>
         <section
           aria-label={tr('settings.cueFlows.rules')}
           className="divide-y divide-[var(--color-line)] rounded-b-lg border-x border-b border-[var(--color-line)]"

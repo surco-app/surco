@@ -1021,21 +1021,38 @@ describe('CuesTab', () => {
     expect(within(bench).getByRole('region', { name: 'Rules' })).toContainElement(inside[1])
   })
 
-  it('pins the preview to the top of Settings on an opaque ground while the rules scroll under it, below the lists a rule opens', () => {
+  it('pins the preview to the top of Settings on a square strip of the panel colour as wide as the piece, so nothing scrolling under it shows through its round corners, below the lists a rule opens', () => {
     render(<Harness />)
-    const pinned = screen.getByTestId('cue-flow-bench-preview')
-    expect(pinned).toContainElement(screen.getByTestId('cue-flow-preview'))
-    expect(pinned).toHaveClass('sticky', 'top-0', 'z-10', 'bg-[var(--color-field)]')
-    expect(pinned).not.toContainElement(screen.getByTestId('cue-rule-0'))
+    const pin = screen.getByTestId('cue-flow-bench-pin')
+    const card = screen.getByTestId('cue-flow-bench-preview')
+    expect(pin.parentElement).toBe(screen.getByTestId('cue-flow-bench'))
+    expect(pin).toHaveClass('sticky', 'top-0', 'z-10', 'bg-[var(--color-panel)]')
+    expect(pin.className).not.toMatch(/rounded|(?<![\w-])(?:p|m)[xlr]?-/)
+    expect(pin).toContainElement(card)
+    expect(card).toContainElement(screen.getByTestId('cue-flow-preview'))
+    expect(card).toHaveClass('rounded-t-lg', 'bg-[var(--color-field)]')
+    expect(card.className).not.toContain('sticky')
+    expect(pin).not.toContainElement(screen.getByTestId('cue-rule-0'))
+  })
+
+  it('draws a stronger line under the pinned preview, so it stays apart from the rules passing under it on the light theme too', () => {
+    render(<Harness />)
+    expect(screen.getByTestId('cue-flow-bench-preview')).toHaveClass(
+      'border',
+      'border-[var(--color-line)]',
+      'border-b-[var(--color-line-strong)]',
+    )
   })
 
   it('never clips the piece of the preview and the rules, so their lists keep placing themselves against the edges of Settings', () => {
     render(<Harness />)
     const bench = screen.getByTestId('cue-flow-bench')
-    const clipping = [bench, ...Array.from(bench.querySelectorAll('section'))].filter((el) =>
-      /overflow-/.test(el.className),
-    )
+    const clipping = [
+      bench,
+      ...Array.from(bench.querySelectorAll('section, [data-testid="cue-flow-bench-pin"]')),
+    ].filter((el) => /overflow-/.test(el.className))
     expect(clipping).toEqual([])
+    expect(bench.querySelectorAll('section, [data-testid="cue-flow-bench-pin"]')).toHaveLength(3)
   })
 
   it('sets the arrow jump of the manual editor in its own card', () => {
