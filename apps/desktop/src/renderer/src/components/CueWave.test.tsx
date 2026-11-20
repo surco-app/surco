@@ -510,6 +510,28 @@ describe('CueWave', () => {
       })
     })
 
+    it('gives the hot cues the flow would take away a row of their own under the cue squares and over the wave, so they never cover a new cue nor sit under one left out by a rule', () => {
+      setup({
+        readOnly: true,
+        cues: [{ key: 'a', ms: 24000, kind: 1, color: 42, pending: false }],
+        diff,
+        ghost: { added: [], gone: [], rejected: [{ ms: 24200, place: 'hot', color: 42 }] },
+      })
+      const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
+      expect(gone.style.top).toBe('14px')
+      expect(screen.getByTestId('cue-wave-hot-A').style.top).toBe('0px')
+      expect(screen.getByTestId('cue-wave-ghost-dropped-24200').style.top).toBe('0px')
+      expect(gone.className).not.toContain('pointer-events-none')
+      expect(
+        screen.getByTestId('cue-wave-area').compareDocumentPosition(gone) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+      expect(
+        screen.getByTestId('cue-wave-hot-A').compareDocumentPosition(gone) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
     it('fades everything but the differences while they are pointed at, so they stand out among the rest', () => {
       setup({
         readOnly: true,

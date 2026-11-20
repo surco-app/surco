@@ -18,6 +18,7 @@ import {
   droppedStyle,
   GHOST_OPACITY,
   GONE_OPACITY,
+  GONE_ROW_TOP_PX,
   HOT_MARK_PX,
   markStyle,
   placeCues,
@@ -500,6 +501,7 @@ export function CueWave({
           aria-label={diff?.goneLabel}
           style={{
             ...markStyle(h.at),
+            top: `${GONE_ROW_TOP_PX}px`,
             backgroundColor: 'var(--color-panel-2)',
             borderColor: h.colour,
             borderStyle: 'solid',
