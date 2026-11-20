@@ -491,6 +491,8 @@
     "updatedMeta_other": "{{count}} トラックのメタデータを更新しました",
     "removedFromList_one": "{{count}} トラックをリストから削除しました",
     "removedFromList_other": "{{count}} トラックをリストから削除しました",
+    "movedToBackups_one": "{{count}} トラックを「バックアップ」へ移動しました",
+    "movedToBackups_other": "{{count}} トラックを「バックアップ」へ移動しました",
     "undoneMeta_one": "{{count}} トラックのメタデータを復元しました",
     "undoneMeta_other": "{{count}} トラックのメタデータを復元しました",
     "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",

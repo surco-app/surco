@@ -491,6 +491,8 @@
     "updatedMeta_other": "Métadonnées mises à jour sur {{count}} morceaux",
     "removedFromList_one": "{{count}} morceau retiré de la liste",
     "removedFromList_other": "{{count}} morceaux retirés de la liste",
+    "movedToBackups_one": "{{count}} morceau déplacé vers Sauvegardes",
+    "movedToBackups_other": "{{count}} morceaux déplacés vers Sauvegardes",
     "undoneMeta_one": "Métadonnées restaurées sur {{count}} morceau",
     "undoneMeta_other": "Métadonnées restaurées sur {{count}} morceaux",
     "redoneMeta_one": "Modification de métadonnées rétablie sur {{count}} morceau",

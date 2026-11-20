@@ -3582,7 +3582,7 @@ describe('App source playlists', () => {
   // Trash from the playlist, Undo would bring back a row whose file is gone.
   it('does not bring back a row whose file was trashed while its removal could be undone', async () => {
     const pickFiles = vi.fn<Api['pickFiles']>().mockResolvedValue(['/m/a.wav'])
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     factoryWithAlpha({ pickFiles, trashFile })
     await renderApp()
     fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -7064,7 +7064,7 @@ describe('App multi-select removal', () => {
   // Same selection rule for the destructive action: "Move to Trash" sends every selected
   // file to the OS trash, not just the row under the cursor.
   it('trashes every selected file from the right-click menu', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -7086,7 +7086,7 @@ describe('App multi-select removal', () => {
   // selection" after searching used to also send the selected rows the search was hiding to
   // the OS trash, files the user could not see when they confirmed.
   it('trashes only the selected rows the search still shows', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi
         .fn()
@@ -7116,7 +7116,7 @@ describe('App multi-select removal', () => {
   // Same rule for a filter: narrowing to MP3 and trashing the selection must not take the
   // selected WAV the filter is hiding.
   it('trashes only the selected rows the format filter still shows', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.mp3', '/music/b.wav', '/music/c.mp3']),
       trashFile,
@@ -13468,7 +13468,7 @@ describe('App list header', () => {
   // The visible button only drops rows from the list, so it must never reach the files. It
   // takes the selection at once, like the context menu's Remove, since Undo brings it back.
   it('removes the selection from the list with the visible button at once, never trashing files', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
@@ -13497,7 +13497,7 @@ describe('App list header', () => {
   // The OS Trash is recoverable, so the menu moves the selection there at once with no
   // dialog; with nothing selected there is nothing to move and trashFile is never called.
   it('moves the selection to the Trash from the menu, and nothing without one', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({ trashFile })
     await renderApp()
     await addTwoTracks()
@@ -13518,10 +13518,61 @@ describe('App list header', () => {
     expect(screen.getAllByTestId('track-row')).toHaveLength(1)
   })
 
+  it('moves a file on a disk with no Trash to Backups without asking, and its Undo puts back that backup and the row', async () => {
+    const trashFile = vi.fn().mockResolvedValue({ where: 'surco', id: 'backup-a' })
+    const trashRestore = vi.fn().mockResolvedValue({ restoredTo: '/music/a.wav' })
+    setApi({ keepsTrash: vi.fn().mockResolvedValue(false), trashFile, trashRestore })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(trashFile).toHaveBeenCalledWith('/music/a.wav', false))
+    expect(screen.queryByTestId('confirm-ok')).toBeNull()
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 1 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(trashRestore).toHaveBeenCalledWith('backup-a', 'undo'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+  })
+
+  it('keeps the row out of the list when its file could not be put back from Backups', async () => {
+    const trashRestore = vi.fn().mockRejectedValue(new Error('gone'))
+    setApi({
+      keepsTrash: vi.fn().mockResolvedValue(false),
+      trashFile: vi.fn().mockResolvedValue({ where: 'surco', id: 'backup-a' }),
+      trashRestore,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    const notice = await waitFor(() => {
+      const card = screen
+        .getAllByTestId('app-notice')
+        .find((c) => c.textContent?.includes(i18n.t('notices.movedToBackups', { count: 1 })))
+      if (!card) throw new Error('no backups notice')
+      return card
+    })
+    fireEvent.click(within(notice).getByTestId('app-notice-action'))
+    await waitFor(() => expect(trashRestore).toHaveBeenCalledWith('backup-a', 'undo'))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+  })
+
   // Trashing the flagged rips reaches every flagged visible row, not just the selection, so
   // it is the one Trash move that still asks even when every file keeps its Trash.
   it('asks before trashing the flagged rips even when every file has a Trash', async () => {
-    const trashFile = vi.fn().mockResolvedValue(undefined)
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings({ autoAnalyze: true })),
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }),

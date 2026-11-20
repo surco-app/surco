@@ -491,6 +491,8 @@
     "updatedMeta_other": "Metadades actualitzades en {{count}} pistes",
     "removedFromList_one": "{{count}} pista treta de la llista",
     "removedFromList_other": "{{count}} pistes tretes de la llista",
+    "movedToBackups_one": "{{count}} pista moguda a Còpies",
+    "movedToBackups_other": "{{count}} pistes mogudes a Còpies",
     "undoneMeta_one": "Metadades restaurades en {{count}} pista",
     "undoneMeta_other": "Metadades restaurades en {{count}} pistes",
     "redoneMeta_one": "Edició de metadades refeta en {{count}} pista",

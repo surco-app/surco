@@ -12,7 +12,7 @@ afterEach(() => configureOriginalKeeper(null))
 function deps(over: Partial<RecoverableTrashDeps>): RecoverableTrashDeps {
   return {
     keepsTrash: () => true,
-    keep: vi.fn(async () => ({})),
+    keep: vi.fn(async () => ({ id: 'kept' })),
     trashItem: vi.fn(async () => {}),
     policy: () => 'audioChanges',
     remove: vi.fn(async () => {}),
@@ -24,16 +24,31 @@ function deps(over: Partial<RecoverableTrashDeps>): RecoverableTrashDeps {
 describe('trashRecoverably', () => {
   it('sends the file to the OS Trash when its volume has one', async () => {
     const d = deps({})
-    expect(await trashRecoverably('/Users/me/a.mp3', d)).toBe('trash')
+    expect(await trashRecoverably('/Users/me/a.mp3', d)).toEqual({ where: 'trash' })
     expect(d.trashItem).toHaveBeenCalledWith('/Users/me/a.mp3')
     expect(d.keep).not.toHaveBeenCalled()
   })
 
   it('keeps the file in Surco trash instead when the volume has no Trash, since the OS would delete it outright', async () => {
     const d = deps({ keepsTrash: () => false })
-    expect(await trashRecoverably('/Volumes/Public/a.mp3', d)).toBe('surco')
+    expect((await trashRecoverably('/Volumes/Public/a.mp3', d)).where).toBe('surco')
     expect(d.keep).toHaveBeenCalledWith('/Volumes/Public/a.mp3')
     expect(d.trashItem).not.toHaveBeenCalled()
+  })
+
+  it('names the backup it kept, so the renderer can offer to put that exact file back', async () => {
+    const d = deps({ keepsTrash: () => false, keep: vi.fn(async () => ({ id: 'backup-7' })) })
+    expect(await trashRecoverably('/Volumes/Public/a.mp3', d)).toEqual({
+      where: 'surco',
+      id: 'backup-7',
+    })
+  })
+
+  it('names the backup a confirmed delete kept under a policy that keeps copies', async () => {
+    const d = deps({ keepsTrash: () => false, keep: vi.fn(async () => ({ id: 'backup-8' })) })
+    expect(
+      await trashAsConfirmed('/Volumes/Public/a.mp3', { permanentConfirmed: false }, d),
+    ).toEqual({ where: 'surco', id: 'backup-8' })
   })
 
   it('throws and leaves the file alone when the volume has no Trash and keeping failed', async () => {
@@ -61,7 +76,7 @@ describe('trashRecoverably', () => {
         keepsTrash: () => false,
         trashItem,
       }),
-    ).toBe('surco')
+    ).toEqual({ where: 'surco', id: 'kept' })
     expect(stash).toHaveBeenCalledTimes(1)
     expect(trashItem).not.toHaveBeenCalled()
   })
@@ -85,16 +100,18 @@ describe('trashAsConfirmed', () => {
   // OS gets the first try, so a confirmed delete under "Never" lands there when it can.
   it('hands a confirmed delete under never to the OS first on Windows', async () => {
     const d = deps({ keepsTrash: () => false, policy: () => 'never', platform: 'win32' })
-    expect(await trashAsConfirmed('C:\\Music\\a.mp3', { permanentConfirmed: true }, d)).toBe(
-      'trash',
-    )
+    expect(await trashAsConfirmed('C:\\Music\\a.mp3', { permanentConfirmed: true }, d)).toEqual({
+      where: 'trash',
+    })
     expect(d.trashItem).toHaveBeenCalledWith('C:\\Music\\a.mp3')
     expect(d.remove).not.toHaveBeenCalled()
   })
 
   it('deletes for good once confirmed under never on a disk with no Trash', async () => {
     const d = deps({ keepsTrash: () => false, policy: () => 'never' })
-    expect(await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).toBe('deleted')
+    expect(await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).toEqual({
+      where: 'deleted',
+    })
     expect(d.remove).toHaveBeenCalledWith(nas)
     expect(d.keep).not.toHaveBeenCalled()
   })
@@ -102,14 +119,16 @@ describe('trashAsConfirmed', () => {
   it('still keeps a copy when the setting keeps one, confirmation or not', async () => {
     for (const policy of ['always', 'audioChanges'] as const) {
       const d = deps({ keepsTrash: () => false, policy: () => policy })
-      expect(await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).toBe('surco')
+      expect((await trashAsConfirmed(nas, { permanentConfirmed: true }, d)).where).toBe('surco')
       expect(d.remove).not.toHaveBeenCalled()
     }
   })
 
   it('still uses the Trash on a disk that has one, even under never', async () => {
     const d = deps({ policy: () => 'never' })
-    expect(await trashAsConfirmed('/Users/me/a.mp3', { permanentConfirmed: true }, d)).toBe('trash')
+    expect(await trashAsConfirmed('/Users/me/a.mp3', { permanentConfirmed: true }, d)).toEqual({
+      where: 'trash',
+    })
     expect(d.remove).not.toHaveBeenCalled()
   })
 })

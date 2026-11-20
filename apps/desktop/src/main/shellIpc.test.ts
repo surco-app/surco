@@ -115,6 +115,30 @@ describe('registerShellIpc — a delete for good', () => {
     expect(trashItem).not.toHaveBeenCalled()
   })
 
+  it('hands the renderer the backup id of a file kept on a disk with no Trash, so Undo can put it back', async () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'surco-shell-trash-')), 'a.mp3')
+    writeFileSync(file, 'audio')
+    keepsTrash = false
+    const entry = {
+      id: 'backup-1',
+      name: 'a.mp3',
+      originalPath: file,
+      storedPath: '',
+      bytes: 0,
+      trashedAt: 0,
+      reason: 'deleted' as const,
+    }
+    configureBackupStore(
+      { stash: vi.fn(async () => entry), remove: async () => {} },
+      () => 'audioChanges',
+    )
+    registerShellIpc(fakeMediaAccess([file]), unused)
+    expect(await handlerFor('shell:trash')({}, file, false)).toEqual({
+      where: 'surco',
+      id: 'backup-1',
+    })
+  })
+
   it('deletes the file when the user confirmed it under never on a disk with no Trash', async () => {
     const file = nasFile()
     await handlerFor('shell:trash')({}, file, true)

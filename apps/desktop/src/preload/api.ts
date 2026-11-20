@@ -356,7 +356,10 @@ export interface Api {
   reveal: (path: string) => Promise<void>
   openFile: (path: string) => Promise<string>
   // `permanentConfirmed`: the dialog said this file is deleted for good and the user agreed.
-  trashFile: (path: string, permanentConfirmed: boolean) => Promise<void>
+  trashFile: (
+    path: string,
+    permanentConfirmed: boolean,
+  ) => Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }>
   // Whether deleting this file can be described to the user as recoverable. Asked of the
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.

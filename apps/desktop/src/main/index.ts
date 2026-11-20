@@ -1992,7 +1992,7 @@ function registerIpc(): void {
           sessions,
           rootLibraries,
         ),
-        trash: (path) => trashRecoverably(path),
+        trash: (path) => trashRecoverably(path).then(({ where }) => where),
         log: { track: activity.track, copyOf: musicReviewLog.copyOf },
       })
     },

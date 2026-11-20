@@ -5,9 +5,14 @@ import { errorWithKey } from '../shared/errorKeys'
 import { currentBackupPolicy, keepOriginal } from './originalKeeper'
 import { volumeKeepsTrash } from './trashSupport'
 
+export interface TrashedFile {
+  where: 'trash' | 'surco' | 'deleted'
+  id?: string
+}
+
 export interface RecoverableTrashDeps {
   keepsTrash: (path: string) => boolean
-  keep: (path: string) => Promise<unknown>
+  keep: (path: string) => Promise<{ id: string } | null>
   trashItem: (path: string) => Promise<void>
   policy: () => BackupPolicy
   remove: (path: string) => Promise<void>
@@ -29,14 +34,15 @@ const defaultDeps: RecoverableTrashDeps = {
 export async function trashRecoverably(
   path: string,
   over: Partial<RecoverableTrashDeps> = {},
-): Promise<'trash' | 'surco'> {
+): Promise<TrashedFile & { where: 'trash' | 'surco' }> {
   const deps = { ...defaultDeps, ...over }
   if (!deps.keepsTrash(path)) {
-    if (await deps.keep(path)) return 'surco'
+    const kept = await deps.keep(path)
+    if (kept) return { where: 'surco', id: kept.id }
     throw new Error(`No recoverable trash for ${path}`)
   }
   await deps.trashItem(path)
-  return 'trash'
+  return { where: 'trash' }
 }
 
 export async function trashWithoutRoom(
@@ -56,17 +62,17 @@ export async function trashAsConfirmed(
   path: string,
   { permanentConfirmed }: { permanentConfirmed: boolean },
   over: Partial<RecoverableTrashDeps> = {},
-): Promise<'trash' | 'surco' | 'deleted'> {
+): Promise<TrashedFile> {
   const deps = { ...defaultDeps, ...over }
   if (!deps.keepsTrash(path) && deps.policy() === 'never') {
     if (!permanentConfirmed) throw new Error(`Permanent delete of ${path} was not confirmed`)
     // Every Windows drive reads as having no Trash, yet a local one has a Recycle Bin.
     if (deps.platform === 'win32') {
       await deps.trashItem(path)
-      return 'trash'
+      return { where: 'trash' }
     }
     await deps.remove(path)
-    return 'deleted'
+    return { where: 'deleted' }
   }
   return trashRecoverably(path, over)
 }

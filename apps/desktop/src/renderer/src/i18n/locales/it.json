@@ -491,6 +491,8 @@
     "updatedMeta_other": "Metadati aggiornati in {{count}} brani",
     "removedFromList_one": "{{count}} brano tolto dall'elenco",
     "removedFromList_other": "{{count}} brani tolti dall'elenco",
+    "movedToBackups_one": "{{count}} brano spostato in Copie",
+    "movedToBackups_other": "{{count}} brani spostati in Copie",
     "undoneMeta_one": "Metadati ripristinati in {{count}} brano",
     "undoneMeta_other": "Metadati ripristinati in {{count}} brani",
     "redoneMeta_one": "Modifica dei metadati ripetuta in {{count}} brano",

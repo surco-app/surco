@@ -125,6 +125,7 @@ interface Params {
   // A trash/delete IPC failure surfaced to the user, since a silent failure would read
   // as success.
   reportTrashFailure: (fileName: string) => void
+  offerTrashUndo: (kept: { track: TrackItem; backupId: string }[]) => void
   // Fired once the superseded Apple Music copy is gone (deleted, or already missing),
   // so App can refresh the library snapshot and confirm the outcome.
   onOldMusicCopyRemoved: () => void
@@ -259,6 +260,7 @@ export function useConfirmFlows({
   processAll,
   openConfirm,
   reportTrashFailure,
+  offerTrashUndo,
   onOldMusicCopyRemoved,
   reportOldCopyRemoveFailure,
   tracksRef,
@@ -279,8 +281,8 @@ export function useConfirmFlows({
   // Trash/Recycle Bin and drop its row only once that succeeds, so a failure leaves that
   // row untouched. Copy switches on platform because the destination differs, and on
   // count so a multi-selection reads "N files" instead of naming just one. A disk with no
-  // Trash (a NAS, every Windows drive) keeps the file in Surco's backups instead, and the
-  // dialog says so: promising the Trash there is how a file was lost on 15/09.
+  // Trash (a NAS, every Windows drive) keeps the file in Surco's backups instead, and any
+  // dialog shown says so: promising the Trash there is how a file was lost on 15/09.
   async function askTrash(targets: TrackItem[], alwaysAsk = false): Promise<void> {
     if (targets.length === 0) return
     const isWin = window.api.platform === 'win32'
@@ -290,7 +292,7 @@ export function useConfirmFlows({
       const trashed = targets.map((track, i) =>
         window.api
           .trashFile(track.inputPath, confirmsPermanent(keeps[i], settings))
-          .then(() => track.id)
+          .then(({ where, id }) => ({ track, backupId: where === 'surco' ? id : undefined }))
           // A silent failure here reads as "the file is in the trash" when it isn't.
           .catch(() => {
             reportTrashFailure(track.fileName)
@@ -299,14 +301,21 @@ export function useConfirmFlows({
       )
       // The rows leave together once every file has settled, so a cover the selection
       // shared is freed against the rows that remain (see App's onRemove).
-      void Promise.all(trashed).then((ids) =>
+      void Promise.all(trashed).then((settled) => {
+        const gone = settled.filter((g) => g !== null)
+        const kept = gone.flatMap(({ track, backupId }) =>
+          backupId
+            ? [{ track: tracksRef.current.find((t) => t.id === track.id) ?? track, backupId }]
+            : [],
+        )
+        if (kept.length > 0) offerTrashUndo(kept)
         removeTracks(
-          ids.filter((id) => id !== null),
+          gone.map(({ track }) => track.id),
           true,
-        ),
-      )
+        )
+      })
     }
-    if (!alwaysAsk && keeps.every(Boolean)) {
+    if (!alwaysAsk && !keeps.some((keep) => confirmsPermanent(keep, settings))) {
       moveToTrash()
       return
     }

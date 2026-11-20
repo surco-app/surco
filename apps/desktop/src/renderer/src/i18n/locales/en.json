@@ -491,6 +491,8 @@
     "updatedMeta_other": "Metadata updated on {{count}} tracks",
     "removedFromList_one": "{{count}} track removed from the list",
     "removedFromList_other": "{{count}} tracks removed from the list",
+    "movedToBackups_one": "{{count}} track moved to Backups",
+    "movedToBackups_other": "{{count}} tracks moved to Backups",
     "undoneMeta_one": "Metadata restored on {{count}} track",
     "undoneMeta_other": "Metadata restored on {{count}} tracks",
     "redoneMeta_one": "Metadata edit redone on {{count}} track",

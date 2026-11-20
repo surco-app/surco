@@ -31,6 +31,9 @@ function setup(
     updateTrack?: ReturnType<typeof vi.fn<(id: string, patch: Partial<TrackItem>) => void>>
     removeTracks?: ReturnType<typeof vi.fn<(ids: string[], everywhere?: boolean) => void>>
     reportTrashFailure?: ReturnType<typeof vi.fn<(fileName: string) => void>>
+    offerTrashUndo?: ReturnType<
+      typeof vi.fn<(kept: { track: TrackItem; backupId: string }[]) => void>
+    >
     settings?: Settings | null
     deriveTracks?: ReturnType<typeof vi.fn<(patches: unknown[]) => void>>
     notify?: ReturnType<typeof vi.fn<(message: string) => void>>
@@ -50,6 +53,7 @@ function setup(
       processAll: vi.fn(),
       openConfirm: (c) => opened.push(c),
       reportTrashFailure: extra.reportTrashFailure ?? vi.fn(),
+      offerTrashUndo: extra.offerTrashUndo ?? vi.fn(),
       onOldMusicCopyRemoved: extra.onOldMusicCopyRemoved ?? vi.fn(),
       reportOldCopyRemoveFailure: extra.reportOldCopyRemoveFailure ?? vi.fn(),
       tracksRef: { current: allTracks },
@@ -87,11 +91,11 @@ describe('useConfirmFlows scope wording', () => {
 // file to Surco's backups. The dialog promising the Trash there is how a file was lost
 // on 15/09.
 describe('useConfirmFlows move to Trash', () => {
-  it('says a file on a disk with no Trash goes to Backups', async () => {
+  it('says a sweep that always asks keeps a file on a disk with no Trash in Backups', async () => {
     installApi({ keepsTrash: vi.fn().mockResolvedValue(false) })
     const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
     const { flows, opened } = setup([a])
-    await flows.askTrash([a])
+    await flows.askTrash([a], true)
     expect(opened[0].title).toBe('Move file to Backups › Music files?')
     expect(opened[0].message).toBe(
       'This disk has no Trash, so “Artist - a.wav” is kept in Backups › Music files and removed from the list. You can restore it from there.',
@@ -103,7 +107,7 @@ describe('useConfirmFlows move to Trash', () => {
     installApi({ platform: 'win32', keepsTrash: vi.fn().mockResolvedValue(false) })
     const a = track('a')
     const { flows, opened } = setup([a])
-    await flows.askTrash([a])
+    await flows.askTrash([a], true)
     expect(opened[0].title).toBe('Move file to Backups › Music files?')
     expect(opened[0].confirmLabel).toBe('Move to Backups › Music files')
     expect(`${opened[0].title} ${opened[0].message}`).not.toContain('Recycle Bin')
@@ -114,7 +118,7 @@ describe('useConfirmFlows move to Trash', () => {
     const a = track('a')
     const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
     const { flows, opened } = setup([a, b])
-    await flows.askTrash([a, b])
+    await flows.askTrash([a, b], true)
     expect(opened[0].title).toBe('Move 2 files to the Trash or Backups › Music files?')
     expect(opened[0].message).toBe(
       'This removes 2 files from the list. Those on a disk with no Trash are kept in Backups › Music files and the rest go to the Trash. You can restore them from there.',
@@ -124,7 +128,7 @@ describe('useConfirmFlows move to Trash', () => {
   // Moving to the OS Trash is recoverable, like Cmd+Delete in Finder, so asking would only
   // slow the user down. Dialogs are for what cannot be undone.
   it('moves files to the Trash without a dialog when every file has a Trash', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
     const b = track('b')
@@ -139,7 +143,7 @@ describe('useConfirmFlows move to Trash', () => {
   // With no dialog to show, an empty selection would otherwise run the move over nothing
   // and still ask the app to remove an empty batch of rows.
   it('does nothing at all for an empty selection', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const { flows, opened, removeTracks } = setup([])
     await flows.askTrash([])
@@ -153,7 +157,7 @@ describe('useConfirmFlows move to Trash', () => {
     installApi({
       platform: 'win32',
       keepsTrash: vi.fn().mockResolvedValue(true),
-      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' }),
     })
     const a = track('a')
     const { flows, opened, removeTracks } = setup([a])
@@ -165,7 +169,7 @@ describe('useConfirmFlows move to Trash', () => {
   // Trashing the flagged rips reaches every flagged visible row, well beyond what the user
   // selected, so it keeps its dialog even where every file would land in the Trash.
   it('still asks before a sweep that must always ask, even when every file has a Trash', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
     const b = track('b')
@@ -191,18 +195,111 @@ describe('useConfirmFlows move to Trash', () => {
     expect(reportTrashFailure).toHaveBeenCalledWith('Artist - a.wav')
   })
 
-  it('still asks when one file of the selection has no Trash, and moves nothing before the click', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+  it('moves a selection split between the Trash and a disk with none without a dialog, since Backups keeps the rest', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({
       trashFile,
       keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
     })
     const a = track('a')
     const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
-    const { flows, opened } = setup([a, b])
+    const { flows, opened, removeTracks } = setup([a, b], { settings: keepsCopies })
+    await flows.askTrash([a, b])
+    expect(opened).toHaveLength(0)
+    expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
+    expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/b.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b'], true))
+  })
+})
+
+const keepsCopies = { backupPolicy: 'audioChanges' } as Settings
+
+describe('useConfirmFlows move to Backups without asking', () => {
+  it('moves a file to Backups on Windows without a dialog while copies are kept, since Undo brings it back', async () => {
+    const trashFile = vi
+      .fn<Api['trashFile']>()
+      .mockResolvedValue({ where: 'surco', id: 'backup-a' })
+    installApi({ platform: 'win32', trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a', { inputPath: 'C:\\Music\\a.wav' })
+    const { flows, opened, removeTracks } = setup([a], { settings: keepsCopies })
+    await flows.askTrash([a])
+    expect(opened).toHaveLength(0)
+    expect(trashFile).toHaveBeenCalledWith('C:\\Music\\a.wav', false)
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
+  })
+
+  it('still asks on Windows under never, where the file would be deleted for good', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'deleted' })
+    installApi({ platform: 'win32', trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
+    const a = track('a')
+    const { flows, opened } = setup([a], { settings: { backupPolicy: 'never' } as Settings })
+    await flows.askTrash([a])
+    expect(opened[0].title).toBe('Delete file permanently?')
+    expect(trashFile).not.toHaveBeenCalled()
+  })
+
+  it('still asks when one file of the selection would be deleted for good under never', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
+    installApi({
+      trashFile,
+      keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
+    })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const { flows, opened } = setup([a, b], { settings: { backupPolicy: 'never' } as Settings })
     await flows.askTrash([a, b])
     expect(opened).toHaveLength(1)
     expect(trashFile).not.toHaveBeenCalled()
+  })
+
+  it('keeps the row and says so when the copy to Backups fails, and offers no Undo for it', async () => {
+    installApi({
+      keepsTrash: vi.fn().mockResolvedValue(false),
+      trashFile: vi.fn<Api['trashFile']>().mockRejectedValue(new Error('no room')),
+    })
+    const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
+    const reportTrashFailure = vi.fn()
+    const offerTrashUndo = vi.fn()
+    const { flows, removeTracks } = setup([a], {
+      settings: keepsCopies,
+      reportTrashFailure,
+      offerTrashUndo,
+    })
+    await flows.askTrash([a])
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith([], true))
+    expect(reportTrashFailure).toHaveBeenCalledWith('Artist - a.wav')
+    expect(offerTrashUndo).not.toHaveBeenCalled()
+  })
+
+  it('offers Undo with the backup id of each file kept in Backups, and not for those in the system Trash', async () => {
+    installApi({
+      keepsTrash: vi.fn(async (path: string) => path === '/a.wav'),
+      trashFile: vi.fn<Api['trashFile']>(async (path) =>
+        path === '/a.wav' ? { where: 'trash' } : { where: 'surco', id: `backup-${path}` },
+      ),
+    })
+    const a = track('a')
+    const b = track('b', { inputPath: '/Volumes/NAS/b.wav' })
+    const c = track('c', { inputPath: '/Volumes/NAS/c.wav' })
+    const offerTrashUndo = vi.fn()
+    const { flows, removeTracks } = setup([a, b, c], { settings: keepsCopies, offerTrashUndo })
+    await flows.askTrash([a, b, c])
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a', 'b', 'c'], true))
+    expect(offerTrashUndo).toHaveBeenCalledTimes(1)
+    expect(offerTrashUndo).toHaveBeenCalledWith([
+      { track: b, backupId: 'backup-/Volumes/NAS/b.wav' },
+      { track: c, backupId: 'backup-/Volumes/NAS/c.wav' },
+    ])
+  })
+
+  it('offers no Undo when every file went to the system Trash, which keeps its own way back', async () => {
+    installApi({ keepsTrash: vi.fn().mockResolvedValue(true) })
+    const a = track('a')
+    const offerTrashUndo = vi.fn()
+    const { flows, removeTracks } = setup([a], { settings: keepsCopies, offerTrashUndo })
+    await flows.askTrash([a])
+    await waitFor(() => expect(removeTracks).toHaveBeenCalledWith(['a'], true))
+    expect(offerTrashUndo).not.toHaveBeenCalled()
   })
 })
 
@@ -211,7 +308,7 @@ describe('useConfirmFlows move to Trash', () => {
 // confirmation main needs to delete it.
 describe('useConfirmFlows trashed row', () => {
   it('drops a trashed file’s row from every list, a playlist that listed it included', async () => {
-    installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined) })
+    installApi({ trashFile: vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' }) })
     const a = track('a')
     const { flows, removeTracks } = setup([a])
     await flows.askTrash([a])
@@ -224,7 +321,9 @@ describe('useConfirmFlows trashed row', () => {
   it('drops every trashed row in one batch, leaving out the files that failed', async () => {
     installApi({
       trashFile: vi.fn<Api['trashFile']>((path) =>
-        path === '/b.wav' ? Promise.reject(new Error('busy')) : Promise.resolve(undefined),
+        path === '/b.wav'
+          ? Promise.reject(new Error('busy'))
+          : Promise.resolve({ where: 'trash' as const }),
       ),
     })
     const tracks = [track('a'), track('b'), track('c')]
@@ -240,7 +339,7 @@ describe('useConfirmFlows delete for good', () => {
   const never = { backupPolicy: 'never' } as Settings
 
   it('says a file on a disk with no Trash is deleted for good under never', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
     const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
     const { flows, opened } = setup([a], { settings: never })
@@ -256,7 +355,7 @@ describe('useConfirmFlows delete for good', () => {
   })
 
   it('names both outcomes and confirms the permanent delete only for the file without a Trash', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({
       trashFile,
       keepsTrash: vi.fn(async (path: string) => path !== '/Volumes/NAS/b.wav'),
@@ -276,7 +375,7 @@ describe('useConfirmFlows delete for good', () => {
   })
 
   it('moves to the Trash without a dialog under never when every file has a Trash', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(true) })
     const a = track('a')
     const { flows, opened } = setup([a], { settings: never })
@@ -285,19 +384,18 @@ describe('useConfirmFlows delete for good', () => {
     expect(trashFile).toHaveBeenCalledWith('/a.wav', false)
   })
 
-  it('still keeps it in Backups when the setting keeps copies', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+  it('still keeps it in Backups when the setting keeps copies, with no dialog', async () => {
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'surco', id: 'k' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
     const a = track('a', { inputPath: '/Volumes/NAS/a.wav' })
     const { flows, opened } = setup([a], { settings: { backupPolicy: 'audioChanges' } as Settings })
     await flows.askTrash([a])
-    expect(opened[0].title).toBe('Move file to Backups › Music files?')
-    opened[0].onConfirm()
+    expect(opened).toHaveLength(0)
     expect(trashFile).toHaveBeenCalledWith('/Volumes/NAS/a.wav', false)
   })
 
   it('says the clean-up deletes for good when no file has a Trash under never', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({ trashFile, keepsTrash: vi.fn().mockResolvedValue(false) })
     const a = track('a', { status: 'done', replacesPath: '/Volumes/NAS/old/a.mp3' })
     const { flows, opened } = setup([a], { settings: never })
@@ -339,7 +437,7 @@ describe('useConfirmFlows clean up previous files', () => {
   // a single "clean up" that silently took the old Apple Music entry along with the
   // original would delete more than the user agreed to. Nothing moves before the answer.
   it('lists the original, the replaced file and the old library copy before touching any', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     const deleteAppleMusic = vi
       .fn<Api['deleteAppleMusic']>()
       .mockResolvedValue({ outcome: 'deleted' })
@@ -363,7 +461,7 @@ describe('useConfirmFlows clean up previous files', () => {
   // Confirming runs the same three actions the separate links ran, and each row learns
   // its file is gone so the link retires instead of offering a file already in the Trash.
   it('runs every listed removal and marks the rows once confirmed', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     const deleteAppleMusic = vi
       .fn<Api['deleteAppleMusic']>()
       .mockResolvedValue({ outcome: 'deleted' })
@@ -390,7 +488,7 @@ describe('useConfirmFlows clean up previous files', () => {
   // file so a partial failure leaves the rest of the offer standing.
   it('marks each replaced file on the row that replaced it', async () => {
     installApi({
-      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' }),
       keepsTrash: vi.fn().mockResolvedValue(true),
     })
     const a = track('a', { status: 'done', replacesPath: '/old/a.mp3' })
@@ -519,7 +617,7 @@ describe('useConfirmFlows clean up previous files', () => {
   // every probe kept asking for a file that is gone. It follows the converted copy.
   it('moves the row to its converted copy once its original is trashed', async () => {
     installApi({
-      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' }),
       keepsTrash: vi.fn().mockResolvedValue(true),
     })
     const updateTrack = vi.fn()
@@ -539,7 +637,7 @@ describe('useConfirmFlows clean up previous files', () => {
 
   it('moves a row whose file the old library copy took with it to its converted copy', async () => {
     installApi({
-      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue(undefined),
+      trashFile: vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' }),
       keepsTrash: vi.fn().mockResolvedValue(true),
       deleteAppleMusic: vi
         .fn<Api['deleteAppleMusic']>()
@@ -562,7 +660,7 @@ describe('useConfirmFlows clean up previous files', () => {
   // original listed beside it. Removing the entry already sent that file to the Trash,
   // so trashing it again would fail on a missing file and report a false error.
   it('does not trash the original again when the old library copy was that same file', async () => {
-    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue(undefined)
+    const trashFile = vi.fn<Api['trashFile']>().mockResolvedValue({ where: 'trash' })
     installApi({
       trashFile,
       keepsTrash: vi.fn().mockResolvedValue(true),

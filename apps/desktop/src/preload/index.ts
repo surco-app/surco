@@ -286,7 +286,10 @@ const api: Api = {
     ipcRenderer.invoke('library:pathAliases', paths),
   reveal: (path: string) => ipcRenderer.invoke('shell:reveal', path),
   openFile: (path: string): Promise<string> => ipcRenderer.invoke('shell:open', path),
-  trashFile: (path: string, permanentConfirmed: boolean): Promise<void> =>
+  trashFile: (
+    path: string,
+    permanentConfirmed: boolean,
+  ): Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }> =>
     ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
   retireSuperseded: (path: string, titles: string[]): Promise<'retired' | 'used'> =>

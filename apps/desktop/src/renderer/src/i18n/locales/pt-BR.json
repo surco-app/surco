@@ -491,6 +491,8 @@
     "updatedMeta_other": "Metadados atualizados em {{count}} faixas",
     "removedFromList_one": "{{count}} faixa removida da lista",
     "removedFromList_other": "{{count}} faixas removidas da lista",
+    "movedToBackups_one": "{{count}} faixa movida para Cópias",
+    "movedToBackups_other": "{{count}} faixas movidas para Cópias",
     "undoneMeta_one": "Metadados restaurados em {{count}} faixa",
     "undoneMeta_other": "Metadados restaurados em {{count}} faixas",
     "redoneMeta_one": "Edição de metadados refeita em {{count}} faixa",

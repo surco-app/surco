@@ -33,7 +33,7 @@ export function registerShellIpc(
   // the dialog told the user so and they confirmed it (see trashAsConfirmed).
   ipcMain.handle('shell:trash', async (_e, path: string, permanentConfirmed?: unknown) => {
     if (!mediaAccess.isAllowed(path)) throw errorWithKey('pathNotAllowed')
-    await trashAsConfirmed(path, { permanentConfirmed: permanentConfirmed === true })
+    return trashAsConfirmed(path, { permanentConfirmed: permanentConfirmed === true })
   })
   // The file a format change superseded, once its check came back ok: no dialog asks first,
   // so it goes only when no DJ library uses it, recoverably unless «Nunca» on a disk with no

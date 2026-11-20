@@ -1961,6 +1961,49 @@ export default function App(): React.JSX.Element {
     }
     removeTracks(ids, everywhere)
   })
+  const offerTrashUndo = useStableCallback((kept: { track: TrackItem; backupId: string }[]) => {
+    const rows = kept.map(({ track }) => track)
+    const covers = rows.map((t) => t.coverUrl)
+    listUndoCovers.current.push(covers)
+    holdTracks(rows)
+    const release = () => {
+      dropHeldTracks(rows.map((t) => t.id))
+      listUndoCovers.current = listUndoCovers.current.filter((held) => held !== covers)
+      revokeDisplacedCovers(covers, [...tracksRef.current.map((t) => t.coverUrl), ...heldCovers()])
+    }
+    toastReporter.reportUndo(
+      tr('notices.movedToBackups', { count: rows.length }),
+      () => {
+        void Promise.all(
+          kept.map(({ track, backupId }) =>
+            window.api.trashRestore(backupId, 'undo').then(
+              () => track,
+              (e) => {
+                setNotice(
+                  tr('trash.restoreFailed', {
+                    name: track.fileName,
+                    reason: mainErrorMessage(e, tr, tr('errors.unexpected', { detail: '' })),
+                  }),
+                )
+                return null
+              },
+            ),
+          ),
+        ).then((settled) => {
+          const back = settled.filter((t) => t !== null)
+          unforgetAnalysisTracks(back.map((t) => t.id))
+          restoreTracks(back)
+          void seedCachedAnalyses(
+            queryClient,
+            back.map((t) => t.inputPath),
+          )
+          release()
+        })
+      },
+      release,
+      'trash-kept',
+    )
+  })
 
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
@@ -1985,6 +2028,7 @@ export default function App(): React.JSX.Element {
     processAll,
     openConfirm: overlays.openConfirm,
     reportTrashFailure: (fileName) => setAppError({ kind: 'trash', detail: fileName }),
+    offerTrashUndo,
     // The old entry left the snapshot's library, so refresh it — that recompute is
     // also what retires the footer's "remove the old copy" link. The toast confirms
     // the outcome meanwhile, since the refetch can take a moment on a big library.
