@@ -146,7 +146,8 @@
     "add_one": "Aggiungi {{count}} brano",
     "add_other": "Aggiungi {{count}} brani",
     "loading": "Ricerca nella collezione…",
-    "failed": "Non è stato possibile leggere la collezione"
+    "failed": "Non è stato possibile leggere la collezione",
+    "copyAbsent": "Copia quelle che mancano"
   },
   "info": {
     "title": "Informazioni"

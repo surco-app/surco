@@ -146,7 +146,8 @@
     "add_one": "Adicionar {{count}} faixa",
     "add_other": "Adicionar {{count}} faixas",
     "loading": "Buscando na coleção…",
-    "failed": "Não foi possível ler a coleção"
+    "failed": "Não foi possível ler a coleção",
+    "copyAbsent": "Copie as que faltam"
   },
   "info": {
     "title": "Informações"

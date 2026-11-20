@@ -210,3 +210,10 @@ export function chosenTracks(rows: ReviewRow[]): CollectionTrack[] {
     return [track]
   })
 }
+
+export function absentLines(matches: TracklistMatch[]): string {
+  return matches
+    .filter((match) => match.level === 'absent')
+    .map((match) => match.line.raw)
+    .join('\n')
+}

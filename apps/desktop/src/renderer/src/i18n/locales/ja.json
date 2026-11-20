@@ -146,7 +146,8 @@
     "add_one": "{{count}}トラックを追加",
     "add_other": "{{count}}トラックを追加",
     "loading": "コレクションを検索中…",
-    "failed": "コレクションを読めませんでした"
+    "failed": "コレクションを読めませんでした",
+    "copyAbsent": "足りない行をコピー"
   },
   "info": {
     "title": "情報"

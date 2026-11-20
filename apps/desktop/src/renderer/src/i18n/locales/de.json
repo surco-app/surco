@@ -146,7 +146,8 @@
     "add_one": "{{count}} Track hinzufügen",
     "add_other": "{{count}} Tracks hinzufügen",
     "loading": "Sammlung wird durchsucht…",
-    "failed": "Die Sammlung konnte nicht gelesen werden"
+    "failed": "Die Sammlung konnte nicht gelesen werden",
+    "copyAbsent": "Kopiere die fehlenden"
   },
   "info": {
     "title": "Informationen"

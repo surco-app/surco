@@ -284,3 +284,27 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-text')).toHaveValue(SET1)
   })
 })
+
+describe('PasteTracklistModal copy absent', () => {
+  it('copies the lines the collection lacks, as pasted, so they can be looked for elsewhere', async () => {
+    setup()
+    const copyText = vi.fn().mockResolvedValue(undefined)
+    window.api.copyText = copyText
+    paste(SET1)
+    await review()
+    const button = screen.getByTestId('paste-tracklist-copy-absent')
+    expect(button).toHaveAttribute('aria-label', 'Copiar las que faltan')
+    fireEvent.click(button)
+    expect(copyText).toHaveBeenCalledTimes(1)
+    const copied = copyText.mock.calls[0][0] as string
+    expect(copied.split('\n')).toHaveLength(14)
+    expect(copied).not.toContain('Because Of You')
+  })
+
+  it('has no button when nothing is missing', async () => {
+    setup()
+    paste('Sergi M, Solar System - Because Of You')
+    await review()
+    expect(screen.queryByTestId('paste-tracklist-copy-absent')).toBeNull()
+  })
+})

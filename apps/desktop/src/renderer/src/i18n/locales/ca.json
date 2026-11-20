@@ -146,7 +146,8 @@
     "add_one": "Afegir {{count}} pista",
     "add_other": "Afegir {{count}} pistes",
     "loading": "Cercant a la col·lecció…",
-    "failed": "No s'ha pogut llegir la col·lecció"
+    "failed": "No s'ha pogut llegir la col·lecció",
+    "copyAbsent": "Copia les que falten"
   },
   "info": {
     "title": "Informació"

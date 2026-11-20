@@ -146,7 +146,8 @@
     "add_one": "Add {{count}} track",
     "add_other": "Add {{count}} tracks",
     "loading": "Searching the collection…",
-    "failed": "The collection could not be read"
+    "failed": "The collection could not be read",
+    "copyAbsent": "Copy the missing ones"
   },
   "info": {
     "title": "Info"

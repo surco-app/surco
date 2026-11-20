@@ -146,7 +146,8 @@
     "add_one": "Ajouter {{count}} morceau",
     "add_other": "Ajouter {{count}} morceaux",
     "loading": "Recherche dans la collection…",
-    "failed": "Impossible de lire la collection"
+    "failed": "Impossible de lire la collection",
+    "copyAbsent": "Copie celles qui manquent"
   },
   "info": {
     "title": "Informations"
