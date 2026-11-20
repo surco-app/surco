@@ -10,6 +10,8 @@ const dir = vi.hoisted(() => {
   const { join } = require('node:path')
   return mkdtempSync(join(tmpdir(), 'surco-session-')) as string
 })
+const warn = vi.hoisted(() => vi.fn())
+vi.mock('electron-log/main', () => ({ default: { warn, info: vi.fn(), error: vi.fn() } }))
 vi.mock('electron', () => {
   return {
     app: { getPath: () => dir },
@@ -404,14 +406,17 @@ describe('previous session', () => {
     expect((await next.loadPreviousSession())?.paths).toEqual([b])
   })
 
-  it('still saves the current session when keeping the previous one fails', async () => {
+  it('still saves the current session when keeping the previous one fails, and says so in the log since the safety net is gone', async () => {
     const [a, b] = reset()
     ;(await launch()).saveLastSession([a], {})
     mkdirSync(join(dir, 'session.prev.json'))
+    warn.mockClear()
     try {
       const next = await launch()
       next.saveLastSession([b], {})
       expect((await next.loadLastSession()).paths).toEqual([b])
+      expect(warn).toHaveBeenCalledTimes(1)
+      expect(warn.mock.calls[0][0]).toMatch(/^previous session not kept: /)
     } finally {
       rmSync(join(dir, 'session.prev.json'), { recursive: true, force: true })
     }

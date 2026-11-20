@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSy
 import { readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app, nativeImage } from 'electron'
+import log from 'electron-log/main'
 import { parseDeclick } from '../shared/declick'
 import { normalizeTrim } from '../shared/trim'
 import type {
@@ -238,7 +239,9 @@ function keepPreviousSession(path: string, paths: string[]): void {
   previousKept = true
   try {
     copyFileSync(path, previousSessionPath())
-  } catch {}
+  } catch (err) {
+    log.warn(`previous session not kept: ${err}`)
+  }
 }
 
 // Write-then-rename like the settings store: a crash mid-write must never truncate
