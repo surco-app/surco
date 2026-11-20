@@ -80,6 +80,7 @@ export const MENU_GAP = 4
 
 export function clipBox(el: HTMLElement): {
   top: number
+  left: number
   right: number
   bottom: number
   scroller: HTMLElement | null
@@ -89,10 +90,16 @@ export function clipBox(el: HTMLElement): {
     if (/auto|scroll|hidden|clip/.test(`${style.overflowX} ${style.overflowY}`)) {
       const { top, left, right, bottom } = node.getBoundingClientRect()
       const inner = node.clientWidth > 0 ? left + node.clientLeft + node.clientWidth : right
-      return { top, right: inner, bottom, scroller: node }
+      return { top, left: left + node.clientLeft, right: inner, bottom, scroller: node }
     }
   }
-  return { top: 0, right: window.innerWidth, bottom: window.innerHeight, scroller: null }
+  return {
+    top: 0,
+    left: 0,
+    right: window.innerWidth,
+    bottom: window.innerHeight,
+    scroller: null,
+  }
 }
 
 function colorAt(color: FlowColor, slot: number): number {
@@ -125,6 +132,7 @@ export function CueRuleRow({
   const paletteRef = useRef<HTMLDivElement>(null)
   const [paletteRight, setPaletteRight] = useState(false)
   const [menuUp, setMenuUp] = useState(false)
+  const [pastLeft, setPastLeft] = useState(0)
   const [dropHere, setDropHere] = useState(false)
   const dragged = reorder?.dragged ?? null
   const id = `cue-rule-${index}`
@@ -180,12 +188,16 @@ export function CueRuleRow({
     const height = (palette.offsetHeight || popping.height) + MENU_GAP
     const at = anchor.getBoundingClientRect()
     const clip = clipBox(palette)
-    setPaletteRight(at.left + width > clip.right)
+    const towardsLeft = at.left + width > clip.right
+    setPaletteRight(towardsLeft)
+    setPastLeft(towardsLeft ? Math.max(0, Math.ceil(clip.left - (at.right - width))) : 0)
     const below = at.bottom + height - clip.bottom
     const fitsAbove = at.top - height >= clip.top
     setMenuUp(below > 0 && fitsAbove)
     if (below > 0 && !fitsAbove && clip.scroller) clip.scroller.scrollTop += Math.ceil(below)
   }, [open])
+
+  const insideLeft = paletteRight && pastLeft > 0 ? { right: -pastLeft } : undefined
 
   const closeToToken = () => {
     const token = rowRef.current?.querySelector<HTMLElement>(`[data-testid="${id}-${open}"]`)
@@ -335,6 +347,7 @@ export function CueRuleRow({
           data-testid={`${id}-${block}-menu`}
           data-align={paletteRight ? 'right' : 'left'}
           data-side={menuUp ? 'top' : 'bottom'}
+          style={insideLeft}
           className={`${MENU_CLASS} animate-pop-flat ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} ${options.some((o) => o.hint) ? 'max-h-96 w-72' : 'max-h-64'}`}
         >
           {options.map((o) => (
@@ -545,6 +558,7 @@ export function CueRuleRow({
                       data-testid={`${id}-color-${slot}-palette`}
                       data-align={paletteRight ? 'right' : 'left'}
                       data-side={menuUp ? 'top' : 'bottom'}
+                      style={insideLeft}
                       className={`animate-pop-flat absolute ${menuUp ? (paletteRight ? 'origin-bottom-right' : 'origin-bottom-left') : paletteRight ? 'origin-top-right' : 'origin-top-left'} ${paletteRight ? 'right-0' : 'left-0'} ${menuUp ? 'bottom-full mb-1' : 'top-full mt-1'} z-20 w-76 rounded-md border border-[var(--color-line)] bg-[var(--color-panel)] p-2 shadow-[var(--shadow-float)]`}
                     >
                       <CuePalette
