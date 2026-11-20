@@ -203,6 +203,51 @@ describe('CueRuleRow open menu', () => {
   })
 })
 
+describe('CueRuleRow menu between the two edges of Settings', () => {
+  const rect = (left: number, width: number) =>
+    ({
+      left,
+      right: left + width,
+      width,
+      top: 0,
+      bottom: 0,
+      height: 0,
+      x: left,
+      y: 0,
+      toJSON: () => ({}),
+    }) as DOMRect
+  const openBetween = (anchorLeft: number) => {
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element,
+    ) {
+      if (this.getAttribute('data-testid') === 'scroller') return rect(379, 534)
+      if (this.getAttribute('data-testid') === 'cue-rule-0-color-2-palette') return rect(0, 304)
+      return rect(anchorLeft, 25)
+    })
+    render(
+      <div data-testid="scroller" style={{ overflowY: 'auto', overflowX: 'hidden' }}>
+        <CueRuleRow rule={RULE} index={0} onChange={vi.fn()} onRemove={vi.fn()} />
+      </div>,
+    )
+    Object.defineProperty(screen.getByTestId('scroller'), 'clientWidth', { value: 525 })
+    fireEvent.click(screen.getByTestId('cue-rule-0-color-2'))
+    spy.mockRestore()
+    return screen.getByTestId('cue-rule-0-color-2-palette')
+  }
+
+  it('slides a menu that fits on neither side of its square back inside the left edge of Settings, so its first colours are never cut', () => {
+    const menu = openBetween(653)
+    expect(menu).toHaveAttribute('data-align', 'right')
+    expect(menu.style.right).toBe('-6px')
+  })
+
+  it('leaves a menu that fits towards the left hanging from the right edge of its square', () => {
+    const menu = openBetween(700)
+    expect(menu).toHaveAttribute('data-align', 'right')
+    expect(menu.style.right).toBe('')
+  })
+})
+
 describe('CueRuleRow condition of each repetition', () => {
   const box = (slot: number, name: string) =>
     screen.getByTestId(`cue-rule-0-color-${slot}-when-${name}`)
@@ -240,6 +285,34 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(box(2, 'before')).toHaveTextContent('no cue before')
     expect(box(2, 'in-down')).toHaveTextContent('breakdown')
     expect(screen.getByTestId('cue-rule-0-color-2-when-only')).toHaveTextContent('Only in')
+  })
+
+  it('draws the box of a condition whether it is ticked or not, at one size, so one left off still reads as something to tick', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits'] })
+    openSquare(2)
+    const on = screen.getByTestId('cue-rule-0-color-2-when-fits-box')
+    for (const name of ['before', 'after']) {
+      const off = screen.getByTestId(`cue-rule-0-color-2-when-${name}-box`)
+      expect(off).toHaveClass(
+        'h-3.5',
+        'w-3.5',
+        'shrink-0',
+        'border',
+        'border-[var(--color-line-strong)]',
+        'bg-[var(--color-field)]',
+      )
+      expect(off.querySelector('svg')).toBeNull()
+    }
+    expect(on).toHaveClass(
+      'h-3.5',
+      'w-3.5',
+      'shrink-0',
+      'border',
+      'border-[var(--color-accent)]',
+      'bg-[var(--color-accent)]',
+      'text-[var(--color-on-accent)]',
+    )
+    expect(on.querySelector('svg')).not.toBeNull()
   })
 
   it('offers them under a single colour too, where they hold for every repetition of the rule', () => {
