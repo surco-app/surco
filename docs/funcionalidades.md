@@ -2760,6 +2760,10 @@ pida con «Ponerlo también ahí y perder esos cambios». Si la colección no ti
 tiene dos veces, se omite sin decir nada. Se elige a qué programas llega en Ajustes → Cues
 (`cueFlowToRekordbox`, `cueFlowToTraktor`, `cueFlowToEngine`, `cueFlowToSerato`, encendidos,
 `settings.ts:90-93`).
+Cada programa ocupa una fila de «Aplicar los flujos también en» (`cue-flow-targets`), con lo
+que recibe a la derecha (en rekordbox hot cues y CALL, en los demás solo hot cues, en Traktor en
+azul) o, si no está en este equipo, que no se ha encontrado. Lo que hay que saber de Traktor,
+Serato y VirtualDJ al guardar va tras el icono de información de su fila.
 El punto se ajusta al golpe más cercano del otro programa, nunca a su compás
 (`contextOf`, `lib/cueTwins.ts`). Medido sobre 19 pistas que una colección real tiene en
 rekordbox y en Engine DJ (AIFF): las rejillas coinciden a menos de 13 ms en 16 de ellas y a

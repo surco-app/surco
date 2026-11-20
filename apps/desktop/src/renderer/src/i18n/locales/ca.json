@@ -2174,17 +2174,21 @@
       "lettersByTime": "Lletres en l'ordre de la pista",
       "lettersByTimeHint": "L'A sempre és el primer cue de la pista. Apaga-ho si per a tu cada lletra és un pad fix.",
       "markPoint": "Posar un CALL on marques",
-      "traktorColours": "A Traktor aquests cues surten en blau, perquè Traktor pinta cada cue segons el seu tipus",
-      "callsOnlyRekordbox": "Els CALL només existeixen a rekordbox. Engine DJ, Traktor, Serato i VirtualDJ només reben els hot cues",
-      "callsOnlyRekordboxWin": "Els CALL només existeixen a rekordbox. Engine DJ, Traktor i Serato només reben els hot cues",
       "targets": {
         "title": "Aplicar els fluxos també a",
         "hint": "El programa des del qual marques sempre rep els cues. Surco cerca la mateixa pista als altres pel seu fitxer i hi posa el flux amb la graella i els cues que ja té allà. Els cues que poses a mà es queden al programa on els marques.",
-        "rekordbox": "Hot cues i CALL",
-        "traktor": "Només hot cues, en blau, de l'A a la G. Traktor llegeix la seva col·lecció en arrencar, així que en desar Surco et demanarà que el tanquis.",
-        "engine": "Només hot cues. Engine DJ no té CALL.",
-        "serato": "Només hot cues, de l'A a l'H. Serato no té CALL. Si Serato és obert, Surco els desa quan el tanques.",
-        "virtualdj": "Només hot cues, de l'A a l'H. VirtualDJ no té CALL. Si VirtualDJ és obert, Surco els desa quan el tanques."
+        "gets": {
+          "rekordbox": "Hot cues i CALL",
+          "traktor": "Només hot cues, en blau, de l'A a la G",
+          "engine": "Només hot cues",
+          "serato": "Només hot cues, de l'A a l'H",
+          "virtualdj": "Només hot cues, de l'A a l'H"
+        },
+        "caveat": {
+          "traktor": "Traktor llegeix la seva col·lecció en arrencar, així que en desar Surco et demanarà que el tanquis",
+          "serato": "Si Serato és obert, Surco els desa quan el tanques",
+          "virtualdj": "Si VirtualDJ és obert, Surco els desa quan el tanques"
+        }
       }
     },
     "cueProfile": {

@@ -29,6 +29,7 @@ import {
 import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
+import { hoverTooltip } from '../../test/tooltip'
 import { CuesTab } from './CuesTab'
 
 let afterTest: (() => unknown) | null = null
@@ -214,17 +215,30 @@ describe('CuesTab', () => {
     expect(trackCues).toHaveBeenCalledWith('rb:7')
   })
 
-  it('says with the programs what reaches Engine DJ, Traktor and Serato, only where they are installed', async () => {
+  it('says on the row of each program what reaches it, Traktor in blue and the others the hot cues only, and that it is missing where it is not installed', async () => {
     installApi({
       dj: djReads({
         traktor: { available: async () => true },
         engine: { available: async () => false },
+        serato: { available: vi.fn<ProgramReads['available']>(async () => true) },
       }),
     })
-    render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      'CALLs only exist in rekordbox. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only. In Traktor these cues show in blue, since Traktor colours each cue by its type',
+    render(<Harness collection="/c/master.db" />)
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-traktor')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox-gets')).toHaveTextContent(
+      /^Hot cues and CALLs$/,
     )
+    expect(screen.getByTestId('settings-cue-flow-to-traktor-gets')).toHaveTextContent(
+      /^Hot cues only, in blue, from A to G$/,
+    )
+    expect(screen.getByTestId('settings-cue-flow-to-serato-gets')).toHaveTextContent(
+      /^Hot cues only, from A to H$/,
+    )
+    expect(await screen.findByTestId('settings-cue-flow-to-engine-missing')).toHaveTextContent(
+      /^No Engine DJ library was found$/,
+    )
+    expect(screen.queryByTestId('settings-cue-flow-to-engine-gets')).toBeNull()
+    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
     cleanup()
     installApi({
       dj: djReads({
@@ -233,42 +247,28 @@ describe('CuesTab', () => {
       }),
     })
     render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-engine-gets')).toHaveTextContent(
+      /^Hot cues only$/,
     )
-    cleanup()
-    installApi({
-      dj: djReads({
-        traktor: { available: async () => false },
-        engine: { available: async () => false },
-        serato: { available: vi.fn<ProgramReads['available']>(async () => true) },
-      }),
-    })
-    render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
+    expect(screen.getByTestId('settings-cue-flow-to-traktor-missing')).toHaveTextContent(
+      /^No Traktor collection was found$/,
     )
-    cleanup()
-    installApi({
-      dj: djReads({
-        traktor: { available: async () => false },
-        engine: { available: async () => false },
-      }),
-    })
-    render(<Harness />)
-    await screen.findByTestId('cue-flow-mark-point')
+    expect(screen.queryByTestId('settings-cue-flow-to-traktor-gets')).toBeNull()
     expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
-  it('leaves VirtualDJ out of the hot cues note on Windows, where Surco does not offer VirtualDJ', async () => {
+  it('says on Windows too what each found program gets on its own row, with no note under the list', async () => {
     installApi({
       platform: 'win32',
       dj: djReads({ engine: { available: async () => true } }),
     })
     render(<Harness />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor and Serato get the hot cues only$/,
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-engine')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-engine-gets')).toHaveTextContent(
+      /^Hot cues only$/,
     )
+    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
   it('has a VirtualDJ destination on Windows too, where Surco offers VirtualDJ in beta', async () => {
@@ -278,12 +278,17 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeInTheDocument()
   })
 
-  it('says the hot cues note when only rekordbox and VirtualDJ are found, since a flow reaches VirtualDJ without its CALLs', async () => {
+  it('says on their rows that rekordbox gets the CALLs and VirtualDJ the hot cues only when only those two are found, since a flow reaches VirtualDJ without its CALLs', async () => {
     installApi({ dj: djReads({ virtualdj: { available: async () => true } }) })
     render(<Harness collection="/c/master.db" />)
-    expect(await screen.findByTestId('cue-flow-library-note')).toHaveTextContent(
-      /^CALLs only exist in rekordbox\. Engine DJ, Traktor, Serato and VirtualDJ get the hot cues only$/,
+    await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj-gets')).toHaveTextContent(
+      /^Hot cues only, from A to H$/,
     )
+    expect(screen.getByTestId('settings-cue-flow-to-rekordbox-gets')).toHaveTextContent(
+      /^Hot cues and CALLs$/,
+    )
+    expect(screen.queryByTestId('cue-flow-library-note')).not.toBeInTheDocument()
   })
 
   it('shows a destination as missing only for the programs that are not installed', async () => {
@@ -329,8 +334,11 @@ describe('CuesTab', () => {
     render(<Harness />)
     await waitFor(() => expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled())
     expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeChecked()
-    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
-      'Hot cues only, from A to H. VirtualDJ has no CALLs. If VirtualDJ is open, Surco saves them when you close it.',
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj-gets')).toHaveTextContent(
+      /^Hot cues only, from A to H$/,
+    )
+    expect(screen.getByTestId('settings-cue-flow-to-virtualdj-caveat')).toHaveTextContent(
+      /^If VirtualDJ is open, Surco saves them when you close it$/,
     )
     fireEvent.click(screen.getByTestId('settings-cue-flow-to-virtualdj'))
     expect(last?.cueFlowToVirtualdj).toBe(false)
@@ -1115,19 +1123,106 @@ describe('CuesTab', () => {
       ).toEqual([])
     })
 
-    it('keeps the note about CALLs and Traktor colours with the programs it talks about, away from the rules', async () => {
-      installApi({ dj: djReads({ traktor: { available: async () => true } }) })
+    it('keeps each program on one row, the box and the name on the left and what it gets in grey against the right edge, cut with an ellipsis before it wraps', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      installApi({
+        dj: djReads({
+          traktor: { available: async () => true },
+          engine: { available: async () => true },
+          serato: { available: async () => true },
+          virtualdj: { available: async () => true },
+        }),
+      })
+      render(<Harness collection="/c/master.db" />)
+      await waitFor(() =>
+        expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled(),
+      )
+      const gets = {
+        rekordbox: 'Hot cues y CALL',
+        traktor: 'Solo hot cues, en azul, de la A a la G',
+        engine: 'Solo hot cues',
+        serato: 'Solo hot cues, de la A a la H',
+        virtualdj: 'Solo hot cues, de la A a la H',
+      }
+      for (const [library, text] of Object.entries(gets)) {
+        const row = screen.getByTestId(`cue-flow-target-${library}`)
+        expect(row).toHaveClass('flex', 'items-center')
+        expect(row).toContainElement(screen.getByTestId(`settings-cue-flow-to-${library}`))
+        const said = within(row).getByTestId(`settings-cue-flow-to-${library}-gets`)
+        expect(said.textContent).toBe(text)
+        expect(said).toHaveClass(
+          'min-w-0',
+          'flex-1',
+          'truncate',
+          'text-right',
+          'text-xs',
+          'text-fg-dim',
+        )
+        expect(row.querySelectorAll('p')).toHaveLength(0)
+      }
+      expect(screen.getByTestId('cue-flow-targets').children).toHaveLength(5)
+    })
+
+    it('puts the catch of a program behind an (i) beside its name, only on the programs that have one, so the row stays one line', async () => {
+      await i18n.changeLanguage('es')
+      afterTest = () => i18n.changeLanguage('en')
+      installApi({
+        dj: djReads({
+          traktor: { available: async () => true },
+          engine: { available: async () => true },
+          serato: { available: async () => true },
+          virtualdj: { available: async () => true },
+        }),
+      })
+      render(<Harness collection="/c/master.db" />)
+      await waitFor(() =>
+        expect(screen.getByTestId('settings-cue-flow-to-virtualdj')).toBeEnabled(),
+      )
+      const catches = {
+        traktor:
+          'Traktor lee su colección al arrancar, así que al guardar Surco te pedirá cerrarlo',
+        serato: 'Si Serato está abierto, Surco los guarda cuando lo cierras',
+        virtualdj: 'Si VirtualDJ está abierto, Surco los guarda cuando lo cierras',
+      }
+      for (const [library, text] of Object.entries(catches)) {
+        const info = screen.getByTestId(`settings-cue-flow-to-${library}-caveat`)
+        expect(screen.getByTestId(`cue-flow-target-${library}`)).toContainElement(info)
+        expect(info.tagName).toBe('BUTTON')
+        expect(info).toHaveClass('press')
+        expect(info).not.toHaveAttribute('title')
+        expect(info).toHaveAccessibleName(text)
+        expect(info.closest('label')).toBeNull()
+        expect(hoverTooltip(info)).toBe(text)
+      }
+      expect(screen.queryByTestId('settings-cue-flow-to-rekordbox-caveat')).toBeNull()
+      expect(screen.queryByTestId('settings-cue-flow-to-engine-caveat')).toBeNull()
+    })
+
+    it('says a program is missing in place of what it would get and drops its (i), since nothing is saved there', async () => {
+      installApi({
+        dj: djReads({
+          traktor: { available: async () => false },
+          serato: { available: async () => false },
+        }),
+      })
       render(<Harness />)
-      const note = await screen.findByTestId('cue-flow-library-note')
-      expect(
-        screen.getByTestId('cue-flow-targets').compareDocumentPosition(note) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-      expect(
-        note.compareDocumentPosition(screen.getByTestId('cue-manual')) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy()
-      expect(screen.getByTestId('cue-flow-bench')).not.toContainElement(note)
+      const missing = await screen.findByTestId('settings-cue-flow-to-serato-missing')
+      expect(screen.getByTestId('cue-flow-target-serato')).toContainElement(missing)
+      expect(missing).toHaveClass(
+        'min-w-0',
+        'flex-1',
+        'truncate',
+        'text-right',
+        'text-xs',
+        'text-fg-dim',
+      )
+      expect(screen.queryByTestId('settings-cue-flow-to-serato-gets')).toBeNull()
+      expect(screen.queryByTestId('settings-cue-flow-to-serato-caveat')).toBeNull()
+      expect(screen.queryByTestId('settings-cue-flow-to-traktor-caveat')).toBeNull()
+      expect(screen.getByTestId('settings-cue-flow-to-serato').closest('label')).toHaveClass(
+        'opacity-50',
+      )
     })
 
     it('heads the programs list and the manual editor with a section title like the other tabs of Settings, the help of the programs inside its title', () => {
@@ -1379,8 +1474,8 @@ describe('CuesTab', () => {
     const serato = screen.getByTestId('settings-cue-flow-to-serato')
     await waitFor(() => expect(serato).toBeEnabled())
     expect(serato).toBeChecked()
-    expect(screen.getByTestId('cue-flow-targets')).toHaveTextContent(
-      i18n.t('settings.cueFlows.targets.serato'),
+    expect(screen.getByTestId('settings-cue-flow-to-serato-gets')).toHaveTextContent(
+      'Hot cues only, from A to H',
     )
     fireEvent.click(serato)
     expect(last?.cueFlowToSerato).toBe(false)

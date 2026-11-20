@@ -21,7 +21,7 @@ import { flowFromTrack } from '../../lib/cueExample'
 import { flowName } from '../../lib/cueFlowName'
 import { CUE_PROGRAMS } from '../../lib/cuePrograms'
 import { FLOW_TO } from '../../lib/cueTwins'
-import { isWindows, offeredHere } from '../../lib/platform'
+import { offeredHere } from '../../lib/platform'
 import { LIBRARY_NAME } from '../../lib/reviewLibraries'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -64,6 +64,11 @@ const UNAVAILABLE: Record<DjProgram, string> = {
   serato: 'settings.sourceSeratoUnavailable',
   virtualdj: 'settings.sourceVirtualdjUnavailable',
 }
+const CAVEAT: Partial<Record<DjProgram, string>> = {
+  traktor: 'settings.cueFlows.targets.caveat.traktor',
+  serato: 'settings.cueFlows.targets.caveat.serato',
+  virtualdj: 'settings.cueFlows.targets.caveat.virtualdj',
+}
 const QUANTIZE_LABEL: Record<CueQuantize, string> = {
   bar: 'editor.cues.quantizeBar',
   beat: 'editor.cues.quantizeBeat',
@@ -105,9 +110,6 @@ export function CuesTab({
     DJ_PROGRAMS.map((p) => [p, available[p] === false]),
   ) as Record<DjProgram, boolean>
   missingBy.rekordbox = !foundBy.rekordbox
-  const hotCuesOnlyFound = DJ_PROGRAMS.some(
-    (p) => foundBy[p] && CUE_PROGRAMS[p].takesFlows && !CUE_PROGRAMS[p].writesCalls,
-  )
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -480,41 +482,45 @@ export function CuesTab({
             const key = FLOW_TO[library]
             const found = foundBy[library]
             const reached = found && CUE_PROGRAMS[library].takesFlows
+            const caveat = missingBy[library] ? undefined : CAVEAT[library]
             return (
-              <div key={library} className="px-3.5 py-2.5">
-                <CheckboxRow
-                  testid={`settings-cue-flow-to-${library}`}
-                  checked={reached && synced[key]}
-                  onChange={(v) => patch(key, v)}
-                  label={name}
-                  disabled={!reached}
-                />
-                <SettingsHint
-                  data-testid={
-                    missingBy[library] ? `settings-cue-flow-to-${library}-missing` : undefined
-                  }
-                  className="mt-1 pl-7"
+              <div
+                key={library}
+                data-testid={`cue-flow-target-${library}`}
+                className="flex items-center gap-3 px-3.5 py-2.5"
+              >
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <CheckboxRow
+                    testid={`settings-cue-flow-to-${library}`}
+                    checked={reached && synced[key]}
+                    onChange={(v) => patch(key, v)}
+                    label={name}
+                    disabled={!reached}
+                  />
+                  {caveat && (
+                    <button
+                      type="button"
+                      data-testid={`settings-cue-flow-to-${library}-caveat`}
+                      className="press relative inline-flex rounded text-fg-faint hover:text-fg focus-visible:text-fg"
+                    >
+                      <Info className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span className="sr-only">{tr(caveat)}</span>
+                      <Tooltip label={tr(caveat)} />
+                    </button>
+                  )}
+                </div>
+                <span
+                  data-testid={`settings-cue-flow-to-${library}-${missingBy[library] ? 'missing' : 'gets'}`}
+                  className="min-w-0 flex-1 truncate text-right text-xs text-fg-dim"
                 >
                   {missingBy[library]
                     ? tr(UNAVAILABLE[library])
-                    : tr(`settings.cueFlows.targets.${library}`)}
-                </SettingsHint>
+                    : tr(`settings.cueFlows.targets.gets.${library}`)}
+                </span>
               </div>
             )
           })}
         </div>
-        {hotCuesOnlyFound && (
-          <SettingsHint data-testid="cue-flow-library-note">
-            {[
-              tr(
-                isWindows()
-                  ? 'settings.cueFlows.callsOnlyRekordboxWin'
-                  : 'settings.cueFlows.callsOnlyRekordbox',
-              ),
-              ...(foundBy.traktor ? [tr('settings.cueFlows.traktorColours')] : []),
-            ].join('. ')}
-          </SettingsHint>
-        )}
       </div>
       <div className="flex flex-col gap-2">
         <h3 className={HEADING}>{tr('settings.cueFlows.manual.title')}</h3>
