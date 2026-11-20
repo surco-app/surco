@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { rejectedCues } from '../../../shared/cueRules'
+import { type DjProgram, programOf } from '../../../shared/djProgram'
 import { foldAccents } from '../../../shared/foldAccents'
 import type { TrackCues } from '../../../shared/types'
 import { readPlaylist } from '../hooks/useSourceBrowser'
@@ -23,6 +24,7 @@ import {
   trackOfCues,
   trackPlan,
 } from '../lib/cueExample'
+import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { clipBox, MENU_GAP } from './CueRuleRow'
 import { CueWave } from './CueWave'
 import { SegmentedControl } from './SegmentedControl'
@@ -59,12 +61,14 @@ const folded = (text: string): string => foldAccents(text).toLowerCase()
 
 function TrackChoices({
   choices,
+  program,
   loading,
   inUse,
   onChoose,
   onClose,
 }: {
   choices: Choice[]
+  program: DjProgram
   loading: boolean
   inUse: string | null
   onChoose: (choice: Choice | null) => void
@@ -81,6 +85,7 @@ function TrackChoices({
     .filter((c) => folded(`${c.label} ${c.artist ?? ''}`).includes(wanted))
     .slice(0, MAX_CHOICES)
   const searchable = loading || choices.length > 0
+  const searchLabel = tr('settings.cueFlows.searchCollection', { program: LIBRARY_NAME[program] })
 
   useEffect(() => {
     const first = searchable ? searchRef.current : exampleRef.current
@@ -128,8 +133,8 @@ function TrackChoices({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder={tr('settings.cueFlows.searchCollection')}
-          aria-label={tr('settings.cueFlows.searchCollection')}
+          placeholder={searchLabel}
+          aria-label={searchLabel}
           className="mb-1 h-7 w-full min-w-0 border-b border-[var(--color-line)] bg-transparent px-2 text-xs text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
         />
       )}
@@ -211,6 +216,7 @@ export function CueFlowPreview({
   flow,
   track,
   tracks = NO_CHOICES,
+  program = 'rekordbox',
   loading = false,
   onPick,
   onOpenChange,
@@ -219,6 +225,7 @@ export function CueFlowPreview({
   flow: CueFlow
   track?: { label: string; cues: TrackCues }
   tracks?: Choice[]
+  program?: DjProgram
   loading?: boolean
   onPick?: (choice: Choice) => void
   onOpenChange?: (open: boolean) => void
@@ -322,7 +329,10 @@ export function CueFlowPreview({
   const others =
     notices.length > 1 ? notices.map((n) => n.text).join(tr('settings.cueFlows.whenEachLead')) : ''
   const choices =
-    track && marked && !tracks.some((c) => c.contentId === track.cues.contentId)
+    track &&
+    marked &&
+    programOf(track.cues.contentId) === program &&
+    !tracks.some((c) => c.contentId === track.cues.contentId)
       ? [{ contentId: track.cues.contentId, label: track.label }, ...tracks]
       : tracks
 
@@ -393,6 +403,7 @@ export function CueFlowPreview({
         {open && (
           <TrackChoices
             choices={choices}
+            program={program}
             loading={loading}
             inUse={onTrack ? track.cues.contentId : null}
             onChoose={choose}
@@ -491,21 +502,22 @@ export function CueFlowPreview({
 export function CueFlowTrackPreview({
   flow,
   track,
-  rekordbox,
+  programs,
   onShown,
 }: {
   flow: CueFlow
   track?: Choice
-  rekordbox: boolean
+  programs: readonly DjProgram[]
   onShown?: (shown: { label: string; cues: TrackCues } | null) => void
 }): React.JSX.Element {
   const [picked, setPicked] = useState(track)
   const [open, setOpen] = useState(false)
   const { data } = useTrackCues(picked?.contentId)
+  const program = programs.at(0)
   const collection = useQuery({
-    queryKey: ['source-playlist', 'rekordbox', ALL_TRACKS_ID],
-    queryFn: () => readPlaylist('rekordbox', ALL_TRACKS_ID),
-    enabled: rekordbox && open,
+    queryKey: ['source-playlist', program, ALL_TRACKS_ID],
+    queryFn: () => readPlaylist(program as DjProgram, ALL_TRACKS_ID),
+    enabled: program !== undefined && open,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const tracks = useMemo(() => {
@@ -519,6 +531,7 @@ export function CueFlowTrackPreview({
       flow={flow}
       track={picked && data ? { label: picked.label, cues: data } : undefined}
       tracks={tracks}
+      program={program}
       loading={collection.isLoading}
       onPick={setPicked}
       onOpenChange={setOpen}

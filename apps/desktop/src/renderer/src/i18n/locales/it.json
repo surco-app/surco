@@ -2049,7 +2049,7 @@
       "preview": "Anteprima",
       "previewHint": "Brano di esempio a 128 BPM, marcato alla battuta {{bar}}",
       "exampleTrack": "Brano di esempio",
-      "searchCollection": "Cerca nella tua collezione di rekordbox",
+      "searchCollection": "Cerca nella tua collezione di {{program}}",
       "noTrackFound": "Nessun brano con questo nome",
       "loadingTracks": "Lettura della tua collezione…",
       "noMark": "{{label}} non ha ancora nessun segno, quindi l'anteprima usa il brano di esempio",

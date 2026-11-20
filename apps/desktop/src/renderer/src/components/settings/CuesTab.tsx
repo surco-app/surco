@@ -107,6 +107,9 @@ export function CuesTab({
     DJ_PROGRAMS.map((p) => [p, available[p] === false]),
   ) as Record<DjProgram, boolean>
   missingBy.rekordbox = !foundBy.rekordbox
+  const previewPrograms = DJ_PROGRAMS.filter(
+    (p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows,
+  )
   const flows = synced.cueFlows
   const flow = flows.find((f) => f.id === current) ?? activeCueFlow(synced)
   const put = (next: CueFlow) =>
@@ -415,7 +418,7 @@ export function CuesTab({
             <CueFlowTrackPreview
               flow={flow}
               track={cueTrack}
-              rekordbox={foundBy.rekordbox}
+              programs={previewPrograms}
               onShown={setPreviewed}
             />
           </section>

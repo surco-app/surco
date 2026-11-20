@@ -2049,7 +2049,7 @@
       "preview": "Aperçu",
       "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
       "exampleTrack": "Morceau d’exemple",
-      "searchCollection": "Rechercher dans ta collection rekordbox",
+      "searchCollection": "Rechercher dans ta collection {{program}}",
       "noTrackFound": "Aucun morceau avec ce nom",
       "loadingTracks": "Lecture de ta collection…",
       "noMark": "{{label}} n’a encore aucune marque, l’aperçu utilise donc le morceau d’exemple",

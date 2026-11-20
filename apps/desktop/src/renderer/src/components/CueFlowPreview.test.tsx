@@ -692,6 +692,18 @@ describe('CueFlowPreview', () => {
       )
     })
 
+    it('names in the search field the program whose collection it searches, so a DJ with Traktor is not told it is rekordbox', () => {
+      render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} program="traktor" />)
+      open()
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAttribute(
+        'placeholder',
+        'Search your Traktor collection',
+      )
+      expect(screen.getByTestId('cue-preview-track-search')).toHaveAccessibleName(
+        'Search your Traktor collection',
+      )
+    })
+
     it('hands over the track picked, closes the choices and gives the focus back to the selector', () => {
       const onPick = vi.fn()
       render(<CueFlowPreview flow={MY_FLOW} tracks={LIST} onPick={onPick} />)

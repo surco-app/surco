@@ -2049,7 +2049,7 @@
       "preview": "Preview",
       "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "exampleTrack": "Example track",
-      "searchCollection": "Search your rekordbox collection",
+      "searchCollection": "Search your {{program}} collection",
       "noTrackFound": "No track with that name",
       "loadingTracks": "Reading your collection…",
       "noMark": "{{label}} has no mark yet, so the preview uses the example track",

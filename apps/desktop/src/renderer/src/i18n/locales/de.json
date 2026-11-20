@@ -2049,7 +2049,7 @@
       "preview": "Vorschau",
       "previewHint": "Beispieltrack mit 128 BPM, markiert in Takt {{bar}}",
       "exampleTrack": "Beispieltrack",
-      "searchCollection": "In deiner rekordbox-Sammlung suchen",
+      "searchCollection": "In deiner {{program}}-Sammlung suchen",
       "noTrackFound": "Kein Track mit diesem Namen",
       "loadingTracks": "Deine Sammlung wird gelesen…",
       "noMark": "{{label}} hat noch keine Markierung, daher nutzt die Vorschau den Beispieltrack",

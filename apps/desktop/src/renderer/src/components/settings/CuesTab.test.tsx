@@ -18,6 +18,7 @@ import {
 import type { CueGridTolerance } from '../../../../shared/cueGrid'
 import type { CueJumpBars } from '../../../../shared/cueJump'
 import type { CueQuantize } from '../../../../shared/cueQuantize'
+import { traktorContentId } from '../../../../shared/traktorContent'
 import type { SourcePlaylistEntry, TrackCues } from '../../../../shared/types'
 import i18n from '../../i18n'
 import {
@@ -126,6 +127,8 @@ const inCollection = (
 const collectionOf = (...entries: SourcePlaylistEntry[]) =>
   djReads({ rekordbox: { playlist: async () => entries } })
 const glueCollection = () => collectionOf(inCollection('rb:7', 'Bicep, Glue'))
+const FOUND = { available: async () => true }
+const GLUE_IN_TRAKTOR = traktorContentId('Macintosh HD/:Music/:glue.aiff')
 const MARKED_BY_HAND: TrackCues = {
   contentId: 'rb:7',
   analysed: true,
@@ -1668,6 +1671,22 @@ describe('the tracks the preview offers', () => {
     expect(screen.getByTestId('cue-preview-track-option-rb:7')).toBeInTheDocument()
     expect(screen.queryByTestId('cue-preview-track-loading')).toBeNull()
     expect(api.dj.playlist).toHaveBeenCalledTimes(1)
+  })
+
+  it('reads the Traktor collection and never the rekordbox one where Traktor is the only program found, and only once the choices open, naming Traktor in the search field with no programs to choose from, so a DJ without rekordbox can try a flow on a track of theirs', async () => {
+    const playlist = vi.fn(async () => [inCollection(GLUE_IN_TRAKTOR, 'Glue', [])])
+    const api = installApi({ dj: djReads({ traktor: { ...FOUND, playlist } }) })
+    render(<Harness />)
+    await waitFor(() => expect(api.dj.available).toHaveBeenCalled())
+    await act(async () => {})
+    expect(api.dj.playlist).not.toHaveBeenCalled()
+    openTracks()
+    await screen.findByTestId(`cue-preview-track-option-${GLUE_IN_TRAKTOR}`)
+    expect(vi.mocked(api.dj.playlist).mock.calls).toEqual([['traktor', ALL_TRACKS_ID]])
+    expect(screen.queryByRole('radiogroup')).toBeNull()
+    const search = screen.getByTestId('cue-preview-track-search')
+    expect(search).toHaveAttribute('placeholder', 'Search your Traktor collection')
+    expect(search).toHaveAccessibleName('Search your Traktor collection')
   })
 
   it('shares the read with the rest of the app, so a collection the list already read is not read twice', async () => {
