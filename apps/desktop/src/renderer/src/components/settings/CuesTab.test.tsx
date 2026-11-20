@@ -29,7 +29,6 @@ import {
 import { createQueryClient } from '../../lib/queryClient'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
-import { hoverTooltip } from '../../test/tooltip'
 import { CuesTab } from './CuesTab'
 
 let afterTest: (() => unknown) | null = null
@@ -132,13 +131,13 @@ const previewGlue = async () => {
   )
 }
 
-const chosen = (): HTMLElement =>
-  screen
-    .getAllByTestId(/^cue-flow-/)
-    .find((el) => el.getAttribute('aria-pressed') === 'true') as HTMLElement
+const openPicker = () => fireEvent.click(screen.getByTestId('cue-flow-picker'))
 const openAdd = () => fireEvent.click(screen.getByTestId('cue-flow-add'))
 const openMore = () => fireEvent.click(screen.getByTestId('cue-flow-more'))
-const pick = (id: string) => fireEvent.click(screen.getByTestId(`cue-flow-${id}`))
+const pick = (id: string) => {
+  openPicker()
+  fireEvent.click(screen.getByTestId(`cue-flow-${id}`))
+}
 const startRename = () => {
   openMore()
   fireEvent.click(screen.getByTestId('cue-flow-rename'))
@@ -395,6 +394,7 @@ describe('CuesTab', () => {
 
   it('marks no flow as the default while the editor is in Manual, and Poner por defecto leaves Manual', () => {
     render(<Harness active="manual" />)
+    openPicker()
     expect(screen.queryByTestId('cue-flow-in-use')).toBeNull()
     openMore()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
@@ -420,126 +420,39 @@ describe('CuesTab', () => {
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness flows={BUNDLED_FLOWS} active="mix-in" />)
     expect(screen.queryAllByRole('textbox')).toHaveLength(0)
-    expect(chosen()).toHaveTextContent(/^Mix in 64$/)
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Mix in 64')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Por defecto')
+    openPicker()
     expect(screen.getByTestId('cue-flow-mix-in-32')).toHaveTextContent('Mix in 32')
     expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
     expect(screen.queryByTestId('cue-flow-calls-only')).toBeNull()
-    expect(
-      within(screen.getByTestId('cue-flow-mix-in')).getByTestId('cue-flow-in-use'),
-    ).toHaveAccessibleName('Por defecto')
-    expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByTestId('cue-flow-mix-in')).toHaveTextContent('Por defecto')
+    expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('switches to a flow with one click on its pill, since a closed list hid the other flows behind a second click', () => {
-    render(<Harness />)
-    expect(screen.queryByTestId('cue-flow-picker')).toBeNull()
-    expect(screen.getByTestId('cue-flow-mine')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('cue-rule-0')).toBeInTheDocument()
-    fireEvent.click(screen.getByTestId('cue-flow-calls-only'))
-    expect(screen.getByTestId('cue-flow-calls-only')).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByTestId('cue-flow-mine')).toHaveAttribute('aria-pressed', 'false')
-    expect(screen.getByTestId('cue-flow-no-rules')).toBeInTheDocument()
+  it('cuts a long flow name with an ellipsis inside the list button, so the row never grows wider than Settings nor pushes + and the actions away', () => {
+    const long = 'Warm up for the long sets at the club on Sundays'
+    render(<Harness flows={[MIX_IN, { ...MY_FLOW, name: long }]} />)
+    const picker = screen.getByTestId('cue-flow-picker')
+    expect(picker).toHaveClass('w-full', 'min-w-0')
+    expect(picker.parentElement).toHaveClass('min-w-0', 'flex-1')
+    expect(within(picker).getByText(long)).toHaveClass('min-w-0', 'flex-1', 'truncate')
+    expect(screen.getByTestId('cue-flow-add')).toHaveClass('shrink-0')
+    expect(screen.getByTestId('cue-flow-more')).toHaveClass('shrink-0')
+    openPicker()
+    expect(within(screen.getByTestId('cue-flow-mine')).getByText(long)).toHaveClass(
+      'min-w-0',
+      'truncate',
+    )
   })
 
-  it('marks the default flow with a mute dot that only a screen reader hears, and moves it when another flow becomes the default', () => {
-    render(<Harness />)
-    expect(screen.getAllByTestId('cue-flow-in-use')).toHaveLength(1)
-    const dot = within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use')
-    expect(dot).toHaveAttribute('role', 'img')
-    expect(dot).toHaveAccessibleName('Default')
-    expect(dot).toHaveTextContent('')
-    pick('one-at-32')
-    openMore()
-    fireEvent.click(screen.getByTestId('cue-flow-use'))
-    expect(screen.getAllByTestId('cue-flow-in-use')).toHaveLength(1)
-    expect(
-      within(screen.getByTestId('cue-flow-one-at-32')).getByTestId('cue-flow-in-use'),
-    ).toBeInTheDocument()
-  })
-
-  it('renames the chosen flow where its pill was, the other flows keeping their place around it', () => {
+  it('renames the flow where the list of flows was, + and the actions keeping their place', () => {
     render(<Harness />)
     startRename()
-    const order = (): (string | undefined)[] =>
-      Array.from(
-        screen.getByTestId('cue-flows').querySelectorAll<HTMLElement>('[data-testid]'),
-        (el) => el.dataset.testid,
-      ).filter((id) => id !== 'cue-flow-in-use')
-    expect(order()).toEqual([
-      'cue-flow-mix-in',
-      'cue-flow-name',
-      'cue-flow-one-at-32',
-      'cue-flow-calls-only',
-      'cue-flow-add',
-      'cue-flow-more',
-    ])
-    expect(screen.queryByTestId('cue-flow-mine')).toBeNull()
+    expect(screen.queryByTestId('cue-flow-picker')).toBeNull()
+    expect(screen.getByTestId('cue-flow-name')).toHaveClass('min-w-0', 'flex-1')
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
-    expect(order()[1]).toBe('cue-flow-mine')
-  })
-
-  it('walks the flows with the left and right arrows and gives Tab a single stop, so the keyboard does not cross every flow to reach the rules', () => {
-    render(<Harness />)
-    const stops = (): string[] =>
-      KEPT.map((f) => String(screen.getByTestId(`cue-flow-${f.id}`).tabIndex))
-    expect(stops()).toEqual(['-1', '0', '-1', '-1'])
-    screen.getByTestId('cue-flow-mine').focus()
-    fireEvent.keyDown(screen.getByTestId('cue-flow-mine'), { key: 'ArrowRight' })
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveFocus()
-    expect(screen.getByTestId('cue-flow-one-at-32')).toHaveAttribute('aria-pressed', 'true')
-    expect(stops()).toEqual(['-1', '-1', '0', '-1'])
-    fireEvent.keyDown(screen.getByTestId('cue-flow-one-at-32'), { key: 'ArrowLeft' })
-    fireEvent.keyDown(screen.getByTestId('cue-flow-mine'), { key: 'ArrowLeft' })
-    expect(screen.getByTestId('cue-flow-mix-in')).toHaveFocus()
-    fireEvent.keyDown(screen.getByTestId('cue-flow-mix-in'), { key: 'ArrowLeft' })
-    expect(screen.getByTestId('cue-flow-calls-only')).toHaveFocus()
-    fireEvent.keyDown(screen.getByTestId('cue-flow-calls-only'), { key: 'ArrowRight' })
-    expect(screen.getByTestId('cue-flow-mix-in')).toHaveFocus()
-  })
-
-  it('says the whole name of a flow in Surco’s tooltip only when the pill cuts it, so a short name is not said twice', () => {
-    const long = 'Warm up for the long sets at the club on Sundays'
-    const cut = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (
-      this: HTMLElement,
-    ) {
-      return this.textContent === long ? 400 : 0
-    })
-    afterTest = () => cut.mockRestore()
-    render(<Harness flows={[MIX_IN, { ...MY_FLOW, name: long }]} />)
-    const pill = screen.getByTestId('cue-flow-mine')
-    expect(pill).not.toHaveAttribute('title')
-    expect(hoverTooltip(pill)).toBe(long)
-    expect(hoverTooltip(screen.getByTestId('cue-flow-mix-in'))).toBeNull()
-  })
-
-  it('opens the flow menus towards the right when their button sits near the left edge, where Settings would cut a menu that opens to the left', () => {
-    const rect = (left: number, width: number) =>
-      ({
-        left,
-        right: left + width,
-        width,
-        top: 0,
-        bottom: 0,
-        height: 0,
-        x: left,
-        y: 0,
-        toJSON: () => ({}),
-      }) as DOMRect
-    let buttonLeft = 110
-    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
-      this: Element,
-    ) {
-      if (this.getAttribute('data-testid') === 'cue-flows') return rect(0, 600)
-      return rect(buttonLeft, 32)
-    })
-    afterTest = () => spy.mockRestore()
-    render(<Harness />)
-    openMore()
-    expect(screen.getByRole('menu')).toHaveClass('left-0', 'origin-top-left')
-    openMore()
-    buttonLeft = 560
-    openMore()
-    expect(screen.getByRole('menu')).toHaveClass('right-0', 'origin-top-right')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('My flow')
   })
 
   // Every flow menu hangs below its button's right edge, so it has to scale out of that
@@ -553,9 +466,8 @@ describe('CuesTab', () => {
   it('keeps Poner por defecto with the actions on the open flow, out of the list of flows to pick', () => {
     render(<Harness />)
     pick('one-at-32')
-    expect(screen.queryByTestId('cue-flow-use')).toBeNull()
-    openMore()
-    expect(within(screen.getByRole('menu')).getByTestId('cue-flow-use')).toBeInTheDocument()
+    openPicker()
+    expect(within(screen.getByRole('menu')).queryByTestId('cue-flow-use')).toBeNull()
   })
 
   it('offers Poner por defecto on a flow that is not the default', async () => {
@@ -573,16 +485,16 @@ describe('CuesTab', () => {
     await i18n.changeLanguage('es')
     afterTest = () => i18n.changeLanguage('en')
     render(<Harness />)
-    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent(/^Mi flujo$/)
-    expect(
-      within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use'),
-    ).toHaveAccessibleName('Por defecto')
+    openPicker()
+    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('Mi flujo')
+    expect(screen.getByTestId('cue-flow-mine')).toHaveTextContent('Por defecto')
     expect(screen.getByTestId('cue-flow-one-at-32')).toHaveTextContent('Un cue a 32')
     expect(screen.getByTestId('cue-flow-calls-only')).toHaveTextContent('Solo CALL')
   })
 
   it('marks the bundled flow as the default when the stored active flow no longer exists, since that is the flow that runs', () => {
     render(<Harness flows={BUNDLED_FLOWS} active="gone" />)
+    openPicker()
     expect(
       within(screen.getByTestId('cue-flow-mix-in')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
@@ -592,6 +504,7 @@ describe('CuesTab', () => {
 
   it('keeps marking the Mi flujo an earlier Surco kept when the stored active flow no longer exists, as main still runs it', () => {
     render(<Harness active="gone" />)
+    openPicker()
     expect(
       within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
@@ -924,7 +837,7 @@ describe('CuesTab', () => {
     fireEvent.change(screen.getByTestId('cue-flow-name'), { target: { value: 'Mis 64' } })
     fireEvent.keyDown(screen.getByTestId('cue-flow-name'), { key: 'Enter' })
     expect(screen.queryByTestId('cue-flow-name')).toBeNull()
-    expect(chosen()).toHaveTextContent('Mis 64')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Mis 64')
     openMore()
     fireEvent.click(screen.getByTestId('cue-flow-use'))
     const made = last?.cueFlows.find((f) => f.name === 'Mis 64')
@@ -957,7 +870,7 @@ describe('CuesTab', () => {
     expect(input).toHaveValue('')
     expect(input).toHaveAttribute('placeholder', 'My flow')
     fireEvent.blur(input)
-    expect(chosen()).toHaveTextContent('My flow')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('My flow')
   })
 
   it('restores the name of the bundled flow with Restablecer', () => {
@@ -968,7 +881,7 @@ describe('CuesTab', () => {
     openMore()
     fireEvent.click(screen.getByTestId('cue-flow-restore'))
     expect(last?.cueFlows.find((f) => f.id === 'mix-in')?.name).toBe('')
-    expect(chosen()).toHaveTextContent('Mix in 64')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Mix in 64')
   })
 
   it('ends a rename on Escape without closing Settings, keeping what was typed', () => {
@@ -981,7 +894,7 @@ describe('CuesTab', () => {
     fireEvent.keyDown(screen.getByTestId('cue-flow-name'), { key: 'Escape' })
     expect(settingsEscape).not.toHaveBeenCalled()
     expect(screen.queryByTestId('cue-flow-name')).toBeNull()
-    expect(chosen()).toHaveTextContent('Mi set')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Mi set')
   })
 
   it('never offers to delete a bundled flow but restores it as Surco ships it', () => {
@@ -1013,7 +926,8 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('cue-flow-delete'))
     expect(last?.cueFlows.map((f) => f.id)).toEqual(['mix-in', 'one-at-32', 'calls-only'])
     expect(last?.activeCueFlow).toBe('mix-in')
-    expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-pressed', 'true')
+    openPicker()
+    expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-checked', 'true')
   })
 
   it('deletes another flow and falls back to the bundled flow when it was the default', () => {
@@ -1342,7 +1256,7 @@ describe('CuesTab', () => {
     await screen.findByTestId('cue-profile')
     openAdd()
     fireEvent.click(screen.getByTestId('cue-flow-add-learned'))
-    expect(chosen()).toHaveTextContent('Aprendido de mi colección')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Aprendido de mi colección')
     expect(last?.activeCueFlow).not.toBe(MIX_IN.id)
     expect(last?.cueFlows.at(-1)?.rules).toEqual(ONE_AT_32.rules)
   })
@@ -1417,7 +1331,7 @@ describe('CuesTab', () => {
     fireEvent.click(screen.getByTestId('cue-flow-add-track'))
     expect(screen.queryByRole('menu')).toBeNull()
     expect(screen.queryByTestId('cue-flow-name')).toBeNull()
-    expect(chosen()).toHaveTextContent('Like “Bicep, Glue”')
+    expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('Like “Bicep, Glue”')
     expect(last?.cueFlows).toHaveLength(2)
     expect(last?.cueFlows[1].id).not.toBe(MIX_IN.id)
     expect(last?.cueFlows[1].rules).toEqual(flowFromTrack(MARKED_BY_HAND)?.rules)

@@ -1,6 +1,6 @@
-import { Ellipsis, Info, Plus } from 'lucide-react'
+import { Check, ChevronDown, Ellipsis, Info, Plus } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   activeCueFlow,
@@ -61,7 +61,7 @@ const HEADING = 'text-section font-semibold text-fg-muted'
 const ICON_BUTTON =
   'press flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg hover:bg-[var(--color-line-strong)] aria-expanded:bg-[var(--color-accent-soft)] aria-expanded:text-[var(--color-accent)]'
 const DROP_MENU =
-  'animate-pop-flat absolute top-full z-50 mt-1 overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+  'animate-pop-flat absolute top-full z-50 mt-1 origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 const UNAVAILABLE: Record<DjProgram, string> = {
   rekordbox: 'settings.sourceRekordboxUnavailable',
   traktor: 'settings.sourceTraktorUnavailable',
@@ -69,59 +69,11 @@ const UNAVAILABLE: Record<DjProgram, string> = {
   serato: 'settings.sourceSeratoUnavailable',
   virtualdj: 'settings.sourceVirtualdjUnavailable',
 }
-const MENU_WIDTH = 240
 const QUANTIZE_LABEL: Record<CueQuantize, string> = {
   bar: 'editor.cues.quantizeBar',
   beat: 'editor.cues.quantizeBeat',
 }
 const GROUP = 'divide-y divide-[var(--color-line)] rounded-lg border border-[var(--color-line)]'
-
-function FlowPill({
-  id,
-  name,
-  chosen,
-  inUse,
-  onChoose,
-  onKeyDown,
-}: {
-  id: string
-  name: string
-  chosen: boolean
-  inUse: string | null
-  onChoose: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-}): React.JSX.Element {
-  const nameRef = useRef<HTMLSpanElement>(null)
-  const [cut, setCut] = useState(false)
-  useLayoutEffect(() => {
-    const el = nameRef.current
-    if (el) setCut(el.scrollWidth > el.clientWidth)
-  })
-  return (
-    <button
-      type="button"
-      data-testid={`cue-flow-${id}`}
-      aria-pressed={chosen}
-      tabIndex={chosen ? 0 : -1}
-      onClick={onChoose}
-      onKeyDown={onKeyDown}
-      className="press flex h-8 max-w-40 items-center gap-1.5 rounded-full border border-[var(--color-line-strong)] px-3 text-sm text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg aria-pressed:border-[var(--color-accent)] aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-fg"
-    >
-      {inUse !== null && (
-        <span
-          data-testid="cue-flow-in-use"
-          role="img"
-          aria-label={inUse}
-          className="size-1.5 shrink-0 rounded-full bg-[var(--color-accent)]"
-        />
-      )}
-      <span ref={nameRef} className="min-w-0 truncate">
-        {name}
-      </span>
-      {cut && <Tooltip label={name} />}
-    </button>
-  )
-}
 
 function Fold({
   id,
@@ -171,8 +123,7 @@ export function CuesTab({
   const [removals, setRemovals] = useState(0)
   const [typed, setTyped] = useState<string | null>(null)
   const [renaming, setRenaming] = useState(false)
-  const rowRef = useRef<HTMLDivElement>(null)
-  const [menusRightwards, setMenusRightwards] = useState(false)
+  const picker = useSplitMenu()
   const more = useSplitMenu()
   const add = useSplitMenu()
   const [read, onLearned] = useCueProfileRead()
@@ -262,30 +213,6 @@ export function CuesTab({
     setCurrent(DEFAULT_CUE_FLOW_ID)
   }
 
-  const walk = (e: React.KeyboardEvent, index: number) => {
-    const last = flows.length - 1
-    let next = -1
-    if (e.key === 'ArrowRight') next = index === last ? 0 : index + 1
-    else if (e.key === 'ArrowLeft') next = index === 0 ? last : index - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = last
-    if (next === -1) return
-    e.preventDefault()
-    select(flows[next].id)
-    rowRef.current
-      ?.querySelector<HTMLElement>(`[data-testid="cue-flow-${flows[next].id}"]`)
-      ?.focus()
-  }
-
-  const toggle = (menu: ReturnType<typeof useSplitMenu>) => {
-    const row = rowRef.current?.getBoundingClientRect()
-    const at = menu.toggleRef.current?.getBoundingClientRect()
-    if (row && at)
-      setMenusRightwards(at.right - row.left < MENU_WIDTH && row.right - at.left >= MENU_WIDTH)
-    menu.setOpen((v) => !v)
-  }
-  const menuSide = menusRightwards ? 'left-0 origin-top-left' : 'right-0 origin-top-right'
-
   const inUse = synced.activeCueFlow === MANUAL_CUE_FLOW ? null : activeCueFlow(synced).id
   const reachedNames = DJ_PROGRAMS.filter(
     (p) => offeredHere(p) && foundBy[p] && CUE_PROGRAMS[p].takesFlows && synced[FLOW_TO[p]],
@@ -302,40 +229,85 @@ export function CuesTab({
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2" data-search-id="cueFlows.flows">
         <h3 className={HEADING}>{tr('settings.cueFlows.flows')}</h3>
-        <div ref={rowRef} data-testid="cue-flows" className="flex flex-wrap items-center gap-1.5">
-          {flows.map((f, index) =>
-            renaming && f.id === flow.id ? (
-              <input
-                key={f.id}
-                data-testid="cue-flow-name"
-                aria-label={tr('settings.cueFlows.name')}
-                ref={nameRef}
-                value={typed ?? flowName(flow, tr)}
-                placeholder={flowName(flow, tr)}
-                onBlur={endRename}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== 'Escape') return
-                  e.preventDefault()
-                  e.stopPropagation()
-                  endRename()
-                }}
-                onChange={(e) => {
-                  setTyped(e.target.value)
-                  put({ ...flow, name: e.target.value })
-                }}
-                className="h-8 w-40 min-w-0 rounded-full border border-[var(--color-accent)] bg-[var(--color-field)] px-3 text-sm text-fg outline-none"
-              />
-            ) : (
-              <FlowPill
-                key={f.id}
-                id={f.id}
-                name={flowName(f, tr)}
-                chosen={f.id === flow.id}
-                inUse={inUse === f.id ? tr('settings.cueFlows.inUse') : null}
-                onChoose={() => select(f.id)}
-                onKeyDown={(e) => walk(e, index)}
-              />
-            ),
+        <div className="flex items-center gap-2">
+          {renaming ? (
+            <input
+              data-testid="cue-flow-name"
+              aria-label={tr('settings.cueFlows.name')}
+              ref={nameRef}
+              value={typed ?? flowName(flow, tr)}
+              placeholder={flowName(flow, tr)}
+              onBlur={endRename}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' && e.key !== 'Escape') return
+                e.preventDefault()
+                e.stopPropagation()
+                endRename()
+              }}
+              onChange={(e) => {
+                setTyped(e.target.value)
+                put({ ...flow, name: e.target.value })
+              }}
+              className="h-8 min-w-0 flex-1 rounded-md border border-[var(--color-accent)] bg-[var(--color-field)] px-3 text-sm text-fg outline-none"
+            />
+          ) : (
+            <div ref={picker.ref} className="relative min-w-0 flex-1">
+              <button
+                type="button"
+                data-testid="cue-flow-picker"
+                ref={picker.toggleRef}
+                aria-haspopup="menu"
+                aria-expanded={picker.open}
+                onClick={() => picker.setOpen((v) => !v)}
+                className="press flex h-8 w-full min-w-0 items-center gap-2 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] pr-2.5 pl-3 text-left text-sm text-fg"
+              >
+                <span className="min-w-0 flex-1 truncate">{flowName(flow, tr)}</span>
+                {inUse === flow.id && (
+                  <span className="shrink-0 text-xs text-fg-dim">
+                    {tr('settings.cueFlows.inUse')}
+                  </span>
+                )}
+                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
+              </button>
+              {picker.open && (
+                <div
+                  ref={picker.menuRef}
+                  role="menu"
+                  aria-label={tr('settings.cueFlows.flows')}
+                  onKeyDown={picker.onMenuKeyDown}
+                  className={`${DROP_MENU} right-0 left-0`}
+                >
+                  {flows.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={f.id === flow.id}
+                      data-testid={`cue-flow-${f.id}`}
+                      onClick={() => {
+                        picker.setOpen(false)
+                        select(f.id)
+                      }}
+                      className={`${SPLIT_ITEM} justify-start gap-2`}
+                    >
+                      <Check
+                        className={`h-3.5 w-3.5 shrink-0 ${f.id === flow.id ? '' : 'invisible'}`}
+                        aria-hidden="true"
+                      />
+                      <span className="min-w-0 flex-1 truncate">{flowName(f, tr)}</span>
+                      {inUse === f.id && (
+                        <span
+                          data-testid="cue-flow-in-use"
+                          className="shrink-0 text-xs text-fg-dim"
+                        >
+                          {tr('settings.cueFlows.inUse')}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
           <div ref={add.ref} className="relative">
             <button
@@ -345,7 +317,7 @@ export function CuesTab({
               aria-label={tr('settings.cueFlows.newFlow')}
               aria-haspopup={offered || fromTrack ? 'menu' : undefined}
               aria-expanded={offered || fromTrack ? add.open : undefined}
-              onClick={() => (offered || fromTrack ? toggle(add) : create())}
+              onClick={() => (offered || fromTrack ? add.setOpen((v) => !v) : create())}
               className={ICON_BUTTON}
             >
               <Plus className="h-3.5 w-3.5" aria-hidden="true" />
@@ -357,7 +329,7 @@ export function CuesTab({
                 role="menu"
                 aria-label={tr('settings.cueFlows.newFlow')}
                 onKeyDown={add.onMenuKeyDown}
-                className={`${DROP_MENU} ${menuSide} w-60`}
+                className={`${DROP_MENU} right-0 w-60`}
               >
                 <button
                   type="button"
@@ -415,7 +387,7 @@ export function CuesTab({
               aria-label={tr('settings.cueFlows.moreActions')}
               aria-haspopup="menu"
               aria-expanded={more.open}
-              onClick={() => toggle(more)}
+              onClick={() => more.setOpen((v) => !v)}
               className={ICON_BUTTON}
             >
               <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
@@ -426,7 +398,7 @@ export function CuesTab({
                 role="menu"
                 aria-label={tr('settings.cueFlows.moreActions')}
                 onKeyDown={more.onMenuKeyDown}
-                className={`${DROP_MENU} ${menuSide} w-60`}
+                className={`${DROP_MENU} right-0 w-60`}
               >
                 <button
                   type="button"
