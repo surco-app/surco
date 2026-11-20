@@ -140,7 +140,7 @@ describe('LoudnessReadout silent channel', () => {
       />,
     )
     const row = screen.getByTestId('loudness-silent-channel')
-    expect(row.textContent).toContain('Left channel has no signal')
+    expect(row.textContent).toContain('Left has no signal')
     expect(row.getAttribute('data-grade')).toBe('bad')
     expect(screen.queryByTestId('loudness-pill-balance')).not.toBeInTheDocument()
   })
@@ -154,7 +154,7 @@ describe('LoudnessReadout silent channel', () => {
       />,
     )
     expect(screen.getByTestId('loudness-silent-channel').textContent).toContain(
-      'Right channel has no signal',
+      'Right has no signal',
     )
   })
 
