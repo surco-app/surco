@@ -4388,6 +4388,27 @@ describe('App source playlists', () => {
     await waitFor(() => expect(chips()).toEqual([null, '2 proposals', null]))
   })
 
+  it('filters by an Auto mark tally line only the tracks of the batch it counts, not those of an earlier batch', async () => {
+    await openFactory({
+      cues: { trackCues: vi.fn<Api['cues']['trackCues']>().mockResolvedValue(null) },
+    })
+    act(() => keepAutoMark('c-l1', { kind: 'marked' }))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { metaKey: true })
+    act(() => {
+      keepAutoMark('c-l2', { kind: 'marked' })
+      keepAutoMark('c-l3', { kind: 'marked' })
+    })
+    expect(await screen.findByTestId('cues-batch-tally-marked')).toHaveTextContent(/2$/)
+    fireEvent.click(screen.getByTestId('cues-batch-tally-marked'))
+    await waitFor(() => expect(titles()).toHaveLength(2))
+    expect(titles().join(' ')).not.toContain('Alpha')
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+    expect(await screen.findByTestId('quality-filter-autoMarkMarked')).toHaveTextContent(/2$/)
+  })
+
   // The DJ's own request: put the set in order by dragging. The list must show the new
   // order at once and keep it after rekordbox answers, even with the dragged row selected
   // (a held selection otherwise freezes the order on screen).

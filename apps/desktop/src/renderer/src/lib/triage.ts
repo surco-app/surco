@@ -112,8 +112,6 @@ export type SelectionFilter = 'selected'
 // The DJ's own rating: the unrated still to judge, or a floor of stars worth a set.
 export type StarsFilter = 'noStars' | 'stars3' | 'stars4' | 'stars5'
 
-// What the list knows about a row that the row itself does not carry: which fields
-// Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
 export type AutoMarkKind = 'proposed' | 'marked' | 'none' | 'unanalysed'
 
 export const AUTO_MARK_FILTERS = {
@@ -125,6 +123,8 @@ export const AUTO_MARK_FILTERS = {
 
 export type AutoMarkAttention = (typeof AUTO_MARK_FILTERS)[AutoMarkKind]
 
+// What the list knows about a row that the row itself does not carry: which fields
+// Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
 export interface FilterFacts {
   incomplete: (track: TrackItem) => boolean
   unsaved: (track: TrackItem) => boolean
