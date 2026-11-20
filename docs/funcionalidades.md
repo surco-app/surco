@@ -2661,6 +2661,30 @@ cuando otra cae dentro de esos compases por delante (`allowed`, `shared/cueRules
 regla solo ofrece las condiciones que le aplican (`conditionsFor`, `CueRuleRow.tsx:44`), y
 debajo dice qué hace la elegida (`settings.cueFlows.whenHint`).
 
+**Condiciones de cada cuadro de color** (sin publicar). Además de la condición de la regla,
+cada cuadro de color lleva sus propias condiciones, que se marcan como casillas bajo la paleta
+y se pueden combinar; la cue solo sale si cumple todas. Son «si cabe», «sin otro cue en los
+compases anteriores» y «sin otro cue en los compases siguientes», cada una con sus compases
+(32 y 16 por defecto, `NEAR_BARS`), y «Solo en» con intro, subida, bajada, estribillo y outro,
+donde varias marcadas valen por cualquiera de ellas. Con «un color por repetición» cada cuadro
+habla de su repetición; con «un color», y en una regla «en el mismo golpe», el único cuadro
+vale para toda la regla. El cuadro con condiciones se dibuja en contorno y la línea de ayuda
+las dice con una frase por cuadro. «Otro cue» son los que han puesto las reglas de más arriba,
+no las demás repeticiones de la misma regla ni las cues que ya tenía la pista, y una cue justo
+a esa distancia no cuenta (`unmet`, `shared/cueRules.ts`). La regla va primero y puede cortar la
+cuenta; una repetición que no cumple lo suyo se queda fuera y la cuenta sigue. La vista previa
+la lista con su motivo, entre ellos «Otro cue demasiado cerca». Se guardan como una palabra por
+repetición en `whenEach` (`formatRepeatWhen`, `shared/cueFlows.ts`): las que ya existían se
+escriben igual, las combinaciones nuevas y las de una regla de un color (`all:`) hacen que una
+versión anterior de Surco aparte la regla entera sin aplicarla ni perderla. Solo probado en
+tests, no a mano en la app.
+
+**El orden de las reglas es su prioridad** (sin publicar). Con dos o más reglas, el número de
+cada una es un asa: se arrastra para soltarla en el sitio de otra, o con el foco en él Alt y
+flecha arriba o abajo la mueven (`cue-rule-<n>-move`, `moveRule`, `settings/CuesTab.tsx`). Las
+reglas que esta versión no entiende conservan su sitio. El arrastre con ratón está sin probar
+en la app.
+
 **La vista previa de Ajustes usa la pista seleccionada** (v1.26.0). Si la pista abierta está
 analizada y tiene alguna marca, la vista previa se dibuja sobre ella, con su onda y su rejilla,
 y una barra deja volver a la pista de ejemplo; si no tiene marca, busca los puntos de Auto
