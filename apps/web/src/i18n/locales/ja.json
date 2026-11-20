@@ -1032,7 +1032,7 @@
         "title": "キューを打つ",
         "s": "rekordbox、Engine DJ、Traktor、Serato、VirtualDJの波形に、フローでホットキュー。",
         "body": [
-          "サイドバーで3つのいずれかのプレイリストを開き、トラックを選びます。キューのセクションに波形とグリッドが表示されます。"
+          "サイドバーでいずれかのプログラムのプレイリストを開き、トラックを選びます。キューのセクションに波形とグリッドが表示されます。"
         ],
         "steps": [
           {
@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "セットのトラックリストを貼り付ける",
-        "s": "テキストのトラックリストを、rekordbox、Traktor、Serato、VirtualDJ のプレイリストに",
+        "s": "テキストのトラックリストを、DJソフトのプレイリストに",
         "body": [
           "1行に1曲のリストなら、時間の有無を問わず何でも使えます。YouTube 動画の説明文、ウェブからコピーしたトラックリスト、あるいは Surco の作者が作った tracklist の出力。tracklist は自分の動画の曲を YouTube の申し立てと Shazam から特定するプログラムです（github.com/vigosan/tracklist）。"
         ],

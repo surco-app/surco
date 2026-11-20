@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Enganxa el tracklist de la teva sessió",
-        "s": "D'un tracklist en text a una playlist de rekordbox, Traktor, Serato o VirtualDJ, en l'ordre del set.",
+        "s": "D'un tracklist en text a una playlist del teu programa de DJ, en l'ordre del set.",
         "body": [
           "Val qualsevol llista amb una pista per línia, amb temps o sense. La descripció d'un vídeo de YouTube, un tracklist copiat d'una web o el que treu tracklist, el programa de l'autor de Surco que identifica les pistes d'un vídeo propi (github.com/vigosan/tracklist)."
         ],

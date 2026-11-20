@@ -1032,7 +1032,7 @@
         "title": "Pose tes cues",
         "s": "Des hot cues sur la forme d’onde de rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ, avec ton flux.",
         "body": [
-          "Ouvre une playlist de l’un des trois dans la barre latérale et choisis un morceau. La section Cues montre sa forme d’onde et sa grille."
+          "Ouvre une playlist de l’un d’eux dans la barre latérale et choisis un morceau. La section Cues montre sa forme d’onde et sa grille."
         ],
         "steps": [
           {
@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Colle la tracklist de ton set",
-        "s": "D'une tracklist en texte à une playlist rekordbox, Traktor, Serato ou VirtualDJ, dans l'ordre du set.",
+        "s": "D'une tracklist en texte à une playlist de ton logiciel DJ, dans l'ordre du set.",
         "body": [
           "N'importe quelle liste avec un morceau par ligne fait l'affaire, avec ou sans temps : la description d'une vidéo YouTube, une tracklist copiée d'un site ou ce que sort tracklist, le programme de l'auteur de Surco qui identifie les morceaux de ta propre vidéo grâce aux réclamations YouTube et à Shazam (github.com/vigosan/tracklist)."
         ],

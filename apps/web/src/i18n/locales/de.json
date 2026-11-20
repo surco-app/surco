@@ -1032,7 +1032,7 @@
         "title": "Setz deine Cues",
         "s": "Hot Cues auf der Wellenform von rekordbox, Engine DJ, Traktor, Serato oder VirtualDJ, mit deinem Ablauf.",
         "body": [
-          "Öffne in der Seitenleiste eine Playlist aus einem der drei Programme und wähle einen Track. Der Abschnitt Cues zeigt seine Wellenform und sein Raster."
+          "Öffne in der Seitenleiste eine Playlist aus einem dieser Programme und wähle einen Track. Der Abschnitt Cues zeigt seine Wellenform und sein Raster."
         ],
         "steps": [
           {
@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Füge die Tracklist deines Sets ein",
-        "s": "Von einer Text-Tracklist zu einer Playlist in rekordbox, Traktor, Serato oder VirtualDJ, in der Reihenfolge des Sets.",
+        "s": "Von einer Text-Tracklist zu einer Playlist in deinem DJ-Programm, in der Reihenfolge des Sets.",
         "body": [
           "Jede Liste mit einem Track pro Zeile geht, mit oder ohne Zeiten: die Beschreibung eines YouTube-Videos, eine von einer Website kopierte Tracklist oder die Ausgabe von tracklist, dem Programm des Surco-Autors, das die Tracks eines eigenen Videos über YouTubes Ansprüche und Shazam erkennt (github.com/vigosan/tracklist)."
         ],

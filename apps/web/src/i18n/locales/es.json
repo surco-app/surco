@@ -1032,7 +1032,7 @@
         "title": "Marca tus cues",
         "s": "Hot cues sobre la onda de rekordbox, Engine DJ, Traktor, Serato o VirtualDJ, con tu flujo.",
         "body": [
-          "Abre una playlist de cualquiera de los tres en la barra lateral y elige una pista. La sección Cues muestra su onda y su rejilla."
+          "Abre una playlist de cualquiera de ellos en la barra lateral y elige una pista. La sección Cues muestra su onda y su rejilla."
         ],
         "steps": [
           {
@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Pega el tracklist de tu sesión",
-        "s": "De un tracklist en texto a una playlist de rekordbox, Traktor, Serato o VirtualDJ, en el orden del set.",
+        "s": "De un tracklist en texto a una playlist de tu programa de DJ, en el orden del set.",
         "body": [
           "Vale cualquier lista con una pista por línea, con o sin tiempos: la descripción de un vídeo de YouTube, un tracklist copiado de una web o lo que saca tracklist, el programa del autor de Surco que identifica las pistas de un vídeo propio (github.com/vigosan/tracklist)."
         ],

@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Incolla la tracklist del tuo set",
-        "s": "Da una tracklist in testo a una playlist di rekordbox, Traktor, Serato o VirtualDJ, nell'ordine del set.",
+        "s": "Da una tracklist in testo a una playlist del tuo programma DJ, nell'ordine del set.",
         "body": [
           "Va bene qualsiasi elenco con un brano per riga, con o senza tempi. La descrizione di un video di YouTube, una tracklist copiata da un sito o quello che produce tracklist, il programma dell'autore di Surco che riconosce i brani di un tuo video (github.com/vigosan/tracklist)."
         ],

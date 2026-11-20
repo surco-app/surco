@@ -1032,7 +1032,7 @@
         "title": "Mark your cues",
         "s": "Hot cues on the rekordbox, Engine DJ, Traktor, Serato or VirtualDJ waveform, with your flow.",
         "body": [
-          "Open a playlist from any of the three in the sidebar and pick a track. The Cues section shows its waveform and grid."
+          "Open a playlist from any of them in the sidebar and pick a track. The Cues section shows its waveform and grid."
         ],
         "steps": [
           {
@@ -1061,7 +1061,7 @@
         "id": "tracklist",
         "group": "out",
         "title": "Paste your set's tracklist",
-        "s": "From a text tracklist to a rekordbox, Traktor, Serato or VirtualDJ playlist, in the set's order.",
+        "s": "From a text tracklist to a playlist in your DJ program, in the set's order.",
         "body": [
           "Any list with one track per line works, with or without times: a YouTube video description, a tracklist copied from a website, or what tracklist prints, the program by Surco's author that identifies the tracks of your own video from YouTube's claims and Shazam (github.com/vigosan/tracklist)."
         ],
