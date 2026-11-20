@@ -6,6 +6,7 @@ import type { TrackItem, TrackStatus } from '../types'
 import type { CopyVerdict } from './bestCopy'
 import * as normalizeText from './normalizeText'
 import {
+  type AutoMarkKind,
   attentionOffered,
   EMPTY_FILTER,
   type FilterFacts,
@@ -229,6 +230,10 @@ describe('matchesFilter / qualityCounts', () => {
       betterThanLibrary: 0,
       unanalysedRekordbox: 0,
       unanalysedEngine: 0,
+      autoMarkProposed: 0,
+      autoMarkMarked: 0,
+      autoMarkNone: 0,
+      autoMarkUnanalysed: 0,
       noCover: 5,
       smallCover: 0,
       noBpm: 5,
@@ -545,6 +550,7 @@ describe('filters that read what App knows about a row', () => {
     libraryCopy: () => undefined,
     played: () => false,
     selected: () => false,
+    autoMark: () => undefined,
   }
 
   // Which fields are required is a setting, and unsaved cues live in the cue editor's
@@ -1500,5 +1506,49 @@ describe('filters offered per tab', () => {
     expect(fitFilterToTab(sel, null)).toEqual({ ...sel, attention: null })
     expect(fitFilterToTab(sel, 'appleMusic')).toEqual({ ...sel, attention: null, library: null })
     expect(fitFilterToTab(sel, 'traktor')).toBe(sel)
+  })
+})
+
+describe('the Auto mark filters', () => {
+  const tracks = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ id, status: 'idle' }) as TrackItem)
+  const kinds: Record<string, AutoMarkKind> = {
+    a: 'proposed',
+    b: 'proposed',
+    c: 'marked',
+    d: 'none',
+  }
+  const facts: FilterFacts = { ...NO_FACTS, autoMark: (t) => kinds[t.id] }
+  const shown = (attention: FilterSelection['attention']) =>
+    tracks.filter((t) => matchesFilter(t, { ...EMPTY_FILTER, attention }, facts)).map((t) => t.id)
+
+  it('puts each track only in the filter of its own mark, so a line of the tally shows exactly its tracks', () => {
+    expect(shown('autoMarkProposed')).toEqual(['a', 'b'])
+    expect(shown('autoMarkMarked')).toEqual(['c'])
+    expect(shown('autoMarkNone')).toEqual(['d'])
+    expect(shown('autoMarkUnanalysed')).toEqual([])
+  })
+
+  it('leaves a track with no mark out of all four, since it was not in the Auto mark', () => {
+    for (const attention of [
+      'autoMarkProposed',
+      'autoMarkMarked',
+      'autoMarkNone',
+      'autoMarkUnanalysed',
+    ] as const)
+      expect(shown(attention)).not.toContain('e')
+  })
+
+  it('counts each mark in the same pass as the other filters', () => {
+    const counts = qualityCounts(tracks, facts)
+    expect([
+      counts.autoMarkProposed,
+      counts.autoMarkMarked,
+      counts.autoMarkNone,
+      counts.autoMarkUnanalysed,
+    ]).toEqual([2, 1, 1, 0])
+  })
+
+  it('counts nothing without marks', () => {
+    expect(qualityCounts(tracks).autoMarkProposed).toBe(0)
   })
 })

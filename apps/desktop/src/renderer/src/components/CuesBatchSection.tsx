@@ -27,6 +27,7 @@ import {
 import { recordCueEdits } from '../lib/cueTasteEdits'
 import { twinPlansOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
+import type { AutoMarkKind } from '../lib/triage'
 import { saveAllKey } from './CuesSection'
 import { GridBatchBlock } from './GridBatchBlock'
 import { Select } from './Select'
@@ -54,6 +55,7 @@ export function CuesBatchSection({
   onFlow,
   gridCheckOf,
   onShowBadGrid,
+  onShowMarked,
   onOpen,
   onPhrases,
 }: {
@@ -62,6 +64,7 @@ export function CuesBatchSection({
   onFlow: (id: string) => void
   gridCheckOf: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid: () => void
+  onShowMarked: (kind: AutoMarkKind) => void
   onOpen: (contentId: string) => void
   onPhrases: () => Promise<{ done: number; skipped: number }>
 }): React.JSX.Element {
@@ -278,16 +281,22 @@ export function CuesBatchSection({
         </p>
       )}
       {marked && (
-        <dl data-testid="cues-batch-tally" className="mt-3 grid gap-1 text-xs">
+        <div data-testid="cues-batch-tally" className="mt-3 grid gap-1 text-xs">
           {tally
             .filter(([, , n]) => n > 0)
             .map(([kind, label, n]) => (
-              <div key={kind} className="flex justify-between gap-4 text-fg-dim">
-                <dt>{label}</dt>
-                <dd className="tabular-nums text-fg">{n}</dd>
-              </div>
+              <button
+                key={kind}
+                type="button"
+                data-testid={`cues-batch-tally-${kind}`}
+                onClick={() => onShowMarked(kind)}
+                className="press flex justify-between gap-4 text-left text-fg-dim"
+              >
+                <span>{label}</span>
+                <span className="tabular-nums text-fg">{n}</span>
+              </button>
             ))}
-        </dl>
+        </div>
       )}
       {clearedRows.length > 0 && (
         <dl data-testid="cues-batch-cleared" className="mt-3 grid gap-1 text-xs">

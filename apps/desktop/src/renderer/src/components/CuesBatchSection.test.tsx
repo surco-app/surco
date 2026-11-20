@@ -86,6 +86,7 @@ function setup(
   const onMark = vi.fn()
   const onFlow = vi.fn()
   const onShowBadGrid = vi.fn()
+  const onShowMarked = vi.fn()
   const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1 }))
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>, shown = targets) => (
@@ -97,6 +98,7 @@ function setup(
           onFlow={onFlow}
           gridCheckOf={(contentId) => (contentId === '103' ? LATE : ON_BEATS)}
           onShowBadGrid={onShowBadGrid}
+          onShowMarked={onShowMarked}
           onOpen={vi.fn()}
           onPhrases={onPhrases}
         />
@@ -113,6 +115,7 @@ function setup(
     onMark,
     onFlow,
     onShowBadGrid,
+    onShowMarked,
     onPhrases,
     changeSettings,
     changeTargets,
@@ -244,6 +247,30 @@ describe('Cues over several selected tracks', () => {
     expect(tally).toHaveTextContent(i18n.t('trackList.autoMark.marked'))
     expect(tally).toHaveTextContent(i18n.t('trackList.autoMark.unanalysed'))
     expect(screen.queryByTestId('cues-batch-accept')).toBeNull()
+  })
+
+  it('shows in the list the tracks of the tally line pressed, so the DJ goes straight to the ones that need a look', () => {
+    const { onShowMarked } = setup()
+    act(() => {
+      keepAutoMark('103', { kind: 'marked' })
+      keepAutoMark('104', { kind: 'unanalysed' })
+    })
+    fireEvent.click(screen.getByTestId('cues-batch-tally-unanalysed'))
+    expect(onShowMarked).toHaveBeenCalledTimes(1)
+    expect(onShowMarked).toHaveBeenCalledWith('unanalysed')
+    fireEvent.click(screen.getByTestId('cues-batch-tally-marked'))
+    expect(onShowMarked).toHaveBeenLastCalledWith('marked')
+  })
+
+  it('draws no line for a kind with no tracks, so there is no button that shows an empty list', () => {
+    setup()
+    act(() => {
+      keepAutoMark('103', { kind: 'marked' })
+    })
+    expect(screen.getByTestId('cues-batch-tally-marked')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-batch-tally-proposed')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-tally-none')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-tally-unanalysed')).toBeNull()
   })
 
   it('throws the proposals away on Descartar without placing anything', () => {
@@ -514,6 +541,7 @@ describe('Cues over several selected tracks', () => {
             onMark={vi.fn()}
             onFlow={vi.fn()}
             gridCheckOf={() => ON_BEATS}
+            onShowMarked={vi.fn()}
             onShowBadGrid={vi.fn()}
             onOpen={vi.fn()}
             onPhrases={vi.fn()}

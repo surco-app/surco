@@ -94,6 +94,10 @@ export type AttentionFilter =
   | 'badGrid'
   | 'unanalysedRekordbox'
   | 'unanalysedEngine'
+  | 'autoMarkProposed'
+  | 'autoMarkMarked'
+  | 'autoMarkNone'
+  | 'autoMarkUnanalysed'
 // The tag work matching a release fixes: no artwork, artwork too small for a CDJ screen
 // (the editor's own low-res rule), no tempo, no key. A row still being read has no tags
 // yet, so it belongs to none of them.
@@ -110,6 +114,17 @@ export type StarsFilter = 'noStars' | 'stars3' | 'stars4' | 'stars5'
 
 // What the list knows about a row that the row itself does not carry: which fields
 // Settings require, and the cue drafts the cue editor holds. App answers; the filter asks.
+export type AutoMarkKind = 'proposed' | 'marked' | 'none' | 'unanalysed'
+
+export const AUTO_MARK_FILTERS = {
+  proposed: 'autoMarkProposed',
+  marked: 'autoMarkMarked',
+  none: 'autoMarkNone',
+  unanalysed: 'autoMarkUnanalysed',
+} as const satisfies Record<AutoMarkKind, AttentionFilter>
+
+export type AutoMarkAttention = (typeof AUTO_MARK_FILTERS)[AutoMarkKind]
+
 export interface FilterFacts {
   incomplete: (track: TrackItem) => boolean
   unsaved: (track: TrackItem) => boolean
@@ -118,6 +133,7 @@ export interface FilterFacts {
   libraryCopy: (track: TrackItem) => CopyVerdict | null | undefined
   played: (track: TrackItem) => boolean
   selected: (track: TrackItem) => boolean
+  autoMark: (track: TrackItem) => AutoMarkKind | undefined
 }
 
 export const NO_FACTS: FilterFacts = {
@@ -128,6 +144,7 @@ export const NO_FACTS: FilterFacts = {
   libraryCopy: () => undefined,
   played: () => false,
   selected: () => false,
+  autoMark: () => undefined,
 }
 
 // One selection per dimension, all combined with AND. `format` is the source container
@@ -163,7 +180,15 @@ export type FilterTab = PlaylistSource | null
 export function attentionOffered(mode: AttentionFilter, tab: FilterTab): boolean {
   if (mode === 'unanalysedRekordbox') return tab === 'rekordbox'
   if (mode === 'unanalysedEngine') return tab === 'engine'
-  if (mode === 'noCues' || mode === 'offGrid' || mode === 'badGrid')
+  if (
+    mode === 'noCues' ||
+    mode === 'offGrid' ||
+    mode === 'badGrid' ||
+    mode === 'autoMarkProposed' ||
+    mode === 'autoMarkMarked' ||
+    mode === 'autoMarkNone' ||
+    mode === 'autoMarkUnanalysed'
+  )
     return tab !== null && tab !== 'appleMusic'
   return true
 }
@@ -263,6 +288,10 @@ export function matchesFilter(
   if (sel.attention === 'badGrid' && !hasBadGrid(track, facts)) return false
   if (sel.attention === 'unanalysedRekordbox' && unanalysedIn(track) !== 'rekordbox') return false
   if (sel.attention === 'unanalysedEngine' && unanalysedIn(track) !== 'engine') return false
+  if (sel.attention === 'autoMarkProposed' && facts.autoMark(track) !== 'proposed') return false
+  if (sel.attention === 'autoMarkMarked' && facts.autoMark(track) !== 'marked') return false
+  if (sel.attention === 'autoMarkNone' && facts.autoMark(track) !== 'none') return false
+  if (sel.attention === 'autoMarkUnanalysed' && facts.autoMark(track) !== 'unanalysed') return false
   if (sel.tags && !matchesTags(track, sel.tags, facts)) return false
   if (sel.listen && facts.played(track) !== (sel.listen === 'played')) return false
   if (sel.selection && !facts.selected(track)) return false
@@ -608,6 +637,10 @@ export function qualityCounts(
   badGrid: number
   unanalysedRekordbox: number
   unanalysedEngine: number
+  autoMarkProposed: number
+  autoMarkMarked: number
+  autoMarkNone: number
+  autoMarkUnanalysed: number
   noCover: number
   smallCover: number
   noBpm: number
@@ -646,6 +679,10 @@ export function qualityCounts(
   let badGrid = 0
   let unanalysedRekordbox = 0
   let unanalysedEngine = 0
+  let autoMarkProposed = 0
+  let autoMarkMarked = 0
+  let autoMarkNone = 0
+  let autoMarkUnanalysed = 0
   let noCover = 0
   let smallCover = 0
   let noBpm = 0
@@ -690,6 +727,11 @@ export function qualityCounts(
     const waitingOn = unanalysedIn(t)
     if (waitingOn === 'rekordbox') unanalysedRekordbox += 1
     else if (waitingOn === 'engine') unanalysedEngine += 1
+    const autoMark = facts.autoMark(t)
+    if (autoMark === 'proposed') autoMarkProposed += 1
+    else if (autoMark === 'marked') autoMarkMarked += 1
+    else if (autoMark === 'none') autoMarkNone += 1
+    else if (autoMark === 'unanalysed') autoMarkUnanalysed += 1
     if (matchesTags(t, 'noCover', facts)) noCover += 1
     if (matchesTags(t, 'smallCover', facts)) smallCover += 1
     if (matchesTags(t, 'noBpm', facts)) noBpm += 1
@@ -723,6 +765,10 @@ export function qualityCounts(
     badGrid,
     unanalysedRekordbox,
     unanalysedEngine,
+    autoMarkProposed,
+    autoMarkMarked,
+    autoMarkNone,
+    autoMarkUnanalysed,
     noCover,
     smallCover,
     noBpm,
@@ -768,6 +814,10 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   badGrid: 'attention',
   unanalysedRekordbox: 'attention',
   unanalysedEngine: 'attention',
+  autoMarkProposed: 'attention',
+  autoMarkMarked: 'attention',
+  autoMarkNone: 'attention',
+  autoMarkUnanalysed: 'attention',
   noCover: 'tags',
   smallCover: 'tags',
   noBpm: 'tags',

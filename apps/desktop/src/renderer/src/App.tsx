@@ -289,6 +289,8 @@ import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
 import { latestBackupByPath } from './lib/trashView'
 import {
+  AUTO_MARK_FILTERS,
+  type AutoMarkKind,
   EMPTY_FILTER,
   type FilterFacts,
   type FilterSelection,
@@ -2302,6 +2304,7 @@ export default function App(): React.JSX.Element {
   // The selection reaches the filter only while it filters by it: every click or arrow
   // moves the selection, and rebuilding the facts recounts every filter over the whole list.
   const filteredSelection = filterSelection.selection ? selectedIdSet : null
+  const autoMarks = useAutoMarks()
   // What the filter asks about a row that the row does not carry: the fields Settings
   // require (the same rule that keeps Convert all off it) and the open playlist's cue drafts.
   const filterFacts = useMemo<FilterFacts>(
@@ -2320,6 +2323,10 @@ export default function App(): React.JSX.Element {
       libraryCopy: libraryCopyVerdicts.verdictOf,
       played: (t) => playedPaths.has(t.inputPath),
       selected: (t) => filteredSelection?.has(t.id) ?? false,
+      autoMark: (t) => {
+        const contentId = playlistContentOf?.get(t.id)
+        return contentId === undefined ? undefined : autoMarks.get(contentId)?.kind
+      },
     }),
     [
       gridCheckOf,
@@ -2331,6 +2338,7 @@ export default function App(): React.JSX.Element {
       unsavedCues,
       playedPaths,
       filteredSelection,
+      autoMarks,
     ],
   )
   const filterFactsRef = useRef(filterFacts)
@@ -3052,7 +3060,6 @@ export default function App(): React.JSX.Element {
       if (unsavedCues.has(contentId)) ids.add(id)
     return ids
   }, [cuesOpen, playlistContentOf, unsavedCues])
-  const autoMarks = useAutoMarks()
   const autoMarkById = useMemo(() => {
     const byId = new Map<string, AutoMark>()
     if (!cuesOpen) return byId
@@ -3080,6 +3087,9 @@ export default function App(): React.JSX.Element {
   )
   const showBadGrid = useStableCallback(() =>
     setFilterSelection({ ...filterSelection, attention: 'badGrid' }),
+  )
+  const showMarked = useStableCallback((kind: AutoMarkKind) =>
+    setFilterSelection({ ...filterSelection, attention: AUTO_MARK_FILTERS[kind] }),
   )
   const openCueTrack = useStableCallback((contentId: string) => {
     const track = selectedTracks.find((t) => playlistScope?.contentOf.get(t.id) === contentId)
@@ -4954,6 +4964,7 @@ export default function App(): React.JSX.Element {
                               cueTargets={cueTargets}
                               cueGridCheckOf={cueGridCheckOf}
                               onShowBadGrid={showBadGrid}
+                              onShowMarked={showMarked}
                               onOpenCueTrack={openCueTrack}
                               cueActionsRef={cueActionsRef}
                               libraryIndex={libraryIndex}

@@ -113,6 +113,7 @@ import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
+import type { AutoMarkKind } from '../lib/triage'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { CopyComparison } from './CopyComparison'
@@ -234,6 +235,7 @@ interface Props {
   cueTargets?: AutoMarkTarget[]
   cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid?: () => void
+  onShowMarked?: (kind: AutoMarkKind) => void
   onOpenCueTrack?: (contentId: string) => void
   cueActionsRef?: { current: CueActions | null }
   onHideEditorHints: () => void
@@ -341,6 +343,7 @@ export const Editor = memo(function Editor({
   cueTargets,
   cueGridCheckOf,
   onShowBadGrid,
+  onShowMarked,
   onOpenCueTrack,
   cueActionsRef,
   onHideEditorHints,
@@ -1841,6 +1844,7 @@ export const Editor = memo(function Editor({
                             onFlow={(flowId) => onCueFlow?.(flowId)}
                             gridCheckOf={(contentId) => cueGridCheckOf?.(contentId)}
                             onShowBadGrid={() => onShowBadGrid?.()}
+                            onShowMarked={(kind) => onShowMarked?.(kind)}
                             onOpen={(contentId) => onOpenCueTrack?.(contentId)}
                             onPhrases={onCuePhrasesAll}
                           />

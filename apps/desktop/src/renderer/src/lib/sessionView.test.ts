@@ -80,6 +80,16 @@ describe('sessionView', () => {
     )
   })
 
+  it('does not bring back an Auto mark filter on reopen, since the marks live in memory and the filter would open on an empty list', () => {
+    for (const attention of [
+      'autoMarkProposed',
+      'autoMarkMarked',
+      'autoMarkNone',
+      'autoMarkUnanalysed',
+    ])
+      expect(parseSessionView({ filters: { attention } })?.filters.attention).toBeNull()
+  })
+
   it('keeps the loudness sort on reopen instead of falling back to the import order', () => {
     expect(parseSessionView({ sortBy: 'loudness', sortDir: 'desc' })).toMatchObject({
       sortBy: 'loudness',
