@@ -307,6 +307,19 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent('with no other cue in the bars after')
   })
 
+  it('draws a section left off as a pill of its own too, so all five read as things to press and the ticked ones stand out by their fill', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
+    openSquare(2)
+    expect(screen.getByTestId('cue-rule-0-color-2-when-sections')).toHaveClass('gap-1')
+    expect(box(2, 'in-intro')).toHaveAttribute('aria-checked', 'false')
+    expect(box(2, 'in-intro')).toHaveClass(
+      'rounded-full',
+      'bg-[var(--color-field)]',
+      'shadow-[inset_0_0_0_1px_var(--color-line-strong)]',
+      'aria-checked:shadow-[inset_0_0_0_1px_var(--color-accent)]',
+    )
+  })
+
   it('sets the five sections side by side in one row, each the same size ticked or not, so the menu is a row tall instead of five', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
     openSquare(2)
@@ -315,7 +328,10 @@ describe('CueRuleRow condition of each repetition', () => {
     const sections = ['intro', 'up', 'down', 'chorus', 'outro'].map((s) => box(2, `in-${s}`))
     expect(Array.from(row.children)).toEqual(sections)
     expect(new Set(sections.map((el) => el.className)).size).toBe(1)
-    expect(box(2, 'in-up')).toHaveClass('aria-checked:bg-[var(--color-panel-2)]', 'text-fg-muted')
+    expect(box(2, 'in-up')).toHaveClass(
+      'aria-checked:bg-[var(--color-accent-soft)]',
+      'text-fg-muted',
+    )
     expect(sections.map((el) => el.textContent)).toEqual([
       'intro',
       'build',
