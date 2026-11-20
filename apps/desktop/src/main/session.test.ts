@@ -24,7 +24,7 @@ vi.mock('electron', () => {
   }
 })
 
-import { rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import type { SessionEdit } from '../shared/types'
@@ -391,5 +391,29 @@ describe('previous session', () => {
     const next = await launch()
     next.saveLastSession([a], { [a]: edit() })
     expect(await next.loadPreviousSession()).toBeNull()
+  })
+
+  it('keeps the next list of the same launch as previous after the offer is declined', async () => {
+    const [a, b, c] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    const next = await launch()
+    next.saveLastSession([], {})
+    next.clearPreviousSession()
+    next.saveLastSession([b], {})
+    next.saveLastSession([c], {})
+    expect((await next.loadPreviousSession())?.paths).toEqual([b])
+  })
+
+  it('still saves the current session when keeping the previous one fails', async () => {
+    const [a, b] = reset()
+    ;(await launch()).saveLastSession([a], {})
+    mkdirSync(join(dir, 'session.prev.json'))
+    try {
+      const next = await launch()
+      next.saveLastSession([b], {})
+      expect((await next.loadLastSession()).paths).toEqual([b])
+    } finally {
+      rmSync(join(dir, 'session.prev.json'), { recursive: true, force: true })
+    }
   })
 })

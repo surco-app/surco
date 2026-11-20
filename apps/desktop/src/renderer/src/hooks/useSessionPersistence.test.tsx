@@ -553,9 +553,7 @@ describe('useSessionPersistence', () => {
       return { store, result, addPaths }
     }
 
-    // The offer runs out in six seconds and the window can paint late, so a DJ who never
-    // saw it still needs a way back to yesterday's list.
-    it('reopens the offered session after the offer aged out, while Files is empty', async () => {
+    it('reopens the offered session after the offer aged out unseen, while Files is empty', async () => {
       const { store, result, addPaths } = await mount(withEdits, null)
       dismissToastByExpiry(store, store.getState().toasts[0].id)
       expect(result.current.canReopen()).toBe(true)
@@ -563,8 +561,7 @@ describe('useSessionPersistence', () => {
       expect(addPaths).toHaveBeenCalledWith(withEdits.paths, withEdits.edits)
     })
 
-    // Starting a new list replaced the stored session, so the one before it is what comes back.
-    it('falls back to the session a new list replaced', async () => {
+    it('falls back to the session a new list replaced, since that list is what was lost', async () => {
       const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
       const { result, addPaths } = await mount({ paths: [], edits: {} }, previous)
       expect(result.current.canReopen()).toBe(true)
@@ -572,15 +569,13 @@ describe('useSessionPersistence', () => {
       expect(addPaths).toHaveBeenCalledWith(previous.paths, previous.edits)
     })
 
-    // Reopening on top of rows would mix two sessions, the same rule the offer follows.
-    it('is unavailable while Files has a row', async () => {
+    it('is unavailable while Files has a row, so two sessions never mix', async () => {
       const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
       const { result } = await mount(withEdits, previous, [files('/music/new.wav')])
       expect(result.current.canReopen()).toBe(false)
     })
 
-    // A double press while the first reopen is still importing would load every track twice.
-    it('loads once when run twice in a row', async () => {
+    it('loads once when run twice in a row, so a double press never imports every track twice', async () => {
       const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
       const { store, result, addPaths } = await mount(withEdits, previous)
       dismissToastByExpiry(store, store.getState().toasts[0].id)
@@ -591,9 +586,35 @@ describe('useSessionPersistence', () => {
       expect(addPaths).toHaveBeenCalledTimes(1)
     })
 
-    // Clearing the list moves the stored session aside in main; the command must offer that
-    // list, not whatever the previous slot held at launch.
-    it('offers the list just cleared once its empty save lands', async () => {
+    it('loads once when the offer is accepted and the command runs before the import lands', async () => {
+      const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
+      const { store, result, addPaths } = await mount(withEdits, previous)
+      let expand: (paths: string[]) => void = () => {}
+      window.api.expandPaths = vi.fn<Api['expandPaths']>(
+        () =>
+          new Promise<string[]>((resolve) => {
+            expand = resolve
+          }),
+      )
+      await act(async () => {
+        void store.getState().toasts[0].action?.onAction()
+        await result.current.reopen()
+      })
+      await act(async () => expand(withEdits.paths))
+      expect(addPaths).toHaveBeenCalledTimes(1)
+      expect(addPaths).toHaveBeenCalledWith(withEdits.paths, withEdits.edits)
+    })
+
+    it('reopens the previous session as it is on disk when run, not as it was at launch', async () => {
+      const atLaunch: SessionData = { paths: ['/music/launch.wav'], edits: {} }
+      const now: SessionData = { paths: ['/music/now.wav'], edits: {} }
+      const { result, addPaths } = await mount({ paths: [], edits: {} }, atLaunch)
+      vi.mocked(window.api.loadPreviousSession).mockResolvedValue(now)
+      await act(async () => result.current.reopen())
+      expect(addPaths).toHaveBeenCalledWith(now.paths, now.edits)
+    })
+
+    it('offers the list just cleared once its empty save lands, not what the slot held at launch', async () => {
       vi.useFakeTimers()
       const cleared: SessionData = { paths: ['/music/cleared.wav'], edits: {} }
       const loadPreviousSession = vi
@@ -640,8 +661,7 @@ describe('useSessionPersistence', () => {
       expect(addPaths).toHaveBeenCalledWith(cleared.paths, cleared.edits)
     })
 
-    // The ✕ is the user saying no to that list; the command must not bring it back either.
-    it('offers nothing after the offer is closed by hand', async () => {
+    it('offers nothing after the offer is closed by hand, since the ✕ said no to that list', async () => {
       const previous: SessionData = { paths: ['/music/old.wav'], edits: {} }
       const { store, result } = await mount(withEdits, previous)
       dismissToastByUser(store, store.getState().toasts[0].id)

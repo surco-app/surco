@@ -73,7 +73,7 @@ export function useSessionPersistence({
   const reopeningRef = useRef(false)
   const withdrawnRef = useRef(withdrawOffer)
   withdrawnRef.current = withdrawOffer
-  const reopenLastSession = useStableCallback(async (session: SessionData) => {
+  const restoreSession = useStableCallback(async (session: SessionData) => {
     // Retire the prompt right here, not via the rows-exist effect below: the ref must
     // clear immediately (a second click mid-import would double-load), and once it is
     // null that effect can no longer find the toast — it would stay up forever.
@@ -95,6 +95,15 @@ export function useSessionPersistence({
     if (view && (view.selectedPath || view.selectedPaths.length > 0))
       selectRestored(view.selectedPath, view.selectedPaths)
     if (view?.playback) resumePlayback(view.playback.path, view.playback.time)
+  })
+  const reopenLastSession = useStableCallback(async (session: SessionData) => {
+    if (reopeningRef.current) return
+    reopeningRef.current = true
+    try {
+      await restoreSession(session)
+    } finally {
+      reopeningRef.current = false
+    }
   })
   // Stable identity so the ask-once effect below never re-runs, which would cancel the
   // in-flight ask. The offer carries translation keys, not text: it is raised before the
@@ -245,13 +254,15 @@ export function useSessionPersistence({
       !tracksRef.current.some((t) => t.inFiles) &&
       (pendingSessionRef.current ?? previousSessionRef.current) !== null,
   )
-  const reopen = useStableCallback(() => {
-    const session = pendingSessionRef.current ?? previousSessionRef.current
-    if (!session || !canReopen()) return
+  const reopen = useStableCallback(async () => {
+    if (!canReopen()) return
     reopeningRef.current = true
-    void reopenLastSession(session).finally(() => {
+    try {
+      const session = pendingSessionRef.current ?? (await window.api.loadPreviousSession())
+      if (session && !tracksRef.current.some((t) => t.inFiles)) await restoreSession(session)
+    } finally {
       reopeningRef.current = false
-    })
+    }
   })
   return { canReopen, reopen }
 }

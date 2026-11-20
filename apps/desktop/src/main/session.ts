@@ -214,6 +214,7 @@ export async function loadPreviousSession(): Promise<SessionData | null> {
 
 export function clearPreviousSession(): void {
   rmSync(previousSessionPath(), { force: true })
+  previousKept = false
 }
 
 let storedPaths: string[] | null = null
@@ -234,8 +235,10 @@ function keepPreviousSession(path: string, paths: string[]): void {
   const next = new Set(paths)
   if (stored.length === 0 || (stored.length === next.size && stored.every((p) => next.has(p))))
     return
-  copyFileSync(path, previousSessionPath())
   previousKept = true
+  try {
+    copyFileSync(path, previousSessionPath())
+  } catch {}
 }
 
 // Write-then-rename like the settings store: a crash mid-write must never truncate

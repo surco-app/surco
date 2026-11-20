@@ -1070,8 +1070,6 @@ describe('buildCommands trash-selected gate', () => {
 })
 
 describe('reopen-last-session', () => {
-  // The session hook alone knows whether Files is empty and a session is waiting, so the
-  // palette follows its answer instead of offering a reopen that would mix two lists.
   it('follows the session hook for availability and runs its reopen', () => {
     const reopenLastSession = vi.fn()
     const off = commandById(makeDeps({ reopenLastSession }), 'reopen-last-session')

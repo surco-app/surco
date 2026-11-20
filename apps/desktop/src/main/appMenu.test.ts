@@ -133,8 +133,6 @@ describe('appMenuTemplate', () => {
     ])
   })
 
-  // The launch offer runs out on its own, so the File menu keeps a way back to the last
-  // session, through the same command the palette runs.
   it('reopens the last session from the File menu in every shipped language', () => {
     for (const locale of ['es', 'en', 'de', 'fr', 'pt-BR', 'ja', 'ca', 'it']) {
       const { template, run } = build(locale)
