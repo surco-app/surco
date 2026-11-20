@@ -2670,7 +2670,9 @@ que el flujo deja fuera con la regla y el motivo: dentro de un estribillo, pasa 
 antes del inicio o después del final (`CueFlowPreview.tsx`, `rejectedCues`).
 El selector de pista ofrece todas las pistas de la colección de un programa, tengan marcas o no,
 por orden alfabético, con el artista en gris y un buscador que nombra el programa, esté abierta
-la playlist que esté abierta (`collectionChoices`, `cueExample.ts`). Sirve con rekordbox,
+la playlist que esté abierta (`collectionChoices`, `cueExample.ts`). Cerrado, el selector lleva
+una nota en el color de acento, el título de la pista elegida y, detrás y más tenue, su artista
+(`cue-preview-track-artist`), que se recorta antes que el título. Sirve con rekordbox,
 Traktor, Engine DJ, Serato y VirtualDJ, los que Surco encuentre en el equipo. Con dos o más, lo
 primero del desplegable es una fila con un botón por programa (`cue-preview-program-<programa>`),
 que se recorre con las flechas izquierda y derecha; empieza en el programa de la pista con la
@@ -2691,7 +2693,7 @@ tener que leer el audio. La búsqueda solo se lanza al elegir una pista sin marc
 en caché; mientras dura se ve la onda de la pista con sus cues y la línea de estado dice
 «Buscando los puntos de la pista…» (`cue-preview-finding`). Los puntos encontrados se dibujan
 como un aro en vez del triángulo de un CALL (`data-auto`, `CueWave.tsx`), con el texto «Punto
-que encuentra Auto marcar». La comparación con los hot cues de la pista, el botón «Ahora»
+que encuentra Auto marcar». La comparación con los hot cues de la pista, el conmutador «Con el flujo / Ahora»
 y «Desde «título de la pista»» funcionan igual, y ese flujo se deduce contando desde los puntos
 encontrados (`flowFromTrack`). Si no se encuentra ningún punto o la pista no se puede leer, la
 vista previa lo dice y usa la pista de ejemplo. Una pista con marcas propias no lanza ninguna

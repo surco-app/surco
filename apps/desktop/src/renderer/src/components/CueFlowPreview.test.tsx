@@ -258,7 +258,7 @@ describe('CueFlowPreview', () => {
         /^1 new and 1 taken away$/,
       )
       expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       expect(screen.getAllByTestId(/^cue-wave-ghost-gone-/)).toHaveLength(1)
       expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
     })
@@ -346,40 +346,93 @@ describe('CueFlowPreview', () => {
       released()
       rerender(<CueFlowPreview flow={ONE_AT_32} track={other} />)
       held()
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       released()
       held()
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
       released()
     })
 
-    it('offers to see the track as it is now only when the flow would change it', () => {
+    it('offers to see the track as it is now only when the flow would change it, as two icons that each say what they draw', () => {
       const { unmount } = render(<CueFlowPreview flow={MIX_IN} track={marked} />)
-      expect(screen.queryByTestId('cue-preview-now')).toBeNull()
+      expect(screen.queryByTestId('cue-preview-mode')).toBeNull()
       unmount()
       render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      const now = screen.getByTestId('cue-preview-now')
-      expect(now).toHaveAttribute('aria-pressed', 'false')
-      expect(now).toHaveTextContent(/^Now$/)
-      expect(hoverTooltip(now)).toBe('See the cues the track has now')
+      const group = screen.getByTestId('cue-preview-mode')
+      expect(group).toHaveAttribute('role', 'radiogroup')
+      expect(group).toHaveAccessibleName('What is drawn')
+      const flow = screen.getByTestId('cue-preview-mode-flow')
+      const now = screen.getByTestId('cue-preview-mode-now')
+      expect(within(group).getAllByRole('radio')).toEqual([flow, now])
+      expect(flow).toHaveAttribute('aria-checked', 'true')
+      expect(now).toHaveAttribute('aria-checked', 'false')
+      expect(flow).toHaveAccessibleName('With the flow')
+      expect(now).toHaveAccessibleName('Now')
+      expect(flow.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+      expect(now.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+      expect(hoverTooltip(flow)).toBe('With the flow')
+      expect(hoverTooltip(now)).toBe('Now')
+      expect(screen.queryByTestId('cue-preview-now')).toBeNull()
     })
 
-    it('keeps the look at the track as it is now to one small switch of the same size pressed or not, so it never outweighs the wave it sits under', () => {
+    it('keeps the two icons the same size whichever is chosen and only slides the pill behind them, so the switch never outweighs the wave nor moves the line it sits on', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      const now = screen.getByTestId('cue-preview-now')
-      expect(now).toHaveClass('h-6', 'text-xs', 'shrink-0')
-      const before = now.className
+      const group = screen.getByTestId('cue-preview-mode')
+      const flow = screen.getByTestId('cue-preview-mode-flow')
+      const now = screen.getByTestId('cue-preview-mode-now')
+      const thumb = screen.getByTestId('cue-preview-mode-thumb')
+      expect(group).toHaveClass('h-6', 'shrink-0', 'rounded-full', 'p-0.5')
+      expect(flow).toHaveClass('press', 'h-5', 'w-[26px]', 'rounded-full')
+      expect(thumb).toHaveAttribute('aria-hidden', 'true')
+      expect(thumb).toHaveAttribute('data-side', 'flow')
+      expect(thumb).toHaveClass(
+        'h-5',
+        'w-[26px]',
+        'translate-x-0',
+        'transition-transform',
+        'duration-200',
+        'ease-standard',
+        'motion-reduce:transition-none',
+      )
+      const before = [group.className, flow.className, now.className]
       fireEvent.click(now)
-      expect(now).toHaveAttribute('aria-pressed', 'true')
-      expect(now.className).toBe(before)
-      expect(screen.queryByTestId('cue-preview-mode-flow')).toBeNull()
-      expect(screen.queryByTestId('cue-preview-mode-now')).toBeNull()
+      expect(flow).toHaveAttribute('aria-checked', 'false')
+      expect(now).toHaveAttribute('aria-checked', 'true')
+      expect(thumb).toHaveAttribute('data-side', 'now')
+      expect(thumb).toHaveClass('translate-x-[26px]', 'transition-transform')
+      expect(thumb).not.toHaveClass('translate-x-0')
+      expect([group.className, flow.className, now.className]).toEqual(before)
+      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
+      fireEvent.click(flow)
+      expect(flow).toHaveAttribute('aria-checked', 'true')
+      expect(thumb).toHaveAttribute('data-side', 'flow')
+    })
+
+    it('changes what is drawn with the left and right arrows and takes the focus along, with one tab stop on the chosen icon, so the switch answers from the keyboard like the row of programs', () => {
+      render(<CueFlowPreview flow={ONE_AT_32} track={keepsOne} />)
+      const flow = screen.getByTestId('cue-preview-mode-flow')
+      const now = screen.getByTestId('cue-preview-mode-now')
+      expect(flow).toHaveAttribute('tabindex', '0')
+      expect(now).toHaveAttribute('tabindex', '-1')
+      flow.focus()
+      fireEvent.keyDown(flow, { key: 'ArrowRight' })
+      expect(now).toHaveAttribute('aria-checked', 'true')
+      expect(now).toHaveAttribute('tabindex', '0')
+      expect(flow).toHaveAttribute('tabindex', '-1')
+      expect(now).toHaveFocus()
+      expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull()
+      fireEvent.keyDown(now, { key: 'ArrowLeft' })
+      expect(flow).toHaveAttribute('aria-checked', 'true')
+      expect(flow).toHaveFocus()
+      fireEvent.keyDown(flow, { key: 'ArrowLeft' })
+      expect(now).toHaveAttribute('aria-checked', 'true')
+      expect(now).toHaveFocus()
     })
 
     it('draws the hot cues the track has now with their own letters, and strikes the ones the flow would take away', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={keepsOne} />)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
-      expect(screen.getByTestId('cue-preview-now')).toHaveAttribute('aria-pressed', 'true')
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-checked', 'true')
       expect(screen.getByTestId('cue-wave-hot-B')).toHaveStyle({
         backgroundColor: hotCueColor(42),
       })
@@ -403,7 +456,7 @@ describe('CueFlowPreview', () => {
             ])}
           />,
         )
-        fireEvent.click(screen.getByTestId('cue-preview-now'))
+        fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
         expect(screen.getByTestId('cue-wave-hot-B')).not.toHaveAttribute('data-diff')
         unmount()
       }
@@ -411,39 +464,39 @@ describe('CueFlowPreview', () => {
 
     it('keeps the line and the switch in place when the flow takes nothing away, so nothing jumps on the way back', () => {
       render(<CueFlowPreview flow={MY_FLOW} track={onlyMark} />)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
       expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
       expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(1)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
       expect(screen.getByTestId('cue-preview-compare')).toHaveTextContent(/^3 new$/)
     })
 
     it('hides the cues a rule leaves out while showing the track as it is now, since the track has none of them', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={twoMarks} />)
       expect(screen.getAllByTestId(/^cue-wave-ghost-dropped-/).length).toBeGreaterThan(0)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       expect(screen.queryByTestId(/^cue-wave-ghost-dropped-/)).toBeNull()
     })
 
     it('goes back to the flow when the track or the flow changes, so a new comparison starts from what the flow does', () => {
       const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
-      expect(screen.getByTestId('cue-preview-now')).toHaveAttribute('aria-pressed', 'false')
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-checked', 'false')
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       const other = { ...onlyMark, cues: { ...onlyMark.cues, contentId: 'rb:9' } }
       rerender(<CueFlowPreview flow={MY_FLOW} track={other} />)
-      expect(screen.getByTestId('cue-preview-now')).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-checked', 'false')
     })
 
     it('starts from the flow again on coming back to a flow that was left showing the track as it is now, so the view never returns on its own', () => {
       const { rerender } = render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       rerender(<CueFlowPreview flow={MY_FLOW} track={marked} />)
       rerender(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      expect(screen.getByTestId('cue-preview-now')).toHaveAttribute('aria-pressed', 'false')
+      expect(screen.getByTestId('cue-preview-mode-now')).toHaveAttribute('aria-checked', 'false')
     })
 
     it('hides the line about hot cues left out for lack of room while showing the track as it is now, keeping its place so the preview does not change height', () => {
@@ -463,12 +516,57 @@ describe('CueFlowPreview', () => {
       render(<CueFlowPreview flow={edge} track={onlyMark} />)
       const leftOut = /left out by the limit of 8/
       expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       expect(screen.getByTestId('cue-preview-status')).not.toHaveTextContent(leftOut)
       expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
       expect(screen.queryByTestId(/^cue-wave-trimmed-/)).toBeNull()
-      fireEvent.click(screen.getByTestId('cue-preview-now'))
+      fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
       expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
+    })
+
+    it('draws the selector as a control of its own, lifted off the box with a note in the accent colour, the title in full ink and a clear arrow, so the DJ sees the track can be changed, without growing', () => {
+      render(<CueFlowPreview flow={MIX_IN} track={marked} />)
+      const selector = screen.getByTestId('cue-preview-track')
+      expect(selector).toHaveClass(
+        'h-8',
+        'w-full',
+        'bg-[var(--color-panel-2)]',
+        'border-[var(--color-line-strong)]',
+      )
+      const icon = screen.getByTestId('cue-preview-track-icon')
+      expect(icon).toHaveAttribute('aria-hidden', 'true')
+      expect(icon).toHaveClass('size-3.5', 'shrink-0', 'text-accent')
+      const title = screen.getByTestId('cue-preview-track-title')
+      expect(title).toHaveTextContent(/^DJ Made, Millenium Stringz$/)
+      expect(title).toHaveClass('truncate', 'font-medium', 'text-fg')
+      expect(selector.firstElementChild).toBe(icon)
+      expect(selector.lastElementChild).toHaveClass('text-fg')
+    })
+
+    it('names the artist of the track after its title in a fainter ink that gives way before the title is cut, since a collection repeats titles and the title is what the DJ looks for', () => {
+      render(<CueFlowPreview flow={MIX_IN} track={{ ...marked, label: 'Glue', artist: 'Bicep' }} />)
+      const title = screen.getByTestId('cue-preview-track-title')
+      const artist = screen.getByTestId('cue-preview-track-artist')
+      expect(title).toHaveTextContent(/^Glue$/)
+      expect(artist).toHaveTextContent(/^Bicep$/)
+      expect(artist).toHaveClass('min-w-0', 'shrink-[9999]', 'truncate', 'text-fg-faint')
+      expect(title).not.toHaveClass('shrink-[9999]')
+      expect(title.compareDocumentPosition(artist) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+      expect(
+        artist.compareDocumentPosition(screen.getByTestId('cue-preview-same')) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy()
+    })
+
+    it('names no artist for a track whose artist is unknown nor for the example track, so no empty gap or stale name sits beside the title', () => {
+      const { unmount } = render(<CueFlowPreview flow={MIX_IN} track={marked} />)
+      expect(screen.queryByTestId('cue-preview-track-artist')).toBeNull()
+      unmount()
+      render(<CueFlowPreview flow={MIX_IN} track={{ ...marked, label: 'Glue', artist: 'Bicep' }} />)
+      fireEvent.click(screen.getByTestId('cue-preview-track'))
+      fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
+      expect(screen.getByTestId('cue-preview-track-title')).toHaveTextContent(/^Example track$/)
+      expect(screen.queryByTestId('cue-preview-track-artist')).toBeNull()
     })
 
     it('goes back to the example track on request', () => {
@@ -549,7 +647,7 @@ describe('CueFlowPreview', () => {
       'holds one line of the same height under the wave with %s, so the rules under the preview never jump',
       (_, flow, track, now, status) => {
         render(<CueFlowPreview flow={flow} track={track} />)
-        if (now) fireEvent.click(screen.getByTestId('cue-preview-now'))
+        if (now) fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
         const line = screen.getByTestId('cue-preview-status')
         expect(line).toHaveClass('h-7')
         const said = Array.from(line.querySelectorAll<HTMLElement>('[data-status]'))
@@ -587,7 +685,7 @@ describe('CueFlowPreview', () => {
         expect(screen.getByTestId('cue-preview-same')).toBeInTheDocument()
         unmount()
         render(<CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} />)
-        fireEvent.click(screen.getByTestId('cue-preview-now'))
+        fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
         expect(screen.getByTestId(`cue-wave-ghost-gone-${beat(48)}`)).toBeInTheDocument()
         expect(screen.queryByTestId(/^cue-wave-call-/)).toBeNull()
       })
@@ -635,7 +733,7 @@ describe('CueFlowPreview', () => {
         expect(screen.getByTestId('cue-wave-hot-A')).not.toHaveAttribute('data-diff')
         expect(screen.queryByTestId(/^cue-wave-call-/)).toBeNull()
         expect(screen.queryByTestId(/^cue-wave-ghost-/)).toBeNull()
-        expect(screen.queryByTestId('cue-preview-now')).toBeNull()
+        expect(screen.queryByTestId('cue-preview-mode')).toBeNull()
         expect(onShown).toHaveBeenLastCalledWith(null)
         rerender(
           <CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} onShown={onShown} />,

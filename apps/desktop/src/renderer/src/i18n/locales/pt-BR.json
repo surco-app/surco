@@ -2085,9 +2085,10 @@
       "diffNewHint": "Novo com este fluxo. A faixa não tem",
       "diffGoneHint": "A faixa tem o {{letter}} e o fluxo não colocaria",
       "previewMode": {
+        "label": "O que é desenhado",
+        "flow": "Com o fluxo",
         "now": "Agora"
       },
-      "previewNowHint": "Ver os cues que a faixa tem agora",
       "leftOut": {
         "back_one": "Regra {{rule}}, {{count}} compasso para trás",
         "back_other": "Regra {{rule}}, {{count}} compassos para trás",
