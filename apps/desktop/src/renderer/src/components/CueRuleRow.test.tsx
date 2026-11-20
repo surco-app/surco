@@ -242,6 +242,34 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByTestId('cue-rule-0-color-2-when-only')).toHaveTextContent('Only in')
   })
 
+  it('draws the box of a condition whether it is ticked or not, at one size, so one left off still reads as something to tick', () => {
+    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits'] })
+    openSquare(2)
+    const on = screen.getByTestId('cue-rule-0-color-2-when-fits-box')
+    for (const name of ['before', 'after']) {
+      const off = screen.getByTestId(`cue-rule-0-color-2-when-${name}-box`)
+      expect(off).toHaveClass(
+        'h-3.5',
+        'w-3.5',
+        'shrink-0',
+        'border',
+        'border-[var(--color-line-strong)]',
+        'bg-[var(--color-field)]',
+      )
+      expect(off.querySelector('svg')).toBeNull()
+    }
+    expect(on).toHaveClass(
+      'h-3.5',
+      'w-3.5',
+      'shrink-0',
+      'border',
+      'border-[var(--color-accent)]',
+      'bg-[var(--color-accent)]',
+      'text-[var(--color-on-accent)]',
+    )
+    expect(on.querySelector('svg')).not.toBeNull()
+  })
+
   it('offers them under a single colour too, where they hold for every repetition of the rule', () => {
     const fixed: CueRule = { ...RULE, color: { fixed: 22 } }
     const { onChange } = setup(fixed)

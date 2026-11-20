@@ -261,7 +261,13 @@ export function CueRuleRow({
       onClick={toggle}
       className={BOX_CLASS}
     >
-      <Check className={`h-3.5 w-3.5 shrink-0 ${checked ? '' : 'invisible'}`} aria-hidden="true" />
+      <span
+        data-testid={`${id}-color-${slot}-when-${name}-box`}
+        aria-hidden="true"
+        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[3px] border ${checked ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-on-accent)]' : 'border-[var(--color-line-strong)] bg-[var(--color-field)]'}`}
+      >
+        {checked && <Check className="h-3 w-3" strokeWidth={3} />}
+      </span>
       {label}
       {full && <Tooltip label={full} />}
     </button>
