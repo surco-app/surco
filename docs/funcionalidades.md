@@ -2648,7 +2648,8 @@ crean en Ajustes → Cues, con una vista previa sobre una pista de ejemplo a 128
 cuenta atrás aprendida de la colección se puede convertir en flujo desde el + de la lista de
 flujos, con «Desde cómo marcas» (`cue-flow-add-learned`, `settings/CuesTab.tsx:278`, v1.26.0).
 El mismo + ofrece «Desde «título de la pista»» (`cue-flow-add-track`) cuando la vista previa está
-sobre una pista marcada a mano de la que se puede deducir un flujo que aún no existe, y lo crea
+sobre una pista marcada a mano, o con los puntos que encuentra Auto marcar, de la que se puede
+deducir un flujo que aún no existe, y lo crea
 con el nombre «Como «título»» sin mover la vista previa de esa pista. Ese flujo queda elegido en
 la pestaña pero no pasa a ser el de por defecto, a diferencia del de «Desde cómo marcas».
 
@@ -2662,17 +2663,39 @@ debajo dice qué hace la elegida (`settings.cueFlows.whenHint`).
 
 **La vista previa de Ajustes usa la pista seleccionada** (v1.26.0). Si la pista abierta está
 analizada y tiene alguna marca, la vista previa se dibuja sobre ella, con su onda y su rejilla,
-y una barra deja volver a la pista de ejemplo; si no tiene marca, lo dice y usa la de ejemplo.
+y una barra deja volver a la pista de ejemplo; si no tiene marca, busca los puntos de Auto
+marcar (ver «Pistas sin marcas propias») y, si no hay ninguno, lo dice y usa la de ejemplo.
 Sobre la pista real dice si sus hot cues saldrían iguales o cuántas cambian, y lista las cues
 que el flujo deja fuera con la regla y el motivo: dentro de un estribillo, pasa de otra marca,
 antes del inicio o después del final (`CueFlowPreview.tsx`, `rejectedCues`).
-El selector de pista ofrece las pistas con marcas de toda la colección de rekordbox, por orden
-alfabético y con un buscador, esté abierta la playlist que esté abierta
-(`collectionChoices`, `cueExample.ts`). La colección se lee la primera vez que se abre el
-desplegable y queda en la caché que comparte con el resto de la app; mientras se lee, bajo
-«Pista de ejemplo» gira una fila de carga (`cue-preview-track-loading`). Sin biblioteca de
-rekordbox, sin ninguna pista con marcas o si la lectura falla, solo sale «Pista de ejemplo»,
-sin buscador ni mensaje.
+El selector de pista ofrece todas las pistas de la colección de un programa, tengan marcas o no,
+por orden alfabético, con el artista en gris y un buscador que nombra el programa, esté abierta
+la playlist que esté abierta (`collectionChoices`, `cueExample.ts`). Sirve con rekordbox,
+Traktor, Engine DJ, Serato y VirtualDJ, los que Surco encuentre en el equipo. Con dos o más, lo
+primero del desplegable es una fila con un botón por programa (`cue-preview-program-<programa>`),
+que se recorre con las flechas izquierda y derecha; empieza en el programa de la pista con la
+que se abrió la vista previa, si no en el que está abierto en la ventana principal y si no en el
+primero, y recuerda el elegido mientras la pestaña Cues sigue abierta. Cambiar de programa
+cambia la lista y vacía la búsqueda, y la pista elegida sigue en la vista previa. Solo se lee la
+colección del programa que se mira, la primera vez que se abre el desplegable o se elige ese
+programa, y queda en la caché que comparte con el resto de la app; mientras se lee, bajo «Pista
+de ejemplo» gira una fila de carga (`cue-preview-track-loading`). Sin ningún programa, con una
+colección vacía o si la lectura falla, solo sale «Pista de ejemplo», sin buscador ni mensaje.
+
+**Pistas sin marcas propias.** Fuera de rekordbox no hay CALL, así que casi ninguna pista tiene
+marcas. Al elegir una pista analizada sin ninguna, la vista previa busca los puntos que
+encontraría «Auto marcar» en ella, con la misma detección y el mismo gusto aprendido que el
+editor (`dropInputOf`, `dropsOnGrid` y `withoutCallInBar`, `lib/cueAutoMark.ts`), y cuelga el
+flujo de ellos. En rekordbox lee la onda que guarda rekordbox; en los demás programas puede
+tener que leer el audio. La búsqueda solo se lanza al elegir una pista sin marcas y se guarda
+en caché; mientras dura se ve la onda de la pista con sus cues y la línea de estado dice
+«Buscando los puntos de la pista…» (`cue-preview-finding`). Los puntos encontrados se dibujan
+como un aro en vez del triángulo de un CALL (`data-auto`, `CueWave.tsx`), con el texto «Punto
+que encuentra Auto marcar». La comparación con los hot cues de la pista, «Con el flujo / Ahora»
+y «Desde «título de la pista»» funcionan igual, y ese flujo se deduce contando desde los puntos
+encontrados (`flowFromTrack`). Si no se encuentra ningún punto o la pista no se puede leer, la
+vista previa lo dice y usa la pista de ejemplo. Una pista con marcas propias no lanza ninguna
+búsqueda.
 
 **La cuenta atrás y los estribillos** (v1.16.0). En una regla que cuenta hacia atrás «si
 cabe», la cue que cae donde empieza una racha de estribillos se queda, porque es donde se
