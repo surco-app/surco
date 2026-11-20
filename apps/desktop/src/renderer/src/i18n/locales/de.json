@@ -2085,9 +2085,10 @@
       "diffNewHint": "Neu mit diesem Ablauf. Der Track hat ihn nicht",
       "diffGoneHint": "Der Track hat {{letter}} und der Ablauf würde ihn nicht setzen",
       "previewMode": {
+        "label": "Was gezeichnet wird",
+        "flow": "Mit dem Ablauf",
         "now": "Jetzt"
       },
-      "previewNowHint": "Die Cues ansehen, die der Track jetzt hat",
       "leftOut": {
         "back_one": "Regel {{rule}}, {{count}} Takt zurück",
         "back_other": "Regel {{rule}}, {{count}} Takte zurück",

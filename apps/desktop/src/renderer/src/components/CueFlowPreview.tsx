@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, ChevronDown, Loader2 } from 'lucide-react'
+import { Check, ChevronDown, Clock, Loader2, Wand2 } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -69,8 +69,13 @@ const OPTION =
 const PROGRAM =
   'press min-w-0 flex-1 truncate rounded-md px-2 py-1 text-xs text-fg-muted hover:text-fg aria-checked:bg-[var(--color-panel-2)] aria-checked:text-fg aria-checked:shadow-[inset_0_0_0_1px_var(--color-line-strong)]'
 
-const NOW =
-  'press h-6 shrink-0 rounded border border-[var(--color-line-strong)] px-2 text-xs text-fg-muted hover:text-fg aria-pressed:bg-[var(--color-panel-2)] aria-pressed:text-fg'
+const MODE =
+  'press relative flex h-5 w-[26px] items-center justify-center rounded-full aria-checked:text-fg aria-[checked=false]:text-fg-faint aria-[checked=false]:hover:text-fg-muted'
+
+const MODES = [
+  { mode: 'flow', Icon: Wand2 },
+  { mode: 'now', Icon: Clock },
+] as const
 
 const folded = (text: string): string => foldAccents(text).toLowerCase()
 
@@ -316,6 +321,7 @@ export function CueFlowPreview({
   const [focused, setFocused] = useState(false)
   const pickerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const modeRef = useRef<HTMLDivElement>(null)
   const own = track?.cues.analysed ? trackOfCues(track.cues) : null
   const found = own !== null && own.drops.length === 0 && points.length > 0
   const real = own !== null && found ? { ...own, drops: points } : own
@@ -457,6 +463,22 @@ export function CueFlowPreview({
     close()
   }
 
+  function draw(next: Mode): void {
+    setNow(next === 'now')
+    setPinned(false)
+    setHovered(false)
+    setFocused(false)
+  }
+
+  function onModeKey(e: React.KeyboardEvent<HTMLButtonElement>, at: number): void {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
+    e.preventDefault()
+    e.stopPropagation()
+    const next = (at + 1) % MODES.length
+    draw(MODES[next].mode)
+    modeRef.current?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus()
+  }
+
   return (
     <div data-testid="cue-flow-preview">
       <div ref={pickerRef} className="relative mb-2">
@@ -577,21 +599,40 @@ export function CueFlowPreview({
           ))}
         <span className="flex-1" />
         {differs && (
-          <button
-            type="button"
-            data-testid="cue-preview-now"
-            aria-pressed={mode === 'now'}
-            onClick={() => {
-              setNow((v) => !v)
-              setPinned(false)
-              setHovered(false)
-              setFocused(false)
-            }}
-            className={NOW}
+          <div
+            ref={modeRef}
+            role="radiogroup"
+            data-testid="cue-preview-mode"
+            aria-label={tr('settings.cueFlows.previewMode.label')}
+            className="relative flex h-6 shrink-0 rounded-full bg-[var(--color-panel)] p-0.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
           >
-            {tr('settings.cueFlows.previewMode.now')}
-            <Tooltip label={tr('settings.cueFlows.previewNowHint')} />
-          </button>
+            <span
+              aria-hidden="true"
+              data-testid="cue-preview-mode-thumb"
+              data-side={mode}
+              className={`pointer-events-none absolute top-0.5 left-0.5 h-5 w-[26px] rounded-full bg-[var(--color-panel-2)] shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-transform duration-200 ease-standard motion-reduce:transition-none ${
+                mode === 'now' ? 'translate-x-[26px]' : 'translate-x-0'
+              }`}
+            />
+            {MODES.map(({ mode: m, Icon }, at) => (
+              // biome-ignore lint/a11y/useSemanticElements: a program is a segment of the row; a native radio input cannot draw it and the arrows and roving tab stop are handled here
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={m === mode}
+                aria-label={tr(`settings.cueFlows.previewMode.${m}`)}
+                tabIndex={m === mode ? 0 : -1}
+                data-testid={`cue-preview-mode-${m}`}
+                onClick={() => draw(m)}
+                onKeyDown={(e) => onModeKey(e, at)}
+                className={MODE}
+              >
+                <Icon aria-hidden="true" className="size-[13px]" />
+                <Tooltip label={tr(`settings.cueFlows.previewMode.${m}`)} />
+              </button>
+            ))}
+          </div>
         )}
       </div>
     </div>

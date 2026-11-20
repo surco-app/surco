@@ -2085,9 +2085,10 @@
       "diffNewHint": "Nouveau avec ce flux. Le morceau ne l’a pas",
       "diffGoneHint": "Le morceau a le {{letter}} et le flux ne le placerait pas",
       "previewMode": {
+        "label": "Ce qui est dessiné",
+        "flow": "Avec le flux",
         "now": "Maintenant"
       },
-      "previewNowHint": "Voir les cues que le morceau a maintenant",
       "leftOut": {
         "back_one": "Règle {{rule}}, {{count}} mesure en arrière",
         "back_other": "Règle {{rule}}, {{count}} mesures en arrière",

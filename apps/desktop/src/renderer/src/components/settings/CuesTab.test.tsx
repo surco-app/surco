@@ -1899,12 +1899,12 @@ describe('the tracks the preview offers', () => {
       return { api, read: () => vi.mocked(api.dj.playlist).mock.calls.map(([program]) => program) }
     }
     const programs = () =>
-      within(screen.getByRole('radiogroup'))
+      within(screen.getByRole('radiogroup', { name: 'Program' }))
         .getAllByRole('radio')
         .map((r) => [r.textContent, r.getAttribute('aria-checked')])
     const openOnceFound = async () => {
       openTracks()
-      await screen.findByRole('radiogroup')
+      await screen.findByRole('radiogroup', { name: 'Program' })
     }
 
     it('puts the programs first in the choices, over the search field, in the order of the rest of the tab, and starts on the first when nothing says which one the DJ is working in', async () => {

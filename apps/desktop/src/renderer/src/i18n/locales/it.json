@@ -2085,9 +2085,10 @@
       "diffNewHint": "Nuovo con questo flusso. Il brano non ce l'ha",
       "diffGoneHint": "Il brano ha il {{letter}} e il flusso non lo metterebbe",
       "previewMode": {
+        "label": "Cosa si disegna",
+        "flow": "Con il flusso",
         "now": "Adesso"
       },
-      "previewNowHint": "Vedi i cue che il brano ha adesso",
       "leftOut": {
         "back_one": "Regola {{rule}}, {{count}} battuta indietro",
         "back_other": "Regola {{rule}}, {{count}} battute indietro",
