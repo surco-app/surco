@@ -34,7 +34,8 @@ const NEW_DAYS = 30
 const DAY_MS = 86_400_000
 
 function recencyOf(entry: SourcePlaylistEntry, now: Date): 'recent' | 'old' | 'unknown' {
-  const added = Date.parse(entry.meta.dateAdded ?? '')
+  const parsed = Date.parse(entry.meta.dateAdded ?? '')
+  const added = Number.isNaN(parsed) ? (entry.meta.addedAt ?? Number.NaN) : parsed
   if (Number.isNaN(added)) return 'unknown'
   return now.getTime() - added <= NEW_DAYS * DAY_MS ? 'recent' : 'old'
 }

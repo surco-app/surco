@@ -109,6 +109,8 @@ function metaOf(block: string): AppleMusicTrackMeta {
   if (key) meta.key = key
   const added = importedAt(attr(info, 'IMPORT_DATE'))
   if (added) meta.addedAt = added
+  const plays = Number(attr(info, 'PLAYCOUNT'))
+  if (plays > 0) meta.playCount = plays
   return meta
 }
 
