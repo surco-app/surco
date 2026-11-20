@@ -511,7 +511,7 @@ export function CueWave({
               '--cue': h.colour,
             } as React.CSSProperties
           }
-          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_75%,var(--color-fg))]"
+          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_55%,var(--color-fg))]"
         >
           <span
             data-testid={`cue-wave-strike-${h.ms}`}
