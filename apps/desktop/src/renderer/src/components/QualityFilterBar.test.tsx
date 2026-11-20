@@ -27,6 +27,8 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
   matchedBandcamp: 0,
   silence: 0,
   clipping: 0,
+  paddedBits: 0,
+  upsampled: 0,
   noCues: 0,
   offGrid: 0,
   badGrid: 0,
@@ -241,11 +243,27 @@ describe('QualityFilterBar sections', () => {
     openMenu('attention')
     const shown = screen.getAllByRole('option').map((el) => el.getAttribute('data-testid'))
     expect(shown).toEqual(
-      ['silence', 'clipping', 'noCues', 'offGrid', 'badGrid', 'unanalysedRekordbox'].map(
-        (m) => `quality-filter-${m}`,
-      ),
+      [
+        'silence',
+        'clipping',
+        'paddedBits',
+        'upsampled',
+        'noCues',
+        'offGrid',
+        'badGrid',
+        'unanalysedRekordbox',
+      ].map((m) => `quality-filter-${m}`),
     )
     expect(screen.queryByTestId('quality-filter-unconverted')).toBeNull()
+  })
+
+  it('offers padded bits and upsampled beside silence and clipping, named as the editor names them, and picks them on the attention axis', () => {
+    const { onChange } = renderBar({ tally: tally({ paddedBits: 3, upsampled: 5 }) })
+    openMenu('attention')
+    expect(screen.getByTestId('quality-filter-paddedBits')).toHaveTextContent(/^Padded bits\s*3$/)
+    expect(screen.getByTestId('quality-filter-upsampled')).toHaveTextContent(/^Upsampled\s*5$/)
+    fireEvent.click(screen.getByTestId('quality-filter-upsampled'))
+    expect(onChange).toHaveBeenCalledWith(sel({ attention: 'upsampled' }))
   })
 
   // An empty filter stays where it is, dimmed with its 0, instead of vanishing: the user

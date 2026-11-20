@@ -71,6 +71,15 @@ describe('sessionView', () => {
     })
   })
 
+  it('keeps the padded bits and upsampled filters on reopen instead of letting them go as unknown', () => {
+    expect(parseSessionView({ filters: { attention: 'paddedBits' } })?.filters.attention).toBe(
+      'paddedBits',
+    )
+    expect(parseSessionView({ filters: { attention: 'upsampled' } })?.filters.attention).toBe(
+      'upsampled',
+    )
+  })
+
   // The tracks already heard come back with the list, so a crate gone through over several
   // days picks up with the same ones still to hear.
   it('brings back which tracks were heard', () => {

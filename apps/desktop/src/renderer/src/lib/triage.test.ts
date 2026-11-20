@@ -221,6 +221,8 @@ describe('matchesFilter / qualityCounts', () => {
       duplicates: 0,
       silence: 0,
       clipping: 0,
+      paddedBits: 0,
+      upsampled: 0,
       noCues: 0,
       offGrid: 0,
       badGrid: 0,
@@ -274,6 +276,36 @@ describe('attention filter (silence to trim, clipping)', () => {
         (x) => x.id,
       ),
     ).toEqual(['quiet-tail', 'both'])
+  })
+})
+
+describe('padded bits and upsampled filters', () => {
+  const t = (id: string, spectrum?: Partial<SpectrumResult>): TrackItem =>
+    ({ id, status: 'idle', inputPath: `/m/${id}.flac`, spectrum }) as TrackItem
+  const tracks = [
+    t('padded', { bitsUsage: 'padded16', resolution: 'native' }),
+    t('upsampled-flag', { upsampled: true }),
+    t('upsampled-rate', { resolution: 'upsampled' }),
+    t('real-24', { bitsUsage: 'full', resolution: 'hires' }),
+    t('unclear-bits', { bitsUsage: 'unknown', resolution: 'unknown' }),
+    t('unanalysed'),
+  ]
+
+  it('lists the tracks the editor marks as padded bits and no others, never an unanalysed one', () => {
+    expect(by(tracks, { attention: 'paddedBits' }).map((x) => x.id)).toEqual(['padded'])
+  })
+
+  it('lists the tracks the editor marks as upsampled by either fact, never an unanalysed one', () => {
+    expect(by(tracks, { attention: 'upsampled' }).map((x) => x.id)).toEqual([
+      'upsampled-flag',
+      'upsampled-rate',
+    ])
+  })
+
+  it('counts each bucket so the menu shows how many files are left to look at', () => {
+    const counts = qualityCounts(tracks)
+    expect(counts.paddedBits).toBe(1)
+    expect(counts.upsampled).toBe(2)
   })
 })
 

@@ -87,6 +87,8 @@ export type DuplicatesFilter = 'duplicates'
 export type AttentionFilter =
   | 'silence'
   | 'clipping'
+  | 'paddedBits'
+  | 'upsampled'
   | 'noCues'
   | 'offGrid'
   | 'badGrid'
@@ -254,6 +256,8 @@ export function matchesFilter(
   if (sel.duplicates && track.duplicate !== true) return false
   if (sel.attention === 'silence' && track.audioIssues?.silence !== true) return false
   if (sel.attention === 'clipping' && track.audioIssues?.clipping !== true) return false
+  if (sel.attention === 'paddedBits' && !hasPaddedBits(track)) return false
+  if (sel.attention === 'upsampled' && !isUpsampled(track)) return false
   if (sel.attention === 'noCues' && !hasNoCues(track)) return false
   if (sel.attention === 'offGrid' && !isOffGrid(track, facts)) return false
   if (sel.attention === 'badGrid' && !hasBadGrid(track, facts)) return false
@@ -285,6 +289,14 @@ function matchesStars(track: TrackItem, filter: StarsFilter): boolean {
   const stars = starsOf(track)
   if (stars === null) return false
   return filter === 'noStars' ? stars === 0 : stars >= STARS_FLOOR[filter]
+}
+
+function hasPaddedBits(track: TrackItem): boolean {
+  return track.spectrum?.bitsUsage === 'padded16'
+}
+
+function isUpsampled(track: TrackItem): boolean {
+  return Boolean(track.spectrum?.upsampled || track.spectrum?.resolution === 'upsampled')
 }
 
 function isOffGrid(track: TrackItem, facts: FilterFacts): boolean {
@@ -587,6 +599,8 @@ export function qualityCounts(
   duplicates: number
   silence: number
   clipping: number
+  paddedBits: number
+  upsampled: number
   noCues: number
   offGrid: number
   badGrid: number
@@ -623,6 +637,8 @@ export function qualityCounts(
   let duplicates = 0
   let silence = 0
   let clipping = 0
+  let paddedBits = 0
+  let upsampled = 0
   let noCues = 0
   let offGrid = 0
   let badGrid = 0
@@ -664,6 +680,8 @@ export function qualityCounts(
     if (t.duplicate) duplicates += 1
     if (t.audioIssues?.silence) silence += 1
     if (t.audioIssues?.clipping) clipping += 1
+    if (hasPaddedBits(t)) paddedBits += 1
+    if (isUpsampled(t)) upsampled += 1
     if (hasNoCues(t)) noCues += 1
     if (isOffGrid(t, facts)) offGrid += 1
     if (hasBadGrid(t, facts)) badGrid += 1
@@ -696,6 +714,8 @@ export function qualityCounts(
     duplicates,
     silence,
     clipping,
+    paddedBits,
+    upsampled,
     noCues,
     offGrid,
     badGrid,
@@ -739,6 +759,8 @@ const TALLY_AXIS: Record<keyof Tally, keyof FilterSelection> = {
   duplicates: 'duplicates',
   silence: 'attention',
   clipping: 'attention',
+  paddedBits: 'attention',
+  upsampled: 'attention',
   noCues: 'attention',
   offGrid: 'attention',
   badGrid: 'attention',

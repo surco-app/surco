@@ -261,6 +261,8 @@
       "duplicates": "重複",
       "silence": "トリムする無音",
       "clipping": "クリッピング",
+      "paddedBits": "パディングされたビット",
+      "upsampled": "アップサンプリング",
       "noCues": "キューなし",
       "offGrid": "グリッドからずれたキュー",
       "unanalysedRekordbox": "rekordbox で未分析",

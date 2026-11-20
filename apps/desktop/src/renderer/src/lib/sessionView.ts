@@ -127,6 +127,8 @@ const DUPLICATES: Record<DuplicatesFilter, true> = { duplicates: true }
 const ATTENTION: Record<AttentionFilter, true> = {
   silence: true,
   clipping: true,
+  paddedBits: true,
+  upsampled: true,
   noCues: true,
   offGrid: true,
   badGrid: true,

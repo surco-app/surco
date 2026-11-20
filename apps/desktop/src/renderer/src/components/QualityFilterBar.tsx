@@ -2,6 +2,8 @@ import type { TFunction } from 'i18next'
 import {
   Asterisk,
   AudioLines,
+  Binary,
+  ChartSpline,
   CircleAlert,
   CircleCheckBig,
   CircleFadingArrowUp,
@@ -73,6 +75,8 @@ type DuplicatesMode = 'duplicates'
 type AttentionMode =
   | 'silence'
   | 'clipping'
+  | 'paddedBits'
+  | 'upsampled'
   | 'noCues'
   | 'offGrid'
   | 'badGrid'
@@ -116,6 +120,8 @@ const STARS_MODES: StarsMode[] = ['noStars', 'stars3', 'stars4', 'stars5']
 const ATTENTION_MODES: AttentionMode[] = [
   'silence',
   'clipping',
+  'paddedBits',
+  'upsampled',
   'noCues',
   'offGrid',
   'badGrid',
@@ -145,6 +151,8 @@ const FILTER_ICONS: Record<Mode | 'all', LucideIcon> = {
   duplicates: CopyIcon,
   silence: Scissors,
   clipping: Zap,
+  paddedBits: Binary,
+  upsampled: ChartSpline,
   noCues: FlagOff,
   offGrid: Magnet,
   badGrid: Grid2x2X,

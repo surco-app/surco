@@ -261,6 +261,8 @@
       "duplicates": "Duplicates",
       "silence": "Silence to trim",
       "clipping": "Clipping",
+      "paddedBits": "Padded bits",
+      "upsampled": "Upsampled",
       "noCues": "No cues",
       "offGrid": "Cues off the grid",
       "unanalysedRekordbox": "Not analyzed in rekordbox",
