@@ -1237,6 +1237,68 @@ describe('ConvertFooter up to date', () => {
   })
 })
 
+describe('ConvertFooter height', () => {
+  const LINE = 20
+  function heightOf(el: HTMLElement, compact: boolean): number {
+    const own = el.className.split(/\s+/)
+    const pick = (re: RegExp): number | undefined => {
+      const base = own.find((c) => re.test(c) && !c.includes(':'))
+      const dense = own.find((c) => c.startsWith('compact:') && re.test(c.slice(8)))
+      const cls = compact && dense ? dense.slice(8) : base
+      return cls === undefined ? undefined : Number(cls.split('-')[1]) * 4
+    }
+    const fixed = pick(/^h-[\d.]+$/)
+    if (fixed !== undefined) return fixed
+    return (pick(/^py-[\d.]+$/) ?? 0) * 2 + LINE
+  }
+  const selection = {
+    isMulti: true,
+    selectedCount: 3,
+    readyCount: 3,
+    status: { ...status(false), superseded: [] },
+    onConvertSelection: vi.fn(),
+  }
+  const states: [string, React.JSX.Element, string][] = [
+    ['ready to convert', footer(false), 'process-btn'],
+    [
+      'converting one track',
+      cloneElement(footer(false), {
+        item: { id: 't1', status: 'processing', stage: 'converting', inputPath: '/a.wav', meta: {} },
+        onCancel: vi.fn(),
+      }),
+      'process-btn',
+    ],
+    ['a selection to convert', cloneElement(footer(false), selection), 'batch-convert'],
+    [
+      'a batch running',
+      cloneElement(footer(false), { batchRun: { done: 1, total: 3 }, onCancelBatch: vi.fn() }),
+      'batch-run-cancel',
+    ],
+    [
+      'up to date',
+      cloneElement(footer(false), {
+        upToDate: true,
+        willEditInPlace: true,
+        tagsOnly: true,
+        sameFormat: true,
+      }),
+      'convert-up-to-date-row',
+    ],
+  ]
+
+  // 21/11: in Compact the convert button sat at 32 px, too thin to aim at, while converting,
+  // a running batch and the up-to-date line stood 40 px, so the footer jumped as it changed state.
+  it.each(states)(
+    'stands 40 px, or 36 px in Compact, while %s, so the footer never changes height',
+    (_, el, testId) => {
+      render(el)
+      const target = screen.getByTestId(testId)
+      expect(heightOf(target, false)).toBe(40)
+      expect(heightOf(target, true)).toBe(36)
+    },
+  )
+})
+
 describe('ConvertFooter batch format and destination', () => {
   function plan(over: Record<string, unknown> = {}): React.JSX.Element {
     return cloneElement(footer(false), {

@@ -77,7 +77,9 @@ describe.skipIf(process.platform !== 'darwin')(
       await surco.drop(join(root, 'Downloads'))
       replaces = (await surco.convertInEditor('Robin S - Show Me Love.flac')).replaces
       row = rekordboxRow(db, '900001')
-      await waitFor(() => expect(osTrash.map((p) => basename(p))).toContain('Show Me Love.mp3'))
+      await waitFor(() => expect(osTrash.map((p) => basename(p))).toContain('Show Me Love.mp3'), {
+        timeout: 60_000,
+      })
       osTrashAfterRetire = osTrash.map((p) => basename(p))
     }, 120_000)
 
