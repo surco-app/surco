@@ -1158,15 +1158,39 @@ describe('buildReleaseMeta', () => {
   })
 
   // A Bandcamp match is not a Discogs release, so it must not stamp its id into the Discogs
-  // provenance field — that field gates the auto-match "skip already-matched" check and the
-  // release link, both of which are Discogs-specific. Whatever was there stays.
-  it('leaves the Discogs release id untouched when the match is from another provider', () => {
+  // provenance field. Nor may it keep the id the file came in with: that one names another
+  // release, so the catalog panel would reopen it and the converted file would claim it.
+  // The sweep stays off the track through `matched`, not through this id.
+  it('clears the Discogs release id when the match is from another provider', () => {
     const patch = buildReleaseMeta(
       meta({ discogsReleaseId: '111' }),
       release({ id: 999, provider: 'bandcamp' }),
       undefined,
     )
-    expect(patch.meta.discogsReleaseId).toBe('111')
+    expect(patch.meta.discogsReleaseId).toBe('')
+  })
+
+  // The link follows the id: a Discogs address the file carried points at a release other
+  // than the one just applied, and written into the tags it would claim that release.
+  it('clears a Discogs link the file carried when the match is from another provider', () => {
+    const patch = buildReleaseMeta(
+      meta({ discogsUrl: 'https://www.discogs.com/release/111' }),
+      release({ id: 999, provider: 'beatport' }),
+      undefined,
+    )
+    expect(patch.meta.discogsUrl).toBe('')
+  })
+
+  // Clearing the file's own id must stay reversible: the memory of the applied release keeps
+  // it, so the next release applied over this one starts from the file's id again.
+  it('remembers the Discogs id and link it cleared so a later release can restore them', () => {
+    const patch = buildReleaseMeta(
+      meta({ discogsReleaseId: '111', discogsUrl: 'https://www.discogs.com/release/111' }),
+      release({ id: 999, provider: 'beatport' }),
+      undefined,
+    )
+    expect(patch.appliedRelease.before.discogsReleaseId).toBe('111')
+    expect(patch.appliedRelease.before.discogsUrl).toBe('https://www.discogs.com/release/111')
   })
 
   // Genre and style are separate things on Discogs — "Electronic" is the genre, "House"

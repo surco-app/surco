@@ -650,9 +650,10 @@ export function buildReleaseMeta(
     mixName: track?.mixName || base.mixName || '',
     isrc: track?.isrc || base.isrc || '',
     // Provenance is Discogs-specific: a Bandcamp match must not stamp its id into the
-    // Discogs field (it gates auto-match's "skip already-matched" and the release link),
-    // so a non-Discogs apply leaves whatever was there untouched.
-    discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : base.discogsReleaseId,
+    // Discogs field, nor keep the one the file came in with, which names another release
+    // (the panel would reopen it and the tags would claim it). The sweep skips the track
+    // through `matched`, not through this id.
+    discogsReleaseId: rel.provider === 'discogs' ? String(rel.id) : '',
     // Same provenance rule as the id above: a Bandcamp match must not stamp a
     // discogs.com address onto the track. The API returns `uri`; falling back to the
     // canonical /release/<id> form covers releases whose response omits it.
@@ -662,7 +663,7 @@ export function buildReleaseMeta(
     discogsUrl:
       rel.provider === 'discogs'
         ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
-        : base.discogsUrl,
+        : '',
   }
   const meta = importFields ? onlyImported(current, imported, importFields) : imported
   const coverUrl = keepCover ? shown.url : coverOf(rel, shown.url)
