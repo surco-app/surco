@@ -138,6 +138,24 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
     expect(traktor.wanted.filter((c) => c.kind !== 0)).toHaveLength(3)
   })
 
+  // Saving works the other program's cues out again with the flows as they are now, so the
+  // row must too: a row still counting with the old rules promises cues the save won't write.
+  it('counts again with the new rules when the DJ changes the flow', async () => {
+    const { saveRekordboxCues, changeSettings } = setup()
+    await ready()
+    markAt(bar(64))
+    expect(await screen.findByTestId('cues-twin-traktor')).toHaveTextContent('3 hot cues')
+    const [drop, first] = MY_FLOW.rules
+    changeSettings({ cueFlows: [{ ...MY_FLOW, rules: [{ ...drop, repeat: 2 }, first] }] })
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-twin-traktor')).toHaveTextContent('2 hot cues'),
+    )
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const traktor = saveRekordboxCues.mock.calls[0][0][1]
+    expect(traktor.wanted.filter((c) => c.kind !== 0)).toHaveLength(2)
+  })
+
   it('asks to close each program a save reaches before saving, once per Save', async () => {
     const { askToApply, calls } = setup()
     await ready()
