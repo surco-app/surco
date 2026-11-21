@@ -1238,10 +1238,13 @@ export default function App(): React.JSX.Element {
   // rekordbox write among its items) and the bulk actions act on rows no longer on screen.
   // It is set aside while the new rows load and comes back narrowed to them once they land.
   const heldSelection = useRef<Selection | null>(null)
+  // Opening another playlist is going to see what it holds, so a search typed in the one
+  // left goes too: kept, it made the new playlist look short or empty.
   const selectPlaylist = useStableCallback((node: SourceNode, folders: string[]) => {
     if (node.id !== browser.playlist?.id) {
       heldSelection.current ??= selection
       setSelection({ ids: [], anchor: null })
+      setSearch('')
     }
     browser.selectPlaylist(node, folders)
   })
@@ -1358,6 +1361,7 @@ export default function App(): React.JSX.Element {
       if (node.id !== browser.playlist?.id || source !== browser.source) {
         heldSelection.current ??= selection
         setSelection({ ids: [], anchor: null })
+        setSearch('')
       }
       browser.openPlaylist(source, node, folders)
     },

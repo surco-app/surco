@@ -3881,6 +3881,39 @@ describe('App source playlists', () => {
       return { analyzed, release: () => release() }
     }
 
+    // Opening a playlist is going to see what it holds: a search typed in the one before
+    // made the new one look short or empty.
+    it('clears the search when another playlist is opened', async () => {
+      setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
+
+      fireEvent.click(screen.getByTestId('source-node-b'))
+
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      expect(screen.getByTestId('track-search')).toHaveValue('')
+    })
+
+    // "¿Esta pista ya está en rekordbox?" is asked by searching in one list and switching to
+    // the other: the search has to come along.
+    it('keeps the search when switching to another source', async () => {
+      setupPlaylists()
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'song' } })
+
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(5))
+      expect(screen.getByTestId('track-search')).toHaveValue('song')
+    })
+
     async function leaveForPeak(): Promise<void> {
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -14592,6 +14625,35 @@ describe('App palette playlists', () => {
     fireEvent.click(await screen.findByRole('option', { name: 'Engine DJ › Carcer edits' }))
     await waitFor(() => expect(playlist).toHaveBeenCalledWith('7'))
     expect(screen.getByTestId('source-rail-engine')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The palette is a way to open a playlist like the tree: a search typed before it would
+  // hide what the playlist holds the moment it opens.
+  it('clears the search when a playlist is opened from the palette', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Carcer edits', kind: 'playlist', count: 1 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/c.wav', separator: false, meta: {} }]),
+        },
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'carcer' } })
+    fireEvent.click(await screen.findByRole('option', { name: 'Engine DJ › Carcer edits' }))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    expect(screen.getByTestId('track-search')).toHaveValue('')
   })
 })
 
