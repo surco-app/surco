@@ -8,6 +8,7 @@ import type { PlaylistLibrary, Settings, ThemePref } from '../../../shared/types
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { DONATE_URL } from '../lib/donate'
 import { mainErrorMessage } from '../lib/ipcError'
+import { isMacOS } from '../lib/platform'
 import {
   buildSettingsPatch,
   type LocalDraft,
@@ -15,7 +16,6 @@ import {
   pickSynced,
   type SyncedDraft,
 } from '../lib/settingsDraft'
-import { isMacOS } from '../lib/platform'
 import { groupByTab, searchSettings } from '../lib/settingsSearch'
 import { settingsSearchIndexHere } from '../lib/settingsSearchIndex'
 import {
