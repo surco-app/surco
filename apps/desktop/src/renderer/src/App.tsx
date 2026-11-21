@@ -2643,12 +2643,22 @@ export default function App(): React.JSX.Element {
   // A search hides rows too, and an action on the selection must not reach them. Only the
   // hidden extras of a selection go: when no selected row is left on screen the selection
   // stays, so typing does not jump the editor from track to track on every keystroke.
-  const [prunedFor, setPrunedFor] = useState({ filterSelection, deferredSearch })
+  // The search stays across sources, so a switch narrows the selection kept for the new
+  // source the same way. Keyed on its rows too: a playlist still loading shows none (nothing
+  // is pruned then) and its arrival is when its own rows are on screen to prune against.
+  const [prunedFor, setPrunedFor] = useState({
+    filterSelection,
+    deferredSearch,
+    source: browser.source,
+    playlistIds,
+  })
   if (
     prunedFor.filterSelection !== filterSelection ||
-    prunedFor.deferredSearch !== deferredSearch
+    prunedFor.deferredSearch !== deferredSearch ||
+    prunedFor.source !== browser.source ||
+    prunedFor.playlistIds !== playlistIds
   ) {
-    setPrunedFor({ filterSelection, deferredSearch })
+    setPrunedFor({ filterSelection, deferredSearch, source: browser.source, playlistIds })
     const ids = visibleTracks.map((t) => t.id)
     const next =
       pruneToVisible(ids, selection) ??

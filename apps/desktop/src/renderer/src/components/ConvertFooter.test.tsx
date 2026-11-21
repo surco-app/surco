@@ -1413,6 +1413,20 @@ describe('ConvertFooter running batch', () => {
     expect(onCancelBatch).toHaveBeenCalledOnce()
     expect(onProcess).not.toHaveBeenCalled()
   })
+
+  it('carries the count and a fill at the share done inside the cancel button, as one track does, so no line of text sits above it', () => {
+    render(cloneElement(footer(false), { batchRun: run, onCancelBatch: vi.fn() }))
+    const cancel = screen.getByTestId('batch-run-cancel')
+    expect(cancel).toContainElement(screen.getByTestId('batch-run-progress'))
+    expect(within(cancel).getByTestId('batch-run-fill')).toHaveStyle({ transform: 'scaleX(0.25)' })
+  })
+
+  it('still says how far the batch has come to a screen reader, once the count lives inside the button', () => {
+    render(cloneElement(footer(false), { batchRun: run, onCancelBatch: vi.fn() }))
+    expect(screen.getByTestId('batch-run-cancel')).toHaveAccessibleDescription(
+      i18n.t('header.convertingCount', run),
+    )
+  })
 })
 
 describe('ConvertFooter focus across a batch', () => {

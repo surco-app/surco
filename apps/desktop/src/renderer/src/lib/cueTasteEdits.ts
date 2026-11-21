@@ -2,7 +2,6 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { DropInput } from '../../../shared/dropDetect'
 import { modelWithTaste, tasteTrackOf } from '../../../shared/dropTaste'
-import type { TrackCues } from '../../../shared/types'
 import {
   cueDropInputQuery,
   cueProfileQuery,
