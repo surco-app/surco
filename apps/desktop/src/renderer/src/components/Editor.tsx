@@ -104,6 +104,7 @@ import {
   corroboratedTier,
   joinArtists,
   type ReleaseMetaPatch,
+  titleWithMix,
 } from '../lib/release'
 import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
@@ -709,7 +710,7 @@ export const Editor = memo(function Editor({
       item.meta.title
         ? release?.tracklist.find(
             (t) =>
-              t.title === item.meta.title &&
+              titleWithMix(t) === item.meta.title &&
               splitPosition(t.position).track === item.meta.trackNumber,
           )
         : undefined,

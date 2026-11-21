@@ -4458,6 +4458,31 @@ describe('Editor track preselection', () => {
     expect(other).not.toHaveAttribute('aria-current')
   })
 
+  it('keeps the applied row marked when the applied title carries the mix name', async () => {
+    withDiscogs()
+    ;(window as unknown as { api: { getRelease: unknown } }).api.getRelease = vi
+      .fn()
+      .mockResolvedValue({
+        ...release,
+        provider: 'beatport',
+        tracklist: [
+          { position: '1', title: 'Song', mixName: 'Extended Mix', duration: '7:02' },
+          { position: '2', title: 'Song', mixName: 'Radio Edit', duration: '3:10' },
+        ],
+      })
+    renderEditor({
+      id: 'a',
+      duration: 390,
+      meta: { title: 'Song (Extended Mix)', trackNumber: '1' },
+    })
+    const rows = await loadTracklist({ autoOpens: false })
+    const applied = rows.find((r) => r.textContent?.includes('Extended Mix'))
+    const other = rows.find((r) => r.textContent?.includes('Radio Edit'))
+    expect(screen.queryByTestId('track-confidence')).toBeNull()
+    expect(applied).toHaveAttribute('aria-current', 'true')
+    expect(other).not.toHaveAttribute('aria-current')
+  })
+
   // A weak match — one incidental shared word — is "too weak to trust", so it must
   // neither preselect a row nor show a badge. Otherwise loading an unrelated release
   // still badges a random mix and invites the user to apply the wrong one.

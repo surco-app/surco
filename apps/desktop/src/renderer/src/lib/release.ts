@@ -234,7 +234,7 @@ export function trackDisplayTitle(track: ReleaseTrack): string {
   return track.mixName ? `${track.title} (${track.mixName})` : track.title
 }
 
-function titleWithMix(track: ReleaseTrack): string {
+export function titleWithMix(track: ReleaseTrack): string {
   const mix = track.mixName?.trim()
   if (!mix || /^original mix$/i.test(mix)) return track.title
   if (normalize(track.title).includes(normalize(mix))) return track.title
