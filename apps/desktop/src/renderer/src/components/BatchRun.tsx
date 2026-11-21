@@ -1,5 +1,5 @@
-import { Loader2 } from 'lucide-react'
 import type React from 'react'
+import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Tooltip } from './Tooltip'
 
@@ -11,23 +11,35 @@ export function BatchRun({
   onCancel: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const progressId = useId()
+  const share = progress.total > 0 ? progress.done / progress.total : 0
   return (
-    <div data-testid="batch-run" className="space-y-2">
-      <p
-        data-testid="batch-run-progress"
-        className="flex items-center justify-center gap-1.5 text-xs text-fg-dim tabular-nums"
-      >
-        <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
-        {tr('header.convertingCount', progress)}
-      </p>
+    <div data-testid="batch-run" className="flex">
       <button
         type="button"
         data-testid="batch-run-cancel"
         onClick={onCancel}
         aria-label={tr('header.cancelConvert')}
-        className="press group relative w-full rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] py-2.5 text-sm font-medium text-fg hover:bg-[var(--color-line-strong)]"
+        aria-describedby={progressId}
+        className="press group relative flex-1 overflow-hidden rounded-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)]"
       >
-        {tr('common.cancel')}
+        <span
+          data-testid="batch-run-fill"
+          aria-hidden="true"
+          className="absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-240 ease-standard"
+          style={{ transform: `scaleX(${share})` }}
+        />
+        <span aria-hidden="true" className="progress-sweep absolute inset-0" />
+        <span
+          id={progressId}
+          data-testid="batch-run-progress"
+          className="relative tabular-nums group-hover:hidden group-focus-visible:hidden"
+        >
+          {tr('header.convertingCount', progress)}
+        </span>
+        <span className="relative hidden group-hover:inline group-focus-visible:inline">
+          {tr('common.cancel')}
+        </span>
         <Tooltip label={tr('header.cancelConvert')} />
       </button>
     </div>
