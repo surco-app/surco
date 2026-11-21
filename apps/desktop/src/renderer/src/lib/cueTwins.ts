@@ -38,6 +38,16 @@ export interface TwinSettings {
   cueFlowToVirtualdj: boolean
 }
 
+export const twinSettingsOf = (settings: TwinSettings): TwinSettings => ({
+  cueFlows: settings.cueFlows,
+  cueLettersByTime: settings.cueLettersByTime,
+  cueFlowToRekordbox: settings.cueFlowToRekordbox,
+  cueFlowToTraktor: settings.cueFlowToTraktor,
+  cueFlowToEngine: settings.cueFlowToEngine,
+  cueFlowToSerato: settings.cueFlowToSerato,
+  cueFlowToVirtualdj: settings.cueFlowToVirtualdj,
+})
+
 export type TwinPlan =
   | {
       library: DjProgram

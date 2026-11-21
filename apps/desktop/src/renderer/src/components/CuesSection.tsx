@@ -118,7 +118,7 @@ import {
   useUnsavedCueTracks,
 } from '../lib/cueSession'
 import { recordCueEdits } from '../lib/cueTasteEdits'
-import { type TwinPlan, twinPlansOf } from '../lib/cueTwins'
+import { type TwinPlan, twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
@@ -850,6 +850,7 @@ function Editing({
   const [overwrite, setOverwrite] = useState<ReadonlySet<string>>(new Set())
   const own = { contentId: cue.contentId, path: cue.path, label: cue.label, draft: state }
   const flowMarked = !provisional && !unchanged && Object.keys(state.origin).length > 0
+  const twinSettings = twinSettingsOf(settings)
   const { data: twinData = [] } = useQuery({
     queryKey: [
       'cue-twin-plans',
@@ -859,13 +860,9 @@ function Editing({
       state.origin,
       unsavedIds,
       [...overwrite],
-      settings.cueFlowToRekordbox,
-      settings.cueFlowToTraktor,
-      settings.cueFlowToEngine,
-      settings.cueFlowToSerato,
-      settings.cueFlowToVirtualdj,
+      twinSettings,
     ],
-    queryFn: () => twinPlansOf(queryClient, [own], settings, overwrite),
+    queryFn: () => twinPlansOf(queryClient, [own], twinSettings, overwrite),
     enabled: flowMarked,
   })
   const twins = flowMarked ? twinData : []

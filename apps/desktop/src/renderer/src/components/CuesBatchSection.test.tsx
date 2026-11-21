@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
+import { HOT_KINDS } from '../../../shared/cueRules'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
@@ -471,6 +472,33 @@ describe('Cues over several selected tracks', () => {
     fireEvent.click(screen.getByTestId('cues-batch-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103', S])
+  })
+
+  // Saving works the other programs' cues out again with the flows as they are now, so the
+  // count must too: a count kept from the old rules promises tracks the save won't reach.
+  it('counts again with the new rules when the DJ changes the flow', async () => {
+    const T = 'traktor:M/:m/:a.wav'
+    const full = HOT_KINDS.map((kind, i) => ({ id: `r${i}`, ms: bar(150 + i), kind, color: 1 }))
+    const { saveRekordboxCues, changeSettings } = setup(
+      { '/m/a.wav': { rekordbox: '7' } },
+      [{ contentId: T, path: '/m/a.wav', label: 'Maniac' }],
+      { '7': full },
+    )
+    act(() =>
+      keepAutoMark(T, {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-twin-rekordbox')).toHaveTextContent('1'),
+    )
+    changeSettings({ cueFlows: [{ ...MY_FLOW, markPoint: false }, ONE_AT_32] })
+    await waitFor(() => expect(screen.queryByTestId('cues-batch-twin-rekordbox')).toBeNull())
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual([T])
   })
 
   it('says how many tracks keep their unsaved changes in the other program', async () => {

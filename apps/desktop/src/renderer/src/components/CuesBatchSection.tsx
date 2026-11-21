@@ -25,7 +25,7 @@ import {
   useUnsavedCueTracks,
 } from '../lib/cueSession'
 import { recordCueEdits } from '../lib/cueTasteEdits'
-import { twinPlansOf } from '../lib/cueTwins'
+import { twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
 import { useAppSettings } from '../lib/settingsContext'
 import type { AutoMarkKind } from '../lib/triage'
 import { saveAllKey } from './CuesSection'
@@ -99,18 +99,15 @@ export function CuesBatchSection({
   const savable = (contentId: string) => canSave || cueProgramOf(contentId).collectionGate === null
   const unsaved = new Set(ids.filter((id) => unsavedAll.has(id) && savable(id)))
   const drafts = keptDrafts().filter((d) => unsaved.has(d.contentId))
+  const twinSettings = twinSettingsOf(settings)
   const { data: plans = [] } = useQuery({
     queryKey: [
       'cue-twin-plans-batch',
       drafts.map((d) => [d.contentId, d.draft.cues]),
       [...unsavedAll].sort(),
-      settings.cueFlowToRekordbox,
-      settings.cueFlowToTraktor,
-      settings.cueFlowToEngine,
-      settings.cueFlowToSerato,
-      settings.cueFlowToVirtualdj,
+      twinSettings,
     ],
-    queryFn: () => twinPlansOf(queryClient, drafts, settings),
+    queryFn: () => twinPlansOf(queryClient, drafts, twinSettings),
     enabled: drafts.length > 0,
   })
   const twins = drafts.length > 0 ? plans.filter((p) => savable(p.contentId)) : []
