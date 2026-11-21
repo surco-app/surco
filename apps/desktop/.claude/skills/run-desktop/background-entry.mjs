@@ -2,7 +2,9 @@ import { app, BrowserWindow } from 'electron'
 
 if (process.platform === 'darwin') {
   app.setActivationPolicy('accessory')
-  BrowserWindow.prototype.show = function show() {}
+  BrowserWindow.prototype.show = function show() {
+    this.emit('show')
+  }
   BrowserWindow.prototype.focus = function focus() {}
 }
 BrowserWindow.getFocusedWindow = () => BrowserWindow.getAllWindows()[0] ?? null
