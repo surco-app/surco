@@ -169,11 +169,7 @@ import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
 import { nextLocale } from './i18n/locale'
-import {
-  analysisKey,
-  removeAnalysisQueries,
-  seedCachedAnalyses,
-} from './lib/analysisQueries'
+import { analysisKey, removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { cleanupPatcher, planAutoClean } from './lib/autoClean'
@@ -210,11 +206,11 @@ import {
   useUnsavedCueTracks,
 } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
-import { fillMeasuredPatches } from './lib/fillMeasured'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { onFeedbackRequested } from './lib/feedback'
 import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
+import { fillMeasuredPatches } from './lib/fillMeasured'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
@@ -570,7 +566,8 @@ export default function App(): React.JSX.Element {
     (next: FilterSelection): void => {
       flushPendingEdits()
       storeFilterSelection(next)
-      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention)) setAutoMarkBatch(null)
+      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention))
+        setAutoMarkBatch(null)
     },
     [storeFilterSelection],
   )
@@ -1367,6 +1364,7 @@ export default function App(): React.JSX.Element {
       ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
     }
+    pendingRestoredReveal.current = restored.anchor
     setSelection(restored)
     const fitted = fitFilterToTab(filterSelection, next)
     if (fitted !== filterSelection) setFilterSelection(fitted)
@@ -1482,8 +1480,8 @@ export default function App(): React.JSX.Element {
     () => tracks.find((t) => t.id === selectedId)?.inputPath ?? null,
     [tracks, selectedId],
   )
-  // The reopened selection is scrolled to once its row shows: under a library filter that
-  // waits for the row's verdict to come in.
+  // The reopened selection, and the one a source gives back on return, is scrolled to once
+  // its row shows: under a library filter that waits for the row's verdict to come in.
   const pendingRestoredReveal = useRef<string | null>(null)
   const selectedSourcePaths = useMemo(
     () =>
