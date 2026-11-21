@@ -7237,6 +7237,55 @@ describe('App multi-select removal', () => {
     ])
   })
 
+  // The search stays when switching source, so coming back to Tracks can show fewer rows than
+  // the selection kept for it. An action on the selection must never reach a row the user
+  // cannot see: the snare, hidden by a search typed in the playlist, went to the OS trash
+  // with the two kicks.
+  it('trashes only the selected rows the search shows after coming back from another source', async () => {
+    const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
+    setApi({
+      pickFiles: vi
+        .fn()
+        .mockResolvedValue(['/music/kick.wav', '/music/snare.wav', '/music/kick2.wav']),
+      trashFile,
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/kick-other.wav', separator: false, meta: {} }]),
+        },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'kick' } })
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getByTestId('track-menu-trash'))
+
+    await waitFor(() => expect(trashFile).toHaveBeenCalledTimes(2))
+    expect(trashFile.mock.calls.map((c) => c[0]).sort()).toEqual([
+      '/music/kick.wav',
+      '/music/kick2.wav',
+    ])
+  })
+
   // Same rule for a filter: narrowing to MP3 and trashing the selection must not take the
   // selected WAV the filter is hiding.
   it('trashes only the selected rows the format filter still shows', async () => {
