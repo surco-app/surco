@@ -200,7 +200,12 @@ import { beginNmlBatch, foldNmlBatch, redirectNmlPatch } from './nmlBatch'
 import { filesFromArgv, routeOpenedFile } from './openedFiles'
 import { configureBackupStore } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
-import { cleanupPlaybackTemps, resolvePlayable, resolveRecovered } from './playback'
+import {
+  cleanupPlaybackTemps,
+  recordPlaybackTempsIn,
+  resolvePlayable,
+  resolveRecovered,
+} from './playback'
 import { runProcessTrack } from './processTrack'
 import { createProgramQueue, type ProgramQueueDeps } from './programQueue'
 import { getProvider } from './providers'
@@ -819,6 +824,7 @@ const tmpManifest = createTmpManifest(join(app.getPath('userData'), 'pending-tmp
       () => false,
     ),
 })
+recordPlaybackTempsIn(tmpManifest)
 // Surco's own trash: every original a conversion replaces or renames away, and every
 // delete on a volume with no OS Trash, kept for a while (see surcoTrash.ts). Local disk
 // on purpose, like the manifest above: the one place a bad write can be undone from.

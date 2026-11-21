@@ -6,6 +6,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import {
   cleanupPlaybackTemps,
   PLAYBACK_TEMPS_KEPT,
+  recordPlaybackTempsIn,
   resolvePlayable,
   resolveRecovered,
 } from './playback'
@@ -220,5 +221,54 @@ describe('playback temps during a session', () => {
 
     expect(remove).toHaveBeenCalledTimes(1)
     expect(remove).not.toHaveBeenCalledWith('/tmp/play-0.wav')
+  })
+})
+
+describe('playback temps left by a crash', () => {
+  // A crash or force-quit skips the quit sweep. macOS purges its temp folder after a few
+  // days, Windows never does, so every WAV of an interrupted session stayed in %TEMP% for
+  // good. Listed in the tmp manifest, the next launch deletes them.
+  function manifest() {
+    const listed = new Set<string>()
+    const m = {
+      track: vi.fn((p: string) => void listed.add(p)),
+      untrack: vi.fn((p: string) => void listed.delete(p)),
+    }
+    recordPlaybackTempsIn(m)
+    return { m, listed }
+  }
+
+  it('lists a transcode before ffmpeg writes it, so a crash mid-transcode is covered', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const { listed } = manifest()
+    let seen: string[] = []
+    const d = deps({
+      transcode: vi.fn(async () => {
+        seen = [...listed]
+      }),
+    })
+    await resolvePlayable('/crash.aiff', d)
+    expect(seen).toEqual(['/tmp/play-0.wav'])
+  })
+
+  it('takes a transcode off the list once it is deleted during the session', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const { listed } = manifest()
+    const d = deps()
+    for (let i = 0; i < PLAYBACK_TEMPS_KEPT + 1; i++) await resolvePlayable(`/list-${i}.aiff`, d)
+    await vi.waitFor(() => expect(listed.has('/tmp/play-0.wav')).toBe(false))
+    expect(listed.size).toBe(PLAYBACK_TEMPS_KEPT)
+  })
+
+  it('empties the list at quit, keeping only what could not be deleted', async () => {
+    cleanupPlaybackTemps(vi.fn())
+    const { listed } = manifest()
+    const d = deps()
+    await resolvePlayable('/quit-a.aiff', d)
+    await resolvePlayable('/quit-b.aiff', d)
+    cleanupPlaybackTemps((p) => {
+      if (p === '/tmp/play-1.wav') throw new Error('EBUSY')
+    })
+    expect([...listed]).toEqual(['/tmp/play-1.wav'])
   })
 })
