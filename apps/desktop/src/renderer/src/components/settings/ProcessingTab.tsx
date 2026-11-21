@@ -23,18 +23,24 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
         <SettingsLabel className="mb-3" searchId="declick.title">
           {tr('declick.title')}
         </SettingsLabel>
-        <SettingsHint className="mb-4">{tr('declick.hint')}</SettingsHint>
+        {synced.showEditorHints && (
+          <SettingsHint className="mb-4" data-testid="declick-hint">
+            {tr('declick.hint')}
+          </SettingsHint>
+        )}
         <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
           <div className="min-w-0">
             <DeclickControls
               value={synced.declick.mode}
               onChange={(mode) => patch('declick', { ...synced.declick, mode })}
+              showHints={synced.showEditorHints}
             />
           </div>
           <div className="min-w-0">
             <NoiseControls
               value={synced.declick.noise}
               onChange={(noise) => patch('declick', { ...synced.declick, noise })}
+              showHints={synced.showEditorHints}
             />
           </div>
         </div>
@@ -42,7 +48,11 @@ export function ProcessingTab({ synced, patch }: Props): React.JSX.Element {
 
       <SettingsSection>
         <SettingsLabel searchId="normalize.title">{tr('normalize.title')}</SettingsLabel>
-        <SettingsHint className="mt-2 mb-3">{tr('normalize.hint')}</SettingsHint>
+        {synced.showEditorHints && (
+          <SettingsHint className="mt-2 mb-3" data-testid="normalize-hint">
+            {tr('normalize.hint')}
+          </SettingsHint>
+        )}
         <NormalizeControls
           value={synced.normalize}
           onChange={(n) => patch('normalize', n)}

@@ -54,3 +54,34 @@ describe('DeclickControls group name', () => {
     expect(screen.getByRole('group', { name: 'Background noise' })).toBeInTheDocument()
   })
 })
+
+// The inline-explanations switch in Settings promises to hide what each mode does; a step
+// hint that stayed on with it off made the switch look broken to whoever turned it off.
+describe('DeclickControls inline explanations', () => {
+  it('drops both ladder hints when the explanations are off', () => {
+    render(
+      <>
+        <DeclickControls value="soft" onChange={() => {}} showHints={false} />
+        <NoiseControls value="soft" onChange={() => {}} showHints={false} />
+      </>,
+    )
+    expect(screen.queryByTestId('declick-mode-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-noise-hint')).not.toBeInTheDocument()
+    expect(screen.getByTestId('declick-mode-soft')).toBeInTheDocument()
+  })
+
+  it('keeps both ladder hints when the explanations are on', () => {
+    render(
+      <>
+        <DeclickControls value="soft" onChange={() => {}} showHints />
+        <NoiseControls value="soft" onChange={() => {}} showHints />
+      </>,
+    )
+    expect(screen.getByTestId('declick-mode-hint')).toHaveTextContent(
+      i18n.t('declick.modeHint.soft'),
+    )
+    expect(screen.getByTestId('declick-noise-hint')).toHaveTextContent(
+      i18n.t('declick.noiseHint.soft'),
+    )
+  })
+})

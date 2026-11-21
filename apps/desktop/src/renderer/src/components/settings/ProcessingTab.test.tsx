@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
-import '../../i18n'
+import i18n from '../../i18n'
 import { ProcessingTab } from './ProcessingTab'
 
 afterEach(cleanup)
@@ -130,5 +130,24 @@ describe('ProcessingTab', () => {
       renderTab({ normalize: loudness, outputFormat })
       expect(screen.queryByTestId('normalize-cue-warning')).not.toBeInTheDocument()
     }
+  })
+
+  // The inline-explanations switch is read from the draft, so turning it off in the
+  // Editor tab hides these section explanations at once, before saving, like the
+  // normalize mode line below them already did.
+  it('hides the section explanations while the draft has the explanations off', () => {
+    renderTab({ showEditorHints: false })
+    expect(screen.queryByTestId('declick-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('normalize-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-mode-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-noise-hint')).not.toBeInTheDocument()
+  })
+
+  it('shows the section explanations while the draft has the explanations on', () => {
+    renderTab({ showEditorHints: true })
+    expect(screen.getByTestId('declick-hint')).toHaveTextContent(i18n.t('declick.hint'))
+    expect(screen.getByTestId('normalize-hint')).toHaveTextContent(i18n.t('normalize.hint'))
+    expect(screen.getByTestId('declick-mode-hint')).toBeInTheDocument()
+    expect(screen.getByTestId('declick-noise-hint')).toBeInTheDocument()
   })
 })

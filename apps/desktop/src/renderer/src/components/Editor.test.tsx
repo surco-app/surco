@@ -180,6 +180,7 @@ function renderEditor(
     showSpectrum?: boolean
     normalize?: NormalizeConfig
     declick?: DeclickConfig
+    showEditorHints?: boolean
     overwriteOriginal?: boolean
     backupPolicy?: Settings['backupPolicy']
     rememberedPick?: React.ComponentProps<typeof Editor>['rememberedPick']
@@ -314,6 +315,7 @@ function renderEditor(
       keyNotation: props.keyNotation ?? 'camelot',
       normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
       ...(props.declick ? { declick: props.declick } : {}),
+      ...(props.showEditorHints !== undefined ? { showEditorHints: props.showEditorHints } : {}),
       ...(props.editorSections ? { editorSections: props.editorSections } : {}),
       ...(props.discogsToken !== undefined ? { discogsToken: props.discogsToken } : {}),
       ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
@@ -2951,6 +2953,18 @@ describe('Editor export control', () => {
       editorSections: [{ id: 'declick' as const, open: true }],
     })
     expect(screen.getByTestId('declick-mode-strong')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  // The inline-explanations switch hides what each click-repair step does in the editor
+  // too, as it already did for the normalization lines below.
+  it('drops the click-repair step explanations when inline explanations are off', () => {
+    renderEditor({ id: 'a' }, 'wav', {
+      showEditorHints: false,
+      editorSections: [{ id: 'declick' as const, open: true }],
+    })
+    expect(screen.getByTestId('declick-mode-off')).toBeInTheDocument()
+    expect(screen.queryByTestId('declick-mode-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-noise-hint')).not.toBeInTheDocument()
   })
 
   // The other half of the same contract: an untouched track still opens on the Settings

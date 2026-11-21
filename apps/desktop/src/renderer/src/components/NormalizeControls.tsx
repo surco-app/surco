@@ -193,13 +193,14 @@ export function NormalizeControls({
             label={tr('normalize.mode.loudness')}
             labelFor={(id) => tr(`normalize.preset.${id}`)}
           />
-          <p className="text-xs text-fg-dim">
-            {modeLine}
-            {modeLine && ' '}
-            <span data-testid="normalize-preset-hint">
-              {tr(`normalize.presetHint.${loudnessPreset}`)}
-            </span>
-          </p>
+          {showHints && (
+            <p className="text-xs text-fg-dim">
+              {modeLine}{' '}
+              <span data-testid="normalize-preset-hint">
+                {tr(`normalize.presetHint.${loudnessPreset}`)}
+              </span>
+            </p>
+          )}
           <div className="flex gap-4">
             <NumberField
               testid="normalize-target-lufs"

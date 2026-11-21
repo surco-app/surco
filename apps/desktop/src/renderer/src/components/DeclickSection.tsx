@@ -52,6 +52,7 @@ interface Props {
   // The silence trim staged in the trim section, dimmed over this wave so the
   // audio the export drops reads at a glance here too.
   trim?: TrimRange
+  showHints?: boolean
 }
 
 // The per-track click-repair override: the clicks marked on the track's own wave, and
@@ -71,6 +72,7 @@ export function DeclickSection({
   selectedCount,
   format,
   trim,
+  showHints = true,
 }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const waveColor = useWaveColors().after
@@ -344,12 +346,14 @@ export function DeclickSection({
               <DeclickControls
                 value={value.mode}
                 onChange={(mode) => onChange({ ...value, mode })}
+                showHints={showHints}
               />
             </div>
             <div className="min-w-0">
               <NoiseControls
                 value={value.noise}
                 onChange={(noise) => onChange({ ...value, noise })}
+                showHints={showHints}
               />
             </div>
           </div>

@@ -272,6 +272,21 @@ describe('DeclickSection', () => {
     expect(screen.queryByTestId('declick-scope')).not.toBeInTheDocument()
   })
 
+  // The editor's inline-explanations switch reaches this section too: with it off the
+  // ladders keep their buttons and lose the line explaining each step.
+  it('drops the step explanations when the editor hints are off', () => {
+    render(section({ showHints: false }))
+    expect(screen.queryByTestId('declick-mode-hint')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('declick-noise-hint')).not.toBeInTheDocument()
+    expect(screen.getByTestId('declick-mode-soft')).toBeInTheDocument()
+  })
+
+  it('keeps the step explanations when the editor hints are on', () => {
+    render(section({ showHints: true }))
+    expect(screen.getByTestId('declick-mode-hint')).toBeInTheDocument()
+    expect(screen.getByTestId('declick-noise-hint')).toBeInTheDocument()
+  })
+
   it('marks clicks already found on disk before its live probe answers', async () => {
     const api = window.api as unknown as Record<string, unknown>
     api.clicks = vi.fn(() => new Promise(() => {}))
