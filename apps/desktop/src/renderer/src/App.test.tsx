@@ -3213,6 +3213,39 @@ describe('App source rail', () => {
     )
   })
 
+  it('selects the files added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
+    rekordboxWithFactory({
+      pickFiles: vi
+        .fn<Api['pickFiles']>()
+        .mockResolvedValueOnce(['/m/a.wav'])
+        .mockResolvedValueOnce(['/m/b.wav', '/m/c.wav']),
+      dj: djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+        },
+      }),
+    })
+    await renderApp()
+    runMenu('add')
+    await screen.findByTestId('field-title')
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.click(screen.getByTestId('quality-filter-trigger'))
+    fireEvent.click(screen.getByTestId('quality-filter-section-attention'))
+    fireEvent.click(screen.getByTestId('quality-filter-unanalysedRekordbox'))
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' })
+
+    runMenu('add')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+  })
+
   // The list's count is the size of the list on screen: inside a playlist that is its rows,
   // not every track the working list has gathered.
   it('counts the open playlist’s rows in the list header, not the whole working list', async () => {

@@ -1402,6 +1402,9 @@ export default function App(): React.JSX.Element {
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
     const selectedBefore = paths.length > 0 ? selectSource(null) : selection
+    const tracksFilterActive = Object.values(fitFilterToTab(filterSelection, null)).some(
+      (axis) => axis !== null,
+    )
     const before = new Set(tracksRef.current.map((t) => t.id))
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
@@ -1416,7 +1419,7 @@ export default function App(): React.JSX.Element {
     // something: a field being typed in, a filter that may hide the new rows, or a selection
     // the user made while a slow folder was still being walked. The first row addPaths
     // opens on an empty list is the add's own doing and does not count as one.
-    if (added.length === 0 || isTypingTarget(document.activeElement) || filterActive) return
+    if (added.length === 0 || isTypingTarget(document.activeElement) || tracksFilterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
       const untouched =
