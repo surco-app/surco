@@ -307,7 +307,7 @@ describe('registerCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
-  it('queues only the phrase count of each rekordbox track as a comment, behind a cues momento, and applies quietly', async () => {
+  it('queues only the phrase count of each rekordbox track as a comment, behind a metadata momento, and applies quietly', async () => {
     const order: string[] = []
     const beginMoment = vi.fn((r: string) => order.push(`begin:${r}`))
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => {
@@ -331,8 +331,8 @@ describe('registerCuesIpc', () => {
       { contentId: '104', path: '/m/b.wav', label: 'b', count: '6' },
     ]
     await handler('cues:saveComments')({}, items)
-    expect(order).toEqual(['begin:cues', 'enqueue'])
-    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
+    expect(order).toEqual(['begin:review', 'enqueue'])
+    expect(beginMoment).toHaveBeenCalledWith('review', ['rekordbox'])
     expect(enqueue).toHaveBeenCalledWith(
       items.map((item) => ({ ...item, id: expect.any(String), kind: 'comment' })),
     )

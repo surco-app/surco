@@ -144,7 +144,7 @@ export function registerCuesIpc(host: {
     const target = host.sources.rekordbox
     const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
     if (!target || mine.length === 0) return
-    host.beginMoment?.('cues', ['rekordbox'])
+    host.beginMoment?.('review', ['rekordbox'])
     target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
     target.applyQuietly()
   })
