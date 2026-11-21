@@ -8239,6 +8239,56 @@ describe('App multi-select convert', () => {
     expect(screen.queryByTestId('batch-convert')).toBeNull()
   })
 
+  // "busco algo y añado una pista nueva... la pista nueva no la veo": a search left over
+  // from earlier hid what was just added, so the add looked like it had done nothing.
+  it('clears a search that would hide the files just added, and selects them', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/bravo.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'alpha' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(screen.getByTestId('track-search')).toHaveValue('')
+    const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
+    expect(bravo).toHaveAttribute('aria-selected', 'true')
+  })
+
+  // Dropping another version of the tune being searched for, to compare them, is a reason to
+  // keep the search: everything added is on screen beside what was found.
+  it('keeps a search that every file just added matches', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/alpha-remix.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'alpha' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(screen.getByTestId('track-search')).toHaveValue('alpha')
+    const remix = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('remix'))
+    expect(remix).toHaveAttribute('aria-selected', 'true')
+  })
+
   // A drop that lands while a field is being typed in must not swap the form under the
   // cursor for a bulk one.
   it('leaves the selection alone when files arrive while a field has the cursor', async () => {

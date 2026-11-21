@@ -1390,13 +1390,17 @@ export default function App(): React.JSX.Element {
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
     await addPaths(expanded)
-    const added = tracksRef.current.filter((t) => !before.has(t.id)).map((t) => t.id)
+    const arrived = tracksRef.current.filter((t) => !before.has(t.id))
+    const added = arrived.map((t) => t.id)
+    // A search left from earlier work that hides any of what arrived goes, or the add looks
+    // like it did nothing. One every new row matches stays: another version of the tune
+    // being searched for lands right beside it.
+    if (!arrived.every(searchMatcher(store.getState().search))) setSearch('')
     // What arrived becomes the selection, unless that would pull the editor away from
-    // something: a field being typed in, a filter or search that may hide the new rows, or
-    // a selection the user made while a slow folder was still being walked. The first row
-    // addPaths opens on an empty list is the add's own doing and does not count as one.
-    if (added.length === 0 || isTypingTarget(document.activeElement) || search || filterActive)
-      return
+    // something: a field being typed in, a filter that may hide the new rows, or a selection
+    // the user made while a slow folder was still being walked. The first row addPaths
+    // opens on an empty list is the add's own doing and does not count as one.
+    if (added.length === 0 || isTypingTarget(document.activeElement) || filterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
       const untouched =
