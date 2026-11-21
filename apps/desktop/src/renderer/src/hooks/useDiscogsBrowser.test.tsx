@@ -457,9 +457,10 @@ describe('useDiscogsBrowser', () => {
   it('loads a release directly from a pasted id without searching', async () => {
     const search = vi.fn().mockResolvedValue([])
     setApi({ search })
-    const { result } = renderHook(() => useDiscogsBrowser(item({ query: '1' }), tr), {
+    const { result } = renderHook(() => useDiscogsBrowser(item(), tr), {
       wrapper: wrapper(),
     })
+    act(() => result.current.setQuery('1'))
     act(() => result.current.doSearch())
     await waitFor(() => expect(result.current.release?.id).toBe(1))
     expect(search).not.toHaveBeenCalled()
@@ -473,6 +474,45 @@ describe('useDiscogsBrowser', () => {
     setApi({ search })
     const { result } = renderHook(
       () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '1' }), tr),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  // A file named "1999.mp3" with no tags leaves "1999" in the box. That is a guess built
+  // from the name, not an id the user handed over: loading release #1999 would show a
+  // search box claiming a text search that never ran, and the editor could auto-apply
+  // that random release. Only a number the user typed counts as an id.
+  it('runs a text search for an automatic query made only of digits', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    const getRelease = vi.fn().mockResolvedValue(release)
+    setApi({ search, getRelease })
+    renderHook(() => useDiscogsBrowser(item({ query: '1999' }), tr), { wrapper: wrapper() })
+    await waitFor(() => expect(search).toHaveBeenCalled())
+    expect(search.mock.calls[0][0]).toBe('1999')
+    expect(getRelease).not.toHaveBeenCalled()
+  })
+
+  // The number the user typed in the box is theirs: it still jumps straight to that release.
+  it('loads a release directly from an id the user typed', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result } = renderHook(() => useDiscogsBrowser(item({ query: 'some album' }), tr), {
+      wrapper: wrapper(),
+    })
+    act(() => result.current.setQuery('1'))
+    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    expect(search).not.toHaveBeenCalled()
+  })
+
+  // A typed id comes back on a remount as the track's query with queryTyped set: it is
+  // still the user's id, not a guess, so it loads directly again.
+  it('loads a release directly from a typed id restored after a remount', async () => {
+    const search = vi.fn().mockResolvedValue([])
+    setApi({ search })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: '1', queryTyped: true }), tr),
       { wrapper: wrapper() },
     )
     await waitFor(() => expect(result.current.release?.id).toBe(1))

@@ -289,7 +289,12 @@ export function useDiscogsBrowser(
   // with staleTime Infinity the same key would keep serving the pre-setting miss. The
   // album-first setting and the format filter join them for the same reason. The album itself stays out, like
   // the artist and title: typing in the Album field would fire a search per keystroke.
-  const directId = parseReleaseId(searchTerm)
+  // A bare number is an id only when the user typed it or it is the track's stored id; one
+  // the app built from a file named "1999.mp3" is a text search like any other query.
+  const bareNumber = /^\d+$/.test(searchTerm.trim())
+  const numberIsId =
+    userDroveSearch.current || item.queryTyped === true || searchTerm.trim() === storedId
+  const directId = bareNumber && !numberIsId ? null : parseReleaseId(searchTerm)
   const sources: (SearchProviderId | 'direct')[] = directId !== null ? ['direct'] : providers
   const searchQueries = useQueries({
     queries: sources.map((source) => ({
