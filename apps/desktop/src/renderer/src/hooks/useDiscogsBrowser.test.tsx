@@ -982,6 +982,40 @@ describe('useDiscogsBrowser', () => {
     expect(search.mock.calls[1][3]).toEqual(expect.objectContaining({ album: 'Play' }))
   })
 
+  it("searches another track with the same term with its own tags instead of reusing the first track's answer", async () => {
+    const search = vi.fn().mockResolvedValue([searchResult])
+    setApi({ search })
+    const Wrapper = wrapper()
+    const first = renderHook(
+      () =>
+        useDiscogsBrowser(
+          { ...item({ query: 'moby porcelain' }), meta: { ...item().meta, album: 'Play' } },
+          tr,
+          undefined,
+          ['discogs'],
+        ),
+      { wrapper: Wrapper },
+    )
+    act(() => first.result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(1))
+    first.unmount()
+
+    const other: TrackItem = {
+      ...item({ query: 'moby porcelain' }),
+      id: 'b',
+      inputPath: '/m/b.wav',
+      meta: { ...item().meta, album: 'Porcelain (Remixes)' },
+    }
+    const second = renderHook(() => useDiscogsBrowser(other, tr, undefined, ['discogs']), {
+      wrapper: Wrapper,
+    })
+    act(() => second.result.current.doSearch())
+    await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+    expect(search.mock.calls[1][3]).toEqual(
+      expect.objectContaining({ album: 'Porcelain (Remixes)' }),
+    )
+  })
+
   // With "Search by album first" on, every edition of the artist's albums ties on the
   // artist, and Discogs' most-owned LP led while the edition the file is tagged with sat
   // 40 rows down. The tagged album decides the order; with the setting off, nothing moves.

@@ -302,6 +302,7 @@ export function useDiscogsBrowser(
         'search',
         searchTerm,
         source,
+        item.id,
         cleanup.ignoreWords ?? [],
         searchByAlbumFirst,
         formats,
