@@ -15,6 +15,7 @@ import {
   cueDraftKey,
   keepAutoMark,
   keepDraft,
+  keptDrafts,
   resetCueSession,
   subscribeCueDrafts,
   unsavedCueTracks,
@@ -499,6 +500,37 @@ describe('Cues over several selected tracks', () => {
     fireEvent.click(screen.getByTestId('cues-batch-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual([T])
+  })
+
+  it('counts again when the cues stop counting as placed by the flow, so the count matches what saving writes', async () => {
+    const T = 'traktor:M/:m/:a.wav'
+    const { saveRekordboxCues, changeSettings } = setup({ '/m/a.wav': { traktor: T } }, [
+      TARGETS[0],
+    ])
+    act(() =>
+      keepAutoMark('103', {
+        kind: 'proposed',
+        proposals: [bar(64)].map((ms) => ({ ms, sure: true, quietBars: 8 })),
+      }),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-accept'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-twin-traktor')).toHaveTextContent('1'),
+    )
+    const [{ path, label, draft }] = keptDrafts()
+    act(() =>
+      keepDraft(
+        '103',
+        cueDraftKey('103', 'f0', null),
+        { ...draft, origin: {} },
+        { path, label, fingerprint: 'f0' },
+      ),
+    )
+    changeSettings({})
+    await waitFor(() => expect(screen.queryByTestId('cues-batch-twin-traktor')).toBeNull())
+    fireEvent.click(screen.getByTestId('cues-batch-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues.mock.calls[0][0].map((r) => r.contentId)).toEqual(['103'])
   })
 
   it('says how many tracks keep their unsaved changes in the other program', async () => {

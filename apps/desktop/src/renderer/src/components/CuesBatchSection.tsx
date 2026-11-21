@@ -103,7 +103,15 @@ export function CuesBatchSection({
   const { data: plans = [] } = useQuery({
     queryKey: [
       'cue-twin-plans-batch',
-      drafts.map((d) => [d.contentId, d.draft.cues]),
+      drafts.map((d) => [
+        d.contentId,
+        d.path,
+        d.label,
+        d.draft.cues,
+        d.draft.origin,
+        d.draft.locked,
+        d.draft.marked,
+      ]),
       [...unsavedAll].sort(),
       twinSettings,
     ],
