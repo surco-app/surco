@@ -671,6 +671,47 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(screen.queryByTestId('track-number')).not.toBeInTheDocument())
   })
 
+  // Date added sorts nothing on a playlist that has no dates, so there it reads as the
+  // playlist's own order: its label, and the numbers down the side, come back with it.
+  it('reads a playlist without dates in its own order while date added is the sort', async () => {
+    openEngine({
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+            { id: '7', name: 'Friday', kind: 'playlist', count: 2 },
+            { id: '8', name: 'Saturday', kind: 'playlist', count: 2 },
+          ]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: vi.fn<ProgramReads['playlist']>().mockImplementation(async (id) => [
+            {
+              path: '/m/a.wav',
+              separator: false,
+              meta: id === '7' ? { addedAt: 2 } : {},
+              contentId: 'engine:11',
+            },
+            {
+              path: '/m/b.wav',
+              separator: false,
+              meta: id === '7' ? { addedAt: 1 } : {},
+              contentId: 'engine:12',
+            },
+          ]),
+        },
+      }),
+    })
+    await openFriday()
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-dateAdded'))
+    await waitFor(() => expect(screen.queryByTestId('track-number')).not.toBeInTheDocument())
+
+    fireEvent.click(screen.getByTestId('source-node-8'))
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-number').map((n) => n.textContent)).toEqual(['1', '2']),
+    )
+    expect(screen.getByTestId('track-sort')).toHaveTextContent(i18n.t('sidebar.sort.import'))
+  })
+
   it('leaves the playlist rows bare once the numbers are turned off', async () => {
     openEngine({ getSettings: vi.fn().mockResolvedValue(settings({ showListPositions: false })) })
     await openFriday()

@@ -590,7 +590,7 @@ export default function App(): React.JSX.Element {
   // The text box stays driven by `search` (instant keystrokes); the expensive filter/sort
   // pass below keys off the deferred value so typing in a large crate never blocks paint.
   const deferredSearch = useDeferredValue(search)
-  const sortBy = useAppStore(store, (s) => s.sortBy)
+  const pickedSort = useAppStore(store, (s) => s.sortBy)
   // Picking a sort key resets to ascending, so a freshly-chosen column reads top-down
   // rather than inheriting the previous column's reversed direction.
   const setSortBy = useCallback(
@@ -2250,6 +2250,8 @@ export default function App(): React.JSX.Element {
         : null
     return prevPlaylistScope.current
   }, [browser.playlist, browser.entries, tracksView])
+  const hasAddedDates = (playlistScope?.addedOf.size ?? 0) > 0
+  const sortBy = pickedSort === 'dateAdded' && !hasAddedDates ? 'import' : pickedSort
   const playlistIds = playlistScope?.ids
   const playlistPathOf = playlistScope?.pathOf
   const playlistContentOf = playlistScope?.contentOf
@@ -4868,7 +4870,7 @@ export default function App(): React.JSX.Element {
                             filterFacets={filterFacets}
                             sortBy={sortBy}
                             setSortBy={setSortBy}
-                            hasAddedDates={(playlistScope?.addedOf.size ?? 0) > 0}
+                            hasAddedDates={hasAddedDates}
                             sortDir={sortDir}
                             toggleSortDir={toggleSortDir}
                             tracks={scopeTracks}
