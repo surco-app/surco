@@ -217,6 +217,23 @@ describe('selected-row progress affordances', () => {
 // a glow you had to hunt for. WCAG 1.4.11 wants 3:1 for a focus indicator against what
 // surrounds it, so the ring is measured as it lands on the surfaces controls sit on,
 // with any color-mix blended over that surface the way the browser paints it.
+// The ring round a converting cover was hollowed out by a mask with a fixed 34px radius,
+// sized for the 64px cover. Compact rows (48px) and rows without waves (40px, 32px) draw a
+// smaller ring that sat wholly inside that hole, so conversion showed no progress at all
+// there. The hole has to follow the ring's own size, leaving the same thin band on every one.
+describe('progress ring round the cover', () => {
+  const rule = css.slice(
+    css.indexOf('.progress-ring {'),
+    css.indexOf('}', css.indexOf('.progress-ring {')),
+  )
+  const mask = rule.match(/mask:\s*([^;]+);/)?.[1] ?? ''
+
+  it('hollows the ring relative to its own size, so every cover size keeps a visible band', () => {
+    expect(mask).toContain('closest-side')
+    expect(mask).not.toMatch(/transparent \d+(\.\d+)?px/)
+  })
+})
+
 describe('focus ring contrast (WCAG 1.4.11)', () => {
   const ring = css.match(/--ring:\s*([^;]+);/)?.[1] ?? ''
   const mix = ring.match(/color-mix\(in srgb, var\(--color-accent\) (\d+)%, transparent\)/)

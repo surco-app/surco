@@ -385,7 +385,7 @@ textarea {
     var(--ring-color) calc(var(--progress) * 1turn),
     color-mix(in srgb, var(--ring-color) 20%, transparent) 0
   );
-  mask: radial-gradient(circle, transparent 34px, #000 34.5px);
+  mask: radial-gradient(closest-side, transparent calc(100% - 2px), #000 calc(100% - 1.5px));
   transition: --progress var(--duration-panel) var(--ease-standard);
   pointer-events: none;
 }
