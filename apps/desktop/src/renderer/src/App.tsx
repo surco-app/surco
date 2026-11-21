@@ -1357,20 +1357,22 @@ export default function App(): React.JSX.Element {
     readLibraryRoles()
     setSessionWizard({ parentId: sessionRun.recent?.parentId ?? 'root', adjust: true })
   })
-  const selectSource = useStableCallback((next: PlaylistSource | null) => {
-    if (next === browser.source) return
+  const selectSource = useStableCallback((next: PlaylistSource | null): Selection => {
+    if (next === browser.source) return selection
     heldSelection.current = null
     selectionBySource.current.set(browser.source, selection)
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
-    setSelection({
+    const restored = {
       ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
       anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
-    })
+    }
+    setSelection(restored)
     const fitted = fitFilterToTab(filterSelection, next)
     if (fitted !== filterSelection) setFilterSelection(fitted)
     browser.selectSource(next)
     closePlayer()
+    return restored
   })
   const goToPlaylist = useStableCallback(
     (source: PlaylistSource, node: SourceNode, folders: string[]) => {
@@ -1401,9 +1403,8 @@ export default function App(): React.JSX.Element {
   // a tree playlist never reaches here. Picked and dropped paths expand alike: a folder
   // walks to its audio files, and ._ AppleDouble and hidden entries are filtered out.
   const addToWorkingList = useStableCallback(async (paths: string[]): Promise<void> => {
-    if (paths.length > 0) selectSource(null)
+    const selectedBefore = paths.length > 0 ? selectSource(null) : selection
     const before = new Set(tracksRef.current.map((t) => t.id))
-    const selectedBefore = selection
     const expanded = await window.api.expandPaths(paths, true)
     if (paths.length > 0 && expanded.length === 0) reportNoAudioFound()
     await addPaths(expanded)

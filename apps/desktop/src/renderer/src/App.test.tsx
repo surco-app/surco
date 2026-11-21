@@ -3109,6 +3109,30 @@ describe('App source rail', () => {
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
   })
 
+  // Tracks comes forward with what was added, and what was added is what the next edit is
+  // for, as when adding from Tracks itself: the row picked there before leaving came back
+  // as the selection instead, and the new files had to be picked by hand.
+  it('selects the files added while a source is on screen, not the row picked in Tracks before', async () => {
+    rekordboxWithFactory({
+      pickFiles: vi
+        .fn<Api['pickFiles']>()
+        .mockResolvedValueOnce(['/m/a.wav'])
+        .mockResolvedValueOnce(['/m/b.wav', '/m/c.wav']),
+    })
+    await renderApp()
+    runMenu('add')
+    await screen.findByTestId('field-title')
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('source-node-f')
+
+    runMenu('add')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
+    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+  })
+
   // The list's count is the size of the list on screen: inside a playlist that is its rows,
   // not every track the working list has gathered.
   it('counts the open playlist’s rows in the list header, not the whole working list', async () => {
