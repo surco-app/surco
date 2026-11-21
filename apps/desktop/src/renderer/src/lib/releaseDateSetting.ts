@@ -26,6 +26,10 @@ function followFileDate(t: TrackItem, fullReleaseDate: boolean): TrackItem {
     fillSignature: t.fillSignature && moved(t.fillSignature),
     reviewRaw: t.reviewRaw && { ...t.reviewRaw, signature: moved(t.reviewRaw.signature) },
     notInFile: t.notInFile && { ...t.notInFile, signature: moved(t.notInFile.signature) },
+    appliedRelease:
+      t.appliedRelease?.before.year === from
+        ? { ...t.appliedRelease, before: { ...t.appliedRelease.before, year: to } }
+        : t.appliedRelease,
   }
 }
 

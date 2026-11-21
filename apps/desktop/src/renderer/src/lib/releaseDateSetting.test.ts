@@ -96,4 +96,14 @@ describe('followReleaseDate', () => {
 
     expect(next.meta.year).toBe('2005')
   })
+
+  // Undoing the release must hand back the file's own date as the setting now shows it,
+  // or the undo stages the old-format year and the next convert writes it over the file.
+  it('undoes a release applied before the toggle to the file date in the new format', () => {
+    const [next] = followReleaseDate([matched(false)], true)
+    const undone = { ...next, meta: { ...next.meta, ...next.appliedRelease?.before } }
+
+    expect(undone.meta.year).toBe('2020-12-01')
+    expect(hasStagedEdits({ ...undone, appliedRelease: undefined })).toBe(false)
+  })
 })
