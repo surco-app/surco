@@ -1289,12 +1289,12 @@ describe('ConvertFooter height', () => {
   // 21/11: in Compact the convert button sat at 32 px, too thin to aim at, while converting,
   // a running batch and the up-to-date line stood 40 px, so the footer jumped as it changed state.
   it.each(states)(
-    'stands 40 px, or 36 px in Compact, while %s, so the footer never changes height',
+    'stands 40 px in either density while %s, so the main action never shrinks and the footer never changes height',
     (_, el, testId) => {
       render(el)
       const target = screen.getByTestId(testId)
       expect(heightOf(target, false)).toBe(40)
-      expect(heightOf(target, true)).toBe(36)
+      expect(heightOf(target, true)).toBe(40)
     },
   )
 })

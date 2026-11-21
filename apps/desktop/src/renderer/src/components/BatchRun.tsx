@@ -21,7 +21,7 @@ export function BatchRun({
         onClick={onCancel}
         aria-label={tr('header.cancelConvert')}
         aria-describedby={progressId}
-        className="press group relative flex-1 overflow-hidden rounded-lg bg-[var(--color-accent)]/40 py-2.5 compact:py-2 text-sm font-medium text-[var(--color-on-accent)]"
+        className="press group relative flex-1 overflow-hidden rounded-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)]"
       >
         <span
           data-testid="batch-run-fill"
