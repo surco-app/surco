@@ -1,3 +1,4 @@
+import { cleanQuery } from '../../../shared/searchClean'
 import { normalizeSeparators, smartDeriveTags } from './deriveTags'
 
 export interface ParsedName {
@@ -5,6 +6,18 @@ export interface ParsedName {
   artist: string
   title: string
   query: string
+}
+
+const VINYL_POSITION_PREFIX = /^[A-Ha-h]\d{1,2}\.\s*/
+const FOLDER_YEAR = /\(\d{4}\)/g
+
+function folderQuery(path: string): string | undefined {
+  const folder = path.split(/[/\\]/).at(-2)
+  if (!folder) return undefined
+  const cleaned = cleanQuery(normalizeSeparators(folder).replace(FOLDER_YEAR, ' '))
+  const [artist, ...album] = cleaned.split(' - ')
+  if (!artist || album.length === 0) return undefined
+  return `${artist} ${album.join(' - ')}`
 }
 
 // Tracks are named "Artist - Title.ext", often behind a leading track number. The
@@ -32,6 +45,6 @@ export function parseFileName(path: string): ParsedName {
       query: `${tags.artist} ${tags.title}`,
     }
   }
-  const readable = normalizeSeparators(fileName)
-  return { fileName, artist: '', title: readable, query: readable }
+  const readable = normalizeSeparators(fileName).replace(VINYL_POSITION_PREFIX, '') || fileName
+  return { fileName, artist: '', title: readable, query: folderQuery(path) ?? readable }
 }

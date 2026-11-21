@@ -331,6 +331,25 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.85)' })
   })
 
+  // Reported 21/11: in compact density the button grew taller the moment a convert started,
+  // nudging the footer. Idle, blocked and converting must share one height in every density.
+  it('keeps the same vertical padding whether idle, blocked or converting', () => {
+    const paddingOf = () =>
+      screen
+        .getByTestId('process-btn')
+        .className.split(/\s+/)
+        .filter((c) => /(^|:)py-/.test(c))
+        .sort()
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
+    const idle = paddingOf()
+    rerender(<ExportButton {...baseProps} incomplete />)
+    expect(paddingOf()).toEqual(idle)
+    rerender(
+      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
+    )
+    expect(paddingOf()).toEqual(idle)
+  })
+
   // Reported 02/11: editing a track already in Music read "Adding to Apple Music…" under
   // an "Update" button. Each step names what the job really does.
   it.each([
