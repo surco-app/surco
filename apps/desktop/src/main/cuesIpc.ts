@@ -143,7 +143,8 @@ export function registerCuesIpc(host: {
   ipcMain.handle('cues:saveComments', async (_e, items: SaveCommentRequest[]) => {
     const target = host.sources.rekordbox
     const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
-    if (!target || mine.length === 0) return
+    if (!target) throw new Error('rekordbox has no cue source')
+    if (mine.length === 0) return
     host.beginMoment?.('review', ['rekordbox'])
     target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
     target.applyQuietly()

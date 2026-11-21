@@ -370,6 +370,24 @@ describe('registerCuesIpc', () => {
     expect(applyQuietly).not.toHaveBeenCalled()
   })
 
+  it('refuses comments when rekordbox has no cue source, so the window says the save failed instead of restoring the form', async () => {
+    const beginMoment = vi.fn()
+    registerCuesIpc({
+      collection: () => '',
+      beginMoment,
+      flow: () => MY_FLOW,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      sources: { rekordbox: null, engine: null, traktor: null, serato: null, virtualdj: null },
+    })
+    await expect(
+      handler('cues:saveComments')({}, [
+        { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4' },
+      ]),
+    ).rejects.toThrow('rekordbox has no cue source')
+    expect(beginMoment).not.toHaveBeenCalled()
+  })
+
   it('saving cues starts a cues momento before anything is queued, so the copy is labelled for the cue save', async () => {
     const order: string[] = []
     const beginMoment = vi.fn((r: string) => order.push(`begin:${r}`))
