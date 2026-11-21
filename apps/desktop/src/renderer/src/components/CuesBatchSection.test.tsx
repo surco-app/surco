@@ -253,6 +253,52 @@ describe('Phrases over several selected tracks', () => {
     await act(async () => finish())
   })
 
+  it('keeps the first comment of a track phrased twice and saves its latest count, so the form gets back what the DJ had', async () => {
+    const { onPhrases, saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    await putPhrases()
+    const again = {
+      ...PHRASED[0],
+      count: '4 - 8',
+      before: PHRASED[0].after,
+      after: '4 - 8 · Vocal fuerte',
+    }
+    onPhrases.mockResolvedValueOnce({ done: 1, skipped: 0, comments: [again] })
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    await waitFor(() => expect(onPhrases).toHaveBeenCalledTimes(2))
+    fireEvent.click(await screen.findByTestId('cues-batch-comments-save'))
+    await waitFor(() =>
+      expect(saveComments).toHaveBeenCalledWith([
+        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '4 - 8' },
+        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
+      ]),
+    )
+    await waitFor(() =>
+      expect(onRestoreComments).toHaveBeenCalledWith([
+        { ...again, before: 'Vocal fuerte' },
+        PHRASED[1],
+      ]),
+    )
+  })
+
+  it('keeps the tracks phrased in an earlier selection when phrasing another, so saving covers both groups', async () => {
+    const { onPhrases, saveComments } = setup({}, TARGETS, {}, PHRASED.slice(0, 1))
+    await putPhrases()
+    onPhrases.mockResolvedValueOnce({ done: 1, skipped: 0, comments: PHRASED.slice(1, 2) })
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent(
+        i18n.t('editor.cues.batch.saveComments', { count: 2 }),
+      ),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+    await waitFor(() =>
+      expect(saveComments).toHaveBeenCalledWith([
+        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8' },
+        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
+      ]),
+    )
+  })
+
   it('keeps the row and says it failed when rekordbox refuses, so the DJ can try again', async () => {
     const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
     saveComments.mockRejectedValueOnce(new Error('locked'))

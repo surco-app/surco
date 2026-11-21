@@ -88,7 +88,12 @@ export function CuesBatchSection({
     try {
       const { comments, ...result } = await onPhrases()
       setPhrased(result)
-      setUnsavedComments(comments.filter((c) => programOf(c.contentId) === 'rekordbox'))
+      setUnsavedComments((kept) => {
+        const byId = new Map(kept.map((c) => [c.id, c]))
+        for (const c of comments.filter((c) => programOf(c.contentId) === 'rekordbox'))
+          byId.set(c.id, { ...c, before: byId.get(c.id)?.before ?? c.before })
+        return [...byId.values()]
+      })
       setCommentsFailed(false)
     } finally {
       setPhrasing(false)

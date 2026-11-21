@@ -4652,6 +4652,36 @@ describe('App source playlists', () => {
       expect(commentOf().value).toBe('Mine now')
     })
 
+    const phraseAgain = async () => {
+      fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+      await waitFor(() => expect(screen.getByTestId('cues-batch-phrases')).toBeEnabled())
+    }
+
+    it('gives the form its first comment back when discarding phrases put twice, so the second press does not bury it', async () => {
+      await phraseTwo()
+      await phraseAgain()
+      fireEvent.click(screen.getByTestId('cues-batch-comments-discard'))
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(commentOf().value).toBe('Vocal fuerte')
+    })
+
+    it('gives the form its first comment back when saving phrases put twice, so a later Convert does not write the count into the file', async () => {
+      const saveComments = await phraseTwo()
+      await phraseAgain()
+      fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+      await waitFor(() =>
+        expect(saveComments).toHaveBeenCalledWith([
+          { contentId: 'c-l1', path: '/m/a.wav', label: 'Alpha', count: '2 - 8' },
+          { contentId: 'c-l2', path: '/m/b.wav', label: 'Bravo', count: '2 - 8' },
+        ]),
+      )
+      await waitFor(() =>
+        expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(commentOf().value).toBe('Vocal fuerte')
+    })
+
     it('gives the form its comment back when discarding, so nothing of the batch stays to be converted', async () => {
       await phraseTwo()
       fireEvent.click(screen.getByTestId('cues-batch-comments-discard'))
