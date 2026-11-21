@@ -1,9 +1,10 @@
 import type React from 'react'
-import { useCallback, useSyncExternalStore } from 'react'
+import { useCallback, useId, useLayoutEffect, useRef, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HOT_CUE_DEFAULT_COLOR, MEMORY_CUE_COLOR } from '../../../shared/rekordboxCueColors'
 import type { RowCue, RowWaveRequest } from '../../../shared/types'
 import { markStyle, placeCues } from '../lib/cueMarks'
+import { PROGRESS_CREEP_MS, prefersReducedMotion, standardEasing } from '../lib/motion'
 import { rowWaveKey, rowWaveOf, subscribeRowWave } from '../lib/rowWaves'
 import { Tooltip } from './Tooltip'
 import { WaveBars } from './WaveBars'
@@ -16,6 +17,7 @@ export function RowWave({
   active,
   unanalyzed,
   proposals = [],
+  progress,
 }: {
   request: RowWaveRequest
   cues: RowCue[]
@@ -24,6 +26,7 @@ export function RowWave({
   active: boolean
   unanalyzed?: 'rekordbox' | 'engine'
   proposals?: number[]
+  progress?: number
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const key = rowWaveKey(request)
@@ -48,6 +51,24 @@ export function RowWave({
   // since it is Surco's and not the library's, with a dashed ring for what is missing. The
   // dashed baseline stays only while there is nothing to draw over it.
   const provisional = !!unanalyzed && (hot.length > 0 || calls.length > 0)
+  const drawable = (!unanalyzed || provisional) && !!bars && bars.length > 0
+  const waveClass = 'absolute inset-x-0 bottom-0 h-[18px] w-full compact:h-[13px]'
+  const waveFill = provisional ? 'var(--color-fg-faint)' : undefined
+  const fillRef = useRef<HTMLSpanElement>(null)
+  const running = useRef<Animation | null>(null)
+  const sheenId = `sheen-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
+  useLayoutEffect(() => () => running.current?.cancel(), [])
+  useLayoutEffect(() => {
+    const el = fillRef.current
+    if (progress === undefined || !el || typeof el.animate !== 'function' || prefersReducedMotion())
+      return
+    const from = getComputedStyle(el).clipPath
+    running.current?.cancel()
+    running.current = el.animate(
+      [{ clipPath: from }, { clipPath: clipTo(progress + (1 - progress) / 3) }],
+      { duration: PROGRESS_CREEP_MS, easing: standardEasing(), fill: 'forwards' },
+    )
+  }, [progress])
   const labels: string[] = []
   if (hot.length > 0)
     labels.push(
@@ -66,19 +87,73 @@ export function RowWave({
       className="flex h-full items-center gap-1.5"
     >
       <span className="relative block h-full min-w-0 flex-1">
-        {unanalyzed && !provisional && (
+        {unanalyzed && !provisional && progress === undefined && (
           <span
             data-testid="track-unanalyzed"
             className="absolute inset-x-0 top-1/2 block border-t border-dashed border-[var(--color-line-strong)]"
           />
         )}
-        {(!unanalyzed || provisional) && bars && bars.length > 0 && (
+        {drawable && (
           <WaveBars
             bars={bars}
             testId="track-wave-bars"
-            className="absolute inset-x-0 bottom-0 h-[18px] w-full compact:h-[13px]"
-            fill={provisional ? 'var(--color-fg-faint)' : undefined}
+            className={waveClass}
+            fill={waveFill}
+            opacity={progress === undefined ? undefined : 0.25}
           />
+        )}
+        {progress !== undefined && !drawable && (
+          <span className="absolute inset-x-0 bottom-2 h-0.5 rounded-full bg-[var(--color-accent)] opacity-25 compact:bottom-1.5" />
+        )}
+        {progress !== undefined && (
+          <span
+            ref={fillRef}
+            data-testid="track-convert-fill"
+            className="absolute inset-0"
+            style={{ clipPath: clipTo(progress) }}
+          >
+            {drawable ? (
+              <>
+                <WaveBars
+                  bars={bars}
+                  testId="track-convert-bars"
+                  className={waveClass}
+                  fill={waveFill}
+                />
+                {!prefersReducedMotion() && (
+                  <>
+                    <svg aria-hidden="true" className="absolute h-0 w-0">
+                      <linearGradient id={sheenId} x1="-0.3" x2="0">
+                        <stop offset="0" stopColor="#fff" stopOpacity="0" />
+                        <stop offset="0.5" stopColor="#fff" stopOpacity="0.6" />
+                        <stop offset="1" stopColor="#fff" stopOpacity="0" />
+                        <animate
+                          attributeName="x1"
+                          values="-0.3;1"
+                          dur="1.8s"
+                          repeatCount="indefinite"
+                        />
+                        <animate
+                          attributeName="x2"
+                          values="0;1.3"
+                          dur="1.8s"
+                          repeatCount="indefinite"
+                        />
+                      </linearGradient>
+                    </svg>
+                    <WaveBars
+                      bars={bars}
+                      testId="track-convert-sheen"
+                      className={waveClass}
+                      fill={`url(#${sheenId})`}
+                    />
+                  </>
+                )}
+              </>
+            ) : (
+              <span className="absolute inset-x-0 bottom-2 h-0.5 rounded-full bg-[var(--color-accent)] compact:bottom-1.5" />
+            )}
+          </span>
         )}
         {span > 0 &&
           proposals.map((ms) => (
@@ -139,4 +214,8 @@ export function RowWave({
       )}
     </span>
   )
+}
+
+function clipTo(progress: number): string {
+  return `inset(0px ${Math.round((1 - progress) * 1000) / 10}% 0px 0px)`
 }

@@ -17,12 +17,14 @@ export function WaveBars({
   className,
   style,
   fill = 'var(--color-accent)',
+  opacity = 0.7,
 }: {
   bars: number[]
   testId: string
   className: string
   style?: React.CSSProperties
   fill?: string
+  opacity?: number
 }): React.JSX.Element {
   return (
     <svg
@@ -30,7 +32,7 @@ export function WaveBars({
       aria-hidden="true"
       viewBox={`0 0 ${bars.length} ${WAVE_HEIGHT}`}
       preserveAspectRatio="none"
-      opacity={0.7}
+      opacity={opacity}
       className={className}
       style={style}
     >

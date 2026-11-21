@@ -562,6 +562,9 @@ const TrackRow = memo(function TrackRow({
   const cleaned = activeCleanups(t).length > 0
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
+  const stageLabel = stage
+    ? tr(`trackList.stage.${stage}`, { format: (t.format ?? outputFormat).toUpperCase() })
+    : ''
   const shown = rowDisplay(t)
   const titleFit = useMiddleTruncatedTitle(shown.title)
   const { keyNotation } = useAppSettings()
@@ -1038,15 +1041,21 @@ const TrackRow = memo(function TrackRow({
                     className="skeleton-sweep-row mt-2 block h-2.5 w-28 rounded bg-[var(--color-panel-2)]"
                   />
                 ) : converting ? (
-                  <span data-testid="track-stage" className="mt-0.5 block">
-                    <span className="block truncate text-xs text-[var(--color-accent)]">
-                      {tr(`trackList.stage.${stage}`, {
-                        format: (t.format ?? outputFormat).toUpperCase(),
-                      })}
-                    </span>
+                  <span data-testid="track-stage" className="group/dot relative block h-full">
+                    <RowWave
+                      request={{ path: t.inputPath, analysisPath: t.sourcePreview?.analysisPath }}
+                      cues={t.sourcePreview?.cues ?? []}
+                      durationSec={shown.duration}
+                      pending={cuesPending}
+                      active={seen}
+                      unanalyzed={unanalyzed}
+                      progress={STAGE_PROGRESS[stage]}
+                    />
+                    <Tooltip label={stageLabel} align="start" scope="dot" />
                     {/* Text, not role="progressbar": an option's children are presentational,
                       so a nested role would be flattened away and the amount never spoken. */}
-                    <span className="sr-only">
+                    <span data-testid="track-stage-spoken" className="sr-only">
+                      {stageLabel}{' '}
                       {tr('trackList.progress', {
                         percent: Math.round(STAGE_PROGRESS[stage] * 100),
                       })}

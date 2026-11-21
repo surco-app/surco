@@ -118,6 +118,56 @@ describe('RowWave', () => {
     expect(screen.queryByTestId('track-unanalyzed')).not.toBeInTheDocument()
   })
 
+  // A converting row used to swap its wave for a line of words, and the DJ lost the track
+  // they were watching. The wave stays where it is, faint, and fills in the accent as far as
+  // the conversion has come; at the end the fill covers it and it is the ordinary wave again.
+  it('fills the wave as far as the conversion has come, over a faint copy of the whole wave', async () => {
+    render(
+      <RowWave
+        request={request}
+        cues={cues}
+        durationSec={128}
+        pending={false}
+        active
+        progress={0.85}
+      />,
+    )
+    const ghost = await screen.findByTestId('track-wave-bars')
+    const fill = screen.getByTestId('track-convert-fill')
+    expect(fill.style.clipPath).toBe('inset(0px 15% 0px 0px)')
+    expect(fill.querySelector('path')?.getAttribute('d')).toBe(
+      ghost.querySelector('path')?.getAttribute('d'),
+    )
+    expect(ghost).toHaveAttribute('opacity', '0.25')
+    expect(screen.getAllByTestId('track-hot-cue')).toHaveLength(2)
+  })
+
+  // Before the wave arrives there is nothing to fill, and a row with no visible progress
+  // reads as stalled; a flat line carries the same fill until the bars land.
+  it('fills a flat line while the wave has not arrived', () => {
+    ;(window as unknown as { api: Partial<Api> }).api = {
+      rowWaves: vi.fn<Api['rowWaves']>(async () => ({})),
+    }
+    render(
+      <RowWave
+        request={request}
+        cues={[]}
+        durationSec={128}
+        pending={false}
+        active
+        progress={0.2}
+      />,
+    )
+    expect(screen.queryByTestId('track-wave-bars')).not.toBeInTheDocument()
+    expect(screen.getByTestId('track-convert-fill').style.clipPath).toBe('inset(0px 80% 0px 0px)')
+  })
+
+  it('draws no progress on a row that is not converting', async () => {
+    render(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
+    expect(await screen.findByTestId('track-wave-bars')).not.toHaveAttribute('opacity', '0.25')
+    expect(screen.queryByTestId('track-convert-fill')).not.toBeInTheDocument()
+  })
+
   it('draws the wave once it arrives', async () => {
     render(<RowWave request={request} cues={[]} durationSec={128} pending={false} active />)
     expect(await screen.findByTestId('track-wave-bars')).toBeInTheDocument()

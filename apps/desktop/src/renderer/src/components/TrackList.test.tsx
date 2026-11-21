@@ -570,6 +570,18 @@ describe('TrackList', () => {
     ])
   })
 
+  // The stage used to be a line of words where the wave goes. The row now shows the
+  // conversion as the wave filling in, and the words are only spoken, so nothing on screen
+  // is text the DJ has to read while it runs.
+  it('shows a converting track as its wave filling in, and only speaks the stage', () => {
+    renderList([track({ id: 'busy', status: 'processing', stage: 'appleMusic' })])
+    const stage = screen.getByTestId('track-stage')
+    expect(stage).toContainElement(screen.getByTestId('track-convert-fill'))
+    expect(screen.getByTestId('track-convert-fill').style.clipPath).toBe('inset(0px 15% 0px 0px)')
+    expect(screen.getByTestId('track-stage-spoken')).toHaveTextContent('Adding to Apple Music…')
+    expect(stage.textContent).toBe(screen.getByTestId('track-stage-spoken').textContent)
+  })
+
   it('labels the stage with the track’s own format over the default', () => {
     renderList([track({ id: 'busy', status: 'processing', stage: 'converting', format: 'mp3' })])
     expect(screen.getByTestId('track-stage')).toHaveTextContent(/MP3/)

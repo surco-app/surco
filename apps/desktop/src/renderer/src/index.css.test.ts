@@ -204,7 +204,7 @@ describe('selected-row progress affordances', () => {
     })
   }
 
-  for (const testid of ['track-stage', 'track-quality-loading']) {
+  for (const testid of ['track-quality-loading']) {
     it(`flips ${testid} to the on-selection colour`, () => {
       const block = css.slice(css.indexOf('.is-primary'))
       expect(block).toContain(`.is-primary [data-testid="${testid}"]`)

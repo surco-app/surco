@@ -14,6 +14,7 @@ export function scrollBehavior(): ScrollBehavior {
 }
 
 const PANEL_FALLBACK_MS = 240
+export const PROGRESS_CREEP_MS = 12000
 const STANDARD_FALLBACK = 'cubic-bezier(0.2, 0, 0, 1)'
 
 function rootToken(name: string): string {

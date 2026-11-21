@@ -1030,12 +1030,9 @@ button:hover > .process-fill {
 /* Conversion progress is the same story and the one that costs most: the stage label and its
    sweep bar are accent-coloured, and accent on the selection fill measures 1.00 in light (the
    two tokens are the same hex) and 2.12 in dark. The row the DJ is watching — the track open
-   in the editor — was the only one showing no progress at all, reading as a stall. Both the
-   label and the bar flip to the on-selection colour; the track it sweeps over keeps its own
+   in the editor — was the only one showing no progress at all, reading as a stall. The bar
+   flips to the on-selection colour; the track it sweeps over keeps its own
    translucent white so the bar still reads as a track rather than a solid block. */
-.is-primary [data-testid="track-stage"] .text-\[var\(--color-accent\)\] {
-  color: var(--color-on-row-selected);
-}
 .is-primary .progress-ring {
   --ring-color: var(--color-on-row-selected);
 }
