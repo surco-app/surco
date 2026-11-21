@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 export const FOOTER_BAR =
   'border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5 compact:py-2'
 export const SPLIT_BODY =
-  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 compact:py-2 text-sm font-medium disabled:pointer-events-none disabled:opacity-40'
+  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-40'
 export const SPLIT_BODY_READY =
   'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-40'
 export const SPLIT_TOGGLE =
