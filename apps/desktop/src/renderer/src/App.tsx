@@ -1354,10 +1354,9 @@ export default function App(): React.JSX.Element {
     selectionBySource.current.set(browser.source, selection)
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
-    setSelection({
-      ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
-      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
-    })
+    const anchor = kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null
+    pendingRestoredReveal.current = anchor
+    setSelection({ ids: kept?.ids.filter((id) => alive.has(id)) ?? [], anchor })
     const fitted = fitFilterToTab(filterSelection, next)
     if (fitted !== filterSelection) setFilterSelection(fitted)
     browser.selectSource(next)
@@ -1472,8 +1471,8 @@ export default function App(): React.JSX.Element {
     () => tracks.find((t) => t.id === selectedId)?.inputPath ?? null,
     [tracks, selectedId],
   )
-  // The reopened selection is scrolled to once its row shows: under a library filter that
-  // waits for the row's verdict to come in.
+  // The reopened selection, and the one a source gives back on return, is scrolled to once
+  // its row shows: under a library filter that waits for the row's verdict to come in.
   const pendingRestoredReveal = useRef<string | null>(null)
   const selectedSourcePaths = useMemo(
     () =>
