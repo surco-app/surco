@@ -3437,7 +3437,8 @@
       },
       "cues": "cues",
       "tags": "etiquetas",
-      "matching": "Matching"
+      "matching": "Matching",
+      "comment": "comentario"
     },
     "applyNow": "Aplicar ahora",
     "discard": "Descartar",

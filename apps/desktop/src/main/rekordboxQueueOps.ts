@@ -67,7 +67,16 @@ export interface MatchOp {
   label: string
 }
 
-export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp | MatchOp
+export interface CommentOp {
+  id: string
+  kind: 'comment'
+  contentId: string
+  path: string
+  label: string
+  count: string
+}
+
+export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp | MatchOp | CommentOp
 
 export interface OpOutcome {
   id: string
@@ -97,7 +106,7 @@ const EDIT_RANK: Record<RekordboxPlaylistEdit['kind'], number> = {
 
 export function opRank(op: QueueOp): number {
   if (op.kind === 'track') return 0
-  if (op.kind === 'tags') return 1
+  if (op.kind === 'tags' || op.kind === 'comment') return 1
   if (op.kind === 'cues') return 4
   if (op.kind === 'match') return 2
   return EDIT_RANK[op.edit.kind]

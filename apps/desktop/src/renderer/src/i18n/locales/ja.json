@@ -3437,7 +3437,8 @@
       },
       "cues": "キュー",
       "tags": "タグ",
-      "matching": "Matching"
+      "matching": "Matching",
+      "comment": "コメント"
     },
     "applyNow": "今すぐ適用",
     "discard": "破棄",

@@ -12,6 +12,7 @@ import {
   type WantedCue,
 } from '../shared/cueRules'
 import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats, gridTempos } from '../shared/gridEdit'
+import { withPhraseCount } from '../shared/phraseCount'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -67,6 +68,7 @@ import { isRekordboxRunning } from './rekordboxProcess'
 import {
   type BatchResult,
   bumpNode,
+  type CommentOp,
   type CuesOp,
   type EditOp,
   editResultOfOutcome,
@@ -77,6 +79,7 @@ import {
   type TrackOp,
   type XmlDraft,
 } from './rekordboxQueueOps'
+import { rekordboxStamp, takeLocalUsn } from './rekordboxRows'
 import { checkpointCollection, restoreCollection, writeBackup } from './rekordboxSessionBackup'
 import { replaceFile } from './replaceFile'
 
@@ -173,6 +176,7 @@ interface Planned {
   cues?: CueChangeSet
   grid?: GridWrite
   anlz?: AnlzPaths
+  comment?: string
 }
 
 type Plan = Planned | { outcome: OpOutcome }
@@ -357,6 +361,7 @@ function planOp(
   if (op.kind === 'tags')
     return { outcome: { id: op.id, applied: false, reason: 'write-failed', notices: [] } }
   if (op.kind === 'match') return planMatch(probe, op)
+  if (op.kind === 'comment') return planComment(probe, op)
   return planEdit(probe, xml, op, find)
 }
 
@@ -376,6 +381,17 @@ function planMatch(probe: Db, op: MatchOp): Plan {
   if (paired === (op.action === 'add'))
     return { outcome: { id: op.id, applied: true, notices: [] } }
   return { op }
+}
+
+function planComment(probe: Db, op: CommentOp): Plan {
+  const row = probe
+    .prepare('SELECT Commnt FROM djmdContent WHERE ID = ? AND coalesce(rb_local_deleted, 0) = 0')
+    .get(op.contentId) as { Commnt: string | null } | undefined
+  if (!row) return { outcome: { id: op.id, applied: false, reason: 'stale', notices: [] } }
+  const current = row.Commnt ?? ''
+  const next = withPhraseCount(current, op.count)
+  if (next === current) return { outcome: { id: op.id, applied: true, notices: [] } }
+  return { op, comment: next }
 }
 
 function freeId(draft: XmlDraft): string {
@@ -503,6 +519,13 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
     else removeMatching(db, a, b)
     return { id: planned.op.id, applied: true, notices: [] }
   }
+  if (planned.op.kind === 'comment') {
+    const stamp = rekordboxStamp(now)
+    db.prepare(
+      'UPDATE djmdContent SET Commnt = ?, rb_local_usn = ?, updated_at = ? WHERE ID = ?',
+    ).run(planned.comment, takeLocalUsn(db, stamp), stamp, planned.op.contentId)
+    return { id: planned.op.id, applied: true, notices: [] }
+  }
   if (planned.op.kind === 'cues') {
     applyCueChanges(db, planned.op.contentId, planned.cues as CueChangeSet, { now })
     if (planned.grid) applyGridBpm(db, planned.op.contentId, planned.grid.bpm, { now })
@@ -512,7 +535,12 @@ function writeOp(db: Db, draft: XmlDraft, planned: Planned, now: Date): OpOutcom
 }
 
 function needsNode(planned: Planned): boolean {
-  if (planned.op.kind === 'cues' || planned.op.kind === 'tags' || planned.op.kind === 'match')
+  if (
+    planned.op.kind === 'cues' ||
+    planned.op.kind === 'tags' ||
+    planned.op.kind === 'match' ||
+    planned.op.kind === 'comment'
+  )
     return false
   if (planned.op.kind === 'track') return (planned.track?.names.length ?? 0) > 0
   return planned.op.edit.kind === 'create'

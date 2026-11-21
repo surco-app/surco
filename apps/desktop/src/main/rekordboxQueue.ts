@@ -123,6 +123,7 @@ export function keyOf(op: QueueOp): string {
   if (op.kind === 'cues') return `cues:${op.contentId}`
   if (op.kind === 'tags') return `tags:${op.id}`
   if (op.kind === 'match') return `match:${op.id}`
+  if (op.kind === 'comment') return `comment:${op.contentId}`
   return `edit:${op.id}`
 }
 
@@ -178,7 +179,7 @@ function stateOf(
       continue
     }
     const it = item(`track:${op.path}`, op.label)
-    if (op.kind === 'cues' || op.kind === 'tags') {
+    if (op.kind === 'cues' || op.kind === 'tags' || op.kind === 'comment') {
       it.parts.push({ kind: op.kind })
       continue
     }
@@ -380,7 +381,13 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
       try {
         const after = await deps.nodeStamps(collectionPath)
         for (const op of q.ops) {
-          if (op.kind === 'cues' || op.kind === 'tags' || op.kind === 'match') continue
+          if (
+            op.kind === 'cues' ||
+            op.kind === 'tags' ||
+            op.kind === 'match' ||
+            op.kind === 'comment'
+          )
+            continue
           for (const [id, stamp] of Object.entries(op.stamps))
             if (stamp === before[id] && after[id] !== undefined) op.stamps[id] = after[id]
         }

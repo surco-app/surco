@@ -49,4 +49,18 @@ describe('opRank', () => {
     expect(move).toBe(rank({ kind: 'rename', playlistId: 'a', name: 'b' }))
     expect(move).toBeLessThan(rank({ kind: 'delete', playlistId: 'a' }))
   })
+
+  it('ranks a comment with the tag syncs, after new tracks land and before playlist edits', () => {
+    const comment = opRank({
+      id: 'c',
+      kind: 'comment',
+      contentId: '1',
+      path: '/m/a.wav',
+      label: 'a',
+      count: '8',
+    })
+    expect(comment).toBe(
+      opRank({ id: 't', kind: 'tags', path: '/m/a.wav', label: 'a', fields: {} }),
+    )
+  })
 })

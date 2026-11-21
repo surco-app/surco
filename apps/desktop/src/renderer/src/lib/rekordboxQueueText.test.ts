@@ -112,6 +112,20 @@ describe('rekordbox queue text', () => {
     expect(partText(tr, { kind: 'matching' })).toBe('Matching')
   })
 
+  it('names a waiting comment in the queue pill in every language, so the DJ sees only the comment is coming', () => {
+    expect(partText(tr, { kind: 'comment' })).toBe('comment')
+    expect([es, en, ca, de, fr, itIT, ja, ptBR].map((l) => l.rekordboxQueue.part.comment)).toEqual([
+      'comentario',
+      'comment',
+      'comentari',
+      'Kommentar',
+      'commentaire',
+      'commento',
+      'コメント',
+      'comentário',
+    ])
+  })
+
   it('names a node move in the queue pill', () => {
     expect(partText(tr, { kind: 'tree', edit: 'moveNode' })).toBe('move')
   })

@@ -164,6 +164,31 @@ describe('applyTraktorBatch', () => {
     })
   })
 
+  it('leaves a rekordbox comment alone instead of reading it as an edit, and writes nothing', async () => {
+    const file = await onDisk(doc)
+    const write = vi.fn(async () => null)
+    const result = await applyTraktorBatch(
+      file,
+      [
+        {
+          id: 'k',
+          kind: 'comment',
+          contentId: ID,
+          path: '/Users/dj/Music/power.flac',
+          label: 'The Power',
+          count: '8',
+        },
+      ],
+      { session, ensureClosed: async () => true, write },
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'k', applied: false }],
+    })
+    expect(write).not.toHaveBeenCalled()
+  })
+
   it('refuses a set built on cues Traktor changed since', async () => {
     const file = await onDisk(doc)
     const result = await applyTraktorBatch(file, [op(doc, asWanted(doc), 'stale')], {

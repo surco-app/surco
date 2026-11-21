@@ -4,7 +4,7 @@ import type { RekordboxQueueState } from '../shared/types'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import { type RekordboxRepoint, stackRepoint } from './rekordboxBatch'
 import { createRekordboxQueue, type QueueDeps, type QueueStore } from './rekordboxQueue'
-import type { BatchResult, CuesOp, QueueOp, TagsOp, TrackOp } from './rekordboxQueueOps'
+import type { BatchResult, CommentOp, CuesOp, QueueOp, TagsOp, TrackOp } from './rekordboxQueueOps'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
@@ -1029,6 +1029,63 @@ describe('cues in the queue', () => {
         { key: 'match:m', label: 'Let Yourself Go · Take Me Home', parts: [{ kind: 'matching' }] },
       ],
     })
+  })
+
+  const comment = (id: string, count: string): CommentOp => ({
+    id,
+    kind: 'comment',
+    contentId: '103',
+    path: '/m/a.wav',
+    label: 'a.wav',
+    count,
+  })
+
+  it('shows a waiting comment on the track line, and keeps only the latest count of a track, since counting again replaces the last one', () => {
+    const store = memoryStore()
+    const q = createRekordboxQueue(deps({ store }))
+    q.enqueue([track('t', '/m/a.wav', { contentId: '103' }), comment('k1', '7')])
+    q.enqueue([comment('k2', '8 - 4')])
+    expect(savedQueue<QueueOp>(store).ops.filter((o) => o.kind === 'comment')).toEqual([
+      comment('k2', '8 - 4'),
+    ])
+    expect(q.state()).toEqual({
+      tracks: 1,
+      changes: 0,
+      items: [
+        {
+          key: 'track:/m/a.wav',
+          label: 'a.wav',
+          parts: [{ kind: 'playlists', names: ['Makina'] }, { kind: 'comment' }],
+        },
+      ],
+    })
+  })
+
+  it('counts an applied comment as a track done, so "Listo en rekordbox" appears', async () => {
+    const q = createRekordboxQueue(deps())
+    q.enqueue([comment('k', '8')])
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1, changes: 0 })
+  })
+
+  it('moves no stamp for a queued comment after a batch wrote, since comments carry none, and still moves the stamps queued after it', async () => {
+    const store = memoryStore()
+    const nodeStamps = vi
+      .fn<QueueDeps['nodeStamps']>()
+      .mockResolvedValueOnce({ '3000': 100 })
+      .mockResolvedValueOnce({ '3000': 200 })
+    const d = deps({ store, nodeStamps })
+    const q = createRekordboxQueue(d)
+    q.enqueue([track('a', '/m/a.wav')])
+    d.applyBatch.mockImplementationOnce(async (_c, ops, ensureClosed) => {
+      await ensureClosed()
+      q.enqueue([comment('k', '8'), track('b', '/m/b.wav', { stamps: { '3000': 100 } })])
+      return applied(ops)
+    })
+    expect(await q.apply(closed)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(savedQueue<QueueOp>(store).ops).toEqual([
+      comment('k', '8'),
+      track('b', '/m/b.wav', { stamps: { '3000': 200 } }),
+    ])
   })
 
   it('counts an applied Matching pair as a change, so the notice says something landed', async () => {
