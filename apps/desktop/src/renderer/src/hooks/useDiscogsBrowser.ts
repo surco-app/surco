@@ -175,7 +175,14 @@ export function useDiscogsBrowser(
   // Enter/the button. Drives the search query key. Seeded from the file's own stored
   // release id (if any) so the panel opens straight to it, exactly like a pasted id —
   // typing afterwards commits a new term and overrides it.
-  const [searchTerm, setSearchTerm] = useState(item.meta.discogsReleaseId ?? '')
+  // A search the user typed outranks the id: the box re-seeds with it, so its results come
+  // back with it, and the stored release is pinned on top of them below.
+  const [typedOverStored] = useState(
+    () => item.queryTyped === true && !!item.meta.discogsReleaseId && item.query.trim() !== '',
+  )
+  const [searchTerm, setSearchTerm] = useState(
+    typedOverStored ? item.query : (item.meta.discogsReleaseId ?? ''),
+  )
   // Which result is expanded. Reading the release itself from the cache (below) keeps
   // a single source of truth that auto-open, preview and reopen all set.
   const [openResult, setOpenResult] = useState<SearchResult | null>(null)
@@ -460,6 +467,22 @@ export function useDiscogsBrowser(
     userOpened.current = false
   }, [runKey])
   const [probedFor, setProbedFor] = useState<string | null>(null)
+  const latestRun = useRef(runKey)
+  latestRun.current = runKey
+  const [storedPinRun] = useState(() => (typedOverStored ? runKey : null))
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once per mount, for the run it seeded.
+  useEffect(() => {
+    if (storedPinRun === null) return
+    loadRelease({ provider: 'discogs', id: Number(storedId), title: '' })
+      .then((rel) => {
+        if (latestRun.current !== storedPinRun) return
+        const pinned = resultFromRelease(rel)
+        setSuggested(pinned)
+        setSuggestedConfident(true)
+        if (!userOpened.current) setOpenResult(pinned)
+      })
+      .catch(() => setProbedFor(storedPinRun))
+  }, [])
 
   // Once every source has answered, open the first result that confidently holds the
   // file's track (or the directly-loaded release), so the user lands on the right album.
@@ -473,7 +496,7 @@ export function useDiscogsBrowser(
       setOpenResult(direct)
       return
     }
-    if (!item.meta.title.trim()) return
+    if (!item.meta.title.trim() || runKey === storedPinRun) return
     let cancelled = false
     setAutoProbing(true)
     ;(async () => {

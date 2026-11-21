@@ -44,6 +44,7 @@ function item(
     artist?: string
     discogsReleaseId?: string
     loadingMeta?: boolean
+    queryTyped?: boolean
   } = {},
 ): TrackItem {
   const meta = {
@@ -60,6 +61,7 @@ function item(
     meta,
     status: 'idle',
     loadingMeta: over.loadingMeta,
+    queryTyped: over.queryTyped,
   }
 }
 
@@ -497,6 +499,75 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.openKey).toBe('discogs:55')
     expect(result.current.suggestedKey).toBe('discogs:55')
     expect(result.current.results.map((r) => r.id)).toEqual([55, 1])
+  })
+
+  // A search the user typed survives a track flip in the box, so its results must come back
+  // with it: opening the stored release alone left the box saying one thing and the list
+  // holding a single other release (21/11). The stored release still leads, open.
+  it('brings back a typed search with the stored release on top when the track reopens', async () => {
+    const second = { ...searchResult, id: 2, title: 'Other Album' }
+    const search = vi.fn().mockResolvedValue([searchResult, second])
+    setApi({ search, getRelease: vi.fn((id: number) => Promise.resolve({ ...release, id })) })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({ query: 'refined term', queryTyped: true, discogsReleaseId: '55' }),
+          tr,
+        ),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
+    expect(result.current.openKey).toBe('discogs:55')
+    expect(search).toHaveBeenCalledWith('refined term', 'discogs', 'high', expect.anything())
+  })
+
+  // The probe would otherwise pin whichever result it finds holding the title, pushing the
+  // release the user already applied down the list they came back to.
+  it('keeps the stored release on top of a typed search even when the probe finds another', async () => {
+    const second = { ...searchResult, id: 2, title: 'Other Album' }
+    setApi({
+      search: vi.fn().mockResolvedValue([searchResult, second]),
+      getRelease: vi.fn((id: number) =>
+        Promise.resolve(id === 1 ? release : { ...release, id, tracklist: [] }),
+      ),
+    })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({
+            query: 'refined term',
+            queryTyped: true,
+            discogsReleaseId: '55',
+            title: 'Track One',
+          }),
+          tr,
+        ),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
+    await act(() => new Promise((r) => setTimeout(r, 50)))
+    expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2])
+    expect(result.current.suggestedKey).toBe('discogs:55')
+  })
+
+  // A stored release that fails to load must not leave the best-match slot waiting forever.
+  it('stops holding the best-match slot when the stored release fails to load', async () => {
+    setApi({ getRelease: vi.fn().mockRejectedValue(new Error('gone')) })
+    const { result } = renderHook(
+      () =>
+        useDiscogsBrowser(
+          item({
+            query: 'refined term',
+            queryTyped: true,
+            discogsReleaseId: '55',
+            title: 'Track One',
+          }),
+          tr,
+        ),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([1]))
+    await waitFor(() => expect(result.current.choosingBest).toBe(false))
   })
 
   // But a search the user typed themselves is theirs: if the sweep's id lands while
