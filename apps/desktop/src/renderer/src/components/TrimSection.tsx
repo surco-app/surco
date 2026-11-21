@@ -1218,7 +1218,7 @@ export function TrimSection({
                   collapsing to nothing moved the lanes down under the pointer the moment
                   the first scissors staged a cut. */}
               <div className="mb-1.5 flex min-h-4 min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-                {shown ? (
+                {shown && (
                   <span
                     data-testid="trim-cuts"
                     className="min-w-0 truncate text-label tabular-nums text-fg-dim"
@@ -1226,16 +1226,6 @@ export function TrimSection({
                     <span className="font-medium">{tr('trim.cutsLabel')}</span>
                     {` ${cuts.join(' · ')}`}
                   </span>
-                ) : (
-                  wave &&
-                  !suggestion && (
-                    <span
-                      data-testid="trim-detected"
-                      className="min-w-0 truncate text-label text-fg-dim"
-                    >
-                      {tr('trim.nothing')}
-                    </span>
-                  )
                 )}
               </div>
               {wave === null ? (

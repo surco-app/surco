@@ -808,7 +808,6 @@
     "qualityProcessed": "Möglicherweise nachbearbeitet",
     "qualityTranscode": "Verlustbehaftete Quelle",
     "qualityDamaged": "Beschädigte Datei",
-    "qualityDamagedCaption": "Die Datei lässt sich nicht bis zu ihrer angegebenen Länge dekodieren: Sie ist beschädigt oder unvollständig.",
     "analyzing": "Spektrum wird analysiert…",
     "previous": {
       "label": "Vorher:",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "Schneidet",
     "cutStart": "{{seconds}} am Anfang",
     "cutEnd": "{{seconds}} am Ende",
-    "nothing": "Keine Stille am Anfang oder Ende erkannt.",
     "clearSide": "Diesen Schnitt entfernen",
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "Ziehen, um die Reihenfolge zu ändern",
       "noRules": "Keine Regeln. Der Ablauf setzt nur einen CALL an deine Markierung.",
       "preview": "Vorschau",
-      "previewHint": "Beispieltrack mit 128 BPM, markiert in Takt {{bar}}",
       "exampleTrack": "Beispieltrack",
       "searchCollection": "In deiner {{program}}-Sammlung suchen",
       "previewProgram": "Programm",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "Dieser Ablauf verlangt {{count}} Hot Cues und rekordbox erlaubt 8",
-      "looseCall": "Ein einzelner CALL gilt beim nächsten Mal als Markierung",
       "block": {
         "from": "Ab",
         "direction": "Richtung",

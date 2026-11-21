@@ -808,7 +808,6 @@
     "qualityProcessed": "Possible reprocessat",
     "qualityTranscode": "Font amb pèrdua",
     "qualityDamaged": "Fitxer malmès",
-    "qualityDamagedCaption": "El fitxer deixa de descodificar-se abans de la durada declarada. Està malmès o incomplet.",
     "analyzing": "Analitzant l'espectre…",
     "previous": {
       "label": "Abans:",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "Retalla",
     "cutStart": "{{seconds}} de l'inici",
     "cutEnd": "{{seconds}} del final",
-    "nothing": "No es detecta silenci ni a l'inici ni al final.",
     "clearSide": "Treure aquest tall",
     "applyStart": "Retallar {{seconds}} de l'inici",
     "applyEnd": "Retallar {{seconds}} del final",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "Arrossega per canviar l'ordre",
       "noRules": "Sense regles. El flux només posa un CALL on marques.",
       "preview": "Previsualització",
-      "previewHint": "Pista d'exemple a 128 BPM, marcada al compàs {{bar}}",
       "exampleTrack": "Pista d'exemple",
       "searchCollection": "Cerca a la teva col·lecció de {{program}}",
       "previewProgram": "Programa",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "Aquest flux demana {{count}} hot cues i rekordbox n'admet 8",
-      "looseCall": "Un CALL solt es prendrà com a marca la pròxima vegada",
       "block": {
         "from": "Des de",
         "direction": "Sentit",

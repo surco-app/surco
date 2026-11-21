@@ -1270,9 +1270,13 @@ describe('MusicReview', () => {
       expect(screen.queryByTestId('music-review-done-dest-traktor')).toBeNull()
     })
 
-    it('keeps the note that removed copies stay removed above the footer', () => {
+    // The confirm step already warned before anything was removed; saying it again
+    // after the fact, over an Undo the user may not even press, was a repeat.
+    it('leaves the warning about removed copies to the confirm step, not the summary', () => {
       render(<Panes review={done(run({ outcomes: [written], removed: [removal('removed')] }))} />)
-      expect(screen.getByTestId('music-review-done-note')).toHaveTextContent(
+      expect(screen.getByTestId('music-review-undo')).toBeInTheDocument()
+      expect(screen.queryByTestId('music-review-done-note')).toBeNull()
+      expect(screen.getByTestId('music-review-done')).not.toHaveTextContent(
         "Removed copies don't come back with Undo.",
       )
     })
@@ -1280,16 +1284,13 @@ describe('MusicReview', () => {
 
   // A run that only removed copies has nothing Undo can bring back; the button would
   // report success and change nothing.
-  it('hides undo and says removed copies stay removed when nothing can be undone', () => {
+  it('hides undo when nothing can be undone', () => {
     render(
       <Panes
         review={done(run({ removed: [{ outcome: 'removed', playlists: 0, fileTrashed: true }] }))}
       />,
     )
     expect(screen.queryByTestId('music-review-undo')).toBeNull()
-    expect(screen.getByTestId('music-review-done')).toHaveTextContent(
-      "Removed copies don't come back with Undo.",
-    )
     expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('Trash')
   })
 
@@ -2826,7 +2827,6 @@ describe('list review', () => {
       expect(detailOf('trash')).toBe(
         '1 file · 1 file stays on disk because Apple Music still uses it',
       )
-      expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
       expect(screen.getByTestId('music-review-done')).not.toHaveTextContent('could not be changed')
     })
 
@@ -2857,8 +2857,6 @@ describe('list review', () => {
         '1 file stays on disk because Apple Music still uses it · 1 entry left Apple Music, but its file stays because another entry still uses it',
       )
       expect(screen.queryByTestId('music-review-done-stat-removed')).toBeNull()
-      // The entry that left Music does not come back with Undo either.
-      expect(screen.getByTestId('music-review-done-note')).toBeInTheDocument()
     })
 
     // An unreadable Music refused nothing; "could not leave Apple Music" sent the user to

@@ -21,7 +21,15 @@ describe('CueFlowPreview', () => {
     expect(screen.getByTestId('cue-wave-hot-C')).toBeInTheDocument()
     expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(4)
     expect(screen.getByTestId('cue-wave')).toHaveAttribute('tabindex', '-1')
-    expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
+  })
+
+  // The selector already names the example track and the wave shows where it is
+  // marked; a sentence under it describing the same track was the third telling.
+  it('names the example track only in its selector, with no sentence under the wave describing it', () => {
+    render(<CueFlowPreview flow={MY_FLOW} />)
+    expect(screen.getByTestId('cue-preview-track-title')).toHaveTextContent(/^Example track$/)
+    expect(screen.queryByTestId('cue-preview-hint')).toBeNull()
+    expect(screen.getByTestId('cue-flow-preview')).not.toHaveTextContent('at 128 BPM')
   })
 
   it('takes no inset of its own, so its selector, wave and status line start where the piece that holds it says, which is where the room for the ring of a new cue at the very start comes from', () => {
@@ -574,7 +582,7 @@ describe('CueFlowPreview', () => {
       fireEvent.click(screen.getByTestId('cue-preview-track'))
       fireEvent.click(screen.getByTestId('cue-preview-track-option-example'))
       expect(screen.getByTestId('cue-preview-track')).toHaveTextContent('Example track')
-      expect(screen.getByText('Example track at 128 BPM, marked at bar 96')).toBeInTheDocument()
+      expect(screen.queryByTestId('cue-preview-hint')).toBeNull()
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
       expect(screen.queryByTestId('cue-preview-same')).toBeNull()
     })
@@ -602,9 +610,10 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
         /^DJ Made, Millenium Stringz has no mark yet/,
       )
-      expect(hoverTooltip(screen.getByTestId('cue-preview-no-mark'))).toContain(
-        'Example track at 128 BPM, marked at bar 96',
+      expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
+        /uses the example track$/,
       )
+      expect(hoverTooltip(screen.getByTestId('cue-preview-no-mark'))).toBeNull()
     })
 
     const edge = {
@@ -633,7 +642,7 @@ describe('CueFlowPreview', () => {
     const noMark = onTrack([{ id: 'hot', ms: beat(48), kind: 1, color: 22 }])
 
     it.each([
-      ['the example track', MY_FLOW, undefined, false, 'hint'],
+      ['the example track', MY_FLOW, undefined, false, null],
       ['a flow over the limit on the example track', edge, undefined, false, 'trimmed'],
       ['a flow that cannot fit', nine, undefined, false, 'too-many'],
       ['a flow that cannot fit on a marked track', nine, marked, false, 'too-many'],

@@ -18,7 +18,6 @@ import {
   collectionChoices,
   EXAMPLE_DURATION_MS,
   EXAMPLE_GRID,
-  EXAMPLE_POINT_BAR,
   EXAMPLE_TRACK,
   EXAMPLE_WAVE,
   examplePlan,
@@ -36,14 +35,13 @@ import { Tooltip } from './Tooltip'
 type Source = 'track' | 'example'
 type Mode = 'flow' | 'now'
 
-type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'hint' | 'finding'
+type Status = 'too-many' | 'trimmed' | 'compare' | 'no-mark' | 'finding'
 
 const NOTICE_TEXT: Record<Status, string> = {
   'too-many': 'text-xs text-warn',
   trimmed: 'text-xs text-fg-dim',
   compare: 'text-xs text-warn',
   'no-mark': 'text-label text-fg-dim',
-  hint: 'text-label text-fg-dim',
   finding: 'text-label text-fg-dim',
 }
 
@@ -404,14 +402,6 @@ export function CueFlowPreview({
               },
             ]
           : []),
-        ...(onTrack
-          ? []
-          : [
-              {
-                status: 'hint' as const,
-                text: tr('settings.cueFlows.previewHint', { bar: EXAMPLE_POINT_BAR }),
-              },
-            ]),
       ]
   const notice = notices.at(0)
   const others =

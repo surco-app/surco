@@ -808,7 +808,6 @@
     "qualityProcessed": "再処理された可能性があります",
     "qualityTranscode": "非可逆ソース",
     "qualityDamaged": "破損したファイル",
-    "qualityDamagedCaption": "表示上の長さより前でデコードが止まります。ファイルが破損しているか不完全です。",
     "analyzing": "スペクトラムを分析中…",
     "previous": {
       "label": "以前:",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "カット",
     "cutStart": "先頭から {{seconds}}",
     "cutEnd": "末尾から {{seconds}}",
-    "nothing": "先頭または末尾の無音は検出されませんでした。",
     "clearSide": "このカットをクリア",
     "applyStart": "先頭から {{seconds}} をカット",
     "applyEnd": "末尾から {{seconds}} をカット",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "ドラッグして順番を変更",
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
-      "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",
       "exampleTrack": "サンプルトラック",
       "searchCollection": "{{program}} のコレクションを検索",
       "previewProgram": "ソフト",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "このフローは {{count}} 個のホットキューを必要としますが、rekordbox は 8 個までです",
-      "looseCall": "単独の CALL は次回マークとして扱われます",
       "block": {
         "from": "起点",
         "direction": "方向",

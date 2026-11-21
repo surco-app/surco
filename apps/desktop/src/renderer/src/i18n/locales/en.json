@@ -808,7 +808,6 @@
     "qualityProcessed": "Possibly reprocessed",
     "qualityTranscode": "Lossy source",
     "qualityDamaged": "Damaged",
-    "qualityDamagedCaption": "The file stops decoding before its stated length: it is damaged or incomplete.",
     "analyzing": "Analyzing spectrum…",
     "previous": {
       "label": "Before:",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "Cuts",
     "cutStart": "{{seconds}} from the start",
     "cutEnd": "{{seconds}} from the end",
-    "nothing": "No leading or trailing silence detected.",
     "clearSide": "Clear this cut",
     "applyStart": "Cut {{seconds}} from the start",
     "applyEnd": "Cut {{seconds}} from the end",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "Drag to change the order",
       "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
-      "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "exampleTrack": "Example track",
       "searchCollection": "Search your {{program}} collection",
       "previewProgram": "Program",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
-      "looseCall": "A loose CALL will be taken as a mark next time",
       "block": {
         "from": "From",
         "direction": "Direction",

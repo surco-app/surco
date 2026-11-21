@@ -622,11 +622,6 @@ export function CueRuleRow({
       >
         <Minus size={14} />
       </button>
-      {rule.place === 'call' && (
-        <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">
-          {tr('settings.cueFlows.looseCall')}
-        </p>
-      )}
     </fieldset>
   )
 }

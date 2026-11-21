@@ -390,11 +390,6 @@ export function QualitySection({
             ) : spectrum ? (
               <>
                 <Spectrogram spectrum={spectrum} transcoded={transcoded} />
-                {spectrum.damaged && (
-                  <p data-testid="quality-damaged-note" className="mt-2 text-xs text-danger">
-                    {tr('editor.qualityDamagedCaption')}
-                  </p>
-                )}
                 {spectrum.cutoffHz === null && (
                   <p data-testid="quality-no-cutoff" className="mt-2 text-xs text-fg-dim">
                     {tr('editor.qualityNoCutoff')}

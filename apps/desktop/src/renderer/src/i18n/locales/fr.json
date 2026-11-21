@@ -808,7 +808,6 @@
     "qualityProcessed": "Retraitement possible",
     "qualityTranscode": "Source avec pertes",
     "qualityDamaged": "Fichier endommagé",
-    "qualityDamagedCaption": "Le fichier cesse d’être décodé avant sa durée annoncée : il est endommagé ou incomplet.",
     "analyzing": "Analyse du spectre…",
     "previous": {
       "label": "Avant :",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "Coupes",
     "cutStart": "{{seconds}} au début",
     "cutEnd": "{{seconds}} à la fin",
-    "nothing": "Aucun silence détecté au début ou à la fin.",
     "clearSide": "Supprimer cette coupe",
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "Fais glisser pour changer l’ordre",
       "noRules": "Aucune règle. Le flux ne met qu’un CALL là où tu marques.",
       "preview": "Aperçu",
-      "previewHint": "Morceau d’exemple à 128 BPM, marqué à la mesure {{bar}}",
       "exampleTrack": "Morceau d’exemple",
       "searchCollection": "Rechercher dans ta collection {{program}}",
       "previewProgram": "Logiciel",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "Ce flux demande {{count}} hot cues et rekordbox en accepte 8",
-      "looseCall": "Un CALL seul sera pris pour une marque la fois suivante",
       "block": {
         "from": "Depuis",
         "direction": "Sens",

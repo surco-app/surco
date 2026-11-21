@@ -808,7 +808,6 @@
     "qualityProcessed": "Forse rielaborato",
     "qualityTranscode": "Sorgente lossy",
     "qualityDamaged": "File danneggiato",
-    "qualityDamagedCaption": "Il file smette di decodificarsi prima della durata dichiarata. È danneggiato o incompleto.",
     "analyzing": "Analisi dello spettro…",
     "previous": {
       "label": "Prima:",
@@ -1509,7 +1508,6 @@
     "cutsLabel": "Taglia",
     "cutStart": "{{seconds}} dall'inizio",
     "cutEnd": "{{seconds}} dalla fine",
-    "nothing": "Nessun silenzio rilevato all'inizio o alla fine.",
     "clearSide": "Togli questo taglio",
     "applyStart": "Taglia {{seconds}} dall'inizio",
     "applyEnd": "Taglia {{seconds}} dalla fine",
@@ -2067,7 +2065,6 @@
       "moveRuleHint": "Trascina per cambiare l'ordine",
       "noRules": "Nessuna regola. Il flusso mette solo un CALL dove marchi.",
       "preview": "Anteprima",
-      "previewHint": "Brano di esempio a 128 BPM, marcato alla battuta {{bar}}",
       "exampleTrack": "Brano di esempio",
       "searchCollection": "Cerca nella tua collezione di {{program}}",
       "previewProgram": "Programma",
@@ -2106,7 +2103,6 @@
         }
       },
       "tooMany": "Questo flusso chiede {{count}} hot cue e rekordbox ne ammette 8",
-      "looseCall": "Un CALL isolato verrà preso come segno la prossima volta",
       "block": {
         "from": "Da",
         "direction": "Direzione",
