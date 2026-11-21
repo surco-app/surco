@@ -7,6 +7,7 @@ import { DEFAULT_EDITOR_SECTIONS } from '../../../../shared/editorSections'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import i18n from '../../i18n'
 import { ProcessingTab } from './ProcessingTab'
+import { SettingsHintsVisible } from './SettingsPrimitives'
 
 afterEach(cleanup)
 
@@ -93,7 +94,12 @@ const synced: SyncedDraft = {
 
 function renderTab(over: Partial<SyncedDraft> = {}): ReturnType<typeof vi.fn> {
   const patch = vi.fn()
-  render(<ProcessingTab synced={{ ...synced, ...over }} patch={patch} />)
+  const draft = { ...synced, ...over }
+  render(
+    <SettingsHintsVisible value={draft.showEditorHints}>
+      <ProcessingTab synced={draft} patch={patch} />
+    </SettingsHintsVisible>,
+  )
   return patch
 }
 

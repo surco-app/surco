@@ -1940,7 +1940,7 @@
     "showLoudness": "Afficher le loudness (LUFS)",
     "showLoudnessHint": "Mesure le loudness intégré, le true peak et la plage de loudness (EBU R128) à l’édition d’un morceau. Si désactivé, la mesure est entièrement sautée.",
     "showEditorHints": "Explications en ligne",
-    "showEditorHintsHint": "Explications d’une ligne sous les contrôles de l’éditeur : ce que fait chaque mode et ce qu’est le plafond de crête. À désactiver une fois connues par cœur.",
+    "showEditorHintsHint": "Explications sous les contrôles de l’éditeur et des Réglages. Ce qui manque à une option pour fonctionner reste affiché. Désactive-les quand tu les connais par cœur.",
     "keyNotation": "Notation de la tonalité",
     "keyNotationHint": "Comment la tonalité s’affiche dans la liste des morceaux et dans la suggestion sous le champ Tonalité. L’alphanumérique, ou Camelot, est ce que les logiciels DJ utilisent pour trier.",
     "sections": {

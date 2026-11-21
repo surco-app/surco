@@ -1940,7 +1940,7 @@
     "showLoudness": "Mostrar la sonoritat (LUFS)",
     "showLoudnessHint": "Mesura la sonoritat integrada, el pic real i el rang de sonoritat (EBU R128) quan edites una pista. Si ho desactives, la mesura s'omet del tot.",
     "showEditorHints": "Explicacions en línia",
-    "showEditorHintsHint": "Explicacions d'una línia sota els controls de l'editor. Què fa cada mode i què és el sostre de pics. Desactiva-les quan te les sàpigues de memòria.",
+    "showEditorHintsHint": "Explicacions sota els controls de l'editor i de Configuració. El que li falta a una opció per funcionar es continua veient. Desactiva-les quan te les sàpigues de memòria.",
     "keyNotation": "Notació de la tonalitat",
     "keyNotationHint": "Com es mostra la tonalitat a la llista de pistes i al suggeriment sota el camp Tonalitat. L'alfanumèrica, o Camelot, és la que fan servir els programes de DJ per ordenar.",
     "sections": {

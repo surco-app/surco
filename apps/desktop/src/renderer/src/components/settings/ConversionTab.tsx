@@ -58,6 +58,7 @@ export function ConversionTab({ synced, patch }: Props): React.JSX.Element {
           label={tr('settings.keepMp3Sources')}
           searchId="keepMp3Sources"
           hint={keepMp3Off ? tr('settings.keepMp3SourcesOff') : tr('settings.keepMp3SourcesHint')}
+          hintAlways={keepMp3Off}
           disabled={keepMp3Off}
         />
 

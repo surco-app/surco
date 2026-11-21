@@ -20,6 +20,8 @@ import { CheckboxRow } from './CheckboxRow'
 const HEADING = 'text-section font-semibold text-fg-muted'
 const NESTED_LABEL = 'text-xs font-medium text-fg-dim'
 const InNamedSection = createContext(false)
+const HintsVisible = createContext(true)
+export const SettingsHintsVisible = HintsVisible.Provider
 
 // Opens a group WITHIN a tab (Search's "Search sources"), in the same heading voice as a
 // named section.
@@ -63,11 +65,15 @@ export function SettingsHint({
   children,
   className = '',
   'data-testid': testid,
+  always = false,
 }: {
   children: React.ReactNode
   className?: string
   'data-testid'?: string
-}): React.JSX.Element {
+  always?: boolean
+}): React.JSX.Element | null {
+  const visible = useContext(HintsVisible)
+  if (!visible && !always) return null
   return (
     <p data-testid={testid} className={`text-xs leading-relaxed text-fg-dim ${className}`}>
       {children}
@@ -114,6 +120,7 @@ export function SettingsField({
   label,
   htmlFor,
   hint,
+  hintAlways,
   info,
   children,
   searchId,
@@ -121,6 +128,7 @@ export function SettingsField({
   label?: string
   htmlFor?: string
   hint?: React.ReactNode
+  hintAlways?: boolean
   info?: string
   children: React.ReactNode
   searchId?: string
@@ -143,7 +151,7 @@ export function SettingsField({
         </div>
       )}
       {children}
-      {hint && <SettingsHint>{hint}</SettingsHint>}
+      {hint && <SettingsHint always={hintAlways}>{hint}</SettingsHint>}
     </div>
   )
 }
@@ -168,6 +176,7 @@ export function SettingsCheckboxField({
   onChange,
   label,
   hint,
+  hintAlways,
   disabled = false,
   searchId,
 }: {
@@ -176,6 +185,7 @@ export function SettingsCheckboxField({
   onChange: (checked: boolean) => void
   label: string
   hint?: React.ReactNode
+  hintAlways?: boolean
   disabled?: boolean
   searchId?: string
 }): React.JSX.Element {
@@ -191,7 +201,7 @@ export function SettingsCheckboxField({
       {/* The hint follows the row's dimmed/enabled state so a disabled option greys out as
           one unit; CheckboxRow already dims its own row, so only the hint needs it here. */}
       {hint && (
-        <SettingsHint className={`mt-1.5 pl-7 ${disabled ? 'opacity-50' : ''}`}>
+        <SettingsHint className={`mt-1.5 pl-7 ${disabled ? 'opacity-50' : ''}`} always={hintAlways}>
           {hint}
         </SettingsHint>
       )}

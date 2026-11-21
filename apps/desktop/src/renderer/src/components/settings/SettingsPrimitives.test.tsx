@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   SettingsCheckboxField,
   SettingsField,
+  SettingsHint,
+  SettingsHintsVisible,
   SettingsLabel,
   SettingsSection,
 } from './SettingsPrimitives'
@@ -121,5 +123,73 @@ describe('search anchors', () => {
   it('marks a loose label with its search anchor', () => {
     render(<SettingsLabel searchId="theme">Appearance</SettingsLabel>)
     expect(screen.getByText('Appearance')).toHaveAttribute('data-search-id', 'theme')
+  })
+})
+
+// "Inline explanations" off is a DJ saying he knows Settings by heart, so the lines that
+// explain a control go. A line that says why a control is off or what is missing is not an
+// explanation he has memorised, and without it a greyed control reads as broken.
+describe('inline explanations', () => {
+  function fields(visible?: boolean): void {
+    const body = (
+      <>
+        <SettingsField label="Grouping" hint="What grouping fills">
+          <input />
+        </SettingsField>
+        <SettingsCheckboxField
+          testid="ascii"
+          checked={false}
+          onChange={() => {}}
+          label="ASCII file names"
+          hint="Why ASCII helps"
+        />
+        <SettingsHint data-testid="loose">How the cache works</SettingsHint>
+        <SettingsHint data-testid="state" always>
+          Choose a collection first
+        </SettingsHint>
+        <SettingsCheckboxField
+          testid="auto"
+          checked={false}
+          onChange={() => {}}
+          label="Auto-match"
+          hint="Add a source first"
+          hintAlways
+          disabled
+        />
+      </>
+    )
+    render(
+      visible === undefined ? (
+        body
+      ) : (
+        <SettingsHintsVisible value={visible}>{body}</SettingsHintsVisible>
+      ),
+    )
+  }
+
+  it('shows every explanation while inline explanations are on', () => {
+    fields(true)
+    expect(screen.getByText('What grouping fills')).toBeInTheDocument()
+    expect(screen.getByText('Why ASCII helps')).toBeInTheDocument()
+    expect(screen.getByTestId('loose')).toBeInTheDocument()
+    expect(screen.getByTestId('state')).toBeInTheDocument()
+    expect(screen.getByText('Add a source first')).toBeInTheDocument()
+  })
+
+  it('hides the explanations but keeps what a control is missing while they are off', () => {
+    fields(false)
+    expect(screen.queryByText('What grouping fills')).not.toBeInTheDocument()
+    expect(screen.queryByText('Why ASCII helps')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('loose')).not.toBeInTheDocument()
+    expect(screen.getByTestId('state')).toBeInTheDocument()
+    expect(screen.getByText('Add a source first')).toBeInTheDocument()
+  })
+
+  // The onboarding wizard draws the same fields with no Settings draft around them, and a
+  // new user has never had the chance to turn explanations off.
+  it('shows the explanations outside Settings', () => {
+    fields()
+    expect(screen.getByText('What grouping fills')).toBeInTheDocument()
+    expect(screen.getByTestId('loose')).toBeInTheDocument()
   })
 })

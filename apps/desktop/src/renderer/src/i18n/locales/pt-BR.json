@@ -1940,7 +1940,7 @@
     "showLoudness": "Mostrar o volume (LUFS)",
     "showLoudnessHint": "Mede o volume integrado, o true peak e a variação de volume (EBU R128) ao editar uma faixa. Se desativar, a medição é pulada por completo.",
     "showEditorHints": "Explicações em linha",
-    "showEditorHintsHint": "Explicações de uma linha sob os controles do editor: o que cada modo faz e o que é o teto de picos. Desative quando já souber de cor.",
+    "showEditorHintsHint": "Explicações sob os controles do editor e dos Ajustes. O que falta para uma opção funcionar continua visível. Desative quando você já souber de cor.",
     "keyNotation": "Notação do tom",
     "keyNotationHint": "Como o tom aparece na lista de faixas e na sugestão abaixo do campo Tom. A alfanumérica, ou Camelot, é o que os programas de DJ usam para ordenar.",
     "sections": {

@@ -151,6 +151,7 @@ export function GeneralTab({
             label={tr('settings.autoUpdates')}
             searchId="autoUpdates"
             hint={tr(isStoreBuild() ? 'settings.autoUpdatesStoreHint' : 'settings.autoUpdatesHint')}
+            hintAlways={isStoreBuild()}
             disabled={isStoreBuild()}
           />
           <button
@@ -169,6 +170,7 @@ export function GeneralTab({
             label={tr('settings.betaUpdates')}
             searchId="betaUpdates"
             hint={tr(isStoreBuild() ? 'settings.betaUpdatesStoreHint' : 'settings.betaUpdatesHint')}
+            hintAlways={isStoreBuild()}
             disabled={isStoreBuild()}
           />
         </div>

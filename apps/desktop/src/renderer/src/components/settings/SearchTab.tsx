@@ -74,7 +74,7 @@ export function SearchTab({
         searchId="searchResultsSection"
       >
         {!formatsOn && (
-          <SettingsHint data-testid="settings-formats-disabled" className="mb-4">
+          <SettingsHint data-testid="settings-formats-disabled" className="mb-4" always>
             {tr('settings.discogsFormatsDisabledHint')}
           </SettingsHint>
         )}
