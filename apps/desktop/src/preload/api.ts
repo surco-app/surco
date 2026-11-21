@@ -62,6 +62,7 @@ import type {
   ReviewOutcome,
   ReviewWriteField,
   RowWaveRequest,
+  SaveCommentRequest,
   SaveCuesRequest,
   SearchHints,
   SearchPriority,
@@ -106,6 +107,7 @@ export interface CuesApi {
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>
+  saveComments: (items: SaveCommentRequest[]) => Promise<void>
 }
 
 export interface Api {

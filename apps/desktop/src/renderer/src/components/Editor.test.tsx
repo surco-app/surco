@@ -25,6 +25,7 @@ import { coverSourceOf } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
 import { resetEditorPlace } from '../lib/editorPlace'
 import { OpenSettingsProvider } from '../lib/openSettingsContext'
+import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
 import { runKeyClaim } from '../lib/spaceClaim'
@@ -1842,7 +1843,7 @@ describe('Editor multi-select', () => {
       customFields?: Settings['customFields']
       rekordboxCue?: React.ComponentProps<typeof Editor>['rekordboxCue']
       onCueAutoMarkAll?: () => void
-      onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
+      onCuePhrasesAll?: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       libraryIndex?: AppleMusicIndex | null
@@ -2082,7 +2083,7 @@ describe('Editor multi-select', () => {
     renderMulti({
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
       onCueAutoMarkAll,
-      onCuePhrasesAll: vi.fn(async () => ({ done: 0, skipped: 0 })),
+      onCuePhrasesAll: vi.fn(async () => ({ done: 0, skipped: 0, comments: [] })),
       cueTargets: [
         { contentId: '103', path: '/music/a.wav', label: 'a' },
         { contentId: '104', path: '/music/b.wav', label: 'b' },
@@ -2096,7 +2097,7 @@ describe('Editor multi-select', () => {
   })
 
   it('puts the phrases in the comments of the whole selection from the cues slot', () => {
-    const onCuePhrasesAll = vi.fn(async () => ({ done: 2, skipped: 0 }))
+    const onCuePhrasesAll = vi.fn(async () => ({ done: 2, skipped: 0, comments: [] }))
     renderMulti({
       rekordboxCue: { contentId: '103', path: '/music/a.wav', label: 'a' },
       onCueAutoMarkAll: vi.fn(),

@@ -1220,6 +1220,8 @@
         "phrasesDone_other": "Phrasen in {{count}} Kommentare gesetzt",
         "phrasesSkipped_one": "{{count}} ohne zwei CALLs, unverändert",
         "phrasesSkipped_other": "{{count}} ohne zwei CALLs, unverändert",
+        "saveComments_one": "{{count}} Kommentar in rekordbox speichern",
+        "saveComments_other": "{{count}} Kommentare in rekordbox speichern",
         "clearedHot_one": "{{count}} Hot Cue wird gelöscht",
         "clearedHot_other": "{{count}} Hot Cues werden gelöscht",
         "clearedCalls_one": "{{count}} CALL wird gelöscht",
@@ -3437,7 +3439,8 @@
       },
       "cues": "Cues",
       "tags": "Tags",
-      "matching": "Matching"
+      "matching": "Matching",
+      "comment": "Kommentar"
     },
     "applyNow": "Jetzt anwenden",
     "discard": "Verwerfen",

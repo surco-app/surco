@@ -20,6 +20,7 @@ import {
   subscribeCueDrafts,
   unsavedCueTracks,
 } from '../lib/cueSession'
+import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { SettingsProvider } from '../lib/settingsContext'
 import { installApi } from '../test/api'
 import { CuesBatchSection } from './CuesBatchSection'
@@ -58,6 +59,7 @@ function setup(
   twins: Record<string, LibraryTracks> = {},
   targets = TARGETS,
   cues: Record<string, TrackCues['cues']> = {},
+  phrased: PhrasedComment[] = [],
 ) {
   const calls: string[] = []
   const askToApply = vi.fn<Api['dj']['askToApply']>(async () => {
@@ -66,6 +68,9 @@ function setup(
   })
   const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {
     calls.push('save')
+  })
+  const saveComments = vi.fn<Api['cues']['saveComments']>(async () => {
+    calls.push('saveComments')
   })
   const api = installApi({
     cues: {
@@ -82,6 +87,7 @@ function setup(
       ),
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       save: saveRekordboxCues,
+      saveComments,
     },
   })
   api.dj.askToApply = askToApply
@@ -89,7 +95,8 @@ function setup(
   const onFlow = vi.fn()
   const onShowBadGrid = vi.fn()
   const onShowMarked = vi.fn()
-  const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1 }))
+  const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1, comments: phrased }))
+  const onRestoreComments = vi.fn()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>, shown = targets) => (
     <QueryClientProvider client={client}>
@@ -103,6 +110,7 @@ function setup(
           onShowMarked={onShowMarked}
           onOpen={vi.fn()}
           onPhrases={onPhrases}
+          onRestoreComments={onRestoreComments}
         />
       </SettingsProvider>
     </QueryClientProvider>
@@ -119,6 +127,8 @@ function setup(
     onShowBadGrid,
     onShowMarked,
     onPhrases,
+    onRestoreComments,
+    saveComments,
     changeSettings,
     changeTargets,
   }
@@ -143,6 +153,161 @@ describe('Phrases over several selected tracks', () => {
     expect(screen.getByTestId('cues-batch-phrases')).toBeDisabled()
     await screen.findByTestId('cues-batch-phrases-done')
     expect(onPhrases).toHaveBeenCalledTimes(1)
+  })
+  const PHRASED: PhrasedComment[] = [
+    {
+      id: 'a',
+      contentId: '103',
+      path: '/m/a.wav',
+      label: 'Maniac',
+      count: '2 - 8',
+      before: 'Vocal fuerte',
+      after: '2 - 8 · Vocal fuerte',
+    },
+    {
+      id: 'b',
+      contentId: '104',
+      path: '/m/b.wav',
+      label: 'Summer Sky',
+      count: '4',
+      before: '',
+      after: '4',
+    },
+    {
+      id: 'c',
+      contentId: 'traktor:M/:m/:c.wav',
+      path: '/m/c.wav',
+      label: 'Gone',
+      count: '3',
+      before: '',
+      after: '3',
+    },
+  ]
+  const putPhrases = async () => {
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    return screen.findByTestId('cues-batch-comments-save')
+  }
+
+  it('offers to save only the rekordbox counts after putting phrases, so a Traktor track is not promised a rekordbox write', async () => {
+    setup({}, TARGETS, {}, PHRASED)
+    expect(await putPhrases()).toHaveTextContent(
+      i18n.t('editor.cues.batch.saveComments', { count: 2 }),
+    )
+    expect(screen.getByTestId('cues-batch-comments-discard')).toHaveTextContent(
+      i18n.t('editor.cues.batch.clearDiscard'),
+    )
+  })
+
+  it('asks to close rekordbox and sends only where the count goes, so no other tag of the form reaches rekordbox', async () => {
+    const { calls, askToApply, saveComments } = setup({}, TARGETS, {}, PHRASED)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    expect(askToApply).toHaveBeenCalledWith(['rekordbox'])
+    expect(calls).toEqual(['askToApply', 'saveComments'])
+    expect(saveComments).toHaveBeenCalledWith([
+      { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8' },
+      { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
+    ])
+  })
+
+  it('gives the saved comments back to the form and hides the row, so a later Convert does not write the count into the file', async () => {
+    const { onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(onRestoreComments).toHaveBeenCalledWith(PHRASED.slice(0, 2)))
+    await waitFor(() => expect(screen.queryByTestId('cues-batch-comments-save')).toBeNull())
+    expect(screen.getByTestId('cues-batch-phrases-done')).toBeInTheDocument()
+  })
+
+  it('discards without writing to rekordbox and gives the comments back, so nothing of the batch stays behind', async () => {
+    const { onRestoreComments, saveComments } = setup({}, TARGETS, {}, PHRASED)
+    await putPhrases()
+    fireEvent.click(screen.getByTestId('cues-batch-comments-discard'))
+    expect(onRestoreComments).toHaveBeenCalledWith(PHRASED.slice(0, 2))
+    expect(saveComments).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('cues-batch-comments-save')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-phrases-done')).toBeNull()
+  })
+
+  it('shows no save row when no counted track is in rekordbox, as there is nowhere to save them', async () => {
+    setup({}, TARGETS, {}, PHRASED.slice(2))
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    await screen.findByTestId('cues-batch-phrases-done')
+    expect(screen.queryByTestId('cues-batch-comments-save')).toBeNull()
+  })
+
+  it('turns Descartar off while saving, so a discard mid-save cannot leave rekordbox written behind the DJ', async () => {
+    const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    let finish = () => {}
+    saveComments.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    const discard = screen.getByTestId('cues-batch-comments-discard')
+    expect(discard).toBeDisabled()
+    fireEvent.click(discard)
+    expect(onRestoreComments).not.toHaveBeenCalled()
+    await act(async () => finish())
+  })
+
+  it('keeps the first comment of a track phrased twice and saves its latest count, so the form gets back what the DJ had', async () => {
+    const { onPhrases, saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    await putPhrases()
+    const again = {
+      ...PHRASED[0],
+      count: '4 - 8',
+      before: PHRASED[0].after,
+      after: '4 - 8 · Vocal fuerte',
+    }
+    onPhrases.mockResolvedValueOnce({ done: 1, skipped: 0, comments: [again] })
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    await waitFor(() => expect(onPhrases).toHaveBeenCalledTimes(2))
+    fireEvent.click(await screen.findByTestId('cues-batch-comments-save'))
+    await waitFor(() =>
+      expect(saveComments).toHaveBeenCalledWith([
+        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '4 - 8' },
+        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
+      ]),
+    )
+    await waitFor(() =>
+      expect(onRestoreComments).toHaveBeenCalledWith([
+        { ...again, before: 'Vocal fuerte' },
+        PHRASED[1],
+      ]),
+    )
+  })
+
+  it('keeps the tracks phrased in an earlier selection when phrasing another, so saving covers both groups', async () => {
+    const { onPhrases, saveComments } = setup({}, TARGETS, {}, PHRASED.slice(0, 1))
+    await putPhrases()
+    onPhrases.mockResolvedValueOnce({ done: 1, skipped: 0, comments: PHRASED.slice(1, 2) })
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent(
+        i18n.t('editor.cues.batch.saveComments', { count: 2 }),
+      ),
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+    await waitFor(() =>
+      expect(saveComments).toHaveBeenCalledWith([
+        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8' },
+        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
+      ]),
+    )
+  })
+
+  it('keeps the row and says it failed when rekordbox refuses, so the DJ can try again', async () => {
+    const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    saveComments.mockRejectedValueOnce(new Error('locked'))
+    fireEvent.click(await putPhrases())
+    expect(await screen.findByTestId('cues-batch-comments-failed')).toHaveTextContent(
+      i18n.t('editor.cues.saveFailed'),
+    )
+    expect(screen.getByTestId('cues-batch-comments-save')).toBeEnabled()
+    expect(onRestoreComments).not.toHaveBeenCalled()
   })
 })
 
@@ -605,6 +770,7 @@ describe('Cues over several selected tracks', () => {
             onShowBadGrid={vi.fn()}
             onOpen={vi.fn()}
             onPhrases={vi.fn()}
+            onRestoreComments={vi.fn()}
           />
         </SettingsProvider>
       </QueryClientProvider>,

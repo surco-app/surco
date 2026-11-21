@@ -33,6 +33,7 @@ import { copyFolder, listCopies } from './libraryHistory'
 import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { applyRekordboxBatch, editRekordboxPlaylist, replaceFile } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
+import { createRekordboxQueue } from './rekordboxQueue'
 import type { QueueOp } from './rekordboxQueueOps'
 import { createSessionBackup, restoreCollection } from './rekordboxSessionBackup'
 
@@ -793,6 +794,169 @@ describe('applyRekordboxBatch with Matching', () => {
     await applyRekordboxBatch(path, [matchOp('m', 'add', ['101', '102'])], deps())
     expect(linkIds(path, '2000')).toEqual(before)
     expect(playlistNamed(path, 'Factory')).toBeDefined()
+  })
+})
+
+function setComment(path: string, id: string, comment: string | null): void {
+  const db = openRekordboxDb(path)
+  if (!db) throw new Error('did not open')
+  try {
+    db.prepare('UPDATE djmdContent SET Commnt = ? WHERE ID = ?').run(comment, id)
+  } finally {
+    db.close()
+  }
+}
+
+function contentRow(path: string, id: string): Record<string, unknown> {
+  const db = openRekordboxDb(path, { readonly: true })
+  if (!db) throw new Error('did not open')
+  try {
+    return db.prepare('SELECT * FROM djmdContent WHERE ID = ?').get(id) as Record<string, unknown>
+  } finally {
+    db.close()
+  }
+}
+
+const commentOp = (id: string, contentId: string, count: string): QueueOp => ({
+  id,
+  kind: 'comment',
+  contentId,
+  path: '/Volumes/Public/Music/Gowan.wav',
+  label: 'Gowan',
+  count,
+})
+
+describe('applyRekordboxBatch with comments', () => {
+  it('puts the count in front of the rekordbox comment, keeping the My Tag block and the words typed by hand', async () => {
+    const path = await collection({ usn: 40 })
+    setComment(path, '103', '/* Base / Melodia */ Vocal fuerte')
+    const d = deps()
+    const result = await applyRekordboxBatch(path, [commentOp('c', '103', '8 - 4')], d)
+    expect(result).toEqual({
+      ok: true,
+      wrote: true,
+      outcomes: [{ id: 'c', applied: true, notices: [] }],
+    })
+    expect(d.sessionBackup).toHaveBeenCalledWith(path)
+    expect(contentRow(path, '103')).toMatchObject({
+      Commnt: '8 - 4 · /* Base / Melodia */ Vocal fuerte',
+      rb_local_usn: 41,
+      updated_at: '2026-10-15 18:00:00.000 +00:00',
+    })
+  })
+
+  it('replaces the count an earlier save left, so counting again never stacks two counts', async () => {
+    const path = await collection()
+    setComment(path, '103', '7 (16) · Vocal fuerte')
+    await applyRekordboxBatch(path, [commentOp('c', '103', '8 - 4')], deps())
+    expect(contentRow(path, '103').Commnt).toBe('8 - 4 · Vocal fuerte')
+  })
+
+  it('writes only the count when rekordbox has no comment, empty or NULL', async () => {
+    const path = await collection()
+    setComment(path, '103', '')
+    setComment(path, '104', null)
+    await applyRekordboxBatch(
+      path,
+      [commentOp('a', '103', '8 - 4'), commentOp('b', '104', '6')],
+      deps(),
+    )
+    expect(contentRow(path, '103').Commnt).toBe('8 - 4')
+    expect(contentRow(path, '104').Commnt).toBe('6')
+  })
+
+  it('leaves every other column of the track as rekordbox had it, since only the comment was asked for', async () => {
+    const path = await collection({
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        c.ID === '103' ? { ...c, ArtistID: '7', GenreID: '9', Rating: 3, BPM: 12800 } : c,
+      ),
+    })
+    const { Commnt: _c, rb_local_usn: _u, updated_at: _a, ...before } = contentRow(path, '103')
+    await applyRekordboxBatch(path, [commentOp('c', '103', '8 - 4')], deps())
+    const { Commnt, rb_local_usn: _u2, updated_at: _a2, ...after } = contentRow(path, '103')
+    expect(Commnt).toBe('8 - 4')
+    expect(after).toEqual(before)
+  })
+
+  it('asks nothing and writes nothing when the comment already carries this count', async () => {
+    const path = await collection()
+    setComment(path, '103', '8 - 4 · Vocal fuerte')
+    const d = deps()
+    const result = await applyRekordboxBatch(path, [commentOp('c', '103', '8 - 4')], d)
+    expect(result).toEqual({
+      ok: true,
+      wrote: false,
+      outcomes: [{ id: 'c', applied: true, notices: [] }],
+    })
+    expect(d.ensureClosed).not.toHaveBeenCalled()
+    expect(d.sessionBackup).not.toHaveBeenCalled()
+  })
+
+  it('refuses a track rekordbox deleted and writes nothing, so a gone row never comes back with a comment', async () => {
+    const path = await collection({
+      content: ORGANISE_FIXTURE.content.map((c) => (c.ID === '103' ? { ...c, deleted: true } : c)),
+    })
+    const d = deps()
+    const result = await applyRekordboxBatch(
+      path,
+      [commentOp('c', '103', '8 - 4'), commentOp('g', 'gone', '8')],
+      d,
+    )
+    expect(result).toMatchObject({
+      ok: true,
+      wrote: false,
+      outcomes: [
+        { id: 'c', applied: false, reason: 'stale' },
+        { id: 'g', applied: false, reason: 'stale' },
+      ],
+    })
+    expect(contentRow(path, '103').Commnt).toBeNull()
+    expect(d.sessionBackup).not.toHaveBeenCalled()
+  })
+
+  it('never reads a comment as a playlist edit, so no playlist is deleted or touched while commenting', async () => {
+    const path = await collection()
+    const before = { factory: linkIds(path, '2000'), h: linkIds(path, '3000') }
+    const result = await applyRekordboxBatch(path, [commentOp('c', '103', '8 - 4')], deps())
+    expect(result).toMatchObject({ ok: true, wrote: true })
+    expect(linkIds(path, '2000')).toEqual(before.factory)
+    expect(linkIds(path, '3000')).toEqual(before.h)
+    expect(playlistNamed(path, 'Factory')).toBeDefined()
+    expect(playlistNamed(path, 'COMBOS')).toBeDefined()
+  })
+
+  it('waits in the queue while rekordbox is open and lands once it is closed', async () => {
+    const path = await collection()
+    let text: string | null = null
+    const queue = createRekordboxQueue({
+      store: {
+        read: () => text,
+        write: (t) => {
+          text = t
+        },
+        setAside: () => {
+          text = null
+        },
+      },
+      collection: () => path,
+      applyBatch: (c, ops, ensureClosed) => applyRekordboxBatch(c, ops, deps({ ensureClosed })),
+      repoint: async () => [],
+      nodeStamps: async () => ({}),
+      onChange: () => {},
+    })
+    queue.enqueue([commentOp('c', '103', '8 - 4')])
+    expect(await queue.apply(async () => false)).toEqual({ status: 'refused', reason: 'cancelled' })
+    expect(contentRow(path, '103').Commnt).toBeNull()
+    expect(queue.state().items).toEqual([
+      {
+        key: 'track:/Volumes/Public/Music/Gowan.wav',
+        label: 'Gowan',
+        parts: [{ kind: 'comment' }],
+      },
+    ])
+    expect(await queue.apply(async () => true)).toMatchObject({ status: 'applied', tracks: 1 })
+    expect(contentRow(path, '103').Commnt).toBe('8 - 4')
+    expect(queue.isEmpty()).toBe(true)
   })
 })
 

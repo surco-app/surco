@@ -1911,6 +1911,7 @@ export type RekordboxQueuePart =
   | { kind: 'cues' }
   | { kind: 'tags' }
   | { kind: 'matching' }
+  | { kind: 'comment' }
 
 export interface RekordboxQueueItem {
   key: string
@@ -2001,6 +2002,13 @@ export interface SaveCuesRequest {
   provisional?: true
   grid?: EditableGrid
   gridFingerprint?: string
+}
+
+export interface SaveCommentRequest {
+  contentId: string
+  path: string
+  label: string
+  count: string
 }
 
 export type CopyReason =

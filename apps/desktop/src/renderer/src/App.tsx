@@ -224,7 +224,7 @@ import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
 import { clampPanelGeometry } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
-import { phraseCountsOf } from './lib/phraseCountBatch'
+import { type PhrasedComment, phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
 import { reopenedPlaylist } from './lib/playlistEdits'
 import {
@@ -3225,7 +3225,9 @@ export default function App(): React.JSX.Element {
   const putPhrasesInSelected = useStableCallback(async () => {
     const targets = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
-      return contentId ? [{ id: t.id, contentId }] : []
+      return contentId
+        ? [{ id: t.id, contentId, path: t.inputPath, label: t.listLabel, before: t.meta.comment }]
+        : []
     })
     const counts = await phraseCountsOf(queryClient, targets)
     if (counts.size > 0) {
@@ -3237,7 +3239,25 @@ export default function App(): React.JSX.Element {
           : t
       })
     }
-    return { done: counts.size, skipped: targets.length - counts.size }
+    const comments = targets.flatMap((t) => {
+      const count = counts.get(t.id)
+      return count ? [{ ...t, count, after: withPhraseCount(t.before, count) }] : []
+    })
+    return { done: counts.size, skipped: targets.length - counts.size, comments }
+  })
+  const restorePhrasedComments = useStableCallback((comments: PhrasedComment[]) => {
+    const byId = new Map(comments.map((c) => [c.id, c]))
+    const untouched = new Set(
+      tracksRef.current.filter((t) => byId.get(t.id)?.after === t.meta.comment).map((t) => t.id),
+    )
+    if (untouched.size === 0) return
+    recordMetaUndo([...untouched])
+    mapTracks((t) => {
+      const phrased = byId.get(t.id)
+      return phrased && untouched.has(t.id)
+        ? { ...t, meta: { ...t.meta, comment: phrased.before } }
+        : t
+    })
   })
   const selectedContentId =
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
@@ -5081,6 +5101,7 @@ export default function App(): React.JSX.Element {
                               onCueFlow={onCueFlow}
                               onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
                               onCuePhrasesAll={cuesMarkable ? putPhrasesInSelected : undefined}
+                              onCueRestoreComments={restorePhrasedComments}
                               cueTargets={cueTargets}
                               cueGridCheckOf={cueGridCheckOf}
                               onShowBadGrid={showBadGrid}

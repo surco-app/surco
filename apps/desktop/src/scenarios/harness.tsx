@@ -870,6 +870,7 @@ function wiredCues(): CuesApi {
     queued: async () => null,
     undo: async () => {},
     save: async () => {},
+    saveComments: async () => {},
   }
 }
 
