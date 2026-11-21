@@ -617,6 +617,7 @@ export interface AppliedRelease {
   before: Partial<Record<MetaTextKey, string>>
   wrote: Partial<Record<MetaTextKey, string>>
   cover?: { before: { url?: string; path?: string }; wrote: { url?: string; path?: string } }
+  releaseDate?: string
 }
 
 // One track's editable state, persisted alongside the session paths so a crash or

@@ -665,11 +665,15 @@ export function buildReleaseMeta(
   const meta = importFields ? onlyImported(current, imported, importFields) : imported
   const coverUrl = keepCover ? shown.url : coverOf(rel, shown.url)
   const coverPath = keepCover ? shown.path : undefined
+  const releaseDate = fullDateOf(rel.released ?? '')
   return {
     coverUrl,
     coverPath,
     meta,
-    appliedRelease: appliedOver(base, meta, shown, { url: coverUrl, path: coverPath }),
+    appliedRelease: {
+      ...appliedOver(base, meta, shown, { url: coverUrl, path: coverPath }),
+      ...(releaseDate && { releaseDate }),
+    },
   }
 }
 
