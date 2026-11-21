@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Envoie tes phrases dans rekordbox",
+    "items": [
+      {
+        "text": "Après « Mettre les phrases dans les commentaires », enregistre-les dans rekordbox avec « Enregistrer N commentaires dans rekordbox ». Seule la colonne Commentaires change. Tes fichiers et le reste des données restent comme avant, tes My Tags aussi.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Une conversion montre sa progression dans la ligne elle-même, avec sa forme d’onde qui se remplit. En lot, le bouton d’annulation se remplit à mesure que les morceaux se terminent.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Un fichier sans tags est recherché par l’artiste et l’album de son dossier quand le nom ne donne pas d’artiste. Une face de vinyle dans le nom, comme A1, ne gêne plus.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Les fichiers que tu ajoutes restent sélectionnés, et si une recherche les cachait, Surco l’efface. Ouvrir une autre playlist efface aussi la recherche.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Avec « Explications en ligne » désactivé, Réglages cache aussi ses explications. Celles qui te disent ce qui manque à un contrôle restent.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Crée des flux de cues depuis un morceau",

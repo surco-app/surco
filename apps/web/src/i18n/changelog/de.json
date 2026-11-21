@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Bring deine Phrasen nach rekordbox",
+    "items": [
+      {
+        "text": "Nach „Phrasen in die Kommentare setzen“ speicherst du sie mit „N Kommentare in rekordbox speichern“ in rekordbox. Nur die Spalte Kommentare ändert sich. Deine Dateien und alle anderen Daten bleiben, wie sie waren, deine My Tags auch.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Eine Konvertierung zeigt ihren Fortschritt direkt in der Zeile, die Wellenform füllt sich. Im Stapel füllt sich der Abbrechen-Button, während die Tracks fertig werden.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Eine Datei ohne Tags wird nach Künstler und Album ihres Ordners gesucht, wenn der Name keinen Künstler nennt. Eine Vinylseite im Namen wie A1 stört nicht mehr.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Dateien, die du hinzufügst, bleiben ausgewählt, und wenn eine Suche sie versteckt hat, entfernt Surco sie. Eine andere Playlist zu öffnen leert die Suche ebenfalls.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Mit ausgeschalteten „Erklärungen im Editor“ blendet auch Einstellungen seine Erklärungen aus. Die Hinweise, was einem Regler fehlt, bleiben.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Cue-Abläufe aus einem Track erstellen",

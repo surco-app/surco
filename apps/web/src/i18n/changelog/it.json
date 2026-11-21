@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Porta le frasi in rekordbox",
+    "items": [
+      {
+        "text": "Dopo «Metti le frasi nei commenti», salvale in rekordbox con «Salva N commenti in rekordbox». Cambia solo la colonna Commenti. I tuoi file e il resto dei dati restano come prima, e anche i tuoi My Tags.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Una conversione mostra il suo avanzamento nella riga stessa, con la forma d’onda che si riempie. In un lotto si riempie il pulsante di annullamento man mano che i brani finiscono.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Un file senza tag viene cercato per l’artista e l’album della sua cartella quando il nome non dice l’artista. Il lato del vinile nel nome, come A1, non dà più fastidio.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "I file che aggiungi restano selezionati, e se una ricerca li nascondeva, Surco la toglie. Aprire un’altra playlist pulisce anche la ricerca.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Con «Spiegazioni in linea» spento, anche Impostazioni nasconde le sue spiegazioni. Restano quelle che ti dicono cosa manca a un controllo.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Crea flussi di cue da un brano",

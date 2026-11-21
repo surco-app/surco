@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "21 de noviembre de 2026",
+    "title": "Pasa las frases a rekordbox",
+    "items": [
+      {
+        "text": "Después de «Poner frases en los comentarios», guárdalas en rekordbox con «Guardar N comentarios en rekordbox». Solo cambia la columna Comentarios. Tus archivos y el resto de datos se quedan como estaban, y tus My Tags también.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "El progreso de una conversión se ve en la propia fila, con su onda llenándose. En lote se llena el botón de cancelar a medida que acaban las pistas.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Un archivo sin etiquetas se busca por el artista y el álbum de su carpeta cuando el nombre no dice el artista. La cara del vinilo en el nombre, como A1, ya no estorba.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Los archivos que añades quedan seleccionados, y si una búsqueda los escondía, Surco la quita. Abrir otra playlist también limpia la búsqueda.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Con «Explicaciones en línea» apagado, Ajustes también esconde sus explicaciones. Se quedan las que te dicen qué le falta a un control.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "20 de noviembre de 2026",
     "title": "Crea flujos de cues desde una pista",

@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Send your phrases to rekordbox",
+    "items": [
+      {
+        "text": "After “Put phrases in the comments”, save them to rekordbox with “Save N comments to rekordbox”. Only the Comments column changes. Your files and everything else stay as they were, and so do your My Tags.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "A conversion shows its progress in the row itself, with its wave filling in. In a batch, the cancel button fills up as tracks finish.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "A file with no tags is searched by its folder’s artist and album when the name gives no artist. A vinyl side in the name, like A1, no longer gets in the way.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Files you add stay selected, and if a search was hiding them, Surco clears it. Opening another playlist also clears the search.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "With “Inline explanations” off, Settings hides its explanations too. The ones that tell you what a control is missing stay.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Make cue flows from a track",

@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Passa les frases a rekordbox",
+    "items": [
+      {
+        "text": "Després de «Posar frases als comentaris», desa-les a rekordbox amb «Desar N comentaris a rekordbox». Només canvia la columna Comentaris. Els teus fitxers i la resta de dades es queden com estaven, i els teus My Tags també.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "El progrés d’una conversió es veu a la mateixa fila, amb la seva ona omplint-se. En lot s’omple el botó de cancel·lar a mesura que acaben les pistes.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Un fitxer sense etiquetes es busca per l’artista i l’àlbum de la seva carpeta quan el nom no diu l’artista. La cara del vinil al nom, com A1, ja no fa nosa.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Els fitxers que afegeixes queden seleccionats, i si una cerca els amagava, Surco la treu. Obrir una altra playlist també neteja la cerca.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Amb «Explicacions en línia» apagat, Configuració també amaga les seves explicacions. Es queden les que et diuen què li falta a un control.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Crea fluxos de cues a partir d'una pista",

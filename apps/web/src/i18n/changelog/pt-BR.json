@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.42",
+    "date": "November 21, 2026",
+    "title": "Leve suas frases para o rekordbox",
+    "items": [
+      {
+        "text": "Depois de “Colocar frases nos comentários”, salve-as no rekordbox com “Salvar N comentários no rekordbox”. Só a coluna Comentários muda. Seus arquivos e o resto dos dados ficam como estavam, e suas My Tags também.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Uma conversão mostra o progresso na própria linha, com a forma de onda se preenchendo. Em lote, o botão de cancelar se enche conforme as faixas terminam.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Um arquivo sem tags é buscado pelo artista e álbum da pasta quando o nome não diz o artista. O lado do vinil no nome, como A1, não atrapalha mais.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Os arquivos que você adiciona ficam selecionados, e se uma busca os escondia, o Surco a limpa. Abrir outra playlist também limpa a busca.",
+        "in": "1.42.0"
+      },
+      {
+        "text": "Com “Explicações em linha” desligado, Ajustes também esconde suas explicações. Ficam as que dizem o que falta a um controle.",
+        "in": "1.42.0"
+      }
+    ]
+  },
+  {
     "version": "1.41",
     "date": "November 20, 2026",
     "title": "Crie fluxos de cues a partir de uma faixa",
