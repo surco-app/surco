@@ -138,6 +138,7 @@ export function EditorTab({ synced, patch }: Props): React.JSX.Element {
             label={tr('settings.showEditorHints')}
             searchId="showEditorHints"
             hint={tr('settings.showEditorHintsHint')}
+            hintAlways
           />
         </SettingsGroup>
       </SettingsSection>

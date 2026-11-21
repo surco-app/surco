@@ -201,7 +201,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
         {button}
       </div>
       {nothing && !profile && (
-        <SettingsHint data-testid="cue-profile-nothing">
+        <SettingsHint data-testid="cue-profile-nothing" always>
           {tr('settings.cueProfile.nothing')}
         </SettingsHint>
       )}

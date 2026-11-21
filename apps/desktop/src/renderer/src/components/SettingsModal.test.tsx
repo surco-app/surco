@@ -1925,3 +1925,58 @@ describe('the DJ software tab', () => {
     expect(programs.querySelector('[data-search-id="destination"]')).toBeNull()
   })
 })
+
+// The inline-explanations switch now covers Settings too. It is read from the draft, so
+// the DJ sees the explanations go the moment he unticks it; its own line stays so he can
+// find the way back, and a line saying what a greyed control is missing never goes.
+describe('SettingsModal inline explanations', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
+  })
+
+  function open(over: Partial<Settings> = {}, initialTab?: SettingsTab) {
+    render(
+      <SettingsModal
+        settings={{ ...settings, ...over }}
+        onClose={() => {}}
+        onSave={() => {}}
+        onPreviewTheme={() => {}}
+        onSettingsReplaced={() => {}}
+        initialTab={initialTab}
+      />,
+    )
+  }
+
+  it('hides the explanations as soon as the switch is unticked, keeping its own', () => {
+    open({}, 'editor')
+    const own = i18n.t('settings.showEditorHintsHint')
+    expect(screen.getByText(i18n.t('settings.groupingHint'))).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-show-editor-hints'))
+    expect(screen.queryByText(i18n.t('settings.groupingHint'))).not.toBeInTheDocument()
+    expect(screen.getByText(own)).toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('settings-show-editor-hints'))
+    expect(screen.getByText(i18n.t('settings.groupingHint'))).toBeInTheDocument()
+    expect(screen.getByText(own)).toBeInTheDocument()
+  })
+
+  it('keeps saying what a disabled program needs while the explanations are off', () => {
+    open({ showEditorHints: false }, 'programs')
+    expect(screen.getByTestId('settings-reach-traktor')).toBeDisabled()
+    expect(screen.getByText(i18n.t('settings.syncTraktorIdle'))).toBeInTheDocument()
+    expect(screen.queryByText(i18n.t('settings.traktorNmlPathHint'))).not.toBeInTheDocument()
+  })
+
+  it('still finds a setting by its name while the explanations are off', async () => {
+    open({ showEditorHints: false })
+    fireEvent.change(screen.getByTestId('settings-search'), {
+      target: { value: i18n.t('settings.searchByAlbumFirst') },
+    })
+    fireEvent.click(screen.getByTestId('settings-search-result-searchByAlbumFirst'))
+    await waitFor(() =>
+      expect(
+        screen.getByRole('tabpanel').querySelector('[data-search-id="searchByAlbumFirst"]'),
+      ).toHaveAttribute('data-search-hit', 'true'),
+    )
+    expect(screen.queryByText(i18n.t('settings.searchByAlbumFirstHint'))).not.toBeInTheDocument()
+  })
+})

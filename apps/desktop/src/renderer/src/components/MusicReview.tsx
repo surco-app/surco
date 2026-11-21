@@ -763,11 +763,6 @@ function Done({
           {t('damage.done.undoNote')}
         </p>
       )}
-      {(removed > 0 || leftMusic > 0) && (
-        <p data-testid="music-review-done-note" className="text-xs text-fg-faint">
-          {t('musicReview.removedNoUndo')}
-        </p>
-      )}
       <div className="flex items-center gap-1.5">
         {undoable && (
           <button

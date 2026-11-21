@@ -885,12 +885,18 @@ describe('CuesTab', () => {
     expect(screen.queryByTestId('cue-rule-1-repeat')).toBeNull()
   })
 
-  it('warns that a loose CALL from a rule reads as a drop next time', () => {
+  // The place token already reads CALL; a line of prose under every such rule only
+  // restated it and promised a reading the next analysis does not always make.
+  it('shows a CALL rule by its place alone, with no colour blocks and no note under it', () => {
     render(<Harness />)
     fireEvent.click(screen.getByTestId('cue-rule-0-place'))
     fireEvent.click(screen.getByTestId('cue-rule-0-place-option-call'))
-    expect(screen.getByTestId('cue-rule-0-loose-call')).toBeInTheDocument()
+    expect(screen.getByTestId('cue-rule-0-place')).toHaveTextContent(
+      i18n.t('settings.cueFlows.place.call'),
+    )
     expect(screen.queryByTestId('cue-rule-0-color-mode')).toBeNull()
+    expect(screen.queryByTestId('cue-rule-0-loose-call')).toBeNull()
+    expect(screen.getByTestId('cue-rule-0')).not.toHaveTextContent('loose CALL')
   })
 
   it('creates a flow straight into naming it, the way a new folder opens in Finder, and makes it the one in use', () => {

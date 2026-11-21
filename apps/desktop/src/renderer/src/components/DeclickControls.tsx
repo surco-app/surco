@@ -7,6 +7,7 @@ import { SegmentedControl } from './SegmentedControl'
 interface Props {
   value: DeclickMode
   onChange: (next: DeclickMode) => void
+  showHints?: boolean
 }
 
 const MODES: readonly DeclickMode[] = ['off', 'soft', 'standard', 'strong']
@@ -16,7 +17,7 @@ const MODES: readonly DeclickMode[] = ['off', 'soft', 'standard', 'strong']
 // ONE intensity ladder — off, gentle, standard, strong — each step a calibrated
 // preset (see shared/declick.ts for the mapping and why the raw adeclick knobs
 // are deliberately not exposed).
-export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
+export function DeclickControls({ value, onChange, showHints = true }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
     <div>
@@ -30,9 +31,11 @@ export function DeclickControls({ value, onChange }: Props): React.JSX.Element {
         label={tr('declick.clicksLabel')}
         labelFor={(id) => tr(`declick.mode.${id}`)}
       />
-      <p data-testid="declick-mode-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
-        {tr(`declick.modeHint.${value}`)}
-      </p>
+      {showHints && (
+        <p data-testid="declick-mode-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
+          {tr(`declick.modeHint.${value}`)}
+        </p>
+      )}
     </div>
   )
 }
@@ -45,9 +48,11 @@ const NOISE_MODES: readonly NoiseMode[] = ['off', 'soft', 'medium', 'strong']
 export function NoiseControls({
   value,
   onChange,
+  showHints = true,
 }: {
   value: NoiseMode
   onChange: (next: NoiseMode) => void
+  showHints?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   return (
@@ -62,9 +67,11 @@ export function NoiseControls({
         label={tr('declick.noiseLabel')}
         labelFor={(id) => tr(`declick.noiseMode.${id}`)}
       />
-      <p data-testid="declick-noise-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
-        {tr(`declick.noiseHint.${value}`)}
-      </p>
+      {showHints && (
+        <p data-testid="declick-noise-hint" className="mt-2 w-0 min-w-full text-xs text-fg-dim">
+          {tr(`declick.noiseHint.${value}`)}
+        </p>
+      )}
     </div>
   )
 }

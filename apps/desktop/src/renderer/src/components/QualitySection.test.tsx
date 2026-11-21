@@ -465,6 +465,8 @@ describe('QualitySection verdict caption', () => {
     await waitFor(() => expect(reportError).toHaveBeenCalledWith(i18n.t('errors.qualityReport')))
   })
 
+  // The Damaged pill names the verdict and the convert footer explains it where the
+  // decision is made; a red caption under the spectrum said it a third time.
   it('names a file that stops decoding before its stated length Damaged instead of grading its highs', async () => {
     renderSection({
       image: '',
@@ -477,9 +479,8 @@ describe('QualitySection verdict caption', () => {
     expect(await screen.findByTestId('quality-damaged')).toHaveTextContent(
       i18n.t('editor.qualityDamaged'),
     )
-    expect(screen.getByTestId('quality-damaged-note')).toHaveTextContent(
-      i18n.t('editor.qualityDamagedCaption'),
-    )
+    expect(screen.queryByTestId('quality-damaged-note')).toBeNull()
+    expect(document.body).not.toHaveTextContent('stops decoding')
     expect(screen.queryByTestId('quality-badge')).toBeNull()
   })
 

@@ -808,7 +808,6 @@
     "qualityProcessed": "再処理された可能性があります",
     "qualityTranscode": "非可逆ソース",
     "qualityDamaged": "破損したファイル",
-    "qualityDamagedCaption": "表示上の長さより前でデコードが止まります。ファイルが破損しているか不完全です。",
     "analyzing": "スペクトラムを分析中…",
     "previous": {
       "label": "以前:",
@@ -1941,7 +1940,7 @@
     "showLoudness": "ラウドネス（LUFS）表示",
     "showLoudnessHint": "トラック編集中に統合ラウドネス、トゥルーピーク、ラウドネスレンジ（EBU R128）を測定します。オフの場合は測定がスキップされます。",
     "showEditorHints": "インライン説明",
-    "showEditorHintsHint": "エディタコントロール下の1行説明：各モードの機能とピーク上限を示します。覚えたらオフにしてください。",
+    "showEditorHintsHint": "エディタと設定のコントロールの下に表示される説明です。オプションを使うのに足りないものは常に表示されます。覚えたらオフにしてください。",
     "keyNotation": "キー表記",
     "keyNotationHint": "トラックリストと「キー」フィールドの下の候補で、キーをどのように表示するかを選びます。英数字表記（Camelot）はDJソフトが並べ替えに使う方式です。",
     "sections": {
@@ -2067,7 +2066,6 @@
       "moveRuleHint": "ドラッグして順番を変更",
       "noRules": "ルールがありません。このフローはマークした位置に CALL を置くだけです。",
       "preview": "プレビュー",
-      "previewHint": "128 BPM のサンプルトラック、{{bar}} 小節目にマーク",
       "exampleTrack": "サンプルトラック",
       "searchCollection": "{{program}} のコレクションを検索",
       "previewProgram": "ソフト",
@@ -2106,7 +2104,6 @@
         }
       },
       "tooMany": "このフローは {{count}} 個のホットキューを必要としますが、rekordbox は 8 個までです",
-      "looseCall": "単独の CALL は次回マークとして扱われます",
       "block": {
         "from": "起点",
         "direction": "方向",

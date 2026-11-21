@@ -808,7 +808,6 @@
     "qualityProcessed": "Possible reprocessat",
     "qualityTranscode": "Font amb pèrdua",
     "qualityDamaged": "Fitxer malmès",
-    "qualityDamagedCaption": "El fitxer deixa de descodificar-se abans de la durada declarada. Està malmès o incomplet.",
     "analyzing": "Analitzant l'espectre…",
     "previous": {
       "label": "Abans:",
@@ -1941,7 +1940,7 @@
     "showLoudness": "Mostrar la sonoritat (LUFS)",
     "showLoudnessHint": "Mesura la sonoritat integrada, el pic real i el rang de sonoritat (EBU R128) quan edites una pista. Si ho desactives, la mesura s'omet del tot.",
     "showEditorHints": "Explicacions en línia",
-    "showEditorHintsHint": "Explicacions d'una línia sota els controls de l'editor. Què fa cada mode i què és el sostre de pics. Desactiva-les quan te les sàpigues de memòria.",
+    "showEditorHintsHint": "Explicacions sota els controls de l'editor i de Configuració. El que li falta a una opció per funcionar es continua veient. Desactiva-les quan te les sàpigues de memòria.",
     "keyNotation": "Notació de la tonalitat",
     "keyNotationHint": "Com es mostra la tonalitat a la llista de pistes i al suggeriment sota el camp Tonalitat. L'alfanumèrica, o Camelot, és la que fan servir els programes de DJ per ordenar.",
     "sections": {
@@ -2067,7 +2066,6 @@
       "moveRuleHint": "Arrossega per canviar l'ordre",
       "noRules": "Sense regles. El flux només posa un CALL on marques.",
       "preview": "Previsualització",
-      "previewHint": "Pista d'exemple a 128 BPM, marcada al compàs {{bar}}",
       "exampleTrack": "Pista d'exemple",
       "searchCollection": "Cerca a la teva col·lecció de {{program}}",
       "previewProgram": "Programa",
@@ -2106,7 +2104,6 @@
         }
       },
       "tooMany": "Aquest flux demana {{count}} hot cues i rekordbox n'admet 8",
-      "looseCall": "Un CALL solt es prendrà com a marca la pròxima vegada",
       "block": {
         "from": "Des de",
         "direction": "Sentit",

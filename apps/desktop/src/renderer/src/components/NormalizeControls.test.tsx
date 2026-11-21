@@ -371,6 +371,19 @@ describe('NormalizeControls hidden hints', () => {
     expect(screen.getByTestId('normalize-mode-line')).toBeTruthy()
     expect(screen.getByTestId('normalize-ceiling-caption')).toBeTruthy()
   })
+
+  // The preset line explains the preset, the same kind of teaching as the mode line it
+  // shares a paragraph with, so the switch that hides one has to hide the other.
+  it('hides the preset line with the mode line when hints are off', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} showHints={false} />)
+    expect(screen.queryByTestId('normalize-preset-hint')).toBeNull()
+    expect(screen.getByTestId('normalize-preset-streaming')).toBeTruthy()
+  })
+
+  it('shows the preset line when hints are on', () => {
+    render(<NormalizeControls value={loudness} onChange={vi.fn()} showHints />)
+    expect(screen.getByTestId('normalize-preset-hint')).toBeTruthy()
+  })
 })
 
 // Same as the click-repair ladder: the mode buttons are bare words, and the editor shows

@@ -808,7 +808,6 @@
     "qualityProcessed": "Possibly reprocessed",
     "qualityTranscode": "Lossy source",
     "qualityDamaged": "Damaged",
-    "qualityDamagedCaption": "The file stops decoding before its stated length: it is damaged or incomplete.",
     "analyzing": "Analyzing spectrum…",
     "previous": {
       "label": "Before:",
@@ -1941,7 +1940,7 @@
     "showLoudness": "Show loudness (LUFS)",
     "showLoudnessHint": "Measures integrated loudness, true peak and loudness range (EBU R128) while editing a track. When off, the measurement is skipped entirely.",
     "showEditorHints": "Inline explanations",
-    "showEditorHintsHint": "One-line explanations under the editor controls: what each mode does and what the peak ceiling is. Turn off once you know them by heart.",
+    "showEditorHintsHint": "Explanations under the controls in the editor and in Settings. What an option still needs to work always shows. Turn them off once you know them by heart.",
     "keyNotation": "Key notation",
     "keyNotationHint": "How the key is shown in the track list and in the suggestion under the Key field. Alphanumeric, or Camelot, is what DJ software sorts by.",
     "sections": {
@@ -2067,7 +2066,6 @@
       "moveRuleHint": "Drag to change the order",
       "noRules": "No rules. The flow only puts a CALL where you mark.",
       "preview": "Preview",
-      "previewHint": "Example track at 128 BPM, marked at bar {{bar}}",
       "exampleTrack": "Example track",
       "searchCollection": "Search your {{program}} collection",
       "previewProgram": "Program",
@@ -2106,7 +2104,6 @@
         }
       },
       "tooMany": "This flow asks for {{count}} hot cues and rekordbox allows 8",
-      "looseCall": "A loose CALL will be taken as a mark next time",
       "block": {
         "from": "From",
         "direction": "Direction",

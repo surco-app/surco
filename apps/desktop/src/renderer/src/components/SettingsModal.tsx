@@ -39,6 +39,7 @@ import { LayoutTab } from './settings/LayoutTab'
 import { NamingTab } from './settings/NamingTab'
 import { ProcessingTab } from './settings/ProcessingTab'
 import { SearchTab } from './settings/SearchTab'
+import { SettingsHintsVisible } from './settings/SettingsPrimitives'
 import {
   SETTINGS_SEARCH_LISTBOX_ID,
   SettingsSearchResults,
@@ -504,112 +505,114 @@ export function SettingsModal({
             aria-labelledby={`settings-tab-${entry.id}`}
             className={`${tab === 'cues' ? 'scroll-pt-40 ' : ''}-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]`}
           >
-            {tab === 'general' && (
-              <GeneralTab
-                synced={synced}
-                patch={patch}
-                local={local}
-                patchLocal={patchLocal}
-                onPreviewTheme={onPreviewTheme}
-              />
-            )}
-            {tab === 'advanced' && (
-              <AdvancedTab
-                configDir={configDir}
-                defaultDir={defaultDir}
-                onChangeConfigDir={changeConfigDir}
-                onResetConfigDir={() => moveConfigDir(null)}
-                onExportSettings={exportSettings}
-                onImportSettings={importSettings}
-                settingsFileError={settingsFileError}
-                local={local}
-                patchLocal={patchLocal}
-              />
-            )}
-            {tab === 'search' && (
-              <SearchTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                patchLocal={patchLocal}
-                onBeatportChange={(next) => {
-                  onSettingsReplaced(next)
-                  patchLocal('beatportUsername', next.beatportUsername)
-                }}
-              />
-            )}
-            {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
-            {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
-            {tab === 'destination' && (
-              <DestinationTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
-                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
-                onChangeTraktorNmlPath={changeTraktorNmlPath}
-                rekordboxCollection={rekordboxCollection}
-                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
-                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
-                detectedNmlPath={detectedNmlPath}
-                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
-              />
-            )}
-            {tab === 'programs' && (
-              <ProgramsTab
-                synced={synced}
-                local={local}
-                patch={patch}
-                onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
-                onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
-                onChangeTraktorNmlPath={changeTraktorNmlPath}
-                rekordboxCollection={rekordboxCollection}
-                onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
-                onChangeVirtualdjDir={() => void changeVirtualdjDir()}
-                detectedNmlPath={detectedNmlPath}
-                onAcceptDetectedNmlPath={acceptDetectedNmlPath}
-                searchAnchor={selectedTab === 'programs' ? selectedAnchor : undefined}
-              />
-            )}
-            {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
-            {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
-            {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
-            {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
-            {tab === 'cues' && (
-              <CuesTab
-                synced={synced}
-                patch={patch}
-                rekordboxCollection={rekordboxCollection}
-                cueTrack={cueTrack}
-                cueProgram={cueProgram}
-              />
-            )}
-            {tab === 'fields' && (
-              <FieldsEditor
-                visibleFields={synced.visibleFields}
-                requiredFields={synced.requiredFields}
-                importFields={synced.importFields}
-                customFields={synced.customFields}
-                onChangeVisible={(fields) => patch('visibleFields', fields)}
-                onChangeRequired={(fields) => patch('requiredFields', fields)}
-                onChangeImport={(fields) => patch('importFields', fields)}
-                onChangeCustom={(fields) => patch('customFields', fields)}
-                separators={{ genre: synced.genreSeparator, grouping: synced.groupingSeparator }}
-                onChangeSeparator={(key, separator) =>
-                  patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
-                }
-                playlistLibraries={playlistLibraries}
-              />
-            )}
-            {tab === 'shortcuts' && (
-              <ShortcutsTab
-                synced={synced}
-                patch={patch}
-                bindings={bindings}
-                conflictIds={conflictIds}
-              />
-            )}
-            {tab === 'stats' && <StatsTab settings={settings} />}
+            <SettingsHintsVisible value={synced.showEditorHints}>
+              {tab === 'general' && (
+                <GeneralTab
+                  synced={synced}
+                  patch={patch}
+                  local={local}
+                  patchLocal={patchLocal}
+                  onPreviewTheme={onPreviewTheme}
+                />
+              )}
+              {tab === 'advanced' && (
+                <AdvancedTab
+                  configDir={configDir}
+                  defaultDir={defaultDir}
+                  onChangeConfigDir={changeConfigDir}
+                  onResetConfigDir={() => moveConfigDir(null)}
+                  onExportSettings={exportSettings}
+                  onImportSettings={importSettings}
+                  settingsFileError={settingsFileError}
+                  local={local}
+                  patchLocal={patchLocal}
+                />
+              )}
+              {tab === 'search' && (
+                <SearchTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  patchLocal={patchLocal}
+                  onBeatportChange={(next) => {
+                    onSettingsReplaced(next)
+                    patchLocal('beatportUsername', next.beatportUsername)
+                  }}
+                />
+              )}
+              {tab === 'conversion' && <ConversionTab synced={synced} patch={patch} />}
+              {tab === 'processing' && <ProcessingTab synced={synced} patch={patch} />}
+              {tab === 'destination' && (
+                <DestinationTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
+                  onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
+                  onChangeTraktorNmlPath={changeTraktorNmlPath}
+                  rekordboxCollection={rekordboxCollection}
+                  onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                  onChangeVirtualdjDir={() => void changeVirtualdjDir()}
+                  detectedNmlPath={detectedNmlPath}
+                  onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+                />
+              )}
+              {tab === 'programs' && (
+                <ProgramsTab
+                  synced={synced}
+                  local={local}
+                  patch={patch}
+                  onOutputDirChange={(dir) => patchLocal('outputDir', dir)}
+                  onChangeEngineDir={(dir) => patchLocal('engineLibraryDir', dir)}
+                  onChangeTraktorNmlPath={changeTraktorNmlPath}
+                  rekordboxCollection={rekordboxCollection}
+                  onChangeRekordboxDbPath={() => void changeRekordboxDbPath()}
+                  onChangeVirtualdjDir={() => void changeVirtualdjDir()}
+                  detectedNmlPath={detectedNmlPath}
+                  onAcceptDetectedNmlPath={acceptDetectedNmlPath}
+                  searchAnchor={selectedTab === 'programs' ? selectedAnchor : undefined}
+                />
+              )}
+              {tab === 'naming' && <NamingTab synced={synced} patch={patch} />}
+              {tab === 'editor' && <EditorTab synced={synced} patch={patch} />}
+              {tab === 'layout' && <LayoutTab synced={synced} patch={patch} />}
+              {tab === 'artwork' && <ArtworkTab synced={synced} patch={patch} />}
+              {tab === 'cues' && (
+                <CuesTab
+                  synced={synced}
+                  patch={patch}
+                  rekordboxCollection={rekordboxCollection}
+                  cueTrack={cueTrack}
+                  cueProgram={cueProgram}
+                />
+              )}
+              {tab === 'fields' && (
+                <FieldsEditor
+                  visibleFields={synced.visibleFields}
+                  requiredFields={synced.requiredFields}
+                  importFields={synced.importFields}
+                  customFields={synced.customFields}
+                  onChangeVisible={(fields) => patch('visibleFields', fields)}
+                  onChangeRequired={(fields) => patch('requiredFields', fields)}
+                  onChangeImport={(fields) => patch('importFields', fields)}
+                  onChangeCustom={(fields) => patch('customFields', fields)}
+                  separators={{ genre: synced.genreSeparator, grouping: synced.groupingSeparator }}
+                  onChangeSeparator={(key, separator) =>
+                    patch(key === 'genre' ? 'genreSeparator' : 'groupingSeparator', separator)
+                  }
+                  playlistLibraries={playlistLibraries}
+                />
+              )}
+              {tab === 'shortcuts' && (
+                <ShortcutsTab
+                  synced={synced}
+                  patch={patch}
+                  bindings={bindings}
+                  conflictIds={conflictIds}
+                />
+              )}
+              {tab === 'stats' && <StatsTab settings={settings} />}
+            </SettingsHintsVisible>
           </div>
           {/* Fades the cut-off last line into the panel while there's more below, then
             clears at the end — the "keep scrolling" cue the faint scrollbar didn't give. */}

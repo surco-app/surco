@@ -35,6 +35,7 @@ export function AutoMatchControl({
       checked={checked && autoReady}
       onChange={onChange}
       disabled={!autoReady}
+      hintAlways={!autoReady}
       label={tr('settings.autoMatch')}
       hint={
         searchProviders.length === 0

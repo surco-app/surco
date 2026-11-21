@@ -2017,6 +2017,7 @@ export const Editor = memo(function Editor({
                           selectedCount={selectedTracks?.length ?? 1}
                           format={format}
                           trim={item.trim}
+                          showHints={showEditorHints}
                         />
                       )
                     case 'normalize':

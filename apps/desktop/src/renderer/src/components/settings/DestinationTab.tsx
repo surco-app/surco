@@ -241,7 +241,7 @@ function OutputSettings({
                 patch={patch}
                 disabled={!local.traktorNmlPath}
               />
-              <SettingsHint className="mt-2 mb-4">
+              <SettingsHint className="mt-2 mb-4" always={!local.traktorNmlPath}>
                 {local.traktorNmlPath
                   ? tr('settings.syncTraktorHint')
                   : tr('settings.syncTraktorIdle')}
@@ -269,7 +269,7 @@ function OutputSettings({
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm">{detectedNmlPath}</p>
-                    <SettingsHint>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
+                    <SettingsHint always>{tr('settings.traktorNmlPathDetectedHint')}</SettingsHint>
                   </div>
                   <button
                     type="button"
@@ -420,7 +420,7 @@ function OutputSettings({
                 patch={patch}
                 disabled={!rekordboxCollection}
               />
-              <SettingsHint className="mt-2">
+              <SettingsHint className="mt-2" always={!rekordboxCollection}>
                 {rekordboxCollection
                   ? tr('settings.syncRekordboxHint')
                   : tr('settings.syncRekordboxIdle')}
@@ -497,7 +497,9 @@ function OutputSettings({
                   </div>
                 </div>
               )}
-              <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
+              <SettingsHint className="mt-2" always>
+                {tr('settings.completeCuesHint')}
+              </SettingsHint>
             </SettingsSection>
             {/* The library folder says which Engine database Surco reads and
           writes; the three-state control decides whether rows that point at a converted
@@ -572,7 +574,7 @@ function OutputSettings({
             />
             {/* What this level costs, rather than one sentence covering all three: the choice
             IS the trade-off, so the line has to move with it. */}
-            <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
+            <SettingsHint className="mt-2.5" data-testid="settings-backup-hint" always>
               {tr(POLICY_HINT[synced.backupPolicy])}
             </SettingsHint>
             {/* Only 'never' can cost a file, and the word alone doesn't say so — least of all
@@ -642,7 +644,7 @@ function OutputSettings({
                 </div>
               </div>
             </div>
-            <SettingsHint className="mt-2.5">
+            <SettingsHint className="mt-2.5" always={backupOff}>
               {backupOff
                 ? tr('settings.originalBackupLimitsKept')
                 : tr('settings.originalBackupLimitsHint')}
@@ -675,7 +677,7 @@ function SeratoSection({
         patch={patch}
         disabled={!found && !synced.syncSerato && !synced.addToSerato}
       />
-      <SettingsHint className="mt-2">
+      <SettingsHint className="mt-2" always={!found}>
         {found ? tr('settings.syncSeratoHint') : tr('settings.syncSeratoIdle')}
       </SettingsHint>
     </SettingsSection>
@@ -703,7 +705,7 @@ function VirtualdjReach({
         patch={patch}
         disabled={!found && !synced.syncVirtualdj && !synced.addToVirtualdj}
       />
-      <SettingsHint className="mt-2">
+      <SettingsHint className="mt-2" always={!found}>
         {found ? tr('settings.syncVirtualdjHint') : tr('settings.syncVirtualdjIdle')}
       </SettingsHint>
     </div>
@@ -750,7 +752,7 @@ function DjReachRow({
         labelFor={(reach) => tr(`settings.djReach.${reach}`)}
       />
       {value === 'add' && (
-        <SettingsHint className="mt-2" data-testid={`settings-reach-${program}-add-hint`}>
+        <SettingsHint className="mt-2" data-testid={`settings-reach-${program}-add-hint`} always>
           {tr('settings.djReachAddHint')}
         </SettingsHint>
       )}
