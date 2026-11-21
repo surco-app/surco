@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Cada repetición, aunque pase por encima de otra marca",
-        "fits": "Se para en la marca anterior y en cualquier estribillo",
-        "previous": "Cruza los estribillos sin marca y se para en la marca anterior",
-        "room": "Lo deja fuera si otro cue llega en los compases que elijas",
-        "clear": "Lo deja fuera si otro cue cae en el mismo compás",
-        "first": "Solo antes de la primera marca, si allí no hay nada"
+        "fits": "Se para en la marca anterior y en los estribillos que marca rekordbox. En las marcas que pones a mano, solo en la marca anterior",
+        "previous": "Cruza los estribillos de rekordbox sin marca y se para en la marca anterior o en el estribillo donde está. En las marcas que pones a mano, solo en la marca anterior",
+        "room": "Lo deja fuera si una regla de arriba pone un cue en los compases que elijas",
+        "clear": "Lo deja fuera si una regla de arriba pone un cue a menos de un compás",
+        "first": "Solo antes de la primera marca, si ninguna regla de arriba pone un cue ahí"
       },
       "whenEach": {
         "fits": "si cabe",
@@ -2166,7 +2166,6 @@
         "afterShort": "sin cue después",
         "in": "en {{sections}}",
         "only": "Solo en",
-        "line": "El de {{bars}}, solo {{conditions}}.",
         "lineAll": "Solo {{conditions}}."
       },
       "section": {

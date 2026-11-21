@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Chaque répétition, même par-dessus une autre marque",
-        "fits": "S’arrête à la marque précédente et à chaque refrain",
-        "previous": "Traverse les refrains sans marque et s’arrête à la marque précédente",
-        "room": "Le laisse de côté si un autre cue arrive dans les mesures que tu choisis",
-        "clear": "Le laisse de côté si un autre cue tombe sur la même mesure",
-        "first": "Seulement avant la première marque, s’il n’y a encore rien"
+        "fits": "S’arrête à la marque précédente et aux refrains que rekordbox repère. Sur les marques que tu poses à la main, seulement à la marque précédente",
+        "previous": "Traverse les refrains de rekordbox sans marque et s’arrête à la marque précédente ou au refrain où elle se trouve. Sur les marques que tu poses à la main, seulement à la marque précédente",
+        "room": "Le laisse de côté si une règle plus haut pose un cue dans les mesures que tu choisis",
+        "clear": "Le laisse de côté si une règle plus haut pose un cue à moins d’une mesure",
+        "first": "Seulement avant la première marque, si aucune règle plus haut n’y pose de cue"
       },
       "whenEach": {
         "fits": "si ça rentre",
@@ -2166,7 +2166,6 @@
         "afterShort": "sans cue après",
         "in": "dans {{sections}}",
         "only": "Seulement dans",
-        "line": "Celui de {{bars}}, seulement {{conditions}}.",
         "lineAll": "Seulement {{conditions}}."
       },
       "section": {

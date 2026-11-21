@@ -140,7 +140,6 @@ export function CueRuleRow({
   const slotNumbers = Array.from({ length: slots }, (_, i) => i)
   const shownSlots = rule.direction === 'back' ? [...slotNumbers].reverse() : slotNumbers
   const showDistance = !('fixed' in rule.color)
-  const shared = rule.bars === 0 || !showDistance
   const [nearBars, setNearBars] = useState<Record<string, number>>({})
   const whenAt = (slot: number): RepeatWhen => repeatWhenOf(rule, slot + 1)
   const own = (slot: number): boolean => formatRepeatWhen(whenAt(slot)) !== 'rule'
@@ -526,7 +525,11 @@ export function CueRuleRow({
                   <button
                     type="button"
                     data-testid={`${id}-color-${slot}`}
-                    aria-label={tr('settings.cueFlows.block.color', { n: slot + 1 })}
+                    aria-label={
+                      own(slot)
+                        ? `${tr('settings.cueFlows.block.color', { n: slot + 1 })}${tr('settings.cueFlows.whenEachLead')}${tr('settings.cueFlows.whenEach.lineAll', { conditions: conditionsOf(whenAt(slot)) })}`
+                        : tr('settings.cueFlows.block.color', { n: slot + 1 })
+                    }
                     aria-expanded={open === `color-${slot}`}
                     data-own={own(slot) ? 'true' : undefined}
                     onClick={() => setOpen(open === `color-${slot}` ? null : `color-${slot}`)}
@@ -619,20 +622,6 @@ export function CueRuleRow({
       >
         <Minus size={14} />
       </button>
-      <p data-testid={`${id}-when-line`} className="text-xs leading-normal text-fg-faint">
-        {tr(`settings.cueFlows.whenHint.${rule.when}`)}
-        {shownSlots.filter(own).map((slot, i) => (
-          <span key={slot}>
-            {i === 0 ? tr('settings.cueFlows.whenEachLead') : ' '}
-            {shared
-              ? tr('settings.cueFlows.whenEach.lineAll', { conditions: conditionsOf(whenAt(slot)) })
-              : tr('settings.cueFlows.whenEach.line', {
-                  bars: rule.bars * (slot + 1),
-                  conditions: conditionsOf(whenAt(slot)),
-                })}
-          </span>
-        ))}
-      </p>
       {rule.place === 'call' && (
         <p data-testid={`${id}-loose-call`} className="text-label leading-normal text-fg-dim">
           {tr('settings.cueFlows.looseCall')}

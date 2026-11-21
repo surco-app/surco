@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "A ogni ripetizione, anche se passa sopra un altro segno",
-        "fits": "Si ferma al segno precedente e a qualsiasi ritornello",
-        "previous": "Attraversa i ritornelli senza segno e si ferma al segno precedente",
-        "room": "Lo esclude se un altro cue arriva nelle battute che scegli",
-        "clear": "Lo esclude se un altro cue cade nella stessa battuta",
-        "first": "Solo prima del primo segno, se lì non c'è niente"
+        "fits": "Si ferma al segno precedente e ai ritornelli che segna rekordbox. Sui segni che metti a mano, solo al segno precedente",
+        "previous": "Attraversa i ritornelli di rekordbox senza segno e si ferma al segno precedente o al ritornello in cui si trova. Sui segni che metti a mano, solo al segno precedente",
+        "room": "Lo esclude se una regola più in alto mette un cue nelle battute che scegli",
+        "clear": "Lo esclude se una regola più in alto mette un cue a meno di una battuta",
+        "first": "Solo prima del primo segno, se nessuna regola più in alto ci mette un cue"
       },
       "whenEach": {
         "fits": "se c'è spazio",
@@ -2166,7 +2166,6 @@
         "afterShort": "nessun cue dopo",
         "in": "in {{sections}}",
         "only": "Solo in",
-        "line": "Quello da {{bars}}, solo {{conditions}}.",
         "lineAll": "Solo {{conditions}}."
       },
       "section": {

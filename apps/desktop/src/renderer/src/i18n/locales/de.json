@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Jede Wiederholung, auch über eine andere Markierung hinweg",
-        "fits": "Stoppt an der vorherigen Markierung und an jedem Refrain",
-        "previous": "Läuft durch Refrains ohne Markierung und stoppt an der vorherigen Markierung",
-        "room": "Lässt ihn weg, wenn in den gewählten Takten ein anderer Cue kommt",
-        "clear": "Lässt ihn weg, wenn ein anderer Cue im selben Takt liegt",
-        "first": "Nur vor der ersten Markierung, wenn dort noch nichts ist"
+        "fits": "Stoppt an der vorherigen Markierung und an den Refrains, die rekordbox markiert. Bei Markierungen, die du von Hand setzt, nur an der vorherigen Markierung",
+        "previous": "Läuft durch Refrains von rekordbox ohne Markierung und stoppt an der vorherigen Markierung oder an dem Refrain, in dem sie liegt. Bei Markierungen, die du von Hand setzt, nur an der vorherigen Markierung",
+        "room": "Lässt ihn weg, wenn eine Regel weiter oben in den gewählten Takten einen Cue setzt",
+        "clear": "Lässt ihn weg, wenn eine Regel weiter oben weniger als einen Takt entfernt einen Cue setzt",
+        "first": "Nur vor der ersten Markierung, wenn keine Regel weiter oben dort einen Cue setzt"
       },
       "whenEach": {
         "fits": "wenn es passt",
@@ -2166,7 +2166,6 @@
         "afterShort": "kein Cue danach",
         "in": "in {{sections}}",
         "only": "Nur in",
-        "line": "Der bei {{bars}}, nur {{conditions}}.",
         "lineAll": "Nur {{conditions}}."
       },
       "section": {

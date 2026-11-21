@@ -157,33 +157,30 @@ describe('CueRuleRow room sentence', () => {
 })
 
 describe('CueRuleRow condition line', () => {
-  it('says under the sentence what the chosen condition does, the same words the list gives it', () => {
-    setup({ ...RULE, when: 'previous' })
-    const line = screen.getByTestId('cue-rule-0-when-line').textContent
+  // The grey line under each rule told what its condition would do with perfect analysis:
+  // choruses Surco only knows from rekordbox, phrases the other programs never give. It read
+  // as a promise the track could break, so the rule shows only what the DJ chose, and what
+  // a condition does is said where it is picked, in the list.
+  it('puts no explanation under the rule, only in the list where the condition is picked', () => {
+    setup({ ...RULE, when: 'previous', whenEach: ['fits', 'rule', 'down'] })
+    const hint = i18n.t('settings.cueFlows.whenHint.previous')
+    expect(screen.getByTestId('cue-rule-0')).not.toHaveTextContent(hint)
     fireEvent.click(screen.getByTestId('cue-rule-0-when'))
-    expect(line).toBe(screen.getByTestId('cue-rule-0-when-option-previous-hint').textContent)
-    expect(line).not.toBe('')
+    expect(screen.getByTestId('cue-rule-0-when-option-previous-hint')).toHaveTextContent(hint)
   })
 
-  it('follows the condition when the rule changes, so the line never describes the old one', () => {
-    const { rerender } = render(
-      <CueRuleRow
-        rule={{ ...RULE, when: 'fits' }}
-        index={1}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
-      />,
-    )
-    const before = screen.getByTestId('cue-rule-1-when-line').textContent
-    rerender(
-      <CueRuleRow
-        rule={{ ...RULE, when: 'clear' }}
-        index={1}
-        onChange={vi.fn()}
-        onRemove={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('cue-rule-1-when-line').textContent).not.toBe(before)
+  // Choruses and phrases come from rekordbox alone; a hint that spoke of choruses as if Surco
+  // heard them claimed something untrue for Engine, Serato, Traktor and VirtualDJ.
+  it('names rekordbox as where the choruses come from, in every language', async () => {
+    try {
+      for (const lng of ['es', 'en', 'de', 'fr', 'pt-BR', 'ca', 'it', 'ja']) {
+        await i18n.changeLanguage(lng)
+        for (const when of ['fits', 'previous'])
+          expect(i18n.t(`settings.cueFlows.whenHint.${when}`)).toContain('rekordbox')
+      }
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 })
 
@@ -191,7 +188,7 @@ describe('CueRuleRow open menu', () => {
   it('closes on a press anywhere outside the menu, even on the same rule, so it never stays over the text', () => {
     setup(RULE)
     fireEvent.click(screen.getByTestId('cue-rule-0-from'))
-    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-when-line'))
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0'))
     expect(screen.queryByTestId('cue-rule-0-from-menu')).not.toBeInTheDocument()
   })
 
@@ -450,7 +447,7 @@ describe('CueRuleRow condition of each repetition', () => {
     setup(RULE)
     openSquare(1)
     pickBars(1, 'before', 8)
-    fireEvent.mouseDown(screen.getByTestId('cue-rule-0-when-line'))
+    fireEvent.mouseDown(screen.getByTestId('cue-rule-0'))
     expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
   })
 
@@ -558,13 +555,6 @@ describe('CueRuleRow condition of each repetition', () => {
     }
   })
 
-  it('says under the sentence what each repetition of its own does, by its bars and in the order of the squares', () => {
-    setup({ ...RULE, when: 'previous', whenEach: ['fits', 'rule', 'down'] })
-    expect(screen.getByTestId('cue-rule-0-when-line')).toHaveTextContent(
-      'Crosses choruses with no mark in them and stops at the previous mark. The one at 48, only in a breakdown. The one at 16, only if it fits.',
-    )
-  })
-
   it('cuts the conditions of the repetitions a shorter rule no longer has, so none comes back when it grows again', () => {
     const { onChange } = setup({ ...RULE, whenEach: ['fits', 'rule', 'down'] })
     fireEvent.click(screen.getByTestId('cue-rule-0-repeat'))
@@ -577,17 +567,23 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByTestId('cue-rule-0-color-0')).toHaveAttribute('data-own', 'true')
   })
 
-  it('says every condition of a repetition in one sentence, joined the way the language joins a list', () => {
+  // With the line under the rule gone, the outline is all that marks a repetition with its
+  // own conditions; a screen reader cannot see it, so the square names them.
+  it('names every condition of a repetition on its square, joined the way the language joins a list', () => {
     setup({ ...RULE, whenEach: ['in:up|down', 'rule', 'fits+before:32+after:1'] })
-    expect(screen.getByTestId('cue-rule-0-when-line')).toHaveTextContent(
-      'The one at 48, only if it fits, with no other cue in the 32 bars before, and with no other cue in the 1 bar after. The one at 16, only in a build or a breakdown.',
+    expect(screen.getByTestId('cue-rule-0-color-2')).toHaveAccessibleName(
+      'Colour 3. Only if it fits, with no other cue in the 32 bars before, and with no other cue in the 1 bar after.',
     )
+    expect(screen.getByTestId('cue-rule-0-color-0')).toHaveAccessibleName(
+      'Colour 1. Only in a build or a breakdown.',
+    )
+    expect(screen.getByTestId('cue-rule-0-color-1')).toHaveAccessibleName('Colour 2')
   })
 
-  it('says the conditions of a one colour rule about the whole rule, since no repetition stands apart', () => {
+  it('names the conditions of a one colour rule on its single square', () => {
     setup({ ...RULE, color: { fixed: 22 }, whenEach: ['all:before:32'] })
-    expect(screen.getByTestId('cue-rule-0-when-line')).toHaveTextContent(
-      'Every repeat, even over another mark. Only with no other cue in the 32 bars before.',
+    expect(screen.getByTestId('cue-rule-0-color-0')).toHaveAccessibleName(
+      'Colour 1. Only with no other cue in the 32 bars before.',
     )
   })
 
@@ -596,16 +592,14 @@ describe('CueRuleRow condition of each repetition', () => {
       await i18n.changeLanguage(lng)
       cleanup()
       setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+in:up|down'] })
-      return screen.getByTestId('cue-rule-0-when-line').textContent
+      return screen.getByTestId('cue-rule-0-color-2').getAttribute('aria-label')
     }
     try {
-      expect(await line('es')).toContain('El de 48, solo si cabe y en una subida o una bajada.')
+      expect(await line('es')).toContain('Solo si cabe y en una subida o una bajada.')
       expect(await line('de')).toContain(
-        'Der bei 48, nur wenn es passt und in einem Aufbau oder einem Breakdown.',
+        'Nur wenn es passt und in einem Aufbau oder einem Breakdown.',
       )
-      expect(await line('ja')).toContain(
-        '48 のキューは収まる場合、ビルドアップまたはブレイクダウンのみ。',
-      )
+      expect(await line('ja')).toContain('収まる場合、ビルドアップまたはブレイクダウンのみ。')
     } finally {
       await i18n.changeLanguage('en')
     }

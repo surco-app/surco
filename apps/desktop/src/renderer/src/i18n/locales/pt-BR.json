@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Toda repetição, mesmo por cima de outra marca",
-        "fits": "Para na marca anterior e em qualquer refrão",
-        "previous": "Atravessa refrões sem marca e para na marca anterior",
-        "room": "Deixa de fora se outro cue vier nos compassos que você escolher",
-        "clear": "Deixa de fora se outro cue cair no mesmo compasso",
-        "first": "Só antes da primeira marca, se ainda não houver nada"
+        "fits": "Para na marca anterior e nos refrões que o rekordbox marca. Nas marcas que você põe à mão, só na marca anterior",
+        "previous": "Atravessa os refrões do rekordbox sem marca e para na marca anterior ou no refrão onde ela está. Nas marcas que você põe à mão, só na marca anterior",
+        "room": "Deixa de fora se uma regra acima puser um cue nos compassos que você escolher",
+        "clear": "Deixa de fora se uma regra acima puser um cue a menos de um compasso",
+        "first": "Só antes da primeira marca, se nenhuma regra acima puser um cue ali"
       },
       "whenEach": {
         "fits": "se couber",
@@ -2166,7 +2166,6 @@
         "afterShort": "sem cue depois",
         "in": "em {{sections}}",
         "only": "Só em",
-        "line": "O de {{bars}}, só {{conditions}}.",
         "lineAll": "Só {{conditions}}."
       },
       "section": {

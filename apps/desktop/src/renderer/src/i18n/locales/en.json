@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Every repeat, even over another mark",
-        "fits": "Stops at the previous mark and at any chorus",
-        "previous": "Crosses choruses with no mark in them and stops at the previous mark",
-        "room": "Leaves it out when another cue comes within the bars you choose",
-        "clear": "Leaves it out when another cue falls in the same bar",
-        "first": "Only before the first mark, if nothing is there yet"
+        "fits": "Stops at the previous mark and at the choruses rekordbox marks. On marks you place by hand, only at the previous mark",
+        "previous": "Crosses rekordbox choruses with no mark in them and stops at the previous mark or at the chorus it sits in. On marks you place by hand, only at the previous mark",
+        "room": "Leaves it out when a rule above puts a cue within the bars you choose",
+        "clear": "Leaves it out when a rule above puts a cue less than a bar away",
+        "first": "Only before the first mark, if no rule above puts a cue there"
       },
       "whenEach": {
         "fits": "if it fits",
@@ -2166,7 +2166,6 @@
         "afterShort": "no cue after",
         "in": "in {{sections}}",
         "only": "Only in",
-        "line": "The one at {{bars}}, only {{conditions}}.",
         "lineAll": "Only {{conditions}}."
       },
       "section": {

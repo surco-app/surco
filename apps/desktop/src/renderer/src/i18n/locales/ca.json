@@ -2148,11 +2148,11 @@
       },
       "whenHint": {
         "always": "Cada repetició, encara que passi per sobre d'una altra marca",
-        "fits": "S'atura a la marca anterior i a qualsevol tornada",
-        "previous": "Travessa les tornades sense marca i s'atura a la marca anterior",
-        "room": "El deixa fora si arriba un altre cue en els compassos que triïs",
-        "clear": "El deixa fora si cau un altre cue al mateix compàs",
-        "first": "Només abans de la primera marca, si allà no hi ha res"
+        "fits": "S'atura a la marca anterior i a les tornades que marca rekordbox. A les marques que poses a mà, només a la marca anterior",
+        "previous": "Travessa les tornades de rekordbox sense marca i s'atura a la marca anterior o a la tornada on és. A les marques que poses a mà, només a la marca anterior",
+        "room": "El deixa fora si una regla de dalt posa un cue en els compassos que triïs",
+        "clear": "El deixa fora si una regla de dalt posa un cue a menys d'un compàs",
+        "first": "Només abans de la primera marca, si cap regla de dalt no hi posa un cue"
       },
       "whenEach": {
         "fits": "si hi cap",
@@ -2166,7 +2166,6 @@
         "afterShort": "sense cue després",
         "in": "en {{sections}}",
         "only": "Només en",
-        "line": "El de {{bars}}, només {{conditions}}.",
         "lineAll": "Només {{conditions}}."
       },
       "section": {
