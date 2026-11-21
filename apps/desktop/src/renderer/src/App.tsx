@@ -169,11 +169,7 @@ import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
 import { nextLocale } from './i18n/locale'
-import {
-  analysisKey,
-  removeAnalysisQueries,
-  seedCachedAnalyses,
-} from './lib/analysisQueries'
+import { analysisKey, removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
 import { type AppError, type AppStore, createAppStore, useAppStore } from './lib/appStore'
 import { cleanupPatcher, planAutoClean } from './lib/autoClean'
@@ -210,11 +206,11 @@ import {
   useUnsavedCueTracks,
 } from './lib/cueSession'
 import { deriveTagPatches } from './lib/deriveTags'
-import { fillMeasuredPatches } from './lib/fillMeasured'
 import type { Destination } from './lib/destination'
 import { createDragDepth } from './lib/dragDepth'
 import { onFeedbackRequested } from './lib/feedback'
 import { missingRequiredOf, requiredFieldsOf } from './lib/fields'
+import { fillMeasuredPatches } from './lib/fillMeasured'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
@@ -570,7 +566,8 @@ export default function App(): React.JSX.Element {
     (next: FilterSelection): void => {
       flushPendingEdits()
       storeFilterSelection(next)
-      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention)) setAutoMarkBatch(null)
+      if (!Object.values(AUTO_MARK_FILTERS).some((a) => a === next.attention))
+        setAutoMarkBatch(null)
     },
     [storeFilterSelection],
   )

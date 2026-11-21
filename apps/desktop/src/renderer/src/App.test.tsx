@@ -2992,6 +2992,45 @@ describe('App source rail', () => {
     expect(screen.getByTestId('field-title')).toBeInTheDocument()
   })
 
+  // Row 120 of 310 kept selected but left off screen read as the selection being lost: the
+  // list came back at its top, the place the user was working in nowhere to be seen.
+  it('brings the row kept selected in Tracks back into view on return', async () => {
+    setApi({
+      platform: 'darwin',
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      loadAppleMusicPlaylists: vi
+        .fn<Api['loadAppleMusicPlaylists']>()
+        .mockResolvedValue([{ persistentId: 'p1', name: 'Warm up', count: 1 }]),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1])
+    fireEvent.click(await screen.findByTestId('source-rail-appleMusic'))
+    await screen.findByTestId('source-node-p1')
+
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: HTMLElement) {
+        const top = this.getAttribute('aria-selected') === 'true' ? 2400 : 0
+        return { top, bottom: top + 24, height: 24 } as DOMRect
+      })
+    const scrolledTo = vi.fn()
+    HTMLElement.prototype.scrollTo = scrolledTo
+    try {
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await waitFor(() =>
+        expect(scrolledTo).toHaveBeenCalledWith(
+          expect.objectContaining({ top: expect.any(Number) }),
+        ),
+      )
+      expect(scrolledTo.mock.contexts.at(-1)).toBe(screen.getByTestId('track-list-scroll'))
+    } finally {
+      rect.mockRestore()
+      Reflect.deleteProperty(HTMLElement.prototype, 'scrollTo')
+    }
+  })
+
   // Going back and forth between the working list and a set is the DJ's everyday move:
   // each side has to be where it was left, playlist and selected row included.
   it('gives each source back its own open playlist and selected row', async () => {
