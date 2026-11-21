@@ -1220,6 +1220,8 @@
         "phrasesDone_other": "Phrases mises dans {{count}} commentaires",
         "phrasesSkipped_one": "{{count}} sans deux CALLs, inchangé",
         "phrasesSkipped_other": "{{count}} sans deux CALLs, inchangés",
+        "saveComments_one": "Enregistrer {{count}} commentaire dans rekordbox",
+        "saveComments_other": "Enregistrer {{count}} commentaires dans rekordbox",
         "clearedHot_one": "{{count}} hot cue à effacer",
         "clearedHot_other": "{{count}} hot cues à effacer",
         "clearedCalls_one": "{{count}} CALL à effacer",

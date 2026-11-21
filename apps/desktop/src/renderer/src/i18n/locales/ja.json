@@ -1220,6 +1220,8 @@
         "phrasesDone_other": "{{count}} 件のコメントにフレーズを入れました",
         "phrasesSkipped_one": "CALLが2つない {{count}} 件はそのまま",
         "phrasesSkipped_other": "CALLが2つない {{count}} 件はそのまま",
+        "saveComments_one": "{{count}} 件のコメントを rekordbox に保存",
+        "saveComments_other": "{{count}} 件のコメントを rekordbox に保存",
         "clearedHot_one": "削除するホットキュー {{count}} 件",
         "clearedHot_other": "削除するホットキュー {{count}} 件",
         "clearedCalls_one": "削除するCALL {{count}} 件",

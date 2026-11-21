@@ -4579,6 +4579,87 @@ describe('App source playlists', () => {
     expect(autoMarkOf('c-l3')).toBeUndefined()
   })
 
+  describe('phrase counts saved to rekordbox', () => {
+    const grid = Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
+    const analysed = vi.fn<Api['cues']['trackCues']>(async (contentId) => ({
+      contentId,
+      analysed: true,
+      grid,
+      strong: [],
+      phrases: [],
+      cues: [0, 64, 320].map((b) => ({ id: `c${b}`, ms: b * 500, kind: 0, color: null })),
+      wave: null,
+      durationMs: 400000,
+      fingerprint: 'f0',
+      gridFingerprint: '',
+    }))
+    const commentOf = () => screen.getByTestId('field-comment') as HTMLInputElement
+    const phraseTwo = async (saveComments = vi.fn<Api['cues']['saveComments']>()) => {
+      await openFactory({
+        readTags: vi.fn(async (path: string) => ({
+          title: TITLES[path],
+          artist: 'DJ',
+          comment: 'Vocal fuerte',
+        })),
+        cues: { ...stubApi().cues, trackCues: analysed, saveComments },
+        onCueProfileChanged: () => () => {},
+        getSettings: vi.fn().mockResolvedValue(settings({ visibleFields: ['title', 'comment'] })),
+      })
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      fireEvent.click(await screen.findByTestId('cues-batch-phrases'))
+      await screen.findByTestId('cues-batch-comments-save')
+      return saveComments
+    }
+
+    it('gives the form its comment back once the count is saved to rekordbox, so a later Convert does not write it into the file', async () => {
+      const saveComments = await phraseTwo()
+      fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+      await waitFor(() =>
+        expect(saveComments).toHaveBeenCalledWith([
+          { contentId: 'c-l1', path: '/m/a.wav', label: 'Alpha', count: '2 - 8' },
+          { contentId: 'c-l2', path: '/m/b.wav', label: 'Bravo', count: '2 - 8' },
+        ]),
+      )
+      await waitFor(() =>
+        expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      expect(commentOf().value).toBe('Vocal fuerte')
+    })
+
+    it('leaves a comment edited by hand after the phrases when discarding, so the DJ does not lose what was typed', async () => {
+      const saveComments = await phraseTwo()
+      fireEvent.change(commentOf(), { target: { value: 'Mine now' } })
+      fireEvent.blur(commentOf())
+      fireEvent.click(screen.getByTestId('cues-batch-comments-discard'))
+      expect(saveComments).not.toHaveBeenCalled()
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(commentOf().value).toBe('Mine now')
+    })
+
+    it('leaves a comment edited by hand after the phrases when saving, so the DJ does not lose what was typed', async () => {
+      const saveComments = await phraseTwo()
+      fireEvent.change(commentOf(), { target: { value: 'Mine now' } })
+      fireEvent.blur(commentOf())
+      fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+      await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+      await waitFor(() =>
+        expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(commentOf().value).toBe('Mine now')
+    })
+
+    it('gives the form its comment back when discarding, so nothing of the batch stays to be converted', async () => {
+      await phraseTwo()
+      fireEvent.click(screen.getByTestId('cues-batch-comments-discard'))
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(commentOf().value).toBe('Vocal fuerte')
+    })
+  })
+
   it('shows on each row of the open playlist what Auto marcar left for its rekordbox entry', async () => {
     await openFactory()
     act(() =>

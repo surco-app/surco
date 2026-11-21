@@ -26,6 +26,7 @@ import {
 } from '../lib/cueSession'
 import { recordCueEdits } from '../lib/cueTasteEdits'
 import { twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
+import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { useAppSettings } from '../lib/settingsContext'
 import type { AutoMarkKind } from '../lib/triage'
 import { saveAllKey } from './CuesSection'
@@ -58,6 +59,7 @@ export function CuesBatchSection({
   onShowMarked,
   onOpen,
   onPhrases,
+  onRestoreComments,
 }: {
   targets: AutoMarkTarget[]
   onMark: () => void
@@ -66,7 +68,8 @@ export function CuesBatchSection({
   onShowBadGrid: () => void
   onShowMarked: (kind: AutoMarkKind) => void
   onOpen: (contentId: string) => void
-  onPhrases: () => Promise<{ done: number; skipped: number }>
+  onPhrases: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
+  onRestoreComments: (comments: PhrasedComment[]) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -78,13 +81,51 @@ export function CuesBatchSection({
   const [phrasing, setPhrasing] = useState(false)
   const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
   const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
+  const [unsavedComments, setUnsavedComments] = useState<PhrasedComment[]>([])
+  const [commentsFailed, setCommentsFailed] = useState(false)
   const putPhrases = async () => {
     setPhrasing(true)
     try {
-      setPhrased(await onPhrases())
+      const { comments, ...result } = await onPhrases()
+      setPhrased(result)
+      setUnsavedComments(comments.filter((c) => programOf(c.contentId) === 'rekordbox'))
+      setCommentsFailed(false)
     } finally {
       setPhrasing(false)
     }
+  }
+  const saveComments = async () => {
+    setBusy(true)
+    try {
+      const saved = await window.api.dj
+        .askToApply(['rekordbox'])
+        .then(() =>
+          window.api.cues.saveComments(
+            unsavedComments.map(({ contentId, path, label, count }) => ({
+              contentId,
+              path,
+              label,
+              count,
+            })),
+          ),
+        )
+        .then(
+          () => true,
+          () => false,
+        )
+      setCommentsFailed(!saved)
+      if (!saved) return
+      onRestoreComments(unsavedComments)
+      setUnsavedComments([])
+    } finally {
+      setBusy(false)
+    }
+  }
+  const discardComments = () => {
+    onRestoreComments(unsavedComments)
+    setUnsavedComments([])
+    setCommentsFailed(false)
+    setPhrased(null)
   }
   const ids = targets.map((t) => t.contentId)
   const idsKey = [...ids].sort().join('\n')
@@ -284,6 +325,34 @@ export function CuesBatchSection({
             </>
           )}
         </p>
+      )}
+      {unsavedComments.length > 0 && (
+        <div className="mt-3 grid gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="cues-batch-comments-save"
+              disabled={busy}
+              onClick={() => void saveComments()}
+              className={PRIMARY}
+            >
+              {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
+            </button>
+            <button
+              type="button"
+              data-testid="cues-batch-comments-discard"
+              onClick={discardComments}
+              className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+            >
+              {tr('editor.cues.batch.clearDiscard')}
+            </button>
+          </div>
+          {commentsFailed && (
+            <p data-testid="cues-batch-comments-failed" className="text-xs text-warn">
+              {tr('editor.cues.saveFailed')}
+            </p>
+          )}
+        </div>
       )}
       {marked && (
         <div data-testid="cues-batch-tally" className="mt-3 grid gap-1 text-xs">

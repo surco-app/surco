@@ -1220,6 +1220,8 @@
         "phrasesDone_other": "Phrases put in {{count}} comments",
         "phrasesSkipped_one": "{{count}} without two CALLs, left alone",
         "phrasesSkipped_other": "{{count}} without two CALLs, left alone",
+        "saveComments_one": "Save {{count}} comment to rekordbox",
+        "saveComments_other": "Save {{count}} comments to rekordbox",
         "clearedHot_one": "{{count}} hot cue to clear",
         "clearedHot_other": "{{count}} hot cues to clear",
         "clearedCalls_one": "{{count}} CALL to clear",

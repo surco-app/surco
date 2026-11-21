@@ -90,6 +90,7 @@ import {
   renderOutputName,
   titleFormatPatches,
 } from '../lib/outputName'
+import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { isMacOS, revealCommandKey } from '../lib/platform'
 import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
@@ -232,7 +233,8 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
-  onCuePhrasesAll?: () => Promise<{ done: number; skipped: number }>
+  onCuePhrasesAll?: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
+  onCueRestoreComments?: (comments: PhrasedComment[]) => void
   cueTargets?: AutoMarkTarget[]
   cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid?: () => void
@@ -341,6 +343,7 @@ export const Editor = memo(function Editor({
   onCueFlow,
   onCueAutoMarkAll,
   onCuePhrasesAll,
+  onCueRestoreComments,
   cueTargets,
   cueGridCheckOf,
   onShowBadGrid,
@@ -1848,6 +1851,7 @@ export const Editor = memo(function Editor({
                             onShowMarked={(kind) => onShowMarked?.(kind)}
                             onOpen={(contentId) => onOpenCueTrack?.(contentId)}
                             onPhrases={onCuePhrasesAll}
+                            onRestoreComments={(comments) => onCueRestoreComments?.(comments)}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))

@@ -1220,6 +1220,8 @@
         "phrasesDone_other": "Frases posades a {{count}} comentaris",
         "phrasesSkipped_one": "{{count}} sense dos CALLs, no es toca",
         "phrasesSkipped_other": "{{count}} sense dos CALLs, no es toquen",
+        "saveComments_one": "Desar {{count}} comentari a rekordbox",
+        "saveComments_other": "Desar {{count}} comentaris a rekordbox",
         "clearedHot_one": "{{count}} hot cue que s'esborra",
         "clearedHot_other": "{{count}} hot cues que s'esborren",
         "clearedCalls_one": "{{count}} CALL que s'esborra",

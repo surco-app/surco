@@ -3,6 +3,16 @@ import { phraseCount } from '../../../shared/phraseCount'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { queuedCuesQuery, trackCuesQuery } from '../hooks/useTrackCues'
 
+export interface PhrasedComment {
+  id: string
+  contentId: string
+  path: string
+  label: string
+  count: string
+  before: string
+  after: string
+}
+
 export async function phraseCountsOf(
   client: QueryClient,
   targets: { id: string; contentId: string }[],
