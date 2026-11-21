@@ -489,6 +489,85 @@ describe('useTrackLibrary read cap across imports', () => {
   })
 })
 
+describe('useTrackLibrary a catalog query typed while the tags load', () => {
+  function setupHeldRead(): {
+    result: { current: ReturnType<typeof useTrackLibrary> }
+    release: () => void
+  } {
+    const pending: (() => void)[] = []
+    setApi({
+      readMeta: vi.fn(
+        () =>
+          new Promise((resolve) => {
+            pending.push(() =>
+              resolve({
+                tags: { title: 'Porcelain', artist: 'Moby' },
+                duration: 180,
+                cover: null,
+                foreignTags: [],
+              }),
+            )
+          }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    return {
+      result,
+      release: () => {
+        for (const r of pending.splice(0)) r()
+      },
+    }
+  }
+
+  it('keeps the query the user typed so going back to the track does not lose their search', async () => {
+    const { result, release } = setupHeldRead()
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    const id = result.current.tracksRef.current[0].id
+    act(() => result.current.updateTrack(id, { query: 'moby porcelain remix', queryTyped: true }))
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBeFalsy())
+    expect(result.current.tracks[0]).toMatchObject({
+      query: 'moby porcelain remix',
+      queryTyped: true,
+    })
+  })
+
+  it('still builds the query from the tags when the user typed none', async () => {
+    const { result, release } = setupHeldRead()
+    await act(async () => {
+      void result.current.addPaths(['/m/a.wav'])
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    await act(async () => {
+      release()
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    await waitFor(() => expect(result.current.tracks[0].loadingMeta).toBeFalsy())
+    expect(result.current.tracks[0]).toMatchObject({ query: 'Moby Porcelain', queryTyped: false })
+  })
+})
+
 // A row read under a date remembered from last launch shows the file as it was then. When
 // the background check finds the file changed outside Surco, the row is read again.
 describe('useTrackLibrary files changed outside Surco', () => {

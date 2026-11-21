@@ -747,6 +747,7 @@ export function useTrackLibrary({
       // A read that succeeded clears the mark a failed one left; a degraded read sets
       // it, so the row says so instead of looking like a file with no tags.
       ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
+      ...(t.queryTyped && { query: t.query, queryTyped: true }),
       meta: mergeReadMeta(base.meta, t.meta, finalMeta),
     }))
     // Reported like a thrown failure so the batch's aggregate notice counts it: the
