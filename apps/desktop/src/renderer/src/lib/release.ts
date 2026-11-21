@@ -657,9 +657,6 @@ export function buildReleaseMeta(
     // Same provenance rule as the id above: a Bandcamp match must not stamp a
     // discogs.com address onto the track. The API returns `uri`; falling back to the
     // canonical /release/<id> form covers releases whose response omits it.
-    // Same provenance rule as the id above: a Bandcamp match must not stamp a
-    // discogs.com address onto the track. The API returns `uri`; falling back to the
-    // canonical /release/<id> form covers releases whose response omits it.
     discogsUrl:
       rel.provider === 'discogs'
         ? rel.uri?.trim() || `https://www.discogs.com/release/${rel.id}`
