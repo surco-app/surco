@@ -15,6 +15,7 @@ import {
   rekordboxPathOf,
   withTarget,
 } from '../lib/rekordboxPlaylists'
+import { useAppSettings } from '../lib/settingsContext'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
 import type { TrackItem } from '../types'
 import { useProgramsAvailable } from './useProgramsAvailable'
@@ -111,8 +112,9 @@ export function usePlaylistsSpec(
   const paths = useMemo(() => (shown ? tracks.map(rekordboxPathOf) : []), [shown, tracks])
   const membership = useRekordboxMembership(paths, shown, library)
   const gated = SOURCE_PROGRAMS[library].edit?.gate === 'traktorCollection'
+  const { traktorNmlPath } = useAppSettings()
   const { data: canSave } = useQuery({
-    queryKey: ['traktor-can-save', 'field'],
+    queryKey: ['traktor-can-save', traktorNmlPath],
     queryFn: () => window.api.traktorCanSave(),
     enabled: shown && gated,
   })

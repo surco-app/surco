@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import type { Settings } from '../../../shared/types'
 import { rekordboxPathOf } from '../lib/rekordboxPlaylists'
+import { SettingsProvider } from '../lib/settingsContext'
 import { djReads, installApi, type ProgramReads } from '../test/api'
 import type { TrackItem } from '../types'
 import {
@@ -247,7 +248,15 @@ describe('the Serato crates field', () => {
 
 describe('usePlaylistsSpec', () => {
   const fresh = { id: 't1', inputPath: '/m/new.flac', meta: {} } as TrackItem
+  let settings: Partial<Settings> = {}
   function spec(library: 'engine' | 'traktor', canSave = true) {
+    settings = { traktorNmlPath: '' }
+    const client = new QueryClient()
+    const withSettings = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ ...settings }}>{children}</SettingsProvider>
+      </QueryClientProvider>
+    )
     installApi({
       dj: djReads({
         engine: {
@@ -270,7 +279,7 @@ describe('usePlaylistsSpec', () => {
     return renderHook(
       () =>
         usePlaylistsSpec(library, { shown: true, item: fresh, tracks: [fresh], onChange: vi.fn() }),
-      { wrapper },
+      { wrapper: withSettings },
     )
   }
 
@@ -289,6 +298,15 @@ describe('usePlaylistsSpec', () => {
   it('holds Traktor’s playlists until its collection is confirmed, since Surco writes to that one only', async () => {
     const hook = spec('traktor', false)
     await waitFor(() => expect(hook.result.current?.disabled).toBe('unconfirmed'))
+  })
+
+  it('frees Traktor’s playlists as soon as its collection is confirmed in Settings, without a restart', async () => {
+    const hook = spec('traktor', false)
+    await waitFor(() => expect(hook.result.current?.disabled).toBe('unconfirmed'))
+    vi.mocked(window.api.traktorCanSave).mockResolvedValue(true)
+    settings.traktorNmlPath = '/Users/dj/Documents/Native Instruments/Traktor 4.4.1/collection.nml'
+    hook.rerender()
+    await waitFor(() => expect(hook.result.current?.disabled).toBeUndefined())
   })
 
   // The editor asks for every library's field on every render, over the whole selection.
