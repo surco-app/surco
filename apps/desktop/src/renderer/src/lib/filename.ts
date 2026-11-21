@@ -13,6 +13,8 @@ export interface ParsedName {
 // titles containing " - " (e.g. remixes) stay intact, a numbered prefix is read as
 // a number rather than part of the artist, and the cleaned artist + title feed the
 // Discogs search query.
+const VINYL_POSITION_PREFIX = /^[A-Ha-h]\d{1,2}\.\s*/
+
 export function parseFileName(path: string): ParsedName {
   // Both separators: this runs in the renderer on raw OS paths, and Windows sends
   // backslashes — splitting on '/' alone left the whole route as the track's label
@@ -32,6 +34,6 @@ export function parseFileName(path: string): ParsedName {
       query: `${tags.artist} ${tags.title}`,
     }
   }
-  const readable = normalizeSeparators(fileName)
+  const readable = normalizeSeparators(fileName).replace(VINYL_POSITION_PREFIX, '') || fileName
   return { fileName, artist: '', title: readable, query: readable }
 }

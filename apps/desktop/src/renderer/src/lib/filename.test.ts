@@ -75,6 +75,21 @@ describe('parseFileName', () => {
     expect(r.query).toBe('Javier Fig Fast Food')
   })
 
+  it('drops a vinyl side position so the search looks for the real title', () => {
+    const r = parseFileName('/m/B1.I Saw That Not.wav')
+    expect(r.title).toBe('I Saw That Not')
+    expect(r.query).toBe('I Saw That Not')
+    expect(r.fileName).toBe('B1.I Saw That Not')
+  })
+
+  it('drops a vinyl position followed by a dot and a space', () => {
+    expect(parseFileName('/m/A2. Night Drive.wav').title).toBe('Night Drive')
+  })
+
+  it('keeps a title that only looks like a position, such as E2-E4', () => {
+    expect(parseFileName('/m/E2-E4.wav').title).toBe('E2-E4')
+  })
+
   it('strips the extension and directory from the file name', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
