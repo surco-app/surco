@@ -92,7 +92,10 @@ function setup(
   matchingPathPairs: [string, string][] = [],
 ) {
   let focus: (focused: boolean) => void = () => {}
-  const state = { hidden: hiddenSources }
+  const state: { hidden: PlaylistSource[]; folders: string[] | null } = {
+    hidden: hiddenSources,
+    folders: null,
+  }
   ;(window as unknown as { api: unknown }).api = {
     platform,
     loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]),
@@ -112,7 +115,13 @@ function setup(
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
   const hook = renderHook(
-    () => useSourceBrowser({ onPlaylistGone, hiddenSources: state.hidden, matchingPathPairs }),
+    () =>
+      useSourceBrowser({
+        onPlaylistGone,
+        hiddenSources: state.hidden,
+        matchingPathPairs,
+        libraryFolders: state.folders,
+      }),
     {
       wrapper,
     },
@@ -123,6 +132,10 @@ function setup(
     focus: () => focus(true),
     hide: (next: PlaylistSource[]) => {
       state.hidden = next
+      hook.rerender()
+    },
+    pickFolders: (next: string[]) => {
+      state.folders = next
       hook.rerender()
     },
   }
@@ -737,6 +750,29 @@ describe('useSourceBrowser', () => {
     act(() => focus())
     await waitFor(() => expect(result.current.treeFailed).toBe(true))
     expect(result.current.playlist?.id).toBe('house')
+  })
+
+  it('shows the tree of the folder just picked in Settings, not the one picked before', async () => {
+    const loadRekordboxTree = vi
+      .fn()
+      .mockResolvedValueOnce([{ id: 'house', name: 'House', kind: 'playlist', count: 1 }])
+      .mockResolvedValue([{ id: 'techno', name: 'Techno', kind: 'playlist', count: 1 }])
+    const { result, pickFolders } = setup({ dj: { rekordbox: { tree: loadRekordboxTree } } })
+    pickFolders(['', '', ''])
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.some((n) => n.name === 'House')).toBe(true))
+    pickFolders(['/Volumes/USB/rekordbox/master.db', '', ''])
+    await waitFor(() => expect(result.current.tree?.some((n) => n.name === 'Techno')).toBe(true))
+  })
+
+  it('reads no library again when the settings first arrive, so opening Surco costs no extra read', async () => {
+    const { result, pickFolders } = setup({})
+    act(() => result.current.selectSource('rekordbox'))
+    await waitFor(() => expect(result.current.tree?.some((n) => n.name === 'House')).toBe(true))
+    const treeCalls = vi.mocked(window.api.dj.tree).mock.calls.length
+    pickFolders(['', '', ''])
+    await act(async () => {})
+    expect(window.api.dj.tree).toHaveBeenCalledTimes(treeCalls)
   })
 
   // Each source is its own list: another source never shows this one's playlist, and coming

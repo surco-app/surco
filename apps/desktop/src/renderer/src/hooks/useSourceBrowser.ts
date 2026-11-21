@@ -21,6 +21,7 @@ import { useRekordboxMatching } from './useRekordboxMatching'
 
 const NO_PAIRS: readonly (readonly [string, string])[] = []
 
+import { useStableCallback } from './useStableCallback'
 import { useWindowFocus } from './useWindowFocus'
 
 export interface SourceBrowser {
@@ -113,10 +114,12 @@ export function useSourceBrowser({
   onPlaylistGone,
   hiddenSources,
   matchingPathPairs = NO_PAIRS,
+  libraryFolders = null,
 }: {
   onPlaylistGone: (name: string, source: PlaylistSource) => void
   hiddenSources: PlaylistSource[]
   matchingPathPairs?: readonly (readonly [string, string])[]
+  libraryFolders?: readonly string[] | null
 }): SourceBrowser {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -275,8 +278,7 @@ export function useSourceBrowser({
     if (!takeOwnRemoval(playlist.id)) onPlaylistGoneRef.current(playlist.name, source)
   }, [playlist, source, shownTree])
 
-  useWindowFocus((focused) => {
-    if (!focused) return
+  const rereadLibraries = useStableCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['source-available'] })
     queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
     queryClient.invalidateQueries({ queryKey: ['source-playlist'], predicate: notMusic })
@@ -284,6 +286,17 @@ export function useSourceBrowser({
     for (const p of DJ_PROGRAMS)
       queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] })
   })
+  useWindowFocus((focused) => {
+    if (focused) rereadLibraries()
+  })
+
+  const foldersKey = libraryFolders?.join('\n') ?? null
+  const seenFolders = useRef(foldersKey)
+  useEffect(() => {
+    const before = seenFolders.current
+    seenFolders.current = foldersKey
+    if (before !== null && before !== foldersKey) rereadLibraries()
+  }, [foldersKey, rereadLibraries])
 
   return {
     sources,

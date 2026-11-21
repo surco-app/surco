@@ -796,6 +796,12 @@ export default function App(): React.JSX.Element {
   const browser = useSourceBrowser({
     matchingPathPairs,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
+    libraryFolders: settings && [
+      settings.rekordboxDbPath,
+      settings.engineLibraryDir,
+      settings.virtualdjLibraryDir,
+      settings.traktorNmlPath,
+    ],
     onPlaylistGone: (name, source) =>
       pushToast(store, {
         key: 'source-playlist-gone',
