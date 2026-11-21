@@ -188,6 +188,20 @@ describe('exportedPatch', () => {
   // Converting writes the staged state into a file, so nothing is at risk anymore:
   // re-stamping the disk snapshot is what makes the session store stop persisting
   // this track and lets the reopen offer expire freely again.
+  // The written year is the file's date from now on: a row converted with the plain year must
+  // not take back the whole date its source carried when the full release date is turned on.
+  it('takes the date it wrote as the file date', () => {
+    const dated = (year: string) =>
+      track({ fileDate: '2020-12-01', meta: { ...track().meta, year } })
+    for (const result of [
+      { outputPath: '/out/a.aiff', inPlace: false },
+      { outputPath: '', inPlace: false, addedToMusicOnly: true },
+    ]) {
+      expect(exportedPatch(dated('2020'), result)).toHaveProperty('fileDate', undefined)
+      expect(exportedPatch(dated('2021-03-04'), result)).toHaveProperty('fileDate', '2021-03-04')
+    }
+  })
+
   // Once written, the clean-up is just the file's spelling: no mark, no count, nothing to undo.
   it('drops the load-time clean-up record once the values are written', () => {
     const cleaned = { title: { raw: 'Till  I Come', before: 'Till  I Come', to: 'Till I Come' } }

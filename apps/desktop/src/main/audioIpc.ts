@@ -3,7 +3,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
 import log from 'electron-log/main'
 import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
-import { yearFromDate } from '../shared/tagFields'
+import { fullDateOf, yearFromDate } from '../shared/tagFields'
 import type {
   DeclickConfig,
   LoudnessResult,
@@ -163,6 +163,13 @@ function withSettingsYear<T extends { year?: string }>(tags: T): T {
   return { ...tags, year: yearFromDate(tags.year) }
 }
 
+function withSettingsDate<T extends { tags: { year?: string } }>(
+  read: T,
+): T & { fileDate?: string } {
+  const fileDate = fullDateOf(read.tags.year ?? '')
+  return { ...read, tags: withSettingsYear(read.tags), ...(fileDate && { fileDate }) }
+}
+
 export function registerAudioIpc(allowMedia: (path: string) => void): void {
   ipcMain.handle('audio:tags', async (_e, inputPath: string) => {
     try {
@@ -187,7 +194,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   // never as the base64 the renderer used to keep in every track's state.
   ipcMain.handle('audio:meta', async (_e, inputPath: string) => {
     const read = await readMeta(inputPath)
-    const meta = { ...read, tags: withSettingsYear(read.tags) }
+    const meta = withSettingsDate(read)
     if (!meta.cover) return meta
     return {
       ...meta,
@@ -197,7 +204,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
 
   ipcMain.handle('audio:metaLight', async (_e, inputPath: string) => {
     const read = await readMetaLight(inputPath)
-    const meta = { ...read, tags: withSettingsYear(read.tags) }
+    const meta = withSettingsDate(read)
     if (!meta.cover) return meta
     return {
       ...meta,
@@ -218,7 +225,7 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
         const { path, light } = rows[next++]
         const read = await peekMeta(path, light)
         if (!read) continue
-        const meta = { ...read, tags: withSettingsYear(read.tags) }
+        const meta = withSettingsDate(read)
         if (!meta.cover) {
           hits.set(path, meta)
           continue

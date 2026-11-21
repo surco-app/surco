@@ -576,6 +576,25 @@ describe('release date over IPC', () => {
 
     expect([tags.year, meta.tags.year]).toEqual(['2020-12-01', '2020-12-01'])
   })
+
+  // The setting can change after a row was read. Without the file's whole date beside the
+  // year it shows, a row read with the setting off kept "2020" and saved it over a file
+  // dated to the day once the user turned the setting on.
+  it('hands over the whole date the file carries beside the year it shows', async () => {
+    withFullDate(false)
+    const read = { tags: { ...dated }, duration: 10, cover: null, foreignTags: [] }
+    vi.mocked(readMeta).mockResolvedValue(read as unknown as Awaited<ReturnType<typeof readMeta>>)
+    vi.mocked(peekMeta).mockResolvedValue({ ...read, partial: false } as unknown as Awaited<
+      ReturnType<typeof peekMeta>
+    >)
+
+    const meta = (await handlerFor('audio:meta')({}, '/m/a.flac')) as { fileDate?: string }
+    const cached = (await handlerFor('audio:metaCached')({}, [
+      { path: '/m/a.flac', light: false },
+    ])) as Record<string, { fileDate?: string }>
+
+    expect([meta.fileDate, cached['/m/a.flac'].fileDate]).toEqual(['2020-12-01', '2020-12-01'])
+  })
 })
 
 // An .m4a is graded by the codec the analysis now keeps, which entries cached before it

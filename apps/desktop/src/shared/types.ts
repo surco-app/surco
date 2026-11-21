@@ -790,6 +790,9 @@ export interface MetaRead {
   // The review fields as the file spells them, only where that differs from the trimmed
   // tags: the list review looks for the stray spaces every other read trims away.
   reviewRaw?: ReviewRawFields
+  // The whole release date the file carries, whatever the year in tags shows under the full
+  // release date setting, so a row read before the setting changes can follow it.
+  fileDate?: string
   // The probe failed and these fields are a fallback, not the file's contents. readMeta
   // degrades rather than rejecting (a transient failure must not cost the row), which
   // left a degraded read indistinguishable from a file that simply carries no tags —

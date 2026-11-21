@@ -666,7 +666,7 @@ export function useTrackLibrary({
   ): boolean {
     const path = base.inputPath
     const savedOrigin = saved && fromLegacy(saved)
-    const { tags, duration, cover, foreignTags, failed, reviewRaw } = read
+    const { tags, duration, cover, foreignTags, failed, reviewRaw, fileDate } = read
     const s = searchFromTags(parseFileName(path), tags)
     // Whatever Music knows that this file does not. Consumed once, like the restored
     // edit above: a later start-over must rebuild from the file alone.
@@ -702,6 +702,7 @@ export function useTrackLibrary({
       // Stamped before the restored overlay below, so restored edits keep counting
       // as staged until they are actually converted.
       diskSignature: trackSignature({ meta: readMeta, coverUrl: cover?.thumbUrl }),
+      fileDate,
     }
     // Only a spelling the row took from the file: a title parsed from the file name or
     // filled from Music is not the file's spelling of anything.

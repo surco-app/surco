@@ -194,6 +194,9 @@ export interface TrackItem extends TrackOrigin {
   // work that exists nowhere on disk — exactly what the session store must persist
   // and what makes the reopen offer refuse to expire on its own.
   diskSignature?: string
+  // The whole release date the file carries (MetaRead.fileDate), re-stamped when a conversion
+  // writes the year out, so the Year box follows the full release date setting when it changes.
+  fileDate?: string
   // The review fields as the file spells them where that differs from the trimmed read,
   // valid only while diskSignature still equals `signature` (the read it came from).
   reviewRaw?: { signature: string; fields: ReviewRawFields }

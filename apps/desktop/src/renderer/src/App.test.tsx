@@ -2377,6 +2377,42 @@ describe('App quality triage', () => {
   })
 })
 
+// The full release date setting promises to show and save the whole date whenever the file
+// has one, on every row: a row read before the change kept the old year and saved it over the
+// file on convert. A year the user typed is theirs, so the setting never rewrites it.
+describe('App full release date setting', () => {
+  it('re-dresses the rows already read when it changes, but not a year the user typed', async () => {
+    const base = settings({ visibleFields: ['title', 'artist', 'year'] })
+    setApi({
+      readMeta: vi.fn(async (path: string) => ({
+        tags: { title: path === '/music/a.wav' ? 'Song A' : 'Song B', artist: 'X', year: '2020' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+        fileDate: '2020-12-01',
+      })),
+      getSettings: vi.fn().mockResolvedValue(base),
+      saveSettings: vi.fn((patch) => Promise.resolve({ ...base, ...patch })),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('2020'))
+    fireEvent.click(rows[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Song B'))
+    fireEvent.change(screen.getByTestId('field-year'), { target: { value: '1999' } })
+
+    fireEvent.click(screen.getByTestId('open-settings'))
+    fireEvent.click(await screen.findByTestId('settings-tab-editor'))
+    fireEvent.click(screen.getByTestId('settings-full-release-date'))
+    fireEvent.click(screen.getByTestId('settings-close'))
+    await waitFor(() => expect(screen.queryByTestId('settings-close')).toBeNull())
+
+    await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('1999'))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('2020-12-01'))
+  })
+})
+
 describe('App auto-match', () => {
   // Auto-match exists to tag a crate from Discogs without a click per track: the toolbar
   // sweep searches each file, and when a release matches confidently it applies the
