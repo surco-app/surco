@@ -341,8 +341,9 @@ export function CuesBatchSection({
             <button
               type="button"
               data-testid="cues-batch-comments-discard"
+              disabled={busy}
               onClick={discardComments}
-              className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg"
+              className="press px-2 py-1.5 text-xs text-fg-dim hover:text-fg disabled:opacity-40 disabled:hover:text-fg-dim"
             >
               {tr('editor.cues.batch.clearDiscard')}
             </button>

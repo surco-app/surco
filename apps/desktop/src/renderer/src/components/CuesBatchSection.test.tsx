@@ -235,6 +235,24 @@ describe('Phrases over several selected tracks', () => {
     expect(screen.queryByTestId('cues-batch-comments-save')).toBeNull()
   })
 
+  it('turns Descartar off while saving, so a discard mid-save cannot leave rekordbox written behind the DJ', async () => {
+    const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    let finish = () => {}
+    saveComments.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve
+        }),
+    )
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    const discard = screen.getByTestId('cues-batch-comments-discard')
+    expect(discard).toBeDisabled()
+    fireEvent.click(discard)
+    expect(onRestoreComments).not.toHaveBeenCalled()
+    await act(async () => finish())
+  })
+
   it('keeps the row and says it failed when rekordbox refuses, so the DJ can try again', async () => {
     const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
     saveComments.mockRejectedValueOnce(new Error('locked'))
