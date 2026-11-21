@@ -243,17 +243,13 @@ describe('TrimSection', () => {
     ).toHaveTextContent('The waveform of this track could not be read')
   })
 
-  // A wave with no shade and no suggestion already shows there is nothing to cut, and
-  // the folded row says it in words; a third line inside the open section was noise.
-  it('opens on the bare lanes when the track starts and ends on music, with no line saying so', async () => {
+  it('says there is nothing to cut when the track starts and ends on music', async () => {
     ;(window as unknown as { api: { waveform: unknown } }).api.waveform = vi
       .fn()
       .mockResolvedValue(musicOnlyWave())
     render(section())
-    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
-    expect(screen.getByTestId('trim-lane-end')).toBeInTheDocument()
-    expect(screen.queryByTestId('trim-detected')).not.toBeInTheDocument()
-    expect(screen.getByTestId('editor-trim')).not.toHaveTextContent('No leading or trailing silence')
+    const detected = await screen.findByTestId('trim-detected', undefined, { timeout: 3000 })
+    expect(detected).toHaveTextContent('No leading or trailing silence detected.')
     expect(screen.queryByTestId('trim-detected-pill')).not.toBeInTheDocument()
     expect(screen.queryByTestId('trim-apply-start')).not.toBeInTheDocument()
   })
@@ -1204,7 +1200,7 @@ describe('TrimSection', () => {
       .fn()
       .mockResolvedValue(musicOnlyWave())
     const { rerender } = render(section())
-    await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
+    await screen.findByTestId('trim-detected', undefined, { timeout: 3000 })
     rerender(section({ open: false }))
     expect(screen.getByTestId('trim-row-sentence')).toHaveTextContent('No silence to remove')
   })

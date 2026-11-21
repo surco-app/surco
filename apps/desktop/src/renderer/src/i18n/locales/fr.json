@@ -1508,6 +1508,7 @@
     "cutsLabel": "Coupes",
     "cutStart": "{{seconds}} au début",
     "cutEnd": "{{seconds}} à la fin",
+    "nothing": "Aucun silence détecté au début ou à la fin.",
     "clearSide": "Supprimer cette coupe",
     "applyStart": "Rogner {{seconds}} au début",
     "applyEnd": "Rogner {{seconds}} à la fin",

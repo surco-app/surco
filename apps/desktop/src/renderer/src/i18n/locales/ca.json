@@ -1508,6 +1508,7 @@
     "cutsLabel": "Retalla",
     "cutStart": "{{seconds}} de l'inici",
     "cutEnd": "{{seconds}} del final",
+    "nothing": "No es detecta silenci ni a l'inici ni al final.",
     "clearSide": "Treure aquest tall",
     "applyStart": "Retallar {{seconds}} de l'inici",
     "applyEnd": "Retallar {{seconds}} del final",

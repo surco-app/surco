@@ -1508,6 +1508,7 @@
     "cutsLabel": "Cuts",
     "cutStart": "{{seconds}} from the start",
     "cutEnd": "{{seconds}} from the end",
+    "nothing": "No leading or trailing silence detected.",
     "clearSide": "Clear this cut",
     "applyStart": "Cut {{seconds}} from the start",
     "applyEnd": "Cut {{seconds}} from the end",

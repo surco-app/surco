@@ -1508,6 +1508,7 @@
     "cutsLabel": "カット",
     "cutStart": "先頭から {{seconds}}",
     "cutEnd": "末尾から {{seconds}}",
+    "nothing": "先頭または末尾の無音は検出されませんでした。",
     "clearSide": "このカットをクリア",
     "applyStart": "先頭から {{seconds}} をカット",
     "applyEnd": "末尾から {{seconds}} をカット",

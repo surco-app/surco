@@ -1508,6 +1508,7 @@
     "cutsLabel": "Taglia",
     "cutStart": "{{seconds}} dall'inizio",
     "cutEnd": "{{seconds}} dalla fine",
+    "nothing": "Nessun silenzio rilevato all'inizio o alla fine.",
     "clearSide": "Togli questo taglio",
     "applyStart": "Taglia {{seconds}} dall'inizio",
     "applyEnd": "Taglia {{seconds}} dalla fine",

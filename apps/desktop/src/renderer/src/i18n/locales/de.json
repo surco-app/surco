@@ -1508,6 +1508,7 @@
     "cutsLabel": "Schneidet",
     "cutStart": "{{seconds}} am Anfang",
     "cutEnd": "{{seconds}} am Ende",
+    "nothing": "Keine Stille am Anfang oder Ende erkannt.",
     "clearSide": "Diesen Schnitt entfernen",
     "applyStart": "{{seconds}} am Anfang abschneiden",
     "applyEnd": "{{seconds}} am Ende abschneiden",

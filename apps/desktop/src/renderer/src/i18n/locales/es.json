@@ -1508,6 +1508,7 @@
     "cutsLabel": "Recorta",
     "cutStart": "{{seconds}} del inicio",
     "cutEnd": "{{seconds}} del final",
+    "nothing": "No se detecta silencio al inicio ni al final.",
     "clearSide": "Quitar este corte",
     "applyStart": "Recortar {{seconds}} del inicio",
     "applyEnd": "Recortar {{seconds}} del final",
