@@ -207,7 +207,7 @@ export function ExportButton({
       <div
         key="up-to-date"
         data-testid="convert-up-to-date-row"
-        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center ${narrow ? 'gap-2' : 'gap-3'}`}
+        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 compact:h-9 items-center ${narrow ? 'gap-2' : 'gap-3'}`}
       >
         <span
           data-testid="convert-up-to-date"
@@ -317,7 +317,7 @@ export function ExportButton({
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
-                  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+                  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 compact:py-2 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
                 : `${SPLIT_BODY} ${faceBlocked ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`
           }
         >

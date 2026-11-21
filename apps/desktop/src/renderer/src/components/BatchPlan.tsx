@@ -165,7 +165,7 @@ export function BatchPlan({
         data-testid="batch-convert"
         onClick={onConvert}
         disabled={count === 0}
-        className="press group relative w-full rounded-lg bg-[var(--color-accent)] py-2.5 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40"
+        className="press group relative w-full rounded-lg bg-[var(--color-accent)] py-2.5 compact:py-2 text-sm font-medium text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:pointer-events-none disabled:opacity-40"
       >
         {convertLabel}
         <Tooltip label={convertLabel} hint={convertHint} />
