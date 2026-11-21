@@ -17,6 +17,7 @@ const OLD_METHODS = [
 ]
 
 const REQUESTS = [{ contentId: 'serato:/m/a.mp3', path: '/m/a.mp3', label: 'a', wanted: [] }]
+const COMMENTS = [{ contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4' }]
 
 describe('createCuesApi', () => {
   it.each([
@@ -32,6 +33,7 @@ describe('createCuesApi', () => {
     ['queued', 'cues:queued', ['engine:4']],
     ['undo', 'cues:undo', ['engine:4']],
     ['save', 'cues:save', [REQUESTS]],
+    ['saveComments', 'cues:saveComments', [COMMENTS]],
   ] as const)(
     'invokes its own channel with the same arguments for %s',
     async (op, channel, args) => {

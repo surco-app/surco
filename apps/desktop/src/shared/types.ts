@@ -2004,6 +2004,13 @@ export interface SaveCuesRequest {
   gridFingerprint?: string
 }
 
+export interface SaveCommentRequest {
+  contentId: string
+  path: string
+  label: string
+  count: string
+}
+
 export type CopyReason =
   | 'run'
   | 'cues'

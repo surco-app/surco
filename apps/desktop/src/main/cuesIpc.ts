@@ -11,6 +11,7 @@ import type {
   LibraryTracks,
   LiveCues,
   QueuedCues,
+  SaveCommentRequest,
   SaveCuesRequest,
   SurcoGrid,
   TrackCues,
@@ -138,5 +139,13 @@ export function registerCuesIpc(host: {
           host.provisional.add({ contentId: req.contentId, label: req.label, wanted: req.wanted })
       t.applyQuietly()
     }
+  })
+  ipcMain.handle('cues:saveComments', async (_e, items: SaveCommentRequest[]) => {
+    const target = host.sources.rekordbox
+    const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
+    if (!target || mine.length === 0) return
+    host.beginMoment?.('cues', ['rekordbox'])
+    target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
+    target.applyQuietly()
   })
 }

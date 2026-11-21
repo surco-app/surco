@@ -307,6 +307,69 @@ describe('registerCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
+  it('queues only the phrase count of each rekordbox track as a comment, behind a cues momento, and applies quietly', async () => {
+    const order: string[] = []
+    const beginMoment = vi.fn((r: string) => order.push(`begin:${r}`))
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => {
+      order.push('enqueue')
+      return true
+    })
+    const applyQuietly = quietly()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    const items = [
+      { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4' },
+      { contentId: '104', path: '/m/b.wav', label: 'b', count: '6' },
+    ]
+    await handler('cues:saveComments')({}, items)
+    expect(order).toEqual(['begin:cues', 'enqueue'])
+    expect(beginMoment).toHaveBeenCalledWith('cues', ['rekordbox'])
+    expect(enqueue).toHaveBeenCalledWith(
+      items.map((item) => ({ ...item, id: expect.any(String), kind: 'comment' })),
+    )
+    expect(applyQuietly).toHaveBeenCalled()
+  })
+
+  it('never queues a comment for a track of another program, since only rekordbox has the Comments column it fills', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const engineEnqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const beginMoment = vi.fn()
+    const applyQuietly = quietly()
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly,
+      beginMoment,
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      engine: {
+        libraryDir: () => '/e',
+        queue: queue({ enqueue: engineEnqueue }),
+        applyQuietly: quietly(),
+        words: async () => null,
+      },
+    })
+    await handler('cues:saveComments')({}, [
+      { contentId: 'engine:4', path: '/m/e.mp3', label: 'e', count: '8' },
+    ])
+    expect(enqueue).not.toHaveBeenCalled()
+    expect(engineEnqueue).not.toHaveBeenCalled()
+    expect(beginMoment).not.toHaveBeenCalled()
+    expect(applyQuietly).not.toHaveBeenCalled()
+  })
+
   it('saving cues starts a cues momento before anything is queued, so the copy is labelled for the cue save', async () => {
     const order: string[] = []
     const beginMoment = vi.fn((r: string) => order.push(`begin:${r}`))
