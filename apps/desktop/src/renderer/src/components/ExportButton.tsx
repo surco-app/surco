@@ -317,7 +317,7 @@ export function ExportButton({
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
-                  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+                  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 compact:py-1.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
                 : `${SPLIT_BODY} ${faceBlocked ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`
           }
         >
