@@ -71,9 +71,16 @@ export function SettingsHint({
   className?: string
   'data-testid'?: string
   always?: boolean
-}): React.JSX.Element | null {
+}): React.JSX.Element {
   const visible = useContext(HintsVisible)
-  if (!visible && !always) return null
+  if (!visible && !always)
+    return (
+      <div
+        data-testid={testid ? `${testid}-space` : undefined}
+        aria-hidden="true"
+        className={className}
+      />
+    )
   return (
     <p data-testid={testid} className={`text-xs leading-relaxed text-fg-dim ${className}`}>
       {children}

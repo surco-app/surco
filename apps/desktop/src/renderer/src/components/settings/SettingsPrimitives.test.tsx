@@ -185,6 +185,23 @@ describe('inline explanations', () => {
     expect(screen.getByText('Add a source first')).toBeInTheDocument()
   })
 
+  // Some hints carry the gap to the next control in their own margin (the Traktor sync row
+  // to its collection.nml label). Hidden outright, the label sat glued to the buttons above,
+  // so a hidden hint leaves an empty placeholder that keeps that spacing and says nothing.
+  it('keeps the space a hidden explanation gave the next control, with no text in it', () => {
+    render(
+      <SettingsHintsVisible value={false}>
+        <SettingsHint data-testid="spaced" className="mt-2 mb-4">
+          Converted tracks are written into the collection
+        </SettingsHint>
+      </SettingsHintsVisible>,
+    )
+    const space = screen.getByTestId('spaced-space')
+    expect(space).toBeEmptyDOMElement()
+    expect(space).toHaveAttribute('aria-hidden', 'true')
+    expect(space.className).toContain('mb-4')
+  })
+
   // The onboarding wizard draws the same fields with no Settings draft around them, and a
   // new user has never had the chance to turn explanations off.
   it('shows the explanations outside Settings', () => {
