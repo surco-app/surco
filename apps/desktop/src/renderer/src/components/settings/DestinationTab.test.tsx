@@ -13,6 +13,7 @@ import type { LocalDraft, SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
 import { djReads } from '../../test/api'
 import { hoverTooltip } from '../../test/tooltip'
+import { SettingsHintsVisible } from './SettingsPrimitives'
 ;(window as unknown as { api: unknown }).api = {
   platform: 'darwin',
   dj: djReads({ serato: { available: async () => false } }),
@@ -122,22 +123,25 @@ function renderTab(
   over: Partial<SyncedDraft> = {},
   localOver: Partial<LocalDraft> = {},
   Tab: typeof DestinationTab = DestinationTab,
+  hints = true,
 ) {
   const patch = vi.fn()
   render(
-    <Tab
-      synced={{ ...synced, ...over }}
-      local={{ ...local, ...localOver }}
-      patch={patch}
-      onOutputDirChange={vi.fn()}
-      onChangeEngineDir={vi.fn()}
-      onChangeTraktorNmlPath={vi.fn()}
-      detectedNmlPath={null}
-      onAcceptDetectedNmlPath={vi.fn()}
-      rekordboxCollection=""
-      onChangeRekordboxDbPath={vi.fn()}
-      onChangeVirtualdjDir={vi.fn()}
-    />,
+    <SettingsHintsVisible value={hints}>
+      <Tab
+        synced={{ ...synced, ...over }}
+        local={{ ...local, ...localOver }}
+        patch={patch}
+        onOutputDirChange={vi.fn()}
+        onChangeEngineDir={vi.fn()}
+        onChangeTraktorNmlPath={vi.fn()}
+        detectedNmlPath={null}
+        onAcceptDetectedNmlPath={vi.fn()}
+        rekordboxCollection=""
+        onChangeRekordboxDbPath={vi.fn()}
+        onChangeVirtualdjDir={vi.fn()}
+      />
+    </SettingsHintsVisible>,
   )
   return patch
 }
@@ -894,6 +898,14 @@ describe('DestinationTab originals', () => {
       /unless the check after converting finds something that doesn’t add up/i,
     )
   })
+
+  // The level's cost is an explanation like any other: someone who switched the
+  // explanations off knows it, and 'never' keeps its amber warning regardless.
+  it('hides the level explanation with the explanations off but keeps the never warning', () => {
+    renderTab({ backupPolicy: 'never' }, {}, DestinationTab, false)
+    expect(screen.queryByTestId('settings-backup-hint')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-backup-warning')).toBeInTheDocument()
+  })
 })
 
 describe('complete on close', () => {
@@ -1234,5 +1246,21 @@ describe('DestinationTab clearing the list after converting', () => {
     expect(box).not.toBeChecked()
     fireEvent.click(box)
     expect(patch).toHaveBeenCalledWith('clearListAfterConvert', true)
+  })
+})
+
+// Completing cues and closing Engine DJ explain the control, not a missing setup, so
+// they follow the explanations switch like the rest of Ajustes.
+describe('program explanations with the explanations off', () => {
+  it('hides the complete-cues and Engine library explanations', () => {
+    renderTab({}, {}, ProgramsTab, false)
+    expect(screen.queryByText(i18n.t('settings.completeCuesHint'))).not.toBeInTheDocument()
+    expect(screen.queryByText(i18n.t('settings.engineLibraryDirHint'))).not.toBeInTheDocument()
+  })
+
+  it('shows them with the explanations on', () => {
+    renderTab({}, {}, ProgramsTab, true)
+    expect(screen.getByText(i18n.t('settings.completeCuesHint'))).toBeInTheDocument()
+    expect(screen.getByText(i18n.t('settings.engineLibraryDirHint'))).toBeInTheDocument()
   })
 })

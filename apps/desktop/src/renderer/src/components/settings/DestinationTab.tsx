@@ -497,9 +497,7 @@ function OutputSettings({
                   </div>
                 </div>
               )}
-              <SettingsHint className="mt-2" always>
-                {tr('settings.completeCuesHint')}
-              </SettingsHint>
+              <SettingsHint className="mt-2">{tr('settings.completeCuesHint')}</SettingsHint>
             </SettingsSection>
             {/* The library folder says which Engine database Surco reads and
           writes; the three-state control decides whether rows that point at a converted
@@ -574,7 +572,7 @@ function OutputSettings({
             />
             {/* What this level costs, rather than one sentence covering all three: the choice
             IS the trade-off, so the line has to move with it. */}
-            <SettingsHint className="mt-2.5" data-testid="settings-backup-hint" always>
+            <SettingsHint className="mt-2.5" data-testid="settings-backup-hint">
               {tr(POLICY_HINT[synced.backupPolicy])}
             </SettingsHint>
             {/* Only 'never' can cost a file, and the word alone doesn't say so — least of all

@@ -33,9 +33,7 @@ export function EngineLibraryFields({
         onChange={() => void change()}
         testid={`${testidPrefix}-library`}
       />
-      <SettingsHint className="mt-2" always>
-        {tr('settings.engineLibraryDirHint')}
-      </SettingsHint>
+      <SettingsHint className="mt-2">{tr('settings.engineLibraryDirHint')}</SettingsHint>
     </div>
   )
 }
