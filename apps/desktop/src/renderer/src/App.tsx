@@ -251,6 +251,7 @@ import {
 } from './lib/rekordboxPlaylists'
 import type { CueSpot } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
+import { followReleaseDate } from './lib/releaseDateSetting'
 import {
   clearDraggedRows,
   draggedRows,
@@ -963,6 +964,16 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     if (libraryHasRows) preloadLazyWhenIdle()
   }, [libraryHasRows])
+  // The rows read before the full release date setting changed follow it (followReleaseDate).
+  const settingsLoaded = !!settings
+  const appliedReleaseDate = useRef<boolean | null>(null)
+  useEffect(() => {
+    if (!settingsLoaded) return
+    const was = appliedReleaseDate.current
+    appliedReleaseDate.current = fullReleaseDate
+    if (was !== null && was !== fullReleaseDate)
+      setTracks((prev) => followReleaseDate(prev, fullReleaseDate))
+  }, [settingsLoaded, fullReleaseDate, setTracks])
   useEffect(
     () =>
       window.api.onNotAudioSkipped((count) =>

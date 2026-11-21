@@ -1103,6 +1103,37 @@ describe('useTrackLibrary untrimmed review fields', () => {
   })
 })
 
+describe('useTrackLibrary file release date', () => {
+  // The Year box shows the read under the setting of the moment; the row keeps the file's
+  // whole date so it can follow the setting when the user changes it later.
+  it('keeps the whole date the read returns on the track', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '', year: '2020' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+        fileDate: '2020-12-01',
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+
+    expect(result.current.tracks[0]?.fileDate).toBe('2020-12-01')
+  })
+})
+
 describe('useTrackLibrary foreign tags', () => {
   // The inspector shows the third-party tags a file carries (SERATO_MARKERS_V2,
   // MUSICBRAINZ_*…) so the user can review and delete them. The read already returns

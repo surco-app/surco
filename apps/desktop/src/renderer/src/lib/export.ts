@@ -1,3 +1,4 @@
+import { fullDateOf } from '../../../shared/tagFields'
 import type { DeclickConfig, NormalizeConfig, ProcessResult } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
@@ -50,6 +51,7 @@ export function exportedPatch(
       // nothing is at risk anymore: the session store stops persisting this track
       // and the reopen offer may expire freely again.
       diskSignature: trackSignature(track),
+      fileDate: fullDateOf(track.meta.year) || undefined,
       cleaned: undefined,
     }
   }
@@ -102,6 +104,7 @@ export function exportedPatch(
     // anymore: the session store stops persisting this track and the reopen offer
     // may expire freely again.
     diskSignature: trackSignature(settledTrack),
+    fileDate: fullDateOf(track.meta.year) || undefined,
     cleaned: undefined,
   }
 }
