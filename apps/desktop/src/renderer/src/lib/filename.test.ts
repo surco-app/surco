@@ -90,6 +90,29 @@ describe('parseFileName', () => {
     expect(parseFileName('/m/E2-E4.wav').title).toBe('E2-E4')
   })
 
+  it('searches by the folder artist and album when the file name carries no artist', () => {
+    const r = parseFileName(
+      '/dl/Maxis - Bit Music/(2003) Bolo & Uri vs. Emo DJ - Such A Bitch WAV/B1.I Saw That Not.wav',
+    )
+    expect(r.query).toBe('Bolo & Uri vs. Emo DJ Such A Bitch')
+    expect(r.artist).toBe('')
+    expect(r.title).toBe('I Saw That Not')
+  })
+
+  it('reads the folder from a backslashed Windows path too', () => {
+    const r = parseFileName('C:\\dl\\Artist - Album [2010] FLAC\\01 Intro.flac')
+    expect(r.query).toBe('Artist Album')
+  })
+
+  it('keeps the file name query when the folder is not an "Artist - Album" name', () => {
+    expect(parseFileName('/dl/complete/B1.I Saw That Not.wav').query).toBe('I Saw That Not')
+  })
+
+  it('prefers the artist the file name gives over the folder', () => {
+    const r = parseFileName('/dl/Various - Compilation/Acer - Keep Calm.wav')
+    expect(r.query).toBe('Acer Keep Calm')
+  })
+
   it('strips the extension and directory from the file name', () => {
     const r = parseFileName('/a/b/Chumi Dj - Open Your Eyes.wav')
     expect(r.fileName).toBe('Chumi Dj - Open Your Eyes')
