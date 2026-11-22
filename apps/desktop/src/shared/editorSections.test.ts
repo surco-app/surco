@@ -2,6 +2,29 @@ import { describe, expect, it } from 'vitest'
 import { DEFAULT_EDITOR_SECTIONS, normalizeEditorSections } from './editorSections'
 
 describe('normalizeEditorSections', () => {
+  it('pins the library section above the form, whatever order was stored', () => {
+    const out = normalizeEditorSections([
+      { id: 'quality', open: true },
+      { id: 'library', open: false },
+      { id: 'form', open: true },
+    ])
+    expect(out.slice(0, 2).map((s) => s.id)).toEqual(['library', 'form'])
+    expect(out[0].open).toBe(false)
+  })
+
+  it('adds the library section, open, to a list saved before it existed', () => {
+    const out = normalizeEditorSections([
+      { id: 'form', open: true },
+      { id: 'quality', open: false },
+    ])
+    expect(out[0]).toEqual({ id: 'library', open: true })
+  })
+
+  it('lets the library section be hidden, unlike the form', () => {
+    const out = normalizeEditorSections([{ id: 'library', open: true, hidden: true }])
+    expect(out[0]).toEqual({ id: 'library', open: true, hidden: true })
+  })
+
   it('returns the defaults for a missing value', () => {
     expect(normalizeEditorSections(undefined)).toEqual(DEFAULT_EDITOR_SECTIONS)
   })
@@ -16,6 +39,7 @@ describe('normalizeEditorSections', () => {
     ]
     const ids = normalizeEditorSections(stored).map((s) => s.id)
     expect(ids).toEqual([
+      'library',
       'form',
       'otherTags',
       'properties',
@@ -47,6 +71,7 @@ describe('normalizeEditorSections', () => {
     // WHEREVER the user parked those: trim/declick after the properties the user
     // moved — never dumped blindly below the output name.
     expect(normalizeEditorSections(stored)).toEqual([
+      { id: 'library', open: true },
       { id: 'form', open: true },
       { id: 'otherTags', open: false },
       { id: 'normalize', open: false },
@@ -66,6 +91,7 @@ describe('normalizeEditorSections', () => {
   it('orders inspection first and the audio chain in processing order by default', () => {
     const ids = DEFAULT_EDITOR_SECTIONS.map((s) => s.id)
     expect(ids).toEqual([
+      'library',
       'form',
       'otherTags',
       'properties',
@@ -132,7 +158,7 @@ describe('normalizeEditorSections', () => {
   // blank the whole panel by hiding it.
   it('never lets the metadata form be hidden', () => {
     const stored = [{ id: 'form' as const, open: true, hidden: true }]
-    expect(normalizeEditorSections(stored)[0]).toEqual({ id: 'form', open: true })
+    expect(normalizeEditorSections(stored)[1]).toEqual({ id: 'form', open: true })
   })
 
   // The metadata form is the editor's header (toolbar, Apple Music badge) — the one
@@ -143,7 +169,7 @@ describe('normalizeEditorSections', () => {
       { id: 'quality' as const, open: true },
       { id: 'form' as const, open: false },
     ]
-    expect(normalizeEditorSections(stored)[0]).toEqual({ id: 'form', open: false })
+    expect(normalizeEditorSections(stored)[1]).toEqual({ id: 'form', open: false })
   })
 
   it('drops unknown and duplicate entries from a hand-edited file', () => {
@@ -155,6 +181,7 @@ describe('normalizeEditorSections', () => {
     ] as unknown as Parameters<typeof normalizeEditorSections>[0]
     const ids = normalizeEditorSections(stored)?.map((s) => s.id)
     expect(ids).toEqual([
+      'library',
       'form',
       'otherTags',
       'properties',

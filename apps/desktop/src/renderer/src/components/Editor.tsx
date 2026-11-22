@@ -1815,7 +1815,7 @@ export const Editor = memo(function Editor({
             let lastGroup = EDITOR_SECTION_GROUP.form
             let lifted: React.ReactElement | null = null
             const column = editorSections
-              .filter((s) => s.id !== 'form' && s.hidden !== true)
+              .filter((s) => s.id !== 'form' && s.id !== 'library' && s.hidden !== true)
               .flatMap(({ id }) => {
                 // Typed as element-or-falsy (not the wider ReactNode) so the arrays
                 // returned below are Element lists flatMap accepts, and the `!element`

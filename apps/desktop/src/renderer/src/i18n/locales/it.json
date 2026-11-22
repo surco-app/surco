@@ -1376,7 +1376,13 @@
         "needsCalls": "Servono due CALL",
         "apply": "Metti nel commento"
       }
-    }
+    },
+    "librarySectionTitle": "Nella tua libreria",
+    "libraryVerdictHere": "Questa è migliore",
+    "libraryVerdictLibrary": "C'è una copia migliore",
+    "libraryVerdictSame": "Stessa copia",
+    "libraryVerdictMeasuring": "Confronto…",
+    "libraryRowBetter": "Migliore di questo file"
   },
   "fields": {
     "groupIdentity": "Di base",
@@ -1967,7 +1973,8 @@
       "hide": "Nascondi la sezione dall'editor",
       "visible": "Visibile",
       "visibleHint": "Mostra questa sezione nell'editor. Quelle nascoste non compaiono affatto.",
-      "openHint": "Apre questa sezione già espansa quando apri un brano."
+      "openHint": "Apre questa sezione già espansa quando apri un brano.",
+      "library": "Nella tua libreria"
     },
     "keyNotations": {
       "camelot": "Alfanumerica (8A)",

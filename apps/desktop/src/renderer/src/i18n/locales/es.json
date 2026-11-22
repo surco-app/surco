@@ -1376,7 +1376,13 @@
         "needsCalls": "Hacen falta dos CALLs",
         "apply": "Poner en el comentario"
       }
-    }
+    },
+    "librarySectionTitle": "En tu biblioteca",
+    "libraryVerdictHere": "Esta es la mejor",
+    "libraryVerdictLibrary": "Hay una copia mejor",
+    "libraryVerdictSame": "Misma copia",
+    "libraryVerdictMeasuring": "Comparando…",
+    "libraryRowBetter": "Mejor que este archivo"
   },
   "fields": {
     "groupIdentity": "Básicos",
@@ -1967,7 +1973,8 @@
       "hide": "Ocultar la sección del editor",
       "visible": "Visible",
       "visibleHint": "Muestra esta sección en el editor. Las ocultas no aparecen en absoluto.",
-      "openHint": "Empieza esta sección desplegada al abrir una pista."
+      "openHint": "Empieza esta sección desplegada al abrir una pista.",
+      "library": "En tu biblioteca"
     },
     "keyNotations": {
       "camelot": "Alfanumérica (8A)",

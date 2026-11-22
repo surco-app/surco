@@ -3,6 +3,7 @@
 // default settings (main/settings) reference the same list and can never drift.
 
 const EDITOR_SECTION_IDS = [
+  'library',
   'form',
   'otherTags',
   'properties',
@@ -25,6 +26,7 @@ export type EditorSectionId = (typeof EDITOR_SECTION_IDS)[number]
 type EditorSectionGroup = 'metadata' | 'audio' | 'output'
 
 export const EDITOR_SECTION_GROUP: Record<EditorSectionId, EditorSectionGroup> = {
+  library: 'metadata',
   form: 'metadata',
   otherTags: 'metadata',
   properties: 'metadata',
@@ -54,6 +56,7 @@ export interface EditorSectionPref {
 // conversion applies it — trim the silence first, repair clicks on what remains,
 // size the gain on the repaired audio — and the name last.
 export const DEFAULT_EDITOR_SECTIONS: EditorSectionPref[] = [
+  { id: 'library', open: true },
   { id: 'form', open: true },
   // The third-party tags the app doesn't manage. Folded by default, and it renders
   // nothing when the track carries none, so it stays out of the way until it applies.
@@ -103,13 +106,15 @@ export function normalizeEditorSections(
     }, -1)
     merged.splice(at + 1, 0, def)
   }
-  return [...merged.filter((s) => s.id === 'form'), ...merged.filter((s) => s.id !== 'form')].map(
-    (s) => ({
-      id: s.id,
-      open: s.open,
-      // hidden survives the repair, except on the form — hiding it would blank the
-      // whole editor, so a hand-edited flag there is dropped rather than honored.
-      ...(s.hidden === true && s.id !== 'form' ? { hidden: true } : {}),
-    }),
-  )
+  const pinned = ['library', 'form']
+  return [
+    ...pinned.flatMap((id) => merged.filter((s) => s.id === id)),
+    ...merged.filter((s) => !pinned.includes(s.id)),
+  ].map((s) => ({
+    id: s.id,
+    open: s.open,
+    // hidden survives the repair, except on the form — hiding it would blank the
+    // whole editor, so a hand-edited flag there is dropped rather than honored.
+    ...(s.hidden === true && s.id !== 'form' ? { hidden: true } : {}),
+  }))
 }

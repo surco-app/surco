@@ -1376,7 +1376,13 @@
         "needsCalls": "Needs two CALLs",
         "apply": "Put in the comment"
       }
-    }
+    },
+    "librarySectionTitle": "In your library",
+    "libraryVerdictHere": "This one is better",
+    "libraryVerdictLibrary": "There's a better copy",
+    "libraryVerdictSame": "Same copy",
+    "libraryVerdictMeasuring": "Comparing…",
+    "libraryRowBetter": "Better than this file"
   },
   "fields": {
     "groupIdentity": "Basics",
@@ -1967,7 +1973,8 @@
       "hide": "Hide section from the editor",
       "visible": "Visible",
       "visibleHint": "Show this section in the editor. Hidden sections are left out entirely.",
-      "openHint": "Start this section unfolded when you open a track."
+      "openHint": "Start this section unfolded when you open a track.",
+      "library": "In your library"
     },
     "keyNotations": {
       "camelot": "Alphanumeric (8A)",

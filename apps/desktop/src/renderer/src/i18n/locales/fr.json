@@ -1376,7 +1376,13 @@
         "needsCalls": "Il faut deux CALLs",
         "apply": "Mettre dans le commentaire"
       }
-    }
+    },
+    "librarySectionTitle": "Dans ta bibliothèque",
+    "libraryVerdictHere": "Celle-ci est meilleure",
+    "libraryVerdictLibrary": "Il y a une meilleure copie",
+    "libraryVerdictSame": "Même copie",
+    "libraryVerdictMeasuring": "Comparaison…",
+    "libraryRowBetter": "Meilleure que ce fichier"
   },
   "fields": {
     "groupIdentity": "Essentiels",
@@ -1967,7 +1973,8 @@
       "hide": "Masquer la section de l’éditeur",
       "visible": "Visible",
       "visibleHint": "Affiche cette section dans l’éditeur. Les sections masquées n’apparaissent pas du tout.",
-      "openHint": "Ouvre cette section dépliée à l’ouverture d’un morceau."
+      "openHint": "Ouvre cette section dépliée à l’ouverture d’un morceau.",
+      "library": "Dans ta bibliothèque"
     },
     "keyNotations": {
       "camelot": "Alphanumérique (8A)",

@@ -31,6 +31,7 @@ const INTENT_SECTIONS: Record<AudioIntent, EditorSectionId[]> = {
 // The sections that are part of the product's core and never hidden by the wizard,
 // whatever audio intents are (or aren't) picked.
 const ALWAYS_SHOWN: EditorSectionId[] = [
+  'library',
   'form',
   'properties',
   'quality',

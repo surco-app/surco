@@ -1376,7 +1376,13 @@
         "needsCalls": "Braucht zwei CALLs",
         "apply": "In den Kommentar setzen"
       }
-    }
+    },
+    "librarySectionTitle": "In deiner Bibliothek",
+    "libraryVerdictHere": "Diese ist besser",
+    "libraryVerdictLibrary": "Es gibt eine bessere Kopie",
+    "libraryVerdictSame": "Gleiche Kopie",
+    "libraryVerdictMeasuring": "Wird verglichen…",
+    "libraryRowBetter": "Besser als diese Datei"
   },
   "fields": {
     "groupIdentity": "Grundlagen",
@@ -1967,7 +1973,8 @@
       "hide": "Abschnitt im Editor ausblenden",
       "visible": "Sichtbar",
       "visibleHint": "Zeigt diesen Abschnitt im Editor. Ausgeblendete erscheinen gar nicht.",
-      "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest."
+      "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest.",
+      "library": "In deiner Bibliothek"
     },
     "keyNotations": {
       "camelot": "Alphanumerisch (8A)",

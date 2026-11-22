@@ -1376,7 +1376,13 @@
         "needsCalls": "Calen dos CALLs",
         "apply": "Posar al comentari"
       }
-    }
+    },
+    "librarySectionTitle": "A la teva biblioteca",
+    "libraryVerdictHere": "Aquesta és la millor",
+    "libraryVerdictLibrary": "Hi ha una còpia millor",
+    "libraryVerdictSame": "Mateixa còpia",
+    "libraryVerdictMeasuring": "Comparant…",
+    "libraryRowBetter": "Millor que aquest fitxer"
   },
   "fields": {
     "groupIdentity": "Bàsics",
@@ -1967,7 +1973,8 @@
       "hide": "Amagar la secció de l'editor",
       "visible": "Visible",
       "visibleHint": "Mostra aquesta secció a l'editor. Les amagades no hi apareixen gens.",
-      "openHint": "Aquesta secció comença desplegada quan obres una pista."
+      "openHint": "Aquesta secció comença desplegada quan obres una pista.",
+      "library": "A la teva biblioteca"
     },
     "keyNotations": {
       "camelot": "Alfanumèrica (8A)",

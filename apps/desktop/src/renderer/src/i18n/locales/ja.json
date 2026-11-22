@@ -1376,7 +1376,13 @@
         "needsCalls": "CALLが2つ必要です",
         "apply": "コメントに入れる"
       }
-    }
+    },
+    "librarySectionTitle": "ライブラリ内",
+    "libraryVerdictHere": "こちらの方が良い",
+    "libraryVerdictLibrary": "より良いコピーがあります",
+    "libraryVerdictSame": "同じコピー",
+    "libraryVerdictMeasuring": "比較中…",
+    "libraryRowBetter": "このファイルより良い"
   },
   "fields": {
     "groupIdentity": "基本",
@@ -1967,7 +1973,8 @@
       "hide": "エディタからセクションを非表示",
       "visible": "表示",
       "visibleHint": "このセクションをエディタに表示します。非表示セクションは完全に除外されます。",
-      "openHint": "トラックを開いたときにこのセクションを展開した状態で開始します。"
+      "openHint": "トラックを開いたときにこのセクションを展開した状態で開始します。",
+      "library": "ライブラリ内"
     },
     "keyNotations": {
       "camelot": "英数字（8A）",
