@@ -9,7 +9,7 @@ import type {
 import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy'
 import { libraryCopyFormat } from '../lib/properties'
 import { copyDurationOptions, withDuration } from './useCopyDuration'
-import { copyFactsQueries, pairOptions, toCopyFacts } from './useCopyFacts'
+import { copyFactsQueries, toCopyFacts, versionPairOptions } from './useCopyFacts'
 import { trackPropertiesOptions } from './useTrackProperties'
 
 export interface CopyVerdictState {
@@ -50,7 +50,7 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
       ...copyPaths.flatMap((path) => [
         ...copyFactsQueries(path).map((query) => ({ ...query, enabled: on && !!path })),
         { ...copyDurationOptions(path), enabled: on && !!path },
-        { ...pairOptions(herePath, path), enabled: on && !!path },
+        { ...versionPairOptions(herePath, path), enabled: on && !!path },
         { ...trackPropertiesOptions(path), enabled: !!path },
       ]),
     ],

@@ -410,7 +410,7 @@ export interface Api {
   rememberAutoMatch: (path: string, verdict: RememberedAutoMatch) => Promise<null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
-  comparePair: (a: string, b: string) => Promise<PairProbe | null>
+  comparePair: (a: string, b: string, version?: boolean) => Promise<PairProbe | null>
   limiterGlimpse: (
     worse: string,
     better: string,

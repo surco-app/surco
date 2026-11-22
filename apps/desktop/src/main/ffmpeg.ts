@@ -3522,12 +3522,16 @@ export async function headOffsetMs(
 // The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
 // VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
 // probe's one second; the copies are searched again as far as the gap plus a second, in
-// either polarity, at a tenth of the probe's rate so a search of minutes stays a few tens of
-// megabytes (the bass that carries most of a track's energy survives it). Gaps past
-// VERSION_REACH_MAX_SECONDS are not searched, and nothing is said about them.
+// either polarity, at a tenth of the probe's rate (the bass that carries most of a track's
+// energy survives it). The reach is bounded so the FFT is never longer than 2^19 points, the
+// size of the probe's own, which keeps the synchronous work on the main process short; a gap
+// past that reach (about 54 s) is not searched, and nothing is said about it.
 const VERSION_RATE = 4410
 const VERSION_WINDOW_SECONDS = 10
-const VERSION_REACH_MAX_SECONDS = 180
+const VERSION_FFT_MAX = 2 ** 19
+const VERSION_REACH_MAX_SECONDS = Math.floor(
+  (VERSION_FFT_MAX - VERSION_WINDOW_SECONDS * VERSION_RATE) / 2 / VERSION_RATE,
+)
 
 async function versionCorrelation(
   a: string,
@@ -3596,8 +3600,10 @@ async function versionCorrelation(
 export async function comparePair(
   a: string,
   b: string,
+  version = false,
   signal?: AbortSignal,
 ): Promise<PairProbe | null> {
+  if (!version) return alignedPair(a, b, signal)
   const [facts, aSec, bSec] = await Promise.all([
     alignedPair(a, b, signal),
     probeDuration(a, signal),

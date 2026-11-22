@@ -68,7 +68,7 @@ export interface AudioAnalysisIpc {
     result: string | null
   }
   'audio:pair': {
-    args: [a: string, b: string]
+    args: [a: string, b: string, version?: boolean]
     result: PairProbe | null
   }
   'audio:limiterGlimpse': {

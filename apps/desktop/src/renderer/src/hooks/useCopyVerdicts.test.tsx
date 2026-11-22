@@ -114,6 +114,7 @@ describe('useCopyVerdicts', () => {
     })
     await waitFor(() => expect(result.current[0].measuring).toBe(false))
     expect(result.current[0].verdict).toEqual({ winner: 'different' })
+    expect(window.api.comparePair).toHaveBeenCalledWith('/here/a.mp3', '/lib/edit.mp3', true)
     expect(result.current[0].here?.durationSec).toBe(483.2)
     expect(result.current[0].copy?.durationSec).toBe(447.9)
   })

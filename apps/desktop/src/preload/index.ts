@@ -348,7 +348,8 @@ const api: Api = {
     invokeAudio('audio:loudness', path, priority),
   fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
     invokeAudio('audio:fingerprint', path, priority),
-  comparePair: (a: string, b: string): Promise<PairProbe | null> => invokeAudio('audio:pair', a, b),
+  comparePair: (a: string, b: string, version?: boolean): Promise<PairProbe | null> =>
+    invokeAudio('audio:pair', a, b, version),
   limiterGlimpse: (
     worse: string,
     better: string,

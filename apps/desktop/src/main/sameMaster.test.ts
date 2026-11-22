@@ -24,6 +24,7 @@ const trimmed = join(dir, 'trimmed.wav')
 const inverted = join(dir, 'inverted.wav')
 const otherShort = join(dir, 'other-short.wav')
 const noise = join(dir, 'noise.wav')
+const farHead = join(dir, 'far-head.wav')
 
 const mix = (f1: number, f2: number, f3: number): string =>
   `aevalsrc=0.3*sin(2*PI*${f1}*t)+0.2*sin(2*PI*${f2}*t)+0.2*sin(2*PI*${f3}*t):d=20`
@@ -77,6 +78,7 @@ beforeAll(() => {
     inverted,
   ])
   execFileSync(FF, [...q, '-i', other, '-af', 'atrim=end=15', '-c:a', 'pcm_s16le', otherShort])
+  execFileSync(FF, [...q, '-i', base, '-af', 'adelay=60s:all=1', '-c:a', 'pcm_s16le', farHead])
 })
 
 describe('comparePair', () => {
@@ -126,18 +128,30 @@ describe('comparePair', () => {
     ['three seconds trimmed from the head', base, trimmed],
     ['four seconds later with its polarity reversed', noise, inverted],
   ])('finds the same master with %s', async (_what, reference, copy) => {
-    const p = await comparePair(reference, copy)
+    const p = await comparePair(reference, copy, true)
     expect(p?.versionCorrelation).toBeGreaterThan(0.9)
   })
 
+  // Only the library copy row names another version; duplicate groups and triage compare
+  // pairs too, and must not pay for the wider search or the length probes it needs.
+  it('runs the wider search only when asked for it', async () => {
+    expect((await comparePair(base, headed))?.versionCorrelation).toBeUndefined()
+  })
+
+  // The wider search is bounded to the size of the probe's own FFT so it never holds the main
+  // process; a gap past that reach is not searched and nothing is claimed.
+  it('searches no further than its bounded reach', async () => {
+    expect((await comparePair(base, farHead, true))?.versionCorrelation).toBeUndefined()
+  })
+
   it('finds no match for a different recording of another length', async () => {
-    const p = await comparePair(base, otherShort)
+    const p = await comparePair(base, otherShort, true)
     expect(p).not.toBeNull()
     expect(p?.versionCorrelation).toBeLessThan(0.5)
   })
 
   // Copies of one length need no wider search: another version is never claimed for them.
   it('searches no further for copies of the same length', async () => {
-    expect((await comparePair(base, limited))?.versionCorrelation).toBeUndefined()
+    expect((await comparePair(base, limited, true))?.versionCorrelation).toBeUndefined()
   })
 })

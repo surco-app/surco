@@ -17,8 +17,19 @@ export function pairOptions(a: string, b: string) {
   })
 }
 
+// The library copy row also names another version, so its pair carries the wider search;
+// a separate entry, so duplicate groups and triage never wait on or pay for it.
+export function versionPairOptions(a: string, b: string) {
+  const [first, second] = [a, b].sort()
+  return queryOptions({
+    queryKey: ['pair', first, second, 'version'],
+    queryFn: () => window.api.comparePair(first, second, true),
+    staleTime: Number.POSITIVE_INFINITY,
+  })
+}
+
 export function usePairFacts(a: string, b: string, enabled: boolean): PairProbe | null | undefined {
-  const query = useQuery({ ...pairOptions(a, b), enabled: enabled && !!a && !!b })
+  const query = useQuery({ ...versionPairOptions(a, b), enabled: enabled && !!a && !!b })
   return query.isPending ? undefined : (query.data ?? null)
 }
 
