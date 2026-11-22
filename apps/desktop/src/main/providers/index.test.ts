@@ -42,6 +42,7 @@ vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
 vi.mock('../deezer', () => ({ search: dzSearch, getRelease: vi.fn() }))
 vi.mock('../beatport', () => ({ search: bpSearch, getRelease: bpGetRelease }))
 vi.mock('../musicbrainz', () => ({ search: mbSearch, getRelease: mbGetRelease }))
+vi.mock('../itunes', () => ({ search: vi.fn(), getRelease: vi.fn() }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'

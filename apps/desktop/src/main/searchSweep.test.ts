@@ -12,7 +12,7 @@ const { userData } = vi.hoisted(() => {
   return { userData: fs.mkdtempSync(path.join(os.tmpdir(), 'surco-search-sweep-')) }
 })
 vi.mock('electron', () => ({
-  app: { isPackaged: false, getPath: () => userData, on: () => {} },
+  app: { isPackaged: false, getPath: () => userData, on: () => {}, getLocaleCountryCode: () => '' },
 }))
 vi.mock('./settings', async (importOriginal) => {
   const actual = await importOriginal<typeof import('./settings')>()
@@ -27,6 +27,7 @@ import * as beatport from './beatport'
 import { createBeatportSession } from './beatportSession'
 import * as deezer from './deezer'
 import { readMeta } from './ffmpeg'
+import * as itunes from './itunes'
 import * as musicbrainz from './musicbrainz'
 import { cleanHints, getProvider } from './providers'
 import { actsOf, buildSearchCandidates, namesArtist } from './searchQuery'
@@ -244,7 +245,7 @@ async function rungsOf(
         }),
       )
   }
-  const searchOnce = { deezer, bandcamp, beatport }[provider].searchOnce
+  const searchOnce = { deezer, bandcamp, beatport, itunes }[provider].searchOnce
   for (const c of buildSearchCandidates(query, hints, { includeCatalog: false, albumFirst: true }))
     rungs.push(await rung('text', c, () => searchOnce(c, 'low')))
   return rungs
