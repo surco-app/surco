@@ -24,6 +24,7 @@ const PROVIDER_IMAGE_HOSTS = [
   'https://coverartarchive.org',
   'https://archive.org',
   'https://*.archive.org',
+  'https://*.mzstatic.com',
 ]
 
 // Each extractor anchors on how its file quotes the directive (the HTML terminates it

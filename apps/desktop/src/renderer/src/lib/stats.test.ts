@@ -167,4 +167,8 @@ describe('matchStatKey', () => {
   it('routes a MusicBrainz match to its own tally instead of crediting Discogs', () => {
     expect(matchStatKey('musicbrainz')).toBe('musicbrainzMatches')
   })
+
+  it('routes an Apple Music match to its own tally instead of crediting Discogs', () => {
+    expect(matchStatKey('itunes')).toBe('itunesMatches')
+  })
 })

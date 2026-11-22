@@ -190,6 +190,7 @@ export const defaults: Settings = {
   hasSeenOnboarding: false,
   deezerProviderMigrated: false,
   musicbrainzProviderMigrated: false,
+  itunesProviderMigrated: false,
   backupPolicyMigrated: false,
   backupLimitsMigrated: false,
   trackImportFieldsMigrated: false,
@@ -204,6 +205,7 @@ export const defaults: Settings = {
     deezerMatches: 0,
     beatportMatches: 0,
     musicbrainzMatches: 0,
+    itunesMatches: 0,
   },
   commandUsage: {},
   musicReviewIgnored: [],
@@ -674,13 +676,21 @@ export function recordStat(key: keyof Settings['stats'], by = 1): void {
 // launch — or the user's other Mac — from re-adding a source once its step has run.
 export function migrateProviderDefaults(): void {
   const cur = getSettings()
-  if (cur.deezerProviderMigrated && cur.musicbrainzProviderMigrated) return
+  if (cur.deezerProviderMigrated && cur.musicbrainzProviderMigrated && cur.itunesProviderMigrated)
+    return
   const searchProviders = [...cur.searchProviders]
   if (!cur.deezerProviderMigrated && !searchProviders.includes('deezer'))
     searchProviders.push('deezer')
   if (!cur.musicbrainzProviderMigrated && !searchProviders.includes('musicbrainz'))
     searchProviders.push('musicbrainz')
-  saveSettings({ searchProviders, deezerProviderMigrated: true, musicbrainzProviderMigrated: true })
+  if (!cur.itunesProviderMigrated && !searchProviders.includes('itunes'))
+    searchProviders.push('itunes')
+  saveSettings({
+    searchProviders,
+    deezerProviderMigrated: true,
+    musicbrainzProviderMigrated: true,
+    itunesProviderMigrated: true,
+  })
 }
 
 const TRACK_IMPORT_FIELDS = ['bpm', 'key', 'mixName', 'isrc']

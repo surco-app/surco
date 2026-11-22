@@ -5,6 +5,7 @@ import {
   FolderDown,
   Headphones,
   Heart,
+  Music,
   Radio,
   Share,
   Store,
@@ -42,6 +43,7 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
   { key: 'deezerMatches', icon: Radio },
   { key: 'beatportMatches', icon: AudioLines },
   { key: 'musicbrainzMatches', icon: Database },
+  { key: 'itunesMatches', icon: Music },
 ]
 
 // Matches by source as one proportional bar, a segment per source with the raw counts
@@ -212,6 +214,12 @@ export function StatsTab({ settings }: Props): React.JSX.Element {
                 label: tr('settings.provider.musicbrainz'),
                 count: stats.musicbrainzMatches,
                 swatch: 'bg-[var(--color-accent)]/40',
+              },
+              {
+                key: 'itunes',
+                label: tr('settings.provider.itunes'),
+                count: stats.itunesMatches,
+                swatch: 'bg-[var(--color-good)]/50',
               },
             ]}
           />

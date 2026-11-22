@@ -91,10 +91,12 @@ export function matchStatKey(
   | 'bandcampMatches'
   | 'deezerMatches'
   | 'beatportMatches'
-  | 'musicbrainzMatches' {
+  | 'musicbrainzMatches'
+  | 'itunesMatches' {
   if (provider === 'bandcamp') return 'bandcampMatches'
   if (provider === 'deezer') return 'deezerMatches'
   if (provider === 'beatport') return 'beatportMatches'
   if (provider === 'musicbrainz') return 'musicbrainzMatches'
+  if (provider === 'itunes') return 'itunesMatches'
   return 'discogsMatches'
 }

@@ -1671,6 +1671,7 @@
       "deezerMatches": "Trobades a Deezer",
       "beatportMatches": "Trobades a Beatport",
       "musicbrainzMatches": "Trobades a MusicBrainz",
+      "itunesMatches": "Trobades a Apple Music",
       "matchSources": "D'on vénen les coincidències",
       "timeSaved": "Has estalviat uns {{time}}",
       "perTrack": "≈ {{minutes}} min de feina manual per pista",
@@ -1791,7 +1792,7 @@
     "searchByAlbumFirst": "Cercar primer per àlbum",
     "searchByAlbumFirstHint": "Si les etiquetes tenen àlbum, es cerca amb l'artista abans que la pista. Si no surt res, es cerca la pista.",
     "searchProviders": "Fonts de cerca",
-    "searchProvidersHint": "Catàlegs on cerca l'editor. Discogs està revisat a mà, Bandcamp hi afegeix material autoeditat, Deezer cobreix els llançaments digitals comercials, Beatport aporta BPM, tonalitat i mix, i MusicBrainz és un catàleg obert que manté la seva comunitat.",
+    "searchProvidersHint": "Catàlegs on cerca l'editor. Discogs està revisat a mà, Bandcamp hi afegeix material autoeditat, Deezer cobreix els llançaments digitals comercials, Beatport aporta BPM, tonalitat i mix, MusicBrainz és un catàleg obert que manté la seva comunitat i Apple Music hi porta el catàleg d'Apple amb caràtula gran.",
     "searchResultsSection": "Resultats",
     "searchMatchingSection": "Coincidències",
     "providerDescription": {
@@ -1799,14 +1800,16 @@
       "bandcamp": "Material autoeditat",
       "deezer": "Llançaments digitals comercials",
       "beatport": "BPM, tonalitat i mix",
-      "musicbrainz": "Catàleg obert que manté la seva comunitat"
+      "musicbrainz": "Catàleg obert que manté la seva comunitat",
+      "itunes": "Catàleg d'Apple, caràtula gran"
     },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
       "beatport": "Beatport",
-      "musicbrainz": "MusicBrainz"
+      "musicbrainz": "MusicBrainz",
+      "itunes": "Apple Music"
     },
     "format": {
       "Vinyl": "Vinil",
@@ -1919,7 +1922,7 @@
     "trimWhitespace": "Retallar els espais sobrants",
     "zeroPadTrack": "Núm. de pista amb un zero davant (03)",
     "fullReleaseDate": "Any amb data completa",
-    "fullReleaseDateHint": "Mostra i desa 2020-12-01 en lloc de 2020 quan el fitxer o Discogs, Bandcamp, Deezer, Beatport o MusicBrainz tenen la data sencera.",
+    "fullReleaseDateHint": "Mostra i desa 2020-12-01 en lloc de 2020 quan el fitxer o Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music tenen la data sencera.",
     "editorQuickButtonsTitle": "Botons ràpids",
     "editorTagsTitle": "Etiquetes",
     "editorAnalysisTitle": "Anàlisi",
@@ -2347,7 +2350,7 @@
     "audioBody": "Surco només mostra les seccions de l'editor que necessites per a la teva manera de treballar. Tria el que t'encaixi. Ho pots canviar quan vulguis a Configuració.",
     "intent": {
       "metadata": "Corregir les metadades",
-      "metadataBody": "Etiquetes, caràtula i l'aparellament amb Discogs, Bandcamp, Deezer, Beatport i MusicBrainz. Sempre actiu, perquè és el que fa Surco.",
+      "metadataBody": "Etiquetes, caràtula i l'aparellament amb Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music. Sempre actiu, perquè és el que fa Surco.",
       "restore": "Restaurar rips de vinil",
       "restoreBody": "Retalla el silenci i repara clics i pops en enregistraments de vinil.",
       "level": "Anivellar el volum",
@@ -2421,7 +2424,7 @@
       },
       "windows": {
         "q": "Hi ha alguna cosa diferent a Windows?",
-        "a": "Gairebé tot funciona exactament igual. La conversió, l'etiquetatge, la cerca a Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, l'anàlisi de qualitat i l'exportació a rekordbox, Traktor, Serato i Engine DJ.\n\nL'única cosa que no existeix a Windows és la integració amb Apple Music. Surco controla l'app Music d'Apple mitjançant AppleScript, un pont d'automatització que només existeix a macOS (l'app d'Apple Music per a Windows no ofereix res d'equivalent). Per això la destinació, els botons i la insígnia de biblioteca d'Apple Music simplement no hi apareixen.\n\nUn detall dels WAV que convé saber. Surco desa les etiquetes dels WAV al chunk ID3 estàndard, que les apps de DJ i editors com Mp3tag llegeixen sense problemes, però que l'Explorador de Windows no pot mostrar. Un WAV convertit pot semblar sense etiquetes en una carpeta encara que totes les etiquetes hi siguin. Amb MP3 o FLAC l'Explorador les mostra amb normalitat."
+        "a": "Gairebé tot funciona exactament igual. La conversió, l'etiquetatge, la cerca a Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, l'anàlisi de qualitat i l'exportació a rekordbox, Traktor, Serato i Engine DJ.\n\nL'única cosa que no existeix a Windows és la integració amb Apple Music. Surco controla l'app Music d'Apple mitjançant AppleScript, un pont d'automatització que només existeix a macOS (l'app d'Apple Music per a Windows no ofereix res d'equivalent). Per això la destinació, els botons i la insígnia de biblioteca d'Apple Music simplement no hi apareixen.\n\nUn detall dels WAV que convé saber. Surco desa les etiquetes dels WAV al chunk ID3 estàndard, que les apps de DJ i editors com Mp3tag llegeixen sense problemes, però que l'Explorador de Windows no pot mostrar. Un WAV convertit pot semblar sense etiquetes en una carpeta encara que totes les etiquetes hi siguin. Amb MP3 o FLAC l'Explorador les mostra amb normalitat."
       }
     }
   },

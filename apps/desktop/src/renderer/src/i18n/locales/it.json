@@ -1671,6 +1671,7 @@
       "deezerMatches": "Trovati su Deezer",
       "beatportMatches": "Trovati su Beatport",
       "musicbrainzMatches": "Trovati su MusicBrainz",
+      "itunesMatches": "Trovati su Apple Music",
       "matchSources": "Da dove arrivano gli abbinamenti",
       "timeSaved": "Hai risparmiato circa {{time}}",
       "perTrack": "≈ {{minutes}} min di lavoro manuale per brano",
@@ -1791,7 +1792,7 @@
     "searchByAlbumFirst": "Cerca prima per album",
     "searchByAlbumFirstHint": "Se i tag hanno l'album, si cerca con l'artista prima del brano. Se non esce niente, si cerca il brano.",
     "searchProviders": "Sorgenti di ricerca",
-    "searchProvidersHint": "Cataloghi in cui cerca l'editor. Discogs è curato, Bandcamp aggiunge materiale autoprodotto, Deezer copre le uscite digitali commerciali, Beatport porta BPM, tonalità e mix, e MusicBrainz è un catalogo aperto curato dalla sua comunità.",
+    "searchProvidersHint": "Cataloghi in cui cerca l'editor. Discogs è curato, Bandcamp aggiunge materiale autoprodotto, Deezer copre le uscite digitali commerciali, Beatport porta BPM, tonalità e mix, MusicBrainz è un catalogo aperto curato dalla sua comunità e Apple Music offre il catalogo di Apple con copertina grande.",
     "searchResultsSection": "Risultati",
     "searchMatchingSection": "Abbinamenti",
     "providerDescription": {
@@ -1799,14 +1800,16 @@
       "bandcamp": "Materiale autoprodotto",
       "deezer": "Uscite digitali commerciali",
       "beatport": "BPM, tonalità e mix",
-      "musicbrainz": "Catalogo aperto curato dalla sua comunità"
+      "musicbrainz": "Catalogo aperto curato dalla sua comunità",
+      "itunes": "Catalogo di Apple, copertina grande"
     },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
       "beatport": "Beatport",
-      "musicbrainz": "MusicBrainz"
+      "musicbrainz": "MusicBrainz",
+      "itunes": "Apple Music"
     },
     "format": {
       "Vinyl": "Vinile",
@@ -1919,7 +1922,7 @@
     "trimWhitespace": "Togli gli spazi in eccesso",
     "zeroPadTrack": "N. brano con zero davanti (03)",
     "fullReleaseDate": "Anno con data completa",
-    "fullReleaseDateHint": "Mostra e salva 2020-12-01 invece di 2020 quando il file o Discogs, Bandcamp, Deezer, Beatport o MusicBrainz hanno la data intera.",
+    "fullReleaseDateHint": "Mostra e salva 2020-12-01 invece di 2020 quando il file o Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music hanno la data intera.",
     "editorQuickButtonsTitle": "Pulsanti rapidi",
     "editorTagsTitle": "Tag",
     "editorAnalysisTitle": "Analisi",
@@ -2347,7 +2350,7 @@
     "audioBody": "Surco mostra solo le sezioni dell'editor che servono al tuo flusso di lavoro. Scegli quello che fa per te. Puoi cambiarlo quando vuoi in Impostazioni.",
     "intent": {
       "metadata": "Correggere i metadati",
-      "metadataBody": "Tag, copertina e abbinamento con Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. Sempre attivo, perché è lo scopo di Surco.",
+      "metadataBody": "Tag, copertina e abbinamento con Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music. Sempre attivo, perché è lo scopo di Surco.",
       "restore": "Restaurare rip da vinile",
       "restoreBody": "Taglia il silenzio e ripara clic e pop nelle registrazioni da vinile.",
       "level": "Livellare il volume",
@@ -2421,7 +2424,7 @@
       },
       "windows": {
         "q": "C'è qualcosa di diverso su Windows?",
-        "a": "Quasi tutto funziona esattamente allo stesso modo. La conversione, il tagging, la ricerca su Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, l'analisi della qualità e l'esportazione verso rekordbox, Traktor, Serato ed Engine DJ.\n\nL'unica cosa che non esiste su Windows è l'integrazione con Apple Music. Surco controlla l'app Musica di Apple tramite AppleScript, un ponte di automazione che esiste solo su macOS (l'app Apple Music per Windows non offre niente di equivalente), quindi la destinazione, i pulsanti e il badge della libreria di Apple Music semplicemente non compaiono.\n\nUn dettaglio sui WAV che è bene sapere. Surco salva i tag dei WAV nel chunk ID3 standard, che le app per DJ e gli editor come Mp3tag leggono senza problemi, ma che Esplora file di Windows non riesce a mostrare. Un WAV convertito può sembrare senza tag in una cartella anche se tutti i tag sono lì. Con MP3 o FLAC, Esplora file li mostra normalmente."
+        "a": "Quasi tutto funziona esattamente allo stesso modo. La conversione, il tagging, la ricerca su Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music, l'analisi della qualità e l'esportazione verso rekordbox, Traktor, Serato ed Engine DJ.\n\nL'unica cosa che non esiste su Windows è l'integrazione con Apple Music. Surco controlla l'app Musica di Apple tramite AppleScript, un ponte di automazione che esiste solo su macOS (l'app Apple Music per Windows non offre niente di equivalente), quindi la destinazione, i pulsanti e il badge della libreria di Apple Music semplicemente non compaiono.\n\nUn dettaglio sui WAV che è bene sapere. Surco salva i tag dei WAV nel chunk ID3 standard, che le app per DJ e gli editor come Mp3tag leggono senza problemi, ma che Esplora file di Windows non riesce a mostrare. Un WAV convertito può sembrare senza tag in una cartella anche se tutti i tag sono lì. Con MP3 o FLAC, Esplora file li mostra normalmente."
       }
     }
   },
