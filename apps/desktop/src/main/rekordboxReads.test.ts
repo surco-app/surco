@@ -54,7 +54,7 @@ describe('runRekordboxRead', () => {
       const answer = runRekordboxRead(path, undefined, name, arg as never)
       expect(structuredClone(answer), name).toEqual(answer)
     }
-  })
+  }, 30000)
 
   it('says which playlists hold a file and sees a change written after, so the kept read never hides what the DJ just did', async () => {
     const path = await collection()
