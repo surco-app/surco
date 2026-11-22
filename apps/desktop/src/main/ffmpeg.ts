@@ -3495,11 +3495,18 @@ async function versionCorrelation(
     if (isAbortError(err)) throw err
     return undefined
   }
-  const match = await runInWorker<number | null>({ type: 'versionMatch', a: pa, b: pb, reachSec }, [
-    pa.buffer as ArrayBuffer,
-    pb.buffer as ArrayBuffer,
-  ])
-  return match ?? undefined
+  // The pool runs a job to its end, with no way to cancel it: the abortable part is the
+  // decode above, and the search itself is bounded (an FFT of 2^19 points). A failed search
+  // says nothing, so comparePair keeps its ±1 s facts.
+  try {
+    const match = await runInWorker<number | null>(
+      { type: 'versionMatch', a: pa, b: pb, reachSec },
+      [pa.buffer as ArrayBuffer, pb.buffer as ArrayBuffer],
+    )
+    return match ?? undefined
+  } catch {
+    return undefined
+  }
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from

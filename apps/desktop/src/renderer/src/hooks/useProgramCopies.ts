@@ -79,14 +79,14 @@ export function useProgramCopies({
         // in that library, and its row says so (another version) instead of hiding it.
         const entry =
           findLibraryEntry(index, { title, artist }, durationSec) ??
-          findLibraryEntry(index, { title, artist }) ??
           (suggestedTitle !== undefined && suggestedArtist !== undefined
             ? findLibraryEntry(
                 index,
                 { title: suggestedTitle, artist: suggestedArtist },
                 durationSec,
               )
-            : null)
+            : null) ??
+          findLibraryEntry(index, { title, artist })
         if (!entry?.path) return []
         return [{ program, path: entry.path, isThisFile: pathKey(entry.path) === thisKey }]
       }),

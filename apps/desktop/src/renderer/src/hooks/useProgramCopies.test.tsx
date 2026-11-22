@@ -197,6 +197,41 @@ describe('useProgramCopies', () => {
     )
   })
 
+  // A match without the length is the last resort: a suggested release confirmed by the
+  // length is the better evidence of which copy this is.
+  it('prefers the suggested tags confirmed by length over its own tags without length', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: {
+          collection: async () => [
+            row('/r/edit.wav', {
+              title: 'Real Love (Extended Version)',
+              artist: '3 Ways',
+              durationSec: 447.9,
+            }),
+            row('/r/same.wav', { title: 'Amor Real', artist: 'Tres Vías', durationSec: 483.4 }),
+          ],
+        },
+      }),
+    })
+    const { result } = renderHook(
+      () =>
+        useProgramCopies(
+          args({
+            meta: { title: 'Real love (EXTENDED REMASTERED)', artist: '3 WAYS' },
+            durationSec: 483.4,
+            suggestedMeta: { title: 'Amor Real', artist: 'Tres Vías' },
+          }),
+        ),
+      { wrapper: wrapperFor({ syncRekordbox: true }) },
+    )
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { program: 'rekordbox', path: '/r/same.wav', isThisFile: false },
+      ]),
+    )
+  })
+
   it('builds each index once per collection', async () => {
     const build = vi.spyOn(library, 'buildLibraryIndex')
     installApi({

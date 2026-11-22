@@ -188,6 +188,8 @@ export function useLibraryVerdict({
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
   const describedId = useMemo(() => {
     if (offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
+    // Several entries match equally: describing one of them could describe the wrong copy.
+    if (replaceTarget && 'ambiguous' in replaceTarget) return null
     if (inLibrary !== 'yes' || item.musicPersistentId) return null
     const entry =
       findLibraryEntry(libraryIndex, ownTags, ownTags.durationSec) ??
@@ -196,6 +198,7 @@ export function useLibraryVerdict({
     return entry?.persistentId ?? null
   }, [
     offeredId,
+    replaceTarget,
     librarySource,
     libraryIndex,
     inLibrary,

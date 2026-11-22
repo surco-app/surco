@@ -5815,6 +5815,23 @@ describe('Editor Apple Music library section', () => {
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Replace/)
   })
 
+  // Two Music entries match equally: picking one would describe a copy that may not be the
+  // one the section means, so the row claims nothing.
+  it('describes no copy when the library holds two that match equally', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      index: buildLibraryIndex([
+        { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
+        { title: 'Strobe', artist: 'deadmau5', persistentId: 'FEDCBA9876543210' },
+      ]),
+    })
+    await waitFor(() => expect(screen.getByTestId('library-row')).toBeInTheDocument())
+    await new Promise((r) => setTimeout(r, 50))
+    expect(api.appleMusicEntryLocation).not.toHaveBeenCalled()
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+  })
+
   // One master and nothing measurable between the copies: the row says they are alike and
   // still opens the figures, so the reader can weigh them.
   it('says two copies of one master are alike and opens their figures', async () => {
