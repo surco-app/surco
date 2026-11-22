@@ -6,6 +6,8 @@
 export interface RekordboxRepoint {
   from: string
   to: string
+  // The conversion replaced a library file: `from` is that file, which the libraries hold.
+  replaced?: true
   meta?: RekordboxMeta
   // The conversion rewrote the audio: rekordbox's analysis describes the old file, and its
   // cues land back on the beats they were set on once moved by cueShiftMs.

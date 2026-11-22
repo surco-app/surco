@@ -2117,3 +2117,33 @@ describe('librariesKeepingOriginal', () => {
     expect(FILE_USE.open).not.toHaveBeenCalled()
   })
 })
+
+// A replace asked for by the DJ with only Add to Traktor on still has to write the move,
+// otherwise the old entry is left on a file Surco is about to retire and loses its cues
+// and playlists. With both toggles off nothing may be written.
+describe('traktorFlushDeps with only Add to Traktor on', () => {
+  const settle = () => {
+    Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
+    STATUS.traktor = { enabled: false, found: false }
+  }
+
+  it('writes the collection for a replace when only Add to Traktor is on', () => {
+    Object.assign(SETTINGS, {
+      syncTraktor: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    STATUS.traktor = { enabled: true, found: true }
+    try {
+      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
+        '/c/collection.nml',
+      )
+      Object.assign(SETTINGS, { addToTraktor: false })
+      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
+        '',
+      )
+    } finally {
+      settle()
+    }
+  })
+})

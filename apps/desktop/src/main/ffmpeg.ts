@@ -2037,7 +2037,12 @@ function recordConversionPatch(
   // Both have to hold: the toggle is the permission and the path is the address. Checking
   // only the path would keep recording patches for a sync the user has switched off, and
   // reading a cue tree per track is not free.
-  if (!getSettings().syncTraktor || !getSettings().traktorNmlPath) return
+  if (!getSettings().traktorNmlPath) return
+  // With Sync Traktor off the collection is only written for a replace under Add to
+  // Traktor, where the DJ asked for the swap: the entry moves with the file, and nothing
+  // else (stars, names, covers, cues) is synced.
+  const syncing = getSettings().syncTraktor
+  if (!syncing && !(replaces && getSettings().addToTraktor)) return
   try {
     // A replace is addressed to the file it supersedes: that is the path Traktor has, while
     // the download it was converted from is a file the collection never saw.
@@ -2046,6 +2051,22 @@ function recordConversionPatch(
     // what separates a conversion whose source survives from a substitution.
     const outputLocation = toNmlLocation(output)
     const outputName = basename(output)
+    if (!syncing && replaces) {
+      recordNmlPatch({
+        volume,
+        dir,
+        file,
+        relocates: true,
+        outputVolume: outputLocation.volume,
+        outputDir: outputLocation.dir,
+        outputFile: outputLocation.file,
+        cueShift:
+          replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
+            ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
+            : undefined,
+      })
+      return
+    }
     const sameDir = dirname(input) === dirname(output)
     // meta.bpm is user-editable free text; empty or non-numeric must come out as
     // undefined; a NaN would pass around looking like a value and only fail

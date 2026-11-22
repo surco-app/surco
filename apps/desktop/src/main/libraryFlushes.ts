@@ -361,8 +361,11 @@ export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
     // Same rule as rekordbox below: the toggle grants permission, the path only says
     // where. Before these toggles a filled-in path meant both, which is why anyone
     // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
+    // Add to Traktor alone is enough too: without Sync Traktor the batch can only hold the
+    // move a replace records, never stars, names, covers or cues.
     traktorNmlPath:
-      getSettings().syncTraktor && currentLibraryStatus().traktor.found
+      (getSettings().syncTraktor || getSettings().addToTraktor) &&
+      currentLibraryStatus().traktor.found
         ? getSettings().traktorNmlPath
         : '',
     collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
@@ -808,7 +811,7 @@ export function traktorWrite(patches: NmlPatch[], result: SyncResult): TraktorWr
   return cues ? { before: keyed(before), cues: keyed(cues) } : { before: keyed(before) }
 }
 
-type LibraryHas = (path: string, from?: string) => boolean
+type LibraryHas = (path: string, from?: string, replaced?: boolean) => boolean
 
 function pathsHeld(path: string, from: string | undefined, followsFrom: boolean): string[] {
   return followsFrom && from !== undefined ? [path, from] : [path]
@@ -825,8 +828,12 @@ async function traktorCollectionHas(
     return undefined
   }
   const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
-  return (path, from) =>
-    pathsHeld(path, from, followsFrom).some((p) => byPath.has(p.normalize('NFC')))
+  // A replace looks at the old file even when Sync Traktor is off: that entry is the one
+  // that moves, and adding the new file beside it would strand the old one.
+  return (path, from, replaced) =>
+    pathsHeld(path, from, followsFrom || replaced === true).some((p) =>
+      byPath.has(p.normalize('NFC')),
+    )
 }
 
 async function engineLibraryHas(

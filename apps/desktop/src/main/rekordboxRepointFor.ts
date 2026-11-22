@@ -63,5 +63,5 @@ export function rekordboxRepointFor(
     ...(options.names ? { names: options.names } : {}),
   }
   if (from === output && !options.meta && !audio) return null
-  return { from, to: output, ...extra }
+  return { from, to: output, ...(options.replaces ? { replaced: true as const } : {}), ...extra }
 }

@@ -66,6 +66,7 @@ describe('rekordboxRepointFor', () => {
     ).toEqual({
       from: '/m/02 Possession (Dececio Remix).mp3',
       to: '/m/Transfer - Possession.aiff',
+      replaced: true,
     })
   })
 
@@ -128,5 +129,14 @@ describe('rekordboxRepointFor', () => {
         audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 500 },
       })?.audio,
     ).toEqual({ cueShiftMs: 0 })
+  })
+
+  // Traktor and Engine need to know the old file is held before adding the new one, or a
+  // replace would leave a second entry beside the one that should move.
+  it('marks a repoint that replaces a library file', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', { replaces: '/m/a.mp3' })?.replaced,
+    ).toBe(true)
+    expect(rekordboxRepointFor('/m/a.mp3', '/m/a.aiff')?.replaced).toBeUndefined()
   })
 })
