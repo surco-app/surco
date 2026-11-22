@@ -13,6 +13,7 @@ import type {
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
 import { keepCoverArg } from './coverSource'
+import { readLabelPage } from './labelPage'
 import { foldText } from './normalizeText'
 import { unformatTitle } from './outputName'
 import {
@@ -318,7 +319,7 @@ export async function probeReleases(
     let rel: Release
     let m: ReturnType<typeof bestMatch>
     try {
-      rel = await opts.loadRelease(result)
+      rel = readLabelPage(await opts.loadRelease(result), target.artist)
       m = bestMatch(rel.tracklist, target)
     } catch {
       return null

@@ -11,6 +11,7 @@ import type { Release, SearchProviderId, SearchResult } from '../../../shared/ty
 import { type MatchCleanup, matchTargetOf, probeReleases, searchHintsFor } from '../lib/autoMatch'
 import { releaseQueryOptions } from '../lib/fetchRelease'
 import { cleanIpcError, errorKeyOf, mainErrorMessage } from '../lib/ipcError'
+import { readLabelPage } from '../lib/labelPage'
 import { preRankResults, providerCountsOf, releaseKey, resultFromRelease } from '../lib/release'
 import { parseReleaseId } from '../lib/search'
 import type { TrackItem } from '../types'
@@ -545,7 +546,11 @@ export function useDiscogsBrowser(
     queryFn: openResult ? releaseQueryOptions(openResult, 'high').queryFn : skipToken,
     enabled: openResult !== null,
   })
-  const release = openResult !== null ? (releaseQuery.data ?? null) : null
+  const loaded = openResult !== null ? releaseQuery.data : undefined
+  const release = useMemo(
+    () => (loaded ? readLabelPage(loaded, item.meta.artist) : null),
+    [loaded, item.meta.artist],
+  )
 
   // A click previews (expands) a result; clicking the open one collapses it again.
   const previewRelease = useCallback((result: SearchResult) => {

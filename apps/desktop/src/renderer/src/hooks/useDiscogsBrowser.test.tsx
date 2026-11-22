@@ -329,6 +329,37 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.release).toBeNull())
   })
 
+  // The open release feeds both the tracklist the panel shows and what a click writes, so
+  // reading a label page against the file's artist here keeps the two saying the same:
+  // the bare title, the file's act, and the label in the label field.
+  it('opens a label page release read against the file artist', async () => {
+    const labelResult = { provider: 'bandcamp' as const, id: 7, title: 'Song (Original mix)' }
+    setApi({
+      search: vi.fn().mockResolvedValue([labelResult]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        provider: 'bandcamp',
+        id: 7,
+        title: 'Da Crew - Song (Original mix)',
+        artists: [{ name: 'Label Traxx' }],
+        tracklist: [{ position: '1', title: 'Da Crew - Song (Original mix)' }],
+      }),
+    })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'da crew song', artist: 'Da Crew' }), tr),
+      { wrapper: wrapper() },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    act(() => result.current.previewRelease(labelResult))
+    await waitFor(() => expect(result.current.release?.id).toBe(7))
+    expect(result.current.release).toMatchObject({
+      title: 'Song (Original mix)',
+      artists: [{ name: 'Da Crew' }],
+      labels: [{ name: 'Label Traxx', catno: '' }],
+      tracklist: [{ title: 'Song (Original mix)', artists: [{ name: 'Da Crew' }] }],
+    })
+  })
+
   // After a search the result that confidently holds the file's track opens on its
   // own, so the user lands on the right album without opening each result by hand.
   it('auto-opens the result whose tracklist matches the file title', async () => {

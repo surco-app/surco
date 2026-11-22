@@ -490,6 +490,32 @@ describe('autoMatchRelease Bandcamp suggestions', () => {
     expect(m?.tier).toBe('review')
   })
 
+  // A label's page names the label as artist and keeps the act inside the title. Read
+  // against the file's artist before scoring, the sweep scores and hands back the bare
+  // title with the file's act and the label in its place, so what it applies is right.
+  it('scores and returns a label page track read against the file artist', async () => {
+    const api = {
+      ...bandcampOnly([]),
+      getRelease: vi.fn().mockResolvedValue(
+        release(2, {
+          provider: 'bandcamp',
+          title: 'Da Crew - Song (Original mix)',
+          artists: [{ name: 'Label Traxx' }],
+          tracklist: [{ position: '1', title: 'Da Crew - Song (Original mix)', duration: '3:20' }],
+        }),
+      ),
+    }
+    const m = await autoMatchRelease(
+      'da crew song',
+      { title: 'Song (Original mix)', durationSec: 200, artist: 'Da Crew' },
+      api,
+    )
+
+    expect(m?.track).toMatchObject({ title: 'Song (Original mix)', artists: [{ name: 'Da Crew' }] })
+    expect(m?.release.labels).toEqual([{ name: 'Label Traxx', catno: '' }])
+    expect(m?.confidence).toBe(1)
+  })
+
   // The curated source keeps precedence: its suggestion stands over Bandcamp's.
   it('keeps a Discogs suggestion over a Bandcamp one', async () => {
     const api = {
