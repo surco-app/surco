@@ -1212,6 +1212,8 @@
         "phrasesSkipped_other": "{{count}} sense dos CALLs, no es toquen",
         "saveComments_one": "Desar {{count}} comentari",
         "saveComments_other": "Desar {{count}} comentaris",
+        "commentsFileFailed_one": "No s'ha pogut escriure en {{count}} fitxer",
+        "commentsFileFailed_other": "No s'ha pogut escriure en {{count}} fitxers",
         "commentsWhere": "Opcions de desament",
         "commentsToFile": "Fitxer i rekordbox",
         "commentsRekordboxOnly": "Només a rekordbox",

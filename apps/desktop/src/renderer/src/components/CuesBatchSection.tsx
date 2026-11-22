@@ -100,7 +100,7 @@ export function CuesBatchSection({
   const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
   const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
   const [unsavedComments, setUnsavedComments] = useState<PhrasedComment[]>([])
-  const [commentsFailed, setCommentsFailed] = useState(false)
+  const [commentsFailed, setCommentsFailed] = useState<'rekordbox' | number | null>(null)
   const commentsMenu = useSplitMenu()
   const mode: CommentMode = settings.commentsReplace ? 'replace' : 'prepend'
   const putPhrases = async () => {
@@ -114,7 +114,7 @@ export function CuesBatchSection({
           byId.set(c.id, { ...c, before: byId.get(c.id)?.before ?? c.before })
         return [...byId.values()]
       })
-      setCommentsFailed(false)
+      setCommentsFailed(null)
     } finally {
       setPhrasing(false)
     }
@@ -141,7 +141,7 @@ export function CuesBatchSection({
           (saved) => saved,
           () => null,
         )
-      setCommentsFailed(!result || result.failed.length > 0)
+      setCommentsFailed(!result ? 'rekordbox' : result.failed.length || null)
       if (!result) return
       const failed = new Set(result.failed)
       onCommentsSaved(
@@ -182,7 +182,7 @@ export function CuesBatchSection({
   const discardComments = () => {
     onRestoreComments(unsavedComments)
     setUnsavedComments([])
-    setCommentsFailed(false)
+    setCommentsFailed(null)
     setPhrased(null)
   }
   const ids = targets.map((t) => t.contentId)
@@ -450,9 +450,11 @@ export function CuesBatchSection({
               {tr('editor.cues.batch.clearDiscard')}
             </button>
           </div>
-          {commentsFailed && (
+          {commentsFailed !== null && (
             <p data-testid="cues-batch-comments-failed" className="text-xs text-warn">
-              {tr('editor.cues.saveFailed')}
+              {commentsFailed === 'rekordbox'
+                ? tr('editor.cues.saveFailed')
+                : tr('editor.cues.batch.commentsFileFailed', { count: commentsFailed })}
             </p>
           )}
         </div>

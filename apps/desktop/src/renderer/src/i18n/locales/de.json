@@ -1212,6 +1212,8 @@
         "phrasesSkipped_other": "{{count}} ohne zwei CALLs, unverändert",
         "saveComments_one": "{{count}} Kommentar speichern",
         "saveComments_other": "{{count}} Kommentare speichern",
+        "commentsFileFailed_one": "Konnte nicht in {{count}} Datei schreiben",
+        "commentsFileFailed_other": "Konnte nicht in {{count}} Dateien schreiben",
         "commentsWhere": "Speicheroptionen",
         "commentsToFile": "Datei und rekordbox",
         "commentsRekordboxOnly": "Nur in rekordbox",

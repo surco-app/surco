@@ -404,11 +404,16 @@ describe('Phrases over several selected tracks', () => {
     expect(onPhrases).toHaveBeenCalledExactlyOnceWith('replace')
   })
 
-  it('keeps the files that failed pending and says so, so the DJ can retry just those', async () => {
+  it('keeps the files that failed pending and names only the file write, since rekordbox did save, so the DJ can retry just those', async () => {
     const { saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
     saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'] })
     fireEvent.click(await putPhrases())
-    expect(await screen.findByTestId('cues-batch-comments-failed')).toBeInTheDocument()
+    expect(await screen.findByTestId('cues-batch-comments-failed')).toHaveTextContent(
+      "Couldn't write to 1 file",
+    )
+    expect(screen.getByTestId('cues-batch-comments-failed')).not.toHaveTextContent(
+      i18n.t('editor.cues.saveFailed'),
+    )
     expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent('Save 1 comment')
     expect(onCommentsSaved).toHaveBeenCalledWith([PHRASED[0]], true)
   })

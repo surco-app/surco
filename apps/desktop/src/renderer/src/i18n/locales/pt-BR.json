@@ -1212,6 +1212,8 @@
         "phrasesSkipped_other": "{{count}} sem dois CALLs, não alterados",
         "saveComments_one": "Salvar {{count}} comentário",
         "saveComments_other": "Salvar {{count}} comentários",
+        "commentsFileFailed_one": "Não foi possível gravar em {{count}} arquivo",
+        "commentsFileFailed_other": "Não foi possível gravar em {{count}} arquivos",
         "commentsWhere": "Opções de salvamento",
         "commentsToFile": "Arquivo e rekordbox",
         "commentsRekordboxOnly": "Só no rekordbox",

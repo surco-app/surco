@@ -1212,6 +1212,8 @@
         "phrasesSkipped_other": "CALLが2つない {{count}} 件はそのまま",
         "saveComments_one": "{{count}} 件のコメントを保存",
         "saveComments_other": "{{count}} 件のコメントを保存",
+        "commentsFileFailed_one": "{{count}} 件のファイルに書き込めませんでした",
+        "commentsFileFailed_other": "{{count}} 件のファイルに書き込めませんでした",
         "commentsWhere": "保存オプション",
         "commentsToFile": "ファイルと rekordbox",
         "commentsRekordboxOnly": "rekordbox のみ",
