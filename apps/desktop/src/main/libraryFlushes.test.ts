@@ -2120,31 +2120,102 @@ describe('librariesKeepingOriginal', () => {
 
 // A replace asked for by the DJ with only Add to Traktor on still has to write the move,
 // otherwise the old entry is left on a file Surco is about to retire and loses its cues
-// and playlists. With both toggles off nothing may be written.
-describe('traktorFlushDeps with only Add to Traktor on', () => {
-  const settle = () => {
-    Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
-    STATUS.traktor = { enabled: false, found: false }
+// and playlists. That permission is the conversion run's alone: every other Traktor write
+// (review renames, duplicate repoints, cue repairs) is Sync Traktor's, and a DJ who left it
+// off must find none of them in the collection. With both toggles off nothing is written.
+describe('Traktor writes with only Add to Traktor on', () => {
+  const relocating = {
+    volume: 'HD',
+    dir: '/:m/:',
+    file: 'old.mp3',
+    relocates: true as const,
+    outputVolume: 'HD',
+    outputDir: '/:m/:',
+    outputFile: 'new.flac',
   }
-
-  it('writes the collection for a replace when only Add to Traktor is on', () => {
+  const traktorQueue = () => ({
+    enqueue: vi.fn(),
+    applyQuietly: vi.fn(),
+    state: () => ({ tracks: 0, changes: 0, items: [] }),
+  })
+  async function addOnly(run: () => Promise<void>, found = true) {
     Object.assign(SETTINGS, {
       syncTraktor: false,
       addToTraktor: true,
       traktorNmlPath: '/c/collection.nml',
     })
-    STATUS.traktor = { enabled: true, found: true }
+    STATUS.traktor = { enabled: false, found }
+    EFFECTS.length = 0
     try {
-      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
-        '/c/collection.nml',
-      )
-      Object.assign(SETTINGS, { addToTraktor: false })
-      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
-        '',
-      )
+      await run()
     } finally {
-      settle()
+      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
+      STATUS.traktor = { enabled: false, found: false }
     }
+  }
+
+  it('writes the move a replace recorded', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).toContain('traktor sync')
+    })
+  })
+
+  it('drops what a conversion recorded while Sync Traktor was still on, keeping only moves', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch({
+        volume: 'HD',
+        dir: '/:m/:',
+        file: 'a.mp3',
+        tags: { title: { from: 'a', to: 'b' } },
+      })
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).not.toContain('traktor sync')
+    })
+  })
+
+  it('writes nothing once Add to Traktor is off too', async () => {
+    await addOnly(async () => {
+      Object.assign(SETTINGS, { addToTraktor: false })
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).not.toContain('traktor sync')
+    })
+  })
+
+  it("never writes a review rename, since renames are Sync Traktor's to send", async () => {
+    await addOnly(async () => {
+      const traktor = traktorQueue()
+      const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
+      const result = await syncTagsInLibraries(
+        update,
+        host(),
+        sessions,
+        vi.fn(),
+        undefined,
+        undefined,
+        traktor,
+      )
+      expect(EFFECTS).not.toContain('traktor sync')
+      expect(traktor.enqueue).not.toHaveBeenCalled()
+      expect(result.traktor).toEqual({ outcome: 'nothing' })
+    })
+  })
+
+  it('leaves the shared Traktor permission closed for every other write', async () => {
+    await addOnly(async () => {
+      expect(traktorFlushDeps(host(), sessions.traktor).traktorNmlPath).toBe('')
+    })
   })
 
   it('writes nothing when the collection is not found', () => {
@@ -2159,7 +2230,8 @@ describe('traktorFlushDeps with only Add to Traktor on', () => {
         '',
       )
     } finally {
-      settle()
+      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
+      STATUS.traktor = { enabled: false, found: false }
     }
   })
 })

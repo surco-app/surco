@@ -361,11 +361,8 @@ export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
     // Same rule as rekordbox below: the toggle grants permission, the path only says
     // where. Before these toggles a filled-in path meant both, which is why anyone
     // already syncing is migrated to syncTraktor: true (see syncToggleMigration.ts).
-    // Add to Traktor alone is enough too: without Sync Traktor the batch can only hold the
-    // move a replace records, never stars, names, covers or cues.
     traktorNmlPath:
-      (getSettings().syncTraktor || getSettings().addToTraktor) &&
-      currentLibraryStatus().traktor.found
+      getSettings().syncTraktor && currentLibraryStatus().traktor.found
         ? getSettings().traktorNmlPath
         : '',
     collectionMissing: getSettings().syncTraktor && !currentLibraryStatus().traktor.found,
@@ -581,6 +578,25 @@ async function settle<P extends WritableProgram>(
   outcome[program] = await flusher.after(run)
 }
 
+// Add to Traktor alone opens the collection for a conversion run's replace moves and
+// nothing else: the DJ asked for the swap, and an entry left on a file Surco retires loses
+// its cues and playlists. Every other Traktor write (review renames, duplicate repoints,
+// cue repairs) goes through traktorFlushDeps, which only Sync Traktor opens. Patches
+// recorded while Sync Traktor was still on are dropped here unless they relocate, so
+// switching it off mid-run sends no stars, names, covers or cues.
+function conversionTraktorDeps(host: LibraryHost, session: SessionBackup) {
+  const deps = traktorFlushDeps(host, session)
+  const settings = getSettings()
+  if (settings.syncTraktor || !settings.addToTraktor) {
+    return { deps, allowed: (patches: NmlPatch[]) => patches }
+  }
+  const found = currentLibraryStatus().traktor.found
+  return {
+    deps: { ...deps, traktorNmlPath: found ? settings.traktorNmlPath : '' },
+    allowed: (patches: NmlPatch[]) => patches.filter((patch) => patch.relocates),
+  }
+}
+
 function traktorConversionFlusher(
   host: LibraryHost,
   sessions: Sessions,
@@ -589,7 +605,7 @@ function traktorConversionFlusher(
   let traktor: FlushOutcome['traktor'] = 'off'
   return {
     before: async () => {
-      const traktorDeps = traktorFlushDeps(host, sessions.traktor)
+      const { deps: traktorDeps, allowed } = conversionTraktorDeps(host, sessions.traktor)
       const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
       let patches: NmlPatch[] = []
       let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
@@ -603,7 +619,7 @@ function traktorConversionFlusher(
           showBlockedDialog: () => {},
         }),
         endNmlBatch: () => {
-          patches = endNmlBatch()
+          patches = allowed(endNmlBatch())
           traktorLater = nmlBatchOpen()
           return patches
         },
