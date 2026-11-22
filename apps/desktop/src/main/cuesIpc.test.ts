@@ -368,6 +368,37 @@ describe('registerCuesIpc', () => {
     expect(result).toEqual({ failed: ['/m/b.wav'] })
   })
 
+  it('writes the files one at a time, since they sit on a NAS', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue: vi.fn(() => true) }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    const done = handler('cues:saveComments')(
+      {},
+      [
+        { contentId: '103', path: '/m/a.wav', label: 'a', count: '8', mode: 'prepend' },
+        { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'prepend' },
+      ],
+      true,
+    )
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(writeCommentToFile).toHaveBeenCalledTimes(1)
+    release[0](true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(2))
+    release[1](true)
+    expect(await done).toEqual({ failed: [] })
+  })
+
   it("leaves the files alone when only rekordbox is asked, since the choice is the user's", async () => {
     const writeCommentToFile = vi.fn(async () => true)
     registerWithSources({
