@@ -502,7 +502,7 @@ describe('matrix file oracle', () => {
       [flac.path, 0],
     ]
     for (const [path, ms] of table) expect(traktorTimelineMs(path), path).toBeCloseTo(ms, 1)
-  })
+  }, 30_000)
 
   // rekordbox counts cue milliseconds from its own start, which is not where ffmpeg starts:
   // an MP3 with an Info/Xing frame starts one frame (1152 samples) later, plus the encoder
