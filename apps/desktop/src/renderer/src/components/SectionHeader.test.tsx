@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -198,4 +198,44 @@ describe('editor heading outline', () => {
     render(<SectionSubhead>Loudness</SectionSubhead>)
     expect(screen.getByRole('heading', { level: 4, name: 'Loudness' })).toBeInTheDocument()
   })
+})
+
+// "12 Tracks werden bearbeitet" beside "Aus Dateinamen füllen" in a narrow editor ran under
+// the header's actions. The title now gives way with an ellipsis, so it never overlaps them,
+// and the words it cut ride a tooltip; a title that fits has nothing for a tooltip to add.
+describe('SectionHeader title that does not fit', () => {
+  function cutTitle(cut: boolean): void {
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.dataset.testid === 'section-title' && cut ? 200 : 100
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => 100)
+  }
+
+  function hoverTitle(): void {
+    const button = screen.getByRole('button', { name: '12 Tracks werden bearbeitet' })
+    fireEvent.pointerMove(button)
+    for (const type of ['pointerenter', 'pointermove']) {
+      button.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10 }))
+    }
+    act(() => vi.advanceTimersByTime(400))
+  }
+
+  it.each([
+    [true, true],
+    [false, false],
+  ])(
+    'gives way with an ellipsis and, when cut (%s), keeps the whole title in a tooltip',
+    (cut, tip) => {
+      vi.useFakeTimers()
+      cutTitle(cut)
+      render(<SectionHeader title="12 Tracks werden bearbeitet" open onToggle={() => {}} />)
+      expect(screen.getByTestId('section-title').className).toContain('truncate')
+      hoverTitle()
+      if (tip) expect(screen.getByRole('tooltip')).toHaveTextContent('12 Tracks werden bearbeitet')
+      else expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+      vi.useRealTimers()
+    },
+  )
 })
