@@ -804,7 +804,7 @@
           }
         ],
         "points": [
-          "Bandcamp sert pour l’autoproduit et les exclusivités, Deezer pour la musique commerciale absente de Discogs.",
+          "Bandcamp sert pour l’autoproduit et les exclusivités, Deezer et Apple Music pour la musique commerciale absente de Discogs.",
           "Beatport demande de connecter ton compte (un gratuit suffit) et apporte BPM, tonalité, mix et ISRC.",
           "MusicBrainz autorise une recherche par seconde, donc ses résultats peuvent arriver un peu après.",
           "Avec ton propre token Discogs dans les Réglages, tu as une limite plus haute et plus rapide."

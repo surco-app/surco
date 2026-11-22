@@ -804,7 +804,7 @@
           }
         ],
         "points": [
-          "Bandcamp is for self-released and exclusive material, and Deezer for the commercial music Discogs doesn't have.",
+          "Bandcamp is for self-released and exclusive material, and Deezer and Apple Music for the commercial music Discogs doesn't have.",
           "Beatport needs your account connected (a free one will do) and brings BPM, key, mix and ISRC.",
           "MusicBrainz allows one search per second, so its results can arrive a little later.",
           "With your own Discogs token in Settings you get a higher, faster limit."
