@@ -138,10 +138,10 @@ interface MetadataFormProps {
   fields: FieldSpec[]
 }
 
-// The metadata form body: the cover well with the rating under it (single-track only) and
-// the fields — a flat list in the user's own order, rendered inline in the editor's single
-// scroll (no inner scroller) so browsing never fights a second scroll region, fed
-// pre-resolved field specs.
+// The metadata form body: the cover well with the rating under it (one stamp for the whole
+// selection in multi) and the fields — a flat list in the user's own order, rendered inline
+// in the editor's single scroll (no inner scroller) so browsing never fights a second
+// scroll region, fed pre-resolved field specs.
 export function MetadataForm({
   item,
   isMulti,

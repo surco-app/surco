@@ -282,7 +282,10 @@ export const Field = memo(function Field({
                     <span className="shrink-0 text-xs tabular-nums text-fg-faint">{count}</span>
                   </button>
                 ))}
-                <hr className="my-1 border-0 border-t border-[var(--color-line)]" />
+                <hr
+                  role="presentation"
+                  className="my-1 border-0 border-t border-[var(--color-line)]"
+                />
                 <button
                   type="button"
                   role="option"

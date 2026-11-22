@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { GENRE_TAGS } from '../lib/bulkEdit'
@@ -568,6 +568,18 @@ describe('Field mixed values', () => {
     fireEvent.click(screen.getByTestId('field-values-clear-artist'))
     expect(onChange).toHaveBeenCalledWith('')
     expect(screen.queryByRole('listbox')).toBeNull()
+  })
+
+  // A listbox may only hold options; a separator inside it is read by VoiceOver as one
+  // more item, so the line before Clear in all is drawn but not announced.
+  it('keeps the line before clear-in-all out of the listbox items', () => {
+    render(
+      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    const listbox = screen.getByRole('listbox')
+    expect(within(listbox).queryAllByRole('separator')).toHaveLength(0)
+    expect(within(listbox).getAllByRole('option')).toHaveLength(values.length + 1)
   })
 
   it('marks the values list as a dropdown menu so keyboard focus fills the row like a native menu', () => {

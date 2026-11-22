@@ -1765,11 +1765,11 @@ export const Editor = memo(function Editor({
           />
           <SectionBody open={formOpen} id={formBodyId}>
             {libraryCopyBetterNote}
-            {/* Capture focus entering/leaving the field grid so the sweep knows which row is
+            {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would
-                reopen the very window it closes. onChange (a text commit) also confirms the row
-                is under active edit, in case focus arrived without a focus event we saw. */}
+                reopen the very window it closes. onChange (a text commit) also confirms the rows
+                are under active edit, in case focus arrived without a focus event we saw. */}
             <div
               onFocusCapture={() => onFieldFocusChange?.(editedIds)}
               onChangeCapture={() => onFieldFocusChange?.(editedIds)}
