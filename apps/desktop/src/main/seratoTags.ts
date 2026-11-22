@@ -426,6 +426,20 @@ function payloadSeratoShows(
   )
 }
 
+// A file Surco cannot read may hold anything, so it counts as holding Serato data.
+function holdsSerato(track: ReturnType<typeof readSeratoTrack>): boolean {
+  return (
+    !track ||
+    !!(
+      track.payload ||
+      track.markers ||
+      track.oldBlock ||
+      track.grids.tempoMap ||
+      track.grids.beatGrid
+    )
+  )
+}
+
 // What an ordinary conversion's caller must log: the carry runs in a worker with no logger,
 // and cues left out without a line in the log are cues lost with no trace.
 export type SeratoCarryOutcome = 'clock-unmeasured' | null
@@ -456,6 +470,9 @@ export async function carrySeratoCues(
   // conversion carries on, so the stale analysis is still stripped from its output.
   if (carry && !from && fallback) throw new Error(`cannot read ${source}`)
   const shown = from && fallback ? payloadSeratoShows(from) : (from?.payload ?? null)
+  // Asking for no Serato data on the new file leaves the replaced one as it was: Serato still
+  // holds its cues and grid there, so its caller must keep Serato on it, not on this copy.
+  const heldBack = !carry && fallback !== undefined && holdsSerato(readSeratoTrack(source))
   // A readable source with no cues and no grid has nothing to carry: the file converted
   // keeps its own, as an ordinary conversion would carry them. A grid alone is still the
   // DJ's work on the replaced file, so it is carried and the download's cues are not.
@@ -467,6 +484,7 @@ export async function carrySeratoCues(
       shiftMs: 0,
     })
   const to = readSeratoTrack(dest)
+  if (!to && heldBack) throw new Error(`Serato data of ${source} not carried`)
   if (!to) return null
   const timed = shown || from?.grids.tempoMap || from?.grids.beatGrid
   // Without Serato's clock nothing can be placed. A replacement must hear it, like an
@@ -508,5 +526,6 @@ export async function carrySeratoCues(
   } finally {
     f.dispose()
   }
+  if (heldBack) throw new Error(`Serato data of ${source} not carried`)
   return leads || !timed ? null : 'clock-unmeasured'
 }

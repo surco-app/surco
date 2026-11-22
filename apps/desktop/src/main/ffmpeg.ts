@@ -2638,7 +2638,9 @@ export async function convertAudio(
     // shift is taken on the finished file, which already includes it.
     const replaceCueShiftMs = 0
     const inputTrimMs = trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0
-    if (carrySerato || !seratoAnalysisKept)
+    // A replacement always runs it: with the carry off it still has to say whether the
+    // replaced file held Serato data the copy now lacks.
+    if (carrySerato || !seratoAnalysisKept || replacesPath)
       await runInWorker<SeratoCarryOutcome>({
         type: 'carrySeratoCues',
         source: replacesPath ?? input,

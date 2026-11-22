@@ -237,6 +237,39 @@ describe('carrySeratoCues replacing an MP3 whose old cue block Serato shows', ()
   })
 })
 
+// The DJ asking for no Serato data on the new file does not empty the replaced one: the
+// cues and grid there are still what Serato holds, and pointing Serato at a copy without
+// them, then retiring the file, loses them. The replacement must say so to its caller.
+describe('carrySeratoCues replacing with no Serato data asked for', () => {
+  const replacing = (source: string, dest = audioFile('aiff')) =>
+    carrySeratoCues(source, dest, {
+      trimMs: 0,
+      carry: false,
+      strip: true,
+      shiftMs: 0,
+      fallback: { source: audioFile('wav'), trimMs: 0 },
+    })
+
+  it('fails when the replaced file holds Serato cues', async () => {
+    const source = audioFile('mp3')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
+    await expect(replacing(source)).rejects.toThrow()
+  })
+
+  it('fails when the replaced file holds only a Serato grid', async () => {
+    const source = withTag(audioFile('mp3'), (f) =>
+      addGeob(f, 'Serato Tempo Map', tempoMap(1, 120)),
+    )
+    await expect(replacing(source)).rejects.toThrow()
+  })
+
+  it('carries nothing and still strips the copy when the replaced file holds no Serato data', async () => {
+    const dest = withTag(audioFile('wav'), (f) => addGeob(f, 'Serato Overview', 'AQFBQUFB'))
+    await expect(replacing(audioFile('mp3'), dest)).resolves.toBeNull()
+    expect(geobDescriptions(dest)).toEqual([])
+  })
+})
+
 describe('carrySeratoCues with a shift', () => {
   const carried = async (shiftMs: number) => {
     const source = audioFile('wav')

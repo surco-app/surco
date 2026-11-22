@@ -902,6 +902,64 @@ describe('a replacement carries the Serato cues of the file it replaces', () => 
     expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
   })
 
+  // Emptying the tags of the new file does not empty the replaced one, which Serato still
+  // reads: pointing Serato at the copy and retiring that file would lose its cues.
+  it('keeps Serato on the replaced file when the DJ empties every tag of its replacement', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-clear-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const out = join(dir, 'out.aiff')
+
+    await convertAudio(
+      plainSine(dir, '.flac'),
+      out,
+      'aiff',
+      meta,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      true,
+      undefined,
+      replaced,
+    )
+
+    expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
+  })
+
+  // A download already in the output format is copied as it is, with no carry to run; the
+  // Serato field deleted in the inspector must still keep Serato on the replaced file.
+  it('keeps Serato on the replaced file when the DJ deletes the Serato markers of a replacement copied as it is', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-inspector-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const out = join(dir, 'out.aiff')
+
+    await convertAudio(
+      plainSine(dir, '.aiff'),
+      out,
+      'aiff',
+      meta,
+      undefined,
+      undefined,
+      false,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['SERATO_MARKERS_V2'],
+      replaced,
+    )
+
+    expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
+  })
+
   // In an MP3 or M4A Serato shows the old cue block and ignores Markers2 (measured 03/11):
   // the cues the DJ saw are the old block's, and those are the ones the new file must hold.
   it.each(['.mp3', '.m4a'])(
