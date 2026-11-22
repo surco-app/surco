@@ -1053,7 +1053,6 @@
     "copyCrestLibraryBare": "Die {{loser}}-Kopie ist weniger dynamisch als diese Datei.",
     "copyLimitedBare": "Die {{loser}}-Kopie ist stärker limitiert.",
     "copyLimitedHereBare": "Diese Datei ist stärker limitiert.",
-    "copySameAudio": "Beide Kopien enthalten dieselben Samples mit derselben Verstärkung.",
     "libraryHasBetter": "Trotzdem ersetzen",
     "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen",
     "coverMixed": "Die ausgewählten Tracks haben unterschiedliche Cover",

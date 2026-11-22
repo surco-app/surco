@@ -73,6 +73,7 @@ import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
+import { copySentence } from '../lib/copySentence'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -1506,45 +1507,47 @@ export const Editor = memo(function Editor({
       : undefined
   const spectrumDecided =
     !!copyVerdict && 'reason' in copyVerdict && SPECTRUM_REASONS.has(copyVerdict.reason)
-  const libraryComparison = copyVerdict &&
-    copyVerdict.winner !== 'tie' &&
-    hereFacts &&
-    libraryFacts && (
-      <CopyComparison
-        verdict={copyVerdict}
-        here={hereFacts}
-        library={libraryFacts}
-        hereLabel={hereFacts.ext}
-        libraryLabel={replacedCopyFormat || libraryFacts.ext}
-        glimpse={
-          limitedRate ? (
-            <LimiterGlimpse
-              worsePath={copyVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
-              betterPath={copyVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
-              sampleRate={limitedRate}
-              layers={[
-                {
-                  side: copyVerdict.winner === 'a' ? 'better' : 'worse',
-                  label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
-                },
-                {
-                  side: copyVerdict.winner === 'a' ? 'worse' : 'better',
-                  label: `${libraryName} · ${libraryFacts.ext}`,
-                },
-              ]}
-            />
-          ) : spectrumDecided ? (
-            <SpectrumGlimpse
-              herePath={item.inputPath}
-              libraryPath={comparedCopyPath}
-              hereLabel={`${tr('editor.copyThisFile')} · ${hereFacts.ext}`}
-              libraryLabel={`${libraryName} · ${libraryFacts.ext}`}
-              loser={copyVerdict.winner === 'a' ? 'library' : 'here'}
-            />
-          ) : undefined
-        }
-      />
-    )
+  const differingVerdict = copyVerdict && 'reason' in copyVerdict ? copyVerdict : null
+  const copyReason =
+    differingVerdict && hereFacts && libraryFacts
+      ? copySentence(differingVerdict, hereFacts, libraryFacts, tr, i18n.language)
+      : undefined
+  const libraryComparison = differingVerdict && hereFacts && libraryFacts && (
+    <CopyComparison
+      verdict={differingVerdict}
+      here={hereFacts}
+      library={libraryFacts}
+      hereLabel={hereFacts.ext}
+      libraryLabel={replacedCopyFormat || libraryFacts.ext}
+      glimpse={
+        limitedRate ? (
+          <LimiterGlimpse
+            worsePath={differingVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
+            betterPath={differingVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
+            sampleRate={limitedRate}
+            layers={[
+              {
+                side: differingVerdict.winner === 'a' ? 'better' : 'worse',
+                label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
+              },
+              {
+                side: differingVerdict.winner === 'a' ? 'worse' : 'better',
+                label: `${libraryName} · ${libraryFacts.ext}`,
+              },
+            ]}
+          />
+        ) : spectrumDecided ? (
+          <SpectrumGlimpse
+            herePath={item.inputPath}
+            libraryPath={comparedCopyPath}
+            hereLabel={`${tr('editor.copyThisFile')} · ${hereFacts.ext}`}
+            libraryLabel={`${libraryName} · ${libraryFacts.ext}`}
+            loser={differingVerdict.winner === 'a' ? 'library' : 'here'}
+          />
+        ) : undefined
+      }
+    />
+  )
   const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const showLibrary = !isMulti && inLibrary === 'yes' && !libraryHidden
 
@@ -1631,6 +1634,8 @@ export const Editor = memo(function Editor({
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
               libraryName={libraryName}
+              librarySource={librarySource === 'engineDj' ? 'engineDj' : 'appleMusic'}
+              verdictDetail={copyReason}
               verdict={
                 libraryCopyBetter && (copyState === null || copyState === 'measuring')
                   ? 'library'

@@ -1053,7 +1053,6 @@
     "copyCrestLibraryBare": "The {{loser}} copy is less dynamic than this file.",
     "copyLimitedBare": "The {{loser}} copy is more limited.",
     "copyLimitedHereBare": "This file is more limited.",
-    "copySameAudio": "Both copies hold the same samples at the same gain.",
     "libraryHasBetter": "Replace anyway",
     "requiredEmpty": "Required: fill it in before converting",
     "coverMixed": "The selected tracks have different artwork",

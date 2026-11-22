@@ -1053,7 +1053,6 @@
     "copyCrestLibraryBare": "La copie de {{loser}} est moins dynamique que ce fichier.",
     "copyLimitedBare": "La copie de {{loser}} est plus limitée.",
     "copyLimitedHereBare": "Ce fichier est plus limité.",
-    "copySameAudio": "Les deux copies contiennent les mêmes échantillons avec le même gain.",
     "libraryHasBetter": "Remplacer quand même",
     "requiredEmpty": "Obligatoire : à remplir avant la conversion",
     "coverMixed": "Les morceaux sélectionnés ont des pochettes différentes",

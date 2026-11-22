@@ -1053,7 +1053,6 @@
     "copyCrestLibraryBare": "{{loser}} のコピーはこのファイルよりダイナミックレンジが狭いです。",
     "copyLimitedBare": "{{loser}} のコピーはリミッティングが強いです。",
     "copyLimitedHereBare": "このファイルはリミッティングが強いです。",
-    "copySameAudio": "両方のコピーは同じサンプルを同じゲインで保持しています。",
     "libraryHasBetter": "それでも置き換え",
     "requiredEmpty": "必須：変換前に入力してください",
     "coverMixed": "選択したトラックのアートワークが異なります",
