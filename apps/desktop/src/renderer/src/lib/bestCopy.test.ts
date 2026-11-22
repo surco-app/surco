@@ -117,6 +117,29 @@ describe('compareCopies', () => {
     })
   })
 
+  // «Parecidas» claims one master: only a tie whose pair correlated at or above the
+  // same-master line carries that evidence.
+  describe('same master', () => {
+    it('marks a tie of one master that nothing separates', () => {
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, sameMaster)).toEqual({
+        winner: 'tie',
+        sameMaster: true,
+      })
+    })
+
+    it('leaves a tie without that evidence unmarked', () => {
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, otherMaster)).toEqual(
+        { winner: 'tie' },
+      )
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, null)).toEqual({
+        winner: 'tie',
+      })
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' })).toEqual({
+        winner: 'tie',
+      })
+    })
+  })
+
   it('never ranks by level without the pair probe', () => {
     expect(compareCopies(netzwerkWav, netzwerkAif)).toEqual({ winner: 'tie' })
   })
@@ -152,7 +175,7 @@ describe('compareCopies', () => {
         { ...netzwerkAif, fingerprint: 'q', integratedLufs: -20 },
         sameMaster,
       ),
-    ).toEqual({ winner: 'tie' })
+    ).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   // Night Power: peak counts within 3x, crest 3.8 dB apart.
@@ -166,13 +189,13 @@ describe('compareCopies', () => {
   it('calls a small crest gap a tie', () => {
     const a = { ...netzwerkAif, fingerprint: 's', peakCount: 1176, crestDb: 12 }
     const b = { ...netzwerkAif, fingerprint: 't', peakCount: 2706, crestDb: 13.18 }
-    expect(compareCopies(a, b, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(a, b, sameMaster)).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   it('skips a criterion one side has not measured', () => {
     expect(
       compareCopies({ ...netzwerkWav, peakCount: null, crestDb: null }, netzwerkAif, sameMaster),
-    ).toEqual({ winner: 'tie' })
+    ).toEqual({ winner: 'tie', sameMaster: true })
   })
 })
 
@@ -230,6 +253,7 @@ describe('compareCopies, every branch and both directions', () => {
     })
     expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
   })
 
@@ -240,6 +264,7 @@ describe('compareCopies, every branch and both directions', () => {
     })
     expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
   })
 
@@ -259,6 +284,7 @@ describe('compareCopies, every branch and both directions', () => {
     })
     expect(compareCopies(lossless, b, { correlation: 1, residualDb: -59.9, gainDb: 0 })).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
   })
 
@@ -268,8 +294,8 @@ describe('compareCopies, every branch and both directions', () => {
     const pair = (gainDb: number) => ({ correlation: 1, residualDb: -80, gainDb })
     expect(compareCopies(lossless, b, pair(0.009))).toEqual({ winner: 'same' })
     expect(compareCopies(lossless, b, pair(-0.009))).toEqual({ winner: 'same' })
-    expect(compareCopies(lossless, b, pair(0.01))).toEqual({ winner: 'tie' })
-    expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie' })
+    expect(compareCopies(lossless, b, pair(0.01))).toEqual({ winner: 'tie', sameMaster: true })
+    expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   // One copy measured and the other not is partial data: the measured figure alone must
@@ -278,16 +304,20 @@ describe('compareCopies, every branch and both directions', () => {
     const missingPeaks = { ...level(1000, 12), fingerprint: 'p', peakCount: null }
     expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
     expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
     const missingCrest = { ...level(10, 12), fingerprint: 'c', crestDb: null }
     expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
     expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
   })
 

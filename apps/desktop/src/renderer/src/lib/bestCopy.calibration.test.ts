@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { COPY_MARGINS, type CopyFacts, type CopyVerdict, compareCopies } from './bestCopy'
+import { verdictState } from './libraryVerdict'
 
 // Peak counts are the CSV's per-channel averages, not the app's astats Overall scale; the decision is a ratio, so they are used as measured.
 // The MP3 side has no measured cutoff in the CSV (its hf columns are band levels), so it carries a typical 19500 Hz lowpass with a knee.
@@ -188,7 +189,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 1677,
     },
     pair: { correlation: 0.9979, residualDb: -23.8, gainDb: -0.22 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'tie', sameMaster: true },
   },
   {
     label: 'Alfredo Pareja - Good Vibration (Klubbed Mix)',
@@ -276,7 +277,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 32.5,
     },
     pair: { correlation: 0.9968, residualDb: -22.0, gainDb: -0.36 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'tie', sameMaster: true },
   },
   {
     label: 'Alfredo Pareja - No Matter',
@@ -364,7 +365,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 2706,
     },
     pair: { correlation: 0.9967, residualDb: -21.8, gainDb: 0.18 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'tie', sameMaster: true },
   },
   {
     label: 'Abel The Kid & Raul Ortiz - Flamenkito',
@@ -562,7 +563,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 20511,
     },
     pair: { correlation: 0.9999, residualDb: -35.7, gainDb: -1.03 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'tie', sameMaster: true },
   },
   {
     label: 'Aquagen - Hard To Say I\u2019m Sorry (Club Mix)',
@@ -601,15 +602,17 @@ describe('compareCopies on the 26 measured pairs', () => {
     expect(compareCopies(a, b, pair)).toEqual(expected)
   })
 
-  // S-drift is one master drifting against itself (0.067) and B one master at 0.954: calling
-  // either another version would be false, whatever their lengths turn out to be.
-  it.each(MEASURED.filter((m) => m.cls === 'S-drift' || m.cls === 'B'))(
-    'never calls the same master another version: $cls $label',
-    ({ a, b, pair }) => {
-      const sameLength = { durationSec: 300, integratedLufs: -9 }
-      expect(compareCopies({ ...a, ...sameLength }, { ...b, ...sameLength }, pair).winner).not.toBe(
-        'different',
-      )
-    },
-  )
+  // S-drift (PG2, one master drifting against itself, 0.067), B (Nacho Division, one master
+  // at 0.954) and an X pair (Kike Boy, Jumper) with equal lengths: the length gap another version needs is not there, so
+  // they are never called another version, and with no same-master evidence they show no
+  // state at all rather than «Parecidas». The CSV holds no lengths and no wider search, so
+  // this pins only the equal-length case; the shifted case is pinned in sameMaster.test.ts.
+  it.each(
+    MEASURED.filter((m) => m.cls === 'S-drift' || m.cls === 'B' || m.label === 'Kike Boy - Jumper'),
+  )('claims nothing about $cls $label at equal lengths', ({ a, b, pair }) => {
+    const sameLength = { durationSec: 300, integratedLufs: -9 }
+    const verdict = compareCopies({ ...a, ...sameLength }, { ...b, ...sameLength }, pair)
+    expect(verdict.winner).not.toBe('different')
+    expect(verdictState(verdict, false)).toBeNull()
+  })
 })

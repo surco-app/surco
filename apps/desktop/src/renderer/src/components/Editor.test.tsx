@@ -5765,6 +5765,23 @@ describe('Editor Apple Music library section', () => {
     expect(lengths.map((cell) => cell.textContent)).toEqual(['8:03', '7:28'])
   })
 
+  // Copies the probe could not line up and that no wider search covered carry no evidence of
+  // one master or of another version: the row claims nothing and opens nothing.
+  it('claims nothing about copies it could not line up at equal lengths', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: aifLoudness,
+      pair: Promise.resolve(null),
+      hereDuration: 300,
+      libraryDuration: 300,
+    })
+    await waitFor(() => expect(api.comparePair).toHaveBeenCalled())
+    await waitFor(() => expect(api.readDuration).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+    expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+  })
+
   // One master and nothing measurable between the copies: the row says they are alike and
   // still opens the figures, so the reader can weigh them.
   it('says two copies of one master are alike and opens their figures', async () => {

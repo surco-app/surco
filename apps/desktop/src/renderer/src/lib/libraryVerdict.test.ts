@@ -40,7 +40,8 @@ describe('rowVerdict', () => {
   it.each([
     [{ ...facts, measuring: true }, 'measuring'],
     [facts, null],
-    [{ ...facts, verdict: { winner: 'tie' } }, 'tie'],
+    [{ ...facts, verdict: { winner: 'tie', sameMaster: true } }, 'tie'],
+    [{ ...facts, verdict: { winner: 'tie' } }, null],
     [{ ...facts, verdict: { winner: 'different' } }, 'different'],
     [{ ...facts, verdict: { winner: 'a', reason: 'format' } }, 'here'],
     [{ ...facts, verdict: { winner: 'b', reason: 'format' } }, 'library'],

@@ -10,6 +10,7 @@ export function verdictState(
   if (!verdict) return null
   if (verdict.winner === 'a') return 'here'
   if (verdict.winner === 'b') return 'library'
+  if (verdict.winner === 'tie' && !verdict.sameMaster) return null
   return verdict.winner
 }
 

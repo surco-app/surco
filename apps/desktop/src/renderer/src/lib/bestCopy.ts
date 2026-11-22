@@ -29,7 +29,7 @@ export type CopyReason =
 export type CopyVerdict =
   | { winner: 'a' | 'b'; reason: CopyReason }
   | { winner: 'same' }
-  | { winner: 'tie' }
+  | { winner: 'tie'; sameMaster?: true }
   | { winner: 'different' }
 
 export interface CopyMargins {
@@ -157,6 +157,7 @@ export function compareCopies(
   if (isOtherVersion(a, b, probe ?? null)) return { winner: 'different' }
   if (pair === null || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
   return (
-    byPeakCount(a, b, margins.peakCountRatio) ?? byCrest(a, b, margins.crestDb) ?? { winner: 'tie' }
+    byPeakCount(a, b, margins.peakCountRatio) ??
+    byCrest(a, b, margins.crestDb) ?? { winner: 'tie', sameMaster: true }
   )
 }
