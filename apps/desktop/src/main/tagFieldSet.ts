@@ -264,6 +264,15 @@ export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrit
   }
 }
 
+export function heldComment(file: string): string {
+  const f = TagFile.createFromPath(file)
+  try {
+    return firstHeld(f, 'comment')[0] ?? ''
+  } finally {
+    f.dispose()
+  }
+}
+
 // Whether every tag on disk already says what each change asks for: Music, which rewrites
 // its file as it sets the field, may have written the fix before Surco got to it.
 export function tagFieldsHeld(file: string, changes: TagFieldChange[]): boolean[] {

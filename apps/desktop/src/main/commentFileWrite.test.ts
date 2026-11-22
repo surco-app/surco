@@ -25,6 +25,28 @@ describe('writeCommentToFile', () => {
     expect(d.noteWritten).toHaveBeenCalledWith('/m/a.wav')
   })
 
+  it('notifies the new date only after the analysis is carried, so the window never asks for analysis under a date with none', async () => {
+    const order: string[] = []
+    const d = deps({
+      carry: vi.fn(async () => {
+        order.push('carry')
+      }),
+      noteWritten: vi.fn(async () => {
+        order.push('noteWritten')
+      }),
+    })
+    await writeCommentToFile('/m/a.wav', '2 - 8', 'prepend', d)
+    expect(order).toEqual(['carry', 'noteWritten'])
+  })
+
+  it('writes a comment that has trailing spaces, since the file is read as it is held', async () => {
+    const d = deps({ readComment: async () => 'Remix  ' })
+    expect(await writeCommentToFile('/m/a.wav', '2 - 8', 'prepend', d)).toBe(true)
+    expect(d.rewrite).toHaveBeenCalledWith('/m/a.wav', [
+      { field: 'comment', from: 'Remix  ', to: '2 - 8 · Remix  ' },
+    ])
+  })
+
   it('refuses a file outside the folders Surco may touch, since a path from the window is not trusted', async () => {
     const d = deps({ allowed: () => false })
     expect(await writeCommentToFile('/etc/a.wav', '2 - 8', 'prepend', d)).toBe(false)

@@ -35,7 +35,7 @@ import { randomPlaylistId } from './rekordboxPlaylistEdit'
 import { applyRekordboxBatch, editRekordboxPlaylist, replaceFile } from './rekordboxPlaylistWrite'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { createRekordboxQueue } from './rekordboxQueue'
-import type { QueueOp } from './rekordboxQueueOps'
+import type { CommentOp, QueueOp } from './rekordboxQueueOps'
 import { createSessionBackup, restoreCollection } from './rekordboxSessionBackup'
 
 const NOW = new Date('2026-10-15T18:00:00.000Z')
@@ -857,6 +857,14 @@ describe('applyRekordboxBatch with comments', () => {
     setComment(path, '103', 'Remix /* Base */')
     await applyRekordboxBatch(path, [commentOp('c', '103', '2 - 8', 'replace')], deps())
     expect(contentRow(path, '103').Commnt).toBe('2 - 8 · /* Base */')
+  })
+
+  it('still puts the count in front for a comment queued by an earlier version that had no mode, so an update never wipes the comment', async () => {
+    const path = await collection()
+    setComment(path, '103', 'Vocal fuerte')
+    const { mode: _mode, ...legacy } = commentOp('c', '103', '8 - 4') as CommentOp
+    await applyRekordboxBatch(path, [legacy as unknown as QueueOp], deps())
+    expect(contentRow(path, '103').Commnt).toBe('8 - 4 · Vocal fuerte')
   })
 
   it('replaces the count an earlier save left, so counting again never stacks two counts', async () => {

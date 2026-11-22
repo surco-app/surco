@@ -389,7 +389,7 @@ function planComment(probe: Db, op: CommentOp): Plan {
     .get(op.contentId) as { Commnt: string | null } | undefined
   if (!row) return { outcome: { id: op.id, applied: false, reason: 'stale', notices: [] } }
   const current = row.Commnt ?? ''
-  const next = phrasedComment(current, op.count, op.mode)
+  const next = phrasedComment(current, op.count, op.mode ?? 'prepend')
   if (next === current) return { outcome: { id: op.id, applied: true, notices: [] } }
   return { op, comment: next }
 }

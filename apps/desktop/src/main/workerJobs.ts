@@ -17,7 +17,13 @@ import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
 import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
-import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
+import {
+  type FieldWrite,
+  heldComment,
+  setTagFields,
+  type TagFieldChange,
+  tagFieldsHeld,
+} from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
@@ -146,6 +152,7 @@ export type WorkerJob =
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
+  | { type: 'heldComment'; file: string }
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
@@ -165,6 +172,7 @@ export type WorkerJobResult =
   | string[]
   | FieldWrite[]
   | boolean[]
+  | string
   | { peaks: number[]; rms: number[] }
   | FullScan
   | Uint16Array
@@ -276,6 +284,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return setGenreFrame(job.file, job.changes)
     case 'tagFieldsHeld':
       return tagFieldsHeld(job.file, job.changes)
+    case 'heldComment':
+      return heldComment(job.file)
     case 'tagLibRead':
       return readTagLibFields(job.file)
     case 'tagSnapshot':

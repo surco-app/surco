@@ -274,7 +274,6 @@ import { sourceStat } from './sourceStat'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
-import type { TagLibRead } from './tags'
 import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
@@ -1703,9 +1702,8 @@ function registerIpc(): void {
     writeCommentToFile: (path, count, mode) =>
       writeCommentToFile(path, count, mode, {
         allowed: (p) => mediaAccess.isAllowed(p),
-        readComment: async (p) =>
-          (await runInWorker<TagLibRead>({ type: 'tagLibRead', file: p })).extras.comment ?? '',
-        mtime: (p) => fileSignatures.fresh(p),
+        readComment: (p) => runInWorker<string>({ type: 'heldComment', file: p }),
+        mtime: async (p) => (await stat(p)).mtimeMs,
         rewrite: (p, changes) => rewriteTagFields(p, changes, tmpManifest, followLibrarySize),
         carry: (p, from, to) => carryAnalysis(p, from, to, AUDIO_ONLY_NAMESPACES),
         noteWritten: (p) => fileSignatures.changed(p),

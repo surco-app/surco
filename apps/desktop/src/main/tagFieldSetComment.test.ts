@@ -16,7 +16,7 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
 
 import { emptyMetadata } from '../shared/metadata'
-import { setTagFields } from './tagFieldSet'
+import { heldComment, setTagFields } from './tagFieldSet'
 import { snapshotTags } from './tagSnapshot'
 import { writeTags } from './tags'
 
@@ -111,5 +111,20 @@ describe('setTagFields — the comment tag', () => {
     ])
     expect(snapshotTags(file)).toEqual(before)
     expect(commentOf(file)).toBe('Remix')
+  })
+})
+
+describe('heldComment', () => {
+  it('returns the comment of an mp3 untrimmed, so a comment with trailing spaces can still be matched and rewritten', () => {
+    const file = track('mp3', 'Remix  ')
+    const held = heldComment(file)
+    expect(held).toBe('Remix  ')
+    expect(setTagFields(file, [{ field: 'comment', from: held, to: '2 - 8 · Remix  ' }])).toEqual([
+      'written',
+    ])
+  })
+
+  it('returns the comment of a wav untrimmed, whichever tag holds it first', () => {
+    expect(heldComment(track('wav', 'Remix  '))).toBe('Remix  ')
   })
 })
