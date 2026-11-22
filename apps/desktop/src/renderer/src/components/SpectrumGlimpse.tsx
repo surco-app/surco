@@ -126,7 +126,7 @@ export function SpectrumGlimpse({
   libraryPath: string
   hereLabel: string
   libraryLabel: string
-  loser: Side
+  loser: Side | null
 }): React.JSX.Element | null {
   const here = useSpectrogram(herePath, true)
   const library = useSpectrogram(libraryPath, true)

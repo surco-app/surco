@@ -55,6 +55,8 @@ describe('LibrarySection', () => {
     ['tie', 'Parecidas'],
     ['even', 'Ni mejor ni peor'],
     ['measuring', 'Comparando'],
+    ['missing', 'No se encuentra'],
+    ['unreadable', 'No se puede leer'],
   ] as const)('says the %s state in words on the row', (verdict, words) => {
     const pill = mountApart({ verdict })
     expect(pill).toHaveTextContent(words)
@@ -152,6 +154,8 @@ describe('LibrarySection', () => {
         'Ni mejor ni peor',
         'Otra versión · 0:00:00',
         'Es este archivo',
+        'No se encuentra',
+        'No se puede leer',
       ])
     }
     for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
@@ -240,6 +244,23 @@ describe('LibrarySection', () => {
     expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
+
+  // «Not found» is about that copy, not about the file: it stays on its row and is neither
+  // hoisted to the header nor offers a comparison there is nothing to compare.
+  it.each(['missing', 'unreadable'] as const)(
+    'keeps a %s copy on its row without a header state or a comparison',
+    (verdict) => {
+      mount({
+        rows: [
+          row({ id: 'appleMusic', name: 'Apple Music', verdict, comparison: undefined }),
+          row({ id: 'rekordbox', name: 'rekordbox', verdict, comparison: undefined }),
+        ],
+      })
+      expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
+      expect(screen.getAllByTestId('library-row')[0].tagName).not.toBe('BUTTON')
+    },
+  )
 
   it('says the file is worse plainly when folded over one row', () => {
     mount({ open: false }, { verdict: 'library' })

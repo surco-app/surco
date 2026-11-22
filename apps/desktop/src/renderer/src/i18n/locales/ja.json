@@ -1373,6 +1373,8 @@
     "libraryStateDifferent": "別バージョン · {{duration}}",
     "libraryStateTie": "近い",
     "libraryStateThisFile": "このファイルです",
+    "libraryStateMissing": "見つかりません",
+    "libraryStateUnreadable": "読み込めません",
     "libraryStateEven": "優劣なし",
     "libraryStateMeasuring": "比較中",
     "libraryVerdictWithReason": "{{verdict}}。{{reason}}"

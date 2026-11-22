@@ -5432,6 +5432,7 @@ describe('Editor Apple Music library section', () => {
     resolved = false,
     meta = { title: 'Strobe', artist: 'deadmau5' },
     libraryProperties,
+    libraryGone,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -5449,6 +5450,7 @@ describe('Editor Apple Music library section', () => {
     resolved?: boolean
     meta?: { title: string; artist: string }
     libraryProperties?: TrackProperties
+    libraryGone?: 'missing' | 'unreadable'
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
     setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
@@ -5456,11 +5458,19 @@ describe('Editor Apple Music library section', () => {
       location === 'pending'
         ? vi.fn(() => new Promise<string>(() => {}))
         : vi.fn().mockResolvedValue(location)
-    if (libraryProperties) {
-      api.properties = vi.fn(async (path: string) =>
-        path === location || path === herePath ? libraryProperties : null,
-      )
+    const readable = libraryProperties ?? {
+      ...mp3Copy,
+      container: 'wav',
+      codec: 'pcm_s16le',
+      bitDepth: 16,
+      bitrateKbps: 1411,
     }
+    api.properties = vi.fn(async (path: string) =>
+      (path === location && !libraryGone) || path === herePath ? readable : null,
+    )
+    api.fileExists = vi.fn(
+      async (path: string) => !(path === location && libraryGone === 'missing'),
+    )
     api.peekAnalysis = vi.fn().mockResolvedValue(null)
     // A lossy source shows as a 16 kHz cutoff with a knee, the mark a transcode leaves.
     api.spectrogram = vi.fn(async (path: string) => {
@@ -5719,7 +5729,27 @@ describe('Editor Apple Music library section', () => {
       expect(here.querySelector('[data-testid="spectrum-glimpse-lost"]')).toBeNull()
     })
 
-    it('draws no spectra when a limiter decided it', async () => {
+    // The two pictures sit above the figures whatever decided the verdict, so the reader sees
+    // both cutoffs before reading a number; only the copy that lost to its cutoff is tinted.
+    it.each([
+      ['better', aifLoudness, wavLoudness],
+      ['worse', wavLoudness, aifLoudness],
+    ] as const)(
+      'stacks both spectra above the table when this file is %s',
+      async (_state, here, library) => {
+        renderWithLibraryCopy({ here, library })
+        await waitFor(() => expect(screen.getByTestId('library-verdict')).toBeInTheDocument())
+        fireEvent.click(screen.getByTestId('library-row'))
+        const spectra = await screen.findByTestId('spectrum-glimpse')
+        const table = screen.getByTestId('copy-comparison')
+        expect(
+          spectra.compareDocumentPosition(table.querySelector('table, [role="table"]') ?? table) &
+            Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy()
+      },
+    )
+
+    it('draws the spectra with no cut one marked when a limiter decided it', async () => {
       const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
       api.limiterGlimpse = vi.fn(async () => ({ worse: [-0.5, 0.5], better: [-0.6, 0.6] }))
       await waitFor(() =>
@@ -5729,7 +5759,8 @@ describe('Editor Apple Music library section', () => {
       )
       fireEvent.click(screen.getByTestId('library-row'))
       expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
-      expect(screen.queryByTestId('spectrum-glimpse')).toBeNull()
+      expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
+      expect(screen.queryByTestId('spectrum-glimpse-lost')).toBeNull()
     })
   })
 
@@ -5793,6 +5824,21 @@ describe('Editor Apple Music library section', () => {
     )
   })
 
+  // A 30 s Music copy against a 95 s file: the wider search never runs past its reach, which
+  // used to leave the row with no state at all. The lengths alone say it is another version.
+  it('says another version from the lengths alone when they are further apart than the search reaches', async () => {
+    renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: Promise.resolve(null),
+      hereDuration: 95,
+      libraryDuration: 30,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('Another version · 0:30'),
+    )
+  })
+
   // 3 Ways: two lossless edits, 8:03 and 7:28, that the probe could not line up. Saying
   // nothing hid that the library holds another version; its length is what tells it apart,
   // and opening the row puts both lengths side by side.
@@ -5831,6 +5877,7 @@ describe('Editor Apple Music library section', () => {
     expect(screen.getByTestId('library-verdict')).toHaveTextContent('Neither better')
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
+    expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
   })
 
   // 3 Ways, as reported: the Music entry runs 35 s shorter, so it is no candidate to replace,
@@ -5904,6 +5951,31 @@ describe('Editor Apple Music library section', () => {
       expect(api.comparePair).toHaveBeenCalled()
     })
 
+    // The Apple Music copy can sit on a drive that is not mounted; its row must not read like
+    // a copy that is this very file, nor warn about a copy nobody can reach.
+    it.each([
+      ['missing', 'No se encuentra', 'Not found'],
+      ['unreadable', 'No se puede leer', "Can't be read"],
+    ] as const)(
+      'says the Apple Music copy is %s when its file cannot be read',
+      async (gone, _es, label) => {
+        const { api } = renderWithLibraryCopy({
+          here: aifLoudness,
+          library: wavLoudness,
+          hereLossy: true,
+          libraryGone: gone,
+        })
+        await waitFor(() => expect(api.fileExists).toHaveBeenCalledWith('/Music/Strobe.wav'))
+        const row = screen.getByTestId('library-row')
+        await waitFor(() =>
+          expect(within(row).getByTestId('library-row-state')).toHaveTextContent(label),
+        )
+        expect(within(row).getByTestId('library-row-state')).toHaveAttribute('data-state', gone)
+        expect(row.tagName).not.toBe('BUTTON')
+        expect(screen.queryByTestId('library-verdict')).toBeNull()
+      },
+    )
+
     it('says nothing when adding to Apple Music is off', async () => {
       const { api } = renderWithLibraryCopy({
         here: aifLoudness,
@@ -5966,7 +6038,12 @@ describe('Editor Apple Music library section', () => {
   })
 
   describe('rows for the DJ programs that hold the track', () => {
-    type Copy = { path: string; loudness: LoudnessResult | null; lossy?: boolean }
+    type Copy = {
+      path: string
+      loudness: LoudnessResult | null
+      lossy?: boolean
+      gone?: 'missing' | 'unreadable'
+    }
 
     function renderWithPrograms({
       rekordbox,
@@ -6022,8 +6099,9 @@ describe('Editor Apple Music library section', () => {
         residualDb: -20.5,
         gainDb: -2.2,
       }))
+      api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
-        copyAt(path) || path === herePath
+        (copyAt(path) && !copyAt(path)?.gone) || path === herePath
           ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
           : null,
       )
@@ -6105,6 +6183,47 @@ describe('Editor Apple Music library section', () => {
       ).toEqual([])
       expect(screen.queryByTestId('library-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    // A copy that is gone showed only its program's name, exactly like the row of a copy that
+    // is this very file; it now says it is not found, and the other row keeps its own state.
+    it('says a program copy that is not there is not found, unlike the copy that is this file', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/music/Strobe.aif', loudness: aifLoudness },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness, gone: 'missing' },
+      })
+      await waitFor(() => expect(screen.getAllByTestId('library-row')).toHaveLength(2))
+      await waitFor(() => expect(api.fileExists).toHaveBeenCalledWith('/t/Strobe.wav'))
+      await waitFor(() =>
+        expect(
+          within(screen.getAllByTestId('library-row')[1]).getByTestId('library-row-state'),
+        ).toHaveAttribute('data-state', 'missing'),
+      )
+      const [rekordboxRow, traktorRow] = screen.getAllByTestId('library-row')
+      expect(traktorRow.tagName).not.toBe('BUTTON')
+      expect(within(traktorRow).queryByTestId('library-row-format')).toBeNull()
+      expect(within(rekordboxRow).getByTestId('library-row-state')).toHaveAttribute(
+        'data-state',
+        'thisFile',
+      )
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
+    })
+
+    // A copy that is there but cannot be probed must not claim to be missing: the DJ would go
+    // looking for a drive that is mounted.
+    it('says a program copy that is there but cannot be read cannot be read, not that it is missing', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/music/Strobe.aif', loudness: aifLoudness },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness, gone: 'unreadable' },
+      })
+      await waitFor(() => expect(screen.getAllByTestId('library-row')).toHaveLength(2))
+      await waitFor(() =>
+        expect(
+          within(screen.getAllByTestId('library-row')[1]).getByTestId('library-row-state'),
+        ).toHaveAttribute('data-state', 'unreadable'),
+      )
+      expect(screen.getAllByTestId('library-row')[1].tagName).not.toBe('BUTTON')
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
     })
 
     it('says there is a better copy when any program holds one, even if another holds a worse one', async () => {

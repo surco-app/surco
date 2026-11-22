@@ -20,6 +20,8 @@ export type LibraryVerdict =
   | 'different'
   | 'tie'
   | 'thisFile'
+  | 'missing'
+  | 'unreadable'
   | 'even'
 
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
@@ -30,6 +32,8 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
   library: { label: 'editor.libraryStateLibrary', className: PILL_TONE.warn },
   different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
   tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
+  missing: { label: 'editor.libraryStateMissing', className: 'bg-fg-faint/10 text-fg-faint' },
+  unreadable: { label: 'editor.libraryStateUnreadable', className: 'bg-fg-faint/10 text-fg-faint' },
   thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/10 text-fg-faint' },
   even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/15 text-fg-dim' },
   measuring: {
@@ -104,6 +108,8 @@ const RESERVED_STATES = [
   'even',
   'different',
   'thisFile',
+  'missing',
+  'unreadable',
 ] as const
 
 function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): string {
@@ -225,11 +231,14 @@ function LibraryRowItem({
   )
 }
 
+// States about one copy rather than about the open file never ride up to the header.
+const ROW_ONLY: LibraryVerdict[] = ['measuring', 'thisFile', 'missing', 'unreadable']
+
 // The state every copy shares, with the length when it is another version of one length; none
 // while any copy is still being measured, so the header does not settle and then jump.
 function sharedState(rows: LibraryRow[]): LibraryRow | null {
   const [first] = rows.filter((row) => row.verdict || row.comparable)
-  if (!first?.verdict || first.verdict === 'measuring' || first.verdict === 'thisFile') return null
+  if (!first?.verdict || ROW_ONLY.includes(first.verdict)) return null
   const same = rows.every(
     (row) =>
       !(row.verdict || row.comparable) ||

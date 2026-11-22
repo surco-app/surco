@@ -358,6 +358,7 @@ const api: Api = {
     invokeAudio('audio:limiterGlimpse', worse, better, sampleRate),
   properties: (path: string): Promise<TrackProperties | null> =>
     invokeAudio('audio:properties', path),
+  fileExists: (path: string): Promise<boolean> => invokeAudio('audio:fileExists', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
     invokeAudio('audio:bpm', path, priority),
   key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>

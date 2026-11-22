@@ -10,12 +10,15 @@ import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy
 import { libraryCopyFormat } from '../lib/properties'
 import { copyDurationOptions, withDuration } from './useCopyDuration'
 import { copyFactsQueries, toCopyFacts, versionPairOptions } from './useCopyFacts'
+import { type PropertiesResult, useCopyReach } from './useCopyReach'
 import { trackPropertiesOptions } from './useTrackProperties'
 
 export interface CopyVerdictState {
   verdict: CopyVerdict | null
   measuring: boolean
   format: string
+  missing: boolean
+  unreadable: boolean
   here?: CopyFacts
   copy?: CopyFacts
 }
@@ -54,7 +57,13 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
         { ...trackPropertiesOptions(path), enabled: !!path },
       ]),
     ],
-  }) as Settled<unknown>[]
+  }) as (Settled<unknown> & PropertiesResult)[]
+  const reach = useCopyReach(
+    copyPaths.map((path, i) => ({
+      path,
+      properties: results[HERE_QUERIES + i * QUERIES_PER_COPY + FACTS_PER_FILE + 2],
+    })),
+  )
 
   if (copyPaths.length === 0) return []
   const here = withDuration(
@@ -73,6 +82,13 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
     const measuring = here === undefined || copy === undefined || pair === undefined
     const verdict = here && copy && pair !== undefined ? compareCopies(here, copy, pair) : null
-    return { verdict, measuring, format, here: here ?? undefined, copy: copy ?? undefined }
+    return {
+      verdict,
+      measuring,
+      format,
+      ...reach[i],
+      here: here ?? undefined,
+      copy: copy ?? undefined,
+    }
   })
 }

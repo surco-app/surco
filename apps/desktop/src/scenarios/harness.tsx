@@ -1028,6 +1028,7 @@ function scenarioApi(
     properties: (path) => invokeMain('audio:properties', path),
     readTags: (path) => invokeMain('audio:tags', path),
     readCoverFull: (path) => invokeMain('audio:coverFull', path),
+    fileExists: (path) => invokeMain('audio:fileExists', path),
     ...(drivesMusic(options) && {
       appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
       appleMusicEntryMeta: (path, pids) => invokeMain('applemusic:entryMeta', path, pids),

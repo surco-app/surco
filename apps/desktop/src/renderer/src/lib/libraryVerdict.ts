@@ -15,6 +15,8 @@ export function verdictState(
 }
 
 export function rowVerdict(state: CopyVerdictState): LibraryVerdict | null {
+  if (state.missing) return 'missing'
+  if (state.unreadable) return 'unreadable'
   return verdictState(state.verdict, state.measuring)
 }
 
@@ -24,6 +26,8 @@ export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): Librar
     'measuring',
     'here',
     'different',
+    'missing',
+    'unreadable',
     'tie',
     'even',
     'same',

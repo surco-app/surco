@@ -48,6 +48,7 @@ import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
 import { useCopyFacts, usePairFacts } from '../hooks/useCopyFacts'
+import { useCopyReach } from '../hooks/useCopyReach'
 import { useCopyVerdicts } from '../hooks/useCopyVerdicts'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
 import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
@@ -766,7 +767,8 @@ export const Editor = memo(function Editor({
   })
   // The format of the library copy the section shows (the one a replacement would supersede
   // when there is one), so the user can tell whether the file in hand is worth swapping in.
-  const { data: replacedCopyProps } = useTrackProperties(libraryCopyPath, !!libraryCopyPath)
+  const replacedCopyQuery = useTrackProperties(libraryCopyPath, !!libraryCopyPath)
+  const replacedCopyProps = replacedCopyQuery.data
   const replacedCopyFormat = replacedCopyProps
     ? libraryCopyFormat(replacedCopyProps, libraryCopyPath, i18n.language)
     : ''
@@ -781,6 +783,11 @@ export const Editor = memo(function Editor({
   const comparedCopyPath =
     pathKey(libraryCopyPath) === pathKey(item.inputPath) ? '' : libraryCopyPath
   const musicHoldsFile = !!libraryCopyPath && !comparedCopyPath
+  const [musicCopyReach] = useCopyReach(
+    comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
+  )
+  const musicCopyUnreached =
+    !!musicCopyReach && (musicCopyReach.missing || musicCopyReach.unreadable)
   const hereFacts = withDuration(
     useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
     useCopyDuration(item.inputPath, !!comparedCopyPath),
@@ -1583,31 +1590,32 @@ export const Editor = memo(function Editor({
         hereDurationSec={here.durationSec}
         libraryDurationSec={library.durationSec}
         glimpse={
-          limitedRate ? (
-            <LimiterGlimpse
-              worsePath={verdict.winner === 'a' ? copyPath : item.inputPath}
-              betterPath={verdict.winner === 'a' ? item.inputPath : copyPath}
-              sampleRate={limitedRate}
-              layers={[
-                {
-                  side: verdict.winner === 'a' ? 'better' : 'worse',
-                  label: `${tr('editor.copyThisFile')} · ${here.ext}`,
-                },
-                {
-                  side: verdict.winner === 'a' ? 'worse' : 'better',
-                  label: `${libraryName} · ${library.ext}`,
-                },
-              ]}
-            />
-          ) : spectrumDecided ? (
+          <>
             <SpectrumGlimpse
               herePath={item.inputPath}
               libraryPath={copyPath}
               hereLabel={`${tr('editor.copyThisFile')} · ${here.ext}`}
               libraryLabel={`${libraryName} · ${library.ext}`}
-              loser={verdict.winner === 'a' ? 'library' : 'here'}
+              loser={spectrumDecided ? (verdict.winner === 'a' ? 'library' : 'here') : null}
             />
-          ) : undefined
+            {limitedRate && (
+              <LimiterGlimpse
+                worsePath={verdict.winner === 'a' ? copyPath : item.inputPath}
+                betterPath={verdict.winner === 'a' ? item.inputPath : copyPath}
+                sampleRate={limitedRate}
+                layers={[
+                  {
+                    side: verdict.winner === 'a' ? 'better' : 'worse',
+                    label: `${tr('editor.copyThisFile')} · ${here.ext}`,
+                  },
+                  {
+                    side: verdict.winner === 'a' ? 'worse' : 'better',
+                    label: `${libraryName} · ${library.ext}`,
+                  },
+                ]}
+              />
+            )}
+          </>
         }
       />
     )
@@ -1630,21 +1638,27 @@ export const Editor = memo(function Editor({
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           verdict: musicHoldsFile
             ? 'thisFile'
-            : libraryCopyBetter && (copyState === null || copyState === 'measuring')
-              ? 'library'
-              : libraryCopyPending && !libraryCopyPath
-                ? 'measuring'
-                : copyState,
+            : musicCopyReach?.missing
+              ? 'missing'
+              : musicCopyReach?.unreadable
+                ? 'unreadable'
+                : libraryCopyBetter && (copyState === null || copyState === 'measuring')
+                  ? 'library'
+                  : libraryCopyPending && !libraryCopyPath
+                    ? 'measuring'
+                    : copyState,
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
-          comparison: renderComparison({
-            verdict: copyVerdict,
-            here: hereFacts,
-            library: libraryFacts,
-            copyPath: comparedCopyPath,
-            libraryName: 'Apple Music',
-            libraryLabel: replacedCopyFormat,
-          }),
+          comparison: musicCopyUnreached
+            ? undefined
+            : renderComparison({
+                verdict: copyVerdict,
+                here: hereFacts,
+                library: libraryFacts,
+                copyPath: comparedCopyPath,
+                libraryName: 'Apple Music',
+                libraryLabel: replacedCopyFormat,
+              }),
           comparisonOpen: copyOpen,
           onToggleComparison: () =>
             setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${libraryCopyPath}`),
@@ -1665,14 +1679,17 @@ export const Editor = memo(function Editor({
       }
     }
     const openKey = `${copy.program}\n${item.inputPath}\n${copy.path}`
-    const comparison = renderComparison({
-      verdict: state.verdict,
-      here: state.here,
-      library: state.copy,
-      copyPath: copy.path,
-      libraryName: name,
-      libraryLabel: state.format,
-    })
+    const comparison =
+      state.missing || state.unreadable
+        ? undefined
+        : renderComparison({
+            verdict: state.verdict,
+            here: state.here,
+            library: state.copy,
+            copyPath: copy.path,
+            libraryName: name,
+            libraryLabel: state.format,
+          })
     const comparisonOpen = !!comparison && programOpenFor.has(openKey)
     return {
       id: copy.program,

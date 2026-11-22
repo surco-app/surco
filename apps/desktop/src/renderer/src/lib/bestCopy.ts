@@ -1,4 +1,4 @@
-import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
+import { VERSION_GAP_SEC, VERSION_REACH_MAX_SECONDS } from '../../../shared/copyVersion'
 import type { PairFacts, PairProbe } from '../../../shared/types'
 import { type ReplaceSide, replaceWarning } from './replaceWarning'
 
@@ -52,6 +52,9 @@ export const COPY_MARGINS: CopyMargins = {
 // the 22/11 measurement: different edits of one title correlated about 0 (0.19 at best,
 // searched 60 s either way) and one master stayed at 0.95 or above. Both files must also have
 // given the search real audio: 10 s or more and above the -70 LUFS gate.
+// Past the search's own reach (VERSION_REACH_MAX_SECONDS, about 54 s) nothing is measured, and
+// the lengths alone decide: a master with a trimmed or padded head differs by seconds, so one
+// that carries more than that much extra audio is a longer or shorter edit, another version.
 export const OTHER_VERSION = {
   maxCorrelation: 0.5,
   minDurationSec: 10,
@@ -64,7 +67,11 @@ function aligned(pair: PairProbe | null | undefined): PairFacts | null {
 
 function isOtherVersion(a: CopyFacts, b: CopyFacts, pair: PairProbe | null): boolean {
   if (a.durationSec == null || b.durationSec == null) return false
-  if (Math.abs(a.durationSec - b.durationSec) <= VERSION_GAP_SEC) return false
+  const gapSec = Math.abs(a.durationSec - b.durationSec)
+  if (gapSec <= VERSION_GAP_SEC) return false
+  if (gapSec + 1 > VERSION_REACH_MAX_SECONDS) {
+    return Math.min(a.durationSec, b.durationSec) >= OTHER_VERSION.minDurationSec
+  }
   if (pair?.versionCorrelation == null) return false
   if (pair.versionCorrelation >= OTHER_VERSION.maxCorrelation) return false
   const probed = (f: CopyFacts): boolean =>

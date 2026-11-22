@@ -83,6 +83,10 @@ export interface AudioAnalysisIpc {
     args: [inputPath: string]
     result: TrackProperties | null
   }
+  'audio:fileExists': {
+    args: [path: string]
+    result: boolean
+  }
   'audio:bpm': {
     args: [inputPath: string, priority?: 'high' | 'low']
     result: BpmResult | null

@@ -1,3 +1,8 @@
+import {
+  VERSION_RATE,
+  VERSION_REACH_MAX_SECONDS,
+  VERSION_WINDOW_SECONDS,
+} from '../shared/copyVersion'
 import { fft } from './fft'
 
 export const PAIR_RATE = 44100
@@ -61,17 +66,7 @@ export function bestLag(
   return best
 }
 
-// The wider search behind PairFacts.versionCorrelation, at a tenth of the probe's rate (the
-// bass that carries most of a track's energy survives it). The reach is bounded so the FFT is
-// never longer than 2^19 points, the size of the probe's own; a gap past that reach (about
-// 54 s) is not searched. Even so one search held the event loop 58 to 293 ms when measured on
-// the main process, so it runs in the analysis worker.
-export const VERSION_RATE = 4410
-const VERSION_WINDOW_SECONDS = 10
-const VERSION_FFT_MAX = 2 ** 19
-export const VERSION_REACH_MAX_SECONDS = Math.floor(
-  (VERSION_FFT_MAX - VERSION_WINDOW_SECONDS * VERSION_RATE) / 2 / VERSION_RATE,
-)
+export { VERSION_RATE, VERSION_REACH_MAX_SECONDS }
 
 // The |correlation| of two copies decoded at VERSION_RATE, lined up on the best lag within
 // reachSec either way in either polarity and compared over a minute (from 30 s when a is long

@@ -713,3 +713,19 @@ describe('audio:waveform-scan priority', () => {
     expect(vi.mocked(analysisLimiter.run).mock.calls[0]?.[1]).toBe('high')
   })
 })
+
+describe('audio:fileExists', () => {
+  // A library copy whose probe failed is either gone (deleted, drive not mounted) or there
+  // but unreadable; the row may only say «Not found» when the file really is not there.
+  it('answers true for a file that is there', async () => {
+    const file = await makeFile()
+
+    await expect(handlerFor('audio:fileExists')({}, file)).resolves.toBe(true)
+  })
+
+  it('answers false, without throwing, for a file on a volume that is not mounted', async () => {
+    await expect(
+      handlerFor('audio:fileExists')({}, join(work, 'Unmounted', 'gone.wav')),
+    ).resolves.toBe(false)
+  })
+})

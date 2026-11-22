@@ -1373,6 +1373,8 @@
     "libraryStateDifferent": "Otra versión · {{duration}}",
     "libraryStateTie": "Parecidas",
     "libraryStateThisFile": "Es este archivo",
+    "libraryStateMissing": "No se encuentra",
+    "libraryStateUnreadable": "No se puede leer",
     "libraryStateEven": "Ni mejor ni peor",
     "libraryStateMeasuring": "Comparando",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
