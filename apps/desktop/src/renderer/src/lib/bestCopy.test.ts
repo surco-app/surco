@@ -50,11 +50,20 @@ describe('compareCopies', () => {
   })
 
   // Wiki Wiki: two masters of one title, 822 against 3.5 samples at the peak. Level says
-  // nothing about which master is better, so no winner.
-  it('never ranks two different masters by level', () => {
+  // nothing about which master is better, so no winner, and the reader is told they are
+  // not the same audio rather than that they are alike.
+  it('never ranks two different masters by level, and calls them different', () => {
     const a = { ...netzwerkAif, fingerprint: 'p', peakCount: 822.5, crestDb: 11 }
     const b = { ...netzwerkAif, fingerprint: 'q', peakCount: 3.5, crestDb: 11 }
-    expect(compareCopies(a, b, otherMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(a, b, otherMaster)).toEqual({ winner: 'different' })
+  })
+
+  // 3 Ways: two lossless edits, 447 s and 483 s, that the pair probe could not line up at
+  // all. Saying nothing about them hid that the library holds another version.
+  it('calls two measured copies the probe could not line up different', () => {
+    const a = { ...netzwerkAif, fingerprint: 'p' }
+    const b = { ...netzwerkAif, fingerprint: 'q' }
+    expect(compareCopies(a, b, null)).toEqual({ winner: 'different' })
   })
 
   it('never ranks by level without the pair probe', () => {
@@ -185,7 +194,7 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'b',
       reason: 'peakCount',
     })
-    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.979))).toEqual({ winner: 'tie' })
+    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.979))).toEqual({ winner: 'different' })
   })
 
   it('calls a residual of -60 dB the same audio and -59.9 dB not', () => {

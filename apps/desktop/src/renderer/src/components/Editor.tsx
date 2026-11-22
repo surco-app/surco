@@ -41,6 +41,7 @@ import type {
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
+import { useCopyDuration } from '../hooks/useCopyDuration'
 import { useCopyFacts, usePairFacts } from '../hooks/useCopyFacts'
 import { useCopyVerdicts } from '../hooks/useCopyVerdicts'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -87,7 +88,7 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
-import { aggregateLibraryVerdict, rowVerdict } from '../lib/libraryVerdict'
+import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
   autoNamesFile,
@@ -134,7 +135,7 @@ import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
-import { type LibraryRow, LibrarySection, type LibraryVerdict } from './LibrarySection'
+import { type LibraryRow, LibrarySection } from './LibrarySection'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
@@ -772,17 +773,21 @@ export const Editor = memo(function Editor({
   const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
   const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
+  const copyDuration = useCopyDuration(comparedCopyPath, !!comparedCopyPath)
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
       ? compareCopies(hereFacts, libraryFacts, copyPair)
       : null
   const copyMeasuring =
     !!comparedCopyPath &&
-    (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
+    (hereFacts === undefined ||
+      libraryFacts === undefined ||
+      copyPair === undefined ||
+      copyDuration === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const copyOpen =
     !!copyVerdict &&
-    copyVerdict.winner !== 'tie' &&
+    copyVerdict.winner !== 'same' &&
     copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
   const libraryCopyBetter = copyVerdict
     ? copyVerdict.winner === 'b'
@@ -1516,15 +1521,7 @@ export const Editor = memo(function Editor({
       : []),
   ]
 
-  const copyState: LibraryVerdict | null = copyMeasuring
-    ? 'measuring'
-    : !copyVerdict || copyVerdict.winner === 'tie'
-      ? null
-      : copyVerdict.winner === 'a'
-        ? 'here'
-        : copyVerdict.winner === 'b'
-          ? 'library'
-          : 'same'
+  const copyState = verdictState(copyVerdict, copyMeasuring)
   const renderComparison = ({
     verdict,
     here,
@@ -1532,6 +1529,7 @@ export const Editor = memo(function Editor({
     copyPath,
     libraryName,
     libraryLabel,
+    libraryDurationSec,
   }: {
     verdict: CopyVerdict | null
     here: CopyFacts | null | undefined
@@ -1539,15 +1537,15 @@ export const Editor = memo(function Editor({
     copyPath: string
     libraryName: string
     libraryLabel: string
+    libraryDurationSec?: number
   }): React.ReactNode => {
-    // A tie or the same audio leaves nothing to weigh, so the row opens nothing.
-    if (!verdict || !('reason' in verdict) || !here || !library) return undefined
+    // The same audio leaves nothing to weigh, so the row opens nothing.
+    if (!verdict || verdict.winner === 'same' || !here || !library) return undefined
+    const reason = 'reason' in verdict ? verdict.reason : undefined
     // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
     const limitedRate =
-      verdict.reason === 'peakCount'
-        ? (verdict.winner === 'a' ? library : here).sampleRateHz
-        : undefined
-    const spectrumDecided = SPECTRUM_REASONS.has(verdict.reason)
+      reason === 'peakCount' ? (verdict.winner === 'a' ? library : here).sampleRateHz : undefined
+    const spectrumDecided = reason !== undefined && SPECTRUM_REASONS.has(reason)
     return (
       <CopyComparison
         verdict={verdict}
@@ -1556,6 +1554,8 @@ export const Editor = memo(function Editor({
         hereLabel={here.ext}
         libraryLabel={libraryLabel || library.ext}
         libraryName={libraryName}
+        hereDurationSec={item.duration}
+        libraryDurationSec={libraryDurationSec}
         glimpse={
           limitedRate ? (
             <LimiterGlimpse
@@ -1601,7 +1601,12 @@ export const Editor = memo(function Editor({
           id: 'appleMusic',
           name: 'Apple Music',
           format: musicHoldsFile ? '' : replacedCopyFormat,
-          better: libraryCopyBetter,
+          verdict:
+            libraryCopyBetter && (copyState === null || copyState === 'measuring')
+              ? 'library'
+              : copyState,
+          durationSec: copyDuration ?? undefined,
+          detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: renderComparison({
             verdict: copyVerdict,
             here: hereFacts,
@@ -1609,79 +1614,56 @@ export const Editor = memo(function Editor({
             copyPath: comparedCopyPath,
             libraryName: 'Apple Music',
             libraryLabel: replacedCopyFormat,
+            libraryDurationSec: copyDuration ?? undefined,
           }),
           comparisonOpen: copyOpen,
           onToggleComparison: () =>
             setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`),
         }
       : null
-  const musicRowVerdict: LibraryVerdict | null =
-    libraryCopyBetter && (copyState === null || copyState === 'measuring') ? 'library' : copyState
-  const programRows = programCopies.map(
-    (copy): { row: LibraryRow; verdict: LibraryVerdict | null; reason?: string } => {
-      const name = LIBRARY_NAME[copy.program]
-      const state = copy.isThisFile
-        ? undefined
-        : programVerdicts[comparedProgramCopies.indexOf(copy)]
-      if (!state) {
-        return {
-          row: {
-            id: copy.program,
-            name,
-            format: '',
-            better: false,
-            comparisonOpen: false,
-            onToggleComparison: () => {},
-          },
-          verdict: null,
-        }
-      }
-      const openKey = `${copy.program}\n${item.inputPath}\n${copy.path}`
-      const comparison = renderComparison({
-        verdict: state.verdict,
-        here: state.here,
-        library: state.copy,
-        copyPath: copy.path,
-        libraryName: name,
-        libraryLabel: state.format,
-      })
-      const comparisonOpen = !!comparison && programOpenFor.has(openKey)
+  const programRows = programCopies.map((copy): LibraryRow => {
+    const name = LIBRARY_NAME[copy.program]
+    const state = copy.isThisFile ? undefined : programVerdicts[comparedProgramCopies.indexOf(copy)]
+    if (!state) {
       return {
-        row: {
-          id: copy.program,
-          name,
-          format: state.format,
-          better: state.verdict?.winner === 'b',
-          comparison,
-          comparisonOpen,
-          onToggleComparison: () =>
-            setProgramOpenFor((open) => {
-              const next = new Set(open)
-              if (comparisonOpen) next.delete(openKey)
-              else next.add(openKey)
-              return next
-            }),
-        },
-        verdict: rowVerdict(state),
-        reason: reasonFor(state.verdict, state.here, state.copy, name),
+        id: copy.program,
+        name,
+        format: '',
+        verdict: null,
+        comparisonOpen: false,
+        onToggleComparison: () => {},
       }
-    },
-  )
-  const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows.map((p) => p.row)]
-  const judged = [
-    ...(musicRow
-      ? [
-          {
-            verdict: musicRowVerdict,
-            reason: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
-          },
-        ]
-      : []),
-    ...programRows,
-  ]
-  const libraryVerdict = aggregateLibraryVerdict(judged.map((j) => j.verdict))
-  // The reason of the copy that set the section's verdict, naming its program.
-  const libraryVerdictDetail = judged.find((j) => j.verdict === libraryVerdict && j.reason)?.reason
+    }
+    const openKey = `${copy.program}\n${item.inputPath}\n${copy.path}`
+    const comparison = renderComparison({
+      verdict: state.verdict,
+      here: state.here,
+      library: state.copy,
+      copyPath: copy.path,
+      libraryName: name,
+      libraryLabel: state.format,
+      libraryDurationSec: state.durationSec,
+    })
+    const comparisonOpen = !!comparison && programOpenFor.has(openKey)
+    return {
+      id: copy.program,
+      name,
+      format: state.format,
+      verdict: rowVerdict(state),
+      durationSec: state.durationSec,
+      detail: reasonFor(state.verdict, state.here, state.copy, name),
+      comparison,
+      comparisonOpen,
+      onToggleComparison: () =>
+        setProgramOpenFor((open) => {
+          const next = new Set(open)
+          if (comparisonOpen) next.delete(openKey)
+          else next.add(openKey)
+          return next
+        }),
+    }
+  })
+  const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
   const showLibrary = !isMulti && libraryRows.length > 0 && !libraryHidden
 
   return (
@@ -1766,8 +1748,6 @@ export const Editor = memo(function Editor({
             <LibrarySection
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
-              verdict={libraryVerdict}
-              verdictDetail={libraryVerdictDetail}
               rows={libraryRows}
             />
           )}

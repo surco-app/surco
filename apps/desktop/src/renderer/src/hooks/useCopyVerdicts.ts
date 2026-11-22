@@ -8,6 +8,7 @@ import type {
 } from '../../../shared/types'
 import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy'
 import { libraryCopyFormat } from '../lib/properties'
+import { copyDurationOptions } from './useCopyDuration'
 import { copyFactsQueries, pairOptions, toCopyFacts } from './useCopyFacts'
 import { trackPropertiesOptions } from './useTrackProperties'
 
@@ -17,10 +18,11 @@ export interface CopyVerdictState {
   format: string
   here?: CopyFacts
   copy?: CopyFacts
+  durationSec?: number
 }
 
 const FACTS_PER_FILE = 3
-const QUERIES_PER_COPY = FACTS_PER_FILE + 2
+const QUERIES_PER_COPY = FACTS_PER_FILE + 3
 
 type Settled<T> = { isPending: boolean; data: T | undefined }
 
@@ -44,6 +46,7 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
         ...copyFactsQueries(path).map((query) => ({ ...query, enabled: on && !!path })),
         { ...pairOptions(herePath, path), enabled: on && !!path },
         { ...trackPropertiesOptions(path), enabled: !!path },
+        { ...copyDurationOptions(path), enabled: on && !!path },
       ]),
     ],
   }) as Settled<unknown>[]
@@ -57,8 +60,17 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
     const pair = pairResult.isPending ? undefined : ((pairResult.data as PairFacts | null) ?? null)
     const props = results[start + FACTS_PER_FILE + 1].data as TrackProperties | null | undefined
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
-    const measuring = here === undefined || copy === undefined || pair === undefined
+    const durationResult = results[start + FACTS_PER_FILE + 2]
+    const measuring =
+      here === undefined || copy === undefined || pair === undefined || durationResult.isPending
     const verdict = here && copy && pair !== undefined ? compareCopies(here, copy, pair) : null
-    return { verdict, measuring, format, here: here ?? undefined, copy: copy ?? undefined }
+    return {
+      verdict,
+      measuring,
+      format,
+      here: here ?? undefined,
+      copy: copy ?? undefined,
+      durationSec: (durationResult.data as number | null | undefined) ?? undefined,
+    }
   })
 }

@@ -1,9 +1,10 @@
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CopyFacts, CopyReason } from '../lib/bestCopy'
+import type { CopyFacts, CopyReason, CopyVerdict } from '../lib/bestCopy'
+import { formatTime } from '../lib/duration'
 import { formatUpTo } from '../lib/numberFormat'
 
-type RowId = 'cutoff' | 'loudness' | 'crest' | 'peakCount'
+type RowId = 'duration' | 'cutoff' | 'loudness' | 'crest' | 'peakCount'
 
 // The row whose figures carried the verdict. Lossy against lossless is decided by the
 // formats, so it colours no row: a knee-less 16 kHz WAV beating a 20 kHz MP3 would read as
@@ -23,14 +24,19 @@ export function CopyComparison({
   libraryLabel,
   glimpse,
   libraryName,
+  hereDurationSec,
+  libraryDurationSec,
 }: {
   id?: string
-  // A tie opens no card, and same audio has nothing to weigh.
-  verdict: { winner: 'a' | 'b'; reason: CopyReason }
+  // Same audio has nothing to weigh, so it opens no card.
+  verdict: Exclude<CopyVerdict, { winner: 'same' }>
   here: CopyFacts
   library: CopyFacts
   hereLabel: string
   libraryLabel: string
+  // Another version differs in length, so its card leads with both.
+  hereDurationSec?: number
+  libraryDurationSec?: number
   // The waves behind the verdict, set above the table.
   glimpse?: React.ReactNode
   libraryName: string
@@ -41,7 +47,20 @@ export function CopyComparison({
   const cell = (value: number | null | undefined, digits: number, unit = ''): string =>
     value == null ? '—' : `${num(value, digits)}${unit}`
 
+  const length = (seconds: number | undefined): string =>
+    seconds == null ? '—' : formatTime(seconds)
+
   const rows: { id: RowId; label: string; here: string; library: string }[] = [
+    ...(verdict.winner === 'different'
+      ? [
+          {
+            id: 'duration' as const,
+            label: tr('editor.propDuration'),
+            here: length(hereDurationSec),
+            library: length(libraryDurationSec),
+          },
+        ]
+      : []),
     {
       id: 'cutoff',
       label: tr('editor.copyRowCutoff'),
@@ -72,11 +91,14 @@ export function CopyComparison({
   // the winner reaches higher as printed: marking a lower or equal figure would argue against
   // the verdict.
   const transcodeShown =
+    'reason' in verdict &&
     verdict.reason === 'transcode' &&
     loser.cutoffHz != null &&
     winner.cutoffHz != null &&
     Math.round(winner.cutoffHz / 100) > Math.round(loser.cutoffHz / 100)
-  const decidingRow = transcodeShown ? 'cutoff' : DECIDING_ROW[verdict.reason]
+  // Copies nothing separates have no deciding row: the reader weighs the figures.
+  const decidingRow =
+    'reason' in verdict ? (transcodeShown ? 'cutoff' : DECIDING_ROW[verdict.reason]) : undefined
   const winnerSide = verdict.winner === 'a' ? 'here' : 'library'
   // The winning figure takes the verdict's colour: green when this file wins, amber when the
   // library holds the better copy, the same colours as the glyph in the section's header.

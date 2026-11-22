@@ -63,6 +63,7 @@ describe('useCopyVerdicts', () => {
       fingerprint: vi.fn(async (path: string) => `fp${path}`),
       comparePair: vi.fn().mockResolvedValue({ correlation: 0.9, residualDb: -10, gainDb: 0 }),
       properties: vi.fn(async (path: string) => (path === '/lib/worse.mp3' ? properties : null)),
+      readDuration: vi.fn(async (path: string) => (path === '/lib/better.wav' ? 447.9 : 483.2)),
     })
     const { result } = renderHook(
       () => useCopyVerdicts('/here/a.mp3', ['/lib/better.wav', '/lib/worse.mp3']),
@@ -73,6 +74,25 @@ describe('useCopyVerdicts', () => {
     expect(result.current.map((row) => row.copy?.ext)).toEqual(['WAV', 'MP3'])
     expect(result.current[0].here?.ext).toBe('MP3')
     expect(result.current.map((row) => row.format)).toEqual(['', 'MP3 320'])
+    expect(result.current.map((row) => row.durationSec)).toEqual([447.9, 483.2])
+  })
+
+  // Another version is named with its length; a verdict landing before the length would
+  // change the pill's words under the reader a moment later.
+  it('keeps measuring until the copy length is in', async () => {
+    setApi({
+      spectrogram: vi.fn(async (path: string) => spectrumFor(path)),
+      loudness: vi.fn().mockResolvedValue(loudness),
+      fingerprint: vi.fn(async (path: string) => `fp${path}`),
+      comparePair: vi.fn().mockResolvedValue(null),
+      properties: vi.fn().mockResolvedValue(null),
+      readDuration: vi.fn(() => new Promise(() => {})),
+    })
+    const { result } = renderHook(() => useCopyVerdicts('/here/a.mp3', ['/lib/better.wav']), {
+      wrapper,
+    })
+    await waitFor(() => expect(result.current[0].verdict).not.toBeNull())
+    expect(result.current[0].measuring).toBe(true)
   })
 
   it('reports measuring until every fact is in', async () => {
@@ -82,6 +102,7 @@ describe('useCopyVerdicts', () => {
       fingerprint: vi.fn().mockResolvedValue('abc'),
       comparePair: vi.fn(() => new Promise(() => {})),
       properties: vi.fn().mockResolvedValue(null),
+      readDuration: vi.fn().mockResolvedValue(300),
     })
     const { result } = renderHook(() => useCopyVerdicts('/here/a.mp3', ['/lib/worse.mp3']), {
       wrapper,

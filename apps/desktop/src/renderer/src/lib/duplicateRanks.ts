@@ -38,7 +38,7 @@ export function rankGroup(
     for (let j = 0; j < count; j++) {
       if (j === i) continue
       const v = verdict(i, j)
-      if (v.winner === 'b' || v.winner === 'tie') return false
+      if (v.winner === 'b' || v.winner === 'tie' || v.winner === 'different') return false
       if (v.winner === 'a') won = true
     }
     return won

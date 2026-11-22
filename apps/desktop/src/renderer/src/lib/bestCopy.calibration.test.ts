@@ -122,7 +122,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 2828,
     },
     pair: { correlation: 0.0674, residualDb: -0.0, gainDb: -26.89 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Alex & Giro - Wiki Wiki',
@@ -144,7 +144,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 3.5,
     },
     pair: { correlation: 0.8618, residualDb: -5.9, gainDb: -1.9 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Kike Boy - Farmatro\u0301n',
@@ -166,7 +166,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 1713,
     },
     pair: { correlation: 0.7803, residualDb: -4.1, gainDb: -1.03 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Alfredo Pareja - No More Lies',
@@ -232,7 +232,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 160.5,
     },
     pair: { correlation: 0.0145, residualDb: -0.0, gainDb: -32.71 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Da Tekno Warriors - Da Game',
@@ -254,7 +254,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 244,
     },
     pair: { correlation: 0.2982, residualDb: -0.4, gainDb: -11.93 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Anneke Van Hooff - Lie To Me (Extended Mix)',
@@ -342,7 +342,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 5772,
     },
     pair: { correlation: 0.7164, residualDb: -3.1, gainDb: -2.07 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: '4 Clubbers - Children (Future Breeze Vs. Junkfood Junkies Mix)',
@@ -474,7 +474,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 22.5,
     },
     pair: { correlation: 0.3828, residualDb: -0.7, gainDb: -7.8 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Alfredo Pareja - Believe In Dance',
@@ -518,7 +518,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 2.5,
     },
     pair: { correlation: 0.6679, residualDb: -2.6, gainDb: -3.43 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Nacho Division - Meditation (Remix)',
@@ -540,7 +540,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 1306,
     },
     pair: { correlation: 0.9543, residualDb: -10.5, gainDb: 1.3 },
-    expected: { winner: 'tie' },
+    expected: { winner: 'different' },
   },
   {
     label: 'Alfredo Pareja - Do You Know My Name',

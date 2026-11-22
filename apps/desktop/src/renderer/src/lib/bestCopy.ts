@@ -28,6 +28,7 @@ export type CopyVerdict =
   | { winner: 'a' | 'b'; reason: CopyReason }
   | { winner: 'same' }
   | { winner: 'tie' }
+  | { winner: 'different' }
 
 export interface CopyMargins {
   sameMasterCorrelation: number
@@ -118,7 +119,10 @@ export function compareCopies(
   const cleaner =
     flag(a.processed, b.processed, 'processed') ?? flag(a.upsampled, b.upsampled, 'upsampled')
   if (cleaner) return cleaner
-  if (!pair || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
+  if (pair === undefined) return { winner: 'tie' }
+  if (pair === null || pair.correlation < margins.sameMasterCorrelation) {
+    return { winner: 'different' }
+  }
   return (
     byPeakCount(a, b, margins.peakCountRatio) ?? byCrest(a, b, margins.crestDb) ?? { winner: 'tie' }
   )

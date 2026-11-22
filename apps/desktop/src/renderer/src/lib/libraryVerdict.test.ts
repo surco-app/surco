@@ -15,6 +15,16 @@ describe('aggregateLibraryVerdict', () => {
     expect(aggregateLibraryVerdict(['here', 'same'])).toBe('here')
   })
 
+  // A folded header shows one state: the one that asks the most of the reader. Another
+  // version in the library is worth knowing before two copies that are merely alike, and
+  // both before an identical copy, which asks nothing.
+  it('ranks the states from the most to the least urgent', () => {
+    const order = ['library', 'measuring', 'here', 'different', 'tie', 'same'] as const
+    order.forEach((verdict, i) => {
+      expect(aggregateLibraryVerdict([...order.slice(i)].reverse())).toBe(verdict)
+    })
+  })
+
   it('reports same when it is the only decision', () => {
     expect(aggregateLibraryVerdict(['same', null])).toBe('same')
   })
@@ -30,11 +40,24 @@ describe('rowVerdict', () => {
   it.each([
     [{ ...facts, measuring: true }, 'measuring'],
     [facts, null],
-    [{ ...facts, verdict: { winner: 'tie' } }, null],
+    [{ ...facts, verdict: { winner: 'tie' } }, 'tie'],
+    [{ ...facts, verdict: { winner: 'different' } }, 'different'],
     [{ ...facts, verdict: { winner: 'a', reason: 'format' } }, 'here'],
     [{ ...facts, verdict: { winner: 'b', reason: 'format' } }, 'library'],
     [{ ...facts, verdict: { winner: 'same' } }, 'same'],
   ] as const)('maps %j to %s', (state, expected) => {
     expect(rowVerdict(state as unknown as CopyVerdictState)).toBe(expected)
+  })
+
+  // A verdict computed while a fact was still pending would call two copies different
+  // before the probe that lines them up had answered.
+  it('keeps measuring over any verdict while a fact is pending', () => {
+    expect(
+      rowVerdict({
+        ...facts,
+        measuring: true,
+        verdict: { winner: 'different' },
+      } as CopyVerdictState),
+    ).toBe('measuring')
   })
 })

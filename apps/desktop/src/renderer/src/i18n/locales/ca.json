@@ -1365,12 +1365,15 @@
       }
     },
     "librarySectionTitle": "A la teva biblioteca",
-    "libraryVerdictHere": "Aquesta és la millor",
-    "libraryVerdictLibrary": "Hi ha una còpia millor",
-    "libraryVerdictSame": "Mateixa còpia",
-    "libraryVerdictMeasuring": "Comparant…",
-    "libraryVerdictWithReason": "{{verdict}}. {{reason}}",
-    "libraryRowBetter": "Millor que aquest fitxer"
+    "libraryStateSame": "Idèntica",
+    "libraryStateHere": "Aquesta és millor",
+    "libraryStateLibrary": "Millor allà",
+    "libraryStateLibraryIn": "Millor a {{program}}",
+    "libraryStateDifferentBare": "Una altra versió",
+    "libraryStateDifferent": "Una altra versió · {{duration}}",
+    "libraryStateTie": "Semblants",
+    "libraryStateMeasuring": "Comparant",
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },
   "fields": {
     "groupIdentity": "Bàsics",

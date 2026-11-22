@@ -14,7 +14,7 @@ function row(over: Partial<LibraryRow> = {}): LibraryRow {
     id: 'appleMusic',
     name: 'Música',
     format: 'FLAC 44,1 kHz',
-    better: false,
+    verdict: 'here',
     comparison: <div data-testid="comparison">numbers</div>,
     comparisonOpen: false,
     onToggleComparison: vi.fn(),
@@ -27,68 +27,154 @@ function mount(
   only: Partial<LibraryRow> = {},
 ) {
   const single = row(only)
-  render(<LibrarySection open onToggle={() => {}} verdict="here" rows={[single]} {...props} />)
+  render(<LibrarySection open onToggle={() => {}} rows={[single]} {...props} />)
   return { onToggleComparison: single.onToggleComparison }
 }
 
 describe('LibrarySection', () => {
-  // The verdict is read at a glance beside the title: a line of words under every header
-  // turned the section into a wall of text. Each state keeps its words for a screen reader
-  // and the tooltip, and the warning keeps a shape of its own so it never rests on colour.
+  // A glyph beside the title did not read as "the same copy": each copy now says its relation
+  // to this file in a short word, on its own row, next to its format.
   it.each([
-    ['here', 'good', 'Esta es la mejor'],
-    ['library', 'warn', 'Hay una copia mejor'],
-    ['same', 'good', 'Misma copia'],
-    ['measuring', 'neutral', 'Comparando…'],
-  ] as const)(
-    'shows the %s verdict as a glyph named for it, with no words',
-    (verdict, tone, label) => {
-      mount({ verdict })
-      const glyph = screen.getByTestId('library-verdict')
-      expect(glyph).toHaveAttribute('role', 'img')
-      expect(glyph).toHaveAccessibleName(label)
-      expect(glyph).toHaveAttribute('data-tone', tone)
-      expect(screen.getByTestId('section-status').textContent).toBe('')
-      expect(hoverTooltip(glyph)).toBe(label)
-    },
-  )
-
-  // The two greens and the amber are told apart by shape too, for a colour-blind reader.
-  it('draws a different shape for each settled verdict', () => {
-    const shapes = (['here', 'library', 'same'] as const).map((verdict) => {
-      mount({ verdict })
-      const svg = screen.getByTestId('library-verdict').querySelector('svg')?.innerHTML
-      cleanup()
-      return svg
-    })
-    expect(new Set(shapes).size).toBe(3)
+    ['same', 'Idéntica'],
+    ['here', 'Esta es mejor'],
+    ['library', 'Mejor allí'],
+    ['tie', 'Parecidas'],
+    ['measuring', 'Comparando'],
+  ] as const)('says the %s state in words on the row', (verdict, words) => {
+    mount({}, { verdict })
+    const pill = within(screen.getByTestId('library-row')).getByTestId('library-row-state')
+    expect(pill).toHaveTextContent(words)
+    expect(pill).toHaveAccessibleName(words)
+    expect(pill).toHaveAttribute('data-state', verdict)
   })
 
-  // The table under the row shows the figures; why they decide (a lossy source, a limiter) is
-  // said once, on the verdict's glyph, instead of a sentence above the table.
-  it('names the reason with the verdict when there is one', () => {
-    mount({ verdict: 'library', verdictDetail: 'Este archivo tiene pérdida (MP3).' })
-    expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
-      'Hay una copia mejor. Este archivo tiene pérdida (MP3).',
-    )
+  // Another version is told apart from a copy that is merely alike, and its length is what
+  // tells it apart at a glance: 8:03 here against 7:28 in the library.
+  it('names another version with the library copy length', () => {
+    mount({}, { verdict: 'different', durationSec: 448.6 })
+    const pill = screen.getByTestId('library-row-state')
+    expect(pill).toHaveTextContent('Otra versión · 7:28')
+    expect(pill).toHaveAccessibleName('Otra versión · 7:28')
+    expect(pill).toHaveAttribute('data-state', 'different')
   })
 
-  // Japanese closes a sentence with 。, so the verdict and its reason join the way each
+  it('names another version without a length it does not know', () => {
+    mount({}, { verdict: 'different' })
+    expect(screen.getByTestId('library-row-state')).toHaveAccessibleName('Otra versión')
+  })
+
+  it('shows no state on a copy not measured yet', () => {
+    mount({}, { verdict: null })
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+    expect(screen.queryByTestId('library-row-state-slot')).toBeNull()
+  })
+
+  // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
+  // for a screen reader and the tooltip, so the row keeps one short word.
+  it('names the reason with the state when there is one', () => {
+    mount({}, { verdict: 'library', detail: 'Este archivo tiene pérdida (MP3).' })
+    const pill = screen.getByTestId('library-row-state')
+    expect(pill).toHaveTextContent(/^Mejor allí$/)
+    expect(pill).toHaveAccessibleName('Mejor allí. Este archivo tiene pérdida (MP3).')
+    expect(hoverTooltip(pill)).toBe('Mejor allí. Este archivo tiene pérdida (MP3).')
+  })
+
+  // Japanese closes a sentence with 。, so the state and its reason join the way each
   // language punctuates, not with an ASCII period glued in by code.
-  it('joins the verdict and its reason with the language own full stop', async () => {
+  it('joins the state and its reason with the language own full stop', async () => {
     await i18n.changeLanguage('ja')
     try {
-      mount({ verdict: 'library', verdictDetail: '理由' })
-      expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
-        'より良いコピーがあります。理由',
-      )
+      mount({}, { verdict: 'library', detail: '理由' })
+      const name = screen.getByTestId('library-row-state').getAttribute('aria-label') ?? ''
+      expect(name.endsWith('。理由')).toBe(true)
     } finally {
       await i18n.changeLanguage('es')
     }
   })
 
-  it('shows no verdict until there is one', () => {
-    mount({ verdict: null })
+  // The two greens and the amber used to be told apart by shape; now the word does it, so
+  // the amber is never carried by colour alone.
+  it('keeps every settled state in words of its own', () => {
+    const words = (['same', 'here', 'library', 'different', 'tie'] as const).map((verdict) => {
+      mount({}, { verdict })
+      const text = screen.getByTestId('library-row-state').textContent
+      cleanup()
+      return text
+    })
+    expect(new Set(words).size).toBe(5)
+  })
+
+  // The row must not jump when the measurement lands: the result takes the place of
+  // "Comparing" in a slot that keeps the measuring pill's width reserved underneath.
+  it('keeps the state slot as wide as the measuring pill once the result lands', () => {
+    mount({}, { verdict: 'measuring' })
+    const measuringSizer = screen.getByTestId('library-row-state-sizer')
+    expect(measuringSizer).toHaveTextContent('Comparando')
+    expect(measuringSizer).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByTestId('library-row-state-slot')).toContainElement(
+      screen.getByTestId('library-row-state'),
+    )
+    cleanup()
+    mount({}, { verdict: 'same' })
+    const slot = screen.getByTestId('library-row-state-slot')
+    expect(slot).toContainElement(screen.getByTestId('library-row-state'))
+    expect(within(slot).getByTestId('library-row-state-sizer')).toHaveTextContent('Comparando')
+  })
+
+  // An identical copy has nothing to weigh, so its row is not a control that opens nothing.
+  it('never makes an identical copy a button', () => {
+    mount({}, { verdict: 'same' })
+    expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+    expect(screen.queryByTestId('comparison')).toBeNull()
+  })
+
+  // Open, the rows say each copy's state; the header saying it again was the same thing twice.
+  it('keeps the header free of a state while the section is open', () => {
+    mount({}, { verdict: 'library' })
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // Folded, the rows are hidden, so the header carries the state that most needs the reader.
+  it('carries the most urgent state in the header when folded', () => {
+    mount({
+      open: false,
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'different', durationSec: 300 }),
+        row({ id: 'serato', name: 'Serato', verdict: 'here' }),
+      ],
+    })
+    const pill = screen.getByTestId('library-verdict')
+    expect(pill).toHaveAttribute('data-state', 'here')
+    expect(pill).toHaveAccessibleName('Esta es mejor')
+  })
+
+  // With several programs "better there" cannot say where, so the folded header names it.
+  it('names the program holding the better copy when folded over several rows', () => {
+    mount({
+      open: false,
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'engine', name: 'Engine DJ', verdict: 'library', detail: 'Razón.' }),
+      ],
+    })
+    const pill = screen.getByTestId('library-verdict')
+    expect(pill).toHaveTextContent(/^Mejor en Engine DJ$/)
+    expect(pill).toHaveAccessibleName('Mejor en Engine DJ. Razón.')
+  })
+
+  it('says better there plainly when folded over one row', () => {
+    mount({ open: false }, { verdict: 'library' })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Mejor allí$/)
+  })
+
+  it('says another version in the folded header without a length', () => {
+    mount({ open: false }, { verdict: 'different', durationSec: 300 })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Otra versión$/)
+  })
+
+  it('shows no folded state until there is one', () => {
+    mount({ open: false }, { verdict: null })
     expect(screen.queryByTestId('library-verdict')).not.toBeInTheDocument()
   })
 
@@ -113,35 +199,6 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row-format')).toHaveTextContent('AIFF 24/48')
   })
 
-  // The header's amber triangle already says the library holds a better copy; a second
-  // amber mark on the only row told the reader the same thing twice.
-  it('says a better copy once, in the header, when there is one row', () => {
-    mount({ verdict: 'library' }, { better: true })
-    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
-    const row = screen.getByTestId('library-row')
-    expect(within(row).getAllByRole('img')).toEqual([screen.getByTestId('library-row-icon')])
-  })
-
-  // With several programs the header cannot say which one holds the better copy, so that row
-  // carries a small triangle, named for a screen reader and the tooltip, and no words.
-  it('marks only the rows whose copy beats this file when there are several', () => {
-    mount({
-      verdict: 'library',
-      rows: [
-        row({ id: 'appleMusic', name: 'Apple Music', better: false }),
-        row({ id: 'rekordbox', name: 'rekordbox', better: true }),
-        row({ id: 'serato', name: 'Serato', better: false }),
-      ],
-    })
-    const [music, rekordbox, serato] = screen.getAllByTestId('library-row')
-    expect(within(music).queryByTestId('library-row-better')).toBeNull()
-    expect(within(serato).queryByTestId('library-row-better')).toBeNull()
-    const mark = within(rekordbox).getByTestId('library-row-better')
-    expect(mark).toHaveAccessibleName('Mejor que este archivo')
-    expect(hoverTooltip(mark)).toBe('Mejor que este archivo')
-    expect(rekordbox.textContent).not.toContain('Mejor')
-  })
-
   it('opens the comparison from the row', () => {
     const { onToggleComparison } = mount({}, { comparisonOpen: false })
     expect(screen.queryByTestId('comparison')).not.toBeInTheDocument()
@@ -153,8 +210,8 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row')).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('renders a plain row without format or chevron', () => {
-    mount({}, { format: '', comparison: undefined })
+  it('renders a plain row without format, state or chevron', () => {
+    mount({}, { format: '', verdict: null, comparison: undefined })
     const plain = screen.getByTestId('library-row')
     expect(plain.tagName).not.toBe('BUTTON')
     const icon = screen.getByTestId('library-row-icon')
