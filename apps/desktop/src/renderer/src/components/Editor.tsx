@@ -199,9 +199,10 @@ interface Props {
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   onClearAll?: () => void
   autoMatchDeclined?: boolean
-  // Reports which track (if any) has a field focused, so the background auto-match sweep
-  // can leave the row being typed into alone (see App's editingRef). null on blur.
-  onFieldFocusChange?: (id: string | null) => void
+  // Reports which tracks a focused field writes to (every selected one in a multi-select,
+  // since a bulk edit lands on all of them), so the background auto-match sweep can leave
+  // the rows being typed into alone (see App's editingRef). Empty on blur.
+  onFieldFocusChange?: (ids: readonly string[]) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
@@ -430,6 +431,9 @@ export const Editor = memo(function Editor({
   } = appSettings
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  // A bulk field writes to every selected track, so all of them are under edit, not just
+  // the anchor the form is keyed on.
+  const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
@@ -1791,11 +1795,11 @@ export const Editor = memo(function Editor({
                 reopen the very window it closes. onChange (a text commit) also confirms the row
                 is under active edit, in case focus arrived without a focus event we saw. */}
             <div
-              onFocusCapture={() => onFieldFocusChange?.(item.id)}
-              onChangeCapture={() => onFieldFocusChange?.(item.id)}
+              onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+              onChangeCapture={() => onFieldFocusChange?.(editedIds)}
               onBlurCapture={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-                  onFieldFocusChange?.(null)
+                  onFieldFocusChange?.([])
               }}
             >
               <MetadataForm

@@ -2707,6 +2707,49 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
   })
+
+  // With two tracks selected, a field typed in the editor writes to both. While the
+  // user is still in the form, a probe that read the tracks after that write must not
+  // land on either one, or the second track gets Discogs's album over the one the user
+  // just typed while the first keeps theirs and the selection quietly splits.
+  it('leaves every selected track alone while a bulk field is under edit', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    const getRelease = vi.fn(async () => {
+      await gate
+      return release
+    })
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'album'] }),
+        ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1], { metaKey: true })
+
+    const album = await screen.findByTestId('field-album')
+    fireEvent.focus(album)
+    fireEvent.change(album, { target: { value: 'Hand Typed' } })
+    fireEvent.keyDown(album, { key: 'Enter' })
+
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(2))
+    releaseGate()
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Hand Typed'))
+  })
 })
 
 beforeAll(installDragEvent)

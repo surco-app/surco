@@ -663,11 +663,11 @@ export default function App(): React.JSX.Element {
   // Live view of the Apple Music library snapshot for the sweep, kept current below once
   // useTracksView has computed it (the sweep reads it at apply time, not at render).
   const libraryIndexRef = useRef<AppleMusicIndex | null>(null)
-  // The track whose editor field currently holds focus, set by the Editor on focus/blur.
+  // The tracks whose editor field currently holds focus, set by the Editor on focus/blur.
   // The sweep reads it so a match can't overwrite a row while the user is typing into it —
   // the field's buffered edit isn't in the live meta yet, so the meta guard alone can't
   // see it (see useAutoMatch's editingRef).
-  const editingRef = useRef<string | null>(null)
+  const editingRef = useRef<readonly string[]>([])
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prefetchedPath = useRef<string | null>(null)
   const queryClient = useQueryClient()
@@ -2948,9 +2948,9 @@ export default function App(): React.JSX.Element {
   })
 
   // Stable like the other editor props so a search keystroke doesn't re-render the
-  // memoized Editor: records which track's field has focus for the sweep's edit guard.
-  const onFieldFocusChange = useStableCallback((id: string | null) => {
-    editingRef.current = id
+  // memoized Editor: records which tracks' field has focus for the sweep's edit guard.
+  const onFieldFocusChange = useStableCallback((ids: readonly string[]) => {
+    editingRef.current = ids
   })
 
   const onChangeTracksPlaylists = useStableCallback(
