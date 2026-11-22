@@ -81,7 +81,7 @@ export function SweepsPill({
           open ? 'bg-[var(--color-hover)]' : ''
         }`}
       >
-        <span className="flex items-center gap-1">
+        <span className="mr-1 flex items-center gap-1.5">
           {tasks.map((task, i) => {
             const Icon = iconFor(task, slowed)
             return (
@@ -102,7 +102,7 @@ export function SweepsPill({
         </span>
         <span
           data-testid="sweeps-percent"
-          className="min-w-[4.5ch] text-right text-fg-muted tabular-nums"
+          className="min-w-[4.5ch] text-left text-fg-muted tabular-nums"
         >
           {new Intl.NumberFormat(i18n.language, { style: 'percent' }).format(fraction)}
         </span>
