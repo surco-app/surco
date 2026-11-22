@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { GENRE_TAGS } from '../lib/bulkEdit'
@@ -643,5 +643,49 @@ describe('Field read-only', () => {
       <Field name="title" label="Title" value="" onChange={vi.fn()} readOnly readOnlyNote="Own" />,
     )
     expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
+  })
+
+  // In a selection, Title is shown, not edited: it reads as text in the same row so the form
+  // does not jump between one track and many, while quality keeps its dashed box.
+  it('draws a plain read-only field as text without changing the row, and still announces its note', () => {
+    render(
+      <>
+        <Field
+          name="title"
+          label="Title"
+          value=""
+          onChange={vi.fn()}
+          readOnly
+          plain
+          readOnlyNote="Own"
+        />
+        <Field name="quality" label="Quality" value="Good" onChange={vi.fn()} readOnly />
+      </>,
+    )
+    expect(screen.getByTestId('field-title')).toHaveAttribute('data-plain', 'true')
+    expect(screen.getByTestId('field-quality')).not.toHaveAttribute('data-plain')
+    expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
+  })
+
+  // The placeholder is cut with an ellipsis in a narrow form, so the whole text rides in a tooltip.
+  it('keeps the whole list of differing values in a tooltip', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        onChange={vi.fn()}
+        mixed
+        placeholder="A · B · C"
+      />,
+    )
+    const input = screen.getByTestId('field-artist')
+    for (const type of ['pointerenter', 'pointermove']) {
+      input.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
+    }
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('A · B · C')
+    vi.useRealTimers()
   })
 })

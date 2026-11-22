@@ -326,7 +326,22 @@ describe('buildFieldSpecs (bulk mode)', () => {
       { value: 'Oliver Gil', count: 2 },
       { value: 'Aaron Sevilla', count: 1 },
     ])
-    expect(artist?.placeholder).toBe('editor.valuesCount')
+    expect(artist?.placeholder).toBe('Oliver Gil · Aaron Sevilla')
+  })
+
+  // A count tells the user nothing about what is there; two or three names fit and say it.
+  it('lists up to three differing values in the placeholder, most common first', () => {
+    const build = (artists: string[]) =>
+      buildFieldSpecs(
+        params({
+          isMulti: true,
+          selectedTracks: artists.map((artist, i) => track(`t${i}`, { artist })),
+          visibleFields: ['artist'],
+        }),
+      ).find((s) => s.key === 'artist')
+    expect(build(['A', 'B', 'B'])?.placeholder).toBe('B · A')
+    expect(build(['A', 'B', 'C'])?.placeholder).toBe('A · B · C')
+    expect(build(['A', 'B', 'C', 'D'])?.placeholder).toBe('editor.valuesCount')
   })
 
   it('offers no values when the selection agrees', () => {
@@ -366,7 +381,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     const genre = specs.find((s) => s.key === 'genre')
     expect(genre?.value).toBe('')
-    expect(genre?.placeholder).toBe('editor.valuesCount')
+    expect(genre?.placeholder).toBe('Techno · House')
   })
 
   // "Multiple values" does not fit a box sized for four digits and got cut to "Multi". A
@@ -382,7 +397,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     const year = specs.find((s) => s.key === 'year')
     expect(year?.width).toBe('short')
-    expect(year?.placeholder).toBe('…')
+    expect(year?.placeholder).toBe('2007 · 2008')
     expect(year?.mixed).toBe(true)
   })
 
@@ -466,7 +481,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
     expect(build([a, c])).toMatchObject({
       value: '',
-      placeholder: 'editor.valuesCount',
+      placeholder: 'NM · VG',
       mixed: true,
     })
     expect(build([a, c, d])?.mixedValues).toEqual([
@@ -599,14 +614,15 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     expect(specs[0]).toMatchObject({ readOnly: true, value: '' })
     expect(specs[0].mixed).toBeUndefined()
-    expect(specs[0].placeholder).toBe('editor.valuesCount')
+    expect(specs[0].placeholder).toBe('One · Two')
+    expect(specs[0].plain).toBe(true)
     expect(specs[0].readOnlyNote).toBe('editor.perTrackOnly')
     expect(specs[0].mixedValues).toBeUndefined()
     specs[0].onChange('x')
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
-  it('shows an ellipsis for differing values in a field with a width', () => {
+  it('names two differing values in a field with a width and counts three', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
@@ -614,7 +630,19 @@ describe('buildFieldSpecs (bulk mode)', () => {
         visibleFields: ['bpm'],
       }),
     )
-    expect(specs[0]).toMatchObject({ readOnly: true, value: '', placeholder: '…' })
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '', placeholder: '120 · 128' })
+    const three = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [
+          track('a', { year: '2019' }),
+          track('b', { year: '2020' }),
+          track('c', { year: '2021' }),
+        ],
+        visibleFields: ['year'],
+      }),
+    )
+    expect(three[0].placeholder).toBe('editor.valuesCount')
   })
 
   it('shows the common BPM read-only and keeps the width that pairs it with Key', () => {
