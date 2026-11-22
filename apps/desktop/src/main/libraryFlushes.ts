@@ -53,6 +53,7 @@ import type { QueueOp } from './rekordboxQueueOps'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
+import { seratoRootOf } from './seratoCrateFile'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { seratoTagOps, syncSeratoTags } from './seratoTagSync'
 import { getSettings } from './settings'
@@ -566,10 +567,17 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
   // Serato follows a replacement with Add to Serato alone, as Traktor does: the old file is
   // retired, and the entry left on it loses its cues and crates. Tags, adds and crates stay
   // behind their own settings, so this gate opens only the repoint.
-  const held =
-    syncSerato || addToSerato ? seratoLibraryHas(queue.roots()) : (_path: string) => false
+  // A file outside every Serato library is never held there, and a move queued for it would
+  // wait for nothing.
+  const roots = queue.roots()
+  const held = syncSerato || addToSerato ? seratoLibraryHas(roots) : (_path: string) => false
   const moves = run.repoints.filter(
-    (r) => r.replaced && !r.seratoCarryFailed && r.from !== r.to && held(r.from),
+    (r) =>
+      r.replaced &&
+      !r.seratoCarryFailed &&
+      r.from !== r.to &&
+      seratoRootOf(r.from, roots) !== null &&
+      held(r.from),
   )
   const ops = [
     ...libraryTrackOps(

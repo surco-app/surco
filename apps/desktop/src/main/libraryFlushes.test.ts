@@ -1090,6 +1090,17 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
       delete (REPOINTS[0] as Record<string, unknown>).meta
     })
 
+    it('queues no move for a replaced file outside every Serato library, which Serato cannot hold', async () => {
+      await replacing({ syncSerato: true, addToSerato: true }, {}, async () => {
+        const serato = {
+          ...queue(),
+          roots: () => [{ dir: seratoHome([])[0].dir, root: '/Volumes/Other' }],
+        }
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      })
+    })
+
     it('does not repoint Serato with both Sync and Add off', async () => {
       await replacing({ syncSerato: false, addToSerato: false }, {}, async (serato) => {
         await flush(serato)
