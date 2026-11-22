@@ -4,7 +4,7 @@
 
 **Spec:** `docs/superpowers/specs/2026-11-22-revisar-sustituidas-design.md`
 
-## Fases, en este orden (cada una mergeable)
+## Fases, en este orden
 
 | Fase | Plan | Tareas |
 |---|---|---|
@@ -27,5 +27,5 @@
 ## Reglas de cierre de cada fase
 
 - Suite entera desde `apps/desktop` con código de salida 0 y sin `Unhandled`/`Errors`, `npx tsc --build` desde `apps/desktop`, y lint de escritorio y web enteros.
-- Merge a main local sin push al acabar cada fase. Ningún release hasta que Vicent lo diga.
+- Todo se queda en la rama `revisar-sustituidas` hasta acabar y probar las cuatro fases. Entonces se hace merge a main local sin push. Ningún release hasta que Vicent lo diga.
 - Las pruebas reales usan copias, salvo VirtualDJ. Hay que avisar a Vicent antes de tocar rekordbox o Music.
