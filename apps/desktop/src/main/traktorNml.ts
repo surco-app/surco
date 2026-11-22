@@ -909,3 +909,24 @@ export function nmlCopyInfo(
   ).length
   return { cues, playlists }
 }
+
+export function volumeOf(
+  nml: string,
+  volume: string | null,
+  bootVolume: string,
+): { volume: string; id: string } | null {
+  const collection = nml.match(/<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/)?.[0] ?? ''
+  for (const [tag] of collection.matchAll(/<LOCATION\b[^>]*>/g)) {
+    const name = attr(tag, 'VOLUME')
+    const id = attr(tag, 'VOLUMEID')
+    if (!id) continue
+    const same =
+      volume === null
+        ? name === '' || name === bootVolume
+        : /^[A-Za-z]:$/.test(volume)
+          ? name.toUpperCase() === volume.toUpperCase()
+          : name.normalize('NFC') === volume.normalize('NFC')
+    if (same) return { volume: name, id }
+  }
+  return null
+}
