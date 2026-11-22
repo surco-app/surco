@@ -70,7 +70,10 @@ describe.skipIf(process.platform !== 'darwin')(
         },
       ])
 
+      // The app's self-check holds the verdict until the rekordbox repoint is written. Without
+      // it the verdict lands first, and under load the old file is judged still in use and kept.
       surco = await openSurco({
+        verify: true,
         settings: { outputFormat: 'aiff', syncRekordbox: true, rekordboxDbPath: db },
         destination: 'appleMusic',
       })
