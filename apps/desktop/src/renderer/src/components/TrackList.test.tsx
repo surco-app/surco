@@ -622,9 +622,31 @@ describe('TrackList', () => {
       }),
     ])
     const classes = screen.getByTestId('track-key').className.split(' ')
-    expect(classes).toContain('max-w-[5.5rem]')
+    expect(classes).toContain('max-w-[3.5rem]')
     expect(classes).toContain('truncate')
     expect(classes).toContain('shrink-0')
+  })
+
+  it('lets the DJ read a free-text key tag the pill had to cut, on hover', () => {
+    renderList([
+      track({
+        id: 'a',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: 'F#m (11A) Energy 7' } as TrackMetadata,
+      }),
+    ])
+    expect(hoverTooltip(screen.getByTestId('track-key'))).toEqual('F#m (11A) Energy 7')
+  })
+
+  it('raises no tooltip on a key the pill shows whole, so hovering the column stays quiet', () => {
+    renderList([
+      track({
+        id: 'a',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: '8A' } as TrackMetadata,
+      }),
+    ])
+    expect(hoverTooltip(screen.getByTestId('track-key'))).toBeNull()
   })
 
   it('writes the key in the notation chosen in Settings, so the list reads like the DJ software', () => {

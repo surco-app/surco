@@ -25,7 +25,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { keyIn } from '../../../shared/camelot'
+import { camelotOf, keyIn } from '../../../shared/camelot'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
@@ -999,8 +999,11 @@ const TrackRow = memo(function TrackRow({
                 {key && (
                   <span
                     data-testid="track-key"
-                    className={`max-w-[5.5rem] shrink-0 truncate rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+                    className={`max-w-[3.5rem] shrink-0 truncate rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
                   >
+                    {camelotOf(t.meta.key) === null && (
+                      <Tooltip label={key} align="end" scope="dot" />
+                    )}
                     {key}
                   </span>
                 )}
