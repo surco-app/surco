@@ -790,12 +790,13 @@ export const Editor = memo(function Editor({
           hasKnee: spectrumInHand?.hasKnee,
         },
       ) !== null
+  const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const programCopies = useProgramCopies({
     inputPath: item.inputPath,
     meta: item.meta,
     durationSec: item.duration,
     suggestedMeta,
-    enabled: !isMulti,
+    enabled: !isMulti && !libraryHidden,
   })
   const comparedProgramCopies = programCopies.filter((copy) => !copy.isThisFile)
   const programVerdicts = useCopyVerdicts(
@@ -1630,7 +1631,6 @@ export const Editor = memo(function Editor({
     ...(musicRow ? [musicRowVerdict] : []),
     ...programRows.map((p) => p.verdict),
   ])
-  const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const showLibrary = !isMulti && libraryRows.length > 0 && !libraryHidden
 
   return (

@@ -5638,6 +5638,27 @@ describe('Editor Apple Music library section', () => {
       expect(dj.collection).not.toHaveBeenCalled()
     })
 
+    it('reads no DJ collection while the section is hidden, since nothing would show what it found', async () => {
+      setApi('win32')
+      const api = window.api as unknown as Record<string, unknown>
+      const dj = djReads({
+        rekordbox: {
+          collection: async () => [
+            { contentId: 'r1', path: '/r/Strobe.wav', title: 'Strobe', artist: 'deadmau5' },
+          ],
+        },
+      })
+      api.dj = dj
+      renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+        syncRekordbox: true,
+        editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+          s.id === 'library' ? { ...s, hidden: true } : s,
+        ),
+      })
+      await new Promise((r) => setTimeout(r, 50))
+      expect(dj.collection).not.toHaveBeenCalled()
+    })
+
     it('shows rekordbox and Traktor rows when both collections hold the track', async () => {
       renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
