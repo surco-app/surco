@@ -12350,31 +12350,55 @@ describe('App copy and paste metadata from the editor', () => {
 })
 
 describe('App paste metadata onto a selection', () => {
-  const setup = async () => {
+  const coverOf = (path: string) =>
+    path === '/music/a.wav'
+      ? 'data:image/jpeg;base64,AA'
+      : path === '/music/b.wav'
+        ? 'data:image/jpeg;base64,BB'
+        : null
+  const setup = async (copy = true) => {
     const tags: Record<string, Record<string, string>> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara', album: 'Source LP', trackNumber: '1' },
       '/music/b.wav': { title: 'Bravo', artist: 'Old B', album: 'Old LP', trackNumber: '2' },
       '/music/c.wav': { title: 'Charlie', artist: 'Old C', album: 'Old LP', trackNumber: '3' },
     }
     setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ visibleFields: ['title', 'artist', 'album', 'trackNumber'] }),
+        ),
       pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
       readTags: vi.fn(async (path: string) => tags[path]),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi.fn((path: string) => {
+        const thumbUrl = coverOf(path)
+        return Promise.resolve(thumbUrl ? { thumbUrl, width: 600, height: 600 } : null)
+      }),
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     const rows = screen.getAllByTestId('track-row')
+    await waitFor(() => expect(within(rows[1]).getByTestId('track-cover')).toBeInTheDocument())
     fireEvent.click(rows[0])
-    fireEvent.contextMenu(rows[0])
-    fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    if (copy) {
+      fireEvent.contextMenu(rows[0])
+      fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    }
     fireEvent.click(rows[1])
     fireEvent.click(rows[2], { shiftKey: true })
     return rows
   }
-  const valueAfterSelecting = async (row: HTMLElement, testid: string) => {
+  const open = async (row: HTMLElement, testid: string) => {
     fireEvent.click(row)
     await waitFor(() => expect(screen.getByTestId(testid)).toBeInTheDocument())
     return (screen.getByTestId(testid) as HTMLInputElement).value
+  }
+  const coverSrc = async (row: HTMLElement) => {
+    fireEvent.click(row)
+    await waitFor(() => expect(screen.getByTestId('field-title')).toBeInTheDocument())
+    return screen.queryByTestId('cover-preview')?.getAttribute('src') ?? null
   }
 
   // Dressing a whole release from one good track is the point of the clipboard; the
@@ -12386,10 +12410,15 @@ describe('App paste metadata onto a selection', () => {
     fireEvent.click(screen.getByTestId('paste-meta-btn'))
     expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
 
-    expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('DJ Lara')
-    expect(await valueAfterSelecting(rows[1], 'field-title')).toBe('Bravo')
-    expect(await valueAfterSelecting(rows[2], 'field-artist')).toBe('DJ Lara')
-    expect(await valueAfterSelecting(rows[2], 'field-title')).toBe('Charlie')
+    for (const [row, title, number] of [
+      [rows[1], 'Bravo', '2'],
+      [rows[2], 'Charlie', '3'],
+    ] as const) {
+      expect(await open(row, 'field-artist')).toBe('DJ Lara')
+      expect(await open(row, 'field-album')).toBe('Source LP')
+      expect(await open(row, 'field-title')).toBe(title)
+      expect(await open(row, 'field-trackNumber')).toBe(number)
+    }
   })
 
   // The paste asks for no confirmation because one undo gives every row back.
@@ -12399,11 +12428,35 @@ describe('App paste metadata onto a selection', () => {
     fireEvent.click(screen.getByTestId('paste-meta-btn'))
     await screen.findByText('Metadata pasted')
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.queryByTestId('paste-meta-btn')).toBeNull())
 
-    await waitFor(async () =>
-      expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('Old B'),
-    )
-    expect(await valueAfterSelecting(rows[2], 'field-artist')).toBe('Old C')
+    expect(await open(rows[1], 'field-artist')).toBe('Old B')
+    expect(await open(rows[2], 'field-artist')).toBe('Old C')
+  })
+
+  // A copied cover dresses every selected row, and the single undo must hand each row
+  // its own cover back, not leave the pasted one or blank the rows that had none.
+  it('pastes the copied cover onto every selected track and undoes it with their own covers', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    await screen.findByText('Metadata pasted')
+
+    expect(await coverSrc(rows[1])).toBe('data:image/jpeg;base64,AA')
+    expect(await coverSrc(rows[2])).toBe('data:image/jpeg;base64,AA')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+
+    expect(await coverSrc(rows[1])).toBe('data:image/jpeg;base64,BB')
+    expect(await coverSrc(rows[2])).toBeNull()
+    expect(await open(rows[1], 'field-artist')).toBe('Old B')
+  })
+
+  it('disables the editor paste while nothing has been copied', async () => {
+    await setup(false)
+    openMore()
+    expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
   })
 
   it('offers the paste in the list menu when several rows are selected', async () => {
@@ -12413,7 +12466,7 @@ describe('App paste metadata onto a selection', () => {
     fireEvent.contextMenu(rows[2])
     fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
     expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
-    expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('DJ Lara')
+    expect(await open(rows[1], 'field-artist')).toBe('DJ Lara')
   })
 })
 
