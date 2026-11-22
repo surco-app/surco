@@ -137,11 +137,11 @@ export function CopyComparison({
                   key={row.id}
                   data-testid={`copy-row-${row.id}`}
                   data-decides={decides ? 'true' : undefined}
-                  className="border-t border-[var(--color-line)]"
+                  className="border-t border-[var(--color-line)] @max-[22rem]:relative"
                 >
                   <th
                     scope="row"
-                    className={`px-1 py-2 @min-[22rem]:w-px @min-[22rem]:whitespace-nowrap @min-[22rem]:px-3 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
+                    className={`px-1 py-2 @max-[22rem]:absolute @max-[22rem]:left-1 @max-[22rem]:top-1 @max-[22rem]:p-0 @min-[22rem]:w-[30%] @min-[22rem]:px-3 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
                   >
                     {row.label}
                   </th>
@@ -151,7 +151,7 @@ export function CopyComparison({
                       <td
                         key={side}
                         data-winner={wins ? side : undefined}
-                        className={`px-1 py-2 @min-[22rem]:px-3 text-right text-sm font-medium ${wins ? winnerTone : ''}`}
+                        className={`whitespace-nowrap px-1 py-2 @max-[22rem]:pt-5 @min-[22rem]:px-3 text-right text-xs @min-[22rem]:text-sm font-medium ${wins ? winnerTone : ''}`}
                       >
                         {row[side]}
                       </td>
