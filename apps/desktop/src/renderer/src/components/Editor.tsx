@@ -1116,7 +1116,9 @@ export const Editor = memo(function Editor({
   const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
-        fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+        fields: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
+          missing.map((key) => tr(`fields.${key}`)),
+        ),
       })
     : undefined
   const incompleteReason = isMulti

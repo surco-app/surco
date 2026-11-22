@@ -187,6 +187,8 @@
     "convertingCount": "Convertendo… {{done}}/{{total}}",
     "leftOutMissing_one": "{{count}} faixa fica de fora porque falta {{fields}}",
     "leftOutMissing_other": "{{count}} faixas ficam de fora porque falta {{fields}}",
+    "leftOutMissingSeveral_one": "{{count}} faixa fica de fora porque faltam {{fields}}",
+    "leftOutMissingSeveral_other": "{{count}} faixas ficam de fora porque faltam {{fields}}",
     "leftOutSerato_one": "{{count}} faixa fica de fora, o Serato a perderia com seus cues",
     "leftOutSerato_other": "{{count}} faixas ficam de fora, o Serato as perderia com seus cues",
     "convertSelected_one": "Converter {{count}} selecionada",

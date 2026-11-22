@@ -4191,6 +4191,17 @@ describe('Editor on a track opened from Serato', () => {
 })
 
 describe('Editor required-field gate', () => {
+  // One track and a selection name what is missing the same way: as a list in the UI
+  // language, not as a comma run ("Title, Artist").
+  it('names the missing fields of one track as a list', () => {
+    renderEditor({ id: 'a', meta: { title: '', artist: '' } }, 'wav', {
+      requiredFields: ['title', 'artist'],
+    })
+    expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
+      'Missing required fields: Title and Artist',
+    )
+  })
+
   // The convert button used to fail late: it stayed enabled with empty required
   // fields and only surfaced the error after the click. Blocking it until the fields
   // are filled turns a dead-end error into clear, upfront guidance; the format menu

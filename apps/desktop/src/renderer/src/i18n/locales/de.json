@@ -187,6 +187,8 @@
     "convertingCount": "Wird konvertiert… {{done}}/{{total}}",
     "leftOutMissing_one": "{{count}} Track bleibt draußen, ihm fehlt {{fields}}",
     "leftOutMissing_other": "{{count}} Tracks bleiben draußen, ihnen fehlt {{fields}}",
+    "leftOutMissingSeveral_one": "{{count}} Track bleibt draußen, ihm fehlen {{fields}}",
+    "leftOutMissingSeveral_other": "{{count}} Tracks bleiben draußen, ihnen fehlen {{fields}}",
     "leftOutSerato_one": "{{count}} Track bleibt draußen, Serato würde ihn und seine Cues verlieren",
     "leftOutSerato_other": "{{count}} Tracks bleiben draußen, Serato würde sie und ihre Cues verlieren",
     "convertSelected_one": "{{count}} ausgewählten Track konvertieren",

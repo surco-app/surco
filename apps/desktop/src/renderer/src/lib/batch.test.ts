@@ -79,17 +79,35 @@ describe('eligibleForBatch', () => {
 })
 
 // "le falta Título, Artista" reads as a list cut short; the language's own list words say
-// it as a sentence would ("Título y Artista", "Title and Artist").
+// it as a sentence would ("Título y Artista", "Title and Artist"), and the verb agrees with
+// how many fields are missing ("le faltan" for two, "le falta" for one).
 describe('leftOutNote', () => {
-  const gate = { missing: { count: 2, fields: ['title', 'artist'] }, serato: 0, mixed: false }
+  const gate = (fields: string[]) => ({ missing: { count: 1, fields }, serato: 0, mixed: false })
+  const noteIn = async (language: string, fields: string[]) => {
+    await i18n.changeLanguage(language)
+    try {
+      return leftOutNote(gate(fields), i18n.getFixedT(language), language)
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  }
 
   it.each([
     ['en', 'Title and Artist'],
-    ['es', 'Título y Artista'],
-  ])('joins the missing fields with the %s list words', async (language, joined) => {
-    await i18n.changeLanguage(language)
-    expect(leftOutNote(gate, i18n.getFixedT(language), language)).toContain(joined)
-    await i18n.changeLanguage('en')
+    ['es', 'le faltan Título y Artista'],
+    ['ca', 'li falten Títol i Artista'],
+    ['de', 'ihm fehlen Titel und Künstler'],
+    ['it', 'mancano Titolo e Artista'],
+    ['pt-BR', 'faltam Título e Artista'],
+  ])(
+    'joins several missing fields with the %s list words and a plural verb',
+    async (language, said) => {
+      expect(await noteIn(language, ['title', 'artist'])).toContain(said)
+    },
+  )
+
+  it('keeps the singular verb for one missing field', async () => {
+    expect(await noteIn('es', ['artist'])).toContain('le falta Artista')
   })
 })
 
