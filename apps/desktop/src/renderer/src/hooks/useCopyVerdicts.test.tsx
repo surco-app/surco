@@ -254,6 +254,15 @@ describe('useCopyVerdicts', () => {
     expect(result.current[1].checking).toBe(false)
   })
 
+  // A file check that itself fails says nothing about the file being gone, so the copy is
+  // treated as there: unreadable after the second read, never «not found».
+  it('reports a copy unreadable, not missing, when the file check itself fails', async () => {
+    failingCopyApi({ fileExists: vi.fn().mockRejectedValue(new Error('EIO')) })
+    const { result } = renderGone()
+    await waitFor(() => expect(result.current[0].unreadable).toBe(true))
+    expect(result.current[0].missing).toBe(false)
+  })
+
   it('stops checking once the copy is known to be gone', async () => {
     failingCopyApi({})
     const { result } = renderGone()

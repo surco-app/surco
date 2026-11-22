@@ -1654,7 +1654,7 @@ export const Editor = memo(function Editor({
                 ? 'unreadable'
                 : musicCopyReach?.checking
                   ? 'measuring'
-                  : libraryCopyBetter && (copyState === null || copyState === 'measuring')
+                  : libraryCopyBetter && (copyState === 'unmeasurable' || copyState === 'measuring')
                     ? 'library'
                     : libraryCopyPending && !libraryCopyPath
                       ? 'measuring'

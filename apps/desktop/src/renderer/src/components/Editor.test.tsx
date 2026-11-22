@@ -5870,6 +5870,16 @@ describe('Editor Apple Music library section', () => {
     expect(screen.getByTestId('library-row-state')).toHaveAccessibleName("Can't be measured")
   })
 
+  // Without any analysis the format and cutoff still say which copy is worse: a lossy file
+  // against a lossless library copy is not «can't be measured».
+  it('falls back to the format and cutoff check when neither copy can be analysed', async () => {
+    renderWithLibraryCopy({ here: null, library: null, hereLossy: true, showSpectrum: true })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'library'),
+    )
+    expect(screen.getByTestId('library-verdict')).toHaveAccessibleName('Your file is worse')
+  })
+
   // While the file check or the second read of a failed probe is still running the row keeps
   // saying it is comparing instead of going blank for a moment.
   it('says comparing while a failed probe waits for the file check', async () => {

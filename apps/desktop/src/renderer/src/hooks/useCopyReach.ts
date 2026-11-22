@@ -83,8 +83,8 @@ export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
       running.add(path)
       void queryClient
         .invalidateQueries({ queryKey: trackPropertiesOptions(path).queryKey, exact: true })
-        .then(() => {
-          pathsOf(reread, queryClient).add(path)
+        .then(() => pathsOf(reread, queryClient).add(path))
+        .finally(() => {
           running.delete(path)
           settle((n) => n + 1)
         })
