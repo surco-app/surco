@@ -11,6 +11,9 @@ import { trackPropertiesOptions } from './useTrackProperties'
 export interface CopyReach {
   missing: boolean
   unreadable: boolean
+  // A failed probe the file check and the second read have not settled yet: neither answer
+  // is known, so the row says it is still comparing.
+  checking: boolean
 }
 
 export type PropertiesResult = Pick<
@@ -40,10 +43,11 @@ function probeFailed(properties: PropertiesResult): boolean {
 // The paths already read a second time in this client's session: whether a failure is the
 // second one is a fact to keep, not to infer from clock readings that can tie.
 const reread = new WeakMap<QueryClient, Set<string>>()
+const inFlight = new WeakMap<QueryClient, Set<string>>()
 
-function rereadPaths(queryClient: QueryClient): Set<string> {
-  const known = reread.get(queryClient) ?? new Set<string>()
-  reread.set(queryClient, known)
+function pathsOf(book: WeakMap<QueryClient, Set<string>>, queryClient: QueryClient): Set<string> {
+  const known = book.get(queryClient) ?? new Set<string>()
+  book.set(queryClient, known)
   return known
 }
 
@@ -58,8 +62,8 @@ export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
   })
   const reach = copies.map(({ path, properties }, i) => {
     const failed = probeFailed(properties) && !properties.isFetching
-    const there = exists[i].data
-    const outdated = there === true && !rereadPaths(queryClient).has(path)
+    const there = exists[i].isError ? true : exists[i].data
+    const outdated = there === true && !pathsOf(reread, queryClient).has(path)
     return {
       path,
       outdated: failed && outdated,
@@ -74,13 +78,21 @@ export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
   useEffect(() => {
     if (!outdatedPaths) return
     for (const path of outdatedPaths.split('\n')) {
+      const running = pathsOf(inFlight, queryClient)
+      if (running.has(path)) continue
+      running.add(path)
       void queryClient
         .invalidateQueries({ queryKey: trackPropertiesOptions(path).queryKey, exact: true })
         .then(() => {
-          rereadPaths(queryClient).add(path)
+          pathsOf(reread, queryClient).add(path)
+          running.delete(path)
           settle((n) => n + 1)
         })
     }
   }, [queryClient, outdatedPaths])
-  return reach.map(({ missing, unreadable }) => ({ missing, unreadable }))
+  return reach.map(({ missing, unreadable }, i) => ({
+    missing,
+    unreadable,
+    checking: probeFailed(copies[i].properties) && !missing && !unreadable,
+  }))
 }

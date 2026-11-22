@@ -1365,7 +1365,7 @@
       }
     },
     "librarySectionTitle": "ライブラリ内",
-    "libraryStateSame": "同じファイル",
+    "libraryStateSame": "中身は同じ",
     "libraryStateHere": "あなたのファイルの方が良い",
     "libraryStateLibrary": "あなたのファイルの方が劣る",
     "libraryStateLibraryIn": "{{program}}のコピーの方が良い",
@@ -1375,6 +1375,7 @@
     "libraryStateThisFile": "このファイルです",
     "libraryStateMissing": "見つかりません",
     "libraryStateUnreadable": "読み込めません",
+    "libraryStateUnmeasurable": "測定できません",
     "libraryStateEven": "優劣なし",
     "libraryStateMeasuring": "比較中",
     "libraryVerdictWithReason": "{{verdict}}。{{reason}}"

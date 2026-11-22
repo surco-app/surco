@@ -19,6 +19,7 @@ export interface CopyVerdictState {
   format: string
   missing: boolean
   unreadable: boolean
+  checking: boolean
   here?: CopyFacts
   copy?: CopyFacts
 }

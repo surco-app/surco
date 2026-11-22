@@ -1375,6 +1375,7 @@
     "libraryStateThisFile": "Das ist diese Datei",
     "libraryStateMissing": "Nicht gefunden",
     "libraryStateUnreadable": "Nicht lesbar",
+    "libraryStateUnmeasurable": "Nicht messbar",
     "libraryStateEven": "Gleichwertig",
     "libraryStateMeasuring": "Wird verglichen",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"

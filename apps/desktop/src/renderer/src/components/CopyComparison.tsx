@@ -121,13 +121,11 @@ export function CopyComparison({
           <thead>
             <tr>
               <th />
-              <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                <span className="whitespace-nowrap">{tr('editor.copyThisFile')} ·</span>{' '}
-                <span className="whitespace-nowrap">{hereLabel}</span>
+              <th className="px-1 py-2 @min-[22rem]:px-3 @min-[22rem]:whitespace-nowrap text-right text-xs font-normal text-fg-dim">
+                {tr('editor.copyThisFile')} · {hereLabel}
               </th>
-              <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                <span className="whitespace-nowrap">{libraryName} ·</span>{' '}
-                <span className="whitespace-nowrap">{libraryLabel}</span>
+              <th className="px-1 py-2 @min-[22rem]:px-3 text-right text-xs font-normal text-fg-dim">
+                {libraryName} · {libraryLabel}
               </th>
             </tr>
           </thead>
@@ -143,7 +141,7 @@ export function CopyComparison({
                 >
                   <th
                     scope="row"
-                    className={`px-3 py-2 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
+                    className={`px-1 py-2 @min-[22rem]:w-px @min-[22rem]:whitespace-nowrap @min-[22rem]:px-3 text-left text-xs font-normal ${decides ? 'text-fg' : 'text-fg-dim'}`}
                   >
                     {row.label}
                   </th>
@@ -153,7 +151,7 @@ export function CopyComparison({
                       <td
                         key={side}
                         data-winner={wins ? side : undefined}
-                        className={`px-3 py-2 text-right text-sm font-medium ${wins ? winnerTone : ''}`}
+                        className={`px-1 py-2 @min-[22rem]:px-3 text-right text-sm font-medium ${wins ? winnerTone : ''}`}
                       >
                         {row[side]}
                       </td>

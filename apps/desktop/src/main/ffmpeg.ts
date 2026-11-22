@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
-import { VERSION_GAP_SEC } from '../shared/copyVersion'
+import { beyondVersionReach, VERSION_GAP_SEC } from '../shared/copyVersion'
 import { customTagName } from '../shared/customFields'
 import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
@@ -106,7 +106,6 @@ import {
   PAIR_SILENT_RMS,
   PAIR_WINDOW_SECONDS,
   VERSION_RATE,
-  VERSION_REACH_MAX_SECONDS,
 } from './pairLag'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
@@ -3470,8 +3469,9 @@ export async function headOffsetMs(
 // The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
 // VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
 // probe's one second; both copies are decoded here and searched again in the analysis worker
-// (pairLag.versionMatch) as far as the gap plus a second. A gap past its bounded reach is not
-// searched, and nothing is said about it.
+// (pairLag.versionMatch) as far as the gap plus a second. A gap past its bounded reach
+// (beyondVersionReach) is not searched: the renderer calls those lengths another version from
+// the durations alone.
 async function versionCorrelation(
   a: string,
   b: string,
@@ -3479,7 +3479,7 @@ async function versionCorrelation(
   signal?: AbortSignal,
 ): Promise<number | undefined> {
   const reachSec = gapSec + 1
-  if (reachSec > VERSION_REACH_MAX_SECONDS) return undefined
+  if (beyondVersionReach(gapSec)) return undefined
   const decode = (input: string): Promise<Float32Array> =>
     decodePcm(input, {
       sampleRate: VERSION_RATE,

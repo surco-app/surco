@@ -95,6 +95,18 @@ describe('compareCopies', () => {
       expect(compareCopies(edit(95), edit(30), undefined)).toEqual({ winner: 'tie' })
     })
 
+    // The renderer and the main process decide from the same two lengths: right at the edge of
+    // the reach, a gap the main process still searches is never called another version here.
+    it.each([
+      [53, 'tie'],
+      [54, 'different'],
+    ] as const)(
+      'calls a gap of %i s another version only once the search no longer reaches it',
+      (gap, winner) => {
+        expect(compareCopies(edit(100 + gap), edit(100), null)).toEqual({ winner })
+      },
+    )
+
     it('never calls a copy too short to hold a track another version from its length alone', () => {
       expect(compareCopies(edit(95), edit(4), null)).toEqual({ winner: 'tie' })
     })

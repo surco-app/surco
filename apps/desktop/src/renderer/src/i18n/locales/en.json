@@ -1375,7 +1375,8 @@
     "libraryStateThisFile": "It's this file",
     "libraryStateMissing": "Not found",
     "libraryStateUnreadable": "Can't be read",
-    "libraryStateEven": "Neither better",
+    "libraryStateUnmeasurable": "Can't be measured",
+    "libraryStateEven": "Neither is better",
     "libraryStateMeasuring": "Comparing",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

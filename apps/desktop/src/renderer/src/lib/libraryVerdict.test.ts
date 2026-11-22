@@ -26,6 +26,7 @@ describe('aggregateLibraryVerdict', () => {
       'different',
       'missing',
       'unreadable',
+      'unmeasurable',
       'tie',
       'even',
       'same',
@@ -47,10 +48,17 @@ describe('aggregateLibraryVerdict', () => {
 })
 
 describe('rowVerdict', () => {
-  const facts = { verdict: null, measuring: false, format: '', missing: false, unreadable: false }
+  const facts = {
+    verdict: null,
+    measuring: false,
+    format: '',
+    missing: false,
+    unreadable: false,
+    checking: false,
+  }
   it.each([
     [{ ...facts, measuring: true }, 'measuring'],
-    [facts, null],
+    [facts, 'unmeasurable'],
     [{ ...facts, verdict: { winner: 'tie', sameMaster: true } }, 'tie'],
     [{ ...facts, verdict: { winner: 'tie' } }, 'even'],
     [{ ...facts, verdict: { winner: 'different' } }, 'different'],
@@ -59,6 +67,7 @@ describe('rowVerdict', () => {
     [{ ...facts, verdict: { winner: 'same' } }, 'same'],
     [{ ...facts, missing: true }, 'missing'],
     [{ ...facts, unreadable: true }, 'unreadable'],
+    [{ ...facts, checking: true }, 'measuring'],
   ] as const)('maps %j to %s', (state, expected) => {
     expect(rowVerdict(state as unknown as CopyVerdictState)).toBe(expected)
   })

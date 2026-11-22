@@ -1,4 +1,4 @@
-import { VERSION_GAP_SEC, VERSION_REACH_MAX_SECONDS } from '../../../shared/copyVersion'
+import { beyondVersionReach, VERSION_GAP_SEC } from '../../../shared/copyVersion'
 import type { PairFacts, PairProbe } from '../../../shared/types'
 import { type ReplaceSide, replaceWarning } from './replaceWarning'
 
@@ -69,7 +69,7 @@ function isOtherVersion(a: CopyFacts, b: CopyFacts, pair: PairProbe | null): boo
   if (a.durationSec == null || b.durationSec == null) return false
   const gapSec = Math.abs(a.durationSec - b.durationSec)
   if (gapSec <= VERSION_GAP_SEC) return false
-  if (gapSec + 1 > VERSION_REACH_MAX_SECONDS) {
+  if (beyondVersionReach(gapSec)) {
     return Math.min(a.durationSec, b.durationSec) >= OTHER_VERSION.minDurationSec
   }
   if (pair?.versionCorrelation == null) return false

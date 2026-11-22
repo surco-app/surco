@@ -57,6 +57,7 @@ describe('LibrarySection', () => {
     ['measuring', 'Comparando'],
     ['missing', 'No se encuentra'],
     ['unreadable', 'No se puede leer'],
+    ['unmeasurable', 'No se puede medir'],
   ] as const)('says the %s state in words on the row', (verdict, words) => {
     const pill = mountApart({ verdict })
     expect(pill).toHaveTextContent(words)
@@ -156,6 +157,7 @@ describe('LibrarySection', () => {
         'Es este archivo',
         'No se encuentra',
         'No se puede leer',
+        'No se puede medir',
       ])
     }
     for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
@@ -325,17 +327,72 @@ describe('LibrarySection', () => {
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
-  // While a copy is still being measured the header must not settle on a shared state and
-  // jump when the other one lands.
-  it('keeps each row its own pill while any row is still comparing', () => {
+  // While only some copies are still being measured the header must not settle on a shared
+  // state and jump when the others land: each row keeps its own pill.
+  it('keeps each row its own pill while only some rows are still comparing', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'here' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // The common case, one copy, goes from «Comparando» to its verdict in one place: the header,
+  // so nothing in the section changes size when the measurement lands.
+  it('says comparing once in the header when every row is comparing', () => {
     mount({
       rows: [
         row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
         row({ id: 'rekordbox', name: 'rekordbox', verdict: 'measuring' }),
       ],
     })
-    expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Comparando')
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+  })
+
+  // The header keeps its pill line from the start whenever a verdict can land there, so the
+  // title does not grow when the pill arrives.
+  it('keeps the header place of a verdict that has not arrived yet', () => {
+    mount({}, { verdict: null, comparable: true })
+    expect(screen.getByTestId('library-verdict-slot')).toBeInTheDocument()
     expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  it('keeps no header place when no copy will ever be compared', () => {
+    mount({}, { verdict: 'thisFile', comparable: false, comparison: undefined })
+    expect(screen.queryByTestId('library-verdict-slot')).toBeNull()
+  })
+
+  it('says a copy that cannot be measured on its own row, never hoisted', () => {
+    const pill = mountApart({ verdict: 'unmeasurable' })
+    expect(pill).toHaveTextContent('No se puede medir')
+    expect(pill).toHaveAttribute('data-state', 'unmeasurable')
+  })
+
+  // The rows lose their pills when the state goes up, so their reasons go up with it.
+  it('joins every row reason in the shared header state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'library', detail: 'Razón uno.' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'library', detail: 'Razón dos.' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
+      'Tu archivo es peor. Razón uno. Razón dos.',
+    )
+  })
+
+  it('compares lengths as they are shown, not as floats, to decide a shared state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'different', durationSec: 300.2 }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'different', durationSec: 300.4 }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Otra versión · 5:00')
   })
 
   it('names the program when a folded header covers a better copy among different states', () => {

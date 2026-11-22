@@ -1375,7 +1375,8 @@
     "libraryStateThisFile": "C'est ce fichier",
     "libraryStateMissing": "Introuvable",
     "libraryStateUnreadable": "Illisible",
-    "libraryStateEven": "Équivalentes",
+    "libraryStateUnmeasurable": "Impossible à mesurer",
+    "libraryStateEven": "Ni meilleur ni pire",
     "libraryStateMeasuring": "Comparaison",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

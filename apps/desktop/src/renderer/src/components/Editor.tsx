@@ -758,6 +758,7 @@ export const Editor = memo(function Editor({
     replaceTargetPending,
     libraryCopyPath,
     libraryCopyPending,
+    libraryCopyUnlocated,
   } = useLibraryVerdict({
     item,
     libraryIndex,
@@ -1638,15 +1639,17 @@ export const Editor = memo(function Editor({
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           verdict: musicHoldsFile
             ? 'thisFile'
-            : musicCopyReach?.missing
+            : libraryCopyUnlocated || musicCopyReach?.missing
               ? 'missing'
               : musicCopyReach?.unreadable
                 ? 'unreadable'
-                : libraryCopyBetter && (copyState === null || copyState === 'measuring')
-                  ? 'library'
-                  : libraryCopyPending && !libraryCopyPath
-                    ? 'measuring'
-                    : copyState,
+                : musicCopyReach?.checking
+                  ? 'measuring'
+                  : libraryCopyBetter && (copyState === null || copyState === 'measuring')
+                    ? 'library'
+                    : libraryCopyPending && !libraryCopyPath
+                      ? 'measuring'
+                      : copyState,
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: musicCopyUnreached

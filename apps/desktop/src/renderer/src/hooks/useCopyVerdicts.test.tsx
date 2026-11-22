@@ -242,6 +242,25 @@ describe('useCopyVerdicts', () => {
     expect(fileExists).not.toHaveBeenCalledWith('/lib/worse.mp3')
   })
 
+  // A failed probe is not yet «not found» nor «unreadable»: until the file check and the second
+  // read answer, the row says it is still checking instead of going blank.
+  it('reports checking while a failed probe waits for the file check, and never for a healthy copy', async () => {
+    const fileExists = vi.fn(() => new Promise(() => {}))
+    failingCopyApi({ fileExists })
+    const { result } = renderGone()
+    await waitFor(() => expect(fileExists).toHaveBeenCalled())
+    expect(result.current[0]).toMatchObject({ checking: true, missing: false, unreadable: false })
+    await waitFor(() => expect(result.current[1].format).toBe('MP3 320'))
+    expect(result.current[1].checking).toBe(false)
+  })
+
+  it('stops checking once the copy is known to be gone', async () => {
+    failingCopyApi({})
+    const { result } = renderGone()
+    await waitFor(() => expect(result.current[0].missing).toBe(true))
+    expect(result.current[0].checking).toBe(false)
+  })
+
   it('starts nothing without copies', () => {
     const spectrogram = vi.fn()
     setApi({ spectrogram, loudness: vi.fn(), fingerprint: vi.fn() })

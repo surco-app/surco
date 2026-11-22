@@ -1375,6 +1375,7 @@
     "libraryStateThisFile": "És aquest fitxer",
     "libraryStateMissing": "No es troba",
     "libraryStateUnreadable": "No es pot llegir",
+    "libraryStateUnmeasurable": "No es pot mesurar",
     "libraryStateEven": "Ni millor ni pitjor",
     "libraryStateMeasuring": "Comparant",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
