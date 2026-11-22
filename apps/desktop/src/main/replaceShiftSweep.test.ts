@@ -1,8 +1,15 @@
 import { execFile } from 'node:child_process'
-import { appendFileSync, existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { readdir } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { extname, join } from 'node:path'
+import { dirname, extname, join, sep } from 'node:path'
 import { promisify } from 'node:util'
 import { it, vi } from 'vitest'
 
@@ -35,8 +42,8 @@ const execFileAsync = promisify(execFile)
 // pair at random (fixed seed), and the Matching pairs in matching-pairs.json (different tracks
 // that mix well, so they share tempo and often key).
 //
-//   SURCO_REPLACE_SWEEP_LIBRARY=/Volumes/Public/Music/Media.localized/Music \
-//   SURCO_REPLACE_SWEEP_DOWNLOADS="/Volumes/Public/Soulseek Downloads:$HOME/Desktop" \
+//   SURCO_REPLACE_SWEEP_LIBRARY=/path/to/apple/music/media \
+//   SURCO_REPLACE_SWEEP_DOWNLOADS="/path/to/downloads:/path/to/more/downloads" \
 //   SURCO_REPLACE_SWEEP_RB_DB=/path/to/a/copy/of/master.db npm run replace-sweep
 //
 // or SURCO_REPLACE_SWEEP_PAIRS=pairs.tsv with `old<TAB>new[<TAB>source]` lines. Lists are joined
@@ -47,6 +54,13 @@ const library = process.env.SURCO_REPLACE_SWEEP_LIBRARY
 const pairsFile = process.env.SURCO_REPLACE_SWEEP_PAIRS
 const downloads = process.env.SURCO_REPLACE_SWEEP_DOWNLOADS
 const rekordboxCopy = process.env.SURCO_REPLACE_SWEEP_RB_DB
+// Even read-only, SQLite can create or touch master.db's -wal and -shm, so the sweep never opens
+// the database rekordbox itself keeps: anything inside the Pioneer folder is refused.
+const liveRekordbox = rekordboxCopy !== undefined && insidePioneer(rekordboxCopy)
+if (liveRekordbox)
+  process.stderr.write(
+    `replace sweep skipped: SURCO_REPLACE_SWEEP_RB_DB points into rekordbox's own folder (${rekordboxCopy}); copy master.db elsewhere first\n`,
+  )
 const userData = join(homedir(), 'Library', 'Application Support', 'Surco')
 const trashFile = process.env.SURCO_REPLACE_SWEEP_TRASH ?? join(userData, 'trash', 'trash.json')
 const matchingFile =
@@ -99,6 +113,19 @@ interface FileRead {
   artist: string
   durationSec: number | null
   error?: string
+}
+
+function resolved(path: string): string {
+  try {
+    return realpathSync(path)
+  } catch {
+    return join(resolved(dirname(path)), path.slice(dirname(path).length + 1))
+  }
+}
+
+function insidePioneer(path: string): boolean {
+  const pioneer = resolved(join(homedir(), 'Library', 'Pioneer')).toLowerCase() + sep
+  return resolved(path).toLowerCase().startsWith(pioneer)
 }
 
 const pairKey = (p: Pair): string => `${p.kind}\t${p.old}\t${p.new}`
@@ -573,7 +600,7 @@ function summarise(measured: Row[]): string {
   return lines.join('\n')
 }
 
-it.skipIf(!library && !pairsFile)(
+it.skipIf((!library && !pairsFile) || liveRekordbox)(
   'measures the replace shift of real same-track pairs and two negative controls',
   async () => {
     const positives = await positivePairs()
