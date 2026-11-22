@@ -193,11 +193,4 @@ describe('SuggestionChips', () => {
     expect(screen.queryByTestId('chip-less')).not.toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
   })
-
-  // The dashed outline already says a tag is not applied; a "+" in front of each of
-  // twenty-seven chips only added noise.
-  it('draws an addable tag without a plus sign', () => {
-    render(<SuggestionChips suggestions={['Bases']} isOn={() => false} addable onPick={() => {}} />)
-    expect(screen.getByTestId('chip-Bases')).toHaveTextContent(/^Bases$/)
-  })
 })

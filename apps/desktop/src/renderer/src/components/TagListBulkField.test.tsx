@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
 import { GROUPING_TAGS } from '../lib/bulkEdit'
 import type { TrackItem } from '../types'
+import { SuggestionChips } from './SuggestionChips'
 import { TagListBulkField } from './TagListBulkField'
 
 afterEach(cleanup)
@@ -148,30 +149,63 @@ describe('TagListBulkField', () => {
   })
 
   // WHY: four tracks already cost a third of the column in chips; a twelve-cut release
-  // would push every field below out of sight. The summary row stays put and says how
-  // many tags differ, and the per-track rows open only when the user asks. The editor
-  // title already counts the tracks, so the toggle does not count them again.
-  it('starts folded, with the summary row visible and a count of the tags that vary', () => {
+  // would push every field below out of sight. The summary row stays put and the per-track
+  // rows open only when the user asks. The chips' "1/2" already says how many tracks differ.
+  it('starts folded, with the summary row visible and no count of what varies', () => {
     renderField()
     expect(screen.getByTestId('chip-Cantaditas')).toBeInTheDocument()
     expect(screen.queryByTestId('grouping-track-a1')).toBeNull()
-    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(
-      'editor.groupingPerTrack',
-    )
-    expect(screen.getByTestId('grouping-per-track-toggle')).not.toHaveTextContent(
-      'editor.groupingPerTrack:3',
-    )
-    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent(
-      'editor.groupingVarying:3',
-    )
+    const toggle = screen.getByTestId('grouping-per-track-toggle')
+    expect(toggle).toHaveTextContent('editor.groupingPerTrack')
+    expect(toggle).not.toHaveTextContent('editor.groupingVarying')
+    expect(toggle).not.toHaveTextContent('editor.groupingSame')
   })
 
-  it('says there are no differences instead of "0 vary" when every track matches', () => {
+  // WHY: a selection is the same form as one track, so the label sits where one track's
+  // label sits (the form's label column) instead of heading a full-width block, and it does
+  // not repeat that the field covers every track: the title already counts them.
+  it('is a plain label in the form grid, without "all tracks"', () => {
+    renderField()
+    const root = screen.getByTestId('grouping-bulk')
+    const label = within(root).getByText('Grouping')
+    expect(label.parentElement).toBe(root)
+    expect(root).not.toHaveTextContent('editor.groupingAllTracks')
+  })
+
+  // WHY: a tag on every track and a tag on a lone track are the same fact to the person
+  // reading the row, so they must read as the same state, not a dashed look for one view.
+  it('gives an applied-in-all tag the state a single track gives an applied tag', () => {
     renderField([a2, track('a3', { grouping: 'Cantaditas' })])
-    expect(screen.getByTestId('grouping-per-track-toggle')).toHaveTextContent('editor.groupingSame')
-    expect(screen.getByTestId('grouping-per-track-toggle')).not.toHaveTextContent(
-      'editor.groupingVarying',
+    render(
+      <SuggestionChips
+        scope="single"
+        suggestions={['Cantaditas']}
+        isOn={() => true}
+        onPick={() => {}}
+      />,
     )
+    const inAll = screen.getByTestId('chip-Cantaditas')
+    const single = screen.getByTestId('chip-single-Cantaditas')
+    expect(single).toHaveAttribute('data-state', 'on')
+    expect(single).toHaveAttribute('aria-pressed', 'true')
+    expect(inAll).toHaveAttribute('data-state', 'on')
+  })
+
+  // WHY: the multi row once drew unapplied suggestions dashed while one track draws them
+  // solid, so the same suggestion looked unavailable. Both views share one look.
+  it('draws an unapplied suggestion the way a single track draws it', () => {
+    renderField([a2, track('a3', { grouping: 'Cantaditas' })])
+    render(
+      <SuggestionChips
+        scope="single"
+        suggestions={['Bases']}
+        isOn={() => false}
+        onPick={() => {}}
+      />,
+    )
+    const multi = screen.getByTestId('chip-Bases')
+    const single = screen.getByTestId('chip-single-Bases')
+    expect(multi.className).toBe(single.className)
   })
 
   it('opens the per-track rows on demand and keeps them open', () => {

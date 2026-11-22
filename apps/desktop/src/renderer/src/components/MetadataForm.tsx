@@ -223,10 +223,6 @@ export function MetadataForm({
                     ],
                   })}
                 </Fragment>
-              ) : f.perTrack ? (
-                <div key={f.key} className="beside:col-span-2">
-                  {renderField(f)}
-                </div>
               ) : f.key === 'compilation' ? (
                 <div key={f.key} className="flex beside:col-start-2">
                   {renderField(f)}
