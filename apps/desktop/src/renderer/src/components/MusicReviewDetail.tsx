@@ -13,6 +13,7 @@ import { useTrackProperties } from '../hooks/useTrackProperties'
 import { copyQuality } from '../lib/copyQuality'
 import { damageKey } from '../lib/damageReview'
 import { INVISIBLE } from '../lib/musicSpelling'
+import { pathKey } from '../lib/pathKey'
 import { formatFileSize } from '../lib/properties'
 import { formatKHz, type Verdict } from '../lib/quality'
 import { REVIEW_LIBRARIES, TAG_LIBRARIES } from '../lib/reviewLibraries'
@@ -489,7 +490,6 @@ function SpellingDetail({
   )
 }
 
-const pathKey = (path: string) => path.normalize('NFC').toLowerCase()
 const samePath = (a: string, b: string) => pathKey(a) === pathKey(b)
 
 function CopyLibraries({ info }: { info: LibraryCopyInfo | undefined }) {
