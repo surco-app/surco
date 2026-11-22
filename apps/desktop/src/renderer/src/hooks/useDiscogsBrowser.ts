@@ -175,13 +175,17 @@ export function useDiscogsBrowser(
   // Enter/the button. Drives the search query key. Seeded from the file's own stored
   // release id (if any) so the panel opens straight to it, exactly like a pasted id —
   // typing afterwards commits a new term and overrides it.
-  // A search the user typed outranks the id: the box re-seeds with it, so its results come
-  // back with it, and the stored release is pinned on top of them below.
-  const [typedOverStored] = useState(
-    () => item.queryTyped === true && !!item.meta.discogsReleaseId && item.query.trim() !== '',
+  // The text in the box outranks the id: the panel searches it, so the list always holds what
+  // the box says, and the stored release is pinned on top of those results below. Only an empty
+  // box, or a file-name guess the tag read is about to replace, opens the id alone.
+  const [searchOverStored] = useState(
+    () =>
+      !!item.meta.discogsReleaseId &&
+      item.query.trim() !== '' &&
+      (item.queryTyped === true || !item.loadingMeta),
   )
   const [searchTerm, setSearchTerm] = useState(
-    typedOverStored ? item.query : (item.meta.discogsReleaseId ?? ''),
+    searchOverStored ? item.query : (item.meta.discogsReleaseId ?? ''),
   )
   // Which result is expanded. Reading the release itself from the cache (below) keeps
   // a single source of truth that auto-open, preview and reopen all set.
@@ -248,16 +252,14 @@ export function useDiscogsBrowser(
   }, [storedId, openResult, searchTerm, loadRelease])
 
   // Typing commits the query 500ms after it stops; Enter and the button commit at once
-  // through doSearch. Until the user takes over the box, two states hold the commit
-  // back: a tag read still in flight — the box holds the file-name guess the read is
-  // about to replace, so committing it would fire the very homonym search the re-seed
-  // below then has to redo, a noise flash plus a wasted provider call — and a stored
-  // release id driving the panel, where a text search would silently bury the exact
-  // release the id seed opened. The read landing re-arms the effect, which then commits
-  // the query the panel holds at that point.
+  // through doSearch. Until the user takes over the box, a tag read still in flight holds
+  // the commit back: the box holds the file-name guess the read is about to replace, so
+  // committing it would fire the very homonym search the re-seed below then has to redo,
+  // a noise flash plus a wasted provider call. The read landing re-arms the effect, which
+  // then commits the query the panel holds at that point.
   // biome-ignore lint/correctness/useExhaustiveDependencies: query and the tag-read hold are the triggers; the id/item/persist callback are read fresh at commit time, and depending on them would re-arm the debounce on every track edit.
   useEffect(() => {
-    if (!userDroveSearch.current && (item.loadingMeta || storedId !== '')) return
+    if (!userDroveSearch.current && item.loadingMeta) return
     if (!query.trim()) return
     const id = setTimeout(() => {
       setSearchTerm(query)
@@ -269,10 +271,7 @@ export function useDiscogsBrowser(
   // The track's own query firms up after mount: import seeds it from the file NAME and
   // the tag read then rebuilds it as "artist title" — on a slow volume that read lands
   // seconds after the editor opened. When the stored query changes under the panel and
-  // the user hasn't taken over the box, re-seed exactly as a remount would. With a
-  // stored-id release on screen the box text still follows, but no text search fires
-  // (the debounce above holds while the id drives the panel) — searching then would
-  // bury the exact release the id seed just opened.
+  // the user hasn't taken over the box, re-seed exactly as a remount would.
   const seenItemQuery = useRef(item.query)
   useEffect(() => {
     const changed = item.query !== seenItemQuery.current
@@ -475,10 +474,18 @@ export function useDiscogsBrowser(
   const [probedFor, setProbedFor] = useState<string | null>(null)
   const latestRun = useRef(runKey)
   latestRun.current = runKey
-  const [storedPinRun] = useState(() => (typedOverStored ? runKey : null))
-  // biome-ignore lint/correctness/useExhaustiveDependencies: once per mount, for the run it seeded.
+  // A run the user didn't type this mount keeps the stored release on top, decided when the
+  // run starts: an id stamped mid-run is the stored-id effect's to handle.
+  const pinFor = useRef({ run: '', pin: false })
+  if (pinFor.current.run !== runKey)
+    pinFor.current = {
+      run: runKey,
+      pin: storedId !== '' && directId === null && !userDroveSearch.current,
+    }
+  const storedPinRun = pinFor.current.pin && searchTerm.trim() !== '' ? runKey : null
+  // biome-ignore lint/correctness/useExhaustiveDependencies: per run, for the run it pins; the id is read as it stood when the run started.
   useEffect(() => {
-    if (storedPinRun === null) return
+    if (storedPinRun === null || !active) return
     loadRelease({ provider: 'discogs', id: Number(storedId), title: '' })
       .then((rel) => {
         if (latestRun.current !== storedPinRun) return
@@ -488,7 +495,7 @@ export function useDiscogsBrowser(
         if (!userOpened.current) setOpenResult(pinned)
       })
       .catch(() => setProbedFor(storedPinRun))
-  }, [])
+  }, [storedPinRun, active])
 
   // Once every source has answered, open the first result that confidently holds the
   // file's track (or the directly-loaded release), so the user lands on the right album.
