@@ -5,6 +5,7 @@ import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
+import type { ReplaceShift } from '../shared/replaceShift'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
@@ -102,6 +103,13 @@ import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
+import {
+  REPLACE_HEAD_AT_SECONDS,
+  REPLACE_REACH_SECONDS,
+  REPLACE_TAIL_BEFORE_END_SECONDS,
+  REPLACE_WINDOW_SECONDS,
+  type ReplaceWindow,
+} from './replaceShiftMeasure'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { carryRiffChunks } from './riffCarry'
 import type { SeratoCarryOutcome } from './seratoTags'
@@ -3520,6 +3528,96 @@ export async function headOffsetMs(
   return (lag / PAIR_RATE) * 1000
 }
 
+// Decodes one window of a file at exact-sample precision, zero-padded or cut to `samples`
+// where `from` falls before the start or the file ends early. Padding is only for the new
+// file: the old window keeps its real length so a short one is seen as short.
+async function decodeReplaceWindow(
+  input: string,
+  from: number,
+  samples: number,
+  pad: boolean,
+  signal: AbortSignal,
+): Promise<Float32Array> {
+  const lead = Math.max(0, Math.round(-from * PAIR_RATE))
+  const decoded = await decodePcm(input, {
+    sampleRate: PAIR_RATE,
+    startSec: Math.max(0, from),
+    seconds: (samples - lead) / PAIR_RATE,
+    maxBufferMb: 8,
+    exactStart: true,
+    signal,
+  })
+  if (!pad) return decoded.slice(0, samples)
+  const out = new Float32Array(samples)
+  out.set(decoded.subarray(0, samples - lead), lead)
+  return out
+}
+
+// How far a replacement moved the audio against the file it replaces: head and tail
+// windows of both are decoded in parallel by ffmpeg and the correlation runs in the worker,
+// since a 2^21-point FFT on the main process blocks it past 100 ms. A measurement that fails
+// never throws, only a cancel does, and a cancel (or the first failure) kills every ffmpeg
+// of the measurement before it settles.
+export async function measureReplaceShift(
+  old: string,
+  current: string,
+  signal?: AbortSignal,
+): Promise<ReplaceShift> {
+  signal?.throwIfAborted()
+  const duration = await probeDuration(old, signal)
+  signal?.throwIfAborted()
+  if (duration === null) return { unmoved: 'unreadable' }
+  const ctl = new AbortController()
+  const stop = (): void => ctl.abort()
+  signal?.addEventListener('abort', stop)
+  const width = REPLACE_WINDOW_SECONDS * PAIR_RATE
+  const wide = width + 2 * REPLACE_REACH_SECONDS * PAIR_RATE
+  const headAt = REPLACE_HEAD_AT_SECONDS
+  const tailAt = duration - REPLACE_TAIL_BEFORE_END_SECONDS - REPLACE_WINDOW_SECONDS
+  const tailWanted = tailAt >= headAt + REPLACE_WINDOW_SECONDS
+  const guard = <T>(work: Promise<T>): Promise<T> => {
+    work.catch(stop)
+    return work
+  }
+  const windowAt = (t: number) => ({
+    old: guard(decodeReplaceWindow(old, t, width, false, ctl.signal)),
+    new: guard(decodeReplaceWindow(current, t - REPLACE_REACH_SECONDS, wide, true, ctl.signal)),
+  })
+  try {
+    const head = windowAt(headAt)
+    const tail = tailWanted ? windowAt(tailAt) : null
+    const settled = await Promise.allSettled([
+      head.old,
+      head.new,
+      ...(tail ? [tail.old, tail.new] : []),
+    ])
+    if (signal?.aborted) signal.throwIfAborted()
+    const [headOld, headNew, tailOld, tailNew] = settled
+    if (headOld.status === 'rejected' || (tailOld && tailOld.status === 'rejected')) {
+      const reason =
+        headOld.status === 'rejected' ? headOld.reason : (tailOld as PromiseRejectedResult).reason
+      if (isAbortError(reason)) throw reason
+      return { unmoved: 'unreadable' }
+    }
+    const windowOf = (
+      o: PromiseSettledResult<Float32Array> | undefined,
+      n: PromiseSettledResult<Float32Array> | undefined,
+    ): ReplaceWindow | null =>
+      o?.status === 'fulfilled' && n?.status === 'fulfilled' ? { old: o.value, new: n.value } : null
+    const headWindow = windowOf(headOld, headNew)
+    const tailWindow = windowOf(tailOld, tailNew)
+    const transfer = [headWindow, tailWindow].flatMap((w) =>
+      w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
+    )
+    return await runInWorker<ReplaceShift>(
+      { type: 'replaceShift', head: headWindow, tail: tailWindow },
+      transfer,
+    )
+  } finally {
+    signal?.removeEventListener('abort', stop)
+  }
+}
+
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
 // the start when a is under 90 s). Calibrated on 26 real pairs: the same master
 // correlates 0.992 to 0.9999, a different source 0.38 to 0.86. Null when either file
@@ -3716,13 +3814,20 @@ async function decodePcm(
     seconds?: number
     maxBufferMb: number
     signal?: AbortSignal
+    exactStart?: boolean
   },
 ): Promise<Float32Array> {
   const args = ['-hide_banner', '-loglevel', 'error']
+  const seekAfterInput = opts.exactStart === true
   // Input seek (-ss before -i): ffmpeg jumps straight to the window instead of
-  // decoding its way there — what keeps the zoomed re-decode interactive.
-  if (opts.startSec !== undefined && opts.startSec > 0) args.push('-ss', String(opts.startSec))
+  // decoding its way there — what keeps the zoomed re-decode interactive. With
+  // exactStart it goes after -i instead: ffmpeg decodes from the top and discards, which
+  // lands on the sample even where a VBR MP3's header seeks to the wrong frame.
+  if (!seekAfterInput && opts.startSec !== undefined && opts.startSec > 0)
+    args.push('-ss', String(opts.startSec))
   args.push(...forcedInputArgs(input), '-i', input)
+  if (seekAfterInput && opts.startSec !== undefined && opts.startSec > 0)
+    args.push('-ss', String(opts.startSec))
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
   // Cap the downmix matrix at unity gain. ffmpeg's mono downmix is power-preserving,
   // so two correlated channels come back ×√2 (+3.01 dB) — and every threshold
