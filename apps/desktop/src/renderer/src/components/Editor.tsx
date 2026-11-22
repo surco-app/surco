@@ -844,6 +844,10 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
+  // Only the copy a replacement would supersede lends its fields: a copy the section merely
+  // describes may be another version of the track, whose tags would not be this file's.
+  const replacedCopyPath =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
   useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
 
   const latestItem = useLatest(item)
