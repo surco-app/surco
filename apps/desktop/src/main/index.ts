@@ -367,13 +367,7 @@ app.on('second-instance', (_event, argv) => {
 protocol.registerSchemesAsPrivileged([
   {
     scheme: MEDIA_SCHEME,
-    privileges: {
-      standard: true,
-      secure: true,
-      supportFetchAPI: true,
-      stream: true,
-      corsEnabled: true,
-    },
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
   },
 ])
 
@@ -2029,6 +2023,10 @@ function registerIpc(): void {
   // asks Chromium to cancel, which reaches main asynchronously — the race the user
   // reported as "it updates on the third or fourth try".
   ipcMain.handle('player:release', (_e, path: string) => releaseMediaFile(path))
+  // The same allowlist the surco:// handler applies: only a path the app handed out warms.
+  ipcMain.on('player:prewarm', (_e, path: string) => {
+    if (mediaAccess.isAllowed(path)) void resolvePlayable(path).catch(() => {})
+  })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {
@@ -2578,7 +2576,7 @@ app.whenReady().then(() => {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com",
       "media-src 'self' blob: surco:",
-      "connect-src 'self' surco:",
+      "connect-src 'self'",
     ].join('; ')
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({

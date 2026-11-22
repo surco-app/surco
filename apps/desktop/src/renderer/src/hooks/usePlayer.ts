@@ -249,26 +249,15 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
   // before the first sound — paid in full in the gap after the click. Warming the
   // resolved playable for the rested selection runs (and caches) that transcode
   // ahead of time, overlapping it with the seconds the user spends reading the
-  // track, so play then hits a cache and starts instantly. A 1-byte range request
-  // drives the same main-process resolve without pulling the file across.
+  // track, so play then hits a cache and starts instantly. Main resolves it on its
+  // own; a moved-on selection lets a started transcode finish and cache.
   useEffect(() => {
     const path = selected?.inputPath
     // Nothing to warm with no selection, and no point warming the track already
     // streaming under the element — its playable is resolved and cached.
     if (!path || selectedId === playingIdRef.current) return
-    const controller = new AbortController()
-    const id = setTimeout(() => {
-      void fetch(mediaUrl(path), {
-        headers: { Range: 'bytes=0-0' },
-        signal: controller.signal,
-      }).catch(() => {})
-    }, PREWARM_SETTLE_MS)
-    // A moved-on selection aborts the renderer's wait; the transcode it may have
-    // already kicked off in main still finishes and caches, so the warm isn't wasted.
-    return () => {
-      clearTimeout(id)
-      controller.abort()
-    }
+    const id = setTimeout(() => window.api.prewarmPlayback(path), PREWARM_SETTLE_MS)
+    return () => clearTimeout(id)
   }, [selectedId, selected?.inputPath])
 
   // Space toggles the player's visibility; the selection effect below starts

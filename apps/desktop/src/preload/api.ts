@@ -313,6 +313,9 @@ export interface Api {
   // descriptor is gone. Must be awaited before an in-place export: on Windows the
   // rename fails while the handle lives, and Surco's own player is the holder.
   releasePlayingFile: (path: string) => Promise<void>
+  // Resolves (and caches) the file the player would stream, so an AIFF's transcode runs
+  // while the track is only selected. Fire-and-forget; main ignores a path it never handed out.
+  prewarmPlayback: (path: string) => void
   // Marks the start of a convert-all run so main forgets any "apply to the rest"
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.

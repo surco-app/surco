@@ -63,34 +63,3 @@ describe('img-src cover-CDN allowlists', () => {
     expect(headerCsp.trim().split(/\s+/).sort()).toEqual(metaCsp.trim().split(/\s+/).sort())
   })
 })
-
-// The player warms an AIFF's transcode by fetching its surco:// URL when the track is
-// selected; without surco: in connect-src that fetch is refused on every selection, so the
-// first play of an AIFF still waits for the whole transcode.
-describe('connect-src', () => {
-  const connectSrc = (source: string, pattern: RegExp): string[] =>
-    (source.match(pattern)?.[1] ?? '').trim().split(/\s+/)
-  const meta = connectSrc(
-    readFileSync(join(root, 'src/renderer/index.html'), 'utf-8'),
-    /connect-src ([^;"]+)/,
-  )
-  const header = connectSrc(
-    readFileSync(join(root, 'src/main/index.ts'), 'utf-8'),
-    /"connect-src ([^"]+)"/,
-  )
-
-  it('lets the renderer fetch surco:// media in the meta and the packaged header CSP', () => {
-    expect(meta).toContain('surco:')
-    expect(header).toContain('surco:')
-  })
-})
-
-// connect-src lets the fetch out, but Chromium still refuses a fetch from the page to a
-// scheme it does not treat as CORS-capable, so the prewarm needs both.
-describe('surco:// scheme', () => {
-  it('is registered as CORS-capable, so the renderer can fetch from it', () => {
-    const main = readFileSync(join(root, 'src/main/index.ts'), 'utf-8')
-    const privileges = main.match(/scheme: MEDIA_SCHEME,\s*privileges: \{([^}]+)\}/)?.[1] ?? ''
-    expect(privileges).toContain('corsEnabled: true')
-  })
-})
