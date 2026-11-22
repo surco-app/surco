@@ -6779,4 +6779,54 @@ describe('Editor replacing a library copy', () => {
     expect(patch.meta).toMatchObject({ album: 'Your Love', genre: 'Euro House' })
     expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
   })
+
+  const lengthIndex = buildLibraryIndex([
+    {
+      title: 'Your Love (Power Love Mix)',
+      artist: '2 Shy',
+      persistentId: '0123456789ABCDEF',
+      durationSec: 300,
+    },
+  ])
+
+  it('fills from the copy when its length confirms it is the same recording', async () => {
+    const { onChange } = renderEditor(
+      {
+        id: 'a',
+        inputPath: '/music/new/your-love.aiff',
+        fileName: 'your-love.aiff',
+        duration: 300,
+        meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
+      },
+      'aiff',
+      { libraryIndex: lengthIndex, addToAppleMusic: true },
+    )
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true })),
+    )
+    expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
+  })
+
+  // The 35 s gap makes the library entry another version, not a replace target: its tags would not be this file's.
+  it('never fills from a copy the section only describes, since another version has other tags', async () => {
+    const { onChange, onRecordUndo } = renderEditor(
+      {
+        id: 'a',
+        inputPath: '/music/new/your-love.aiff',
+        fileName: 'your-love.aiff',
+        duration: 335,
+        inLibraryResolved: true,
+        meta: { title: 'Your Love (Radio Edit)', artist: '2 Shy' },
+      },
+      'aiff',
+      { libraryIndex: lengthIndex, addToAppleMusic: true },
+    )
+    await waitFor(() =>
+      expect(window.api.properties).toHaveBeenCalledWith('/music/old/your-love.mp3'),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
+    expect(onRecordUndo).not.toHaveBeenCalled()
+  })
 })
