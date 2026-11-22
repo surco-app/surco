@@ -495,4 +495,44 @@ describe('a replace', () => {
       params: { value: 'Old' },
     })
   })
+
+  const keyOf = (block: string, over: Partial<NmlPatch> = {}, cues?: string | null) =>
+    checkTraktor(nml(block), [{ patch: replace(over), before: 'Song.mp3', cues }], BOOT)[0]
+  const moved = () => entry('Song.aiff', 'Public', NEW_DIR)
+
+  // Two entries on the new file: retiring the old one could orphan either.
+  it('more than one entry at the new location is traktorAmbiguous', () => {
+    expect(keyOf(`${moved()}\n${moved()}`)?.detail).toEqual({
+      key: 'traktorAmbiguous',
+      params: { count: 2 },
+    })
+  })
+
+  // Traktor knows neither file: the track is lost and nothing may be retired.
+  it('neither the old nor the new entry is traktorMissing', () => {
+    expect(keyOf(entry('Other.mp3'))?.detail.key).toBe('traktorMissing')
+  })
+
+  // The DJ dragged the download in first: the old entry stayed, so the old file must stay.
+  it('the old entry still present beside one at the new location is traktorStillOld', () => {
+    expect(keyOf(`${entry('Song.mp3')}\n${moved()}`)?.detail.key).toBe('traktorStillOld')
+  })
+
+  // Traktor stores the internal disk by name; an empty output volume means that disk.
+  it('an empty output volume resolves to the boot volume', () => {
+    const onBoot = entry('Song.aiff', BOOT, NEW_DIR)
+    expect(keyOf(onBoot, { outputVolume: '' })?.detail.key).toBe('traktorOk')
+  })
+
+  // A case-insensitive volume still holds the old file under another spelling.
+  it('an old entry spelled in another case is still traktorStillOld', () => {
+    expect(keyOf(entry('SONG.MP3'))?.detail.key).toBe('traktorStillOld')
+  })
+
+  // With a cue shift the cues moved on purpose, so their positions are not compared here.
+  it('a patch with a cueShift does not compare cue positions', () => {
+    const cues = cuesOf(twoCues)
+    const shifted = { cueShift: { shiftMs: 50 } }
+    expect(keyOf(moved(), shifted, cues)?.detail.key).toBe('traktorOk')
+  })
 })
