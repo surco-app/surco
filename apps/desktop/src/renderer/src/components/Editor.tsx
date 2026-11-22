@@ -54,6 +54,7 @@ import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
 import { useProgramCopies } from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
+import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useCachedSpectrum } from '../hooks/useSpectrogram'
@@ -826,6 +827,7 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
+  useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
 
   const latestItem = useLatest(item)
   async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {

@@ -7,6 +7,7 @@ import { createRef, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
+import { emptyMetadata } from '../../../shared/metadata'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -118,6 +119,8 @@ beforeEach(() => {
     // copy is offered, so this effect mounts wherever a library index is handed in.
     appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+    readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
+    readCoverFull: vi.fn().mockResolvedValue(null),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
     // that gives one a cover mounts this effect.
     prepareCoverDrag: vi.fn().mockResolvedValue(null),
@@ -5153,6 +5156,8 @@ describe('Editor Apple Music library section', () => {
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+      readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
+      readCoverFull: vi.fn().mockResolvedValue(null),
       cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     }
   }
@@ -6605,5 +6610,45 @@ describe('Editor convert notes from the measured spectrum', () => {
     expect(await screen.findByTestId('convert-damaged-note')).toHaveTextContent(
       i18n.t('editor.damagedSource'),
     )
+  })
+})
+
+describe('Editor replacing a library copy', () => {
+  const libraryIndex = buildLibraryIndex([
+    { title: 'Your Love (Power Love Mix)', artist: '2 Shy', persistentId: '0123456789ABCDEF' },
+  ])
+
+  beforeEach(() => {
+    Object.assign(window.api, {
+      platform: 'darwin',
+      appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/your-love.mp3'),
+      readTags: vi.fn<Api['readTags']>().mockResolvedValue({
+        ...emptyMetadata(),
+        title: 'Your Love (Power Love Mix)',
+        artist: '2 Shy',
+        album: 'Your Love',
+        genre: 'Euro House',
+      }),
+    })
+  })
+
+  it('fills the empty fields from the copy it replaces, so the DJ can update straight away', async () => {
+    const { onChange, onRecordUndo } = renderEditor(
+      {
+        id: 'a',
+        inputPath: '/music/new/your-love.aiff',
+        fileName: 'your-love.aiff',
+        meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
+      },
+      'aiff',
+      { libraryIndex, addToAppleMusic: true },
+    )
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true })),
+    )
+    expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
+    const patch = onChange.mock.calls.find(([p]) => p.copyFilled)?.[0]
+    expect(patch.meta).toMatchObject({ album: 'Your Love', genre: 'Euro House' })
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
   })
 })

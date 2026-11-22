@@ -234,6 +234,7 @@ export interface TrackItem extends TrackOrigin {
   // Music already filled the gaps the file left, once, when the editor first showed the
   // track (see useAppleMusicFill). An empty field after that is the DJ's own choice.
   appleMusicFilled?: boolean
+  copyFilled?: boolean
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.
