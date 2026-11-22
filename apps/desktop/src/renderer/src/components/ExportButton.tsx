@@ -131,10 +131,10 @@ export function ExportButton({
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const processing = status === 'processing'
-  // Missing tags block only the convert: the format menu stays reachable for a track and a
-  // selection alike, since a format or destination can be what leaves tracks out.
-  // Missing tags block the convert softly: aria-disabled instead of disabled keeps the
-  // button in the Tab order, so the keyboard can reach it and hear why it won't run.
+  // Missing tags block only the convert, and softly: aria-disabled instead of disabled keeps
+  // the button in the Tab order, so the keyboard can reach it and hear why it won't run. The
+  // format menu stays open for a track and a selection alike: picking a format converts
+  // nothing, and in a selection the format can be what leaves tracks out.
   const softBlocked = incomplete && !processing
   const reasonId = useId()
 
