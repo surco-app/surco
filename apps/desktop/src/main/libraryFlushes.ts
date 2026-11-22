@@ -356,6 +356,14 @@ export function repointRekordbox(
   )
 }
 
+// Whether Surco never writes collection.nml, for the Copias screen. Add to Traktor alone is
+// a write too: it adds converted tracks the collection lacks and moves a replaced track's
+// entry onto the new file, so only with both toggles off is the collection untouched.
+export function traktorUntouched(): boolean {
+  const settings = getSettings()
+  return !settings.syncTraktor && !settings.addToTraktor
+}
+
 export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
   return {
     // Same rule as rekordbox below: the toggle grants permission, the path only says

@@ -121,6 +121,7 @@ import {
   syncTagsInLibraries,
   tagSyncPrograms,
   traktorFlushDeps,
+  traktorUntouched,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -2263,6 +2264,28 @@ describe('Traktor writes with only Add to Traktor on', () => {
     } finally {
       Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
       STATUS.traktor = { enabled: false, found: false }
+    }
+  })
+})
+
+// The Copias screen shows a program Surco never writes as "untouched", a hint that its
+// copies cannot hold anything Surco did. With only Add to Traktor on Surco does write
+// collection.nml (it adds converted tracks and moves a replaced track's entry), so calling
+// it untouched would steer the DJ away from the copy that undoes those writes.
+describe('traktorUntouched', () => {
+  it('counts Traktor as written whenever Sync or Add to Traktor is on', () => {
+    try {
+      for (const [syncTraktor, addToTraktor, untouched] of [
+        [false, false, true],
+        [true, false, false],
+        [false, true, false],
+        [true, true, false],
+      ] as const) {
+        Object.assign(SETTINGS, { syncTraktor, addToTraktor })
+        expect(traktorUntouched()).toBe(untouched)
+      }
+    } finally {
+      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false })
     }
   })
 })

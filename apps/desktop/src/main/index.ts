@@ -178,6 +178,7 @@ import {
   syncTagsInLibraries,
   tagSyncPrograms,
   traktorFlushDeps,
+  traktorUntouched,
   traktorWrite,
   usedByAnyLibrary,
 } from './libraryFlushes'
@@ -2464,7 +2465,7 @@ function registerIpc(): void {
       },
       traktor: {
         collectionPath: () => traktorWritePath() || null,
-        untouched: () => !getSettings().syncTraktor,
+        untouched: traktorUntouched,
         session: traktorSessionBackup,
         queue: traktorCueQueue,
         ensureClosed: (win) => ensureClosed('traktor', win, 'restore'),
