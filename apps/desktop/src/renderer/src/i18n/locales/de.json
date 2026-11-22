@@ -1365,13 +1365,14 @@
       }
     },
     "librarySectionTitle": "In deiner Bibliothek",
-    "libraryStateSame": "Identisch",
-    "libraryStateHere": "Diese ist besser",
-    "libraryStateLibrary": "Dort besser",
-    "libraryStateLibraryIn": "Besser in {{program}}",
+    "libraryStateSame": "Es ist dasselbe",
+    "libraryStateHere": "Deine Datei ist besser",
+    "libraryStateLibrary": "Deine Datei ist schlechter",
+    "libraryStateLibraryIn": "Bessere Kopie in {{program}}",
     "libraryStateDifferentBare": "Andere Version",
     "libraryStateDifferent": "Andere Version · {{duration}}",
     "libraryStateTie": "Ähnlich",
+    "libraryStateThisFile": "Das ist diese Datei",
     "libraryStateMeasuring": "Wird verglichen",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

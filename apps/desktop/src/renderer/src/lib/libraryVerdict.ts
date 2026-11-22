@@ -19,7 +19,15 @@ export function rowVerdict(state: CopyVerdictState): LibraryVerdict | null {
 }
 
 export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): LibraryVerdict | null {
-  for (const verdict of ['library', 'measuring', 'here', 'different', 'tie', 'same'] as const) {
+  for (const verdict of [
+    'library',
+    'measuring',
+    'here',
+    'different',
+    'tie',
+    'same',
+    'thisFile',
+  ] as const) {
     if (rows.includes(verdict)) return verdict
   }
   return null

@@ -1365,13 +1365,14 @@
       }
     },
     "librarySectionTitle": "ライブラリ内",
-    "libraryStateSame": "同一",
-    "libraryStateHere": "こちらが良い",
-    "libraryStateLibrary": "あちらが良い",
-    "libraryStateLibraryIn": "{{program}}の方が良い",
+    "libraryStateSame": "同じファイル",
+    "libraryStateHere": "あなたのファイルの方が良い",
+    "libraryStateLibrary": "あなたのファイルの方が劣る",
+    "libraryStateLibraryIn": "{{program}}のコピーの方が良い",
     "libraryStateDifferentBare": "別バージョン",
     "libraryStateDifferent": "別バージョン · {{duration}}",
     "libraryStateTie": "近い",
+    "libraryStateThisFile": "このファイルです",
     "libraryStateMeasuring": "比較中",
     "libraryVerdictWithReason": "{{verdict}}。{{reason}}"
   },

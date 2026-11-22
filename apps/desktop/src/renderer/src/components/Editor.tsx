@@ -826,6 +826,13 @@ export const Editor = memo(function Editor({
     enabled: !isMulti && !libraryHidden,
   })
   const comparedProgramCopies = programCopies.filter((copy) => !copy.isThisFile)
+  const { data: thisFileProps } = useTrackProperties(
+    item.inputPath,
+    programCopies.some((copy) => copy.isThisFile),
+  )
+  const thisFileFormat = thisFileProps
+    ? libraryCopyFormat(thisFileProps, item.inputPath, i18n.language)
+    : ''
   const programVerdicts = useCopyVerdicts(
     item.inputPath,
     comparedProgramCopies.map((copy) => copy.path),
@@ -1621,12 +1628,15 @@ export const Editor = memo(function Editor({
       ? {
           id: 'appleMusic',
           name: 'Apple Music',
-          format: musicHoldsFile ? '' : replacedCopyFormat,
+          format: replacedCopyFormat,
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
-          verdict:
-            libraryCopyBetter && (copyState === null || copyState === 'measuring')
+          verdict: musicHoldsFile
+            ? 'thisFile'
+            : libraryCopyBetter && (copyState === null || copyState === 'measuring')
               ? 'library'
-              : copyState,
+              : libraryCopyPending && !libraryCopyPath
+                ? 'measuring'
+                : copyState,
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: renderComparison({
@@ -1649,9 +1659,9 @@ export const Editor = memo(function Editor({
       return {
         id: copy.program,
         name,
-        format: '',
-        verdict: null,
-        comparable: !copy.isThisFile,
+        format: thisFileFormat,
+        verdict: 'thisFile',
+        comparable: false,
         comparisonOpen: false,
         onToggleComparison: () => {},
       }

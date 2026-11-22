@@ -12,7 +12,14 @@ import { SectionHeader } from './SectionHeader'
 import { SOURCE_ICON } from './SourceRail'
 import { Tooltip } from './Tooltip'
 
-export type LibraryVerdict = 'here' | 'library' | 'same' | 'measuring' | 'different' | 'tie'
+export type LibraryVerdict =
+  | 'here'
+  | 'library'
+  | 'same'
+  | 'measuring'
+  | 'different'
+  | 'tie'
+  | 'thisFile'
 
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
 // copy". The amber is never carried by colour alone, the word says it too.
@@ -22,6 +29,7 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
   library: { label: 'editor.libraryStateLibrary', className: PILL_TONE.warn },
   different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
   tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
+  thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/10 text-fg-faint' },
   measuring: {
     label: 'editor.libraryStateMeasuring',
     className: 'border border-dashed border-[var(--color-line-strong)] text-fg-faint',
@@ -85,7 +93,15 @@ function StatePill({
   )
 }
 
-const RESERVED_STATES = ['measuring', 'same', 'here', 'library', 'tie', 'different'] as const
+const RESERVED_STATES = [
+  'measuring',
+  'same',
+  'here',
+  'library',
+  'tie',
+  'different',
+  'thisFile',
+] as const
 
 function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): string {
   if (verdict === 'different' && row.durationSec != null) {
@@ -100,7 +116,13 @@ function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): stri
 const rowClass =
   'flex min-h-[30px] w-full flex-wrap items-center gap-x-2 gap-y-1 pl-3 pr-3 text-left text-xs @max-[22rem]:py-[7px]'
 
-function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
+function LibraryRowItem({
+  row,
+  showState,
+}: {
+  row: LibraryRow
+  showState: boolean
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
   const comparisonId = useId()
   const { verdict, comparison, comparisonOpen } = row
@@ -136,7 +158,7 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
           {row.format}
         </span>
       )}
-      {(verdict || row.comparable) && (
+      {showState && (verdict || row.comparable) && (
         <span
           data-testid="library-row-state-slot"
           className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
@@ -200,14 +222,30 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   )
 }
 
+// The state every copy shares, with the length when it is another version of one length; none
+// while any copy is still being measured, so the header does not settle and then jump.
+function sharedState(rows: LibraryRow[]): LibraryRow | null {
+  const [first] = rows.filter((row) => row.verdict || row.comparable)
+  if (!first?.verdict || first.verdict === 'measuring' || first.verdict === 'thisFile') return null
+  const same = rows.every(
+    (row) =>
+      !(row.verdict || row.comparable) ||
+      (row.verdict === first.verdict &&
+        (first.verdict !== 'different' || row.durationSec === first.durationSec)),
+  )
+  return same ? first : null
+}
+
 export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const verdict = aggregateLibraryVerdict(rows.map((row) => row.verdict))
-  const leading = rows.find((row) => row.verdict === verdict)
-  // Folded, the rows are hidden, so the header says the state that most needs the reader;
-  // open, the rows say it and the header stays quiet.
-  const headerWords =
-    verdict === 'library' && rows.length > 1 && leading
+  const shared = sharedState(rows)
+  const verdict = shared?.verdict ?? aggregateLibraryVerdict(rows.map((row) => row.verdict))
+  const leading = shared ?? rows.find((row) => row.verdict === verdict)
+  // A state every copy shares is said once, here, open or folded. Otherwise each row says its
+  // own and, folded, the header says the state that most needs the reader.
+  const headerWords = shared
+    ? rowWords(shared, shared.verdict as LibraryVerdict, tr)
+    : verdict === 'library' && leading
       ? tr('editor.libraryStateLibraryIn', { program: leading.name })
       : verdict
         ? tr(STATE[verdict].label)
@@ -220,7 +258,7 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
         open={open}
         onToggle={onToggle}
         status={
-          !open &&
+          (shared || !open) &&
           verdict && (
             <span className="grid">
               <StatePill
@@ -236,7 +274,7 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
       <SectionBody open={open}>
         <div className="mt-2 @container">
           {rows.map((row) => (
-            <LibraryRowItem key={row.id} row={row} />
+            <LibraryRowItem key={row.id} row={row} showState={!shared} />
           ))}
         </div>
       </SectionBody>

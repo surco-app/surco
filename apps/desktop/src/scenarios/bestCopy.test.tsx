@@ -54,7 +54,7 @@ describe.skipIf(process.platform !== 'darwin')(
       await surco.select(TAGS.title)
       verdict = await waitFor(
         () => {
-          const pill = screen.getByTestId('library-row-state')
+          const pill = screen.getByTestId('library-verdict')
           if (pill.getAttribute('aria-label') === 'Comparing')
             throw new Error('scenario: the copies are still being measured')
           return pill
@@ -68,7 +68,7 @@ describe.skipIf(process.platform !== 'darwin')(
     })
 
     it('says the file in hand is the better copy', () => {
-      expect(verdict.getAttribute('aria-label')).toMatch(/^This is better\./)
+      expect(verdict.getAttribute('aria-label')).toMatch(/^Your file is better\./)
     })
 
     it('shows that the limiter, counted in peaks, is what decided', () => {
