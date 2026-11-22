@@ -892,6 +892,27 @@ describe('corroboratedTier on an uncurated source whose artist contradicts the f
     const rel = release({ artists: [{ name: 'Someone Else' }] })
     expect(corroboratedTier(1, file, rel, withDuration, false)).toBe('high')
   })
+  // Folding keeps only Latin letters and digits, so a name in another script folds to nothing
+  // on both sides; read that as "no agreement" and every Japanese or Cyrillic act's match on
+  // Bandcamp would be vetoed and then dropped by the sweep.
+  it('lets a non-Latin artist agree with the same name on the page', () => {
+    const rel = bandcamp({ artists: [{ name: '電気' }] })
+    const target = { title: '曲', artist: '電気', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, { ...withDuration, title: '曲' }, false)).toBe('high')
+  })
+
+  it('still holds a non-Latin artist that differs from the page for review', () => {
+    const rel = bandcamp({ artists: [{ name: '別人' }] })
+    const target = { title: '曲', artist: '電気', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, { ...withDuration, title: '曲' }, false)).toBe('review')
+  })
+
+  // A blank artist tag names no act, so it cannot contradict anyone: same as no tag.
+  it('leaves a whitespace-only artist tag as it is today', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    const target = { title: 'Song', artist: '   ', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, withDuration, false)).toBe('high')
+  })
 })
 
 describe('catalogNumberMatches', () => {

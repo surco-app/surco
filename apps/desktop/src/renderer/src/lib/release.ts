@@ -305,11 +305,16 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 // lead artist matches the release's fuller collaboration credit and vice versa, while a
 // partial name ("Mat") never matches a longer one ("Matador"). The glued-spelling fallback
 // compares with spaces removed — that only erases word boundaries, never letters, so
-// "Djmofly" meets "DJ Mofly" but two different names still can't fuse.
+// "Djmofly" meets "DJ Mofly" but two different names still can't fuse. Folding drops every
+// non-Latin letter, so a name that folds to nothing falls back to its plain case-and-spacing
+// reading (as labelPage's sameName does) instead of never agreeing with itself.
 function sameAct(target: string, artists: { name: string }[] | undefined): boolean {
   const releaseWords = normalize(joinArtists(artists)).split(' ').filter(Boolean)
   const targetWords = normalize(target).split(' ').filter(Boolean)
-  if (releaseWords.length === 0 || targetWords.length === 0) return false
+  if (releaseWords.length === 0 || targetWords.length === 0) {
+    const plain = (s: string): string => s.trim().replace(/\s+/g, ' ').toLowerCase()
+    return plain(target) !== '' && plain(target) === plain(joinArtists(artists))
+  }
   const releaseSet = new Set(releaseWords)
   const targetSet = new Set(targetWords)
   return (
@@ -352,7 +357,7 @@ function contradictsFileArtist(
   track: ReleaseTrack,
   signals: MatchSignals,
 ): boolean {
-  if (rel.provider === 'discogs' || !target.artist || signals.artistAgrees) return false
+  if (rel.provider === 'discogs' || !target.artist?.trim() || signals.artistAgrees) return false
   return [...(track.artists ?? []), ...(rel.artists ?? [])].some((a) => a.name.trim() !== '')
 }
 
