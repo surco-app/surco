@@ -111,7 +111,11 @@ describe('the collection patch a replace records', () => {
     await convertAudio(...replaceArgs())
     const [patch] = endNmlBatch()
 
-    expect(patch).toMatchObject({ ...toNmlLocation(oldPath), relocates: true, outputFile: 'Song.aiff' })
+    expect(patch).toMatchObject({
+      ...toNmlLocation(oldPath),
+      relocates: true,
+      outputFile: 'Song.aiff',
+    })
     expect(patch?.newFile).toBeUndefined()
   })
 
