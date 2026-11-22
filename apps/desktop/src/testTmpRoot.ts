@@ -31,4 +31,9 @@ const runDir = mkdtempSync(join(runs, 'run-'))
 process.env.TMPDIR = runDir
 log.transports.file.resolvePathFn = () => join(runDir, 'main.log')
 setLibraryBackupRoot(join(runDir, 'backups'))
-afterAll(() => remove(runDir))
+// Background work can still log once a file's tests are done; writing into the removed
+// folder makes electron-log complain on the console after the worker has shut it down.
+afterAll(() => {
+  log.transports.file.level = false
+  remove(runDir)
+})
