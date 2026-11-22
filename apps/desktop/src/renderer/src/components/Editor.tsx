@@ -1451,15 +1451,16 @@ export const Editor = memo(function Editor({
             onSelect: onCopyMeta,
             separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
           },
-          {
-            id: 'paste-meta',
-            testid: 'paste-meta-btn',
-            label: pasteMetaLabel,
-            Icon: ClipboardPaste,
-            onSelect: onPasteMeta,
-            disabled: copiedMetaTitle === null,
-          },
         ]),
+    {
+      id: 'paste-meta',
+      testid: 'paste-meta-btn',
+      label: pasteMetaLabel,
+      Icon: ClipboardPaste,
+      onSelect: onPasteMeta,
+      disabled: copiedMetaTitle === null,
+      separatorBefore: isMulti && !(onApplyTitleFormat && titleFormat.trim() !== ''),
+    },
   ]
 
   // The library state rides the section's title line, beside the title: a line of its own

@@ -12349,6 +12349,74 @@ describe('App copy and paste metadata from the editor', () => {
   })
 })
 
+describe('App paste metadata onto a selection', () => {
+  const setup = async () => {
+    const tags: Record<string, Record<string, string>> = {
+      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara', album: 'Source LP', trackNumber: '1' },
+      '/music/b.wav': { title: 'Bravo', artist: 'Old B', album: 'Old LP', trackNumber: '2' },
+      '/music/c.wav': { title: 'Charlie', artist: 'Old C', album: 'Old LP', trackNumber: '3' },
+    }
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+      readTags: vi.fn(async (path: string) => tags[path]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.contextMenu(rows[0])
+    fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { shiftKey: true })
+    return rows
+  }
+  const valueAfterSelecting = async (row: HTMLElement, testid: string) => {
+    fireEvent.click(row)
+    await waitFor(() => expect(screen.getByTestId(testid)).toBeInTheDocument())
+    return (screen.getByTestId(testid) as HTMLInputElement).value
+  }
+
+  // Dressing a whole release from one good track is the point of the clipboard; the
+  // release-level fields travel, but each track keeps its own title and number or the
+  // paste would flatten the album into copies of one song.
+  it('gives every selected track the release fields and keeps their own title and number', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+
+    expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('DJ Lara')
+    expect(await valueAfterSelecting(rows[1], 'field-title')).toBe('Bravo')
+    expect(await valueAfterSelecting(rows[2], 'field-artist')).toBe('DJ Lara')
+    expect(await valueAfterSelecting(rows[2], 'field-title')).toBe('Charlie')
+  })
+
+  // The paste asks for no confirmation because one undo gives every row back.
+  it('undoes the paste on every selected track at once', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    await screen.findByText('Metadata pasted')
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+
+    await waitFor(async () =>
+      expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('Old B'),
+    )
+    expect(await valueAfterSelecting(rows[2], 'field-artist')).toBe('Old C')
+  })
+
+  it('offers the paste in the list menu when several rows are selected', async () => {
+    const rows = await setup()
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { shiftKey: true })
+    fireEvent.contextMenu(rows[2])
+    fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+    expect(await valueAfterSelecting(rows[1], 'field-artist')).toBe('DJ Lara')
+  })
+})
+
 describe('App duplicates filter', () => {
   // The download-folder case this bucket exists for: the same song arriving as two
   // files. The bucket only appears once a real duplicate pair exists, and picking it

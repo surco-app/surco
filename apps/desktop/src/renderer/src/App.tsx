@@ -2888,7 +2888,7 @@ export default function App(): React.JSX.Element {
   // convert wipes its cover and rating, not just the text fields — and its own
   // foreign tags, which differ per track so a flat patchTracks patch can't carry them.
   const onClearExtras = useStableCallback((ids: string[]) => clearExtrasTracks(ids))
-  const { onCopyMeta, onPasteMeta, onCopyPath, onApplyCoverAll, onCopyFilename } =
+  const { onCopyMeta, onPasteMeta, onPasteMetaAll, onCopyPath, onApplyCoverAll, onCopyFilename } =
     useMetadataClipboard({
       copiedMeta,
       setCopiedMeta,
@@ -2906,7 +2906,13 @@ export default function App(): React.JSX.Element {
     if (selected) onCopyMeta(selected)
   })
   const onPasteSelectedMeta = useStableCallback(() => {
-    if (selected) onPasteMeta(selected)
+    if (selectedIds.length > 1) onPasteMetaAll(selectedIds)
+    else if (selected) onPasteMeta(selected)
+  })
+  const onPasteMetaMenu = useStableCallback((track: TrackItem) => {
+    const targets = menuTargets(track.id)
+    if (targets.length > 1) onPasteMetaAll(targets.map((t) => t.id))
+    else onPasteMeta(track)
   })
   // Stable like the other editor props: an inline arrow is a new identity per render,
   // which would re-render the memoized Editor per keystroke.
@@ -3954,7 +3960,7 @@ export default function App(): React.JSX.Element {
           onMergeMatch={merge ? () => void runMatchingEdits(merge) : undefined}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
-          onPasteMeta={onPasteMeta}
+          onPasteMeta={onPasteMetaMenu}
           canPasteMeta={copiedMeta !== null}
           onRemove={removeFromList}
           removeLabel={removeLabel}

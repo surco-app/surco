@@ -507,7 +507,7 @@ describe('TrackContextMenu with several tracks selected', () => {
       .filter((id) => id !== 'track-menu-backdrop')
 
   it('keeps only what acts on the whole selection, because a one-track item would touch just the clicked row', () => {
-    renderMenu({ ...everything, multi: true })
+    renderMenu({ ...everything, canPasteMeta: false, multi: true })
     expect(shownIds()).toEqual([
       'track-menu-unmatch',
       'track-menu-add-to',
@@ -517,8 +517,13 @@ describe('TrackContextMenu with several tracks selected', () => {
     ])
   })
 
+  it('offers pasting the copied tags onto the whole selection, since it has Undo', () => {
+    renderMenu({ canPasteMeta: true, multi: true })
+    expect(shownIds()).toEqual(['track-menu-paste-meta', 'track-menu-remove', 'track-menu-trash'])
+  })
+
   it('keeps merging blocks, because it joins every selected block and not just the clicked row', () => {
-    renderMenu({ ...everything, onMergeMatch: vi.fn(), multi: true })
+    renderMenu({ ...everything, canPasteMeta: false, onMergeMatch: vi.fn(), multi: true })
     expect(shownIds()).toEqual([
       'track-menu-unmatch',
       'track-menu-merge-match',
@@ -530,7 +535,7 @@ describe('TrackContextMenu with several tracks selected', () => {
   })
 
   it('opens on an item, not on a divider left over from the hidden groups', () => {
-    renderMenu({ ...everything, onUnmatch: undefined, multi: true })
+    renderMenu({ ...everything, canPasteMeta: false, onUnmatch: undefined, multi: true })
     const first = screen.getByTestId('track-menu').firstElementChild
     expect(first?.tagName).not.toBe('HR')
     expect(first).toContainElement(screen.getByTestId('track-menu-add-to'))
