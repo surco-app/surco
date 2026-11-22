@@ -5,7 +5,8 @@ import { crateFileOf } from './seratoCrateFile'
 import { parseSeratoCrate, parseSeratoDatabase } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { crateBytes, onlyBackupOf, tempsUnder, twoRoots } from './seratoLibraryFixture'
-import { repointSerato } from './seratoRepoint'
+import type { QueueApply } from './rekordboxQueue'
+import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
 
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
@@ -203,4 +204,77 @@ describe('the Serato queue wiring', () => {
     expect(readFileSync(join(__dirname, 'index.ts'), 'utf-8')).toMatch(
       /repoint: \(_library, list\) =>\s+repointSerato\(list,/,
     ))
+})
+
+describe('settleSeratoRepoint', () => {
+  const applied: QueueApply = {
+    status: 'applied',
+    tracks: 1,
+    changes: 1,
+    notices: [],
+    written: [],
+    outcomes: [],
+  }
+  const deps = (holds: boolean, running: boolean) => {
+    const apply = vi.fn(async (_ensureClosed: () => Promise<boolean>) => applied)
+    const onApplied = vi.fn()
+    return {
+      apply,
+      onApplied,
+      deps: {
+        queue: { holdsRepoint: () => holds, apply },
+        isRunning: async () => running,
+        onApplied,
+      },
+    }
+  }
+
+  it('applies a pending Serato repoint for the file before its use is read, so a closed Serato lets the original go', async () => {
+    const t = deps(true, false)
+    await settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
+    expect(t.apply).toHaveBeenCalledTimes(1)
+    expect(await t.apply.mock.calls[0][0]()).toBe(true)
+    expect(t.onApplied).toHaveBeenCalledWith(applied)
+  })
+
+  it('leaves the repoint queued while Serato is open, so the original stays', async () => {
+    const t = deps(true, true)
+    await settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
+    expect(await t.apply.mock.calls[0][0]()).toBe(false)
+  })
+
+  it('does nothing for a file with no repoint waiting', async () => {
+    const t = deps(false, false)
+    await settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
+    expect(t.apply).not.toHaveBeenCalled()
+  })
+
+  it('never lets a failing apply break the retire flow, so the original is simply kept', async () => {
+    const t = deps(true, false)
+    t.apply.mockRejectedValue(new Error('disk'))
+    await expect(settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)).resolves.toBeUndefined()
+    expect(t.onApplied).not.toHaveBeenCalled()
+  })
+
+  it('stops waiting for a slow apply, so retiring never hangs behind it', async () => {
+    vi.useFakeTimers()
+    try {
+      const t = deps(true, false)
+      t.apply.mockReturnValue(new Promise(() => undefined))
+      const done = settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
+      await vi.advanceTimersByTimeAsync(20_000)
+      await expect(done).resolves.toBeUndefined()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})
+
+describe('retiring a replaced original', () => {
+  it('settles Serato before asking any library about a file to retire, so a closed Serato no longer holds it', () => {
+    const source = readFileSync(join(__dirname, 'index.ts'), 'utf-8')
+    expect(source).toMatch(
+      /holdsInAnyLibrary = async[\s\S]*?settleSeratoRepoint\(path,[\s\S]*?usedByAnyLibrary\(path, titles, \{\s+traktorRead: traktorReadPath,\s+rootLibraries,/,
+    )
+  })
 })

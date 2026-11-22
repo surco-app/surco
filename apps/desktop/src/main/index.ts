@@ -243,7 +243,7 @@ import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
-import { repointSerato } from './seratoRepoint'
+import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
 import {
   clearPreviousSession,
   loadLastSession,
@@ -504,8 +504,13 @@ const traktorReadPath = (): string =>
     }),
     existsSync,
   )
-const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
-  usedByAnyLibrary(path, titles, {
+const holdsInAnyLibrary = async (path: string, titles: string[]): Promise<boolean> => {
+  await settleSeratoRepoint(path, {
+    queue: programQueues.serato.queue,
+    isRunning: DJ_PROCESSES.serato.isRunning,
+    onApplied: programQueues.serato.announceApplied,
+  })
+  return usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
     rootLibraries,
     ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
@@ -513,6 +518,7 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
     fileLike: fileLikeForMusic,
     ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
   })
+}
 const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
