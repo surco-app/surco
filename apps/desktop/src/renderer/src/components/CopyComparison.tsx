@@ -12,7 +12,7 @@ interface SentenceKeys {
 }
 
 // One sentence per reason and side: the side that loses is the subject, so "this file" and
-// "the Apple Music copy" each need their own wording rather than one key with a name in it.
+// "the library copy" each need their own wording rather than one key with a name in it.
 const LIBRARY_LOSES: Record<CopyReason, SentenceKeys> = {
   lossless: { full: 'editor.copyLossyLibrary', bare: 'editor.copyLossyLibrary' },
   transcode: { full: 'editor.copyTranscodeLibrary', bare: 'editor.copyTranscodeLibraryBare' },
