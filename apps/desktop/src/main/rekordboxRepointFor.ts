@@ -73,10 +73,12 @@ export function rekordboxRepointFor(
             options.audio.outputShiftMs - options.audio.sourceShiftMs - options.audio.trimmedMs,
           ),
         }
+  // Engine DJ keeps cues in samples at the old file's rate, so a replacement at another rate
+  // has to hand it the new one even when the shift was not trusted and nothing moves in time.
   const engineShift: EngineShift | undefined =
-    moved !== undefined
+    moved !== undefined || (options.replaces && replaceAudio.sampleRateHz)
       ? {
-          trimmedMs: 0 - Math.round(moved),
+          trimmedMs: moved === undefined ? 0 : 0 - Math.round(moved),
           ...(replaceAudio.sampleRateHz ? { sampleRateHz: replaceAudio.sampleRateHz } : {}),
           ...(replaceAudio.sampleCount ? { sampleCount: replaceAudio.sampleCount } : {}),
         }

@@ -498,4 +498,15 @@ describe('stackRepoint on a replacement', () => {
     expect(stacked.engineShift?.trimmedMs).toBe(-1474)
     expect(stacked.fromBytes).toBe(10)
   })
+
+  // The file on disk is the last one written: Engine must read its cues at that file's
+  // rate, so a later same-path conversion's rate wins over the earlier one.
+  it("keeps the last file's rate when a same-path replacement is converted again", () => {
+    const p = '/m/a.aiff'
+    const stacked = stackRepoint(
+      { from: p, to: p, engineShift: { trimmedMs: 0, sampleRateHz: 48000 } },
+      { from: p, to: p, engineShift: { trimmedMs: 0, sampleRateHz: 44100 } },
+    )
+    expect(stacked.engineShift?.sampleRateHz).toBe(44100)
+  })
 })

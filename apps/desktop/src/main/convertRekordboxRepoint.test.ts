@@ -174,6 +174,20 @@ describe('rekordboxRepointFor', () => {
     expect(repoint?.engineShift?.trimmedMs ?? 0).toBe(0)
   })
 
+  // Engine DJ counts cues in samples at the rate it has stored. A replacement at another
+  // rate whose shift was not trusted still has to rescale them, or every cue plays early or
+  // late in the booth.
+  it("tells Engine DJ the new file's rate even when the shift could not be trusted", () => {
+    const repoint = rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+      replaces: '/m/a.mp3',
+      audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 0 },
+      replaceShift: { unmoved: 'noMatch' },
+      replaceAudio: { oldShiftMs: 0, newShiftMs: 0, sampleRateHz: 48000 },
+    })
+    expect(repoint?.engineShift).toEqual({ trimmedMs: 0, sampleRateHz: 48000 })
+    expect(repoint?.audio?.cueShiftMs).toBe(0)
+  })
+
   // The waveform and beat grid rekordbox keeps were analysed on the old file. With the audio
   // 200 ms later the moved cues would sit off that grid, so rekordbox has to analyse the
   // replacement again even though its samples were copied rather than re-encoded.
