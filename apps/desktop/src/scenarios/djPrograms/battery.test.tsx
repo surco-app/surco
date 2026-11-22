@@ -38,6 +38,7 @@ vi.mock('../../main/virtualdjProcess', () => ({
   waitForVirtualdjExit: vi.fn(async () => true),
 }))
 
+import { setEngineWriteGatherMs } from '../../main/engineLibrary'
 import { isEngineDjRunning } from '../../main/engineProcess'
 import { serialLibraryFlush } from '../../main/libraryTagSync'
 import { isRekordboxRunning } from '../../main/rekordboxProcess'
@@ -194,6 +195,9 @@ const canEdit = (program: DjProgram, kind: RekordboxPlaylistEdit['kind']): boole
 }
 
 beforeAll(async () => {
+  // Each conversion here lands alone, so the 2 s the Engine writer waits to gather a run's
+  // adds only idles away the test's time, and under load it pushed tests past their timeout.
+  setEngineWriteGatherMs(0)
   root = realpathSync(scenarioDir('dj-programs'))
   output = join(root, 'Salida')
   mkdirSync(output, { recursive: true })
