@@ -5241,7 +5241,7 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId('track-menu-remove-from'))
       fireEvent.click(await screen.findByTestId('confirm-ok'))
       await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-      expect(screen.queryByTestId('field-title')).not.toBeInTheDocument()
+      await waitFor(() => expect(screen.queryByTestId('field-title')).not.toBeInTheDocument())
       const charlie = screen.getAllByTestId('track-row')[0]
       fireEvent.click(charlie, { metaKey: true })
       fireEvent.contextMenu(charlie)
