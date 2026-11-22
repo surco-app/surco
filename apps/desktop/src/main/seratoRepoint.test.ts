@@ -218,7 +218,7 @@ describe('settleSeratoRepoint', () => {
     outcomes: [],
   }
   const serialSpy = vi.fn()
-  const serial = <T,>(task: () => Promise<T>): Promise<T> => {
+  const serial = <T>(task: () => Promise<T>): Promise<T> => {
     serialSpy()
     return task()
   }

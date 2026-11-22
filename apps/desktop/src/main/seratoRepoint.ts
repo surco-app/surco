@@ -111,9 +111,7 @@ export async function settleSeratoRepoint(
         resolve(undefined)
       }, SETTLE_TIMEOUT_MS)
     })
-    const applying = deps.serial(() =>
-      deps.queue.apply(async () => !(await deps.isRunning())),
-    )
+    const applying = deps.serial(() => deps.queue.apply(async () => !(await deps.isRunning())))
     const result = await Promise.race([applying, gaveUp])
     if (result) deps.onApplied(result)
   } catch (err) {
