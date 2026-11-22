@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { CommentMode } from '../shared/phraseCount'
 import type { RekordboxPlaylistEdit } from '../shared/types'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 import {
@@ -817,13 +818,19 @@ function contentRow(path: string, id: string): Record<string, unknown> {
   }
 }
 
-const commentOp = (id: string, contentId: string, count: string): QueueOp => ({
+const commentOp = (
+  id: string,
+  contentId: string,
+  count: string,
+  mode: CommentMode = 'prepend',
+): QueueOp => ({
   id,
   kind: 'comment',
   contentId,
   path: '/Volumes/Public/Music/Gowan.wav',
   label: 'Gowan',
   count,
+  mode,
 })
 
 describe('applyRekordboxBatch with comments', () => {
@@ -843,6 +850,13 @@ describe('applyRekordboxBatch with comments', () => {
       rb_local_usn: 41,
       updated_at: '2026-10-15 18:00:00.000 +00:00',
     })
+  })
+
+  it("replaces rekordbox's comment but keeps its My Tags block when the op asks to replace", async () => {
+    const path = await collection()
+    setComment(path, '103', 'Remix /* Base */')
+    await applyRekordboxBatch(path, [commentOp('c', '103', '2 - 8', 'replace')], deps())
+    expect(contentRow(path, '103').Commnt).toBe('2 - 8 · /* Base */')
   })
 
   it('replaces the count an earlier save left, so counting again never stacks two counts', async () => {

@@ -58,6 +58,7 @@ describe('opRank', () => {
       path: '/m/a.wav',
       label: 'a',
       count: '8',
+      mode: 'prepend',
     })
     expect(comment).toBe(
       opRank({ id: 't', kind: 'tags', path: '/m/a.wav', label: 'a', fields: {} }),

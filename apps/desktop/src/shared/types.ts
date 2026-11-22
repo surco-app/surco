@@ -8,6 +8,7 @@ import type { DjProgram, LibraryProgram, UsbProgram, WritableProgram } from './d
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
+import type { CommentMode } from './phraseCount'
 import type { SessionWizardSettings } from './sessionTypes'
 import type { Chord } from './shortcuts'
 import type { TrackOrigin } from './trackOrigin'
@@ -2035,6 +2036,7 @@ export interface SaveCommentRequest {
   path: string
   label: string
   count: string
+  mode: CommentMode
 }
 
 export type CopyReason =

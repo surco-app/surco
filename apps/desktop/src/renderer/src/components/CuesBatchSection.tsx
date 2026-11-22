@@ -111,7 +111,9 @@ export function CuesBatchSection({
               path,
               label,
               count,
+              mode: 'prepend' as const,
             })),
+            false,
           ),
         )
         .then(

@@ -71,6 +71,7 @@ function setup(
   })
   const saveComments = vi.fn<Api['cues']['saveComments']>(async () => {
     calls.push('saveComments')
+    return { failed: [] }
   })
   const api = installApi({
     cues: {
@@ -204,10 +205,13 @@ describe('Phrases over several selected tracks', () => {
     await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
     expect(askToApply).toHaveBeenCalledWith(['rekordbox'])
     expect(calls).toEqual(['askToApply', 'saveComments'])
-    expect(saveComments).toHaveBeenCalledWith([
-      { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8' },
-      { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
-    ])
+    expect(saveComments).toHaveBeenCalledWith(
+      [
+        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8', mode: 'prepend' },
+        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
+      ],
+      false,
+    )
   })
 
   it('gives the saved comments back to the form and hides the row, so a later Convert does not write the count into the file', async () => {
@@ -240,8 +244,8 @@ describe('Phrases over several selected tracks', () => {
     let finish = () => {}
     saveComments.mockImplementationOnce(
       () =>
-        new Promise<void>((resolve) => {
-          finish = resolve
+        new Promise<{ failed: string[] }>((resolve) => {
+          finish = () => resolve({ failed: [] })
         }),
     )
     fireEvent.click(await putPhrases())
@@ -267,10 +271,13 @@ describe('Phrases over several selected tracks', () => {
     await waitFor(() => expect(onPhrases).toHaveBeenCalledTimes(2))
     fireEvent.click(await screen.findByTestId('cues-batch-comments-save'))
     await waitFor(() =>
-      expect(saveComments).toHaveBeenCalledWith([
-        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '4 - 8' },
-        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
-      ]),
+      expect(saveComments).toHaveBeenCalledWith(
+        [
+          { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '4 - 8', mode: 'prepend' },
+          { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
+        ],
+        false,
+      ),
     )
     await waitFor(() =>
       expect(onRestoreComments).toHaveBeenCalledWith([
@@ -292,10 +299,13 @@ describe('Phrases over several selected tracks', () => {
     )
     fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
     await waitFor(() =>
-      expect(saveComments).toHaveBeenCalledWith([
-        { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8' },
-        { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4' },
-      ]),
+      expect(saveComments).toHaveBeenCalledWith(
+        [
+          { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8', mode: 'prepend' },
+          { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
+        ],
+        false,
+      ),
     )
   })
 

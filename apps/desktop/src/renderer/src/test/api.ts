@@ -288,7 +288,7 @@ const NO_CUES: CuesApi = {
   queued: async () => null,
   undo: async () => {},
   save: async () => {},
-  saveComments: async () => {},
+  saveComments: async () => ({ failed: [] }),
 }
 
 export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {

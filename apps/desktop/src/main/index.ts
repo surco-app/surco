@@ -72,6 +72,7 @@ import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
 import {
   analysisCacheStats,
+  carryAnalysis,
   clearAnalysisCache,
   configureFileSignatures,
   pruneAnalysisCache,
@@ -103,8 +104,10 @@ import { cachedBeatGrid, cachedGridAudit } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { createBusyPaths } from './busyPaths'
+import { AUDIO_ONLY_NAMESPACES } from './carriedAnalysis'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import { createQuitIntent, handleGuardedClose } from './closeToQuit'
+import { writeCommentToFile } from './commentFileWrite'
 import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
@@ -194,6 +197,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMemoryWatch, processSamples } from './memoryWatch'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
+import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { beginNmlBatch, foldNmlBatch, redirectNmlPatch } from './nmlBatch'
@@ -270,6 +274,7 @@ import { sourceStat } from './sourceStat'
 import { createStickyConflict } from './stickyConflict'
 import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
+import type { TagLibRead } from './tags'
 import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
@@ -1695,6 +1700,16 @@ function registerIpc(): void {
     beginMoment: moments.begin,
     flow: () => activeCueFlow(getSettings()),
     provisional: provisionalCues,
+    writeCommentToFile: (path, count, mode) =>
+      writeCommentToFile(path, count, mode, {
+        allowed: (p) => mediaAccess.isAllowed(p),
+        readComment: async (p) =>
+          (await runInWorker<TagLibRead>({ type: 'tagLibRead', file: p })).extras.comment ?? '',
+        mtime: (p) => fileSignatures.fresh(p),
+        rewrite: (p, changes) => rewriteTagFields(p, changes, tmpManifest, followLibrarySize),
+        carry: (p, from, to) => carryAnalysis(p, from, to, AUDIO_ONLY_NAMESPACES),
+        noteWritten: (p) => fileSignatures.changed(p),
+      }),
     twins: (file) =>
       libraryTracksOf(
         file,
