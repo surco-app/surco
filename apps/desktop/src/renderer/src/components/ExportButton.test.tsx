@@ -85,6 +85,16 @@ describe('ExportButton', () => {
     expect(onProcess).toHaveBeenCalledWith('aiff')
   })
 
+  // The branch rule: the up-to-date row's dropdown reads like the split button's, the chosen
+  // format beside the chevron, sized by the same stacked names.
+  it('shows the chosen format on the up-to-date row dropdown, as on the split button', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    expect(screen.getByTestId('process-format-toggle')).toHaveAccessibleName(
+      'Format and destination, AIFF',
+    )
+  })
+
   it('keeps the format menu on the quiet face', () => {
     render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
@@ -225,8 +235,9 @@ describe('ExportButton', () => {
     )
   })
 
-  // A width that followed the text made the verb half jump each time the format changed.
-  it('keeps the dropdown the same size whatever format is chosen', () => {
+  // A width that followed the text made the verb half jump each time the format changed, so
+  // every name sits in the dropdown's one stacked cell and only which one shows changes.
+  it('stacks every format name in the dropdown whatever format is chosen', () => {
     const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
     const sized = screen.getByTestId('process-format-toggle').textContent
     rerender(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)

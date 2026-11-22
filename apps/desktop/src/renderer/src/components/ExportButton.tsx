@@ -269,13 +269,14 @@ export function ExportButton({
           <button
             type="button"
             data-testid="process-format-toggle"
-            aria-label={tr('editor.chooseFormat')}
+            aria-label={tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })}
             aria-expanded={open}
             ref={toggleRef}
             aria-haspopup="menu"
             onClick={() => setOpen((v) => !v)}
-            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)]"
+            className="press flex h-8 items-center justify-center gap-1 rounded-lg border border-[var(--color-line-strong)] px-2 text-fg-dim hover:bg-[var(--color-hover)]"
           >
+            {formatPicker}
             <ChevronDown
               aria-hidden="true"
               className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}

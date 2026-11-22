@@ -444,6 +444,13 @@ describe('offersSourceFormat', () => {
     expect(offersSourceFormat([aif, aiff], 'aiff')).toBe(false)
   })
 
+  // A dot in a folder name is no extension: files without one share a single "format".
+  it('reads a file with no extension as one format, whatever its folder is called', () => {
+    const bare = { ...track('e', 'idle'), inputPath: '/Mix.2024/intro' }
+    const other = { ...track('g', 'idle'), inputPath: '/Set.v2/outro' }
+    expect(offersSourceFormat([bare, other], 'aiff')).toBe(false)
+  })
+
   it('is offered once the files have more than one format', () => {
     expect(offersSourceFormat([flacA, mp3], 'aiff')).toBe(true)
   })

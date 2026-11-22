@@ -260,12 +260,14 @@ export function batchFormats(
   return [...formats]
 }
 
-// A file's own format, .aif and .aiff alike; one no output format names keeps its extension.
+// A file's own format, .aif and .aiff alike; one no output format names keeps its extension,
+// and a file without one (a dot in a folder name is not one) reads as ''.
 function inputFormatOf(path: string): string {
-  return (
-    OUTPUT_FORMATS.find((f) => formatMatchesInput(f, path)) ??
-    path.slice(path.lastIndexOf('.')).toLowerCase()
-  )
+  const known = OUTPUT_FORMATS.find((f) => formatMatchesInput(f, path))
+  if (known) return known
+  const name = path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1)
+  const dot = name.lastIndexOf('.')
+  return dot === -1 ? '' : name.slice(dot).toLowerCase()
 }
 
 // "Same as source" is offered only where it differs from a real format, over files of more

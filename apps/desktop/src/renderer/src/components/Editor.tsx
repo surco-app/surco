@@ -1184,6 +1184,10 @@ export const Editor = memo(function Editor({
       ),
     [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
   )
+  const offerSource = useMemo(
+    () => offersSourceFormat(multiTracks, formatPick),
+    [multiTracks, formatPick],
+  )
   const addsToMusic =
     !isMulti &&
     picked.addToAppleMusic &&
@@ -2181,7 +2185,8 @@ export const Editor = memo(function Editor({
           incompleteReason={incompleteReason}
           incompleteSummary={
             multiGate
-              ? multiGate.missing.fields.length
+              ? // Named on the face only when empty fields are why nothing is ready.
+                !multiGate.mixed && multiGate.ready.length === 0 && multiGate.missing.fields.length
                 ? missingSummary(
                     multiGate.missing.fields.map((key) => tr(`fields.${key}`)),
                     tr,
@@ -2199,7 +2204,7 @@ export const Editor = memo(function Editor({
           tagsOnly={tagsOnlyExport}
           batchTagsOnly={batchTagsOnly}
           batchFormats={batchWrites}
-          offerSource={offersSourceFormat(multiTracks, formatPick)}
+          offerSource={offerSource}
           clearAfterBatch={clearListAfterConvert}
           onToggleClearAfterBatch={onToggleClearList}
           sameFormat={formatMatchesInput(format, item.inputPath)}

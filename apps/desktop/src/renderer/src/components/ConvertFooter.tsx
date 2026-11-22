@@ -332,9 +332,10 @@ export function ConvertFooter({
       : tr(batchTagsOnly ? 'header.updateSelected' : 'header.convertSelected', {
           count: batchCount,
         })
+  // The label stays first, so it can still be read in full when the button truncates it.
   const batchTip =
     isMulti && batchFormats.length > 1
-      ? batchFormats.map((f) => f.toUpperCase()).join(' · ')
+      ? [batchLabel, ...batchFormats.map((f) => f.toUpperCase())].join(' · ')
       : undefined
   const lossyToLossless =
     !isMulti &&
@@ -771,7 +772,8 @@ export function ConvertFooter({
               incomplete={isMulti ? batchCount === 0 : incomplete}
               incompleteReason={isMulti ? leftOut : incompleteReason}
               blockedLabel={incompleteSummary}
-              onBlockedPress={onBlockedPress}
+              // A selection held back by something other than empty fields has no field to go to.
+              onBlockedPress={isMulti && !incompleteSummary ? undefined : onBlockedPress}
               inPlace={!isMulti && willEditInPlace}
               tagsOnly={tagsOnly}
               sameFormat={sameFormat}

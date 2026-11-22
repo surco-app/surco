@@ -1347,7 +1347,9 @@ describe('ConvertFooter selection split button', () => {
   it('says on hover which formats a selection writes when it writes more than one', () => {
     render(plan({ batchFormats: ['aiff', 'mp3'] }))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
-    expect(hoverTooltip(screen.getByTestId('process-btn'))).toContain('AIFF · MP3')
+    expect(hoverTooltip(screen.getByTestId('process-btn'))).toBe(
+      `${i18n.t('header.convertSelected', { count: 2 })} · AIFF · MP3`,
+    )
   })
 
   it('says it updates, not converts, when the batch only rewrites tags', () => {

@@ -2524,6 +2524,23 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
   })
 
+  // Nothing converts because the selection mixes replacing with adding, not because of the
+  // empty field: the face must not send the DJ to a field that would change nothing.
+  it('keeps the plain face when something other than a missing field holds every track back', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'album', 'artist'],
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
+      i18n.t('editor.mixedReplaceSelection'),
+    )
+    expect(screen.queryByTestId('process-blocked-face')).toBeNull()
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
+  })
+
   it('names the missing fields in the batch plan', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(i18n.t('fields.artist'))
@@ -3494,9 +3511,9 @@ describe('Editor export control', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 
-  // The verb stays on the main half and the dropdown shows the pick, at one width, so a
-  // format change moves neither half.
-  it('shows the format chosen from the dropdown on the dropdown, at the same width', () => {
+  // The verb stays on the main half and the dropdown shows the pick over the same stack of
+  // names, so a format change moves neither half.
+  it('shows the format chosen from the dropdown on the dropdown, over the same stacked names', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.flac' }, 'aiff')
     expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
