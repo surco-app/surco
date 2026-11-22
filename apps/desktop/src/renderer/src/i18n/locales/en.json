@@ -187,6 +187,8 @@
     "convertingCount": "Converting… {{done}}/{{total}}",
     "leftOutMissing_one": "{{count}} track left out, it has no {{fields}}",
     "leftOutMissing_other": "{{count}} tracks left out, they have no {{fields}}",
+    "leftOutMissingSeveral_one": "{{count}} track left out, it has no {{fields}}",
+    "leftOutMissingSeveral_other": "{{count}} tracks left out, they have no {{fields}}",
     "leftOutSerato_one": "{{count}} track left out, Serato would lose it and its cues",
     "leftOutSerato_other": "{{count}} tracks left out, Serato would lose them and their cues",
     "convertSelected_one": "Convert {{count}} selected",

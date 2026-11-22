@@ -2023,6 +2023,10 @@ function registerIpc(): void {
   // asks Chromium to cancel, which reaches main asynchronously — the race the user
   // reported as "it updates on the third or fourth try".
   ipcMain.handle('player:release', (_e, path: string) => releaseMediaFile(path))
+  // The same allowlist the surco:// handler applies: only a path the app handed out warms.
+  ipcMain.on('player:prewarm', (_e, path: string) => {
+    if (mediaAccess.isAllowed(path)) void resolvePlayable(path).catch(() => {})
+  })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {

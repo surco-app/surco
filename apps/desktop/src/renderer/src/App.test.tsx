@@ -340,6 +340,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     platform: 'win32',
     version: '0.0.0-test',
     releasePlayingFile: vi.fn<Api['releasePlayingFile']>().mockResolvedValue(undefined),
+    prewarmPlayback: vi.fn<Api['prewarmPlayback']>(),
     matchingPairs: vi.fn<Api['matchingPairs']>().mockResolvedValue([]),
     addMatchingPair: vi.fn<Api['addMatchingPair']>().mockResolvedValue(undefined),
     removeMatchingPair: vi.fn<Api['removeMatchingPair']>().mockResolvedValue(undefined),
@@ -8420,7 +8421,7 @@ describe('App non-audio notice', () => {
     expect(await screen.findByTestId('app-notice')).toHaveTextContent(
       i18n.t('notices.notAudioSkipped', { count: 2 }),
     )
-    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
   })
 
   it('says so for a lone dropped file that is not audio instead of doing nothing', async () => {

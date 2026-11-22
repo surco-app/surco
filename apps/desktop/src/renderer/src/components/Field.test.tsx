@@ -639,7 +639,7 @@ describe('Field read-only', () => {
         value=""
         onChange={vi.fn()}
         placeholder="A · B · C"
-        placeholderListed
+        placeholderTooltip
         {...props}
       />,
     )

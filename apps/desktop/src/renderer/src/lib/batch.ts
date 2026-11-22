@@ -123,15 +123,26 @@ export function convertGate(
 }
 
 // The words for what the gate keeps out, shared by the header's note and the editor's
-// batch plan so the two never describe one selection differently.
-export function leftOutNote(gate: Omit<ConvertGate, 'ready'>, tr: TFunction): string | null {
+// batch plan so the two never describe one selection differently. The missing fields read
+// as a list in the UI language ("Title and Artist"), not as a bare comma run, with the verb
+// agreeing with how many fields are missing.
+export function leftOutNote(
+  gate: Omit<ConvertGate, 'ready'>,
+  tr: TFunction,
+  language: string,
+): string | null {
   if (gate.mixed) return tr('editor.mixedReplaceSelection')
   const notes = [
     gate.missing.count > 0
-      ? tr('header.leftOutMissing', {
-          count: gate.missing.count,
-          fields: gate.missing.fields.map((key) => tr(`fields.${key}`)).join(', '),
-        })
+      ? tr(
+          gate.missing.fields.length > 1 ? 'header.leftOutMissingSeveral' : 'header.leftOutMissing',
+          {
+            count: gate.missing.count,
+            fields: new Intl.ListFormat(language, { type: 'conjunction' }).format(
+              gate.missing.fields.map((key) => tr(`fields.${key}`)),
+            ),
+          },
+        )
       : null,
     ...READ_ONLY_PROGRAMS.map((p) =>
       gate[p] > 0 ? tr(LEFT_OUT_KEY[p], { count: gate[p] }) : null,
