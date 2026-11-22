@@ -347,7 +347,23 @@ describe('all tracks', () => {
       path: '/Users/dj/Music/a.mp3',
       title: 'Alpha',
       artist: 'Ann',
+      durationSec: 200.5,
     })
+  })
+
+  it('reads the track length into durationSec, from the float playtime when Traktor wrote one', () => {
+    expect(readTraktorCollection(doc, 'Macintosh HD')[0].durationSec).toBe(200.5)
+  })
+
+  it('leaves durationSec undefined when the length is missing or zero', () => {
+    const lengthOf = (info: string) =>
+      readTraktorCollection(
+        `<NML VERSION="20"><COLLECTION ENTRIES="1"><ENTRY TITLE="t"><LOCATION DIR="/:m/:" FILE="t.mp3" VOLUME="HD" VOLUMEID="v"></LOCATION><INFO${info}></INFO></ENTRY></COLLECTION></NML>`,
+        'HD',
+      )[0].durationSec
+    expect(lengthOf('')).toBeUndefined()
+    expect(lengthOf(' PLAYTIME="0" PLAYTIME_FLOAT="0.000000"')).toBeUndefined()
+    expect(lengthOf(' PLAYTIME="241"')).toBe(241)
   })
 
   it('lists every track newest first and leaves the separator files out', () => {

@@ -1266,6 +1266,7 @@ export interface CollectionTrack {
   path: string | null
   title: string
   artist: string
+  durationSec?: number
 }
 
 // One organising action on rekordbox, as the user made it: one drop, one menu choice, one

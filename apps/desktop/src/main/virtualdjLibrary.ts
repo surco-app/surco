@@ -195,6 +195,7 @@ export function virtualdjCollection(library: VirtualdjLibrary): CollectionTrack[
     path: s.path,
     title: s.title,
     artist: s.artist,
+    ...(s.lengthSeconds ? { durationSec: s.lengthSeconds } : {}),
   }))
 }
 

@@ -104,7 +104,24 @@ describe('readVirtualdjLibrary', () => {
       path: '/Music/Serato Pruebas/Pray.flac',
       title: 'Pray (W.I.P. In The Church Mix)',
       artist: 'Tina Cousins',
+      durationSec: 428.253333,
     })
+  })
+
+  it('reads the track length into durationSec', () => {
+    const collection = virtualdjCollection(readVirtualdjLibrary(local(fixture)))
+    expect(collection.find((t) => t.path === '/Music/Serato Pruebas/Pray.flac')?.durationSec).toBe(
+      428.253333,
+    )
+  })
+
+  it('leaves durationSec undefined when the length is missing or zero', () => {
+    const read = (extra: string) =>
+      virtualdjCollection(
+        readVirtualdjLibrary(local(library([song('/x.mp3', undefined, extra)]))),
+      )[0].durationSec
+    expect(read('')).toBeUndefined()
+    expect(read('<Infos SongLength="0" />\r\n')).toBeUndefined()
   })
 
   it('gives a list its tracks in the order of the panel, each one a VirtualDJ track with its bpm and key', () => {

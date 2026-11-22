@@ -3,6 +3,7 @@ import {
   crateTree,
   parseSeratoCrate,
   parseSeratoDatabase,
+  parseSeratoLength,
   seratoDatabaseTruncated,
 } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -28,7 +29,7 @@ const FULL = {
   tadd: '1700000000',
 }
 
-const PRAY = (ext: string) => ({
+const PRAY = (ext: string, durationSec = 428.25) => ({
   path: `Users/vicent/Music/Serato Pruebas/Pray.${ext}`,
   title: 'Pray (W.I.P. In The Church Mix)',
   artist: 'Tina Cousins',
@@ -37,6 +38,25 @@ const PRAY = (ext: string) => ({
   bpm: '134.00',
   key: 'Ebm',
   addedAt: 1793688116,
+  durationSec,
+})
+
+describe('parseSeratoLength', () => {
+  it.each([
+    ['06:01', 361],
+    ['06:01.25', 361.25],
+    ['1:02:03', 3723],
+    ['7:08.3', 428.3],
+  ])('reads %s as %s seconds', (text, seconds) => {
+    expect(parseSeratoLength(text)).toBe(seconds)
+  })
+
+  it.each(['', '0', '00:00', 'abc', '1:2:3:4', '-1:00', '01:60x'])(
+    'does not understand "%s"',
+    (text) => {
+      expect(parseSeratoLength(text)).toBeUndefined()
+    },
+  )
 })
 
 describe('parseSeratoDatabase', () => {
@@ -66,9 +86,28 @@ describe('parseSeratoDatabase', () => {
     ])
   })
 
+  it('reads the track length from tlen into durationSec', () => {
+    const lengths = (tlen: string) =>
+      parseSeratoDatabase(concat([VERSION, track({ pfil: 'a.mp3', tlen })]))[0].durationSec
+    expect(lengths('06:01.25')).toBe(361.25)
+    expect(lengths('06:01')).toBe(361)
+    expect(lengths('1:02:03')).toBe(3723)
+  })
+
+  it('leaves durationSec undefined when tlen is missing, zero or not understood', () => {
+    const lengths = (fields: Record<string, string>) =>
+      parseSeratoDatabase(concat([VERSION, track({ pfil: 'a.mp3', ...fields })]))[0].durationSec
+    expect(lengths({})).toBeUndefined()
+    expect(lengths({ tlen: '00:00' })).toBeUndefined()
+    expect(lengths({ tlen: 'soon' })).toBeUndefined()
+    expect(lengths({ tlen: '6:xx' })).toBeUndefined()
+  })
+
   it('reads the database Serato DJ Pro 5 wrote', () => {
     expect(parseSeratoDatabase(bytes(DATABASE_V2))).toEqual(
-      ['mp3', 'aiff', 'm4a', 'flac', 'wav'].map(PRAY),
+      ['mp3', 'aiff', 'm4a', 'flac', 'wav'].map((ext) =>
+        PRAY(ext, ext === 'mp3' ? 428.33 : 428.25),
+      ),
     )
   })
 
