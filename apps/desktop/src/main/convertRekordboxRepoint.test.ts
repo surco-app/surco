@@ -174,6 +174,19 @@ describe('rekordboxRepointFor', () => {
     expect(repoint?.engineShift?.trimmedMs ?? 0).toBe(0)
   })
 
+  // The waveform and beat grid rekordbox keeps were analysed on the old file. With the audio
+  // 200 ms later the moved cues would sit off that grid, so rekordbox has to analyse the
+  // replacement again even though its samples were copied rather than re-encoded.
+  it('has rekordbox re-analyse a moved replacement whose samples were copied', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        replaceShift: { moved: 200 },
+        replaceAudio: { oldShiftMs: 0, newShiftMs: 0 },
+      })?.audio,
+    ).toEqual({ cueShiftMs: 200 })
+  })
+
   // Engine DJ and VirtualDJ tell a row still owed its shift from one already written by the
   // size it had before: without it a replacement on the very path it replaces looks done and
   // its cues are never moved.
