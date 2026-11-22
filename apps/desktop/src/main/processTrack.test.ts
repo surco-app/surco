@@ -3784,6 +3784,40 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(entry.music).toBeUndefined()
   })
 
+  // With only Add to Traktor on, a replace still moves the old entry in collection.nml, and
+  // the old file must not be retired until Traktor is seen to follow: if the move was refused
+  // (the new path already has its own entry, an unknown volume, Traktor open and its queue
+  // discarded) the old entry still points at that file, and retiring it loses the track with
+  // its cues and playlists. A plain conversion writes nothing to Traktor there, so it waits
+  // on nothing.
+  it('waits on Traktor for a replace when only Add to Traktor is on', async () => {
+    const run = async (replacesPath?: string) => {
+      const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+      const deps = makeDeps({
+        settings: settings({
+          syncTraktor: false,
+          addToTraktor: true,
+          traktorNmlPath: '/t/collection.nml',
+        }),
+        registerVerification,
+      })
+      const result = await runProcessTrack(
+        job({ meta, ...(replacesPath && { replacesPath }) }),
+        deps,
+      )
+      return {
+        places: registerVerification.mock.calls[0][0].places,
+        checked: result.verification?.checks.map((c) => c.place),
+      }
+    }
+    const replace = await run('/m/old.mp3')
+    expect(replace.places.has('traktor')).toBe(true)
+    expect(replace.checked).toContain('traktor')
+    const plain = await run()
+    expect(plain.places.has('traktor')).toBe(false)
+    expect(plain.checked).not.toContain('traktor')
+  })
+
   // A source no library has was never touched there: listing it would leave a place
   // "checking" that nothing will ever answer for. One that could not be read is kept,
   // or a locked database would pass for a track the library does not have.

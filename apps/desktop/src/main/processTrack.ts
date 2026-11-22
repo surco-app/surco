@@ -1225,7 +1225,12 @@ export async function runProcessTrack(
     } finally {
       deps.unregisterActiveConversion(job.id)
     }
-    const traktor = settings.syncTraktor && !!settings.traktorNmlPath
+    // Add to Traktor alone moves a replace's old entry onto the new file, so the old file
+    // must wait on Traktor too: a refused move leaves that entry on it, and retiring it then
+    // loses the track with its cues and playlists.
+    const traktor =
+      !!settings.traktorNmlPath &&
+      (settings.syncTraktor || (settings.addToTraktor && !!job.replacesPath))
     const playlists: VerifyEntry['playlists'] = {}
     for (const program of WRITABLE_PROGRAMS) {
       const wanted = JOB_PLAYLISTS[program](job)?.wanted

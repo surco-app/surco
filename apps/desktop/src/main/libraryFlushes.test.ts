@@ -2181,6 +2181,37 @@ describe('Traktor writes with only Add to Traktor on', () => {
     })
   })
 
+  // A move that never reached the collection must not read as Traktor having nothing to
+  // do, or the check lets the old file go while the entry still points at it.
+  it('says Traktor failed when the collection is missing, instead of off', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(outcome.traktor).toBe('failed')
+    }, false)
+  })
+
+  it('holds the move for when the collection drive is back', async () => {
+    await addOnly(async () => {
+      Object.assign(SETTINGS, { traktorNmlPath: '/Volumes/Surco Desconectado/collection.nml' })
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      const traktor = traktorQueue()
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+      })
+      expect(traktor.enqueue).toHaveBeenCalledWith(
+        [],
+        [expect.objectContaining({ patch: expect.objectContaining({ relocates: true }) })],
+      )
+      expect(outcome.traktor).toBe('queued')
+    }, false)
+  })
+
   it('writes nothing once Add to Traktor is off too', async () => {
     await addOnly(async () => {
       Object.assign(SETTINGS, { addToTraktor: false })

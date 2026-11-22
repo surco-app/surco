@@ -34,20 +34,27 @@ const GRID_CUE =
 // findEntries also matches the playlist's ENTRY blocks, which carry no LOCATION.
 const collectionEntries = (nml: string) => findEntries(nml).filter((e) => e.file !== '')
 
-function collection(old: string): { xml: string; key: string } {
-  const { volume: pathVolume, dir, file } = toNmlLocation(old)
+function locationOf(path: string) {
+  const { volume: pathVolume, dir, file } = toNmlLocation(path)
   const volume = pathVolume || bootVolumeName()
-  const key = `${volume}${dir}${file}`
+  return { volume, dir, file, key: `${volume}${dir}${file}` }
+}
+
+// taken: the new file already has an ENTRY of its own (the DJ dragged the download into
+// Traktor before replacing), so the old entry has nowhere to move.
+function collection(old: string, taken?: string): { xml: string; key: string } {
+  const { volume, dir, file, key } = locationOf(old)
+  const own = taken && locationOf(taken)
   const xml = `<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <NML VERSION="19"><HEAD COMPANY="www.native-instruments.com" PROGRAM="Traktor"></HEAD>
-<COLLECTION ENTRIES="1">
+<COLLECTION ENTRIES="${own ? 2 : 1}">
 <ENTRY MODIFIED_DATE="2026/10/14" TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${dir}" FILE="${file}" VOLUME="${volume}" VOLUMEID="${volume}"></LOCATION>
 <INFO RANKING="204"></INFO>
 <TEMPO BPM="120.000000" BPM_QUALITY="100.000000"></TEMPO>
 ${HOT_CUE}
 ${GRID_CUE}
 </ENTRY>
-</COLLECTION>
+${own ? `<ENTRY TITLE="Show Me Love" ARTIST="Robin S"><LOCATION DIR="${own.dir}" FILE="${own.file}" VOLUME="${own.volume}" VOLUMEID="${own.volume}"></LOCATION>\n</ENTRY>\n` : ''}</COLLECTION>
 <PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1">
 <NODE TYPE="PLAYLIST" NAME="Peak"><PLAYLIST ENTRIES="1" TYPE="LIST" UUID="peak">
 <ENTRY><PRIMARYKEY TYPE="TRACK" KEY="${key}"></PRIMARYKEY></ENTRY>
@@ -68,12 +75,14 @@ interface Outcome {
   nml: () => string
   trashed: () => string[]
   errors: () => string[]
+  traktorCheck: () => string | undefined
 }
 
 function swapScenario(
   settings: { syncTraktor: boolean; addToTraktor: boolean },
   name: string,
   tests: (outcome: Outcome) => void,
+  options: { outputTaken?: boolean } = {},
 ) {
   describe.skipIf(process.platform !== 'darwin')(name, () => {
     let surco: Scenario
@@ -107,7 +116,10 @@ function swapScenario(
         durationSec: 8,
       })
       nml = join(scenarioDir('traktor-replace-library'), 'collection.nml')
-      before = collection(old).xml
+      before = collection(
+        old,
+        options.outputTaken ? join(media, 'Robin S - Show Me Love.aiff') : undefined,
+      ).xml
       writeFileSync(nml, before)
 
       surco = await openSurco({
@@ -115,12 +127,27 @@ function swapScenario(
         settings: { outputFormat: 'aiff', ...settings, traktorNmlPath: nml },
         destination: 'appleMusic',
       })
+      // osTrash outlives each scenario: only what this swap sent to the Trash counts, or one
+      // scenario's retired file would answer for the next.
+      const trashedBefore = osTrash.length
+      const trashedNow = () => osTrash.slice(trashedBefore).map((p) => basename(p))
       await surco.drop(join(root, 'Downloads'))
       await surco.convertInEditor('Robin S - Show Me Love.flac')
-      await waitFor(() => expect(osTrash.map((p) => basename(p))).toContain('Show Me Love.mp3'), {
-        timeout: 60_000,
-      })
-      osTrashAfterRetire = osTrash.map((p) => basename(p))
+      if (options.outputTaken) {
+        await waitFor(
+          () =>
+            expect(surco.verification('Robin S - Show Me Love.flac')?.status).toMatch(
+              /^(ok|mismatch)$/,
+            ),
+          { timeout: 60_000 },
+        )
+        await surco.settled()
+      } else {
+        await waitFor(() => expect(trashedNow()).toContain('Show Me Love.mp3'), {
+          timeout: 60_000,
+        })
+      }
+      osTrashAfterRetire = trashedNow()
       const landed = music.state.added[0].persistentId
       newFile = music.entry(landed)?.location ?? ''
       const { volume, dir, file } = toNmlLocation(newFile)
@@ -139,6 +166,9 @@ function swapScenario(
       nml: () => nml,
       trashed: () => osTrashAfterRetire,
       errors: () => surco.errors,
+      traktorCheck: () =>
+        surco.verification('Robin S - Show Me Love.flac')?.checks.find((c) => c.place === 'traktor')
+          ?.detail.key,
     })
   })
 }
@@ -196,3 +226,33 @@ swapScenario(
     })
   },
 )
+
+// The move is refused when the new file already has its own entry: the old entry, with its
+// cues and playlists, still points at the old file. Retiring that file then would leave the
+// DJ's real entry missing in Traktor, so it has to stay until the DJ sorts the two out.
+for (const settings of [
+  { syncTraktor: false, addToTraktor: true },
+  { syncTraktor: true, addToTraktor: true },
+]) {
+  swapScenario(
+    settings,
+    `Swap a track whose new file Traktor already has (${settings.syncTraktor ? 'Sync Traktor' : 'only Add to Traktor'})`,
+    (o) => {
+      it('keeps the old file while its entry could not follow', () => {
+        expect(o.trashed()).not.toContain('Show Me Love.mp3')
+      })
+
+      // The check is what tells the DJ the swap is not finished in Traktor; reading ok, the
+      // old file is kept only by the last look at the collection before the Trash.
+      it('says Traktor still has the track on the old file', () => {
+        expect(o.traktorCheck()).toBe('traktorStillOld')
+      })
+
+      it('leaves the old entry and its cues where they were', () => {
+        expect(o.after()).toContain('FILE="Show Me Love.mp3"')
+        expect(o.after()).toContain(HOT_CUE)
+      })
+    },
+    { outputTaken: true },
+  )
+}

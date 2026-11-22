@@ -591,8 +591,15 @@ function conversionTraktorDeps(host: LibraryHost, session: SessionBackup) {
     return { deps, allowed: (patches: NmlPatch[]) => patches }
   }
   const found = currentLibraryStatus().traktor.found
+  // A missing collection is a move that did not happen, not one with nothing to do: said
+  // as missing, the check keeps the old file, and on an unplugged drive the move waits in
+  // the queue for it to come back.
   return {
-    deps: { ...deps, traktorNmlPath: found ? settings.traktorNmlPath : '' },
+    deps: {
+      ...deps,
+      traktorNmlPath: found ? settings.traktorNmlPath : '',
+      collectionMissing: !found,
+    },
     allowed: (patches: NmlPatch[]) => patches.filter((patch) => patch.relocates),
   }
 }
