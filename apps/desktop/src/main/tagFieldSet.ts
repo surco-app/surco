@@ -1,7 +1,9 @@
 import { extname } from 'node:path'
 import {
   CombinedTag,
+  Id3v2FrameClassType,
   Id3v2Tag,
+  type Id3v2UserTextInformationFrame,
   InfoTag,
   Mpeg4AppleTag,
   Mpeg4BoxType,
@@ -39,6 +41,14 @@ const same = (a: string, b: string): boolean => a.normalize('NFC') === b.normali
 const xiphCommentOf = (tag: XiphComment): string | undefined =>
   tag.getField('COMMENT')[0] || tag.getField('DESCRIPTION')[0]
 
+const id3CommentOf = (tag: Id3v2Tag): string | undefined =>
+  tag.comment ||
+  tag
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .find((frame) => frame.description.toLowerCase() === 'comment')?.text?.[0]
+
 function valuesOf(tag: Tag, field: TagWriteField): string[] {
   switch (field) {
     case 'title':
@@ -58,7 +68,12 @@ function valuesOf(tag: Tag, field: TagWriteField): string[] {
       return grouping ? [grouping] : []
     }
     case 'comment': {
-      const comment = tag instanceof XiphComment ? xiphCommentOf(tag) : tag.comment
+      const comment =
+        tag instanceof XiphComment
+          ? xiphCommentOf(tag)
+          : tag instanceof Id3v2Tag
+            ? id3CommentOf(tag)
+            : tag.comment
       return comment ? [comment] : []
     }
   }

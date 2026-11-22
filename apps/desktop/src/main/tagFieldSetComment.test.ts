@@ -124,6 +124,31 @@ describe('heldComment', () => {
     ])
   })
 
+  it('keeps an mp3 comment held only in a TXXX frame and moves it to COMM, so the phrase count never erases the text', () => {
+    const file = track('mp3', '')
+    const seed = TagFile.createFromPath(file)
+    const id3 = seed.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    const mirror = Id3v2UserTextInformationFrame.fromDescription('comment')
+    mirror.text = ['Remix']
+    id3.addFrame(mirror)
+    seed.save()
+    seed.dispose()
+    expect(commentOf(file)).toBe('')
+    const held = heldComment(file)
+    expect(held).toBe('Remix')
+    expect(setTagFields(file, [{ field: 'comment', from: held, to: '2 - 8 · Remix' }])).toEqual([
+      'written',
+    ])
+    expect(commentOf(file)).toBe('2 - 8 · Remix')
+    const f = TagFile.createFromPath(file)
+    const after = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag
+    const users = after.getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    expect(users.filter((u) => u.description.toLowerCase() === 'comment')).toEqual([])
+    f.dispose()
+  })
+
   it('returns the comment of a wav untrimmed, whichever tag holds it first', () => {
     expect(heldComment(track('wav', 'Remix  '))).toBe('Remix  ')
   })
