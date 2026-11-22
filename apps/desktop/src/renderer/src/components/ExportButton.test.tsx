@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { hoverTooltip } from '../test/tooltip'
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -652,5 +653,25 @@ describe('ExportButton menu layer', () => {
     render(<ExportButton {...baseProps} incomplete={false} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     expect(layer(screen.getByRole('menu'))).toBeGreaterThan(20)
+  })
+
+  // The label may be cut with an ellipsis at the narrowest editor, so the full text must
+  // stay reachable: by name for a screen reader and on hover for everyone else.
+  it('keeps the full update-anyway label on hover and in its name when it is cut short', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        inPlace
+        tagsOnly
+        sameFormat
+        upToDate
+        narrow
+        onProcess={vi.fn()}
+      />,
+    )
+    const button = screen.getByTestId('convert-update-anyway')
+    expect(button).toHaveAccessibleName('Update anyway')
+    expect(hoverTooltip(button)).toBe('Update anyway')
   })
 })

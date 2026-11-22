@@ -261,9 +261,10 @@ export function ExportButton({
           type="button"
           data-testid="convert-update-anyway"
           onClick={() => onProcess(outputFormat)}
-          className={`press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
+          className={`press h-8 min-w-0 truncate rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
         >
           {tr('editor.updateAnyway')}
+          <Tooltip label={tr('editor.updateAnyway')} hoverOnly />
         </button>
         <div ref={ref} className="relative">
           <button
