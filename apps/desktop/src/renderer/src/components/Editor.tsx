@@ -1559,7 +1559,7 @@ export const Editor = memo(function Editor({
       ? {
           id: 'appleMusic',
           name: 'Apple Music',
-          format: replacedCopyFormat,
+          format: musicHoldsFile ? '' : replacedCopyFormat,
           better: libraryCopyBetter,
           comparison: renderComparison({
             verdict: copyVerdict,

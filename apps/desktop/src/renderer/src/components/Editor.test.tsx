@@ -5243,6 +5243,21 @@ describe('Editor Apple Music library section', () => {
     expect(api.comparePair).not.toHaveBeenCalled()
   })
 
+  it('names no format on the Apple Music row when the file in hand is that copy, since there is nothing to weigh it against', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: wavLoudness,
+      herePath: '/music/strobe.wav'.normalize('NFD'),
+    })
+    api.properties = vi.fn(async (path: string) => (path === '/Music/Strobe.wav' ? mp3Copy : null))
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    await new Promise((r) => setTimeout(r, 50))
+    const row = screen.getByTestId('library-row')
+    expect(row.textContent).toBe('Apple Music')
+    expect(row.tagName).not.toBe('BUTTON')
+    expect(screen.queryByTestId('library-row-better')).toBeNull()
+  })
+
   it('opens the numbers from the library row without folding any section', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
