@@ -156,4 +156,44 @@ describe('repointSerato', () => {
 
     expect(tempsUnder(lib.base)).toEqual([])
   })
+
+  it('refuses to repoint past a crate it could not read, since that crate may hold the track and would keep a dead path', async () => {
+    const lib = library({
+      internal: [
+        ['Good', ['Users/dj/Music/A.mp3']],
+        ['Broken', ['Users/dj/Music/A.mp3']],
+      ],
+      truncated: ['Broken'],
+    })
+    const goodBefore = readFileSync(crateFileOf(lib.home, 'Good'))
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: false, reason: 'unreadable' }])
+    expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(lib.homeDb)
+    expect(readFileSync(crateFileOf(lib.home, 'Good'))).toEqual(goodBefore)
+    expect(readdirSync(lib.base)).not.toContain('serato-backups')
+  })
+
+  it('keeps the reasons that waiting cannot fix when Serato is open, so those do not re-queue', async () => {
+    const lib = library()
+
+    const results = await repointSerato(
+      [
+        { from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true },
+        { from: '/Users/dj/Music/Z.mp3', to: '/Users/dj/Music/Z.aiff', replaced: true },
+        { from: '/Users/dj/Music/B.mp3', to: join(lib.gig.root, 'Tracks/B.aiff'), replaced: true },
+      ],
+      { ...lib.deps, seratoOpen: async () => true },
+    )
+
+    expect(results).toEqual([
+      { written: false, reason: 'rekordbox-running' },
+      { written: false, reason: 'no-match' },
+      { written: false, reason: 'other-volume' },
+    ])
+  })
 })

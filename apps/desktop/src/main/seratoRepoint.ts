@@ -1,7 +1,12 @@
 import { join } from 'node:path'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
-import { seratoPathOn, seratoRootOf, withCrateTrackRepointed } from './seratoCrateFile'
+import {
+  crateTrackPaths,
+  seratoPathOn,
+  seratoRootOf,
+  withCrateTrackRepointed,
+} from './seratoCrateFile'
 import { seratoDatabaseTruncated } from './seratoDatabase'
 import { withSeratoTrackRepointed } from './seratoDatabaseWrite'
 import {
@@ -46,7 +51,8 @@ function repointOne(
   for (const name of draft.list(subcrates).filter((n) => n.endsWith('.crate'))) {
     const file = join(subcrates, name)
     const bytes = draft.read(file)
-    const crate = bytes && withCrateTrackRepointed(bytes, from, to)
+    if (!bytes || crateTrackPaths(bytes) === null) return 'truncated'
+    const crate = withCrateTrackRepointed(bytes, from, to)
     if (crate) draft.write(file, crate)
   }
   return { written: true }
@@ -67,7 +73,7 @@ export async function repointSerato(
     case 'nothing':
       return results
     case 'cancelled':
-      return all('rekordbox-running')
+      return results.map((r) => (r.written ? { written: false, reason: 'rekordbox-running' } : r))
     case 'backup-failed':
       return all('backup-failed')
     default:
