@@ -1597,8 +1597,8 @@ export const Editor = memo(function Editor({
           }}
           className="min-h-0 flex-1 overflow-y-auto p-7"
         >
-          {/* The pinned metadata form opens the "File" phase; the mapped sections
-              below label "Audio" and "Output" as the group changes down the list. */}
+          {/* The pinned library section and metadata form open the "File" phase; the mapped
+              sections below label "Audio" and "Output" as the group changes down the list. */}
           {!isMulti && (
             <SectionGroupHeading
               label={tr('editor.groupMetadata')}
@@ -1611,7 +1611,11 @@ export const Editor = memo(function Editor({
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
               libraryName={libraryName}
-              verdict={copyState ?? (libraryCopyBetter ? 'library' : null)}
+              verdict={
+                libraryCopyBetter && (copyState === null || copyState === 'measuring')
+                  ? 'library'
+                  : copyState
+              }
               copyFormat={replacedCopyFormat}
               libraryBetter={libraryCopyBetter}
               comparison={libraryComparison || undefined}

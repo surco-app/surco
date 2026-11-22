@@ -4912,9 +4912,9 @@ describe('Editor Apple Music library badge', () => {
     tagFormats: [],
   }
 
-  // The badge exists so a DJ doesn't re-import a song they already own; on macOS it
+  // The library section exists so a DJ doesn't re-import a song they already own; on macOS it
   // checks the live title/artist against the same library snapshot the list and filter
-  // read, so the badge can never disagree with the row's in-library state.
+  // read, so the section can never disagree with the row's in-library state.
   it('flags a track already in the Apple Music library on macOS', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
@@ -4924,10 +4924,9 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
-  // With Engine DJ as the destination the same badge reads the Engine library, and names it:
-  // a green mark beside "Metadata" alone read as "the tags are fine", so the badge says which
-  // library the track is in. Not macOS-gated: the Engine database is plain SQLite on every
-  // platform.
+  // With Engine DJ as the destination the same section reads the Engine library, and its row
+  // names it, so the user sees which library the track is in. Not macOS-gated: the Engine
+  // database is plain SQLite on every platform.
   it('shows Engine DJ with no verdict', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
@@ -4960,7 +4959,7 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
-  // Until the snapshot arrives there is no verdict to show, so the badge stays hidden
+  // Until the snapshot arrives there is no verdict to show, so the section stays hidden
   // rather than guessing — the slot fills once the library has loaded.
   it('hides the badge until the snapshot has loaded', () => {
     setApi('darwin')
@@ -5087,7 +5086,7 @@ describe('Editor Apple Music library badge', () => {
   })
 
   // A copy that lives only in iCloud has no file to read, so there is no format to name;
-  // the badge stays as it was rather than guessing.
+  // the row names only the library rather than guessing.
   it('names no format when the library copy has no file on disk', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -5187,8 +5186,6 @@ describe('Editor Apple Music library badge', () => {
     expect(screen.queryByTestId('library-row-better')).toBeNull()
   })
 
-  // The pill sat inside the header's fold button: a click on it folded Metadata, and a
-  // button nested in a button is out of reach for the keyboard and a screen reader.
   // Whether the swap is worth it depends on what the library copy is down to its depth and
   // rate: a WAV 16/44.1 and a WAV 24/96 are not the same copy. The table that weighs the two
   // copies is where that is read, so its heading names the copy in full.
@@ -5257,7 +5254,7 @@ describe('Editor Apple Music library badge', () => {
 
   // jsdom does not turn Enter or Space on a button into a click (the browser does, for a
   // native button with no interactive ancestor), so the test pins the two things that
-  // make the key work: the pill takes focus and no other button wraps it.
+  // make the key work: the row takes focus and no other button wraps it.
   it('reaches the library row from the keyboard as a button of its own', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
@@ -5391,7 +5388,8 @@ describe('Editor Apple Music library badge', () => {
     })
     await waitFor(() => expect(screen.getByTestId('library-row-better')).toBeInTheDocument())
     expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Comparing…')
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent("There's a better copy")
   })
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
@@ -5412,7 +5410,7 @@ describe('Editor Apple Music library badge', () => {
     expect(pill).toHaveTextContent('Comparing…')
   })
 
-  // A copy that could not be measured gives no verdict at all; the pill that was there
+  // A copy that could not be measured gives no verdict at all; the section that was there
   // before the comparison existed stays as it was.
   it('shows no verdict when the library copy cannot be read', async () => {
     const { api } = renderWithLibraryCopy({ here: aifLoudness, library: null })
@@ -5502,7 +5500,7 @@ describe('Editor Apple Music library badge', () => {
     })
   })
 
-  // Off macOS there is no Apple Music library, so the badge stays hidden rather than
+  // Off macOS there is no Apple Music library, so the section stays hidden rather than
   // making a promise the platform can't keep.
   it('never shows the badge off macOS', () => {
     setApi('win32')
@@ -5555,20 +5553,20 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
         libraryIndex: owned,
       },
     )
-    // The file's own artist tag isn't in the library, so there is no badge yet.
+    // The file's own artist tag isn't in the library, so there is no section yet.
     expect(screen.queryByTestId('library-section')).toBeNull()
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
+    // The release's canonical "The Artist — Track Two (Remix)" is owned, so the section shows
     // even though the file tag never matched on its own.
     expect(await screen.findByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
-  // canonical name still isn't in the library leaves the badge off.
+  // canonical name still isn't in the library leaves the section off.
   it('keeps the badge off when the suggestion is not in the library either', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
@@ -5587,7 +5585,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
-  // A track the library lacks shows no badge while Discogs is still searching; Discogs may
+  // A track the library lacks shows no section while Discogs is still searching; Discogs may
   // still flip it to owned later.
   it('shows no badge while Discogs is still searching for a track the library lacks', async () => {
     setApi()
@@ -5612,7 +5610,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     release_()
   })
 
-  // Once the search settles with no owning match, the badge stays off.
+  // Once the search settles with no owning match, the section stays off.
   it('stays off once the search settles without an owning match', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
