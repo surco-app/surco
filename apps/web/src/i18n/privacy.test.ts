@@ -21,6 +21,7 @@ describe('privacy page', () => {
           'Deezer',
           'Beatport',
           'MusicBrainz',
+          'Apple Music',
           'GitHub',
           'Resend',
         ]),

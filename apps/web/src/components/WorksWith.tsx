@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 
-const SOURCES = ['Discogs', 'Bandcamp', 'Deezer', 'Beatport', 'MusicBrainz']
+const SOURCES = ['Discogs', 'Bandcamp', 'Deezer', 'Beatport', 'MusicBrainz', 'Apple Music']
 const PROGRAMS = ['rekordbox', 'Traktor', 'Engine DJ', 'Serato', 'VirtualDJ', 'Apple Music']
 
 function Group({

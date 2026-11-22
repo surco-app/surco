@@ -28,17 +28,16 @@ describe('works with', () => {
       expect(sources).toContain(name)
       expect(programs).not.toContain(name)
     }
-    for (const name of [
-      'rekordbox',
-      'Traktor',
-      'Engine DJ',
-      'Serato',
-      'VirtualDJ',
-      'Apple Music',
-    ]) {
+    for (const name of ['rekordbox', 'Traktor', 'Engine DJ', 'Serato', 'VirtualDJ']) {
       expect(programs).toContain(name)
       expect(sources).not.toContain(name)
     }
+  })
+
+  it('names Apple Music on both sides, since its catalog fills the tags and its app takes the tracks', () => {
+    const html = render('en')
+    expect(group(html, 'works-with-sources')).toContain('Apple Music')
+    expect(group(html, 'works-with-programs')).toContain('Apple Music')
   })
 
   it.each(LANGUAGES)('names both groups in %s', (lng) => {

@@ -7,10 +7,10 @@
     "ogLocale": "ca_ES",
     "inLanguage": "ca",
     "title": "Surco: Prepara les teves pistes de DJ en segons",
-    "description": "Surco prepara les teves pistes de DJ en segons. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, edita etiquetes i metadades des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, i porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. I detecta MP3 recomprimits disfressats de lossless.",
+    "description": "Surco prepara les teves pistes de DJ en segons. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, edita etiquetes i metadades des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, i porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. I detecta MP3 recomprimits disfressats de lossless.",
     "ogTitle": "Surco: Prepara les teves pistes de DJ en segons",
-    "ogDescription": "Menys preparar, més punxar. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, i endreça-ho tot en segons. I detecta MP3 disfressats de lossless.",
-    "jsonLdDescription": "Organitzador de pistes d'àudio per a DJ. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ i analitza l'espectre per detectar MP3 recomprimits."
+    "ogDescription": "Menys preparar, més punxar. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, i endreça-ho tot en segons. I detecta MP3 disfressats de lossless.",
+    "jsonLdDescription": "Organitzador de pistes d'àudio per a DJ. Converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, porta les pistes a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ i analitza l'espectre per detectar MP3 recomprimits."
   },
   "nav": {
     "velocidad": "Velocitat",
@@ -110,11 +110,11 @@
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "en lloc de cinc webs i un editor d'etiquetes",
+        "replaces": "en lloc de sis webs i un editor d'etiquetes",
         "items": [
           {
-            "t": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz",
-            "s": "Cerca artista, àlbum, any, BPM, tonalitat, segell i catàleg en cinc fonts.",
+            "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music",
+            "s": "Cerca artista, àlbum, any, BPM, tonalitat, segell i catàleg en sis fonts.",
             "d": "Artista, àlbum, any, BPM i tonalitat. El segell i el catàleg vénen de Discogs, Beatport i MusicBrainz, i Beatport hi afegeix el mix i l'ISRC."
           },
           {
@@ -135,7 +135,7 @@
           {
             "t": "Caràtules",
             "s": "Porta la caràtula de qualsevol font o fes servir la teva, retallada al teu gust.",
-            "d": "De Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o la teva, amb retall quadrat i mida màxima configurables."
+            "d": "De Discogs, Bandcamp, Deezer, Beatport, MusicBrainz, Apple Music o la teva, amb retall quadrat i mida màxima configurables."
           },
           {
             "t": "ID3v2.3, no v2.4",
@@ -160,7 +160,7 @@
           {
             "t": "Data completa, si la vols",
             "s": "Desa la data sencera, com ara 2020-12-01, si la font la porta.",
-            "d": "L'any com a 2020-12-01 quan el fitxer o Discogs, Bandcamp, Deezer, Beatport o MusicBrainz porten la data sencera. Al nom del fitxer i a rekordbox continua anant-hi només l'any."
+            "d": "L'any com a 2020-12-01 quan el fitxer o Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music porten la data sencera. Al nom del fitxer i a rekordbox continua anant-hi només l'any."
           },
           {
             "t": "Gènere i grouping amb diverses etiquetes",
@@ -472,7 +472,7 @@
       }
     },
     "metaTitle": "Tot el que fa Surco · Funcions",
-    "metaDescription": "Convertir, etiquetar des de Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, analitzar la qualitat, treure clics, retallar silencis i exportar a rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. Gratis."
+    "metaDescription": "Convertir, etiquetar des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music, analitzar la qualitat, treure clics, retallar silencis i exportar a rekordbox, Engine DJ, Traktor, Serato o VirtualDJ. Gratis."
   },
   "shortcuts": {
     "kicker": "Primer el teclat",
@@ -498,7 +498,7 @@
       },
       {
         "title": "Tria el disc",
-        "body": "Cerca a Discogs, Bandcamp, Deezer, Beatport o MusicBrainz i aplica artista, àlbum, any, gènere i caràtula amb un clic."
+        "body": "Cerca a Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music i aplica artista, àlbum, any, gènere i caràtula amb un clic."
       },
       {
         "title": "Exporta i llestos",
@@ -516,8 +516,8 @@
         "desc": "Les teves pistes i el filtre del que ja és a la teva biblioteca d'Apple Music o Engine DJ."
       },
       "discogs": {
-        "title": "Match de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz",
-        "desc": "Cerca el disc exacte a Discogs, Bandcamp, Deezer, Beatport o MusicBrainz, de l'edició de club al single comercial, i tria la versió correcta."
+        "title": "Match de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music",
+        "desc": "Cerca el disc exacte a Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music, de l'edició de club al single comercial, i tria la versió correcta."
       },
       "metadata": {
         "title": "Editor de metadades",
@@ -567,7 +567,7 @@
       },
       {
         "q": "És un editor d'etiquetes i metadades?",
-        "a": "Sí, i més. Surco edita les etiquetes i les metadades de la teva música (artista, títol, àlbum, any, caràtula…) i les completa des de Discogs, Bandcamp, Deezer, Beatport o MusicBrainz. Però a més converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, comprova la qualitat de l'àudio i endreça la teva biblioteca. El que faries amb un editor d'etiquetes i tres apps més, en una de sola."
+        "a": "Sí, i més. Surco edita les etiquetes i les metadades de la teva música (artista, títol, àlbum, any, caràtula…) i les completa des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz o Apple Music. Però a més converteix entre AIFF, WAV, FLAC, ALAC i MP3 en qualsevol direcció, comprova la qualitat de l'àudio i endreça la teva biblioteca. El que faries amb un editor d'etiquetes i tres apps més, en una de sola."
       },
       {
         "q": "Toca els meus fitxers originals?",
@@ -635,7 +635,7 @@
   },
   "guide": {
     "metaTitle": "Com fer servir Surco: guia pas a pas",
-    "metaDescription": "Guia de Surco pas a pas. Importa pistes, etiqueta-les des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, analitza l'espectre, converteix, marca cues i porta-ho tot a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
+    "metaDescription": "Guia de Surco pas a pas. Importa pistes, etiqueta-les des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, analitza l'espectre, converteix, marca cues i porta-ho tot a Apple Music, rekordbox, Engine DJ, Traktor, Serato o VirtualDJ.",
     "kicker": "Guia",
     "title": "Com fer servir Surco",
     "lede": "De deixar anar les pistes a tenir-les a punt per punxar, en setze passos curts.",
@@ -689,7 +689,7 @@
           }
         ],
         "points": [
-          "D'entrada ja ho analitza tot en importar i cerca a Discogs, Bandcamp, Deezer i MusicBrainz sense configurar res.",
+          "D'entrada ja ho analitza tot en importar i cerca a Discogs, Bandcamp, Deezer, MusicBrainz i Apple Music sense configurar res.",
           "Si Surco troba el teu rekordbox, Traktor, Engine DJ, Serato o VirtualDJ, just després de la benvinguda et pregunta amb quin punxes, i el que no marquis deixa de sortir a la barra lateral."
         ],
         "shot": "instalar-ca.webp",
@@ -785,9 +785,9 @@
         "id": "discogs",
         "group": "tag",
         "title": "Cerca el disc a les teves fonts",
-        "s": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz, amb dades i caràtula en un clic.",
+        "s": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music, amb dades i caràtula en un clic.",
         "body": [
-          "Discogs, Bandcamp, Deezer i MusicBrainz venen activades i no demanen cap compte. Beatport s'activa a Configuració → Fonts."
+          "Discogs, Bandcamp, Deezer, MusicBrainz i Apple Music venen activades i no demanen cap compte. Beatport s'activa a Configuració → Fonts."
         ],
         "steps": [
           {
@@ -1259,7 +1259,7 @@
     },
     "tag": {
       "title": "Les etiquetes, de Discogs, en un clic.",
-      "lede": "Discogs per als segells, Bandcamp per a les autoedicions, Deezer per al comercial, Beatport per al que sona als clubs i MusicBrainz per a tota la resta. Un clic i hi entra tot. Artista, segell, any, BPM i caràtula.",
+      "lede": "Discogs per als segells, Bandcamp per a les autoedicions, Deezer i Apple Music per al comercial, Beatport per al que sona als clubs i MusicBrainz per a tota la resta. Un clic i hi entra tot. Artista, segell, any, BPM i caràtula.",
       "all": "Tots ({{count}})"
     },
     "batch": {
@@ -1297,9 +1297,9 @@
       },
       "tag": {
         "title": "Totes les metadades, en un clic",
-        "note": "Discogs, Bandcamp, Deezer, Beatport i MusicBrainz. Artista, segell, any, BPM i caràtula.",
+        "note": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music. Artista, segell, any, BPM i caràtula.",
         "lead": "Etiquetes en un clic.",
-        "rest": "Artista, segell, any, BPM i caràtula de cinc fonts."
+        "rest": "Artista, segell, any, BPM i caràtula de sis fonts."
       },
       "export": {
         "title": "I apareixen al teu programa",
@@ -1632,7 +1632,7 @@
     },
     "outro": {
       "title": "Converteix la teva música",
-      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music i ho arxiva tot a la teva biblioteca."
     }
   },
   "flacToAiff": {
@@ -1759,7 +1759,7 @@
     },
     "outro": {
       "title": "Passa els teus FLAC a AIFF",
-      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music i ho arxiva tot a la teva biblioteca."
     }
   },
   "wavToAiff": {
@@ -1886,7 +1886,7 @@
     },
     "outro": {
       "title": "Passa els teus WAV a AIFF",
-      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music i ho arxiva tot a la teva biblioteca."
     }
   },
   "flacToMp3": {
@@ -2008,7 +2008,7 @@
     },
     "outro": {
       "title": "Passa els teus FLAC a MP3",
-      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music i ho arxiva tot a la teva biblioteca."
     }
   },
   "wavToMp3": {
@@ -2135,7 +2135,7 @@
     },
     "outro": {
       "title": "Passa els teus WAV a MP3",
-      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport i MusicBrainz i ho arxiva tot a la teva biblioteca."
+      "lede": "A més, Surco etiqueta des de Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music i ho arxiva tot a la teva biblioteca."
     }
   },
   "useCases": {
@@ -3690,7 +3690,7 @@
     "privacyHeading": "L'app",
     "privacyLede": "Surco no té compte ni telemetria. Només envia alguna cosa a un servidor de Surco quan tu hi envies un comentari, i per a la resta l'app es connecta a altres serveis únicament en aquests casos.",
     "privacyItems": [
-      "Quan cerques una pista, a mà o amb la cerca automàtica, envia el títol, l'artista i altres dades de cerca a les fonts que tinguis activades. Poden ser Discogs, Bandcamp, Deezer, Beatport i MusicBrainz. Les caràtules es baixen dels seus servidors i de Cover Art Archive.",
+      "Quan cerques una pista, a mà o amb la cerca automàtica, envia el títol, l'artista i altres dades de cerca a les fonts que tinguis activades. Poden ser Discogs, Bandcamp, Deezer, Beatport, MusicBrainz i Apple Music. Les caràtules es baixen dels seus servidors i de Cover Art Archive.",
       "Si connectes el teu compte de Beatport, l'usuari i la contrasenya només viatgen a Beatport. La contrasenya es desa xifrada al teu ordinador.",
       "Per saber si hi ha una versió nova, consulta les versions publicades a GitHub i en baixa l'actualització d'allà mateix.",
       "Si envies un comentari o informes d'un error des de l'app, el missatge, el teu correu i, si deixes marcat l'informe tècnic, la versió, el sistema i les últimes línies d'error (sense rutes de carpetes) passen per un servidor de Surco, que els reenvia amb Resend a hello@vicent.io. El teu correu només es fa servir per respondre't. Si ho prefereixes, pots obrir un issue a GitHub, on no s'envia res fins que no el publiques tu."
@@ -3716,6 +3716,10 @@
       {
         "name": "MusicBrainz",
         "url": "https://metabrainz.org/privacy"
+      },
+      {
+        "name": "Apple Music",
+        "url": "https://www.apple.com/legal/privacy/"
       },
       {
         "name": "Cover Art Archive",
