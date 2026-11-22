@@ -755,7 +755,12 @@ export const Editor = memo(function Editor({
   // file in hand is worth swapping in. Only a single, located copy has a file to read.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  const seratoLosesStars = useSeratoLosesStars(replacedCopyPath)
+  // A selection replaces what each track was stamped to replace by an earlier convert.
+  const seratoLosesStars = useSeratoLosesStars(
+    ...(isMulti
+      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
+      : [replacedCopyPath]),
+  )
   const { data: replacedCopyProps } = useTrackProperties(replacedCopyPath, !!replacedCopyPath)
   const replacedCopyFormat = replacedCopyProps
     ? libraryCopyFormat(replacedCopyProps, replacedCopyPath, i18n.language)

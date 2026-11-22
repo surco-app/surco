@@ -70,6 +70,15 @@ describe('useSeratoLosesStars', () => {
     expect(result.current).toBe(false)
   })
 
+  // Several tracks replace several files: one Serato holds is one that loses its stars.
+  it('warns when Serato holds any of the files several tracks replace', async () => {
+    installApi({ dj: serato('/s/old.wav') })
+    const { result } = renderHook(() => useSeratoLosesStars('/elsewhere/a.wav', '/s/old.wav'), {
+      wrapper: wrapperFor({ syncSerato: true }),
+    })
+    await waitFor(() => expect(result.current).toBe(true))
+  })
+
   it('stays quiet with no replaced file', async () => {
     installApi({ dj: serato('/s/old.wav') })
     const { result } = renderHook(() => useSeratoLosesStars(''), {

@@ -643,6 +643,22 @@ describe('ConvertFooter Serato stars note', () => {
     )
   })
 
+  // With several tracks the footer warns as it does with one: the stars of every Serato
+  // track the batch replaces are lost the same way.
+  it('says Serato will lose the stars before several tracks replace a Serato track', () => {
+    render(
+      cloneElement(withStars({ replaces: false }), {
+        isMulti: true,
+        selectedCount: 2,
+        readyCount: 2,
+        status: { ...status(false), superseded: [] },
+      }),
+    )
+    expect(screen.getByTestId('convert-serato-stars-note')).toHaveTextContent(
+      i18n.t('editor.seratoLosesStars'),
+    )
+  })
+
   it('says nothing when the button adds instead of replacing', () => {
     render(withStars({ replaces: false }))
     expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()

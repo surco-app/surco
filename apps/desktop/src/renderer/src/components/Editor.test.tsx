@@ -1979,6 +1979,7 @@ describe('Editor multi-select', () => {
       onCuePhrasesAll?: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
+      replacesA?: string
       libraryIndex?: AppleMusicIndex | null
       fileA?: string
       fileB?: string
@@ -2012,6 +2013,7 @@ describe('Editor multi-select', () => {
         ...(o.declickA && { declick: o.declickA }),
         spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
         ...(o.fromSeratoA && { programs: ['serato'] }),
+        ...(o.replacesA && { replacesPath: o.replacesA }),
       })
       const b = item({
         id: 'b',
@@ -2092,6 +2094,22 @@ describe('Editor multi-select', () => {
       rerenderTracks: (over: Partial<typeof opts>) => rendered.rerenderUi(build(over)),
     }
   }
+
+  // A selection converted again replaces the files its tracks replaced before: when Serato
+  // holds one, the DJ must read that its stars go before pressing, as with a single track.
+  it('warns that Serato loses the stars when a selected track replaces a file Serato holds', async () => {
+    Object.assign(window.api, {
+      dj: djReads({
+        serato: {
+          collection: vi
+            .fn<ProgramReads['collection']>()
+            .mockResolvedValue([{ contentId: '1', path: '/s/old.wav', title: 'A', artist: '' }]),
+        },
+      }),
+    })
+    renderMulti({ replacesA: '/s/old.wav', settings: { syncSerato: true } })
+    expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
+  })
 
   // Working out what a convert would leave out walks every selected track through the
   // library and required-field checks. Typing a search in the results column changes none
