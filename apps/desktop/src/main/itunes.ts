@@ -199,7 +199,11 @@ export async function getRelease(id: number, priority?: SearchPriority): Promise
         `${BASE}/lookup?id=${id}&entity=song&country=${cc}`,
         priority,
       )
-      const release = mapRelease(data.results ?? [])
+      const items = data.results ?? []
+      if (!items.some((i) => i.wrapperType === 'collection')) {
+        throw errorWithKey('itunesUnavailable', `no album ${id}`)
+      }
+      const release = mapRelease(items)
       cacheStore.setRelease(cacheKey, release)
       return release
     },

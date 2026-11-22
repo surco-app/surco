@@ -328,6 +328,14 @@ describe('getRelease', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('fails instead of caching an empty release when Apple returns no album, so a lookup hiccup does not hide the release for good', async () => {
+    const fetchMock = mockFetch([{ resultCount: 0, results: [] }, reviveLookup])
+    await expect(getRelease(7)).rejects.toThrow(/^SURCO_ERR:itunesUnavailable/)
+    const rel = await getRelease(7)
+    expect(rel.title).toBe('Not So Bad - EP')
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
   it('links the activity row to the album on Apple Music, so the user can open the release page', async () => {
     mockFetch([
       { ...reviveLookup, results: reviveLookup.results.map((r) => ({ ...r, collectionId: 42 })) },
