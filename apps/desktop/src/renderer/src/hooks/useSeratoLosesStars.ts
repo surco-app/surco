@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import { pathKey } from '../lib/pathKey'
 import { useAppSettings } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
@@ -13,7 +14,9 @@ export function useSeratoLosesStars(replacedPath: string): boolean {
     ...sourceCollectionOptions('serato'),
     enabled: repoints && !!replacedPath,
   })
-  if (!repoints || !replacedPath || !data) return false
-  const key = pathKey(replacedPath)
-  return data.some((track) => !!track.path && pathKey(track.path) === key)
+  const heldKeys = useMemo(
+    () => new Set((data ?? []).flatMap((track) => (track.path ? [pathKey(track.path)] : []))),
+    [data],
+  )
+  return repoints && !!replacedPath && heldKeys.has(pathKey(replacedPath))
 }
