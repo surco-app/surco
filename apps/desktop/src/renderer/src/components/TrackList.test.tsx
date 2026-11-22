@@ -1312,7 +1312,10 @@ describe('TrackList right-to-left names', () => {
     renderList([
       track({
         id: 'a',
-        meta: { title: 'ليلة في القاهرة (ريمكس ممتد)', artist: 'عمرو دياب وفرقة القاهرة الموسيقية' },
+        meta: {
+          title: 'ليلة في القاهرة (ريمكس ممتد)',
+          artist: 'عمرو دياب وفرقة القاهرة الموسيقية',
+        },
       }),
     ])
     expect(screen.getByTestId('track-title')).toHaveAttribute('dir', 'auto')
@@ -2974,7 +2977,9 @@ describe('TrackList title of a versioned track', () => {
   })
 
   it('cuts the middle of a version in square brackets too, so a remaster still reads as one on the row', () => {
-    renderList([track({ id: 'a', meta: { title: 'Strings of Life (Original) [Remastered 2026]' } })])
+    renderList([
+      track({ id: 'a', meta: { title: 'Strings of Life (Original) [Remastered 2026]' } }),
+    ])
     act(() => {
       for (const o of observed) o.fire()
     })
