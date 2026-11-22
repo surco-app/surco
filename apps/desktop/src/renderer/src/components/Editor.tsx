@@ -1565,10 +1565,8 @@ export const Editor = memo(function Editor({
     libraryName: string
     libraryLabel: string
   }): React.ReactNode => {
-    // The same audio leaves nothing to weigh, and a tie with no evidence of one master claims
-    // nothing to weigh against, so neither row opens.
+    // The same audio leaves nothing to weigh, so its row does not open.
     if (!verdict || verdict.winner === 'same' || !here || !library) return undefined
-    if (verdict.winner === 'tie' && !verdict.sameMaster) return undefined
     const reason = 'reason' in verdict ? verdict.reason : undefined
     // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
     const limitedRate =

@@ -20,6 +20,7 @@ export type LibraryVerdict =
   | 'different'
   | 'tie'
   | 'thisFile'
+  | 'even'
 
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
 // copy". The amber is never carried by colour alone, the word says it too.
@@ -30,6 +31,7 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
   different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
   tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
   thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/10 text-fg-faint' },
+  even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/15 text-fg-dim' },
   measuring: {
     label: 'editor.libraryStateMeasuring',
     className: 'border border-dashed border-[var(--color-line-strong)] text-fg-faint',
@@ -99,6 +101,7 @@ const RESERVED_STATES = [
   'here',
   'library',
   'tie',
+  'even',
   'different',
   'thisFile',
 ] as const

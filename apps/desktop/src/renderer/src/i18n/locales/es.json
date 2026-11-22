@@ -1373,6 +1373,7 @@
     "libraryStateDifferent": "Otra versión · {{duration}}",
     "libraryStateTie": "Parecidas",
     "libraryStateThisFile": "Es este archivo",
+    "libraryStateEven": "Ni mejor ni peor",
     "libraryStateMeasuring": "Comparando",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

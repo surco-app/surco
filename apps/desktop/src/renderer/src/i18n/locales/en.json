@@ -1373,6 +1373,7 @@
     "libraryStateDifferent": "Another version · {{duration}}",
     "libraryStateTie": "Alike",
     "libraryStateThisFile": "It's this file",
+    "libraryStateEven": "Neither better",
     "libraryStateMeasuring": "Comparing",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

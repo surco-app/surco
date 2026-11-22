@@ -1373,6 +1373,7 @@
     "libraryStateDifferent": "Una altra versió · {{duration}}",
     "libraryStateTie": "Semblants",
     "libraryStateThisFile": "És aquest fitxer",
+    "libraryStateEven": "Ni millor ni pitjor",
     "libraryStateMeasuring": "Comparant",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

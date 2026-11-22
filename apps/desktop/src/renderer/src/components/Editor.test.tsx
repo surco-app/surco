@@ -5813,21 +5813,24 @@ describe('Editor Apple Music library section', () => {
     expect(lengths.map((cell) => cell.textContent)).toEqual(['8:03', '7:28'])
   })
 
-  // Copies the probe could not line up and that no wider search covered carry no evidence of
-  // one master or of another version: the row claims nothing and opens nothing.
-  it('claims nothing about copies it could not line up at equal lengths', async () => {
+  // Absolom's Secret, as reported: a FLAC and the library's WAV, both clean, that line up only
+  // at 0.92. Nothing makes either better, yet a blank row read as if Surco had not looked:
+  // the row says neither is better and opens the figures for the reader to weigh.
+  it('says neither copy is better when nothing separates two copies it could not prove one master', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
       library: aifLoudness,
-      pair: Promise.resolve(null),
-      hereDuration: 300,
-      libraryDuration: 300,
+      pair: Promise.resolve({ correlation: 0.9158, residualDb: -7.9, gainDb: -0.1 }),
+      hereDuration: 387,
+      libraryDuration: 392,
     })
     await waitFor(() => expect(api.comparePair).toHaveBeenCalled())
-    await waitFor(() => expect(api.readDuration).toHaveBeenCalledWith('/Music/Strobe.wav'))
-    await new Promise((r) => setTimeout(r, 50))
-    expect(screen.queryByTestId('library-verdict')).toBeNull()
-    expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even'),
+    )
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Neither better')
+    fireEvent.click(screen.getByTestId('library-row'))
+    expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
   })
 
   // 3 Ways, as reported: the Music entry runs 35 s shorter, so it is no candidate to replace,

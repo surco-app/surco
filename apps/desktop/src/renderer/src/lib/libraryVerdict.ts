@@ -10,7 +10,7 @@ export function verdictState(
   if (!verdict) return null
   if (verdict.winner === 'a') return 'here'
   if (verdict.winner === 'b') return 'library'
-  if (verdict.winner === 'tie' && !verdict.sameMaster) return null
+  if (verdict.winner === 'tie' && !verdict.sameMaster) return 'even'
   return verdict.winner
 }
 
@@ -25,6 +25,7 @@ export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): Librar
     'here',
     'different',
     'tie',
+    'even',
     'same',
     'thisFile',
   ] as const) {
