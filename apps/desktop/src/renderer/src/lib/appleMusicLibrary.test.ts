@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { AppleMusicIndex } from './appleMusicLibrary'
 import {
   buildLibraryIndex,
+  findLibraryEntry,
   isInLibrary,
   replaceCandidate,
   staleLibraryCopy,
@@ -505,5 +506,48 @@ describe('replaceCandidate', () => {
     expect(
       replaceCandidate(idx, { title: 'Possession', artist: 'Transfer', durationSec: 372 }),
     ).toBeNull()
+  })
+})
+
+describe('findLibraryEntry', () => {
+  it('returns the matched entry with its path', () => {
+    const idx = buildLibraryIndex([
+      { title: 'Strobe', artist: 'deadmau5', path: '/music/deadmau5/strobe.mp3' },
+    ])
+    expect(findLibraryEntry(idx, { title: 'Strobe', artist: 'deadmau5' })?.path).toBe(
+      '/music/deadmau5/strobe.mp3',
+    )
+  })
+
+  it('returns null when nothing in the index matches', () => {
+    const idx = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5' }])
+    expect(findLibraryEntry(idx, { title: 'Other', artist: 'deadmau5' })).toBeNull()
+  })
+
+  it('picks the remix whose length is closest', () => {
+    const idx = buildLibraryIndex([
+      {
+        title: 'Never Leave U (Radio Edit)',
+        artist: 'Lumidelic',
+        durationSec: 180,
+        path: '/radio',
+      },
+      {
+        title: 'Never Leave U (Extended Mix)',
+        artist: 'Lumidelic',
+        durationSec: 361,
+        path: '/extended',
+      },
+    ])
+    expect(
+      findLibraryEntry(idx, { title: 'Never Leave U (Extended Mix)', artist: 'Lumidelic' }, 360)
+        ?.path,
+    ).toBe('/extended')
+  })
+
+  it('keeps isInLibrary answering as before', () => {
+    const idx = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5', path: '/a' }])
+    expect(isInLibrary(idx, { title: 'Strobe', artist: 'deadmau5' })).toBe(true)
+    expect(isInLibrary(idx, { title: 'Other', artist: 'deadmau5' })).toBe(false)
   })
 })

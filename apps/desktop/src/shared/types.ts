@@ -1123,6 +1123,7 @@ export interface AppleMusicLookupCandidate {
   // on (deleted when the user replaces an old copy), not just detected. Absent on
   // probe candidates and on Engine DJ library rows, which have no Music identity.
   persistentId?: string
+  path?: string
 }
 
 // One of the user's own Apple Music playlists, offered as a source of tracks to work on.
