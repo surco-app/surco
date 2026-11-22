@@ -69,7 +69,7 @@ function StatePill({
       data-state={verdict}
       role="img"
       aria-label={label}
-      className={`relative col-start-1 row-start-1 flex h-4 items-center gap-1 justify-self-end whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${STATE[verdict].className}`}
+      className={`relative col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${STATE[verdict].className}`}
     >
       {verdict === 'measuring' && (
         <Loader2
@@ -90,7 +90,11 @@ function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): stri
   return tr(STATE[verdict].label)
 }
 
-const rowClass = 'flex h-[30px] w-full items-center gap-2 pl-3 pr-3 text-left text-xs'
+// Too narrow for the name, the format and the state on one line, the state drops under the
+// name; the break is set by the panel's width, never by the state, so a row keeps its shape
+// while the measurement lands.
+const rowClass =
+  'flex min-h-[30px] w-full flex-wrap items-center gap-x-2 gap-y-1 pl-3 pr-3 text-left text-xs @max-[22rem]:py-[7px]'
 
 function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -110,49 +114,50 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
       >
         <LibraryIcon size={14} />
       </span>
-      <span className="truncate text-fg">{row.name}</span>
-      <span className="ml-auto flex shrink-0 items-center gap-2">
-        {/* The track list's format chip, outlined rather than tinted: a tint there is the
+      <span className="min-w-0 flex-1 truncate text-fg">{row.name}</span>
+      {/* The track list's format chip, outlined rather than tinted: a tint there is the
             file's quality verdict, which this copy does not carry. */}
-        {row.format && (
-          <span
-            data-testid="library-row-format"
-            className={`flex h-4 items-center rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
-          >
-            {row.format}
-          </span>
-        )}
-        {/* The measuring pill stays underneath, unseen, so the result takes its place
+      {row.format && (
+        <span
+          data-testid="library-row-format"
+          className={`flex h-4 shrink-0 items-center rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+        >
+          {row.format}
+        </span>
+      )}
+      {/* The measuring pill stays underneath, unseen, so the result takes its place
             without the row shifting. */}
-        {verdict && (
-          <span data-testid="library-row-state-slot" className="grid shrink-0">
-            <span
-              data-testid="library-row-state-sizer"
+      {verdict && (
+        <span
+          data-testid="library-row-state-slot"
+          className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
+        >
+          <span
+            data-testid="library-row-state-sizer"
+            aria-hidden="true"
+            className={`invisible col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded border px-[5px] ${PILL_TEXT}`}
+          >
+            <Loader2 className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+            {tr(STATE.measuring.label)}
+          </span>
+          <StatePill
+            testid="library-row-state"
+            verdict={verdict}
+            words={rowWords(row, verdict, tr)}
+            detail={row.detail}
+          />
+        </span>
+      )}
+      {(comparison || verdict) && (
+        <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
+          {comparison && (
+            <ChevronRight
+              className={`h-3 w-3 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
               aria-hidden="true"
-              className={`invisible col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded border px-[5px] ${PILL_TEXT}`}
-            >
-              <Loader2 className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-              {tr(STATE.measuring.label)}
-            </span>
-            <StatePill
-              testid="library-row-state"
-              verdict={verdict}
-              words={rowWords(row, verdict, tr)}
-              detail={row.detail}
             />
-          </span>
-        )}
-        {(comparison || verdict) && (
-          <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
-            {comparison && (
-              <ChevronRight
-                className={`h-3 w-3 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-            )}
-          </span>
-        )}
-      </span>
+          )}
+        </span>
+      )}
     </>
   )
   return (
@@ -213,7 +218,7 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
         }
       />
       <SectionBody open={open}>
-        <div className="mt-2">
+        <div className="mt-2 @container">
           {rows.map((row) => (
             <LibraryRowItem key={row.id} row={row} />
           ))}
