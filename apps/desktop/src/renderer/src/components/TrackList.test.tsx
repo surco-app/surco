@@ -1285,6 +1285,19 @@ describe('TrackList format pill', () => {
   })
 })
 
+describe('TrackList right-to-left names', () => {
+  it('lets an Arabic or Hebrew title and artist set their own direction, so a cut name keeps its start and the ellipsis lands at its end', () => {
+    renderList([
+      track({
+        id: 'a',
+        meta: { title: 'ليلة في القاهرة (ريمكس ممتد)', artist: 'عمرو دياب وفرقة القاهرة الموسيقية' },
+      }),
+    ])
+    expect(screen.getByTestId('track-title')).toHaveAttribute('dir', 'auto')
+    expect(screen.getByTestId('track-artist')).toHaveAttribute('dir', 'auto')
+  })
+})
+
 describe('TrackList quality badge', () => {
   const spectrum = (cutoffHz: number | null) => ({
     image: '',

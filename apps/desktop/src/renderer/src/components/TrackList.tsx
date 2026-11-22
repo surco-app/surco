@@ -820,7 +820,12 @@ const TrackRow = memo(function TrackRow({
                 artist a few letters. */}
               <span data-testid="track-title-line" className="flex h-[18px] items-center gap-2">
                 <span className="relative block min-w-0 flex-1 truncate">
-                  <span ref={titleFit.ref} data-testid="track-title" className={ROW_TITLE}>
+                  <span
+                    ref={titleFit.ref}
+                    data-testid="track-title"
+                    dir="auto"
+                    className={ROW_TITLE}
+                  >
                     <Tooltip label={rowTooltip(t, tr)} />
                     {titleFit.text === shown.title ? (
                       shown.title
@@ -844,6 +849,7 @@ const TrackRow = memo(function TrackRow({
                 <span className={ROW_DETAIL}>
                   <span
                     data-testid="track-artist"
+                    dir="auto"
                     className="relative block w-fit max-w-full truncate"
                   >
                     <Tooltip label={rowTooltip(t, tr)} />

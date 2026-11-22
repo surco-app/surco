@@ -89,6 +89,15 @@ describe('truncateTitleMiddle', () => {
     )
   })
 
+  it('leaves an Arabic or Hebrew title to the browser, since cutting it here puts the brackets and the ellipsis on the wrong side', () => {
+    expect(truncateTitleMiddle('ليلة في القاهرة (ريمكس ممتد)', 12, width)).toBe(
+      'ليلة في القاهرة (ريمكس ممتد)',
+    )
+    expect(truncateTitleMiddle('לילה בתל אביב (רמיקס מורחב)', 12, width)).toBe(
+      'לילה בתל אביב (רמיקס מורחב)',
+    )
+  })
+
   it('measures with the width it is handed, not with the letter count', () => {
     const wide = (s: string): number => graphemes(s).reduce((n, g) => n + (g === 'W' ? 3 : 1), 0)
     const out = truncateTitleMiddle('WWWW WWWW WWWW (Extended Mix)', 20, wide)
