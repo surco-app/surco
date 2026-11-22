@@ -1527,6 +1527,7 @@ export const Editor = memo(function Editor({
       />
     )
   const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
+  const showLibrary = !isMulti && inLibrary === 'yes' && !libraryHidden
 
   return (
     <div className="flex h-full min-h-0">
@@ -1606,7 +1607,7 @@ export const Editor = memo(function Editor({
               first
             />
           )}
-          {!isMulti && inLibrary === 'yes' && !libraryHidden && (
+          {showLibrary && (
             <LibrarySection
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
@@ -1625,71 +1626,83 @@ export const Editor = memo(function Editor({
               }
             />
           )}
-          <SectionHeader
-            title={
-              isMulti
-                ? tr('editor.editingMultiple', { count: selectedTracks?.length ?? 0 })
-                : tr('editor.sectionForm')
-            }
-            open={formOpen}
-            onToggle={() => setSectionOpen('form', !formOpen)}
-            bodyId={formBodyId}
-            // Folded, the header still says whose tags these are; multi-select's
-            // title already counts the selection, so no digest is added there.
-            summary={
-              !isMulti
-                ? [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || undefined
+          <div
+            data-testid="metadata-block"
+            data-separated={showLibrary}
+            className={
+              showLibrary
+                ? 'mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3'
                 : undefined
             }
-            summaryTestId="form-summary"
-            right={
-              // Fill and Clear stay in the header with their names; every other glyph that
-              // used to ride this line waits in the menu, which closes the row. Clear is set
-              // apart from Fill by a divider, so a reach for fill never lands on it.
-              <div className="flex items-center gap-1">
-                {formOpen && deriveButton}
-                {formOpen && (
-                  <>
-                    <div
-                      aria-hidden="true"
-                      className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
-                    />
-                    {clearButton}
-                  </>
-                )}
-                {formOpen && <MetaMoreMenu items={moreItems} />}
-              </div>
-            }
-          />
-          <SectionBody open={formOpen} id={formBodyId}>
-            {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
+          >
+            <SectionHeader
+              title={
+                isMulti
+                  ? tr('editor.editingMultiple', { count: selectedTracks?.length ?? 0 })
+                  : tr('editor.sectionForm')
+              }
+              open={formOpen}
+              onToggle={() => setSectionOpen('form', !formOpen)}
+              bodyId={formBodyId}
+              // Folded, the header still says whose tags these are; multi-select's
+              // title already counts the selection, so no digest is added there.
+              summary={
+                !isMulti
+                  ? [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || undefined
+                  : undefined
+              }
+              summaryTestId="form-summary"
+              right={
+                // Fill and Clear stay in the header with their names; every other glyph that
+                // used to ride this line waits in the menu, which closes the row. Clear is set
+                // apart from Fill by a divider, so a reach for fill never lands on it.
+                <div className="flex items-center gap-1">
+                  {formOpen && deriveButton}
+                  {formOpen && (
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
+                      />
+                      {clearButton}
+                    </>
+                  )}
+                  {formOpen && <MetaMoreMenu items={moreItems} />}
+                </div>
+              }
+            />
+            <SectionBody open={formOpen} id={formBodyId}>
+              {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would
                 reopen the very window it closes. onChange (a text commit) also confirms the rows
                 are under active edit, in case focus arrived without a focus event we saw. */}
-            <div
-              onFocusCapture={() => onFieldFocusChange?.(editedIds)}
-              onChangeCapture={() => onFieldFocusChange?.(editedIds)}
-              onBlurCapture={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-                  onFieldFocusChange?.([])
-              }}
-            >
-              <MetadataForm
-                item={item}
-                isMulti={isMulti}
-                selectedTracks={selectedTracks}
-                release={release}
-                coverDims={effectiveCoverDims}
-                setCoverDims={setCoverDims}
-                onChange={onCoverChange}
-                onApplyCoverAll={onApplyCoverAll}
-                // Over a selection the stars write every track, the way the bulk fields do.
-                onRate={(v) => (isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v))}
-                fields={fieldSpecs}
-              />
-            </div>
-          </SectionBody>
+              <div
+                onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+                onChangeCapture={() => onFieldFocusChange?.(editedIds)}
+                onBlurCapture={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                    onFieldFocusChange?.([])
+                }}
+              >
+                <MetadataForm
+                  item={item}
+                  isMulti={isMulti}
+                  selectedTracks={selectedTracks}
+                  release={release}
+                  coverDims={effectiveCoverDims}
+                  setCoverDims={setCoverDims}
+                  onChange={onCoverChange}
+                  onApplyCoverAll={onApplyCoverAll}
+                  // Over a selection the stars write every track, the way the bulk fields do.
+                  onRate={(v) =>
+                    isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v)
+                  }
+                  fields={fieldSpecs}
+                />
+              </div>
+            </SectionBody>
+          </div>
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each

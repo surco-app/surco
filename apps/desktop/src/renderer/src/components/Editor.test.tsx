@@ -5013,6 +5013,19 @@ describe('Editor Apple Music library badge', () => {
     )
   })
 
+  it('separates the metadata form from the library section only when that section shows', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('metadata-block')).toHaveAttribute('data-separated', 'true')
+    cleanup()
+    renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('metadata-block')).toHaveAttribute('data-separated', 'false')
+  })
+
   it('leaves the library section out when it is hidden in the layout', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
