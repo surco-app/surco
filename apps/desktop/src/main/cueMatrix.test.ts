@@ -851,3 +851,85 @@ describe('a replacement carries the Serato cues of the file it replaces', () => 
     expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
   })
 })
+
+function tempoMap(firstBeatSeconds: number, bpm: number): Uint8Array {
+  const data = new Uint8Array(40)
+  const view = new DataView(data.buffer)
+  view.setUint16(0, 0x0200)
+  view.setUint16(2, 1)
+  view.setFloat64(4, firstBeatSeconds)
+  view.setUint32(12, 1)
+  view.setFloat64(24, bpm)
+  view.setUint32(36, 1)
+  return data
+}
+
+function withSeratoGrid(file: string): string {
+  const f = TagFile.createFromPath(file)
+  try {
+    if (file.endsWith('.flac'))
+      (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
+        'SERATO_TEMPO_MAP',
+        Buffer.concat([
+          Buffer.from('application/octet-stream\0\0Serato Tempo Map\0', 'latin1'),
+          tempoMap(1, 120),
+        ]).toString('base64'),
+      )
+    else
+      (f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(
+        seratoGeob('Serato Tempo Map', tempoMap(1, 120)),
+      )
+    f.save()
+  } finally {
+    f.dispose()
+  }
+  return file
+}
+
+async function gridOnAudio(file: string): Promise<number> {
+  const track = readSeratoTrack(file)
+  return (
+    (track?.tempoMap?.firstBeatMs ?? Number.NaN) -
+    (await seratoLeadOfFile(file, track?.sampleRate ?? 44100))
+  )
+}
+
+// A DJ who fixed the grid by hand in Serato loses that work if a conversion drops it:
+// Serato re-analyses a track with no grid and lands wherever its detector says.
+describe('a hand-set Serato grid', () => {
+  it('keeps a hand-set Serato grid on the same beat from FLAC to MP3, where the MP3 clock starts later', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-'))
+    const input = withSeratoGrid(makeSeratoSource(dir, '.flac'))
+    const out = join(dir, 'out.mp3')
+
+    await convertAudio(input, out, 'mp3', meta)
+
+    expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(input)))).toBeLessThan(1)
+    expect(await seratoLeadOfFile(out, 44100)).toBeGreaterThan(await seratoLeadOfFile(input, 44100))
+  })
+
+  // The grid the DJ set lives in the file being replaced, like its cues; the download's
+  // own analysis never was in Serato.
+  it("keeps the replaced file's Serato grid in its replacement", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-'))
+    const replaced = withSeratoGrid(makeSeratoSource(dir, '.mp3', false))
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(replaced)))).toBeLessThan(1)
+  })
+
+  // When the cues come from the download, so does the grid, on the download's clock.
+  it("keeps the download's own grid when the replaced file has no Serato cues", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-none-'))
+    const replaced = plainSine(dir, '.mp3')
+    const download = withSeratoGrid(makeSeratoSource(dir, '.flac'))
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(download)))).toBeLessThan(1)
+  })
+})

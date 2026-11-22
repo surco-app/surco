@@ -25,6 +25,7 @@ import {
   SERATO_WAV,
   seratoV1Block,
 } from '../shared/seratoMarkersFixture'
+import { seratoLeadOfFile } from './seratoClock'
 import { carrySeratoCues, readSeratoMarkers, readSeratoTrack, setSeratoMarkers } from './seratoTags'
 
 const FFMPEG = ffmpegStatic as unknown as string
@@ -248,5 +249,150 @@ describe('carrySeratoCues from an unreadable source', () => {
         fallback: { source: audioFile('wav'), trimMs: 0 },
       }),
     ).rejects.toThrow()
+  })
+})
+
+const tempoMap = (firstBeatSeconds: number, bpm: number) => {
+  const data = Buffer.alloc(40)
+  data.writeUInt16BE(0x0200, 0)
+  data.writeUInt16BE(1, 2)
+  data.writeDoubleBE(firstBeatSeconds, 4)
+  data.writeUInt32BE(1, 12)
+  data.writeDoubleBE(bpm, 24)
+  data.writeUInt32BE(1, 36)
+  return data.toString('base64')
+}
+
+const oldBeatGrid = (firstSeconds: number, lastSeconds: number) => {
+  const data = Buffer.alloc(6 + 16 + 1)
+  data.writeUInt16BE(0x0100, 0)
+  data.writeUInt32BE(2, 2)
+  data.writeFloatBE(firstSeconds, 6)
+  data.writeUInt32BE(16, 10)
+  data.writeFloatBE(lastSeconds, 14)
+  data.writeFloatBE(128, 18)
+  return data.toString('base64')
+}
+
+const geobDescriptions = (file: string) => {
+  const f = TagFile.createFromPath(file)
+  try {
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (id3?.frames ?? [])
+      .filter((frame) => frame.frameId.toString() === 'GEOB')
+      .map((frame) => (frame as Id3v2AttachmentFrame).description)
+  } finally {
+    f.dispose()
+  }
+}
+
+function griddedSource(ext = 'wav'): string {
+  const file = audioFile(ext)
+  setSeratoMarkers(file, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }]))
+  return withTag(file, (f) => {
+    addGeob(f, 'Serato Overview', 'AQFBQUFB')
+    addGeob(f, 'Serato Tempo Map', tempoMap(1, 120))
+  })
+}
+
+// A DJ who fixed the grid by hand in Serato loses that work if the copy drops it:
+// Serato re-analyses a track with no grid and lands wherever its detector says.
+describe('carrySeratoCues with a beat grid', () => {
+  it('carries the tempo map with the cues, moved by the same amount', async () => {
+    const dest = audioFile('wav')
+
+    await carrySeratoCues(griddedSource(), dest, {
+      trimMs: 0,
+      carry: true,
+      strip: false,
+      shiftMs: 120,
+    })
+
+    expect(readSeratoTrack(dest)?.markers?.cues[0].ms).toBe(2120)
+    expect(readSeratoTrack(dest)?.tempoMap).toEqual({
+      firstBeatMs: expect.closeTo(1120, 6),
+      bpm: 120,
+    })
+  })
+
+  it('carries the tempo map even when the rest of the Serato analysis is stripped', async () => {
+    const dest = withTag(audioFile('wav'), (f) => addGeob(f, 'Serato Overview', 'AQFBQUFB'))
+
+    await carrySeratoCues(griddedSource(), dest, {
+      trimMs: 0,
+      carry: true,
+      strip: true,
+      shiftMs: 0,
+    })
+
+    expect(geobDescriptions(dest)).not.toContain('Serato Overview')
+    expect(readSeratoTrack(dest)?.tempoMap?.firstBeatMs).toBeCloseTo(1000, 6)
+  })
+
+  // A copy as it is already holds the same grid, and stripping the analysis takes it off:
+  // it must be put back, not skipped because it was already there before the strip.
+  it('puts back a grid the copy held already once the strip takes it off', async () => {
+    const source = griddedSource()
+    const dest = withTag(audioFile('wav'), (f) => addGeob(f, 'Serato Tempo Map', tempoMap(1, 120)))
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: true, shiftMs: 0 })
+
+    expect(readSeratoTrack(dest)?.tempoMap?.firstBeatMs).toBeCloseTo(1000, 6)
+  })
+
+  it('carries no grid when the DJ asked for no Serato data', async () => {
+    const dest = audioFile('wav')
+
+    await carrySeratoCues(griddedSource(), dest, {
+      trimMs: 0,
+      carry: false,
+      strip: true,
+      shiftMs: 0,
+    })
+
+    expect(readSeratoTrack(dest)?.tempoMap).toBeNull()
+  })
+
+  // Each container keeps the grid in its own field; one Serato cannot find is as lost as none.
+  it.each(['mp3', 'aiff', 'flac', 'm4a'])(
+    'writes the tempo map where Serato reads it in a %s, on its clock',
+    async (ext) => {
+      const source = griddedSource()
+      const dest = audioFile(ext)
+
+      await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: true, shiftMs: 0 })
+
+      const read = readSeratoTrack(dest)
+      const lead =
+        (await seratoLeadOfFile(dest, read?.sampleRate ?? 44100)) -
+        (await seratoLeadOfFile(source, 44100))
+      expect(read?.tempoMap?.firstBeatMs).toBeCloseTo(1000 + lead, 6)
+    },
+  )
+
+  it('moves every marker of an old BeatGrid with the cues', async () => {
+    const source = withTag(griddedSource(), (f) =>
+      addGeob(f, 'Serato BeatGrid', oldBeatGrid(1.5, 9.5)),
+    )
+    const dest = audioFile('flac')
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: true, shiftMs: 120 })
+
+    const grid = readSeratoTrack(dest)?.grids.beatGrid
+    const view = grid ? new DataView(grid.buffer, grid.byteOffset) : null
+    expect([view?.getFloat32(6), view?.getFloat32(14)]).toEqual([
+      expect.closeTo(1.62, 5),
+      expect.closeTo(9.62, 5),
+    ])
+  })
+
+  it("leaves the copy's own grid alone when the source has none", async () => {
+    const source = audioFile('wav')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
+    const dest = withTag(audioFile('wav'), (f) => addGeob(f, 'Serato Tempo Map', tempoMap(3, 90)))
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs: 120 })
+
+    expect(readSeratoTrack(dest)?.tempoMap).toEqual({ firstBeatMs: 3000, bpm: 90 })
   })
 })

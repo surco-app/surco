@@ -18,11 +18,15 @@ import {
   markersFromGeob,
   readSeratoTempoMap,
   readSeratoTempoMapArmored,
+  retimedSeratoBeatGrid,
   retimedSeratoPayload,
+  retimedSeratoTempoMap,
   type SeratoMarkers,
   type SeratoTempoMap,
   seratoArmored,
   seratoGeobBody,
+  seratoObjectArmored,
+  seratoObjectUnarmored,
   seratoPayloadOf,
   seratoV1Agrees,
   seratoV1CueTimes,
@@ -89,6 +93,45 @@ function tempoReaderFor(ext: string): ((f: TagFile) => SeratoTempoMap | null) | 
   return null
 }
 
+// The beat grid in each container's own field: the Tempo Map Serato 5 writes and the older
+// BeatGrid. Both sit on the cues' clock, so a copy moves them by the same amount.
+const GRIDS = [
+  {
+    key: 'tempoMap',
+    geob: 'Serato Tempo Map',
+    vorbis: 'SERATO_TEMPO_MAP',
+    atom: 'tempomap',
+    retimed: retimedSeratoTempoMap,
+  },
+  {
+    key: 'beatGrid',
+    geob: 'Serato BeatGrid',
+    vorbis: 'SERATO_BEATGRID',
+    atom: 'beatgrid',
+    retimed: retimedSeratoBeatGrid,
+  },
+] as const
+
+type SeratoGrids = Record<(typeof GRIDS)[number]['key'], Uint8Array | null>
+
+function rawGrid(f: TagFile, ext: string, grid: (typeof GRIDS)[number]): Uint8Array | null {
+  if (ID3_EXTENSIONS.has(ext)) return id3Geob(f, grid.geob)
+  const value =
+    ext === '.flac'
+      ? (f.getTag(TagTypes.Xiph, false) as XiphComment | null)?.getField(grid.vorbis)?.[0]
+      : ext === '.m4a' || ext === '.mp4'
+        ? (f.tag as Mpeg4AppleTag).getItunesStrings(SERATO_MEAN, grid.atom)[0]
+        : undefined
+  return value ? seratoObjectUnarmored(value, grid.geob) : null
+}
+
+function rawGrids(f: TagFile, ext: string): SeratoGrids {
+  return {
+    tempoMap: rawGrid(f, ext, GRIDS[0]),
+    beatGrid: rawGrid(f, ext, GRIDS[1]),
+  }
+}
+
 function flacMarkers(f: TagFile): SeratoMarkers | null {
   const xiph = f.getTag(TagTypes.Xiph, false) as XiphComment | null
   const value = xiph?.getField(FLAC_MARKERS2)?.[0]
@@ -139,6 +182,7 @@ export function readSeratoTrack(file: string): {
   markers: SeratoMarkers | null
   oldBlockDisagrees: boolean
   tempoMap: SeratoTempoMap | null
+  grids: SeratoGrids
   durationMs: number
   sampleRate: number
   trackNo: number
@@ -156,6 +200,7 @@ export function readSeratoTrack(file: string): {
         markers,
         oldBlockDisagrees: oldBlockDisagrees(f, ext, markers),
         tempoMap: readTempo ? readTempo(f) : null,
+        grids: rawGrids(f, ext),
         durationMs: f.properties?.durationMilliseconds ?? 0,
         sampleRate: f.properties?.audioSampleRate || DEFAULT_SAMPLE_RATE,
         trackNo: f.tag.track,
@@ -179,12 +224,12 @@ function markersSource(f: TagFile, ext: string): Uint8Array | string | null {
   return null
 }
 
-function markers2Frame(payload: Uint8Array): Id3v2AttachmentFrame {
+function seratoFrame(description: string, body: Uint8Array): Id3v2AttachmentFrame {
   const picture = Picture.fromFullData(
-    ByteVector.fromByteArray(seratoGeobBody(payload)),
+    ByteVector.fromByteArray(body),
     PictureType.NotAPicture,
     'application/octet-stream',
-    MARKERS2,
+    description,
   )
   picture.filename = ''
   const frame = Id3v2AttachmentFrame.fromPicture(picture)
@@ -201,7 +246,7 @@ function setId3Markers(f: TagFile, payload: Uint8Array): void {
     const description = descriptionAndPayload(frame)?.description
     if (description === MARKERS2 || description === MARKERS_V1) tag.removeFrame(frame)
   }
-  tag.addFrame(markers2Frame(payload))
+  tag.addFrame(seratoFrame(MARKERS2, seratoGeobBody(payload)))
   dropBrokenUfids(tag)
   keepGenreParentheses(tag)
 }
@@ -218,6 +263,29 @@ function applyMarkers(f: TagFile, ext: string, payload: Uint8Array): void {
     apple.setItunesStrings(SERATO_MEAN, 'markersv2', seratoArmored(payload))
     apple.setItunesStrings(SERATO_MEAN, 'markers')
   } else throw new Error(`no Serato tag for ${ext}`)
+}
+
+function applyGrid(f: TagFile, ext: string, grid: (typeof GRIDS)[number], data: Uint8Array): void {
+  if (ID3_EXTENSIONS.has(ext)) {
+    const tag = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    for (const frame of tag.frames.slice())
+      if (
+        frame.frameId.toString() === 'GEOB' &&
+        descriptionAndPayload(frame)?.description === grid.geob
+      )
+        tag.removeFrame(frame)
+    tag.addFrame(seratoFrame(grid.geob, data))
+  } else if (ext === '.flac')
+    (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
+      grid.vorbis,
+      seratoObjectArmored(grid.geob, data),
+    )
+  else if (ext === '.m4a' || ext === '.mp4')
+    (f.tag as Mpeg4AppleTag).setItunesStrings(
+      SERATO_MEAN,
+      grid.atom,
+      seratoObjectArmored(grid.geob, data),
+    )
 }
 
 function markersTag(ext: string): TagTypes {
@@ -333,23 +401,34 @@ export async function carrySeratoCues(
     })
   const to = readSeratoTrack(dest)
   if (!to) return
-  const sourceLead = from?.payload ? await seratoLeadOfFile(source, from.sampleRate) : 0
+  const timed = from?.payload || from?.grids.tempoMap || from?.grids.beatGrid
+  const sourceLead = from && timed ? await seratoLeadOfFile(source, from.sampleRate) : 0
+  const moveMs = timed
+    ? (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs + shiftMs
+    : 0
   const payload = from?.payload
-    ? retimedSeratoPayload(
-        from.payload,
-        (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs + shiftMs,
-        trimMs > 0 ? sourceLead + trimMs : 0,
-      )
+    ? retimedSeratoPayload(from.payload, moveMs, trimMs > 0 ? sourceLead + trimMs : 0)
     : null
   const changed = payload && !sameBytes(to.payload, payload) ? payload : null
   const fresh = from?.oldBlockDisagrees ? null : changed
+  // The grid is not analysis to strip: a DJ may have set it by hand. It moves with the
+  // cues, by the same amount, and only a shape Surco can read whole is copied.
+  const grids = GRIDS.flatMap((grid) => {
+    const raw = from?.grids[grid.key]
+    const data = raw ? grid.retimed(raw, moveMs) : null
+    return data ? [{ grid, data }] : []
+  })
   const f = TagFile.createFromPath(dest)
   try {
-    const keep = f.tagTypesOnDisk | (fresh ? markersTag(ext) : 0)
+    const keep = f.tagTypesOnDisk | (fresh || grids.length > 0 ? markersTag(ext) : 0)
     const stripped = strip && dropSeratoAnalysis(f, ext)
     const dropped = changed !== null && fresh === null && dropSeratoCues(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
-    if (fresh || stripped || dropped) saveKeeping(f, keep)
+    const regridded = grids.filter(
+      ({ grid, data }) => stripped || !sameBytes(to.grids[grid.key], data),
+    )
+    for (const { grid, data } of regridded) applyGrid(f, ext, grid, data)
+    if (fresh || stripped || dropped || regridded.length > 0) saveKeeping(f, keep)
   } finally {
     f.dispose()
   }

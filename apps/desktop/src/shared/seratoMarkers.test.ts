@@ -4,7 +4,9 @@ import {
   markersFromGeob,
   readSeratoTempoMap,
   readSeratoTempoMapArmored,
+  retimedSeratoBeatGrid,
   retimedSeratoPayload,
+  retimedSeratoTempoMap,
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
@@ -375,6 +377,83 @@ describe('readSeratoTempoMapArmored', () => {
     expect(readSeratoTempoMapArmored(value)?.bpm).toBeCloseTo(133.998, 3)
     expect(readSeratoTempoMapArmored(FLAC)).toBeNull()
     expect(readSeratoTempoMapArmored('')).toBeNull()
+  })
+})
+
+const tempoMapAt = (firstBeatSeconds: number, bpm: number) => {
+  const data = Uint8Array.from(PRAY_MP3_TEMPO)
+  new DataView(data.buffer).setFloat64(4, firstBeatSeconds)
+  new DataView(data.buffer).setFloat64(24, bpm)
+  return data
+}
+
+describe('retimedSeratoTempoMap', () => {
+  // The grid and the cues share Serato's clock: a copy whose audio starts later must move
+  // the first beat as far as the cues, or every beat lands beside the drop the DJ marked.
+  it('moves the first beat of a tempo map by the shift and keeps its BPM', () => {
+    const before = tempoMapAt(2.95, 128)
+    const moved = retimedSeratoTempoMap(before, 120)
+    expect(moved && readSeratoTempoMap(moved)).toEqual({
+      firstBeatMs: expect.closeTo(3070, 6),
+      bpm: 128,
+    })
+    expect(Array.from(moved?.subarray(12) ?? [])).toEqual(Array.from(before.subarray(12)))
+    expect(Array.from(before)).toEqual(Array.from(tempoMapAt(2.95, 128)))
+  })
+
+  // Rewriting bytes Surco cannot read could hand Serato a grid it never wrote; leaving the
+  // grid out only makes Serato analyse the track again.
+  it('answers null for a tempo map shape that was never measured', () => {
+    const two = tempoMapAt(2.95, 128)
+    two[3] = 2
+    expect(retimedSeratoTempoMap(two, 120)).toBeNull()
+    expect(retimedSeratoTempoMap(new Uint8Array(), 120)).toBeNull()
+  })
+})
+
+const beatGrid = (markers: [number, number][], terminal: [number, number], footer = 0) => {
+  const data = new Uint8Array(6 + (markers.length + 1) * 8 + 1)
+  const view = new DataView(data.buffer)
+  data.set([1, 0])
+  view.setUint32(2, markers.length + 1)
+  markers.forEach(([seconds, beats], i) => {
+    view.setFloat32(6 + i * 8, seconds)
+    view.setUint32(10 + i * 8, beats)
+  })
+  view.setFloat32(6 + markers.length * 8, terminal[0])
+  view.setFloat32(10 + markers.length * 8, terminal[1])
+  data[data.length - 1] = footer
+  return data
+}
+const beatGridPositions = (data: Uint8Array | null) =>
+  data
+    ? Array.from({ length: new DataView(data.buffer).getUint32(2) }, (_, i) =>
+        new DataView(data.buffer).getFloat32(6 + i * 8),
+      )
+    : null
+
+describe('retimedSeratoBeatGrid', () => {
+  // Older Serato kept the grid as a list of markers, each on the same clock as the cues:
+  // all of them move, or the tempo changes the DJ marked fall between beats.
+  it('moves every marker of an old BeatGrid by the shift', () => {
+    const before = beatGrid([[1.5, 16]], [9.5, 128], 7)
+    const moved = retimedSeratoBeatGrid(before, 120)
+    expect(beatGridPositions(moved)).toEqual([expect.closeTo(1.62, 5), expect.closeTo(9.62, 5)])
+    const view = new DataView((moved as Uint8Array).buffer)
+    expect(view.getUint32(10)).toBe(16)
+    expect(view.getFloat32(18)).toBe(128)
+    expect(moved?.at(-1)).toBe(7)
+    expect(beatGridPositions(before)).toEqual([1.5, 9.5])
+  })
+
+  it('answers null for an old BeatGrid it cannot read whole', () => {
+    const whole = beatGrid([[1.5, 16]], [9.5, 128])
+    expect(retimedSeratoBeatGrid(whole.subarray(0, whole.length - 1), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([...whole, 0]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([2, ...whole.subarray(1)]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([1, 0, 0, 0, 0, 0, 0]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(beatGrid([], [Number.NaN, 128]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(beatGrid([], [9.5, 0]), 120)).toBeNull()
   })
 })
 

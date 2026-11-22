@@ -227,6 +227,23 @@ export function seratoArmored(payload: Uint8Array): string {
   return `${encodeBase64Wrapped(concat([bytesOf(ARMOR_HEADER), seratoGeobBody(payload)]))}\n`
 }
 
+function objectArmorHeader(description: string): string {
+  return `application/octet-stream\0\0${description}\0`
+}
+
+// FLAC and M4A hold a Serato object as the GEOB would: base64 of its MIME type and
+// description ahead of the bytes, wrapped like the Markers2 value Serato wrote.
+export function seratoObjectArmored(description: string, data: Uint8Array): string {
+  return `${encodeBase64Wrapped(concat([bytesOf(objectArmorHeader(description)), data]))}\n`
+}
+
+export function seratoObjectUnarmored(value: string, description: string): Uint8Array | null {
+  const header = objectArmorHeader(description)
+  const armored = decodeBase64(value.replace(/\s/g, ''))
+  if (!armored || !latin1(armored.subarray(0, header.length)).startsWith(header)) return null
+  return armored.subarray(header.length)
+}
+
 const MIN_TEMPO_BPM = 20
 const MAX_TEMPO_BPM = 400
 
@@ -248,6 +265,40 @@ export function readSeratoTempoMap(data: Uint8Array): SeratoTempoMap | null {
   )
     return null
   return { firstBeatMs, bpm }
+}
+
+// The Tempo Map Serato 5 writes is on the cues' clock: moving its first beat by the cues'
+// shift keeps every beat under the same audio, and the BPM and the bytes after it stay.
+export function retimedSeratoTempoMap(data: Uint8Array, shiftMs: number): Uint8Array | null {
+  if (!readSeratoTempoMap(data)) return null
+  const out = data.slice()
+  const view = new DataView(out.buffer)
+  view.setFloat64(4, view.getFloat64(4) + shiftMs / 1000)
+  return out
+}
+
+const BEATGRID_MARKER_BYTES = 8
+const BEATGRID_FOOTER_BYTES = 1
+
+// The older Serato BeatGrid, never measured in a file of ours: `01 00`, a u32 count, then
+// markers of a f32 position in seconds and a u32 beat count (a f32 BPM on the last one),
+// then one footer byte. Anything else is a shape Surco cannot vouch for, and is not copied.
+export function retimedSeratoBeatGrid(data: Uint8Array, shiftMs: number): Uint8Array | null {
+  if (data.length < 6 || data[0] !== 1 || data[1] !== 0) return null
+  const count = u32(data, 2)
+  if (count < 1 || data.length !== 6 + count * BEATGRID_MARKER_BYTES + BEATGRID_FOOTER_BYTES)
+    return null
+  const out = data.slice()
+  const view = new DataView(out.buffer)
+  const bpm = view.getFloat32(6 + (count - 1) * BEATGRID_MARKER_BYTES + 4)
+  if (!(bpm >= MIN_TEMPO_BPM && bpm <= MAX_TEMPO_BPM)) return null
+  for (let marker = 0; marker < count; marker++) {
+    const at = 6 + marker * BEATGRID_MARKER_BYTES
+    const seconds = view.getFloat32(at)
+    if (!Number.isFinite(seconds)) return null
+    view.setFloat32(at, seconds + shiftMs / 1000)
+  }
+  return out
 }
 
 export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null {
