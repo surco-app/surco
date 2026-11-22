@@ -248,4 +248,19 @@ describe('useReplacedCopyFill', () => {
     expect(onChange.mock.calls[0][0]).toMatchObject({ meta: { album: 'Your Love' } })
     expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
   })
+
+  it('waits for the new file artwork to be read, so its own cover is never lost to the copy', () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>()
+    const readTags = vi.fn<Api['readTags']>()
+    setApi(readTags, readCoverFull)
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ metaPartial: true }),
+        copyPath: '/old/your-love.mp3',
+        onChange: vi.fn(),
+      }),
+    )
+    expect(readTags).not.toHaveBeenCalled()
+    expect(readCoverFull).not.toHaveBeenCalled()
+  })
 })
