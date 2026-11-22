@@ -182,6 +182,61 @@ describe('carrySeratoCues from a track whose older cue block disagrees', () => {
   })
 })
 
+// In an MP3 Serato shows the old block, not Markers2: a replacement that cannot carry that
+// block whole must fail, so its caller keeps Serato on the file that still holds those cues.
+describe('carrySeratoCues replacing an MP3 whose old cue block Serato shows', () => {
+  const replacedWith = (block: Uint8Array) => {
+    const file = audioFile('mp3')
+    setSeratoMarkers(file, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
+    return withTag(file, (f) =>
+      addGeob(f, 'Serato Markers_', Buffer.from(block).toString('base64')),
+    )
+  }
+  const replacing = (source: string) =>
+    carrySeratoCues(source, audioFile('aiff'), {
+      trimMs: 0,
+      carry: true,
+      strip: false,
+      shiftMs: 0,
+      fallback: { source: audioFile('wav'), trimMs: 0 },
+    })
+
+  it('fails when the old block holds a loop Surco has never placed there', async () => {
+    const block = seratoV1Block([2400], 1)
+    block[6 + 5 * 22] = 0
+    await expect(replacing(replacedWith(block))).rejects.toThrow()
+  })
+
+  it('fails when the old block cannot be read', async () => {
+    const block = seratoV1Block([2400])
+    block[7] = 0x80
+    await expect(replacing(replacedWith(block))).rejects.toThrow()
+  })
+
+  // Serato shows no name from the old block; the one the DJ typed on that pad is kept.
+  it("keeps the Markers2 name on the old block's cue", async () => {
+    const source = audioFile('mp3')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: 'Drop' }]))
+    withTag(source, (f) =>
+      addGeob(f, 'Serato Markers_', Buffer.from(seratoV1Block([2400])).toString('base64')),
+    )
+    const dest = audioFile('aiff')
+
+    await carrySeratoCues(source, dest, {
+      trimMs: 0,
+      carry: true,
+      strip: false,
+      shiftMs: 0,
+      fallback: { source: audioFile('wav'), trimMs: 0 },
+    })
+
+    const lead = (await seratoLeadOfFile(dest, 44100)) - (await seratoLeadOfFile(source, 44100))
+    expect(readSeratoMarkers(dest)?.cues).toEqual([
+      { index: 0, ms: Math.round(2400 + lead), color: 0xcc0000, name: 'Drop' },
+    ])
+  })
+})
+
 describe('carrySeratoCues with a shift', () => {
   const carried = async (shiftMs: number) => {
     const source = audioFile('wav')

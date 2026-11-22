@@ -13,6 +13,8 @@ import {
   seratoV1Agrees,
   seratoV1CueTimes,
   seratoV1CueTimesArmored,
+  seratoV1Cues,
+  seratoV1CuesArmored,
   withSeratoCues,
 } from './seratoMarkers'
 import {
@@ -543,6 +545,56 @@ describe('seratoV1CueTimes', () => {
     expect(
       seratoV1Agrees(seratoV1CueTimesArmored(seratoV1Armored([3000, 6000, 9000])), clicks),
     ).toBe(false)
+  })
+})
+
+// A replaced MP3 or M4A whose old block disagrees shows that block's cues in Serato: they
+// are rebuilt from it, colours included, and a set loop Surco cannot place is told apart.
+describe('seratoV1Cues', () => {
+  it('reads the time and colour of each hot cue in a real MP3 old block', () => {
+    const block = Uint8Array.from(Buffer.from(`020500000001${REAL_V1_ENTRY}077f7f7f`, 'hex'))
+    expect(seratoV1Cues(block)).toEqual({
+      cues: [{ index: 0, ms: 57606, color: 0xcc0000, name: '' }],
+      loops: false,
+    })
+  })
+
+  it('keeps the pad of each cue past the empty slots and sees no loop in empty loop slots', () => {
+    expect(seratoV1Cues(seratoV1Block([null, 1000], 9))?.cues.map((c) => [c.index, c.ms])).toEqual([
+      [1, 1000],
+    ])
+    expect(seratoV1Cues(seratoV1Block([1000], 9))?.loops).toBe(false)
+  })
+
+  it('tells a set loop slot apart', () => {
+    const block = seratoV1Block([1000], 1)
+    block[6 + 5 * 22] = 0
+    expect(seratoV1Cues(block)?.loops).toBe(true)
+  })
+
+  it('cannot read a block whose cue times cannot be read', () => {
+    const garbled = seratoV1Block([57606])
+    garbled[7] = 0x80
+    expect(seratoV1Cues(garbled)).toBeNull()
+  })
+
+  it('reads the times and colours of a real M4A old block', () => {
+    const pray = seratoV1M4aArmored([...SERATO_V1_M4A_PRAY, ...Array(11).fill(SERATO_V1_M4A_UNSET)])
+    expect(seratoV1CuesArmored(pray)).toEqual({
+      cues: [
+        { index: 0, ms: 7444, color: 0xcc0000, name: '' },
+        { index: 1, ms: 12756, color: 0xcc8800, name: '' },
+        { index: 2, ms: 19019, color: 0x0000cc, name: '' },
+      ],
+      loops: false,
+    })
+  })
+
+  it('tells a set loop slot apart in an M4A old block', () => {
+    const loop = `000003e8000007d000ffffffff00cc00000300`
+    expect(
+      seratoV1CuesArmored(seratoV1M4aArmored([...Array(5).fill(SERATO_V1_M4A_UNSET), loop]))?.loops,
+    ).toBe(true)
   })
 })
 

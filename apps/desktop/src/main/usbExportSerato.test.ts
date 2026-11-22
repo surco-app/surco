@@ -188,6 +188,7 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 44100,
       trackNo: 4,
@@ -213,6 +214,7 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 22050,
       trackNo: 0,
@@ -236,6 +238,7 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 22050,
       trackNo: 0,

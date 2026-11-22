@@ -901,6 +901,45 @@ describe('a replacement carries the Serato cues of the file it replaces', () => 
 
     expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
   })
+
+  // In an MP3 or M4A Serato shows the old cue block and ignores Markers2 (measured 03/11):
+  // the cues the DJ saw are the old block's, and those are the ones the new file must hold.
+  it.each(['.mp3', '.m4a'])(
+    'carries the cues of the old block a %s replaced file shows in Serato when its Markers2 disagrees',
+    async (ext) => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-v1-'))
+      const replaced = makeSeratoSource(dir, ext, false, [SERATO_CUE_MS + 400])
+      const download = plainSine(dir, '.flac')
+      const out = join(dir, 'out.aiff')
+
+      await replace(download, out, replaced)
+
+      const lead = await seratoLeadOfFile(replaced, readSeratoTrack(replaced)?.sampleRate ?? 44100)
+      expect((await surcoMs(out))?.cue).toEqual([expect.closeTo(SERATO_CUE_MS + 400 - lead, 0)])
+      expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
+    },
+  )
+
+  // A file Serato only ever wrote the old block to still holds the DJ's cues: falling back to
+  // the download's would put cues the DJ never set where Serato is pointed.
+  it("carries the cues of an MP3 replaced file that holds only the old block, not the download's", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-v1only-'))
+    const replaced = plainSine(dir, '.mp3')
+    const f = TagFile.createFromPath(replaced)
+    ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(
+      seratoGeob('Serato Markers_', seratoV1Block([SERATO_CUE_MS + 400])),
+    )
+    f.save()
+    f.dispose()
+    const download = makeSeratoSource(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    const lead = await seratoLeadOfFile(replaced, 44100)
+    expect((await surcoMs(out))?.cue).toEqual([expect.closeTo(SERATO_CUE_MS + 400 - lead, 0)])
+    expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
+  })
 })
 
 function tempoMap(firstBeatSeconds: number, bpm: number): Uint8Array {

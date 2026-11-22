@@ -381,6 +381,64 @@ function m4aV1CueTimes(block: Uint8Array): (number | null)[] | null {
   return times
 }
 
+const V1_COLOR_AT = 16
+const V1_M4A_COLOR_AT = 14
+
+export interface SeratoV1Cues {
+  cues: SeratoCue[]
+  loops: boolean
+}
+
+// The old block holds no names; a cue's colour sits 7 bits to a byte in an MP3 and as three
+// plain bytes in an M4A. A loop slot set in it is a loop Surco has never measured there.
+function v1CuesOf(
+  block: Uint8Array,
+  times: (number | null)[] | null,
+  entryBytes: number,
+  colorAt: (at: number) => number | null,
+  loopSet: (at: number) => boolean,
+): SeratoV1Cues | null {
+  if (!times) return null
+  const cues: SeratoCue[] = []
+  for (const [slot, ms] of times.entries()) {
+    if (ms === null) continue
+    const color = colorAt(6 + slot * entryBytes)
+    if (color === null) return null
+    cues.push({ index: slot, ms, color, name: '' })
+  }
+  let loops = false
+  for (let slot = V1_CUE_SLOTS; slot < u32(block, 2); slot++)
+    if (loopSet(6 + slot * entryBytes)) loops = true
+  return { cues, loops }
+}
+
+export function seratoV1Cues(block: Uint8Array): SeratoV1Cues | null {
+  return v1CuesOf(
+    block,
+    seratoV1CueTimes(block),
+    V1_ENTRY_BYTES,
+    (at) => sevenBit(block, at + V1_COLOR_AT),
+    (at) => block[at] === V1_SET,
+  )
+}
+
+export function seratoV1CuesArmored(value: string): SeratoV1Cues | null {
+  const armored = decodeBase64(value.replace(/\s/g, ''))
+  if (!armored || !latin1(armored.subarray(0, V1_ARMOR_HEADER.length)).startsWith(V1_ARMOR_HEADER))
+    return null
+  const block = armored.subarray(V1_ARMOR_HEADER.length)
+  return v1CuesOf(
+    block,
+    m4aV1CueTimes(block),
+    V1_M4A_ENTRY_BYTES,
+    (at) =>
+      (block[at + V1_M4A_COLOR_AT] << 16) |
+      (block[at + V1_M4A_COLOR_AT + 1] << 8) |
+      block[at + V1_M4A_COLOR_AT + 2],
+    (at) => u32(block, at) !== V1_M4A_UNSET,
+  )
+}
+
 export function seratoV1Agrees(
   times: (number | null)[] | null,
   markers: SeratoMarkers | null,

@@ -31,6 +31,10 @@ import {
   seratoV1Agrees,
   seratoV1CueTimes,
   seratoV1CueTimesArmored,
+  type SeratoV1Cues,
+  seratoV1Cues,
+  seratoV1CuesArmored,
+  withSeratoCues,
 } from '../shared/seratoMarkers'
 import { seratoLeadOfFile } from './seratoClock'
 import { dropBrokenUfids, geobParts, keepGenreParentheses } from './tags'
@@ -177,10 +181,23 @@ function oldBlockDisagrees(f: TagFile, ext: string, markers: SeratoMarkers | nul
   return false
 }
 
+function oldBlockOf(f: TagFile, ext: string): SeratoV1Cues | 'unreadable' | null {
+  if (ext === '.mp3') {
+    const block = id3Geob(f, MARKERS_V1)
+    return block ? (seratoV1Cues(block) ?? 'unreadable') : null
+  }
+  if (ext === '.m4a' || ext === '.mp4') {
+    const value = (f.tag as Mpeg4AppleTag).getItunesStrings(SERATO_MEAN, 'markers')[0]
+    return value !== undefined ? (seratoV1CuesArmored(value) ?? 'unreadable') : null
+  }
+  return null
+}
+
 export function readSeratoTrack(file: string): {
   payload: Uint8Array | null
   markers: SeratoMarkers | null
   oldBlockDisagrees: boolean
+  oldBlock: SeratoV1Cues | 'unreadable' | null
   tempoMap: SeratoTempoMap | null
   grids: SeratoGrids
   durationMs: number
@@ -199,6 +216,7 @@ export function readSeratoTrack(file: string): {
         payload: source ? seratoPayloadOf(source) : null,
         markers,
         oldBlockDisagrees: oldBlockDisagrees(f, ext, markers),
+        oldBlock: oldBlockOf(f, ext),
         tempoMap: readTempo ? readTempo(f) : null,
         grids: rawGrids(f, ext),
         durationMs: f.properties?.durationMilliseconds ?? 0,
@@ -387,6 +405,27 @@ async function measuredLeads(
   }
 }
 
+// In an MP3 or M4A Serato shows the old block's cues and ignores Markers2 (measured 03/11),
+// so a replacement carries those when the old block disagrees or stands alone: the cues are
+// rebuilt from it, with the Markers2 name on the same pad and the Markers2 loops kept. An old
+// block Surco cannot read, or one with a loop it has never measured there, cannot be carried
+// whole, and Serato must not be pointed at a file that lost what it showed.
+function payloadSeratoShows(
+  from: NonNullable<ReturnType<typeof readSeratoTrack>>,
+): Uint8Array | null {
+  const old = from.oldBlock
+  if (!old || (from.payload && !from.oldBlockDisagrees)) return from.payload
+  if (old === 'unreadable' || old.loops) throw new Error('cannot carry the old Serato cue block')
+  const named = from.markers?.cues ?? []
+  return withSeratoCues(
+    from.payload,
+    old.cues.map((cue) => ({
+      ...cue,
+      name: named.find((c) => c.index === cue.index)?.name ?? '',
+    })),
+  )
+}
+
 // What an ordinary conversion's caller must log: the carry runs in a worker with no logger,
 // and cues left out without a line in the log are cues lost with no trace.
 export type SeratoCarryOutcome = 'clock-unmeasured' | null
@@ -416,17 +455,11 @@ export async function carrySeratoCues(
   // because a copy without the cues must not have Serato pointed at it. An ordinary
   // conversion carries on, so the stale analysis is still stripped from its output.
   if (carry && !from && fallback) throw new Error(`cannot read ${source}`)
+  const shown = from && fallback ? payloadSeratoShows(from) : (from?.payload ?? null)
   // A readable source with no cues and no grid has nothing to carry: the file converted
   // keeps its own, as an ordinary conversion would carry them. A grid alone is still the
   // DJ's work on the replaced file, so it is carried and the download's cues are not.
-  if (
-    from &&
-    !from.payload &&
-    !from.markers &&
-    !from.grids.tempoMap &&
-    !from.grids.beatGrid &&
-    fallback
-  )
+  if (from && !shown && !from.markers && !from.grids.tempoMap && !from.grids.beatGrid && fallback)
     return carrySeratoCues(fallback.source, dest, {
       trimMs: fallback.trimMs,
       carry,
@@ -435,18 +468,19 @@ export async function carrySeratoCues(
     })
   const to = readSeratoTrack(dest)
   if (!to) return null
-  const timed = from?.payload || from?.grids.tempoMap || from?.grids.beatGrid
+  const timed = shown || from?.grids.tempoMap || from?.grids.beatGrid
   // Without Serato's clock nothing can be placed. A replacement must hear it, like an
   // unreadable source; an ordinary conversion carries nothing and still strips.
   const leads = from && timed ? await measuredLeads(source, from, dest, to, !fallback) : null
   const carried = leads ? from : null
   const sourceLead = leads?.source ?? 0
   const moveMs = leads ? leads.dest - sourceLead - trimMs + shiftMs : 0
-  const payload = carried?.payload
-    ? retimedSeratoPayload(carried.payload, moveMs, trimMs > 0 ? sourceLead + trimMs : 0)
-    : null
+  const payload =
+    carried && shown
+      ? retimedSeratoPayload(shown, moveMs, trimMs > 0 ? sourceLead + trimMs : 0)
+      : null
   const changed = payload && !sameBytes(to.payload, payload) ? payload : null
-  const fresh = carried?.oldBlockDisagrees ? null : changed
+  const fresh = carried?.oldBlockDisagrees && !fallback ? null : changed
   // The grid is not analysis to strip: a DJ may have set it by hand. It moves with the
   // cues, by the same amount, and only a shape Surco can read whole is copied.
   const grids = GRIDS.flatMap((grid) => {
