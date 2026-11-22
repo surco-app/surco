@@ -676,6 +676,23 @@ describe('Restoring the tags a release replaced', () => {
     expect(screen.queryByTestId('field-album-previous')).toBeNull()
   })
 
+  // Copy and Paste are a pair; the release restore is a different kind of action, so it
+  // sits after them instead of splitting the pair.
+  it('lists the restore after Paste so Copy and Paste stay together', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    const ids = screen.getAllByRole('menuitem').map((el) => el.getAttribute('data-testid'))
+    expect(ids.indexOf('restore-release-btn')).toBe(ids.indexOf('paste-meta-btn') + 1)
+  })
+
   // One click, one Undo step: restoring field by field would need one ⌘Z per field.
   it('puts every replaced field back in a single patch and a single Undo step', () => {
     const { onChange, onRecordUndo } = renderEditor(
@@ -2627,6 +2644,17 @@ describe('Editor multi-select', () => {
     expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
   })
 
+  it('does not send the DJ to a field from the amber note either when the selection mixes replacing with adding', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'album', 'artist'],
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    fireEvent.click(screen.getByTestId('batch-plan-blocked'))
+    expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
+  })
+
   // One track marks its empty required field with the amber dot; a selection that held the
   // same gap back showed only the note below, so the DJ could not see which field to fill.
   it('marks a required Grouping that one selected track still misses, as one track does', () => {
@@ -2686,6 +2714,21 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(screen.getByTestId('grouping-bulk').contains(document.activeElement)).toBe(true)
     expect(document.activeElement).not.toBe(document.body)
+  })
+
+  // Title is per track in a selection, so its box is read-only. A press that lands there
+  // must still be seen: the field is the answer to "why can't I convert".
+  it('takes a blocked press to a per-track Title that stays visible to the keyboard', () => {
+    renderMulti({
+      requiredFields: ['title'],
+      visibleFields: ['title', 'album'],
+      metaA: { title: '' },
+      metaB: { title: '' },
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    const title = screen.getByTestId('field-title')
+    expect(document.activeElement).toBe(title)
+    expect(title).not.toHaveAttribute('aria-hidden')
   })
 
   it('focuses the per-track toggle when Grouping has no chips to land on', () => {

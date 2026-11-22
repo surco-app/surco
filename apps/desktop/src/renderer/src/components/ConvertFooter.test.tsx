@@ -1305,6 +1305,13 @@ describe('ConvertFooter height', () => {
   )
 })
 
+describe('ConvertFooter one track shortcut hint', () => {
+  it('shows the convert shortcut on hover, as a selection does', () => {
+    render(cloneElement(footer(false), { processHint: '⌘⏎' }))
+    expect(hoverTooltip(screen.getByTestId('process-btn'))).toMatch(/⌘⏎$/)
+  })
+})
+
 describe('ConvertFooter selection split button', () => {
   function plan(over: Record<string, unknown> = {}): React.JSX.Element {
     return cloneElement(footer(false), {

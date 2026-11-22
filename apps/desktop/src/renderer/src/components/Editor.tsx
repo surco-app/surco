@@ -202,6 +202,7 @@ interface Props {
   onCancel?: () => void
   onConvertSelection?: () => void
   convertHint?: string
+  processHint?: string
   batchRun?: { done: number; total: number } | null
   onCancelBatch?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
@@ -331,6 +332,7 @@ export const Editor = memo(function Editor({
   onCancel,
   onConvertSelection,
   convertHint,
+  processHint,
   batchRun,
   onCancelBatch,
   onFormatChange,
@@ -1075,7 +1077,7 @@ export const Editor = memo(function Editor({
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
   const readOnlyRows = blockedBy !== undefined
   const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
-  const firstMissing = (multiGate?.missing.fields ?? missing)[0]
+  const firstMissing = multiGate?.mixed ? undefined : (multiGate?.missing.fields ?? missing)[0]
   const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
   const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
@@ -1326,6 +1328,7 @@ export const Editor = memo(function Editor({
         selectedTracks,
         visibleFields,
         requiredFields,
+        heldBackFields: multiGate?.missing.fields,
         item,
         genreChips,
         groupingPresets,
@@ -1357,6 +1360,7 @@ export const Editor = memo(function Editor({
       selectedTracks,
       visibleFields,
       requiredFields,
+      multiGate,
       item.meta,
       genreChips,
       groupingPresets,
@@ -1474,6 +1478,15 @@ export const Editor = memo(function Editor({
             separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
           },
         ]),
+    {
+      id: 'paste-meta',
+      testid: 'paste-meta-btn',
+      label: pasteMetaLabel,
+      Icon: ClipboardPaste,
+      onSelect: onPasteMeta,
+      disabled: copiedMetaTitle === null,
+      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
+    },
     ...(Object.keys(restorableRelease).length > 0
       ? [
           {
@@ -1486,15 +1499,6 @@ export const Editor = memo(function Editor({
           },
         ]
       : []),
-    {
-      id: 'paste-meta',
-      testid: 'paste-meta-btn',
-      label: pasteMetaLabel,
-      Icon: ClipboardPaste,
-      onSelect: onPasteMeta,
-      disabled: copiedMetaTitle === null,
-      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
-    },
   ]
 
   // The library state rides the section's title line, beside the title: a line of its own
@@ -2280,6 +2284,7 @@ export const Editor = memo(function Editor({
           onCancel={isMulti ? undefined : onCancel}
           onConvertSelection={onConvertSelection}
           convertHint={convertHint}
+          processHint={processHint}
           batchRun={batchRun}
           onCancelBatch={onCancelBatch}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}

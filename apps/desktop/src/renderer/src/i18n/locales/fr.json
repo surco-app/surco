@@ -987,7 +987,7 @@
     "baseTitle": "Titre de base",
     "stripNumbering": "Retirer la numérotation",
     "applyTitleFormat": "Format",
-    "restoreRelease": "Restaurer les anciennes étiquettes",
+    "restoreRelease": "Restaurer les anciens tags",
     "applyTitleFormatHint": "Appliquer le format du titre à la sélection",
     "deriveFromName": "Remplir depuis le nom",
     "deriveFromNameHint": "Remplit les métadonnées à partir du nom du fichier",
