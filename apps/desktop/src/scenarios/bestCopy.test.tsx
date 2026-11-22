@@ -68,7 +68,7 @@ describe.skipIf(process.platform !== 'darwin')(
     })
 
     it('says the file in hand is the better copy', () => {
-      expect(verdict.getAttribute('aria-label')).toMatch(/^Your file is better\./)
+      expect(verdict.getAttribute('aria-label')).toMatch(/^The new one is better\./)
     })
 
     it('shows that the limiter, counted in peaks, is what decided', () => {

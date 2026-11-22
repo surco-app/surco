@@ -50,8 +50,8 @@ describe('LibrarySection', () => {
   // to this file in a short word, on its own row, next to its format.
   it.each([
     ['same', 'Son el mismo'],
-    ['here', 'Tu archivo es mejor'],
-    ['library', 'Tu archivo es peor'],
+    ['here', 'La nueva es mejor'],
+    ['library', 'La nueva es peor'],
     ['tie', 'Parecidas'],
     ['even', 'Ni mejor ni peor'],
     ['measuring', 'Comparando'],
@@ -97,10 +97,10 @@ describe('LibrarySection', () => {
   // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
   // for a screen reader and the tooltip, so the row keeps one short word.
   it('names the reason with the state when there is one', () => {
-    const pill = mountApart({ verdict: 'library', detail: 'Este archivo tiene pérdida (MP3).' })
-    expect(pill).toHaveTextContent(/^Tu archivo es peor$/)
-    expect(pill).toHaveAccessibleName('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
-    expect(hoverTooltip(pill)).toBe('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
+    const pill = mountApart({ verdict: 'library', detail: 'La nueva tiene pérdida (MP3).' })
+    expect(pill).toHaveTextContent(/^La nueva es peor$/)
+    expect(pill).toHaveAccessibleName('La nueva es peor. La nueva tiene pérdida (MP3).')
+    expect(hoverTooltip(pill)).toBe('La nueva es peor. La nueva tiene pérdida (MP3).')
   })
 
   // Japanese closes a sentence with 。, so the state and its reason join the way each
@@ -149,8 +149,8 @@ describe('LibrarySection', () => {
       expect(labels).toEqual([
         'Comparando',
         'Son el mismo',
-        'Tu archivo es mejor',
-        'Tu archivo es peor',
+        'La nueva es mejor',
+        'La nueva es peor',
         'Parecidas',
         'Ni mejor ni peor',
         'Otra versión · 0:00:00',
@@ -204,7 +204,7 @@ describe('LibrarySection', () => {
     })
     const pill = screen.getByTestId('library-verdict')
     expect(pill).toHaveAttribute('data-state', 'here')
-    expect(pill).toHaveAccessibleName('Tu archivo es mejor')
+    expect(pill).toHaveAccessibleName('La nueva es mejor')
   })
 
   // With several programs "better there" cannot say where, so the folded header names it.
@@ -266,7 +266,7 @@ describe('LibrarySection', () => {
 
   it('says the file is worse plainly when folded over one row', () => {
     mount({ open: false }, { verdict: 'library' })
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es peor$/)
   })
 
   it('says another version in the folded header without a length when the rows differ in state', () => {
@@ -295,7 +295,7 @@ describe('LibrarySection', () => {
     for (const open of [true, false]) {
       render(<LibrarySection open={open} onToggle={() => {}} rows={rows} />)
       expect(screen.getAllByTestId('library-verdict')).toHaveLength(1)
-      expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es mejor$/)
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es mejor$/)
       expect(screen.queryByTestId('library-row-state')).toBeNull()
       cleanup()
     }
@@ -407,7 +407,7 @@ describe('LibrarySection', () => {
       ],
     })
     expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
-      'Tu archivo es peor. Razón uno. Razón dos.',
+      'La nueva es peor. Razón uno. Razón dos.',
     )
   })
 
@@ -440,7 +440,7 @@ describe('LibrarySection', () => {
         row({ id: 'engine', name: 'Engine DJ', verdict: 'library' }),
       ],
     })
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es peor$/)
   })
 
   it('shows no folded state until there is one', () => {
