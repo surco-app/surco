@@ -982,6 +982,7 @@
     "clearInAll": "Vaciar en todas",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
+    "emptyValue": "vacío",
     "groupingAllTracks": "todas las pistas",
     "groupingPerTrack": "Por pista",
     "groupingVarying_one": "{{count}} etiqueta varía",

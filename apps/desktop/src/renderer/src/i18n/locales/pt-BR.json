@@ -982,6 +982,7 @@
     "clearInAll": "Limpar em todas",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
+    "emptyValue": "vazio",
     "groupingAllTracks": "todas as faixas",
     "groupingPerTrack": "Por faixa",
     "groupingVarying_one": "{{count}} tag varia",

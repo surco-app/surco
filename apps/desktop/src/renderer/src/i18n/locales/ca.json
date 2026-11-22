@@ -982,6 +982,7 @@
     "clearInAll": "Buidar a totes",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valors",
+    "emptyValue": "buit",
     "groupingAllTracks": "totes les pistes",
     "groupingPerTrack": "Per pista",
     "groupingVarying_one": "{{count}} etiqueta varia",

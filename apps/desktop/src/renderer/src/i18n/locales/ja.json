@@ -982,6 +982,7 @@
     "clearInAll": "すべて空にする",
     "valuesCount_one": "{{count}} 件の値",
     "valuesCount_other": "{{count}} 件の値",
+    "emptyValue": "空",
     "groupingAllTracks": "すべてのトラック",
     "groupingPerTrack": "トラックごと",
     "groupingVarying_one": "{{count}} 件のタグが異なります",

@@ -667,8 +667,41 @@ describe('Field read-only', () => {
     expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
   })
 
-  // The placeholder is cut with an ellipsis in a narrow form, so the whole text rides in a tooltip.
-  it('keeps the whole list of differing values in a tooltip', () => {
+  // pointerenter does not bubble, so a real pointer reaches the Tooltip through the element
+  // that holds it, not the input inside.
+  const hoverBox = (name: string): void => {
+    const box = screen.getByTestId(`field-${name}`).parentElement as HTMLElement
+    for (const type of ['pointerenter', 'pointermove']) {
+      box.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10 }))
+    }
+  }
+
+  // The placeholder is cut with an ellipsis in a narrow form, so the whole text rides in a
+  // tooltip, on a mixed field and on a per-track one alike.
+  it.each([
+    ['mixed', { mixed: true }],
+    ['plain', { readOnly: true, plain: true }],
+  ])('keeps the whole list of differing values in a tooltip on a %s field', (_, props) => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        onChange={vi.fn()}
+        placeholder="A · B · C"
+        placeholderListed
+        {...props}
+      />,
+    )
+    hoverBox('artist')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('A · B · C')
+    vi.useRealTimers()
+  })
+
+  // A bare "4 values" is already all there is to say; a tooltip would only repeat it.
+  it('adds no tooltip when the placeholder is only a count', () => {
     vi.useFakeTimers()
     render(
       <Field
@@ -677,15 +710,12 @@ describe('Field read-only', () => {
         value=""
         onChange={vi.fn()}
         mixed
-        placeholder="A · B · C"
+        placeholder="4 values"
       />,
     )
-    const input = screen.getByTestId('field-artist')
-    for (const type of ['pointerenter', 'pointermove']) {
-      input.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10, bubbles: true }))
-    }
+    hoverBox('artist')
     act(() => vi.advanceTimersByTime(400))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('A · B · C')
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
     vi.useRealTimers()
   })
 })

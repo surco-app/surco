@@ -982,6 +982,7 @@
     "clearInAll": "Vider partout",
     "valuesCount_one": "{{count}} valeur",
     "valuesCount_other": "{{count}} valeurs",
+    "emptyValue": "vide",
     "groupingAllTracks": "tous les morceaux",
     "groupingPerTrack": "Par morceau",
     "groupingVarying_one": "{{count}} tag varie",

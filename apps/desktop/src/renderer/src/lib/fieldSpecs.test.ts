@@ -326,7 +326,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
       { value: 'Oliver Gil', count: 2 },
       { value: 'Aaron Sevilla', count: 1 },
     ])
-    expect(artist?.placeholder).toBe('Oliver Gil · Aaron Sevilla')
+    expect(artist?.placeholder).toBe('Oliver Gil · Aaron Sevilla · editor.emptyValue')
   })
 
   // A count tells the user nothing about what is there; two or three names fit and say it.
@@ -342,6 +342,26 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(build(['A', 'B', 'B'])?.placeholder).toBe('B · A')
     expect(build(['A', 'B', 'C'])?.placeholder).toBe('A · B · C')
     expect(build(['A', 'B', 'C', 'D'])?.placeholder).toBe('editor.valuesCount')
+  })
+
+  // "A" alone would read as a value every track shares, when some have nothing there.
+  it('lists a track with nothing as a value of its own and counts it towards the limit', () => {
+    const build = (artists: string[]) =>
+      buildFieldSpecs(
+        params({
+          isMulti: true,
+          selectedTracks: artists.map((artist, i) => track(`t${i}`, { artist })),
+          visibleFields: ['artist'],
+        }),
+      ).find((s) => s.key === 'artist')
+    expect(build(['A', '', 'A'])).toMatchObject({
+      placeholder: 'A · editor.emptyValue',
+      placeholderListed: true,
+    })
+    expect(build(['A', 'B', 'C', ''])).toMatchObject({
+      placeholder: 'editor.valuesCount',
+      placeholderListed: false,
+    })
   })
 
   it('offers no values when the selection agrees', () => {
@@ -653,7 +673,8 @@ describe('buildFieldSpecs (bulk mode)', () => {
         visibleFields: ['bpm'],
       }),
     )
-    expect(specs[0]).toMatchObject({ readOnly: true, value: '128', placeholder: undefined })
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '128' })
+    expect(specs[0].placeholder).toBeUndefined()
     expect(specs[0].width).toBe(FIELD_DEFS.find((d) => d.key === 'bpm')?.width)
   })
 })

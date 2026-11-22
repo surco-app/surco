@@ -53,15 +53,21 @@ function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; co
 }
 
 // What a mixed field shows in place of a value: the values themselves when few enough to read
-// (fewer still in a box sized for its value), otherwise how many there are.
+// (fewer still in a box sized for its value), otherwise how many there are. A track with
+// nothing counts as a value of its own: without it "A" would read as a value they all share.
 function mixedPlaceholder(
   values: { value: string }[],
+  hasEmpty: boolean,
   width: FieldWidth | undefined,
   tr: BuildFieldSpecsParams['tr'],
-): string {
-  return values.length <= (width ? 2 : 3)
-    ? values.map((v) => v.value).join(' · ')
-    : tr('editor.valuesCount', { count: values.length })
+): { placeholder: string; placeholderListed: boolean } {
+  const shown = values.map((v) => v.value)
+  if (hasEmpty) shown.push(tr('editor.emptyValue'))
+  const listed = shown.length <= (width ? 2 : 3)
+  return {
+    placeholder: listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length }),
+    placeholderListed: listed,
+  }
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -75,6 +81,9 @@ export interface FieldSpec {
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  // The placeholder spells out the values, so a tooltip adds the part a narrow box cuts;
+  // a bare count says everything it has to.
+  placeholderListed?: boolean
   width?: FieldWidth
   required?: boolean
   invalid?: boolean
@@ -283,7 +292,14 @@ export function buildFieldSpecs({
       label: tr(`fields.${key}`),
       value: shared ?? '',
       // The mixed flag still says "multiple values" in words to a screen reader.
-      placeholder: mixedValues ? mixedPlaceholder(mixedValues, width, tr) : undefined,
+      ...(mixedValues
+        ? mixedPlaceholder(
+            mixedValues,
+            tracks.some((t) => !t.meta[key]),
+            width,
+            tr,
+          )
+        : {}),
       width,
       mixed,
       mixedValues,
@@ -308,7 +324,7 @@ export function buildFieldSpecs({
       key: f.key,
       label: f.label,
       value: shared ?? '',
-      placeholder: mixedValues ? mixedPlaceholder(mixedValues, undefined, tr) : undefined,
+      ...(mixedValues ? mixedPlaceholder(mixedValues, values.includes(''), undefined, tr) : {}),
       mixed: shared === undefined,
       mixedValues,
       onChange: customBulkOnChange.get(f.key) ?? (() => {}),
@@ -324,8 +340,14 @@ export function buildFieldSpecs({
       key,
       label: tr(`fields.${key}`),
       value: shared ?? '',
-      placeholder:
-        shared === undefined ? mixedPlaceholder(valueCounts(tracks, key), width, tr) : undefined,
+      ...(shared === undefined
+        ? mixedPlaceholder(
+            valueCounts(tracks, key),
+            tracks.some((t) => !t.meta[key]),
+            width,
+            tr,
+          )
+        : {}),
       width,
       readOnly: true,
       plain: true,

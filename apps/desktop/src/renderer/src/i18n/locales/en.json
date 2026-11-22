@@ -982,6 +982,7 @@
     "clearInAll": "Clear in all",
     "valuesCount_one": "{{count}} value",
     "valuesCount_other": "{{count}} values",
+    "emptyValue": "empty",
     "groupingAllTracks": "all tracks",
     "groupingPerTrack": "Per track",
     "groupingVarying_one": "{{count}} tag varies",
