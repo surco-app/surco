@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Release, TrackMetadata } from '../../../shared/types'
+import { readLabelPage } from '../lib/labelPage'
 import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
 import { AlbumMatchRows } from './AlbumMatchRows'
@@ -178,6 +179,40 @@ describe('AlbumMatchRows', () => {
     await screen.findAllByTestId('match-row')
     fireEvent.click(screen.getByTestId('match-apply'))
     expect(onApply.mock.calls[0][0][0].patch.meta.publisher).toBe('')
+  })
+
+  // The editor reads the release against the focused file's artist only. On a label EP with
+  // two acts the other act's file would get "Other Act - Tune" as its title, so every file is
+  // read against its own artist before it is assigned and written.
+  it('reads a two-act label EP against each file own artist', async () => {
+    const page: Release = {
+      provider: 'bandcamp',
+      id: 9,
+      title: 'Label Traxx EP',
+      artists: [{ name: 'Label Traxx' }],
+      tracklist: [
+        { position: '1', title: 'Da Crew - Song', duration: '3:00' },
+        { position: '2', title: 'Other Act - Tune', duration: '6:00' },
+      ],
+    }
+    const crew = track('crew', 'Song', 181)
+    crew.meta = { ...crew.meta, artist: 'Da Crew' }
+    const other = track('other', 'Tune', 359)
+    other.meta = { ...other.meta, artist: 'Other Act' }
+    const onApply = vi.fn()
+    render(
+      <AlbumMatchRows
+        files={[crew, other]}
+        release={readLabelPage(page, 'Da Crew')}
+        onApply={onApply}
+      />,
+    )
+    await screen.findAllByTestId('match-row')
+    fireEvent.click(screen.getByTestId('match-apply'))
+    const patches = onApply.mock.calls[0][0] as { id: string; patch: { meta: TrackMetadata } }[]
+    const metaOf = (id: string) => patches.find((p) => p.id === id)?.patch.meta
+    expect(metaOf('crew')).toMatchObject({ title: 'Song', artist: 'Da Crew' })
+    expect(metaOf('other')).toMatchObject({ title: 'Tune', artist: 'Other Act' })
   })
 
   it('acknowledges the apply by flashing the button to "Applied"', async () => {
