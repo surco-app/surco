@@ -245,7 +245,7 @@ export const Field = memo(function Field({
           // that dominated the form; now they wait quietly until you engage one.
           className={`w-full truncate rounded-lg border px-2.5 py-1.5 text-sm outline-none compact:py-1 placeholder:text-fg-faint ${
             plain
-              ? 'border-transparent bg-transparent'
+              ? 'border-transparent bg-transparent focus:border-[var(--color-accent)]'
               : `${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]`
           } ${
             formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''
