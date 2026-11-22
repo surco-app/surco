@@ -799,6 +799,20 @@ describe('a replacement carries the Serato cues of the file it replaces', () => 
     expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, 0)
   })
 
+  // A FLAC keeps its cues in a Vorbis comment the AIFF cannot hold: only the carry brings
+  // them across, so a carry that read nothing from the replaced file must still run from the download.
+  it("keeps a FLAC download's own Serato cues when the replaced file has none", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-none-flac-'))
+    const replaced = plainSine(dir, '.mp3')
+    const download = makeSeratoSource(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, 0)
+    expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
+  })
+
   // The measure of phase 3 is taken on the finished file, trim included: taking the trim
   // off again here would move the cues twice.
   it("does not take a trim off the replaced file's cues", async () => {

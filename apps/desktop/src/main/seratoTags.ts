@@ -307,13 +307,29 @@ export async function carrySeratoCues(
     carry,
     strip,
     shiftMs,
-  }: { trimMs: number; carry: boolean; strip: boolean; shiftMs: number },
+    fallback,
+  }: {
+    trimMs: number
+    carry: boolean
+    strip: boolean
+    shiftMs: number
+    fallback?: { source: string; trimMs: number }
+  },
 ): Promise<void> {
   const ext = extname(dest).toLowerCase()
   const from = carry ? readSeratoTrack(source) : null
   // An unreadable source is not one without cues: the caller must hear it, because a
   // replacement whose cues could not be read must not have Serato pointed at it.
   if (carry && !from) throw new Error(`cannot read ${source}`)
+  // A readable source with no cues at all has nothing to carry: the file converted keeps
+  // its own, as an ordinary conversion would carry them.
+  if (from && !from.payload && !from.markers && fallback)
+    return carrySeratoCues(fallback.source, dest, {
+      trimMs: fallback.trimMs,
+      carry,
+      strip,
+      shiftMs: 0,
+    })
   const to = readSeratoTrack(dest)
   if (!to) return
   const sourceLead = from?.payload ? await seratoLeadOfFile(source, from.sampleRate) : 0

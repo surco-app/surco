@@ -141,6 +141,7 @@ export type WorkerJob =
       carry: boolean
       strip: boolean
       shiftMs: number
+      fallback?: { source: string; trimMs: number }
     }
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }

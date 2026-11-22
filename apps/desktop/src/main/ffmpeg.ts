@@ -2636,13 +2636,14 @@ export async function convertAudio(
     // replaces, so they come from there. The trim is not taken off them: the measure of the
     // shift is taken on the finished file, which already includes it.
     const replaceCueShiftMs = 0
+    const inputTrimMs = trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0
     if (carrySerato || !seratoAnalysisKept)
       await runInWorker({
         type: 'carrySeratoCues',
         source: replacesPath ?? input,
         dest: tmp,
-        trimMs:
-          trimAf !== undefined && !replacesPath ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
+        trimMs: replacesPath ? 0 : inputTrimMs,
+        ...(replacesPath ? { fallback: { source: input, trimMs: inputTrimMs } } : {}),
         carry: carrySerato,
         strip: !seratoAnalysisKept,
         shiftMs: replacesPath ? replaceCueShiftMs : 0,
