@@ -242,6 +242,7 @@ function renderEditor(
   onRecordUndo: ReturnType<typeof vi.fn>
   onFoldResults: ReturnType<typeof vi.fn>
   changeSettings: (next: Partial<Settings>) => void
+  setFilesOpen: (filesOpen: boolean) => void
 } {
   const onProcess = vi.fn()
   const onFoldResults = vi.fn()
@@ -262,9 +263,9 @@ function renderEditor(
   const onCopyMeta = vi.fn()
   const onPasteMeta = vi.fn()
   const onExportCollection = vi.fn()
-  const { changeSettings } = renderWithQuery(
-    // The panel reads "open Settings" from context now, so the spy rides a provider
-    // exactly as App mounts it.
+  // The panel reads "open Settings" from context now, so the spy rides a provider
+  // exactly as App mounts it.
+  const ui = (filesOpen: boolean) => (
     <OpenSettingsProvider open={onOpenSettings}>
       <Editor
         item={item(over)}
@@ -298,50 +299,50 @@ function renderEditor(
         onExportCollection={onExportCollection}
         onRecordUndo={onRecordUndo}
         readFullTrack={props.readFullTrack ?? (async () => undefined)}
-        filesOpen={props.filesOpen}
+        filesOpen={filesOpen}
       />
-    </OpenSettingsProvider>,
-    {
-      outputFormat,
-      // The membership badge follows the conversion destination now; Apple Music (the
-      // pre-destination-aware behaviour every badge test was written against) unless a
-      // test opts into another destination.
-      addToAppleMusic: props.addToAppleMusic ?? true,
-      addToEngineDj: props.addToEngineDj ?? false,
-      addToTraktor: props.addToTraktor ?? false,
-      addToRekordbox: props.addToRekordbox ?? false,
-      ...(props.syncRekordbox ? { syncRekordbox: true } : {}),
-      ...(props.syncTraktor ? { syncTraktor: true } : {}),
-      traktorNmlPath: props.traktorNmlPath ?? '',
-      keepMp3Sources: props.keepMp3Sources ?? false,
-      overwriteOriginal: props.overwriteOriginal ?? false,
-      ...(props.backupPolicy ? { backupPolicy: props.backupPolicy } : {}),
-      replaceLowResCover: props.replaceLowResCover ?? false,
-      autoApplyFilename: props.autoApplyFilename ?? false,
-      filenameFormat: props.filenameFormat ?? '{artist} - {title}',
-      titleFormat: props.titleFormat ?? '',
-      genrePresets: props.genrePresets ?? [],
-      ...(props.genreSeparator ? { genreSeparator: props.genreSeparator } : {}),
-      groupingPresets: [],
-      visibleFields: props.visibleFields ?? [],
-      customFields: props.customFields ?? [],
-      requiredFields: props.requiredFields ?? [],
-      discogsFormats: props.discogsFormats ?? [],
-      discogsMaxResults: 25,
-      showLoudness: props.showLoudness ?? false,
-      ...(props.showSpectrum ? { showSpectrum: true } : {}),
-      keyNotation: props.keyNotation ?? 'camelot',
-      normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
-      ...(props.declick ? { declick: props.declick } : {}),
-      ...(props.showEditorHints !== undefined ? { showEditorHints: props.showEditorHints } : {}),
-      ...(props.editorSections ? { editorSections: props.editorSections } : {}),
-      ...(props.discogsToken !== undefined ? { discogsToken: props.discogsToken } : {}),
-      ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
-      ...(props.outputDir ? { outputDir: props.outputDir } : {}),
-      ...(props.convertBesideOriginal ? { convertBesideOriginal: true } : {}),
-      ...(props.autoMatch ? { autoMatch: true } : {}),
-    },
+    </OpenSettingsProvider>
   )
+  const { changeSettings, rerenderUi } = renderWithQuery(ui(props.filesOpen ?? true), {
+    outputFormat,
+    // The membership badge follows the conversion destination now; Apple Music (the
+    // pre-destination-aware behaviour every badge test was written against) unless a
+    // test opts into another destination.
+    addToAppleMusic: props.addToAppleMusic ?? true,
+    addToEngineDj: props.addToEngineDj ?? false,
+    addToTraktor: props.addToTraktor ?? false,
+    addToRekordbox: props.addToRekordbox ?? false,
+    ...(props.syncRekordbox ? { syncRekordbox: true } : {}),
+    ...(props.syncTraktor ? { syncTraktor: true } : {}),
+    traktorNmlPath: props.traktorNmlPath ?? '',
+    keepMp3Sources: props.keepMp3Sources ?? false,
+    overwriteOriginal: props.overwriteOriginal ?? false,
+    ...(props.backupPolicy ? { backupPolicy: props.backupPolicy } : {}),
+    replaceLowResCover: props.replaceLowResCover ?? false,
+    autoApplyFilename: props.autoApplyFilename ?? false,
+    filenameFormat: props.filenameFormat ?? '{artist} - {title}',
+    titleFormat: props.titleFormat ?? '',
+    genrePresets: props.genrePresets ?? [],
+    ...(props.genreSeparator ? { genreSeparator: props.genreSeparator } : {}),
+    groupingPresets: [],
+    visibleFields: props.visibleFields ?? [],
+    customFields: props.customFields ?? [],
+    requiredFields: props.requiredFields ?? [],
+    discogsFormats: props.discogsFormats ?? [],
+    discogsMaxResults: 25,
+    showLoudness: props.showLoudness ?? false,
+    ...(props.showSpectrum ? { showSpectrum: true } : {}),
+    keyNotation: props.keyNotation ?? 'camelot',
+    normalize: props.normalize ?? { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+    ...(props.declick ? { declick: props.declick } : {}),
+    ...(props.showEditorHints !== undefined ? { showEditorHints: props.showEditorHints } : {}),
+    ...(props.editorSections ? { editorSections: props.editorSections } : {}),
+    ...(props.discogsToken !== undefined ? { discogsToken: props.discogsToken } : {}),
+    ...(props.searchProviders ? { searchProviders: props.searchProviders } : {}),
+    ...(props.outputDir ? { outputDir: props.outputDir } : {}),
+    ...(props.convertBesideOriginal ? { convertBesideOriginal: true } : {}),
+    ...(props.autoMatch ? { autoMatch: true } : {}),
+  })
   return {
     onProcess,
     onChange,
@@ -363,6 +364,7 @@ function renderEditor(
     onRecordUndo,
     onFoldResults,
     changeSettings,
+    setFilesOpen: (filesOpen: boolean) => rerenderUi(ui(filesOpen)),
   }
 }
 
@@ -1665,6 +1667,7 @@ function MultiHarness() {
         searchInputRef={createRef<HTMLInputElement>()}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
+        filesOpen
         resultsFolded={false}
         onFoldResults={vi.fn()}
         onResultsResizeStart={vi.fn()}
@@ -2081,6 +2084,7 @@ describe('Editor multi-select', () => {
           searchInputRef={createRef<HTMLInputElement>()}
           onExportCollection={vi.fn()}
           readFullTrack={async () => undefined}
+          filesOpen
           resultsFolded={false}
           onFoldResults={vi.fn()}
           onResultsResizeStart={vi.fn()}
@@ -3247,6 +3251,7 @@ describe('Editor export control', () => {
           copiedMetaTitle={null}
           onExportCollection={vi.fn()}
           readFullTrack={async () => undefined}
+          filesOpen
         />
       )
     }
@@ -4729,6 +4734,7 @@ describe('Editor Discogs apply', () => {
         copiedMetaTitle={null}
         onExportCollection={vi.fn()}
         readFullTrack={async () => undefined}
+        filesOpen
       />
     )
   }
@@ -5568,7 +5574,11 @@ describe('Editor Apple Music library section', () => {
     libraryProperties?: TrackProperties
     libraryGone?: 'missing' | 'unreadable' | 'checking'
     filesOpen?: boolean
-  }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
+  }): {
+    api: Record<string, unknown>
+    onProcess: ReturnType<typeof vi.fn>
+    setFilesOpen: (filesOpen: boolean) => void
+  } {
     setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
     api.appleMusicEntryLocation =
@@ -5607,7 +5617,7 @@ describe('Editor Apple Music library section', () => {
     api.readDuration = vi.fn(async (path: string) =>
       path === '/Music/Strobe.wav' ? libraryDuration : (hereDuration ?? null),
     )
-    const { onProcess } = renderEditor(
+    const { onProcess, setFilesOpen } = renderEditor(
       {
         id: 'a',
         inputPath: herePath,
@@ -5625,7 +5635,7 @@ describe('Editor Apple Music library section', () => {
         filesOpen,
       },
     )
-    return { api, onProcess }
+    return { api, onProcess, setFilesOpen }
   }
 
   // An exact match beside a weaker «(Radio Edit)» is no tie: the exact entry is the copy, so
@@ -5662,6 +5672,21 @@ describe('Editor Apple Music library section', () => {
   it('shows the library section for a track from the Tracks list', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, filesOpen: true })
     expect(await screen.findByTestId('library-section')).toBeInTheDocument()
+  })
+
+  it('drops the section on leaving the Tracks list and brings it back with one fresh row on returning', async () => {
+    const { setFilesOpen } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    setFilesOpen(false)
+    expect(screen.queryByTestId('library-section')).toBeNull()
+    setFilesOpen(true)
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'here'),
+    )
+    expect(screen.getAllByTestId('library-row')).toHaveLength(1)
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
   it('shows no library section and measures no copy for a track opened from a program tab', async () => {

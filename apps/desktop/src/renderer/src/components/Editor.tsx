@@ -295,7 +295,7 @@ interface Props {
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
-  filesOpen?: boolean
+  filesOpen: boolean
   librarySources?: readonly PlaylistSource[]
   onRevealIn?: (source: PlaylistSource) => void
   // Re-checks a conversion whose re-read did not add up; App owns the job runner.
@@ -390,7 +390,7 @@ export const Editor = memo(function Editor({
   copiedMetaTitle,
   onExportCollection,
   readFullTrack,
-  filesOpen = true,
+  filesOpen,
   librarySources = [],
   onRevealIn,
   onRetryVerification,
