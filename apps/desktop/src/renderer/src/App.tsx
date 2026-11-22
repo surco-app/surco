@@ -1247,6 +1247,8 @@ export default function App(): React.JSX.Element {
   // Music, and leaving it selected there kept its editor open beside a list without it.
   // What is kept was picked before leaving, so rows removed meanwhile are left out.
   const selectionBySource = useRef(new Map<PlaylistSource | null, Selection>())
+  // The search too: one typed in rekordbox hid rows in Tracks that were never searched for.
+  const searchBySource = useRef(new Map<PlaylistSource | null, string>())
   // Another playlist of the same source hides the rows of the one left, which stay in the
   // collection: a selection kept across the switch let the editor, the row menu (a
   // rekordbox write among its items) and the bulk actions act on rows no longer on screen.
@@ -1358,6 +1360,8 @@ export default function App(): React.JSX.Element {
     if (next === browser.source) return selection
     heldSelection.current = null
     selectionBySource.current.set(browser.source, selection)
+    searchBySource.current.set(browser.source, store.getState().search)
+    setSearch(searchBySource.current.get(next) ?? '')
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
     const restored = {
@@ -1419,7 +1423,9 @@ export default function App(): React.JSX.Element {
     // something: a field being typed in, a filter that may hide the new rows, or a selection
     // the user made while a slow folder was still being walked. The first row addPaths
     // opens on an empty list is the add's own doing and does not count as one.
-    if (added.length === 0 || isTypingTarget(document.activeElement) || tracksFilterActive) return
+    const typingInEditor =
+      isTypingTarget(document.activeElement) && columnOf(document.activeElement) !== 'list'
+    if (added.length === 0 || typingInEditor || tracksFilterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
       const untouched =

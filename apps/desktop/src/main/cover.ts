@@ -63,16 +63,12 @@ export async function prepareProcessedCover(
   let processed: string
   try {
     processed = await processCover(coverPath, opts)
-  } catch (e) {
-    // cleanup() only ships on success, so a failed pass would otherwise strand the
-    // temp we downloaded/extracted (the user's own dropped file is never touched).
+  } finally {
     if (tempCover) await unlink(tempCover).catch(() => {})
-    throw e
   }
   return {
     path: processed,
     cleanup: async () => {
-      if (tempCover) await unlink(tempCover).catch(() => {})
       await unlink(processed).catch(() => {})
     },
   }

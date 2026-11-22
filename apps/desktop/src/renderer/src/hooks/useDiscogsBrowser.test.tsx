@@ -466,14 +466,13 @@ describe('useDiscogsBrowser', () => {
     expect(search).not.toHaveBeenCalled()
   })
 
-  // A track already carrying a Discogs release id opens straight to it on mount — no
-  // debounce, no click, no text search — exactly like pasting the id, so re-tagging an
-  // already-matched crate re-confirms every track's release without a fresh search.
-  it('loads a release directly from the file’s stored Discogs id on mount', async () => {
+  // A matched track with nothing to search for, no artist or title to build a term from,
+  // still opens straight to its stored release, exactly like pasting the id.
+  it('loads a release directly from the file’s stored Discogs id when the box is empty', async () => {
     const search = vi.fn().mockResolvedValue([])
     setApi({ search })
     const { result } = renderHook(
-      () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '1' }), tr),
+      () => useDiscogsBrowser(item({ query: '', discogsReleaseId: '1' }), tr),
       { wrapper: wrapper() },
     )
     await waitFor(() => expect(result.current.release?.id).toBe(1))
@@ -559,6 +558,22 @@ describe('useDiscogsBrowser', () => {
     await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
     expect(result.current.openKey).toBe('discogs:55')
     expect(search).toHaveBeenCalledWith('refined term', 'discogs', 'high', expect.anything())
+  })
+
+  // Applying a match stamps its id on the track, so flipping away and back reopened the panel
+  // on that one release: the box still said "artist title" while the list had lost the other
+  // editions it had shown a moment before, until Enter brought them back (22/11).
+  it('brings back the automatic search with the stored release on top when the track reopens', async () => {
+    const second = { ...searchResult, id: 2, title: 'Other Album' }
+    const search = vi.fn().mockResolvedValue([searchResult, second])
+    setApi({ search, getRelease: vi.fn((id: number) => Promise.resolve({ ...release, id })) })
+    const { result } = renderHook(
+      () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '55' }), tr),
+      { wrapper: wrapper() },
+    )
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
+    expect(result.current.openKey).toBe('discogs:55')
+    expect(search).toHaveBeenCalledWith('artist title', 'discogs', 'high', expect.anything())
   })
 
   // The probe would otherwise pin whichever result it finds holding the title, pushing the
@@ -707,10 +722,11 @@ describe('useDiscogsBrowser', () => {
     expect(search.mock.calls.map((c) => c[0])).toEqual(['typed term'])
   })
 
-  // A restored track carries its stored id through the read: the id view must survive
-  // the read landing, not get buried under the text search the landing releases.
-  it('keeps the stored-id release when the tag read lands on a restored track', async () => {
-    const search = vi.fn().mockResolvedValue([])
+  // A restored track carries its stored id through the read: the box holds a file-name guess
+  // until then, so the id opens alone; once the read lands the box's search runs and the
+  // stored release keeps the top slot, open, instead of being buried under it.
+  it('keeps the stored-id release on top when the tag read lands on a restored track', async () => {
+    const search = vi.fn().mockResolvedValue([{ ...searchResult, id: 2, title: 'Other Album' }])
     setApi({ search })
     const { result, rerender } = renderHook(
       ({ loadingMeta }: { loadingMeta: boolean }) =>
@@ -718,10 +734,10 @@ describe('useDiscogsBrowser', () => {
       { wrapper: wrapper(), initialProps: { loadingMeta: true } },
     )
     await waitFor(() => expect(result.current.release?.id).toBe(1))
-    rerender({ loadingMeta: false })
-    await act(() => new Promise((r) => setTimeout(r, 600)))
-    expect(result.current.release?.id).toBe(1)
     expect(search).not.toHaveBeenCalled()
+    rerender({ loadingMeta: false })
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([1, 2]))
+    expect(result.current.release?.id).toBe(1)
   })
 
   // The track's query firms up after mount: import seeds it from the file NAME ("I'm
@@ -758,11 +774,10 @@ describe('useDiscogsBrowser', () => {
     expect(result.current.query).toBe('refined term')
   })
 
-  // With a stored-id release on screen, the firmed-up query only refreshes the box text
-  // (what a remount would show); firing a text search would bury the exact release the
-  // id seed just opened under candidates.
-  it('updates the box without a text search when the query firms up over a stored id', async () => {
-    const search = vi.fn().mockResolvedValue([])
+  // Over a stored release the firmed-up query re-runs like anywhere else, so the list holds
+  // what the box says, and the stored release keeps the top slot, open.
+  it('re-runs the search with the stored release on top when the query firms up over it', async () => {
+    const search = vi.fn().mockResolvedValue([{ ...searchResult, id: 2, title: 'Other Album' }])
     setApi({ search })
     const { result, rerender } = renderHook(
       ({ query }: { query: string }) =>
@@ -773,26 +788,26 @@ describe('useDiscogsBrowser', () => {
     rerender({ query: "DJ Miguel Serna, Alex Cervera I'm Ready" })
     await act(() => new Promise((r) => setTimeout(r, 600)))
     expect(result.current.query).toBe("DJ Miguel Serna, Alex Cervera I'm Ready")
+    expect(search.mock.calls.map((c) => c[0])).toContain("DJ Miguel Serna, Alex Cervera I'm Ready")
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([1, 2]))
     expect(result.current.release?.id).toBe(1)
-    expect(search).not.toHaveBeenCalled()
   })
 
-  // The regression the first cut of the stored-id shortcut shipped with: the typing
-  // debounce arms on mount too (item.query is rarely empty), so 500ms after opening it
-  // overwrote the seeded id with item.query and ran the very text search the id was
-  // meant to skip — the panel flashed the right release, then buried it in candidates.
-  // The seed must survive the debounce window; only real typing may override it.
-  it('keeps the stored-id release once the mount debounce window has passed', async () => {
-    const search = vi.fn().mockResolvedValue([])
+  // The typing debounce arms on mount too: 500ms after opening it must neither re-run the
+  // search nor knock the stored release off the top, where it flashed and then got buried
+  // in candidates once before. Only real typing may override it.
+  it('keeps the stored-id release on top once the mount debounce window has passed', async () => {
+    const search = vi.fn().mockResolvedValue([{ ...searchResult, id: 2, title: 'Other Album' }])
     setApi({ search })
     const { result } = renderHook(
       () => useDiscogsBrowser(item({ query: 'artist title', discogsReleaseId: '1' }), tr),
       { wrapper: wrapper() },
     )
-    await waitFor(() => expect(result.current.release?.id).toBe(1))
+    await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([1, 2]))
     await act(() => new Promise((r) => setTimeout(r, 600)))
+    expect(result.current.results.map((r) => r.id)).toEqual([1, 2])
     expect(result.current.release?.id).toBe(1)
-    expect(search).not.toHaveBeenCalled()
+    expect(search).toHaveBeenCalledTimes(1)
   })
 
   // A refined search is navigation state the user expects to survive a track flip;
