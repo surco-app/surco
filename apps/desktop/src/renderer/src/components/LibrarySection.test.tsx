@@ -158,6 +158,7 @@ describe('LibrarySection', () => {
         'No se encuentra',
         'No se puede leer',
         'No se puede medir',
+        '9 copias',
       ])
     }
     for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
@@ -396,6 +397,20 @@ describe('LibrarySection', () => {
     const pill = mountApart({ verdict: 'unmeasurable' })
     expect(pill).toHaveTextContent('No se puede medir')
     expect(pill).toHaveAttribute('data-state', 'unmeasurable')
+  })
+
+  // The library holds the track more than once and cannot tell which entry is this copy: the
+  // row counts them, in gray, and that says nothing about this file, so it never goes up.
+  it('says how many copies the library holds on its own row, never hoisted', () => {
+    mount(
+      {},
+      { verdict: 'several', copies: 2, format: '', comparable: false, comparison: undefined },
+    )
+    const pill = screen.getByTestId('library-row-state')
+    expect(pill).toHaveTextContent('2 copias')
+    expect(pill).toHaveAccessibleName('2 copias')
+    expect(pill).toHaveAttribute('data-state', 'several')
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
   // The rows lose their pills when the state goes up, so their reasons go up with it.

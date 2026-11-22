@@ -6,6 +6,7 @@ import {
   isInLibrary,
   replaceCandidate,
   staleLibraryCopy,
+  topLibraryEntries,
 } from './appleMusicLibrary'
 
 describe('buildLibraryIndex / isInLibrary', () => {
@@ -549,5 +550,34 @@ describe('findLibraryEntry', () => {
     const idx = buildLibraryIndex([{ title: 'Strobe', artist: 'deadmau5', path: '/a' }])
     expect(isInLibrary(idx, { title: 'Strobe', artist: 'deadmau5' })).toBe(true)
     expect(isInLibrary(idx, { title: 'Other', artist: 'deadmau5' })).toBe(false)
+  })
+})
+
+describe('topLibraryEntries', () => {
+  it('returns every entry tied at the top score, since none of them can be told apart', () => {
+    const idx = indexOf([
+      { title: 'Possession', artist: 'Transfer', durationSec: 372, persistentId: 'PID1' },
+      { title: 'Possession', artist: 'Transfer', durationSec: 372, persistentId: 'PID2' },
+    ])
+    expect(
+      topLibraryEntries(idx, { title: 'Possession', artist: 'Transfer', durationSec: 372 }).map(
+        (entry) => entry.persistentId,
+      ),
+    ).toEqual(['PID1', 'PID2'])
+  })
+
+  it('returns only the clearly best entry when a weaker variant also matches', () => {
+    const idx = indexOf([
+      { title: 'Possession', artist: 'Transfer', durationSec: 372, persistentId: 'PID1' },
+      {
+        title: 'Possession (Radio Edit)',
+        artist: 'Transfer',
+        durationSec: 210,
+        persistentId: 'PID2',
+      },
+    ])
+    const candidate = { title: 'Possession', artist: 'Transfer', durationSec: 372 }
+    expect(replaceCandidate(idx, candidate)).toEqual({ ambiguous: ['PID1', 'PID2'] })
+    expect(topLibraryEntries(idx, candidate).map((entry) => entry.persistentId)).toEqual(['PID1'])
   })
 })

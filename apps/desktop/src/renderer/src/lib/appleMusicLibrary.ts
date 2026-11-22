@@ -392,6 +392,20 @@ export function isAmbiguousCandidate(
   return candidate !== null && 'ambiguous' in candidate
 }
 
+export function topLibraryEntries(
+  index: AppleMusicIndex,
+  candidate: { title: string; artist: string; durationSec?: number },
+): LibraryEntry[] {
+  const gathered = candidateEntries(index, candidate)
+  if (!gathered) return []
+  const scored = [...gathered.entries]
+    .filter((entry) => entry.persistentId)
+    .map((entry) => ({ entry, score: libraryMatchScore(entry, gathered.cand) }))
+    .filter(({ score }) => score >= LIBRARY_MATCH_THRESHOLD)
+  const top = Math.max(...scored.map(({ score }) => score))
+  return scored.filter(({ score }) => score === top).map(({ entry }) => entry)
+}
+
 export function replaceCandidate(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string; durationSec?: number },

@@ -1430,6 +1430,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
           librarySource: librarySourceOf(settings, process.platform === 'darwin'),
           suggestedMeta: undefined,
           onChange,
+          describesCopy: true,
         })
         const target = verdict.replaceTarget
         useAppleMusicFill({

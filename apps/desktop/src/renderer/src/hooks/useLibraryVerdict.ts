@@ -7,6 +7,7 @@ import {
   replaceCandidate,
   type StaleLibraryCopy,
   staleLibraryCopy,
+  topLibraryEntries,
 } from '../lib/appleMusicLibrary'
 import type { LibrarySource } from '../lib/librarySource'
 import type { TrackItem } from '../types'
@@ -22,6 +23,7 @@ interface Params {
   // App's updateTrack. The Discogs-proven verdict is pinned onto the track so the LIST and
   // its filter read it too — the list has no open release and cannot recompute it.
   onChange: (patch: Partial<TrackItem>) => void
+  describesCopy: boolean
 }
 
 interface LibraryVerdict {
@@ -40,8 +42,7 @@ interface LibraryVerdict {
   // found again on title and artist alone), read only to say what it is, never replaced.
   libraryCopyPath: string
   libraryCopyPending: boolean
-  // Music listed the entry but gave no file for it: the copy cannot be found.
-  libraryCopyUnlocated: boolean
+  tiedCopies: number
 }
 
 // Whether the destination library (Apple Music or Engine DJ) already owns this track, and
@@ -58,6 +59,7 @@ export function useLibraryVerdict({
   librarySource,
   suggestedMeta,
   onChange,
+  describesCopy,
 }: Params): LibraryVerdict {
   // Whether the confident Discogs suggestion is what proves this track is owned — the raw
   // tags didn't key-match the library but the release's canonical title/artist does. This is
@@ -188,10 +190,21 @@ export function useLibraryVerdict({
   // A shown copy with no replace target still has to say what it is: the entry the section
   // matched, looked up without the length that kept it from being a replace candidate.
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
+  const topEntries = useMemo(
+    () =>
+      describesCopy && libraryIndex && replaceTarget && 'ambiguous' in replaceTarget
+        ? topLibraryEntries(libraryIndex, ownTags)
+        : [],
+    [describesCopy, libraryIndex, replaceTarget, item.meta.title, item.meta.artist, item.duration],
+  )
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
   const describedId = useMemo(() => {
-    if (offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
-    // Several entries match equally: describing one of them could describe the wrong copy.
-    if (replaceTarget && 'ambiguous' in replaceTarget) return null
+    if (!describesCopy || offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
+    // Several entries match: one that clearly scores best is the copy described, while a tie at
+    // the top could describe the wrong one. Replacing still needs a single match.
+    if (replaceTarget && 'ambiguous' in replaceTarget) {
+      return topEntries.length === 1 ? (topEntries[0].persistentId ?? null) : null
+    }
     if (inLibrary !== 'yes' || item.musicPersistentId) return null
     const entry =
       findLibraryEntry(libraryIndex, ownTags, ownTags.durationSec) ??
@@ -199,8 +212,10 @@ export function useLibraryVerdict({
       (suggestedMeta ? findLibraryEntry(libraryIndex, suggestedMeta) : null)
     return entry?.persistentId ?? null
   }, [
+    describesCopy,
     offeredId,
     replaceTarget,
+    topEntries,
     librarySource,
     libraryIndex,
     inLibrary,
@@ -210,7 +225,8 @@ export function useLibraryVerdict({
     item.duration,
     suggestedMeta,
   ])
-  const copyId = offeredId ?? describedId
+  const ownId = describesCopy && librarySource === 'appleMusic' ? item.musicPersistentId : undefined
+  const copyId = offeredId ?? describedId ?? ownId ?? null
   const [offeredPath, setOfferedPath] = useState<{ id: string; path: string } | null>(null)
   const [lookedUp, setLookedUp] = useState<string | null>(null)
   useEffect(() => {
@@ -244,6 +260,6 @@ export function useLibraryVerdict({
     replaceTargetPending: !!offeredId && lookedUp !== offeredId,
     libraryCopyPath: copyId && offeredPath?.id === copyId ? offeredPath.path : '',
     libraryCopyPending: !!copyId && lookedUp !== copyId,
-    libraryCopyUnlocated: !!copyId && lookedUp === copyId && offeredPath?.id !== copyId,
+    tiedCopies: topEntries.length > 1 ? topEntries.length : 0,
   }
 }

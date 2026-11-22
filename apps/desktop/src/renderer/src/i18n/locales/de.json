@@ -1385,6 +1385,8 @@
     "libraryStateMissing": "Nicht gefunden",
     "libraryStateUnreadable": "Nicht lesbar",
     "libraryStateUnmeasurable": "Nicht messbar",
+    "libraryStateSeveral_one": "{{count}} Kopie",
+    "libraryStateSeveral_other": "{{count}} Kopien",
     "libraryStateEven": "Gleichwertig",
     "libraryStateMeasuring": "Wird verglichen",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"

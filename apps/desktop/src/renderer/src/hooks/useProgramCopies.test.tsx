@@ -101,6 +101,20 @@ describe('useProgramCopies', () => {
     expect(rekordbox).not.toHaveBeenCalled()
   })
 
+  it('lists no copy while disabled even when the program tab already cached its collection', async () => {
+    installApi({ dj: djReads({ rekordbox: { collection: async () => [row('/r/weekend.aiff')] } }) })
+    const client = createQueryClient()
+    await client.prefetchQuery(sourceCollectionOptions('rekordbox'))
+    const wrapper = ({ children }: { children: React.ReactNode }): React.JSX.Element => (
+      <QueryClientProvider client={client}>
+        <SettingsProvider settings={{ syncRekordbox: true }}>{children}</SettingsProvider>
+      </QueryClientProvider>
+    )
+    const { result } = renderHook(() => useProgramCopies(args({ enabled: false })), { wrapper })
+    await Promise.resolve()
+    expect(result.current).toEqual([])
+  })
+
   it('shows no copy for a program whose collection fails to read', async () => {
     installApi({
       dj: djReads({

@@ -23,6 +23,7 @@ export type LibraryVerdict =
   | 'missing'
   | 'unreadable'
   | 'unmeasurable'
+  | 'several'
   | 'even'
 
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
@@ -46,6 +47,7 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
     className: 'bg-fg-faint/8 text-fg-faint',
   },
   thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/8 text-fg-faint' },
+  several: { label: 'editor.libraryStateSeveral', className: 'bg-fg-faint/8 text-fg-faint' },
   even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/10 text-fg-dim' },
   measuring: {
     label: 'editor.libraryStateMeasuring',
@@ -62,6 +64,7 @@ export interface LibraryRow {
   comparable: boolean
   // The library copy's length, which tells another version apart at a glance.
   durationSec?: number
+  copies?: number
   // Why the winning copy won, said with the state: the table below shows only the figures.
   detail?: string
   comparison?: React.ReactNode
@@ -82,6 +85,7 @@ const NO_REASON: LibraryVerdict[] = [
   'missing',
   'unreadable',
   'unmeasurable',
+  'several',
 ]
 
 function StatePill({
@@ -132,6 +136,7 @@ const RESERVED_STATES = [
   'missing',
   'unreadable',
   'unmeasurable',
+  'several',
 ] as const
 
 // Every state a pill can take, unseen in one cell: the place is as wide as the widest in this
@@ -144,7 +149,9 @@ function StateSizers({ program }: { program?: string }): React.JSX.Element {
     words:
       key === 'different'
         ? tr('editor.libraryStateDifferent', { duration: '0:00:00' })
-        : tr(STATE[key].label),
+        : key === 'several'
+          ? tr(STATE[key].label, { count: 9 })
+          : tr(STATE[key].label),
   }))
   return (
     <>
@@ -175,6 +182,7 @@ function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): stri
   if (verdict === 'different' && row.durationSec != null) {
     return tr('editor.libraryStateDifferent', { duration: formatTime(row.durationSec) })
   }
+  if (verdict === 'several') return tr(STATE.several.label, { count: row.copies ?? 2 })
   return tr(STATE[verdict].label)
 }
 
@@ -281,7 +289,7 @@ function LibraryRowItem({
 }
 
 // States about one copy rather than about the open file never ride up to the header.
-const ROW_ONLY: LibraryVerdict[] = ['thisFile', 'missing', 'unreadable', 'unmeasurable']
+const ROW_ONLY: LibraryVerdict[] = ['thisFile', 'missing', 'unreadable', 'unmeasurable', 'several']
 
 // The state every copy shares, with the length when it is another version of one length, as
 // it is shown. «Comparing» is shared only when every copy is comparing, so the common case of

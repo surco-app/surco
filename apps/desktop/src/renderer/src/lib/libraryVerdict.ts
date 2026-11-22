@@ -27,6 +27,7 @@ export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): Librar
     'missing',
     'unreadable',
     'unmeasurable',
+    'several',
     'tie',
     'even',
     'same',

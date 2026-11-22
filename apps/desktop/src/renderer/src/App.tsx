@@ -5242,6 +5242,7 @@ export default function App(): React.JSX.Element {
                               copiedMetaTitle={copiedMeta ? (copiedMeta.meta.title ?? '') : null}
                               onExportCollection={onOpenExport}
                               readFullTrack={readFullTrack}
+                              filesOpen={browser.source === null}
                               librarySources={browser.sources}
                               onRevealIn={onRevealIn}
                               onRetryVerification={retryVerification}
