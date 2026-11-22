@@ -33,7 +33,7 @@ import { MATCHING_ID } from '../../shared/matching'
 import { pairsOfBlocks } from '../../shared/matchingBlocks'
 import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
-import { withPhraseCount } from '../../shared/phraseCount'
+import { type CommentMode, phrasedComment } from '../../shared/phraseCount'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import {
   childNames,
@@ -3264,7 +3264,7 @@ export default function App(): React.JSX.Element {
     })
     void autoMarkTracks(queryClient, ids)
   })
-  const putPhrasesInSelected = useStableCallback(async () => {
+  const putPhrasesInSelected = useStableCallback(async (mode: CommentMode) => {
     const targets = selectedTracks.flatMap((t) => {
       const contentId = playlistScope?.contentOf.get(t.id)
       return contentId
@@ -3277,13 +3277,13 @@ export default function App(): React.JSX.Element {
       mapTracks((t) => {
         const count = counts.get(t.id)
         return count
-          ? { ...t, meta: { ...t.meta, comment: withPhraseCount(t.meta.comment, count) } }
+          ? { ...t, meta: { ...t.meta, comment: phrasedComment(t.meta.comment, count, mode) } }
           : t
       })
     }
     const comments = targets.flatMap((t) => {
       const count = counts.get(t.id)
-      return count ? [{ ...t, count, after: withPhraseCount(t.before, count) }] : []
+      return count ? [{ ...t, count, after: phrasedComment(t.before, count, mode) }] : []
     })
     return { done: counts.size, skipped: targets.length - counts.size, comments }
   })
@@ -3300,6 +3300,35 @@ export default function App(): React.JSX.Element {
         ? { ...t, meta: { ...t.meta, comment: phrased.before } }
         : t
     })
+  })
+  const recomposePhrasedComments = useStableCallback(
+    (comments: PhrasedComment[], mode: CommentMode): PhrasedComment[] => {
+      const byId = new Map(comments.map((c) => [c.id, c]))
+      const untouched = new Set(
+        tracksRef.current.filter((t) => byId.get(t.id)?.after === t.meta.comment).map((t) => t.id),
+      )
+      const recomposed = comments.map((c) => ({
+        ...c,
+        after: phrasedComment(c.before, c.count, mode),
+      }))
+      if (untouched.size === 0) return recomposed
+      const afterOf = new Map(recomposed.map((c) => [c.id, c.after]))
+      recordMetaUndo([...untouched])
+      mapTracks((t) => {
+        const after = afterOf.get(t.id)
+        return after !== undefined && untouched.has(t.id)
+          ? { ...t, meta: { ...t.meta, comment: after } }
+          : t
+      })
+      return recomposed
+    },
+  )
+  const phrasedCommentsSaved = useStableCallback((comments: PhrasedComment[], toFile: boolean) => {
+    if (!toFile) {
+      restorePhrasedComments(comments)
+      return
+    }
+    for (const c of comments) void refreshChangedTrack(c.id)
   })
   const selectedContentId =
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
@@ -5149,6 +5178,9 @@ export default function App(): React.JSX.Element {
                               onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}
                               onCuePhrasesAll={cuesMarkable ? putPhrasesInSelected : undefined}
                               onCueRestoreComments={restorePhrasedComments}
+                              onCueRecomposeComments={recomposePhrasedComments}
+                              onCueCommentsSaved={phrasedCommentsSaved}
+                              onCueSaveSettings={saveSettingsStable}
                               cueTargets={cueTargets}
                               cueGridCheckOf={cueGridCheckOf}
                               onShowBadGrid={showBadGrid}

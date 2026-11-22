@@ -119,6 +119,8 @@ interface ResolvedSettings extends Record<DjAddKey | DjSyncKey, boolean> {
   cueFlowToSerato: boolean
   cueFlowToVirtualdj: boolean
   cueLearnFromEdits: boolean
+  commentsToFile: boolean
+  commentsReplace: boolean
   hiddenSources: PlaylistSource[]
   sessionWizard: SessionWizardSettings
   sessionsMade: string[]
@@ -192,6 +194,8 @@ const DEFAULTS: ResolvedSettings = {
   cueFlowToSerato: true,
   cueFlowToVirtualdj: true,
   cueLearnFromEdits: true,
+  commentsToFile: true,
+  commentsReplace: false,
   hiddenSources: [],
   sessionWizard: DEFAULT_SESSION_WIZARD,
   sessionsMade: [],
@@ -265,6 +269,8 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     cueFlowToSerato: settings.cueFlowToSerato !== false,
     cueFlowToVirtualdj: settings.cueFlowToVirtualdj !== false,
     cueLearnFromEdits: settings.cueLearnFromEdits !== false,
+    commentsToFile: settings.commentsToFile !== false,
+    commentsReplace: settings.commentsReplace === true,
     hiddenSources: normalizeHiddenSources(settings.hiddenSources),
     sessionWizard: normalizeSessionWizard(settings.sessionWizard),
     sessionsMade: normalizeSessionsMade(settings.sessionsMade),

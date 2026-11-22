@@ -7,6 +7,7 @@ import type { Api } from '../../../preload/api'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import { HOT_KINDS } from '../../../shared/cueRules'
 import type { GridCheck } from '../../../shared/gridAudit'
+import { type CommentMode, phrasedComment } from '../../../shared/phraseCount'
 import type { LibraryTracks, Settings, TrackCues } from '../../../shared/types'
 import i18n from '../i18n'
 import { startDraft } from '../lib/cueDraft'
@@ -98,6 +99,11 @@ function setup(
   const onShowMarked = vi.fn()
   const onPhrases = vi.fn(async () => ({ done: 1, skipped: 1, comments: phrased }))
   const onRestoreComments = vi.fn()
+  const onRecomposeComments = vi.fn((comments: PhrasedComment[], mode: CommentMode) =>
+    comments.map((c) => ({ ...c, after: phrasedComment(c.before, c.count, mode) })),
+  )
+  const onCommentsSaved = vi.fn()
+  const onSaveSettings = vi.fn()
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>, shown = targets) => (
     <QueryClientProvider client={client}>
@@ -112,6 +118,9 @@ function setup(
           onOpen={vi.fn()}
           onPhrases={onPhrases}
           onRestoreComments={onRestoreComments}
+          onRecomposeComments={onRecomposeComments}
+          onCommentsSaved={onCommentsSaved}
+          onSaveSettings={onSaveSettings}
         />
       </SettingsProvider>
     </QueryClientProvider>
@@ -129,6 +138,9 @@ function setup(
     onShowMarked,
     onPhrases,
     onRestoreComments,
+    onRecomposeComments,
+    onCommentsSaved,
+    onSaveSettings,
     saveComments,
     changeSettings,
     changeTargets,
@@ -139,7 +151,7 @@ describe('Phrases over several selected tracks', () => {
   it('puts the phrases in every comment at once and says how many had too few CALLs, so the DJ knows which tracks still need marking', async () => {
     const { onPhrases } = setup()
     fireEvent.click(screen.getByTestId('cues-batch-phrases'))
-    expect(onPhrases).toHaveBeenCalledTimes(1)
+    expect(onPhrases).toHaveBeenCalledExactlyOnceWith('prepend')
     expect(await screen.findByTestId('cues-batch-phrases-done')).toHaveTextContent(
       i18n.t('editor.cues.batch.phrasesDone', { count: 1 }),
     )
@@ -210,14 +222,15 @@ describe('Phrases over several selected tracks', () => {
         { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8', mode: 'prepend' },
         { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
       ],
-      false,
+      true,
     )
   })
 
-  it('gives the saved comments back to the form and hides the row, so a later Convert does not write the count into the file', async () => {
-    const { onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+  it('hands the saved comments to the form with where they went and hides the row, so the form either rereads the file or gets its comment back', async () => {
+    const { onCommentsSaved, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
     fireEvent.click(await putPhrases())
-    await waitFor(() => expect(onRestoreComments).toHaveBeenCalledWith(PHRASED.slice(0, 2)))
+    await waitFor(() => expect(onCommentsSaved).toHaveBeenCalledWith(PHRASED.slice(0, 2), true))
+    expect(onRestoreComments).not.toHaveBeenCalled()
     await waitFor(() => expect(screen.queryByTestId('cues-batch-comments-save')).toBeNull())
     expect(screen.getByTestId('cues-batch-phrases-done')).toBeInTheDocument()
   })
@@ -258,7 +271,7 @@ describe('Phrases over several selected tracks', () => {
   })
 
   it('keeps the first comment of a track phrased twice and saves its latest count, so the form gets back what the DJ had', async () => {
-    const { onPhrases, saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    const { onPhrases, saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
     await putPhrases()
     const again = {
       ...PHRASED[0],
@@ -276,14 +289,14 @@ describe('Phrases over several selected tracks', () => {
           { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '4 - 8', mode: 'prepend' },
           { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
         ],
-        false,
+        true,
       ),
     )
     await waitFor(() =>
-      expect(onRestoreComments).toHaveBeenCalledWith([
-        { ...again, before: 'Vocal fuerte' },
-        PHRASED[1],
-      ]),
+      expect(onCommentsSaved).toHaveBeenCalledWith(
+        [{ ...again, before: 'Vocal fuerte' }, PHRASED[1]],
+        true,
+      ),
     )
   })
 
@@ -304,20 +317,128 @@ describe('Phrases over several selected tracks', () => {
           { contentId: '103', path: '/m/a.wav', label: 'Maniac', count: '2 - 8', mode: 'prepend' },
           { contentId: '104', path: '/m/b.wav', label: 'Summer Sky', count: '4', mode: 'prepend' },
         ],
-        false,
+        true,
       ),
     )
   })
 
   it('keeps the row and says it failed when rekordbox refuses, so the DJ can try again', async () => {
-    const { saveComments, onRestoreComments } = setup({}, TARGETS, {}, PHRASED)
+    const { saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
     saveComments.mockRejectedValueOnce(new Error('locked'))
     fireEvent.click(await putPhrases())
     expect(await screen.findByTestId('cues-batch-comments-failed')).toHaveTextContent(
       i18n.t('editor.cues.saveFailed'),
     )
     expect(screen.getByTestId('cues-batch-comments-save')).toBeEnabled()
-    expect(onRestoreComments).not.toHaveBeenCalled()
+    expect(onCommentsSaved).not.toHaveBeenCalled()
+  })
+
+  const openOptions = () => fireEvent.click(screen.getByTestId('cues-batch-comments-options'))
+
+  it('saves to the file and rekordbox by default, so the phrases reach every program that reads the tag', async () => {
+    const { saveComments } = setup({}, TARGETS, {}, PHRASED)
+    const save = await putPhrases()
+    expect(save).toHaveTextContent('Save 2 comments')
+    fireEvent.click(save)
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    expect(saveComments.mock.calls[0][1]).toBe(true)
+    expect(saveComments.mock.calls[0][0].map((i) => i.mode)).toEqual(['prepend', 'prepend'])
+  })
+
+  it('asks rekordbox only when picked and remembers it, so a DJ who keeps files untouched is not asked again', async () => {
+    const { saveComments, onSaveSettings, onCommentsSaved, changeSettings } = setup(
+      {},
+      TARGETS,
+      {},
+      PHRASED,
+    )
+    await putPhrases()
+    openOptions()
+    fireEvent.click(screen.getByTestId('cues-batch-comments-rekordbox-only'))
+    expect(onSaveSettings).toHaveBeenCalledWith({ commentsToFile: false })
+    changeSettings({ commentsToFile: false })
+    openOptions()
+    expect(screen.getByTestId('cues-batch-comments-rekordbox-only')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    expect(screen.getByTestId('cues-batch-comments-to-file')).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+    openOptions()
+    fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    expect(saveComments.mock.calls[0][1]).toBe(false)
+    await waitFor(() => expect(onCommentsSaved).toHaveBeenCalledWith(PHRASED.slice(0, 2), false))
+  })
+
+  it('shows the replaced comment in the form the moment Replace is picked, so the DJ sees what will be written before saving', async () => {
+    const { saveComments, onSaveSettings, onRecomposeComments, onCommentsSaved, changeSettings } =
+      setup({}, TARGETS, {}, PHRASED)
+    await putPhrases()
+    openOptions()
+    expect(screen.getByTestId('cues-batch-comments-prepend')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    fireEvent.click(screen.getByTestId('cues-batch-comments-replace'))
+    expect(onRecomposeComments).toHaveBeenCalledWith(PHRASED.slice(0, 2), 'replace')
+    expect(onSaveSettings).toHaveBeenCalledWith({ commentsReplace: true })
+    changeSettings({ commentsReplace: true })
+    fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    expect(saveComments.mock.calls[0][0].map((i) => i.mode)).toEqual(['replace', 'replace'])
+    await waitFor(() =>
+      expect(onCommentsSaved).toHaveBeenCalledWith(
+        [{ ...PHRASED[0], after: '2 - 8' }, PHRASED[1]],
+        true,
+      ),
+    )
+  })
+
+  it('puts the phrases replacing the comment when Replace is remembered, so the next batch keeps the choice', async () => {
+    const { onPhrases, changeSettings } = setup({}, TARGETS, {}, PHRASED)
+    changeSettings({ commentsReplace: true })
+    fireEvent.click(screen.getByTestId('cues-batch-phrases'))
+    expect(onPhrases).toHaveBeenCalledExactlyOnceWith('replace')
+  })
+
+  it('keeps the files that failed pending and says so, so the DJ can retry just those', async () => {
+    const { saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
+    saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'] })
+    fireEvent.click(await putPhrases())
+    expect(await screen.findByTestId('cues-batch-comments-failed')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent('Save 1 comment')
+    expect(onCommentsSaved).toHaveBeenCalledWith([PHRASED[0]], true)
+  })
+
+  it('offers the two choices as two checked groups split by a line, so where and how read as separate questions', async () => {
+    setup({}, TARGETS, {}, PHRASED)
+    await putPhrases()
+    const toggle = screen.getByTestId('cues-batch-comments-options')
+    expect(toggle).toHaveAttribute('aria-label', 'Save options')
+    openOptions()
+    const groups = screen.getAllByRole('group')
+    expect(groups).toHaveLength(2)
+    expect(
+      groups.map((g) =>
+        Array.from(g.querySelectorAll('[role="menuitemradio"]')).map((el) =>
+          el.getAttribute('data-testid'),
+        ),
+      ),
+    ).toEqual([
+      ['cues-batch-comments-to-file', 'cues-batch-comments-rekordbox-only'],
+      ['cues-batch-comments-prepend', 'cues-batch-comments-replace'],
+    ])
+    expect(screen.getByTestId('cues-batch-comments-to-file')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('cues-batch-comments-to-file'), { key: 'ArrowDown' })
+    expect(screen.getByTestId('cues-batch-comments-rekordbox-only')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('cues-batch-comments-rekordbox-only'), {
+      key: 'Escape',
+    })
+    expect(screen.queryByTestId('cues-batch-comments-to-file')).toBeNull()
+    expect(toggle).toHaveFocus()
   })
 })
 
@@ -781,6 +902,9 @@ describe('Cues over several selected tracks', () => {
             onOpen={vi.fn()}
             onPhrases={vi.fn()}
             onRestoreComments={vi.fn()}
+            onRecomposeComments={vi.fn()}
+            onCommentsSaved={vi.fn()}
+            onSaveSettings={vi.fn()}
           />
         </SettingsProvider>
       </QueryClientProvider>,
