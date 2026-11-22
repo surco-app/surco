@@ -116,6 +116,8 @@ const settings: Settings = {
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
   matchingDismissed: [],
+  commentsToFile: true,
+  commentsReplace: false,
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,

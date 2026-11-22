@@ -268,6 +268,8 @@ export interface Settings {
   sessionWizard: SessionWizardSettings
   sessionsMade: string[]
   matchingDismissed: string[]
+  commentsToFile: boolean
+  commentsReplace: boolean
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean

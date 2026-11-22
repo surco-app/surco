@@ -187,6 +187,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     sessionWizard: { ...DEFAULT_SESSION_WIZARD },
     sessionsMade: [],
     matchingDismissed: [],
+    commentsToFile: true,
+    commentsReplace: false,
     language: 'system',
     discogsToken: '',
     beatportUsername: '',

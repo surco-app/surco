@@ -72,6 +72,8 @@ export const testSettings: Settings = {
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
   matchingDismissed: [],
+  commentsToFile: true,
+  commentsReplace: false,
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
