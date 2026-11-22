@@ -674,4 +674,19 @@ describe('ExportButton menu layer', () => {
     expect(button).toHaveAccessibleName('Update anyway')
     expect(hoverTooltip(button)).toBe('Update anyway')
   })
+
+  it('dims the format half with the body when a held-back selection cannot convert, while its menu still opens since another format can unblock it', () => {
+    render(<ExportButton {...baseProps} incomplete count={38} incompleteReason="Separate them" />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    expect(toggle).toBeEnabled()
+    expect(screen.getByTestId('process-format-fill')).not.toHaveAttribute('data-on')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('keeps the format half filled while the selection can convert', () => {
+    render(<ExportButton {...baseProps} incomplete={false} count={38} />)
+    expect(screen.getByTestId('process-format-fill')).toHaveAttribute('data-on', 'true')
+  })
 })
