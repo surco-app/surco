@@ -517,7 +517,8 @@ describe('autoMatchRelease Bandcamp suggestions', () => {
   })
 
   // Same length is all a wrong release shares with the file; with the act contradicting,
-  // the sweep must not write that release unattended.
+  // the sweep must not write that release unattended. It is not suggested either: an
+  // uncurated review is only collected when the artist agrees, so the hit is dropped.
   it('never applies a Bandcamp match whose artist contradicts the file', async () => {
     const m = await autoMatchRelease(
       'my song',
@@ -525,7 +526,7 @@ describe('autoMatchRelease Bandcamp suggestions', () => {
       bandcampOnly([{ position: '1', title: 'My Song', duration: '3:20' }]),
     )
 
-    expect(m?.tier).not.toBe('high')
+    expect(m).toBeUndefined()
   })
 
   // The curated source keeps precedence: its suggestion stands over Bandcamp's.

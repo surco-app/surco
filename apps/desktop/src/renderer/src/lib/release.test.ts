@@ -864,6 +864,23 @@ describe('corroboratedTier on an uncurated source whose artist contradicts the f
     expect(corroboratedTier(1, file, bandcamp(), withDuration, false)).toBe('high')
   })
 
+  // The pressing number names the release, not the act: held for a human glance, since an
+  // uncurated page may carry a recycled catalog number for an unrelated act.
+  it('holds a catalog-number match for review when the artist contradicts', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    const track = { position: '1', title: 'Song' }
+    expect(corroboratedTier(1, { title: 'Song', artist: 'Da Crew' }, rel, track, true)).toBe(
+      'review',
+    )
+  })
+
+  // A label page names the label as release artist; when its titles carry no prefix naming
+  // the file's act, applying it unattended would write the label into Artist.
+  it('holds a release whose only artist is the label for review', () => {
+    const rel = bandcamp({ artists: [{ name: 'Label Traxx' }] })
+    expect(corroboratedTier(1, file, rel, withDuration, false)).toBe('review')
+  })
+
   it('leaves a file without an artist as it is today', () => {
     const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
     const target = { title: 'Song', durationSec: 200 }
