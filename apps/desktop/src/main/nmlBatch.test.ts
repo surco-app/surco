@@ -206,6 +206,37 @@ describe('nmlBatch', () => {
 
       expect(endNmlBatch()[0].newFile).toBeUndefined()
     })
+
+    // A replace moves the Traktor entry whole to wherever the file ends up, so with "Apple
+    // Music only" it must follow into Music's own folder: if the check read that as "stays
+    // on the source", the old file would never be retired and the DJ's cues would sit on a
+    // track that is about to be removed.
+    it("a replace follows the file into Music's own folder", () => {
+      beginNmlBatch()
+      recordNmlPatch(
+        {
+          volume: '',
+          dir: '/:Users/:me/:Music/:Old/:',
+          file: 'Song.mp3',
+          relocates: true,
+          outputDir: '/:tmp/:x/:',
+          outputFile: 'Song.aiff',
+        },
+        { input: '/tmp/dl.mp3', output: '/tmp/x/Song.aiff' },
+      )
+
+      const followed = redirectNmlPatch('/tmp/x/Song.aiff', '/Users/me/Music/Media/A/B/Song.aiff', {
+        volume: '',
+        dir: '/:Users/:me/:Music/:Media/:A/:B/:',
+        file: 'Song.aiff',
+      })
+
+      const [recorded] = endNmlBatch()
+      expect(followed).toBe(true)
+      expect(recorded.outputDir).toBe('/:Users/:me/:Music/:Media/:A/:B/:')
+      expect(recorded.relocates).toBe(true)
+      expect(recorded.newFile).toBeUndefined()
+    })
   })
 
   // The check after the batch judges Traktor against the patch the conversion recorded:
