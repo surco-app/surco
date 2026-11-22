@@ -977,6 +977,7 @@
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
     "perTrackOnly": "Se edita pista a pista",
+    "clearInAll": "Vaciar en todas",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
     "groupingAllTracks": "todas las pistas",

@@ -977,6 +977,7 @@
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
     "perTrackOnly": "Se modifie morceau par morceau",
+    "clearInAll": "Vider partout",
     "valuesCount_one": "{{count}} valeur",
     "valuesCount_other": "{{count}} valeurs",
     "groupingAllTracks": "tous les morceaux",

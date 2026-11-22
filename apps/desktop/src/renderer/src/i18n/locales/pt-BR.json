@@ -977,6 +977,7 @@
     "editingMultiple": "Editando {{count}} faixas",
     "multipleValues": "Vários valores",
     "perTrackOnly": "Edite uma faixa por vez",
+    "clearInAll": "Limpar em todas",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
     "groupingAllTracks": "todas as faixas",

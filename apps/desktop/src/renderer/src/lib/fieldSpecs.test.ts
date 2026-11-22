@@ -452,6 +452,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const a = { ...track('a'), foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] }
     const b = { ...track('b', { custom: { vinylCondition: 'NM' } }) }
     const c = { ...track('c', { custom: { vinylCondition: 'VG' } }) }
+    const d = { ...track('d', { custom: { vinylCondition: 'NM' } }) }
     const build = (selectedTracks: TrackItem[]) =>
       buildFieldSpecs(
         params({
@@ -465,9 +466,13 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
     expect(build([a, c])).toMatchObject({
       value: '',
-      placeholder: 'editor.multipleValues',
+      placeholder: 'editor.valuesCount',
       mixed: true,
     })
+    expect(build([a, c, d])?.mixedValues).toEqual([
+      { value: 'NM', count: 2 },
+      { value: 'VG', count: 1 },
+    ])
     build([a, b])?.onChange('VG+')
     expect(write).toHaveBeenCalledWith('VG+')
   })

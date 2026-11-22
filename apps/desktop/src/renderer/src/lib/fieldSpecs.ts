@@ -40,13 +40,16 @@ export interface PlaylistsSpec {
   }
 }
 
-function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
+function countValues(values: string[]): { value: string; count: number }[] {
   const counts = new Map<string, number>()
-  for (const t of tracks) {
-    const value = t.meta[key] ?? ''
+  for (const value of values) {
     if (value !== '') counts.set(value, (counts.get(value) ?? 0) + 1)
   }
   return [...counts].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count)
+}
+
+function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
+  return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -286,12 +289,17 @@ export function buildFieldSpecs({
   const customSpec = (f: CustomField): FieldSpec => {
     const values = selectedCustom.map((c) => c[f.key] ?? '')
     const shared = values.every((v) => v === values[0]) ? values[0] : undefined
+    const mixedValues = shared === undefined ? countValues(values) : undefined
     return {
       key: f.key,
       label: f.label,
       value: shared ?? '',
-      placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
+      placeholder:
+        shared === undefined
+          ? tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
+          : undefined,
       mixed: shared === undefined,
+      mixedValues,
       onChange: customBulkOnChange.get(f.key) ?? (() => {}),
     }
   }

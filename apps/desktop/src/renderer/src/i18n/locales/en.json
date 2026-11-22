@@ -977,6 +977,7 @@
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",
     "perTrackOnly": "Edited one track at a time",
+    "clearInAll": "Clear in all",
     "valuesCount_one": "{{count}} value",
     "valuesCount_other": "{{count}} values",
     "groupingAllTracks": "all tracks",

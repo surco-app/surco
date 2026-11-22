@@ -282,6 +282,20 @@ export const Field = memo(function Field({
                     <span className="shrink-0 text-xs tabular-nums text-fg-faint">{count}</span>
                   </button>
                 ))}
+                <hr className="my-1 border-0 border-t border-[var(--color-line)]" />
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  data-testid={`field-values-clear-${name}`}
+                  onClick={() => {
+                    setValuesOpen(false)
+                    commit('')
+                  }}
+                  className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-[var(--color-hover)]"
+                >
+                  {tr('editor.clearInAll')}
+                </button>
               </div>
             )}
           </>

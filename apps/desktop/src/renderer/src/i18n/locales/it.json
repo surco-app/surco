@@ -977,6 +977,7 @@
     "editingMultiple": "Modifica di {{count}} brani",
     "multipleValues": "Valori diversi",
     "perTrackOnly": "Si modifica brano per brano",
+    "clearInAll": "Svuota in tutte",
     "valuesCount_one": "{{count}} valore",
     "valuesCount_other": "{{count}} valori",
     "groupingAllTracks": "tutti i brani",

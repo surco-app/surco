@@ -977,6 +977,7 @@
     "editingMultiple": "Editant {{count}} pistes",
     "multipleValues": "Diversos valors",
     "perTrackOnly": "S'edita pista a pista",
+    "clearInAll": "Buidar a totes",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valors",
     "groupingAllTracks": "totes les pistes",

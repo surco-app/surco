@@ -547,7 +547,27 @@ describe('Field mixed values', () => {
     )
     fireEvent.click(screen.getByTestId('field-values-artist'))
     const options = screen.getAllByRole('option')
-    expect(options.map((o) => o.textContent)).toEqual(['Oliver Gil3', 'Aaron Sevilla1'])
+    expect(options.slice(0, 2).map((o) => o.textContent)).toEqual(['Oliver Gil3', 'Aaron Sevilla1'])
+  })
+
+  // Mixed fields used to be the one place where emptying every track meant clicking row by
+  // row; the list ends with an explicit way to blank them all at once.
+  it('ends the list with a clear-in-all option that writes an empty value', () => {
+    const onChange = vi.fn()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        mixed
+        mixedValues={values}
+        onChange={onChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('field-values-artist'))
+    fireEvent.click(screen.getByTestId('field-values-clear-artist'))
+    expect(onChange).toHaveBeenCalledWith('')
+    expect(screen.queryByRole('listbox')).toBeNull()
   })
 
   it('marks the values list as a dropdown menu so keyboard focus fills the row like a native menu', () => {

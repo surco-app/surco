@@ -977,6 +977,7 @@
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
     "multipleValues": "Mehrere Werte",
     "perTrackOnly": "Wird Titel für Titel bearbeitet",
+    "clearInAll": "In allen leeren",
     "valuesCount_one": "{{count}} Wert",
     "valuesCount_other": "{{count}} Werte",
     "groupingAllTracks": "alle Tracks",

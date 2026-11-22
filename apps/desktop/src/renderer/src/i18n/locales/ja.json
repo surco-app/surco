@@ -977,6 +977,7 @@
     "editingMultiple": "{{count}} トラックの編集",
     "multipleValues": "複数の値",
     "perTrackOnly": "1曲ずつ編集します",
+    "clearInAll": "すべて空にする",
     "valuesCount_one": "{{count}} 件の値",
     "valuesCount_other": "{{count}} 件の値",
     "groupingAllTracks": "すべてのトラック",
