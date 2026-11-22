@@ -169,6 +169,7 @@ import {
   flushConversionBatch,
   type LibraryHost,
   librariesKeepingOriginal,
+  libraryUntouched,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
   repointEngineQueued,
@@ -178,7 +179,6 @@ import {
   syncTagsInLibraries,
   tagSyncPrograms,
   traktorFlushDeps,
-  traktorUntouched,
   traktorWrite,
   usedByAnyLibrary,
 } from './libraryFlushes'
@@ -2454,7 +2454,7 @@ function registerIpc(): void {
     {
       rekordbox: {
         collectionPath: () => rekordboxCollectionPath() || null,
-        untouched: () => !getSettings().syncRekordbox,
+        untouched: () => libraryUntouched('rekordbox'),
         session: rekordboxSessionBackup,
         queue: rekordboxQueue,
         ensureClosed: (win) => ensureClosed('rekordbox', win, 'restore'),
@@ -2465,7 +2465,7 @@ function registerIpc(): void {
       },
       traktor: {
         collectionPath: () => traktorWritePath() || null,
-        untouched: traktorUntouched,
+        untouched: () => libraryUntouched('traktor'),
         session: traktorSessionBackup,
         queue: traktorCueQueue,
         ensureClosed: (win) => ensureClosed('traktor', win, 'restore'),
@@ -2479,7 +2479,7 @@ function registerIpc(): void {
           const dir = engineLibraryPath()
           return dir ? engineDatabasePath(dir) : null
         },
-        untouched: () => !getSettings().syncEngineDj,
+        untouched: () => libraryUntouched('engine'),
         session: engineSessionBackup,
         queue: engineCueQueue,
         ensureClosed: (win) => ensureClosed('engine', win, 'restore'),
@@ -2490,7 +2490,7 @@ function registerIpc(): void {
       },
       virtualdj: {
         collectionPath: () => virtualdjCopyKey(virtualdjRoots()) || null,
-        untouched: () => !getSettings().syncVirtualdj,
+        untouched: () => libraryUntouched('virtualdj'),
         session: virtualdjSessionBackup,
         queue: virtualdjCueQueue,
         ensureClosed: (win) => ensureClosed('virtualdj', win, 'restore'),

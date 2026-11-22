@@ -114,6 +114,7 @@ import {
   flushConversionBatch,
   type LibraryHost,
   librariesKeepingOriginal,
+  libraryUntouched,
   rekordboxFlushDeps,
   repointEngineQueued,
   SYNC_BLOCKED_KEY,
@@ -121,7 +122,6 @@ import {
   syncTagsInLibraries,
   tagSyncPrograms,
   traktorFlushDeps,
-  traktorUntouched,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -2269,23 +2269,33 @@ describe('Traktor writes with only Add to Traktor on', () => {
 })
 
 // The Copias screen shows a program Surco never writes as "untouched", a hint that its
-// copies cannot hold anything Surco did. With only Add to Traktor on Surco does write
-// collection.nml (it adds converted tracks and moves a replaced track's entry), so calling
-// it untouched would steer the DJ away from the copy that undoes those writes.
-describe('traktorUntouched', () => {
-  it('counts Traktor as written whenever Sync or Add to Traktor is on', () => {
-    try {
-      for (const [syncTraktor, addToTraktor, untouched] of [
-        [false, false, true],
-        [true, false, false],
-        [false, true, false],
-        [true, true, false],
-      ] as const) {
-        Object.assign(SETTINGS, { syncTraktor, addToTraktor })
-        expect(traktorUntouched()).toBe(untouched)
+// copies cannot hold anything Surco did. Each Add toggle writes its library on its own
+// (Traktor: added tracks and replace moves; rekordbox and VirtualDJ: queued adds; Engine
+// DJ: tracks added to m.db), so calling it untouched would steer the DJ away from the copy
+// that undoes those writes.
+describe('libraryUntouched', () => {
+  it.each([
+    ['rekordbox', 'syncRekordbox', 'addToRekordbox'],
+    ['engine', 'syncEngineDj', 'addToEngineDj'],
+    ['traktor', 'syncTraktor', 'addToTraktor'],
+    ['virtualdj', 'syncVirtualdj', 'addToVirtualdj'],
+  ] as const)(
+    'counts %s as written whenever its Sync or Add toggle is on',
+    (program, sync, add) => {
+      const saved = { ...SETTINGS }
+      try {
+        for (const [synced, added, untouched] of [
+          [false, false, true],
+          [true, false, false],
+          [false, true, false],
+          [true, true, false],
+        ] as const) {
+          Object.assign(SETTINGS, { [sync]: synced, [add]: added })
+          expect(libraryUntouched(program)).toBe(untouched)
+        }
+      } finally {
+        Object.assign(SETTINGS, saved)
       }
-    } finally {
-      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false })
-    }
-  })
+    },
+  )
 })

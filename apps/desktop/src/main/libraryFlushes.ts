@@ -356,12 +356,13 @@ export function repointRekordbox(
   )
 }
 
-// Whether Surco never writes collection.nml, for the Copias screen. Add to Traktor alone is
-// a write too: it adds converted tracks the collection lacks and moves a replaced track's
-// entry onto the new file, so only with both toggles off is the collection untouched.
-export function traktorUntouched(): boolean {
+// Whether Surco never writes this library, for the Copias screen. Each Add toggle writes on
+// its own: Traktor gets added tracks and a replace's moved entry, rekordbox and VirtualDJ
+// queued adds, Engine DJ tracks added to m.db. So a library is untouched only with both its
+// Sync and its Add toggle off.
+export function libraryUntouched(program: WritableProgram): boolean {
   const settings = getSettings()
-  return !settings.syncTraktor && !settings.addToTraktor
+  return !settings[UPDATE_SETTING[program]] && !settings[ADD_SETTING[program]]
 }
 
 export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
