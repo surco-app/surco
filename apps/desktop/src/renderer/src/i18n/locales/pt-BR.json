@@ -914,6 +914,7 @@
     "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Nomes",
     "regenerateCustom": "Personalizar o padrão do nome para esta faixa…",
     "lossyToLossless": "A fonte tem perdas: converter para {{format}} não recupera a qualidade.",
+    "seratoLosesStars": "O Serato vai perder as estrelas desta faixa.",
     "damagedSource": "Este arquivo está danificado ou incompleto, então a cópia também estará.",
     "exportAgain": "Converter de novo",
     "chooseFormat": "Escolher formato",

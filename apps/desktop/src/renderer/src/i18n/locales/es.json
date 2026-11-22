@@ -914,6 +914,7 @@
     "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Nombres",
     "regenerateCustom": "Personalizar el patrón del nombre para esta pista…",
     "lossyToLossless": "La fuente tiene pérdidas: convertir a {{format}} no recupera su calidad.",
+    "seratoLosesStars": "Serato perderá las estrellas de esta pista.",
     "damagedSource": "Este archivo está dañado o incompleto, así que la copia también lo estará.",
     "exportAgain": "Convertir de nuevo",
     "chooseFormat": "Elegir formato",

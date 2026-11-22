@@ -625,6 +625,30 @@ describe('ConvertFooter lossy source note', () => {
   })
 })
 
+describe('ConvertFooter Serato stars note', () => {
+  const withStars = (over: { replaces?: boolean }): React.JSX.Element =>
+    cloneElement(footer(false), {
+      item: { id: 't1', status: 'idle', inputPath: '/crate/a.aiff', meta: {} } as TrackItem,
+      replaces: true,
+      seratoLosesStars: true,
+      ...over,
+    })
+
+  // Serato re-imports a repointed track as new and the stars live where Surco cannot write,
+  // so the DJ must read the loss before pressing Replace, not after.
+  it('says Serato will lose the stars before a replacement of a Serato track', () => {
+    render(withStars({}))
+    expect(screen.getByTestId('convert-serato-stars-note')).toHaveTextContent(
+      i18n.t('editor.seratoLosesStars'),
+    )
+  })
+
+  it('says nothing when the button adds instead of replacing', () => {
+    render(withStars({ replaces: false }))
+    expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
+  })
+})
+
 describe('ConvertFooter damaged source note', () => {
   const converting = (spectrum: TrackItem['spectrum']): React.JSX.Element =>
     cloneElement(footer(false), {

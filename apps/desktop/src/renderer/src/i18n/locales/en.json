@@ -914,6 +914,7 @@
     "regenerateHint": "Rebuild the file name from the metadata above using your Settings → Naming pattern",
     "regenerateCustom": "Customize the filename pattern for this track…",
     "lossyToLossless": "Source is lossy: converting to {{format}} won't restore its quality.",
+    "seratoLosesStars": "Serato will lose this track's stars.",
     "damagedSource": "This file is damaged or incomplete, so the copy will be too.",
     "exportAgain": "Convert again",
     "chooseFormat": "Choose format",

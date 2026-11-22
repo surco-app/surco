@@ -914,6 +914,7 @@
     "regenerateHint": "設定 → 命名パターンを使用して、上記メタデータからファイル名を再構築",
     "regenerateCustom": "このトラックのファイル名パターンをカスタマイズ…",
     "lossyToLossless": "ソースは非可逆です。{{format}} に変換しても音質は戻りません。",
+    "seratoLosesStars": "Serato でこのトラックの星の評価が失われます。",
     "damagedSource": "このファイルは破損しているか不完全なため、コピーも同様になります。",
     "exportAgain": "再度変換",
     "chooseFormat": "フォーマットを選択",

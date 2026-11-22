@@ -914,6 +914,7 @@
     "regenerateHint": "Reconstruir el nom del fitxer amb les metadades de dalt fent servir el teu patró de Configuració → Noms",
     "regenerateCustom": "Personalitzar el patró del nom per a aquesta pista…",
     "lossyToLossless": "La font té pèrdua. Convertir a {{format}} no en recupera la qualitat.",
+    "seratoLosesStars": "Serato perdrà les estrelles d'aquesta pista.",
     "damagedSource": "Aquest fitxer està malmès o incomplet, així que la còpia també ho estarà.",
     "exportAgain": "Convertir de nou",
     "chooseFormat": "Triar el format",

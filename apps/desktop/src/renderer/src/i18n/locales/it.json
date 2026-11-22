@@ -914,6 +914,7 @@
     "regenerateHint": "Ricostruisci il nome del file dai metadati qui sopra con il tuo schema di Impostazioni → Nomi",
     "regenerateCustom": "Personalizza lo schema del nome per questo brano…",
     "lossyToLossless": "La sorgente è lossy. Convertire in {{format}} non ne recupera la qualità.",
+    "seratoLosesStars": "Serato perderà le stelle di questo brano.",
     "damagedSource": "Questo file è danneggiato o incompleto, quindi lo sarà anche la copia.",
     "exportAgain": "Converti di nuovo",
     "chooseFormat": "Scegli il formato",
