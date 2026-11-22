@@ -360,6 +360,33 @@ describe('useDiscogsBrowser', () => {
     })
   })
 
+  // The open release's identity is what the album grid keys its hand corrections on, so an
+  // Artist edit that does not change the reading must hand back the very same release.
+  it('keeps the read release while an Artist edit leaves the reading unchanged', async () => {
+    const labelResult = { provider: 'bandcamp' as const, id: 7, title: 'Song (Original mix)' }
+    setApi({
+      search: vi.fn().mockResolvedValue([labelResult]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        provider: 'bandcamp',
+        id: 7,
+        title: 'Da Crew - Song (Original mix)',
+        artists: [{ name: 'Label Traxx' }],
+        tracklist: [{ position: '1', title: 'Da Crew - Song (Original mix)' }],
+      }),
+    })
+    const { result, rerender } = renderHook(
+      ({ artist }) => useDiscogsBrowser(item({ query: 'da crew song', artist }), tr),
+      { wrapper: wrapper(), initialProps: { artist: 'Da Crew' } },
+    )
+    act(() => result.current.doSearch())
+    await waitFor(() => expect(result.current.results).toHaveLength(1))
+    act(() => result.current.previewRelease(labelResult))
+    await waitFor(() => expect(result.current.release?.id).toBe(7))
+    const read = result.current.release
+    rerender({ artist: 'Da Crew ' })
+    expect(result.current.release).toBe(read)
+  })
+
   // After a search the result that confidently holds the file's track opens on its
   // own, so the user lands on the right album without opening each result by hand.
   it('auto-opens the result whose tracklist matches the file title', async () => {

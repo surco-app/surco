@@ -547,9 +547,12 @@ export function useDiscogsBrowser(
     enabled: openResult !== null,
   })
   const loaded = openResult !== null ? releaseQuery.data : undefined
+  // Keyed on the trimmed artist: the album grid keys its hand corrections on this identity,
+  // so an Artist edit that leaves the reading as it was must not hand back a new release.
+  const fileArtist = item.meta.artist?.trim()
   const release = useMemo(
-    () => (loaded ? readLabelPage(loaded, item.meta.artist) : null),
-    [loaded, item.meta.artist],
+    () => (loaded ? readLabelPage(loaded, fileArtist) : null),
+    [loaded, fileArtist],
   )
 
   // A click previews (expands) a result; clicking the open one collapses it again.

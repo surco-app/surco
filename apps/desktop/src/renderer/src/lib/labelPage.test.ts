@@ -102,4 +102,43 @@ describe('readLabelPage', () => {
     expect(rel.artists).toEqual([])
     expect(rel.labels).toEqual([{ name: 'Label Traxx', catno: '' }])
   })
+
+  // A mixed release knows no album artist (the page's is the label), and a release that
+  // knows nothing about a field must not blank the one the file already carries.
+  it('keeps the file album artist when a mixed release knows none', () => {
+    const rel = readLabelPage(
+      labelSingle({
+        title: 'Label Traxx Volume 1',
+        tracklist: [
+          { position: '1', title: 'Da Crew - Song (Original mix)' },
+          { position: '2', title: 'Other Act - Tune' },
+        ],
+      }),
+      'Da Crew',
+    )
+    const { meta } = buildReleaseMeta(
+      { ...file, albumArtist: 'Crew Collective' },
+      rel,
+      rel.tracklist[0],
+    )
+    expect(meta.albumArtist).toBe('Crew Collective')
+    expect(meta.artist).toBe('Da Crew')
+  })
+
+  // A file tagged without the accent still names the same act the page prefixes with it.
+  it('reads the prefix regardless of accents', () => {
+    const rel = readLabelPage(
+      labelSingle({ tracklist: [{ position: '1', title: 'Dá Crëw - Song (Original mix)' }] }),
+      'Da Crew',
+    )
+    expect(rel.tracklist[0].title).toBe('Song (Original mix)')
+  })
+
+  // Accent folding drops every non-Latin letter, so two different names in another script
+  // must not both fold to nothing and read as the same act.
+  it('tells apart two different names in a non-Latin script', () => {
+    const source = labelSingle({ tracklist: [{ position: '1', title: '電気 - 曲' }] })
+    expect(readLabelPage(source, '別の人')).toBe(source)
+    expect(readLabelPage(source, '電気').tracklist[0].title).toBe('曲')
+  })
 })

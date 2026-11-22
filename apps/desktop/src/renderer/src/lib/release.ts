@@ -650,7 +650,7 @@ export function buildReleaseMeta(
     trackNumber: pos ? pos.track : base.trackNumber,
     discNumber: pos ? pos.disc : base.discNumber,
     album: rel.title,
-    albumArtist,
+    albumArtist: albumArtist || base.albumArtist || '',
     // Like every other field, the artist applies from the release: the track's own
     // artist (compilations) first, then the album artist — overwriting a wrong existing
     // value rather than keeping it. The current value stands only if Discogs has none.

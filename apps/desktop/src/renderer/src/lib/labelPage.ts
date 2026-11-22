@@ -1,11 +1,14 @@
 import type { Release, ReleaseTrack } from '../../../shared/types'
+import { foldText } from './normalizeText'
 import { joinArtists } from './release'
 
-// The same reading main's Bandcamp parser gives a name: case-insensitive on collapsed
-// whitespace. Exact on purpose (not sameAct's word containment): rewriting a title on a
-// partial name would cut a real title like "Love - Song" for a file tagged "Love Inc".
+// Case, spacing and accents aside, the whole name must be equal. Exact on purpose (not
+// sameAct's word containment): rewriting a title on a partial name would cut a real title
+// like "Love - Song" for a file tagged "Love Inc". foldText drops every non-Latin letter,
+// so a name in another script falls back to its plain case-and-spacing reading instead of
+// folding to nothing and meeting any other.
 function sameName(a: string, b: string): boolean {
-  const fold = (s: string): string => s.trim().replace(/\s+/g, ' ').toLowerCase()
+  const fold = (s: string): string => foldText(s) || s.trim().replace(/\s+/g, ' ').toLowerCase()
   return fold(a) === fold(b)
 }
 
