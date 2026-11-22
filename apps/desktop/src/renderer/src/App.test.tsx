@@ -31,6 +31,7 @@ import type {
   RekordboxSyncIssue,
   Release,
   RestoreResult,
+  SessionEdit,
   Settings,
   SourceNode,
   UsbExportEvent,
@@ -2821,6 +2822,34 @@ describe('App auto-match', () => {
       expect(await fieldOfRow(0, 'artist')).toBe('Hand Artist')
       expect(await albumOfRow(0)).toBe('Hand Album')
       expect(await albumOfRow(1)).toBe('Album')
+    })
+
+    // Clearing a selection is the multi-track twin of the single clear: what it empties
+    // is no longer the user's typing to protect, so the mark goes with the tags.
+    it('drops the mark from every track a selection clear empties', async () => {
+      handApi()
+      const saveLastSession = vi.fn().mockResolvedValue(undefined)
+      ;(window.api as unknown as { saveLastSession: unknown }).saveLastSession = saveLastSession
+      const lastEdits = () =>
+        Object.values(saveLastSession.mock.calls.at(-1)?.[1] ?? {}) as SessionEdit[]
+      await renderApp()
+      const rows = await addTwoTracks()
+      fireEvent.click(rows[1], { metaKey: true })
+      await typeAlbum('Hand Typed')
+      await waitFor(() => expect(lastEdits().map((e) => e.handEdited)).toEqual([true, true]), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+
+      await waitFor(
+        () => {
+          const edits = lastEdits()
+          expect(edits.map((e) => e.meta.album)).toEqual(['', ''])
+          expect(edits.map((e) => e.handEdited)).toEqual([undefined, undefined])
+        },
+        { timeout: 3000 },
+      )
     })
 
     // A note in the comment is not a retag: no release writes the comment, so the sweep

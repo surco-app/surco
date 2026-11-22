@@ -1127,22 +1127,18 @@ describe('clearedTrackPatch', () => {
     ],
   }
 
-  // "Clear all" is how a DJ retags a badly matched file from scratch, and the editor
-  // promises the cleared track goes back to the sweep. The flag the sweep itself left kept
-  // it out for good, so the retyped title was never matched again.
-  it('lets the sweep match the track again once a title is typed back', () => {
-    const cleared = { ...matchedTrack, ...clearedTrackPatch(matchedTrack) }
-    const retyped = { ...cleared, meta: { ...cleared.meta, title: 'Song' } }
-    expect(tracksToAutoMatch([retyped])).toEqual([retyped])
+  // "Clear all" empties the tags the match flags were about, so the flags go with them: a
+  // flag left behind would claim a release (or the sweep's own write) the track no longer
+  // carries, and the sweep's flag kept the track out of every later match for good.
+  it('drops the match flags the sweep and a manual pick left', () => {
+    expect(clearedTrackPatch(matchedTrack)).toMatchObject({ matched: false, autoMatched: false })
   })
 
-  // Clearing is how the DJ hands a track back to the sweep, so the guard a hand edit put on
-  // it goes with the tags: otherwise the retyped title would never be matched again.
-  it('lets the sweep match a track edited by hand once it is cleared', () => {
-    const edited = { ...matchedTrack, matched: false, autoMatched: false, handEdited: true }
-    const cleared = { ...edited, ...clearedTrackPatch(edited) }
-    const retyped = { ...cleared, meta: { ...cleared.meta, title: 'Song' } }
-    expect(tracksToAutoMatch([retyped])).toEqual([retyped])
+  // The hand-edit mark protects tags the clear just emptied, so it goes too. What the user
+  // types afterwards marks the track again like any other edit.
+  it('drops the hand-edit mark along with the tags it protected', () => {
+    const patch = clearedTrackPatch({ ...matchedTrack, handEdited: true })
+    expect(patch).toHaveProperty('handEdited', undefined)
   })
 
   // The ⌘K palette and the editor's eraser are the same action, so both must strip the

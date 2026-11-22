@@ -176,9 +176,10 @@ export function acceptReviewPatch(
 
 // "Clear all" on one track, the editor's eraser and the ⌘K palette alike. Every field
 // empty, the artwork off the preview and the next export, the rating and the file's own
-// third-party tags wiped (metaCleared, foreignRemoved). It also un-matches the track, the
-// sweep's own flag included, so a retag is probed afresh: a pending review flag dropped,
-// and the Discogs-proven owned verdict re-resolved against whatever the retag matches.
+// third-party tags wiped (metaCleared, foreignRemoved). It also drops every flag about the
+// tags it empties: the match flags (the sweep's own included), a pending review, the
+// hand-edit mark and the Discogs-proven owned verdict. Tags typed afterwards mark the
+// track again (isHandEdit), so the sweep only refills it if the user types nothing.
 export function clearedTrackPatch(track: TrackItem): Partial<TrackItem> {
   return {
     meta: emptyMetadata(),
