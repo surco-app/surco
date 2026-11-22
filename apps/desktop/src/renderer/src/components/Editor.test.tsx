@@ -5361,6 +5361,24 @@ describe('Editor Apple Music library section', () => {
     expect(state).toHaveAccessibleName('Not found')
   })
 
+  // The library owns the track (proven once and pinned) but no entry matches its tags now:
+  // there is no copy to reach, so the row says it is not found.
+  it('says not found when the library owns the track but no entry matches it, since no copy is reachable', async () => {
+    setApi('darwin')
+    renderEditor(
+      { id: 'a', inLibraryResolved: true, meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      {
+        libraryIndex: buildLibraryIndex([
+          { title: 'Other', artist: 'Someone', persistentId: '0123456789ABCDEF' },
+        ]),
+      },
+    )
+    const state = await screen.findByTestId('library-row-state')
+    expect(state).toHaveAttribute('data-state', 'missing')
+    expect(state).toHaveAccessibleName('Not found')
+  })
+
   // Until the snapshot arrives there is no verdict to show, so the section stays hidden
   // rather than guessing — the slot fills once the library has loaded.
   it('hides the section until the snapshot has loaded', () => {
@@ -5689,6 +5707,20 @@ describe('Editor Apple Music library section', () => {
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
+  // Replacing on convert is not the section: a single Music match within tolerance still has
+  // its file looked up in a program tab, so the replace offer works there as it does anywhere.
+  it('keeps the replace lookup but shows no section for a single Music match in a program tab', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      filesOpen: false,
+    })
+    await waitFor(() =>
+      expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
+    )
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
   it('shows no library section and measures no copy for a track opened from a program tab', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
@@ -5703,7 +5735,7 @@ describe('Editor Apple Music library section', () => {
     expect(api.loudness).not.toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
   })
 
-  it('looks up no Apple Music copy to describe for a track opened from a program tab', async () => {
+  it('describes no Apple Music copy in a program tab, since describing it is the section own work', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
       library: wavLoudness,
