@@ -299,6 +299,9 @@ interface Props {
 
 const NARROW_EDITOR_PX = 400
 
+// What a release writes about where it came from rather than about the music.
+const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
+
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'transcode',
   'cutoff',
@@ -1111,7 +1114,7 @@ export const Editor = memo(function Editor({
         : null,
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
-  const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
+  const leftOut = multiGate ? leftOutNote(multiGate, tr, i18n.language) : null
   const againGate = useMemo(
     () =>
       isMulti
@@ -1119,7 +1122,7 @@ export const Editor = memo(function Editor({
         : null,
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
-  const againLeftOut = againGate ? leftOutNote(againGate, tr) : null
+  const againLeftOut = againGate ? leftOutNote(againGate, tr, i18n.language) : null
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
   const readOnlyRows = blockedBy !== undefined
   const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
@@ -1128,7 +1131,9 @@ export const Editor = memo(function Editor({
   const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
     ? tr('editor.missingRequired', {
-        fields: missing.map((key) => tr(`fields.${key}`)).join(', '),
+        fields: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
+          missing.map((key) => tr(`fields.${key}`)),
+        ),
       })
     : undefined
   const incompleteReason = isMulti
@@ -1322,17 +1327,21 @@ export const Editor = memo(function Editor({
   )
 
   // What the last applied release replaced and nobody has touched since: the fields that
-  // still hold what it wrote and had another value before. Offered as one action in More
-  // rather than as a line under every field.
+  // still hold what it wrote and had another value before, empty included, so a field the
+  // release filled goes back to empty. Offered as one action in More rather than as a line
+  // under every field.
+  // The release id and address it stamped go back with the tags, but alone they do not keep
+  // the action offered: they stay once the DJ has put every tag back by hand.
   const restorableRelease = useMemo(() => {
     if (isMulti || !item.appliedRelease) return {}
     const { before, wrote } = item.appliedRelease
-    return Object.fromEntries(
+    const restorable = Object.fromEntries(
       (Object.entries(wrote) as [MetaTextKey, string][]).flatMap(([key, value]) => {
         const old = before[key] ?? ''
-        return old && old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
+        return old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
       }),
     ) as Partial<Record<MetaTextKey, string>>
+    return Object.keys(restorable).some((key) => !RELEASE_STAMPS.has(key)) ? restorable : {}
   }, [isMulti, item.appliedRelease, item.meta])
   const restoreRelease = useStableCallback((): void => {
     onRecordUndo?.([item.id])

@@ -268,6 +268,7 @@ const api: Api = {
   verifyMusicAdded: (trackId, persistentId) =>
     ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
+  prewarmPlayback: (path) => ipcRenderer.send('player:prewarm', path),
   conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),

@@ -76,6 +76,14 @@ export function SectionHeader({
   const isMaximized = sectionId !== undefined && maximized === sectionId
   const leadRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLSpanElement>(null)
+  // A title wider than the room the header's actions leave gives way with an ellipsis
+  // instead of running under them; only then does the tooltip carry the words it cut. It is
+  // measured as the pointer or focus reaches the header, the only moments a tooltip shows.
+  const [titleCut, setTitleCut] = useState(false)
+  const measureTitle = (): void => {
+    const titleEl = titleRef.current
+    if (titleEl) setTitleCut(titleEl.scrollWidth > titleEl.clientWidth)
+  }
   const [statusEl, setStatusEl] = useState<HTMLSpanElement | null>(null)
   const [statusBelow, setStatusBelow] = useState(false)
   useLayoutEffect(() => {
@@ -87,8 +95,13 @@ export function SectionHeader({
       if (!lead || !titleEl) return
       const leadBox = lead.getBoundingClientRect()
       const room = leadBox.width
+      // The title's whole width, not its box: a title already cut by the ellipsis would
+      // make the status seem to fit beside it, so the status moves down before the title
+      // gives way.
+      const titleBox = titleEl.getBoundingClientRect()
       const needed =
-        titleEl.getBoundingClientRect().right -
+        titleBox.left +
+        Math.max(titleBox.width, titleEl.scrollWidth) -
         leadBox.left +
         STATUS_OFFSET_PX +
         statusContent.getBoundingClientRect().width
@@ -142,7 +155,7 @@ export function SectionHeader({
           Both groups are a line of 24px so the title and the icons share a centre. The folded
           summary is zero-width at rest and only grows into free space, so a long digest
           truncates rather than forcing a wrap. */}
-          <h3 className={`flex min-h-6 min-w-min ${statusAction ? 'shrink-0' : 'flex-1'}`}>
+          <h3 className={`flex min-h-6 ${statusAction ? 'min-w-min shrink-0' : 'min-w-0 flex-1'}`}>
             <button
               type="button"
               // The section jumps (⌘[ / ⌘]) move focus header to header, so each one has to be
@@ -154,15 +167,18 @@ export function SectionHeader({
               aria-expanded={open}
               aria-controls={bodyId}
               aria-describedby={status ? statusId : undefined}
+              onPointerMove={measureTitle}
+              onFocus={measureTitle}
               className="-my-1.5 flex min-w-0 flex-1 items-center gap-1.5 py-1.5 text-left text-section font-semibold text-fg-muted hover:text-fg disabled:opacity-40 disabled:hover:text-fg-muted"
             >
               <ChevronRight
                 aria-hidden="true"
                 className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
               />
-              <span ref={titleRef} data-testid="section-title" className="shrink-0">
+              <span ref={titleRef} data-testid="section-title" className="min-w-0 truncate">
                 {title}
               </span>
+              <Tooltip label={titleCut ? title : ''} />
               {!statusBelow && statusNode}
               {!statusAction && summaryNode}
             </button>

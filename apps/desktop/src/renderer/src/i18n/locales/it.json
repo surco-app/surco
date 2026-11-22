@@ -187,6 +187,8 @@
     "convertingCount": "Conversione… {{done}}/{{total}}",
     "leftOutMissing_one": "{{count}} brano resta fuori perché manca {{fields}}",
     "leftOutMissing_other": "{{count}} brani restano fuori perché manca {{fields}}",
+    "leftOutMissingSeveral_one": "{{count}} brano resta fuori perché mancano {{fields}}",
+    "leftOutMissingSeveral_other": "{{count}} brani restano fuori perché mancano {{fields}}",
     "leftOutSerato_one": "{{count}} brano resta fuori, Serato lo perderebbe insieme ai suoi cue",
     "leftOutSerato_other": "{{count}} brani restano fuori, Serato li perderebbe insieme ai loro cue",
     "convertSelected_one": "Converti {{count}} selezionato",

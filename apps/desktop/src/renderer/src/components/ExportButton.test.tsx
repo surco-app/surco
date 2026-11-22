@@ -603,10 +603,10 @@ describe('ExportButton', () => {
   // track, or a selection all in one format, it is that format under a second name. The
   // caller works that out from the files; a selection alone no longer earns it.
   it('offers "Same as source" in the format menu only when the caller says it applies', () => {
-    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} count={2} />)
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     expect(screen.queryByTestId('process-format-source')).not.toBeInTheDocument()
-    rerender(<ExportButton {...baseProps} incomplete={false} count={2} offerSource />)
+    rerender(<ExportButton {...baseProps} incomplete={false} offerSource />)
     expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
   })
 
@@ -624,7 +624,6 @@ describe('ExportButton', () => {
       <ExportButton
         {...baseProps}
         incomplete={false}
-        count={2}
         offerSource
         onSelectFormat={onSelectFormat}
       />,
@@ -637,7 +636,7 @@ describe('ExportButton', () => {
   // With 'source' picked, the dropdown must show the translated short name ("Original"),
   // never the raw setting uppercased ("SOURCE" means nothing to the user).
   it('shows the translated label for "Same as source", not the raw setting', () => {
-    render(<ExportButton {...baseProps} incomplete={false} count={2} outputFormat="source" />)
+    render(<ExportButton {...baseProps} incomplete={false} outputFormat="source" />)
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('Original')
     expect(screen.getByTestId('process-format-toggle')).not.toHaveTextContent('SOURCE')
   })
@@ -676,7 +675,7 @@ describe('ExportButton menu layer', () => {
   })
 
   it('dims the format half with the body when a held-back selection cannot convert, while its menu still opens since another format can unblock it', () => {
-    render(<ExportButton {...baseProps} incomplete count={38} incompleteReason="Separate them" />)
+    render(<ExportButton {...baseProps} incomplete incompleteReason="Separate them" />)
     const toggle = screen.getByTestId('process-format-toggle')
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
     expect(toggle).toBeEnabled()
@@ -685,8 +684,27 @@ describe('ExportButton menu layer', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
   })
 
+  // One track and a selection held back by the same missing tag must answer the same way:
+  // the single toggle used to go disabled, so its menu would not even open there while the
+  // selection's did, and changing the format or destination is never what a gap blocks.
+  it('opens the format menu of a single blocked track just like a blocked selection', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        incompleteReason="Missing Artist"
+        blockedLabel="Missing Artist"
+      />,
+    )
+    const toggle = screen.getByTestId('process-format-toggle')
+    expect(toggle).toBeEnabled()
+    expect(screen.getByTestId('process-format-fill')).not.toHaveAttribute('data-on')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  })
+
   it('keeps the format half filled while the selection can convert', () => {
-    render(<ExportButton {...baseProps} incomplete={false} count={38} />)
+    render(<ExportButton {...baseProps} incomplete={false} />)
     expect(screen.getByTestId('process-format-fill')).toHaveAttribute('data-on', 'true')
   })
 })

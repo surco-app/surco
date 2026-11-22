@@ -187,6 +187,8 @@
     "convertingCount": "変換中… {{done}}/{{total}}",
     "leftOutMissing_one": "{{count}}件は{{fields}}がないため対象外",
     "leftOutMissing_other": "{{count}}件は{{fields}}がないため対象外",
+    "leftOutMissingSeveral_one": "{{count}}件は{{fields}}がないため対象外",
+    "leftOutMissingSeveral_other": "{{count}}件は{{fields}}がないため対象外",
     "leftOutSerato_one": "{{count}}件は対象外、Serato でトラックとキューが失われます",
     "leftOutSerato_other": "{{count}}件は対象外、Serato でトラックとキューが失われます",
     "convertSelected_one": "選択した {{count}} 件を変換",

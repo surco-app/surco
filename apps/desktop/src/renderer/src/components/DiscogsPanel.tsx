@@ -174,11 +174,16 @@ export const DiscogsPanel = memo(function DiscogsPanel({
   const listed = pinned ? results.filter((r) => resultKeyOf(r) !== pinnedKey) : results
   // Once a match is applied, the release it came from stays and the other results wait behind
   // one button, so the choice the app already made is not offered again. Opened by the button
-  // or by the user's own search, and closed again on the next track.
+  // or by the user's own search, and closed again on the next track. With no other result
+  // there is nothing to wait behind it, so no button.
   const [openedFor, setOpenedFor] = useState<{ id: string | undefined } | null>(null)
   const restOpen = openedFor !== null && openedFor.id === trackId
   const foldRest =
-    !restOpen && !isMulti && !!appliedTrack && listed.some((r) => resultKeyOf(r) === openKey)
+    !restOpen &&
+    !isMulti &&
+    !!appliedTrack &&
+    listed.length > 1 &&
+    listed.some((r) => resultKeyOf(r) === openKey)
   const shown = foldRest ? listed.filter((r) => resultKeyOf(r) === openKey) : listed
   const applyTrack = (track: ReleaseTrack): void => {
     const open = [...(pinned ? [pinned] : []), ...results].find(

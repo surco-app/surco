@@ -910,6 +910,7 @@ function scenarioApi(
     dj: wiredDj(),
     cues: wiredCues(),
     rowWaves: async () => ({}),
+    prewarmPlayback: () => {},
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({
       profile: null,
