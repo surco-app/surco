@@ -301,18 +301,44 @@ describe('LibrarySection', () => {
     }
   })
 
-  // The state place stays in every row, empty when the state rode up to the header, so the
-  // format chip sits in the same column whether the rows say their state or the header does.
-  it('keeps the empty state place on rows whose state went up to the header', () => {
+  // A state the header already says leaves nothing for the rows to reserve: the chevron sits
+  // right after the format chip instead of behind an empty stretch.
+  it('closes the state place on rows whose state went up to the header', () => {
     mount({
       rows: [
         row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
         row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
       ],
     })
-    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
-    expect(screen.queryByTestId('library-row-state')).toBeNull()
+    const rows = within(screen.getByTestId('library-rows'))
+    expect(rows.queryAllByTestId('library-row-state-slot')).toHaveLength(0)
+    expect(rows.queryAllByTestId('library-row-state-sizer')).toHaveLength(0)
     expect(screen.getAllByTestId('library-row-format')).toHaveLength(2)
+    expect(screen.getAllByTestId('library-row-chevron-slot')).toHaveLength(2)
+  })
+
+  it('closes the state place when every row is comparing and the header says it', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'measuring' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Comparando')
+    expect(screen.queryAllByTestId('library-row-state-slot')).toHaveLength(0)
+  })
+
+  it('brings the state place back in every row when the states differ', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'library' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
+    for (const libraryRow of screen.getAllByTestId('library-row')) {
+      expect(within(libraryRow).getAllByTestId('library-row-state-sizer').length).toBeGreaterThan(0)
+    }
   })
 
   // Different states keep one pill per row and nothing beside the title while it is open.

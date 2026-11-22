@@ -218,13 +218,13 @@ function LibraryRowItem({
           {row.format}
         </span>
       )}
-      {(verdict || row.comparable) && (
+      {showState && (verdict || row.comparable) && (
         <span
           data-testid="library-row-state-slot"
-          className={`col-start-4 row-start-1 grid @max-[22rem]:col-[2/4] @max-[22rem]:row-start-2 @max-[22rem]:justify-self-start ${showState ? '' : '@max-[22rem]:hidden'}`}
+          className={`col-start-4 row-start-1 grid @max-[22rem]:col-[2/4] @max-[22rem]:row-start-2 @max-[22rem]:justify-self-start`}
         >
           <StateSizers />
-          {showState && verdict && (
+          {verdict && (
             <StatePill
               testid="library-row-state"
               verdict={verdict}
@@ -237,7 +237,7 @@ function LibraryRowItem({
       {(comparison || verdict || row.comparable) && (
         <span
           data-testid="library-row-chevron-slot"
-          className="col-start-5 row-start-1 flex h-3 w-3 @max-[22rem]:col-start-4"
+          className={`row-start-1 flex h-3 w-3 @max-[22rem]:col-start-4 ${showState ? 'col-start-5' : 'col-start-4'}`}
         >
           {comparison && (
             <ChevronRight
@@ -352,7 +352,7 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
         <div className="mt-2 @container">
           <div
             data-testid="library-rows"
-            className="grid grid-cols-[max-content_minmax(0,max-content)_max-content_max-content_max-content] justify-start gap-x-2 @max-[22rem]:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content]"
+            className={`grid justify-start gap-x-2 @max-[22rem]:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] ${shared ? 'grid-cols-[max-content_minmax(0,max-content)_max-content_max-content]' : 'grid-cols-[max-content_minmax(0,max-content)_max-content_max-content_max-content]'}`}
           >
             {rows.map((row) => (
               <LibraryRowItem key={row.id} row={row} showState={!shared} />
