@@ -174,6 +174,18 @@ describe('withCrateTrackRepointed', () => {
     expect(crateTrackPaths(out)).toEqual([`${DIR}/Canción.wav`.normalize('NFD')])
   })
 
+  // A crate can list the same file twice; an entry left on the old path is a dead row once
+  // the replaced file is retired.
+  it('points every entry of the replaced file at the new one', () => {
+    const crate = concat([HEAD, otrk(Q_XING), otrk(Q_WAV), otrk(Q_XING)])
+    const out = present(withCrateTrackRepointed(crate, Q_XING, `${DIR}/Q mp3 Xing.aiff`))
+    expect(crateTrackPaths(out)).toEqual([
+      `${DIR}/Q mp3 Xing.aiff`,
+      Q_WAV,
+      `${DIR}/Q mp3 Xing.aiff`,
+    ])
+  })
+
   it('answers null for a crate without the file', () => {
     expect(withCrateTrackRepointed(MEDIDA_Q, `${DIR}/absent.mp3`, `${DIR}/absent.wav`)).toBeNull()
   })
