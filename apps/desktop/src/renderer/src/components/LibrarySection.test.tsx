@@ -80,8 +80,6 @@ describe('LibrarySection', () => {
     expect(plain).toHaveTextContent('Música')
   })
 
-  // The DJ reads the section top to bottom as one list of the places that hold the track, so
-  // each program keeps its slot whatever order the copies were found in.
   it('renders one row per program in the given order', () => {
     mount({
       rows: [
@@ -103,8 +101,6 @@ describe('LibrarySection', () => {
     ])
   })
 
-  // Each copy is a different file with its own numbers; opening one must not unfold the rest
-  // and bury the one the DJ asked for under tables they did not ask for.
   it('opens each comparison on its own', () => {
     const music = row({
       id: 'appleMusic',
@@ -130,8 +126,6 @@ describe('LibrarySection', () => {
     expect(music.onToggleComparison).not.toHaveBeenCalled()
   })
 
-  // The amber dot says "this copy beats the file you have"; on a copy that does not, it would
-  // send the DJ to swap in a worse file.
   it('marks only the copies that beat this file', () => {
     mount({
       rows: [

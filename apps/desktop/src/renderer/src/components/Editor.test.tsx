@@ -5650,9 +5650,7 @@ describe('Editor Apple Music library section', () => {
       expect(rows[1]).toHaveTextContent('Traktor')
     })
 
-    // A track opened from rekordbox's own folder is rekordbox's copy: there is no second file
-    // to weigh it against, so the row only says rekordbox holds it.
-    it('shows the rekordbox row without comparison when this file is the rekordbox copy', async () => {
+    it('shows the rekordbox row without comparison when this file is the rekordbox copy, since there is no second file to weigh', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/MUSIC/strobe.aif'.normalize('NFD'), loudness: aifLoudness },
       })
@@ -5667,9 +5665,7 @@ describe('Editor Apple Music library section', () => {
       expect(api.comparePair).not.toHaveBeenCalled()
     })
 
-    // One better copy anywhere is reason enough not to keep working on this file, so the
-    // header warns even when another program holds a worse one.
-    it('says there is a better copy when any program holds one', async () => {
+    it('says there is a better copy when any program holds one, even if another holds a worse one', async () => {
       renderWithPrograms({
         here: wavLoudness,
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, lossy: true },
