@@ -22,7 +22,7 @@ Drop your tracks in. Surco finds the right metadata, checks that your files real
 
 ## What it does
 
-- **Auto-tagging.** Searches Discogs, Bandcamp, Deezer, Beatport and MusicBrainz and matches whole imports on its own. Title, duration, artist and catalog number have to agree before anything is written, and uncertain matches wait for a one-click review instead of being applied.
+- **Auto-tagging.** Searches Discogs, Bandcamp, Deezer, Beatport, MusicBrainz and Apple Music and matches whole imports on its own. Title, duration, artist and catalog number have to agree before anything is written, and uncertain matches wait for a one-click review instead of being applied.
 - **Fake-lossless detection.** A spectrogram and a verdict that explains itself with the numbers it measured. It flags a 320 kbps re-encode sold as FLAC or WAV, upsampled audio and other quality lies.
 - **Cue editor.** Hot cues and CALLs on the rekordbox wave and grid. Pick a flow such as Mix in 64 or one of your own, click where the track drops and the rest of the cues land counting back.
 - **Auto mark.** Suggests where each track drops, on one track or a whole selection, and tells sure suggestions from doubtful ones. It learns how you mark from the cues you already placed and the ones you save.

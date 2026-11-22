@@ -12,7 +12,7 @@ LicenseUrl: https://github.com/surco-app/surco/blob/main/LICENSE
 ShortDescription: Free, open-source track organizer for DJs
 Description: |-
   Surco finds the right metadata for your tracks on Discogs, Bandcamp, Deezer,
-  Beatport and MusicBrainz,
+  Beatport, MusicBrainz and Apple Music,
   checks that files really are lossless, detects BPM and musical key,
   converts between formats and exports to DJ software or Apple Music.
 Moniker: surco

@@ -1082,15 +1082,15 @@ repunta (ver §13).
 
 ## 9. Proveedores externos
 
-| | Discogs | Bandcamp | Deezer | Beatport | MusicBrainz |
-|---|---|---|---|---|---|
-| Sello y nº de catálogo | Sí | No | No | Sí | Sí |
-| Formato del lanzamiento | Sí | No | No | No | Sí |
-| Duraciones de pista | Sí | Sí | Sí | Sí | Sí |
-| Créditos de composición | Sí | No | No | No | No |
-| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** | No |
-| Búsqueda por ISRC | No | No | **Sí** | No | No |
-| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) | No |
+| | Discogs | Bandcamp | Deezer | Beatport | MusicBrainz | Apple Music |
+|---|---|---|---|---|---|---|
+| Sello y nº de catálogo | Sí | No | No | Sí | Sí | Solo sello (del copyright) |
+| Formato del lanzamiento | Sí | No | No | No | Sí | No |
+| Duraciones de pista | Sí | Sí | Sí | Sí | Sí | Sí |
+| Créditos de composición | Sí | No | No | No | No | No |
+| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** | No | No |
+| Búsqueda por ISRC | No | No | **Sí** | No | No | No |
+| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) | No | No |
 
 **Discogs** funciona sin configurar nada con una clave compartida (60 req/min
 entre todos los usuarios); un token propio da su propio cupo. Las credenciales
@@ -1120,7 +1120,7 @@ notación elegida, `providers/index.ts:102`), mix e ISRC (`beatport.ts:150-157`)
 campo fuera de la lista de importación no se toca. Entre versiones con el mismo
 título se preselecciona la que nombra el fichero, y el mix se añade al título
 salvo «Original Mix» (`lib/release.ts:232-237`). En la lista de resultados va
-detrás de Discogs, Bandcamp y Deezer (`release.ts:403-409`).
+detrás de Discogs, Bandcamp y Deezer (`release.ts:408-415`).
 
 **MusicBrainz** es el catálogo abierto de la comunidad. Sale **encendido** para todos:
 en instalaciones nuevas por defecto (`shared/defaults.ts:76`) y en las existentes con
@@ -1139,7 +1139,22 @@ Edition)») se busca sin ella pero puntúa primero la edición que la nombra
 (`musicbrainz.ts:155-163`, `:207-215`, `:296-306`). Las carátulas vienen de Cover Art
 Archive: la miniatura es la del álbum, que existe en cuanto alguna edición tiene imagen
 (`musicbrainz.ts:141-145`), y una edición sin carátula propia toma la del álbum solo si
-responde (`musicbrainz.ts:436`). Va la última en la lista (`release.ts:408`).
+responde (`musicbrainz.ts:436`). Va justo antes de Apple Music en la lista
+(`release.ts:413`).
+
+**Apple Music** usa la API pública de búsqueda de iTunes, sin cuenta ni clave. Sale
+**encendido** para todos, en instalaciones nuevas por defecto (`shared/defaults.ts:81`) y
+en las existentes con la misma migración de una sola vez (`settings.ts:686-687`). Apple
+ordena los resultados por popularidad y no por parecido, así que cada consulta pide 200
+canciones (`itunes.ts:104`) y se queda solo con las que nombran todas sus palabras en el
+artista, el título o el disco (`itunes.ts:86-94`); después las agrupa por disco
+(`itunes.ts:59-77`). Busca en la tienda del país del sistema, o en la de `US` si el sistema
+no lo dice (`itunes.ts:19-21`). Apple no publica su límite, que ronda las 20 peticiones por
+minuto, y Surco va a 3 cada 9 segundos (`itunes.ts:25`, `itunesLimiter.ts:3-4`); un 403 o
+un 429 se reintenta con espera creciente (`itunes.ts:32-36`). Trae la fecha entera, el
+género, el tracklist con duraciones y la carátula a 3000 px (`itunes.ts:164-185`). El sello
+sale del copyright sin el «℗ 2020» del principio (`itunes.ts:150-153`), y no hay número de
+catálogo, BPM, tonalidad ni ISRC. Va la última en la lista (`release.ts:414`).
 
 ### La escalera de búsqueda
 
@@ -1153,8 +1168,8 @@ vinilo delante (`A1.`, `B2.`). Si el nombre no dice el artista y la carpeta se l
 «Artista - Álbum», se busca por esa carpeta, sin el año entre paréntesis
 (`folderQuery`, `renderer/src/lib/filename.ts:14`).
 
-**Solo cuenta un peldaño que nombra al artista.** En Bandcamp, Deezer, Beatport y el
-texto libre de MusicBrainz, cuando las etiquetas traen artista, un peldaño solo vale si
+**Solo cuenta un peldaño que nombra al artista.** En Bandcamp, Deezer, Beatport, Apple
+Music y el texto libre de MusicBrainz, cuando las etiquetas traen artista, un peldaño solo vale si
 alguna fila nombra a alguno de sus actos (una colaboración se parte por comas, «&»,
 «feat.» y demás; «Pro-Active» y «Proactive» cuentan igual); si ninguno lo nombra, esa
 fuente se queda vacía en vez de enseñar discos ajenos (`searchQuery.ts:111-177`). En un
