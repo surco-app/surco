@@ -8420,7 +8420,7 @@ describe('App non-audio notice', () => {
     expect(await screen.findByTestId('app-notice')).toHaveTextContent(
       i18n.t('notices.notAudioSkipped', { count: 2 }),
     )
-    expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    expect(await screen.findAllByTestId('track-row')).toHaveLength(1)
   })
 
   it('says so for a lone dropped file that is not audio instead of doing nothing', async () => {
