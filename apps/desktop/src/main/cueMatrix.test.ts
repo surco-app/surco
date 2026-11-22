@@ -1065,6 +1065,23 @@ describe('a hand-set Serato grid', () => {
     expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(replaced)))).toBeLessThan(1)
   })
 
+  // A grid Surco cannot move would be lost with the replaced file it retires.
+  it('keeps Serato on the replaced file when its grid cannot be moved', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-unmovable-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const multi = tempoMap(1, 120)
+    new DataView(multi.buffer).setUint16(2, 2)
+    const f = TagFile.createFromPath(replaced)
+    ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(seratoGeob('Serato Tempo Map', multi))
+    f.save()
+    f.dispose()
+    const out = join(dir, 'out.aiff')
+
+    await replace(plainSine(dir, '.flac'), out, replaced)
+
+    expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
+  })
+
   // When the cues come from the download, so does the grid, on the download's clock.
   it("keeps the download's own grid when the replaced file has no Serato cues", async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-none-'))

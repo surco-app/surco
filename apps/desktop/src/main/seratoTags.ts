@@ -483,9 +483,12 @@ export async function carrySeratoCues(
   const fresh = carried?.oldBlockDisagrees && !fallback ? null : changed
   // The grid is not analysis to strip: a DJ may have set it by hand. It moves with the
   // cues, by the same amount, and only a shape Surco can read whole is copied.
+  // A replacement retires the file that holds the grid, so one it cannot move is lost, and
+  // Serato must not be pointed at its copy; an ordinary conversion keeps its source.
   const grids = GRIDS.flatMap((grid) => {
     const raw = carried?.grids[grid.key]
     const data = raw ? grid.retimed(raw, moveMs) : null
+    if (raw && !data && fallback) throw new Error(`cannot move the ${grid.geob} of ${source}`)
     return data ? [{ grid, data }] : []
   })
   const f = TagFile.createFromPath(dest)

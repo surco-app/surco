@@ -441,6 +441,40 @@ describe('carrySeratoCues with a beat grid', () => {
     ])
   })
 
+  // A Tempo Map with several markers is a grid the DJ may have set by hand that Surco cannot
+  // move: a replacement must fail rather than retire the file holding it for one without it.
+  it('fails a replacement whose grid Surco cannot move', async () => {
+    const multi = Buffer.from(tempoMap(1, 120), 'base64')
+    multi.writeUInt16BE(2, 2)
+    const source = audioFile('mp3')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
+    withTag(source, (f) => addGeob(f, 'Serato Tempo Map', multi.toString('base64')))
+
+    await expect(
+      carrySeratoCues(source, audioFile('aiff'), {
+        trimMs: 0,
+        carry: true,
+        strip: false,
+        shiftMs: 0,
+        fallback: { source: audioFile('wav'), trimMs: 0 },
+      }),
+    ).rejects.toThrow()
+  })
+
+  // An ordinary conversion keeps its source, so the grid is not lost: it carries the cues.
+  it('still carries the cues of an ordinary conversion whose grid Surco cannot move', async () => {
+    const multi = Buffer.from(tempoMap(1, 120), 'base64')
+    multi.writeUInt16BE(2, 2)
+    const source = audioFile('wav')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
+    withTag(source, (f) => addGeob(f, 'Serato Tempo Map', multi.toString('base64')))
+    const dest = audioFile('wav')
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs: 0 })
+
+    expect(readSeratoMarkers(dest)?.cues.map((c) => c.ms)).toEqual([2000])
+  })
+
   it("leaves the copy's own grid alone when the source has none", async () => {
     const source = audioFile('wav')
     setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0, name: '' }]))
