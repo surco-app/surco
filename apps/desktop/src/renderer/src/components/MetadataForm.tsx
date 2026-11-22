@@ -201,9 +201,24 @@ export function MetadataForm({
               f.width ? (
                 <Fragment key={f.key}>
                   {renderField(f, {
-                    trailing: rest.map((r) => (
-                      <Fragment key={r.key}>{renderField(r, { inline: true })}</Fragment>
-                    )),
+                    trailing: [
+                      ...rest.map((r) => (
+                        <Fragment key={r.key}>{renderField(r, { inline: true })}</Fragment>
+                      )),
+                      ...(f.action
+                        ? [
+                            <button
+                              key="action"
+                              type="button"
+                              data-testid="number-tracks-btn"
+                              onClick={f.action.onApply}
+                              className="press h-[26px] self-end rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
+                            >
+                              {f.action.label}
+                            </button>,
+                          ]
+                        : []),
+                    ],
                   })}
                 </Fragment>
               ) : f.perTrack ? (

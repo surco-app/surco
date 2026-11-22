@@ -84,6 +84,8 @@ export interface FieldSpec {
   previous?: FieldPreviousNote
   readOnly?: boolean
   readOnlyNote?: string
+  // A button beside a read-only per-track field that fills it for the whole selection.
+  action?: { label: string; onApply: () => void }
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
@@ -165,6 +167,7 @@ export interface BuildFieldSpecsParams {
   // The same per key for a selection: writes the value into every selected track.
   customBulkOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  numberTracks?: () => void
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
@@ -238,6 +241,7 @@ export function buildFieldSpecs({
   customOnChange,
   customBulkOnChange,
   onChangeTracksMeta,
+  numberTracks,
   fullReleaseDate,
   cleanedNotes,
   previousNotes,
@@ -322,6 +326,10 @@ export function buildFieldSpecs({
       width,
       readOnly: true,
       readOnlyNote: tr('editor.perTrackOnly'),
+      action:
+        key === 'trackNumber' && numberTracks
+          ? { label: tr('editor.numberTracks', { count: tracks.length }), onApply: numberTracks }
+          : undefined,
       onChange: () => {},
     }
   }

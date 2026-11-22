@@ -976,6 +976,7 @@
     "libraryCheckFailedEngine": "Non è stato possibile leggere la tua libreria di Engine DJ, quindi i brani non vengono segnati come già presenti. Surco riprova quando torni alla finestra.",
     "editingMultiple": "Modifica di {{count}} brani",
     "multipleValues": "Valori diversi",
+    "numberTracks": "Numera 1–{{count}}",
     "perTrackOnly": "Si modifica brano per brano",
     "clearInAll": "Svuota in tutte",
     "valuesCount_one": "{{count}} valore",

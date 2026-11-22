@@ -1860,6 +1860,7 @@ describe('Editor multi-select', () => {
       settings?: Partial<Settings>
       onChangeSelection?: (patch: Partial<TrackItem>) => void
       onFormatChange?: (format: FormatSetting | null) => void
+      listOrder?: string[]
     } = {},
   ) {
     if (opts.platform)
@@ -1912,6 +1913,9 @@ describe('Editor multi-select', () => {
           onResultsResizeStart={vi.fn()}
           onResultsFit={vi.fn()}
           selectedTracks={[a, b]}
+          listOrderRef={{
+            current: (o.listOrder ?? ['a', 'b']).map((id) => (id === 'a' ? a : b)),
+          }}
           onChangeSelection={o.onChangeSelection}
           onFormatChange={o.onFormatChange}
           onApplyMatches={vi.fn()}
@@ -2527,6 +2531,18 @@ describe('Editor multi-select', () => {
     const { onChangeAllMeta } = renderMulti({ visibleFields: ['title', 'trackTotal'] })
     fireEvent.click(screen.getByTestId('chip-2'))
     expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
+  })
+
+  it('numbers the selected tracks in the order the list shows them, not the order they were loaded', () => {
+    const { onChangeTracksMeta } = renderMulti({
+      visibleFields: ['title', 'trackNumber', 'trackTotal'],
+      listOrder: ['b', 'a'],
+    })
+    fireEvent.click(screen.getByTestId('number-tracks-btn'))
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([
+      { id: 'b', meta: { trackNumber: '1' } },
+      { id: 'a', meta: { trackNumber: '2' } },
+    ])
   })
 
   it('derives tags for every selected track from its own file name in one click', () => {

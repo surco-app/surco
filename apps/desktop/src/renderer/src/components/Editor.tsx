@@ -16,7 +16,17 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
-import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  Fragment,
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { tagsOnly } from '../../../shared/audioProcessing'
@@ -174,6 +184,10 @@ interface Props {
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  // The rows as the list shows them (sorted, filtered). A ref because the order is only
+  // read when numbering is clicked, and a new array on every progress tick would defeat
+  // the memo of this component.
+  listOrderRef?: React.RefObject<TrackItem[]>
   onChangeTracksPlaylists?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
@@ -312,6 +326,7 @@ export const Editor = memo(function Editor({
   onApplyCoverAll,
   onDeriveTags,
   onChangeTracksMeta,
+  listOrderRef,
   onChangeTracksPlaylists,
   onApplyTitleFormat,
   onRecordUndo,
@@ -1211,6 +1226,19 @@ export const Editor = memo(function Editor({
       ),
     [customFields, selectedTracks, onChangeTracksMeta],
   )
+  // selectedTracks follows the library's order, not the list's: numbering must follow what
+  // the user sees, so each selected track takes its row position, unlisted ones last.
+  const numberTracks = useCallback(() => {
+    const rows = listOrderRef?.current ?? []
+    const rowOf = (id: string): number => {
+      const i = rows.findIndex((r) => r.id === id)
+      return i < 0 ? rows.length : i
+    }
+    const inListOrder = [...(selectedTracks ?? [])].sort((a, b) => rowOf(a.id) - rowOf(b.id))
+    onChangeTracksMeta?.(
+      inListOrder.map((t, i) => ({ id: t.id, meta: { trackNumber: String(i + 1) } })),
+    )
+  }, [selectedTracks, listOrderRef, onChangeTracksMeta])
   const customValueMap = useMemo(() => resolvedMeta.custom ?? {}, [resolvedMeta])
   const bulkOnChange = useMemo(
     () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
@@ -1325,6 +1353,7 @@ export const Editor = memo(function Editor({
         customBulkOnChange,
         fullReleaseDate,
         onChangeTracksMeta,
+        numberTracks,
         cleanedNotes,
         previousNotes,
         playlists: playlistsSpec,
@@ -1355,6 +1384,7 @@ export const Editor = memo(function Editor({
       customOnChange,
       customBulkOnChange,
       onChangeTracksMeta,
+      numberTracks,
       fullReleaseDate,
       cleanedNotes,
       previousNotes,

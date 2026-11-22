@@ -976,6 +976,7 @@
     "libraryCheckFailedEngine": "Engine DJ ライブラリを読み取れなかったため、トラックがすでに登録されているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "editingMultiple": "{{count}} トラックの編集",
     "multipleValues": "複数の値",
+    "numberTracks": "1–{{count}}で番号付け",
     "perTrackOnly": "1曲ずつ編集します",
     "clearInAll": "すべて空にする",
     "valuesCount_one": "{{count}} 件の値",

@@ -5125,6 +5125,7 @@ export default function App(): React.JSX.Element {
                               onApplyCoverAll={onApplyCoverAll}
                               onDeriveTags={deriveTracksUndoable}
                               onChangeTracksMeta={deriveTracksUndoable}
+                              listOrderRef={visibleTracksRef}
                               onApplyTitleFormat={applyTitleFormat}
                               onRecordUndo={recordMetaUndo}
                               onClearAll={clearMeta}

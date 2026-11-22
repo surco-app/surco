@@ -976,6 +976,7 @@
     "libraryCheckFailedEngine": "No s'ha pogut llegir la teva biblioteca d'Engine DJ, així que les pistes no es marquen com a ja incloses. Surco ho torna a provar quan tornes a la finestra.",
     "editingMultiple": "Editant {{count}} pistes",
     "multipleValues": "Diversos valors",
+    "numberTracks": "Numerar 1–{{count}}",
     "perTrackOnly": "S'edita pista a pista",
     "clearInAll": "Buidar a totes",
     "valuesCount_one": "{{count}} valor",
