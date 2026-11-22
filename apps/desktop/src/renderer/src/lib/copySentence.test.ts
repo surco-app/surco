@@ -65,14 +65,14 @@ describe('copySentence', () => {
         { ...wav, integratedLufs: -12.2 },
         { ...aif, integratedLufs: -10 },
       ),
-    ).toBe('This file has 1978 samples pinned at its ceiling, the mark of a limiter.')
+    ).toBe('The new one has 1978 samples pinned at its ceiling, the mark of a limiter.')
   })
 
   // A limiter is inferred from the pinned samples, never measured; with no count to show,
   // the sentence can only say what the figures say, that this copy is more limited.
   it('does not claim a limiter when the pinned samples are not known', () => {
     expect(say({ winner: 'b', reason: 'peakCount' }, { ...wav, peakCount: null }, aif)).toBe(
-      'This file is more limited.',
+      'The new one is more limited.',
     )
   })
 
@@ -85,13 +85,13 @@ describe('copySentence', () => {
         { ...wav, cutoffHz: 16000 },
         { ...aif, ext: 'MP3', cutoffHz: 20000 },
       ),
-    ).toBe('The Apple Music copy is lossy (MP3). This file is lossless (WAV).')
+    ).toBe('The Apple Music copy is lossy (MP3). The new one is lossless (WAV).')
   })
 
   it('names the formats when this file is the lossy one', () => {
     expect(
       say({ winner: 'b', reason: 'lossless' }, { ...aif, ext: 'MP3', cutoffHz: 16000 }, wav),
-    ).toBe('This file is lossy (MP3). The Apple Music copy is lossless (WAV).')
+    ).toBe('The new one is lossy (MP3). The Apple Music copy is lossless (WAV).')
   })
 
   it('quotes both cutoffs when the cutoff decided', () => {
@@ -101,7 +101,7 @@ describe('copySentence', () => {
         { ...aif, ext: 'MP3', cutoffHz: 16000 },
         { ...wav, ext: 'MP3', cutoffHz: 19500 },
       ),
-    ).toBe('This file is cut at 16 kHz. The Apple Music copy reaches 19.5 kHz.')
+    ).toBe('The new one is cut at 16 kHz. The Apple Music copy reaches 19.5 kHz.')
   })
 
   // A transcode is called on the losing copy's knee alone, so the other copy's cutoff can be
@@ -112,7 +112,7 @@ describe('copySentence', () => {
       { ...wav, cutoffHz: 16000, hasKnee: true },
       { ...aif, cutoffHz: undefined },
     )
-    expect(sentence).toBe('This file comes from a lossy source.')
+    expect(sentence).toBe('The new one comes from a lossy source.')
     expect(sentence).not.toContain('—')
   })
 
@@ -149,7 +149,7 @@ describe('copySentence', () => {
       { ...wav, cutoffHz: 16000, hasKnee: true },
       { ...aif, cutoffHz: 15000, hasKnee: false },
     )
-    expect(lower).toBe('This file comes from a lossy source.')
+    expect(lower).toBe('The new one comes from a lossy source.')
     expect(lower).not.toContain('15')
     expect(
       say(
@@ -169,7 +169,7 @@ describe('copySentence', () => {
         { ...wav, cutoffHz: 16000, hasKnee: true },
         { ...aif, cutoffHz: 16040, hasKnee: false },
       ),
-    ).toBe('This file comes from a lossy source.')
+    ).toBe('The new one comes from a lossy source.')
   })
 
   // Audio quality calls a file with nothing above 22 kHz "probablemente reescalado"; the
@@ -177,7 +177,7 @@ describe('copySentence', () => {
   it('calls an upsampled copy probably reescalada, as Audio quality does', async () => {
     await i18n.changeLanguage('es')
     expect(say({ winner: 'a', reason: 'upsampled' }, aif, wav)).toBe(
-      'La copia de Apple Music probablemente está reescalada desde una frecuencia más baja. Este archivo no.',
+      'La copia de Apple Music probablemente está reescalada desde una frecuencia más baja. La nueva no.',
     )
   })
 })
