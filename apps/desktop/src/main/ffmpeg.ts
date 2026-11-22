@@ -2024,6 +2024,14 @@ function changedNames(before: TrackMetadata, after: TrackMetadata): NmlPatch['ta
   return Object.keys(changes).length > 0 ? changes : undefined
 }
 
+// Only a shift that moves something is recorded for a replace, so a zero leaves the entry's
+// CUE_V2 byte for byte as they were.
+function replacedCueShift(shift: CueShift): NmlPatch['cueShift'] {
+  return shift.shiftMs !== 0 || shift.maxMs !== undefined
+    ? { shiftMs: shift.shiftMs, maxMs: shift.maxMs }
+    : undefined
+}
+
 function recordConversionPatch(
   input: string,
   output: string,
@@ -2061,10 +2069,7 @@ function recordConversionPatch(
           outputVolume: outputLocation.volume,
           outputDir: outputLocation.dir,
           outputFile: outputLocation.file,
-          cueShift:
-            replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
-              ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
-              : undefined,
+          cueShift: replacedCueShift(replaces.cueShift),
         },
         { input, output },
       )
@@ -2083,15 +2088,12 @@ function recordConversionPatch(
         file,
         // A replace moves the whole entry (relocates) so newFile stays out of it. Its cues
         // are the entry's own: the tag on the output and the download-to-output shift
-        // describe a different pair of files, so neither is sent. Only a shift that moves
-        // something is recorded, so a zero leaves the CUE_V2 byte for byte as they were.
+        // describe a different pair of files, so neither is sent.
         newFile: !replaces && sameDir && outputName !== file ? outputName : undefined,
         relocates: replaces ? true : undefined,
         cueTree: replaces ? undefined : (readCueTree(output) ?? undefined),
         cueShift: replaces
-          ? replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
-            ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
-            : undefined
+          ? replacedCueShift(replaces.cueShift)
           : cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
         bpm,
         // Traktor reads a library track's stars from the collection, not the file, so
