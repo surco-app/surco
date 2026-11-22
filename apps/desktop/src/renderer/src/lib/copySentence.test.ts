@@ -28,7 +28,8 @@ const say = (
   verdict: { winner: 'a' | 'b'; reason: CopyReason },
   here: CopyFacts,
   library: CopyFacts,
-): string => copySentence(verdict, here, library, i18n.t, i18n.language)
+  libraryName = 'Apple Music',
+): string => copySentence(verdict, here, library, libraryName, i18n.t, i18n.language)
 
 const REASONS = [
   'lossless',
@@ -46,6 +47,12 @@ describe('copySentence', () => {
   it('argues the Netzwerk verdict with the measured numbers', () => {
     expect(say({ winner: 'a', reason: 'peakCount' }, aif, wav)).toBe(
       'The Apple Music copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
+    )
+  })
+
+  it('names the library it compares with', () => {
+    expect(say({ winner: 'a', reason: 'peakCount' }, aif, wav, 'rekordbox')).toBe(
+      'The rekordbox copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
   })
 

@@ -1369,7 +1369,8 @@
     "libraryVerdictLibrary": "より良いコピーがあります",
     "libraryVerdictSame": "同じコピー",
     "libraryVerdictMeasuring": "比較中…",
-    "libraryVerdictWithReason": "{{verdict}}。{{reason}}"
+    "libraryVerdictWithReason": "{{verdict}}。{{reason}}",
+    "libraryRowBetter": "このファイルより良い"
   },
   "fields": {
     "groupIdentity": "基本",

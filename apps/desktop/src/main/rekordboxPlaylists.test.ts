@@ -480,7 +480,7 @@ describe('the recently added list', () => {
           FolderPath: '/Volumes/Public/Music/Undated.wav',
           FileType: 11,
           Title: 'Undated',
-          Length: 200,
+          Length: 0,
         },
       ],
       keys: [
@@ -526,8 +526,19 @@ describe('the recently added list', () => {
       path: PLAY.FolderPath,
       title: 'Play This Song (Transformix)',
       artist: '2 Fabiola',
+      durationSec: 338,
     })
     expect(rows.find((r) => r.contentId === 'edge')?.artist).toBe('')
+  })
+
+  it('reads the track length into durationSec', () => {
+    expect(readRekordboxCollection(rdb).find((r) => r.contentId === 'c2')?.durationSec).toBe(338)
+  })
+
+  it('leaves durationSec undefined when the length is missing or zero', () => {
+    expect(
+      readRekordboxCollection(rdb).find((r) => r.contentId === 'undated')?.durationSec,
+    ).toBeUndefined()
   })
 
   it('leaves streamed tracks out of the collection, since a playlist add refuses them', () => {

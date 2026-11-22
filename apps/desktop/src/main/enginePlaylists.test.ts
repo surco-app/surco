@@ -11,6 +11,7 @@ import { analysedTrack } from './enginePerformanceFixture'
 import {
   artworkFileName,
   openEngineDb,
+  readEngineCollection,
   readEngineMembership,
   readEnginePlaylist,
   readEngineRecentCount,
@@ -131,6 +132,27 @@ describe('readEngineTree', () => {
     const db = opened(dir)
     expect(readEngineTree(db)[0].count).toBe(1)
     db.close()
+  })
+})
+
+describe('readEngineCollection', () => {
+  it('reads the track length into durationSec', async () => {
+    const dir = await library({ tracks: TRACKS, playlists: [], entities: [] })
+    const rows = readEngineCollection(opened(dir), dir)
+    expect(rows.find((r) => r.title === 'Night Train')?.durationSec).toBe(256)
+  })
+
+  it('leaves durationSec undefined when the length is missing or zero', async () => {
+    const dir = await library({
+      tracks: [
+        { id: 1, path: '../Music/a.mp3', title: 'A', length: 0 },
+        { id: 2, path: '../Music/b.mp3', title: 'B' },
+      ],
+      playlists: [],
+      entities: [],
+    })
+    const rows = readEngineCollection(opened(dir), dir)
+    expect(rows.map((r) => r.durationSec)).toEqual([undefined, undefined])
   })
 })
 

@@ -253,11 +253,14 @@ function allTracks(nml: string): Track[] {
 export function readTraktorCollection(nml: string, bootVolume: string): CollectionTrack[] {
   return allTracks(nml).map((track) => {
     const head = track.block.match(/<ENTRY\b[^>]*>/)?.[0] ?? ''
+    const info = track.block.match(/<INFO\b[^>]*>/)?.[0] ?? ''
+    const durationSec = Number(attr(info, 'PLAYTIME_FLOAT') || attr(info, 'PLAYTIME')) || 0
     return {
       contentId: traktorContentId(track.key),
       path: traktorFileOf(track.block, bootVolume),
       title: attr(head, 'TITLE').trim(),
       artist: attr(head, 'ARTIST').trim(),
+      ...(durationSec > 0 ? { durationSec } : {}),
     }
   })
 }

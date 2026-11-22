@@ -4,28 +4,31 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { hoverTooltip } from '../test/tooltip'
-import { LibrarySection } from './LibrarySection'
+import { type LibraryRow, LibrarySection } from './LibrarySection'
 
 beforeAll(() => i18n.changeLanguage('es'))
 afterEach(cleanup)
 
-function mount(props: Partial<Parameters<typeof LibrarySection>[0]> = {}) {
-  const onToggleComparison = vi.fn()
-  render(
-    <LibrarySection
-      open
-      onToggle={() => {}}
-      libraryName="Música"
-      librarySource="appleMusic"
-      verdict="here"
-      copyFormat="FLAC 44,1 kHz"
-      comparison={<div data-testid="comparison">numbers</div>}
-      comparisonOpen={false}
-      onToggleComparison={onToggleComparison}
-      {...props}
-    />,
-  )
-  return { onToggleComparison }
+function row(over: Partial<LibraryRow> = {}): LibraryRow {
+  return {
+    id: 'appleMusic',
+    name: 'Música',
+    format: 'FLAC 44,1 kHz',
+    better: false,
+    comparison: <div data-testid="comparison">numbers</div>,
+    comparisonOpen: false,
+    onToggleComparison: vi.fn(),
+    ...over,
+  }
+}
+
+function mount(
+  props: Partial<Parameters<typeof LibrarySection>[0]> = {},
+  only: Partial<LibraryRow> = {},
+) {
+  const single = row(only)
+  render(<LibrarySection open onToggle={() => {}} verdict="here" rows={[single]} {...props} />)
+  return { onToggleComparison: single.onToggleComparison }
 }
 
 describe('LibrarySection', () => {
@@ -89,60 +92,120 @@ describe('LibrarySection', () => {
     expect(screen.queryByTestId('library-verdict')).not.toBeInTheDocument()
   })
 
-  // Same audio leaves nothing to weigh: a row that opens onto matching figures would send
-  // the reader hunting for a difference that is not there.
-  it('opens nothing when both copies are the same audio', () => {
-    mount({ verdict: 'same', comparisonOpen: true })
-    const row = screen.getByTestId('library-row')
-    expect(row.tagName).not.toBe('BUTTON')
-    expect(row).not.toHaveAttribute('aria-expanded')
-    expect(screen.queryByTestId('comparison')).not.toBeInTheDocument()
-  })
-
   // The row carries the same mark the library wears in the sidebar, so it is recognised
   // before it is read.
   it.each([
     ['appleMusic', 'Apple Music'],
-    ['engineDj', 'Engine DJ'],
-  ] as const)('leads the row with the %s sidebar glyph', (librarySource, libraryName) => {
-    mount({ librarySource, libraryName })
-    expect(screen.getByTestId('library-row-icon')).toHaveAccessibleName(libraryName)
-    expect(screen.getByTestId('library-row-icon')).toHaveAttribute('data-source', librarySource)
+    ['rekordbox', 'rekordbox'],
+    ['engine', 'Engine DJ'],
+    ['traktor', 'Traktor'],
+    ['serato', 'Serato'],
+    ['virtualdj', 'VirtualDJ'],
+  ] as const)('leads the row with the %s sidebar glyph', (id, name) => {
+    mount({}, { id, name })
+    expect(screen.getByTestId('library-row-icon')).toHaveAccessibleName(name)
+    expect(screen.getByTestId('library-row-icon')).toHaveAttribute('data-source', id)
   })
 
   // The copy's format reads as the same chip the track list uses for a file's format.
   it('sets the copy format in a format chip', () => {
-    mount({ copyFormat: 'AIFF 24/48' })
+    mount({}, { format: 'AIFF 24/48' })
     expect(screen.getByTestId('library-row-format')).toHaveTextContent('AIFF 24/48')
   })
 
   // The header's amber triangle already says the library holds a better copy; a second
-  // amber mark on the row told the reader the same thing twice.
-  it('says a better library copy once, in the header', () => {
-    mount({ verdict: 'library' })
+  // amber mark on the only row told the reader the same thing twice.
+  it('says a better copy once, in the header, when there is one row', () => {
+    mount({ verdict: 'library' }, { better: true })
     expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
     const row = screen.getByTestId('library-row')
     expect(within(row).getAllByRole('img')).toEqual([screen.getByTestId('library-row-icon')])
   })
 
+  // With several programs the header cannot say which one holds the better copy, so that row
+  // carries a small triangle, named for a screen reader and the tooltip, and no words.
+  it('marks only the rows whose copy beats this file when there are several', () => {
+    mount({
+      verdict: 'library',
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', better: false }),
+        row({ id: 'rekordbox', name: 'rekordbox', better: true }),
+        row({ id: 'serato', name: 'Serato', better: false }),
+      ],
+    })
+    const [music, rekordbox, serato] = screen.getAllByTestId('library-row')
+    expect(within(music).queryByTestId('library-row-better')).toBeNull()
+    expect(within(serato).queryByTestId('library-row-better')).toBeNull()
+    const mark = within(rekordbox).getByTestId('library-row-better')
+    expect(mark).toHaveAccessibleName('Mejor que este archivo')
+    expect(hoverTooltip(mark)).toBe('Mejor que este archivo')
+    expect(rekordbox.textContent).not.toContain('Mejor')
+  })
+
   it('opens the comparison from the row', () => {
-    const { onToggleComparison } = mount({ comparisonOpen: false })
+    const { onToggleComparison } = mount({}, { comparisonOpen: false })
     expect(screen.queryByTestId('comparison')).not.toBeInTheDocument()
     fireEvent.click(screen.getByTestId('library-row'))
     expect(onToggleComparison).toHaveBeenCalledTimes(1)
     cleanup()
-    mount({ comparisonOpen: true })
+    mount({}, { comparisonOpen: true })
     expect(screen.getByTestId('comparison')).toBeInTheDocument()
     expect(screen.getByTestId('library-row')).toHaveAttribute('aria-expanded', 'true')
   })
 
   it('renders a plain row without format or chevron', () => {
-    mount({ copyFormat: '', comparison: undefined })
-    const row = screen.getByTestId('library-row')
-    expect(row.tagName).not.toBe('BUTTON')
+    mount({}, { format: '', comparison: undefined })
+    const plain = screen.getByTestId('library-row')
+    expect(plain.tagName).not.toBe('BUTTON')
     const icon = screen.getByTestId('library-row-icon')
-    expect([...row.querySelectorAll('svg')].filter((svg) => !icon.contains(svg))).toEqual([])
+    expect([...plain.querySelectorAll('svg')].filter((svg) => !icon.contains(svg))).toEqual([])
     expect(screen.queryByTestId('library-row-format')).toBeNull()
-    expect(row).toHaveTextContent('Música')
+    expect(plain).toHaveTextContent('Música')
+  })
+
+  it('renders one row per program in the given order', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music' }),
+        row({ id: 'rekordbox', name: 'rekordbox' }),
+        row({ id: 'traktor', name: 'Traktor' }),
+      ],
+    })
+    const rows = screen.getAllByTestId('library-row')
+    expect(rows.map((r) => r.getAttribute('data-row'))).toEqual([
+      'appleMusic',
+      'rekordbox',
+      'traktor',
+    ])
+    expect(rows.map((r) => r.textContent)).toEqual([
+      expect.stringContaining('Apple Music'),
+      expect.stringContaining('rekordbox'),
+      expect.stringContaining('Traktor'),
+    ])
+  })
+
+  it('opens each comparison on its own', () => {
+    const music = row({
+      id: 'appleMusic',
+      comparison: <div data-testid="comparison-music">music</div>,
+      comparisonOpen: true,
+    })
+    const rekordbox = row({
+      id: 'rekordbox',
+      name: 'rekordbox',
+      comparison: <div data-testid="comparison-rekordbox">rekordbox</div>,
+    })
+    mount({ rows: [music, rekordbox] })
+    expect(screen.getByTestId('comparison-music')).toBeInTheDocument()
+    expect(screen.queryByTestId('comparison-rekordbox')).not.toBeInTheDocument()
+    const [musicRow, rekordboxRow] = screen.getAllByTestId('library-row')
+    expect(musicRow).toHaveAttribute('aria-expanded', 'true')
+    expect(rekordboxRow).toHaveAttribute('aria-expanded', 'false')
+    expect(musicRow.getAttribute('aria-controls')).not.toBe(
+      rekordboxRow.getAttribute('aria-controls'),
+    )
+    fireEvent.click(rekordboxRow)
+    expect(rekordbox.onToggleComparison).toHaveBeenCalledTimes(1)
+    expect(music.onToggleComparison).not.toHaveBeenCalled()
   })
 })

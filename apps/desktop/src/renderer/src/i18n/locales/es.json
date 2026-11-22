@@ -1369,7 +1369,8 @@
     "libraryVerdictLibrary": "Hay una copia mejor",
     "libraryVerdictSame": "Misma copia",
     "libraryVerdictMeasuring": "Comparando…",
-    "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}",
+    "libraryRowBetter": "Mejor que este archivo"
   },
   "fields": {
     "groupIdentity": "Básicos",

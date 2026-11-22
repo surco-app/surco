@@ -66,13 +66,20 @@ function twoLibraries() {
   seratoFolder(
     join(home, 'Music'),
     [
-      { pfil: 'Users/dj/Music/old.mp3', tsng: 'Old', tart: 'Ann', tadd: daysAgo(90) },
+      {
+        pfil: 'Users/dj/Music/old.mp3',
+        tsng: 'Old',
+        tart: 'Ann',
+        tlen: '00:00',
+        tadd: daysAgo(90),
+      },
       {
         pfil: 'Users/dj/Music/new.mp3',
         tsng: 'New',
         tart: 'Bob',
         tbpm: '128.00',
         tkey: '8A',
+        tlen: '06:01.25',
         tadd: daysAgo(2),
       },
     ],
@@ -172,6 +179,17 @@ describe('the Serato tab', () => {
       title: 'Old',
       artist: 'Ann',
     })
+  })
+
+  it('reads the track length into durationSec', () => {
+    const rows = seratoCollection(readSeratoLibrary(twoLibraries().roots))
+    expect(rows.find((r) => r.title === 'New')?.durationSec).toBe(361.25)
+  })
+
+  it('leaves durationSec undefined when the length is missing or zero', () => {
+    const rows = seratoCollection(readSeratoLibrary(twoLibraries().roots))
+    expect(rows.find((r) => r.title === 'Old')?.durationSec).toBeUndefined()
+    expect(rows.find((r) => r.title === 'Gig')?.durationSec).toBeUndefined()
   })
 
   it('lists in Recently added only what Serato added in the last 30 days, newest first', () => {

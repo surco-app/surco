@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { CopyFacts, CopyReason } from '../lib/bestCopy'
 import { formatUpTo } from '../lib/numberFormat'
 
-const LIBRARY = 'Apple Music'
-
 type RowId = 'cutoff' | 'loudness' | 'crest' | 'peakCount'
 
 // The row whose figures carried the verdict. Lossy against lossless is decided by the
@@ -24,6 +22,7 @@ export function CopyComparison({
   hereLabel,
   libraryLabel,
   glimpse,
+  libraryName,
 }: {
   id?: string
   // A tie opens no card, and same audio has nothing to weigh.
@@ -34,6 +33,7 @@ export function CopyComparison({
   libraryLabel: string
   // The waves behind the verdict, set above the table.
   glimpse?: React.ReactNode
+  libraryName: string
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lang = i18n.language
@@ -103,7 +103,7 @@ export function CopyComparison({
                 {tr('editor.copyThisFile')} · {hereLabel}
               </th>
               <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                {LIBRARY} · {libraryLabel}
+                {libraryName} · {libraryLabel}
               </th>
             </tr>
           </thead>

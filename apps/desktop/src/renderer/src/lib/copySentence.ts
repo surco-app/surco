@@ -2,8 +2,6 @@ import type { TFunction } from 'i18next'
 import type { CopyFacts, CopyReason } from './bestCopy'
 import { formatUpTo } from './numberFormat'
 
-const LIBRARY = 'Apple Music'
-
 interface SentenceKeys {
   full: string
   // The same claim without its figures, for a copy whose measurement is missing: a
@@ -13,7 +11,7 @@ interface SentenceKeys {
 }
 
 // One sentence per reason and side: the side that loses is the subject, so "this file" and
-// "the Apple Music copy" each need their own wording rather than one key with a name in it.
+// "the library copy" each need their own wording rather than one key with a name in it.
 const LIBRARY_LOSES: Record<CopyReason, SentenceKeys> = {
   lossless: { full: 'editor.copyLossyLibrary', bare: 'editor.copyLossyLibrary' },
   transcode: { full: 'editor.copyTranscodeLibrary', bare: 'editor.copyTranscodeLibraryBare' },
@@ -47,13 +45,14 @@ export function copySentence(
   verdict: { winner: 'a' | 'b'; reason: CopyReason },
   here: CopyFacts,
   library: CopyFacts,
+  libraryName: string,
   tr: TFunction,
   lang: string,
 ): string {
   const num = (value: number, digits: number): string => formatUpTo(value, digits, lang)
   const [loser, winner] = verdict.winner === 'a' ? [library, here] : [here, library]
   const keys = (verdict.winner === 'a' ? LIBRARY_LOSES : HERE_LOSES)[verdict.reason]
-  const names = { loser: LIBRARY, winner: LIBRARY }
+  const names = { loser: libraryName, winner: libraryName }
   switch (verdict.reason) {
     case 'lossless':
       return tr(keys.full, { ...names, format: loser.ext, otherFormat: winner.ext })

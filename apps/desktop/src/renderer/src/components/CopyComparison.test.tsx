@@ -41,6 +41,7 @@ describe('CopyComparison', () => {
   it('shows the table with no sentence above it', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'peakCount' }}
         here={aif}
         library={wav}
@@ -53,12 +54,28 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-comparison')).not.toHaveTextContent('limiter')
   })
 
+  it('names the library it compares with in the table', () => {
+    render(
+      <CopyComparison
+        libraryName="rekordbox"
+        verdict={{ winner: 'a', reason: 'peakCount' }}
+        here={aif}
+        library={wav}
+        hereLabel="AIF"
+        libraryLabel="WAV"
+      />,
+    )
+    expect(screen.getByRole('columnheader', { name: 'rekordbox · WAV' })).toBeInTheDocument()
+    expect(screen.queryByText(/Apple Music/)).toBeNull()
+  })
+
   // Only the figure that carried the verdict is marked, and only on the side that won, in the
   // verdict's own colour: the louder loudness reading (shown, never deciding) must not be
   // mistaken for the reason, and a coloured loser read as a second verdict.
   it('marks the winning figure of the deciding row as this file when it wins', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'peakCount' }}
         here={aif}
         library={wav}
@@ -77,6 +94,7 @@ describe('CopyComparison', () => {
   it('marks the winning figure of the deciding row as the library when it wins', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'cutoff' }}
         here={{ ...aif, ext: 'MP3', cutoffHz: 16000 }}
         library={{ ...wav, ext: 'MP3', cutoffHz: 19500 }}
@@ -101,6 +119,7 @@ describe('CopyComparison', () => {
       const clean = { ...aif, cutoffHz: 22050 }
       render(
         <CopyComparison
+          libraryName="Apple Music"
           verdict={{ winner, reason: 'transcode' }}
           here={winner === 'a' ? clean : lossy}
           library={winner === 'a' ? lossy : clean}
@@ -120,6 +139,7 @@ describe('CopyComparison', () => {
   it('marks no cutoff when the winner of a lossy source does not reach higher', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'transcode' }}
         here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
         library={{ ...aif, cutoffHz: 15000 }}
@@ -136,6 +156,7 @@ describe('CopyComparison', () => {
   it('marks no figure when the formats decided', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'lossless' }}
         here={{ ...wav, cutoffHz: 16000 }}
         library={{ ...aif, ext: 'MP3', cutoffHz: 20000 }}

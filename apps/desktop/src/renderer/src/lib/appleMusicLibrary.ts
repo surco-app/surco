@@ -8,9 +8,10 @@ import { cleanName, durationProximitySec } from './release'
 // Music reported one, used to tell two versions of a title apart. persistentId names the
 // Music row so a matched old copy can be acted on (the replace flow deletes it), not just
 // detected; absent on Engine DJ rows and old-shape dumps.
-interface LibraryEntry {
+export interface LibraryEntry {
   artist: string
   durationSec?: number
+  path?: string
   parts: { base: string; suffix: string }
   persistentId?: string
   // The row's raw "Artist - Title" as Music displays it, untouched by folding. The
@@ -194,7 +195,7 @@ function titleScore(
 
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
-  for (const { title, artist, durationSec, persistentId } of tracks) {
+  for (const { title, artist, durationSec, persistentId, path } of tracks) {
     const folded = foldArtist(artist)
     // An empty artist can't identify a song and would later word-match nothing
     // meaningfully; skip the row entirely.
@@ -206,6 +207,7 @@ export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMus
     const entry: LibraryEntry = {
       artist: folded,
       durationSec,
+      path,
       parts: titleParts(title, artist),
       persistentId,
       label: `${artist} - ${title}`,
@@ -302,20 +304,34 @@ function candidateEntries(
   return { cand, entries }
 }
 
-// Whether the candidate (a track's live tags) is already in the library: it scores at least
-// LIBRARY_MATCH_THRESHOLD against some library entry sharing a title key. Bucketed by title
-// key so only the handful of plausible entries are scored, never the whole library. It's a
-// hint, not a guarantee.
+// The library entry the candidate (a track's live tags) is: the best-scoring one among those
+// sharing a title key that reaches LIBRARY_MATCH_THRESHOLD, null when none does. Bucketed by
+// title key so only the handful of plausible entries are scored, never the whole library.
+// It's a hint, not a guarantee.
+export function findLibraryEntry(
+  index: AppleMusicIndex,
+  meta: { title: string; artist: string },
+  durationSec?: number,
+): LibraryEntry | null {
+  const gathered = candidateEntries(index, { ...meta, durationSec })
+  if (!gathered) return null
+  let best: LibraryEntry | null = null
+  let bestScore = 0
+  for (const entry of gathered.entries) {
+    const score = libraryMatchScore(entry, gathered.cand)
+    if (score >= LIBRARY_MATCH_THRESHOLD && score > bestScore) {
+      best = entry
+      bestScore = score
+    }
+  }
+  return best
+}
+
 export function isInLibrary(
   index: AppleMusicIndex,
   candidate: { title: string; artist: string; durationSec?: number },
 ): boolean {
-  const gathered = candidateEntries(index, candidate)
-  if (!gathered) return false
-  for (const entry of gathered.entries) {
-    if (libraryMatchScore(entry, gathered.cand) >= LIBRARY_MATCH_THRESHOLD) return true
-  }
-  return false
+  return findLibraryEntry(index, candidate, candidate.durationSec) !== null
 }
 
 // What the replace flow needs from the superseded copy: the persistent ID to delete it

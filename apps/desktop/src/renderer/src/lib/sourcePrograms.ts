@@ -1,3 +1,4 @@
+import { queryOptions } from '@tanstack/react-query'
 import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
@@ -37,6 +38,14 @@ export const SOURCE_READ: Record<DjProgram, SourceRead> = {
   engine: sourceRead('engine', { collection: true }),
   serato: sourceRead('serato', { collection: true }),
   virtualdj: sourceRead('virtualdj', { collection: true }),
+}
+
+export function sourceCollectionOptions(p: DjProgram) {
+  return queryOptions({
+    queryKey: ['source-collection', p],
+    queryFn: () => SOURCE_READ[p].collection?.() ?? Promise.resolve([]),
+    staleTime: 60_000,
+  })
 }
 
 export type EditMessagePrefix =

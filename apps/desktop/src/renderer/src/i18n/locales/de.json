@@ -1369,7 +1369,8 @@
     "libraryVerdictLibrary": "Es gibt eine bessere Kopie",
     "libraryVerdictSame": "Gleiche Kopie",
     "libraryVerdictMeasuring": "Wird verglichen…",
-    "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}",
+    "libraryRowBetter": "Besser als diese Datei"
   },
   "fields": {
     "groupIdentity": "Grundlagen",
