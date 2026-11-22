@@ -2938,6 +2938,14 @@ describe('TrackList title of a versioned track', () => {
     expect(within(plain).queryByTestId('track-title-fit')).toBeNull()
   })
 
+  it('cuts the middle of a version in square brackets too, so a remaster still reads as one on the row', () => {
+    renderList([track({ id: 'a', meta: { title: 'Strings of Life (Original) [Remastered 2026]' } })])
+    act(() => {
+      for (const o of observed) o.fire()
+    })
+    expect(screen.getByTestId('track-title-fit')).toHaveTextContent(/… 2026\]$/)
+  })
+
   it('shows the whole title when it fits', () => {
     renderList([track({ id: 'a', meta: { title: 'Pray (Edit)' } })])
     act(() => {

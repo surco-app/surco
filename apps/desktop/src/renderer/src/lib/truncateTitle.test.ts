@@ -83,6 +83,12 @@ describe('truncateTitleMiddle', () => {
     }
   })
 
+  it('keeps a version written in square brackets, the way stores tag remasters, so two releases of one track still tell apart', () => {
+    expect(truncateTitleMiddle('Strings of Life [Remastered 2026]', 24, width)).toBe(
+      'Strings of Life [… 2026]',
+    )
+  })
+
   it('measures with the width it is handed, not with the letter count', () => {
     const wide = (s: string): number => graphemes(s).reduce((n, g) => n + (g === 'W' ? 3 : 1), 0)
     const out = truncateTitleMiddle('WWWW WWWW WWWW (Extended Mix)', 20, wide)
