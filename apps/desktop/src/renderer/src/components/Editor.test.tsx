@@ -5625,6 +5625,19 @@ describe('Editor Apple Music library section', () => {
       return api
     }
 
+    it('reads no DJ collection with several tracks selected, since the section speaks about one track', async () => {
+      const api = window.api as unknown as Record<string, unknown>
+      const dj = djReads({
+        rekordbox: {
+          collection: async () => [{ contentId: 'r1', path: '/r/A.wav', title: 'A', artist: '' }],
+        },
+      })
+      api.dj = dj
+      renderWithQuery(<MultiHarness />, { syncRekordbox: true, syncTraktor: true })
+      await new Promise((r) => setTimeout(r, 50))
+      expect(dj.collection).not.toHaveBeenCalled()
+    })
+
     it('shows rekordbox and Traktor rows when both collections hold the track', async () => {
       renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
