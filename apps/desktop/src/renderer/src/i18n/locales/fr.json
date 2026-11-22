@@ -1490,7 +1490,8 @@
       "off": "Désactivée",
       "soft": "Réparation douce",
       "standard": "Réparation standard",
-      "strong": "Réparation forte"
+      "strong": "Réparation forte",
+      "mixed": "Réglages différents"
     },
     "rowNoise": {
       "soft": "réduction de bruit douce",
@@ -1600,7 +1601,8 @@
       "none": "Loudness d’origine",
       "measured": "Sonne à {{now}} LUFS, sortira à {{target}}",
       "target": "Égalise à {{target}} LUFS",
-      "peak": "Pic à {{db}} dBFS"
+      "peak": "Pic à {{db}} dBFS",
+      "mixed": "Réglages différents"
     }
   },
   "settings": {

@@ -29,6 +29,9 @@ interface Props {
   // are not this track's loudness — they are all of them at once, and the section has to
   // say so. A count rather than a boolean because the number is the warning.
   selectedCount: number
+  // The selected tracks carry different settings, so the header cannot state one of them
+  // as if it were all; the dials keep showing the anchor's value.
+  mixed?: boolean
   format: OutputFormat
   showHints?: boolean
   onHideHints?: () => void
@@ -43,6 +46,7 @@ export function NormalizeSection({
   onChange,
   item,
   selectedCount,
+  mixed = false,
   format,
   showHints = true,
   onHideHints,
@@ -109,23 +113,25 @@ export function NormalizeSection({
         maximizable
         help={tr('normalize.editorHint')}
         summary={
-          value.mode === 'loudness'
-            ? `${
-                !isMulti && planLoudness
-                  ? tr('normalize.row.measured', {
-                      now: formatDb(planLoudness.integratedLufs, i18n.language),
-                      target: formatUpTo(value.targetLufs, 1, i18n.language),
-                    })
-                  : tr('normalize.row.target', {
-                      target: formatUpTo(value.targetLufs, 1, i18n.language),
-                    })
-              } · ${formatUpTo(value.truePeakDb, 1, i18n.language)} dBTP`
-            : value.mode === 'peak'
-              ? tr('normalize.row.peak', { db: formatUpTo(value.peakDb, 1, i18n.language) })
-              : tr('normalize.row.none')
+          mixed
+            ? tr('normalize.row.mixed')
+            : value.mode === 'loudness'
+              ? `${
+                  !isMulti && planLoudness
+                    ? tr('normalize.row.measured', {
+                        now: formatDb(planLoudness.integratedLufs, i18n.language),
+                        target: formatUpTo(value.targetLufs, 1, i18n.language),
+                      })
+                    : tr('normalize.row.target', {
+                        target: formatUpTo(value.targetLufs, 1, i18n.language),
+                      })
+                } · ${formatUpTo(value.truePeakDb, 1, i18n.language)} dBTP`
+              : value.mode === 'peak'
+                ? tr('normalize.row.peak', { db: formatUpTo(value.peakDb, 1, i18n.language) })
+                : tr('normalize.row.none')
         }
         summaryTestId="normalize-row-sentence"
-        summaryMuted={value.mode === 'none'}
+        summaryMuted={mixed || value.mode === 'none'}
       />
       <SectionBody open={open}>
         <div className="mt-4">

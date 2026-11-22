@@ -1490,7 +1490,8 @@
       "off": "Off",
       "soft": "Gentle repair",
       "standard": "Standard repair",
-      "strong": "Strong repair"
+      "strong": "Strong repair",
+      "mixed": "Mixed settings"
     },
     "rowNoise": {
       "soft": "gentle noise reduction",
@@ -1600,7 +1601,8 @@
       "none": "Original loudness",
       "measured": "Plays at {{now}} LUFS, comes out at {{target}}",
       "target": "Levels to {{target}} LUFS",
-      "peak": "Peak at {{db}} dBFS"
+      "peak": "Peak at {{db}} dBFS",
+      "mixed": "Mixed settings"
     }
   },
   "settings": {

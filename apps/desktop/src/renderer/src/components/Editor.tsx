@@ -72,6 +72,7 @@ import {
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
+import { configsDiffer } from '../lib/configsDiffer'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -2008,6 +2009,10 @@ export const Editor = memo(function Editor({
                         <DeclickSection
                           key={id}
                           value={declickCfg}
+                          mixed={
+                            isMulti &&
+                            configsDiffer((selectedTracks ?? []).map((t) => t.declick ?? declick))
+                          }
                           open={declickOpen}
                           onToggle={() => setSectionOpen('declick', !declickOpen)}
                           onChange={(d) => {
@@ -2030,6 +2035,12 @@ export const Editor = memo(function Editor({
                         <NormalizeSection
                           key={id}
                           value={normalizeCfg}
+                          mixed={
+                            isMulti &&
+                            configsDiffer(
+                              (selectedTracks ?? []).map((t) => t.normalize ?? normalize),
+                            )
+                          }
                           open={normalizeOpen}
                           onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
                           onChange={(n) => {

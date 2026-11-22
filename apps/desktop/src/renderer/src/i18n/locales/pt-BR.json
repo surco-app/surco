@@ -1490,7 +1490,8 @@
       "off": "Desativado",
       "soft": "Reparo suave",
       "standard": "Reparo padrão",
-      "strong": "Reparo forte"
+      "strong": "Reparo forte",
+      "mixed": "Ajustes diferentes"
     },
     "rowNoise": {
       "soft": "redução de ruído suave",
@@ -1600,7 +1601,8 @@
       "none": "Volume original",
       "measured": "Soa a {{now}} LUFS, sairá a {{target}}",
       "target": "Iguala a {{target}} LUFS",
-      "peak": "Pico em {{db}} dBFS"
+      "peak": "Pico em {{db}} dBFS",
+      "mixed": "Ajustes diferentes"
     }
   },
   "settings": {

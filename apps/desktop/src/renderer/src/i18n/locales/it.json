@@ -1490,7 +1490,8 @@
       "off": "Disattivata",
       "soft": "Riparazione leggera",
       "standard": "Riparazione standard",
-      "strong": "Riparazione forte"
+      "strong": "Riparazione forte",
+      "mixed": "Impostazioni diverse"
     },
     "rowNoise": {
       "soft": "riduzione del rumore leggera",
@@ -1600,7 +1601,8 @@
       "none": "Volume originale",
       "measured": "Suona a {{now}} LUFS, uscirà a {{target}}",
       "target": "Porta a {{target}} LUFS",
-      "peak": "Picco a {{db}} dBFS"
+      "peak": "Picco a {{db}} dBFS",
+      "mixed": "Impostazioni diverse"
     }
   },
   "settings": {

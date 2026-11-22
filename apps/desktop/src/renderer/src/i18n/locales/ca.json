@@ -1490,7 +1490,8 @@
       "off": "Desactivada",
       "soft": "Reparació suau",
       "standard": "Reparació estàndard",
-      "strong": "Reparació forta"
+      "strong": "Reparació forta",
+      "mixed": "Ajustos diferents"
     },
     "rowNoise": {
       "soft": "reducció de soroll suau",
@@ -1600,7 +1601,8 @@
       "none": "Volum original",
       "measured": "Sona a {{now}} LUFS, sortirà a {{target}}",
       "target": "Iguala a {{target}} LUFS",
-      "peak": "Pic a {{db}} dBFS"
+      "peak": "Pic a {{db}} dBFS",
+      "mixed": "Ajustos diferents"
     }
   },
   "settings": {

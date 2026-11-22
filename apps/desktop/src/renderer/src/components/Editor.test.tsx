@@ -1838,6 +1838,10 @@ describe('Editor multi-select', () => {
       requiredFields?: string[]
       metaA?: Partial<TrackMetadata>
       metaB?: Partial<TrackMetadata>
+      normalizeA?: NormalizeConfig
+      normalizeB?: NormalizeConfig
+      declickA?: DeclickConfig
+      declickB?: DeclickConfig
       groupingPresets?: string[]
       groupingSeparator?: string
       customFields?: Settings['customFields']
@@ -1871,6 +1875,8 @@ describe('Editor multi-select', () => {
       status,
       outputPath: opts.done ? '/out/a.aiff' : undefined,
       meta: { title: 'A', album: 'Shared', ...opts.metaA },
+      ...(opts.normalizeA && { normalize: opts.normalizeA }),
+      ...(opts.declickA && { declick: opts.declickA }),
       spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
       ...(opts.fromSeratoA && { programs: ['serato'] }),
     })
@@ -1881,6 +1887,8 @@ describe('Editor multi-select', () => {
       status,
       outputPath: opts.done ? '/out/b.aiff' : undefined,
       meta: { title: 'B', album: 'Shared', ...opts.metaB },
+      ...(opts.normalizeB && { normalize: opts.normalizeB }),
+      ...(opts.declickB && { declick: opts.declickB }),
     })
     renderWithQuery(
       <Editor
@@ -2248,6 +2256,55 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('declick-mode-standard'))
     expect(onChangeSelection).toHaveBeenCalledWith({
       declick: expect.objectContaining({ mode: 'standard' }),
+    })
+  })
+
+  // The dials show the anchor track's value, but each track converts with its own: a header
+  // that read like one setting would promise loudness the other tracks will not get.
+  describe('loudness and click settings that differ across the selection', () => {
+    const club = { mode: 'loudness' as const, targetLufs: -14, truePeakDb: -1, peakDb: -1 }
+    const folded = (id: 'normalize' | 'declick') => ({
+      editorSections: [{ id, open: false }],
+    })
+
+    it('says the tracks carry different loudness settings instead of one of them', () => {
+      renderMulti({
+        normalizeA: club,
+        normalizeB: { ...club, targetLufs: -9 },
+        settings: folded('normalize'),
+      })
+      expect(screen.getByTestId('normalize-row-sentence')).toHaveTextContent(
+        i18n.t('normalize.row.mixed'),
+      )
+    })
+
+    it('keeps the normal loudness summary when every track carries the same setting', () => {
+      renderMulti({ normalizeA: club, normalizeB: { ...club }, settings: folded('normalize') })
+      expect(screen.getByTestId('normalize-row-sentence')).not.toHaveTextContent(
+        i18n.t('normalize.row.mixed'),
+      )
+    })
+
+    it('says the tracks carry different click repair settings instead of one of them', () => {
+      renderMulti({
+        declickA: { mode: 'soft', noise: 'off' },
+        declickB: { mode: 'strong', noise: 'off' },
+        settings: folded('declick'),
+      })
+      expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(
+        i18n.t('declick.row.mixed'),
+      )
+    })
+
+    it('keeps the normal click repair summary when every track carries the same setting', () => {
+      renderMulti({
+        declickA: { mode: 'soft', noise: 'off' },
+        declickB: { mode: 'soft', noise: 'off' },
+        settings: folded('declick'),
+      })
+      expect(screen.getByTestId('declick-row-sentence')).not.toHaveTextContent(
+        i18n.t('declick.row.mixed'),
+      )
     })
   })
 

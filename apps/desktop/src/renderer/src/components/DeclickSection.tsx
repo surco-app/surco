@@ -46,6 +46,9 @@ interface Props {
   // to every selected track (see declickForJob), so with a selection open this is not
   // the anchor track's setting — it is all of them, and the section has to say so.
   selectedCount: number
+  // The selected tracks carry different settings, so the header cannot state one of them
+  // as if it were all; the mode picker keeps showing the anchor's value.
+  mixed?: boolean
   // The export format the convert button will use — the cue warning only shows for
   // the formats that actually drop the cues.
   format: OutputFormat
@@ -70,6 +73,7 @@ export function DeclickSection({
   onChange,
   inputPath,
   selectedCount,
+  mixed = false,
   format,
   trim,
   showHints = true,
@@ -317,9 +321,9 @@ export function DeclickSection({
         // clicks-found strip reads far better with the whole window to mark them in.
         sectionId="declick"
         maximizable
-        summary={rowSentence}
+        summary={mixed ? tr('declick.row.mixed') : rowSentence}
         summaryTestId="declick-row-sentence"
-        summaryMuted={!repairs}
+        summaryMuted={mixed || !repairs}
         right={
           estimate ? (
             <SectionPill tone="neutral" testid="declick-estimate-pill" numeric>
