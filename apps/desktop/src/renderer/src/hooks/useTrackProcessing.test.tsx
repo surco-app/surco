@@ -3153,6 +3153,50 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       ['rekordbox-membership'],
     ])
   })
+
+  it('re-reads the collection of every DJ program a conversion reaches, so the editor finds the new copy there without waiting a minute', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { addToTraktor: true, syncRekordbox: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const keys = invalidate.mock.calls.map(([filters]) => filters?.queryKey)
+    expect(keys).toContainEqual(['source-collection', 'rekordbox'])
+    expect(keys).toContainEqual(['source-collection', 'traktor'])
+    expect(keys).not.toContainEqual(['source-collection', 'engine'])
+  })
+
+  it('leaves the DJ collections alone when the conversion wrote nothing', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '', inPlace: false, skipped: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { addToTraktor: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).not.toContainEqual([
+      'source-collection',
+      'traktor',
+    ])
+  })
 })
 
 describe('useTrackProcessing retryVerification', () => {

@@ -7,6 +7,7 @@ export interface SeratoTrack {
   bpm: string
   key: string
   addedAt: number | null
+  durationSec?: number
 }
 
 export interface SeratoCrateNode {
@@ -45,6 +46,19 @@ function addedAtOf(text: string | undefined): number | null {
   return text && /^\d+$/.test(text) ? Number(text) : null
 }
 
+function durationOf(text: string | undefined): { durationSec?: number } {
+  const durationSec = text === undefined ? undefined : parseSeratoLength(text)
+  return durationSec === undefined ? {} : { durationSec }
+}
+
+export function parseSeratoLength(text: string): number | undefined {
+  const match = text.match(/^(?:(\d+):)?(\d+):(\d+(?:\.\d+)?)$/)
+  if (!match) return undefined
+  const [, hours, minutes, seconds] = match
+  const total = Number(hours ?? 0) * 3600 + Number(minutes) * 60 + Number(seconds)
+  return total > 0 ? total : undefined
+}
+
 export function parseSeratoDatabase(bytes: Uint8Array): SeratoTrack[] {
   const tracks: SeratoTrack[] = []
   for (const frame of framesOf(bytes).frames) {
@@ -61,6 +75,7 @@ export function parseSeratoDatabase(bytes: Uint8Array): SeratoTrack[] {
       bpm: texts.get('tbpm') ?? '',
       key: texts.get('tkey') ?? '',
       addedAt: addedAtOf(texts.get('tadd')),
+      ...durationOf(texts.get('tlen')),
     })
   }
   return tracks

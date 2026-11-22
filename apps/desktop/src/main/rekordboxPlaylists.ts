@@ -196,7 +196,7 @@ export function readRecentlyAddedCount(db: RekordboxDb, now: Date = new Date()):
 export function readRekordboxCollection(db: RekordboxDb): CollectionTrack[] {
   const rows = db
     .prepare(
-      `SELECT c.ID AS contentId, c.FolderPath, c.FileType, c.Title, a.Name AS Artist
+      `SELECT c.ID AS contentId, c.FolderPath, c.FileType, c.Title, c.Length, a.Name AS Artist
          FROM djmdContent c LEFT JOIN djmdArtist a ON a.ID = c.ArtistID
         WHERE ${ALL} AND c.FileType <> ?
         ORDER BY c.StockDate DESC, c.created_at DESC`,
@@ -206,6 +206,7 @@ export function readRekordboxCollection(db: RekordboxDb): CollectionTrack[] {
     FolderPath: string
     FileType: number
     Title: string | null
+    Length: number | null
     Artist: string | null
   }[]
   return rows.map((row) => ({
@@ -213,6 +214,7 @@ export function readRekordboxCollection(db: RekordboxDb): CollectionTrack[] {
     path: row.FileType === STREAMING_FILE_TYPE ? null : entryPath(row.FolderPath),
     title: row.Title ?? '',
     artist: row.Artist ?? '',
+    ...(row.Length ? { durationSec: row.Length } : {}),
   }))
 }
 

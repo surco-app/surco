@@ -224,13 +224,20 @@ export function readEngineTrackCount(db: EngineDb): number {
 
 export function readEngineCollection(db: EngineDb, libraryDir: string): CollectionTrack[] {
   const rows = db
-    .prepare('SELECT id, path, title, artist FROM Track ORDER BY dateAdded DESC, id DESC')
-    .all() as { id: number; path: string | null; title: string | null; artist: string | null }[]
+    .prepare('SELECT id, path, title, artist, length FROM Track ORDER BY dateAdded DESC, id DESC')
+    .all() as {
+    id: number
+    path: string | null
+    title: string | null
+    artist: string | null
+    length: number | null
+  }[]
   return rows.map((row) => ({
     contentId: engineContentId(row.id),
     path: row.path ? resolve(libraryDir, row.path) : null,
     title: row.title ?? '',
     artist: row.artist ?? '',
+    ...(row.length ? { durationSec: row.length } : {}),
   }))
 }
 

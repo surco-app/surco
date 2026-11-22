@@ -33,6 +33,8 @@ export const markedIds = (db: Db): string[] =>
 const membership = collectionMemo(membershipSnapshot)
 const marked = collectionMemo((db) => markedIds(db).length)
 
+const collectionDump = collectionMemo(readRekordboxCollection)
+
 const finder = collectionMemo(trackFinder)
 
 export function trackOfCollection(
@@ -60,7 +62,11 @@ const READS = {
   tree: { empty: [], run: fresh((db, _arg: undefined) => readRekordboxTree(db)) },
   recentCount: { empty: 0, run: fresh((db, _arg: undefined) => readRecentlyAddedCount(db)) },
   trackCount: { empty: 0, run: fresh((db, _arg: undefined) => readRekordboxTrackCount(db)) },
-  collection: { empty: [], run: fresh((db, _arg: undefined) => readRekordboxCollection(db)) },
+  collection: {
+    empty: [],
+    run: (path: string, key: string | undefined, _arg: undefined) =>
+      collectionDump(path, key) ?? [],
+  },
   matching: { empty: [], run: fresh((db, _arg: undefined) => readMatchingPairs(db)) },
   playedTogether: {
     empty: [],

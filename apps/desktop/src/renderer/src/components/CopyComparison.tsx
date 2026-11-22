@@ -3,8 +3,6 @@ import { useTranslation } from 'react-i18next'
 import type { CopyFacts, CopyReason, CopyVerdict } from '../lib/bestCopy'
 import { formatUpTo } from '../lib/numberFormat'
 
-const LIBRARY = 'Apple Music'
-
 interface SentenceKeys {
   full: string
   // The same claim without its figures, for a copy whose measurement is missing: a
@@ -14,7 +12,7 @@ interface SentenceKeys {
 }
 
 // One sentence per reason and side: the side that loses is the subject, so "this file" and
-// "the Apple Music copy" each need their own wording rather than one key with a name in it.
+// "the library copy" each need their own wording rather than one key with a name in it.
 const LIBRARY_LOSES: Record<CopyReason, SentenceKeys> = {
   lossless: { full: 'editor.copyLossyLibrary', bare: 'editor.copyLossyLibrary' },
   transcode: { full: 'editor.copyTranscodeLibrary', bare: 'editor.copyTranscodeLibraryBare' },
@@ -61,6 +59,7 @@ export function CopyComparison({
   hereLabel,
   libraryLabel,
   glimpse,
+  libraryName,
 }: {
   id?: string
   // A tie opens no card: the pill does not show for one.
@@ -71,6 +70,7 @@ export function CopyComparison({
   libraryLabel: string
   // The waves behind the sentence, set between it and the table.
   glimpse?: React.ReactNode
+  libraryName: string
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const lang = i18n.language
@@ -82,7 +82,7 @@ export function CopyComparison({
     if (verdict.winner === 'same') return tr('editor.copySameAudio')
     const [loser, winner] = verdict.winner === 'a' ? [library, here] : [here, library]
     const keys = (verdict.winner === 'a' ? LIBRARY_LOSES : HERE_LOSES)[verdict.reason]
-    const names = { loser: LIBRARY, winner: LIBRARY }
+    const names = { loser: libraryName, winner: libraryName }
     switch (verdict.reason) {
       case 'lossless':
         return tr(keys.full, { ...names, format: loser.ext, otherFormat: winner.ext })
@@ -186,7 +186,7 @@ export function CopyComparison({
                   {tr('editor.copyThisFile')} · {hereLabel}
                 </th>
                 <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                  {LIBRARY} · {libraryLabel}
+                  {libraryName} · {libraryLabel}
                 </th>
               </tr>
             </thead>

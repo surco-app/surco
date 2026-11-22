@@ -156,6 +156,7 @@ export function seratoCollection(library: SeratoLibrary): CollectionTrack[] {
     path: t.file,
     title: t.title,
     artist: t.artist,
+    ...(t.durationSec === undefined ? {} : { durationSec: t.durationSec }),
   }))
 }
 

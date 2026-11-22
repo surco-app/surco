@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { effectiveMeta, strayTags } from '../../../shared/customFields'
 import { DEFAULT_FIELDS } from '../../../shared/defaults'
-import { type DjProgram, WRITABLE_PROGRAMS } from '../../../shared/djProgram'
+import { DJ_PROGRAMS, type DjProgram, WRITABLE_PROGRAMS } from '../../../shared/djProgram'
+import { DJ_REACH_SETTINGS } from '../../../shared/djSettings'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
 import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
@@ -204,6 +205,16 @@ export function useTrackProcessing({
     for (const program of WRITABLE_PROGRAMS)
       if (TRACK_PROGRAMS[program].rereadAfterMove)
         queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[program].membershipKey] })
+  }
+  const wroteRef = useRef(false)
+  const rereadReachedCollections = (): void => {
+    if (!wroteRef.current) return
+    wroteRef.current = false
+    for (const program of DJ_PROGRAMS) {
+      const { sync, add } = DJ_REACH_SETTINGS[program]
+      if (settings?.[sync] || settings?.[add])
+        queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
+    }
   }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
@@ -512,6 +523,7 @@ export function useTrackProcessing({
         // showing the old output as "after". An in-place export additionally rewrote
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
+        wroteRef.current = true
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
         // "Apple Music only" can move the row too: to the copy Music landed (exportedPatch).
         const movedTo = result.inPlace ? result.outputPath : result.musicLandedPath
@@ -608,6 +620,7 @@ export function useTrackProcessing({
       } finally {
         window.api.endConversionBatch()
         rereadMovedSources()
+        rereadReachedCollections()
       }
     },
   )
@@ -804,6 +817,7 @@ export function useTrackProcessing({
         // during the NEXT batch instead.
         window.api.endConversionBatch()
         rereadMovedSources()
+        rereadReachedCollections()
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.

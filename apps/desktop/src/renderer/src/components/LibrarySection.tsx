@@ -15,36 +15,33 @@ const verdictBadge: Record<LibraryVerdict, { tone: 'good' | 'warn' | 'neutral'; 
   measuring: { tone: 'neutral', label: 'editor.libraryVerdictMeasuring' },
 }
 
-interface Props {
-  open: boolean
-  onToggle: () => void
-  libraryName: string
-  verdict: LibraryVerdict | null
-  copyFormat: string
-  libraryBetter: boolean
+export interface LibraryRow {
+  id: string
+  name: string
+  format: string
+  better: boolean
   comparison?: React.ReactNode
   comparisonOpen: boolean
   onToggleComparison: () => void
 }
 
-export function LibrarySection({
-  open,
-  onToggle,
-  libraryName,
-  verdict,
-  copyFormat,
-  libraryBetter,
-  comparison,
-  comparisonOpen,
-  onToggleComparison,
-}: Props): React.JSX.Element {
+interface Props {
+  open: boolean
+  onToggle: () => void
+  verdict: LibraryVerdict | null
+  rows: LibraryRow[]
+}
+
+const rowClass = 'flex h-[30px] w-full items-center gap-2 pl-3 pr-3 text-left text-xs'
+
+function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const comparisonId = useId()
-  const badge = verdict ? verdictBadge[verdict] : null
+  const { comparison, comparisonOpen } = row
   const rowContent = (
     <>
       <span className="flex h-1.5 w-1.5 shrink-0">
-        {libraryBetter && (
+        {row.better && (
           <span
             data-testid="library-row-better"
             role="img"
@@ -53,8 +50,8 @@ export function LibrarySection({
           />
         )}
       </span>
-      <span className="truncate text-fg">{libraryName}</span>
-      <span className="ml-auto shrink-0 text-fg-dim tabular-nums">{copyFormat}</span>
+      <span className="truncate text-fg">{row.name}</span>
+      <span className="ml-auto shrink-0 text-fg-dim tabular-nums">{row.format}</span>
       {comparison && (
         <ChevronRight
           className={`h-3 w-3 shrink-0 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
@@ -63,7 +60,33 @@ export function LibrarySection({
       )}
     </>
   )
-  const rowClass = 'flex h-[30px] w-full items-center gap-2 pl-3 pr-3 text-left text-xs'
+  return (
+    <>
+      {comparison ? (
+        <button
+          type="button"
+          data-testid="library-row"
+          data-row={row.id}
+          aria-expanded={comparisonOpen}
+          aria-controls={comparisonId}
+          onClick={row.onToggleComparison}
+          className={`press rounded-md hover:bg-[var(--color-hover)] ${rowClass}`}
+        >
+          {rowContent}
+        </button>
+      ) : (
+        <div data-testid="library-row" data-row={row.id} className={rowClass}>
+          {rowContent}
+        </div>
+      )}
+      {comparison && comparisonOpen && <div id={comparisonId}>{comparison}</div>}
+    </>
+  )
+}
+
+export function LibrarySection({ open, onToggle, verdict, rows }: Props): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const badge = verdict ? verdictBadge[verdict] : null
   return (
     <div data-testid="library-section" className="relative">
       <SectionHeader
@@ -81,23 +104,9 @@ export function LibrarySection({
       />
       <SectionBody open={open}>
         <div className="mt-2">
-          {comparison ? (
-            <button
-              type="button"
-              data-testid="library-row"
-              aria-expanded={comparisonOpen}
-              aria-controls={comparisonId}
-              onClick={onToggleComparison}
-              className={`press rounded-md hover:bg-[var(--color-hover)] ${rowClass}`}
-            >
-              {rowContent}
-            </button>
-          ) : (
-            <div data-testid="library-row" className={rowClass}>
-              {rowContent}
-            </div>
-          )}
-          {comparison && comparisonOpen && <div id={comparisonId}>{comparison}</div>}
+          {rows.map((row) => (
+            <LibraryRowItem key={row.id} row={row} />
+          ))}
         </div>
       </SectionBody>
     </div>

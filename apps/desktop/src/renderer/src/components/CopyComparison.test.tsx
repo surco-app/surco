@@ -35,6 +35,7 @@ describe('CopyComparison', () => {
   it('argues the Netzwerk verdict with the measured numbers, colouring only the deciding rows', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'peakCount' }}
         here={aif}
         library={wav}
@@ -49,11 +50,30 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-row-loudness')).not.toHaveAttribute('data-decides')
   })
 
+  it('names the library it compares with in the sentence and the table', () => {
+    render(
+      <CopyComparison
+        libraryName="rekordbox"
+        verdict={{ winner: 'a', reason: 'peakCount' }}
+        here={aif}
+        library={wav}
+        hereLabel="AIF"
+        libraryLabel="WAV"
+      />,
+    )
+    expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
+      'The rekordbox copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
+    )
+    expect(screen.getByRole('columnheader', { name: 'rekordbox · WAV' })).toBeInTheDocument()
+    expect(screen.queryByText(/Apple Music/)).toBeNull()
+  })
+
   // A limiter does not always leave the copy louder; claiming "N dB louder" when it is not
   // would be a false statement, so the loudness clause drops instead.
   it('does not call the limited copy louder when it is not', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'peakCount' }}
         here={{ ...wav, integratedLufs: -12.2 }}
         library={{ ...aif, integratedLufs: -10 }}
@@ -71,6 +91,7 @@ describe('CopyComparison', () => {
   it('does not claim a limiter when the pinned samples are not known', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'peakCount' }}
         here={{ ...wav, peakCount: null }}
         library={aif}
@@ -86,6 +107,7 @@ describe('CopyComparison', () => {
   it('names the formats when a knee-less 16 kHz WAV beats a 20 kHz MP3', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'lossless' }}
         here={{ ...wav, cutoffHz: 16000 }}
         library={{ ...aif, ext: 'MP3', cutoffHz: 20000 }}
@@ -102,6 +124,7 @@ describe('CopyComparison', () => {
   it('names the formats when this file is the lossy one', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'lossless' }}
         here={{ ...aif, ext: 'MP3', cutoffHz: 16000 }}
         library={wav}
@@ -117,6 +140,7 @@ describe('CopyComparison', () => {
   it('colours the cutoff row when the cutoff decided', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'cutoff' }}
         here={{ ...aif, ext: 'MP3', cutoffHz: 16000 }}
         library={{ ...wav, ext: 'MP3', cutoffHz: 19500 }}
@@ -135,6 +159,7 @@ describe('CopyComparison', () => {
   it('drops a cutoff it does not have instead of printing a placeholder', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'transcode' }}
         here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
         library={{ ...aif, cutoffHz: undefined }}
@@ -163,6 +188,7 @@ describe('CopyComparison', () => {
       for (const winner of ['a', 'b'] as const) {
         render(
           <CopyComparison
+            libraryName="Apple Music"
             verdict={{ winner, reason }}
             here={bare(aif)}
             library={bare(wav)}
@@ -193,6 +219,7 @@ describe('CopyComparison', () => {
     for (const winner of ['a', 'b'] as const) {
       render(
         <CopyComparison
+          libraryName="Apple Music"
           verdict={{ winner, reason }}
           here={aif}
           library={wav}
@@ -213,6 +240,7 @@ describe('CopyComparison', () => {
   it('says the two copies are the same audio in one sentence, with no table', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'same' }}
         here={aif}
         library={wav}
@@ -233,6 +261,7 @@ describe('CopyComparison', () => {
   it('only says how far the winner reaches when it reaches higher', () => {
     const { rerender } = render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'transcode' }}
         here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
         library={{ ...aif, cutoffHz: 15000, hasKnee: false }}
@@ -246,6 +275,7 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-sentence').textContent).not.toContain('15')
     rerender(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'transcode' }}
         here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
         library={{ ...aif, cutoffHz: 22050, hasKnee: false }}
@@ -261,6 +291,7 @@ describe('CopyComparison', () => {
   it('drops the cutoffs when they print as the same figure', () => {
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'b', reason: 'transcode' }}
         here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
         library={{ ...aif, cutoffHz: 16040, hasKnee: false }}
@@ -279,6 +310,7 @@ describe('CopyComparison', () => {
     await i18n.changeLanguage('es')
     render(
       <CopyComparison
+        libraryName="Apple Music"
         verdict={{ winner: 'a', reason: 'upsampled' }}
         here={aif}
         library={wav}

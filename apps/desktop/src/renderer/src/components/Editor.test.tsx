@@ -194,6 +194,8 @@ function renderEditor(
     addToEngineDj?: boolean
     addToTraktor?: boolean
     addToRekordbox?: boolean
+    syncRekordbox?: boolean
+    syncTraktor?: boolean
     traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
@@ -300,6 +302,8 @@ function renderEditor(
       addToEngineDj: props.addToEngineDj ?? false,
       addToTraktor: props.addToTraktor ?? false,
       addToRekordbox: props.addToRekordbox ?? false,
+      ...(props.syncRekordbox ? { syncRekordbox: true } : {}),
+      ...(props.syncTraktor ? { syncTraktor: true } : {}),
       traktorNmlPath: props.traktorNmlPath ?? '',
       keepMp3Sources: props.keepMp3Sources ?? false,
       overwriteOriginal: props.overwriteOriginal ?? false,
@@ -5162,17 +5166,24 @@ describe('Editor Apple Music library section', () => {
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
-  // With Engine DJ as the destination the same section reads the Engine library, and its row
-  // names it, so the user sees which library the track is in. Not macOS-gated: the Engine
-  // database is plain SQLite on every platform.
-  it('shows Engine DJ with no verdict', () => {
+  // With Engine DJ on, the section reads the Engine collection, and its row names it, so the
+  // user sees which library the track is in. Not macOS-gated: the Engine database is plain
+  // SQLite on every platform.
+  it('shows Engine DJ from the Engine collection', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.dj = djReads({
+      engine: {
+        collection: async () => [
+          { contentId: 'e1', path: '/e/Strobe.wav', title: 'Strobe', artist: 'deadmau5' },
+        ],
+      },
+    })
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
       addToEngineDj: true,
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('library-row')).toHaveTextContent('Engine DJ')
-    expect(screen.queryByTestId('library-verdict')).toBeNull()
+    expect(await screen.findByTestId('library-row')).toHaveTextContent('Engine DJ')
   })
 
   // The complement: a song not found in the snapshot shows nothing, because the editor
@@ -5470,6 +5481,21 @@ describe('Editor Apple Music library section', () => {
     expect(api.comparePair).not.toHaveBeenCalled()
   })
 
+  it('names no format on the Apple Music row when the file in hand is that copy, since there is nothing to weigh it against', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: wavLoudness,
+      herePath: '/music/strobe.wav'.normalize('NFD'),
+    })
+    api.properties = vi.fn(async (path: string) => (path === '/Music/Strobe.wav' ? mp3Copy : null))
+    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
+    await new Promise((r) => setTimeout(r, 50))
+    const row = screen.getByTestId('library-row')
+    expect(row.textContent).toBe('Apple Music')
+    expect(row.tagName).not.toBe('BUTTON')
+    expect(screen.queryByTestId('library-row-better')).toBeNull()
+  })
+
   it('opens the numbers from the library row without folding any section', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
@@ -5759,6 +5785,185 @@ describe('Editor Apple Music library section', () => {
       libraryIndex: owned,
     })
     expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  describe('rows for the DJ programs that hold the track', () => {
+    type Copy = { path: string; loudness: LoudnessResult | null; lossy?: boolean }
+
+    function renderWithPrograms({
+      rekordbox,
+      traktor,
+      here = aifLoudness,
+      herePath = '/music/Strobe.aif',
+      syncTraktor = true,
+      index = owned,
+    }: {
+      rekordbox?: Copy | 'other'
+      traktor?: Copy
+      here?: LoudnessResult
+      herePath?: string
+      syncTraktor?: boolean
+      index?: AppleMusicIndex
+    }): Record<string, unknown> {
+      setApi('win32')
+      const api = window.api as unknown as Record<string, unknown>
+      const copies = [rekordbox, traktor].filter((c): c is Copy => !!c && c !== 'other')
+      const copyAt = (path: string) => copies.find((c) => c.path === path)
+      const entry = (path: string, title = 'Strobe') => [
+        { contentId: path, path, title, artist: 'deadmau5' },
+      ]
+      api.dj = djReads({
+        rekordbox: {
+          collection: async () =>
+            rekordbox === 'other'
+              ? entry('/r/Other.wav', 'Other')
+              : rekordbox
+                ? entry(rekordbox.path)
+                : [],
+        },
+        traktor: { collection: async () => (traktor ? entry(traktor.path) : []) },
+      })
+      api.peekAnalysis = vi.fn().mockResolvedValue(null)
+      api.spectrogram = vi.fn(async (path: string) => {
+        const lossy = copyAt(path)?.lossy ?? false
+        return {
+          image: '',
+          cutoffHz: lossy ? 16000 : 22050,
+          sampleRateHz: 44100,
+          processed: false,
+          hasKnee: lossy,
+        }
+      })
+      api.loudness = vi.fn(async (path: string) => {
+        const copy = copyAt(path)
+        return copy ? copy.loudness : here
+      })
+      api.fingerprint = vi.fn(async (path: string) => path)
+      api.comparePair = vi.fn(async () => ({
+        correlation: 0.9956,
+        residualDb: -20.5,
+        gainDb: -2.2,
+      }))
+      api.properties = vi.fn(async (path: string) =>
+        copyAt(path) || path === herePath
+          ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
+          : null,
+      )
+      renderEditor(
+        { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
+        'wav',
+        {
+          libraryIndex: index,
+          showLoudness: true,
+          addToAppleMusic: false,
+          syncRekordbox: true,
+          syncTraktor,
+        },
+      )
+      return api
+    }
+
+    it('reads no DJ collection with several tracks selected, since the section speaks about one track', async () => {
+      const api = window.api as unknown as Record<string, unknown>
+      const dj = djReads({
+        rekordbox: {
+          collection: async () => [{ contentId: 'r1', path: '/r/A.wav', title: 'A', artist: '' }],
+        },
+      })
+      api.dj = dj
+      renderWithQuery(<MultiHarness />, { syncRekordbox: true, syncTraktor: true })
+      await new Promise((r) => setTimeout(r, 50))
+      expect(dj.collection).not.toHaveBeenCalled()
+    })
+
+    it('reads no DJ collection while the section is hidden, since nothing would show what it found', async () => {
+      setApi('win32')
+      const api = window.api as unknown as Record<string, unknown>
+      const dj = djReads({
+        rekordbox: {
+          collection: async () => [
+            { contentId: 'r1', path: '/r/Strobe.wav', title: 'Strobe', artist: 'deadmau5' },
+          ],
+        },
+      })
+      api.dj = dj
+      renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+        syncRekordbox: true,
+        editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+          s.id === 'library' ? { ...s, hidden: true } : s,
+        ),
+      })
+      await new Promise((r) => setTimeout(r, 50))
+      expect(dj.collection).not.toHaveBeenCalled()
+    })
+
+    it('shows rekordbox and Traktor rows when both collections hold the track', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness },
+      })
+      await waitFor(() => expect(screen.getAllByTestId('library-row')).toHaveLength(2))
+      const rows = screen.getAllByTestId('library-row')
+      expect(rows.map((r) => r.getAttribute('data-row'))).toEqual(['rekordbox', 'traktor'])
+      expect(rows[0]).toHaveTextContent('rekordbox')
+      expect(rows[1]).toHaveTextContent('Traktor')
+    })
+
+    it('shows the rekordbox row without comparison when this file is the rekordbox copy, since there is no second file to weigh', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/MUSIC/strobe.aif'.normalize('NFD'), loudness: aifLoudness },
+      })
+      const row = await screen.findByTestId('library-row')
+      await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/music/Strobe.aif'))
+      expect(row).toHaveAttribute('data-row', 'rekordbox')
+      expect(row.tagName).not.toBe('BUTTON')
+      expect(row.textContent).toBe('rekordbox')
+      expect(row.querySelector('svg')).toBeNull()
+      expect(screen.queryByTestId('library-row-better')).toBeNull()
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
+      expect(api.comparePair).not.toHaveBeenCalled()
+    })
+
+    it('says there is a better copy when any program holds one, even if another holds a worse one', async () => {
+      renderWithPrograms({
+        here: wavLoudness,
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, lossy: true },
+        traktor: { path: '/t/Strobe.wav', loudness: aifLoudness },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent("There's a better copy"),
+      )
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
+      const [rekordboxRow, traktorRow] = screen.getAllByTestId('library-row')
+      expect(within(rekordboxRow).queryByTestId('library-row-better')).toBeNull()
+      expect(within(traktorRow).getByTestId('library-row-better')).toBeInTheDocument()
+    })
+
+    it('names the program in the comparison table', async () => {
+      renderWithPrograms({ rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness } })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
+      )
+      fireEvent.click(screen.getByTestId('library-row'))
+      expect(
+        await screen.findByRole('columnheader', { name: 'rekordbox · WAV 16/44.1' }),
+      ).toBeInTheDocument()
+      expect(screen.getByTestId('copy-sentence')).toHaveTextContent('The rekordbox copy')
+    })
+
+    it('shows no section when no enabled program holds the track and it is not in Apple Music', async () => {
+      const api = renderWithPrograms({
+        rekordbox: 'other',
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness },
+        syncTraktor: false,
+        index: buildLibraryIndex([{ title: 'Other', artist: 'Someone' }]),
+      })
+      const dj = api.dj as { collection: ReturnType<typeof vi.fn> }
+      await waitFor(() => expect(dj.collection).toHaveBeenCalledWith('rekordbox'))
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.queryByTestId('library-section')).toBeNull()
+      expect(dj.collection).not.toHaveBeenCalledWith('traktor')
+    })
   })
 })
 
