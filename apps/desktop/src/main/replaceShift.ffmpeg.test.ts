@@ -51,7 +51,7 @@ describe('measureReplaceShift', () => {
   const mp3 = join(dir, 'new.mp3')
   const short = join(dir, 'short.flac')
   beforeAll(() => {
-    music(old, 90)
+    music(old, 200)
     derive(old, lead, ['-af', 'adelay=1500:all=1'])
     derive(old, mp3, ['-b:a', '320k'])
     music(short, 40)

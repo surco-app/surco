@@ -13,7 +13,7 @@ import {
 // When a DJ swaps a file for a better master, the cues they placed on the old one only stay on
 // the beat if the new audio sits at the same time or we move them by exactly the measured shift.
 // These tests pin both the sign of that shift and the cases where moving would be a guess.
-const SECONDS = 120
+const SECONDS = 200
 
 function noise(seed: number, seconds = SECONDS): Float32Array {
   const out = new Float32Array(Math.round(seconds * PAIR_RATE))
@@ -84,7 +84,7 @@ describe('replaceShiftOf', () => {
   // Moving with a doubtful measure is the anti-goal: a cue 50 ms off is audible in the booth, so when
   // the end disagrees with the start (another edit) the DJ's cues stay where they were.
   it('leaves the cues alone when the end does not line up with the start', () => {
-    const mid = samples(60)
+    const mid = samples(100)
     const { head, tail } = windowsFor(
       old,
       concat(zeros(1.5), old.slice(0, mid), zeros(0.05), old.slice(mid)),
@@ -95,7 +95,7 @@ describe('replaceShiftOf', () => {
   // An end that is a different recording means the files are not the same master, so any lag found
   // there is noise and must not move a cue.
   it('leaves them alone when the end is another recording', () => {
-    const mid = samples(60)
+    const mid = samples(100)
     const { head, tail } = windowsFor(
       old,
       concat(zeros(1.5), old.slice(0, mid), noise(2).slice(mid)),
@@ -132,7 +132,7 @@ describe('replaceShiftOf', () => {
   // Two windows a sample or two apart are the same placement; refusing them would leave cues behind
   // on files that are simply the same master re-encoded. The gap is the tolerance in whole samples.
   it('accepts two windows that agree within the tolerance', () => {
-    const mid = samples(60)
+    const mid = samples(100)
     const gap = new Float32Array(Math.floor((REPLACE_TOLERANCE_MS * PAIR_RATE) / 1000))
     const { head, tail } = windowsFor(
       old,
@@ -175,8 +175,8 @@ describe('replaceShiftOf', () => {
     const bars = loop(noise(6, 1.875), SECONDS)
     const shared = noise(7)
     const layer = noise(8)
-    const master = bars.map((x, i) => x + 0.184 * shared[i])
-    const remaster = master.map((x, i) => x + 0.433 * layer[i])
+    const master = bars.map((x, i) => x + 0.207 * shared[i])
+    const remaster = master.map((x, i) => x + 0.256 * layer[i])
     const { head, tail } = windowsFor(master, concat(zeros(1.5), remaster))
     expect(replaceShiftOf(head, tail)).toEqual({ unmoved: 'noMatch' })
   })

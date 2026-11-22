@@ -1,13 +1,25 @@
 import type { ReplaceShift } from '../shared/replaceShift'
 import { correlationAt, lagCorrelations, PAIR_RATE } from './pcmLag'
 
-// Provisional until the sweep of task 4 fixes them on real masters, the peak margin included. The head window has to start
-// at least one reach into the track so the new file's search span never begins before zero.
-export const REPLACE_REACH_SECONDS = 10
-export const REPLACE_HEAD_AT_SECONDS = 30
-export const REPLACE_TAIL_BEFORE_END_SECONDS = 30
+// Fixed by replaceShiftSweep.test.ts (22/11) on 234 real same-track pairs (12 kept originals, 75
+// Apple Music/rekordbox copies, 147 downloads against their Apple Music copy) and two negative
+// controls (233 random cross pairs, 5 Matching pairs). 176 positives agree on one shift in every
+// window; the largest real one is 4.45 s, so a 5 s reach covers it, and a wider reach only finds
+// more bars of the same loop: at 30 s a radio edit matched its extended mix 26.7 s off. Intros and
+// outros are loops, so the windows sit deep inside: at 30 s from either end 73 of 234 pairs came
+// out ambiguous, at 90 s 17. The pairs that line up in both windows differ by at most 0.98 ms
+// (a 4 ppm clock drift), hence 2 ms; the one pair at 7.85 ms is an edit (a constant step between
+// head and tail) and has to stay unmoved. No negative window got past 0.65, so 0.95 costs nothing
+// there and, as the ceiling of the rival test, lets a looped bar at 0.9 to 0.95 stand beside a
+// true peak above it by the margin. With these, 156 of 234 move (all to the shift every window
+// agrees on), 58 are another master, 17 ambiguous, 2 too short, 1 drift; no negative pair moves.
+// The head window has to start at least one reach into the track so the new file's search span
+// never begins before zero.
+export const REPLACE_REACH_SECONDS = 5
+export const REPLACE_HEAD_AT_SECONDS = 90
+export const REPLACE_TAIL_BEFORE_END_SECONDS = 90
 export const REPLACE_TOLERANCE_MS = 2
-export const REPLACE_MIN_CORRELATION = 0.9
+export const REPLACE_MIN_CORRELATION = 0.95
 export const REPLACE_WINDOW_SECONDS = 5
 export const REPLACE_PEAK_MARGIN = 0.05
 export const REPLACE_PEAK_EXCLUDE_MS = 50
