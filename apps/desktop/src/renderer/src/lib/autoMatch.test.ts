@@ -516,6 +516,18 @@ describe('autoMatchRelease Bandcamp suggestions', () => {
     expect(m?.confidence).toBe(1)
   })
 
+  // Same length is all a wrong release shares with the file; with the act contradicting,
+  // the sweep must not write that release unattended.
+  it('never applies a Bandcamp match whose artist contradicts the file', async () => {
+    const m = await autoMatchRelease(
+      'my song',
+      { ...byArtist, artist: 'Da Crew' },
+      bandcampOnly([{ position: '1', title: 'My Song', duration: '3:20' }]),
+    )
+
+    expect(m?.tier).not.toBe('high')
+  })
+
   // The curated source keeps precedence: its suggestion stands over Bandcamp's.
   it('keeps a Discogs suggestion over a Bandcamp one', async () => {
     const api = {

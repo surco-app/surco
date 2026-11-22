@@ -338,7 +338,22 @@ export function corroboratedTier(
   const tier = confidenceTier(confidence)
   if (tier !== 'high') return tier
   const s = matchSignals(target, rel, track, catalogMatched)
+  if (contradictsFileArtist(target, rel, track, s)) return 'review'
   return s.durations || s.artistAgrees || s.catalogMatched ? 'high' : 'review'
+}
+
+// An uncurated source (anything but Discogs) naming an artist, with none of them the file's
+// act, is another release that merely shares a title and a length: durations or a catalog
+// number alone must not write it unattended. A candidate naming no artist (a track by
+// another act on a mixed label page) claims nothing, so it never contradicts.
+function contradictsFileArtist(
+  target: TrackMatchTarget,
+  rel: Release,
+  track: ReleaseTrack,
+  signals: MatchSignals,
+): boolean {
+  if (rel.provider === 'discogs' || !target.artist || signals.artistAgrees) return false
+  return [...(track.artists ?? []), ...(rel.artists ?? [])].some((a) => a.name.trim() !== '')
 }
 
 // The guard's three title-independent signals, one flag each. Kept readable per signal
