@@ -2146,4 +2146,20 @@ describe('traktorFlushDeps with only Add to Traktor on', () => {
       settle()
     }
   })
+
+  it('writes nothing when the collection is not found', () => {
+    Object.assign(SETTINGS, {
+      syncTraktor: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    STATUS.traktor = { enabled: true, found: false }
+    try {
+      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
+        '',
+      )
+    } finally {
+      settle()
+    }
+  })
 })

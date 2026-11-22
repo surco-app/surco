@@ -18,7 +18,7 @@ vi.mock('./settings', () => ({
 
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio, toNmlLocation } from './ffmpeg'
-import { beginNmlBatch, endNmlBatch } from './nmlBatch'
+import { beginNmlBatch, endNmlBatch, redirectNmlPatch } from './nmlBatch'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-nmlreplace-add-'))
@@ -104,5 +104,21 @@ describe('the collection patch a replace records with only Add to Traktor on', (
     await convertAudio(download, out, 'aiff', meta)
 
     expect(endNmlBatch()).toEqual([])
+  })
+
+  // With Apple Music only, the file lands in Music's folder and the temp it was written to
+  // is deleted. A move that cannot follow it would point the entry at a path that is gone.
+  it("with only Add to Traktor on, a replace follows the file into Music's folder", async () => {
+    beginNmlBatch()
+    await convertAudio(...replaceArgs())
+    const landed = join(dir, 'Music', 'Media', 'Song.aiff')
+    redirectNmlPatch(out, landed, toNmlLocation(landed))
+    const [patch] = endNmlBatch()
+
+    expect(patch).toMatchObject({
+      outputDir: toNmlLocation(landed).dir,
+      outputFile: 'Song.aiff',
+    })
+    expect(patch?.outputDir).toContain('Media')
   })
 })

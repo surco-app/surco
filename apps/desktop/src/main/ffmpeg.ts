@@ -2052,19 +2052,22 @@ function recordConversionPatch(
     const outputLocation = toNmlLocation(output)
     const outputName = basename(output)
     if (!syncing && replaces) {
-      recordNmlPatch({
-        volume,
-        dir,
-        file,
-        relocates: true,
-        outputVolume: outputLocation.volume,
-        outputDir: outputLocation.dir,
-        outputFile: outputLocation.file,
-        cueShift:
-          replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
-            ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
-            : undefined,
-      })
+      recordNmlPatch(
+        {
+          volume,
+          dir,
+          file,
+          relocates: true,
+          outputVolume: outputLocation.volume,
+          outputDir: outputLocation.dir,
+          outputFile: outputLocation.file,
+          cueShift:
+            replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
+              ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
+              : undefined,
+        },
+        { input, output },
+      )
       return
     }
     const sameDir = dirname(input) === dirname(output)
