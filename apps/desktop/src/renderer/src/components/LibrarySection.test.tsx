@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { hoverTooltip } from '../test/tooltip'
@@ -19,7 +19,6 @@ function mount(props: Partial<Parameters<typeof LibrarySection>[0]> = {}) {
       librarySource="appleMusic"
       verdict="here"
       copyFormat="FLAC 44,1 kHz"
-      libraryBetter={false}
       comparison={<div data-testid="comparison">numbers</div>}
       comparisonOpen={false}
       onToggleComparison={onToggleComparison}
@@ -103,15 +102,13 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row-format')).toHaveTextContent('AIFF 24/48')
   })
 
-  it('marks the row only when the library copy is better', () => {
-    mount({ libraryBetter: true })
-    expect(screen.getByTestId('library-row-better')).toHaveAttribute(
-      'aria-label',
-      'Mejor que este archivo',
-    )
-    cleanup()
-    mount({ libraryBetter: false })
-    expect(screen.queryByTestId('library-row-better')).not.toBeInTheDocument()
+  // The header's amber triangle already says the library holds a better copy; a second
+  // amber mark on the row told the reader the same thing twice.
+  it('says a better library copy once, in the header', () => {
+    mount({ verdict: 'library' })
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
+    const row = screen.getByTestId('library-row')
+    expect(within(row).getAllByRole('img')).toEqual([screen.getByTestId('library-row-icon')])
   })
 
   it('opens the comparison from the row', () => {

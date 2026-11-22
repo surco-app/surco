@@ -1368,8 +1368,7 @@
     "libraryVerdictHere": "Esta é a melhor",
     "libraryVerdictLibrary": "Há uma cópia melhor",
     "libraryVerdictSame": "Mesma cópia",
-    "libraryVerdictMeasuring": "Comparando…",
-    "libraryRowBetter": "Melhor que este arquivo"
+    "libraryVerdictMeasuring": "Comparando…"
   },
   "fields": {
     "groupIdentity": "Básicos",

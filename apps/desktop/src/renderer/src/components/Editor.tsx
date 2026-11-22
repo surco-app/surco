@@ -1642,7 +1642,6 @@ export const Editor = memo(function Editor({
                   : copyState
               }
               copyFormat={replacedCopyFormat}
-              libraryBetter={libraryCopyBetter}
               comparison={libraryComparison || undefined}
               comparisonOpen={copyOpen}
               onToggleComparison={() =>

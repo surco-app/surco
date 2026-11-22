@@ -1368,8 +1368,7 @@
     "libraryVerdictHere": "Aquesta és la millor",
     "libraryVerdictLibrary": "Hi ha una còpia millor",
     "libraryVerdictSame": "Mateixa còpia",
-    "libraryVerdictMeasuring": "Comparant…",
-    "libraryRowBetter": "Millor que aquest fitxer"
+    "libraryVerdictMeasuring": "Comparant…"
   },
   "fields": {
     "groupIdentity": "Bàsics",

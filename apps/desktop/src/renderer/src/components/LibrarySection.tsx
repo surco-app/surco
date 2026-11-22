@@ -54,7 +54,6 @@ interface Props {
   // Why the winning copy won, said with the verdict: the table below shows only the figures.
   verdictDetail?: string
   copyFormat: string
-  libraryBetter: boolean
   comparison?: React.ReactNode
   comparisonOpen: boolean
   onToggleComparison: () => void
@@ -68,7 +67,6 @@ export function LibrarySection({
   verdict,
   verdictDetail,
   copyFormat,
-  libraryBetter,
   comparison: given,
   comparisonOpen,
   onToggleComparison,
@@ -96,16 +94,6 @@ export function LibrarySection({
         <LibraryIcon size={14} />
       </span>
       <span className="truncate text-fg">{libraryName}</span>
-      <span className="flex h-1.5 w-1.5 shrink-0">
-        {libraryBetter && (
-          <span
-            data-testid="library-row-better"
-            role="img"
-            aria-label={tr('editor.libraryRowBetter')}
-            className="h-1.5 w-1.5 rounded-full bg-[var(--color-warn)]"
-          />
-        )}
-      </span>
       <span className="ml-auto flex shrink-0 items-center gap-2">
         {/* The track list's format chip, outlined rather than tinted: a tint there is the
             file's quality verdict, which this copy does not carry. */}

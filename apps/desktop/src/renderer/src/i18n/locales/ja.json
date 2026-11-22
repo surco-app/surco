@@ -1368,8 +1368,7 @@
     "libraryVerdictHere": "こちらの方が良い",
     "libraryVerdictLibrary": "より良いコピーがあります",
     "libraryVerdictSame": "同じコピー",
-    "libraryVerdictMeasuring": "比較中…",
-    "libraryRowBetter": "このファイルより良い"
+    "libraryVerdictMeasuring": "比較中…"
   },
   "fields": {
     "groupIdentity": "基本",

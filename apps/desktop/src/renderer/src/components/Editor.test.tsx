@@ -5291,8 +5291,7 @@ describe('Editor Apple Music library section', () => {
 
   // The swap recipe promises a warning when the file in hand is worse than the library copy.
   // The commonest case is a "lossless" download made from an MP3: the swap would trade the
-  // copy for one no better. The library row marks its copy as the better one and the verdict
-  // turns amber.
+  // copy for one no better. The verdict turns amber.
   it('says the library copy is better when the file in hand was made from a lossy source', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -5310,9 +5309,10 @@ describe('Editor Apple Music library section', () => {
       libraryIndex: ownedWithId,
       showSpectrum: true,
     })
-    await waitFor(() => expect(screen.getByTestId('library-row-better')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn'),
+    )
     expect(screen.getByTestId('library-row')).toHaveTextContent('MP3 320')
-    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
   })
 
   it('says nothing about quality when the file in hand is a real upgrade', async () => {
@@ -5333,7 +5333,7 @@ describe('Editor Apple Music library section', () => {
       showSpectrum: true,
     })
     await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
-    expect(screen.queryByTestId('library-row-better')).toBeNull()
+    expect(screen.queryByTestId('library-verdict')?.getAttribute('data-tone')).not.toBe('warn')
   })
 
   // A copy that lives only in iCloud has no file to read, so there is no format to name;
@@ -5434,7 +5434,6 @@ describe('Editor Apple Music library section', () => {
     expect(screen.queryByTestId('copy-comparison')).toBeNull()
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-row-peakCount')).toHaveAttribute('data-decides', 'true')
-    expect(screen.queryByTestId('library-row-better')).toBeNull()
   })
 
   // Whether the swap is worth it depends on what the library copy is down to its depth and
@@ -5538,7 +5537,6 @@ describe('Editor Apple Music library section', () => {
       expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(/^There's a better copy/),
     )
     expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
-    expect(screen.getByTestId('library-row-better')).toBeInTheDocument()
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
@@ -5639,9 +5637,10 @@ describe('Editor Apple Music library section', () => {
       showSpectrum: true,
       hereLossy: true,
     })
-    await waitFor(() => expect(screen.getByTestId('library-row-better')).toBeInTheDocument())
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn'),
+    )
     expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
-    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
     expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(/^There's a better copy/)
   })
 
