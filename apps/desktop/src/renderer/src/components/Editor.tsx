@@ -1469,7 +1469,7 @@ export const Editor = memo(function Editor({
       Icon: ClipboardPaste,
       onSelect: onPasteMeta,
       disabled: copiedMetaTitle === null,
-      separatorBefore: isMulti && !(onApplyTitleFormat && titleFormat.trim() !== ''),
+      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
     },
   ]
 

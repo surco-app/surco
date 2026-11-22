@@ -266,12 +266,20 @@ export function TrackContextMenu({
         className="absolute min-w-[210px] max-w-[320px] rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]"
       >
         {multi && canPasteMeta && (
-          <MenuItem
-            onHover={leaveSub}
-            testid="track-menu-paste-meta"
-            label={tr('trackList.context.pasteMeta')}
-            onClick={() => run(() => onPasteMeta(track))}
-          />
+          <>
+            <MenuItem
+              onHover={leaveSub}
+              testid="track-menu-paste-meta"
+              label={tr('trackList.context.pasteMeta')}
+              onClick={() => run(() => onPasteMeta(track))}
+            />
+            {(onMatch ||
+              onUnmatch ||
+              onReverseMatch ||
+              onLeaveMatch ||
+              onMergeMatch ||
+              playlist) && <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />}
+          </>
         )}
         {!multi && (
           <>

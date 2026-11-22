@@ -1,5 +1,6 @@
 import { Ellipsis, type LucideIcon } from 'lucide-react'
 import type React from 'react'
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { SPLIT_ITEM, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
@@ -45,23 +46,23 @@ export function MetaMoreMenu({ items }: { items: MetaMenuItem[] }): React.JSX.El
           className={MENU}
         >
           {items.map(({ id, testid, label, Icon, onSelect, disabled, separatorBefore }) => (
-            <button
-              key={id}
-              type="button"
-              data-testid={testid}
-              role="menuitem"
-              disabled={disabled}
-              onClick={() => {
-                setOpen(false)
-                onSelect()
-              }}
-              className={`${SPLIT_ITEM} justify-start gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
-                separatorBefore ? 'mt-1 border-t border-[var(--color-line)] pt-2.5' : ''
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
-              <span className="min-w-0 truncate">{label}</span>
-            </button>
+            <Fragment key={id}>
+              {separatorBefore && <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />}
+              <button
+                type="button"
+                data-testid={testid}
+                role="menuitem"
+                disabled={disabled}
+                onClick={() => {
+                  setOpen(false)
+                  onSelect()
+                }}
+                className={`${SPLIT_ITEM} justify-start gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
+                <span className="min-w-0 truncate">{label}</span>
+              </button>
+            </Fragment>
           ))}
         </div>
       )}

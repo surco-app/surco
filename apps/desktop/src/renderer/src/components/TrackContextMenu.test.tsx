@@ -522,6 +522,22 @@ describe('TrackContextMenu with several tracks selected', () => {
     expect(shownIds()).toEqual(['track-menu-paste-meta', 'track-menu-remove', 'track-menu-trash'])
   })
 
+  // Pasting stamps tags on every selected row; a divider keeps it apart from the
+  // matching and playlist groups below, as every other group in the menu is.
+  it('separates the paste from the next group over a selection', () => {
+    renderMenu({ ...everything, canPasteMeta: true, multi: true })
+    expect(screen.getByTestId('track-menu-paste-meta').nextElementSibling).toBe(
+      screen.getAllByRole('separator')[0],
+    )
+  })
+
+  it('separates the paste from the playlists when no matching item follows it', () => {
+    renderMenu({ ...everything, canPasteMeta: true, onUnmatch: undefined, multi: true })
+    expect(screen.getByTestId('track-menu-paste-meta').nextElementSibling).toBe(
+      screen.getAllByRole('separator')[0],
+    )
+  })
+
   it('keeps merging blocks, because it joins every selected block and not just the clicked row', () => {
     renderMenu({ ...everything, canPasteMeta: false, onMergeMatch: vi.fn(), multi: true })
     expect(shownIds()).toEqual([

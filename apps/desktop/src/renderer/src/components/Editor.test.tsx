@@ -1860,6 +1860,7 @@ describe('Editor multi-select', () => {
       settings?: Partial<Settings>
       onChangeSelection?: (patch: Partial<TrackItem>) => void
       onFormatChange?: (format: FormatSetting | null) => void
+      onApplyTitleFormat?: () => void
     } = {},
   ) {
     if (opts.platform)
@@ -1916,6 +1917,7 @@ describe('Editor multi-select', () => {
           onNumberTracks={onNumberTracks}
           onChangeSelection={o.onChangeSelection}
           onFormatChange={o.onFormatChange}
+          onApplyTitleFormat={o.onApplyTitleFormat}
           onApplyMatches={vi.fn()}
           onProcessAll={onProcessAll}
           onAddAllToAppleMusic={onAddAllToAppleMusic}
@@ -2014,6 +2016,27 @@ describe('Editor multi-select', () => {
     renderMulti()
     expect(screen.queryByTestId('copy-meta-btn')).toBeNull()
     expect(screen.queryByTestId('paste-meta-btn')).toBeNull()
+  })
+
+  // Rewriting titles and pasting the copied tags are different jobs over the whole
+  // selection; a line between them keeps the paste from reading as part of the title pass.
+  it('draws a line between rewriting titles and pasting in the more menu', () => {
+    renderMulti({ onApplyTitleFormat: vi.fn(), settings: { titleFormat: '{title}' } })
+    openMore()
+    const menu = screen.getByRole('menu')
+    expect(within(menu).getAllByRole('separator')).toHaveLength(1)
+    expect(screen.getByTestId('paste-meta-btn').previousElementSibling).toBe(
+      within(menu).getByRole('separator'),
+    )
+  })
+
+  // With no title format the paste is the menu's only item; a line over it would
+  // separate it from nothing.
+  it('draws no line over the paste when it is alone in the more menu', () => {
+    renderMulti()
+    openMore()
+    expect(screen.getByTestId('paste-meta-btn')).toBeInTheDocument()
+    expect(within(screen.getByRole('menu')).queryAllByRole('separator')).toHaveLength(0)
   })
 
   it('completes a playlist only some of the tracks hold into per-track patches for all of them', async () => {
