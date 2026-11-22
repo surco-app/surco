@@ -7,18 +7,19 @@ import { useEffect, useRef, useState } from 'react'
 export const FOOTER_BAR =
   'border-t border-[var(--color-line)] bg-[var(--color-ink)] px-6 py-3.5 compact:py-2'
 export const SPLIT_BODY =
-  'press relative flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-40'
+  'press relative -mr-px flex-1 overflow-hidden rounded-l-lg bg-[var(--color-panel-2)] py-2.5 text-sm font-medium disabled:pointer-events-none disabled:opacity-40'
 export const SPLIT_BODY_READY =
   'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-40'
 export const SPLIT_TOGGLE =
-  'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] disabled:pointer-events-none'
+  'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none'
 // The same toggle sized by the chosen format it shows instead of a fixed chevron width.
 export const SPLIT_TOGGLE_FORMAT =
-  'press relative flex items-center justify-center gap-1 overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] px-3 disabled:pointer-events-none'
+  'press relative flex items-center justify-center gap-1 overflow-hidden rounded-r-lg px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none'
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
-export const SPLIT_TOGGLE_QUIET = 'border-[var(--color-line-strong)] text-fg-faint'
+export const SPLIT_TOGGLE_QUIET =
+  'bg-[var(--color-panel-2)] text-fg-faint before:bg-[var(--color-line-strong)]'
 export const SPLIT_TOGGLE_READY =
-  'border-on-scrim/20 text-[var(--color-on-accent)] disabled:opacity-40'
+  'bg-[var(--color-accent)] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 disabled:opacity-40'
 export const SPLIT_MENU =
   'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =
