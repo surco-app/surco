@@ -5325,15 +5325,30 @@ describe('Editor Apple Music library section', () => {
     expect(await screen.findByTestId('library-row-format')).toHaveTextContent('WAV 16/44.1')
   })
 
-  // Two Music entries match equally, so no copy can be named and nothing can be read about it:
-  // "can't be measured" blamed the measurement for a copy that was never located.
-  it('says the Music copy is not found when no single entry can be named for it', async () => {
+  // Two Music entries match equally, so no copy can be named: the copy is not missing, the
+  // library holds it twice, and the row says so with no format or comparison it cannot back.
+  it('says how many copies Music holds when it cannot tell which one is this track', async () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: buildLibraryIndex([
         { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
         { title: 'Strobe', artist: 'deadmau5', persistentId: 'FEDCBA9876543210' },
       ]),
+    })
+    const row = await screen.findByTestId('library-row')
+    const state = within(row).getByTestId('library-row-state')
+    expect(state).toHaveAttribute('data-state', 'several')
+    expect(state).toHaveAccessibleName('2 copies')
+    expect(within(row).queryByTestId('library-row-format')).toBeNull()
+    expect(row.tagName).not.toBe('BUTTON')
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // A matched entry Music gives no ID for cannot be located at all: that copy is not found.
+  it('says the Music copy is not found when the matched entry cannot be located', async () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
     })
     const state = await screen.findByTestId('library-row-state')
     expect(state).toHaveAttribute('data-state', 'missing')

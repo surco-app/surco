@@ -1385,6 +1385,8 @@
     "libraryStateMissing": "見つかりません",
     "libraryStateUnreadable": "読み込めません",
     "libraryStateUnmeasurable": "測定できません",
+    "libraryStateSeveral_one": "{{count}}件",
+    "libraryStateSeveral_other": "{{count}}件",
     "libraryStateEven": "優劣なし",
     "libraryStateMeasuring": "比較中",
     "libraryVerdictWithReason": "{{verdict}}。{{reason}}"

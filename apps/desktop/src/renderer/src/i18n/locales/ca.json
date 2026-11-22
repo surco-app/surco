@@ -1385,6 +1385,8 @@
     "libraryStateMissing": "No es troba",
     "libraryStateUnreadable": "No es pot llegir",
     "libraryStateUnmeasurable": "No es pot mesurar",
+    "libraryStateSeveral_one": "{{count}} còpia",
+    "libraryStateSeveral_other": "{{count}} còpies",
     "libraryStateEven": "Ni millor ni pitjor",
     "libraryStateMeasuring": "Comparant",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"

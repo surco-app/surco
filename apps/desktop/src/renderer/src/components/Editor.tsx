@@ -1652,6 +1652,10 @@ export const Editor = memo(function Editor({
     verdict && 'reason' in verdict && here && library
       ? copySentence(verdict, here, library, libraryName, tr, i18n.language)
       : undefined
+  const musicCopies =
+    replaceTarget && isAmbiguousCandidate(replaceTarget)
+      ? replaceTarget.ambiguous.length
+      : undefined
   const musicRow: LibraryRow | null =
     librarySource === 'appleMusic' && inLibrary === 'yes'
       ? {
@@ -1659,19 +1663,23 @@ export const Editor = memo(function Editor({
           name: 'Apple Music',
           format: replacedCopyFormat,
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
+          copies: musicCopies,
           verdict: musicHoldsFile
             ? 'thisFile'
-            : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
-              ? 'missing'
-              : musicCopyReach?.unreadable
-                ? 'unreadable'
-                : musicCopyReach?.checking
-                  ? 'measuring'
-                  : libraryCopyBetter && (copyState === 'unmeasurable' || copyState === 'measuring')
-                    ? 'library'
-                    : libraryCopyPending && !libraryCopyPath
-                      ? 'measuring'
-                      : copyState,
+            : musicCopies
+              ? 'several'
+              : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
+                ? 'missing'
+                : musicCopyReach?.unreadable
+                  ? 'unreadable'
+                  : musicCopyReach?.checking
+                    ? 'measuring'
+                    : libraryCopyBetter &&
+                        (copyState === 'unmeasurable' || copyState === 'measuring')
+                      ? 'library'
+                      : libraryCopyPending && !libraryCopyPath
+                        ? 'measuring'
+                        : copyState,
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: musicCopyUnreached
