@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { BUNDLED_FLOWS } from '../../../shared/cueFlows'
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 // OnboardingWizard's tree reads window.api.platform at module load, so stub it first.
@@ -322,7 +322,9 @@ describe('OnboardingWizard destination', () => {
     openFormatStep(onFinish)
     expect(screen.getByTestId('onboarding-output')).toHaveTextContent('/out')
     fireEvent.click(screen.getByTestId('onboarding-output-change'))
-    expect(await screen.findByTestId('onboarding-output')).toHaveTextContent('/dj/converted')
+    await waitFor(() =>
+      expect(screen.getByTestId('onboarding-output')).toHaveTextContent('/dj/converted'),
+    )
     finishWizard()
     expect(onFinish).toHaveBeenCalledWith(expect.objectContaining({ outputDir: '/dj/converted' }))
   })
