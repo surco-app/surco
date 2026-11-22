@@ -1,7 +1,6 @@
 import type { TFunction } from 'i18next'
 import { type AudioProcessing, processesAudio } from '../../../shared/audioProcessing'
 import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
-import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import {
   batchKeepMp3,
   editsInPlace,
@@ -9,6 +8,7 @@ import {
   hasFormatEquivalent,
   resolveJobFormat,
 } from '../../../shared/format'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
 import type { CustomField, FormatSetting, OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
