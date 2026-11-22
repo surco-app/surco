@@ -1,3 +1,4 @@
+import type { ReplaceShift } from '../shared/replaceShift'
 import type { EngineShift } from './engineRepoint'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { RekordboxMeta } from './rekordboxMetadata'
@@ -30,34 +31,62 @@ export function rekordboxRepointFor(
       // The output's exact length in samples, when a trim or a resample changed it.
       sampleCount?: number
     }
+    // How far the replacement moved the audio against the file it replaces, measured on
+    // what ffmpeg decodes: positive when the new file's audio starts later.
+    replaceShift?: ReplaceShift
+    // Where rekordbox places the first sample of the replaced file and of the replacement,
+    // the replacement's real rate and, if the conversion counted it, its length in samples.
+    replaceAudio?: {
+      oldShiftMs: number
+      newShiftMs: number
+      sampleRateHz?: number
+      sampleCount?: number
+    }
     // The source's size before the conversion rewrote it on its own path.
     fromBytes?: number
     names?: RekordboxRepoint['names']
   } = {},
 ): RekordboxRepoint | null {
   const from = options.replaces ?? input
+  // A replacement's cues were set on the old file's audio: they follow it by the measured
+  // shift, plus the difference in where rekordbox places each file's first sample. Engine
+  // DJ and VirtualDJ count from the first sample with no lead, and their shift subtracts a
+  // trim, so audio that starts later is a negative trim.
+  const moved =
+    options.replaces && options.replaceShift && 'moved' in options.replaceShift
+      ? options.replaceShift.moved
+      : undefined
+  const replaceAudio = options.replaceAudio ?? { oldShiftMs: 0, newShiftMs: 0 }
   const audio = options.audio && {
     cueShiftMs: options.replaces
-      ? 0
+      ? moved === undefined
+        ? 0
+        : Math.round(moved + replaceAudio.newShiftMs - replaceAudio.oldShiftMs)
       : Math.round(
           options.audio.outputShiftMs - options.audio.sourceShiftMs - options.audio.trimmedMs,
         ),
   }
   const engineShift: EngineShift | undefined =
-    options.audio &&
-    !options.replaces &&
-    (options.audio.trimmedMs > 0 || options.audio.sampleRateHz || options.audio.sampleCount)
+    moved !== undefined
       ? {
-          trimmedMs: options.audio.trimmedMs,
-          ...(options.audio.sampleRateHz ? { sampleRateHz: options.audio.sampleRateHz } : {}),
-          ...(options.audio.sampleCount ? { sampleCount: options.audio.sampleCount } : {}),
+          trimmedMs: 0 - Math.round(moved),
+          ...(replaceAudio.sampleRateHz ? { sampleRateHz: replaceAudio.sampleRateHz } : {}),
+          ...(replaceAudio.sampleCount ? { sampleCount: replaceAudio.sampleCount } : {}),
         }
-      : undefined
+      : options.audio &&
+          !options.replaces &&
+          (options.audio.trimmedMs > 0 || options.audio.sampleRateHz || options.audio.sampleCount)
+        ? {
+            trimmedMs: options.audio.trimmedMs,
+            ...(options.audio.sampleRateHz ? { sampleRateHz: options.audio.sampleRateHz } : {}),
+            ...(options.audio.sampleCount ? { sampleCount: options.audio.sampleCount } : {}),
+          }
+        : undefined
   const extra = {
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
-    ...(!options.replaces && options.fromBytes !== undefined
+    ...((!options.replaces || options.replaces === output) && options.fromBytes !== undefined
       ? { fromBytes: options.fromBytes }
       : {}),
     ...(options.names ? { names: options.names } : {}),

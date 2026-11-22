@@ -478,3 +478,24 @@ describe('stackRepoint names', () => {
     expect(stacked.names).toEqual({ title: { from: 'Old', to: 'A' } })
   })
 })
+
+describe('stackRepoint on a replacement', () => {
+  // The second replacement was measured against the file the first one left, so its shift
+  // adds to the first: dropping either leaves every cue off by the one that was lost.
+  it('adds a second same-path replacement on top of the first', () => {
+    const p = '/m/a.aiff'
+    const stacked = stackRepoint(
+      {
+        from: p,
+        to: p,
+        audio: { cueShiftMs: 1449 },
+        engineShift: { trimmedMs: -1500 },
+        fromBytes: 10,
+      },
+      { from: p, to: p, audio: { cueShiftMs: -26 }, engineShift: { trimmedMs: 26 } },
+    )
+    expect(stacked.audio?.cueShiftMs).toBe(1423)
+    expect(stacked.engineShift?.trimmedMs).toBe(-1474)
+    expect(stacked.fromBytes).toBe(10)
+  })
+})

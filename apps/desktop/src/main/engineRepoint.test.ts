@@ -509,6 +509,31 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.gridLengthSec).toBeCloseTo(before.gridLengthSec - cut, 4)
     })
 
+    // A replacement measured 1.5 s later is handed to Engine as a trim of minus 1.5 s. The
+    // pad the DJ set on the kick at 10 s has to fire at 11.5 s of the new file, where that
+    // kick now sounds; the other sign would fire it at 8.5 s, three seconds early.
+    it('lands a quick cue set at 10 s at 11.5 s after a replacement measured 1.5 s later', async () => {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = 1', [
+        quickCuesBlob(
+          [{ label: 'Kick', sample: 10 * RATE, argb: 0xffcc0000 }],
+          mainCueTail(MAIN_SEC[0] * RATE, true, MAIN_SEC[1] * RATE),
+        ),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: -1500 } },
+      ])
+      const after = await openDb(lib.dbPath)
+      const row = one(after, 'SELECT quickCues FROM PerformanceData WHERE trackId = 1')
+      after.close()
+      const sample = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))?.slots[0].cue
+        ?.sample
+      expect(Math.abs((sample ?? 0) - 11.5 * RATE)).toBeLessThanOrEqual(1)
+    })
+
     // A conversion that also resamples leaves Engine's sample counts describing the old
     // rate: each position is rewritten at the new one, and the rate Engine reads them by
     // with it.

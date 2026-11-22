@@ -131,6 +131,64 @@ describe('rekordboxRepointFor', () => {
     ).toEqual({ cueShiftMs: 0 })
   })
 
+  // Measured 24/10: rekordbox places a sound where ffmpeg decodes it plus a per-file lead
+  // (51 ms on a LAME MP3, none on an AIFF). The kick the DJ marked at 10 000 ms in the old
+  // MP3 sounds in the new AIFF, whose audio starts 1.5 s later, at 11 449 ms of rekordbox's
+  // clock, so the cue has to land there or every pad fires 1.4 s early.
+  it('moves rekordbox cues later by the measured shift plus the lead each file has', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 0 },
+        replaceShift: { moved: 1500 },
+        replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+      })?.audio,
+    ).toEqual({ cueShiftMs: 1449 })
+  })
+
+  // Engine DJ and VirtualDJ read their positions off the file's first sample with no
+  // per-codec lead, and their shift subtracts a trim: audio that starts 1.5 s later is a
+  // trim of minus 1.5 s, or every pad fires 1.5 s early on the new file.
+  it('moves Engine DJ positions by the measured shift, as a negative trim', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 0 },
+        replaceShift: { moved: 1500 },
+        replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+      })?.engineShift,
+    ).toEqual({ trimmedMs: -1500 })
+  })
+
+  // A shift the measure would not vouch for is a guess; moving every cue by a guess is
+  // worse than leaving them where they were, as every replacement did before.
+  it("keeps today's untouched cues when the shift could not be trusted", () => {
+    const repoint = rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+      replaces: '/m/a.mp3',
+      audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 0 },
+      replaceShift: { unmoved: 'drift' },
+      replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+    })
+    expect(repoint?.audio).toEqual({ cueShiftMs: 0 })
+    expect(repoint?.replaced).toBe(true)
+    expect(repoint?.engineShift?.trimmedMs ?? 0).toBe(0)
+  })
+
+  // Engine DJ and VirtualDJ tell a row still owed its shift from one already written by the
+  // size it had before: without it a replacement on the very path it replaces looks done and
+  // its cues are never moved.
+  it('keeps the old size when the replacement lands on the replaced path', () => {
+    expect(
+      rekordboxRepointFor('/dl/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.aiff',
+        fromBytes: 1234,
+        audio: { sourceShiftMs: 0, outputShiftMs: 0, trimmedMs: 0 },
+        replaceShift: { moved: 1500 },
+        replaceAudio: { oldShiftMs: 0, newShiftMs: 0 },
+      })?.fromBytes,
+    ).toBe(1234)
+  })
+
   // Traktor and Engine need to know the old file is held before adding the new one, or a
   // replace would leave a second entry beside the one that should move.
   it('marks a repoint that replaces a library file', () => {
