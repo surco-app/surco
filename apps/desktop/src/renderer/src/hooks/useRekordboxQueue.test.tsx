@@ -162,6 +162,12 @@ describe('useRekordboxQueue', () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
   })
 
+  it('re-reads the rekordbox collection when a queue lands, so a track it just added shows in the editor', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['source-collection', 'rekordbox'] })
+  })
+
   it('hands the notice the cue rekordbox left off its grid, so the DJ can go straight to it', async () => {
     const { notify, applied } = setup()
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 1, contentId: '7', ms: 1000 }
