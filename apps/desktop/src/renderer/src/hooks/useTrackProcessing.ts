@@ -582,7 +582,12 @@ export function useTrackProcessing({
   )
 
   const askToCloseReached = useStableCallback(async (ids: string[]): Promise<void> => {
-    const paths = ids.flatMap((id) => tracksRef.current.find((t) => t.id === id)?.inputPath ?? [])
+    // A replaced file is read too (its cues are copied to the new one), so the programs that
+    // hold IT must close as well: Serato 5 only writes cues into the file when it quits.
+    const paths = ids.flatMap((id) => {
+      const track = tracksRef.current.find((t) => t.id === id)
+      return track ? [track.inputPath, ...(track.replacesPath ? [track.replacesPath] : [])] : []
+    })
     const programs = await window.api.conversionPrograms(paths).catch(() => [])
     if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
   })
