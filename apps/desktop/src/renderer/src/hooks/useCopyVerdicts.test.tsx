@@ -189,6 +189,18 @@ describe('useCopyVerdicts', () => {
     expect(props.mock.calls.filter(([path]) => path === '/lib/gone.mp3')).toHaveLength(2)
   })
 
+  // The re-read must not hang on the clock: a probe and a file check that answer within the
+  // same millisecond (fast disk, loaded machine) once left the first, possibly stale, failure
+  // standing as the answer without the promised second read.
+  it('reads an unreadable copy a second time even when every answer lands in the same millisecond', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(1_800_000_000_000)
+    const props = vi.fn(async (path: string) => (path === '/lib/gone.mp3' ? null : properties))
+    failingCopyApi({ properties: props, fileExists: vi.fn().mockResolvedValue(true) })
+    const { result } = renderGone()
+    await waitFor(() => expect(result.current[0].unreadable).toBe(true))
+    expect(props.mock.calls.filter(([path]) => path === '/lib/gone.mp3')).toHaveLength(2)
+  })
+
   // The drive was unmounted when the copy was first probed and is back now: the cached null
   // would keep the row unreadable for the whole session, so it is read once more.
   it('reads the properties again when the file turns out to be there after a failed probe', async () => {

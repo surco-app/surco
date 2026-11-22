@@ -1,10 +1,11 @@
 import {
+  type QueryClient,
   queryOptions,
   type UseQueryResult,
   useQueries,
   useQueryClient,
 } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { trackPropertiesOptions } from './useTrackProperties'
 
 export interface CopyReach {
@@ -36,8 +37,19 @@ function probeFailed(properties: PropertiesResult): boolean {
   return !properties.isPending && (properties.isError || properties.data === null)
 }
 
+// The paths already read a second time in this client's session: whether a failure is the
+// second one is a fact to keep, not to infer from clock readings that can tie.
+const reread = new WeakMap<QueryClient, Set<string>>()
+
+function rereadPaths(queryClient: QueryClient): Set<string> {
+  const known = reread.get(queryClient) ?? new Set<string>()
+  reread.set(queryClient, known)
+  return known
+}
+
 export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
   const queryClient = useQueryClient()
+  const [, settle] = useState(0)
   const exists = useQueries({
     queries: copies.map(({ path, properties }) => ({
       ...fileExistsOptions(path),
@@ -47,8 +59,7 @@ export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
   const reach = copies.map(({ path, properties }, i) => {
     const failed = probeFailed(properties) && !properties.isFetching
     const there = exists[i].data
-    const probedAt = Math.max(properties.dataUpdatedAt, properties.errorUpdatedAt)
-    const outdated = there === true && probedAt < exists[i].dataUpdatedAt
+    const outdated = there === true && !rereadPaths(queryClient).has(path)
     return {
       path,
       outdated: failed && outdated,
@@ -63,10 +74,12 @@ export function useCopyReach(copies: CopyProbe[]): CopyReach[] {
   useEffect(() => {
     if (!outdatedPaths) return
     for (const path of outdatedPaths.split('\n')) {
-      void queryClient.invalidateQueries({
-        queryKey: trackPropertiesOptions(path).queryKey,
-        exact: true,
-      })
+      void queryClient
+        .invalidateQueries({ queryKey: trackPropertiesOptions(path).queryKey, exact: true })
+        .then(() => {
+          rereadPaths(queryClient).add(path)
+          settle((n) => n + 1)
+        })
     }
   }, [queryClient, outdatedPaths])
   return reach.map(({ missing, unreadable }) => ({ missing, unreadable }))
