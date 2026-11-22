@@ -1617,7 +1617,19 @@ export interface PairFacts {
   correlation: number
   residualDb: number
   gainDb: number
+  // Set only when the copies' lengths differ by more than VERSION_GAP_SEC (shared/copyVersion): the |correlation|
+  // at the best lag of a wider search, as far as the length gap plus a second either way and
+  // in either polarity, so a copy of one master with a trimmed or padded head is found again.
+  versionCorrelation?: number
 }
+
+// Two copies the ±1 s probe could not line up whose lengths differ by more than
+// VERSION_GAP_SEC: only the wider search has something to say about them.
+export interface UnalignedPair {
+  versionCorrelation: number
+}
+
+export type PairProbe = PairFacts | UnalignedPair
 
 // A short stretch of two copies of one master where the worse copy pins the most samples
 // to its ceiling, the better one lined up and scaled to the same loudness. Each side is

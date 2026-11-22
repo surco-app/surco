@@ -61,6 +61,22 @@ describe('runWorkerJob', () => {
     expect(out).toBeNull()
   })
 
+  // The wider version search's FFT reaches 2^19 points; measured 58 to 293 ms on the main
+  // loop, so it runs here. Same samples with a reversed polarity 3 s later still match.
+  it('runs the wider version search off the main loop, matching either polarity', () => {
+    const rate = 4410
+    const a = new Float32Array(40 * rate)
+    let seed = 7
+    for (let i = 0; i < a.length; i++) {
+      seed = (seed * 16807) % 2147483647
+      a[i] = seed / 2147483647 - 0.5
+    }
+    const b = new Float32Array(43 * rate)
+    for (let i = 0; i < a.length; i++) b[i + 3 * rate] = -a[i]
+    const out = runWorkerJob({ type: 'versionMatch', a, b, reachSec: 4 })
+    expect(out).toBeGreaterThan(0.99)
+  })
+
   it('routes bpm jobs to the tempo detector with the job pcm and rate', () => {
     const pcm = new Float32Array([0.1, 0.2])
     const out = runWorkerJob({ type: 'bpm', pcm, sampleRate: 11025 })

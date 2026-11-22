@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
+import { VERSION_GAP_SEC } from '../shared/copyVersion'
 import { customTagName } from '../shared/customFields'
 import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
@@ -30,6 +31,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   PairFacts,
+  PairProbe,
   ReviewRawFields,
   TrackMetadata,
   TrackProperties,
@@ -64,7 +66,6 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
-import { fft } from './fft'
 import { measureBands } from './fftBands'
 import { carryFlacBlocks } from './flacCarry'
 import {
@@ -98,6 +99,15 @@ import {
   volumeFilter,
 } from './normalize'
 import { discardBackup, keepOriginal } from './originalKeeper'
+import {
+  bestLag,
+  PAIR_MIN_SECONDS,
+  PAIR_RATE,
+  PAIR_SILENT_RMS,
+  PAIR_WINDOW_SECONDS,
+  VERSION_RATE,
+  VERSION_REACH_MAX_SECONDS,
+} from './pairLag'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
@@ -3412,60 +3422,7 @@ export async function audioFingerprint(
 // material the true offset, falling between coarse samples, scores below a repeat a beat
 // away: the coarse search then hands the refinement the wrong neighbourhood. The first
 // 91 s of each copy (~16 MB) hold the 60 s compared plus the one second of reach.
-const PAIR_RATE = 44100
 const PAIR_DECODE_SECONDS = 91
-const PAIR_WINDOW_SECONDS = 60
-const PAIR_MIN_SECONDS = 10
-const PAIR_SILENT_RMS = 1e-6
-
-// The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
-// best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
-// Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
-// window is silent, since silence lines up with anything.
-function bestLag(a: Float32Array, b: Float32Array, from: number, reach = PAIR_RATE): number | null {
-  const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
-  const silent = width * PAIR_SILENT_RMS ** 2
-  const span = width + 2 * reach
-  let n = 1
-  while (n < span) n <<= 1
-  const wRe = new Float64Array(n)
-  const wIm = new Float64Array(n)
-  const sRe = new Float64Array(n)
-  const sIm = new Float64Array(n)
-  let windowEnergy = 0
-  for (let i = 0; i < width; i++) {
-    wRe[i] = a[from + i]
-    windowEnergy += wRe[i] * wRe[i]
-  }
-  if (windowEnergy < silent) return null
-  for (let k = 0; k < span; k++) {
-    const j = from - reach + k
-    if (j >= 0 && j < b.length) sRe[k] = b[j]
-  }
-  const energy = new Float64Array(span + 1)
-  for (let k = 0; k < span; k++) energy[k + 1] = energy[k] + sRe[k] * sRe[k]
-  fft(wRe, wIm)
-  fft(sRe, sIm)
-  for (let k = 0; k < n; k++) {
-    const re = wRe[k] * sRe[k] + wIm[k] * sIm[k]
-    const im = wRe[k] * sIm[k] - wIm[k] * sRe[k]
-    sRe[k] = re
-    sIm[k] = -im
-  }
-  fft(sRe, sIm)
-  let best: number | null = null
-  let bestScore = -Infinity
-  for (let k = 0; k <= 2 * reach; k++) {
-    const e = energy[k + width] - energy[k]
-    if (e < silent) continue
-    const score = sRe[k] / Math.sqrt(e)
-    if (score > bestScore) {
-      bestScore = score
-      best = k - reach
-    }
-  }
-  return best
-}
 
 const HEAD_WINDOW_SECONDS = 5
 const HEAD_SAME_CORRELATION = 0.9
@@ -3510,6 +3467,48 @@ export async function headOffsetMs(
   return (lag / PAIR_RATE) * 1000
 }
 
+// The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
+// VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
+// probe's one second; both copies are decoded here and searched again in the analysis worker
+// (pairLag.versionMatch) as far as the gap plus a second. A gap past its bounded reach is not
+// searched, and nothing is said about it.
+async function versionCorrelation(
+  a: string,
+  b: string,
+  gapSec: number,
+  signal?: AbortSignal,
+): Promise<number | undefined> {
+  const reachSec = gapSec + 1
+  if (reachSec > VERSION_REACH_MAX_SECONDS) return undefined
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: VERSION_RATE,
+      seconds: PAIR_DECODE_SECONDS + Math.ceil(reachSec),
+      maxBufferMb: 16,
+      signal,
+    })
+  let pa: Float32Array
+  let pb: Float32Array
+  try {
+    ;[pa, pb] = await Promise.all([decode(a), decode(b)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return undefined
+  }
+  // The pool runs a job to its end, with no way to cancel it: the abortable part is the
+  // decode above, and the search itself is bounded (an FFT of 2^19 points). A failed search
+  // says nothing, so comparePair keeps its ±1 s facts.
+  try {
+    const match = await runInWorker<number | null>(
+      { type: 'versionMatch', a: pa, b: pb, reachSec },
+      [pa.buffer as ArrayBuffer, pb.buffer as ArrayBuffer],
+    )
+    return match ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
 // the start when a is under 90 s). Calibrated on 26 real pairs: the same master
 // correlates 0.992 to 0.9999, a different source 0.38 to 0.86. Null when either file
@@ -3519,8 +3518,22 @@ export async function headOffsetMs(
 export async function comparePair(
   a: string,
   b: string,
+  version = false,
   signal?: AbortSignal,
-): Promise<PairFacts | null> {
+): Promise<PairProbe | null> {
+  if (!version) return alignedPair(a, b, signal)
+  const [facts, aSec, bSec] = await Promise.all([
+    alignedPair(a, b, signal),
+    probeDuration(a, signal),
+    probeDuration(b, signal),
+  ])
+  const gapSec = aSec != null && bSec != null ? Math.abs(aSec - bSec) : 0
+  const wide = gapSec > VERSION_GAP_SEC ? await versionCorrelation(a, b, gapSec, signal) : undefined
+  if (wide === undefined) return facts
+  return facts ? { ...facts, versionCorrelation: wide } : { versionCorrelation: wide }
+}
+
+async function alignedPair(a: string, b: string, signal?: AbortSignal): Promise<PairFacts | null> {
   const decode = (input: string): Promise<Float32Array> =>
     decodePcm(input, {
       sampleRate: PAIR_RATE,

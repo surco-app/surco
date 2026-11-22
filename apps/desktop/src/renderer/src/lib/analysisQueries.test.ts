@@ -197,6 +197,18 @@ describe('removeAnalysisQueries', () => {
     expect(client.getQueryData(['coverFull', '/m/a.wav'])).toBeUndefined()
     expect(client.getQueryData(['coverFull', '/m/b.wav'])).toBe('data:image/jpeg;base64,OTHER')
   })
+  // A copy's length tells another version apart; a rewritten file must not keep the old one.
+  it('drops the length read for a copy comparison', () => {
+    const client = new QueryClient()
+    client.setQueryData(['duration', '/m/a.wav'], 447.9)
+    client.setQueryData(['duration', '/m/b.wav'], 483.2)
+
+    removeAnalysisQueries(client, ['/m/a.wav'])
+
+    expect(client.getQueryData(['duration', '/m/a.wav'])).toBeUndefined()
+    expect(client.getQueryData(['duration', '/m/b.wav'])).toBe(483.2)
+  })
+
   // A pair compares two files; rewriting or removing either one leaves the comparison
   // describing audio that is no longer there, whichever side of the key the path sits on.
   it('drops every copy comparison that involves an evicted path', () => {

@@ -163,6 +163,75 @@ describe('useProgramCopies', () => {
     await waitFor(() => expect(result.current).toHaveLength(1))
   })
 
+  // 3 Ways: the program's copy runs 35 s shorter, another edit of the same title. Apple
+  // Music shows such a copy and now describes it; a program row must too, so the section
+  // reads the same whichever library holds it.
+  it('lists a copy of the same title and artist whose length is far from this file', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: {
+          collection: async () => [
+            row('/r/real-love.wav', {
+              title: 'Real Love (Extended Version)',
+              artist: '3 Ways',
+              durationSec: 447.9,
+            }),
+          ],
+        },
+      }),
+    })
+    const { result } = renderHook(
+      () =>
+        useProgramCopies(
+          args({
+            meta: { title: 'Real love (EXTENDED REMASTERED)', artist: '3 WAYS' },
+            durationSec: 483.4,
+          }),
+        ),
+      { wrapper: wrapperFor({ syncRekordbox: true }) },
+    )
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { program: 'rekordbox', path: '/r/real-love.wav', isThisFile: false },
+      ]),
+    )
+  })
+
+  // A match without the length is the last resort: a suggested release confirmed by the
+  // length is the better evidence of which copy this is.
+  it('prefers the suggested tags confirmed by length over its own tags without length', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: {
+          collection: async () => [
+            row('/r/edit.wav', {
+              title: 'Real Love (Extended Version)',
+              artist: '3 Ways',
+              durationSec: 447.9,
+            }),
+            row('/r/same.wav', { title: 'Amor Real', artist: 'Tres Vías', durationSec: 483.4 }),
+          ],
+        },
+      }),
+    })
+    const { result } = renderHook(
+      () =>
+        useProgramCopies(
+          args({
+            meta: { title: 'Real love (EXTENDED REMASTERED)', artist: '3 WAYS' },
+            durationSec: 483.4,
+            suggestedMeta: { title: 'Amor Real', artist: 'Tres Vías' },
+          }),
+        ),
+      { wrapper: wrapperFor({ syncRekordbox: true }) },
+    )
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { program: 'rekordbox', path: '/r/same.wav', isThisFile: false },
+      ]),
+    )
+  })
+
   it('builds each index once per collection', async () => {
     const build = vi.spyOn(library, 'buildLibraryIndex')
     installApi({

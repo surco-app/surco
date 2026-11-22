@@ -1365,12 +1365,15 @@
       }
     },
     "librarySectionTitle": "Dans ta bibliothèque",
-    "libraryVerdictHere": "Celle-ci est meilleure",
-    "libraryVerdictLibrary": "Il y a une meilleure copie",
-    "libraryVerdictSame": "Même copie",
-    "libraryVerdictMeasuring": "Comparaison…",
-    "libraryVerdictWithReason": "{{verdict}}. {{reason}}",
-    "libraryRowBetter": "Meilleure que ce fichier"
+    "libraryStateSame": "Identique",
+    "libraryStateHere": "Meilleure ici",
+    "libraryStateLibrary": "Meilleure là-bas",
+    "libraryStateLibraryIn": "Meilleure dans {{program}}",
+    "libraryStateDifferentBare": "Autre version",
+    "libraryStateDifferent": "Autre version · {{duration}}",
+    "libraryStateTie": "Semblables",
+    "libraryStateMeasuring": "Comparaison",
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },
   "fields": {
     "groupIdentity": "Essentiels",

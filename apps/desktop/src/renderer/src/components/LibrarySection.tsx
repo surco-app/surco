@@ -1,46 +1,30 @@
-import { Check, ChevronRight, CircleArrowUp, Loader2, TriangleAlert } from 'lucide-react'
+import type { TFunction } from 'i18next'
+import { ChevronRight, Loader2 } from 'lucide-react'
 import type React from 'react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
-import { PILL_TEXT } from './ListRow'
+import { formatTime } from '../lib/duration'
+import { aggregateLibraryVerdict } from '../lib/libraryVerdict'
+import { PILL_TEXT, PILL_TONE } from './ListRow'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SOURCE_ICON } from './SourceRail'
 import { Tooltip } from './Tooltip'
 
-export type LibraryVerdict = 'here' | 'library' | 'same' | 'measuring'
+export type LibraryVerdict = 'here' | 'library' | 'same' | 'measuring' | 'different' | 'tie'
 
-// The verdict as a glyph beside the title, its words kept for the tooltip and a screen
-// reader. The amber warning is a triangle and both greens keep shapes of their own, so no
-// state rests on colour alone; the four share one box so the title never shifts.
-const verdictGlyph: Record<
-  LibraryVerdict,
-  { tone: 'good' | 'warn' | 'neutral'; label: string; Icon: typeof Check; className: string }
-> = {
-  here: {
-    tone: 'good',
-    label: 'editor.libraryVerdictHere',
-    Icon: CircleArrowUp,
-    className: 'text-[var(--color-good)]',
-  },
-  library: {
-    tone: 'warn',
-    label: 'editor.libraryVerdictLibrary',
-    Icon: TriangleAlert,
-    className: 'text-[var(--color-warn)]',
-  },
-  same: {
-    tone: 'good',
-    label: 'editor.libraryVerdictSame',
-    Icon: Check,
-    className: 'text-[var(--color-good)]',
-  },
+// Each copy's relation to this file in a short word: a glyph alone did not read as "the same
+// copy". The amber is never carried by colour alone, the word says it too.
+const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
+  same: { label: 'editor.libraryStateSame', className: 'bg-fg-faint/10 text-fg-faint' },
+  here: { label: 'editor.libraryStateHere', className: PILL_TONE.good },
+  library: { label: 'editor.libraryStateLibrary', className: PILL_TONE.warn },
+  different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
+  tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
   measuring: {
-    tone: 'neutral',
-    label: 'editor.libraryVerdictMeasuring',
-    Icon: Loader2,
-    className: 'animate-spin text-fg-faint motion-reduce:animate-none',
+    label: 'editor.libraryStateMeasuring',
+    className: 'border border-dashed border-[var(--color-line-strong)] text-fg-faint',
   },
 }
 
@@ -48,7 +32,13 @@ export interface LibraryRow {
   id: PlaylistSource
   name: string
   format: string
-  better: boolean
+  verdict: LibraryVerdict | null
+  // Whether this copy will be compared at all: its state's place is kept from the start.
+  comparable: boolean
+  // The library copy's length, which tells another version apart at a glance.
+  durationSec?: number
+  // Why the winning copy won, said with the state: the table below shows only the figures.
+  detail?: string
   comparison?: React.ReactNode
   comparisonOpen: boolean
   onToggleComparison: () => void
@@ -57,19 +47,73 @@ export interface LibraryRow {
 interface Props {
   open: boolean
   onToggle: () => void
-  verdict: LibraryVerdict | null
-  // Why the winning copy won, said with the verdict: the table below shows only the figures.
-  verdictDetail?: string
   rows: LibraryRow[]
 }
 
-const rowClass = 'flex h-[30px] w-full items-center gap-2 pl-3 pr-3 text-left text-xs'
+function StatePill({
+  testid,
+  verdict,
+  words,
+  detail,
+}: {
+  testid: string
+  verdict: LibraryVerdict
+  words: string
+  detail?: string
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const label = detail
+    ? tr('editor.libraryVerdictWithReason', { verdict: words, reason: detail })
+    : words
+  return (
+    <span
+      data-testid={testid}
+      data-state={verdict}
+      role="img"
+      aria-label={label}
+      className={`relative col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${STATE[verdict].className}`}
+    >
+      {verdict === 'measuring' && (
+        <Loader2
+          className="h-2.5 w-2.5 shrink-0 animate-spin motion-reduce:animate-none"
+          aria-hidden="true"
+        />
+      )}
+      {words}
+      {detail && <Tooltip label={label} />}
+    </span>
+  )
+}
 
-function LibraryRowItem({ row, marked }: { row: LibraryRow; marked: boolean }): React.JSX.Element {
+const RESERVED_STATES = ['measuring', 'same', 'here', 'library', 'tie', 'different'] as const
+
+function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): string {
+  if (verdict === 'different' && row.durationSec != null) {
+    return tr('editor.libraryStateDifferent', { duration: formatTime(row.durationSec) })
+  }
+  return tr(STATE[verdict].label)
+}
+
+// Too narrow for the name, the format and the state on one line, the state drops under the
+// name; the break is set by the panel's width, never by the state, so a row keeps its shape
+// while the measurement lands.
+const rowClass =
+  'flex min-h-[30px] w-full flex-wrap items-center gap-x-2 gap-y-1 pl-3 pr-3 text-left text-xs @max-[22rem]:py-[7px]'
+
+function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const comparisonId = useId()
-  const { comparison, comparisonOpen } = row
+  const { verdict, comparison, comparisonOpen } = row
   const LibraryIcon = SOURCE_ICON[row.id]
+  // Every state the row can take, unseen in one cell: the slot is as wide as the widest in
+  // this language, with room for any length, so the row never shifts and the chips line up.
+  const reserved = RESERVED_STATES.map((key) => ({
+    key,
+    words:
+      key === 'different'
+        ? tr('editor.libraryStateDifferent', { duration: '0:00:00' })
+        : tr(STATE[key].label),
+  }))
   const rowContent = (
     <>
       <span
@@ -81,36 +125,55 @@ function LibraryRowItem({ row, marked }: { row: LibraryRow; marked: boolean }): 
       >
         <LibraryIcon size={14} />
       </span>
-      <span className="truncate text-fg">{row.name}</span>
-      <span className="ml-auto flex shrink-0 items-center gap-2">
-        {marked && (
-          <span
-            data-testid="library-row-better"
-            role="img"
-            aria-label={tr('editor.libraryRowBetter')}
-            className="relative flex h-3 w-3 shrink-0"
-          >
-            <TriangleAlert className="h-3 w-3 text-[var(--color-warn)]" aria-hidden="true" />
-            <Tooltip label={tr('editor.libraryRowBetter')} />
-          </span>
-        )}
-        {/* The track list's format chip, outlined rather than tinted: a tint there is the
+      <span className="min-w-0 flex-1 truncate text-fg">{row.name}</span>
+      {/* The track list's format chip, outlined rather than tinted: a tint there is the
             file's quality verdict, which this copy does not carry. */}
-        {row.format && (
-          <span
-            data-testid="library-row-format"
-            className={`flex h-4 items-center rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
-          >
-            {row.format}
-          </span>
-        )}
-        {comparison && (
-          <ChevronRight
-            className={`h-3 w-3 shrink-0 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
-            aria-hidden="true"
-          />
-        )}
-      </span>
+      {row.format && (
+        <span
+          data-testid="library-row-format"
+          className={`flex h-4 shrink-0 items-center rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+        >
+          {row.format}
+        </span>
+      )}
+      {(verdict || row.comparable) && (
+        <span
+          data-testid="library-row-state-slot"
+          className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
+        >
+          {reserved.map(({ key, words }) => (
+            <span
+              key={key}
+              data-testid="library-row-state-sizer"
+              aria-hidden="true"
+              className={`invisible col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${key === 'measuring' ? 'border' : ''}`}
+            >
+              {key === 'measuring' && (
+                <Loader2 className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+              )}
+              {words}
+            </span>
+          ))}
+          {verdict && (
+            <StatePill
+              testid="library-row-state"
+              verdict={verdict}
+              words={rowWords(row, verdict, tr)}
+              detail={row.detail}
+            />
+          )}
+        </span>
+      )}
+      {(comparison || verdict || row.comparable) && (
+        <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
+          {comparison && (
+            <ChevronRight
+              className={`h-3 w-3 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
+              aria-hidden="true"
+            />
+          )}
+        </span>
+      )}
     </>
   )
   return (
@@ -137,23 +200,18 @@ function LibraryRowItem({ row, marked }: { row: LibraryRow; marked: boolean }): 
   )
 }
 
-export function LibrarySection({
-  open,
-  onToggle,
-  verdict,
-  verdictDetail,
-  rows,
-}: Props): React.JSX.Element {
+export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
-  const glyph = verdict ? verdictGlyph[verdict] : null
-  // With one row the header's triangle already points at it; with several, each row holding a
-  // better copy carries a small one of its own to say which program has it.
-  const marksRows = rows.length > 1
-  const verdictLabel = glyph
-    ? verdictDetail
-      ? tr('editor.libraryVerdictWithReason', { verdict: tr(glyph.label), reason: verdictDetail })
-      : tr(glyph.label)
-    : ''
+  const verdict = aggregateLibraryVerdict(rows.map((row) => row.verdict))
+  const leading = rows.find((row) => row.verdict === verdict)
+  // Folded, the rows are hidden, so the header says the state that most needs the reader;
+  // open, the rows say it and the header stays quiet.
+  const headerWords =
+    verdict === 'library' && rows.length > 1 && leading
+      ? tr('editor.libraryStateLibraryIn', { program: leading.name })
+      : verdict
+        ? tr(STATE[verdict].label)
+        : ''
   return (
     <div data-testid="library-section" className="relative">
       <SectionHeader
@@ -162,24 +220,23 @@ export function LibrarySection({
         open={open}
         onToggle={onToggle}
         status={
-          glyph && (
-            <span
-              data-testid="library-verdict"
-              data-tone={glyph.tone}
-              role="img"
-              aria-label={verdictLabel}
-              className="relative flex h-3.5 w-3.5 shrink-0"
-            >
-              <glyph.Icon className={`h-3.5 w-3.5 ${glyph.className}`} aria-hidden="true" />
-              <Tooltip label={verdictLabel} />
+          !open &&
+          verdict && (
+            <span className="grid">
+              <StatePill
+                testid="library-verdict"
+                verdict={verdict}
+                words={headerWords}
+                detail={leading?.detail}
+              />
             </span>
           )
         }
       />
       <SectionBody open={open}>
-        <div className="mt-2">
+        <div className="mt-2 @container">
           {rows.map((row) => (
-            <LibraryRowItem key={row.id} row={row} marked={marksRows && row.better} />
+            <LibraryRowItem key={row.id} row={row} />
           ))}
         </div>
       </SectionBody>

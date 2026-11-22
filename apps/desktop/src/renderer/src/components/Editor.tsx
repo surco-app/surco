@@ -46,6 +46,7 @@ import type {
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
+import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
 import { useCopyFacts, usePairFacts } from '../hooks/useCopyFacts'
 import { useCopyVerdicts } from '../hooks/useCopyVerdicts'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -93,7 +94,7 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
-import { aggregateLibraryVerdict, rowVerdict } from '../lib/libraryVerdict'
+import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
   autoNamesFile,
@@ -140,7 +141,7 @@ import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
-import { type LibraryRow, LibrarySection, type LibraryVerdict } from './LibrarySection'
+import { type LibraryRow, LibrarySection } from './LibrarySection'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
@@ -749,23 +750,28 @@ export const Editor = memo(function Editor({
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
-  const { inLibrary, staleMusicCopy, replaceTarget, replaceTargetPending } = useLibraryVerdict({
+  const {
+    inLibrary,
+    staleMusicCopy,
+    replaceTarget,
+    replaceTargetPending,
+    libraryCopyPath,
+    libraryCopyPending,
+  } = useLibraryVerdict({
     item,
     libraryIndex,
     librarySource,
     suggestedMeta,
     onChange,
   })
-  // The format of the copy a replacement would supersede, so the user can tell whether the
-  // file in hand is worth swapping in. Only a single, located copy has a file to read.
-  const replacedCopyPath =
-    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  const { data: replacedCopyProps } = useTrackProperties(replacedCopyPath, !!replacedCopyPath)
+  // The format of the library copy the section shows (the one a replacement would supersede
+  // when there is one), so the user can tell whether the file in hand is worth swapping in.
+  const { data: replacedCopyProps } = useTrackProperties(libraryCopyPath, !!libraryCopyPath)
   const replacedCopyFormat = replacedCopyProps
-    ? libraryCopyFormat(replacedCopyProps, replacedCopyPath, i18n.language)
+    ? libraryCopyFormat(replacedCopyProps, libraryCopyPath, i18n.language)
     : ''
   const spectrumInHand = useCachedSpectrum(item.inputPath)
-  const replacedCopySpectrum = useCachedSpectrum(replacedCopyPath)
+  const replacedCopySpectrum = useCachedSpectrum(libraryCopyPath)
   // The measured comparison of the two copies, 'a' this file and 'b' the library's. Until
   // every fact is in, the format-and-cutoff check below still answers; a copy that could not
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
@@ -773,10 +779,16 @@ export const Editor = memo(function Editor({
   // format and spectrum still decide.
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const comparedCopyPath =
-    pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
-  const musicHoldsFile = !!replacedCopyPath && !comparedCopyPath
-  const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
-  const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
+    pathKey(libraryCopyPath) === pathKey(item.inputPath) ? '' : libraryCopyPath
+  const musicHoldsFile = !!libraryCopyPath && !comparedCopyPath
+  const hereFacts = withDuration(
+    useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
+    useCopyDuration(item.inputPath, !!comparedCopyPath),
+  )
+  const libraryFacts = withDuration(
+    useCopyFacts(comparedCopyPath, !!comparedCopyPath),
+    useCopyDuration(comparedCopyPath, !!comparedCopyPath),
+  )
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
@@ -788,14 +800,14 @@ export const Editor = memo(function Editor({
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const copyOpen =
     !!copyVerdict &&
-    copyVerdict.winner !== 'tie' &&
-    copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
+    copyVerdict.winner !== 'same' &&
+    copyOpenFor === `${item.inputPath}\n${libraryCopyPath}`
   const libraryCopyBetter = copyVerdict
     ? copyVerdict.winner === 'b'
-    : !!replacedCopyPath &&
+    : !!libraryCopyPath &&
       replaceWarning(
         {
-          ext: fileExtension(replacedCopyPath),
+          ext: fileExtension(libraryCopyPath),
           cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
           hasKnee: replacedCopySpectrum?.hasKnee,
         },
@@ -1526,15 +1538,7 @@ export const Editor = memo(function Editor({
       : []),
   ]
 
-  const copyState: LibraryVerdict | null = copyMeasuring
-    ? 'measuring'
-    : !copyVerdict || copyVerdict.winner === 'tie'
-      ? null
-      : copyVerdict.winner === 'a'
-        ? 'here'
-        : copyVerdict.winner === 'b'
-          ? 'library'
-          : 'same'
+  const copyState = verdictState(copyVerdict, copyMeasuring)
   const renderComparison = ({
     verdict,
     here,
@@ -1550,14 +1554,15 @@ export const Editor = memo(function Editor({
     libraryName: string
     libraryLabel: string
   }): React.ReactNode => {
-    // A tie or the same audio leaves nothing to weigh, so the row opens nothing.
-    if (!verdict || !('reason' in verdict) || !here || !library) return undefined
+    // The same audio leaves nothing to weigh, and a tie with no evidence of one master claims
+    // nothing to weigh against, so neither row opens.
+    if (!verdict || verdict.winner === 'same' || !here || !library) return undefined
+    if (verdict.winner === 'tie' && !verdict.sameMaster) return undefined
+    const reason = 'reason' in verdict ? verdict.reason : undefined
     // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
     const limitedRate =
-      verdict.reason === 'peakCount'
-        ? (verdict.winner === 'a' ? library : here).sampleRateHz
-        : undefined
-    const spectrumDecided = SPECTRUM_REASONS.has(verdict.reason)
+      reason === 'peakCount' ? (verdict.winner === 'a' ? library : here).sampleRateHz : undefined
+    const spectrumDecided = reason !== undefined && SPECTRUM_REASONS.has(reason)
     return (
       <CopyComparison
         verdict={verdict}
@@ -1566,6 +1571,8 @@ export const Editor = memo(function Editor({
         hereLabel={here.ext}
         libraryLabel={libraryLabel || library.ext}
         libraryName={libraryName}
+        hereDurationSec={here.durationSec}
+        libraryDurationSec={library.durationSec}
         glimpse={
           limitedRate ? (
             <LimiterGlimpse
@@ -1611,7 +1618,13 @@ export const Editor = memo(function Editor({
           id: 'appleMusic',
           name: 'Apple Music',
           format: musicHoldsFile ? '' : replacedCopyFormat,
-          better: libraryCopyBetter,
+          comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
+          verdict:
+            libraryCopyBetter && (copyState === null || copyState === 'measuring')
+              ? 'library'
+              : copyState,
+          durationSec: libraryFacts?.durationSec,
+          detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: renderComparison({
             verdict: copyVerdict,
             here: hereFacts,
@@ -1622,76 +1635,53 @@ export const Editor = memo(function Editor({
           }),
           comparisonOpen: copyOpen,
           onToggleComparison: () =>
-            setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`),
+            setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${libraryCopyPath}`),
         }
       : null
-  const musicRowVerdict: LibraryVerdict | null =
-    libraryCopyBetter && (copyState === null || copyState === 'measuring') ? 'library' : copyState
-  const programRows = programCopies.map(
-    (copy): { row: LibraryRow; verdict: LibraryVerdict | null; reason?: string } => {
-      const name = LIBRARY_NAME[copy.program]
-      const state = copy.isThisFile
-        ? undefined
-        : programVerdicts[comparedProgramCopies.indexOf(copy)]
-      if (!state) {
-        return {
-          row: {
-            id: copy.program,
-            name,
-            format: '',
-            better: false,
-            comparisonOpen: false,
-            onToggleComparison: () => {},
-          },
-          verdict: null,
-        }
-      }
-      const openKey = `${copy.program}\n${item.inputPath}\n${copy.path}`
-      const comparison = renderComparison({
-        verdict: state.verdict,
-        here: state.here,
-        library: state.copy,
-        copyPath: copy.path,
-        libraryName: name,
-        libraryLabel: state.format,
-      })
-      const comparisonOpen = !!comparison && programOpenFor.has(openKey)
+  const programRows = programCopies.map((copy): LibraryRow => {
+    const name = LIBRARY_NAME[copy.program]
+    const state = copy.isThisFile ? undefined : programVerdicts[comparedProgramCopies.indexOf(copy)]
+    if (!state) {
       return {
-        row: {
-          id: copy.program,
-          name,
-          format: state.format,
-          better: state.verdict?.winner === 'b',
-          comparison,
-          comparisonOpen,
-          onToggleComparison: () =>
-            setProgramOpenFor((open) => {
-              const next = new Set(open)
-              if (comparisonOpen) next.delete(openKey)
-              else next.add(openKey)
-              return next
-            }),
-        },
-        verdict: rowVerdict(state),
-        reason: reasonFor(state.verdict, state.here, state.copy, name),
+        id: copy.program,
+        name,
+        format: '',
+        verdict: null,
+        comparable: !copy.isThisFile,
+        comparisonOpen: false,
+        onToggleComparison: () => {},
       }
-    },
-  )
-  const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows.map((p) => p.row)]
-  const judged = [
-    ...(musicRow
-      ? [
-          {
-            verdict: musicRowVerdict,
-            reason: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
-          },
-        ]
-      : []),
-    ...programRows,
-  ]
-  const libraryVerdict = aggregateLibraryVerdict(judged.map((j) => j.verdict))
-  // The reason of the copy that set the section's verdict, naming its program.
-  const libraryVerdictDetail = judged.find((j) => j.verdict === libraryVerdict && j.reason)?.reason
+    }
+    const openKey = `${copy.program}\n${item.inputPath}\n${copy.path}`
+    const comparison = renderComparison({
+      verdict: state.verdict,
+      here: state.here,
+      library: state.copy,
+      copyPath: copy.path,
+      libraryName: name,
+      libraryLabel: state.format,
+    })
+    const comparisonOpen = !!comparison && programOpenFor.has(openKey)
+    return {
+      id: copy.program,
+      name,
+      format: state.format,
+      verdict: rowVerdict(state),
+      comparable: true,
+      durationSec: state.copy?.durationSec,
+      detail: reasonFor(state.verdict, state.here, state.copy, name),
+      comparison,
+      comparisonOpen,
+      onToggleComparison: () =>
+        setProgramOpenFor((open) => {
+          const next = new Set(open)
+          if (comparisonOpen) next.delete(openKey)
+          else next.add(openKey)
+          return next
+        }),
+    }
+  })
+  const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
   const showLibrary = !isMulti && libraryRows.length > 0 && !libraryHidden
 
   return (
@@ -1776,8 +1766,6 @@ export const Editor = memo(function Editor({
             <LibrarySection
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
-              verdict={libraryVerdict}
-              verdictDetail={libraryVerdictDetail}
               rows={libraryRows}
             />
           )}

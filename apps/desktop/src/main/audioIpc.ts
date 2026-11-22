@@ -402,10 +402,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   )
 
   // Not cached on disk: pairs are few, and the answer changes when either file does.
-  handleAudio('audio:pair', async (_e, a: string, b: string) => {
+  handleAudio('audio:pair', async (_e, a: string, b: string, version?: boolean) => {
     try {
       return await cancellable(a, 'low', (signal) =>
-        analysisLimiter.run(() => comparePair(a, b, signal), 'low', signal),
+        analysisLimiter.run(() => comparePair(a, b, version === true, signal), 'low', signal),
       )
     } catch (err) {
       if (!isAbortError(err)) log.error('audio:pair failed', err)
