@@ -11,6 +11,7 @@ import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
+import { versionMatch } from './pairLag'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
@@ -59,6 +60,7 @@ export type WorkerJob =
       withFit: boolean
     }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
+  | { type: 'versionMatch'; a: Float32Array; b: Float32Array; reachSec: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   // The click detector's second-difference scan over the whole native-rate side (~21M
   // samples): one O(n) pass, but big enough to jank the surco:// audition it fires during,
@@ -153,6 +155,7 @@ export type WorkerJob =
 
 export type WorkerJobResult =
   | Record<string, TrackCues | null>
+  | number
   | Map<string, number>
   | BpmResult
   | BeatGridFit
@@ -225,6 +228,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':
       return detectKey(job.pcm, job.sampleRate)
+    case 'versionMatch':
+      return versionMatch(job.a, job.b, job.reachSec)
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'clicks':

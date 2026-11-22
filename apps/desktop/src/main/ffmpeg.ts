@@ -66,7 +66,6 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
-import { fft } from './fft'
 import { measureBands } from './fftBands'
 import { carryFlacBlocks } from './flacCarry'
 import {
@@ -100,6 +99,15 @@ import {
   volumeFilter,
 } from './normalize'
 import { discardBackup, keepOriginal } from './originalKeeper'
+import {
+  bestLag,
+  PAIR_MIN_SECONDS,
+  PAIR_RATE,
+  PAIR_SILENT_RMS,
+  PAIR_WINDOW_SECONDS,
+  VERSION_RATE,
+  VERSION_REACH_MAX_SECONDS,
+} from './pairLag'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
@@ -3414,67 +3422,7 @@ export async function audioFingerprint(
 // material the true offset, falling between coarse samples, scores below a repeat a beat
 // away: the coarse search then hands the refinement the wrong neighbourhood. The first
 // 91 s of each copy (~16 MB) hold the 60 s compared plus the one second of reach.
-const PAIR_RATE = 44100
 const PAIR_DECODE_SECONDS = 91
-const PAIR_WINDOW_SECONDS = 60
-const PAIR_MIN_SECONDS = 10
-const PAIR_SILENT_RMS = 1e-6
-
-// The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
-// best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
-// Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
-// window is silent, since silence lines up with anything.
-function bestLag(
-  a: Float32Array,
-  b: Float32Array,
-  from: number,
-  reach = PAIR_RATE,
-  window = 5 * PAIR_RATE,
-  eitherPolarity = false,
-): number | null {
-  const width = Math.min(a.length, from + window) - from
-  const silent = width * PAIR_SILENT_RMS ** 2
-  const span = width + 2 * reach
-  let n = 1
-  while (n < span) n <<= 1
-  const wRe = new Float64Array(n)
-  const wIm = new Float64Array(n)
-  const sRe = new Float64Array(n)
-  const sIm = new Float64Array(n)
-  let windowEnergy = 0
-  for (let i = 0; i < width; i++) {
-    wRe[i] = a[from + i]
-    windowEnergy += wRe[i] * wRe[i]
-  }
-  if (windowEnergy < silent) return null
-  for (let k = 0; k < span; k++) {
-    const j = from - reach + k
-    if (j >= 0 && j < b.length) sRe[k] = b[j]
-  }
-  const energy = new Float64Array(span + 1)
-  for (let k = 0; k < span; k++) energy[k + 1] = energy[k] + sRe[k] * sRe[k]
-  fft(wRe, wIm)
-  fft(sRe, sIm)
-  for (let k = 0; k < n; k++) {
-    const re = wRe[k] * sRe[k] + wIm[k] * sIm[k]
-    const im = wRe[k] * sIm[k] - wIm[k] * sRe[k]
-    sRe[k] = re
-    sIm[k] = -im
-  }
-  fft(sRe, sIm)
-  let best: number | null = null
-  let bestScore = -Infinity
-  for (let k = 0; k <= 2 * reach; k++) {
-    const e = energy[k + width] - energy[k]
-    if (e < silent) continue
-    const score = (eitherPolarity ? Math.abs(sRe[k]) : sRe[k]) / Math.sqrt(e)
-    if (score > bestScore) {
-      bestScore = score
-      best = k - reach
-    }
-  }
-  return best
-}
 
 const HEAD_WINDOW_SECONDS = 5
 const HEAD_SAME_CORRELATION = 0.9
@@ -3521,18 +3469,9 @@ export async function headOffsetMs(
 
 // The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
 // VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
-// probe's one second; the copies are searched again as far as the gap plus a second, in
-// either polarity, at a tenth of the probe's rate (the bass that carries most of a track's
-// energy survives it). The reach is bounded so the FFT is never longer than 2^19 points, the
-// size of the probe's own, which keeps the synchronous work on the main process short; a gap
-// past that reach (about 54 s) is not searched, and nothing is said about it.
-const VERSION_RATE = 4410
-const VERSION_WINDOW_SECONDS = 10
-const VERSION_FFT_MAX = 2 ** 19
-const VERSION_REACH_MAX_SECONDS = Math.floor(
-  (VERSION_FFT_MAX - VERSION_WINDOW_SECONDS * VERSION_RATE) / 2 / VERSION_RATE,
-)
-
+// probe's one second; both copies are decoded here and searched again in the analysis worker
+// (pairLag.versionMatch) as far as the gap plus a second. A gap past its bounded reach is not
+// searched, and nothing is said about it.
 async function versionCorrelation(
   a: string,
   b: string,
@@ -3556,39 +3495,11 @@ async function versionCorrelation(
     if (isAbortError(err)) throw err
     return undefined
   }
-  const minSamples = PAIR_MIN_SECONDS * VERSION_RATE
-  if (pa.length < minSamples || pb.length < minSamples) return undefined
-  const from = pa.length >= 90 * VERSION_RATE ? 30 * VERSION_RATE : 0
-  const lag = bestLag(
-    pa,
-    pb,
-    from,
-    Math.round(reachSec * VERSION_RATE),
-    VERSION_WINDOW_SECONDS * VERSION_RATE,
-    true,
-  )
-  if (lag === null) return undefined
-  const start = Math.max(from, -lag)
-  const end = Math.min(from + PAIR_WINDOW_SECONDS * VERSION_RATE, pa.length, pb.length - lag)
-  const n = end - start
-  if (n < minSamples) return undefined
-  let sa = 0
-  let sb = 0
-  let saa = 0
-  let sbb = 0
-  let sab = 0
-  for (let i = start; i < end; i++) {
-    const x = pa[i]
-    const y = pb[i + lag]
-    sa += x
-    sb += y
-    saa += x * x
-    sbb += y * y
-    sab += x * y
-  }
-  const silent = n * PAIR_SILENT_RMS ** 2
-  if (saa < silent || sbb < silent) return undefined
-  return Math.abs((n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)))
+  const match = await runInWorker<number | null>({ type: 'versionMatch', a: pa, b: pb, reachSec }, [
+    pa.buffer as ArrayBuffer,
+    pb.buffer as ArrayBuffer,
+  ])
+  return match ?? undefined
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
