@@ -2007,6 +2007,11 @@ export async function holdUnderCeiling(
 // ENTRY pointed at the file Traktor still knows, with that file's own cues: the
 // output location below is what lets applyPatches send the shifted tree only to
 // an ENTRY that describes the converted file.
+//
+// A replace (replaces) is the other case: the entry Traktor has is the replaced
+// copy's, so the patch addresses that path and relocates it whole onto the output.
+// It carries no cue tree and no download-to-output shift, since the entry's own
+// cues are the ones that count.
 const NML_NAMES = ['title', 'artist', 'album', 'genre'] as const
 
 function changedNames(before: TrackMetadata, after: TrackMetadata): NmlPatch['tags'] {
@@ -2027,13 +2032,16 @@ function recordConversionPatch(
   clearedExtras: boolean,
   cueShift: CueShift | undefined,
   namesBefore: TrackMetadata | undefined,
+  replaces?: { path: string; cueShift: CueShift },
 ): void {
   // Both have to hold: the toggle is the permission and the path is the address. Checking
   // only the path would keep recording patches for a sync the user has switched off, and
   // reading a cue tree per track is not free.
   if (!getSettings().syncTraktor || !getSettings().traktorNmlPath) return
   try {
-    const { volume, dir, file } = toNmlLocation(input)
+    // A replace is addressed to the file it supersedes: that is the path Traktor has, while
+    // the download it was converted from is a file the collection never saw.
+    const { volume, dir, file } = toNmlLocation(replaces?.path ?? input)
     // Where Traktor would address the output. Compared against the source below, this is
     // what separates a conversion whose source survives from a substitution.
     const outputLocation = toNmlLocation(output)
@@ -2049,9 +2057,18 @@ function recordConversionPatch(
         volume,
         dir,
         file,
-        newFile: sameDir && outputName !== file ? outputName : undefined,
-        cueTree: readCueTree(output) ?? undefined,
-        cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
+        // A replace moves the whole entry (relocates) so newFile stays out of it. Its cues
+        // are the entry's own: the tag on the output and the download-to-output shift
+        // describe a different pair of files, so neither is sent. Only a shift that moves
+        // something is recorded, so a zero leaves the CUE_V2 byte for byte as they were.
+        newFile: !replaces && sameDir && outputName !== file ? outputName : undefined,
+        relocates: replaces ? true : undefined,
+        cueTree: replaces ? undefined : (readCueTree(output) ?? undefined),
+        cueShift: replaces
+          ? replaces.cueShift.shiftMs !== 0 || replaces.cueShift.maxMs !== undefined
+            ? { shiftMs: replaces.cueShift.shiftMs, maxMs: replaces.cueShift.maxMs }
+            : undefined
+          : cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
         bpm,
         // Traktor reads a library track's stars from the collection, not the file, so
         // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
@@ -2733,6 +2750,7 @@ export async function convertAudio(
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
     // by how many attempts, and whether it ever freed.
+    const replacedCueShift: CueShift = { shiftMs: 0 }
     await renameWithRetry(tmp, output, {
       onRetry: ({ attempt, code, waitMs, path }) =>
         log.warn(
@@ -2758,6 +2776,7 @@ export async function convertAudio(
       clearExtras ?? false,
       cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
       namesBefore,
+      replacesPath ? { path: replacesPath, cueShift: replacedCueShift } : undefined,
     )
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
