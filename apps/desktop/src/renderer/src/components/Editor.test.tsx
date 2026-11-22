@@ -1982,6 +1982,23 @@ describe('Editor multi-select', () => {
     expect(screen.queryByTestId('editor-group-metadata')).toBeNull()
   })
 
+  // The rating is a field of the form like any other: a selection of several tracks used to
+  // leave it out, so rating a crate meant opening every track one by one.
+  it('rates every selected track from the stars of the multi form', () => {
+    const { onChangeAllMeta } = renderMulti({ metaA: { rating: '2' }, metaB: { rating: '2' } })
+    expect(screen.getByTestId('star-2')).toHaveAttribute('aria-checked', 'true')
+    fireEvent.click(screen.getByTestId('star-4'))
+    expect(onChangeAllMeta).toHaveBeenCalledWith({ rating: '4' })
+  })
+
+  // Showing the first track's stars over a selection would claim all of them carry it.
+  it('shows the stars empty when the selected tracks rate differently', () => {
+    renderMulti({ metaA: { rating: '2' }, metaB: { rating: '5' } })
+    for (const n of [1, 2, 3, 4, 5]) {
+      expect(screen.getByTestId(`star-${n}`)).toHaveAttribute('aria-checked', 'false')
+    }
+  })
+
   // Several files have no one folder to open, so the header offers no reveal over them.
   it('offers no reveal over several tracks', () => {
     renderMulti()

@@ -2,6 +2,7 @@ import type React from 'react'
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
+import { commonValue } from '../lib/bulkEdit'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
@@ -171,18 +172,20 @@ export function MetadataForm({
             onChange={onChange}
             onApplyCoverAll={onApplyCoverAll}
           />
-          {!isMulti && (
-            <div className="flex items-center">
-              <span id={ratingLabelId} className="sr-only">
-                {tr('fields.rating')}
-              </span>
-              <StarRating
-                value={item.meta.rating ?? ''}
-                onChange={onRate}
-                labelledBy={ratingLabelId}
-              />
-            </div>
-          )}
+          <div className="flex items-center">
+            <span id={ratingLabelId} className="sr-only">
+              {tr('fields.rating')}
+            </span>
+            <StarRating
+              value={
+                isMulti && selectedTracks
+                  ? (commonValue(selectedTracks, 'rating') ?? '')
+                  : (item.meta.rating ?? '')
+              }
+              onChange={onRate}
+              labelledBy={ratingLabelId}
+            />
+          </div>
         </div>
 
         {/* One column in the user's order, labels to the left of their inputs the way a

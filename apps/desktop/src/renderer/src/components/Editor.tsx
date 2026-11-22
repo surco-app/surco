@@ -1776,7 +1776,8 @@ export const Editor = memo(function Editor({
                 setCoverDims={setCoverDims}
                 onChange={onCoverChange}
                 onApplyCoverAll={onApplyCoverAll}
-                onRate={(v) => setField('rating', v)}
+                // Over a selection the stars write every track, the way the bulk fields do.
+                onRate={(v) => (isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v))}
                 fields={fieldSpecs}
               />
             </div>
