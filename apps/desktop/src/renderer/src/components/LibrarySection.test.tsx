@@ -121,6 +121,17 @@ describe('LibrarySection', () => {
     expect(within(slot).getByTestId('library-row-state-sizer')).toHaveTextContent('Comparando')
   })
 
+  // The chevron only appears once the comparison can open; its place is kept from the start,
+  // so the pill does not slide sideways when "Comparing" turns into the result.
+  it('keeps the chevron place on a row whose state opens nothing yet', () => {
+    mount({}, { verdict: 'measuring', comparison: undefined })
+    const waiting = screen.getByTestId('library-row-chevron-slot')
+    expect(waiting.querySelector('svg')).toBeNull()
+    cleanup()
+    mount({}, { verdict: 'here' })
+    expect(screen.getByTestId('library-row-chevron-slot').querySelector('svg')).not.toBeNull()
+  })
+
   // An identical copy has nothing to weigh, so its row is not a control that opens nothing.
   it('never makes an identical copy a button', () => {
     mount({}, { verdict: 'same' })

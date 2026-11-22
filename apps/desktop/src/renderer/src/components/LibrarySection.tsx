@@ -142,11 +142,15 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
             />
           </span>
         )}
-        {comparison && (
-          <ChevronRight
-            className={`h-3 w-3 shrink-0 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
-            aria-hidden="true"
-          />
+        {(comparison || verdict) && (
+          <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
+            {comparison && (
+              <ChevronRight
+                className={`h-3 w-3 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
+                aria-hidden="true"
+              />
+            )}
+          </span>
         )}
       </span>
     </>
