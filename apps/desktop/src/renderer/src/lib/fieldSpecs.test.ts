@@ -472,6 +472,37 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(write).toHaveBeenCalledWith('VG+')
   })
 
+  // A release shares its style, country, copyright, disc total, media type and Discogs ids,
+  // so a selection from one record must edit them together instead of hiding them. Disc
+  // number and total sit side by side as in the single form, so the pair keeps its row.
+  it('builds the release-level disc fields over a selection, each writing to every track', () => {
+    const keys = [
+      'discTotal',
+      'style',
+      'copyright',
+      'country',
+      'mediaType',
+      'discogsReleaseId',
+      'discogsUrl',
+    ] as const
+    const write = vi.fn()
+    const a = track('a')
+    const b = track('b')
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [a, b],
+        visibleFields: ['discNumber', ...keys],
+        bulkOnChange: bulkOnChangeFrom(write),
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['discNumber', ...keys])
+    for (const key of keys) {
+      specs.find((s) => s.key === key)?.onChange('x')
+      expect(write).toHaveBeenLastCalledWith({ [key]: 'x' })
+    }
+  })
+
   // The order in Ajustes → Editor is the user's: a shift+click must not move fields around
   // under their cursor, so the selection form lists them as the single form does, with
   // managed, custom and playlist fields interleaved where the user put them.

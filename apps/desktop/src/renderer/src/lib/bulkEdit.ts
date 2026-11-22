@@ -4,7 +4,8 @@ import { csvHas, splitCsv, toggleCsv } from './csv'
 
 // The release-level fields, the ones every track on an album shares, so setting one
 // across a multi-selection is meaningful, plus Comment, which a batch of downloads shares
-// as a site's note to wipe. Per-track fields (title, trackNumber, bpm, key, remixArtist)
+// as a site's note to wipe. Per-track fields (title, trackNumber, bpm, key, remixArtist,
+// mixName, originalArtist, lyricist, conductor, encodedBy, isrc, mood, energy, quality)
 // are deliberately excluded: applying one value to all would overwrite genuinely
 // different data rather than fill in a shared blank.
 export const BULK_FIELDS: MetaTextKey[] = [
@@ -22,6 +23,13 @@ export const BULK_FIELDS: MetaTextKey[] = [
   'discNumber',
   'trackTotal',
   'comment',
+  'style',
+  'discTotal',
+  'copyright',
+  'country',
+  'mediaType',
+  'discogsReleaseId',
+  'discogsUrl',
 ]
 
 // The value every selected track shares for a field, or undefined when they disagree.
