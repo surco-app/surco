@@ -15,6 +15,7 @@ function row(over: Partial<LibraryRow> = {}): LibraryRow {
     name: 'Música',
     format: 'FLAC 44,1 kHz',
     verdict: 'here',
+    comparable: true,
     comparison: <div data-testid="comparison">numbers</div>,
     comparisonOpen: false,
     onToggleComparison: vi.fn(),
@@ -63,12 +64,20 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row-state')).toHaveAccessibleName('Otra versión')
   })
 
-  // The slot is kept before the measurement starts, so the format chip does not move when
-  // "Comparing" appears.
-  it('shows no state on a copy not measured yet, keeping its place', () => {
-    mount({}, { verdict: null })
+  // A copy that will be compared keeps its slot before anything is known, not even its
+  // format, so neither the chip nor, at a narrow width, the second line appears late.
+  it('keeps the state place on a copy that will be compared before anything is known', () => {
+    mount({}, { verdict: null, format: '', comparable: true })
     expect(screen.queryByTestId('library-row-state')).toBeNull()
     expect(screen.getByTestId('library-row-state-slot')).toBeInTheDocument()
+    expect(screen.getByTestId('library-row-chevron-slot')).toBeInTheDocument()
+  })
+
+  // A copy that is this very file is never compared, so its row stays one plain line.
+  it('keeps no state place on a copy that will never be compared', () => {
+    mount({}, { verdict: null, format: 'WAV', comparable: false, comparison: undefined })
+    expect(screen.queryByTestId('library-row-state-slot')).toBeNull()
+    expect(screen.queryByTestId('library-row-chevron-slot')).toBeNull()
   })
 
   // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
@@ -107,7 +116,7 @@ describe('LibrarySection', () => {
   })
 
   // Nothing moves when the measurement lands and the format chips line up from row to row:
-  // every slot reserves the widest state of the language, with room for any length.
+  // every slot reserves the widest state of the language, with room for a length past an hour.
   it('reserves the same slot in every row, wide enough for any state', () => {
     mount({
       rows: [
@@ -129,7 +138,7 @@ describe('LibrarySection', () => {
         'Esta es mejor',
         'Mejor allí',
         'Parecidas',
-        'Otra versión · 00:00',
+        'Otra versión · 0:00:00',
       ])
     }
     for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
@@ -151,11 +160,11 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row-chevron-slot').querySelector('svg')).not.toBeNull()
   })
 
-  // An identical copy has nothing to weigh, so its row is not a control that opens nothing.
+  // An identical copy has nothing to weigh: the editor hands it no comparison, so its row is
+  // not a control that opens nothing.
   it('never makes an identical copy a button', () => {
-    mount({}, { verdict: 'same' })
+    mount({}, { verdict: 'same', comparison: undefined })
     expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
-    expect(screen.queryByTestId('comparison')).toBeNull()
   })
 
   // Open, the rows say each copy's state; the header saying it again was the same thing twice.
@@ -241,7 +250,7 @@ describe('LibrarySection', () => {
   })
 
   it('renders a plain row without format, state or chevron', () => {
-    mount({}, { format: '', verdict: null, comparison: undefined })
+    mount({}, { format: '', verdict: null, comparable: false, comparison: undefined })
     const plain = screen.getByTestId('library-row')
     expect(plain.tagName).not.toBe('BUTTON')
     const icon = screen.getByTestId('library-row-icon')

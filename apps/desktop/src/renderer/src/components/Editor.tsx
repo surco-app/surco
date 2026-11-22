@@ -1603,6 +1603,7 @@ export const Editor = memo(function Editor({
           id: 'appleMusic',
           name: 'Apple Music',
           format: musicHoldsFile ? '' : replacedCopyFormat,
+          comparable: !musicHoldsFile && (replaceTargetPending || !!comparedCopyPath),
           verdict:
             libraryCopyBetter && (copyState === null || copyState === 'measuring')
               ? 'library'
@@ -1631,6 +1632,7 @@ export const Editor = memo(function Editor({
         name,
         format: '',
         verdict: null,
+        comparable: !copy.isThisFile,
         comparisonOpen: false,
         onToggleComparison: () => {},
       }
@@ -1650,6 +1652,7 @@ export const Editor = memo(function Editor({
       name,
       format: state.format,
       verdict: rowVerdict(state),
+      comparable: true,
       durationSec: state.copy?.durationSec,
       detail: reasonFor(state.verdict, state.here, state.copy, name),
       comparison,

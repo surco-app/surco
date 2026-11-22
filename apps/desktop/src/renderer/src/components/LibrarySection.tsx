@@ -33,6 +33,8 @@ export interface LibraryRow {
   name: string
   format: string
   verdict: LibraryVerdict | null
+  // Whether this copy will be compared at all: its state's place is kept from the start.
+  comparable: boolean
   // The library copy's length, which tells another version apart at a glance.
   durationSec?: number
   // Why the winning copy won, said with the state: the table below shows only the figures.
@@ -101,9 +103,7 @@ const rowClass =
 function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const comparisonId = useId()
-  const { verdict, comparisonOpen } = row
-  // An identical copy has nothing to weigh, so its row opens nothing.
-  const comparison = verdict === 'same' ? undefined : row.comparison
+  const { verdict, comparison, comparisonOpen } = row
   const LibraryIcon = SOURCE_ICON[row.id]
   // Every state the row can take, unseen in one cell: the slot is as wide as the widest in
   // this language, with room for any length, so the row never shifts and the chips line up.
@@ -111,7 +111,7 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
     key,
     words:
       key === 'different'
-        ? tr('editor.libraryStateDifferent', { duration: '00:00' })
+        ? tr('editor.libraryStateDifferent', { duration: '0:00:00' })
         : tr(STATE[key].label),
   }))
   const rowContent = (
@@ -136,9 +136,7 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
           {row.format}
         </span>
       )}
-      {/* The measuring pill stays underneath, unseen, so the result takes its place
-            without the row shifting. */}
-      {(verdict || row.format) && (
+      {(verdict || row.comparable) && (
         <span
           data-testid="library-row-state-slot"
           className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
@@ -166,7 +164,7 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
           )}
         </span>
       )}
-      {(comparison || verdict || row.format) && (
+      {(comparison || verdict || row.comparable) && (
         <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
           {comparison && (
             <ChevronRight

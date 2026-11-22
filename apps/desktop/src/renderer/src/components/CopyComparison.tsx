@@ -101,7 +101,7 @@ export function CopyComparison({
     'reason' in verdict ? (transcodeShown ? 'cutoff' : DECIDING_ROW[verdict.reason]) : undefined
   const winnerSide = verdict.winner === 'a' ? 'here' : 'library'
   // The winning figure takes the verdict's colour: green when this file wins, amber when the
-  // library holds the better copy, the same colours as the glyph in the section's header.
+  // library holds the better copy, the same colours as the row's state pill.
   const winnerTone =
     verdict.winner === 'a' ? 'text-[var(--color-good)]' : 'text-[var(--color-warn)]'
 
@@ -109,7 +109,7 @@ export function CopyComparison({
     <div
       id={id}
       data-testid="copy-comparison"
-      // No rule of its own: the verdict glyph above carries the colour, and this is its
+      // No rule of its own: the row's state pill above carries the colour, and this is its
       // detail, set in line with the library row.
       className="mt-1.5 pl-3 text-xs"
     >
