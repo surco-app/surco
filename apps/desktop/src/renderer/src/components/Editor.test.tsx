@@ -5670,7 +5670,7 @@ describe('Editor Apple Music library section', () => {
         '/music/Strobe.aif',
         44100,
       )
-      expect(screen.getByTestId('glimpse-toggle-better')).toHaveTextContent('This file · AIF')
+      expect(screen.getByTestId('glimpse-toggle-better')).toHaveTextContent('Your file · AIF')
     })
 
     it('draws this file as the limited one when Apple Music is better', async () => {
@@ -5723,7 +5723,7 @@ describe('Editor Apple Music library section', () => {
       expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
       const here = screen.getByTestId('spectrum-glimpse-here')
       const library = screen.getByTestId('spectrum-glimpse-library')
-      expect(here).toHaveTextContent('This file · AIF')
+      expect(here).toHaveTextContent('Your file · AIF')
       expect(library).toHaveTextContent('Apple Music · WAV')
       expect(library.querySelector('[data-testid="spectrum-glimpse-lost"]')).not.toBeNull()
       expect(here.querySelector('[data-testid="spectrum-glimpse-lost"]')).toBeNull()

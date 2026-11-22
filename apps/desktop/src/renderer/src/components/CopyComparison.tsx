@@ -122,10 +122,12 @@ export function CopyComparison({
             <tr>
               <th />
               <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                {tr('editor.copyThisFile')} · {hereLabel}
+                <span className="whitespace-nowrap">{tr('editor.copyThisFile')} ·</span>{' '}
+                <span className="whitespace-nowrap">{hereLabel}</span>
               </th>
               <th className="px-3 py-2 text-right text-xs font-normal text-fg-dim">
-                {libraryName} · {libraryLabel}
+                <span className="whitespace-nowrap">{libraryName} ·</span>{' '}
+                <span className="whitespace-nowrap">{libraryLabel}</span>
               </th>
             </tr>
           </thead>

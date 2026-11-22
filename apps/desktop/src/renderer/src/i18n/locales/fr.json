@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
-    "copyThisFile": "Ce fichier",
+    "copyThisFile": "Ton fichier",
     "copyRowCutoff": "Coupure",
     "copyRowPeakCount": "Échantillons au plafond",
     "copyLimited": "La copie de {{loser}} est {{db}} dB plus forte, avec {{count}} échantillons collés à son plafond, la marque d’un limiteur.",

@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "Good: -45 dB or lower.",
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
-    "copyThisFile": "This file",
+    "copyThisFile": "Your file",
     "copyRowCutoff": "Cutoff",
     "copyRowPeakCount": "Samples at ceiling",
     "copyLimited": "The {{loser}} copy is {{db}} dB louder, with {{count}} samples pinned at its ceiling, the mark of a limiter.",

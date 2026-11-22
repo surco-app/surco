@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "Bé si és de -45 dB o menys.",
     "loudnessFixNoise": "No es pot corregir aquí perquè Surco no elimina soroll. Ve de l'origen o de la captura.",
     "loudnessAfterHeader": "ara → després de convertir",
-    "copyThisFile": "Aquest fitxer",
+    "copyThisFile": "El teu fitxer",
     "copyRowCutoff": "Tall",
     "copyRowPeakCount": "Mostres al sostre",
     "copyLimited": "La còpia de {{loser}} està {{db}} dB més alta, amb {{count}} mostres clavades al sostre, la petjada d'un limitador.",

@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
-    "copyThisFile": "Diese Datei",
+    "copyThisFile": "Deine Datei",
     "copyRowCutoff": "Cutoff",
     "copyRowPeakCount": "Samples an der Obergrenze",
     "copyLimited": "Die {{loser}}-Kopie ist {{db}} dB lauter, mit {{count}} Samples an ihrer Obergrenze, die Spur eines Limiters.",

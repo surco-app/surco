@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "良好：-45 dB 以下。",
     "loudnessFixNoise": "ここで修正不可：Surco はノイズ除去を行いません。ソースや録音に由来します。",
     "loudnessAfterHeader": "現在 → 変換後",
-    "copyThisFile": "このファイル",
+    "copyThisFile": "あなたのファイル",
     "copyRowCutoff": "カットオフ",
     "copyRowPeakCount": "上限でのサンプル数",
     "copyLimited": "{{loser}} コピーは {{db}} dB 大きく、{{count}} サンプルが上限に固定されており、リミッターの印です。",

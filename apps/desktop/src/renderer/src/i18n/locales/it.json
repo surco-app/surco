@@ -1026,7 +1026,7 @@
     "loudnessRangeNoise": "Buono a -45 dB o meno.",
     "loudnessFixNoise": "Non si può correggere qui, Surco non rimuove il rumore. Viene dall'origine o dalla registrazione.",
     "loudnessAfterHeader": "ora → dopo la conversione",
-    "copyThisFile": "Questo file",
+    "copyThisFile": "Il tuo file",
     "copyRowCutoff": "Taglio",
     "copyRowPeakCount": "Campioni al tetto",
     "copyLimited": "La copia in {{loser}} è {{db}} dB più alta, con {{count}} campioni inchiodati al tetto, l'impronta di un limiter.",
