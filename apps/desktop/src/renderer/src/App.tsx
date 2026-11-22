@@ -3269,12 +3269,6 @@ export default function App(): React.JSX.Element {
     const counts = await phraseCountsOf(queryClient, targets)
     if (counts.size > 0) {
       recordMetaUndo([...counts.keys()])
-      markHandEdited(
-        targets.flatMap((t) => {
-          const count = counts.get(t.id)
-          return count ? [{ id: t.id, meta: { comment: withPhraseCount(t.before, count) } }] : []
-        }),
-      )
       mapTracks((t) => {
         const count = counts.get(t.id)
         return count
@@ -4062,7 +4056,6 @@ export default function App(): React.JSX.Element {
     )
     if (!patches.length) return
     recordMetaUndo(patches.map((p) => p.id))
-    markHandEdited(patches)
     deriveTracks(patches)
     toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
   })

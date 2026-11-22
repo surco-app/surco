@@ -2714,11 +2714,12 @@ describe('App auto-match', () => {
     const handApi = (paths = ['/music/a.wav', '/music/b.wav']) => {
       const getRelease = vi.fn<Api['getRelease']>().mockResolvedValue(release)
       setApi({
-        getSettings: vi
-          .fn()
-          .mockResolvedValue(
-            settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'album'] }),
-          ),
+        getSettings: vi.fn().mockResolvedValue(
+          settings({
+            discogsToken: 'tok',
+            visibleFields: ['title', 'artist', 'album', 'trackNumber', 'comment'],
+          }),
+        ),
         pickFiles: vi.fn().mockResolvedValue(paths),
         readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
         readDuration: vi.fn().mockResolvedValue(180),
@@ -2726,18 +2727,20 @@ describe('App auto-match', () => {
         getRelease,
       })
     }
-    const typeAlbum = async (value: string) => {
-      const album = await screen.findByTestId('field-album')
-      fireEvent.focus(album)
-      fireEvent.change(album, { target: { value } })
-      fireEvent.keyDown(album, { key: 'Enter' })
-      fireEvent.blur(album)
+    const typeField = async (name: string, value: string) => {
+      const field = await screen.findByTestId(`field-${name}`)
+      fireEvent.focus(field)
+      fireEvent.change(field, { target: { value } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+      fireEvent.blur(field)
     }
-    const albumOfRow = async (index: number) => {
+    const typeAlbum = (value: string) => typeField('album', value)
+    const fieldOfRow = async (index: number, name: string) => {
       fireEvent.click(screen.getAllByTestId('track-row')[index])
-      await waitFor(() => expect(screen.getByTestId('field-album')).toBeInTheDocument())
-      return (screen.getByTestId('field-album') as HTMLInputElement).value
+      await waitFor(() => expect(screen.getByTestId(`field-${name}`)).toBeInTheDocument())
+      return (screen.getByTestId(`field-${name}`) as HTMLInputElement).value
     }
+    const albumOfRow = (index: number) => fieldOfRow(index, 'album')
 
     it('keeps its typed album through the sweep while the other track is matched', async () => {
       handApi()
@@ -2793,8 +2796,44 @@ describe('App auto-match', () => {
       await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
       await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
 
+      expect(await fieldOfRow(0, 'trackNumber')).toBe('1')
+      expect(await fieldOfRow(1, 'trackNumber')).toBe('2')
       expect(await albumOfRow(0)).toBe('')
       expect(await albumOfRow(1)).toBe('')
+    })
+
+    // Clearing hands a track back to the sweep only until the DJ types into it again: the
+    // search it kept still finds the old release, which would land over the retyped tags.
+    it('keeps what was typed after a clear through the sweep', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+      await typeField('title', 'My Song')
+      await typeField('artist', 'Hand Artist')
+      await typeAlbum('Hand Album')
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+      expect(await fieldOfRow(0, 'artist')).toBe('Hand Artist')
+      expect(await albumOfRow(0)).toBe('Hand Album')
+      expect(await albumOfRow(1)).toBe('Album')
+    })
+
+    // A note in the comment is not a retag: no release writes the comment, so the sweep
+    // still has the rest of the track's tags to fill.
+    it('still matches a track whose only change is its comment', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      await typeField('comment', 'warm up')
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+      expect(await fieldOfRow(0, 'comment')).toBe('warm up')
     })
 
     // A star is the DJ's judgement of the track, which no release writes: rating a crate

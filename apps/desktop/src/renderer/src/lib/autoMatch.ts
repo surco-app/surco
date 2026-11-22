@@ -1,4 +1,4 @@
-import { emptyMetadata, METADATA_KEYS, searchHintsOf } from '../../../shared/metadata'
+import { emptyMetadata, searchHintsOf } from '../../../shared/metadata'
 import { bareAlbumTitle, cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import { yearFromDate } from '../../../shared/tagFields'
 import type {
@@ -25,6 +25,7 @@ import {
   type MatchSignals,
   matchSignals,
   preRankResults,
+  RELEASE_WRITTEN_KEYS,
   type TrackMatchTarget,
 } from './release'
 
@@ -54,14 +55,12 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
 }
 
 // Whether a metadata change the user made counts as retagging the track, the edit no
-// auto-match may overwrite: any tag it actually changes, except the rating and the custom
-// fields, which no release writes. Typing into a cleared track doesn't count either: a
-// clear is how the user hands a track back to the sweep, and the title typed after it is
-// what the sweep searches with.
+// auto-match may overwrite: it changes one of the tags a release writes. The rating, the
+// custom fields, the comment and the rest no release touches stay out, so editing them
+// leaves the sweep free to fill the track.
 export function isHandEdit(track: TrackItem, patch: Partial<TrackMetadata>): boolean {
-  if (track.metaCleared) return false
-  return METADATA_KEYS.some(
-    (key) => key !== 'rating' && key in patch && (patch[key] ?? '') !== (track.meta[key] ?? ''),
+  return RELEASE_WRITTEN_KEYS.some(
+    (key) => key in patch && (patch[key] ?? '') !== (track.meta[key] ?? ''),
   )
 }
 

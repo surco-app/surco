@@ -572,6 +572,30 @@ function composerOf(rel: Release, track: ReleaseTrack | undefined): string {
   )
 }
 
+// The tags applying a release can overwrite on a track that already carries them, which
+// makes them the ones a hand edit has to protect. BPM and key are absent on purpose: a
+// release only fills them when the track has none. Pinned to buildReleaseMeta by a test.
+export const RELEASE_WRITTEN_KEYS: readonly MetaTextKey[] = [
+  'title',
+  'trackNumber',
+  'discNumber',
+  'album',
+  'albumArtist',
+  'artist',
+  'year',
+  'genre',
+  'style',
+  'country',
+  'mediaType',
+  'publisher',
+  'catalogNumber',
+  'composer',
+  'mixName',
+  'isrc',
+  'discogsReleaseId',
+  'discogsUrl',
+]
+
 // Applying a release overwrites the album-level data and the chosen track's
 // title/number/artist, so the song ends up fully tagged from Discogs in one
 // action. The cover is the exception: a file that already carries a cover keeps

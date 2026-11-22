@@ -1176,9 +1176,16 @@ describe('isHandEdit', () => {
     expect(isHandEdit(track(), { title: 'Song', artist: 'Artist', album: '' })).toBe(false)
   })
 
-  // After a clear the DJ types the title back so the sweep can retag the track from
-  // scratch: that typing is the start of a rematch, not an edit to protect from one.
-  it('does not count typing into a cleared track', () => {
-    expect(isHandEdit(track({ metaCleared: true }), { title: 'Other' })).toBe(false)
+  // What the DJ types after a clear is still theirs: the stale search the track kept
+  // would otherwise bring the old release back over the retyped title and artist.
+  it('counts typing into a cleared track', () => {
+    expect(isHandEdit(track({ metaCleared: true }), { title: 'Other' })).toBe(true)
+  })
+
+  // A release keeps the track's own BPM and key and never writes the comment, grouping,
+  // mood or energy: an edit to those leaves nothing for the sweep to overwrite.
+  it('does not count a tag no release overwrites', () => {
+    expect(isHandEdit(track(), { bpm: '128', key: '8A' })).toBe(false)
+    expect(isHandEdit(track(), { comment: 'warm up', grouping: 'Peak', mood: 'dark' })).toBe(false)
   })
 })
