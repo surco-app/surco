@@ -20,6 +20,7 @@ interface TagListBulkFieldProps {
   list: TagList
   presets: string[]
   tracks: TrackItem[]
+  invalid?: boolean
   onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
@@ -68,6 +69,7 @@ export function TagListBulkField({
   list,
   presets,
   tracks,
+  invalid,
   onChangeTracks,
 }: TagListBulkFieldProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -89,9 +91,17 @@ export function TagListBulkField({
         className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim compact:mb-0.5 beside:col-start-1 beside:mb-0 beside:min-h-[34px] beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right compact:beside:min-h-[30px]"
       >
         {label}
+        {invalid && (
+          <span
+            data-testid={`field-required-${list.key}`}
+            aria-hidden="true"
+            className="h-1.5 w-1.5 rounded-full bg-warn"
+          />
+        )}
       </span>
       <fieldset
         aria-labelledby={`${baseId}-label`}
+        aria-describedby={invalid ? `${baseId}-required` : undefined}
         className="min-w-0 beside:col-start-2 beside:-mt-1.5"
       >
         <SuggestionChips
@@ -103,6 +113,11 @@ export function TagListBulkField({
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />
       </fieldset>
+      {invalid && (
+        <span id={`${baseId}-required`} className="sr-only">
+          {tr('editor.requiredEmpty')}
+        </span>
+      )}
       <div className="mt-0.5 ml-[5px] border-l-2 beside:col-start-2 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"

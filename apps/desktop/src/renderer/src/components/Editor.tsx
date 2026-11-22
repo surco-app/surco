@@ -2197,8 +2197,18 @@ export const Editor = memo(function Editor({
           }
           leftOut={leftOut ?? undefined}
           onBlockedPress={() => {
-            if (firstMissing)
-              document.querySelector<HTMLElement>(`[data-testid="field-${firstMissing}"]`)?.focus()
+            if (!firstMissing) return
+            // Genre and Grouping over a selection have no box: land on their first chip, or
+            // on the per-track toggle when no tag exists yet.
+            const target =
+              document.querySelector<HTMLElement>(`[data-testid="field-${firstMissing}"]`) ??
+              document.querySelector<HTMLElement>(
+                `[data-testid="${firstMissing}-bulk"] fieldset button`,
+              ) ??
+              document.querySelector<HTMLElement>(
+                `[data-testid="${firstMissing}-per-track-toggle"]`,
+              )
+            target?.focus()
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}

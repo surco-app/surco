@@ -54,6 +54,7 @@ function renderField(
         list={f.perTrack.list}
         presets={f.suggestions ?? []}
         tracks={f.perTrack.tracks}
+        invalid={f.invalid}
         onChangeTracks={f.perTrack.onChangeTracks}
       />
     )

@@ -11,6 +11,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
+import { leftOutForMissing } from './batch'
 import { BULK_FIELDS, commonValue, type TagList } from './bulkEdit'
 import { FIELD_DEFS, type FieldWidth, isPlaylistField, PLAYLIST_FIELDS } from './fields'
 import type { PlaylistOption } from './rekordboxPlaylists'
@@ -279,6 +280,16 @@ export function buildFieldSpecs({
     isMulti && selectedTracks && customFields.length > 0
       ? selectedTracks.map((t) => effectiveMeta(t, customFields).custom ?? {})
       : []
+  // The fields the convert gate holds a selection back for, so the form marks exactly the
+  // ones the footer names and a track the batch skips anyway marks nothing.
+  const heldBack =
+    isMulti && selectedTracks
+      ? leftOutForMissing(selectedTracks, requiredFields, customFields).fields
+      : []
+  const requirement = (key: string): Pick<FieldSpec, 'required' | 'invalid'> => ({
+    required: requiredFields.includes(key),
+    invalid: heldBack.includes(key),
+  })
   const bulkSpec = (key: (typeof BULK_FIELDS)[number], tracks: TrackItem[]): FieldSpec => {
     const shared = commonValue(tracks, key)
     const list = tagListFor(key, genreTags, groupingTags)
@@ -314,6 +325,7 @@ export function buildFieldSpecs({
               : undefined,
       tagList: list,
       perTrack,
+      ...requirement(key),
     }
   }
   const customSpec = (f: CustomField): FieldSpec => {
@@ -328,6 +340,7 @@ export function buildFieldSpecs({
       mixed: shared === undefined,
       mixedValues,
       onChange: customBulkOnChange.get(f.key) ?? (() => {}),
+      ...requirement(f.key),
     }
   }
   // A per-track field over a selection: shown where the user put it so the form matches the
@@ -359,6 +372,7 @@ export function buildFieldSpecs({
           ? { label: tr('editor.numberTracks', { count: tracks.length }), onApply: numberTracks }
           : undefined,
       onChange: () => {},
+      ...requirement(key),
     }
   }
   // One walk over visibleFields keeps the user's order; each key maps to its multi spec, or

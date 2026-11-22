@@ -2541,6 +2541,73 @@ describe('Editor multi-select', () => {
     expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
   })
 
+  // One track marks its empty required field with the amber dot; a selection that held the
+  // same gap back showed only the note below, so the DJ could not see which field to fill.
+  it('marks a required Grouping that one selected track still misses, as one track does', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      groupingPresets: ['Warm-up'],
+    })
+    expect(screen.getByTestId('field-required-grouping')).toBeInTheDocument()
+  })
+
+  it('keeps the mark while only some of the selected tracks have the required Grouping', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      metaA: { grouping: 'Warm-up' },
+    })
+    expect(screen.getByTestId('field-required-grouping')).toBeInTheDocument()
+  })
+
+  it('drops the mark once every selected track has the required Grouping', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      metaA: { grouping: 'Warm-up' },
+      metaB: { grouping: 'Peak' },
+    })
+    expect(screen.queryByTestId('field-required-grouping')).toBeNull()
+  })
+
+  it('marks a required text field a selection misses in a track', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'artist'],
+      metaA: { artist: 'Kumara' },
+    })
+    expect(screen.getByTestId('field-required-artist')).toBeInTheDocument()
+  })
+
+  it('marks a required custom field a selection misses in a track', () => {
+    renderMulti({
+      requiredFields: ['mood'],
+      visibleFields: ['title', 'mood'],
+      customFields: [{ key: 'mood', label: 'Mood' }],
+    })
+    expect(screen.getByTestId('field-required-mood')).toBeInTheDocument()
+  })
+
+  // Genre and Grouping have no text box, so "field-grouping" does not exist for a selection:
+  // the press must land on their chips instead of doing nothing.
+  it('focuses the Grouping chips when the missing required field is Grouping and the notice is pressed', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      groupingPresets: ['Warm-up'],
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(screen.getByTestId('grouping-bulk').contains(document.activeElement)).toBe(true)
+    expect(document.activeElement).not.toBe(document.body)
+  })
+
+  it('focuses the per-track toggle when Grouping has no chips to land on', () => {
+    renderMulti({ requiredFields: ['grouping'], visibleFields: ['title', 'grouping'] })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(document.activeElement).toBe(screen.getByTestId('grouping-per-track-toggle'))
+  })
+
   it('names the missing fields in the batch plan', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(i18n.t('fields.artist'))
