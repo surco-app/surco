@@ -49,7 +49,7 @@ import type {
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
-  PairFacts,
+  PairProbe,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -410,7 +410,7 @@ export interface Api {
   rememberAutoMatch: (path: string, verdict: RememberedAutoMatch) => Promise<null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
-  comparePair: (a: string, b: string) => Promise<PairFacts | null>
+  comparePair: (a: string, b: string) => Promise<PairProbe | null>
   limiterGlimpse: (
     worse: string,
     better: string,

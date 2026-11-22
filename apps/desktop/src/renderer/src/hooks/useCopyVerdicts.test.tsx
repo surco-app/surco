@@ -100,12 +100,12 @@ describe('useCopyVerdicts', () => {
 
   // The length is what tells another version from a drifting copy of one master, so both
   // lengths reach the comparison.
-  it('calls a copy of another length the probe could not line up another version', async () => {
+  it('calls a copy of another length the wider search found no match for another version', async () => {
     setApi({
       spectrogram: vi.fn(async (path: string) => spectrumFor(path)),
       loudness: vi.fn().mockResolvedValue(loudness),
       fingerprint: vi.fn(async (path: string) => `fp${path}`),
-      comparePair: vi.fn().mockResolvedValue(null),
+      comparePair: vi.fn().mockResolvedValue({ versionCorrelation: 0.1 }),
       properties: vi.fn().mockResolvedValue(null),
       readDuration: vi.fn(async (path: string) => (path === '/here/a.mp3' ? 483.2 : 447.9)),
     })

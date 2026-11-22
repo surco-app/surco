@@ -65,42 +65,55 @@ describe('compareCopies', () => {
       durationSec,
       integratedLufs,
     })
-    const unrelated = { correlation: 0.19, residualDb: -0.2, gainDb: -12 }
+    const searched = (versionCorrelation: number) => ({ versionCorrelation })
 
-    // 3 Ways: two lossless edits, 447 s and 483 s, that the probe could not line up at all.
-    // Saying nothing hid that the library holds another version.
-    it('calls two edits of different length that the probe could not line up different', () => {
-      expect(compareCopies(edit(447), edit(483), null)).toEqual({ winner: 'different' })
+    // 3 Ways: two lossless edits, 447 s and 483 s, that the ±1 s probe could not line up and
+    // the wider search found nothing between. Saying nothing hid another version.
+    it('calls two edits the wider search found no match between different', () => {
+      expect(compareCopies(edit(447), edit(483), searched(0.19))).toEqual({ winner: 'different' })
+      expect(
+        compareCopies(edit(447), edit(483), {
+          correlation: 0.3,
+          residualDb: -1,
+          gainDb: -6,
+          versionCorrelation: 0.19,
+        }),
+      ).toEqual({ winner: 'different' })
     })
 
-    // Measured: different edits correlate about 0 (0.19 at best, searching 60 s either way).
-    it('calls two edits of different length that barely correlate different', () => {
-      expect(compareCopies(edit(447), edit(483), unrelated)).toEqual({ winner: 'different' })
+    // One master with 3 s of its head trimmed is 3 s shorter and slips past the ±1 s probe;
+    // the wider search lines it up again, so it is no other version.
+    it('never calls a shifted copy of one master another version', () => {
+      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({ winner: 'tie' })
+    })
+
+    // Without the wider search there is no evidence the audio differs.
+    it('never calls copies another version without the wider search', () => {
+      expect(compareCopies(edit(447), edit(483), null)).toEqual({ winner: 'tie' })
+      expect(
+        compareCopies(edit(447), edit(483), { correlation: 0.1, residualDb: -0.1, gainDb: -9 }),
+      ).toEqual({ winner: 'tie' })
     })
 
     // PG2 Hey-Heeey: one master drifting against itself correlated 0.067. A length within 2 s
     // is what a drift leaves, and calling it another version would be false.
     it('never calls copies of nearly the same length another version', () => {
-      expect(compareCopies(edit(447), edit(448.9), unrelated)).toEqual({ winner: 'tie' })
-      expect(compareCopies(edit(447), edit(448.9), null)).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(448.9), searched(0.05))).toEqual({ winner: 'tie' })
     })
 
-    // Nacho Division: one master at 0.954. Only a correlation under 0.5 says the audio differs.
     it('never calls a correlation of 0.5 or more another version', () => {
-      const at = { correlation: 0.5, residualDb: -3, gainDb: -2 }
-      expect(compareCopies(edit(447), edit(483), at)).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({ winner: 'tie' })
     })
 
-    // A null pair also means a file too short or silent to line up; that is no evidence.
     it('never calls a short or silent copy another version', () => {
-      expect(compareCopies(edit(9.9), edit(483), null)).toEqual({ winner: 'tie' })
-      expect(compareCopies(edit(447), edit(483, -71), null)).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(9.9), edit(483), searched(0.1))).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(483, -71), searched(0.1))).toEqual({ winner: 'tie' })
     })
 
     it('never calls copies of unknown length another version', () => {
       const a = { ...netzwerkAif, fingerprint: 'p' }
       const b = { ...netzwerkAif, fingerprint: 'q' }
-      expect(compareCopies(a, b, null)).toEqual({ winner: 'tie' })
+      expect(compareCopies(a, b, searched(0.1))).toEqual({ winner: 'tie' })
     })
   })
 
@@ -215,7 +228,9 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'a',
       reason: 'peakCount',
     })
-    expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({
+      winner: 'tie',
+    })
   })
 
   it('decides on a crest gap of exactly 1.5 dB and not just under it', () => {
@@ -223,7 +238,9 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'b',
       reason: 'crest',
     })
-    expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({
+      winner: 'tie',
+    })
   })
 
   it('reads a correlation of exactly 0.98 as one master and just under it as two', () => {
@@ -259,11 +276,19 @@ describe('compareCopies, every branch and both directions', () => {
   // not read as a gap of 1000 samples or 12 dB against nothing.
   it('skips a level criterion only one side has measured, from either side', () => {
     const missingPeaks = { ...level(1000, 12), fingerprint: 'p', peakCount: null }
-    expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({ winner: 'tie' })
-    expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({
+      winner: 'tie',
+    })
+    expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({
+      winner: 'tie',
+    })
     const missingCrest = { ...level(10, 12), fingerprint: 'c', crestDb: null }
-    expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({ winner: 'tie' })
-    expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({
+      winner: 'tie',
+    })
+    expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({
+      winner: 'tie',
+    })
   })
 
   // Two files that both failed to fingerprint share no MD5; null must not equal null.

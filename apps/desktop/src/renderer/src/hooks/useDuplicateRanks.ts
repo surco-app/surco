@@ -1,6 +1,6 @@
 import { type QueryObserverResult, useQueries } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared/types'
+import type { LoudnessResult, PairProbe, SpectrumVerdict } from '../../../shared/types'
 import { type DuplicateRank, rankGroup } from '../lib/duplicateRanks'
 import { duplicateGroups } from '../lib/duplicates'
 import type { TrackItem } from '../types'
@@ -10,8 +10,8 @@ import { useStableCallback } from './useStableCallback'
 // Only the data reaches the memo below: useQueries structurally shares what combine
 // returns, so a settled query that did not change keeps the same tuple.
 const factsData = (results: QueryObserverResult[]): unknown[] => results.map((r) => r.data)
-const pairsData = (results: QueryObserverResult[]): (PairFacts | null | undefined)[] =>
-  results.map((r) => (r.isPending ? undefined : ((r.data as PairFacts | undefined) ?? null)))
+const pairsData = (results: QueryObserverResult[]): (PairProbe | null | undefined)[] =>
+  results.map((r) => (r.isPending ? undefined : ((r.data as PairProbe | undefined) ?? null)))
 
 function sameRank(a: DuplicateRank | undefined, b: DuplicateRank): boolean {
   return (

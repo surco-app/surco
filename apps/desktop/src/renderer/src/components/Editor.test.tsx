@@ -5748,11 +5748,11 @@ describe('Editor Apple Music library section', () => {
   // 3 Ways: two lossless edits, 8:03 and 7:28, that the probe could not line up. Saying
   // nothing hid that the library holds another version; its length is what tells it apart,
   // and opening the row puts both lengths side by side.
-  it('says the library holds another version, with its length, when the copies do not line up', async () => {
+  it('says the library holds another version, with its length, when the copies do not line up even searched wider', async () => {
     renderWithLibraryCopy({
       here: aifLoudness,
       library: wavLoudness,
-      pair: Promise.resolve(null),
+      pair: Promise.resolve({ versionCorrelation: 0.1 }),
       hereDuration: 483.2,
       libraryDuration: 448.4,
     })

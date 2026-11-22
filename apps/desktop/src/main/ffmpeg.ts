@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
+import { VERSION_GAP_SEC } from '../shared/copyVersion'
 import { customTagName } from '../shared/customFields'
 import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
@@ -30,6 +31,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   PairFacts,
+  PairProbe,
   ReviewRawFields,
   TrackMetadata,
   TrackProperties,
@@ -3422,8 +3424,15 @@ const PAIR_SILENT_RMS = 1e-6
 // best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
 // Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
 // window is silent, since silence lines up with anything.
-function bestLag(a: Float32Array, b: Float32Array, from: number, reach = PAIR_RATE): number | null {
-  const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
+function bestLag(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach = PAIR_RATE,
+  window = 5 * PAIR_RATE,
+  eitherPolarity = false,
+): number | null {
+  const width = Math.min(a.length, from + window) - from
   const silent = width * PAIR_SILENT_RMS ** 2
   const span = width + 2 * reach
   let n = 1
@@ -3458,7 +3467,7 @@ function bestLag(a: Float32Array, b: Float32Array, from: number, reach = PAIR_RA
   for (let k = 0; k <= 2 * reach; k++) {
     const e = energy[k + width] - energy[k]
     if (e < silent) continue
-    const score = sRe[k] / Math.sqrt(e)
+    const score = (eitherPolarity ? Math.abs(sRe[k]) : sRe[k]) / Math.sqrt(e)
     if (score > bestScore) {
       bestScore = score
       best = k - reach
@@ -3510,6 +3519,74 @@ export async function headOffsetMs(
   return (lag / PAIR_RATE) * 1000
 }
 
+// The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
+// VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
+// probe's one second; the copies are searched again as far as the gap plus a second, in
+// either polarity, at a tenth of the probe's rate so a search of minutes stays a few tens of
+// megabytes (the bass that carries most of a track's energy survives it). Gaps past
+// VERSION_REACH_MAX_SECONDS are not searched, and nothing is said about them.
+const VERSION_RATE = 4410
+const VERSION_WINDOW_SECONDS = 10
+const VERSION_REACH_MAX_SECONDS = 180
+
+async function versionCorrelation(
+  a: string,
+  b: string,
+  gapSec: number,
+  signal?: AbortSignal,
+): Promise<number | undefined> {
+  const reachSec = gapSec + 1
+  if (reachSec > VERSION_REACH_MAX_SECONDS) return undefined
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: VERSION_RATE,
+      seconds: PAIR_DECODE_SECONDS + Math.ceil(reachSec),
+      maxBufferMb: 16,
+      signal,
+    })
+  let pa: Float32Array
+  let pb: Float32Array
+  try {
+    ;[pa, pb] = await Promise.all([decode(a), decode(b)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return undefined
+  }
+  const minSamples = PAIR_MIN_SECONDS * VERSION_RATE
+  if (pa.length < minSamples || pb.length < minSamples) return undefined
+  const from = pa.length >= 90 * VERSION_RATE ? 30 * VERSION_RATE : 0
+  const lag = bestLag(
+    pa,
+    pb,
+    from,
+    Math.round(reachSec * VERSION_RATE),
+    VERSION_WINDOW_SECONDS * VERSION_RATE,
+    true,
+  )
+  if (lag === null) return undefined
+  const start = Math.max(from, -lag)
+  const end = Math.min(from + PAIR_WINDOW_SECONDS * VERSION_RATE, pa.length, pb.length - lag)
+  const n = end - start
+  if (n < minSamples) return undefined
+  let sa = 0
+  let sb = 0
+  let saa = 0
+  let sbb = 0
+  let sab = 0
+  for (let i = start; i < end; i++) {
+    const x = pa[i]
+    const y = pb[i + lag]
+    sa += x
+    sb += y
+    saa += x * x
+    sbb += y * y
+    sab += x * y
+  }
+  const silent = n * PAIR_SILENT_RMS ** 2
+  if (saa < silent || sbb < silent) return undefined
+  return Math.abs((n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)))
+}
+
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
 // the start when a is under 90 s). Calibrated on 26 real pairs: the same master
 // correlates 0.992 to 0.9999, a different source 0.38 to 0.86. Null when either file
@@ -3520,7 +3597,19 @@ export async function comparePair(
   a: string,
   b: string,
   signal?: AbortSignal,
-): Promise<PairFacts | null> {
+): Promise<PairProbe | null> {
+  const [facts, aSec, bSec] = await Promise.all([
+    alignedPair(a, b, signal),
+    probeDuration(a, signal),
+    probeDuration(b, signal),
+  ])
+  const gapSec = aSec != null && bSec != null ? Math.abs(aSec - bSec) : 0
+  const wide = gapSec > VERSION_GAP_SEC ? await versionCorrelation(a, b, gapSec, signal) : undefined
+  if (wide === undefined) return facts
+  return facts ? { ...facts, versionCorrelation: wide } : { versionCorrelation: wide }
+}
+
+async function alignedPair(a: string, b: string, signal?: AbortSignal): Promise<PairFacts | null> {
   const decode = (input: string): Promise<Float32Array> =>
     decodePcm(input, {
       sampleRate: PAIR_RATE,

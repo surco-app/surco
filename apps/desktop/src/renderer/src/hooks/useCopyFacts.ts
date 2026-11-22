@@ -1,5 +1,5 @@
 import { queryOptions, useQueries, useQuery } from '@tanstack/react-query'
-import type { LoudnessResult, PairFacts, SpectrumVerdict } from '../../../shared/types'
+import type { LoudnessResult, PairProbe, SpectrumVerdict } from '../../../shared/types'
 import { analysisOptions, cancellableAnalysisOptions } from '../lib/analysisQueries'
 import type { CopyFacts } from '../lib/bestCopy'
 import { gradedExt } from '../lib/quality'
@@ -17,7 +17,7 @@ export function pairOptions(a: string, b: string) {
   })
 }
 
-export function usePairFacts(a: string, b: string, enabled: boolean): PairFacts | null | undefined {
+export function usePairFacts(a: string, b: string, enabled: boolean): PairProbe | null | undefined {
   const query = useQuery({ ...pairOptions(a, b), enabled: enabled && !!a && !!b })
   return query.isPending ? undefined : (query.data ?? null)
 }

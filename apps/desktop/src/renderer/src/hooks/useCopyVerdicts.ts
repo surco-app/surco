@@ -2,7 +2,7 @@ import { useQueries } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import type {
   LoudnessResult,
-  PairFacts,
+  PairProbe,
   SpectrumVerdict,
   TrackProperties,
 } from '../../../shared/types'
@@ -68,7 +68,7 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
       settledDuration(results[start + FACTS_PER_FILE]),
     )
     const pairResult = results[start + FACTS_PER_FILE + 1]
-    const pair = pairResult.isPending ? undefined : ((pairResult.data as PairFacts | null) ?? null)
+    const pair = pairResult.isPending ? undefined : ((pairResult.data as PairProbe | null) ?? null)
     const props = results[start + FACTS_PER_FILE + 2].data as TrackProperties | null | undefined
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
     const measuring = here === undefined || copy === undefined || pair === undefined

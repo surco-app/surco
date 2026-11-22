@@ -1,4 +1,4 @@
-import type { PairFacts } from '../../../shared/types'
+import type { PairProbe } from '../../../shared/types'
 import {
   COPY_MARGINS,
   type CopyFacts,
@@ -23,7 +23,7 @@ export interface DuplicateRank {
 // same. pairAt is asked with i < j and must answer either direction.
 export function rankGroup(
   facts: (CopyFacts | null | undefined)[],
-  pairAt: (i: number, j: number) => PairFacts | null | undefined,
+  pairAt: (i: number, j: number) => PairProbe | null | undefined,
   margins: CopyMargins = COPY_MARGINS,
 ): DuplicateRank[] | null {
   if (facts.some((f) => !f)) return null
