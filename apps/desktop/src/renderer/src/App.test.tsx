@@ -4070,9 +4070,8 @@ describe('App source playlists', () => {
       expect(screen.getByTestId('track-search')).toHaveValue('')
     })
 
-    // "¿Esta pista ya está en rekordbox?" is asked by searching in one list and switching to
-    // the other: the search has to come along.
-    it('keeps the search when switching to another source', async () => {
+    // Each source keeps the search left in it: coming back to rekordbox finds it where it was.
+    it('gives a source its search back when coming back to it', async () => {
       setupPlaylists()
       await renderApp()
       fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
@@ -7554,10 +7553,43 @@ describe('App multi-select removal', () => {
     ])
   })
 
-  // The search stays when switching source, so coming back to Tracks can show fewer rows than
-  // the selection kept for it. An action on the selection must never reach a row the user
-  // cannot see: the snare, hidden by a search typed in the playlist, went to the OS trash
-  // with the two kicks.
+  // A search typed in a DJ program followed the user into Tracks, where it hid rows they never
+  // searched for there (22/11). Tracks comes back with its own search, empty here, and the
+  // program gets its search back on the way back.
+  it('leaves a search typed in a program out of Tracks', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/kick.wav', '/music/snare.wav']),
+      dj: djReads({
+        engine: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: '7', name: 'Friday', kind: 'playlist', count: 1 }]),
+          recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(0),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([{ path: '/m/scratchism.wav', separator: false, meta: {} }]),
+        },
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-engine'))
+    fireEvent.click(await screen.findByTestId('source-node-7'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'scratchism' } })
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    expect(screen.getByTestId('track-search')).toHaveValue('')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+
+    fireEvent.click(screen.getByTestId('source-rail-engine'))
+    expect(screen.getByTestId('track-search')).toHaveValue('scratchism')
+  })
+
+  // Tracks gets its search back when the user returns to it, so it can show fewer rows than
+  // the selection made there. An action on the selection must never reach a row the user
+  // cannot see: the snare, hidden by the search, must stay out of the OS trash.
   it('trashes only the selected rows the search shows after coming back from another source', async () => {
     const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
@@ -7585,12 +7617,13 @@ describe('App multi-select removal', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.click(rows[2], { metaKey: true })
+    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'kick' } })
 
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     fireEvent.click(await screen.findByTestId('source-node-7'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'kick' } })
     fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    expect(screen.getByTestId('track-search')).toHaveValue('kick')
 
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
