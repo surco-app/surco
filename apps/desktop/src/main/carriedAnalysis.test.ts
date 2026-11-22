@@ -17,4 +17,10 @@ describe('AUDIO_ONLY_NAMESPACES', () => {
       ]),
     )
   })
+
+  it('carries the tempo, key, beat grid and remembered auto-match so a comment save never measures the track again', () => {
+    expect(AUDIO_ONLY_NAMESPACES).toEqual(
+      expect.arrayContaining(['bpm', 'key', 'beat-grid-v4', 'automatch-v1']),
+    )
+  })
 })

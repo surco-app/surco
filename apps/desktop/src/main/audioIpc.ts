@@ -15,10 +15,13 @@ import type {
 } from '../shared/types'
 import { activity } from './activity'
 import {
+  AUTO_MATCH_NAMESPACE,
+  BPM_NAMESPACE,
   CHANNELSCAN_NAMESPACE,
   CLICKS_NAMESPACE,
   cachedAnalysis,
   FINGERPRINT_NAMESPACE,
+  KEY_NAMESPACE,
   LOUDNESS_NAMESPACE,
   peekAnalysis,
   peekVerdict,
@@ -94,8 +97,6 @@ function cancellable<T>(
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
 const PROPERTIES_NAMESPACE = 'properties-v2'
-const BPM_NAMESPACE = 'bpm'
-const KEY_NAMESPACE = 'key'
 
 // An .m4a is graded by the codec it holds (AAC or ALAC), which entries cached before the
 // analysis kept it lack. Its own key measures only those files again; every other format
@@ -105,9 +106,6 @@ function spectrogramNamespace(inputPath: string): string {
     ? `${SPECTROGRAM_NAMESPACE}-codec`
     : SPECTROGRAM_NAMESPACE
 }
-
-// Bumped when what a verdict means changes, so verdicts reached before are probed again.
-const AUTO_MATCH_NAMESPACE = 'automatch-v1'
 
 const META_CACHED_READS_AT_ONCE = 8
 
