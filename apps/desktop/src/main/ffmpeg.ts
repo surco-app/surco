@@ -2639,6 +2639,7 @@ export async function convertAudio(
         trimMs: trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
         carry: carrySerato,
         strip: !seratoAnalysisKept,
+        shiftMs: 0,
       }).catch((err) => log.warn(`Serato cues not carried to ${basename(output)}: ${err}`))
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's

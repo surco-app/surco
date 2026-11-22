@@ -140,6 +140,7 @@ export type WorkerJob =
       trimMs: number
       carry: boolean
       strip: boolean
+      shiftMs: number
     }
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }

@@ -168,7 +168,7 @@ describe('carrySeratoCues from a track whose older cue block disagrees', () => {
     })
     expect(readSeratoTrack(source)?.oldBlockDisagrees).toBe(true)
 
-    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false })
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs: 0 })
 
     expect(readSeratoMarkers(dest)).toBeNull()
     const f = TagFile.createFromPath(dest)
@@ -178,5 +178,26 @@ describe('carrySeratoCues from a track whose older cue block disagrees', () => {
     } finally {
       f.dispose()
     }
+  })
+})
+
+describe('carrySeratoCues with a shift', () => {
+  const carried = async (shiftMs: number) => {
+    const source = audioFile('wav')
+    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }]))
+    const dest = audioFile('wav')
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs })
+    return readSeratoMarkers(dest)?.cues[0].ms
+  }
+
+  // The replaced file and its replacement can be different masters: the same beat sits
+  // later in the new one, and a cue left at its old millisecond lands before the drop.
+  it('moves the carried cues later by the shift, on top of the clock difference', async () => {
+    expect(await carried(120)).toBe(2120)
+  })
+
+  // A plain conversion has no shift; the cues must stay exactly where Serato had them.
+  it('carries the cues where they were with no shift', async () => {
+    expect(await carried(0)).toBe(2000)
   })
 })

@@ -297,10 +297,12 @@ function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
   return a !== null && a.length === b.length && a.every((byte, at) => byte === b[at])
 }
 
+// shiftMs is for a replacement master where the same audio sits later (positive) or earlier
+// than in the source; it moves the cues but not the trim cut, which is a position in the source.
 export async function carrySeratoCues(
   source: string,
   dest: string,
-  { trimMs, carry, strip }: { trimMs: number; carry: boolean; strip: boolean },
+  { trimMs, carry, strip, shiftMs }: { trimMs: number; carry: boolean; strip: boolean; shiftMs: number },
 ): Promise<void> {
   const ext = extname(dest).toLowerCase()
   const from = carry ? readSeratoTrack(source) : null
@@ -310,7 +312,7 @@ export async function carrySeratoCues(
   const payload = from?.payload
     ? retimedSeratoPayload(
         from.payload,
-        (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs,
+        (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs + shiftMs,
         trimMs > 0 ? sourceLead + trimMs : 0,
       )
     : null
