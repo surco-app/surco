@@ -809,10 +809,6 @@
     "qualityTranscode": "Font amb pèrdua",
     "qualityDamaged": "Fitxer malmès",
     "analyzing": "Analitzant l'espectre…",
-    "previous": {
-      "label": "Abans:",
-      "restore": "Restaurar"
-    },
     "cleaned": {
       "label": "Netejat",
       "leading_one": "s'ha tret un espai del principi",
@@ -991,6 +987,7 @@
     "baseTitle": "Títol base",
     "stripNumbering": "Treure la numeració",
     "applyTitleFormat": "Format",
+    "restoreRelease": "Restaura les etiquetes d'abans",
     "applyTitleFormatHint": "Aplicar el format del títol a la selecció",
     "deriveFromName": "Omplir des del nom",
     "deriveFromNameHint": "Omple les metadades a partir del nom del fitxer",

@@ -93,7 +93,6 @@ function renderField(
       formatResult={f.formatResult}
       formatAction={f.formatAction}
       cleaned={f.cleaned}
-      previous={f.previous}
       readOnly={f.readOnly}
       readOnlyNote={f.readOnlyNote}
       plain={f.plain}

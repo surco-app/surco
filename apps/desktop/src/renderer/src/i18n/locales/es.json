@@ -809,10 +809,6 @@
     "qualityTranscode": "Fuente con pérdidas",
     "qualityDamaged": "Archivo dañado",
     "analyzing": "Analizando espectro…",
-    "previous": {
-      "label": "Antes:",
-      "restore": "Restaurar"
-    },
     "cleaned": {
       "label": "Limpiado",
       "leading_one": "quitado un espacio al principio",
@@ -991,6 +987,7 @@
     "baseTitle": "Título base",
     "stripNumbering": "Quitar numeración",
     "applyTitleFormat": "Formato",
+    "restoreRelease": "Restaurar las etiquetas de antes",
     "applyTitleFormatHint": "Aplicar el formato del título a la selección",
     "deriveFromName": "Rellenar del nombre",
     "deriveFromNameHint": "Rellena los metadatos a partir del nombre del archivo",

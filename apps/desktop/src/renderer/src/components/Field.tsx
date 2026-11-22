@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useLatest } from '../hooks/useLatest'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
-import type { FieldCleanedNote, FieldFormatAction, FieldPreviousNote } from '../lib/fieldSpecs'
+import type { FieldCleanedNote, FieldFormatAction } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
 import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
@@ -55,7 +55,6 @@ interface FieldProps {
   formatResult?: string
   formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
-  previous?: FieldPreviousNote
   // Filled by Surco from the analysis (Quality with its Auto on): shown, not typed into.
   readOnly?: boolean
   // What a screen reader hears for a read-only field; Quality's own note when absent.
@@ -90,7 +89,6 @@ export const Field = memo(function Field({
   formatResult,
   formatAction,
   cleaned,
-  previous,
   readOnly,
   readOnlyNote,
   plain,
@@ -417,24 +415,6 @@ export const Field = memo(function Field({
             }
           />
         </div>
-      )}
-      {previous && (
-        <span
-          data-testid={`field-${name}-previous`}
-          className={`mt-1 block text-xs text-fg-faint ${width ? 'whitespace-nowrap' : 'beside:col-start-2 beside:-mt-1'}`}
-        >
-          <span className="sr-only">{`${tr('editor.previous.label')} `}</span>
-          <span className="line-through">{previous.value}</span>
-          {' · '}
-          <button
-            type="button"
-            data-testid={`field-previous-restore-${name}`}
-            onClick={previous.onRestore}
-            className="press text-fg-dim underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-fg hover:decoration-current"
-          >
-            {tr('editor.previous.restore')}
-          </button>
-        </span>
       )}
     </>
   )

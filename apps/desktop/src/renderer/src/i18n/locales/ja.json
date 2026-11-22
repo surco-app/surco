@@ -809,10 +809,6 @@
     "qualityTranscode": "非可逆ソース",
     "qualityDamaged": "破損したファイル",
     "analyzing": "スペクトラムを分析中…",
-    "previous": {
-      "label": "以前:",
-      "restore": "元に戻す"
-    },
     "cleaned": {
       "label": "クリーン済み",
       "leading_one": "先頭のスペースを削除しました",
@@ -991,6 +987,7 @@
     "baseTitle": "基本タイトル",
     "stripNumbering": "番号付けを削除",
     "applyTitleFormat": "フォーマット",
+    "restoreRelease": "以前のタグに戻す",
     "applyTitleFormatHint": "タイトル形式を選択範囲に適用",
     "deriveFromName": "ファイル名から入力",
     "deriveFromNameHint": "ファイル名からメタデータ項目を入力",

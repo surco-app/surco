@@ -809,10 +809,6 @@
     "qualityTranscode": "Verlustbehaftete Quelle",
     "qualityDamaged": "Beschädigte Datei",
     "analyzing": "Spektrum wird analysiert…",
-    "previous": {
-      "label": "Vorher:",
-      "restore": "Wiederherstellen"
-    },
     "cleaned": {
       "label": "Bereinigt",
       "leading_one": "ein Leerzeichen am Anfang entfernt",
@@ -991,6 +987,7 @@
     "baseTitle": "Basistitel",
     "stripNumbering": "Nummerierung entfernen",
     "applyTitleFormat": "Format",
+    "restoreRelease": "Frühere Tags wiederherstellen",
     "applyTitleFormatHint": "Titelformat auf die Auswahl anwenden",
     "deriveFromName": "Aus Dateinamen füllen",
     "deriveFromNameHint": "Füllt die Metadatenfelder aus dem Dateinamen",

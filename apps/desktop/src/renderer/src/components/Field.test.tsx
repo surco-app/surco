@@ -481,57 +481,6 @@ describe('Field audio-derived suggestion', () => {
   })
 })
 
-describe('Field previous value', () => {
-  // The strike-through already says the value is the old one; the word only spoke for it.
-  // A screen reader cannot hear a strike, so the word stays for it alone.
-  it('strikes the replaced value without a visible «Before:»', () => {
-    render(
-      <Field
-        name="title"
-        label="Title"
-        value="Release Title"
-        onChange={vi.fn()}
-        previous={{ value: 'My Title', onRestore: vi.fn() }}
-      />,
-    )
-    expect(screen.getByText('Before:')).toHaveClass('sr-only')
-    expect(screen.getByText('My Title')).toBeInTheDocument()
-    expect(screen.getByTestId('field-previous-restore-title')).toHaveTextContent('Restore')
-  })
-
-  it('brings the value a release replaced back from its restore button', () => {
-    const onRestore = vi.fn()
-    render(
-      <Field
-        name="title"
-        label="Title"
-        value="Release Title"
-        onChange={vi.fn()}
-        previous={{ value: 'My Title', onRestore }}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('field-previous-restore-title'))
-    expect(onRestore).toHaveBeenCalledTimes(1)
-  })
-
-  // A short box is only as wide as a year, and the replaced value split under it into
-  // "Before: 2000" and a stray "· Restore" that no longer read as one undo.
-  it('keeps the replaced value and its restore on one line under a short box', () => {
-    render(
-      <Field
-        name="year"
-        label="Year"
-        value="1999"
-        onChange={vi.fn()}
-        width="short"
-        previous={{ value: '2000', onRestore: vi.fn() }}
-      />,
-    )
-    expect(screen.getByTestId('field-year-previous').className).toContain('whitespace-nowrap')
-    expect(screen.getByTestId('field-column-year').className).not.toContain('w-[4.5rem]')
-  })
-})
-
 // A mixed field in a multi-select showed a blank box: the values it held were only
 // reachable by clicking through the rows. The chevron lists them, most common first, and
 // picking one writes it to every selected track like typing it would.

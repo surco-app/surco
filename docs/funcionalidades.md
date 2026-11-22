@@ -1260,9 +1260,10 @@ búsqueda (`editor.lengthMismatch`, `DiscogsPanel.tsx:270`) y en las filas del �
 **BPM y tonalidad propios se quedan** (v1.17.0). Aplicar un lanzamiento solo rellena BPM y
 tonalidad si la pista no los tiene (`release.ts`, `base.bpm || track?.bpm`).
 
-**«Antes:» bajo cada campo** (v1.17.0). Tras aplicar un lanzamiento, cada campo que cambió
-enseña el valor anterior con un botón «Restaurar» que lo devuelve, y la restauración se
-puede deshacer (`editor.previous`, `Field.tsx:301-310`).
+**«Restaurar las etiquetas de antes»** (v1.17.0 bajo cada campo; ahora una sola acción en «Más»).
+Tras aplicar un lanzamiento con una pista, «Más» ofrece devolver de una vez los campos que cambió
+y siguen con lo que escribió (los que el usuario retocó después no se tocan), en un solo paso de
+Deshacer (`editor.restoreRelease`, `Editor.tsx`).
 
 **Bandcamp, con listón propio.** Discogs va siempre primero por ser la fuente
 curada; Bandcamp solo se prueba si Discogs no encuentra nada y el fichero tiene

@@ -809,10 +809,6 @@
     "qualityTranscode": "Lossy source",
     "qualityDamaged": "Damaged",
     "analyzing": "Analyzing spectrum…",
-    "previous": {
-      "label": "Before:",
-      "restore": "Restore"
-    },
     "cleaned": {
       "label": "Cleaned",
       "leading_one": "removed a leading space",
@@ -991,6 +987,7 @@
     "baseTitle": "Base title",
     "stripNumbering": "Remove numbering",
     "applyTitleFormat": "Format",
+    "restoreRelease": "Restore the previous tags",
     "applyTitleFormatHint": "Apply the title format to the selection",
     "deriveFromName": "Fill from filename",
     "deriveFromNameHint": "Fill the metadata fields from the file name",

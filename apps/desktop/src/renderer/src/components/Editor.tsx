@@ -14,6 +14,7 @@ import {
   Search,
   Tag,
   TriangleAlert,
+  Undo2,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -1269,32 +1270,23 @@ export const Editor = memo(function Editor({
     [isMulti, item.meta, item.cleaned, tr, onChange],
   )
 
-  const previousNotes = useMemo(
-    () =>
-      isMulti || !item.appliedRelease
-        ? undefined
-        : Object.fromEntries(
-            (Object.entries(item.appliedRelease.wrote) as [MetaTextKey, string][]).flatMap(
-              ([key, wrote]) => {
-                const before = item.appliedRelease?.before[key] ?? ''
-                if (!before || before === wrote || (item.meta[key] ?? '') !== wrote) return []
-                return [
-                  [
-                    key,
-                    {
-                      value: before,
-                      onRestore: () => {
-                        onRecordUndo?.([item.id])
-                        setField(key, before)
-                      },
-                    },
-                  ],
-                ]
-              },
-            ),
-          ),
-    [isMulti, item.id, item.meta, item.appliedRelease, onRecordUndo, setField],
-  )
+  // What the last applied release replaced and nobody has touched since: the fields that
+  // still hold what it wrote and had another value before. Offered as one action in More
+  // rather than as a line under every field.
+  const restorableRelease = useMemo(() => {
+    if (isMulti || !item.appliedRelease) return {}
+    const { before, wrote } = item.appliedRelease
+    return Object.fromEntries(
+      (Object.entries(wrote) as [MetaTextKey, string][]).flatMap(([key, value]) => {
+        const old = before[key] ?? ''
+        return old && old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
+      }),
+    ) as Partial<Record<MetaTextKey, string>>
+  }, [isMulti, item.appliedRelease, item.meta])
+  const restoreRelease = useStableCallback((): void => {
+    onRecordUndo?.([item.id])
+    onChange({ meta: { ...item.meta, ...restorableRelease } })
+  })
 
   const playlistTracks = useMemo(
     () => (isMulti && selectedTracks ? selectedTracks : [item]),
@@ -1357,7 +1349,6 @@ export const Editor = memo(function Editor({
         onChangeTracksMeta,
         numberTracks: onNumberTracks,
         cleanedNotes,
-        previousNotes,
         playlists: playlistsSpec,
         analyzedQuality: qualityAuto ? (resolvedMeta.quality ?? '') : undefined,
       }),
@@ -1389,7 +1380,6 @@ export const Editor = memo(function Editor({
       onNumberTracks,
       fullReleaseDate,
       cleanedNotes,
-      previousNotes,
       playlistsSpec,
       qualityAuto,
       resolvedMeta.quality,
@@ -1484,6 +1474,18 @@ export const Editor = memo(function Editor({
             separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
           },
         ]),
+    ...(Object.keys(restorableRelease).length > 0
+      ? [
+          {
+            id: 'restore-release',
+            testid: 'restore-release-btn',
+            label: tr('editor.restoreRelease'),
+            Icon: Undo2,
+            onSelect: restoreRelease,
+            separatorBefore: true,
+          },
+        ]
+      : []),
     {
       id: 'paste-meta',
       testid: 'paste-meta-btn',

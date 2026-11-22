@@ -653,6 +653,92 @@ const openMore = (): void => {
   if (!screen.queryByRole('menu')) fireEvent.click(screen.getByTestId('meta-more'))
 }
 
+describe('Restoring the tags a release replaced', () => {
+  const applied = {
+    before: { title: 'My Title', album: 'My Album', year: '' },
+    wrote: { title: 'Release Title', album: 'Release Album', year: '1999' },
+  }
+
+  // The struck-through line under every field cluttered the form after each match; one
+  // action in More gives the same way back, and Undo covers the rest.
+  it('draws no previous value under the fields a release changed', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    expect(screen.getByTestId('field-title')).toHaveValue('Release Title')
+    expect(screen.queryByTestId('field-title-previous')).toBeNull()
+    expect(screen.queryByTestId('field-album-previous')).toBeNull()
+  })
+
+  // One click, one Undo step: restoring field by field would need one ⌘Z per field.
+  it('puts every replaced field back in a single patch and a single Undo step', () => {
+    const { onChange, onRecordUndo } = renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
+    expect(onRecordUndo).toHaveBeenCalledTimes(1)
+    expect(onRecordUndo.mock.calls[0][0]).toEqual(['a'])
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      title: 'My Title',
+      album: 'My Album',
+      year: '1999',
+    })
+  })
+
+  // A title the user rewrote after the match is theirs; restoring must not undo their work.
+  it('leaves alone a field the user changed after the release', () => {
+    const { onChange } = renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'My Own Edit', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      title: 'My Own Edit',
+      album: 'My Album',
+    })
+  })
+
+  it('is not offered when no release was applied', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe' } })
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).toBeNull()
+  })
+
+  it('is not offered once every replaced field is back or changed by the user', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Mine', album: 'Mine too', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).toBeNull()
+  })
+})
+
 describe('Editor metadata header', () => {
   // With a library tree and the results column open in the smallest window the editor is
   // 262 px wide: the two named actions ran over the section title and off the panel's edge.
@@ -4523,26 +4609,27 @@ describe('Editor Discogs apply', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Track One'))
   }
 
-  it('shows the title a release replaced and puts it back on Restaurar, so a bad match costs one click', async () => {
+  it('puts the title a release replaced back from More, so a bad match costs one click', async () => {
     const onRecordUndo = vi.fn()
     await applyFirstTrack(item({ id: 'a', meta: { title: 'My Own Title' } }), onRecordUndo)
-    const previous = screen.getByTestId('field-title-previous')
-    expect(previous).toHaveTextContent('My Own Title')
+    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
     onRecordUndo.mockClear()
-    fireEvent.click(within(previous).getByRole('button'))
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
     expect(onRecordUndo).toHaveBeenCalledWith(['a'])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('My Own Title'))
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 
-  it('shows no previous line for a field the release filled from empty, since there is nothing to restore', async () => {
+  it('offers no restore for a field the release filled from empty, since there is nothing to restore', async () => {
     await applyFirstTrack(item({ id: 'a' }))
     expect(screen.getByTestId('field-artist')).toHaveValue('The Artist')
-    expect(screen.queryByTestId('field-artist-previous')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 
-  it('drops the previous line once the DJ retypes the field, since the release value is no longer there to replace', () => {
+  it('offers no restore once the DJ retypes the field, since the release value is no longer there to replace', () => {
     renderEditor(
       {
         id: 'a',
@@ -4552,7 +4639,8 @@ describe('Editor Discogs apply', () => {
       'wav',
       { visibleFields: ['title'] },
     )
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 })
 

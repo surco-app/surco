@@ -103,7 +103,6 @@ export interface FieldSpec {
   formatResult?: string
   formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
-  previous?: FieldPreviousNote
   readOnly?: boolean
   readOnlyNote?: string
   // Read-only because a selection cannot write one value into every track: drawn as text in
@@ -128,11 +127,6 @@ export interface FieldCleanedNote {
 export interface FieldFormatAction {
   onApply: () => void
   disabled: boolean
-}
-
-export interface FieldPreviousNote {
-  value: string
-  onRestore: () => void
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -196,7 +190,6 @@ export interface BuildFieldSpecsParams {
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
-  previousNotes?: Partial<Record<string, FieldPreviousNote>>
   playlists?: Partial<Record<PlaylistLibrary, PlaylistsSpec>>
   // Quality as the next save writes it, set only while its Auto is on.
   analyzedQuality?: string
@@ -269,7 +262,6 @@ export function buildFieldSpecs({
   numberTracks,
   fullReleaseDate,
   cleanedNotes,
-  previousNotes,
   playlists,
   analyzedQuality,
 }: BuildFieldSpecsParams): FieldSpec[] {
@@ -431,7 +423,6 @@ export function buildFieldSpecs({
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             formatAction: def.key === 'title' ? titleFormatAction : undefined,
             cleaned: cleanedNotes?.[def.key],
-            previous: previousNotes?.[def.key],
             width: widthOf(def.key),
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
