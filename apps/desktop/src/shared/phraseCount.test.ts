@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { phraseCount, withPhraseCount } from './phraseCount'
+import { phraseCount, phrasedComment, withPhraseCount } from './phraseCount'
 
 const BEAT = 60000 / 128
 const steady = (beats: number) =>
@@ -89,5 +89,30 @@ describe('withPhraseCount', () => {
 
   it('leaves a comment that only starts with a number alone, since that number is the DJ’s own note', () => {
     expect(withPhraseCount('128 BPM vocal', '2 - 8')).toBe('2 - 8 · 128 BPM vocal')
+  })
+})
+
+describe('phrasedComment', () => {
+  it('prepends like withPhraseCount so today\u2019s saves keep working', () => {
+    expect(phrasedComment('Remix vinilo 2019', '2 - 8', 'prepend')).toBe(
+      '2 - 8 \u00b7 Remix vinilo 2019',
+    )
+    expect(phrasedComment('1 - 4 \u00b7 Remix vinilo 2019', '2 - 8', 'prepend')).toBe(
+      '2 - 8 \u00b7 Remix vinilo 2019',
+    )
+  })
+
+  it('replaces the whole comment with the count when asked, as Enrique wants', () => {
+    expect(phrasedComment('Remix vinilo 2019', '2 - 8', 'replace')).toBe('2 - 8')
+    expect(phrasedComment('', '2 - 8', 'replace')).toBe('2 - 8')
+  })
+
+  it('keeps rekordbox\u2019s My Tags block on replace, so the tags still show in its comment', () => {
+    expect(phrasedComment('Remix vinilo 2019 /* Base / Melodia */', '2 - 8', 'replace')).toBe(
+      '2 - 8 \u00b7 /* Base / Melodia */',
+    )
+    expect(phrasedComment('1 - 4 \u00b7 Remix /* Base */', '2 - 8', 'replace')).toBe(
+      '2 - 8 \u00b7 /* Base */',
+    )
   })
 })
