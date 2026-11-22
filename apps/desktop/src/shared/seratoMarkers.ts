@@ -269,11 +269,16 @@ export function readSeratoTempoMap(data: Uint8Array): SeratoTempoMap | null {
 
 // The Tempo Map Serato 5 writes is on the cues' clock: moving its first beat by the cues'
 // shift keeps every beat under the same audio, and the BPM and the bytes after it stay.
+// A first beat pushed before the start moves forward by whole beats, which keeps the phase:
+// a negative position is not one Serato is known to read.
 export function retimedSeratoTempoMap(data: Uint8Array, shiftMs: number): Uint8Array | null {
-  if (!readSeratoTempoMap(data)) return null
+  const tempo = readSeratoTempoMap(data)
+  if (!tempo) return null
+  const beatSeconds = 60 / tempo.bpm
+  let first = tempo.firstBeatMs / 1000 + shiftMs / 1000
+  if (first < 0) first += Math.ceil(-first / beatSeconds) * beatSeconds
   const out = data.slice()
-  const view = new DataView(out.buffer)
-  view.setFloat64(4, view.getFloat64(4) + shiftMs / 1000)
+  new DataView(out.buffer).setFloat64(4, first)
   return out
 }
 
@@ -283,22 +288,33 @@ const BEATGRID_FOOTER_BYTES = 1
 // The older Serato BeatGrid, never measured in a file of ours: `01 00`, a u32 count, then
 // markers of a f32 position in seconds and a u32 beat count (a f32 BPM on the last one),
 // then one footer byte. Anything else is a shape Surco cannot vouch for, and is not copied.
+// Markers a shift puts before the start are left out, since the grid from the next one on
+// stands alone; a last marker there leaves no grid at all, and nothing is copied.
 export function retimedSeratoBeatGrid(data: Uint8Array, shiftMs: number): Uint8Array | null {
   if (data.length < 6 || data[0] !== 1 || data[1] !== 0) return null
   const count = u32(data, 2)
   if (count < 1 || data.length !== 6 + count * BEATGRID_MARKER_BYTES + BEATGRID_FOOTER_BYTES)
     return null
-  const out = data.slice()
-  const view = new DataView(out.buffer)
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   const bpm = view.getFloat32(6 + (count - 1) * BEATGRID_MARKER_BYTES + 4)
   if (!(bpm >= MIN_TEMPO_BPM && bpm <= MAX_TEMPO_BPM)) return null
+  const kept: Uint8Array[] = []
   for (let marker = 0; marker < count; marker++) {
     const at = 6 + marker * BEATGRID_MARKER_BYTES
     const seconds = view.getFloat32(at)
     if (!Number.isFinite(seconds)) return null
-    view.setFloat32(at, seconds + shiftMs / 1000)
+    const moved = seconds + shiftMs / 1000
+    if (moved < 0) {
+      if (marker === count - 1) return null
+      continue
+    }
+    const entry = data.slice(at, at + BEATGRID_MARKER_BYTES)
+    new DataView(entry.buffer).setFloat32(0, moved)
+    kept.push(entry)
   }
-  return out
+  const head = data.slice(0, 6)
+  new DataView(head.buffer).setUint32(2, kept.length)
+  return concat([head, ...kept, data.subarray(data.length - BEATGRID_FOOTER_BYTES)])
 }
 
 export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null {

@@ -401,6 +401,18 @@ describe('retimedSeratoTempoMap', () => {
     expect(Array.from(before)).toEqual(Array.from(tempoMapAt(2.95, 128)))
   })
 
+  // A trim can cut before the first beat: a negative position is not one Serato is known to
+  // read, and moving it by whole beats leaves every later beat exactly where it was.
+  it('moves a first beat pushed before the start forward by whole beats, keeping its phase', () => {
+    const moved = retimedSeratoTempoMap(tempoMapAt(0.05, 120), -120)
+    expect(moved && readSeratoTempoMap(moved)).toEqual({
+      firstBeatMs: expect.closeTo(430, 6),
+      bpm: 120,
+    })
+    const far = retimedSeratoTempoMap(tempoMapAt(0.05, 120), -1620)
+    expect(far && readSeratoTempoMap(far)?.firstBeatMs).toBeCloseTo(430, 6)
+  })
+
   // Rewriting bytes Surco cannot read could hand Serato a grid it never wrote; leaving the
   // grid out only makes Serato analyse the track again.
   it('answers null for a tempo map shape that was never measured', () => {
@@ -444,6 +456,20 @@ describe('retimedSeratoBeatGrid', () => {
     expect(view.getFloat32(18)).toBe(128)
     expect(moved?.at(-1)).toBe(7)
     expect(beatGridPositions(before)).toEqual([1.5, 9.5])
+  })
+
+  // A marker before the start has no audio to sit on; the grid after the next marker is
+  // still whole, so only the markers a trim cut away are left out.
+  it('leaves out the old BeatGrid markers a shift puts before the start', () => {
+    const moved = retimedSeratoBeatGrid(beatGrid([[0.05, 16]], [9.5, 128], 7), -120)
+    expect(beatGridPositions(moved)).toEqual([expect.closeTo(9.38, 5)])
+    expect(moved && new DataView(moved.buffer).getFloat32(10)).toBe(128)
+    expect(moved?.length).toBe(6 + 8 + 1)
+    expect(moved?.at(-1)).toBe(7)
+  })
+
+  it('answers null when the shift puts the last marker of an old BeatGrid before the start', () => {
+    expect(retimedSeratoBeatGrid(beatGrid([[0.05, 16]], [0.1, 128]), -120)).toBeNull()
   })
 
   it('answers null for an old BeatGrid it cannot read whole', () => {

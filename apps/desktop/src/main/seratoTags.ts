@@ -365,6 +365,24 @@ function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
   return a !== null && a.length === b.length && a.every((byte, at) => byte === b[at])
 }
 
+async function measuredLeads(
+  source: string,
+  from: { sampleRate: number },
+  dest: string,
+  to: { sampleRate: number },
+  forgiving: boolean,
+): Promise<{ source: number; dest: number } | null> {
+  try {
+    return {
+      source: await seratoLeadOfFile(source, from.sampleRate),
+      dest: await seratoLeadOfFile(dest, to.sampleRate),
+    }
+  } catch (err) {
+    if (forgiving) return null
+    throw err
+  }
+}
+
 // shiftMs is for a replacement master where the same audio sits later (positive) or earlier
 // than in the source; it moves the cues but not the trim cut, which is a position in the source.
 export async function carrySeratoCues(
@@ -390,9 +408,17 @@ export async function carrySeratoCues(
   // because a copy without the cues must not have Serato pointed at it. An ordinary
   // conversion carries on, so the stale analysis is still stripped from its output.
   if (carry && !from && fallback) throw new Error(`cannot read ${source}`)
-  // A readable source with no cues at all has nothing to carry: the file converted keeps
-  // its own, as an ordinary conversion would carry them.
-  if (from && !from.payload && !from.markers && fallback)
+  // A readable source with no cues and no grid has nothing to carry: the file converted
+  // keeps its own, as an ordinary conversion would carry them. A grid alone is still the
+  // DJ's work on the replaced file, so it is carried and the download's cues are not.
+  if (
+    from &&
+    !from.payload &&
+    !from.markers &&
+    !from.grids.tempoMap &&
+    !from.grids.beatGrid &&
+    fallback
+  )
     return carrySeratoCues(fallback.source, dest, {
       trimMs: fallback.trimMs,
       carry,
@@ -402,19 +428,21 @@ export async function carrySeratoCues(
   const to = readSeratoTrack(dest)
   if (!to) return
   const timed = from?.payload || from?.grids.tempoMap || from?.grids.beatGrid
-  const sourceLead = from && timed ? await seratoLeadOfFile(source, from.sampleRate) : 0
-  const moveMs = timed
-    ? (await seratoLeadOfFile(dest, to.sampleRate)) - sourceLead - trimMs + shiftMs
-    : 0
-  const payload = from?.payload
-    ? retimedSeratoPayload(from.payload, moveMs, trimMs > 0 ? sourceLead + trimMs : 0)
+  // Without Serato's clock nothing can be placed. A replacement must hear it, like an
+  // unreadable source; an ordinary conversion carries nothing and still strips.
+  const leads = from && timed ? await measuredLeads(source, from, dest, to, !fallback) : null
+  const carried = leads ? from : null
+  const sourceLead = leads?.source ?? 0
+  const moveMs = leads ? leads.dest - sourceLead - trimMs + shiftMs : 0
+  const payload = carried?.payload
+    ? retimedSeratoPayload(carried.payload, moveMs, trimMs > 0 ? sourceLead + trimMs : 0)
     : null
   const changed = payload && !sameBytes(to.payload, payload) ? payload : null
-  const fresh = from?.oldBlockDisagrees ? null : changed
+  const fresh = carried?.oldBlockDisagrees ? null : changed
   // The grid is not analysis to strip: a DJ may have set it by hand. It moves with the
   // cues, by the same amount, and only a shape Surco can read whole is copied.
   const grids = GRIDS.flatMap((grid) => {
-    const raw = from?.grids[grid.key]
+    const raw = carried?.grids[grid.key]
     const data = raw ? grid.retimed(raw, moveMs) : null
     return data ? [{ grid, data }] : []
   })
@@ -422,7 +450,10 @@ export async function carrySeratoCues(
   try {
     const keep = f.tagTypesOnDisk | (fresh || grids.length > 0 ? markersTag(ext) : 0)
     const stripped = strip && dropSeratoAnalysis(f, ext)
-    const dropped = changed !== null && fresh === null && dropSeratoCues(f, ext)
+    // On a replacement whose file had a grid but no cues, cues the download brought along
+    // were never the DJ's in Serato.
+    const foreign = fallback !== undefined && !payload && to.payload !== null
+    const dropped = ((changed !== null && fresh === null) || foreign) && dropSeratoCues(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
     const regridded = grids.filter(
       ({ grid, data }) => stripped || !sameBytes(to.grids[grid.key], data),

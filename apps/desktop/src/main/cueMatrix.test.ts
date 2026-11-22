@@ -591,6 +591,36 @@ describe('the Serato cue carry-over matrix', () => {
     expect(storedTree(out)).not.toBeNull()
   })
 
+  // An ordinary conversion must still take the old analysis off when Serato's clock cannot
+  // be measured, as it does for a source it cannot read: only a replacement fails the carry.
+  it('still strips the Serato analysis of a source with a grid and no cues when the clock cannot be measured', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-gridonly-fails-'))
+    const input = join(dir, 'in.flac')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'sine=frequency=440:duration=4',
+      '-metadata',
+      'SERATO_OVERVIEW=AQFBQUFB',
+      input,
+    ])
+    withSeratoGrid(input)
+    const out = join(dir, 'out.mp3')
+
+    seratoLeadFails = true
+    try {
+      await convertAudio(input, out, 'mp3', meta)
+    } finally {
+      seratoLeadFails = false
+    }
+
+    expect(seratoLeftovers(out)).toEqual([])
+  })
+
   it('drops what a FLAC re-encode carried of Serato analysis when a trim moves the audio', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-flactrim-'))
     const input = makeSeratoSource(dir, '.flac')
@@ -920,6 +950,23 @@ describe('a hand-set Serato grid', () => {
 
     expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(replaced)))).toBeLessThan(1)
   })
+
+  // A grid the DJ fixed is Serato data of the replaced file even with no cues: falling back
+  // to the download would throw that work away for an analysis that never was in Serato.
+  it.each(['.flac', '.aiff'])(
+    "keeps the replaced file's grid, and none of the %s download's cues, when the replaced file has a grid but no cues",
+    async (ext) => {
+      const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-gridonly-'))
+      const replaced = withSeratoGrid(plainSine(dir, '.mp3'))
+      const download = makeSeratoSource(dir, ext)
+      const out = join(dir, 'out.aiff')
+
+      await replace(download, out, replaced)
+
+      expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(replaced)))).toBeLessThan(1)
+      expect(readSeratoTrack(out)?.markers ?? null).toBeNull()
+    },
+  )
 
   // When the cues come from the download, so does the grid, on the download's clock.
   it("keeps the download's own grid when the replaced file has no Serato cues", async () => {
