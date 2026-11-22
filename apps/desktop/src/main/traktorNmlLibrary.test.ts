@@ -63,6 +63,7 @@ import { backupOf } from './libraryBackups'
 import { copyFolder, listCopies } from './libraryHistory'
 import { createSessionBackup, type SessionBackup } from './rekordboxSessionBackup'
 import { buildTraktorTree, traktorCue } from './traktor4Fixture'
+import type { NmlPatch } from './traktorNml'
 import { bootVolumeName, replaceDuplicatesInCollection, syncCollection } from './traktorNmlLibrary'
 import { isTraktorRunning } from './traktorProcess'
 import { checkTraktor } from './verifyTraktor'
@@ -588,6 +589,47 @@ describe('syncCollection', () => {
 // propia caché de miniaturas, así que la portada nueva no aparece hasta que esos
 // ficheros la llevan. El COVERARTID se conserva: borrarlo sólo lo mandaría a releer la
 // misma caché rancia.
+// A replace's patch is recorded before the job's last steps. If one of them fails after the
+// conversion (Apple Music only, with Music not copying files into its folder, deletes the
+// entry and the temp file), the patch still names an output that is gone: moving the entry
+// there would leave the DJ's track, cues and playlists on a file that does not exist.
+describe('syncCollection with a replace', () => {
+  const BOOT = 'Macintosh HD'
+  const nmlDir = (folder: string) => `${folder.split('/').join('/:')}/:`
+  const withOld = () =>
+    `<NML VERSION="19"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="Uno"><LOCATION DIR="${nmlDir(dir)}" FILE="old.mp3" VOLUME="${BOOT}" VOLUMEID="${BOOT}"></LOCATION></ENTRY>
+</COLLECTION></NML>`
+  const replace = (outputFile: string): NmlPatch => ({
+    volume: '',
+    dir: nmlDir(dir),
+    file: 'old.mp3',
+    relocates: true,
+    outputVolume: '',
+    outputDir: nmlDir(join(dir, 'new')),
+    outputFile,
+  })
+
+  it('leaves the entry where it was when the output is gone', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    const before = withOld()
+    writeFileSync(nmlPath, before)
+    await syncCollection(nmlPath, [replace('gone.aiff')], session, BOOT)
+    expect(readFileSync(nmlPath, 'utf8')).toBe(before)
+  })
+
+  it('moves the entry onto an output that is on disk', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(nmlPath, withOld())
+    await syncCollection(nmlPath, [replace('here.aiff')], session, BOOT)
+    expect(readFileSync(nmlPath, 'utf8')).toContain(
+      `DIR="${nmlDir(join(dir, 'new'))}" FILE="here.aiff"`,
+    )
+  })
+})
+
 describe('syncCollection refreshes the cached artwork', () => {
   const COVER_NML = `<NML VERSION="19"><COLLECTION ENTRIES="1">
 <ENTRY TITLE="Uno"><INFO COVERARTID="042/ABC"></INFO><LOCATION DIR="/:M/:" FILE="uno.aiff" VOLUME="HD"></LOCATION></ENTRY>

@@ -91,9 +91,21 @@ function collection(nml: string): Track[] {
 // mounted under /Volumes.
 export function traktorFileOf(block: string, bootVolume: string): string {
   const location = block.match(/<LOCATION\b[^>]*>/)?.[0] ?? ''
-  const volume = attr(location, 'VOLUME')
-  const folder = attr(location, 'DIR').replace(/\/:/g, '/')
-  const path = `${folder}${attr(location, 'FILE')}`
+  return traktorPathOf(
+    attr(location, 'VOLUME'),
+    attr(location, 'DIR'),
+    attr(location, 'FILE'),
+    bootVolume,
+  )
+}
+
+export function traktorPathOf(
+  volume: string,
+  dir: string,
+  file: string,
+  bootVolume: string,
+): string {
+  const path = `${dir.replace(/\/:/g, '/')}${file}`
   if (/^[A-Za-z]:$/.test(volume)) return `${volume}${path.replace(/\//g, '\\')}`
   return volume === '' || volume === bootVolume ? path : `/Volumes/${volume}${path}`
 }
