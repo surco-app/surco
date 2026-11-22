@@ -472,6 +472,32 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(write).toHaveBeenCalledWith('VG+')
   })
 
+  // The order in Ajustes → Editor is the user's: a shift+click must not move fields around
+  // under their cursor, so the selection form lists them as the single form does, with
+  // managed, custom and playlist fields interleaved where the user put them.
+  it('keeps the user order of the visible fields across managed, custom and playlist keys', () => {
+    const playlists = {
+      rekordbox: {
+        tree: [],
+        options: [],
+        single: { value: [], onChange: vi.fn() },
+        bulk: { states: [], onToggle: vi.fn() },
+        library: 'rekordbox' as const,
+      },
+    }
+    const visibleFields = ['genre', 'vinylCondition', 'artist', 'rekordboxPlaylists', 'album']
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b')],
+        visibleFields,
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        playlists,
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(visibleFields)
+  })
+
   // A user selects the album's tracks and wants every one tagged "of 12": the selection
   // already knows the count, so the field offers it instead of making them count rows.
   it('offers the selection size as the total tracks and writes it to every track', () => {
