@@ -330,7 +330,9 @@ describe('deriveEditorSections', () => {
     expect(shown(sections)).toEqual([
       'library',
       'form',
-      'properties', 'quality', 'cues',
+      'properties',
+      'quality',
+      'cues',
       'matching',
       'output',
     ])
