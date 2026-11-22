@@ -1299,6 +1299,24 @@ describe('runProcessTrack — in-place rewrite', () => {
     ])
   })
 
+  it('keeps an in-place update on its own name when the pattern files into subfolders', async () => {
+    const deps = makeDeps({
+      settings: settings({ overwriteOriginal: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    await runProcessTrack(
+      job({
+        inputPath: "/in/2026/11/Where's Your Head At?.aiff",
+        outputName: "2026/11/Where's Your Head At?",
+      }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe(
+      "/in/2026/11/Where's Your Head At?.aiff",
+    )
+  })
+
   it('rewrites the source, removes the renamed original and never prompts when the renamed target is free', async () => {
     const deps = makeDeps({
       settings: settings({ overwriteOriginal: true }),

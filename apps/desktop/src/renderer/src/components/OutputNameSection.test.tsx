@@ -45,6 +45,7 @@ function renderSection(autoApply: boolean, outputName?: string): void {
       defaultOutputName="a"
       autoApply={autoApply}
       willEditInPlace={false}
+      inSourceFolder={false}
       open={true}
       onToggle={vi.fn()}
       onChangeName={vi.fn()}
@@ -81,6 +82,7 @@ describe('OutputNameSection', () => {
         defaultOutputName="a"
         autoApply={false}
         willEditInPlace={false}
+        inSourceFolder={false}
         open={false}
         onToggle={vi.fn()}
         onChangeName={vi.fn()}
@@ -106,6 +108,7 @@ describe('OutputNameSection', () => {
         defaultOutputName="a"
         autoApply={false}
         willEditInPlace={false}
+        inSourceFolder={false}
         open={false}
         onToggle={vi.fn()}
         onChangeName={vi.fn()}
@@ -135,5 +138,35 @@ describe('OutputNameSection folder note', () => {
   it('says nothing for a plain name', () => {
     renderSection(false, 'AC-DC - Thunderstruck')
     expect(screen.queryByTestId('output-name-folder')).not.toBeInTheDocument()
+  })
+})
+
+describe('OutputNameSection in the source folder', () => {
+  function renderInSourceFolder(outputName: string, open: boolean): void {
+    render(
+      <OutputNameSection
+        item={{ ...item, outputName }}
+        format="aiff"
+        defaultOutputName="a"
+        autoApply={false}
+        willEditInPlace={true}
+        inSourceFolder={true}
+        open={open}
+        onToggle={vi.fn()}
+        onChangeName={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onOpenRename={vi.fn()}
+      />,
+    )
+  }
+
+  it('promises no folder the write will not create', () => {
+    renderInSourceFolder('2026/11/Artist - Title', true)
+    expect(screen.queryByTestId('output-name-folder')).not.toBeInTheDocument()
+  })
+
+  it('summarizes only the name the file takes in its own folder', () => {
+    renderInSourceFolder('2026/11/Artist - Title', false)
+    expect(screen.getByTestId('output-name-summary')).toHaveTextContent(/^Artist - Title\.aiff$/)
   })
 })

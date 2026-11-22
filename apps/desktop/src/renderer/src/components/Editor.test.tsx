@@ -3146,6 +3146,16 @@ describe('Editor export control', () => {
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
 
+    it('goes quiet when the pattern only adds folders an in-place edit ignores', () => {
+      const titled = { ...read, title: 'a.wav' }
+      const signature = trackSignature(item({ id: 'a', meta: titled }))
+      renderEditor({ id: 'a', meta: titled, diskSignature: signature }, 'wav', {
+        autoApplyFilename: true,
+        filenameFormat: '2026/11/{title}',
+      })
+      expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
+    })
+
     it('offers the update while an edit is staged', () => {
       renderEditor({ id: 'a', meta: { genre: 'House' }, diskSignature })
       expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Update')
