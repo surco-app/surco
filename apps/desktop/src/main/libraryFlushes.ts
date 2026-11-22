@@ -563,6 +563,14 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
   const named = syncSerato
     ? run.repoints.flatMap((r) => (r.names ? [{ path: r.to, fields: r.names }] : []))
     : []
+  // Serato follows a replacement with Add to Serato alone, as Traktor does: the old file is
+  // retired, and the entry left on it loses its cues and crates. Tags, adds and crates stay
+  // behind their own settings, so this gate opens only the repoint.
+  const held =
+    syncSerato || addToSerato ? seratoLibraryHas(queue.roots()) : (_path: string) => false
+  const moves = run.repoints.filter(
+    (r) => r.replaced && !r.seratoCarryFailed && r.from !== r.to && held(r.from),
+  )
   const ops = [
     ...libraryTrackOps(
       run.repoints,
@@ -573,8 +581,9 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
     ),
     ...(named.length > 0 ? seratoTagOps(named, queue.roots()) : []),
   ]
-  if (ops.length === 0) return
-  queue.enqueue(ops)
+  if (ops.length + moves.length === 0) return
+  if (moves.length > 0) queue.enqueue(ops, moves)
+  else queue.enqueue(ops)
   queue.applyQuietly()
 }
 

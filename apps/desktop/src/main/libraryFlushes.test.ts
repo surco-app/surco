@@ -1036,6 +1036,89 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
       expect(serato.enqueue).not.toHaveBeenCalled()
     })
   })
+
+  // Decided 22/11 (option A): Serato follows a replacement even though it costs the stars,
+  // because the old file is retired and Serato would otherwise lose the track and its cues.
+  describe('when a replacement lands', () => {
+    const MOVE = { from: '/m/a.mp3', to: '/m/a.flac', replaced: true }
+    async function replacing(
+      settings: { syncSerato: boolean; addToSerato: boolean },
+      extra: Record<string, unknown>,
+      run: (serato: ReturnType<typeof queue>) => Promise<void>,
+    ) {
+      Object.assign(REPOINTS[0], { replaced: true, ...extra })
+      Object.assign(SETTINGS, settings)
+      try {
+        await run(queue())
+      } finally {
+        for (const key of ['replaced', 'seratoCarryFailed', 'names']) {
+          delete (REPOINTS[0] as Record<string, unknown>)[key]
+        }
+        Object.assign(SETTINGS, { syncSerato: false, addToSerato: false })
+      }
+    }
+    const queue = () => ({
+      enqueue: vi.fn(),
+      applyQuietly: vi.fn(),
+      roots: () => seratoHome(['m/a.mp3']),
+    })
+
+    it('queues a Serato repoint for a replaced file Serato holds', async () => {
+      await replacing({ syncSerato: true, addToSerato: false }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+        expect(serato.applyQuietly).toHaveBeenCalled()
+      })
+    })
+
+    it('repoints Serato with only Add to Serato on, since the old file is retired either way', async () => {
+      await replacing({ syncSerato: false, addToSerato: true }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+      })
+    })
+
+    it('sends nothing but the repoint to Serato with only Add on, so Add never opens its tag writes', async () => {
+      await replacing(
+        { syncSerato: false, addToSerato: true },
+        { names: { title: { from: 'Old', to: 'New' } }, meta: { artist: 'J', title: 'P' } },
+        async (serato) => {
+          await flush(serato)
+          expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+        },
+      )
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+    })
+
+    it('does not repoint Serato with both Sync and Add off', async () => {
+      await replacing({ syncSerato: false, addToSerato: false }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      })
+    })
+
+    it('does not repoint Serato for a plain conversion, which keeps its original instead', async () => {
+      Object.assign(SETTINGS, { syncSerato: true })
+      try {
+        const serato = queue()
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      } finally {
+        Object.assign(SETTINGS, { syncSerato: false })
+      }
+    })
+
+    it('does not repoint Serato when the cues could not be carried into the new file, which would lose them', async () => {
+      await replacing(
+        { syncSerato: true, addToSerato: false },
+        { seratoCarryFailed: true },
+        async (serato) => {
+          await flush(serato)
+          expect(serato.enqueue).not.toHaveBeenCalled()
+        },
+      )
+    })
+  })
 })
 
 describe('flushConversionBatch with a converted track VirtualDJ does not have', () => {

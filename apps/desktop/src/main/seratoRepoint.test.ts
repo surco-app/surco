@@ -197,3 +197,10 @@ describe('repointSerato', () => {
     ])
   })
 })
+
+describe('the Serato queue wiring', () => {
+  it('hands the Serato queue its repoint, so a replacement queued while Serato is open applies once it closes', () =>
+    expect(readFileSync(join(__dirname, 'index.ts'), 'utf-8')).toMatch(
+      /repoint: \(_library, list\) =>\s+repointSerato\(list,/,
+    ))
+})

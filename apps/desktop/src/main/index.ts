@@ -243,6 +243,7 @@ import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
+import { repointSerato } from './seratoRepoint'
 import {
   clearPreviousSession,
   loadLastSession,
@@ -636,7 +637,12 @@ const programQueues = {
             rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
-        repoint: async () => [],
+        repoint: (_library, list) =>
+          repointSerato(list, {
+            roots: seratoRoots,
+            backupDir: join(app.getPath('userData'), 'serato-backups'),
+            seratoOpen: DJ_PROCESSES.serato.isRunning,
+          }),
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
