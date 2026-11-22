@@ -603,4 +603,13 @@ describe('Field read-only', () => {
     expect(input).toHaveAttribute('readonly')
     expect(input).toHaveAccessibleDescription('Filled from the quality analysis')
   })
+
+  // The quality note is false for Title or BPM over a selection, so a field that is read-only
+  // for another reason brings its own words.
+  it('announces the note it is given instead of the quality one', () => {
+    render(
+      <Field name="title" label="Title" value="" onChange={vi.fn()} readOnly readOnlyNote="Own" />,
+    )
+    expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
+  })
 })

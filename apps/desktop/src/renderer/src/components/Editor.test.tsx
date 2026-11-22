@@ -2271,6 +2271,7 @@ describe('Editor multi-select', () => {
     const title = screen.getByTestId('field-title')
     expect(title).toHaveAttribute('readonly')
     expect(title).toHaveValue('')
+    expect(title).toHaveAccessibleDescription(i18n.t('editor.perTrackOnly'))
   })
 
   // The bulk form must honour the same visible-fields setting as the single editor:

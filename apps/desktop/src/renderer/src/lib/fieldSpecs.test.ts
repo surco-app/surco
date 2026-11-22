@@ -594,10 +594,22 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     expect(specs[0]).toMatchObject({ readOnly: true, value: '' })
     expect(specs[0].mixed).toBeUndefined()
-    expect(specs[0].placeholder).toBeTruthy()
+    expect(specs[0].placeholder).toBe('editor.valuesCount')
+    expect(specs[0].readOnlyNote).toBe('editor.perTrackOnly')
     expect(specs[0].mixedValues).toBeUndefined()
     specs[0].onChange('x')
     expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  it('shows an ellipsis for differing values in a field with a width', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { bpm: '120' }), track('b', { bpm: '128' })],
+        visibleFields: ['bpm'],
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '', placeholder: '…' })
   })
 
   it('shows the common BPM read-only and keeps the width that pairs it with Key', () => {

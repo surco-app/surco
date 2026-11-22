@@ -976,6 +976,7 @@
     "libraryCheckFailedEngine": "Não foi possível ler sua biblioteca do Engine DJ, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "editingMultiple": "Editando {{count}} faixas",
     "multipleValues": "Vários valores",
+    "perTrackOnly": "Edite uma faixa por vez",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
     "groupingAllTracks": "todas as faixas",

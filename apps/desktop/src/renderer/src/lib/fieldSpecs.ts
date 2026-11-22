@@ -80,6 +80,7 @@ export interface FieldSpec {
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
   readOnly?: boolean
+  readOnlyNote?: string
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
@@ -312,6 +313,7 @@ export function buildFieldSpecs({
           : undefined,
       width,
       readOnly: true,
+      readOnlyNote: tr('editor.perTrackOnly'),
       onChange: () => {},
     }
   }

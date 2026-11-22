@@ -976,6 +976,7 @@
     "libraryCheckFailedEngine": "Couldn't read your Engine DJ library, so tracks aren't marked as already in it. Surco tries again when you come back to the window.",
     "editingMultiple": "Editing {{count}} tracks",
     "multipleValues": "Multiple values",
+    "perTrackOnly": "Edited one track at a time",
     "valuesCount_one": "{{count}} value",
     "valuesCount_other": "{{count}} values",
     "groupingAllTracks": "all tracks",
