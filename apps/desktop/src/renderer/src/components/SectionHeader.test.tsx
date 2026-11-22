@@ -176,6 +176,22 @@ describe('SectionHeader status placement', () => {
       'Apple Music · WAV 16/48 · better than this one',
     )
   })
+
+  // A title that gives way with an ellipsis reports only the room left to it, so measured by
+  // its box the status always seemed to fit and stayed beside a cut title. The status drops
+  // first, measured against the whole title, and the title is cut only if that is not enough.
+  it('moves the status under the title before the title gives way to it', () => {
+    mockWidths(400, 40, 294)
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.dataset.testid === 'section-title' ? 160 : 0
+    })
+    header()
+    expect(screen.getByRole('heading', { level: 3 })).not.toContainElement(
+      screen.getByTestId('section-status'),
+    )
+  })
 })
 
 // The editor is a long single scroll of phases, sections and captions that only looked

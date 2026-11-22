@@ -95,8 +95,13 @@ export function SectionHeader({
       if (!lead || !titleEl) return
       const leadBox = lead.getBoundingClientRect()
       const room = leadBox.width
+      // The title's whole width, not its box: a title already cut by the ellipsis would
+      // make the status seem to fit beside it, so the status moves down before the title
+      // gives way.
+      const titleBox = titleEl.getBoundingClientRect()
       const needed =
-        titleEl.getBoundingClientRect().right -
+        titleBox.left +
+        Math.max(titleBox.width, titleEl.scrollWidth) -
         leadBox.left +
         STATUS_OFFSET_PX +
         statusContent.getBoundingClientRect().width
