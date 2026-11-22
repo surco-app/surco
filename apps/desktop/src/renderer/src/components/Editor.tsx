@@ -775,6 +775,7 @@ export const Editor = memo(function Editor({
     replaceTargetPending,
     libraryCopyPath,
     libraryCopyPending,
+    tiedCopies,
   } = useLibraryVerdict({
     item,
     libraryIndex,
@@ -1652,10 +1653,6 @@ export const Editor = memo(function Editor({
     verdict && 'reason' in verdict && here && library
       ? copySentence(verdict, here, library, libraryName, tr, i18n.language)
       : undefined
-  const musicCopies =
-    replaceTarget && isAmbiguousCandidate(replaceTarget)
-      ? replaceTarget.ambiguous.length
-      : undefined
   const musicRow: LibraryRow | null =
     librarySource === 'appleMusic' && inLibrary === 'yes'
       ? {
@@ -1663,10 +1660,10 @@ export const Editor = memo(function Editor({
           name: 'Apple Music',
           format: replacedCopyFormat,
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
-          copies: musicCopies,
+          copies: tiedCopies,
           verdict: musicHoldsFile
             ? 'thisFile'
-            : musicCopies
+            : tiedCopies
               ? 'several'
               : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
                 ? 'missing'

@@ -5628,6 +5628,34 @@ describe('Editor Apple Music library section', () => {
     return { api, onProcess }
   }
 
+  // An exact match beside a weaker «(Radio Edit)» is no tie: the exact entry is the copy, so
+  // the row names its format and weighs it like a single match. Replacing still needs one match.
+  it('describes the clearly best Music entry when a weaker variant also matches', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 372,
+      index: buildLibraryIndex([
+        { title: 'Strobe', artist: 'deadmau5', durationSec: 372, persistentId: 'AAAA000000000001' },
+        {
+          title: 'Strobe (Radio Edit)',
+          artist: 'deadmau5',
+          durationSec: 210,
+          persistentId: 'BBBB000000000002',
+        },
+      ]),
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
+        /^The new one is better\./,
+      ),
+    )
+    expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('AAAA000000000001')
+    expect(api.appleMusicEntryLocation).not.toHaveBeenCalledWith('BBBB000000000002')
+    expect(screen.getByTestId('library-row-format')).toHaveTextContent('WAV 16/44.1')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Replace/)
+  })
+
   // The section answers "do I already have the file I just brought in?". A track opened from a
   // library or DJ program tab already is that library's copy, so the section would only list
   // the copy the user is looking at, and measuring it against itself would cost analysis time.
