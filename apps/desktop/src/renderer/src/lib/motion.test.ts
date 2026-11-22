@@ -54,10 +54,13 @@ function setRoot(name: string, value: string): void {
 }
 
 describe('script-driven motion reads the same duration and curve as the CSS, so a retuned token moves both', () => {
-  it.each(['0.24s', '.24s', '240ms', ' 240ms '])('reads the panel duration %j as 240 ms', (value) => {
-    setRoot('--duration-panel', value)
-    expect(panelDurationMs()).toBe(240)
-  })
+  it.each(['0.24s', '.24s', '240ms', ' 240ms '])(
+    'reads the panel duration %j as 240 ms',
+    (value) => {
+      setRoot('--duration-panel', value)
+      expect(panelDurationMs()).toBe(240)
+    },
+  )
 
   it('reads a retuned panel duration instead of the fallback', () => {
     setRoot('--duration-panel', '0.5s')

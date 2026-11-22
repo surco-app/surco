@@ -27,7 +27,8 @@ describe('Compact reaches the editor, where a library track is three screens of 
 
   it('gives every editor section the same shorter gap, so no section keeps the Normal rhythm among compact ones', () => {
     const loose = sources.filter((file) => {
-      if (!file.startsWith('components/') || /MusicReview|DamageDetail|settings\//.test(file)) return false
+      if (!file.startsWith('components/') || /MusicReview|DamageDetail|settings\//.test(file))
+        return false
       return /mt-6 border-t border-\[var\(--color-line\)\] pt-[56](?! compact:mt-3 compact:pt-3)/.test(
         readFileSync(join(root, file), 'utf8'),
       )

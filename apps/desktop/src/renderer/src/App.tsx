@@ -663,11 +663,11 @@ export default function App(): React.JSX.Element {
   // Live view of the Apple Music library snapshot for the sweep, kept current below once
   // useTracksView has computed it (the sweep reads it at apply time, not at render).
   const libraryIndexRef = useRef<AppleMusicIndex | null>(null)
-  // The track whose editor field currently holds focus, set by the Editor on focus/blur.
+  // The tracks whose editor field currently holds focus, set by the Editor on focus/blur.
   // The sweep reads it so a match can't overwrite a row while the user is typing into it —
   // the field's buffered edit isn't in the live meta yet, so the meta guard alone can't
   // see it (see useAutoMatch's editingRef).
-  const editingRef = useRef<string | null>(null)
+  const editingRef = useRef<readonly string[]>([])
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prefetchedPath = useRef<string | null>(null)
   const queryClient = useQueryClient()
@@ -2894,7 +2894,7 @@ export default function App(): React.JSX.Element {
   // convert wipes its cover and rating, not just the text fields — and its own
   // foreign tags, which differ per track so a flat patchTracks patch can't carry them.
   const onClearExtras = useStableCallback((ids: string[]) => clearExtrasTracks(ids))
-  const { onCopyMeta, onPasteMeta, onCopyPath, onApplyCoverAll, onCopyFilename } =
+  const { onCopyMeta, onPasteMeta, onPasteMetaAll, onCopyPath, onApplyCoverAll, onCopyFilename } =
     useMetadataClipboard({
       copiedMeta,
       setCopiedMeta,
@@ -2912,7 +2912,13 @@ export default function App(): React.JSX.Element {
     if (selected) onCopyMeta(selected)
   })
   const onPasteSelectedMeta = useStableCallback(() => {
-    if (selected) onPasteMeta(selected)
+    if (selectedIds.length > 1) onPasteMetaAll(selectedIds)
+    else if (selected) onPasteMeta(selected)
+  })
+  const onPasteMetaMenu = useStableCallback((track: TrackItem) => {
+    const targets = menuTargets(track.id)
+    if (targets.length > 1) onPasteMetaAll(targets.map((t) => t.id))
+    else onPasteMeta(track)
   })
   // Stable like the other editor props: an inline arrow is a new identity per render,
   // which would re-render the memoized Editor per keystroke.
@@ -2948,9 +2954,9 @@ export default function App(): React.JSX.Element {
   })
 
   // Stable like the other editor props so a search keystroke doesn't re-render the
-  // memoized Editor: records which track's field has focus for the sweep's edit guard.
-  const onFieldFocusChange = useStableCallback((id: string | null) => {
-    editingRef.current = id
+  // memoized Editor: records which tracks' field has focus for the sweep's edit guard.
+  const onFieldFocusChange = useStableCallback((ids: readonly string[]) => {
+    editingRef.current = ids
   })
 
   const onChangeTracksPlaylists = useStableCallback(
@@ -3960,7 +3966,7 @@ export default function App(): React.JSX.Element {
           onMergeMatch={merge ? () => void runMatchingEdits(merge) : undefined}
           onCopyMeta={onCopyMeta}
           onCopyPath={onCopyPath}
-          onPasteMeta={onPasteMeta}
+          onPasteMeta={onPasteMetaMenu}
           canPasteMeta={copiedMeta !== null}
           onRemove={removeFromList}
           removeLabel={removeLabel}
@@ -4031,8 +4037,15 @@ export default function App(): React.JSX.Element {
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
   // zero-pad hygiene pass formats them at write time like every other track number.
+  // A selection follows the library's order, not the list's, so each track takes its row
+  // position on screen, unlisted ones last. The ⌘K command and the editor button share it.
   const numberTracks = useStableCallback(() => {
-    const targets = bulkTracksRef.current
+    const rows = visibleTracksRef.current
+    const rowOf = (id: string): number => {
+      const i = rows.findIndex((r) => r.id === id)
+      return i < 0 ? rows.length : i
+    }
+    const targets = [...bulkTracksRef.current].sort((a, b) => rowOf(a.id) - rowOf(b.id))
     if (targets.length < 2) return
     deriveTracksUndoable(
       targets.map((t, i) => ({ id: t.id, meta: { trackNumber: String(i + 1) } })),
@@ -5125,6 +5138,7 @@ export default function App(): React.JSX.Element {
                               onApplyCoverAll={onApplyCoverAll}
                               onDeriveTags={deriveTracksUndoable}
                               onChangeTracksMeta={deriveTracksUndoable}
+                              onNumberTracks={numberTracks}
                               onApplyTitleFormat={applyTitleFormat}
                               onRecordUndo={recordMetaUndo}
                               onClearAll={clearMeta}

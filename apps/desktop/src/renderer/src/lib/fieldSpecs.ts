@@ -40,13 +40,16 @@ export interface PlaylistsSpec {
   }
 }
 
-function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
+function countValues(values: string[]): { value: string; count: number }[] {
   const counts = new Map<string, number>()
-  for (const t of tracks) {
-    const value = t.meta[key] ?? ''
+  for (const value of values) {
     if (value !== '') counts.set(value, (counts.get(value) ?? 0) + 1)
   }
   return [...counts].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count)
+}
+
+function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
+  return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -80,6 +83,9 @@ export interface FieldSpec {
   cleaned?: FieldCleanedNote
   previous?: FieldPreviousNote
   readOnly?: boolean
+  readOnlyNote?: string
+  // A button beside a read-only per-track field that fills it for the whole selection.
+  action?: { label: string; onApply: () => void }
   perTrack?: {
     list: TagList
     tracks: TrackItem[]
@@ -161,6 +167,7 @@ export interface BuildFieldSpecsParams {
   // The same per key for a selection: writes the value into every selected track.
   customBulkOnChange: ReadonlyMap<string, (v: string) => void>
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  numberTracks?: () => void
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
@@ -234,6 +241,7 @@ export function buildFieldSpecs({
   customOnChange,
   customBulkOnChange,
   onChangeTracksMeta,
+  numberTracks,
   fullReleaseDate,
   cleanedNotes,
   previousNotes,
@@ -247,64 +255,101 @@ export function buildFieldSpecs({
     isMulti && selectedTracks && customFields.length > 0
       ? selectedTracks.map((t) => effectiveMeta(t, customFields).custom ?? {})
       : []
-  return isMulti && selectedTracks
-    ? [
-        ...BULK_FIELDS.filter((key) => visibleFields.includes(key)).map((key) => {
-          const shared = commonValue(selectedTracks, key)
-          const list = tagListFor(key, genreTags, groupingTags)
-          const perTrack =
-            list && onChangeTracksMeta
-              ? { list, tracks: selectedTracks, onChangeTracks: onChangeTracksMeta }
-              : undefined
-          const mixed = shared === undefined && !perTrack
-          const mixedValues = mixed ? valueCounts(selectedTracks, key) : undefined
-          const width = widthOf(key)
-          return {
-            key,
-            label: tr(`fields.${key}`),
-            value: shared ?? '',
-            // "Multiple values" does not fit a box sized for its value; the mixed flag
-            // still says it in words to a screen reader.
-            placeholder: mixed
-              ? width
-                ? '…'
-                : tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
+  const bulkSpec = (key: (typeof BULK_FIELDS)[number], tracks: TrackItem[]): FieldSpec => {
+    const shared = commonValue(tracks, key)
+    const list = tagListFor(key, genreTags, groupingTags)
+    const perTrack =
+      list && onChangeTracksMeta ? { list, tracks, onChangeTracks: onChangeTracksMeta } : undefined
+    const mixed = shared === undefined && !perTrack
+    const mixedValues = mixed ? valueCounts(tracks, key) : undefined
+    const width = widthOf(key)
+    return {
+      key,
+      label: tr(`fields.${key}`),
+      value: shared ?? '',
+      // "Multiple values" does not fit a box sized for its value; the mixed flag
+      // still says it in words to a screen reader.
+      placeholder: mixed
+        ? width
+          ? '…'
+          : tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
+        : undefined,
+      width,
+      mixed,
+      mixedValues,
+      onChange: bulkOnChange.get(key) ?? (() => {}),
+      suggestions:
+        key === 'genre'
+          ? genreChips
+          : key === 'grouping'
+            ? groupingPresets
+            : key === 'trackTotal'
+              ? [String(tracks.length)]
               : undefined,
-            width,
-            mixed,
-            mixedValues,
-            onChange: bulkOnChange.get(key) ?? (() => {}),
-            suggestions:
-              key === 'genre'
-                ? genreChips
-                : key === 'grouping'
-                  ? groupingPresets
-                  : key === 'trackTotal'
-                    ? [String(selectedTracks.length)]
-                    : undefined,
-            tagList: list,
-            perTrack,
-          }
-        }),
-        ...customFields
-          .filter((f) => visibleFields.includes(f.key))
-          .map((f) => {
-            const values = selectedCustom.map((c) => c[f.key] ?? '')
-            const shared = values.every((v) => v === values[0]) ? values[0] : undefined
-            return {
-              key: f.key,
-              label: f.label,
-              value: shared ?? '',
-              placeholder: shared === undefined ? tr('editor.multipleValues') : undefined,
-              mixed: shared === undefined,
-              onChange: customBulkOnChange.get(f.key) ?? (() => {}),
-            }
-          }),
-        ...visibleFields.flatMap((key) => {
-          const spec = playlistsFor(playlists, key)
-          return spec ? [playlistsField(spec, true, tr)] : []
-        }),
-      ]
+      tagList: list,
+      perTrack,
+    }
+  }
+  const customSpec = (f: CustomField): FieldSpec => {
+    const values = selectedCustom.map((c) => c[f.key] ?? '')
+    const shared = values.every((v) => v === values[0]) ? values[0] : undefined
+    const mixedValues = shared === undefined ? countValues(values) : undefined
+    return {
+      key: f.key,
+      label: f.label,
+      value: shared ?? '',
+      placeholder:
+        shared === undefined
+          ? tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
+          : undefined,
+      mixed: shared === undefined,
+      mixedValues,
+      onChange: customBulkOnChange.get(f.key) ?? (() => {}),
+    }
+  }
+  // A per-track field over a selection: shown where the user put it so the form matches the
+  // single one, but read-only because one value written into every track would erase what
+  // tells them apart. Differing values show as a blank with a placeholder, not a choice.
+  const perTrackSpec = (key: MetaTextKey, tracks: TrackItem[]): FieldSpec => {
+    const shared = commonValue(tracks, key)
+    const width = widthOf(key)
+    return {
+      key,
+      label: tr(`fields.${key}`),
+      value: shared ?? '',
+      placeholder:
+        shared === undefined
+          ? width
+            ? '…'
+            : tr('editor.valuesCount', { count: valueCounts(tracks, key).length })
+          : undefined,
+      width,
+      readOnly: true,
+      readOnlyNote: tr('editor.perTrackOnly'),
+      action:
+        key === 'trackNumber' && numberTracks
+          ? { label: tr('editor.numberTracks', { count: tracks.length }), onApply: numberTracks }
+          : undefined,
+      onChange: () => {},
+    }
+  }
+  // One walk over visibleFields keeps the user's order; each key maps to its multi spec, or
+  // to none when the selection form does not offer it.
+  const multiSpecs = (tracks: TrackItem[]): FieldSpec[] =>
+    visibleFields.flatMap((key): FieldSpec[] => {
+      if (isPlaylistField(key)) {
+        const spec = playlistsFor(playlists, key)
+        return spec ? [playlistsField(spec, true, tr)] : []
+      }
+      const bulkKey = BULK_FIELDS.find((k) => k === key)
+      if (bulkKey) return [bulkSpec(bulkKey, tracks)]
+      const def = FIELD_DEFS.find((d) => d.key === key)
+      if (def && def.key !== 'compilation') return [perTrackSpec(def.key, tracks)]
+      const custom = customFields.find((f) => f.key === key)
+      return custom ? [customSpec(custom)] : []
+    })
+  return isMulti && selectedTracks
+    ? multiSpecs(selectedTracks)
     : visibleFields.flatMap((key) => {
         if (isPlaylistField(key)) {
           const spec = playlistsFor(playlists, key)

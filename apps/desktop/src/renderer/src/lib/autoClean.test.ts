@@ -49,7 +49,7 @@ function opts(rows: TrackItem[], over: Partial<AutoCleanOptions> = {}): AutoClea
     spacing: true,
     unifyCase: true,
     ignored: [],
-    editing: null,
+    editing: [],
     ...over,
   }
 }
@@ -154,7 +154,7 @@ describe('planAutoClean never overwrites an edit', () => {
 
   it('skips the row whose field is being typed into', () => {
     const r = row({ title: 'A  B' })
-    expect(plan([r], { editing: r.id })).toEqual([])
+    expect(plan([r], { editing: [r.id] })).toEqual([])
   })
 
   it('never cleans a field again once cleaned or undone', () => {

@@ -452,6 +452,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     const a = { ...track('a'), foreignTags: [{ name: 'VINYLCONDITION', value: 'NM' }] }
     const b = { ...track('b', { custom: { vinylCondition: 'NM' } }) }
     const c = { ...track('c', { custom: { vinylCondition: 'VG' } }) }
+    const d = { ...track('d', { custom: { vinylCondition: 'NM' } }) }
     const build = (selectedTracks: TrackItem[]) =>
       buildFieldSpecs(
         params({
@@ -465,11 +466,72 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(build([a, b])).toMatchObject({ label: 'Estado del vinilo', value: 'NM' })
     expect(build([a, c])).toMatchObject({
       value: '',
-      placeholder: 'editor.multipleValues',
+      placeholder: 'editor.valuesCount',
       mixed: true,
     })
+    expect(build([a, c, d])?.mixedValues).toEqual([
+      { value: 'NM', count: 2 },
+      { value: 'VG', count: 1 },
+    ])
     build([a, b])?.onChange('VG+')
     expect(write).toHaveBeenCalledWith('VG+')
+  })
+
+  // A release shares its style, country, copyright, disc total, media type and Discogs ids,
+  // so a selection from one record must edit them together instead of hiding them. The
+  // shared row of disc number and total is checked in Editor.test.tsx.
+  it('builds the release-level disc fields over a selection, each writing to every track', () => {
+    const keys = [
+      'discTotal',
+      'style',
+      'copyright',
+      'country',
+      'mediaType',
+      'discogsReleaseId',
+      'discogsUrl',
+    ] as const
+    const write = vi.fn()
+    const a = track('a')
+    const b = track('b')
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [a, b],
+        visibleFields: ['discNumber', ...keys],
+        bulkOnChange: bulkOnChangeFrom(write),
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(['discNumber', ...keys])
+    for (const key of keys) {
+      specs.find((s) => s.key === key)?.onChange('x')
+      expect(write).toHaveBeenLastCalledWith({ [key]: 'x' })
+    }
+  })
+
+  // The order in Ajustes → Editor is the user's: a shift+click must not move fields around
+  // under their cursor, so the selection form lists them as the single form does, with
+  // managed, custom and playlist fields interleaved where the user put them.
+  it('keeps the user order of the visible fields across managed, custom and playlist keys', () => {
+    const playlists = {
+      rekordbox: {
+        tree: [],
+        options: [],
+        single: { value: [], onChange: vi.fn() },
+        bulk: { states: [], onToggle: vi.fn() },
+        library: 'rekordbox' as const,
+      },
+    }
+    const visibleFields = ['genre', 'vinylCondition', 'artist', 'rekordboxPlaylists', 'album']
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a'), track('b')],
+        visibleFields,
+        customFields: [{ key: 'vinylCondition', label: 'Estado del vinilo' }],
+        playlists,
+      }),
+    )
+    expect(specs.map((s) => s.key)).toEqual(visibleFields)
   })
 
   // A user selects the album's tracks and wants every one tagged "of 12": the selection
@@ -509,16 +571,62 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ comment: '' })
   })
 
-  it('honours the visible-fields setting and drops non-bulk fields', () => {
+  // A selection form with the same fields in the same order as one track: the per-track
+  // fields stay where the user put them, but writing one value into every track would
+  // overwrite what makes each track different.
+  it('honours the visible-fields setting and keeps per-track fields in place, read-only', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
         selectedTracks: [track('a')],
-        // 'title' is not a bulk field; 'grouping' is and is visible.
         visibleFields: ['title', 'grouping'],
       }),
     )
-    expect(specs.map((s) => s.key)).toEqual(['grouping'])
+    expect(specs.map((s) => s.key)).toEqual(['title', 'grouping'])
+    expect(specs[0].readOnly).toBe(true)
+    expect(specs[1].readOnly).toBeUndefined()
+  })
+
+  it('shows differing titles as blank with a count of values, without a way to pick one', () => {
+    const onChangeAllMeta = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { title: 'One' }), track('b', { title: 'Two' })],
+        visibleFields: ['title'],
+        bulkOnChange: new Map([['title', onChangeAllMeta]]),
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '' })
+    expect(specs[0].mixed).toBeUndefined()
+    expect(specs[0].placeholder).toBe('editor.valuesCount')
+    expect(specs[0].readOnlyNote).toBe('editor.perTrackOnly')
+    expect(specs[0].mixedValues).toBeUndefined()
+    specs[0].onChange('x')
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  it('shows an ellipsis for differing values in a field with a width', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { bpm: '120' }), track('b', { bpm: '128' })],
+        visibleFields: ['bpm'],
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '', placeholder: '…' })
+  })
+
+  it('shows the common BPM read-only and keeps the width that pairs it with Key', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { bpm: '128' }), track('b', { bpm: '128' })],
+        visibleFields: ['bpm'],
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '128', placeholder: undefined })
+    expect(specs[0].width).toBe(FIELD_DEFS.find((d) => d.key === 'bpm')?.width)
   })
 })
 
@@ -577,6 +685,7 @@ describe('the Playlists field of each library', () => {
     )
     expect(bulk.map((s) => [s.key, s.label, s.playlists?.disabled])).toEqual([
       ['enginePlaylists', 'fields.enginePlaylists', undefined],
+      ['title', 'fields.title', undefined],
       ['traktorPlaylists', 'fields.traktorPlaylists', 'unconfirmed'],
     ])
   })

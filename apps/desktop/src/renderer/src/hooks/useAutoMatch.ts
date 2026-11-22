@@ -59,12 +59,13 @@ interface Params {
   // Live view of the title-cleanup settings (the Naming pattern). Read at probe time so
   // editing the pattern applies to the next probe without restarting the sweep.
   matchCleanupRef: { readonly current: MatchCleanup }
-  // The id of the track whose editor field currently holds focus, or null. A field buffers
-  // its text and only commits to the track array on pause/blur, so for a ~200ms window the
-  // user's words aren't in the live meta yet — the meta-identity guard below can't see them
-  // and a match landing in that window would overwrite the row being typed into. So the
-  // sweep also skips whichever track is under active edit, read at apply time.
-  editingRef: { readonly current: string | null }
+  // The ids of the tracks whose editor field currently holds focus, empty when none (every
+  // selected track in a multi-select, since a bulk field writes to all of them). A field
+  // buffers its text and only commits to the track array on pause/blur, so for a ~200ms
+  // window the user's words aren't in the live meta yet — the meta-identity guard below
+  // can't see them and a match landing in that window would overwrite the row being typed
+  // into. So the sweep also skips every track under active edit, read at apply time.
+  editingRef: { readonly current: readonly string[] }
   // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
   // won or was suggested, why, and every candidate scored along the way.
   reportActivity: (report: LocalActivityReport) => void
@@ -238,7 +239,7 @@ export function useAutoMatch({
       // happened.
       if (m.tier === 'high' && t.metaPartial) await completeTrackMeta(t.id)
       const live = tracksRef.current.find((x) => x.id === t.id)
-      if (!live || live.meta !== t.meta || editingRef.current === t.id) return
+      if (!live || live.meta !== t.meta || editingRef.current.includes(t.id)) return
       if (m.tier === 'high' && live.metaPartial) return
       if (!replayed) reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence

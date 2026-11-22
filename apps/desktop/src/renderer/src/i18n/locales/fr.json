@@ -976,6 +976,9 @@
     "libraryCheckFailedEngine": "Impossible de lire ta bibliothèque Engine DJ, les morceaux ne sont donc pas marqués comme déjà présents. Surco réessaie quand tu reviens sur la fenêtre.",
     "editingMultiple": "Édition de {{count}} morceaux",
     "multipleValues": "Valeurs multiples",
+    "numberTracks": "Numéroter 1–{{count}}",
+    "perTrackOnly": "Se modifie morceau par morceau",
+    "clearInAll": "Vider partout",
     "valuesCount_one": "{{count}} valeur",
     "valuesCount_other": "{{count}} valeurs",
     "groupingAllTracks": "tous les morceaux",
@@ -1488,7 +1491,8 @@
       "off": "Désactivée",
       "soft": "Réparation douce",
       "standard": "Réparation standard",
-      "strong": "Réparation forte"
+      "strong": "Réparation forte",
+      "mixed": "Réglages différents"
     },
     "rowNoise": {
       "soft": "réduction de bruit douce",
@@ -1598,7 +1602,8 @@
       "none": "Loudness d’origine",
       "measured": "Sonne à {{now}} LUFS, sortira à {{target}}",
       "target": "Égalise à {{target}} LUFS",
-      "peak": "Pic à {{db}} dBFS"
+      "peak": "Pic à {{db}} dBFS",
+      "mixed": "Réglages différents"
     }
   },
   "settings": {

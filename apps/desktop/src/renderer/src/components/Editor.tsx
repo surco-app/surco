@@ -72,6 +72,7 @@ import {
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
+import { configsDiffer } from '../lib/configsDiffer'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -96,7 +97,7 @@ import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { withQualityTag } from '../lib/qualityTag'
-import { jobAudio } from '../lib/reapply'
+import { declickFor, jobAudio, normalizeFor } from '../lib/reapply'
 import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
 import {
   bestMatch,
@@ -173,6 +174,9 @@ interface Props {
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
   onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  // Numbers the selection 1..N in list order — App owns it so the button and the ⌘K
+  // command share one order, one undo and one toast.
+  onNumberTracks?: () => void
   onChangeTracksPlaylists?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
@@ -184,9 +188,10 @@ interface Props {
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   onClearAll?: () => void
   autoMatchDeclined?: boolean
-  // Reports which track (if any) has a field focused, so the background auto-match sweep
-  // can leave the row being typed into alone (see App's editingRef). null on blur.
-  onFieldFocusChange?: (id: string | null) => void
+  // Reports which tracks a focused field writes to (every selected one in a multi-select,
+  // since a bulk edit lands on all of them), so the background auto-match sweep can leave
+  // the rows being typed into alone (see App's editingRef). Empty on blur.
+  onFieldFocusChange?: (ids: readonly string[]) => void
   onChange: (patch: Partial<TrackItem>) => void
   onProcess: (format: OutputFormat) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
@@ -311,6 +316,7 @@ export const Editor = memo(function Editor({
   onApplyCoverAll,
   onDeriveTags,
   onChangeTracksMeta,
+  onNumberTracks,
   onChangeTracksPlaylists,
   onApplyTitleFormat,
   onRecordUndo,
@@ -414,6 +420,9 @@ export const Editor = memo(function Editor({
   } = appSettings
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  // A bulk field writes to every selected track, so all of them are under edit, not just
+  // the anchor the form is keyed on.
+  const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
@@ -1324,6 +1333,7 @@ export const Editor = memo(function Editor({
         customBulkOnChange,
         fullReleaseDate,
         onChangeTracksMeta,
+        numberTracks: onNumberTracks,
         cleanedNotes,
         previousNotes,
         playlists: playlistsSpec,
@@ -1354,6 +1364,7 @@ export const Editor = memo(function Editor({
       customOnChange,
       customBulkOnChange,
       onChangeTracksMeta,
+      onNumberTracks,
       fullReleaseDate,
       cleanedNotes,
       previousNotes,
@@ -1450,15 +1461,16 @@ export const Editor = memo(function Editor({
             onSelect: onCopyMeta,
             separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
           },
-          {
-            id: 'paste-meta',
-            testid: 'paste-meta-btn',
-            label: pasteMetaLabel,
-            Icon: ClipboardPaste,
-            onSelect: onPasteMeta,
-            disabled: copiedMetaTitle === null,
-          },
         ]),
+    {
+      id: 'paste-meta',
+      testid: 'paste-meta-btn',
+      label: pasteMetaLabel,
+      Icon: ClipboardPaste,
+      onSelect: onPasteMeta,
+      disabled: copiedMetaTitle === null,
+      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
+    },
   ]
 
   // The library state rides the section's title line, beside the title: a line of its own
@@ -1753,17 +1765,17 @@ export const Editor = memo(function Editor({
           />
           <SectionBody open={formOpen} id={formBodyId}>
             {libraryCopyBetterNote}
-            {/* Capture focus entering/leaving the field grid so the sweep knows which row is
+            {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would
-                reopen the very window it closes. onChange (a text commit) also confirms the row
-                is under active edit, in case focus arrived without a focus event we saw. */}
+                reopen the very window it closes. onChange (a text commit) also confirms the rows
+                are under active edit, in case focus arrived without a focus event we saw. */}
             <div
-              onFocusCapture={() => onFieldFocusChange?.(item.id)}
-              onChangeCapture={() => onFieldFocusChange?.(item.id)}
+              onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+              onChangeCapture={() => onFieldFocusChange?.(editedIds)}
               onBlurCapture={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-                  onFieldFocusChange?.(null)
+                  onFieldFocusChange?.([])
               }}
             >
               <MetadataForm
@@ -1775,7 +1787,8 @@ export const Editor = memo(function Editor({
                 setCoverDims={setCoverDims}
                 onChange={onCoverChange}
                 onApplyCoverAll={onApplyCoverAll}
-                onRate={(v) => setField('rating', v)}
+                // Over a selection the stars write every track, the way the bulk fields do.
+                onRate={(v) => (isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v))}
                 fields={fieldSpecs}
               />
             </div>
@@ -2008,6 +2021,12 @@ export const Editor = memo(function Editor({
                         <DeclickSection
                           key={id}
                           value={declickCfg}
+                          mixed={
+                            isMulti &&
+                            configsDiffer(
+                              (selectedTracks ?? []).map((t) => declickFor(t, declickCfg, declick)),
+                            )
+                          }
                           open={declickOpen}
                           onToggle={() => setSectionOpen('declick', !declickOpen)}
                           onChange={(d) => {
@@ -2030,6 +2049,14 @@ export const Editor = memo(function Editor({
                         <NormalizeSection
                           key={id}
                           value={normalizeCfg}
+                          mixed={
+                            isMulti &&
+                            configsDiffer(
+                              (selectedTracks ?? []).map((t) =>
+                                normalizeFor(t, normalizeCfg, normalize),
+                              ),
+                            )
+                          }
                           open={normalizeOpen}
                           onToggle={() => setSectionOpen('normalize', !normalizeOpen)}
                           onChange={(n) => {

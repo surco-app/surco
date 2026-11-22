@@ -976,6 +976,9 @@
     "libraryCheckFailedEngine": "Deine Engine-DJ-Bibliothek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
     "multipleValues": "Mehrere Werte",
+    "numberTracks": "1–{{count}} nummerieren",
+    "perTrackOnly": "Wird Titel für Titel bearbeitet",
+    "clearInAll": "In allen leeren",
     "valuesCount_one": "{{count}} Wert",
     "valuesCount_other": "{{count}} Werte",
     "groupingAllTracks": "alle Tracks",
@@ -1488,7 +1491,8 @@
       "off": "Aus",
       "soft": "Sanfte Reparatur",
       "standard": "Standardreparatur",
-      "strong": "Starke Reparatur"
+      "strong": "Starke Reparatur",
+      "mixed": "Unterschiedlich"
     },
     "rowNoise": {
       "soft": "sanfte Rauschminderung",
@@ -1598,7 +1602,8 @@
       "none": "Originale Lautheit",
       "measured": "Jetzt {{now}} LUFS, danach {{target}}",
       "target": "Gleicht auf {{target}} LUFS an",
-      "peak": "Peak bei {{db}} dBFS"
+      "peak": "Peak bei {{db}} dBFS",
+      "mixed": "Unterschiedlich"
     }
   },
   "settings": {

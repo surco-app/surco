@@ -2,6 +2,7 @@ import type React from 'react'
 import { Fragment, useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release } from '../../../shared/types'
+import { commonValue } from '../lib/bulkEdit'
 import { buildFieldSpecs, type FieldSpec } from '../lib/fieldSpecs'
 import type { TrackItem } from '../types'
 import { CoverPicker } from './CoverPicker'
@@ -92,6 +93,7 @@ function renderField(
       cleaned={f.cleaned}
       previous={f.previous}
       readOnly={f.readOnly}
+      readOnlyNote={f.readOnlyNote}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}
@@ -136,10 +138,10 @@ interface MetadataFormProps {
   fields: FieldSpec[]
 }
 
-// The metadata form body: the cover well with the rating under it (single-track only) and
-// the fields — a flat list in the user's own order, rendered inline in the editor's single
-// scroll (no inner scroller) so browsing never fights a second scroll region, fed
-// pre-resolved field specs.
+// The metadata form body: the cover well with the rating under it (one stamp for the whole
+// selection in multi) and the fields — a flat list in the user's own order, rendered inline
+// in the editor's single scroll (no inner scroller) so browsing never fights a second
+// scroll region, fed pre-resolved field specs.
 export function MetadataForm({
   item,
   isMulti,
@@ -170,18 +172,20 @@ export function MetadataForm({
             onChange={onChange}
             onApplyCoverAll={onApplyCoverAll}
           />
-          {!isMulti && (
-            <div className="flex items-center">
-              <span id={ratingLabelId} className="sr-only">
-                {tr('fields.rating')}
-              </span>
-              <StarRating
-                value={item.meta.rating ?? ''}
-                onChange={onRate}
-                labelledBy={ratingLabelId}
-              />
-            </div>
-          )}
+          <div className="flex items-center">
+            <span id={ratingLabelId} className="sr-only">
+              {tr('fields.rating')}
+            </span>
+            <StarRating
+              value={
+                isMulti && selectedTracks
+                  ? (commonValue(selectedTracks, 'rating') ?? '')
+                  : (item.meta.rating ?? '')
+              }
+              onChange={onRate}
+              labelledBy={ratingLabelId}
+            />
+          </div>
         </div>
 
         {/* One column in the user's order, labels to the left of their inputs the way a
@@ -197,9 +201,24 @@ export function MetadataForm({
               f.width ? (
                 <Fragment key={f.key}>
                   {renderField(f, {
-                    trailing: rest.map((r) => (
-                      <Fragment key={r.key}>{renderField(r, { inline: true })}</Fragment>
-                    )),
+                    trailing: [
+                      ...rest.map((r) => (
+                        <Fragment key={r.key}>{renderField(r, { inline: true })}</Fragment>
+                      )),
+                      ...(f.action
+                        ? [
+                            <button
+                              key="action"
+                              type="button"
+                              data-testid="number-tracks-btn"
+                              onClick={f.action.onApply}
+                              className="press h-[26px] self-end rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
+                            >
+                              {f.action.label}
+                            </button>,
+                          ]
+                        : []),
+                    ],
                   })}
                 </Fragment>
               ) : f.perTrack ? (

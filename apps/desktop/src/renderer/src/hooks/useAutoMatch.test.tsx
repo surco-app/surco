@@ -50,7 +50,7 @@ function track(id: string): TrackItem {
 function setup(
   tracks: TrackItem[],
   libraryIndex: AppleMusicIndex | null = null,
-  editingRef: { current: string | null } = { current: null },
+  editingRef: { current: readonly string[] } = { current: [] },
   importFields: MetaTextKey[] = [...DEFAULT_IMPORT_FIELDS],
   genrePresets: string[] = [],
   fullReleaseDate = false,
@@ -202,7 +202,7 @@ describe('useAutoMatch', () => {
 
       const search = vi.fn().mockResolvedValue([])
       setApi({ ...memory, search })
-      const again = setup([track('a')], null, { current: null }, undefined, [], false, [
+      const again = setup([track('a')], null, { current: [] }, undefined, [], false, [
         'discogs',
         'bandcamp',
       ])
@@ -296,7 +296,7 @@ describe('useAutoMatch', () => {
       getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({ ...release, country: 'Europe' }),
     })
     const tracks = [track('a')]
-    const { result, updateTrack } = setup(tracks, null, { current: null }, ['album'])
+    const { result, updateTrack } = setup(tracks, null, { current: [] }, ['album'])
 
     act(() => result.current.enqueueAutoMatch(tracks))
 
@@ -315,9 +315,7 @@ describe('useAutoMatch', () => {
         .mockResolvedValue({ ...release, genres: ['electronic'] }),
     })
     const tracks = [track('a')]
-    const { result, updateTrack } = setup(tracks, null, { current: null }, undefined, [
-      'Electronic',
-    ])
+    const { result, updateTrack } = setup(tracks, null, { current: [] }, undefined, ['Electronic'])
 
     act(() => result.current.enqueueAutoMatch(tracks))
 
@@ -334,7 +332,7 @@ describe('useAutoMatch', () => {
         .mockResolvedValue({ ...release, year: 2001, released: '2001-03-12' }),
     })
     const tracks = [track('a')]
-    const { result, updateTrack } = setup(tracks, null, { current: null }, undefined, [], true)
+    const { result, updateTrack } = setup(tracks, null, { current: [] }, undefined, [], true)
 
     act(() => result.current.enqueueAutoMatch(tracks))
 
@@ -365,7 +363,7 @@ describe('useAutoMatch', () => {
   it('never applies a match to the track whose field is being edited', async () => {
     setApi()
     const tracks = [track('a'), track('b')]
-    const editingRef = { current: 'a' }
+    const editingRef = { current: ['a'] }
     const { result, updateTrack } = setup(tracks, null, editingRef)
 
     act(() => result.current.enqueueAutoMatch(tracks))
@@ -782,7 +780,7 @@ describe('a row listed before its full read', () => {
         fullReleaseDateRef: { current: false },
         replaceLowResCoverRef: { current: replaceLowResCover },
         matchCleanupRef: { current: {} },
-        editingRef: { current: null },
+        editingRef: { current: [] },
         reportActivity: vi.fn(),
         recordUndo: vi.fn(),
       }),

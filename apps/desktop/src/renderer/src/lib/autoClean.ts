@@ -14,7 +14,7 @@ export interface AutoCleanOptions {
   spacing: boolean
   unifyCase: boolean
   ignored: readonly string[]
-  editing: string | null
+  editing: readonly string[]
 }
 
 export interface CleanFix extends Omit<FieldCleanup, 'undone'> {
@@ -83,7 +83,7 @@ export function planAutoClean(rows: TrackItem[], options: AutoCleanOptions): Cle
   const rawById = new Map(raw.map((e) => [e.id, e]))
   const fixes: CleanFix[] = []
   for (const row of rows) {
-    if (!targets.has(row.inputPath) || row.id === editing) continue
+    if (!targets.has(row.inputPath) || editing.includes(row.id)) continue
     const entry = rawById.get(row.inputPath)
     const disk = diskMeta(row)
     const next = result.get(row.inputPath)

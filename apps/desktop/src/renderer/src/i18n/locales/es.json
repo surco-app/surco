@@ -976,6 +976,9 @@
     "libraryCheckFailedEngine": "No se ha podido leer tu biblioteca de Engine DJ, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "editingMultiple": "Editando {{count}} pistas",
     "multipleValues": "Varios valores",
+    "numberTracks": "Numerar 1–{{count}}",
+    "perTrackOnly": "Se edita pista a pista",
+    "clearInAll": "Vaciar en todas",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valores",
     "groupingAllTracks": "todas las pistas",
@@ -1488,7 +1491,8 @@
       "off": "Desactivada",
       "soft": "Reparación suave",
       "standard": "Reparación estándar",
-      "strong": "Reparación fuerte"
+      "strong": "Reparación fuerte",
+      "mixed": "Varios ajustes"
     },
     "rowNoise": {
       "soft": "reducción de ruido suave",
@@ -1598,7 +1602,8 @@
       "none": "Volumen original",
       "measured": "Suena a {{now}} LUFS, saldrá a {{target}}",
       "target": "Iguala a {{target}} LUFS",
-      "peak": "Pico a {{db}} dBFS"
+      "peak": "Pico a {{db}} dBFS",
+      "mixed": "Varios ajustes"
     }
   },
   "settings": {

@@ -976,6 +976,9 @@
     "libraryCheckFailedEngine": "Engine DJ ライブラリを読み取れなかったため、トラックがすでに登録されているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "editingMultiple": "{{count}} トラックの編集",
     "multipleValues": "複数の値",
+    "numberTracks": "1–{{count}}で番号付け",
+    "perTrackOnly": "1曲ずつ編集します",
+    "clearInAll": "すべて空にする",
     "valuesCount_one": "{{count}} 件の値",
     "valuesCount_other": "{{count}} 件の値",
     "groupingAllTracks": "すべてのトラック",
@@ -1488,7 +1491,8 @@
       "off": "オフ",
       "soft": "弱めの修復",
       "standard": "標準の修復",
-      "strong": "強めの修復"
+      "strong": "強めの修復",
+      "mixed": "設定が混在"
     },
     "rowNoise": {
       "soft": "弱めのノイズ低減",
@@ -1598,7 +1602,8 @@
       "none": "元の音量",
       "measured": "{{now}} LUFS で再生され、{{target}} で出力されます",
       "target": "{{target}} LUFS にレベル合わせ",
-      "peak": "{{db}} dBFS のピーク"
+      "peak": "{{db}} dBFS のピーク",
+      "mixed": "設定が混在"
     }
   },
   "settings": {

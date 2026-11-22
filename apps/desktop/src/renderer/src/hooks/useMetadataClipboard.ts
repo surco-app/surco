@@ -1,9 +1,12 @@
 import { useTranslation } from 'react-i18next'
 import { effectiveMeta } from '../../../shared/customFields'
 import type { CustomField } from '../../../shared/types'
+import { BULK_FIELDS } from '../lib/bulkEdit'
 import { renderOutputName } from '../lib/outputName'
 import type { CopiedTags, TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
+
+const PASTE_ALL_FIELDS = BULK_FIELDS.filter((key) => key !== 'comment')
 
 interface Params {
   // The one copied tag set (App's store slice): the hook reads it to paste and to
@@ -18,7 +21,7 @@ interface Params {
   filenameFormat: string
   customFields: readonly CustomField[]
   recordMetaUndo: (ids: string[], opts?: { cover?: boolean }) => void
-  updateTracksMeta: (ids: string[], meta: CopiedTags['meta']) => void
+  updateTracksMeta: (ids: string[], meta: Partial<CopiedTags['meta']>) => void
   patchTracks: (ids: string[], patch: Partial<TrackItem>) => void
   setNotice: (message: string) => void
 }
@@ -26,6 +29,7 @@ interface Params {
 interface MetadataClipboard {
   onCopyMeta: (track: TrackItem) => void
   onPasteMeta: (track: TrackItem) => void
+  onPasteMetaAll: (ids: string[]) => void
   onCopyPath: (track: TrackItem) => void
   onApplyCoverAll: (coverUrl: string, coverPath?: string) => void
   onCopyFilename: () => void
@@ -55,19 +59,38 @@ export function useMetadataClipboard({
     setCopiedMeta({ meta: track.meta, coverUrl: track.coverUrl, coverPath: track.coverPath })
     setNotice(tr('notices.copiedMeta'))
   })
+  // A hand-picked cover is a blob: URL that is freed once no row shows it; if the
+  // source row left the list since the copy, paste the tags but skip the dead image.
+  const aliveCover = (copied: CopiedTags) => {
+    const { coverUrl, coverPath } = copied
+    const coverAlive =
+      !!coverUrl &&
+      (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
+    return coverAlive ? { coverUrl, coverPath } : null
+  }
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (!copiedMeta) return
     recordMetaUndo([track.id], { cover: true })
     updateTracksMeta([track.id], copiedMeta.meta)
-    // A hand-picked cover is a blob: URL that is freed once no row shows it; if the
-    // source row left the list since the copy, paste the tags but skip the dead image.
-    const { coverUrl, coverPath } = copiedMeta
-    const coverAlive =
-      !!coverUrl &&
-      (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
+    const cover = aliveCover(copiedMeta)
     // The displaced cover is NOT revoked here: the undo snapshot above may restore
     // it, and revoking would hand ⌘Z a dead blob URL.
-    if (coverAlive) patchTracks([track.id], { coverUrl, coverPath })
+    if (cover) patchTracks([track.id], cover)
+    setNotice(tr('notices.pastedMeta'))
+  })
+  // On a selection only the release-level fields travel: a title or track number
+  // stamped on every row would flatten the album into copies of one song. The comment
+  // stays too: it opens with each track's own rekordbox phrase count. No
+  // confirmation, because one ⌘Z gives every row back.
+  const onPasteMetaAll = useStableCallback((ids: string[]) => {
+    if (!copiedMeta) return
+    recordMetaUndo(ids, { cover: true })
+    const release: Partial<CopiedTags['meta']> = {}
+    for (const key of PASTE_ALL_FIELDS)
+      if (key in copiedMeta.meta) release[key] = copiedMeta.meta[key]
+    updateTracksMeta(ids, release)
+    const cover = aliveCover(copiedMeta)
+    if (cover) patchTracks(ids, cover)
     setNotice(tr('notices.pastedMeta'))
   })
   // Copies the source path to the clipboard. Routed through here (rather than the menu's
@@ -91,5 +114,5 @@ export function useMetadataClipboard({
       setNotice(tr('notices.copiedFilename'))
     }
   })
-  return { onCopyMeta, onPasteMeta, onCopyPath, onApplyCoverAll, onCopyFilename }
+  return { onCopyMeta, onPasteMeta, onPasteMetaAll, onCopyPath, onApplyCoverAll, onCopyFilename }
 }

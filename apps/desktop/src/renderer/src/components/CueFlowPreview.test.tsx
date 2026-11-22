@@ -610,9 +610,7 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
         /^DJ Made, Millenium Stringz has no mark yet/,
       )
-      expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(
-        /uses the example track$/,
-      )
+      expect(screen.getByTestId('cue-preview-no-mark')).toHaveTextContent(/uses the example track$/)
       expect(hoverTooltip(screen.getByTestId('cue-preview-no-mark'))).toBeNull()
     })
 

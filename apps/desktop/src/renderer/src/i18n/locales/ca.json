@@ -976,6 +976,9 @@
     "libraryCheckFailedEngine": "No s'ha pogut llegir la teva biblioteca d'Engine DJ, així que les pistes no es marquen com a ja incloses. Surco ho torna a provar quan tornes a la finestra.",
     "editingMultiple": "Editant {{count}} pistes",
     "multipleValues": "Diversos valors",
+    "numberTracks": "Numerar 1–{{count}}",
+    "perTrackOnly": "S'edita pista a pista",
+    "clearInAll": "Buidar a totes",
     "valuesCount_one": "{{count}} valor",
     "valuesCount_other": "{{count}} valors",
     "groupingAllTracks": "totes les pistes",
@@ -1488,7 +1491,8 @@
       "off": "Desactivada",
       "soft": "Reparació suau",
       "standard": "Reparació estàndard",
-      "strong": "Reparació forta"
+      "strong": "Reparació forta",
+      "mixed": "Ajustos diferents"
     },
     "rowNoise": {
       "soft": "reducció de soroll suau",
@@ -1598,7 +1602,8 @@
       "none": "Volum original",
       "measured": "Sona a {{now}} LUFS, sortirà a {{target}}",
       "target": "Iguala a {{target}} LUFS",
-      "peak": "Pic a {{db}} dBFS"
+      "peak": "Pic a {{db}} dBFS",
+      "mixed": "Ajustos diferents"
     }
   },
   "settings": {

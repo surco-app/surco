@@ -57,6 +57,8 @@ interface FieldProps {
   previous?: FieldPreviousNote
   // Filled by Surco from the analysis (Quality with its Auto on): shown, not typed into.
   readOnly?: boolean
+  // What a screen reader hears for a read-only field; Quality's own note when absent.
+  readOnlyNote?: string
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -86,6 +88,7 @@ export const Field = memo(function Field({
   cleaned,
   previous,
   readOnly,
+  readOnlyNote,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const { t: tr } = useTranslation()
@@ -279,6 +282,23 @@ export const Field = memo(function Field({
                     <span className="shrink-0 text-xs tabular-nums text-fg-faint">{count}</span>
                   </button>
                 ))}
+                <hr
+                  role="presentation"
+                  className="my-1 border-0 border-t border-[var(--color-line)]"
+                />
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={false}
+                  data-testid={`field-values-clear-${name}`}
+                  onClick={() => {
+                    setValuesOpen(false)
+                    commit('')
+                  }}
+                  className="flex w-full items-center rounded-md px-2 py-1.5 text-left text-sm text-fg-muted hover:bg-[var(--color-hover)]"
+                >
+                  {tr('editor.clearInAll')}
+                </button>
               </div>
             )}
           </>
@@ -347,7 +367,7 @@ export const Field = memo(function Field({
       )}
       {readOnly && (
         <span id={readOnlyNoteId} className="sr-only">
-          {tr('fields.qualityFromAnalysis')}
+          {readOnlyNote ?? tr('fields.qualityFromAnalysis')}
         </span>
       )}
       {/* Detecting the audio suggestion (BPM/Key): a placeholder chip in the exact shape

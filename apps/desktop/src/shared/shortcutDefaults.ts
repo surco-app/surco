@@ -133,7 +133,8 @@ export function resolveBindings(
   mac = true,
 ): Map<string, Chord> {
   const map = new Map<string, Chord>()
-  for (const def of SHORTCUT_DEFAULTS) map.set(def.id, mac ? def.chord : (def.winChord ?? def.chord))
+  for (const def of SHORTCUT_DEFAULTS)
+    map.set(def.id, mac ? def.chord : (def.winChord ?? def.chord))
   for (const def of SHORTCUT_DEFAULTS) {
     const override = overrides[def.id]
     if (override) map.set(def.id, override)

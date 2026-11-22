@@ -2707,6 +2707,49 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
   })
+
+  // With two tracks selected, a field typed in the editor writes to both. While the
+  // user is still in the form, a probe that read the tracks after that write must not
+  // land on either one, or the second track gets Discogs's album over the one the user
+  // just typed while the first keeps theirs and the selection quietly splits.
+  it('leaves every selected track alone while a bulk field is under edit', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    const getRelease = vi.fn(async () => {
+      await gate
+      return release
+    })
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'album'] }),
+        ),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease,
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.click(rows[1], { metaKey: true })
+
+    const album = await screen.findByTestId('field-album')
+    fireEvent.focus(album)
+    fireEvent.change(album, { target: { value: 'Hand Typed' } })
+    fireEvent.keyDown(album, { key: 'Enter' })
+
+    fireEvent.click(screen.getByTestId('auto-match'))
+    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(2))
+    releaseGate()
+    await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+    expect(screen.queryAllByTestId('track-automatched')).toHaveLength(0)
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-album')).toHaveValue('Hand Typed'))
+  })
 })
 
 beforeAll(installDragEvent)
@@ -7456,6 +7499,65 @@ describe('App multi-select field edit', () => {
       fireEvent.click(screen.getAllByTestId('track-row')[index])
       await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue(expected))
     }
+  })
+})
+
+describe('App multi-select numbering', () => {
+  const selectSortedByArtist = async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ visibleFields: ['title', 'artist', 'trackNumber'] })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.slice(-5, -4),
+        artist: { '/music/a.wav': 'Charlie', '/music/b.wav': 'Alpha', '/music/c.wav': 'Bravo' }[
+          path
+        ],
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('Alpha'))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+  }
+  const expectNumberedTopToBottom = async () => {
+    for (const [index, expected] of ['1', '2', '3'].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue(expected))
+    }
+  }
+
+  // The library keeps files in the order they were added; numbering follows the rows the
+  // user sees, so a list sorted by artist must number by that sort, not by import.
+  it('numbers the selected tracks in the order the sorted list shows them', async () => {
+    await selectSortedByArtist()
+
+    fireEvent.click(await screen.findByTestId('number-tracks-btn'))
+
+    expect(
+      await screen.findByText(i18n.t('notices.numberedTracks', { count: 3 })),
+    ).toBeInTheDocument()
+    await expectNumberedTopToBottom()
+  })
+
+  // The ⌘K command and the editor button are the same action; the command once numbered
+  // by import order, so on a sorted list the two disagreed about which track is first.
+  it('numbers from the command in the order the sorted list shows them, like the button', async () => {
+    await selectSortedByArtist()
+
+    runMenu('number-tracks')
+
+    expect(
+      await screen.findByText(i18n.t('notices.numberedTracks', { count: 3 })),
+    ).toBeInTheDocument()
+    await expectNumberedTopToBottom()
   })
 })
 
@@ -12406,6 +12508,152 @@ describe('App copy and paste metadata from the editor', () => {
       expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Rave Party'),
     )
     expect((screen.getByTestId('field-artist') as HTMLInputElement).value).toBe('DJ Roy')
+  })
+})
+
+describe('App paste metadata onto a selection', () => {
+  const coverOf = (path: string) =>
+    path === '/music/a.wav'
+      ? 'data:image/jpeg;base64,AA'
+      : path === '/music/b.wav'
+        ? 'data:image/jpeg;base64,BB'
+        : null
+  const setup = async (copy = true) => {
+    const tags: Record<string, Record<string, string>> = {
+      '/music/a.wav': {
+        title: 'Alpha',
+        artist: 'DJ Lara',
+        album: 'Source LP',
+        trackNumber: '1',
+        comment: '8 phrases - Alpha notes',
+      },
+      '/music/b.wav': {
+        title: 'Bravo',
+        artist: 'Old B',
+        album: 'Old LP',
+        trackNumber: '2',
+        comment: '5 phrases - Bravo notes',
+      },
+      '/music/c.wav': { title: 'Charlie', artist: 'Old C', album: 'Old LP', trackNumber: '3' },
+    }
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ visibleFields: ['title', 'artist', 'album', 'trackNumber', 'comment'] }),
+        ),
+      pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
+      readTags: vi.fn(async (path: string) => tags[path]),
+      prepareCoverDrag: vi.fn().mockResolvedValue(null),
+      readCover: vi.fn((path: string) => {
+        const thumbUrl = coverOf(path)
+        return Promise.resolve(thumbUrl ? { thumbUrl, width: 600, height: 600 } : null)
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    await waitFor(() => expect(within(rows[1]).getByTestId('track-cover')).toBeInTheDocument())
+    fireEvent.click(rows[0])
+    if (copy) {
+      fireEvent.contextMenu(rows[0])
+      fireEvent.click(await screen.findByTestId('track-menu-copy-meta'))
+    }
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { shiftKey: true })
+    return rows
+  }
+  const open = async (row: HTMLElement, testid: string) => {
+    fireEvent.click(row)
+    await waitFor(() => expect(screen.getByTestId(testid)).toBeInTheDocument())
+    return (screen.getByTestId(testid) as HTMLInputElement).value
+  }
+  const coverSrc = async (row: HTMLElement) => {
+    fireEvent.click(row)
+    await waitFor(() => expect(screen.getByTestId('field-title')).toBeInTheDocument())
+    return screen.queryByTestId('cover-preview')?.getAttribute('src') ?? null
+  }
+
+  // Dressing a whole release from one good track is the point of the clipboard; the
+  // release-level fields travel, but each track keeps its own title and number or the
+  // paste would flatten the album into copies of one song.
+  it('gives every selected track the release fields and keeps their own title and number', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+
+    for (const [row, title, number] of [
+      [rows[1], 'Bravo', '2'],
+      [rows[2], 'Charlie', '3'],
+    ] as const) {
+      expect(await open(row, 'field-artist')).toBe('DJ Lara')
+      expect(await open(row, 'field-album')).toBe('Source LP')
+      expect(await open(row, 'field-title')).toBe(title)
+      expect(await open(row, 'field-trackNumber')).toBe(number)
+    }
+  })
+
+  // A comment opens with the track's own rekordbox phrase count, so pasting the copied
+  // one would stamp the source's count on every row; each track keeps its comment.
+  it('keeps each selected track its own comment', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+
+    expect(await open(rows[1], 'field-artist')).toBe('DJ Lara')
+    expect(await open(rows[1], 'field-comment')).toBe('5 phrases - Bravo notes')
+    expect(await open(rows[2], 'field-comment')).toBe('')
+  })
+
+  // The paste asks for no confirmation because one undo gives every row back.
+  it('undoes the paste on every selected track at once', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    await screen.findByText('Metadata pasted')
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.queryByTestId('paste-meta-btn')).toBeNull())
+
+    expect(await open(rows[1], 'field-artist')).toBe('Old B')
+    expect(await open(rows[2], 'field-artist')).toBe('Old C')
+  })
+
+  // A copied cover dresses every selected row, and the single undo must hand each row
+  // its own cover back, not leave the pasted one or blank the rows that had none.
+  it('pastes the copied cover onto every selected track and undoes it with their own covers', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    await screen.findByText('Metadata pasted')
+
+    expect(await coverSrc(rows[1])).toBe('data:image/jpeg;base64,AA')
+    expect(await coverSrc(rows[2])).toBe('data:image/jpeg;base64,AA')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+
+    expect(await coverSrc(rows[1])).toBe('data:image/jpeg;base64,BB')
+    expect(await coverSrc(rows[2])).toBeNull()
+    expect(await open(rows[1], 'field-artist')).toBe('Old B')
+  })
+
+  it('disables the editor paste while nothing has been copied', async () => {
+    await setup(false)
+    openMore()
+    expect(screen.getByTestId('paste-meta-btn')).toBeDisabled()
+  })
+
+  it('offers the paste in the list menu when several rows are selected', async () => {
+    const rows = await setup()
+    fireEvent.click(rows[1])
+    fireEvent.click(rows[2], { shiftKey: true })
+    fireEvent.contextMenu(rows[2])
+    fireEvent.click(await screen.findByTestId('track-menu-paste-meta'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+    expect(await open(rows[1], 'field-artist')).toBe('DJ Lara')
   })
 })
 
