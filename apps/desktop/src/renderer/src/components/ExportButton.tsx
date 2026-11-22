@@ -14,6 +14,7 @@ import {
   SPLIT_BODY,
   SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
+  SPLIT_TOGGLE_DIMMED,
   SPLIT_TOGGLE_FORMAT,
   SPLIT_TOGGLE_QUIET,
   SPLIT_TOGGLE_READY,
@@ -205,6 +206,7 @@ export function ExportButton({
   // keep their own looks.
   const swapsFace = !quiet && !liveStage
   const faceBlocked = swapsFace && !!shownBlocked
+  const toggleDimmed = swapsFace && softBlocked && !faceBlocked
   // The fill is decorative, and a button flattens any role nested in it, so how far the
   // export has come is spoken as part of the button's name instead of a progressbar.
   const progressText = liveStage
@@ -436,11 +438,16 @@ export function ExportButton({
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
                   'press relative flex items-center justify-center gap-1 rounded-r-lg bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px before:bg-[var(--color-on-accent)]/20 text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `${SPLIT_TOGGLE_FORMAT} ${faceBlocked ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`
+                : `${SPLIT_TOGGLE_FORMAT} ${faceBlocked ? SPLIT_TOGGLE_QUIET : toggleDimmed ? SPLIT_TOGGLE_DIMMED : SPLIT_TOGGLE_READY}`
           }
         >
           {swapsFace && (
-            <span aria-hidden="true" data-on={!faceBlocked || undefined} className="process-fill" />
+            <span
+              aria-hidden="true"
+              data-testid="process-format-fill"
+              data-on={(!faceBlocked && !toggleDimmed) || undefined}
+              className="process-fill"
+            />
           )}
           {!quiet && formatPicker}
           <ChevronDown

@@ -18,6 +18,8 @@ export const SPLIT_TOGGLE_FORMAT =
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET =
   'bg-[var(--color-panel-2)] text-fg-faint before:bg-[var(--color-line-strong)]'
+export const SPLIT_TOGGLE_DIMMED =
+  'bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 hover:bg-[color-mix(in_srgb,var(--color-accent)_55%,var(--color-ink))]'
 export const SPLIT_TOGGLE_READY =
   'bg-[var(--color-accent)] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 disabled:opacity-40'
 export const SPLIT_MENU =
