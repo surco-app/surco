@@ -144,7 +144,7 @@ import { TrimSection } from './TrimSection'
 interface Props {
   item: TrackItem
   // The session snapshot of the Apple Music library (null until it lands / off macOS),
-  // the same one the list and quality filter read, so the "already owned" badge can never
+  // the same one the list and quality filter read, so the "already owned" section can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
   searchInputRef: React.RefObject<HTMLInputElement | null>

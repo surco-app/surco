@@ -4874,7 +4874,7 @@ describe('Editor album "without version" suggestion', () => {
   })
 })
 
-describe('Editor Apple Music library badge', () => {
+describe('Editor Apple Music library section', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
   function setApi(platform: string): void {
@@ -4939,7 +4939,7 @@ describe('Editor Apple Music library badge', () => {
 
   // The complement: a song not found in the snapshot shows nothing, because the editor
   // only speaks about what the track has, never about what it lacks.
-  it('shows no badge for a track that is not in the library', () => {
+  it('shows no section for a track that is not in the library', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
       libraryIndex: owned,
@@ -4961,7 +4961,7 @@ describe('Editor Apple Music library badge', () => {
 
   // Until the snapshot arrives there is no verdict to show, so the section stays hidden
   // rather than guessing — the slot fills once the library has loaded.
-  it('hides the badge until the snapshot has loaded', () => {
+  it('hides the section until the snapshot has loaded', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: null,
@@ -5515,7 +5515,7 @@ describe('Editor Apple Music library badge', () => {
 
   // Off macOS there is no Apple Music library, so the section stays hidden rather than
   // making a promise the platform can't keep.
-  it('never shows the badge off macOS', () => {
+  it('never shows the section off macOS', () => {
     setApi('win32')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
@@ -5524,7 +5524,7 @@ describe('Editor Apple Music library badge', () => {
   })
 })
 
-describe('Editor Apple Music badge via the Discogs suggestion', () => {
+describe('Editor Apple Music section via the Discogs suggestion', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
   // A track number/title tag the file ships with is often messier than the canonical
@@ -5569,10 +5569,13 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     // The file's own artist tag isn't in the library, so there is no section yet.
     expect(screen.queryByTestId('library-section')).toBeNull()
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    const queryInput = screen.getByTestId('discogs-query')
+    queryInput.focus()
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
+    expect(document.activeElement).toBe(queryInput)
     // The release's canonical "The Artist — Track Two (Remix)" is owned, so the section shows
     // even though the file tag never matched on its own.
     expect(await screen.findByTestId('library-row')).toHaveTextContent('Apple Music')
@@ -5580,7 +5583,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
   // canonical name still isn't in the library leaves the section off.
-  it('keeps the badge off when the suggestion is not in the library either', async () => {
+  it('keeps the section off when the suggestion is not in the library either', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
     renderEditor(
@@ -5600,7 +5603,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
 
   // A track the library lacks shows no section while Discogs is still searching; Discogs may
   // still flip it to owned later.
-  it('shows no badge while Discogs is still searching for a track the library lacks', async () => {
+  it('shows no section while Discogs is still searching for a track the library lacks', async () => {
     setApi()
     let release_: () => void = () => {}
     const gate = new Promise<unknown[]>((res) => {

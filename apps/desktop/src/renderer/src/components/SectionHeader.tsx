@@ -36,13 +36,13 @@ interface SectionHeaderProps {
   // The id of the SectionBody this header folds, so aria-controls can say which region
   // the expanded state belongs to.
   bodyId?: string
-  // A short state that belongs to the whole section (the metadata's library membership),
+  // A short state that belongs to the whole section (the library section's membership),
   // set right after the title on the same line, open or folded. When it is wider than the
   // room left beside the title it drops onto its own line under it, the header's full width:
   // kept on the title's line it ran under the toolbar icons. It is described to a screen
   // reader rather than folded into the button's name, which stays the title alone.
   status?: React.ReactNode
-  // A control that belongs to the section's state (the metadata's copy verdict, which opens
+  // A control that belongs to the section's state (the library section's verdict, which opens
   // its numbers). It follows the status it qualifies, outside the fold button: nested there,
   // a click on it folded the section and the keyboard could not reach it.
   statusAction?: React.ReactNode
