@@ -369,11 +369,45 @@ describe('buildFieldSpecs (bulk mode)', () => {
       ).find((s) => s.key === 'artist')
     expect(build(['A', '', 'A'])).toMatchObject({
       placeholder: 'A · editor.emptyValue',
-      placeholderListed: true,
+      placeholderTooltip: true,
     })
     expect(build(['A', 'B', 'C', ''])).toMatchObject({
       placeholder: 'editor.valuesCount',
-      placeholderListed: false,
+      placeholderTooltip: false,
+    })
+  })
+
+  // A box sized for "2001" cuts even "3 values" to "3 …", so there the bare count rides in a
+  // tooltip as well; in a full-width box the count reads whole and a tooltip would repeat it.
+  it('keeps a bare count in a tooltip only where a fixed-width box cuts it', () => {
+    const tracks = [
+      track('a', { year: '2001', trackNumber: '1', artist: 'A' }),
+      track('b', { year: '2002', trackNumber: '2', artist: 'B' }),
+      track('c', { artist: 'C' }),
+      track('d', { year: '2002', trackNumber: '2', artist: 'D' }),
+    ]
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: tracks,
+        visibleFields: ['year', 'trackNumber', 'artist'],
+      }),
+    )
+    const tooltipOf = (key: string) => {
+      const spec = specs.find((s) => s.key === key)
+      return { placeholder: spec?.placeholder, placeholderTooltip: spec?.placeholderTooltip }
+    }
+    expect(tooltipOf('year')).toEqual({
+      placeholder: 'editor.valuesCount',
+      placeholderTooltip: true,
+    })
+    expect(tooltipOf('trackNumber')).toEqual({
+      placeholder: 'editor.valuesCount',
+      placeholderTooltip: true,
+    })
+    expect(tooltipOf('artist')).toEqual({
+      placeholder: 'editor.valuesCount',
+      placeholderTooltip: false,
     })
   })
 
