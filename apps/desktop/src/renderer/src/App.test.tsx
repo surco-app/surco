@@ -8597,6 +8597,33 @@ describe('App multi-select convert', () => {
     expect(bravo).toHaveAttribute('aria-selected', 'true')
   })
 
+  // Typing the search and then dragging the file in from Finder leaves the cursor in the
+  // search box. Treating it as a field being typed in left the new track unselected, so the
+  // editor kept showing the old one and the add still looked like it had done nothing.
+  it('selects the files just added while the cursor is still in the track search', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/bravo.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const search = screen.getByTestId('track-search')
+    search.focus()
+    fireEvent.change(search, { target: { value: 'alpha' } })
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
+    await waitFor(() => expect(bravo).toHaveAttribute('aria-selected', 'true'))
+  })
+
   // Dropping another version of the tune being searched for, to compare them, is a reason to
   // keep the search: everything added is on screen beside what was found.
   it('keeps a search that every file just added matches', async () => {

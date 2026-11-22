@@ -1419,7 +1419,9 @@ export default function App(): React.JSX.Element {
     // something: a field being typed in, a filter that may hide the new rows, or a selection
     // the user made while a slow folder was still being walked. The first row addPaths
     // opens on an empty list is the add's own doing and does not count as one.
-    if (added.length === 0 || isTypingTarget(document.activeElement) || tracksFilterActive) return
+    const typingInEditor =
+      isTypingTarget(document.activeElement) && columnOf(document.activeElement) !== 'list'
+    if (added.length === 0 || typingInEditor || tracksFilterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
       const untouched =

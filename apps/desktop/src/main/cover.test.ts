@@ -72,6 +72,25 @@ describe('prepareProcessedCover', () => {
     expect(unlink).toHaveBeenCalledWith('/tmp/cover-full.jpg')
   })
 
+  // cover:prepareDrag runs on every track selected and never calls cleanup(): the drag
+  // copies from the processed file at any later moment, so only that one rides the tmp
+  // manifest. An extracted, downloaded or decoded intermediate left for cleanup() piled
+  // up in the temp folder for good, one full-size cover per selected track.
+  it.each([
+    [{ coverFromFile: '/m/a.flac' }, '/tmp/cover-full.jpg'],
+    [{ coverUrl: 'https://img/cover.jpg' }, '/tmp/downloaded.jpg'],
+    [{ coverUrl: 'data:image/jpeg;base64,AAAA' }, join(tmpdir(), 'embed.jpg')],
+  ])(
+    'removes the intermediate of %o once the processed cover exists, without cleanup',
+    async (src, intermediate) => {
+      extractCoverFile.mockResolvedValue('/tmp/cover-full.jpg')
+      const prepared = await prepareProcessedCover(src, opts)
+      expect(prepared?.path).toBe('/tmp/processed.jpg')
+      expect(unlink).toHaveBeenCalledWith(intermediate)
+      expect(unlink).not.toHaveBeenCalledWith('/tmp/processed.jpg')
+    },
+  )
+
   it('returns nothing when the source file carries no art to take', async () => {
     extractCoverFile.mockResolvedValue(null)
     expect(await prepareProcessedCover({ coverFromFile: '/m/a.flac' }, opts)).toBeUndefined()
