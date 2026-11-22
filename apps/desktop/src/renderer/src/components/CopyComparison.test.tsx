@@ -54,6 +54,21 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-comparison')).not.toHaveTextContent('limiter')
   })
 
+  // The pills say «Your file is better», so the table calls the open file the same thing.
+  it('calls the open file by the subject the state pills use', () => {
+    render(
+      <CopyComparison
+        libraryName="rekordbox"
+        verdict={{ winner: 'a', reason: 'peakCount' }}
+        here={aif}
+        library={wav}
+        hereLabel="AIF"
+        libraryLabel="WAV"
+      />,
+    )
+    expect(screen.getByRole('columnheader', { name: 'Your file · AIF' })).toBeInTheDocument()
+  })
+
   it('names the library it compares with in the table', () => {
     render(
       <CopyComparison

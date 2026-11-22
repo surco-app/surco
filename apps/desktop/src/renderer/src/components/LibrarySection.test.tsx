@@ -32,19 +32,34 @@ function mount(
   return { onToggleComparison: single.onToggleComparison }
 }
 
+// A second copy in another state keeps each row's own pill: a state every row shares goes
+// once in the header instead.
+function mountApart(only: Partial<LibraryRow> = {}) {
+  const first = row(only)
+  const other = row({
+    id: 'rekordbox',
+    name: 'rekordbox',
+    verdict: only.verdict === 'measuring' ? 'same' : 'measuring',
+  })
+  render(<LibrarySection open onToggle={() => {}} rows={[first, other]} />)
+  return within(screen.getAllByTestId('library-row')[0]).getByTestId('library-row-state')
+}
+
 describe('LibrarySection', () => {
   // A glyph beside the title did not read as "the same copy": each copy now says its relation
   // to this file in a short word, on its own row, next to its format.
   it.each([
-    ['same', 'Idéntica'],
-    ['here', 'Esta es mejor'],
-    ['library', 'Mejor allí'],
+    ['same', 'Son el mismo'],
+    ['here', 'Tu archivo es mejor'],
+    ['library', 'Tu archivo es peor'],
     ['tie', 'Parecidas'],
     ['even', 'Ni mejor ni peor'],
     ['measuring', 'Comparando'],
+    ['missing', 'No se encuentra'],
+    ['unreadable', 'No se puede leer'],
+    ['unmeasurable', 'No se puede medir'],
   ] as const)('says the %s state in words on the row', (verdict, words) => {
-    mount({}, { verdict })
-    const pill = within(screen.getByTestId('library-row')).getByTestId('library-row-state')
+    const pill = mountApart({ verdict })
     expect(pill).toHaveTextContent(words)
     expect(pill).toHaveAccessibleName(words)
     expect(pill).toHaveAttribute('data-state', verdict)
@@ -53,16 +68,14 @@ describe('LibrarySection', () => {
   // Another version is told apart from a copy that is merely alike, and its length is what
   // tells it apart at a glance: 8:03 here against 7:28 in the library.
   it('names another version with the library copy length', () => {
-    mount({}, { verdict: 'different', durationSec: 448.6 })
-    const pill = screen.getByTestId('library-row-state')
+    const pill = mountApart({ verdict: 'different', durationSec: 448.6 })
     expect(pill).toHaveTextContent('Otra versión · 7:28')
     expect(pill).toHaveAccessibleName('Otra versión · 7:28')
     expect(pill).toHaveAttribute('data-state', 'different')
   })
 
   it('names another version without a length it does not know', () => {
-    mount({}, { verdict: 'different' })
-    expect(screen.getByTestId('library-row-state')).toHaveAccessibleName('Otra versión')
+    expect(mountApart({ verdict: 'different' })).toHaveAccessibleName('Otra versión')
   })
 
   // A copy that will be compared keeps its slot before anything is known, not even its
@@ -84,11 +97,10 @@ describe('LibrarySection', () => {
   // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
   // for a screen reader and the tooltip, so the row keeps one short word.
   it('names the reason with the state when there is one', () => {
-    mount({}, { verdict: 'library', detail: 'Este archivo tiene pérdida (MP3).' })
-    const pill = screen.getByTestId('library-row-state')
-    expect(pill).toHaveTextContent(/^Mejor allí$/)
-    expect(pill).toHaveAccessibleName('Mejor allí. Este archivo tiene pérdida (MP3).')
-    expect(hoverTooltip(pill)).toBe('Mejor allí. Este archivo tiene pérdida (MP3).')
+    const pill = mountApart({ verdict: 'library', detail: 'Este archivo tiene pérdida (MP3).' })
+    expect(pill).toHaveTextContent(/^Tu archivo es peor$/)
+    expect(pill).toHaveAccessibleName('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
+    expect(hoverTooltip(pill)).toBe('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
   })
 
   // Japanese closes a sentence with 。, so the state and its reason join the way each
@@ -96,8 +108,8 @@ describe('LibrarySection', () => {
   it('joins the state and its reason with the language own full stop', async () => {
     await i18n.changeLanguage('ja')
     try {
-      mount({}, { verdict: 'library', detail: '理由' })
-      const name = screen.getByTestId('library-row-state').getAttribute('aria-label') ?? ''
+      const name =
+        mountApart({ verdict: 'library', detail: '理由' }).getAttribute('aria-label') ?? ''
       expect(name.endsWith('。理由')).toBe(true)
     } finally {
       await i18n.changeLanguage('es')
@@ -107,12 +119,13 @@ describe('LibrarySection', () => {
   // The two greens and the amber used to be told apart by shape; now the word does it, so
   // the amber is never carried by colour alone.
   it('keeps every settled state in words of its own', () => {
-    const words = (['same', 'here', 'library', 'different', 'tie', 'even'] as const).map((verdict) => {
-      mount({}, { verdict })
-      const text = screen.getByTestId('library-row-state').textContent
-      cleanup()
-      return text
-    })
+    const words = (['same', 'here', 'library', 'different', 'tie', 'even'] as const).map(
+      (verdict) => {
+        const text = mountApart({ verdict }).textContent
+        cleanup()
+        return text
+      },
+    )
     expect(new Set(words).size).toBe(6)
   })
 
@@ -135,12 +148,16 @@ describe('LibrarySection', () => {
     for (const labels of reserved) {
       expect(labels).toEqual([
         'Comparando',
-        'Idéntica',
-        'Esta es mejor',
-        'Mejor allí',
+        'Son el mismo',
+        'Tu archivo es mejor',
+        'Tu archivo es peor',
         'Parecidas',
         'Ni mejor ni peor',
         'Otra versión · 0:00:00',
+        'Es este archivo',
+        'No se encuentra',
+        'No se puede leer',
+        'No se puede medir',
       ])
     }
     for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
@@ -171,7 +188,7 @@ describe('LibrarySection', () => {
 
   // Open, the rows say each copy's state; the header saying it again was the same thing twice.
   it('keeps the header free of a state while the section is open', () => {
-    mount({}, { verdict: 'library' })
+    mountApart({ verdict: 'library' })
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
@@ -187,7 +204,7 @@ describe('LibrarySection', () => {
     })
     const pill = screen.getByTestId('library-verdict')
     expect(pill).toHaveAttribute('data-state', 'here')
-    expect(pill).toHaveAccessibleName('Esta es mejor')
+    expect(pill).toHaveAccessibleName('Tu archivo es mejor')
   })
 
   // With several programs "better there" cannot say where, so the folded header names it.
@@ -200,18 +217,204 @@ describe('LibrarySection', () => {
       ],
     })
     const pill = screen.getByTestId('library-verdict')
-    expect(pill).toHaveTextContent(/^Mejor en Engine DJ$/)
-    expect(pill).toHaveAccessibleName('Mejor en Engine DJ. Razón.')
+    expect(pill).toHaveTextContent(/^Mejor copia en Engine DJ$/)
+    expect(pill).toHaveAccessibleName('Mejor copia en Engine DJ. Razón.')
   })
 
-  it('says better there plainly when folded over one row', () => {
+  // A row that is the open file itself is never blank: it says so, beside its format, and it is
+  // a state of its own that never rides up to the header with the others.
+  it('says on its own row that a copy is the open file, beside its format, and opens nothing', () => {
+    mount(
+      {},
+      { verdict: 'thisFile', comparable: false, comparison: undefined, format: 'AIFF 16/44,1' },
+    )
+    const pill = screen.getByTestId('library-row-state')
+    expect(pill).toHaveTextContent('Es este archivo')
+    expect(pill).toHaveAttribute('data-state', 'thisFile')
+    expect(screen.getByTestId('library-row-format')).toHaveTextContent('AIFF 16/44,1')
+    expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  it('keeps the open file own state on its row when every row is that file', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'thisFile', comparison: undefined }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'thisFile', comparison: undefined }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // «Not found» is about that copy, not about the file: it stays on its row and is neither
+  // hoisted to the header nor offers a comparison there is nothing to compare.
+  it.each(['missing', 'unreadable'] as const)(
+    'keeps a %s copy on its row without a header state or a comparison',
+    (verdict) => {
+      mount({
+        rows: [
+          row({ id: 'appleMusic', name: 'Apple Music', verdict, comparison: undefined }),
+          row({ id: 'rekordbox', name: 'rekordbox', verdict, comparison: undefined }),
+        ],
+      })
+      expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
+      expect(screen.getAllByTestId('library-row')[0].tagName).not.toBe('BUTTON')
+    },
+  )
+
+  it('says the file is worse plainly when folded over one row', () => {
     mount({ open: false }, { verdict: 'library' })
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Mejor allí$/)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
   })
 
-  it('says another version in the folded header without a length', () => {
-    mount({ open: false }, { verdict: 'different', durationSec: 300 })
+  it('says another version in the folded header without a length when the rows differ in state', () => {
+    mount({
+      open: false,
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'different', durationSec: 300 }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
+      ],
+    })
     expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Otra versión$/)
+  })
+
+  it('says another version with its length in the header when it is the only state', () => {
+    mount({}, { verdict: 'different', durationSec: 300 })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Otra versión · 5:00$/)
+  })
+
+  // The same state on every row was said once per row; said once in the header, the rows keep
+  // only what tells them apart: the program and the format.
+  it('says a state shared by every row once in the header, open or folded', () => {
+    const rows = [
+      row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+      row({ id: 'rekordbox', name: 'rekordbox', verdict: 'here' }),
+    ]
+    for (const open of [true, false]) {
+      render(<LibrarySection open={open} onToggle={() => {}} rows={rows} />)
+      expect(screen.getAllByTestId('library-verdict')).toHaveLength(1)
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es mejor$/)
+      expect(screen.queryByTestId('library-row-state')).toBeNull()
+      cleanup()
+    }
+  })
+
+  // The state place stays in every row, empty when the state rode up to the header, so the
+  // format chip sits in the same column whether the rows say their state or the header does.
+  it('keeps the empty state place on rows whose state went up to the header', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+    expect(screen.getAllByTestId('library-row-format')).toHaveLength(2)
+  })
+
+  // Different states keep one pill per row and nothing beside the title while it is open.
+  it('keeps one pill per row and an empty open header when the states differ', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'library' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // While only some copies are still being measured the header must not settle on a shared
+  // state and jump when the others land: each row keeps its own pill.
+  it('keeps each row its own pill while only some rows are still comparing', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'here' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state')).toHaveLength(2)
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  // The common case, one copy, goes from «Comparando» to its verdict in one place: the header,
+  // so nothing in the section changes size when the measurement lands.
+  it('says comparing once in the header when every row is comparing', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'measuring' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Comparando')
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
+  })
+
+  // The header keeps its pill line from the start whenever a verdict can land there, so the
+  // title does not grow when the pill arrives.
+  it('keeps the header place of a verdict that has not arrived yet', () => {
+    mount({}, { verdict: null, comparable: true })
+    expect(screen.getByTestId('library-verdict-slot')).toBeInTheDocument()
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
+  })
+
+  it('keeps no header place when no copy will ever be compared', () => {
+    mount({}, { verdict: 'thisFile', comparable: false, comparison: undefined })
+    expect(screen.queryByTestId('library-verdict-slot')).toBeNull()
+  })
+
+  it('says a copy that cannot be measured on its own row, never hoisted', () => {
+    const pill = mountApart({ verdict: 'unmeasurable' })
+    expect(pill).toHaveTextContent('No se puede medir')
+    expect(pill).toHaveAttribute('data-state', 'unmeasurable')
+  })
+
+  // The rows lose their pills when the state goes up, so their reasons go up with it.
+  it('joins every row reason in the shared header state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'library', detail: 'Razón uno.' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'library', detail: 'Razón dos.' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
+      'Tu archivo es peor. Razón uno. Razón dos.',
+    )
+  })
+
+  it('compares lengths as they are shown, not as floats, to decide a shared state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'different', durationSec: 300.2 }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'different', durationSec: 300.4 }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Otra versión · 5:00')
+  })
+
+  it('names the program when a folded header covers a better copy among different states', () => {
+    mount({
+      open: false,
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
+        row({ id: 'engine', name: 'Engine DJ', verdict: 'library' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Mejor copia en Engine DJ$/)
+  })
+
+  it('says the file is worse, not a program, when every folded row says it', () => {
+    mount({
+      open: false,
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'library' }),
+        row({ id: 'engine', name: 'Engine DJ', verdict: 'library' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
   })
 
   it('shows no folded state until there is one', () => {

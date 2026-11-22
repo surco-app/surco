@@ -481,6 +481,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     comparePair: async () => null,
     limiterGlimpse: async () => null,
     properties: async () => null,
+    fileExists: async () => true,
     bpm: async () => null,
     key: async () => null,
     waveform: async () => null,

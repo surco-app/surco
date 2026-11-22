@@ -1,3 +1,4 @@
+import { access } from 'node:fs/promises'
 import { basename } from 'node:path'
 import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
@@ -452,6 +453,13 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
+
+  handleAudio('audio:fileExists', (_e, path: string) =>
+    access(path).then(
+      () => true,
+      () => false,
+    ),
+  )
 
   handleAudio('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {

@@ -81,6 +81,36 @@ describe('compareCopies', () => {
       ).toEqual({ winner: 'different' })
     })
 
+    // A 30 s Music copy against a 95 s file: the wider search stops at about 54 s, so nothing
+    // was measured and the row stayed blank. One master cannot carry that much more audio than
+    // the other, so the lengths alone say it is another version, with or without a probe.
+    it.each([null, { correlation: 0.1, residualDb: -1, gainDb: -3 }] as const)(
+      'calls copies further apart than the wider search reaches another version from their lengths (%j)',
+      (pair) => {
+        expect(compareCopies(edit(95), edit(30), pair)).toEqual({ winner: 'different' })
+      },
+    )
+
+    it('keeps measuring while the pair is still being read, however far apart the lengths are', () => {
+      expect(compareCopies(edit(95), edit(30), undefined)).toEqual({ winner: 'tie' })
+    })
+
+    // The renderer and the main process decide from the same two lengths: right at the edge of
+    // the reach, a gap the main process still searches is never called another version here.
+    it.each([
+      [53, 'tie'],
+      [54, 'different'],
+    ] as const)(
+      'calls a gap of %i s another version only once the search no longer reaches it',
+      (gap, winner) => {
+        expect(compareCopies(edit(100 + gap), edit(100), null)).toEqual({ winner })
+      },
+    )
+
+    it('never calls a copy too short to hold a track another version from its length alone', () => {
+      expect(compareCopies(edit(95), edit(4), null)).toEqual({ winner: 'tie' })
+    })
+
     // One master with 3 s of its head trimmed is 3 s shorter and slips past the ±1 s probe;
     // the wider search lines it up again, so it is no other version.
     it('never calls a shifted copy of one master another version', () => {

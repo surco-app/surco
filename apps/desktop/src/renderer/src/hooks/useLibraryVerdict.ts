@@ -40,6 +40,8 @@ interface LibraryVerdict {
   // found again on title and artist alone), read only to say what it is, never replaced.
   libraryCopyPath: string
   libraryCopyPending: boolean
+  // Music listed the entry but gave no file for it: the copy cannot be found.
+  libraryCopyUnlocated: boolean
 }
 
 // Whether the destination library (Apple Music or Engine DJ) already owns this track, and
@@ -242,5 +244,6 @@ export function useLibraryVerdict({
     replaceTargetPending: !!offeredId && lookedUp !== offeredId,
     libraryCopyPath: copyId && offeredPath?.id === copyId ? offeredPath.path : '',
     libraryCopyPending: !!copyId && lookedUp !== copyId,
+    libraryCopyUnlocated: !!copyId && lookedUp === copyId && offeredPath?.id !== copyId,
   }
 }

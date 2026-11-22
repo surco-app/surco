@@ -420,6 +420,7 @@ export interface Api {
     sampleRate: number,
   ) => Promise<LimiterGlimpse | null>
   properties: (path: string) => Promise<TrackProperties | null>
+  fileExists: (path: string) => Promise<boolean>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
   waveform: (path: string, priority?: 'urgent' | 'high' | 'low') => Promise<WaveformResult | null>
