@@ -230,6 +230,7 @@ function renderEditor(
   onOpenRename: ReturnType<typeof vi.fn>
   onRegenerateName: ReturnType<typeof vi.fn>
   onCopyFilename: ReturnType<typeof vi.fn>
+  onCopyPath: ReturnType<typeof vi.fn>
   onSearchWeb: ReturnType<typeof vi.fn>
   onCopyMeta: ReturnType<typeof vi.fn>
   onPasteMeta: ReturnType<typeof vi.fn>
@@ -252,6 +253,7 @@ function renderEditor(
   const onOpenRename = vi.fn()
   const onRegenerateName = vi.fn()
   const onCopyFilename = vi.fn()
+  const onCopyPath = vi.fn()
   const onSearchWeb = vi.fn()
   const onCopyMeta = vi.fn()
   const onPasteMeta = vi.fn()
@@ -284,6 +286,7 @@ function renderEditor(
         onRegenerateName={onRegenerateName}
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={onCopyFilename}
+        onCopyPath={onCopyPath}
         onSearchWeb={onSearchWeb}
         onCopyMeta={onCopyMeta}
         onPasteMeta={onPasteMeta}
@@ -348,6 +351,7 @@ function renderEditor(
     onOpenRename,
     onRegenerateName,
     onCopyFilename,
+    onCopyPath,
     onSearchWeb,
     onCopyMeta,
     onPasteMeta,
@@ -799,6 +803,7 @@ describe('Editor metadata header', () => {
     for (const id of [
       'reveal-file-btn',
       'copy-filename-btn',
+      'copy-path-btn',
       'search-web-btn',
       'copy-meta-btn',
       'paste-meta-btn',
@@ -851,6 +856,17 @@ describe('Editor copy filename', () => {
     openMore()
     fireEvent.click(screen.getByTestId('copy-filename-btn'))
     expect(onCopyFilename).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Editor copy path', () => {
+  // Pasting the full path into a terminal or a chat is the other half of copying the name;
+  // it reuses the track list's copy so the clipboard and the toast behave the same.
+  it('hands the track to the shared path copy', () => {
+    const { onCopyPath } = renderEditor({ id: 'a', inputPath: '/music/a.flac' })
+    openMore()
+    fireEvent.click(screen.getByTestId('copy-path-btn'))
+    expect(onCopyPath).toHaveBeenCalledWith(expect.objectContaining({ inputPath: '/music/a.flac' }))
   })
 })
 
@@ -1622,6 +1638,7 @@ function MultiHarness() {
         onRegenerateName={vi.fn()}
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
+        onCopyPath={vi.fn()}
         onSearchWeb={vi.fn()}
         onCopyMeta={vi.fn()}
         onPasteMeta={vi.fn()}
@@ -2044,6 +2061,7 @@ describe('Editor multi-select', () => {
           onRegenerateName={vi.fn()}
           onTrimDetectedAll={vi.fn()}
           onCopyFilename={vi.fn()}
+          onCopyPath={vi.fn()}
           onSearchWeb={vi.fn()}
           onCopyMeta={vi.fn()}
           onPasteMeta={vi.fn()}
@@ -3165,6 +3183,7 @@ describe('Editor export control', () => {
           onRegenerateName={vi.fn()}
           onTrimDetectedAll={vi.fn()}
           onCopyFilename={vi.fn()}
+          onCopyPath={vi.fn()}
           onSearchWeb={vi.fn()}
           onCopyMeta={vi.fn()}
           onPasteMeta={vi.fn()}
@@ -4634,6 +4653,7 @@ describe('Editor Discogs apply', () => {
         onRegenerateName={vi.fn()}
         onTrimDetectedAll={vi.fn()}
         onCopyFilename={vi.fn()}
+        onCopyPath={vi.fn()}
         onSearchWeb={vi.fn()}
         onCopyMeta={vi.fn()}
         onPasteMeta={vi.fn()}
