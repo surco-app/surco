@@ -507,6 +507,7 @@ const traktorReadPath = (): string =>
 const holdsInAnyLibrary = async (path: string, titles: string[]): Promise<boolean> => {
   await settleSeratoRepoint(path, {
     queue: programQueues.serato.queue,
+    serial: serialLibraryFlush,
     isRunning: DJ_PROCESSES.serato.isRunning,
     onApplied: programQueues.serato.announceApplied,
   })

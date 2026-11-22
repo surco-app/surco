@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
 import { crateFileOf } from './seratoCrateFile'
 import { parseSeratoCrate, parseSeratoDatabase } from './seratoDatabase'
@@ -8,6 +9,7 @@ import { crateBytes, onlyBackupOf, tempsUnder, twoRoots } from './seratoLibraryF
 import type { QueueApply } from './rekordboxQueue'
 import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
 
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 vi.mock('./seratoCuesWrite', () => ({ applySeratoCuesBatch: vi.fn() }))
 
 const VERSION = frame('vrsn', utf16be('2.0/Serato Scratch LIVE Database'))
@@ -215,6 +217,11 @@ describe('settleSeratoRepoint', () => {
     written: [],
     outcomes: [],
   }
+  const serialSpy = vi.fn()
+  const serial = <T,>(task: () => Promise<T>): Promise<T> => {
+    serialSpy()
+    return task()
+  }
   const deps = (holds: boolean, running: boolean) => {
     const apply = vi.fn(async (_ensureClosed: () => Promise<boolean>) => applied)
     const onApplied = vi.fn()
@@ -223,6 +230,7 @@ describe('settleSeratoRepoint', () => {
       onApplied,
       deps: {
         queue: { holdsRepoint: () => holds, apply },
+        serial,
         isRunning: async () => running,
         onApplied,
       },
@@ -254,6 +262,14 @@ describe('settleSeratoRepoint', () => {
     t.apply.mockRejectedValue(new Error('disk'))
     await expect(settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)).resolves.toBeUndefined()
     expect(t.onApplied).not.toHaveBeenCalled()
+    expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('disk'))
+  })
+
+  it('runs the apply through the library flush chain, so it never meets another program writing', async () => {
+    serialSpy.mockClear()
+    const t = deps(true, false)
+    await settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
+    expect(serialSpy).toHaveBeenCalledTimes(1)
   })
 
   it('stops waiting for a slow apply, so retiring never hangs behind it', async () => {
@@ -264,6 +280,7 @@ describe('settleSeratoRepoint', () => {
       const done = settleSeratoRepoint('/Users/dj/Music/A.mp3', t.deps)
       await vi.advanceTimersByTimeAsync(20_000)
       await expect(done).resolves.toBeUndefined()
+      expect(log.warn).toHaveBeenCalledWith(expect.stringContaining('gave up'))
     } finally {
       vi.useRealTimers()
     }

@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import log from 'electron-log/main'
 import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
@@ -90,11 +91,13 @@ const SETTLE_TIMEOUT_MS = 15_000
 // could come before database V2 changed and the old file would be kept for good. Applying the
 // pending repoint first lets a closed Serato release the file; an open Serato refuses the
 // write, the repoint stays queued, and the original stays too. A failing or slow apply must
-// not block or break the retire, so it is abandoned and the original is simply kept.
+// not block or break the retire, so it is logged and abandoned and the original is simply kept.
+// It runs through the library flush chain like every other queue apply.
 export async function settleSeratoRepoint(
   path: string,
   deps: {
     queue: Pick<RekordboxQueue, 'holdsRepoint' | 'apply'>
+    serial: <T>(task: () => Promise<T>) => Promise<T>
     isRunning: () => Promise<boolean>
     onApplied: (result: QueueApply) => void
   },
@@ -103,13 +106,18 @@ export async function settleSeratoRepoint(
   let timer: ReturnType<typeof setTimeout> | undefined
   try {
     const gaveUp = new Promise<undefined>((resolve) => {
-      timer = setTimeout(() => resolve(undefined), SETTLE_TIMEOUT_MS)
+      timer = setTimeout(() => {
+        log.warn(`serato repoint gave up waiting before retiring ${path}`)
+        resolve(undefined)
+      }, SETTLE_TIMEOUT_MS)
     })
-    const applying = deps.queue.apply(async () => !(await deps.isRunning()))
+    const applying = deps.serial(() =>
+      deps.queue.apply(async () => !(await deps.isRunning())),
+    )
     const result = await Promise.race([applying, gaveUp])
     if (result) deps.onApplied(result)
-  } catch {
-    // the original is kept
+  } catch (err) {
+    log.warn(`serato repoint failed before retiring ${path}: ${String(err)}`)
   } finally {
     clearTimeout(timer)
   }
