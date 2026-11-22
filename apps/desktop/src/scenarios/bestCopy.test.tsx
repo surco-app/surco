@@ -54,8 +54,8 @@ describe.skipIf(process.platform !== 'darwin')(
       await surco.select(TAGS.title)
       verdict = await waitFor(
         () => {
-          const pill = screen.getByTestId('copy-verdict')
-          if (pill.getAttribute('data-state') === 'measuring')
+          const pill = screen.getByTestId('library-verdict')
+          if (pill.textContent === 'Comparing…')
             throw new Error('scenario: the copies are still being measured')
           return pill
         },
@@ -68,11 +68,11 @@ describe.skipIf(process.platform !== 'darwin')(
     })
 
     it('says the file in hand is the better copy', () => {
-      expect(verdict.getAttribute('data-state')).toBe('here')
+      expect(verdict.textContent).toBe('This one is better')
     })
 
     it('shows that the limiter, counted in peaks, is what decided', () => {
-      fireEvent.click(verdict)
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(screen.getByTestId('copy-comparison')).toBeTruthy()
       expect(screen.getByRole('button', { name: 'Metadata' }).getAttribute('aria-expanded')).toBe(
         'true',

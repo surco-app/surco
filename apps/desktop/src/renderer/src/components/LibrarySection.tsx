@@ -65,7 +65,10 @@ export function LibrarySection({
   )
   const rowClass = 'flex h-[30px] w-full items-center gap-2 pl-3 pr-3 text-left text-xs'
   return (
-    <div className="relative mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3">
+    <div
+      data-testid="library-section"
+      className="relative mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3"
+    >
       <SectionHeader
         sectionId="library"
         title={tr('editor.librarySectionTitle')}
