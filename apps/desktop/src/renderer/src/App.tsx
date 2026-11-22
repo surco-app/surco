@@ -4031,8 +4031,15 @@ export default function App(): React.JSX.Element {
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
   // zero-pad hygiene pass formats them at write time like every other track number.
+  // A selection follows the library's order, not the list's, so each track takes its row
+  // position on screen, unlisted ones last. The ⌘K command and the editor button share it.
   const numberTracks = useStableCallback(() => {
-    const targets = bulkTracksRef.current
+    const rows = visibleTracksRef.current
+    const rowOf = (id: string): number => {
+      const i = rows.findIndex((r) => r.id === id)
+      return i < 0 ? rows.length : i
+    }
+    const targets = [...bulkTracksRef.current].sort((a, b) => rowOf(a.id) - rowOf(b.id))
     if (targets.length < 2) return
     deriveTracksUndoable(
       targets.map((t, i) => ({ id: t.id, meta: { trackNumber: String(i + 1) } })),
@@ -5125,7 +5132,7 @@ export default function App(): React.JSX.Element {
                               onApplyCoverAll={onApplyCoverAll}
                               onDeriveTags={deriveTracksUndoable}
                               onChangeTracksMeta={deriveTracksUndoable}
-                              listOrderRef={visibleTracksRef}
+                              onNumberTracks={numberTracks}
                               onApplyTitleFormat={applyTitleFormat}
                               onRecordUndo={recordMetaUndo}
                               onClearAll={clearMeta}

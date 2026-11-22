@@ -7504,9 +7504,7 @@ describe('App multi-select field edit', () => {
 })
 
 describe('App multi-select numbering', () => {
-  // The library keeps files in the order they were added; numbering follows the rows the
-  // user sees, so a list sorted by artist must number by that sort, not by import.
-  it('numbers the selected tracks in the order the sorted list shows them', async () => {
+  const selectSortedByArtist = async () => {
     setApi({
       getSettings: vi
         .fn()
@@ -7529,13 +7527,38 @@ describe('App multi-select numbering', () => {
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
     fireEvent.click(rows[2], { metaKey: true })
-
-    fireEvent.click(await screen.findByTestId('number-tracks-btn'))
-
+  }
+  const expectNumberedTopToBottom = async () => {
     for (const [index, expected] of ['1', '2', '3'].entries()) {
       fireEvent.click(screen.getAllByTestId('track-row')[index])
       await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue(expected))
     }
+  }
+
+  // The library keeps files in the order they were added; numbering follows the rows the
+  // user sees, so a list sorted by artist must number by that sort, not by import.
+  it('numbers the selected tracks in the order the sorted list shows them', async () => {
+    await selectSortedByArtist()
+
+    fireEvent.click(await screen.findByTestId('number-tracks-btn'))
+
+    expect(
+      await screen.findByText(i18n.t('notices.numberedTracks', { count: 3 })),
+    ).toBeInTheDocument()
+    await expectNumberedTopToBottom()
+  })
+
+  // The ⌘K command and the editor button are the same action; the command once numbered
+  // by import order, so on a sorted list the two disagreed about which track is first.
+  it('numbers from the command in the order the sorted list shows them, like the button', async () => {
+    await selectSortedByArtist()
+
+    runMenu('number-tracks')
+
+    expect(
+      await screen.findByText(i18n.t('notices.numberedTracks', { count: 3 })),
+    ).toBeInTheDocument()
+    await expectNumberedTopToBottom()
   })
 })
 

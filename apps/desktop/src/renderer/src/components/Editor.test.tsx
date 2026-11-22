@@ -258,7 +258,6 @@ function renderEditor(
     // exactly as App mounts it.
     <OpenSettingsProvider open={onOpenSettings}>
       <Editor
-        listOrderRef={{ current: [] }}
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
         rekordboxCue={props.rekordboxCue}
@@ -1489,7 +1488,6 @@ function MultiHarness() {
   return (
     <>
       <Editor
-        listOrderRef={{ current: [] }}
         key={selected.id}
         item={selected}
         libraryIndex={null}
@@ -1862,8 +1860,6 @@ describe('Editor multi-select', () => {
       settings?: Partial<Settings>
       onChangeSelection?: (patch: Partial<TrackItem>) => void
       onFormatChange?: (format: FormatSetting | null) => void
-      listOrder?: string[]
-      thirdTrack?: boolean
     } = {},
   ) {
     if (opts.platform)
@@ -1874,6 +1870,7 @@ describe('Editor multi-select', () => {
     const onAddAllToAppleMusic = vi.fn()
     const onDeriveTags = vi.fn()
     const onChangeTracksMeta = vi.fn()
+    const onNumberTracks = vi.fn()
     const onChangeTracksPlaylists = vi.fn()
     const status = opts.done ? ('done' as const) : ('idle' as const)
     const build = (over: Partial<typeof opts> = {}) => {
@@ -1900,13 +1897,6 @@ describe('Editor multi-select', () => {
         ...(o.normalizeB && { normalize: o.normalizeB }),
         ...(o.declickB && { declick: o.declickB }),
       })
-      const c = item({
-        id: 'c',
-        fileName: 'cortina - three.flac',
-        status,
-        meta: { title: 'C', album: 'Shared' },
-      })
-      const byId = { a, b, c }
       return (
         <Editor
           item={a}
@@ -1922,10 +1912,8 @@ describe('Editor multi-select', () => {
           onFoldResults={vi.fn()}
           onResultsResizeStart={vi.fn()}
           onResultsFit={vi.fn()}
-          selectedTracks={o.thirdTrack ? [a, b, c] : [a, b]}
-          listOrderRef={{
-            current: (o.listOrder ?? ['a', 'b']).map((id) => byId[id as 'a' | 'b' | 'c']),
-          }}
+          selectedTracks={[a, b]}
+          onNumberTracks={onNumberTracks}
           onChangeSelection={o.onChangeSelection}
           onFormatChange={o.onFormatChange}
           onApplyMatches={vi.fn()}
@@ -1971,6 +1959,7 @@ describe('Editor multi-select', () => {
       onAddAllToAppleMusic,
       onDeriveTags,
       onChangeTracksMeta,
+      onNumberTracks,
       onChangeTracksPlaylists,
       rerenderTracks: (over: Partial<typeof opts>) => rendered.rerenderUi(build(over)),
     }
@@ -2543,32 +2532,15 @@ describe('Editor multi-select', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
   })
 
-  it('numbers the selected tracks in the order the list shows them, not the order they were loaded', () => {
-    const { onChangeTracksMeta } = renderMulti({
+  // App owns the numbering so the button and the ⌘K command agree on the order; the
+  // button only hands the click over.
+  it('hands numbering the selection over to App in one click', () => {
+    const { onNumberTracks, onChangeTracksMeta } = renderMulti({
       visibleFields: ['title', 'trackNumber', 'trackTotal'],
-      thirdTrack: true,
-      listOrder: ['c', 'a', 'b'],
     })
     fireEvent.click(screen.getByTestId('number-tracks-btn'))
-    expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'c', meta: { trackNumber: '1' } },
-      { id: 'a', meta: { trackNumber: '2' } },
-      { id: 'b', meta: { trackNumber: '3' } },
-    ])
-  })
-
-  it('numbers a selected track missing from the list after the listed ones', () => {
-    const { onChangeTracksMeta } = renderMulti({
-      visibleFields: ['title', 'trackNumber', 'trackTotal'],
-      thirdTrack: true,
-      listOrder: ['c', 'a'],
-    })
-    fireEvent.click(screen.getByTestId('number-tracks-btn'))
-    expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'c', meta: { trackNumber: '1' } },
-      { id: 'a', meta: { trackNumber: '2' } },
-      { id: 'b', meta: { trackNumber: '3' } },
-    ])
+    expect(onNumberTracks).toHaveBeenCalledOnce()
+    expect(onChangeTracksMeta).not.toHaveBeenCalled()
   })
 
   it('derives tags for every selected track from its own file name in one click', () => {
@@ -2921,7 +2893,6 @@ describe('Editor export control', () => {
       const [track, setTrack] = useState(start)
       return (
         <Editor
-          listOrderRef={{ current: [] }}
           item={track}
           libraryIndex={null}
           searchInputRef={createRef<HTMLInputElement>()}
@@ -4383,7 +4354,6 @@ describe('Editor Discogs apply', () => {
     const [track, setTrack] = useState(start)
     return (
       <Editor
-        listOrderRef={{ current: [] }}
         item={track}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}
