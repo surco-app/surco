@@ -7,10 +7,10 @@
     "ogLocale": "ja_JP",
     "inLanguage": "ja",
     "title": "Surco: DJトラックを数秒で準備",
-    "description": "SurcoがDJトラックの準備を数秒で済ませます。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報でタグとメタデータを編集。トラックをApple Music、rekordbox、Engine DJ、Traktor、Serato、VirtualDJへ送れます。ロスレスを装った、MP3からの再変換ファイルも検出します。",
+    "description": "SurcoがDJトラックの準備を数秒で済ませます。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicの情報でタグとメタデータを編集。トラックをApple Music、rekordbox、Engine DJ、Traktor、Serato、VirtualDJへ送れます。ロスレスを装った、MP3からの再変換ファイルも検出します。",
     "ogTitle": "Surco: DJトラックを数秒で準備",
-    "ogDescription": "準備の時間を減らして、プレイをもっと。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報でタグ付け。数秒で整理し、ロスレスを装ったMP3も検出します。",
-    "jsonLdDescription": "DJ向け音源整理アプリ。AIFF、WAV、FLAC、ALAC、MP3の相互変換、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの情報によるタグ付け、Apple Music、rekordbox、Engine DJ、Traktor、Serato、VirtualDJへの取り込みに対応。スペクトラム解析で、MP3から再変換された音源も検出します。"
+    "ogDescription": "準備の時間を減らして、プレイをもっと。AIFF、WAV、FLAC、ALAC、MP3を相互に変換し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicの情報でタグ付け。数秒で整理し、ロスレスを装ったMP3も検出します。",
+    "jsonLdDescription": "DJ向け音源整理アプリ。AIFF、WAV、FLAC、ALAC、MP3の相互変換、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicの情報によるタグ付け、Apple Music、rekordbox、Engine DJ、Traktor、Serato、VirtualDJへの取り込みに対応。スペクトラム解析で、MP3から再変換された音源も検出します。"
   },
   "nav": {
     "velocidad": "速度",
@@ -110,11 +110,11 @@
       {
         "kick": "タグ",
         "title": "タグ",
-        "replaces": "5つのサイトとタグエディタの代わりに",
+        "replaces": "6つのサイトとタグエディタの代わりに",
         "items": [
           {
-            "t": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz",
-            "s": "アーティスト、アルバム、年、BPM、キー、レーベル、カタログ番号を5つのソースで検索。",
+            "t": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music",
+            "s": "アーティスト、アルバム、年、BPM、キー、レーベル、カタログ番号を6つのソースで検索。",
             "d": "アーティスト、アルバム、年、BPM、キーを取得します。レーベルとカタログ番号はDiscogs、Beatport、MusicBrainzから、ミックスとISRCはBeatportから取得します。"
           },
           {
@@ -135,7 +135,7 @@
           {
             "t": "アートワーク",
             "s": "どのソースのアートワークも自分の画像も、好きな形に切り抜いて使えます。",
-            "d": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainzの画像や自分の画像を使用できます。正方形への切り抜きや、サイズ上限の設定も可能です。"
+            "d": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicの画像や自分の画像を使用できます。正方形への切り抜きや、サイズ上限の設定も可能です。"
           },
           {
             "t": "ID3v2.4 ではなく v2.3",
@@ -160,7 +160,7 @@
           {
             "t": "完全な日付が必要な場合",
             "s": "ソースに完全な日付があれば、2020-12-01のようにそのまま保存します。",
-            "d": "ファイルやDiscogs、Bandcamp、Deezer、Beatport、MusicBrainzが完全な日付を持っている場合は2020-12-01として年を扱います。ファイル名とrekordboxは年のみを取得します。"
+            "d": "ファイルやDiscogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicが完全な日付を持っている場合は2020-12-01として年を扱います。ファイル名とrekordboxは年のみを取得します。"
           },
           {
             "t": "マルチタグジャンルとグルーピング",
@@ -472,7 +472,7 @@
       }
     },
     "metaTitle": "Surco にできることすべて · 機能",
-    "metaDescription": "変換、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz からのタグ付け、品質分析、クリック修復、無音トリミング、そして rekordbox・Engine DJ・Traktor・Serato・VirtualDJ へのエクスポート。無料。"
+    "metaDescription": "変換、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz・Apple Music からのタグ付け、品質分析、クリック修復、無音トリミング、そして rekordbox・Engine DJ・Traktor・Serato・VirtualDJ へのエクスポート。無料。"
   },
   "shortcuts": {
     "kicker": "キーボード優先",
@@ -498,7 +498,7 @@
       },
       {
         "title": "リリースを選択",
-        "body": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz を検索し、アーティスト、アルバム、年、ジャンル、カバーアートをワンクリックで適用します。"
+        "body": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music を検索し、アーティスト、アルバム、年、ジャンル、カバーアートをワンクリックで適用します。"
       },
       {
         "title": "エクスポートして完了",
@@ -516,8 +516,8 @@
         "desc": "トラックを一覧表示。Apple MusicやEngine DJのライブラリにすでにあるかどうかで絞り込めます。"
       },
       "discogs": {
-        "title": "Discogs、Bandcamp、Deezer、Beatport & MusicBrainz マッチ",
-        "desc": "クラブ向けのプレス盤からチャートのシングルまで、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz で正確なリリースを見つけ、正しいバージョンを選べます。"
+        "title": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz & Apple Music マッチ",
+        "desc": "クラブ向けのプレス盤からチャートのシングルまで、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music で正確なリリースを見つけ、正しいバージョンを選べます。"
       },
       "metadata": {
         "title": "メタデータエディタ",
@@ -567,7 +567,7 @@
       },
       {
         "q": "タグとメタデータエディタですか？",
-        "a": "はい。Surco は音楽のタグとメタデータ（アーティスト、タイトル、アルバム、年、アートワークなど）を編集し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz から自動取得します。さらに、AIFF、WAV、FLAC、ALAC、MP3 の相互変換、オーディオ品質チェック、ライブラリ整理も行います。タグエディタと他3つのアプリの機能を1つにまとめたものです。"
+        "a": "はい。Surco は音楽のタグとメタデータ（アーティスト、タイトル、アルバム、年、アートワークなど）を編集し、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music から自動取得します。さらに、AIFF、WAV、FLAC、ALAC、MP3 の相互変換、オーディオ品質チェック、ライブラリ整理も行います。タグエディタと他3つのアプリの機能を1つにまとめたものです。"
       },
       {
         "q": "元のファイルは変更されますか？",
@@ -635,7 +635,7 @@
   },
   "guide": {
     "metaTitle": "Surco の使い方：ステップバイステップガイド",
-    "metaDescription": "Surcoのステップガイド。トラックの読み込み、Discogs・Bandcamp・Deezer・Beatport・MusicBrainzでのタグ付け、スペクトラム分析、変換、キューの設定、そしてApple Music・rekordbox・Engine DJ・Traktor・Serato・VirtualDJへの書き出しまで。",
+    "metaDescription": "Surcoのステップガイド。トラックの読み込み、Discogs・Bandcamp・Deezer・Beatport・MusicBrainz・Apple Musicでのタグ付け、スペクトラム分析、変換、キューの設定、そしてApple Music・rekordbox・Engine DJ・Traktor・Serato・VirtualDJへの書き出しまで。",
     "kicker": "ガイド",
     "title": "Surco の使い方",
     "lede": "トラックの追加からプレイの準備が整うまで、16の短いステップで解説します。",
@@ -689,7 +689,7 @@
           }
         ],
         "points": [
-          "初期状態で、インポート時にすべてを分析し、設定なしでDiscogs、Bandcamp、Deezer、MusicBrainzを検索します。",
+          "初期状態で、インポート時にすべてを分析し、設定なしでDiscogs、Bandcamp、Deezer、MusicBrainz、Apple Musicを検索します。",
           "rekordbox、Traktor、Engine DJ、Serato、VirtualDJが見つかると、ようこそ画面のすぐ後にどれを使っているかを尋ねます。選ばなかったものはサイドバーに表示されません。"
         ],
         "shot": "instalar-ja.webp",
@@ -787,7 +787,7 @@
         "title": "ソースでリリースを探す",
         "s": "5つのソースから、情報とカバーをワンクリックで適用します。",
         "body": [
-          "Discogs、Bandcamp、Deezer、MusicBrainzは最初から有効で、アカウントは不要です。Beatportは設定 → ソースで有効にします。"
+          "Discogs、Bandcamp、Deezer、MusicBrainz、Apple Musicは最初から有効で、アカウントは不要です。Beatportは設定 → ソースで有効にします。"
         ],
         "steps": [
           {
@@ -804,7 +804,7 @@
           }
         ],
         "points": [
-          "Bandcampは自主制作や限定作品に、DeezerはDiscogsにない商業音楽に向いています。",
+          "Bandcampは自主制作や限定作品に、DeezerとApple MusicはDiscogsにない商業音楽に向いています。",
           "Beatportはアカウントの接続が必要で（無料アカウントで可）、BPM、キー、ミックス、ISRCを取得します。",
           "MusicBrainzは1秒に1回しか検索できないため、結果が少し遅れて届くことがあります。",
           "設定で自分のDiscogsトークンを入れると、上限が高く速くなります。"
@@ -1259,7 +1259,7 @@
     },
     "tag": {
       "title": "Discogs のタグをワンクリックで取得。",
-      "lede": "レーベルの情報はDiscogs、自主リリースはBandcamp、ヒット曲はDeezer、クラブ音楽はBeatport、それ以外はMusicBrainz。ワンクリックでアーティスト、レーベル、年、BPM、アートワークをまとめて入力できます。",
+      "lede": "レーベルの情報はDiscogs、自主リリースはBandcamp、ヒット曲はDeezerとApple Music、クラブ音楽はBeatport、それ以外はMusicBrainz。ワンクリックでアーティスト、レーベル、年、BPM、アートワークをまとめて入力できます。",
       "all": "すべて（{{count}}）"
     },
     "batch": {
@@ -1297,9 +1297,9 @@
       },
       "tag": {
         "title": "すべてのタグをワンクリックで",
-        "note": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz。アーティスト、レーベル、年、BPM、アートワーク。",
+        "note": "Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music。アーティスト、レーベル、年、BPM、アートワーク。",
         "lead": "タグはワンクリック。",
-        "rest": "アーティスト、レーベル、年、BPM、アートワークを5つのソースから。"
+        "rest": "アーティスト、レーベル、年、BPM、アートワークを6つのソースから。"
       },
       "export": {
         "title": "いつものアプリへ、そのまま取り込み",
@@ -1632,7 +1632,7 @@
     },
     "outro": {
       "title": "音楽を変換しよう",
-      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz からタグを取得し、すべてをライブラリに整理します。"
+      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music からタグを取得し、すべてをライブラリに整理します。"
     }
   },
   "flacToAiff": {
@@ -1759,7 +1759,7 @@
     },
     "outro": {
       "title": "FLAC を AIFF に変換しよう",
-      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz からタグを取得し、すべてをライブラリに保存します。"
+      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music からタグを取得し、すべてをライブラリに保存します。"
     }
   },
   "wavToAiff": {
@@ -1886,7 +1886,7 @@
     },
     "outro": {
       "title": "WAV を AIFF に変換しよう",
-      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz からタグを取得し、すべてをライブラリに整理します。"
+      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music からタグを取得し、すべてをライブラリに整理します。"
     }
   },
   "flacToMp3": {
@@ -2008,7 +2008,7 @@
     },
     "outro": {
       "title": "FLAC を MP3 に変換しよう",
-      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz からタグを取得し、すべてをライブラリに整理します。"
+      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music からタグを取得し、すべてをライブラリに整理します。"
     }
   },
   "wavToMp3": {
@@ -2135,7 +2135,7 @@
     },
     "outro": {
       "title": "WAV を MP3 に変換しよう",
-      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz からタグを取得し、すべてをライブラリに整理します。"
+      "lede": "Surco は Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music からタグを取得し、すべてをライブラリに整理します。"
     }
   },
   "useCases": {
@@ -3690,7 +3690,7 @@
     "privacyHeading": "アプリ",
     "privacyLede": "Surco にはアカウントもテレメトリもありません。Surco のサーバーに何かを送るのは、あなたがフィードバックを送るときだけです。それ以外では、アプリが他のサービスに接続するのは次の場合だけです。",
     "privacyItems": [
-      "トラックを手検索または自動マッチで検索すると、タイトル、アーティスト、その他の検索情報がオンにしたソースに送信されます。これらはDiscogs、Bandcamp、Deezer、Beatport、MusicBrainzです。アートワークはそれらのサーバーとCover Art Archiveからダウンロードされます。",
+      "トラックを手検索または自動マッチで検索すると、タイトル、アーティスト、その他の検索情報がオンにしたソースに送信されます。これらはDiscogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicです。アートワークはそれらのサーバーとCover Art Archiveからダウンロードされます。",
       "Beatportアカウントを接続すると、ユーザー名とパスワードはBeatportにのみ送信されます。パスワードはコンピュータに暗号化して保存されます。",
       "新しいバージョンがあるか確認するために、GitHubで公開されたリリースをチェックし、そこからアップデートをダウンロードします。",
       "アプリからフィードバックを送ったりバグを報告したりすると、メッセージ、メールアドレス、そして技術レポートにチェックを入れたままなら、バージョン、システム、最新のエラー行（フォルダーパスは含みません）が Surco のサーバーを通り、Resend で hello@vicent.io に転送されます。メールアドレスは返信にのみ使います。GitHub で Issue を作成することもでき、その場合は自分で投稿するまで何も送信されません。"
@@ -3716,6 +3716,10 @@
       {
         "name": "MusicBrainz",
         "url": "https://metabrainz.org/privacy"
+      },
+      {
+        "name": "Apple Music",
+        "url": "https://www.apple.com/legal/privacy/"
       },
       {
         "name": "Cover Art Archive",

@@ -7,10 +7,10 @@
     "ogLocale": "pt_BR",
     "inLanguage": "pt-BR",
     "title": "Surco: suas faixas de DJ prontas em segundos",
-    "description": "O Surco prepara suas faixas de DJ em segundos. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, edite tags e metadados com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e leve as faixas para o Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ. E descubra os MP3 recodificados disfarçados de lossless.",
+    "description": "O Surco prepara suas faixas de DJ em segundos. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, edite tags e metadados com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e leve as faixas para o Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ. E descubra os MP3 recodificados disfarçados de lossless.",
     "ogTitle": "Surco: suas faixas de DJ prontas em segundos",
-    "ogDescription": "Menos preparação, mais tempo tocando. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, etiquete com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organize tudo em segundos. E descubra os MP3 disfarçados de lossless.",
-    "jsonLdDescription": "Organizador de faixas de áudio para DJs. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, etiquete com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, leve as faixas para o Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ e analise o espectro para detectar MP3 recodificados."
+    "ogDescription": "Menos preparação, mais tempo tocando. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, etiquete com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organize tudo em segundos. E descubra os MP3 disfarçados de lossless.",
+    "jsonLdDescription": "Organizador de faixas de áudio para DJs. Converta entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, etiquete com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music, leve as faixas para o Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ e analise o espectro para detectar MP3 recodificados."
   },
   "nav": {
     "velocidad": "Velocidade",
@@ -110,11 +110,11 @@
       {
         "kick": "etiquetar",
         "title": "Etiquetar",
-        "replaces": "no lugar de cinco sites e um editor de tags",
+        "replaces": "no lugar de seis sites e um editor de tags",
         "items": [
           {
-            "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz",
-            "s": "Busca artista, álbum, ano, BPM, tom, selo e catálogo em cinco fontes.",
+            "t": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz, Apple Music",
+            "s": "Busca artista, álbum, ano, BPM, tom, selo e catálogo em seis fontes.",
             "d": "Artista, álbum, ano, BPM e tom. Selo e número de catálogo vêm do Discogs, do Beatport e do MusicBrainz, e o Beatport acrescenta o mix e o ISRC."
           },
           {
@@ -135,7 +135,7 @@
           {
             "t": "Capa",
             "s": "Traz a capa de qualquer fonte ou usa a sua, recortada do seu jeito.",
-            "d": "Do Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou sua, com recorte quadrado e um tamanho máximo que você define."
+            "d": "Do Discogs, Bandcamp, Deezer, Beatport, MusicBrainz, Apple Music ou sua, com recorte quadrado e um tamanho máximo que você define."
           },
           {
             "t": "ID3v2.3, não v2.4",
@@ -160,7 +160,7 @@
           {
             "t": "A data completa, se você quiser",
             "s": "Salva a data completa, como 2020-12-01, se a fonte a trouxer.",
-            "d": "Ano como 2020-12-01 quando o arquivo ou o Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz trazem a data inteira. Os nomes de arquivo e o rekordbox continuam recebendo só o ano."
+            "d": "Ano como 2020-12-01 quando o arquivo ou o Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou Apple Music trazem a data inteira. Os nomes de arquivo e o rekordbox continuam recebendo só o ano."
           },
           {
             "t": "Gênero e agrupamento com várias tags",
@@ -472,7 +472,7 @@
       }
     },
     "metaTitle": "Tudo o que o Surco faz · Funções",
-    "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, analise a qualidade, repare cliques, corte silêncios e exporte para rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ. Grátis."
+    "metaDescription": "Converta, etiquete com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou Apple Music, analise a qualidade, repare cliques, corte silêncios e exporte para rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ. Grátis."
   },
   "shortcuts": {
     "kicker": "Teclado primeiro",
@@ -498,7 +498,7 @@
       },
       {
         "title": "Escolha o release",
-        "body": "Busque no Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz e aplique artista, álbum, ano, gênero e capa em um clique."
+        "body": "Busque no Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou Apple Music e aplique artista, álbum, ano, gênero e capa em um clique."
       },
       {
         "title": "Exporte e pronto",
@@ -516,8 +516,8 @@
         "desc": "Suas faixas, com um filtro para ver o que já está na sua biblioteca do Apple Music ou do Engine DJ."
       },
       "discogs": {
-        "title": "Associação com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz",
-        "desc": "Encontre o release exato no Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz, das prensagens de clube aos singles das paradas, e escolha a versão certa."
+        "title": "Associação com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music",
+        "desc": "Encontre o release exato no Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou Apple Music, das prensagens de clube aos singles das paradas, e escolha a versão certa."
       },
       "metadata": {
         "title": "Editor de metadados",
@@ -567,7 +567,7 @@
       },
       {
         "q": "É um editor de tags e metadados?",
-        "a": "Sim, e mais. O Surco edita as tags e os metadados da sua música (artista, título, álbum, ano, capa…) e os preenche a partir do Discogs, Bandcamp, Deezer, Beatport ou MusicBrainz. Mas ele também converte entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, verifica a qualidade do áudio e organiza a sua biblioteca. É o que você faria com um editor de tags e mais três apps, num só."
+        "a": "Sim, e mais. O Surco edita as tags e os metadados da sua música (artista, título, álbum, ano, capa…) e os preenche a partir do Discogs, Bandcamp, Deezer, Beatport, MusicBrainz ou Apple Music. Mas ele também converte entre AIFF, WAV, FLAC, ALAC e MP3 em qualquer direção, verifica a qualidade do áudio e organiza a sua biblioteca. É o que você faria com um editor de tags e mais três apps, num só."
       },
       {
         "q": "Ele mexe nos meus arquivos originais?",
@@ -635,7 +635,7 @@
   },
   "guide": {
     "metaTitle": "Como usar o Surco: guia passo a passo",
-    "metaDescription": "Surco passo a passo: importar faixas, etiquetar pelo Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, analisar o espectro, converter, marcar cues e levar tudo para Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ.",
+    "metaDescription": "Surco passo a passo: importar faixas, etiquetar pelo Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music, analisar o espectro, converter, marcar cues e levar tudo para Apple Music, rekordbox, Engine DJ, Traktor, Serato ou VirtualDJ.",
     "kicker": "Guia",
     "title": "Como usar o Surco",
     "lede": "De soltar suas faixas até deixá-las prontas para tocar, em dezesseis passos curtos.",
@@ -689,7 +689,7 @@
           }
         ],
         "points": [
-          "De fábrica ele já analisa tudo ao importar e busca no Discogs, Bandcamp, Deezer e MusicBrainz sem configurar nada.",
+          "De fábrica ele já analisa tudo ao importar e busca no Discogs, Bandcamp, Deezer, MusicBrainz e Apple Music sem configurar nada.",
           "Se o Surco encontrar rekordbox, Traktor, Engine DJ, Serato ou VirtualDJ, logo depois das boas-vindas ele pergunta com qual você toca, e os que você não marcar deixam de aparecer na barra lateral."
         ],
         "shot": "instalar-pt-BR.webp",
@@ -785,9 +785,9 @@
         "id": "discogs",
         "group": "tag",
         "title": "Encontre o release nas suas fontes",
-        "s": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz, com dados e capa em um clique.",
+        "s": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music, com dados e capa em um clique.",
         "body": [
-          "Discogs, Bandcamp, Deezer e MusicBrainz vêm ativados e não pedem conta. O Beatport se ativa em Ajustes → Fontes."
+          "Discogs, Bandcamp, Deezer, MusicBrainz e Apple Music vêm ativados e não pedem conta. O Beatport se ativa em Ajustes → Fontes."
         ],
         "steps": [
           {
@@ -804,7 +804,7 @@
           }
         ],
         "points": [
-          "O Bandcamp serve para independentes e exclusivos, e o Deezer para a música comercial que não está no Discogs.",
+          "O Bandcamp serve para independentes e exclusivos, e o Deezer e o Apple Music para a música comercial que não está no Discogs.",
           "O Beatport pede que você conecte sua conta (uma gratuita serve) e traz BPM, tom, mix e ISRC.",
           "O MusicBrainz aceita uma busca por segundo, então os resultados dele podem chegar um pouco depois.",
           "Com seu próprio token do Discogs em Ajustes, você tem um limite maior e mais rápido."
@@ -1259,7 +1259,7 @@
     },
     "tag": {
       "title": "As tags do Discogs, em um clique.",
-      "lede": "Discogs para os selos, Bandcamp para os lançamentos independentes, Deezer para as paradas, Beatport para a pista, MusicBrainz para todo o resto. Um clique preenche tudo: artista, selo, ano, BPM e capa.",
+      "lede": "Discogs para os selos, Bandcamp para os lançamentos independentes, Deezer e Apple Music para as paradas, Beatport para a pista, MusicBrainz para todo o resto. Um clique preenche tudo: artista, selo, ano, BPM e capa.",
       "all": "Todas ({{count}})"
     },
     "batch": {
@@ -1297,9 +1297,9 @@
       },
       "tag": {
         "title": "Todas as tags, em um clique",
-        "note": "Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. Artista, selo, ano, BPM e capa.",
+        "note": "Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music. Artista, selo, ano, BPM e capa.",
         "lead": "Tags em um clique.",
-        "rest": "Artista, selo, ano, BPM e capa de cinco fontes."
+        "rest": "Artista, selo, ano, BPM e capa de seis fontes."
       },
       "export": {
         "title": "E elas caem no seu programa",
@@ -1632,7 +1632,7 @@
     },
     "outro": {
       "title": "Converta sua música",
-      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organiza tudo na sua biblioteca."
+      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organiza tudo na sua biblioteca."
     }
   },
   "flacToAiff": {
@@ -1759,7 +1759,7 @@
     },
     "outro": {
       "title": "Converta seus FLAC para AIFF",
-      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organiza tudo na sua biblioteca."
+      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organiza tudo na sua biblioteca."
     }
   },
   "wavToAiff": {
@@ -1886,7 +1886,7 @@
     },
     "outro": {
       "title": "Passe seus WAV para AIFF",
-      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organiza tudo na sua biblioteca."
+      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organiza tudo na sua biblioteca."
     }
   },
   "flacToMp3": {
@@ -2008,7 +2008,7 @@
     },
     "outro": {
       "title": "Passe seus FLAC para MP3",
-      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organiza tudo na sua biblioteca."
+      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organiza tudo na sua biblioteca."
     }
   },
   "wavToMp3": {
@@ -2135,7 +2135,7 @@
     },
     "outro": {
       "title": "Passe seus WAV para MP3",
-      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport e MusicBrainz e organiza tudo na sua biblioteca."
+      "lede": "O Surco também etiqueta com Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music e organiza tudo na sua biblioteca."
     }
   },
   "useCases": {
@@ -3690,7 +3690,7 @@
     "privacyHeading": "O app",
     "privacyLede": "O Surco não tem conta nem telemetria. Ele só envia algo para um servidor do Surco quando você manda um comentário, e fora isso o app só se conecta a outros serviços nestes casos.",
     "privacyItems": [
-      "Quando você busca uma faixa, na mão ou com a auto-associação, ele envia o título, o artista e outros dados da busca para as fontes que você ativou. Elas podem ser Discogs, Bandcamp, Deezer, Beatport e MusicBrainz. As capas são baixadas dos servidores delas e do Cover Art Archive.",
+      "Quando você busca uma faixa, na mão ou com a auto-associação, ele envia o título, o artista e outros dados da busca para as fontes que você ativou. Elas podem ser Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music. As capas são baixadas dos servidores delas e do Cover Art Archive.",
       "Se você conectar sua conta do Beatport, seu usuário e sua senha só vão para o Beatport. A senha fica guardada criptografada no seu computador.",
       "Para saber se há uma versão nova, ele consulta as versões publicadas no GitHub e baixa a atualização de lá.",
       "Se você enviar um comentário ou relatar um bug pelo app, sua mensagem, seu e-mail e, se você deixar o relatório técnico marcado, a versão, o sistema e as últimas linhas de erro (sem caminhos de pastas) passam por um servidor do Surco, que os encaminha com o Resend para hello@vicent.io. Seu e-mail só é usado para te responder. Se preferir, você pode abrir uma issue no GitHub, onde nada é enviado até você mesmo publicar."
@@ -3716,6 +3716,10 @@
       {
         "name": "MusicBrainz",
         "url": "https://metabrainz.org/privacy"
+      },
+      {
+        "name": "Apple Music",
+        "url": "https://www.apple.com/legal/privacy/"
       },
       {
         "name": "Cover Art Archive",

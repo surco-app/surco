@@ -2,7 +2,8 @@
 
 Texts for the first submission in Partner Center (product `9P8C4M673334`). The package
 declares five languages, so Partner Center asks for a listing in each. Everything here
-is about the Windows app: Apple Music is macOS only and is left out on purpose.
+is about the Windows app: the Music app integration is macOS only and is left out on
+purpose. Apple Music catalog search works on Windows and is listed.
 
 Price: **Free**. Category: **Music**. Privacy policy URL:
 https://getsurco.app/en/privacy (Spanish: https://getsurco.app/privacidad).
@@ -34,9 +35,9 @@ rekordbox, Engine DJ, Traktor o Serato desde una sola app.
 **Descripción**
 Surco hace en una sola app lo que antes pedía cuatro o cinco. Convierte a AIFF, WAV, FLAC
 o ALAC sin pérdida, o a un MP3 más ligero. Busca las etiquetas y la carátula en Discogs,
-Bandcamp, Deezer, Beatport y MusicBrainz. Detecta los MP3 recomprimidos que se hacen pasar
-por lossless y enseña la medida que hay detrás de cada veredicto. Y deja cada pista en tu
-biblioteca de rekordbox o Engine DJ, o en tus colecciones de Traktor y Serato.
+Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music. Detecta los MP3 recomprimidos que se
+hacen pasar por lossless y enseña la medida que hay detrás de cada veredicto. Y deja cada
+pista en tu biblioteca de rekordbox o Engine DJ, o en tus colecciones de Traktor y Serato.
 
 Surco puede guardar una copia de los archivos que sustituye para que puedas recuperarlos.
 
@@ -44,7 +45,7 @@ Sin cuenta y sin telemetría. Gratis.
 
 **Características**
 - Convierte entre AIFF, WAV, FLAC, ALAC y MP3, y lee M4A, AAC, OGG y OPUS
-- Etiquetas y carátulas desde Discogs, Bandcamp, Deezer, Beatport y MusicBrainz
+- Etiquetas y carátulas desde Discogs, Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music
 - Búsqueda automática que solo aplica las coincidencias seguras
 - Detecta MP3 recomprimidos disfrazados de lossless, con el espectro a la vista
 - Mide loudness, picos, dinámica, balance y ruido de fondo
@@ -63,8 +64,8 @@ rekordbox, Engine DJ, Traktor or Serato from one app.
 **Description**
 Surco does in one app what used to take four or five. It converts to lossless AIFF, WAV,
 FLAC or ALAC, or to a lighter MP3. It finds tags and artwork on Discogs, Bandcamp, Deezer,
-Beatport and MusicBrainz. It catches re-encoded MP3s posing as lossless and shows the
-measurement behind every verdict. And it files each track into your rekordbox or Engine DJ
+Beatport, MusicBrainz and Apple Music. It catches re-encoded MP3s posing as lossless and
+shows the measurement behind every verdict. And it files each track into your rekordbox or Engine DJ
 library, or your Traktor and Serato collections.
 
 Surco can keep a copy of the files it replaces so you can bring them back.
@@ -73,7 +74,7 @@ No account and no telemetry. Free.
 
 **Features**
 - Converts between AIFF, WAV, FLAC, ALAC and MP3, and reads M4A, AAC, OGG and OPUS
-- Tags and artwork from Discogs, Bandcamp, Deezer, Beatport and MusicBrainz
+- Tags and artwork from Discogs, Bandcamp, Deezer, Beatport, MusicBrainz and Apple Music
 - Auto-match that only applies the confident matches
 - Catches re-encoded MP3s disguised as lossless, with the spectrum in view
 - Measures loudness, peaks, dynamics, balance and noise floor
@@ -92,10 +93,10 @@ rekordbox, Engine DJ, Traktor oder Serato schicken, alles in einer App.
 **Beschreibung**
 Surco erledigt in einer App, wofür du früher vier oder fünf gebraucht hast. Es konvertiert
 verlustfrei nach AIFF, WAV, FLAC oder ALAC oder in ein kleineres MP3. Es holt Tags und
-Cover von Discogs, Bandcamp, Deezer, Beatport und MusicBrainz. Es erkennt neu kodierte
-MP3s, die sich als lossless ausgeben, und zeigt die Messung hinter jedem Ergebnis. Und es
-legt jeden Track in deiner rekordbox- oder Engine-DJ-Bibliothek ab oder in deinen Traktor-
-und Serato-Sammlungen.
+Cover von Discogs, Bandcamp, Deezer, Beatport, MusicBrainz und Apple Music. Es erkennt neu
+kodierte MP3s, die sich als lossless ausgeben, und zeigt die Messung hinter jedem Ergebnis.
+Und es legt jeden Track in deiner rekordbox- oder Engine-DJ-Bibliothek ab oder in deinen
+Traktor- und Serato-Sammlungen.
 
 Surco kann eine Kopie der Dateien behalten, die es ersetzt, damit du sie zurückholen kannst.
 
@@ -103,7 +104,7 @@ Kein Konto, keine Telemetrie. Kostenlos.
 
 **Funktionen**
 - Konvertiert zwischen AIFF, WAV, FLAC, ALAC und MP3 und liest M4A, AAC, OGG und OPUS
-- Tags und Cover von Discogs, Bandcamp, Deezer, Beatport und MusicBrainz
+- Tags und Cover von Discogs, Bandcamp, Deezer, Beatport, MusicBrainz und Apple Music
 - Automatischer Abgleich, der nur sichere Treffer übernimmt
 - Erkennt als lossless getarnte MP3s, mit sichtbarem Spektrum
 - Misst Lautheit, Spitzen, Dynamik, Balance und Grundrauschen
@@ -122,10 +123,10 @@ envoie-les vers rekordbox, Engine DJ, Traktor ou Serato depuis une seule app.
 **Description**
 Surco fait dans une seule app ce qui en demandait quatre ou cinq. Il convertit en AIFF,
 WAV, FLAC ou ALAC sans perte, ou en un MP3 plus léger. Il trouve les tags et la pochette
-sur Discogs, Bandcamp, Deezer, Beatport et MusicBrainz. Il repère les MP3 réencodés qui se
-font passer pour du lossless et montre la mesure derrière chaque verdict. Et il range
-chaque morceau dans ta bibliothèque rekordbox ou Engine DJ, ou dans tes collections Traktor
-et Serato.
+sur Discogs, Bandcamp, Deezer, Beatport, MusicBrainz et Apple Music. Il repère les MP3
+réencodés qui se font passer pour du lossless et montre la mesure derrière chaque verdict.
+Et il range chaque morceau dans ta bibliothèque rekordbox ou Engine DJ, ou dans tes
+collections Traktor et Serato.
 
 Surco peut garder une copie des fichiers qu'il remplace pour que tu puisses les récupérer.
 
@@ -133,7 +134,7 @@ Sans compte et sans télémétrie. Gratuit.
 
 **Fonctionnalités**
 - Convertit entre AIFF, WAV, FLAC, ALAC et MP3, et lit M4A, AAC, OGG et OPUS
-- Tags et pochettes depuis Discogs, Bandcamp, Deezer, Beatport et MusicBrainz
+- Tags et pochettes depuis Discogs, Bandcamp, Deezer, Beatport, MusicBrainz et Apple Music
 - Correspondance automatique qui n'applique que les résultats sûrs
 - Repère les MP3 déguisés en lossless, spectre à l'appui
 - Mesure le loudness, les crêtes, la dynamique, la balance et le bruit de fond
@@ -152,8 +153,8 @@ o rekordbox, Engine DJ, Traktor ou Serato em um só app.
 **Descrição**
 O Surco faz em um só app o que antes pedia quatro ou cinco. Converte para AIFF, WAV, FLAC
 ou ALAC sem perdas, ou para um MP3 mais leve. Busca as tags e a capa no Discogs, Bandcamp,
-Deezer, Beatport e MusicBrainz. Detecta MP3 recomprimidos que se passam por lossless e
-mostra a medição por trás de cada veredito. E coloca cada faixa na sua biblioteca do
+Deezer, Beatport, MusicBrainz e Apple Music. Detecta MP3 recomprimidos que se passam por
+lossless e mostra a medição por trás de cada veredito. E coloca cada faixa na sua biblioteca do
 rekordbox ou do Engine DJ, ou nas suas coleções do Traktor e do Serato.
 
 O Surco pode guardar uma cópia dos arquivos que substitui para que você possa recuperá-los.
@@ -162,7 +163,7 @@ Sem conta e sem telemetria. Grátis.
 
 **Recursos**
 - Converte entre AIFF, WAV, FLAC, ALAC e MP3, e lê M4A, AAC, OGG e OPUS
-- Tags e capas do Discogs, Bandcamp, Deezer, Beatport e MusicBrainz
+- Tags e capas do Discogs, Bandcamp, Deezer, Beatport, MusicBrainz e Apple Music
 - Busca automática que só aplica as correspondências seguras
 - Detecta MP3 disfarçados de lossless, com o espectro à vista
 - Mede loudness, picos, dinâmica, balanço e ruído de fundo

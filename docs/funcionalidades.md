@@ -1082,50 +1082,50 @@ repunta (ver §13).
 
 ## 9. Proveedores externos
 
-| | Discogs | Bandcamp | Deezer | Beatport | MusicBrainz |
-|---|---|---|---|---|---|
-| Sello y nº de catálogo | Sí | No | No | Sí | Sí |
-| Formato del lanzamiento | Sí | No | No | No | Sí |
-| Duraciones de pista | Sí | Sí | Sí | Sí | Sí |
-| Créditos de composición | Sí | No | No | No | No |
-| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** | No |
-| Búsqueda por ISRC | No | No | **Sí** | No | No |
-| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) | No |
+| | Discogs | Bandcamp | Deezer | Beatport | MusicBrainz | Apple Music |
+|---|---|---|---|---|---|---|
+| Sello y nº de catálogo | Sí | No | No | Sí | Sí | Solo sello (del copyright) |
+| Formato del lanzamiento | Sí | No | No | No | Sí | No |
+| Duraciones de pista | Sí | Sí | Sí | Sí | Sí | Sí |
+| Créditos de composición | Sí | No | No | No | No | No |
+| BPM, tonalidad, mix e ISRC | No | No | No | **Sí** | No | No |
+| Búsqueda por ISRC | No | No | **Sí** | No | No | No |
+| Requiere token | Opcional (obligatorio para auto-emparejar) | No | No | **Cuenta de Beatport** (gratuita vale) | No | No |
 
 **Discogs** funciona sin configurar nada con una clave compartida (60 req/min
 entre todos los usuarios); un token propio da su propio cupo. Las credenciales
 compartidas van en el binario y son extraíbles: el código las trata como públicas
-(`discogs.ts:12-14`).
+(`discogs.ts:18-23`).
 
 **Auto-emparejar pide token propio solo si Discogs es una de las fuentes**, para no
-agotar el cupo compartido con un barrido de importación entera; con solo Bandcamp
-y/o Deezer funciona sin token (`shared/autoMatch.ts:8-11`). El tooltip de la pista
+agotar el cupo compartido con un barrido de importación entera; sin Discogs entre
+las fuentes (Bandcamp, Deezer, MusicBrainz o Apple Music) funciona sin token (`shared/autoMatch.ts:14-20`). El tooltip de la pista
 auto-emparejada nombra la fuente real de la que vino, y el buscador dice «Busca en
 tus fuentes o pega un ID de release de Discogs…» en vez de nombrar solo Discogs.
 
 **Bandcamp no tiene API pública.** Se usa el mismo endpoint de autocompletado que
 su buscador y se parsea el JSON incrustado en la página. Ambos son no oficiales y
-pueden cambiar sin aviso; el parseo es defensivo (`bandcamp.ts:8-11`).
+pueden cambiar sin aviso; el parseo es defensivo (`bandcamp.ts:9-12`).
 
 **Deezer** señala errores dentro de respuestas 200, y distingue cuota agotada de
-un ISRC que simplemente no tiene (`deezer.ts:10-13`).
+un ISRC que simplemente no tiene (`deezer.ts:11-13`).
 
 **Beatport** no tiene API abierta: Surco busca con la cuenta del usuario, que se
 conecta en Ajustes → Fuentes. La contraseña se guarda cifrada con el llavero del
 sistema y solo en ese equipo; si el sistema no puede cifrar, no se guarda
-(`beatportCredentials.ts:9-13`). Sale **apagado** (`settings.ts:32`), y sin cuenta
+(`beatportCredentials.ts:26-33`). Sale **apagado** (`settings.ts:53`), y sin cuenta
 conectada queda fuera del auto-emparejado aunque esté marcado como fuente
 (`shared/autoMatch.ts:8-12`). Cada pista trae BPM, tonalidad (convertida a la
-notación elegida, `providers/index.ts:102`), mix e ISRC (`beatport.ts:150-157`); un
+notación elegida, `providers/index.ts:126-131`), mix e ISRC (`beatport.ts:157-160`); un
 campo fuera de la lista de importación no se toca. Entre versiones con el mismo
 título se preselecciona la que nombra el fichero, y el mix se añade al título
-salvo «Original Mix» (`lib/release.ts:232-237`). En la lista de resultados va
-detrás de Discogs, Bandcamp y Deezer (`release.ts:403-409`).
+salvo «Original Mix» (`lib/release.ts:237-242`). En la lista de resultados va
+detrás de Discogs, Bandcamp y Deezer (`release.ts:408-415`).
 
 **MusicBrainz** es el catálogo abierto de la comunidad. Sale **encendido** para todos:
-en instalaciones nuevas por defecto (`shared/defaults.ts:76`) y en las existentes con
+en instalaciones nuevas por defecto (`shared/defaults.ts:80`) y en las existentes con
 una migración de una sola vez; si el usuario lo desmarca no vuelve a aparecer
-(`settings.ts:511-517`). Su API pide una petición por segundo, así que cada búsqueda
+(`settings.ts:684-685`). Su API pide una petición por segundo, así que cada búsqueda
 cuesta al menos un segundo por peldaño. Con artista y título en las etiquetas busca la
 grabación por esos campos, primero sin recopilatorios, porque un tema de baile sale en
 cientos y llenan la lista antes que el single original (`musicbrainz.ts:315`). El texto
@@ -1136,28 +1136,43 @@ un disco tanto como una canción (`musicbrainz.ts:276-277`). **Distingue las edi
 el título de cada fila lleva la desambiguación de MusicBrainz («special edition», «dutch
 pressing»), y una edición entre corchetes en la etiqueta de álbum («Duran Duran (Deluxe
 Edition)») se busca sin ella pero puntúa primero la edición que la nombra
-(`musicbrainz.ts:155-163`, `:207-215`, `:296-306`). Las carátulas vienen de Cover Art
+(`musicbrainz.ts:155-163`, `:209-215`, `:296-306`). Las carátulas vienen de Cover Art
 Archive: la miniatura es la del álbum, que existe en cuanto alguna edición tiene imagen
 (`musicbrainz.ts:141-145`), y una edición sin carátula propia toma la del álbum solo si
-responde (`musicbrainz.ts:436`). Va la última en la lista (`release.ts:408`).
+responde (`musicbrainz.ts:436`). Va justo antes de Apple Music en la lista
+(`release.ts:413`).
+
+**Apple Music** usa la API pública de búsqueda de iTunes, sin cuenta ni clave. Sale
+**encendido** para todos, en instalaciones nuevas por defecto (`shared/defaults.ts:81`) y
+en las existentes con la misma migración de una sola vez (`settings.ts:686-687`). Apple
+ordena los resultados por popularidad y no por parecido, así que cada consulta pide 200
+canciones (`itunes.ts:104`) y se queda solo con las que nombran todas sus palabras en el
+artista, el título o el disco (`itunes.ts:86-94`); después las agrupa por disco
+(`itunes.ts:59-77`). Busca en la tienda del país del sistema, o en la de `US` si el sistema
+no lo dice (`itunes.ts:19-21`). Apple no publica su límite, que ronda las 20 peticiones por
+minuto, y Surco va a 3 cada 9 segundos (`itunes.ts:25`, `itunesLimiter.ts:3-4`); un 403 o
+un 429 se reintenta con espera creciente (`itunes.ts:32-36`). Trae la fecha entera, el
+género, el tracklist con duraciones y la carátula a 3000 px (`itunes.ts:164-185`). El sello
+sale del copyright sin el «℗ 2020» del principio (`itunes.ts:150-153`), y no hay número de
+catálogo, BPM, tonalidad ni ISRC. Va la última en la lista (`release.ts:414`).
 
 ### La escalera de búsqueda
 
 Los nombres de ficheros descargados traen ruido que hunde la búsqueda. Surco
 construye una lista ordenada de consultas y se queda con la primera que devuelve
 algo: campos estructurados, luego búsqueda dentro de tracklists, luego recorte de
-palabras finales, luego texto libre (`discogs.ts:253-330`).
+palabras finales, luego texto libre (`discogs.ts:252-366`).
 
 **Archivo sin etiquetas** (v1.42.0). La búsqueda sale del nombre del archivo, sin la cara del
 vinilo delante (`A1.`, `B2.`). Si el nombre no dice el artista y la carpeta se llama
 «Artista - Álbum», se busca por esa carpeta, sin el año entre paréntesis
 (`folderQuery`, `renderer/src/lib/filename.ts:14`).
 
-**Solo cuenta un peldaño que nombra al artista.** En Bandcamp, Deezer, Beatport y el
-texto libre de MusicBrainz, cuando las etiquetas traen artista, un peldaño solo vale si
+**Solo cuenta un peldaño que nombra al artista.** En Bandcamp, Deezer, Beatport, Apple
+Music y el texto libre de MusicBrainz, cuando las etiquetas traen artista, un peldaño solo vale si
 alguna fila nombra a alguno de sus actos (una colaboración se parte por comas, «&»,
 «feat.» y demás; «Pro-Active» y «Proactive» cuentan igual); si ninguno lo nombra, esa
-fuente se queda vacía en vez de enseñar discos ajenos (`searchQuery.ts:111-177`). En un
+fuente se queda vacía en vez de enseñar discos ajenos (`searchQuery.ts:107-181`). En un
 barrido de 120 pistas reales de la biblioteca, las respuestas que solo traían discos
 ajenos bajaron del 25-39 % al 0-11 % según la fuente, sin perder ninguna que nombrara
 al artista (`npm run search-sweep`, `searchSweep.test.ts`). Discogs y los peldaños por
@@ -1165,7 +1180,7 @@ campos de MusicBrainz no pasan por esta regla: ya fijan el artista en la consult
 
 **Buscar primero por álbum** (Ajustes → Fuentes, apagado por defecto). Con artista y
 álbum en las etiquetas, Discogs y MusicBrainz buscan primero ese disco por sus campos
-(`discogs.ts:298-302`, `musicbrainz.ts:285-310`), y el resto prueba «artista álbum» como
+(`discogs.ts:294-317`, `musicbrainz.ts:296-312`), y el resto prueba «artista álbum» como
 primer peldaño (`searchQuery.ts:44`); si no aparece un disco del artista, sigue la
 búsqueda por pista de siempre. Un álbum igual al título o vacío se ignora. Una edición
 entre corchetes en la etiqueta se reintenta sin ella en las dos fuentes.
@@ -1180,21 +1195,21 @@ deshabilitado y lo dice.
 el artista y el título de la pista seleccionada, se busca sin sus etiquetas, para que
 no arrastren los resultados a su propio disco. Si lo escrito nombra el artista y el
 álbum de la pista pero no la canción, se busca ese disco, aunque «Buscar primero por
-álbum» esté apagado (`lib/autoMatch.ts:63-91`, `providers/index.ts:39-45`). Y los
+álbum» esté apagado (`lib/autoMatch.ts:80-116`, `providers/index.ts:39-45`). Y los
 resultados de una búsqueda escrita se ordenan por cuánto del texto escrito cubre cada
-fila, no por las etiquetas del fichero (`typedCoverage`, `release.ts:420-443`). La
+fila, no por las etiquetas del fichero (`typedCoverage`, `release.ts:426-445`). La
 búsqueda automática sigue usando siempre las etiquetas.
 
 **Descargas de sello y promo.** Cuando la etiqueta pone el sello como artista y el
 título trae «Acto - Pista» («HH Traxx» / «Francesco Donadoni - Funky Roll»), tras las
 búsquedas precisas con la etiqueta tal cual se repiten las mismas con el acto y la
 pista que nombra el título, saltando un «Preview - » de Bandcamp delante
-(`discogs.ts:306-316`, `shared/searchClean.ts:174-177`). Va después, así que un
+(`discogs.ts:335-346`, `shared/searchClean.ts:174-177`). Va después, así que un
 fichero bien etiquetado se resuelve igual que antes.
 
 **Orden de resultados.** Un disco acreditado al artista del fichero («Artista - …»)
 sube por delante de otro que solo lo nombra más adelante, como un remix o un bootleg
-que lleva el nombre entero del original (`release.ts:456-464`). Las respuestas de cada
+que lleva el nombre entero del original (`release.ts:465-473`). Las respuestas de cada
 fuente entran en su puesto según llegan, sin reordenar al final, y la que llega tarde
 a una lista ya visible se marca un momento.
 
@@ -1221,12 +1236,12 @@ cada fichero, así que no distingue los cortes; la duración medida sí
 **Ventana proporcional:** ≤2 s es coincidencia perfecta, y la ventana de fallo
 crece con la pista (4%, topado a 20 s) porque los rips de vinilo derivan
 proporcionalmente. Caso real: un rip de 6:48 de un corte listado como 7:02 se
-puntuaba a cero con ventana fija (`release.ts:117-124`).
+puntuaba a cero con ventana fija (`release.ts:128-135`).
 
 **Un lanzamiento nuevo deshace el anterior** (v1.14.0). Al aplicar otro lanzamiento, cada
 campo que el anterior escribió y que nadie ha tocado vuelve a su valor previo, también la
 referencia de Discogs y la carátula, y lo que el DJ cambió se respeta
-(`withoutPrevious`, `release.ts:677`). Antes, aplicar el bueno después de uno equivocado
+(`withoutPrevious`, `release.ts:708`). Antes, aplicar el bueno después de uno equivocado
 dejaba el sello, el catálogo, el país y la carátula del equivocado. Vale en el editor, el
 panel de álbum, el barrido y al aceptar una revisión, y se guarda en la sesión.
 
@@ -1245,11 +1260,11 @@ coincidiendo, o el número de catálogo. Sin eso queda «Por confirmar», porque
 release sin duraciones puntúa 1.0 solo por el título y los títulos de una palabra
 existen en decenas de discos no relacionados (`release.ts:290-298`). Desde v1.17.0 el
 resultado de búsqueda solo lleva «Mejor coincidencia» con esa misma corroboración, no por
-compartir el título (`DiscogsPanel.tsx:304`).
+compartir el título (`DiscogsPanel.tsx:329`).
 
 **Duración que no cuadra** (v1.17.0). Si una pista del lanzamiento dura bastante más o
 menos que el fichero, la fila lleva un aviso con la duración del fichero, en el panel de
-búsqueda (`editor.lengthMismatch`, `DiscogsPanel.tsx:270`) y en las filas del álbum
+búsqueda (`editor.lengthMismatch`, `DiscogsPanel.tsx:304-306`) y en las filas del álbum
 (`match.lengthMismatch`, `AlbumMatchRows.tsx:125`), para no aplicar otra edición sin verlo.
 
 **BPM y tonalidad propios se quedan** (v1.17.0). Aplicar un lanzamiento solo rellena BPM y
@@ -1257,15 +1272,16 @@ tonalidad si la pista no los tiene (`release.ts`, `base.bpm || track?.bpm`).
 
 **«Antes:» bajo cada campo** (v1.17.0). Tras aplicar un lanzamiento, cada campo que cambió
 enseña el valor anterior con un botón «Restaurar» que lo devuelve, y la restauración se
-puede deshacer (`editor.previous`, `Field.tsx:301-310`).
+puede deshacer (`editor.previous`, `Field.tsx:407-424`).
 
-**Bandcamp, con listón propio.** Discogs va siempre primero por ser la fuente
-curada; Bandcamp solo se prueba si Discogs no encuentra nada y el fichero tiene
-duración. Para aplicarse sola, una coincidencia de Bandcamp necesita un 92 %
-(`autoMatch.ts:320-324`). Por debajo, o si no llega a ese listón, se propone como
+**Las demás fuentes, con listón propio.** Discogs va siempre primero por ser la fuente
+curada; Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music solo se prueban si Discogs no
+encuentra nada y el fichero tiene duración. Para aplicarse sola, una coincidencia de
+cualquiera de ellas necesita un 92 %
+(`lib/autoMatch.ts:420-423`). Por debajo, o si no llega a ese listón, se propone como
 «Por confirmar» solo si el artista coincide; sin artista es ruido (resubidas,
 sesiones con el nombre de la pista) y se descarta. Una sugerencia de Discogs manda
-sobre una de Bandcamp (`autoMatch.ts:361-378`).
+sobre una de cualquier otra fuente (`lib/autoMatch.ts:480-486`).
 
 **Contradicción de título:** tres rips distintos colapsando sobre una misma
 entrada de «Rocket Man» fue el bug que motivó esta guarda (`assign.ts:44-48`).
