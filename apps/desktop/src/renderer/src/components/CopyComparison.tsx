@@ -8,8 +8,8 @@ const LIBRARY = 'Apple Music'
 type RowId = 'cutoff' | 'loudness' | 'crest' | 'peakCount'
 
 // The row whose figures carried the verdict. Lossy against lossless is decided by the
-// formats and a transcode by the shape of the spectrum, so neither colours the cutoff row:
-// a knee-less 16 kHz WAV beating a 20 kHz MP3 would read as the lower number winning.
+// formats, so it colours no row: a knee-less 16 kHz WAV beating a 20 kHz MP3 would read as
+// the lower number winning. A transcode is settled below, against its own figures.
 const DECIDING_ROW: Partial<Record<CopyReason, RowId>> = {
   cutoff: 'cutoff',
   peakCount: 'peakCount',
@@ -67,7 +67,16 @@ export function CopyComparison({
       library: cell(library.peakCount, 0),
     },
   ]
-  const decidingRow = DECIDING_ROW[verdict.reason]
+  const [loser, winner] = verdict.winner === 'a' ? [library, here] : [here, library]
+  // A transcode is called on the loser's knee alone, so its cutoffs are the evidence only when
+  // the winner reaches higher as printed: marking a lower or equal figure would argue against
+  // the verdict.
+  const transcodeShown =
+    verdict.reason === 'transcode' &&
+    loser.cutoffHz != null &&
+    winner.cutoffHz != null &&
+    Math.round(winner.cutoffHz / 100) > Math.round(loser.cutoffHz / 100)
+  const decidingRow = transcodeShown ? 'cutoff' : DECIDING_ROW[verdict.reason]
   const winnerSide = verdict.winner === 'a' ? 'here' : 'library'
   // The winning figure takes the verdict's colour: green when this file wins, amber when the
   // library holds the better copy, the same colours as the glyph in the section's header.

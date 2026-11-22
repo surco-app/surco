@@ -89,6 +89,48 @@ describe('CopyComparison', () => {
     expect(winners()).toEqual(['library'])
   })
 
+  // A lossy source is read off the spectrum, and the cutoffs are the evidence of it: the copy
+  // that reaches higher is marked as the one that won.
+  it.each([
+    ['a', 'here', '22.1 kHz'],
+    ['b', 'library', '22.1 kHz'],
+  ] as const)(
+    'marks the higher cutoff when a lossy source decided for %s',
+    (winner, side, figure) => {
+      const lossy = { ...wav, cutoffHz: 16000, hasKnee: true }
+      const clean = { ...aif, cutoffHz: 22050 }
+      render(
+        <CopyComparison
+          verdict={{ winner, reason: 'transcode' }}
+          here={winner === 'a' ? clean : lossy}
+          library={winner === 'a' ? lossy : clean}
+          hereLabel="AIF"
+          libraryLabel="WAV"
+        />,
+      )
+      const row = screen.getByTestId('copy-row-cutoff')
+      expect(row).toHaveAttribute('data-decides', 'true')
+      expect(within(row).getByText(figure)).toHaveAttribute('data-winner', side)
+      expect(winners()).toEqual([side])
+    },
+  )
+
+  // A transcode is called on the losing copy's knee alone, so the winner may cut no higher
+  // (a knee-less 15 kHz WAV). Marking its lower figure would argue the opposite of the verdict.
+  it('marks no cutoff when the winner of a lossy source does not reach higher', () => {
+    render(
+      <CopyComparison
+        verdict={{ winner: 'b', reason: 'transcode' }}
+        here={{ ...wav, cutoffHz: 16000, hasKnee: true }}
+        library={{ ...aif, cutoffHz: 15000 }}
+        hereLabel="WAV"
+        libraryLabel="AIF"
+      />,
+    )
+    expect(screen.getByTestId('copy-row-cutoff')).not.toHaveAttribute('data-decides')
+    expect(winners()).toEqual([])
+  })
+
   // Lossy against lossless is a fact about the formats, not the cutoffs: a knee-less 16 kHz
   // WAV still beats a 20 kHz MP3, and marking the higher cutoff would argue the opposite.
   it('marks no figure when the formats decided', () => {
