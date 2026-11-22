@@ -60,7 +60,13 @@ export interface ConversionQuality {
   flacCompression: FlacCompression
 }
 
-export type SearchProviderId = 'discogs' | 'bandcamp' | 'deezer' | 'beatport' | 'musicbrainz'
+export type SearchProviderId =
+  | 'discogs'
+  | 'bandcamp'
+  | 'deezer'
+  | 'beatport'
+  | 'musicbrainz'
+  | 'itunes'
 
 // How a search request competes for the provider's rate-limited budget. 'high' is the track
 // the user is actively looking at (the editor's own search); 'low' is background work
@@ -398,6 +404,7 @@ export interface Settings {
   deezerProviderMigrated: boolean
   // The same one-shot marker for the addition that introduced MusicBrainz.
   musicbrainzProviderMigrated: boolean
+  itunesProviderMigrated: boolean
   // One-shot marker for moving the old 'always' default onto 'audioChanges' (settings.ts).
   backupPolicyMigrated: boolean
   // One-shot marker for moving the old 30 days and 10 GB defaults onto 7 and 2 (settings.ts).
@@ -443,6 +450,7 @@ export interface LifetimeStats {
   deezerMatches: number
   beatportMatches: number
   musicbrainzMatches: number
+  itunesMatches: number
 }
 
 // An entry in Surco's own trash (main/surcoTrash.ts): a file a conversion replaced or
@@ -1371,6 +1379,7 @@ export type ActivityKind =
   | 'deezer'
   | 'beatport'
   | 'musicbrainz'
+  | 'itunes'
   | 'cover'
   | 'convert'
   | 'analyze'

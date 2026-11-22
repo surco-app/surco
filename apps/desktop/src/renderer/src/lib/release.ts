@@ -411,6 +411,7 @@ const PROVIDER_RANK: Record<SearchProviderId, number> = {
   deezer: 2,
   beatport: 3,
   musicbrainz: 4,
+  itunes: 5,
 }
 
 const COMPILATION_PENALTY = 1

@@ -62,6 +62,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   deezer: Radio,
   beatport: AudioLines,
   musicbrainz: Database,
+  itunes: Music,
   cover: ImageIcon,
   convert: Disc3,
   analyze: ActivityIcon,

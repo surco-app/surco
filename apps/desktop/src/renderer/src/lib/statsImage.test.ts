@@ -14,6 +14,7 @@ describe('statsImageCells', () => {
       deezerMatches: 44,
       beatportMatches: 0,
       musicbrainzMatches: 0,
+      itunesMatches: 0,
     })
     expect(cells).toEqual([
       { key: 'imported', value: 812 },
@@ -34,10 +35,29 @@ describe('statsImageCells', () => {
       deezerMatches: 3,
       beatportMatches: 0,
       musicbrainzMatches: 7,
+      itunesMatches: 0,
     })
     expect(cells).toEqual([
       { key: 'deezerMatches', value: 3 },
       { key: 'musicbrainzMatches', value: 7 },
+    ])
+  })
+
+  it('includes Apple Music finds after MusicBrainz, so the card reads in the same order as the Stats tab', () => {
+    const cells = statsImageCells({
+      imported: 0,
+      listened: 0,
+      analyzed: 0,
+      discogsMatches: 0,
+      bandcampMatches: 0,
+      deezerMatches: 0,
+      beatportMatches: 0,
+      musicbrainzMatches: 2,
+      itunesMatches: 5,
+    })
+    expect(cells).toEqual([
+      { key: 'musicbrainzMatches', value: 2 },
+      { key: 'itunesMatches', value: 5 },
     ])
   })
 
@@ -52,6 +72,7 @@ describe('statsImageCells', () => {
         deezerMatches: 0,
         beatportMatches: 0,
         musicbrainzMatches: 0,
+        itunesMatches: 0,
       }),
     ).toEqual([])
   })
@@ -69,6 +90,7 @@ describe('statsImageCells', () => {
       deezerMatches: 6,
       beatportMatches: 0,
       musicbrainzMatches: 0,
+      itunesMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual([
       'imported',
@@ -92,6 +114,7 @@ describe('statsImageCells', () => {
       deezerMatches: 12,
       beatportMatches: 0,
       musicbrainzMatches: 0,
+      itunesMatches: 0,
     })
     expect(cells.map((c) => c.key)).toContain('deezerMatches')
   })
@@ -108,6 +131,7 @@ describe('statsImageCells', () => {
       deezerMatches: 1,
       beatportMatches: 0,
       musicbrainzMatches: 0,
+      itunesMatches: 0,
     })
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])
   })
@@ -124,6 +148,7 @@ describe('statsImageCells', () => {
       deezerMatches: 500,
       beatportMatches: 0,
       musicbrainzMatches: 0,
+      itunesMatches: 0,
     })
     expect(cells).toHaveLength(4)
     expect(cells.map((c) => c.key)).toEqual(['imported', 'listened', 'analyzed', 'discogsMatches'])

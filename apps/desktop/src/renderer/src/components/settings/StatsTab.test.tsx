@@ -19,6 +19,7 @@ const zeroStats = {
   deezerMatches: 0,
   beatportMatches: 0,
   musicbrainzMatches: 0,
+  itunesMatches: 0,
 }
 
 function withStats(over: Partial<Settings> = {}): Settings {
@@ -62,6 +63,7 @@ describe('StatsTab', () => {
             deezerMatches: 44,
             beatportMatches: 0,
             musicbrainzMatches: 9,
+            itunesMatches: 0,
           },
         })}
       />,
@@ -73,6 +75,20 @@ describe('StatsTab', () => {
     expect(screen.getByTestId('stats-bandcampMatches')).toHaveTextContent('17')
     expect(screen.getByTestId('stats-deezerMatches')).toHaveTextContent('44')
     expect(screen.getByTestId('stats-musicbrainzMatches')).toHaveTextContent('9')
+  })
+
+  it('counts Apple Music finds in the grid and in the source split, so its matches are not credited to another catalog', () => {
+    render(
+      <StatsTab
+        settings={withStats({
+          conversionCount: 10,
+          stats: { ...zeroStats, discogsMatches: 6, itunesMatches: 4 },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('stats-itunesMatches')).toHaveTextContent('4')
+    expect(screen.getByTestId('stats-match-itunes')).toHaveStyle({ width: '40%' })
+    expect(screen.getByTestId('stats-match-split')).toHaveTextContent('Apple Music4')
   })
 
   // The match tallies aren't independent trivia — together they answer "where did my
@@ -135,6 +151,7 @@ describe('StatsTab', () => {
             deezerMatches: 92,
             beatportMatches: 2,
             musicbrainzMatches: 3,
+            itunesMatches: 1,
           },
         })}
       />,
@@ -150,8 +167,11 @@ describe('StatsTab', () => {
       'deezer',
       'musicbrainz',
       'beatport',
+      'itunes',
     ])
-    expect(split.textContent).toMatch(/Discogs213.*Bandcamp185.*Deezer92.*MusicBrainz3.*Beatport2/)
+    expect(split.textContent).toMatch(
+      /Discogs213.*Bandcamp185.*Deezer92.*MusicBrainz3.*Beatport2.*Apple Music1/,
+    )
   })
 
   // A shortened count must not cost the exact figure: it stays one hover away.

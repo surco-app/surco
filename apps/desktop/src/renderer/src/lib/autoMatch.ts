@@ -495,6 +495,7 @@ const PROVIDER_NAME: Record<SearchProviderId, string> = {
   deezer: 'Deezer',
   beatport: 'Beatport',
   musicbrainz: 'MusicBrainz',
+  itunes: 'Apple Music',
 }
 
 function pct(confidence: number): number {

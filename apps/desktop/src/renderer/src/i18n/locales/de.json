@@ -358,6 +358,7 @@
     "fileMissing": "Diese Datei befindet sich nicht mehr an diesem Ort. Womöglich wurde sie verschoben oder umbenannt.",
     "coverUrlBlocked": "Diese Cover-Adresse ist nicht zulässig, daher wurde nichts geladen.",
     "deezerRateLimit": "Deezer drosselt die Suche. Warte einen Moment und versuche es erneut.",
+    "itunesRateLimit": "Apple Music drosselt die Suche. Warte einen Moment und versuche es erneut.",
     "discogsRateLimit": "Discogs drosselt die Suche. Warte einen Moment und versuche es erneut.",
     "discogsToken": "Discogs hat dein Token abgelehnt. Prüfe es in den Einstellungen.",
     "offline": "Keine Verbindung. Prüfe dein Internet und versuche es erneut.",
@@ -389,6 +390,7 @@
     "bandcampPageUnreadable": "Diese Bandcamp-Seite konnte nicht gelesen werden.",
     "bandcampUrlBlocked": "Diese Bandcamp-Adresse ist nicht erlaubt und wurde daher nicht geöffnet.",
     "deezerUnavailable": "Deezer hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
+    "itunesUnavailable": "Apple Music hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
     "beatportNotConnected": "Verbinde dein Beatport-Konto unter Einstellungen → Quellen.",
     "beatportBadCredentials": "Beatport akzeptiert diesen Benutzernamen und dieses Passwort nicht. Verbinde das Konto in den Einstellungen neu.",
     "beatportUnavailable": "Beatport hat nicht richtig geantwortet. Versuche es gleich noch einmal.",
@@ -1669,6 +1671,7 @@
       "deezerMatches": "Auf Deezer gefunden",
       "beatportMatches": "Auf Beatport gefunden",
       "musicbrainzMatches": "Auf MusicBrainz gefunden",
+      "itunesMatches": "Auf Apple Music gefunden",
       "matchSources": "Woher die Treffer stammen",
       "timeSaved": "Du hast rund {{time}} gespart",
       "perTrack": "≈ {{minutes}} Min. Handarbeit pro Track",
@@ -1789,7 +1792,7 @@
     "searchByAlbumFirst": "Zuerst nach Album suchen",
     "searchByAlbumFirstHint": "Wenn die Tags ein Album enthalten, wird es mit dem Künstler vor dem Track gesucht. Findet sich nichts, wird der Track gesucht.",
     "searchProviders": "Suchquellen",
-    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Releases ab, Beatport liefert BPM, Tonart und Mix, und MusicBrainz ist ein offener, von seiner Community gepflegter Katalog.",
+    "searchProvidersHint": "Kataloge, die der Editor durchsucht. Discogs ist kuratiert, Bandcamp ergänzt selbstveröffentlichtes Material, Deezer deckt kommerzielle digitale Releases ab, Beatport liefert BPM, Tonart und Mix, MusicBrainz ist ein offener, von seiner Community gepflegter Katalog, und Apple Music bringt Apples Katalog mit großem Cover.",
     "searchResultsSection": "Ergebnisse",
     "searchMatchingSection": "Abgleich",
     "providerDescription": {
@@ -1797,14 +1800,16 @@
       "bandcamp": "Selbstveröffentlichtes",
       "deezer": "Kommerzielle Digital-Releases",
       "beatport": "BPM, Tonart und Mix",
-      "musicbrainz": "Offener Katalog seiner Community"
+      "musicbrainz": "Offener Katalog seiner Community",
+      "itunes": "Apples Katalog, großes Cover"
     },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
       "beatport": "Beatport",
-      "musicbrainz": "MusicBrainz"
+      "musicbrainz": "MusicBrainz",
+      "itunes": "Apple Music"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1917,7 +1922,7 @@
     "trimWhitespace": "Überflüssige Leerzeichen entfernen",
     "zeroPadTrack": "Tracknummer mit führender Null (03)",
     "fullReleaseDate": "Jahr mit vollständigem Datum",
-    "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Bandcamp, Deezer, Beatport oder MusicBrainz das ganze Datum hat.",
+    "fullReleaseDateHint": "Zeigt und speichert 2020-12-01 statt 2020, wenn die Datei oder Discogs, Bandcamp, Deezer, Beatport, MusicBrainz oder Apple Music das ganze Datum hat.",
     "editorQuickButtonsTitle": "Schnellbuttons",
     "editorTagsTitle": "Tags",
     "editorAnalysisTitle": "Analyse",
@@ -2345,7 +2350,7 @@
     "audioBody": "Surco zeigt nur die Editor-Abschnitte, die dein Workflow braucht. Wähl, was passt. Du kannst es jederzeit in den Einstellungen ändern.",
     "intent": {
       "metadata": "Metadaten richtig setzen",
-      "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp, Deezer, Beatport und MusicBrainz. Immer an: Dafür ist Surco da.",
+      "metadataBody": "Tags, Cover und der Abgleich mit Discogs, Bandcamp, Deezer, Beatport, MusicBrainz und Apple Music. Immer an: Dafür ist Surco da.",
       "restore": "Vinyl-Rips restaurieren",
       "restoreBody": "Stille kürzen und Knackser und Knistern in Vinyl-Aufnahmen reparieren.",
       "level": "Lautheit angleichen",
@@ -2419,7 +2424,7 @@
       },
       "windows": {
         "q": "Gibt es Unterschiede unter Windows?",
-        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer, Beatport und MusicBrainz, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple-Music-Integration. Surco steuert Apples Music-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert (die Apple-Music-App für Windows bietet nichts Vergleichbares), deshalb erscheinen das Apple-Music-Ziel, die Buttons und das Mediathek-Badge einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann. Eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
+        "a": "Fast alles funktioniert genau gleich: Konvertierung, Tagging, die Suche auf Discogs, Bandcamp, Deezer, Beatport, MusicBrainz und Apple Music, die Qualitätsanalyse und der Export zu rekordbox, Traktor, Serato und Engine DJ.\n\nDas Einzige, was es unter Windows nicht gibt, ist die Apple-Music-Integration. Surco steuert Apples Music-App über AppleScript, eine Automatisierungsbrücke, die nur unter macOS existiert (die Apple-Music-App für Windows bietet nichts Vergleichbares), deshalb erscheinen das Apple-Music-Ziel, die Buttons und das Mediathek-Badge einfach nicht.\n\nEine WAV-Eigenheit, die man kennen sollte: Surco speichert WAV-Tags im standardmäßigen ID3-Chunk, den DJ-Apps und Tag-Editoren wie Mp3tag problemlos lesen, den der Windows-Explorer aber nicht anzeigen kann. Eine konvertierte WAV kann in einem Ordner ungetaggt wirken, obwohl alle Tags da sind. Bei MP3 oder FLAC zeigt der Explorer sie ganz normal an."
       }
     }
   },
@@ -2569,6 +2574,8 @@
     "loadBandcampRelease": "Bandcamp-Release wird geladen",
     "searchDeezer": "Suche auf Deezer: {{query}}",
     "loadDeezerRelease": "Deezer-Release wird geladen",
+    "searchItunes": "Suche auf Apple Music: {{query}}",
+    "loadItunesRelease": "Apple-Music-Release wird geladen",
     "searchBeatport": "Suche auf Beatport: {{query}}",
     "loadBeatportRelease": "Beatport-Release wird geladen",
     "searchMusicbrainz": "Suche auf MusicBrainz: {{query}}",

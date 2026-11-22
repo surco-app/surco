@@ -11,6 +11,7 @@ const {
   bpGetRelease,
   mbSearch,
   mbGetRelease,
+  itSearch,
 } = vi.hoisted(() => ({
   search: vi.fn(),
   getRelease: vi.fn(),
@@ -35,6 +36,7 @@ const {
   bpGetRelease: vi.fn(),
   mbSearch: vi.fn(),
   mbGetRelease: vi.fn(),
+  itSearch: vi.fn(),
 }))
 
 vi.mock('../discogs', () => ({ search, getRelease }))
@@ -42,6 +44,7 @@ vi.mock('../bandcamp', () => ({ search: bcSearch, getRelease: vi.fn() }))
 vi.mock('../deezer', () => ({ search: dzSearch, getRelease: vi.fn() }))
 vi.mock('../beatport', () => ({ search: bpSearch, getRelease: bpGetRelease }))
 vi.mock('../musicbrainz', () => ({ search: mbSearch, getRelease: mbGetRelease }))
+vi.mock('../itunes', () => ({ search: itSearch, getRelease: vi.fn() }))
 vi.mock('../settings', () => ({ getSettings }))
 
 import { DEFAULT_PROVIDER, getProvider } from './index'
@@ -252,6 +255,19 @@ describe('getProvider', () => {
       title: 'Song rip djotas good',
     })
     expect(dzSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
+  })
+
+  it('strips the saved ignore words for Apple Music too, so a rip tag in the title does not empty its every-word filter', async () => {
+    getSettings.mockReturnValueOnce({
+      discogsToken: 'tok',
+      discogsFormats: [] as string[],
+      searchIgnoreWords: ['rip djotas good'],
+    })
+    itSearch.mockResolvedValue([])
+    await getProvider('itunes').search('Song rip djotas good', 'low', {
+      title: 'Song rip djotas good',
+    })
+    expect(itSearch).toHaveBeenCalledWith('Song', 'low', { title: 'Song' })
   })
 
   it('strips the saved ignore words for MusicBrainz too', async () => {

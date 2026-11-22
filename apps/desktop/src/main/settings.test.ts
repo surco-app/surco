@@ -89,8 +89,14 @@ describe('defaults for a fresh install', () => {
   // self-released / Bandcamp-exclusive material, Deezer's commercial catalog and
   // MusicBrainz' open one in one query, without first knowing any of them is an opt-in
   // under Settings.
-  it('searches Discogs, Bandcamp, Deezer and MusicBrainz by default, leaving Beatport off since it needs an account', () => {
-    expect(defaults.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer', 'musicbrainz'])
+  it('searches Discogs, Bandcamp, Deezer, MusicBrainz and Apple Music by default, leaving Beatport off since it needs an account', () => {
+    expect(defaults.searchProviders).toEqual([
+      'discogs',
+      'bandcamp',
+      'deezer',
+      'musicbrainz',
+      'itunes',
+    ])
   })
 
   // Originals exist to undo a conversion you just noticed went wrong, which is a
@@ -335,6 +341,7 @@ describe('sanitizeSettingsPatch', () => {
       deezerMatches: 999,
       beatportMatches: 999,
       musicbrainzMatches: 999,
+      itunesMatches: 999,
     }
     expect(
       sanitizeSettingsPatch({ theme: 'dark', stats: forgedStats, conversionCount: 999 }),
@@ -393,6 +400,14 @@ describe('nested settings from an older install', () => {
       JSON.stringify({ stats: { imported: 3, discogsMatches: 4, beatportMatches: 1 } }),
     )
     expect(getSettings().stats.musicbrainzMatches).toBe(0)
+  })
+
+  it('fills itunesMatches for a stats object written before the Apple Music source existed, so its first match does not turn the counter into NaN', () => {
+    writeFileSync(
+      localFile(),
+      JSON.stringify({ stats: { imported: 3, discogsMatches: 4, musicbrainzMatches: 1 } }),
+    )
+    expect(getSettings().stats.itunesMatches).toBe(0)
   })
 
   it('recordStat never produces NaN for a key a stale settings.json omitted', () => {
@@ -938,18 +953,18 @@ describe('migrateProviderDefaults', () => {
     )
     migrateProviderDefaults()
     const s = getSettings()
-    expect(s.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer', 'musicbrainz'])
+    expect(s.searchProviders).toEqual(['discogs', 'bandcamp', 'deezer', 'musicbrainz', 'itunes'])
     expect(s.musicbrainzProviderMigrated).toBe(true)
   })
 
   // An install older than both sources gets both in the same launch.
-  it('adds deezer and musicbrainz together to a pre-deezer install', () => {
+  it('adds deezer, musicbrainz and itunes together to a pre-deezer install', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),
       JSON.stringify({ searchProviders: ['discogs'] }),
     )
     migrateProviderDefaults()
-    expect(getSettings().searchProviders).toEqual(['discogs', 'deezer', 'musicbrainz'])
+    expect(getSettings().searchProviders).toEqual(['discogs', 'deezer', 'musicbrainz', 'itunes'])
   })
 
   // Each marker guards only its own source: unticking MusicBrainz must stick, and must
@@ -961,10 +976,47 @@ describe('migrateProviderDefaults', () => {
         searchProviders: ['discogs'],
         deezerProviderMigrated: true,
         musicbrainzProviderMigrated: true,
+        itunesProviderMigrated: true,
       }),
     )
     migrateProviderDefaults()
     expect(getSettings().searchProviders).toEqual(['discogs'])
+  })
+
+  it('adds itunes once to an install that already ran the deezer and musicbrainz migrations, since it would never see Apple Music otherwise', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({
+        searchProviders: ['discogs', 'musicbrainz'],
+        deezerProviderMigrated: true,
+        musicbrainzProviderMigrated: true,
+      }),
+    )
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders).toEqual(['discogs', 'musicbrainz', 'itunes'])
+    expect(s.itunesProviderMigrated).toBe(true)
+  })
+
+  it('does not re-add itunes after the user unticked it post-migration, so unticking Apple Music sticks', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({
+        searchProviders: ['discogs'],
+        deezerProviderMigrated: true,
+        musicbrainzProviderMigrated: true,
+        itunesProviderMigrated: true,
+      }),
+    )
+    migrateProviderDefaults()
+    expect(getSettings().searchProviders).not.toContain('itunes')
+  })
+
+  it('never duplicates itunes on a fresh install whose defaults already carry it', () => {
+    migrateProviderDefaults()
+    const s = getSettings()
+    expect(s.searchProviders.filter((p) => p === 'itunes')).toHaveLength(1)
+    expect(s.itunesProviderMigrated).toBe(true)
   })
 
   it('never duplicates musicbrainz on a fresh install whose defaults already carry it', () => {

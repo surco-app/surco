@@ -1288,6 +1288,7 @@ function registerIpc(): void {
       'deezerMatches',
       'beatportMatches',
       'musicbrainzMatches',
+      'itunesMatches',
     ] satisfies (keyof Settings['stats'])[]
     if (typeof key === 'string' && keys.includes(key)) {
       recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
@@ -2569,7 +2570,7 @@ app.whenReady().then(() => {
       "default-src 'self'",
       "script-src 'self'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org",
+      "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com",
       "media-src 'self' blob: surco:",
       "connect-src 'self'",
     ].join('; ')

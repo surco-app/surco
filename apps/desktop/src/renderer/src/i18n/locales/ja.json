@@ -358,6 +358,7 @@
     "fileMissing": "このファイルは現在その場所にありません。移動または名前変更された可能性があります。",
     "coverUrlBlocked": "そのアートワークアドレスは許可されていないため、何もダウンロードされませんでした。",
     "deezerRateLimit": "Deezer が検索を制限しています。しばらく待って再度お試しください。",
+    "itunesRateLimit": "Apple Music が検索を制限しています。しばらく待って再度お試しください。",
     "discogsRateLimit": "Discogs が検索を制限しています。しばらく待って再度お試しください。",
     "discogsToken": "Discogs がトークンを拒否しました。設定で確認してください。",
     "offline": "接続できません。インターネット接続を確認して再度お試しください。",
@@ -389,6 +390,7 @@
     "bandcampPageUnreadable": "そのBandcampページは読み込めませんでした。",
     "bandcampUrlBlocked": "そのBandcampアドレスは許可されていないため、開きませんでした。",
     "deezerUnavailable": "Deezerが正しく応答しませんでした。しばらく待って再度お試しください。",
+    "itunesUnavailable": "Apple Musicが正しく応答しませんでした。しばらく待って再度お試しください。",
     "beatportNotConnected": "設定 → ソースでBeatportアカウントを接続してください。",
     "beatportBadCredentials": "Beatportがそのユーザー名とパスワードを受け付けません。設定でアカウントを再接続してください。",
     "beatportUnavailable": "Beatportが正しく応答しませんでした。しばらく待って再度お試しください。",
@@ -1669,6 +1671,7 @@
       "deezerMatches": "Deezerで見つかりました",
       "beatportMatches": "Beatportで見つかりました",
       "musicbrainzMatches": "MusicBrainzで見つかりました",
+      "itunesMatches": "Apple Musicで見つかりました",
       "matchSources": "マッチの取得元",
       "timeSaved": "約 {{time}} を節約しました",
       "perTrack": "≈ トラックごとに {{minutes}} 分の手作業",
@@ -1789,7 +1792,7 @@
     "searchByAlbumFirst": "アルバム優先で検索",
     "searchByAlbumFirstHint": "タグにアルバムがあれば、まずアルバム名とアーティスト名で検索し、見つからなければトラック名で検索します。",
     "searchProviders": "検索ソース",
-    "searchProvidersHint": "エディタが検索するカタログ。Discogsはキュレーション、Bandcampはセルフリリース素材、Deezerは商業デジタルリリース、BeatportはBPM・キー・ミックス、MusicBrainzはコミュニティが管理するオープンカタログです。",
+    "searchProvidersHint": "エディタが検索するカタログ。Discogsはキュレーション、Bandcampはセルフリリース素材、Deezerは商業デジタルリリース、BeatportはBPM・キー・ミックス、MusicBrainzはコミュニティが管理するオープンカタログ、Apple Musicは大きなアートワーク付きのAppleのカタログです。",
     "searchResultsSection": "結果",
     "searchMatchingSection": "マッチング",
     "providerDescription": {
@@ -1797,14 +1800,16 @@
       "bandcamp": "セルフリリース素材",
       "deezer": "商業デジタルリリース",
       "beatport": "BPM、キーとミックス",
-      "musicbrainz": "コミュニティが管理するオープンカタログ"
+      "musicbrainz": "コミュニティが管理するオープンカタログ",
+      "itunes": "Appleのカタログ、大きなアートワーク"
     },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
       "beatport": "Beatport",
-      "musicbrainz": "MusicBrainz"
+      "musicbrainz": "MusicBrainz",
+      "itunes": "Apple Music"
     },
     "format": {
       "Vinyl": "レコード",
@@ -1917,7 +1922,7 @@
     "trimWhitespace": "余分な空白を削除",
     "zeroPadTrack": "トラック番号をゼロ埋め（03）",
     "fullReleaseDate": "年を完全な日付で",
-    "fullReleaseDateHint": "ファイルや Discogs、Bandcamp、Deezer、Beatport、MusicBrainz に完全な日付がある場合、2020 ではなく 2020-12-01 を表示・保存します。",
+    "fullReleaseDateHint": "ファイルや Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music に完全な日付がある場合、2020 ではなく 2020-12-01 を表示・保存します。",
     "editorQuickButtonsTitle": "クイックボタン",
     "editorTagsTitle": "タグ",
     "editorAnalysisTitle": "分析",
@@ -2345,7 +2350,7 @@
     "audioBody": "Surcoはワークフローに必要なエディタセクションのみを表示します。適切なものを選んでください。設定でいつでも変更できます。",
     "intent": {
       "metadata": "メタデータを正しく設定する",
-      "metadataBody": "タグ、アートワーク、Discogs、Bandcamp、Deezer、Beatport、MusicBrainzとのマッチング。常にオンです。これがSurcoの目的です。",
+      "metadataBody": "タグ、アートワーク、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Musicとのマッチング。常にオンです。これがSurcoの目的です。",
       "restore": "レコードのリッピングを修復する",
       "restoreBody": "レコードからの録音で無音部分を切り取り、クリックやポップを修復します。",
       "level": "音量を均一にする",
@@ -2419,7 +2424,7 @@
       },
       "windows": {
         "q": "Windows では何か違いがありますか？",
-        "a": "ほぼすべてが同様に機能します：変換、タグ付け、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz検索、品質分析、そしてrekordbox、Traktor、Serato、Engine DJへのエクスポート。\n\nWindowsに存在しない唯一の機能はApple Music統合です。SurcoはAppleScriptを通じてAppleのMusicアプリを操作しますが、これはmacOSにのみ存在する自動化ブリッジであり（Windows版のApple Musicアプリには同等のものがありません）、Apple Musicの保存先やボタン、ライブラリバッジは表示されません。\n\n知っておくべきWAVの癖：SurcoはWAVタグを標準のID3チャンクに保存します。DJアプリやMp3tagなどのタグエディタは正常に読み取れますが、Windowsエクスプローラーでは表示できないため、変換されたWAVはフォルダー内でタグなしに見えることがあります。実際にはすべてのタグが存在しています。MP3やFLACではエクスプローラーが正常に表示します。"
+        "a": "ほぼすべてが同様に機能します：変換、タグ付け、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music検索、品質分析、そしてrekordbox、Traktor、Serato、Engine DJへのエクスポート。\n\nWindowsに存在しない唯一の機能はApple Music統合です。SurcoはAppleScriptを通じてAppleのMusicアプリを操作しますが、これはmacOSにのみ存在する自動化ブリッジであり（Windows版のApple Musicアプリには同等のものがありません）、Apple Musicの保存先やボタン、ライブラリバッジは表示されません。\n\n知っておくべきWAVの癖：SurcoはWAVタグを標準のID3チャンクに保存します。DJアプリやMp3tagなどのタグエディタは正常に読み取れますが、Windowsエクスプローラーでは表示できないため、変換されたWAVはフォルダー内でタグなしに見えることがあります。実際にはすべてのタグが存在しています。MP3やFLACではエクスプローラーが正常に表示します。"
       }
     }
   },
@@ -2569,6 +2574,8 @@
     "loadBandcampRelease": "Bandcampリリースを読み込み中",
     "searchDeezer": "Deezerを検索中：{{query}}",
     "loadDeezerRelease": "Deezerリリースを読み込み中",
+    "searchItunes": "Apple Musicを検索中：{{query}}",
+    "loadItunesRelease": "Apple Musicリリースを読み込み中",
     "searchBeatport": "Beatportを検索中：{{query}}",
     "loadBeatportRelease": "Beatportリリースを読み込み中",
     "searchMusicbrainz": "MusicBrainzを検索中：{{query}}",

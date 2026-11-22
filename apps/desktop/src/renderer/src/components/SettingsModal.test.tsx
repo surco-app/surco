@@ -158,6 +158,7 @@ const settings: Settings = {
   hasSeenOnboarding: true,
   deezerProviderMigrated: true,
   musicbrainzProviderMigrated: true,
+  itunesProviderMigrated: true,
   backupPolicyMigrated: true,
   backupLimitsMigrated: true,
   trackImportFieldsMigrated: true,
@@ -171,6 +172,7 @@ const settings: Settings = {
     deezerMatches: 0,
     beatportMatches: 0,
     musicbrainzMatches: 0,
+    itunesMatches: 0,
   },
   donateNudgeDismissed: false,
   donateNudgeLastShown: '',
@@ -1605,7 +1607,14 @@ describe('SettingsModal search tab layout', () => {
   // so what a source adds is read where it is switched on.
   it('describes what each source brings in its own row', () => {
     openSearch(['discogs'])
-    for (const p of ['discogs', 'bandcamp', 'deezer', 'beatport', 'musicbrainz'] as const) {
+    for (const p of [
+      'discogs',
+      'bandcamp',
+      'deezer',
+      'beatport',
+      'musicbrainz',
+      'itunes',
+    ] as const) {
       expect(screen.getByTestId(`settings-provider-row-${p}`)).toHaveTextContent(
         i18n.t(`settings.providerDescription.${p}`),
       )

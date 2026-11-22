@@ -358,6 +358,7 @@
     "fileMissing": "This file is no longer at that location. It may have been moved or renamed.",
     "coverUrlBlocked": "That artwork address isn't allowed, so nothing was downloaded.",
     "deezerRateLimit": "Deezer is rate-limiting searches. Wait a moment and try again.",
+    "itunesRateLimit": "Apple Music is rate-limiting searches. Wait a moment and try again.",
     "discogsRateLimit": "Discogs is rate-limiting searches. Wait a moment and try again.",
     "discogsToken": "Discogs refused your token. Check it in Settings.",
     "offline": "No connection. Check your internet and try again.",
@@ -389,6 +390,7 @@
     "bandcampPageUnreadable": "That Bandcamp page couldn't be read.",
     "bandcampUrlBlocked": "That Bandcamp address isn't allowed, so it wasn't opened.",
     "deezerUnavailable": "Deezer didn't answer properly. Try again in a moment.",
+    "itunesUnavailable": "Apple Music didn't answer properly. Try again in a moment.",
     "beatportNotConnected": "Connect your Beatport account in Settings → Sources.",
     "beatportBadCredentials": "Beatport doesn't accept that username and password. Reconnect the account in Settings.",
     "beatportUnavailable": "Beatport didn't answer properly. Try again in a moment.",
@@ -1669,6 +1671,7 @@
       "deezerMatches": "Found on Deezer",
       "beatportMatches": "Found on Beatport",
       "musicbrainzMatches": "Found on MusicBrainz",
+      "itunesMatches": "Found on Apple Music",
       "matchSources": "Where matches came from",
       "timeSaved": "You've saved around {{time}}",
       "perTrack": "≈ {{minutes}} min of manual work per track",
@@ -1789,7 +1792,7 @@
     "searchByAlbumFirst": "Search by album first",
     "searchByAlbumFirstHint": "When the tags have an album, it is searched with the artist before the track. If nothing turns up, the track is searched.",
     "searchProviders": "Search sources",
-    "searchProvidersHint": "Catalogs the editor searches. Discogs is curated, Bandcamp adds self-released material, Deezer covers commercial digital releases, Beatport brings BPM, key and mix, and MusicBrainz is an open catalog kept by its community.",
+    "searchProvidersHint": "Catalogs the editor searches. Discogs is curated, Bandcamp adds self-released material, Deezer covers commercial digital releases, Beatport brings BPM, key and mix, MusicBrainz is an open catalog kept by its community, and Apple Music brings Apple's catalog with large artwork.",
     "searchResultsSection": "Results",
     "searchMatchingSection": "Matching",
     "providerDescription": {
@@ -1797,14 +1800,16 @@
       "bandcamp": "Self-released material",
       "deezer": "Commercial digital releases",
       "beatport": "BPM, key and mix",
-      "musicbrainz": "Open catalog kept by its community"
+      "musicbrainz": "Open catalog kept by its community",
+      "itunes": "Apple's catalog, large artwork"
     },
     "provider": {
       "discogs": "Discogs",
       "bandcamp": "Bandcamp",
       "deezer": "Deezer",
       "beatport": "Beatport",
-      "musicbrainz": "MusicBrainz"
+      "musicbrainz": "MusicBrainz",
+      "itunes": "Apple Music"
     },
     "format": {
       "Vinyl": "Vinyl",
@@ -1917,7 +1922,7 @@
     "trimWhitespace": "Trim extra whitespace",
     "zeroPadTrack": "Zero-pad track number (03)",
     "fullReleaseDate": "Year with full date",
-    "fullReleaseDateHint": "Shows and saves 2020-12-01 instead of 2020 when the file or Discogs, Bandcamp, Deezer, Beatport or MusicBrainz has the whole date.",
+    "fullReleaseDateHint": "Shows and saves 2020-12-01 instead of 2020 when the file or Discogs, Bandcamp, Deezer, Beatport, MusicBrainz or Apple Music has the whole date.",
     "editorQuickButtonsTitle": "Quick buttons",
     "editorTagsTitle": "Tags",
     "editorAnalysisTitle": "Analysis",
@@ -2345,7 +2350,7 @@
     "audioBody": "Surco shows only the editor sections your workflow needs. Pick what fits. You can change it anytime in Settings.",
     "intent": {
       "metadata": "Get the metadata right",
-      "metadataBody": "Tags, artwork and matching against Discogs, Bandcamp, Deezer, Beatport and MusicBrainz. Always on: it's what Surco is for.",
+      "metadataBody": "Tags, artwork and matching against Discogs, Bandcamp, Deezer, Beatport, MusicBrainz and Apple Music. Always on: it's what Surco is for.",
       "restore": "Restore vinyl rips",
       "restoreBody": "Trim dead air and repair clicks and pops on recordings from vinyl.",
       "level": "Level the loudness",
@@ -2419,7 +2424,7 @@
       },
       "windows": {
         "q": "Is anything different on Windows?",
-        "a": "Almost everything works exactly the same: conversion, tagging, Discogs, Bandcamp, Deezer, Beatport and MusicBrainz search, quality analysis, and the rekordbox, Traktor, Serato and Engine DJ exports.\n\nThe one piece that doesn't exist on Windows is the Apple Music integration. Surco drives Apple's Music app through AppleScript, an automation bridge that only exists on macOS (the Apple Music app for Windows offers nothing equivalent), so the Apple Music destination, buttons and library badge simply don't appear.\n\nOne WAV quirk worth knowing: Surco stores WAV tags in the standard ID3 chunk, which DJ apps and tag editors like Mp3tag read fine, but Windows Explorer can't display, so a converted WAV can look untagged in a folder even though every tag is there. With MP3 or FLAC, Explorer shows them normally."
+        "a": "Almost everything works exactly the same: conversion, tagging, Discogs, Bandcamp, Deezer, Beatport, MusicBrainz and Apple Music search, quality analysis, and the rekordbox, Traktor, Serato and Engine DJ exports.\n\nThe one piece that doesn't exist on Windows is the Apple Music integration. Surco drives Apple's Music app through AppleScript, an automation bridge that only exists on macOS (the Apple Music app for Windows offers nothing equivalent), so the Apple Music destination, buttons and library badge simply don't appear.\n\nOne WAV quirk worth knowing: Surco stores WAV tags in the standard ID3 chunk, which DJ apps and tag editors like Mp3tag read fine, but Windows Explorer can't display, so a converted WAV can look untagged in a folder even though every tag is there. With MP3 or FLAC, Explorer shows them normally."
       }
     }
   },
@@ -2569,6 +2574,8 @@
     "loadBandcampRelease": "Loading Bandcamp release",
     "searchDeezer": "Searching Deezer: {{query}}",
     "loadDeezerRelease": "Loading Deezer release",
+    "searchItunes": "Searching Apple Music: {{query}}",
+    "loadItunesRelease": "Loading Apple Music release",
     "searchBeatport": "Searching Beatport: {{query}}",
     "loadBeatportRelease": "Loading Beatport release",
     "searchMusicbrainz": "Searching MusicBrainz: {{query}}",
