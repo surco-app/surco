@@ -16,6 +16,7 @@ import {
   matchTargetOf,
   type ProbedCandidate,
   type ProbeMatch,
+  rereadRemembered,
   type SearchApi,
   searchHintsFor,
   tracksToAutoMatch,
@@ -172,18 +173,26 @@ export function useAutoMatch({
     }),
     [searchProvidersRef],
   )
-  const replays = useCallback(
-    (t: TrackItem): boolean => {
+  // What a file replays: its remembered match (null when it matched nothing), or undefined
+  // when it must be probed, because its tags or providers changed or a remembered uncurated
+  // match no longer reads as 'high' (rereadRemembered). Deciding it here, before the pump
+  // batches, keeps those re-probes inside the probe slots instead of the all-at-once replays.
+  const replay = useCallback(
+    (t: TrackItem): ProbeMatch | null | undefined => {
       const kept = verdicts.current.get(t.inputPath)
       const now = probedWith(t)
-      return (
-        !!kept &&
-        kept.query === now.query &&
-        kept.title === now.title &&
-        kept.providers?.join('\n') === now.providers.join('\n')
-      )
+      if (
+        !kept ||
+        kept.query !== now.query ||
+        kept.title !== now.title ||
+        kept.providers?.join('\n') !== now.providers.join('\n')
+      ) {
+        return undefined
+      }
+      if (!kept.match) return null
+      return rereadRemembered(kept.match, matchTargetOf(t, matchCleanupRef.current))
     },
-    [probedWith],
+    [probedWith, matchCleanupRef],
   )
   // One recall for every queued file not read yet, so replaying a whole library costs a
   // single round trip instead of one per track.
@@ -209,11 +218,10 @@ export function useAutoMatch({
       // show the full trail — what was considered and rejected, not just the winner.
       const probes: ProbedCandidate[] = []
       const startedAt = performance.now()
-      const kept = verdicts.current.get(t.inputPath)
-      const replayed = replays(t)
-      let m: ProbeMatch | undefined
-      if (kept && replayed) m = kept.match ?? undefined
-      else {
+      const remembered = replay(t)
+      const replayed = remembered !== undefined
+      let m = remembered ?? undefined
+      if (!replayed) {
         m = await autoMatchRelease(
           t.query,
           matchTargetOf(t, matchCleanupRef.current),
@@ -297,7 +305,7 @@ export function useAutoMatch({
     },
     [
       searchApiAt,
-      replays,
+      replay,
       probedWith,
       updateTrack,
       completeTrackMeta,
@@ -358,8 +366,8 @@ export function useAutoMatch({
         // only the top-priority slice each pass, then re-evaluate: a row scrolled into view
         // (or a freshly selected one) jumps ahead of the rest of the crate on the very next
         // pass, instead of being stranded behind a whole batch already in flight.
-        const replay = ready.filter(replays)
-        const batch = replay.length > 0 ? replay : ready.slice(0, AUTO_MATCH_CONCURRENCY)
+        const replaying = ready.filter((t) => replay(t) !== undefined)
+        const batch = replaying.length > 0 ? replaying : ready.slice(0, AUTO_MATCH_CONCURRENCY)
         for (const t of batch) matchQueue.current.delete(t.id)
         await mapWithConcurrency(batch, Math.max(batch.length, 1), async (t) => {
           try {
@@ -400,7 +408,7 @@ export function useAutoMatch({
       // Otherwise rows remain queued whose tracks the list has not committed yet — keep the
       // progress shown and let the next enqueue, onTrackVisible or focusTrack pump again.
     }
-  }, [applyAutoMatch, readyMatchTargets, recallVerdicts, replays, resetProgress])
+  }, [applyAutoMatch, readyMatchTargets, recallVerdicts, replay, resetProgress])
 
   // Queues tracks for auto-match and kicks the drain.
   const enqueueAutoMatch = useCallback(

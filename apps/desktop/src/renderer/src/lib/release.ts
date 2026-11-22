@@ -305,11 +305,16 @@ export function confidenceTier(confidence: number): 'high' | 'review' | 'low' {
 // lead artist matches the release's fuller collaboration credit and vice versa, while a
 // partial name ("Mat") never matches a longer one ("Matador"). The glued-spelling fallback
 // compares with spaces removed — that only erases word boundaries, never letters, so
-// "Djmofly" meets "DJ Mofly" but two different names still can't fuse.
+// "Djmofly" meets "DJ Mofly" but two different names still can't fuse. Folding drops every
+// non-Latin letter, so a name that folds to nothing falls back to its plain case-and-spacing
+// reading (as labelPage's sameName does) instead of never agreeing with itself.
 function sameAct(target: string, artists: { name: string }[] | undefined): boolean {
   const releaseWords = normalize(joinArtists(artists)).split(' ').filter(Boolean)
   const targetWords = normalize(target).split(' ').filter(Boolean)
-  if (releaseWords.length === 0 || targetWords.length === 0) return false
+  if (releaseWords.length === 0 || targetWords.length === 0) {
+    const plain = (s: string): string => s.trim().replace(/\s+/g, ' ').toLowerCase()
+    return plain(target) !== '' && plain(target) === plain(joinArtists(artists))
+  }
   const releaseSet = new Set(releaseWords)
   const targetSet = new Set(targetWords)
   return (
@@ -338,7 +343,22 @@ export function corroboratedTier(
   const tier = confidenceTier(confidence)
   if (tier !== 'high') return tier
   const s = matchSignals(target, rel, track, catalogMatched)
+  if (contradictsFileArtist(target, rel, track, s)) return 'review'
   return s.durations || s.artistAgrees || s.catalogMatched ? 'high' : 'review'
+}
+
+// An uncurated source (anything but Discogs) naming an artist, with none of them the file's
+// act, is another release that merely shares a title and a length: durations or a catalog
+// number alone must not write it unattended. A candidate naming no artist (a track by
+// another act on a mixed label page) claims nothing, so it never contradicts.
+function contradictsFileArtist(
+  target: TrackMatchTarget,
+  rel: Release,
+  track: ReleaseTrack,
+  signals: MatchSignals,
+): boolean {
+  if (rel.provider === 'discogs' || !target.artist?.trim() || signals.artistAgrees) return false
+  return [...(track.artists ?? []), ...(rel.artists ?? [])].some((a) => a.name.trim() !== '')
 }
 
 // The guard's three title-independent signals, one flag each. Kept readable per signal
@@ -650,7 +670,7 @@ export function buildReleaseMeta(
     trackNumber: pos ? pos.track : base.trackNumber,
     discNumber: pos ? pos.disc : base.discNumber,
     album: rel.title,
-    albumArtist,
+    albumArtist: albumArtist || base.albumArtist || '',
     // Like every other field, the artist applies from the release: the track's own
     // artist (compilations) first, then the album artist — overwriting a wrong existing
     // value rather than keeping it. The current value stands only if Discogs has none.

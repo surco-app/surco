@@ -834,6 +834,87 @@ describe('corroboratedTier', () => {
   })
 })
 
+describe('corroboratedTier on an uncurated source whose artist contradicts the file', () => {
+  const bandcamp = (over: Partial<Release> = {}) => release({ provider: 'bandcamp', ...over })
+  const withDuration = { position: '1', title: 'Song', duration: '3:20' }
+  const file = { title: 'Song', artist: 'Da Crew', durationSec: 200 }
+
+  // Equal durations only say the cut has the same length; on an uncurated page that is the
+  // only thing a wrong release shares with the file, and it would write another act's tags.
+  it('holds a durations-only high for review when the release names another artist', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    expect(corroboratedTier(1, file, rel, withDuration, false)).toBe('review')
+  })
+
+  it('holds it when only the track names another artist', () => {
+    const rel = bandcamp()
+    const track = { ...withDuration, artists: [{ name: 'Someone Else' }] }
+    expect(corroboratedTier(1, file, rel, track, false)).toBe('review')
+  })
+
+  // After the label-page reading the file's act is the track artist, so it agrees.
+  it('keeps the high once the label page reads as the file’s artist', () => {
+    const rel = bandcamp({ artists: [{ name: 'Label Traxx' }] })
+    const track = { ...withDuration, artists: [{ name: 'Da Crew' }] }
+    expect(corroboratedTier(1, file, rel, track, false)).toBe('high')
+  })
+
+  // A track by another act on a mixed label release carries no artist: nothing contradicts.
+  it('claims no contradiction when the candidate names no artist at all', () => {
+    expect(corroboratedTier(1, file, bandcamp(), withDuration, false)).toBe('high')
+  })
+
+  // The pressing number names the release, not the act: held for a human glance, since an
+  // uncurated page may carry a recycled catalog number for an unrelated act.
+  it('holds a catalog-number match for review when the artist contradicts', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    const track = { position: '1', title: 'Song' }
+    expect(corroboratedTier(1, { title: 'Song', artist: 'Da Crew' }, rel, track, true)).toBe(
+      'review',
+    )
+  })
+
+  // A label page names the label as release artist; when its titles carry no prefix naming
+  // the file's act, applying it unattended would write the label into Artist.
+  it('holds a release whose only artist is the label for review', () => {
+    const rel = bandcamp({ artists: [{ name: 'Label Traxx' }] })
+    expect(corroboratedTier(1, file, rel, withDuration, false)).toBe('review')
+  })
+
+  it('leaves a file without an artist as it is today', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    const target = { title: 'Song', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, withDuration, false)).toBe('high')
+  })
+
+  // Discogs is curated: its garbage-artist-tag canonicalisation by duration stays.
+  it('leaves Discogs untouched', () => {
+    const rel = release({ artists: [{ name: 'Someone Else' }] })
+    expect(corroboratedTier(1, file, rel, withDuration, false)).toBe('high')
+  })
+  // Folding keeps only Latin letters and digits, so a name in another script folds to nothing
+  // on both sides; read that as "no agreement" and every Japanese or Cyrillic act's match on
+  // Bandcamp would be vetoed and then dropped by the sweep.
+  it('lets a non-Latin artist agree with the same name on the page', () => {
+    const rel = bandcamp({ artists: [{ name: '電気' }] })
+    const target = { title: '曲', artist: '電気', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, { ...withDuration, title: '曲' }, false)).toBe('high')
+  })
+
+  it('still holds a non-Latin artist that differs from the page for review', () => {
+    const rel = bandcamp({ artists: [{ name: '別人' }] })
+    const target = { title: '曲', artist: '電気', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, { ...withDuration, title: '曲' }, false)).toBe('review')
+  })
+
+  // A blank artist tag names no act, so it cannot contradict anyone: same as no tag.
+  it('leaves a whitespace-only artist tag as it is today', () => {
+    const rel = bandcamp({ artists: [{ name: 'Someone Else' }] })
+    const target = { title: 'Song', artist: '   ', durationSec: 200 }
+    expect(corroboratedTier(1, target, rel, withDuration, false)).toBe('high')
+  })
+})
+
 describe('catalogNumberMatches', () => {
   // The catalog number is the strongest signal that a file names the exact pressing, so a
   // match must survive the cosmetic ways the same number is written — spacing, dashes and

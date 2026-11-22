@@ -75,6 +75,7 @@ import { type CopyFacts, type CopyReason, type CopyVerdict, compareCopies } from
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
+import { copySentence } from '../lib/copySentence'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
@@ -1529,13 +1530,14 @@ export const Editor = memo(function Editor({
     libraryName: string
     libraryLabel: string
   }): React.ReactNode => {
-    if (!verdict || verdict.winner === 'tie' || !here || !library) return undefined
+    // A tie or the same audio leaves nothing to weigh, so the row opens nothing.
+    if (!verdict || !('reason' in verdict) || !here || !library) return undefined
     // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
     const limitedRate =
-      'reason' in verdict && verdict.reason === 'peakCount'
+      verdict.reason === 'peakCount'
         ? (verdict.winner === 'a' ? library : here).sampleRateHz
         : undefined
-    const spectrumDecided = 'reason' in verdict && SPECTRUM_REASONS.has(verdict.reason)
+    const spectrumDecided = SPECTRUM_REASONS.has(verdict.reason)
     return (
       <CopyComparison
         verdict={verdict}
@@ -1574,6 +1576,15 @@ export const Editor = memo(function Editor({
       />
     )
   }
+  const reasonFor = (
+    verdict: CopyVerdict | null,
+    here: CopyFacts | null | undefined,
+    library: CopyFacts | null | undefined,
+    libraryName: string,
+  ): string | undefined =>
+    verdict && 'reason' in verdict && here && library
+      ? copySentence(verdict, here, library, libraryName, tr, i18n.language)
+      : undefined
   const musicRow: LibraryRow | null =
     librarySource === 'appleMusic' && inLibrary === 'yes'
       ? {
@@ -1597,7 +1608,7 @@ export const Editor = memo(function Editor({
   const musicRowVerdict: LibraryVerdict | null =
     libraryCopyBetter && (copyState === null || copyState === 'measuring') ? 'library' : copyState
   const programRows = programCopies.map(
-    (copy): { row: LibraryRow; verdict: LibraryVerdict | null } => {
+    (copy): { row: LibraryRow; verdict: LibraryVerdict | null; reason?: string } => {
       const name = LIBRARY_NAME[copy.program]
       const state = copy.isThisFile
         ? undefined
@@ -1642,14 +1653,25 @@ export const Editor = memo(function Editor({
             }),
         },
         verdict: rowVerdict(state),
+        reason: reasonFor(state.verdict, state.here, state.copy, name),
       }
     },
   )
   const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows.map((p) => p.row)]
-  const libraryVerdict = aggregateLibraryVerdict([
-    ...(musicRow ? [musicRowVerdict] : []),
-    ...programRows.map((p) => p.verdict),
-  ])
+  const judged = [
+    ...(musicRow
+      ? [
+          {
+            verdict: musicRowVerdict,
+            reason: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
+          },
+        ]
+      : []),
+    ...programRows,
+  ]
+  const libraryVerdict = aggregateLibraryVerdict(judged.map((j) => j.verdict))
+  // The reason of the copy that set the section's verdict, naming its program.
+  const libraryVerdictDetail = judged.find((j) => j.verdict === libraryVerdict && j.reason)?.reason
   const showLibrary = !isMulti && libraryRows.length > 0 && !libraryHidden
 
   return (
@@ -1735,6 +1757,7 @@ export const Editor = memo(function Editor({
               open={sectionOpen.library}
               onToggle={() => setSectionOpen('library', !sectionOpen.library)}
               verdict={libraryVerdict}
+              verdictDetail={libraryVerdictDetail}
               rows={libraryRows}
             />
           )}

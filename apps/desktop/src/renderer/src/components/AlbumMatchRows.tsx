@@ -1,12 +1,13 @@
 import { ArrowRight, Check, TriangleAlert } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Release, ReleaseTrack, SearchProviderId } from '../../../shared/types'
 import { type Assignment, assignTracks, reassign } from '../lib/assign'
 import { matchTargetOf } from '../lib/autoMatch'
 import { keepCoverArg } from '../lib/coverSource'
 import { formatTime } from '../lib/duration'
+import { readLabelPage } from '../lib/labelPage'
 import {
   buildReleaseMeta,
   confidenceTier,
@@ -40,7 +41,7 @@ interface Props {
 // unsure about before applying title/track/artist to every file at once. Search lives
 // in the editor's Discogs column; this only owns the assignment, so the two never
 // reimplement the same Discogs plumbing.
-export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.Element {
+export function AlbumMatchRows({ files, release: given, onApply }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { importFields, genrePresets, fullReleaseDate, replaceLowResCover } = useAppSettings()
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -49,6 +50,16 @@ export function AlbumMatchRows({ files, release, onApply }: Props): React.JSX.El
   const [justApplied, setJustApplied] = useState(false)
   const filesRef = useRef(files)
   filesRef.current = files
+  // The editor reads the release against the focused file's artist only; a label EP by
+  // several acts must also lose each other act's "Artist - " prefix. readLabelPage only
+  // touches the tracks prefixed with the artist it is given and leaves its own output as it
+  // is, so reading once per file's artist is every file's own reading in one release.
+  const fileArtists = files.map((f) => f.meta.artist ?? '').join('\n')
+  // biome-ignore lint/correctness/useExhaustiveDependencies: fileArtists stands for the artists read from filesRef, so an unrelated file edit keeps the same release.
+  const release = useMemo(
+    () => filesRef.current.reduce((r, f) => readLabelPage(r, f.meta.artist), given),
+    [given, fileArtists],
+  )
 
   useEffect(() => {
     if (!justApplied) return

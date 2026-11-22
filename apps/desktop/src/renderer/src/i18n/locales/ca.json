@@ -1053,7 +1053,6 @@
     "copyCrestLibraryBare": "La còpia de {{loser}} és menys dinàmica que aquest fitxer.",
     "copyLimitedBare": "La còpia de {{loser}} està més limitada.",
     "copyLimitedHereBare": "Aquest fitxer està més limitat.",
-    "copySameAudio": "Les dues còpies tenen les mateixes mostres amb el mateix guany.",
     "libraryHasBetter": "Substituir igualment",
     "requiredEmpty": "Obligatori. Omple'l abans de convertir",
     "coverMixed": "Les pistes seleccionades tenen caràtules diferents",
@@ -1370,6 +1369,7 @@
     "libraryVerdictLibrary": "Hi ha una còpia millor",
     "libraryVerdictSame": "Mateixa còpia",
     "libraryVerdictMeasuring": "Comparant…",
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}",
     "libraryRowBetter": "Millor que aquest fitxer"
   },
   "fields": {

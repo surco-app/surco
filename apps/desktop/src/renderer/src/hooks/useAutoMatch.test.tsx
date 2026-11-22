@@ -225,6 +225,89 @@ describe('useAutoMatch', () => {
       expect(search).toHaveBeenCalledTimes(probed)
     })
 
+    // Verdicts saved before the label-page reading existed hold the page as it was: the label
+    // as artist and "Artist - " inside the title. Replaying them as stored would bring back the
+    // reported bug (⌘Z, then «Auto-match all» writes the label into Artist) without a new
+    // cache namespace, so the replay is read again the way a fresh probe reads it.
+    const labelTrack = (): TrackItem => ({
+      ...track('a'),
+      query: 'da crew song',
+      duration: 200,
+      meta: { title: 'Song', artist: 'Da Crew' } as TrackMetadata,
+    })
+    const labelVerdict = (artist: string, title: string) => {
+      const page = {
+        provider: 'bandcamp' as const,
+        id: 7,
+        title,
+        artists: [{ name: artist }],
+        tracklist: [{ position: '1', title, duration: '3:20' }],
+      }
+      return {
+        query: 'da crew song',
+        title: 'Song',
+        providers: ['bandcamp', 'discogs'],
+        match: {
+          release: page,
+          track: page.tracklist[0],
+          confidence: 1,
+          tier: 'high',
+          result: { provider: 'bandcamp', id: 7, title },
+          signals: { durations: true, artistAgrees: false, catalogMatched: false },
+        },
+      }
+    }
+
+    it('reads a remembered label-page verdict again so the label never lands in Artist', async () => {
+      const memory = diskMemory()
+      memory.stored.set('/m/a.wav', labelVerdict('Label Traxx', 'Da Crew - Song'))
+      const search = vi.fn().mockResolvedValue([])
+      setApi({ ...memory, search })
+      const { result, updateTrack } = setup(
+        [labelTrack()],
+        null,
+        { current: [] },
+        undefined,
+        [],
+        false,
+        ['discogs', 'bandcamp'],
+      )
+      act(() => result.current.enqueueAutoMatch([labelTrack()]))
+
+      await waitFor(() => expect(updateTrack).toHaveBeenCalled())
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({
+          autoMatched: true,
+          meta: expect.objectContaining({ artist: 'Da Crew', title: 'Song' }),
+        }),
+      )
+      expect(search).not.toHaveBeenCalled()
+    })
+
+    it('probes again a remembered verdict whose artist now contradicts the file', async () => {
+      const memory = diskMemory()
+      memory.stored.set('/m/a.wav', labelVerdict('Someone Else', 'Song'))
+      const search = vi.fn().mockResolvedValue([])
+      setApi({ ...memory, search })
+      const { result, updateTrack } = setup(
+        [labelTrack()],
+        null,
+        { current: [] },
+        undefined,
+        [],
+        false,
+        ['discogs', 'bandcamp'],
+      )
+      act(() => result.current.enqueueAutoMatch([labelTrack()]))
+
+      await waitFor(() => expect(search).toHaveBeenCalled())
+      expect(updateTrack).not.toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ autoMatched: true }),
+      )
+    })
+
     it('probes again once the tags it was probed with changed', async () => {
       const memory = diskMemory()
       setApi({ ...memory, search: vi.fn().mockResolvedValue([]) })
