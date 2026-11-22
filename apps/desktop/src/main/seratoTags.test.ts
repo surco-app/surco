@@ -184,7 +184,10 @@ describe('carrySeratoCues from a track whose older cue block disagrees', () => {
 describe('carrySeratoCues with a shift', () => {
   const carried = async (shiftMs: number) => {
     const source = audioFile('wav')
-    setSeratoMarkers(source, withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }]))
+    setSeratoMarkers(
+      source,
+      withSeratoCues(null, [{ index: 0, ms: 2000, color: 0xcc0000, name: '' }]),
+    )
     const dest = audioFile('wav')
     await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs })
     return readSeratoMarkers(dest)?.cues[0].ms
@@ -199,5 +202,51 @@ describe('carrySeratoCues with a shift', () => {
   // A plain conversion has no shift; the cues must stay exactly where Serato had them.
   it('carries the cues where they were with no shift', async () => {
     expect(await carried(0)).toBe(2000)
+  })
+})
+
+describe('carrySeratoCues from an unreadable source', () => {
+  const geobNames = (file: string) => {
+    const f = TagFile.createFromPath(file)
+    try {
+      const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+      return (id3?.frames ?? [])
+        .filter((frame) => frame.frameId.toString() === 'GEOB')
+        .map((frame) => (frame as Id3v2AttachmentFrame).description)
+    } finally {
+      f.dispose()
+    }
+  }
+  const staleDest = () =>
+    withTag(audioFile('wav'), (f) => addGeob(f, 'Serato Overview', 'AQFBQUFB'))
+
+  // An ordinary conversion whose source cannot be read still has analysis of the old audio
+  // on its output: it must come off, as it did before a replacement needed the failure.
+  it('still strips the analysis the output carries when no fallback is given', async () => {
+    const dest = staleDest()
+    expect(geobNames(dest)).toEqual(['Serato Overview'])
+
+    await carrySeratoCues(join(tmpdir(), 'surco-gone.mp3'), dest, {
+      trimMs: 0,
+      carry: true,
+      strip: true,
+      shiftMs: 0,
+    })
+
+    expect(geobNames(dest)).toEqual([])
+  })
+
+  // A replacement must say it could not read the file it replaces: its caller keeps Serato
+  // on that file instead of pointing it at a copy without the cues.
+  it('fails when a replacement cannot read the file it replaces', async () => {
+    await expect(
+      carrySeratoCues(join(tmpdir(), 'surco-gone.mp3'), staleDest(), {
+        trimMs: 0,
+        carry: true,
+        strip: true,
+        shiftMs: 0,
+        fallback: { source: audioFile('wav'), trimMs: 0 },
+      }),
+    ).rejects.toThrow()
   })
 })
