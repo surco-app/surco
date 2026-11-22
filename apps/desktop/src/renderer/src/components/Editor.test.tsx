@@ -5415,6 +5415,8 @@ describe('Editor Apple Music library section', () => {
     location = '/Music/Strobe.wav',
     hereDuration,
     libraryDuration = null,
+    resolved = false,
+    meta = { title: 'Strobe', artist: 'deadmau5' },
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -5429,6 +5431,8 @@ describe('Editor Apple Music library section', () => {
     location?: string
     hereDuration?: number
     libraryDuration?: number | null
+    resolved?: boolean
+    meta?: { title: string; artist: string }
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
     setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
@@ -5456,7 +5460,8 @@ describe('Editor Apple Music library section', () => {
         id: 'a',
         inputPath: herePath,
         duration: hereDuration,
-        meta: { title: 'Strobe', artist: 'deadmau5' },
+        inLibraryResolved: resolved,
+        meta,
       },
       'wav',
       // The comparison reads in Audio quality, so that section is mounted.
@@ -5780,6 +5785,34 @@ describe('Editor Apple Music library section', () => {
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByTestId('library-row-state')).toBeNull()
     expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+  })
+
+  // 3 Ways, as reported: the Music entry runs 35 s shorter, so it is no candidate to replace,
+  // yet the section shows it. A row the section shows must say what that copy is, so the
+  // comparison runs to describe it; replacing stays off, since that writes to the library.
+  it('describes a shown Apple Music copy too far in length to replace, without offering to replace it', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: Promise.resolve({ versionCorrelation: 0.13 }),
+      hereDuration: 483.4,
+      libraryDuration: 447.9,
+      resolved: true,
+      meta: { title: 'Real love (EXTENDED REMASTERED)', artist: '3 WAYS' },
+      index: buildLibraryIndex([
+        {
+          title: 'Real Love (Extended Version)',
+          artist: '3 Ways',
+          durationSec: 447.9,
+          persistentId: '0123456789ABCDEF',
+        },
+      ]),
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-row-state')).toHaveTextContent('Another version · 7:27'),
+    )
+    expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF')
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Replace/)
   })
 
   // One master and nothing measurable between the copies: the row says they are alike and

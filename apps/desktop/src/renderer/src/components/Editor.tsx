@@ -744,23 +744,28 @@ export const Editor = memo(function Editor({
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
-  const { inLibrary, staleMusicCopy, replaceTarget, replaceTargetPending } = useLibraryVerdict({
+  const {
+    inLibrary,
+    staleMusicCopy,
+    replaceTarget,
+    replaceTargetPending,
+    libraryCopyPath,
+    libraryCopyPending,
+  } = useLibraryVerdict({
     item,
     libraryIndex,
     librarySource,
     suggestedMeta,
     onChange,
   })
-  // The format of the copy a replacement would supersede, so the user can tell whether the
-  // file in hand is worth swapping in. Only a single, located copy has a file to read.
-  const replacedCopyPath =
-    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  const { data: replacedCopyProps } = useTrackProperties(replacedCopyPath, !!replacedCopyPath)
+  // The format of the library copy the section shows (the one a replacement would supersede
+  // when there is one), so the user can tell whether the file in hand is worth swapping in.
+  const { data: replacedCopyProps } = useTrackProperties(libraryCopyPath, !!libraryCopyPath)
   const replacedCopyFormat = replacedCopyProps
-    ? libraryCopyFormat(replacedCopyProps, replacedCopyPath, i18n.language)
+    ? libraryCopyFormat(replacedCopyProps, libraryCopyPath, i18n.language)
     : ''
   const spectrumInHand = useCachedSpectrum(item.inputPath)
-  const replacedCopySpectrum = useCachedSpectrum(replacedCopyPath)
+  const replacedCopySpectrum = useCachedSpectrum(libraryCopyPath)
   // The measured comparison of the two copies, 'a' this file and 'b' the library's. Until
   // every fact is in, the format-and-cutoff check below still answers; a copy that could not
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
@@ -768,8 +773,8 @@ export const Editor = memo(function Editor({
   // format and spectrum still decide.
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const comparedCopyPath =
-    pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
-  const musicHoldsFile = !!replacedCopyPath && !comparedCopyPath
+    pathKey(libraryCopyPath) === pathKey(item.inputPath) ? '' : libraryCopyPath
+  const musicHoldsFile = !!libraryCopyPath && !comparedCopyPath
   const hereFacts = withDuration(
     useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
     useCopyDuration(item.inputPath, !!comparedCopyPath),
@@ -790,13 +795,13 @@ export const Editor = memo(function Editor({
   const copyOpen =
     !!copyVerdict &&
     copyVerdict.winner !== 'same' &&
-    copyOpenFor === `${item.inputPath}\n${replacedCopyPath}`
+    copyOpenFor === `${item.inputPath}\n${libraryCopyPath}`
   const libraryCopyBetter = copyVerdict
     ? copyVerdict.winner === 'b'
-    : !!replacedCopyPath &&
+    : !!libraryCopyPath &&
       replaceWarning(
         {
-          ext: fileExtension(replacedCopyPath),
+          ext: fileExtension(libraryCopyPath),
           cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
           hasKnee: replacedCopySpectrum?.hasKnee,
         },
@@ -1603,7 +1608,7 @@ export const Editor = memo(function Editor({
           id: 'appleMusic',
           name: 'Apple Music',
           format: musicHoldsFile ? '' : replacedCopyFormat,
-          comparable: !musicHoldsFile && (replaceTargetPending || !!comparedCopyPath),
+          comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           verdict:
             libraryCopyBetter && (copyState === null || copyState === 'measuring')
               ? 'library'
@@ -1620,7 +1625,7 @@ export const Editor = memo(function Editor({
           }),
           comparisonOpen: copyOpen,
           onToggleComparison: () =>
-            setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`),
+            setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${libraryCopyPath}`),
         }
       : null
   const programRows = programCopies.map((copy): LibraryRow => {

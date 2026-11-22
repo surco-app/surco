@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   type AppleMusicIndex,
+  findLibraryEntry,
   isInLibrary,
   type ReplaceCandidate,
   replaceCandidate,
@@ -34,6 +35,11 @@ interface LibraryVerdict {
   // an MP3 — had no way to offer a replacement and quietly offered an add instead.
   replaceTarget: ReplaceCandidate | null
   replaceTargetPending: boolean
+  // The file of the library copy the section describes. It is the replace target's when
+  // there is one; otherwise the entry the section shows (a copy too far in length to replace,
+  // found again on title and artist alone), read only to say what it is, never replaced.
+  libraryCopyPath: string
+  libraryCopyPending: boolean
 }
 
 // Whether the destination library (Apple Music or Engine DJ) already owns this track, and
@@ -177,23 +183,46 @@ export function useLibraryVerdict({
   // stale path can never outlive the copy it described.
   const offeredId =
     replaceTarget && !('ambiguous' in replaceTarget) ? replaceTarget.persistentId : null
+  // A shown copy with no replace target still has to say what it is: the entry the section
+  // matched, looked up without the length that kept it from being a replace candidate.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
+  const describedId = useMemo(() => {
+    if (offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
+    if (inLibrary !== 'yes' || item.musicPersistentId) return null
+    const entry =
+      findLibraryEntry(libraryIndex, ownTags, ownTags.durationSec) ??
+      findLibraryEntry(libraryIndex, ownTags) ??
+      (suggestedMeta ? findLibraryEntry(libraryIndex, suggestedMeta) : null)
+    return entry?.persistentId ?? null
+  }, [
+    offeredId,
+    librarySource,
+    libraryIndex,
+    inLibrary,
+    item.musicPersistentId,
+    item.meta.title,
+    item.meta.artist,
+    item.duration,
+    suggestedMeta,
+  ])
+  const copyId = offeredId ?? describedId
   const [offeredPath, setOfferedPath] = useState<{ id: string; path: string } | null>(null)
   const [lookedUp, setLookedUp] = useState<string | null>(null)
   useEffect(() => {
-    if (!offeredId) return
+    if (!copyId) return
     let cancelled = false
     void window.api
-      .appleMusicEntryLocation(offeredId)
+      .appleMusicEntryLocation(copyId)
       .catch(() => '')
       .then((path) => {
         if (cancelled) return
-        if (path) setOfferedPath({ id: offeredId, path })
-        setLookedUp(offeredId)
+        if (path) setOfferedPath({ id: copyId, path })
+        setLookedUp(copyId)
       })
     return () => {
       cancelled = true
     }
-  }, [offeredId])
+  }, [copyId])
 
   const replaceTargetWithPath = useMemo(
     () =>
@@ -208,5 +237,7 @@ export function useLibraryVerdict({
     staleMusicCopy,
     replaceTarget: replaceTargetWithPath,
     replaceTargetPending: !!offeredId && lookedUp !== offeredId,
+    libraryCopyPath: copyId && offeredPath?.id === copyId ? offeredPath.path : '',
+    libraryCopyPending: !!copyId && lookedUp !== copyId,
   }
 }

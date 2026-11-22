@@ -75,8 +75,11 @@ export function useProgramCopies({
         if (!active[i] || !tracks) return []
         const { index, pathKeys } = lookupFor(tracks)
         if (pathKeys.has(thisKey)) return [{ program, path: inputPath, isThisFile: true }]
+        // Without the length as a last resort: a copy of another edit is still that title
+        // in that library, and its row says so (another version) instead of hiding it.
         const entry =
           findLibraryEntry(index, { title, artist }, durationSec) ??
+          findLibraryEntry(index, { title, artist }) ??
           (suggestedTitle !== undefined && suggestedArtist !== undefined
             ? findLibraryEntry(
                 index,
