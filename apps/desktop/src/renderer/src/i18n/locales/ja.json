@@ -2424,7 +2424,7 @@
       },
       "windows": {
         "q": "Windows では何か違いがありますか？",
-        "a": "ほぼすべてが同様に機能します：変換、タグ付け、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music検索、品質分析、そしてrekordbox、Traktor、Serato、Engine DJへのエクスポート。\n\nWindowsに存在しない唯一の機能はApple Music統合です。SurcoはAppleScriptを通じてAppleのMusicアプリを操作しますが、これはmacOSにのみ存在する自動化ブリッジであり（Windows版のApple Musicアプリには同等のものがありません）、Apple Musicの保存先やボタン、ライブラリバッジは表示されません。\n\n知っておくべきWAVの癖：SurcoはWAVタグを標準のID3チャンクに保存します。DJアプリやMp3tagなどのタグエディタは正常に読み取れますが、Windowsエクスプローラーでは表示できないため、変換されたWAVはフォルダー内でタグなしに見えることがあります。実際にはすべてのタグが存在しています。MP3やFLACではエクスプローラーが正常に表示します。"
+        "a": "ほぼすべてが同様に機能します：変換、タグ付け、Discogs、Bandcamp、Deezer、Beatport、MusicBrainz、Apple Music検索、品質分析、そしてrekordbox、Traktor、Serato、Engine DJへのエクスポート。\n\nApple Musicのカタログ検索も利用できます。Windowsに存在しない唯一の機能はMusicアプリの操作です。SurcoはAppleScriptを通じてAppleのMusicアプリを操作しますが、これはmacOSにのみ存在する自動化ブリッジであり（Windows版のApple Musicアプリには同等のものがありません）、Apple Musicの保存先やボタン、ライブラリバッジは表示されません。\n\n知っておくべきWAVの癖：SurcoはWAVタグを標準のID3チャンクに保存します。DJアプリやMp3tagなどのタグエディタは正常に読み取れますが、Windowsエクスプローラーでは表示できないため、変換されたWAVはフォルダー内でタグなしに見えることがあります。実際にはすべてのタグが存在しています。MP3やFLACではエクスプローラーが正常に表示します。"
       }
     }
   },
