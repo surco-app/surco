@@ -70,6 +70,20 @@ describe('LibrarySection', () => {
     )
   })
 
+  // Japanese closes a sentence with 。, so the verdict and its reason join the way each
+  // language punctuates, not with an ASCII period glued in by code.
+  it('joins the verdict and its reason with the language own full stop', async () => {
+    await i18n.changeLanguage('ja')
+    try {
+      mount({ verdict: 'library', verdictDetail: '理由' })
+      expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
+        'より良いコピーがあります。理由',
+      )
+    } finally {
+      await i18n.changeLanguage('es')
+    }
+  })
+
   it('shows no verdict until there is one', () => {
     mount({ verdict: null })
     expect(screen.queryByTestId('library-verdict')).not.toBeInTheDocument()

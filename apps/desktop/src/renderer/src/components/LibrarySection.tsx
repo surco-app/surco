@@ -76,7 +76,7 @@ export function LibrarySection({
   const glyph = verdict ? verdictGlyph[verdict] : null
   const verdictLabel = glyph
     ? verdictDetail
-      ? `${tr(glyph.label)}. ${verdictDetail}`
+      ? tr('editor.libraryVerdictWithReason', { verdict: tr(glyph.label), reason: verdictDetail })
       : tr(glyph.label)
     : ''
   // Same audio leaves nothing to weigh, so the row opens nothing.

@@ -1368,7 +1368,8 @@
     "libraryVerdictHere": "Questa è migliore",
     "libraryVerdictLibrary": "C'è una copia migliore",
     "libraryVerdictSame": "Stessa copia",
-    "libraryVerdictMeasuring": "Confronto…"
+    "libraryVerdictMeasuring": "Confronto…",
+    "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },
   "fields": {
     "groupIdentity": "Di base",
