@@ -64,10 +64,12 @@ import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import {
   type BatchPick,
+  batchFormats,
   batchSkips,
   batchWritesTagsOnly,
   convertGate,
   leftOutNote,
+  offersSourceFormat,
 } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
@@ -1175,6 +1177,13 @@ export const Editor = memo(function Editor({
       ),
     [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
   )
+  const batchWrites = useMemo(
+    () =>
+      batchFormats(batchReady, batchPick, (t) =>
+        jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
+      ),
+    [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
+  )
   const addsToMusic =
     !isMulti &&
     picked.addToAppleMusic &&
@@ -2171,7 +2180,15 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
+            multiGate
+              ? multiGate.missing.fields.length
+                ? missingSummary(
+                    multiGate.missing.fields.map((key) => tr(`fields.${key}`)),
+                    tr,
+                  )
+                : undefined
+              : [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') ||
+                undefined
           }
           leftOut={leftOut ?? undefined}
           onBlockedPress={() => {
@@ -2181,8 +2198,8 @@ export const Editor = memo(function Editor({
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           batchTagsOnly={batchTagsOnly}
-          batchFormatByHand={batchFormatPicked}
-          batchDestinationByHand={destinationPicked}
+          batchFormats={batchWrites}
+          offerSource={offersSourceFormat(multiTracks, formatPick)}
           clearAfterBatch={clearListAfterConvert}
           onToggleClearAfterBatch={onToggleClearList}
           sameFormat={formatMatchesInput(format, item.inputPath)}
@@ -2196,24 +2213,6 @@ export const Editor = memo(function Editor({
           normalizeCfg={normalizeCfg}
           onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
-            // A second press on the format picked for a batch lets go of it: the batch is
-            // back on what Settings say, the only way to undo a pick made by mistake.
-            if (isMulti && batchFormatPicked && f === formatPick) {
-              setFormatPick(outputFormat)
-              setBatchFormatPicked(false)
-              formatByHand.current = false
-              setFormat(
-                resolveJobFormat(
-                  outputFormat,
-                  item.inputPath,
-                  'aiff',
-                  keepMp3Sources,
-                  item.fromAppleMusic,
-                ),
-              )
-              onFormatChange?.(null)
-              return
-            }
             setFormatPick(f)
             setBatchFormatPicked(true)
             // 'source' is only ever offered in the multi menu, so a real pick always

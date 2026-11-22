@@ -29,7 +29,6 @@ import { gradedExt, isLosslessContainer, isLossyContainer } from '../lib/quality
 import type { SelectionStatus } from '../lib/selectionStatus'
 import { trackQuality } from '../lib/triage'
 import type { TrackItem } from '../types'
-import { BatchPlan } from './BatchPlan'
 import { BatchRun } from './BatchRun'
 import { DoneMenu } from './DoneMenu'
 import { ExportButton } from './ExportButton'
@@ -87,8 +86,10 @@ interface ConvertFooterProps {
   willEditInPlace: boolean
   tagsOnly: boolean
   batchTagsOnly?: boolean
-  batchFormatByHand?: boolean
-  batchDestinationByHand?: boolean
+  // The formats the ready tracks of a selection resolve to, read off the batch plan: more
+  // than one and the button says on hover which, since the dropdown only shows the pick.
+  batchFormats?: OutputFormat[]
+  offerSource?: boolean
   clearAfterBatch?: boolean
   onToggleClearAfterBatch?: () => void
   sameFormat: boolean
@@ -164,8 +165,8 @@ export function ConvertFooter({
   willEditInPlace,
   tagsOnly,
   batchTagsOnly,
-  batchFormatByHand,
-  batchDestinationByHand,
+  batchFormats = [],
+  offerSource,
   clearAfterBatch,
   onToggleClearAfterBatch,
   sameFormat,
@@ -318,6 +319,23 @@ export function ConvertFooter({
     !musicAdded &&
     (musicExt !== 'flac' || hasMusicCopy) &&
     (!inMusicLibraryOnly || hasMusicCopy)
+  // A selection's button counts what a click converts out of what is selected.
+  const batchCount = readyCount ?? selectedCount
+  const batchSome = batchCount < selectedCount
+  const batchLabel = !isMulti
+    ? undefined
+    : batchSome
+      ? tr(batchTagsOnly ? 'header.updateSomeSelected' : 'header.convertSomeSelected', {
+          ready: batchCount,
+          total: selectedCount,
+        })
+      : tr(batchTagsOnly ? 'header.updateSelected' : 'header.convertSelected', {
+          count: batchCount,
+        })
+  const batchTip =
+    isMulti && batchFormats.length > 1
+      ? batchFormats.map((f) => f.toUpperCase()).join(' · ')
+      : undefined
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -384,7 +402,7 @@ export function ConvertFooter({
     refocus.current = false
     footerRef.current
       ?.querySelector<HTMLButtonElement>(
-        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"], [data-testid="batch-convert"], [data-testid="batch-run-cancel"]',
+        '[data-testid="process-btn"], [data-testid="convert-update-anyway"], [data-testid="done-more"], [data-testid="batch-run-cancel"]',
       )
       ?.focus()
   })
@@ -730,54 +748,50 @@ export function ConvertFooter({
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
               </p>
             )}
-            {isMulti ? (
-              <BatchPlan
-                count={readyCount ?? selectedCount}
-                total={selectedCount}
-                onConvert={onConvertSelection}
-                convertHint={convertHint}
-                tagsOnly={batchTagsOnly}
-                formatByHand={batchFormatByHand}
-                destinationByHand={batchDestinationByHand}
-                clearAfter={clearAfterBatch}
-                onToggleClearAfter={onToggleClearAfterBatch}
-                format={format}
-                destination={destination}
-                destinations={destinations}
-                leftOut={leftOut}
-                onBlockedPress={onBlockedPress}
-                onSelectFormat={onSelectFormat}
-                onSelectDestination={onSelectDestination}
-              />
-            ) : (
-              <ExportButton
-                status={isMulti ? 'idle' : item.status}
-                stage={isMulti ? undefined : item.stage}
-                stale={!isMulti && stale}
-                replaces={!isMulti && replaces}
-                libraryBetter={!isMulti && libraryBetter}
-                done={!isMulti && done}
-                outputFormat={format}
-                exportedFormat={isMulti ? null : exportedFormat}
-                incomplete={incomplete}
-                incompleteReason={incompleteReason}
-                blockedLabel={incompleteSummary}
-                onBlockedPress={onBlockedPress}
-                inPlace={!isMulti && willEditInPlace}
-                tagsOnly={tagsOnly}
-                sameFormat={sameFormat}
-                addsToMusic={!isMulti && addsToMusic}
-                upToDate={upToDate}
-                narrow={narrow}
-                destination={destination}
-                destinations={destinations}
-                count={isMulti ? selectedCount : undefined}
-                onProcess={onProcess}
-                onCancel={onCancel}
-                onSelectFormat={onSelectFormat}
-                onSelectDestination={onSelectDestination}
-              />
+            {isMulti && leftOut && (
+              <button
+                type="button"
+                data-testid="batch-plan-blocked"
+                onClick={onBlockedPress}
+                className="press flex w-full items-center gap-1.5 text-left text-xs text-fg-dim hover:text-fg"
+              >
+                <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-warn" />
+                {leftOut}
+              </button>
             )}
+            <ExportButton
+              status={isMulti ? 'idle' : item.status}
+              stage={isMulti ? undefined : item.stage}
+              stale={!isMulti && stale}
+              replaces={!isMulti && replaces}
+              libraryBetter={!isMulti && libraryBetter}
+              done={!isMulti && done}
+              outputFormat={format}
+              exportedFormat={isMulti ? null : exportedFormat}
+              incomplete={isMulti ? batchCount === 0 : incomplete}
+              incompleteReason={isMulti ? leftOut : incompleteReason}
+              blockedLabel={incompleteSummary}
+              onBlockedPress={onBlockedPress}
+              inPlace={!isMulti && willEditInPlace}
+              tagsOnly={tagsOnly}
+              sameFormat={sameFormat}
+              addsToMusic={!isMulti && addsToMusic}
+              upToDate={upToDate}
+              narrow={narrow}
+              destination={destination}
+              destinations={destinations}
+              count={isMulti ? selectedCount : undefined}
+              label={batchLabel}
+              hint={isMulti ? convertHint : undefined}
+              tip={batchTip}
+              offerSource={isMulti && !!offerSource}
+              clearAfter={clearAfterBatch}
+              onToggleClearAfter={isMulti ? onToggleClearAfterBatch : undefined}
+              onProcess={isMulti ? () => onConvertSelection?.() : onProcess}
+              onCancel={onCancel}
+              onSelectFormat={onSelectFormat}
+              onSelectDestination={onSelectDestination}
+            />
           </>
         )}
       </div>

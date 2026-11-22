@@ -52,11 +52,9 @@ export function exportButtonLabel(state: ExportLabelState): {
   if (state.sameFormat && !state.tagsOnly && (state.inPlace || state.stale))
     return { key: 'editor.updateAudio' }
   if (state.done) return { key: 'editor.exportAgain' }
+  // The chosen format is shown on the button's dropdown half, so these say only the verb.
   if (state.replaces) {
-    return {
-      key: state.libraryBetter ? 'editor.libraryHasBetter' : 'editor.replaceAction',
-      options: { format: state.format },
-    }
+    return { key: state.libraryBetter ? 'editor.libraryHasBetter' : 'editor.replaceAction' }
   }
-  return { key: 'editor.convertAction', options: { format: state.format } }
+  return { key: 'editor.convertAction' }
 }

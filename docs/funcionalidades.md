@@ -69,25 +69,28 @@ Desde v1.26.0, si un campo obligatorio vacío deja pistas fuera del lote, el pie
 editor dice cuántas y qué campos les faltan (`header.leftOutMissing`, `lib/batch.ts:117`).
 
 **Un solo botón de convertir, el del pie del editor.** La barra superior ya no lleva botón
-de convertir (`Toolbar.tsx`). Con varias pistas seleccionadas, el pie muestra desde v1.38.0 un
-control segmentado con los seis formatos («Origen», AIFF, ALAC, MP3, WAV, FLAC), que se eligen
-con un clic, y a su derecha el menú de destino con el nombre del destino elegido
-(`process-format-*`, `batch-destination-toggle`, `BatchPlan.tsx`). Ya no hay frase de resumen
-«N pistas → formato · destino». Debajo va «Convertir N seleccionadas», o «Convertir N de M
-seleccionadas» si alguna se queda fuera (`batch-convert`; `header.convertSelected`,
-`header.convertSomeSelected`). El botón dice «Actualizar N seleccionadas» solo cuando el lote
+de convertir (`Toolbar.tsx`). Con varias pistas seleccionadas, el pie usa el mismo botón con
+flecha que una pista (`ExportButton.tsx`, `process-btn` y `process-format-toggle`): la flecha
+abre el mismo menú de Formato y Destino (`FormatDestinationMenu.tsx`), y elegir ahí cuenta como
+elegido a mano. «Igual que el original» solo aparece si los ficheros seleccionados tienen más de
+un formato, o si ya es el formato en uso (`offersSourceFormat`, `lib/batch.ts`). Con una pista
+y con una selección, la parte de la flecha muestra el formato elegido («AIFF ⌄», «Original ⌄»
+para «Igual que el original», `process-format-current`) con un ancho fijo, el del nombre más
+largo en el idioma activo, y la parte principal dice solo el verbo: «Convertir», «Sustituir»,
+«Actualizar»… con una pista, «Convertir N seleccionadas» o «Convertir N de M seleccionadas»
+con una selección (`header.convertSelected`, `header.convertSomeSelected`). Si las pistas
+listas acaban en más de un formato (MP3 conservados, «Igual que el original» sobre una
+mezcla), el botón dice al pasar el ratón cuáles escribe, «AIFF · MP3» (`batchFormats`). El botón dice «Actualizar N seleccionadas» solo cuando el lote
 reescribe etiquetas sin tocar el audio, y lo calcula pista a pista con las mismas reglas que
 la conversión (`batchWritesTagsOnly`, `lib/batch.ts`): el formato en que acaba de verdad cada
-fichero, adónde va de verdad y si se escribe donde está. Eso incluye que un formato solo
-resaltado por ser el de Ajustes no es un formato elegido a mano: con «Conservar los MP3 y M4A»
-los MP3 se quedan como están, y las pistas abiertas desde una playlist de Apple Music conservan
-su formato, hasta que se pulsa un formato. El selector los distingue sin texto: el formato de
-Ajustes va en contorno y el elegido a mano relleno, y pulsar otra vez el elegido lo suelta y
-vuelve al de Ajustes. El destino sigue la misma regla, tenue si viene de Ajustes y en el color
-de acento si se eligió en su menú. Al final de esa línea, solo en la pestaña de ficheros, un interruptor
-de icono sin texto enciende y apaga «Vaciar la lista al terminar un lote» (`batch-clear-toggle`):
-es el mismo ajuste de Ajustes › Destino, se guarda al pulsarlo y va en una cápsula igual a la
-del selector, vacía apagado y rellena encendido. Con destino «Editar el original» o Apple Music el
+fichero, adónde va de verdad y si se escribe donde está. Eso incluye que el formato de Ajustes
+no es un formato elegido a mano: con «Conservar los MP3 y M4A» los MP3 se quedan como están, y
+las pistas abiertas desde una playlist de Apple Music conservan su formato, hasta que se elige
+un formato en el menú. Sin pistas listas el botón lleva la misma cara bloqueada que una pista
+con campos obligatorios vacíos y pulsarlo lleva al primer campo que falta. Solo en la pestaña
+de ficheros, la última opción del menú, separada, enciende y apaga «Vaciar la lista al terminar
+un lote» (`process-clear-after`): es el mismo ajuste de Ajustes › Destino, se guarda al pulsarlo
+y se ve marcada mientras está encendida. Con destino «Editar el original» o Apple Music el
 fichero se etiqueta en su sitio; con «Junto al original» siempre hay copia; con la carpeta de
 salida depende de si alguna biblioteca tiene el fichero, y el pie se lo pregunta al proceso
 principal (hasta 200 ficheros sueltos; por encima cuentan como copia). El destino que muestra

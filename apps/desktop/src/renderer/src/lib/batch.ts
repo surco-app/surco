@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 import { type AudioProcessing, processesAudio } from '../../../shared/audioProcessing'
 import { READ_ONLY_PROGRAMS, type ReadOnlyProgram } from '../../../shared/djProgram'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import {
   batchKeepMp3,
   editsInPlace,
@@ -242,6 +243,35 @@ export function batchWritesTagsOnly(
     if (!inPlace || !plan.sameFormat || processesAudio(audio)) return false
   }
   return written > 0
+}
+
+// The formats the run writes, each once, read off the same plan the run follows: the
+// button names a single format only when this holds exactly one.
+export function batchFormats(
+  ready: TrackItem[],
+  pick: BatchPick,
+  audioOf: (track: TrackItem) => AudioProcessing,
+): OutputFormat[] {
+  const formats = new Set<OutputFormat>()
+  for (const track of ready) {
+    const plan = planOf(track, pick, audioOf(track))
+    if (plan) formats.add(plan.format)
+  }
+  return [...formats]
+}
+
+// A file's own format, .aif and .aiff alike; one no output format names keeps its extension.
+function inputFormatOf(path: string): string {
+  return (
+    OUTPUT_FORMATS.find((f) => formatMatchesInput(f, path)) ??
+    path.slice(path.lastIndexOf('.')).toLowerCase()
+  )
+}
+
+// "Same as source" is offered only where it differs from a real format, over files of more
+// than one format, or while it is the format in use, so the pick in effect always shows.
+export function offersSourceFormat(tracks: TrackItem[], format: FormatSetting): boolean {
+  return format === 'source' || new Set(tracks.map((t) => inputFormatOf(t.inputPath))).size > 1
 }
 
 export function leavesListAfterBatch(track: TrackItem): boolean {

@@ -12,6 +12,9 @@ export const SPLIT_BODY_READY =
   'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-40'
 export const SPLIT_TOGGLE =
   'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] disabled:pointer-events-none'
+// The same toggle sized by the chosen format it shows instead of a fixed chevron width.
+export const SPLIT_TOGGLE_FORMAT =
+  'press relative flex items-center justify-center gap-1 overflow-hidden rounded-r-lg border-l bg-[var(--color-panel-2)] px-3 disabled:pointer-events-none'
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET = 'border-[var(--color-line-strong)] text-fg-faint'
 export const SPLIT_TOGGLE_READY =

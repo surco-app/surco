@@ -1274,7 +1274,7 @@ describe('ConvertFooter height', () => {
       }),
       'process-btn',
     ],
-    ['a selection to convert', cloneElement(footer(false), selection), 'batch-convert'],
+    ['a selection to convert', cloneElement(footer(false), selection), 'process-btn'],
     [
       'a batch running',
       cloneElement(footer(false), { batchRun: { done: 1, total: 3 }, onCancelBatch: vi.fn() }),
@@ -1305,147 +1305,166 @@ describe('ConvertFooter height', () => {
   )
 })
 
-describe('ConvertFooter batch format and destination', () => {
+describe('ConvertFooter selection split button', () => {
   function plan(over: Record<string, unknown> = {}): React.JSX.Element {
     return cloneElement(footer(false), {
       isMulti: true,
       selectedCount: 2,
+      readyCount: 2,
       status: { ...status(false), superseded: [] },
+      onConvertSelection: vi.fn(),
       ...over,
     })
   }
-
-  // Switching between MP3 for the phone and FLAC for home meant opening a menu each time,
-  // with the current format only named in a sentence above it.
-  it('offers every format one press away and marks the one in use', () => {
-    const onSelectFormat = vi.fn()
-    render(plan({ onSelectFormat }))
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
-    expect(screen.getByTestId('process-format-source')).toHaveAttribute('data-state', 'off')
-    fireEvent.click(screen.getByTestId('process-format-mp3'))
-    expect(onSelectFormat).toHaveBeenCalledWith('mp3')
-  })
-
-  it('names the destination on its own menu and picks another from it', () => {
-    const onSelectDestination = vi.fn()
-    render(plan({ destinations: ['beside', 'overwrite'] as Destination[], onSelectDestination }))
-    const toggle = screen.getByTestId('batch-destination-toggle')
-    expect(toggle).toHaveTextContent(i18n.t('settings.destinations.beside'))
-    fireEvent.click(toggle)
-    expect(screen.queryByTestId('process-format-toggle')).toBeNull()
-    fireEvent.click(screen.getByTestId('process-destination-overwrite'))
-    expect(onSelectDestination).toHaveBeenCalledWith('overwrite')
-  })
-
-  // A format that is only the Settings default and one picked by hand do not do the same
-  // to MP3s kept as they are or to tracks from an Apple Music playlist. Painted alike, a
-  // press on the highlighted format changed what the batch did with nothing to show for it.
-  it('paints the Settings format apart from one picked by hand', () => {
-    const { rerender } = render(plan())
-    const aiff = (): HTMLElement => screen.getByTestId('process-format-aiff')
-    expect(aiff()).toHaveAttribute('data-state', 'default')
-    expect(aiff()).toHaveAttribute('aria-pressed', 'false')
-    expect(aiff()).toHaveAttribute('aria-current', 'true')
-    rerender(plan({ batchFormatByHand: true }))
-    expect(aiff()).toHaveAttribute('data-state', 'picked')
-    expect(aiff()).toHaveAttribute('aria-pressed', 'true')
-    expect(aiff()).not.toHaveAttribute('aria-current')
-  })
-
-  it('paints the Settings destination apart from one picked by hand', () => {
-    const { rerender } = render(plan())
-    expect(screen.getByTestId('batch-destination-toggle')).toHaveAttribute('data-state', 'default')
-    rerender(plan({ batchDestinationByHand: true }))
-    expect(screen.getByTestId('batch-destination-toggle')).toHaveAttribute('data-state', 'picked')
-  })
-
-  // The setting lived only in Settings, across the app from the button that starts the
-  // batch: someone clearing the list after every album had to cross the window to switch it.
-  it('switches clearing the list after a batch from the footer, with no label of its own', () => {
-    const onToggleClearAfterBatch = vi.fn()
-    const { rerender } = render(plan({ clearAfterBatch: false, onToggleClearAfterBatch }))
-    const toggle = (): HTMLElement => screen.getByTestId('batch-clear-toggle')
-    expect(toggle()).toHaveAttribute('role', 'switch')
-    expect(toggle()).toHaveAttribute('aria-checked', 'false')
-    expect(toggle()).toHaveAccessibleName(i18n.t('settings.clearListAfterConvert'))
-    expect(toggle()).toHaveTextContent('')
-    fireEvent.click(toggle())
-    expect(onToggleClearAfterBatch).toHaveBeenCalledOnce()
-    rerender(plan({ clearAfterBatch: true, onToggleClearAfterBatch }))
-    expect(toggle()).toHaveAttribute('aria-checked', 'true')
-  })
-
-  // The setting only acts on the working list, so a library tab must not offer a switch
-  // that would do nothing there.
-  it('offers no switch where clearing does not apply', () => {
-    render(plan())
-    expect(screen.queryByTestId('batch-clear-toggle')).toBeNull()
-  })
-
-  // The sentence repeated what the selector, the menu and the button already say, and
-  // was the line the selector takes the place of: the footer must not grow.
-  it('carries no summary sentence', () => {
-    render(plan())
-    expect(screen.queryByTestId('batch-plan')).toBeNull()
-  })
-})
-
-describe('ConvertFooter convert of a selection', () => {
-  function multi(over: Record<string, unknown> = {}): React.JSX.Element {
-    return cloneElement(footer(false), {
-      isMulti: true,
-      selectedCount: 3,
-      readyCount: 3,
-      status: { ...status(false), superseded: [] },
-      ...over,
-    })
+  const openMenu = (): void => {
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
   }
 
-  it('converts the selection from the footer, the one convert button left, naming how many', () => {
-    const onConvertSelection = vi.fn()
-    const onProcess = vi.fn()
-    render(multi({ onConvertSelection, onProcess }))
-    const button = screen.getByTestId('batch-convert')
-    expect(button).toHaveTextContent(i18n.t('header.convertSelected', { count: 3 }))
-    fireEvent.click(button)
-    expect(onConvertSelection).toHaveBeenCalledOnce()
-    expect(onProcess).not.toHaveBeenCalled()
-  })
-
-  it('says it updates, not converts, when the batch only rewrites tags', () => {
-    render(multi({ batchTagsOnly: true, onConvertSelection: vi.fn() }))
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
-      i18n.t('header.updateSelected', { count: 3 }),
+  // One track and a selection drew two different footers for one job: a button with its
+  // menu for one, a row of pills, a loose destination and a switch for several.
+  it('converts a selection from the same split button as one track, the format on its dropdown', () => {
+    render(plan({ batchFormats: ['aiff'] }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
     )
-    expect(screen.getByTestId('batch-convert')).not.toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 3 }),
-    )
-  })
-
-  it('says out of how many it updates when a tags-only batch leaves some out', () => {
-    render(multi({ batchTagsOnly: true, readyCount: 2, onConvertSelection: vi.fn() }))
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
-      i18n.t('header.updateSomeSelected', { ready: 2, total: 3 }),
-    )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    openMenu()
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('role', 'menuitemradio')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-destination-beside')).toBeInTheDocument()
+    expect(screen.queryByTestId('batch-destination-toggle')).toBeNull()
   })
 
   it('says out of how many it converts when the plan leaves some out', () => {
-    render(multi({ readyCount: 2, onConvertSelection: vi.fn() }))
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+    render(plan({ batchFormats: ['aiff'], selectedCount: 3 }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSomeSelected', { ready: 2, total: 3 }),
     )
   })
 
-  it('shows the convert-all shortcut on hover, as the toolbar button did', () => {
-    render(multi({ onConvertSelection: vi.fn(), convertHint: '⌘⇧⏎' }))
-    expect(hoverTooltip(screen.getByTestId('batch-convert'))).toBe(
-      `${i18n.t('header.convertSelected', { count: 3 })}⌘⇧⏎`,
+  // Kept MP3s or "Same as source" over a mix write more than one format: the dropdown still
+  // shows the pick, so the button says on hover what the run really writes.
+  it('says on hover which formats a selection writes when it writes more than one', () => {
+    render(plan({ batchFormats: ['aiff', 'mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    expect(hoverTooltip(screen.getByTestId('process-btn'))).toContain('AIFF · MP3')
+  })
+
+  it('says it updates, not converts, when the batch only rewrites tags', () => {
+    render(plan({ batchFormats: ['flac'], batchTagsOnly: true, selectedCount: 3, readyCount: 3 }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      i18n.t('header.updateSelected', { count: 3 }),
     )
   })
 
-  it('stays in place but greyed when nothing in the selection can be converted', () => {
-    render(multi({ readyCount: 0, onConvertSelection: vi.fn() }))
-    expect(screen.getByTestId('batch-convert')).toBeDisabled()
+  it('says out of how many it updates when a tags-only batch leaves some out', () => {
+    render(plan({ batchTagsOnly: true, selectedCount: 3 }))
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      i18n.t('header.updateSomeSelected', { ready: 2, total: 3 }),
+    )
+  })
+
+  it('converts the selection, not the open track, from the button', () => {
+    const onConvertSelection = vi.fn()
+    const onProcess = vi.fn()
+    render(plan({ onConvertSelection, onProcess }))
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onConvertSelection).toHaveBeenCalledOnce()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  it('picks the format and the destination from the menu', () => {
+    const onSelectFormat = vi.fn()
+    const onSelectDestination = vi.fn()
+    render(
+      plan({
+        destinations: ['beside', 'overwrite'] as Destination[],
+        onSelectFormat,
+        onSelectDestination,
+      }),
+    )
+    openMenu()
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
+    expect(onSelectFormat).toHaveBeenCalledWith('mp3')
+    openMenu()
+    fireEvent.click(screen.getByTestId('process-destination-overwrite'))
+    expect(onSelectDestination).toHaveBeenCalledWith('overwrite')
+  })
+
+  it('offers Same as source only when the editor says the selection has a use for it', () => {
+    const { rerender } = render(plan({ offerSource: false }))
+    openMenu()
+    expect(screen.queryByTestId('process-format-source')).toBeNull()
+    rerender(plan({ offerSource: true }))
+    expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
+  })
+
+  // The setting lived only in Settings, across the app from the button that starts the
+  // batch; it now sits last in the button's own menu, marked while it is on.
+  it('switches clearing the list after a batch from the menu, marked while it is on', () => {
+    const onToggleClearAfterBatch = vi.fn()
+    const { rerender } = render(plan({ clearAfterBatch: false, onToggleClearAfterBatch }))
+    openMenu()
+    const item = (): HTMLElement => screen.getByTestId('process-clear-after')
+    expect(item()).toHaveAttribute('role', 'menuitemcheckbox')
+    expect(item()).toHaveAttribute('aria-checked', 'false')
+    expect(item()).toHaveTextContent(i18n.t('settings.clearListAfterConvert'))
+    fireEvent.click(item())
+    expect(onToggleClearAfterBatch).toHaveBeenCalledOnce()
+    rerender(plan({ clearAfterBatch: true, onToggleClearAfterBatch }))
+    expect(item()).toHaveAttribute('aria-checked', 'true')
+  })
+
+  // The setting only acts on the working list, so a library tab must not offer an option
+  // that would do nothing there, and one track never offers it.
+  it('offers no clearing where it does not apply', () => {
+    render(plan())
+    openMenu()
+    expect(screen.queryByTestId('process-clear-after')).toBeNull()
+    cleanup()
+    render(cloneElement(footer(false), { onToggleClearAfterBatch: vi.fn() }))
+    openMenu()
+    expect(screen.queryByTestId('process-clear-after')).toBeNull()
+  })
+
+  it('shows the convert-all shortcut on hover, as the toolbar button did', () => {
+    render(plan({ convertHint: '⌘⇧⏎' }))
+    expect(hoverTooltip(screen.getByTestId('process-btn'))).toBe(
+      `${i18n.t('header.convertSelected', { count: 2 })}⌘⇧⏎`,
+    )
+  })
+
+  // With nothing ready the button wore a greyed "Convert 0 of 2" that did nothing; one
+  // track in the same spot names what is missing and takes the DJ to it.
+  it('wears the blocked face of one track when nothing is ready, and a press goes to the field', () => {
+    const onBlockedPress = vi.fn()
+    const onConvertSelection = vi.fn()
+    render(
+      plan({
+        readyCount: 0,
+        incompleteSummary: 'Falta Artista',
+        leftOut: '2 fuera',
+        onBlockedPress,
+        onConvertSelection,
+      }),
+    )
+    expect(screen.getByTestId('process-blocked-face')).toHaveTextContent('Falta Artista')
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent('2 fuera')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onBlockedPress).toHaveBeenCalledOnce()
+    expect(onConvertSelection).not.toHaveBeenCalled()
+  })
+
+  // A format or destination can be what leaves every track out ("Same as source" over
+  // files with no format of their own): the menu that undoes it must stay reachable.
+  it('keeps the menu reachable while nothing is ready', () => {
+    render(plan({ readyCount: 0 }))
+    expect(screen.getByTestId('process-format-toggle')).toBeEnabled()
+  })
+
+  it('carries no summary sentence', () => {
+    render(plan())
+    expect(screen.queryByTestId('batch-plan')).toBeNull()
   })
 })
 
@@ -1472,7 +1491,6 @@ describe('ConvertFooter running batch', () => {
       i18n.t('header.convertingCount', run),
     )
     expect(screen.queryByTestId('process-btn')).toBeNull()
-    expect(screen.queryByTestId('batch-convert')).toBeNull()
     expect(screen.queryByTestId('done-more')).toBeNull()
     const cancel = screen.getByTestId('batch-run-cancel')
     expect(cancel).toHaveTextContent(i18n.t('common.cancel'))
@@ -1510,11 +1528,11 @@ describe('ConvertFooter focus across a batch', () => {
 
   it('moves focus from Convert to Cancel when the batch starts, and back when it ends', () => {
     const { rerender } = render(selection)
-    screen.getByTestId('batch-convert').focus()
+    screen.getByTestId('process-btn').focus()
     rerender(cloneElement(selection, { batchRun: run }))
     expect(document.activeElement).toBe(screen.getByTestId('batch-run-cancel'))
     rerender(cloneElement(selection, { batchRun: null }))
-    expect(document.activeElement).toBe(screen.getByTestId('batch-convert'))
+    expect(document.activeElement).toBe(screen.getByTestId('process-btn'))
   })
 
   it('hands focus back to the track convert button when a batch ends over one track', () => {

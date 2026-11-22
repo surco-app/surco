@@ -214,6 +214,29 @@ describe('ExportButton', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 
+  // The format hid behind a bare chevron and the verb carried it ("Convert to AIFF"): the
+  // dropdown half now shows what is chosen, and only the verb is left on the main half.
+  it('says the verb on the main half and the chosen format on the dropdown half', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    expect(screen.getByTestId('process-format-toggle')).toHaveAccessibleName(
+      'Format and destination, AIFF',
+    )
+  })
+
+  // A width that followed the text made the verb half jump each time the format changed.
+  it('keeps the dropdown the same size whatever format is chosen', () => {
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
+    const sized = screen.getByTestId('process-format-toggle').textContent
+    rerender(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('FLAC')
+    expect(screen.getByTestId('process-format-toggle').textContent).toBe(sized)
+    rerender(<ExportButton {...baseProps} incomplete={false} outputFormat="source" />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('Original')
+    expect(screen.getByTestId('process-format-toggle').textContent).toBe(sized)
+  })
+
   // The chevron menu now carries both halves of the button's promise ("Convert to
   // AIFF + Apple Music"): picking a destination must behave exactly like picking a
   // format — relabel only, never convert — so a misclick can't write a file or push
@@ -564,12 +587,14 @@ describe('ExportButton', () => {
     }
   })
 
-  // "Same as source" only means something over several files at once — a single track's
-  // own format is just its own format, so resolving it there is equivalent and more
-  // informative. The menu must offer it only when converting a selection (count set).
-  it('offers "Same as source" in the format menu only over a multi-selection', () => {
-    render(<ExportButton {...baseProps} incomplete={false} count={2} />)
+  // "Same as source" only means something over files of more than one format: over one
+  // track, or a selection all in one format, it is that format under a second name. The
+  // caller works that out from the files; a selection alone no longer earns it.
+  it('offers "Same as source" in the format menu only when the caller says it applies', () => {
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} count={2} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('process-format-source')).not.toBeInTheDocument()
+    rerender(<ExportButton {...baseProps} incomplete={false} count={2} offerSource />)
     expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
   })
 
@@ -584,19 +609,25 @@ describe('ExportButton', () => {
   it('reports a "source" pick without resolving it', () => {
     const onSelectFormat = vi.fn()
     render(
-      <ExportButton {...baseProps} incomplete={false} count={2} onSelectFormat={onSelectFormat} />,
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        count={2}
+        offerSource
+        onSelectFormat={onSelectFormat}
+      />,
     )
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-source'))
     expect(onSelectFormat).toHaveBeenCalledWith('source')
   })
 
-  // With 'source' picked, the button must show the translated "Same as source" label,
+  // With 'source' picked, the dropdown must show the translated short name ("Original"),
   // never the raw setting uppercased ("SOURCE" means nothing to the user).
   it('shows the translated label for "Same as source", not the raw setting', () => {
     render(<ExportButton {...baseProps} incomplete={false} count={2} outputFormat="source" />)
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Same as source')
-    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('SOURCE')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('Original')
+    expect(screen.getByTestId('process-format-toggle')).not.toHaveTextContent('SOURCE')
   })
 })
 
