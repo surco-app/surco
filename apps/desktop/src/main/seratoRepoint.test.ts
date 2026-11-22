@@ -78,6 +78,27 @@ describe('repointSerato', () => {
     expect(readdirSync(lib.base)).not.toContain('serato-backups')
   })
 
+  // A commit whose rollback failed may leave the database on the new file and a crate on the
+  // old one; the retry finds no old entry in the database, and stopping there would leave the
+  // crate on a file that is about to be retired.
+  it('still points the crates at the new file when the database already holds it', async () => {
+    const lib = library({ internal: [['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']]] })
+    const halfway = databaseOf('Users/dj/Music/A.aiff', 'Users/dj/Music/B.mp3')
+    writeFileSync(join(lib.home.dir, 'database V2'), halfway)
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: true }])
+    expect(parseSeratoCrate(readFileSync(crateFileOf(lib.home, 'Set')))).toEqual([
+      'Users/dj/Music/A.aiff',
+      'Users/dj/Music/B.mp3',
+    ])
+    expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(halfway)
+  })
+
   it('waits while Serato is open, since Serato writes its own library over ours when it quits', async () => {
     const lib = library()
 

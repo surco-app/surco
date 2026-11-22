@@ -10,7 +10,7 @@ import {
   withCrateTrackRepointed,
 } from './seratoCrateFile'
 import { seratoDatabaseTruncated } from './seratoDatabase'
-import { withSeratoTrackRepointed } from './seratoDatabaseWrite'
+import { seratoDatabaseHas, withSeratoTrackRepointed } from './seratoDatabaseWrite'
 import {
   commitSeratoDraft,
   createSeratoDraft,
@@ -46,8 +46,11 @@ function repointOne(
   const from = seratoPathOn(repoint.from, root)
   const to = seratoPathOn(repoint.to, root)
   const repointed = withSeratoTrackRepointed(database, from, to)
-  if (!repointed) return { written: false, reason: 'no-match' }
-  draft.write(databaseFile, repointed)
+  // A commit whose rollback failed can leave the database on the new file and a crate still
+  // on the old one: the retry finds no old entry, and the crates must still follow it, or
+  // they keep a path that is about to be retired.
+  if (repointed) draft.write(databaseFile, repointed)
+  else if (!seratoDatabaseHas(database, to)) return { written: false, reason: 'no-match' }
 
   const subcrates = join(root.dir, 'Subcrates')
   for (const name of draft.list(subcrates).filter((n) => n.endsWith('.crate'))) {
