@@ -43,13 +43,13 @@ const verdictGlyph: Record<
   },
 }
 
-const LIBRARY_ICON = { appleMusic: AppleMusicIcon, engineDj: EngineIcon }
+const VERDICT_LIBRARY_ICON = { appleMusic: AppleMusicIcon, engineDj: EngineIcon }
 
 interface Props {
   open: boolean
   onToggle: () => void
   libraryName: string
-  librarySource: keyof typeof LIBRARY_ICON
+  librarySource: keyof typeof VERDICT_LIBRARY_ICON
   verdict: LibraryVerdict | null
   // Why the winning copy won, said with the verdict: the table below shows only the figures.
   verdictDetail?: string
@@ -81,7 +81,7 @@ export function LibrarySection({
     : ''
   // Same audio leaves nothing to weigh, so the row opens nothing.
   const comparison = verdict === 'same' ? undefined : given
-  const LibraryIcon = LIBRARY_ICON[librarySource]
+  const LibraryIcon = VERDICT_LIBRARY_ICON[librarySource]
   const rowContent = (
     <>
       <span
