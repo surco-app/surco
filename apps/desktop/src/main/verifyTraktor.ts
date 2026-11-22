@@ -121,7 +121,18 @@ const NAME_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', [RegExp, string
 
 function entryKey(e: TraktorExpect, bootVolume: string): string {
   const { patch, before } = e
+  if (patch.relocates) return relocatedKey(patch, bootVolume)
   return locationKey(patch.volume || bootVolume, patch.dir, patch.newFile ?? before ?? patch.file)
+}
+
+// Where a replace moved the entry: the file that took the replaced one's place, whose
+// volume may be empty for the boot disk.
+function relocatedKey(patch: NmlPatch, bootVolume: string): string {
+  return locationKey(
+    patch.outputVolume || bootVolume,
+    patch.outputDir ?? '',
+    patch.outputFile ?? '',
+  )
 }
 
 function staleName(block: string | undefined, tags: NmlPatch['tags']): string | null {
@@ -151,6 +162,27 @@ function judge(
   const { patch, before } = e
   if (before === null) return null
   const volume = patch.volume || bootVolume
+  // A replace moves the entry whole onto the output, so it is looked for there. Still on
+  // the replaced file means the move did not happen and the old file must be kept.
+  if (patch.relocates) {
+    const oldKey = locationKey(volume, patch.dir, before).toLowerCase()
+    const newKey = relocatedKey(patch, bootVolume)
+    const old = atAnyCase.get(oldKey) ?? 0
+    const on = at.get(newKey) ?? 0
+    const format = formatOf(extname(patch.outputFile ?? ''))
+    if (old > 0 && oldKey !== newKey.toLowerCase()) {
+      return check('mismatch', 'traktorStillOld', { format: formatOf(extname(before)) })
+    }
+    if (on > 1) return check('mismatch', 'traktorAmbiguous', { count: on })
+    if (on === 0) return check('mismatch', 'traktorMissing')
+    // With a cueShift (a later phase) the cues moved on purpose, so their places are not
+    // compared here.
+    const now = cuesAt(newKey)
+    if (!patch.cueShift && e.cues != null && now !== undefined && !cuesHeld(e.cues, now)) {
+      return check('mismatch', 'traktorCuesChanged')
+    }
+    return check('ok', 'traktorOk', { format })
+  }
   // The output went to another folder (Music's own included, see redirectNmlPatch) and the
   // entry stays on the source, whose audio did not change: the write was to leave its cues
   // exactly as they were. A conversion in place under the same name rewrote the source

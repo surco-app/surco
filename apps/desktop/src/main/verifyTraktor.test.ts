@@ -437,3 +437,62 @@ describe('checkTraktor', () => {
     ).toEqual(['traktorOk', 'traktorStillOld', 'traktorOk'])
   })
 })
+
+// A replace moves the entry to the file that took the old one's place, in another folder or
+// volume. If the check looked only at the old folder it would call a moved entry missing, or
+// let the old file be retired while Traktor still points at it and the DJ loses the track.
+describe('a replace', () => {
+  const NEW_DIR = '/:New/:'
+  const replace = (over: Partial<NmlPatch> = {}): NmlPatch => ({
+    volume: 'Public',
+    dir: '/:Musica/:Artist/:',
+    file: 'Song.mp3',
+    relocates: true,
+    outputVolume: 'Public',
+    outputDir: NEW_DIR,
+    outputFile: 'Song.aiff',
+    ...over,
+  })
+  const twoCues = withCue(withCue(entry('Song.mp3'), '1000'), '2000')
+  const cuesOf = (block: string) => matchedEntryFacts(nml(block), [replace()]).cues[0]
+
+  // The entry followed the file, so the old one can go.
+  it('an entry moved whole to the new file is traktorOk', () => {
+    const list: TraktorExpect[] = [{ patch: replace(), before: 'Song.mp3' }]
+    expect(checkTraktor(nml(entry('Song.aiff', 'Public', NEW_DIR)), list, BOOT)).toEqual([
+      { place: 'traktor', state: 'ok', detail: { key: 'traktorOk', params: { format: 'AIFF' } } },
+    ])
+  })
+
+  // Retiring the old file now would leave Traktor with a track that does not exist.
+  it('an entry still on the replaced file is traktorStillOld, so the old file is kept', () => {
+    const list: TraktorExpect[] = [{ patch: replace(), before: 'Song.mp3' }]
+    expect(checkTraktor(nml(entry('Song.mp3')), list, BOOT)).toEqual([stillOld('MP3')])
+  })
+
+  // The DJ would lose a hot cue they had set.
+  it('an entry moved without a cue it had is traktorCuesChanged', () => {
+    const cues = cuesOf(twoCues)
+    const list: TraktorExpect[] = [{ patch: replace(), before: 'Song.mp3', cues }]
+    const moved = withCue(entry('Song.aiff', 'Public', NEW_DIR), '1000')
+    expect(checkTraktor(nml(moved), list, BOOT)[0]?.detail.key).toBe('traktorCuesChanged')
+  })
+
+  // The replacement kept the old file's own name, so old and new are the same place.
+  it("a replace that landed on the old file's own path is judged by its one entry", () => {
+    const p = replace({ outputDir: '/:Musica/:Artist/:', outputFile: 'Song.mp3' })
+    const list: TraktorExpect[] = [{ patch: p, before: 'Song.mp3' }]
+    expect(checkTraktor(nml(entry('Song.mp3')), list, BOOT)[0]?.detail.key).toBe('traktorOk')
+  })
+
+  // A title fixed in the tags must show in the entry that now stands for the track.
+  it('reads the names from the entry at the new location', () => {
+    const p = replace({ tags: { title: { from: 'Old', to: 'New' } } })
+    const list: TraktorExpect[] = [{ patch: p, before: 'Song.mp3' }]
+    const moved = entry('Song.aiff', 'Public', NEW_DIR).replace('TITLE="Title"', 'TITLE="Old"')
+    expect(checkTraktor(nml(moved), list, BOOT)[0]?.detail).toEqual({
+      key: 'traktorNameStale',
+      params: { value: 'Old' },
+    })
+  })
+})
