@@ -367,7 +367,13 @@ app.on('second-instance', (_event, argv) => {
 protocol.registerSchemesAsPrivileged([
   {
     scheme: MEDIA_SCHEME,
-    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      corsEnabled: true,
+    },
   },
 ])
 
@@ -2572,7 +2578,7 @@ app.whenReady().then(() => {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com",
       "media-src 'self' blob: surco:",
-      "connect-src 'self'",
+      "connect-src 'self' surco:",
     ].join('; ')
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({
