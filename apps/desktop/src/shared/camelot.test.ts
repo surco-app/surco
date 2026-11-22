@@ -31,6 +31,17 @@ describe('camelotOf', () => {
     expect(camelotOf('C#MIN')).toBe('12A')
   })
 
+  it('reads a key tagged with both spellings, so it shows in the same notation as the rest of the column and mixes harmonically', () => {
+    expect(camelotOf('Ebm/D#m')).toBe('2A')
+    expect(camelotOf('Ab minor / G# minor')).toBe('1A')
+    expect(camelotOf('8A/Am')).toBe('8A')
+  })
+
+  it('does not pick a side when the two halves name different keys, so a contradictory tag is never guessed', () => {
+    expect(camelotOf('Am/C')).toBeNull()
+    expect(camelotOf('Am/xyz')).toBeNull()
+  })
+
   it('returns null for anything it cannot read, so a track without a key is never guessed', () => {
     expect(camelotOf('')).toBeNull()
     expect(camelotOf(undefined)).toBeNull()
