@@ -5449,7 +5449,7 @@ describe('Editor Apple Music library section', () => {
     api.fingerprint = vi.fn(async (path: string) => path)
     api.comparePair = vi.fn(() => pair)
     api.readDuration = vi.fn(async (path: string) =>
-      path === '/Music/Strobe.wav' ? libraryDuration : null,
+      path === '/Music/Strobe.wav' ? libraryDuration : (hereDuration ?? null),
     )
     const { onProcess } = renderEditor(
       {

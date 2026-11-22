@@ -50,20 +50,58 @@ describe('compareCopies', () => {
   })
 
   // Wiki Wiki: two masters of one title, 822 against 3.5 samples at the peak. Level says
-  // nothing about which master is better, so no winner, and the reader is told they are
-  // not the same audio rather than that they are alike.
-  it('never ranks two different masters by level, and calls them different', () => {
+  // nothing about which master is better, so no winner; at 0.86 they still share an edit,
+  // so "another version" would be a claim the probe does not support.
+  it('never ranks two different masters by level', () => {
     const a = { ...netzwerkAif, fingerprint: 'p', peakCount: 822.5, crestDb: 11 }
     const b = { ...netzwerkAif, fingerprint: 'q', peakCount: 3.5, crestDb: 11 }
-    expect(compareCopies(a, b, otherMaster)).toEqual({ winner: 'different' })
+    expect(compareCopies(a, b, otherMaster)).toEqual({ winner: 'tie' })
   })
 
-  // 3 Ways: two lossless edits, 447 s and 483 s, that the pair probe could not line up at
-  // all. Saying nothing about them hid that the library holds another version.
-  it('calls two measured copies the probe could not line up different', () => {
-    const a = { ...netzwerkAif, fingerprint: 'p' }
-    const b = { ...netzwerkAif, fingerprint: 'q' }
-    expect(compareCopies(a, b, null)).toEqual({ winner: 'different' })
+  describe('another version', () => {
+    const edit = (durationSec: number, integratedLufs = -9): CopyFacts => ({
+      ...netzwerkAif,
+      fingerprint: `e${durationSec}`,
+      durationSec,
+      integratedLufs,
+    })
+    const unrelated = { correlation: 0.19, residualDb: -0.2, gainDb: -12 }
+
+    // 3 Ways: two lossless edits, 447 s and 483 s, that the probe could not line up at all.
+    // Saying nothing hid that the library holds another version.
+    it('calls two edits of different length that the probe could not line up different', () => {
+      expect(compareCopies(edit(447), edit(483), null)).toEqual({ winner: 'different' })
+    })
+
+    // Measured: different edits correlate about 0 (0.19 at best, searching 60 s either way).
+    it('calls two edits of different length that barely correlate different', () => {
+      expect(compareCopies(edit(447), edit(483), unrelated)).toEqual({ winner: 'different' })
+    })
+
+    // PG2 Hey-Heeey: one master drifting against itself correlated 0.067. A length within 2 s
+    // is what a drift leaves, and calling it another version would be false.
+    it('never calls copies of nearly the same length another version', () => {
+      expect(compareCopies(edit(447), edit(448.9), unrelated)).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(448.9), null)).toEqual({ winner: 'tie' })
+    })
+
+    // Nacho Division: one master at 0.954. Only a correlation under 0.5 says the audio differs.
+    it('never calls a correlation of 0.5 or more another version', () => {
+      const at = { correlation: 0.5, residualDb: -3, gainDb: -2 }
+      expect(compareCopies(edit(447), edit(483), at)).toEqual({ winner: 'tie' })
+    })
+
+    // A null pair also means a file too short or silent to line up; that is no evidence.
+    it('never calls a short or silent copy another version', () => {
+      expect(compareCopies(edit(9.9), edit(483), null)).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(483, -71), null)).toEqual({ winner: 'tie' })
+    })
+
+    it('never calls copies of unknown length another version', () => {
+      const a = { ...netzwerkAif, fingerprint: 'p' }
+      const b = { ...netzwerkAif, fingerprint: 'q' }
+      expect(compareCopies(a, b, null)).toEqual({ winner: 'tie' })
+    })
   })
 
   it('never ranks by level without the pair probe', () => {
@@ -194,7 +232,7 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'b',
       reason: 'peakCount',
     })
-    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.979))).toEqual({ winner: 'different' })
+    expect(compareCopies(netzwerkWav, netzwerkAif, at(0.979))).toEqual({ winner: 'tie' })
   })
 
   it('calls a residual of -60 dB the same audio and -59.9 dB not', () => {

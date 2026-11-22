@@ -13,6 +13,7 @@ export interface CopyFacts {
   peakCount?: number | null
   crestDb?: number | null
   integratedLufs?: number
+  durationSec?: number
 }
 
 export type CopyReason =
@@ -41,6 +42,30 @@ export const COPY_MARGINS: CopyMargins = {
   sameMasterCorrelation: 0.98,
   peakCountRatio: 10,
   crestDb: 1.5,
+}
+
+// Measured 22/11: different edits of one title correlate about 0 (0.19 at best, searching 60 s
+// either way) while one master stays >= 0.95, but one master drifting against itself (PG2
+// Hey-Heeey) fell to 0.067; only the length tells that drift from an edit, so another version
+// also needs lengths more than 2 s apart. A null pair counts only when both files gave the
+// probe real audio: 10 s or more and above the -70 LUFS gate.
+export const OTHER_VERSION = {
+  maxCorrelation: 0.5,
+  minDurationGapSec: 2,
+  minDurationSec: 10,
+  silentLufs: -70,
+}
+
+function isOtherVersion(a: CopyFacts, b: CopyFacts, pair: PairFacts | null): boolean {
+  if (a.durationSec == null || b.durationSec == null) return false
+  if (Math.abs(a.durationSec - b.durationSec) <= OTHER_VERSION.minDurationGapSec) return false
+  if (pair) return pair.correlation < OTHER_VERSION.maxCorrelation
+  const probed = (f: CopyFacts): boolean =>
+    f.durationSec != null &&
+    f.durationSec >= OTHER_VERSION.minDurationSec &&
+    f.integratedLufs != null &&
+    f.integratedLufs > OTHER_VERSION.silentLufs
+  return probed(a) && probed(b)
 }
 
 const IDENTICAL_RESIDUAL_DB = -60
@@ -120,9 +145,8 @@ export function compareCopies(
     flag(a.processed, b.processed, 'processed') ?? flag(a.upsampled, b.upsampled, 'upsampled')
   if (cleaner) return cleaner
   if (pair === undefined) return { winner: 'tie' }
-  if (pair === null || pair.correlation < margins.sameMasterCorrelation) {
-    return { winner: 'different' }
-  }
+  if (isOtherVersion(a, b, pair)) return { winner: 'different' }
+  if (pair === null || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
   return (
     byPeakCount(a, b, margins.peakCountRatio) ?? byCrest(a, b, margins.crestDb) ?? { winner: 'tie' }
   )

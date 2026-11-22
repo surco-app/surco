@@ -41,7 +41,7 @@ import type {
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
-import { useCopyDuration } from '../hooks/useCopyDuration'
+import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
 import { useCopyFacts, usePairFacts } from '../hooks/useCopyFacts'
 import { useCopyVerdicts } from '../hooks/useCopyVerdicts'
 import { useDiscogsBrowser } from '../hooks/useDiscogsBrowser'
@@ -770,20 +770,22 @@ export const Editor = memo(function Editor({
   const comparedCopyPath =
     pathKey(replacedCopyPath) === pathKey(item.inputPath) ? '' : replacedCopyPath
   const musicHoldsFile = !!replacedCopyPath && !comparedCopyPath
-  const hereFacts = useCopyFacts(item.inputPath, !!comparedCopyPath, 'high')
-  const libraryFacts = useCopyFacts(comparedCopyPath, !!comparedCopyPath)
+  const hereFacts = withDuration(
+    useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
+    useCopyDuration(item.inputPath, !!comparedCopyPath),
+  )
+  const libraryFacts = withDuration(
+    useCopyFacts(comparedCopyPath, !!comparedCopyPath),
+    useCopyDuration(comparedCopyPath, !!comparedCopyPath),
+  )
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
-  const copyDuration = useCopyDuration(comparedCopyPath, !!comparedCopyPath)
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
       ? compareCopies(hereFacts, libraryFacts, copyPair)
       : null
   const copyMeasuring =
     !!comparedCopyPath &&
-    (hereFacts === undefined ||
-      libraryFacts === undefined ||
-      copyPair === undefined ||
-      copyDuration === undefined)
+    (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const copyOpen =
     !!copyVerdict &&
@@ -1529,7 +1531,6 @@ export const Editor = memo(function Editor({
     copyPath,
     libraryName,
     libraryLabel,
-    libraryDurationSec,
   }: {
     verdict: CopyVerdict | null
     here: CopyFacts | null | undefined
@@ -1537,7 +1538,6 @@ export const Editor = memo(function Editor({
     copyPath: string
     libraryName: string
     libraryLabel: string
-    libraryDurationSec?: number
   }): React.ReactNode => {
     // The same audio leaves nothing to weigh, so the row opens nothing.
     if (!verdict || verdict.winner === 'same' || !here || !library) return undefined
@@ -1554,8 +1554,8 @@ export const Editor = memo(function Editor({
         hereLabel={here.ext}
         libraryLabel={libraryLabel || library.ext}
         libraryName={libraryName}
-        hereDurationSec={item.duration}
-        libraryDurationSec={libraryDurationSec}
+        hereDurationSec={here.durationSec}
+        libraryDurationSec={library.durationSec}
         glimpse={
           limitedRate ? (
             <LimiterGlimpse
@@ -1605,7 +1605,7 @@ export const Editor = memo(function Editor({
             libraryCopyBetter && (copyState === null || copyState === 'measuring')
               ? 'library'
               : copyState,
-          durationSec: copyDuration ?? undefined,
+          durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: renderComparison({
             verdict: copyVerdict,
@@ -1614,7 +1614,6 @@ export const Editor = memo(function Editor({
             copyPath: comparedCopyPath,
             libraryName: 'Apple Music',
             libraryLabel: replacedCopyFormat,
-            libraryDurationSec: copyDuration ?? undefined,
           }),
           comparisonOpen: copyOpen,
           onToggleComparison: () =>
@@ -1642,7 +1641,6 @@ export const Editor = memo(function Editor({
       copyPath: copy.path,
       libraryName: name,
       libraryLabel: state.format,
-      libraryDurationSec: state.durationSec,
     })
     const comparisonOpen = !!comparison && programOpenFor.has(openKey)
     return {
@@ -1650,7 +1648,7 @@ export const Editor = memo(function Editor({
       name,
       format: state.format,
       verdict: rowVerdict(state),
-      durationSec: state.durationSec,
+      durationSec: state.copy?.durationSec,
       detail: reasonFor(state.verdict, state.here, state.copy, name),
       comparison,
       comparisonOpen,

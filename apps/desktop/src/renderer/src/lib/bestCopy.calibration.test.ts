@@ -122,7 +122,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 2828,
     },
     pair: { correlation: 0.0674, residualDb: -0.0, gainDb: -26.89 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Alex & Giro - Wiki Wiki',
@@ -144,7 +144,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 3.5,
     },
     pair: { correlation: 0.8618, residualDb: -5.9, gainDb: -1.9 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Kike Boy - Farmatro\u0301n',
@@ -166,7 +166,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 1713,
     },
     pair: { correlation: 0.7803, residualDb: -4.1, gainDb: -1.03 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Alfredo Pareja - No More Lies',
@@ -232,7 +232,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 160.5,
     },
     pair: { correlation: 0.0145, residualDb: -0.0, gainDb: -32.71 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Da Tekno Warriors - Da Game',
@@ -254,7 +254,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 244,
     },
     pair: { correlation: 0.2982, residualDb: -0.4, gainDb: -11.93 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Anneke Van Hooff - Lie To Me (Extended Mix)',
@@ -342,7 +342,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 5772,
     },
     pair: { correlation: 0.7164, residualDb: -3.1, gainDb: -2.07 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: '4 Clubbers - Children (Future Breeze Vs. Junkfood Junkies Mix)',
@@ -474,7 +474,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 22.5,
     },
     pair: { correlation: 0.3828, residualDb: -0.7, gainDb: -7.8 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Alfredo Pareja - Believe In Dance',
@@ -518,7 +518,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 2.5,
     },
     pair: { correlation: 0.6679, residualDb: -2.6, gainDb: -3.43 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Nacho Division - Meditation (Remix)',
@@ -540,7 +540,7 @@ const MEASURED: MeasuredPair[] = [
       peakCount: 1306,
     },
     pair: { correlation: 0.9543, residualDb: -10.5, gainDb: 1.3 },
-    expected: { winner: 'different' },
+    expected: { winner: 'tie' },
   },
   {
     label: 'Alfredo Pareja - Do You Know My Name',
@@ -600,4 +600,16 @@ describe('compareCopies on the 26 measured pairs', () => {
   it.each(MEASURED)('$cls $label', ({ a, b, pair, expected }) => {
     expect(compareCopies(a, b, pair)).toEqual(expected)
   })
+
+  // S-drift is one master drifting against itself (0.067) and B one master at 0.954: calling
+  // either another version would be false, whatever their lengths turn out to be.
+  it.each(MEASURED.filter((m) => m.cls === 'S-drift' || m.cls === 'B'))(
+    'never calls the same master another version: $cls $label',
+    ({ a, b, pair }) => {
+      const sameLength = { durationSec: 300, integratedLufs: -9 }
+      expect(compareCopies({ ...a, ...sameLength }, { ...b, ...sameLength }, pair).winner).not.toBe(
+        'different',
+      )
+    },
+  )
 })

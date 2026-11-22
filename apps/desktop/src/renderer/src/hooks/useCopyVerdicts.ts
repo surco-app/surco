@@ -8,7 +8,7 @@ import type {
 } from '../../../shared/types'
 import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy'
 import { libraryCopyFormat } from '../lib/properties'
-import { copyDurationOptions } from './useCopyDuration'
+import { copyDurationOptions, withDuration } from './useCopyDuration'
 import { copyFactsQueries, pairOptions, toCopyFacts } from './useCopyFacts'
 import { trackPropertiesOptions } from './useTrackProperties'
 
@@ -18,10 +18,10 @@ export interface CopyVerdictState {
   format: string
   here?: CopyFacts
   copy?: CopyFacts
-  durationSec?: number
 }
 
 const FACTS_PER_FILE = 3
+const HERE_QUERIES = FACTS_PER_FILE + 1
 const QUERIES_PER_COPY = FACTS_PER_FILE + 3
 
 type Settled<T> = { isPending: boolean; data: T | undefined }
@@ -36,41 +36,43 @@ function factsFrom(path: string, results: Settled<unknown>[]): CopyFacts | null 
   )
 }
 
+function settledDuration(result: Settled<unknown>): number | null | undefined {
+  return result.isPending ? undefined : ((result.data as number | null | undefined) ?? null)
+}
+
 export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerdictState[] {
   const { i18n } = useTranslation()
   const on = copyPaths.length > 0 && !!herePath
   const results = useQueries({
     queries: [
       ...copyFactsQueries(herePath, 'high').map((query) => ({ ...query, enabled: on })),
+      { ...copyDurationOptions(herePath), enabled: on },
       ...copyPaths.flatMap((path) => [
         ...copyFactsQueries(path).map((query) => ({ ...query, enabled: on && !!path })),
+        { ...copyDurationOptions(path), enabled: on && !!path },
         { ...pairOptions(herePath, path), enabled: on && !!path },
         { ...trackPropertiesOptions(path), enabled: !!path },
-        { ...copyDurationOptions(path), enabled: on && !!path },
       ]),
     ],
   }) as Settled<unknown>[]
 
   if (copyPaths.length === 0) return []
-  const here = factsFrom(herePath, results.slice(0, FACTS_PER_FILE))
+  const here = withDuration(
+    factsFrom(herePath, results.slice(0, FACTS_PER_FILE)),
+    settledDuration(results[FACTS_PER_FILE]),
+  )
   return copyPaths.map((path, i) => {
-    const start = FACTS_PER_FILE + i * QUERIES_PER_COPY
-    const copy = factsFrom(path, results.slice(start, start + FACTS_PER_FILE))
-    const pairResult = results[start + FACTS_PER_FILE]
+    const start = HERE_QUERIES + i * QUERIES_PER_COPY
+    const copy = withDuration(
+      factsFrom(path, results.slice(start, start + FACTS_PER_FILE)),
+      settledDuration(results[start + FACTS_PER_FILE]),
+    )
+    const pairResult = results[start + FACTS_PER_FILE + 1]
     const pair = pairResult.isPending ? undefined : ((pairResult.data as PairFacts | null) ?? null)
-    const props = results[start + FACTS_PER_FILE + 1].data as TrackProperties | null | undefined
+    const props = results[start + FACTS_PER_FILE + 2].data as TrackProperties | null | undefined
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
-    const durationResult = results[start + FACTS_PER_FILE + 2]
-    const measuring =
-      here === undefined || copy === undefined || pair === undefined || durationResult.isPending
+    const measuring = here === undefined || copy === undefined || pair === undefined
     const verdict = here && copy && pair !== undefined ? compareCopies(here, copy, pair) : null
-    return {
-      verdict,
-      measuring,
-      format,
-      here: here ?? undefined,
-      copy: copy ?? undefined,
-      durationSec: (durationResult.data as number | null | undefined) ?? undefined,
-    }
+    return { verdict, measuring, format, here: here ?? undefined, copy: copy ?? undefined }
   })
 }
