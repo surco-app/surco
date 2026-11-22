@@ -97,7 +97,7 @@ import { splitPosition } from '../lib/position'
 import { fileExtension, libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { withQualityTag } from '../lib/qualityTag'
-import { jobAudio } from '../lib/reapply'
+import { declickFor, jobAudio, normalizeFor } from '../lib/reapply'
 import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
 import {
   bestMatch,
@@ -2011,7 +2011,9 @@ export const Editor = memo(function Editor({
                           value={declickCfg}
                           mixed={
                             isMulti &&
-                            configsDiffer((selectedTracks ?? []).map((t) => t.declick ?? declick))
+                            configsDiffer(
+                              (selectedTracks ?? []).map((t) => declickFor(t, declickCfg, declick)),
+                            )
                           }
                           open={declickOpen}
                           onToggle={() => setSectionOpen('declick', !declickOpen)}
@@ -2038,7 +2040,9 @@ export const Editor = memo(function Editor({
                           mixed={
                             isMulti &&
                             configsDiffer(
-                              (selectedTracks ?? []).map((t) => t.normalize ?? normalize),
+                              (selectedTracks ?? []).map((t) =>
+                                normalizeFor(t, normalizeCfg, normalize),
+                              ),
                             )
                           }
                           open={normalizeOpen}

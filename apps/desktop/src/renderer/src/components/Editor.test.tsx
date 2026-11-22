@@ -78,20 +78,24 @@ async function hoverForTooltip(trigger: HTMLElement): Promise<HTMLElement> {
 function renderWithQuery(
   ui: React.ReactElement,
   settings: Partial<Settings> = {},
-): ReturnType<typeof render> & { changeSettings: (next: Partial<Settings>) => void } {
+): ReturnType<typeof render> & {
+  changeSettings: (next: Partial<Settings>) => void
+  rerenderUi: (next: React.ReactElement) => void
+} {
   const client = createQueryClient()
   // The editor reads its Settings-derived values from the shared context now, so the
   // per-test overrides ride a provider instead of an 17-prop wall on <Editor>.
-  const tree = (current: Partial<Settings>) => (
+  const tree = (current: Partial<Settings>, content: React.ReactElement = ui) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ discogsToken: 'tok', showSpectrum: false, ...current }}>
-        {ui}
+        {content}
       </SettingsProvider>
     </QueryClientProvider>
   )
   const result = render(tree(settings))
   return Object.assign(result, {
     changeSettings: (next: Partial<Settings>) => result.rerender(tree({ ...settings, ...next })),
+    rerenderUi: (next: React.ReactElement) => result.rerender(tree(settings, next)),
   })
 }
 
@@ -1868,81 +1872,84 @@ describe('Editor multi-select', () => {
     const onChangeTracksMeta = vi.fn()
     const onChangeTracksPlaylists = vi.fn()
     const status = opts.done ? ('done' as const) : ('idle' as const)
-    const a = item({
-      id: 'a',
-      fileName: 'kumara - one.flac',
-      ...(opts.fileA && { inputPath: opts.fileA }),
-      status,
-      outputPath: opts.done ? '/out/a.aiff' : undefined,
-      meta: { title: 'A', album: 'Shared', ...opts.metaA },
-      ...(opts.normalizeA && { normalize: opts.normalizeA }),
-      ...(opts.declickA && { declick: opts.declickA }),
-      spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
-      ...(opts.fromSeratoA && { programs: ['serato'] }),
+    const build = (over: Partial<typeof opts> = {}) => {
+      const o = { ...opts, ...over }
+      const a = item({
+        id: 'a',
+        fileName: 'kumara - one.flac',
+        ...(o.fileA && { inputPath: o.fileA }),
+        status,
+        outputPath: o.done ? '/out/a.aiff' : undefined,
+        meta: { title: 'A', album: 'Shared', ...o.metaA },
+        ...(o.normalizeA && { normalize: o.normalizeA }),
+        ...(o.declickA && { declick: o.declickA }),
+        spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
+        ...(o.fromSeratoA && { programs: ['serato'] }),
+      })
+      const b = item({
+        id: 'b',
+        fileName: 'cortina - two.flac',
+        ...(o.fileB && { inputPath: o.fileB }),
+        status,
+        outputPath: o.done ? '/out/b.aiff' : undefined,
+        meta: { title: 'B', album: 'Shared', ...o.metaB },
+        ...(o.normalizeB && { normalize: o.normalizeB }),
+        ...(o.declickB && { declick: o.declickB }),
+      })
+      return (
+        <Editor
+          item={a}
+          libraryIndex={o.libraryIndex ?? null}
+          rekordboxCue={o.rekordboxCue}
+          onCueAutoMarkAll={o.onCueAutoMarkAll}
+          onCuePhrasesAll={o.onCuePhrasesAll}
+          cueTargets={o.cueTargets}
+          searchInputRef={createRef<HTMLInputElement>()}
+          onExportCollection={vi.fn()}
+          readFullTrack={async () => undefined}
+          resultsFolded={false}
+          onFoldResults={vi.fn()}
+          onResultsResizeStart={vi.fn()}
+          onResultsFit={vi.fn()}
+          selectedTracks={[a, b]}
+          onChangeSelection={o.onChangeSelection}
+          onFormatChange={o.onFormatChange}
+          onApplyMatches={vi.fn()}
+          onProcessAll={onProcessAll}
+          onAddAllToAppleMusic={onAddAllToAppleMusic}
+          onChangeAllMeta={onChangeAllMeta}
+          onClearAll={onClearAll}
+          onApplyCoverAll={vi.fn()}
+          onDeriveTags={onDeriveTags}
+          onChangeTracksMeta={onChangeTracksMeta}
+          onChangeTracksPlaylists={onChangeTracksPlaylists}
+          onChange={vi.fn()}
+          onProcess={vi.fn()}
+          onAddToAppleMusic={vi.fn()}
+          onShowLoudnessHelp={vi.fn()}
+          onHideEditorHints={vi.fn()}
+          onOpenRename={vi.fn()}
+          onRegenerateName={vi.fn()}
+          onTrimDetectedAll={vi.fn()}
+          onCopyFilename={vi.fn()}
+          onSearchWeb={vi.fn()}
+          onCopyMeta={vi.fn()}
+          onPasteMeta={vi.fn()}
+          copiedMetaTitle={null}
+        />
+      )
+    }
+    const rendered = renderWithQuery(build(), {
+      addToAppleMusic: opts.music ?? false,
+      groupingPresets: opts.groupingPresets ?? [],
+      ...(opts.groupingSeparator ? { groupingSeparator: opts.groupingSeparator } : {}),
+      customFields: opts.customFields ?? [],
+      visibleFields: opts.visibleFields ?? ['title', 'album'],
+      requiredFields: opts.requiredFields ?? ['title'],
+      showSpectrum: true,
+      showLoudness: opts.loudness ?? false,
+      ...opts.settings,
     })
-    const b = item({
-      id: 'b',
-      fileName: 'cortina - two.flac',
-      ...(opts.fileB && { inputPath: opts.fileB }),
-      status,
-      outputPath: opts.done ? '/out/b.aiff' : undefined,
-      meta: { title: 'B', album: 'Shared', ...opts.metaB },
-      ...(opts.normalizeB && { normalize: opts.normalizeB }),
-      ...(opts.declickB && { declick: opts.declickB }),
-    })
-    renderWithQuery(
-      <Editor
-        item={a}
-        libraryIndex={opts.libraryIndex ?? null}
-        rekordboxCue={opts.rekordboxCue}
-        onCueAutoMarkAll={opts.onCueAutoMarkAll}
-        onCuePhrasesAll={opts.onCuePhrasesAll}
-        cueTargets={opts.cueTargets}
-        searchInputRef={createRef<HTMLInputElement>()}
-        onExportCollection={vi.fn()}
-        readFullTrack={async () => undefined}
-        resultsFolded={false}
-        onFoldResults={vi.fn()}
-        onResultsResizeStart={vi.fn()}
-        onResultsFit={vi.fn()}
-        selectedTracks={[a, b]}
-        onChangeSelection={opts.onChangeSelection}
-        onFormatChange={opts.onFormatChange}
-        onApplyMatches={vi.fn()}
-        onProcessAll={onProcessAll}
-        onAddAllToAppleMusic={onAddAllToAppleMusic}
-        onChangeAllMeta={onChangeAllMeta}
-        onClearAll={onClearAll}
-        onApplyCoverAll={vi.fn()}
-        onDeriveTags={onDeriveTags}
-        onChangeTracksMeta={onChangeTracksMeta}
-        onChangeTracksPlaylists={onChangeTracksPlaylists}
-        onChange={vi.fn()}
-        onProcess={vi.fn()}
-        onAddToAppleMusic={vi.fn()}
-        onShowLoudnessHelp={vi.fn()}
-        onHideEditorHints={vi.fn()}
-        onOpenRename={vi.fn()}
-        onRegenerateName={vi.fn()}
-        onTrimDetectedAll={vi.fn()}
-        onCopyFilename={vi.fn()}
-        onSearchWeb={vi.fn()}
-        onCopyMeta={vi.fn()}
-        onPasteMeta={vi.fn()}
-        copiedMetaTitle={null}
-      />,
-      {
-        addToAppleMusic: opts.music ?? false,
-        groupingPresets: opts.groupingPresets ?? [],
-        ...(opts.groupingSeparator ? { groupingSeparator: opts.groupingSeparator } : {}),
-        customFields: opts.customFields ?? [],
-        visibleFields: opts.visibleFields ?? ['title', 'album'],
-        requiredFields: opts.requiredFields ?? ['title'],
-        showSpectrum: true,
-        showLoudness: opts.loudness ?? false,
-        ...opts.settings,
-      },
-    )
     return {
       onChangeAllMeta,
       onClearAll,
@@ -1951,6 +1958,7 @@ describe('Editor multi-select', () => {
       onDeriveTags,
       onChangeTracksMeta,
       onChangeTracksPlaylists,
+      rerenderTracks: (over: Partial<typeof opts>) => rendered.rerenderUi(build(over)),
     }
   }
 
@@ -2292,6 +2300,58 @@ describe('Editor multi-select', () => {
         settings: folded('declick'),
       })
       expect(screen.getByTestId('declick-row-sentence')).toHaveTextContent(
+        i18n.t('declick.row.mixed'),
+      )
+    })
+
+    // Conversion resolves a track without its own setting to the dials on screen, so an
+    // anchor with an override beside an unset track converts both the same way.
+    it('does not call the loudness mixed when only the anchor has an override and the others follow the dials', () => {
+      renderMulti({ normalizeA: club, settings: folded('normalize') })
+      expect(screen.getByTestId('normalize-row-sentence')).not.toHaveTextContent(
+        i18n.t('normalize.row.mixed'),
+      )
+    })
+
+    it('does not call the click repair mixed when only the anchor has an override and the others follow the dials', () => {
+      renderMulti({ declickA: { mode: 'soft', noise: 'off' }, settings: folded('declick') })
+      expect(screen.getByTestId('declick-row-sentence')).not.toHaveTextContent(
+        i18n.t('declick.row.mixed'),
+      )
+    })
+
+    // Moving a dial writes the value into every track, so the header has to stop saying the
+    // tracks differ the moment they no longer do.
+    it('goes back to the loudness sentence once a dial is set for all the tracks', () => {
+      const onChangeSelection = vi.fn()
+      const { rerenderTracks } = renderMulti({
+        normalizeA: club,
+        normalizeB: { ...club, targetLufs: -9 },
+        onChangeSelection,
+        settings: { editorSections: [{ id: 'normalize' as const, open: true }] },
+      })
+      fireEvent.click(screen.getByTestId('normalize-mode-peak'))
+      const staged = onChangeSelection.mock.calls[0][0].normalize
+      rerenderTracks({ normalizeA: staged, normalizeB: staged })
+      fireEvent.click(screen.getByRole('button', { name: i18n.t('normalize.title') }))
+      expect(screen.getByTestId('normalize-row-sentence')).not.toHaveTextContent(
+        i18n.t('normalize.row.mixed'),
+      )
+    })
+
+    it('goes back to the click repair sentence once a mode is set for all the tracks', () => {
+      const onChangeSelection = vi.fn()
+      const { rerenderTracks } = renderMulti({
+        declickA: { mode: 'soft', noise: 'off' },
+        declickB: { mode: 'strong', noise: 'off' },
+        onChangeSelection,
+        settings: { editorSections: [{ id: 'declick' as const, open: true }] },
+      })
+      fireEvent.click(screen.getByTestId('declick-mode-standard'))
+      const staged = onChangeSelection.mock.calls[0][0].declick
+      rerenderTracks({ declickA: staged, declickB: staged })
+      fireEvent.click(screen.getByRole('button', { name: i18n.t('declick.title') }))
+      expect(screen.getByTestId('declick-row-sentence')).not.toHaveTextContent(
         i18n.t('declick.row.mixed'),
       )
     })
