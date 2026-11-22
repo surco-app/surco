@@ -16,12 +16,18 @@ import {
 const SECONDS = 120
 
 function noise(seed: number, seconds = SECONDS): Float32Array {
-  const out = new Float32Array(seconds * PAIR_RATE)
+  const out = new Float32Array(Math.round(seconds * PAIR_RATE))
   let s = seed >>> 0
   for (let i = 0; i < out.length; i++) {
     s = (Math.imul(s, 1664525) + 1013904223) >>> 0
     out[i] = s / 2 ** 31 - 1
   }
+  return out
+}
+
+function loop(cell: Float32Array, seconds: number): Float32Array {
+  const out = new Float32Array(seconds * PAIR_RATE)
+  for (let i = 0; i < out.length; i++) out[i] = cell[i % cell.length]
   return out
 }
 
@@ -133,5 +139,45 @@ describe('replaceShiftOf', () => {
       concat(zeros(1.5), old.slice(0, mid), gap, old.slice(mid)),
     )
     expect(replaceShiftOf(head, tail)).toEqual({ moved: 1500 })
+  })
+
+  // DJ intros and outros are loops of whole bars, exactly where the head and tail windows sit.
+  // Every lag a bar apart fits as well as the true one there, and head and tail would agree on the
+  // same wrong bar, throwing every cue off by whole bars. Refuse rather than pick one.
+  it('leaves them alone when the audio is an exact loop within the reach', () => {
+    const looped = loop(noise(3, 1.875), SECONDS)
+    const { head, tail } = windowsFor(looped, concat(zeros(1.5), looped))
+    expect(replaceShiftOf(head, tail)).toEqual({ unmoved: 'noMatch' })
+  })
+
+  // A beat-long loop (120 BPM) with a little noise on top is still ambiguous: lags a beat apart
+  // correlate far above the threshold, so the measure cannot tell which beat is the right one.
+  it('leaves them alone when the audio repeats every beat', () => {
+    const beat = loop(noise(4, 0.5), SECONDS)
+    const hiss = noise(5)
+    for (let i = 0; i < beat.length; i++) beat[i] += 0.02 * hiss[i]
+    const { head, tail } = windowsFor(beat, concat(zeros(1.5), beat))
+    expect(replaceShiftOf(head, tail)).toEqual({ unmoved: 'noMatch' })
+  })
+
+  // A window cut short near the end of a file must give no shift, never throw: a failed measure
+  // must not fail the conversion.
+  it('leaves them alone when a window was cut shorter than the reach needs', () => {
+    const { head, tail } = windowsFor(old, concat(zeros(1.5), old))
+    const short = { old: tail.old, new: tail.new.slice(0, samples(12)) }
+    expect(replaceShiftOf(head, short)).toEqual({ unmoved: 'noMatch' })
+  })
+
+  // A remaster that lays a new layer over a looped intro lowers every bar's fit below the
+  // threshold except the true one, which wins by a hair. A hair is not a measure: refuse when the
+  // next bar fits within the margin of the best, even if it misses the threshold itself.
+  it('leaves them alone when another bar fits nearly as well as the best', () => {
+    const bars = loop(noise(6, 1.875), SECONDS)
+    const shared = noise(7)
+    const layer = noise(8)
+    const master = bars.map((x, i) => x + 0.184 * shared[i])
+    const remaster = master.map((x, i) => x + 0.433 * layer[i])
+    const { head, tail } = windowsFor(master, concat(zeros(1.5), remaster))
+    expect(replaceShiftOf(head, tail)).toEqual({ unmoved: 'noMatch' })
   })
 })

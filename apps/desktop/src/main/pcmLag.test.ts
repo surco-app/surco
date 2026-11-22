@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bestLag, correlationAt, PAIR_RATE } from './pcmLag'
+import { bestLag, correlationAt, lagCorrelations, PAIR_RATE } from './pcmLag'
 
 function noise(seed: number, samples: number): Float32Array {
   let state = seed
@@ -38,5 +38,17 @@ describe('pcmLag', () => {
   it('correlates a copy with itself at 1 and unrelated noise far below 0.9', () => {
     expect(correlationAt(a, 0, a, 0, 5 * PAIR_RATE)).toBeCloseTo(1, 6)
     expect(correlationAt(a, 0, noise(2, 20 * PAIR_RATE), 0, 5 * PAIR_RATE)).toBeLessThan(0.2)
+  })
+
+  // The replaced-track review refuses a shift when a second lag fits almost as well (looped
+  // intros), so it needs the whole curve as correlations, not only the winner.
+  it('gives the correlation at every lag, 1 at the true one and null over silence', () => {
+    const b = new Float32Array(a.length + 100)
+    b.set(a, 100)
+    const curve = lagCorrelations(a, b, 5 * PAIR_RATE, 1000)
+    expect(curve?.length).toBe(2001)
+    expect(curve?.[1100]).toBeCloseTo(1, 4)
+    expect(curve?.[1000]).toBeLessThan(0.2)
+    expect(lagCorrelations(new Float32Array(20 * PAIR_RATE), a, 5 * PAIR_RATE, 1000)).toBeNull()
   })
 })

@@ -7,7 +7,45 @@ export const PAIR_SILENT_RMS = 1e-6
 // best matches the 5 s of a from `from`, by normalised cross-correlation at every sample.
 // Done through the FFT: the direct sum is ~1e10 multiply-adds at this rate. Null when the
 // window is silent, since silence lines up with anything.
-export function bestLag(a: Float32Array, b: Float32Array, from: number, reach = PAIR_RATE): number | null {
+export function bestLag(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach = PAIR_RATE,
+): number | null {
+  const scored = lagScores(a, b, from, reach)
+  if (!scored) return null
+  let best: number | null = null
+  let bestScore = -Infinity
+  for (let k = 0; k <= 2 * reach; k++) {
+    if (scored.scores[k] > bestScore) {
+      bestScore = scored.scores[k]
+      best = k - reach
+    }
+  }
+  return best
+}
+
+// The normalised correlation at every lag of bestLag's search, index k for lag k − reach, so a
+// caller can see whether a second lag fits almost as well as the best one (a looped intro). -1
+// where the other side is silent, null when the window itself is.
+export function lagCorrelations(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach = PAIR_RATE,
+): Float64Array | null {
+  const scored = lagScores(a, b, from, reach)
+  if (!scored) return null
+  return scored.scores.map((score) => (score === -Infinity ? -1 : score / scored.norm))
+}
+
+function lagScores(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach: number,
+): { scores: Float64Array; norm: number } | null {
   const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
   const silent = width * PAIR_SILENT_RMS ** 2
   const span = width + 2 * reach
@@ -38,18 +76,12 @@ export function bestLag(a: Float32Array, b: Float32Array, from: number, reach = 
     sIm[k] = -im
   }
   fft(sRe, sIm)
-  let best: number | null = null
-  let bestScore = -Infinity
+  const scores = new Float64Array(2 * reach + 1).fill(-Infinity)
   for (let k = 0; k <= 2 * reach; k++) {
     const e = energy[k + width] - energy[k]
-    if (e < silent) continue
-    const score = sRe[k] / Math.sqrt(e)
-    if (score > bestScore) {
-      bestScore = score
-      best = k - reach
-    }
+    if (e >= silent) scores[k] = sRe[k] / Math.sqrt(e)
   }
-  return best
+  return { scores, norm: n * Math.sqrt(windowEnergy) }
 }
 
 // Normalised correlation of b from bFrom against a from aFrom over `width` samples, without
