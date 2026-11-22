@@ -970,8 +970,6 @@
     "missingCount_other": "Mancano {{count}} campi obbligatori",
     "mixedReplaceSelection": "La selezione mescola brani che sostituiscono una copia della tua libreria e brani che vengono aggiunti. Separali per convertirli.",
     "reportError": "Segnala",
-    "inLibrary": "In Apple Music",
-    "inLibraryEngine": "In Engine DJ",
     "libraryCheckFailed": "Non è stato possibile leggere la tua libreria di Apple Music, quindi i brani non vengono segnati come già presenti. Surco riprova quando torni alla finestra.",
     "libraryCheckFailedEngine": "Non è stato possibile leggere la tua libreria di Engine DJ, quindi i brani non vengono segnati come già presenti. Surco riprova quando torni alla finestra.",
     "editingMultiple": "Modifica di {{count}} brani",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Buono a -45 dB o meno.",
     "loudnessFixNoise": "Non si può correggere qui, Surco non rimuove il rumore. Viene dall'origine o dalla registrazione.",
     "loudnessAfterHeader": "ora → dopo la conversione",
-    "libraryCopyBetterNote": "La copia in {{library}} ({{format}}) è migliore di questo file.",
-    "libraryCopyBetterNoteBare": "La copia in {{library}} è migliore di questo file.",
-    "libraryCopyCompare": "Confronta",
-    "copyHereBetter": "Copia migliore di quella in {{library}}",
-    "copyLibraryBetter": "Copia peggiore di quella in {{library}}",
-    "copySame": "Stessa copia di quella in {{library}}",
-    "copyComparing": "Confronto con la copia in {{library}}…",
     "copyThisFile": "Questo file",
     "copyRowCutoff": "Taglio",
     "copyRowPeakCount": "Campioni al tetto",
@@ -1376,7 +1367,13 @@
         "needsCalls": "Servono due CALL",
         "apply": "Metti nel commento"
       }
-    }
+    },
+    "librarySectionTitle": "Nella tua libreria",
+    "libraryVerdictHere": "Questa è migliore",
+    "libraryVerdictLibrary": "C'è una copia migliore",
+    "libraryVerdictSame": "Stessa copia",
+    "libraryVerdictMeasuring": "Confronto…",
+    "libraryRowBetter": "Migliore di questo file"
   },
   "fields": {
     "groupIdentity": "Di base",
@@ -1967,7 +1964,8 @@
       "hide": "Nascondi la sezione dall'editor",
       "visible": "Visibile",
       "visibleHint": "Mostra questa sezione nell'editor. Quelle nascoste non compaiono affatto.",
-      "openHint": "Apre questa sezione già espansa quando apri un brano."
+      "openHint": "Apre questa sezione già espansa quando apri un brano.",
+      "library": "Nella tua libreria"
     },
     "keyNotations": {
       "camelot": "Alfanumerica (8A)",

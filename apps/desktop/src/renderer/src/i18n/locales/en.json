@@ -970,8 +970,6 @@
     "missingCount_other": "{{count}} required fields missing",
     "mixedReplaceSelection": "The selection mixes tracks that replace a copy in your library with tracks that are added. Separate them to convert.",
     "reportError": "Report",
-    "inLibrary": "In Apple Music",
-    "inLibraryEngine": "In Engine DJ",
     "libraryCheckFailed": "Couldn't read your Apple Music library, so tracks aren't marked as already in it. Surco tries again when you come back to the window.",
     "libraryCheckFailedEngine": "Couldn't read your Engine DJ library, so tracks aren't marked as already in it. Surco tries again when you come back to the window.",
     "editingMultiple": "Editing {{count}} tracks",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Good: -45 dB or lower.",
     "loudnessFixNoise": "Not fixable here: Surco does not denoise. It comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
-    "libraryCopyBetterNote": "The copy in {{library}} ({{format}}) is better than this file.",
-    "libraryCopyBetterNoteBare": "The copy in {{library}} is better than this file.",
-    "libraryCopyCompare": "Compare",
-    "copyHereBetter": "Better copy than the {{library}} one",
-    "copyLibraryBetter": "Worse copy than the {{library}} one",
-    "copySame": "Same copy as the {{library}} one",
-    "copyComparing": "Comparing with the {{library}} copy…",
     "copyThisFile": "This file",
     "copyRowCutoff": "Cutoff",
     "copyRowPeakCount": "Samples at ceiling",
@@ -1376,7 +1367,13 @@
         "needsCalls": "Needs two CALLs",
         "apply": "Put in the comment"
       }
-    }
+    },
+    "librarySectionTitle": "In your library",
+    "libraryVerdictHere": "This one is better",
+    "libraryVerdictLibrary": "There's a better copy",
+    "libraryVerdictSame": "Same copy",
+    "libraryVerdictMeasuring": "Comparing…",
+    "libraryRowBetter": "Better than this file"
   },
   "fields": {
     "groupIdentity": "Basics",
@@ -1967,7 +1964,8 @@
       "hide": "Hide section from the editor",
       "visible": "Visible",
       "visibleHint": "Show this section in the editor. Hidden sections are left out entirely.",
-      "openHint": "Start this section unfolded when you open a track."
+      "openHint": "Start this section unfolded when you open a track.",
+      "library": "In your library"
     },
     "keyNotations": {
       "camelot": "Alphanumeric (8A)",

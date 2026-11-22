@@ -123,6 +123,7 @@ describe('LayoutTab sections', () => {
     renderTab()
     const rows = screen.getAllByTestId(/^settings-section-row-/)
     expect(rows.map((r) => r.dataset.testid)).toEqual([
+      'settings-section-row-library',
       'settings-section-row-form',
       'settings-section-row-otherTags',
       'settings-section-row-properties',
@@ -151,6 +152,7 @@ describe('LayoutTab sections', () => {
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
       [
+        'library',
         'form',
         'otherTags',
         'quality',
@@ -171,6 +173,7 @@ describe('LayoutTab sections', () => {
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
       [
+        'library',
         'form',
         'otherTags',
         'quality',
@@ -197,6 +200,7 @@ describe('LayoutTab sections', () => {
     expect(patch).toHaveBeenCalledWith(
       'editorSections',
       [
+        'library',
         'form',
         'otherTags',
         'properties',
@@ -286,6 +290,14 @@ describe('LayoutTab sections', () => {
     // otherTags is the first reorderable section after the pinned form, so its up arrow
     // is disabled (nothing above it can be moved past the form).
     expect(screen.getByTestId('settings-section-up-otherTags')).toBeDisabled()
+  })
+
+  it('pins the library row like the form, but lets it be hidden', () => {
+    renderTab()
+    expect(screen.queryByTestId('settings-section-grip-library')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-section-up-library')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('settings-section-down-library')).not.toBeInTheDocument()
+    expect(screen.getByTestId('settings-section-hide-library')).toBeEnabled()
   })
 
   it('disables the last row’s down arrow', () => {

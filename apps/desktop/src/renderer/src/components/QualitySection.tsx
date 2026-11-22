@@ -82,10 +82,6 @@ interface Props {
   // The output sample-rate policy, read so the 'corrected' mode can announce on
   // the verdict itself what the next conversion will do to THIS file.
   outputSampleRate?: OutputSampleRate
-  // The open track against the library's copy of it, built by the editor that owns the
-  // library lookup. It follows the spectrum's own findings, so the spectrum stays the
-  // first thing the section shows.
-  copyComparison?: React.ReactNode
 }
 
 // The audio-quality section: spectrogram with its lossless-cutoff verdict, and the
@@ -102,7 +98,6 @@ export function QualitySection({
   onShowLoudnessHelp,
   showHints = true,
   outputSampleRate = 'source',
-  copyComparison,
 }: Props): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const { reportError } = useToast()
@@ -483,7 +478,6 @@ export function QualitySection({
                   )}
               </>
             ) : null)}
-          {copyComparison}
           {showLoudness &&
             (loudness ? (
               <LoudnessReadout

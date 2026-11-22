@@ -970,8 +970,6 @@
     "missingCount_other": "{{count}} 必須フィールドが不足しています",
     "mixedReplaceSelection": "選択されたトラックは、ライブラリ内のコピーを置き換えるものと追加するものが混在しています。変換するには別々にしてください。",
     "reportError": "レポート",
-    "inLibrary": "Apple Music に登録済み",
-    "inLibraryEngine": "Engine DJ に登録済み",
     "libraryCheckFailed": "Apple Music ライブラリを読み取れなかったため、トラックがすでに含まれているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "libraryCheckFailedEngine": "Engine DJ ライブラリを読み取れなかったため、トラックがすでに登録されているかマークできません。ウィンドウに戻ったときに Surco が再試行します。",
     "editingMultiple": "{{count}} トラックの編集",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "良好：-45 dB 以下。",
     "loudnessFixNoise": "ここで修正不可：Surco はノイズ除去を行いません。ソースや録音に由来します。",
     "loudnessAfterHeader": "現在 → 変換後",
-    "libraryCopyBetterNote": "{{library}} のコピー（{{format}}）はこのファイルより良いです。",
-    "libraryCopyBetterNoteBare": "{{library}} のコピーはこのファイルより良いです。",
-    "libraryCopyCompare": "比較",
-    "copyHereBetter": "{{library}} のものより良いコピー",
-    "copyLibraryBetter": "{{library}} のものより悪いコピー",
-    "copySame": "{{library}} と同じコピー",
-    "copyComparing": "{{library}} コピーと比較…",
     "copyThisFile": "このファイル",
     "copyRowCutoff": "カットオフ",
     "copyRowPeakCount": "上限でのサンプル数",
@@ -1376,7 +1367,13 @@
         "needsCalls": "CALLが2つ必要です",
         "apply": "コメントに入れる"
       }
-    }
+    },
+    "librarySectionTitle": "ライブラリ内",
+    "libraryVerdictHere": "こちらの方が良い",
+    "libraryVerdictLibrary": "より良いコピーがあります",
+    "libraryVerdictSame": "同じコピー",
+    "libraryVerdictMeasuring": "比較中…",
+    "libraryRowBetter": "このファイルより良い"
   },
   "fields": {
     "groupIdentity": "基本",
@@ -1967,7 +1964,8 @@
       "hide": "エディタからセクションを非表示",
       "visible": "表示",
       "visibleHint": "このセクションをエディタに表示します。非表示セクションは完全に除外されます。",
-      "openHint": "トラックを開いたときにこのセクションを展開した状態で開始します。"
+      "openHint": "トラックを開いたときにこのセクションを展開した状態で開始します。",
+      "library": "ライブラリ内"
     },
     "keyNotations": {
       "camelot": "英数字（8A）",

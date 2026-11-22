@@ -970,8 +970,6 @@
     "missingCount_other": "{{count}} champs obligatoires manquants",
     "mixedReplaceSelection": "La sélection mélange des morceaux qui remplacent une copie de ta bibliothèque et des morceaux qui sont ajoutés. Sépare-les pour convertir.",
     "reportError": "Signaler",
-    "inLibrary": "Dans Apple Music",
-    "inLibraryEngine": "Dans Engine DJ",
     "libraryCheckFailed": "Impossible de lire ta bibliothèque Apple Music, les morceaux ne sont donc pas marqués comme déjà présents. Surco réessaie quand tu reviens sur la fenêtre.",
     "libraryCheckFailedEngine": "Impossible de lire ta bibliothèque Engine DJ, les morceaux ne sont donc pas marqués comme déjà présents. Surco réessaie quand tu reviens sur la fenêtre.",
     "editingMultiple": "Édition de {{count}} morceaux",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Bon : -45 dB ou moins.",
     "loudnessFixNoise": "Non corrigible ici : Surco ne débruite pas. Cela vient de la source ou de la captation.",
     "loudnessAfterHeader": "avant → après conversion",
-    "libraryCopyBetterNote": "La copie de {{library}} ({{format}}) est meilleure que ce fichier.",
-    "libraryCopyBetterNoteBare": "La copie de {{library}} est meilleure que ce fichier.",
-    "libraryCopyCompare": "Comparer",
-    "copyHereBetter": "Meilleure copie que celle de {{library}}",
-    "copyLibraryBetter": "Moins bonne copie que celle de {{library}}",
-    "copySame": "Même copie que celle de {{library}}",
-    "copyComparing": "Comparaison avec la copie de {{library}}…",
     "copyThisFile": "Ce fichier",
     "copyRowCutoff": "Coupure",
     "copyRowPeakCount": "Échantillons au plafond",
@@ -1376,7 +1367,13 @@
         "needsCalls": "Il faut deux CALLs",
         "apply": "Mettre dans le commentaire"
       }
-    }
+    },
+    "librarySectionTitle": "Dans ta bibliothèque",
+    "libraryVerdictHere": "Celle-ci est meilleure",
+    "libraryVerdictLibrary": "Il y a une meilleure copie",
+    "libraryVerdictSame": "Même copie",
+    "libraryVerdictMeasuring": "Comparaison…",
+    "libraryRowBetter": "Meilleure que ce fichier"
   },
   "fields": {
     "groupIdentity": "Essentiels",
@@ -1967,7 +1964,8 @@
       "hide": "Masquer la section de l’éditeur",
       "visible": "Visible",
       "visibleHint": "Affiche cette section dans l’éditeur. Les sections masquées n’apparaissent pas du tout.",
-      "openHint": "Ouvre cette section dépliée à l’ouverture d’un morceau."
+      "openHint": "Ouvre cette section dépliée à l’ouverture d’un morceau.",
+      "library": "Dans ta bibliothèque"
     },
     "keyNotations": {
       "camelot": "Alphanumérique (8A)",

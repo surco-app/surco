@@ -970,8 +970,6 @@
     "missingCount_other": "Faltam {{count}} campos obrigatórios",
     "mixedReplaceSelection": "A seleção mistura faixas que substituem uma cópia da sua biblioteca com faixas que são adicionadas. Separe-as para converter.",
     "reportError": "Reportar",
-    "inLibrary": "No Apple Music",
-    "inLibraryEngine": "No Engine DJ",
     "libraryCheckFailed": "Não foi possível ler sua biblioteca do Apple Music, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "libraryCheckFailedEngine": "Não foi possível ler sua biblioteca do Engine DJ, então as faixas não são marcadas como já incluídas. O Surco tenta de novo quando você volta para a janela.",
     "editingMultiple": "Editando {{count}} faixas",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Bom: -45 dB ou menos.",
     "loudnessFixNoise": "Não dá para corrigir aqui: o Surco não remove ruído. Vem da fonte ou da captura.",
     "loudnessAfterHeader": "agora → após converter",
-    "libraryCopyBetterNote": "A cópia do {{library}} ({{format}}) é melhor que este arquivo.",
-    "libraryCopyBetterNoteBare": "A cópia do {{library}} é melhor que este arquivo.",
-    "libraryCopyCompare": "Comparar",
-    "copyHereBetter": "Cópia melhor que a do {{library}}",
-    "copyLibraryBetter": "Cópia pior que a do {{library}}",
-    "copySame": "Mesma cópia que a do {{library}}",
-    "copyComparing": "Comparando com a cópia do {{library}}…",
     "copyThisFile": "Este arquivo",
     "copyRowCutoff": "Corte",
     "copyRowPeakCount": "Amostras no teto",
@@ -1376,7 +1367,13 @@
         "needsCalls": "São necessários dois CALLs",
         "apply": "Colocar no comentário"
       }
-    }
+    },
+    "librarySectionTitle": "Na sua biblioteca",
+    "libraryVerdictHere": "Esta é a melhor",
+    "libraryVerdictLibrary": "Há uma cópia melhor",
+    "libraryVerdictSame": "Mesma cópia",
+    "libraryVerdictMeasuring": "Comparando…",
+    "libraryRowBetter": "Melhor que este arquivo"
   },
   "fields": {
     "groupIdentity": "Básicos",
@@ -1967,7 +1964,8 @@
       "hide": "Ocultar a seção do editor",
       "visible": "Visível",
       "visibleHint": "Mostra esta seção no editor. As ocultas não aparecem de forma alguma.",
-      "openHint": "Abre esta seção expandida ao abrir uma faixa."
+      "openHint": "Abre esta seção expandida ao abrir uma faixa.",
+      "library": "Na sua biblioteca"
     },
     "keyNotations": {
       "camelot": "Alfanumérica (8A)",

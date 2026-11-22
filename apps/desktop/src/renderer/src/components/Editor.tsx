@@ -1,19 +1,16 @@
 import {
   Braces,
-  ChevronRight,
   ClipboardCopy,
   ClipboardPaste,
   Copy,
   Eraser,
   Folder,
   Globe,
-  Music,
   PanelLeftOpen,
   RefreshCw,
   Scissors,
   Search,
   Tag,
-  TriangleAlert,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -84,7 +81,6 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { librarySourceOf } from '../lib/librarySource'
 import { missingSummary } from '../lib/missingSummary'
-import { scrollBehavior } from '../lib/motion'
 import {
   autoNamesFile,
   emptyTitleFormatFields,
@@ -128,6 +124,7 @@ import { BulkActionSection, OverwriteNotice } from './EditorBulkPanels'
 import { FORMATS } from './ExportButton'
 import type { InsertSource } from './FieldInsertMenu'
 import { ForeignTagsInspector } from './ForeignTagsInspector'
+import { LibrarySection, type LibraryVerdict } from './LibrarySection'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
@@ -140,7 +137,6 @@ import { QualitySection } from './QualitySection'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
-import { SectionPill } from './SectionPill'
 import { SpectrumGlimpse } from './SpectrumGlimpse'
 import { Tooltip } from './Tooltip'
 import { TrimSection } from './TrimSection'
@@ -148,7 +144,7 @@ import { TrimSection } from './TrimSection'
 interface Props {
   item: TrackItem
   // The session snapshot of the Apple Music library (null until it lands / off macOS),
-  // the same one the list and quality filter read, so the "already owned" badge can never
+  // the same one the list and quality filter read, so the "already owned" section can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
   searchInputRef: React.RefObject<HTMLInputElement | null>
@@ -292,13 +288,6 @@ const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'processed',
   'upsampled',
 ])
-
-const COPY_STATE_LABEL = {
-  here: 'editor.copyHereBetter',
-  library: 'editor.copyLibraryBetter',
-  same: 'editor.copySame',
-  measuring: 'editor.copyComparing',
-} as const
 
 // Memoized: App keeps every prop identity-stable (useStableCallback handlers, kept
 // selectedTracks identity), so search keystrokes and progress ticks on other tracks
@@ -482,7 +471,6 @@ export const Editor = memo(function Editor({
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
   const formBodyId = useId()
-  const copyCardId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
   const outputOpen = sectionOpen.output
@@ -1482,13 +1470,8 @@ export const Editor = memo(function Editor({
     },
   ]
 
-  // The library state rides the section's title line, beside the title: a line of its own
-  // under the header hung there like a stray fragment of the body, open or folded.
-  const hasLibraryMarks = !isMulti && (inLibrary === 'yes' || inLibrary === 'no')
-  // A note glyph and the library's name: a bare green dot beside "Metadata" read as "the
-  // tags are fine", when what it reports is that the track is already in the library.
   const libraryName = librarySource === 'engineDj' ? 'Engine DJ' : 'Apple Music'
-  const copyState: keyof typeof COPY_STATE_LABEL | null = copyMeasuring
+  const copyState: LibraryVerdict | null = copyMeasuring
     ? 'measuring'
     : !copyVerdict || copyVerdict.winner === 'tie'
       ? null
@@ -1497,23 +1480,6 @@ export const Editor = memo(function Editor({
         : copyVerdict.winner === 'b'
           ? 'library'
           : 'same'
-  // The comparison with the library's copy lives in Audio quality, under the spectrum: that
-  // section speaks of the open track, so "better" or "worse" needs no subject, and its
-  // numbers sit beside the spectrum they are read with. The Metadata header keeps only the
-  // library mark, which still turns to a warning when the library's copy is the better one.
-  // Drawn as one more finding under the spectrum: the same rule on its left, coloured as
-  // the findings above it are (green better, amber worse, grey the same or still measuring).
-  const copyStateTone = {
-    here: 'good',
-    library: 'warn',
-    same: 'neutral',
-    measuring: 'neutral',
-  } as const
-  const TONE_BORDER = {
-    good: 'var(--color-good)',
-    warn: 'var(--color-warn)',
-    neutral: 'var(--color-line-strong)',
-  }
   // Only a limiter verdict has waves to show; its copy's own rate keeps the pinned peaks intact.
   const limitedRate =
     copyVerdict && 'reason' in copyVerdict && copyVerdict.reason === 'peakCount'
@@ -1521,141 +1487,47 @@ export const Editor = memo(function Editor({
       : undefined
   const spectrumDecided =
     !!copyVerdict && 'reason' in copyVerdict && SPECTRUM_REASONS.has(copyVerdict.reason)
-  const copyLine =
-    !isMulti && inLibrary === 'yes' && copyState ? (
-      <>
-        <div
-          data-testid="copy-line"
-          data-tone={copyStateTone[copyState]}
-          className="mt-2 border-l-2 pl-2.5 text-xs"
-          style={{ borderColor: TONE_BORDER[copyStateTone[copyState]] }}
-        >
-          <button
-            type="button"
-            data-testid="copy-verdict"
-            data-state={copyState}
-            aria-expanded={copyOpen}
-            aria-controls={copyCardId}
-            disabled={copyState === 'measuring'}
-            onClick={() => setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)}
-            className="press flex items-center gap-1 rounded text-fg-dim hover:text-fg-muted"
-          >
-            {tr(COPY_STATE_LABEL[copyState], { library: libraryName })}
-            {copyState !== 'measuring' && (
-              <ChevronRight
-                className={`h-3 w-3 transition-transform ${copyOpen ? 'rotate-90' : ''}`}
-                aria-hidden="true"
-              />
-            )}
-          </button>
-        </div>
-        {copyOpen && copyVerdict && hereFacts && libraryFacts && (
-          <CopyComparison
-            id={copyCardId}
-            verdict={copyVerdict}
-            here={hereFacts}
-            library={libraryFacts}
-            hereLabel={hereFacts.ext}
-            libraryLabel={replacedCopyFormat || libraryFacts.ext}
-            glimpse={
-              limitedRate ? (
-                <LimiterGlimpse
-                  worsePath={copyVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
-                  betterPath={copyVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
-                  sampleRate={limitedRate}
-                  layers={[
-                    {
-                      side: copyVerdict.winner === 'a' ? 'better' : 'worse',
-                      label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
-                    },
-                    {
-                      side: copyVerdict.winner === 'a' ? 'worse' : 'better',
-                      label: `${libraryName} · ${libraryFacts.ext}`,
-                    },
-                  ]}
-                />
-              ) : spectrumDecided ? (
-                <SpectrumGlimpse
-                  herePath={item.inputPath}
-                  libraryPath={comparedCopyPath}
-                  hereLabel={`${tr('editor.copyThisFile')} · ${hereFacts.ext}`}
-                  libraryLabel={`${libraryName} · ${libraryFacts.ext}`}
-                  loser={copyVerdict.winner === 'a' ? 'library' : 'here'}
-                />
-              ) : undefined
-            }
-          />
-        )}
-      </>
-    ) : undefined
-  const revealCopy = useRef(false)
-  useEffect(() => {
-    if (!copyOpen || !revealCopy.current) return
-    revealCopy.current = false
-    document
-      .getElementById(copyCardId)
-      ?.scrollIntoView?.({ block: 'nearest', behavior: scrollBehavior() })
-  }, [copyOpen, copyCardId])
-  // The library's copy being the better one is read before the swap, at the top of the tags,
-  // as a sentence naming that copy. The header line keeps only the amber library mark: the
-  // sentence spelled out there outgrew a narrow panel and ran under the toolbar. Once the
-  // copies are measured, Compare goes to the numbers in Audio quality.
-  const canCompareCopies = copyVerdict?.winner === 'b' && !isMulti && (showSpectrum || showLoudness)
-  const libraryCopyBetterNote = !isMulti && inLibrary === 'yes' && libraryCopyBetter && (
-    <div
-      data-testid="library-copy-better-note"
-      className="mb-4 flex items-start gap-2 rounded-md bg-[var(--color-warn)]/10 px-2.5 py-2 text-xs text-fg-muted"
-    >
-      <TriangleAlert
-        className="mt-px h-3.5 w-3.5 shrink-0 text-[var(--color-warn)]"
-        aria-hidden="true"
+  const libraryComparison = copyVerdict &&
+    copyVerdict.winner !== 'tie' &&
+    hereFacts &&
+    libraryFacts && (
+      <CopyComparison
+        verdict={copyVerdict}
+        here={hereFacts}
+        library={libraryFacts}
+        hereLabel={hereFacts.ext}
+        libraryLabel={replacedCopyFormat || libraryFacts.ext}
+        glimpse={
+          limitedRate ? (
+            <LimiterGlimpse
+              worsePath={copyVerdict.winner === 'a' ? comparedCopyPath : item.inputPath}
+              betterPath={copyVerdict.winner === 'a' ? item.inputPath : comparedCopyPath}
+              sampleRate={limitedRate}
+              layers={[
+                {
+                  side: copyVerdict.winner === 'a' ? 'better' : 'worse',
+                  label: `${tr('editor.copyThisFile')} · ${hereFacts.ext}`,
+                },
+                {
+                  side: copyVerdict.winner === 'a' ? 'worse' : 'better',
+                  label: `${libraryName} · ${libraryFacts.ext}`,
+                },
+              ]}
+            />
+          ) : spectrumDecided ? (
+            <SpectrumGlimpse
+              herePath={item.inputPath}
+              libraryPath={comparedCopyPath}
+              hereLabel={`${tr('editor.copyThisFile')} · ${hereFacts.ext}`}
+              libraryLabel={`${libraryName} · ${libraryFacts.ext}`}
+              loser={copyVerdict.winner === 'a' ? 'library' : 'here'}
+            />
+          ) : undefined
+        }
       />
-      <span className="min-w-0 flex-1">
-        {replacedCopyFormat
-          ? tr('editor.libraryCopyBetterNote', {
-              library: libraryName,
-              format: replacedCopyFormat,
-            })
-          : tr('editor.libraryCopyBetterNoteBare', { library: libraryName })}
-      </span>
-      {canCompareCopies && (
-        <button
-          type="button"
-          data-testid="library-copy-compare"
-          onClick={() => {
-            revealCopy.current = true
-            setSectionOpen('quality', true)
-            setCopyOpenFor(`${item.inputPath}\n${replacedCopyPath}`)
-          }}
-          className="press shrink-0 rounded font-medium text-[var(--color-warn)] hover:underline"
-        >
-          {tr('editor.libraryCopyCompare')}
-        </button>
-      )}
-    </div>
-  )
-  const libraryMarks = (
-    <>
-      {!isMulti && inLibrary === 'yes' && (
-        <SectionPill
-          tone={libraryCopyBetter ? 'warn' : 'good'}
-          testid="apple-music-status"
-          icon={
-            libraryCopyBetter ? (
-              <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
-            ) : (
-              <Music className="h-3.5 w-3.5" aria-hidden="true" />
-            )
-          }
-        >
-          <span aria-hidden="true">{libraryName}</span>
-          <span className="sr-only">
-            {tr(librarySource === 'engineDj' ? 'editor.inLibraryEngine' : 'editor.inLibrary')}
-          </span>
-        </SectionPill>
-      )}
-    </>
-  )
+    )
+  const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
+  const showLibrary = !isMulti && inLibrary === 'yes' && !libraryHidden
 
   return (
     <div className="flex h-full min-h-0">
@@ -1726,8 +1598,8 @@ export const Editor = memo(function Editor({
           }}
           className="min-h-0 flex-1 overflow-y-auto p-7"
         >
-          {/* The pinned metadata form opens the "File" phase; the mapped sections
-              below label "Audio" and "Output" as the group changes down the list. */}
+          {/* The pinned library section and metadata form open the "File" phase; the mapped
+              sections below label "Audio" and "Output" as the group changes down the list. */}
           {!isMulti && (
             <SectionGroupHeading
               label={tr('editor.groupMetadata')}
@@ -1735,73 +1607,102 @@ export const Editor = memo(function Editor({
               first
             />
           )}
-          <SectionHeader
-            title={
-              isMulti
-                ? tr('editor.editingMultiple', { count: selectedTracks?.length ?? 0 })
-                : tr('editor.sectionForm')
-            }
-            open={formOpen}
-            onToggle={() => setSectionOpen('form', !formOpen)}
-            bodyId={formBodyId}
-            // Folded, the header still says whose tags these are; multi-select's
-            // title already counts the selection, so no digest is added there.
-            summary={
-              !isMulti
-                ? [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || undefined
+          {showLibrary && (
+            <LibrarySection
+              open={sectionOpen.library}
+              onToggle={() => setSectionOpen('library', !sectionOpen.library)}
+              libraryName={libraryName}
+              verdict={
+                libraryCopyBetter && (copyState === null || copyState === 'measuring')
+                  ? 'library'
+                  : copyState
+              }
+              copyFormat={replacedCopyFormat}
+              libraryBetter={libraryCopyBetter}
+              comparison={libraryComparison || undefined}
+              comparisonOpen={copyOpen}
+              onToggleComparison={() =>
+                setCopyOpenFor(copyOpen ? '' : `${item.inputPath}\n${replacedCopyPath}`)
+              }
+            />
+          )}
+          <div
+            data-testid="metadata-block"
+            data-separated={showLibrary}
+            className={
+              showLibrary
+                ? 'mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3'
                 : undefined
             }
-            summaryTestId="form-summary"
-            status={hasLibraryMarks ? libraryMarks : undefined}
-            right={
-              // Fill and Clear stay in the header with their names; every other glyph that
-              // used to ride this line waits in the menu, which closes the row. Clear is set
-              // apart from Fill by a divider, so a reach for fill never lands on it.
-              <div className="flex items-center gap-1">
-                {formOpen && deriveButton}
-                {formOpen && (
-                  <>
-                    <div
-                      aria-hidden="true"
-                      className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
-                    />
-                    {clearButton}
-                  </>
-                )}
-                {formOpen && <MetaMoreMenu items={moreItems} />}
-              </div>
-            }
-          />
-          <SectionBody open={formOpen} id={formBodyId}>
-            {libraryCopyBetterNote}
-            {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
+          >
+            <SectionHeader
+              title={
+                isMulti
+                  ? tr('editor.editingMultiple', { count: selectedTracks?.length ?? 0 })
+                  : tr('editor.sectionForm')
+              }
+              open={formOpen}
+              onToggle={() => setSectionOpen('form', !formOpen)}
+              bodyId={formBodyId}
+              // Folded, the header still says whose tags these are; multi-select's
+              // title already counts the selection, so no digest is added there.
+              summary={
+                !isMulti
+                  ? [item.meta.artist, item.meta.title].filter(Boolean).join(' — ') || undefined
+                  : undefined
+              }
+              summaryTestId="form-summary"
+              right={
+                // Fill and Clear stay in the header with their names; every other glyph that
+                // used to ride this line waits in the menu, which closes the row. Clear is set
+                // apart from Fill by a divider, so a reach for fill never lands on it.
+                <div className="flex items-center gap-1">
+                  {formOpen && deriveButton}
+                  {formOpen && (
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="mx-1 h-4 w-px self-center bg-[var(--color-line)]"
+                      />
+                      {clearButton}
+                    </>
+                  )}
+                  {formOpen && <MetaMoreMenu items={moreItems} />}
+                </div>
+              }
+            />
+            <SectionBody open={formOpen} id={formBodyId}>
+              {/* Capture focus entering/leaving the field grid so the sweep knows which rows are
                 under edit. Blur only clears when focus leaves the grid entirely (relatedTarget
                 outside) — moving between two fields must not flash the guard off, which would
                 reopen the very window it closes. onChange (a text commit) also confirms the rows
                 are under active edit, in case focus arrived without a focus event we saw. */}
-            <div
-              onFocusCapture={() => onFieldFocusChange?.(editedIds)}
-              onChangeCapture={() => onFieldFocusChange?.(editedIds)}
-              onBlurCapture={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node | null))
-                  onFieldFocusChange?.([])
-              }}
-            >
-              <MetadataForm
-                item={item}
-                isMulti={isMulti}
-                selectedTracks={selectedTracks}
-                release={release}
-                coverDims={effectiveCoverDims}
-                setCoverDims={setCoverDims}
-                onChange={onCoverChange}
-                onApplyCoverAll={onApplyCoverAll}
-                // Over a selection the stars write every track, the way the bulk fields do.
-                onRate={(v) => (isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v))}
-                fields={fieldSpecs}
-              />
-            </div>
-          </SectionBody>
+              <div
+                onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+                onChangeCapture={() => onFieldFocusChange?.(editedIds)}
+                onBlurCapture={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                    onFieldFocusChange?.([])
+                }}
+              >
+                <MetadataForm
+                  item={item}
+                  isMulti={isMulti}
+                  selectedTracks={selectedTracks}
+                  release={release}
+                  coverDims={effectiveCoverDims}
+                  setCoverDims={setCoverDims}
+                  onChange={onCoverChange}
+                  onApplyCoverAll={onApplyCoverAll}
+                  // Over a selection the stars write every track, the way the bulk fields do.
+                  onRate={(v) =>
+                    isMulti ? onChangeAllMeta?.({ rating: v }) : setField('rating', v)
+                  }
+                  fields={fieldSpecs}
+                />
+              </div>
+            </SectionBody>
+          </div>
 
           {/* The sections below the metadata form render in the user's order
               (Settings → Editor); the form itself is the editor's fixed header. Each
@@ -1815,7 +1716,7 @@ export const Editor = memo(function Editor({
             let lastGroup = EDITOR_SECTION_GROUP.form
             let lifted: React.ReactElement | null = null
             const column = editorSections
-              .filter((s) => s.id !== 'form' && s.hidden !== true)
+              .filter((s) => s.id !== 'form' && s.id !== 'library' && s.hidden !== true)
               .flatMap(({ id }) => {
                 // Typed as element-or-falsy (not the wider ReactNode) so the arrays
                 // returned below are Element lists flatMap accepts, and the `!element`
@@ -1936,7 +1837,6 @@ export const Editor = memo(function Editor({
                             onToggle={() => setSectionOpen('quality', !spectrumOpen)}
                             showHints={showEditorHints}
                             outputSampleRate={outputSampleRate}
-                            copyComparison={copyLine}
                           />
                         )
                       )

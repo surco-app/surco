@@ -970,8 +970,6 @@
     "missingCount_other": "{{count}} Pflichtfelder fehlen",
     "mixedReplaceSelection": "Die Auswahl mischt Tracks, die eine Kopie in deiner Mediathek ersetzen, mit Tracks, die hinzugefügt werden. Trenne sie zum Konvertieren.",
     "reportError": "Melden",
-    "inLibrary": "In Apple Music",
-    "inLibraryEngine": "In Engine DJ",
     "libraryCheckFailed": "Deine Apple-Music-Mediathek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "libraryCheckFailedEngine": "Deine Engine-DJ-Bibliothek konnte nicht gelesen werden, daher werden Tracks nicht als bereits enthalten markiert. Surco versucht es erneut, wenn du zum Fenster zurückkehrst.",
     "editingMultiple": "{{count}} Tracks werden bearbeitet",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
     "loudnessFixNoise": "Hier nicht korrigierbar: Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
-    "libraryCopyBetterNote": "Die Kopie in {{library}} ({{format}}) ist besser als diese Datei.",
-    "libraryCopyBetterNoteBare": "Die Kopie in {{library}} ist besser als diese Datei.",
-    "libraryCopyCompare": "Vergleichen",
-    "copyHereBetter": "Bessere Kopie als die von {{library}}",
-    "copyLibraryBetter": "Schlechtere Kopie als die von {{library}}",
-    "copySame": "Dieselbe Kopie wie die von {{library}}",
-    "copyComparing": "Vergleich mit der Kopie von {{library}}…",
     "copyThisFile": "Diese Datei",
     "copyRowCutoff": "Cutoff",
     "copyRowPeakCount": "Samples an der Obergrenze",
@@ -1376,7 +1367,13 @@
         "needsCalls": "Braucht zwei CALLs",
         "apply": "In den Kommentar setzen"
       }
-    }
+    },
+    "librarySectionTitle": "In deiner Bibliothek",
+    "libraryVerdictHere": "Diese ist besser",
+    "libraryVerdictLibrary": "Es gibt eine bessere Kopie",
+    "libraryVerdictSame": "Gleiche Kopie",
+    "libraryVerdictMeasuring": "Wird verglichen…",
+    "libraryRowBetter": "Besser als diese Datei"
   },
   "fields": {
     "groupIdentity": "Grundlagen",
@@ -1967,7 +1964,8 @@
       "hide": "Abschnitt im Editor ausblenden",
       "visible": "Sichtbar",
       "visibleHint": "Zeigt diesen Abschnitt im Editor. Ausgeblendete erscheinen gar nicht.",
-      "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest."
+      "openHint": "Öffnet diesen Abschnitt aufgeklappt, wenn du einen Track öffnest.",
+      "library": "In deiner Bibliothek"
     },
     "keyNotations": {
       "camelot": "Alphanumerisch (8A)",

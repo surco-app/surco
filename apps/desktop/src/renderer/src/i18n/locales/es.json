@@ -970,8 +970,6 @@
     "missingCount_other": "Faltan {{count}} campos obligatorios",
     "mixedReplaceSelection": "La selección mezcla pistas que sustituyen a una copia de tu biblioteca y pistas que se añaden. Sepáralas para convertirlas.",
     "reportError": "Informar",
-    "inLibrary": "En Apple Music",
-    "inLibraryEngine": "En Engine DJ",
     "libraryCheckFailed": "No se ha podido leer tu biblioteca de Apple Music, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "libraryCheckFailedEngine": "No se ha podido leer tu biblioteca de Engine DJ, así que las pistas no se marcan como ya incluidas. Surco lo vuelve a intentar al volver a la ventana.",
     "editingMultiple": "Editando {{count}} pistas",
@@ -1031,13 +1029,6 @@
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
     "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura.",
     "loudnessAfterHeader": "ahora → tras convertir",
-    "libraryCopyBetterNote": "La copia de {{library}} ({{format}}) es mejor que este archivo.",
-    "libraryCopyBetterNoteBare": "La copia de {{library}} es mejor que este archivo.",
-    "libraryCopyCompare": "Comparar",
-    "copyHereBetter": "Mejor copia que la de {{library}}",
-    "copyLibraryBetter": "Peor copia que la de {{library}}",
-    "copySame": "Misma copia que la de {{library}}",
-    "copyComparing": "Comparando con la copia de {{library}}…",
     "copyThisFile": "Este archivo",
     "copyRowCutoff": "Corte",
     "copyRowPeakCount": "Muestras en el techo",
@@ -1376,7 +1367,13 @@
         "needsCalls": "Hacen falta dos CALLs",
         "apply": "Poner en el comentario"
       }
-    }
+    },
+    "librarySectionTitle": "En tu biblioteca",
+    "libraryVerdictHere": "Esta es la mejor",
+    "libraryVerdictLibrary": "Hay una copia mejor",
+    "libraryVerdictSame": "Misma copia",
+    "libraryVerdictMeasuring": "Comparando…",
+    "libraryRowBetter": "Mejor que este archivo"
   },
   "fields": {
     "groupIdentity": "Básicos",
@@ -1967,7 +1964,8 @@
       "hide": "Ocultar la sección del editor",
       "visible": "Visible",
       "visibleHint": "Muestra esta sección en el editor. Las ocultas no aparecen en absoluto.",
-      "openHint": "Empieza esta sección desplegada al abrir una pista."
+      "openHint": "Empieza esta sección desplegada al abrir una pista.",
+      "library": "En tu biblioteca"
     },
     "keyNotations": {
       "camelot": "Alfanumérica (8A)",

@@ -100,9 +100,9 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
       </div>
       <div className="space-y-1.5">
         {sections.map((section, i) => {
-          const movable = section.id !== 'form'
-          // Index 1 sits right under the pinned metadata form, so it can't climb.
-          const canUp = movable && i > 1
+          const movable = section.id !== 'form' && section.id !== 'library'
+          // Index 2 sits right under the pinned library and metadata form, so it can't climb.
+          const canUp = movable && i > 2
           const canDown = movable && i < sections.length - 1
           return (
             // biome-ignore lint/a11y/noStaticElementInteractions: the drag handlers are a pointer-only enhancement — the arrow buttons inside remain the keyboard-accessible way to reorder (same pattern as FieldsEditor).
@@ -207,7 +207,7 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
               {/* Hidden removes the section from the editor entirely; the form has no
                     toggle — it IS the editor. The open pill goes quiet meanwhile: a fold
                     default means nothing for a section that never renders. */}
-              {movable ? (
+              {section.id !== 'form' ? (
                 <button
                   type="button"
                   data-testid={`settings-section-hide-${section.id}`}

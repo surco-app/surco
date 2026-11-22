@@ -4874,7 +4874,7 @@ describe('Editor album "without version" suggestion', () => {
   })
 })
 
-describe('Editor Apple Music library badge', () => {
+describe('Editor Apple Music library section', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
   function setApi(platform: string): void {
@@ -4912,38 +4912,39 @@ describe('Editor Apple Music library badge', () => {
     tagFormats: [],
   }
 
-  // The badge exists so a DJ doesn't re-import a song they already own; on macOS it
+  // The library section exists so a DJ doesn't re-import a song they already own; on macOS it
   // checks the live title/artist against the same library snapshot the list and filter
-  // read, so the badge can never disagree with the row's in-library state.
+  // read, so the section can never disagree with the row's in-library state.
   it('flags a track already in the Apple Music library on macOS', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.getByTestId('library-section')).toBeInTheDocument()
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
-  // With Engine DJ as the destination the same badge reads the Engine library, and names it:
-  // a green mark beside "Metadata" alone read as "the tags are fine", so the badge says which
-  // library the track is in. Not macOS-gated: the Engine database is plain SQLite on every
-  // platform.
-  it('shows the library badge when Engine DJ is the destination library', () => {
+  // With Engine DJ as the destination the same section reads the Engine library, and its row
+  // names it, so the user sees which library the track is in. Not macOS-gated: the Engine
+  // database is plain SQLite on every platform.
+  it('shows Engine DJ with no verdict', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       addToAppleMusic: false,
       addToEngineDj: true,
       libraryIndex: owned,
     })
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Engine DJ')
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Engine DJ')
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
   // The complement: a song not found in the snapshot shows nothing, because the editor
   // only speaks about what the track has, never about what it lacks.
-  it('shows no badge for a track that is not in the library', () => {
+  it('shows no section for a track that is not in the library', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
   // A track Surco itself added carries its library copy's persistent ID, so it reads as
@@ -4955,49 +4956,89 @@ describe('Editor Apple Music library badge', () => {
       'wav',
       { libraryIndex: null },
     )
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
-  // Until the snapshot arrives there is no verdict to show, so the badge stays hidden
+  // Until the snapshot arrives there is no verdict to show, so the section stays hidden
   // rather than guessing — the slot fills once the library has loaded.
-  it('hides the badge until the snapshot has loaded', () => {
+  it('hides the section until the snapshot has loaded', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: null,
     })
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
   // The status reads as part of the section's title line, not a line of its own: alone under
   // the title it hung there like a stray fragment of the body, open or folded.
-  it('shows the badge on the header row, beside the title and the header buttons', () => {
-    setApi('darwin')
-    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
-      libraryIndex: owned,
-    })
+  it('shows the verdict on the library header row, beside the title', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
+    )
     const headerRow = screen
-      .getByRole('button', { name: 'Metadata' })
+      .getByRole('button', { name: 'In your library' })
       .closest('[data-testid="section-header-lead"]')?.parentElement
-    expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
-    expect(headerRow).toContainElement(screen.getByTestId('derive-btn'))
+    expect(headerRow).toContainElement(screen.getByTestId('library-verdict'))
   })
 
   // Folded, the section is one line: a status line left hanging under it read as a stray
-  // fragment of the hidden body. The badge rides the header row beside the digest instead,
-  // so the library state (and the duplicate-copies warning) still shows while folded.
-  it('keeps the badge on the header row while the section is folded', () => {
+  // fragment of the hidden body. The verdict rides the header row instead, so whether the
+  // library holds a better copy still shows while folded.
+  it('keeps the verdict on the header row while the section is folded', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'In your library' }))
+    const headerRow = screen
+      .getByRole('button', { name: 'In your library' })
+      .closest('h3')?.parentElement
+    expect(screen.getByRole('button', { name: 'In your library' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    )
+    expect(headerRow).toContainElement(screen.getByTestId('library-verdict'))
+  })
+
+  it('shows the library section above the metadata form', () => {
     setApi('darwin')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Metadata' }))
-    const headerRow = screen.getByRole('button', { name: 'Metadata' }).closest('h3')?.parentElement
-    expect(headerRow).toContainElement(screen.getByTestId('apple-music-status'))
+    const section = screen.getByTestId('library-section')
+    const metadata = screen.getByRole('button', { name: 'Metadata' })
+    expect(section.compareDocumentPosition(metadata) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
   })
 
-  // The mark beside Metadata only says the track is in the library. The copy's format
-  // belongs with the comparison that weighs it, so it is said once, not on both lines.
-  it('keeps the library copy format off the mark beside Metadata', async () => {
+  it('separates the metadata form from the library section only when that section shows', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('metadata-block')).toHaveAttribute('data-separated', 'true')
+    cleanup()
+    renderEditor({ id: 'a', meta: { title: 'Unknown', artist: 'Nobody' } }, 'wav', {
+      libraryIndex: owned,
+    })
+    expect(screen.getByTestId('metadata-block')).toHaveAttribute('data-separated', 'false')
+  })
+
+  it('leaves the library section out when it is hidden in the layout', () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: owned,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'library' ? { ...s, hidden: true } : s,
+      ),
+    })
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  // The copy's format is said once, on the library's row, beside the library it names.
+  it('names the library copy format on the library row', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
     api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Strobe.mp3')
@@ -5005,16 +5046,15 @@ describe('Editor Apple Music library badge', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: ownedWithId,
     })
-    await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.mp3'))
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
-    expect(screen.getByTestId('apple-music-status')).not.toHaveTextContent('MP3')
+    await waitFor(() => expect(screen.getByTestId('library-row')).toHaveTextContent('MP3 320'))
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
+    expect(screen.getAllByText('MP3 320')).toHaveLength(1)
   })
 
   // The swap recipe promises a warning when the file in hand is worse than the library copy.
   // The commonest case is a "lossless" download made from an MP3: the swap would trade the
-  // copy for one no better. The warning is a sentence at the top of the tags, naming the copy;
-  // spelled out on the header line it outgrew a narrow panel and ran under the toolbar, so the
-  // header keeps only the amber library mark.
+  // copy for one no better. The library row marks its copy as the better one and the verdict
+  // turns amber.
   it('says the library copy is better when the file in hand was made from a lossy source', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -5032,12 +5072,9 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: ownedWithId,
       showSpectrum: true,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
-        'The copy in Apple Music (MP3 320) is better than this file.',
-      ),
-    )
-    expect(screen.getByTestId('apple-music-status')).toHaveAttribute('data-tone', 'warn')
+    await waitFor(() => expect(screen.getByTestId('library-row-better')).toBeInTheDocument())
+    expect(screen.getByTestId('library-row')).toHaveTextContent('MP3 320')
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
   })
 
   it('says nothing about quality when the file in hand is a real upgrade', async () => {
@@ -5058,11 +5095,11 @@ describe('Editor Apple Music library badge', () => {
       showSpectrum: true,
     })
     await waitFor(() => expect(api.spectrogram).toHaveBeenCalled())
-    expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
+    expect(screen.queryByTestId('library-row-better')).toBeNull()
   })
 
   // A copy that lives only in iCloud has no file to read, so there is no format to name;
-  // the badge stays as it was rather than guessing.
+  // the row names only the library rather than guessing.
   it('names no format when the library copy has no file on disk', async () => {
     setApi('darwin')
     const api = window.api as unknown as Record<string, unknown>
@@ -5071,7 +5108,7 @@ describe('Editor Apple Music library badge', () => {
       libraryIndex: ownedWithId,
     })
     await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
-    expect(screen.getByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
   // Netzwerk, measured: the AIFF and the library's WAV are one master, and the WAV went
@@ -5151,22 +5188,17 @@ describe('Editor Apple Music library badge', () => {
   it('says this file is better than the Apple Music copy and opens the numbers', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
-    const pill = screen.getByTestId('copy-verdict')
-    // The row shows the swap the replace button offers; the verdict is the control's name.
-    expect(pill).toHaveTextContent('Better copy than the Apple Music one')
-    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'good')
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'good')
     expect(screen.queryByTestId('copy-sentence')).toBeNull()
-    fireEvent.click(pill)
+    fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-sentence')).toHaveTextContent(
       'The Apple Music copy is 2.2 dB louder, with 1978 samples pinned at its ceiling, the mark of a limiter.',
     )
-    expect(screen.queryByTestId('library-copy-better-note')).toBeNull()
+    expect(screen.queryByTestId('library-row-better')).toBeNull()
   })
 
-  // The pill sat inside the header's fold button: a click on it folded Metadata, and a
-  // button nested in a button is out of reach for the keyboard and a screen reader.
   // Whether the swap is worth it depends on what the library copy is down to its depth and
   // rate: a WAV 16/44.1 and a WAV 24/96 are not the same copy. The table that weighs the two
   // copies is where that is read, so its heading names the copy in full.
@@ -5178,9 +5210,9 @@ describe('Editor Apple Music library badge', () => {
         : null,
     )
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
-    fireEvent.click(screen.getByTestId('copy-verdict'))
+    fireEvent.click(screen.getByTestId('library-row'))
     expect(
       await screen.findByRole('columnheader', { name: 'Apple Music · WAV 16/44.1' }),
     ).toBeInTheDocument()
@@ -5196,36 +5228,52 @@ describe('Editor Apple Music library badge', () => {
     })
     // The library copy's properties are read in the same render the comparison would start.
     await waitFor(() => expect(api.properties).toHaveBeenCalledWith('/Music/Strobe.wav'))
-    expect(screen.queryByTestId('copy-verdict')).toBeNull()
+    expect(screen.queryByTestId('library-verdict')).toBeNull()
     expect(api.comparePair).not.toHaveBeenCalled()
   })
 
-  it('opens the numbers from the pill without folding the Metadata section', async () => {
+  it('opens the numbers from the library row without folding any section', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
-    const pill = screen.getByTestId('copy-verdict')
-    fireEvent.click(pill)
+    const row = screen.getByTestId('library-row')
+    fireEvent.click(row)
     expect(screen.getByRole('button', { name: 'Metadata' })).toHaveAttribute(
       'aria-expanded',
       'true',
     )
+    expect(screen.getByRole('button', { name: 'In your library' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
     const card = screen.getByTestId('copy-comparison')
-    expect(pill).toHaveAttribute('aria-expanded', 'true')
-    expect(pill).toHaveAttribute('aria-controls', card.id)
-    expect(card.id).not.toBe('')
+    expect(row).toHaveAttribute('aria-expanded', 'true')
+    const controlled = document.getElementById(row.getAttribute('aria-controls') ?? '')
+    expect(controlled).toContainElement(card)
+  })
+
+  it('shows no copy line in Audio quality anymore', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
+    )
+    fireEvent.click(screen.getByTestId('library-row'))
+    expect(screen.getAllByTestId('copy-comparison')).toHaveLength(1)
+    expect(screen.getByTestId('library-section')).toContainElement(
+      screen.getByTestId('copy-comparison'),
+    )
   })
 
   // jsdom does not turn Enter or Space on a button into a click (the browser does, for a
   // native button with no interactive ancestor), so the test pins the two things that
-  // make the key work: the pill takes focus and no other button wraps it.
-  it('reaches the pill from the keyboard as a button of its own', async () => {
+  // make the key work: the row takes focus and no other button wraps it.
+  it('reaches the library row from the keyboard as a button of its own', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
-    const pill = screen.getByTestId('copy-verdict')
+    const pill = screen.getByTestId('library-row')
     pill.focus()
     expect(document.activeElement).toBe(pill)
     expect(pill.tagName).toBe('BUTTON')
@@ -5240,7 +5288,7 @@ describe('Editor Apple Music library badge', () => {
   it('measures the open track at the editor priority, not the background one', async () => {
     const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
     expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high')
     expect(api.loudness).not.toHaveBeenCalledWith('/music/Strobe.aif', 'low')
@@ -5249,32 +5297,11 @@ describe('Editor Apple Music library badge', () => {
   it('says Apple Music has the better copy when this file is the limited one', async () => {
     renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent("There's a better copy"),
     )
-    expect(screen.getByTestId('copy-verdict')).toHaveTextContent(
-      'Worse copy than the Apple Music one',
-    )
-    expect(screen.getByTestId('copy-line')).toHaveAttribute('data-tone', 'warn')
-    expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
-      'The copy in Apple Music',
-    )
-  })
-
-  // The warning at the top of the tags is read far from Audio quality, where the numbers
-  // behind it live, so it carries the way there: Compare opens that section on the comparison.
-  it('opens the comparison in Audio quality from the warning above the tags', async () => {
-    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
-    await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
-    )
-    const quality = screen.getByRole('button', { name: 'Audio quality' })
-    if (quality.getAttribute('aria-expanded') === 'true') fireEvent.click(quality)
-    expect(quality).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.queryByTestId('copy-sentence')).toBeNull()
-    fireEvent.click(screen.getByTestId('library-copy-compare'))
-    expect(quality).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByTestId('copy-verdict')).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByTestId('copy-sentence')).toBeInTheDocument()
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
+    expect(screen.getByTestId('library-row-better')).toBeInTheDocument()
+    expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
   // "Pinned at its ceiling" is a claim the user has to take on trust; the glimpse shows it.
@@ -5286,9 +5313,9 @@ describe('Editor Apple Music library badge', () => {
       const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
       api.limiterGlimpse = vi.fn(async () => glimpse)
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
       )
-      fireEvent.click(screen.getByTestId('copy-verdict'))
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
       expect(api.limiterGlimpse).toHaveBeenCalledWith(
         '/Music/Strobe.wav',
@@ -5302,9 +5329,9 @@ describe('Editor Apple Music library badge', () => {
       const { api } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
       api.limiterGlimpse = vi.fn(async () => glimpse)
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'library'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent("There's a better copy"),
       )
-      fireEvent.click(screen.getByTestId('copy-verdict'))
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
       expect(api.limiterGlimpse).toHaveBeenCalledWith(
         '/music/Strobe.aif',
@@ -5323,9 +5350,9 @@ describe('Editor Apple Music library badge', () => {
       })
       api.limiterGlimpse = vi.fn(async () => glimpse)
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
       )
-      fireEvent.click(screen.getByTestId('copy-verdict'))
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
       expect(screen.queryByTestId('limiter-glimpse')).toBeNull()
       expect(api.limiterGlimpse).not.toHaveBeenCalled()
@@ -5338,9 +5365,9 @@ describe('Editor Apple Music library badge', () => {
     it('stacks both copies and marks the Apple Music one as the cut one', async () => {
       renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, libraryLossy: true })
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
       )
-      fireEvent.click(screen.getByTestId('copy-verdict'))
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
       const here = screen.getByTestId('spectrum-glimpse-here')
       const library = screen.getByTestId('spectrum-glimpse-library')
@@ -5354,9 +5381,9 @@ describe('Editor Apple Music library badge', () => {
       const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
       api.limiterGlimpse = vi.fn(async () => ({ worse: [-0.5, 0.5], better: [-0.6, 0.6] }))
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
       )
-      fireEvent.click(screen.getByTestId('copy-verdict'))
+      fireEvent.click(screen.getByTestId('library-row'))
       expect(await screen.findByTestId('limiter-glimpse')).toBeInTheDocument()
       expect(screen.queryByTestId('spectrum-glimpse')).toBeNull()
     })
@@ -5372,13 +5399,10 @@ describe('Editor Apple Music library badge', () => {
       showSpectrum: true,
       hereLossy: true,
     })
-    await waitFor(() =>
-      expect(screen.getByTestId('library-copy-better-note')).toHaveTextContent(
-        'is better than this file.',
-      ),
-    )
-    expect(screen.queryByTestId('library-copy-compare')).toBeNull()
-    expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'measuring')
+    await waitFor(() => expect(screen.getByTestId('library-row-better')).toBeInTheDocument())
+    expect(screen.getByTestId('library-row').tagName).not.toBe('BUTTON')
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-tone', 'warn')
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent("There's a better copy")
   })
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
@@ -5395,19 +5419,18 @@ describe('Editor Apple Music library badge', () => {
 
   it('says it is still comparing while the copies are being measured', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, pair: new Promise(() => {}) })
-    const pill = await screen.findByTestId('copy-verdict')
-    expect(pill).toHaveAttribute('data-state', 'measuring')
-    expect(pill).toHaveTextContent('Comparing with the Apple Music copy…')
+    const pill = await screen.findByTestId('library-verdict')
+    expect(pill).toHaveTextContent('Comparing…')
   })
 
-  // A copy that could not be measured gives no verdict at all; the pill that was there
+  // A copy that could not be measured gives no verdict at all; the section that was there
   // before the comparison existed stays as it was.
   it('shows no verdict when the library copy cannot be read', async () => {
     const { api } = renderWithLibraryCopy({ here: aifLoudness, library: null })
-    await screen.findByTestId('copy-verdict')
+    await screen.findByTestId('library-verdict')
     await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/Music/Strobe.wav', 'low'))
-    await waitFor(() => expect(screen.queryByTestId('copy-verdict')).toBeNull())
-    expect(screen.getByTestId('apple-music-status')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByTestId('library-verdict')).toBeNull())
+    expect(screen.getByTestId('library-section')).toBeInTheDocument()
   })
 
   // Two copies that cannot be lined up are not the same master, so the level criteria are
@@ -5421,7 +5444,7 @@ describe('Editor Apple Music library badge', () => {
     })
     await waitFor(() => expect(api.comparePair).toHaveBeenCalled())
     await waitFor(() =>
-      expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
     )
   })
 
@@ -5434,7 +5457,7 @@ describe('Editor Apple Music library badge', () => {
     it('compares when all of them hold', async () => {
       const { api } = renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness })
       await waitFor(() =>
-        expect(screen.getByTestId('copy-verdict')).toHaveAttribute('data-state', 'here'),
+        expect(screen.getByTestId('library-verdict')).toHaveTextContent('This one is better'),
       )
       expect(api.comparePair).toHaveBeenCalled()
     })
@@ -5447,7 +5470,7 @@ describe('Editor Apple Music library badge', () => {
       })
       await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
       await settle()
-      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
     })
 
@@ -5460,8 +5483,8 @@ describe('Editor Apple Music library badge', () => {
         ]),
       })
       await settle()
-      expect(screen.queryByTestId('apple-music-status')).toBeNull()
-      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(screen.queryByTestId('library-section')).toBeNull()
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
     })
 
@@ -5473,7 +5496,7 @@ describe('Editor Apple Music library badge', () => {
       })
       await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalled())
       await settle()
-      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
     })
 
@@ -5485,23 +5508,23 @@ describe('Editor Apple Music library badge', () => {
       })
       await waitFor(() => expect(api.loudness).toHaveBeenCalledWith('/music/Strobe.aif', 'high'))
       await settle()
-      expect(screen.queryByTestId('copy-verdict')).toBeNull()
+      expect(screen.queryByTestId('library-verdict')).toBeNull()
       expect(api.comparePair).not.toHaveBeenCalled()
     })
   })
 
-  // Off macOS there is no Apple Music library, so the badge stays hidden rather than
+  // Off macOS there is no Apple Music library, so the section stays hidden rather than
   // making a promise the platform can't keep.
-  it('never shows the badge off macOS', () => {
+  it('never shows the section off macOS', () => {
     setApi('win32')
     renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
       libraryIndex: owned,
     })
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 })
 
-describe('Editor Apple Music badge via the Discogs suggestion', () => {
+describe('Editor Apple Music section via the Discogs suggestion', () => {
   beforeEach(() => void i18n.changeLanguage('en'))
 
   // A track number/title tag the file ships with is often messier than the canonical
@@ -5543,21 +5566,24 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
         libraryIndex: owned,
       },
     )
-    // The file's own artist tag isn't in the library, so there is no badge yet.
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    // The file's own artist tag isn't in the library, so there is no section yet.
+    expect(screen.queryByTestId('library-section')).toBeNull()
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
+    const queryInput = screen.getByTestId('discogs-query')
+    queryInput.focus()
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    // The release's canonical "The Artist — Track Two (Remix)" is owned, so the badge flips
+    expect(document.activeElement).toBe(queryInput)
+    // The release's canonical "The Artist — Track Two (Remix)" is owned, so the section shows
     // even though the file tag never matched on its own.
-    expect(await screen.findByTestId('apple-music-status')).toHaveTextContent('In Apple Music')
+    expect(await screen.findByTestId('library-row')).toHaveTextContent('Apple Music')
   })
 
   // The suggestion must not manufacture a false positive: an owned-looking release whose
-  // canonical name still isn't in the library leaves the badge off.
-  it('keeps the badge off when the suggestion is not in the library either', async () => {
+  // canonical name still isn't in the library leaves the section off.
+  it('keeps the section off when the suggestion is not in the library either', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
     renderEditor(
@@ -5572,12 +5598,12 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     const result = await screen.findByTestId('discogs-result')
     if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
     await screen.findAllByTestId('discogs-track')
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
-  // A track the library lacks shows no badge while Discogs is still searching; Discogs may
+  // A track the library lacks shows no section while Discogs is still searching; Discogs may
   // still flip it to owned later.
-  it('shows no badge while Discogs is still searching for a track the library lacks', async () => {
+  it('shows no section while Discogs is still searching for a track the library lacks', async () => {
     setApi()
     let release_: () => void = () => {}
     const gate = new Promise<unknown[]>((res) => {
@@ -5596,11 +5622,11 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     )
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await waitFor(() => expect(window.api.search).toHaveBeenCalled())
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
     release_()
   })
 
-  // Once the search settles with no owning match, the badge stays off.
+  // Once the search settles with no owning match, the section stays off.
   it('stays off once the search settles without an owning match', async () => {
     setApi()
     const owned = buildLibraryIndex([{ title: 'Something Else', artist: 'Nobody' }])
@@ -5615,7 +5641,7 @@ describe('Editor Apple Music badge via the Discogs suggestion', () => {
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     await screen.findByTestId('discogs-result')
     await new Promise((r) => setTimeout(r, 50))
-    expect(screen.queryByTestId('apple-music-status')).toBeNull()
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 })
 

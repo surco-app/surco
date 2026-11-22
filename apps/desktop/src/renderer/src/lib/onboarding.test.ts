@@ -327,7 +327,15 @@ describe('deriveEditorSections', () => {
   // intent picked, the editor keeps only the always-present sections and hides the rest.
   it('hides every audio section when no audio intent is picked', () => {
     const sections = deriveEditorSections([])
-    expect(shown(sections)).toEqual(['form', 'properties', 'quality', 'cues', 'matching', 'output'])
+    expect(shown(sections)).toEqual([
+      'library',
+      'form',
+      'properties',
+      'quality',
+      'cues',
+      'matching',
+      'output',
+    ])
     // trim/declick/normalize are the ones the metadata-only DJ never uses.
     for (const id of ['trim', 'declick', 'normalize'] as const) {
       expect(sections.find((s) => s.id === id)?.hidden).toBe(true)
@@ -366,7 +374,7 @@ describe('deriveEditorSections', () => {
   it('always keeps the metadata, quality, cues and output sections', () => {
     for (const intents of [[], ['restore'], ['level'], ['quality']] as const) {
       const sections = deriveEditorSections([...intents])
-      for (const id of ['form', 'quality', 'cues', 'output'] as const) {
+      for (const id of ['library', 'form', 'quality', 'cues', 'output'] as const) {
         expect(sections.find((s) => s.id === id)?.hidden).not.toBe(true)
       }
     }
@@ -448,6 +456,7 @@ describe('buildOnboardingPatch on a re-run', () => {
   // A layout the DJ arranged by hand: reordered, refolded, otherTags and the
   // vinyl-repair pair hidden. The re-run must treat it as sacred.
   const customized = [
+    { id: 'library', open: true },
     { id: 'form', open: true },
     { id: 'otherTags', open: true, hidden: true },
     { id: 'quality', open: false },
@@ -476,6 +485,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       drafts({ audioIntents: ['level', 'restore'], seededIntents: ['level'], settings: rerun }),
     )
     expect(patch.editorSections).toEqual([
+      { id: 'library', open: true },
       { id: 'form', open: true },
       { id: 'otherTags', open: true, hidden: true },
       { id: 'quality', open: false },
@@ -496,6 +506,7 @@ describe('buildOnboardingPatch on a re-run', () => {
       drafts({ audioIntents: [], seededIntents: ['level'], settings: rerun }),
     )
     expect(patch.editorSections).toEqual([
+      { id: 'library', open: true },
       { id: 'form', open: true },
       { id: 'otherTags', open: true, hidden: true },
       { id: 'quality', open: false },
@@ -543,6 +554,7 @@ describe('buildOnboardingPatch on a re-run', () => {
 // longer the default is the DJ's own, and the wizard treats it like a re-run.
 describe('the wizard on a second machine with a synced layout', () => {
   const synced = [
+    { id: 'library', open: true },
     { id: 'form', open: true },
     { id: 'otherTags', open: true, hidden: true },
     { id: 'quality', open: false },
