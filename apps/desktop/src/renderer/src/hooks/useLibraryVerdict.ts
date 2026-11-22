@@ -22,6 +22,7 @@ interface Params {
   // App's updateTrack. The Discogs-proven verdict is pinned onto the track so the LIST and
   // its filter read it too — the list has no open release and cannot recompute it.
   onChange: (patch: Partial<TrackItem>) => void
+  describesCopy: boolean
 }
 
 interface LibraryVerdict {
@@ -58,6 +59,7 @@ export function useLibraryVerdict({
   librarySource,
   suggestedMeta,
   onChange,
+  describesCopy,
 }: Params): LibraryVerdict {
   // Whether the confident Discogs suggestion is what proves this track is owned — the raw
   // tags didn't key-match the library but the release's canonical title/artist does. This is
@@ -189,7 +191,7 @@ export function useLibraryVerdict({
   // matched, looked up without the length that kept it from being a replace candidate.
   // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead.
   const describedId = useMemo(() => {
-    if (offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
+    if (!describesCopy || offeredId || librarySource !== 'appleMusic' || !libraryIndex) return null
     // Several entries match equally: describing one of them could describe the wrong copy.
     if (replaceTarget && 'ambiguous' in replaceTarget) return null
     if (inLibrary !== 'yes' || item.musicPersistentId) return null
@@ -199,6 +201,7 @@ export function useLibraryVerdict({
       (suggestedMeta ? findLibraryEntry(libraryIndex, suggestedMeta) : null)
     return entry?.persistentId ?? null
   }, [
+    describesCopy,
     offeredId,
     replaceTarget,
     librarySource,

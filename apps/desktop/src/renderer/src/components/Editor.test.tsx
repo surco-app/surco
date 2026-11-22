@@ -219,6 +219,7 @@ function renderEditor(
     readFullTrack?: React.ComponentProps<typeof Editor>['readFullTrack']
     resultsFolded?: boolean
     copiedMetaTitle?: string | null
+    filesOpen?: boolean
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
@@ -297,6 +298,7 @@ function renderEditor(
         onExportCollection={onExportCollection}
         onRecordUndo={onRecordUndo}
         readFullTrack={props.readFullTrack ?? (async () => undefined)}
+        filesOpen={props.filesOpen}
       />
     </OpenSettingsProvider>,
     {
@@ -5494,6 +5496,7 @@ describe('Editor Apple Music library section', () => {
     meta = { title: 'Strobe', artist: 'deadmau5' },
     libraryProperties,
     libraryGone,
+    filesOpen,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -5512,6 +5515,7 @@ describe('Editor Apple Music library section', () => {
     meta?: { title: string; artist: string }
     libraryProperties?: TrackProperties
     libraryGone?: 'missing' | 'unreadable' | 'checking'
+    filesOpen?: boolean
   }): { api: Record<string, unknown>; onProcess: ReturnType<typeof vi.fn> } {
     setApi(platform)
     const api = window.api as unknown as Record<string, unknown>
@@ -5561,10 +5565,60 @@ describe('Editor Apple Music library section', () => {
       },
       'wav',
       // The comparison reads in Audio quality, so that section is mounted.
-      { libraryIndex: index, showSpectrum, showLoudness: true, addToAppleMusic: music },
+      {
+        libraryIndex: index,
+        showSpectrum,
+        showLoudness: true,
+        addToAppleMusic: music,
+        filesOpen,
+      },
     )
     return { api, onProcess }
   }
+
+  // The section answers "do I already have the file I just brought in?". A track opened from a
+  // library or DJ program tab already is that library's copy, so the section would only list
+  // the copy the user is looking at, and measuring it against itself would cost analysis time.
+  it('shows the library section for a track from the Tracks list', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: wavLoudness, filesOpen: true })
+    expect(await screen.findByTestId('library-section')).toBeInTheDocument()
+  })
+
+  it('shows no library section and measures no copy for a track opened from a program tab', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      filesOpen: false,
+    })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(screen.queryByTestId('library-section')).toBeNull()
+    expect(api.comparePair).not.toHaveBeenCalled()
+    expect(api.fileExists).not.toHaveBeenCalled()
+    expect(api.properties).not.toHaveBeenCalledWith('/Music/Strobe.wav')
+    expect(api.loudness).not.toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
+  })
+
+  it('looks up no Apple Music copy to describe for a track opened from a program tab', async () => {
+    const { api } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 483.4,
+      libraryDuration: 447.9,
+      resolved: true,
+      meta: { title: 'Real love (EXTENDED REMASTERED)', artist: '3 WAYS' },
+      index: buildLibraryIndex([
+        {
+          title: 'Real Love (Extended Version)',
+          artist: '3 Ways',
+          durationSec: 447.9,
+          persistentId: '0123456789ABCDEF',
+        },
+      ]),
+      filesOpen: false,
+    })
+    await new Promise((r) => setTimeout(r, 50))
+    expect(api.appleMusicEntryLocation).not.toHaveBeenCalled()
+  })
 
   // The swap is only worth making if the file in hand is the better copy, and the old
   // format-and-cutoff check calls a limited WAV and a clean AIFF even. The measured verdict
@@ -6148,6 +6202,7 @@ describe('Editor Apple Music library section', () => {
       herePath = '/music/Strobe.aif',
       syncTraktor = true,
       index = owned,
+      filesOpen,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6155,6 +6210,7 @@ describe('Editor Apple Music library section', () => {
       herePath?: string
       syncTraktor?: boolean
       index?: AppleMusicIndex
+      filesOpen?: boolean
     }): Record<string, unknown> {
       setApi('win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6210,10 +6266,25 @@ describe('Editor Apple Music library section', () => {
           addToAppleMusic: false,
           syncRekordbox: true,
           syncTraktor,
+          filesOpen,
         },
       )
       return api
     }
+
+    it('reads no DJ collection and probes no copy for a track opened from a program tab', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness },
+        syncTraktor: true,
+        filesOpen: false,
+      })
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.queryByTestId('library-section')).toBeNull()
+      expect((api.dj as { collection: ReturnType<typeof vi.fn> }).collection).not.toHaveBeenCalled()
+      expect(api.comparePair).not.toHaveBeenCalled()
+      expect(api.fileExists).not.toHaveBeenCalled()
+    })
 
     it('reads no DJ collection with several tracks selected, since the section speaks about one track', async () => {
       const api = window.api as unknown as Record<string, unknown>

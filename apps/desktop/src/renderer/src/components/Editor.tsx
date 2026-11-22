@@ -295,6 +295,7 @@ interface Props {
   // post-conversion step that used to live on the toolbar. App owns the modal.
   onExportCollection: () => void
   readFullTrack: (id: string) => Promise<TrackItem | undefined>
+  filesOpen?: boolean
   librarySources?: readonly PlaylistSource[]
   onRevealIn?: (source: PlaylistSource) => void
   // Re-checks a conversion whose re-read did not add up; App owns the job runner.
@@ -389,6 +390,7 @@ export const Editor = memo(function Editor({
   copiedMetaTitle,
   onExportCollection,
   readFullTrack,
+  filesOpen = true,
   librarySources = [],
   onRevealIn,
   onRetryVerification,
@@ -761,6 +763,8 @@ export const Editor = memo(function Editor({
           artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
         }
       : undefined
+  const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
+  const libraryShown = filesOpen && !isMulti && !libraryHidden
   // Whether the destination library already owns this track, and whether an older copy of it
   // is still sitting there. The Discogs-proven verdict is pinned onto the track inside, so
   // the list and its filter agree with this badge.
@@ -778,10 +782,11 @@ export const Editor = memo(function Editor({
     librarySource,
     suggestedMeta,
     onChange,
+    describesCopy: libraryShown,
   })
   // The format of the library copy the section shows (the one a replacement would supersede
   // when there is one), so the user can tell whether the file in hand is worth swapping in.
-  const replacedCopyQuery = useTrackProperties(libraryCopyPath, !!libraryCopyPath)
+  const replacedCopyQuery = useTrackProperties(libraryCopyPath, libraryShown && !!libraryCopyPath)
   const replacedCopyProps = replacedCopyQuery.data
   const replacedCopyFormat = replacedCopyProps
     ? libraryCopyFormat(replacedCopyProps, libraryCopyPath, i18n.language)
@@ -794,9 +799,9 @@ export const Editor = memo(function Editor({
   // not be lined up is not one master, so compareCopies skips the level criteria and the
   // format and spectrum still decide.
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
-  const comparedCopyPath =
-    pathKey(libraryCopyPath) === pathKey(item.inputPath) ? '' : libraryCopyPath
-  const musicHoldsFile = !!libraryCopyPath && !comparedCopyPath
+  const libraryCopyIsThisFile = pathKey(libraryCopyPath) === pathKey(item.inputPath)
+  const comparedCopyPath = libraryCopyIsThisFile || !libraryShown ? '' : libraryCopyPath
+  const musicHoldsFile = !!libraryCopyPath && libraryCopyIsThisFile
   const [musicCopyReach] = useCopyReach(
     comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
   )
@@ -838,13 +843,12 @@ export const Editor = memo(function Editor({
           hasKnee: spectrumInHand?.hasKnee,
         },
       ) !== null
-  const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const programCopies = useProgramCopies({
     inputPath: item.inputPath,
     meta: item.meta,
     durationSec: item.duration,
     suggestedMeta,
-    enabled: !isMulti && !libraryHidden,
+    enabled: libraryShown,
   })
   const comparedProgramCopies = programCopies.filter((copy) => !copy.isThisFile)
   const { data: thisFileProps } = useTrackProperties(
@@ -1733,7 +1737,7 @@ export const Editor = memo(function Editor({
     }
   })
   const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
-  const showLibrary = !isMulti && libraryRows.length > 0 && !libraryHidden
+  const showLibrary = libraryShown && libraryRows.length > 0
 
   return (
     <div className="flex h-full min-h-0">
