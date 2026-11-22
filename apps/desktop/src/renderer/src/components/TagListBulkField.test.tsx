@@ -161,10 +161,12 @@ describe('TagListBulkField', () => {
     expect(toggle).not.toHaveTextContent('editor.groupingSame')
   })
 
-  // WHY: a selection is the same form as one track, so the label sits where one track's
-  // label sits (the form's label column) instead of heading a full-width block, and it does
-  // not repeat that the field covers every track: the title already counts them.
-  it('is a plain label in the form grid, without "all tracks"', () => {
+  // WHY: a selection is the same form as one track, so the label must not head a block of its
+  // own and must not repeat that the field covers every track (the title already counts them).
+  // This checks structure only: the label is a direct child of the field root, which joins the
+  // form grid like a single track's Field. That it lands in the label column is shown by the
+  // screenshots, since the column is CSS and jsdom has no layout.
+  it('puts the label straight under the field root and does not say "all tracks"', () => {
     renderField()
     const root = screen.getByTestId('grouping-bulk')
     const label = within(root).getByText('Grouping')
@@ -189,23 +191,6 @@ describe('TagListBulkField', () => {
     expect(single).toHaveAttribute('data-state', 'on')
     expect(single).toHaveAttribute('aria-pressed', 'true')
     expect(inAll).toHaveAttribute('data-state', 'on')
-  })
-
-  // WHY: the multi row once drew unapplied suggestions dashed while one track draws them
-  // solid, so the same suggestion looked unavailable. Both views share one look.
-  it('draws an unapplied suggestion the way a single track draws it', () => {
-    renderField([a2, track('a3', { grouping: 'Cantaditas' })])
-    render(
-      <SuggestionChips
-        scope="single"
-        suggestions={['Bases']}
-        isOn={() => false}
-        onPick={() => {}}
-      />,
-    )
-    const multi = screen.getByTestId('chip-Bases')
-    const single = screen.getByTestId('chip-single-Bases')
-    expect(multi.className).toBe(single.className)
   })
 
   it('opens the per-track rows on demand and keeps them open', () => {

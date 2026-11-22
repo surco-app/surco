@@ -347,7 +347,9 @@ export function buildFieldSpecs({
             width,
             tr,
           )
-        : {}),
+        : shared === ''
+          ? { placeholder: tr('editor.emptyValue') }
+          : {}),
       width,
       readOnly: true,
       plain: true,

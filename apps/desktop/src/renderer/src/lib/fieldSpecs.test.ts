@@ -329,6 +329,19 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(artist?.placeholder).toBe('Oliver Gil · Aaron Sevilla · editor.emptyValue')
   })
 
+  // WHY: a read-only field with nothing in any track drew an invisible box, so the row looked
+  // broken and the number button beside it seemed to float. The marker says "nothing here".
+  it('shows the empty marker in a per-track field that is empty on every selected track', () => {
+    const spec = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', {}), track('b', {})],
+        visibleFields: ['trackNumber'],
+      }),
+    ).find((s) => s.key === 'trackNumber')
+    expect(spec?.placeholder).toBe('editor.emptyValue')
+  })
+
   // A count tells the user nothing about what is there; two or three names fit and say it.
   it('lists up to three differing values in the placeholder, most common first', () => {
     const build = (artists: string[]) =>

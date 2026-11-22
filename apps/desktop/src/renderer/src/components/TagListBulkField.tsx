@@ -103,7 +103,7 @@ export function TagListBulkField({
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />
       </fieldset>
-      <div className="mt-2.5 ml-[5px] border-l-2 beside:col-start-2 border-[var(--color-line-strong)] pl-2.5">
+      <div className="mt-0.5 ml-[5px] border-l-2 beside:col-start-2 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"
           data-testid={`${list.key}-per-track-toggle`}
