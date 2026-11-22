@@ -56,13 +56,13 @@ import type {
 } from '../../../shared/types'
 import { seedEditorSections } from '../hooks/useEditorSections'
 import { DEFAULT_SEPARATOR } from './csv'
-import type { DjAddKey } from './djReach'
+import type { DjAddKey, DjSyncKey } from './djReach'
 import { DEFAULT_FIELDS, DEFAULT_REQUIRED_FIELDS, requiredFieldsOf } from './fields'
 
 // The slice of Settings the editor tree reads, resolved: settings arrive null for the
 // first frames, so every field carries its default here — in ONE place, instead of a
 // `?? fallback` per prop at every consumer (the 17-prop wall App used to pass Editor).
-interface ResolvedSettings extends Record<DjAddKey, boolean> {
+interface ResolvedSettings extends Record<DjAddKey | DjSyncKey, boolean> {
   discogsToken: string
   // Whether the background sweep auto-matches on import. The editor reads it so opening a
   // track only auto-applies a confident match when the user left auto-match on — off means
@@ -147,6 +147,11 @@ const DEFAULTS: ResolvedSettings = {
   addToTraktor: false,
   addToSerato: false,
   addToVirtualdj: false,
+  syncRekordbox: false,
+  syncEngineDj: false,
+  syncTraktor: false,
+  syncSerato: false,
+  syncVirtualdj: false,
   overwriteOriginal: false,
   backupPolicy: 'audioChanges',
   convertBesideOriginal: false,
@@ -215,6 +220,11 @@ function resolveSettings(settings: Partial<Settings> | null): ResolvedSettings {
     addToTraktor: settings.addToTraktor ?? DEFAULTS.addToTraktor,
     addToSerato: settings.addToSerato ?? DEFAULTS.addToSerato,
     addToVirtualdj: settings.addToVirtualdj ?? DEFAULTS.addToVirtualdj,
+    syncRekordbox: settings.syncRekordbox ?? DEFAULTS.syncRekordbox,
+    syncEngineDj: settings.syncEngineDj ?? DEFAULTS.syncEngineDj,
+    syncTraktor: settings.syncTraktor ?? DEFAULTS.syncTraktor,
+    syncSerato: settings.syncSerato ?? DEFAULTS.syncSerato,
+    syncVirtualdj: settings.syncVirtualdj ?? DEFAULTS.syncVirtualdj,
     overwriteOriginal: settings.overwriteOriginal ?? DEFAULTS.overwriteOriginal,
     backupPolicy: settings.backupPolicy ?? DEFAULTS.backupPolicy,
     convertBesideOriginal: settings.convertBesideOriginal ?? DEFAULTS.convertBesideOriginal,
