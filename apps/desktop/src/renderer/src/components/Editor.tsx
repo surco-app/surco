@@ -298,6 +298,9 @@ interface Props {
 
 const NARROW_EDITOR_PX = 400
 
+// What a release writes about where it came from rather than about the music.
+const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
+
 const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
   'transcode',
   'cutoff',
@@ -1310,15 +1313,18 @@ export const Editor = memo(function Editor({
   // still hold what it wrote and had another value before, empty included, so a field the
   // release filled goes back to empty. Offered as one action in More rather than as a line
   // under every field.
+  // The release id and address it stamped go back with the tags, but alone they do not keep
+  // the action offered: they stay once the DJ has put every tag back by hand.
   const restorableRelease = useMemo(() => {
     if (isMulti || !item.appliedRelease) return {}
     const { before, wrote } = item.appliedRelease
-    return Object.fromEntries(
+    const restorable = Object.fromEntries(
       (Object.entries(wrote) as [MetaTextKey, string][]).flatMap(([key, value]) => {
         const old = before[key] ?? ''
         return old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
       }),
     ) as Partial<Record<MetaTextKey, string>>
+    return Object.keys(restorable).some((key) => !RELEASE_STAMPS.has(key)) ? restorable : {}
   }, [isMulti, item.appliedRelease, item.meta])
   const restoreRelease = useStableCallback((): void => {
     onRecordUndo?.([item.id])

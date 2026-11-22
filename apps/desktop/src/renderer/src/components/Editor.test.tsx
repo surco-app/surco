@@ -748,6 +748,46 @@ describe('Restoring the tags a release replaced', () => {
     })
   })
 
+  // The release also stamps where it came from (the Discogs id and address). Those stay
+  // after the DJ has put every tag back by hand, and alone they kept the action offered for
+  // good; they go back with the tags, but never keep the action alive on their own.
+  describe('with the release id and address it stamped', () => {
+    const stamped = {
+      before: { title: 'My Title', discogsReleaseId: '', discogsUrl: '' },
+      wrote: {
+        title: 'Release Title',
+        discogsReleaseId: '2',
+        discogsUrl: 'https://www.discogs.com/release/2',
+      },
+    }
+    const stampedMeta = { discogsReleaseId: '2', discogsUrl: 'https://www.discogs.com/release/2' }
+
+    it('is not offered once only the id and address are left', () => {
+      renderEditor(
+        { id: 'a', meta: { title: 'My Title', ...stampedMeta }, appliedRelease: stamped },
+        'wav',
+        { visibleFields: ['title'] },
+      )
+      openMore()
+      expect(screen.queryByTestId('restore-release-btn')).toBeNull()
+    })
+
+    it('empties the id and address along with the tags it restores', () => {
+      const { onChange } = renderEditor(
+        { id: 'a', meta: { title: 'Release Title', ...stampedMeta }, appliedRelease: stamped },
+        'wav',
+        { visibleFields: ['title'] },
+      )
+      openMore()
+      fireEvent.click(screen.getByTestId('restore-release-btn'))
+      expect(onChange.mock.calls[0][0].meta).toMatchObject({
+        title: 'My Title',
+        discogsReleaseId: '',
+        discogsUrl: '',
+      })
+    })
+  })
+
   it('is not offered when no release was applied', () => {
     renderEditor({ id: 'a', meta: { title: 'Strobe' } })
     openMore()
