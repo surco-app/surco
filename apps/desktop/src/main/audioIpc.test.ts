@@ -263,7 +263,10 @@ describe('audio:cached-batch', () => {
 
   it('serves the loudness a library already measured before the silent channel field existed, so updating never makes it measure again', async () => {
     const file = await makeFile()
-    await cachedAnalysis('loudness-v2', file, async () => ({ integratedLufs: -9.1, channelBalanceDb: 0.4 }))
+    await cachedAnalysis('loudness-v2', file, async () => ({
+      integratedLufs: -9.1,
+      channelBalanceDb: 0.4,
+    }))
 
     const reading = await handlerFor('audio:loudness')({}, file)
     const result = (await handlerFor('audio:cached-batch')({}, [file])) as Record<string, unknown>

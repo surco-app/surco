@@ -1263,7 +1263,13 @@ describe('ConvertFooter height', () => {
     [
       'converting one track',
       cloneElement(footer(false), {
-        item: { id: 't1', status: 'processing', stage: 'converting', inputPath: '/a.wav', meta: {} },
+        item: {
+          id: 't1',
+          status: 'processing',
+          stage: 'converting',
+          inputPath: '/a.wav',
+          meta: {},
+        },
         onCancel: vi.fn(),
       }),
       'process-btn',

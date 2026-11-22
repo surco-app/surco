@@ -21,17 +21,20 @@ export function PhraseCountRow({
   const next = count === null ? comment : withPhraseCount(comment, count)
   const done = count !== null && next === comment
   return (
-    <div
-      data-testid="phrase-count"
-      className="mt-3 flex min-h-7 items-center gap-3"
-    >
+    <div data-testid="phrase-count" className="mt-3 flex min-h-7 items-center gap-3">
       <span className="shrink-0 text-xs text-fg-dim">{tr('editor.cues.phrases.label')}</span>
       {count === null ? (
-        <span data-testid="phrase-count-needs-calls" className="min-w-0 truncate text-xs text-fg-faint">
+        <span
+          data-testid="phrase-count-needs-calls"
+          className="min-w-0 truncate text-xs text-fg-faint"
+        >
           {tr('editor.cues.phrases.needsCalls')}
         </span>
       ) : (
-        <span data-testid="phrase-count-value" className="min-w-0 truncate text-sm tabular-nums text-fg">
+        <span
+          data-testid="phrase-count-value"
+          className="min-w-0 truncate text-sm tabular-nums text-fg"
+        >
           {count}
         </span>
       )}

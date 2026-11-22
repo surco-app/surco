@@ -22,10 +22,7 @@ const rows: [ExportLabelState, string][] = [
   [{ ...base, tagsOnly: false, replaces: true, libraryBetter: true }, 'editor.libraryHasBetter'],
   [{ ...base, tagsOnly: false }, 'editor.convertAction'],
   [{ ...base, inPlace: true, addsToMusic: true }, 'editor.add'],
-  [
-    { ...base, inPlace: true, tagsOnly: false, sameFormat: true, addsToMusic: true },
-    'editor.add',
-  ],
+  [{ ...base, inPlace: true, tagsOnly: false, sameFormat: true, addsToMusic: true }, 'editor.add'],
 ]
 
 describe('exportButtonLabel', () => {

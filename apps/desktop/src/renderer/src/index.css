@@ -301,7 +301,7 @@ textarea {
   overflow: hidden;
 }
 .skeleton-sweep-row::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   background-image: linear-gradient(
