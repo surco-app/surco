@@ -358,7 +358,7 @@ export function ExportButton({
               : liveStage
                 ? // The dimmed track + accent fill replace the usual disabled fade: the
                   // button reads as a progress bar, not as a greyed-out control.
-                  'press relative -mr-px flex-1 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
+                  'press relative -mr-px flex-1 overflow-hidden rounded-l-lg bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] py-2.5 text-sm font-medium text-[var(--color-on-accent)] disabled:pointer-events-none'
                 : `${SPLIT_BODY} ${faceBlocked ? SPLIT_BODY_QUIET : SPLIT_BODY_READY}`
           }
         >
@@ -435,7 +435,7 @@ export function ExportButton({
               : liveStage
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
-                  'press relative flex items-center justify-center gap-1 rounded-r-lg bg-[var(--color-accent)]/40 px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px before:bg-[var(--color-on-accent)]/20 text-[var(--color-on-accent)] disabled:pointer-events-none'
+                  'press relative flex items-center justify-center gap-1 rounded-r-lg bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px before:bg-[var(--color-on-accent)]/20 text-[var(--color-on-accent)] disabled:pointer-events-none'
                 : `${SPLIT_TOGGLE_FORMAT} ${faceBlocked ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`
           }
         >
