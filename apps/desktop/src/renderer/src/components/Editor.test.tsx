@@ -2144,7 +2144,7 @@ describe('Editor multi-select', () => {
   it('plans the batch in the footer and leaves converting to the toolbar', () => {
     renderMulti()
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
-    expect(screen.queryByTestId('field-title')).toBeNull()
+    expect(screen.getByTestId('field-title')).toHaveAttribute('readonly')
     expect(screen.queryByTestId('process-btn')).toBeNull()
     expect(screen.getByTestId('batch-convert')).toHaveTextContent('2')
     expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
@@ -2262,6 +2262,15 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('batch-convert')).toHaveTextContent(
       i18n.t('header.updateSomeSelected', { ready: 1, total: 2 }),
     )
+  })
+
+  // Per-track fields keep their place so a selection reads like one track, but a title
+  // typed here would land on every track, so it cannot be typed into.
+  it('shows the per-track title in place and read-only', () => {
+    renderMulti({ metaA: { title: 'One' }, metaB: { title: 'Two' } })
+    const title = screen.getByTestId('field-title')
+    expect(title).toHaveAttribute('readonly')
+    expect(title).toHaveValue('')
   })
 
   // The bulk form must honour the same visible-fields setting as the single editor:

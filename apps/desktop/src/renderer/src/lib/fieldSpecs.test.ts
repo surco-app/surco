@@ -566,16 +566,50 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(onChangeAllMeta).toHaveBeenCalledWith({ comment: '' })
   })
 
-  it('honours the visible-fields setting and drops non-bulk fields', () => {
+  // A selection form with the same fields in the same order as one track: the per-track
+  // fields stay where the user put them, but writing one value into every track would
+  // overwrite what makes each track different.
+  it('honours the visible-fields setting and keeps per-track fields in place, read-only', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
         selectedTracks: [track('a')],
-        // 'title' is not a bulk field; 'grouping' is and is visible.
         visibleFields: ['title', 'grouping'],
       }),
     )
-    expect(specs.map((s) => s.key)).toEqual(['grouping'])
+    expect(specs.map((s) => s.key)).toEqual(['title', 'grouping'])
+    expect(specs[0].readOnly).toBe(true)
+    expect(specs[1].readOnly).toBeUndefined()
+  })
+
+  it('shows differing titles as blank with a count of values, without a way to pick one', () => {
+    const onChangeAllMeta = vi.fn()
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { title: 'One' }), track('b', { title: 'Two' })],
+        visibleFields: ['title'],
+        bulkOnChange: new Map([['title', onChangeAllMeta]]),
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '' })
+    expect(specs[0].mixed).toBeUndefined()
+    expect(specs[0].placeholder).toBeTruthy()
+    expect(specs[0].mixedValues).toBeUndefined()
+    specs[0].onChange('x')
+    expect(onChangeAllMeta).not.toHaveBeenCalled()
+  })
+
+  it('shows the common BPM read-only and keeps the width that pairs it with Key', () => {
+    const specs = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { bpm: '128' }), track('b', { bpm: '128' })],
+        visibleFields: ['bpm'],
+      }),
+    )
+    expect(specs[0]).toMatchObject({ readOnly: true, value: '128', placeholder: undefined })
+    expect(specs[0].width).toBe(FIELD_DEFS.find((d) => d.key === 'bpm')?.width)
   })
 })
 
@@ -634,6 +668,7 @@ describe('the Playlists field of each library', () => {
     )
     expect(bulk.map((s) => [s.key, s.label, s.playlists?.disabled])).toEqual([
       ['enginePlaylists', 'fields.enginePlaylists', undefined],
+      ['title', 'fields.title', undefined],
       ['traktorPlaylists', 'fields.traktorPlaylists', 'unconfirmed'],
     ])
   })

@@ -294,6 +294,27 @@ export function buildFieldSpecs({
       onChange: customBulkOnChange.get(f.key) ?? (() => {}),
     }
   }
+  // A per-track field over a selection: shown where the user put it so the form matches the
+  // single one, but read-only because one value written into every track would erase what
+  // tells them apart. Differing values show as a blank with a placeholder, not a choice.
+  const perTrackSpec = (key: MetaTextKey, tracks: TrackItem[]): FieldSpec => {
+    const shared = commonValue(tracks, key)
+    const width = widthOf(key)
+    return {
+      key,
+      label: tr(`fields.${key}`),
+      value: shared ?? '',
+      placeholder:
+        shared === undefined
+          ? width
+            ? '…'
+            : tr('editor.valuesCount', { count: valueCounts(tracks, key).length })
+          : undefined,
+      width,
+      readOnly: true,
+      onChange: () => {},
+    }
+  }
   // One walk over visibleFields keeps the user's order; each key maps to its multi spec, or
   // to none when the selection form does not offer it.
   const multiSpecs = (tracks: TrackItem[]): FieldSpec[] =>
@@ -304,6 +325,8 @@ export function buildFieldSpecs({
       }
       const bulkKey = BULK_FIELDS.find((k) => k === key)
       if (bulkKey) return [bulkSpec(bulkKey, tracks)]
+      const def = FIELD_DEFS.find((d) => d.key === key)
+      if (def && def.key !== 'compilation') return [perTrackSpec(def.key, tracks)]
       const custom = customFields.find((f) => f.key === key)
       return custom ? [customSpec(custom)] : []
     })
