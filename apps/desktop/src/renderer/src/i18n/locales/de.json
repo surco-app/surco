@@ -1492,7 +1492,7 @@
       "soft": "Sanfte Reparatur",
       "standard": "Standardreparatur",
       "strong": "Starke Reparatur",
-      "mixed": "Unterschiedliche Einstellungen"
+      "mixed": "Unterschiedlich"
     },
     "rowNoise": {
       "soft": "sanfte Rauschminderung",
@@ -1603,7 +1603,7 @@
       "measured": "Jetzt {{now}} LUFS, danach {{target}}",
       "target": "Gleicht auf {{target}} LUFS an",
       "peak": "Peak bei {{db}} dBFS",
-      "mixed": "Unterschiedliche Einstellungen"
+      "mixed": "Unterschiedlich"
     }
   },
   "settings": {
