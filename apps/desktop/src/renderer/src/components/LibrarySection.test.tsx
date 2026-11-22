@@ -63,10 +63,12 @@ describe('LibrarySection', () => {
     expect(screen.getByTestId('library-row-state')).toHaveAccessibleName('Otra versión')
   })
 
-  it('shows no state on a copy not measured yet', () => {
+  // The slot is kept before the measurement starts, so the format chip does not move when
+  // "Comparing" appears.
+  it('shows no state on a copy not measured yet, keeping its place', () => {
     mount({}, { verdict: null })
     expect(screen.queryByTestId('library-row-state')).toBeNull()
-    expect(screen.queryByTestId('library-row-state-slot')).toBeNull()
+    expect(screen.getByTestId('library-row-state-slot')).toBeInTheDocument()
   })
 
   // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
@@ -104,21 +106,38 @@ describe('LibrarySection', () => {
     expect(new Set(words).size).toBe(5)
   })
 
-  // The row must not jump when the measurement lands: the result takes the place of
-  // "Comparing" in a slot that keeps the measuring pill's width reserved underneath.
-  it('keeps the state slot as wide as the measuring pill once the result lands', () => {
-    mount({}, { verdict: 'measuring' })
-    const measuringSizer = screen.getByTestId('library-row-state-sizer')
-    expect(measuringSizer).toHaveTextContent('Comparando')
-    expect(measuringSizer).toHaveAttribute('aria-hidden', 'true')
-    expect(screen.getByTestId('library-row-state-slot')).toContainElement(
-      screen.getByTestId('library-row-state'),
+  // Nothing moves when the measurement lands and the format chips line up from row to row:
+  // every slot reserves the widest state of the language, with room for any length.
+  it('reserves the same slot in every row, wide enough for any state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'different', durationSec: 448 }),
+        row({ id: 'serato', name: 'Serato', verdict: 'same' }),
+      ],
+    })
+    const reserved = screen.getAllByTestId('library-row-state-slot').map((slot) =>
+      within(slot)
+        .getAllByTestId('library-row-state-sizer')
+        .map((sizer) => sizer.textContent),
     )
-    cleanup()
-    mount({}, { verdict: 'same' })
-    const slot = screen.getByTestId('library-row-state-slot')
-    expect(slot).toContainElement(screen.getByTestId('library-row-state'))
-    expect(within(slot).getByTestId('library-row-state-sizer')).toHaveTextContent('Comparando')
+    expect(reserved).toHaveLength(3)
+    for (const labels of reserved) {
+      expect(labels).toEqual([
+        'Comparando',
+        'Idéntica',
+        'Esta es mejor',
+        'Mejor allí',
+        'Parecidas',
+        'Otra versión · 00:00',
+      ])
+    }
+    for (const sizer of screen.getAllByTestId('library-row-state-sizer')) {
+      expect(sizer).toHaveAttribute('aria-hidden', 'true')
+    }
+    for (const slot of screen.getAllByTestId('library-row-state-slot')) {
+      expect(slot).toContainElement(within(slot).getByTestId('library-row-state'))
+    }
   })
 
   // The chevron only appears once the comparison can open; its place is kept from the start,

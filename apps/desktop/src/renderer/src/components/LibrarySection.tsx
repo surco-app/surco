@@ -83,6 +83,8 @@ function StatePill({
   )
 }
 
+const RESERVED_STATES = ['measuring', 'same', 'here', 'library', 'tie', 'different'] as const
+
 function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): string {
   if (verdict === 'different' && row.durationSec != null) {
     return tr('editor.libraryStateDifferent', { duration: formatTime(row.durationSec) })
@@ -103,6 +105,15 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
   // An identical copy has nothing to weigh, so its row opens nothing.
   const comparison = verdict === 'same' ? undefined : row.comparison
   const LibraryIcon = SOURCE_ICON[row.id]
+  // Every state the row can take, unseen in one cell: the slot is as wide as the widest in
+  // this language, with room for any length, so the row never shifts and the chips line up.
+  const reserved = RESERVED_STATES.map((key) => ({
+    key,
+    words:
+      key === 'different'
+        ? tr('editor.libraryStateDifferent', { duration: '00:00' })
+        : tr(STATE[key].label),
+  }))
   const rowContent = (
     <>
       <span
@@ -127,28 +138,35 @@ function LibraryRowItem({ row }: { row: LibraryRow }): React.JSX.Element {
       )}
       {/* The measuring pill stays underneath, unseen, so the result takes its place
             without the row shifting. */}
-      {verdict && (
+      {(verdict || row.format) && (
         <span
           data-testid="library-row-state-slot"
           className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
         >
-          <span
-            data-testid="library-row-state-sizer"
-            aria-hidden="true"
-            className={`invisible col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded border px-[5px] ${PILL_TEXT}`}
-          >
-            <Loader2 className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
-            {tr(STATE.measuring.label)}
-          </span>
-          <StatePill
-            testid="library-row-state"
-            verdict={verdict}
-            words={rowWords(row, verdict, tr)}
-            detail={row.detail}
-          />
+          {reserved.map(({ key, words }) => (
+            <span
+              key={key}
+              data-testid="library-row-state-sizer"
+              aria-hidden="true"
+              className={`invisible col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${key === 'measuring' ? 'border' : ''}`}
+            >
+              {key === 'measuring' && (
+                <Loader2 className="h-2.5 w-2.5 shrink-0" aria-hidden="true" />
+              )}
+              {words}
+            </span>
+          ))}
+          {verdict && (
+            <StatePill
+              testid="library-row-state"
+              verdict={verdict}
+              words={rowWords(row, verdict, tr)}
+              detail={row.detail}
+            />
+          )}
         </span>
       )}
-      {(comparison || verdict) && (
+      {(comparison || verdict || row.format) && (
         <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
           {comparison && (
             <ChevronRight
