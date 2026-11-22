@@ -187,7 +187,7 @@ interface Props {
   // The rows as the list shows them (sorted, filtered). A ref because the order is only
   // read when numbering is clicked, and a new array on every progress tick would defeat
   // the memo of this component.
-  listOrderRef?: React.RefObject<TrackItem[]>
+  listOrderRef: React.RefObject<TrackItem[]>
   onChangeTracksPlaylists?: (patches: ({ id: string } & PlaylistsEdit)[]) => void
   // Rewrites the selection's titles from the settings' title format — App owns it so
   // the pass shares the ⌘K command's undo channel and its "changed n / changed
@@ -1229,7 +1229,7 @@ export const Editor = memo(function Editor({
   // selectedTracks follows the library's order, not the list's: numbering must follow what
   // the user sees, so each selected track takes its row position, unlisted ones last.
   const numberTracks = useCallback(() => {
-    const rows = listOrderRef?.current ?? []
+    const rows = listOrderRef.current
     const rowOf = (id: string): number => {
       const i = rows.findIndex((r) => r.id === id)
       return i < 0 ? rows.length : i

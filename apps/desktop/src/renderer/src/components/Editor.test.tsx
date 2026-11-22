@@ -258,6 +258,7 @@ function renderEditor(
     // exactly as App mounts it.
     <OpenSettingsProvider open={onOpenSettings}>
       <Editor
+        listOrderRef={{ current: [] }}
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
         rekordboxCue={props.rekordboxCue}
@@ -1488,6 +1489,7 @@ function MultiHarness() {
   return (
     <>
       <Editor
+        listOrderRef={{ current: [] }}
         key={selected.id}
         item={selected}
         libraryIndex={null}
@@ -1861,6 +1863,7 @@ describe('Editor multi-select', () => {
       onChangeSelection?: (patch: Partial<TrackItem>) => void
       onFormatChange?: (format: FormatSetting | null) => void
       listOrder?: string[]
+      thirdTrack?: boolean
     } = {},
   ) {
     if (opts.platform)
@@ -1897,6 +1900,13 @@ describe('Editor multi-select', () => {
         ...(o.normalizeB && { normalize: o.normalizeB }),
         ...(o.declickB && { declick: o.declickB }),
       })
+      const c = item({
+        id: 'c',
+        fileName: 'cortina - three.flac',
+        status,
+        meta: { title: 'C', album: 'Shared' },
+      })
+      const byId = { a, b, c }
       return (
         <Editor
           item={a}
@@ -1912,9 +1922,9 @@ describe('Editor multi-select', () => {
           onFoldResults={vi.fn()}
           onResultsResizeStart={vi.fn()}
           onResultsFit={vi.fn()}
-          selectedTracks={[a, b]}
+          selectedTracks={o.thirdTrack ? [a, b, c] : [a, b]}
           listOrderRef={{
-            current: (o.listOrder ?? ['a', 'b']).map((id) => (id === 'a' ? a : b)),
+            current: (o.listOrder ?? ['a', 'b']).map((id) => byId[id as 'a' | 'b' | 'c']),
           }}
           onChangeSelection={o.onChangeSelection}
           onFormatChange={o.onFormatChange}
@@ -2536,12 +2546,28 @@ describe('Editor multi-select', () => {
   it('numbers the selected tracks in the order the list shows them, not the order they were loaded', () => {
     const { onChangeTracksMeta } = renderMulti({
       visibleFields: ['title', 'trackNumber', 'trackTotal'],
-      listOrder: ['b', 'a'],
+      thirdTrack: true,
+      listOrder: ['c', 'a', 'b'],
     })
     fireEvent.click(screen.getByTestId('number-tracks-btn'))
     expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'b', meta: { trackNumber: '1' } },
+      { id: 'c', meta: { trackNumber: '1' } },
       { id: 'a', meta: { trackNumber: '2' } },
+      { id: 'b', meta: { trackNumber: '3' } },
+    ])
+  })
+
+  it('numbers a selected track missing from the list after the listed ones', () => {
+    const { onChangeTracksMeta } = renderMulti({
+      visibleFields: ['title', 'trackNumber', 'trackTotal'],
+      thirdTrack: true,
+      listOrder: ['c', 'a'],
+    })
+    fireEvent.click(screen.getByTestId('number-tracks-btn'))
+    expect(onChangeTracksMeta).toHaveBeenCalledWith([
+      { id: 'c', meta: { trackNumber: '1' } },
+      { id: 'a', meta: { trackNumber: '2' } },
+      { id: 'b', meta: { trackNumber: '3' } },
     ])
   })
 
@@ -2895,6 +2921,7 @@ describe('Editor export control', () => {
       const [track, setTrack] = useState(start)
       return (
         <Editor
+          listOrderRef={{ current: [] }}
           item={track}
           libraryIndex={null}
           searchInputRef={createRef<HTMLInputElement>()}
@@ -4356,6 +4383,7 @@ describe('Editor Discogs apply', () => {
     const [track, setTrack] = useState(start)
     return (
       <Editor
+        listOrderRef={{ current: [] }}
         item={track}
         libraryIndex={null}
         searchInputRef={createRef<HTMLInputElement>()}

@@ -7460,6 +7460,42 @@ describe('App multi-select field edit', () => {
   })
 })
 
+describe('App multi-select numbering', () => {
+  // The library keeps files in the order they were added; numbering follows the rows the
+  // user sees, so a list sorted by artist must number by that sort, not by import.
+  it('numbers the selected tracks in the order the sorted list shows them', async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(settings({ visibleFields: ['title', 'artist', 'trackNumber'] })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: path.slice(-5, -4),
+        artist: { '/music/a.wav': 'Charlie', '/music/b.wav': 'Alpha', '/music/c.wav': 'Bravo' }[
+          path
+        ],
+      })),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    fireEvent.click(screen.getByTestId('track-sort'))
+    fireEvent.click(screen.getByTestId('track-sort-option-artist'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')[0]).toHaveTextContent('Alpha'))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(rows[2], { metaKey: true })
+
+    fireEvent.click(await screen.findByTestId('number-tracks-btn'))
+
+    for (const [index, expected] of ['1', '2', '3'].entries()) {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId('field-trackNumber')).toHaveValue(expected))
+    }
+  })
+})
+
 describe('App multi-select removal', () => {
   // The right-click row stays selected when it's already part of the selection, so the
   // menu's list actions follow what's highlighted. "Remove from Surco" on one of several
