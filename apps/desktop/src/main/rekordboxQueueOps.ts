@@ -1,4 +1,5 @@
 import type { WantedCue } from '../shared/cueRules'
+import type { CommentMode } from '../shared/phraseCount'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -74,6 +75,7 @@ export interface CommentOp {
   path: string
   label: string
   count: string
+  mode: CommentMode
 }
 
 export type QueueOp = EditOp | TrackOp | CuesOp | TagsOp | MatchOp | CommentOp

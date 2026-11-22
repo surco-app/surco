@@ -72,6 +72,8 @@ export const testSettings: Settings = {
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
   matchingDismissed: [],
+  commentsToFile: true,
+  commentsReplace: false,
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
@@ -288,7 +290,7 @@ const NO_CUES: CuesApi = {
   queued: async () => null,
   undo: async () => {},
   save: async () => {},
-  saveComments: async () => {},
+  saveComments: async () => ({ failed: [] }),
 }
 
 export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {

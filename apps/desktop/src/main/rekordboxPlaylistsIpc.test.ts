@@ -299,6 +299,7 @@ describe('rekordboxEdit', () => {
       flow: () => MY_FLOW,
       provisional: { add: vi.fn() },
       twins: async () => ({}),
+      writeCommentToFile: async () => true,
       sources: {
         rekordbox: rekordboxCueSource({
           collection: () => path,

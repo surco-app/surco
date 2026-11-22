@@ -177,6 +177,7 @@ describe('applyTraktorBatch', () => {
           path: '/Users/dj/Music/power.flac',
           label: 'The Power',
           count: '8',
+          mode: 'prepend',
         },
       ],
       { session, ensureClosed: async () => true, write },

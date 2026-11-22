@@ -17,6 +17,6 @@ export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke'>): CuesApi {
     queued: (contentId) => ipc.invoke('cues:queued', contentId),
     undo: (contentId) => ipc.invoke('cues:undo', contentId),
     save: (reqs) => ipc.invoke('cues:save', reqs),
-    saveComments: (items) => ipc.invoke('cues:saveComments', items),
+    saveComments: (items, toFile) => ipc.invoke('cues:saveComments', items, toFile),
   }
 }

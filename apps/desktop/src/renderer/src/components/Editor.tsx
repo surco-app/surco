@@ -30,6 +30,7 @@ import {
   resolveJobFormat,
 } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
+import type { CommentMode } from '../../../shared/phraseCount'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
@@ -41,6 +42,7 @@ import type {
   PlaylistSource,
   ReleaseTrack,
   SearchProviderId,
+  Settings,
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
@@ -253,8 +255,13 @@ interface Props {
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
-  onCuePhrasesAll?: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
+  onCuePhrasesAll?: (
+    mode: CommentMode,
+  ) => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
   onCueRestoreComments?: (comments: PhrasedComment[]) => void
+  onCueRecomposeComments?: (comments: PhrasedComment[], mode: CommentMode) => PhrasedComment[]
+  onCueCommentsSaved?: (comments: PhrasedComment[], toFile: boolean) => void
+  onCueSaveSettings?: (patch: Partial<Settings>) => void
   cueTargets?: AutoMarkTarget[]
   cueGridCheckOf?: (contentId: string) => GridCheck | null | undefined
   onShowBadGrid?: () => void
@@ -360,6 +367,9 @@ export const Editor = memo(function Editor({
   onCueAutoMarkAll,
   onCuePhrasesAll,
   onCueRestoreComments,
+  onCueRecomposeComments,
+  onCueCommentsSaved,
+  onCueSaveSettings,
   cueTargets,
   cueGridCheckOf,
   onShowBadGrid,
@@ -1959,6 +1969,13 @@ export const Editor = memo(function Editor({
                             onOpen={(contentId) => onOpenCueTrack?.(contentId)}
                             onPhrases={onCuePhrasesAll}
                             onRestoreComments={(comments) => onCueRestoreComments?.(comments)}
+                            onRecomposeComments={(comments, mode) =>
+                              onCueRecomposeComments?.(comments, mode) ?? comments
+                            }
+                            onCommentsSaved={(comments, toFile) =>
+                              onCueCommentsSaved?.(comments, toFile)
+                            }
+                            onSaveSettings={(patch) => onCueSaveSettings?.(patch)}
                           />
                         )
                       if (isMulti) return singleTrackOnly(id, tr('editor.cues.title'))

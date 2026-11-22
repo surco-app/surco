@@ -115,6 +115,8 @@ export const defaults: Settings = {
   sessionWizard: DEFAULT_SESSION_WIZARD,
   sessionsMade: [],
   matchingDismissed: [],
+  commentsToFile: true,
+  commentsReplace: false,
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
@@ -427,6 +429,8 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     matchingDismissed: normalizeMatchingDismissed(
       patch.matchingDismissed ?? base.matchingDismissed,
     ),
+    commentsToFile: (patch.commentsToFile ?? base.commentsToFile) !== false,
+    commentsReplace: (patch.commentsReplace ?? base.commentsReplace) === true,
   }
 }
 

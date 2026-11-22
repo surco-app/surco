@@ -1,7 +1,9 @@
 import { extname } from 'node:path'
 import {
   CombinedTag,
+  Id3v2FrameClassType,
   Id3v2Tag,
+  type Id3v2UserTextInformationFrame,
   InfoTag,
   Mpeg4AppleTag,
   Mpeg4BoxType,
@@ -18,6 +20,7 @@ import {
   keepGenreParentheses,
   setId3Date,
   setId3Grouping,
+  setUserText as setId3UserText,
   toYear,
 } from './tags'
 
@@ -25,15 +28,28 @@ import {
 // ffmpeg.ts, which pulls electron and the ffmpeg binaries into the worker thread.
 export type FieldWrite = 'written' | 'unchanged'
 
+export type TagWriteField = ReviewWriteField | 'comment'
+
 export interface TagFieldChange {
-  field: ReviewWriteField
+  field: TagWriteField
   from: string
   to: string
 }
 
 const same = (a: string, b: string): boolean => a.normalize('NFC') === b.normalize('NFC')
 
-function valuesOf(tag: Tag, field: ReviewWriteField): string[] {
+const xiphCommentOf = (tag: XiphComment): string | undefined =>
+  tag.getField('COMMENT')[0] || tag.getField('DESCRIPTION')[0]
+
+const id3CommentOf = (tag: Id3v2Tag): string | undefined =>
+  tag.comment ||
+  tag
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .find((frame) => frame.description.toLowerCase() === 'comment')?.text?.[0]
+
+function valuesOf(tag: Tag, field: TagWriteField): string[] {
   switch (field) {
     case 'title':
       return tag.title ? [tag.title] : []
@@ -51,6 +67,15 @@ function valuesOf(tag: Tag, field: ReviewWriteField): string[] {
       const grouping = tag instanceof Id3v2Tag ? id3GroupingOf(tag) : tag.grouping
       return grouping ? [grouping] : []
     }
+    case 'comment': {
+      const comment =
+        tag instanceof XiphComment
+          ? xiphCommentOf(tag)
+          : tag instanceof Id3v2Tag
+            ? id3CommentOf(tag)
+            : tag.comment
+      return comment ? [comment] : []
+    }
   }
 }
 
@@ -59,7 +84,7 @@ function valuesOf(tag: Tag, field: ReviewWriteField): string[] {
 // view of an INFO list reads a different file than the one every DJ program shows. TagLib's
 // spellings are still checked and rewritten when present, since mp3tag and Surco's own
 // writeTags put them there. No INFO id holds an album artist anyone reads.
-const INFO_IDS: Record<ReviewWriteField, string[]> = {
+const INFO_IDS: Record<TagWriteField, string[]> = {
   title: ['INAM'],
   artist: ['IART', 'ISTR'],
   album: ['IPRD', 'DIRC'],
@@ -67,15 +92,17 @@ const INFO_IDS: Record<ReviewWriteField, string[]> = {
   genre: ['IGNR'],
   year: ['ICRD'],
   grouping: [],
+  comment: ['ICMT'],
 }
 
-const TAGLIB_INFO_ID: Partial<Record<ReviewWriteField, string>> = {
+const TAGLIB_INFO_ID: Partial<Record<TagWriteField, string>> = {
   title: 'INAM',
   artist: 'ISTR',
   album: 'DIRC',
   albumArtist: 'IART',
   genre: 'IGNR',
   year: 'ICRD',
+  comment: 'ICMT',
 }
 
 const yearOf = (value: string): string => value.trim().match(/^\d{4}/)?.[0] ?? value.trim()
@@ -86,15 +113,15 @@ const infoValues = (tag: InfoTag, id: string): string[] =>
     .map((v) => v.replace(/\0+$/, ''))
     .filter((v) => v !== '')
 
-const heldIds = (tag: InfoTag, field: ReviewWriteField): string[] =>
+const heldIds = (tag: InfoTag, field: TagWriteField): string[] =>
   INFO_IDS[field].filter((id) => infoValues(tag, id).length > 0)
 
-function readValues(tag: Tag, field: ReviewWriteField): string[][] {
+function readValues(tag: Tag, field: TagWriteField): string[][] {
   if (!(tag instanceof InfoTag)) return [valuesOf(tag, field)]
   return heldIds(tag, field).map((id) => infoValues(tag, id))
 }
 
-const firstHeld = (f: TagFile, field: ReviewWriteField): string[] => {
+const firstHeld = (f: TagFile, field: TagWriteField): string[] => {
   const tags = f.tag instanceof CombinedTag ? f.tag.tags : [f.tag]
   for (const tag of tags) {
     const held = readValues(tag, field).find((values) => values.length > 0)
@@ -103,7 +130,7 @@ const firstHeld = (f: TagFile, field: ReviewWriteField): string[] => {
   return []
 }
 
-function assignInfo(tag: InfoTag, field: ReviewWriteField, to: string): void {
+function assignInfo(tag: InfoTag, field: TagWriteField, to: string): void {
   const held = heldIds(tag, field)
   const targets = held.length > 0 ? held : INFO_IDS[field].slice(0, 1)
   for (const id of targets) {
@@ -114,13 +141,13 @@ function assignInfo(tag: InfoTag, field: ReviewWriteField, to: string): void {
   }
 }
 
-const matches = (field: ReviewWriteField, values: string[], from: string): boolean => {
+const matches = (field: TagWriteField, values: string[], from: string): boolean => {
   if (from === '') return values.length === 0
   if (values.length !== 1) return false
   return field === 'year' ? yearOf(values[0]) === yearOf(from) : same(values[0], from)
 }
 
-function assign(tag: Tag, field: ReviewWriteField, to: string): void {
+function assign(tag: Tag, field: TagWriteField, to: string): void {
   switch (field) {
     case 'title':
       tag.title = to
@@ -143,17 +170,26 @@ function assign(tag: Tag, field: ReviewWriteField, to: string): void {
     case 'grouping':
       tag.grouping = to
       return
+    case 'comment':
+      tag.comment = to
+      return
   }
 }
 
-function assignNative(f: TagFile, field: ReviewWriteField, to: string, ext: string): void {
-  if (field !== 'year' && field !== 'grouping') return
+function assignNative(f: TagFile, field: TagWriteField, to: string, ext: string): void {
+  if (field !== 'year' && field !== 'grouping' && field !== 'comment') return
   const id3 = f.getTag(TagTypes.Id3v2, false)
   if (id3 instanceof Id3v2Tag) {
     if (field === 'year') setId3Date(id3, to)
-    else setId3Grouping(id3, to, ext)
+    else if (field === 'grouping') setId3Grouping(id3, to, ext)
+    else setId3UserText(id3, 'comment', '')
   }
   const xiph = f.getTag(TagTypes.Xiph, false)
+  if (field === 'comment' && xiph instanceof XiphComment) {
+    xiph.removeField('DESCRIPTION')
+    if (to.trim()) xiph.setFieldAsStrings('COMMENT', to)
+    else xiph.removeField('COMMENT')
+  }
   if (field === 'year' && xiph instanceof XiphComment) {
     if (to.trim()) xiph.setFieldAsStrings('DATE', to)
     else xiph.removeField('DATE')
@@ -180,11 +216,23 @@ function onDiskTags(f: TagFile): Tag[] {
   return tags
 }
 
-function holds(f: TagFile, field: ReviewWriteField, value: string): boolean {
+const truncatedDivXComment = (
+  tag: Tag,
+  field: TagWriteField,
+  values: string[],
+  value: string,
+): boolean =>
+  field === 'comment' &&
+  tag.tagTypes === TagTypes.DivX &&
+  values.length === 1 &&
+  value.normalize('NFC').startsWith(values[0].normalize('NFC'))
+
+function holds(f: TagFile, field: TagWriteField, value: string): boolean {
   if (!matches(field, firstHeld(f, field), value)) return false
   for (const tag of onDiskTags(f)) {
     for (const values of readValues(tag, field)) {
-      if (values.length > 0 && !matches(field, values, value)) return false
+      if (values.length === 0 || matches(field, values, value)) continue
+      if (!truncatedDivXComment(tag, field, values, value)) return false
     }
   }
   return true
@@ -238,6 +286,15 @@ export function setTagFields(file: string, changes: TagFieldChange[]): FieldWrit
     if (id3) keepGenreParentheses(id3)
     f.save()
     return outcomes
+  } finally {
+    f.dispose()
+  }
+}
+
+export function heldComment(file: string): string {
+  const f = TagFile.createFromPath(file)
+  try {
+    return firstHeld(f, 'comment')[0] ?? ''
   } finally {
     f.dispose()
   }
