@@ -54,7 +54,7 @@ describe('LibrarySection', () => {
   it('draws a different shape for each settled verdict', () => {
     const shapes = (['here', 'library', 'same'] as const).map((verdict) => {
       mount({ verdict })
-      const svg = screen.getByTestId('library-verdict').querySelector('svg')?.outerHTML
+      const svg = screen.getByTestId('library-verdict').querySelector('svg')?.innerHTML
       cleanup()
       return svg
     })
