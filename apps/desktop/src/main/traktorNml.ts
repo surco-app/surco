@@ -606,8 +606,11 @@ function patchFor(
   entries: NmlEntry[],
   patch: NmlPatch,
   entry: NmlEntry,
+  claimed = new Set<string>(),
 ): NmlPatch & { relocation?: Relocation } {
-  const relocation = patch.relocates ? relocationFor(nml, entries, patch, entry) : undefined
+  const relocation = patch.relocates
+    ? relocationFor(nml, entries, patch, entry, claimed)
+    : undefined
   const repoints = patch.relocates
     ? relocation !== undefined
     : patch.newFile !== undefined && !pathTaken(entries, patch, entry)
@@ -651,8 +654,9 @@ function rewriteEntry(
   patch: NmlPatch | undefined,
   produced: NmlPatch | undefined,
   nml: string,
+  claimed?: Set<string>,
 ): string {
-  let out = patch ? patchEntry(block, patchFor(nml, entries, patch, entry)) : block
+  let out = patch ? patchEntry(block, patchFor(nml, entries, patch, entry, claimed)) : block
   if (produced?.cueTree && produced !== patch)
     out = replaceCues(out, produced.cueTree, produced.bpm)
   return out
@@ -662,17 +666,29 @@ function rewriteEntry(
 // by VOLUMEID as well as by VOLUME, and only the collection knows a volume's id, so an
 // output on a volume no entry names cannot be pointed at without guessing it. An output
 // another entry already holds is left alone for the reason given at pathTaken.
+//
+// claimed holds the paths earlier moves in the same pass took: two stale entries matched by
+// name would otherwise both move onto the one new file, the duplicate pathTaken prevents.
+// The volume is written as the collection spells it (Finder hands paths decomposed, the
+// collection may hold them composed): another spelling reads to Traktor as another disk.
 function relocationFor(
   nml: string,
   entries: NmlEntry[],
   patch: NmlPatch,
   entry: NmlEntry,
+  claimed: Set<string>,
 ): Relocation | undefined {
   const { outputVolume: volume, outputDir: dir, outputFile: file } = patch
   if (volume === undefined || !dir || !file || pathTaken(entries, patch, entry)) return undefined
-  if (sameText(volume, entry.volume)) return { volume, dir, file }
+  const target = locationKey(volume, dir, file)
+  if (claimed.has(target)) return undefined
+  const claim = (relocation: Relocation): Relocation => {
+    claimed.add(target)
+    return relocation
+  }
+  if (sameText(volume, entry.volume)) return claim({ volume: entry.volume, dir, file })
   const known = volumeOf(nml, volume, '')
-  return known ? { volume, volumeId: known.id, dir, file } : undefined
+  return known ? claim({ volume: known.volume, volumeId: known.id, dir, file }) : undefined
 }
 
 const LOCATION_TAG_RE = /<LOCATION\b[^>]*>/
@@ -684,6 +700,7 @@ export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk):
   const sharedCover = sharedCoverSubstitutions(nml, entries, patches, onDisk)
   const produced = producedOutputs(patches)
   const moves: [string, string][] = []
+  const claimed = new Set<string>()
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
@@ -703,6 +720,7 @@ export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk):
       matchPatch(entry, index),
       produced.get(at),
       nml,
+      claimed,
     )
     if (patched === block) continue
     const tag = patched.match(LOCATION_TAG_RE)?.[0] ?? ''

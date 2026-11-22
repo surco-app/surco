@@ -1621,6 +1621,30 @@ describe('a replace moves the entry whole', () => {
     expect(out).toContain('START="12000.000000"')
   })
 
+  // Finder hands paths decomposed while the collection may spell the volume composed (or the
+  // other way round). The entry has to carry the spelling Traktor already uses for that
+  // volume, or Traktor reads it as another disk and the track shows as missing.
+  it('writes the new volume as the collection spells it', () => {
+    const decomposed = 'Mu\u0301sica'
+    const other = NAS.replaceAll('NAS', decomposed)
+    const out = applyPatches(collect(SONG, other), [replace({ outputVolume: 'M\u00fasica' })])
+
+    expect(locationOf(out, 'Song.aiff')).toContain(`VOLUME="${decomposed}"`)
+    expect(out).toContain(`KEY="${decomposed}/:Music/:New/:Song.aiff"`)
+  })
+
+  // Two stale copies of one track (same name, other extension, neither on disk) both match a
+  // replace by name. Moved together they would leave two entries on one file, the duplicate
+  // Traktor indexes badly; only one may take the new path.
+  it('moves only one of two stale entries matched by name onto the new file', () => {
+    const stale = (ext: string) =>
+      `<ENTRY TITLE="Song"><LOCATION DIR="/:Music/:Old/:" FILE="Song.${ext}" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION></ENTRY>`
+
+    const out = applyPatches(collect(stale('wav'), stale('flac')), [replace()], () => false)
+
+    expect(findEntries(out).filter((e) => e.file === 'Song.aiff')).toHaveLength(1)
+  })
+
   // Why the move is opt-in: a plain conversion into another folder never repointed the entry.
   it('an ordinary conversion into another folder still leaves LOCATION alone', () => {
     const { relocates: _relocates, ...plain } = replace()
