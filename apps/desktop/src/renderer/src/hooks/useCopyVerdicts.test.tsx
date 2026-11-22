@@ -17,6 +17,24 @@ const loudness = {
   noiseFloorDb: null,
 }
 
+const properties = {
+  codec: 'mp3',
+  container: 'mp3',
+  sampleRateHz: 44100,
+  bitDepth: null,
+  channels: 2,
+  bitrateKbps: 320,
+  sizeBytes: 1,
+  createdMs: null,
+  modifiedMs: null,
+}
+
+const cutoffs: Record<string, number> = {
+  '/here/a.mp3': 16000,
+  '/lib/better.wav': 22050,
+  '/lib/worse.mp3': 12000,
+}
+
 function setApi(api: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = api
 }
@@ -26,9 +44,13 @@ function wrapper({ children }: { children: React.ReactNode }): React.JSX.Element
 }
 
 function spectrumFor(path: string) {
-  return path.endsWith('.mp3')
-    ? { image: '', cutoffHz: 16000, sampleRateHz: 44100, processed: false, hasKnee: false }
-    : { image: '', cutoffHz: 22050, sampleRateHz: 44100, processed: false, hasKnee: false }
+  return {
+    image: '',
+    cutoffHz: cutoffs[path],
+    sampleRateHz: 44100,
+    processed: false,
+    hasKnee: false,
+  }
 }
 
 afterEach(() => vi.restoreAllMocks())
@@ -38,20 +60,19 @@ describe('useCopyVerdicts', () => {
     setApi({
       spectrogram: vi.fn(async (path: string) => spectrumFor(path)),
       loudness: vi.fn().mockResolvedValue(loudness),
-      fingerprint: vi.fn().mockResolvedValue('abc'),
-      comparePair: vi.fn().mockResolvedValue({ gainDb: 0, lagMs: 0 }),
-      properties: vi.fn().mockResolvedValue(null),
+      fingerprint: vi.fn(async (path: string) => `fp${path}`),
+      comparePair: vi.fn().mockResolvedValue({ correlation: 0.9, residualDb: -10, gainDb: 0 }),
+      properties: vi.fn(async (path: string) => (path === '/lib/worse.mp3' ? properties : null)),
     })
     const { result } = renderHook(
-      () => useCopyVerdicts('/here/a.wav', ['/lib/a.mp3', '/lib/b.wav']),
+      () => useCopyVerdicts('/here/a.mp3', ['/lib/better.wav', '/lib/worse.mp3']),
       { wrapper },
     )
     await waitFor(() => expect(result.current.every((row) => !row.measuring)).toBe(true))
-    expect(result.current).toHaveLength(2)
-    expect(result.current[0].verdict).not.toBeNull()
-    expect(result.current[1].verdict).not.toBeNull()
-    expect(result.current[0].here?.ext).toBe('WAV')
-    expect(result.current[0].copy?.ext).toBe('MP3')
+    expect(result.current.map((row) => row.verdict?.winner)).toEqual(['b', 'a'])
+    expect(result.current.map((row) => row.copy?.ext)).toEqual(['WAV', 'MP3'])
+    expect(result.current[0].here?.ext).toBe('MP3')
+    expect(result.current.map((row) => row.format)).toEqual(['', 'MP3 320'])
   })
 
   it('reports measuring until every fact is in', async () => {
@@ -62,7 +83,7 @@ describe('useCopyVerdicts', () => {
       comparePair: vi.fn(() => new Promise(() => {})),
       properties: vi.fn().mockResolvedValue(null),
     })
-    const { result } = renderHook(() => useCopyVerdicts('/here/a.wav', ['/lib/a.mp3']), {
+    const { result } = renderHook(() => useCopyVerdicts('/here/a.mp3', ['/lib/worse.mp3']), {
       wrapper,
     })
     expect(result.current[0].measuring).toBe(true)
@@ -74,7 +95,7 @@ describe('useCopyVerdicts', () => {
   it('starts nothing without copies', () => {
     const spectrogram = vi.fn()
     setApi({ spectrogram, loudness: vi.fn(), fingerprint: vi.fn() })
-    const { result } = renderHook(() => useCopyVerdicts('/here/a.wav', []), { wrapper })
+    const { result } = renderHook(() => useCopyVerdicts('/here/a.mp3', []), { wrapper })
     expect(result.current).toEqual([])
     expect(spectrogram).not.toHaveBeenCalled()
   })
