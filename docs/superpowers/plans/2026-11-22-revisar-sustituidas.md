@@ -20,9 +20,9 @@
 - `shared/replaceShift.ts` con `ReplaceShift` y `UnmovedReason` (fase 3), y `ProcessResult.replaceShift?`, que consume la fase 4.
 - La fase 3, antes de su tarea 5, comprueba con `grep` que los nombres de las fases 1 y 2 existen tal cual. Si algo difiere, se usa lo real y se informa.
 
-## Pendiente de Vicent
+## Decidido por Vicent
 
-- Reanálisis de rekordbox cuando una sustitución copia el audio tal cual y la medida dice que se movió: fase 3, tarea 5, paso 9. Está en su propio commit para poder quitarlo.
+- Reanálisis de rekordbox cuando una sustitución copia el audio tal cual y la medida dice que se movió: SÍ (22/11). Fase 3, tarea 5, paso 9.
 
 ## Reglas de cierre de cada fase
 
