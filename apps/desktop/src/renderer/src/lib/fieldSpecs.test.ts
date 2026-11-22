@@ -473,8 +473,8 @@ describe('buildFieldSpecs (bulk mode)', () => {
   })
 
   // A release shares its style, country, copyright, disc total, media type and Discogs ids,
-  // so a selection from one record must edit them together instead of hiding them. Disc
-  // number and total sit side by side as in the single form, so the pair keeps its row.
+  // so a selection from one record must edit them together instead of hiding them. The
+  // shared row of disc number and total is checked in Editor.test.tsx.
   it('builds the release-level disc fields over a selection, each writing to every track', () => {
     const keys = [
       'discTotal',

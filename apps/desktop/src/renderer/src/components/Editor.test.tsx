@@ -2015,6 +2015,15 @@ describe('Editor multi-select', () => {
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
+  // Total discs describes the release as much as the disc number does, so a selection
+  // from one record shows both and they keep the shared row of the single form.
+  it('shows total discs beside the disc number across a selection', () => {
+    renderMulti({ visibleFields: ['discNumber', 'discTotal'] })
+    expect(screen.getByTestId('field-column-discNumber').parentElement).toContainElement(
+      screen.getByTestId('field-column-discTotal'),
+    )
+  })
+
   it('adds a grouping tag on a track row with the separator chosen in settings', () => {
     const { onChangeTracksMeta } = renderMulti({
       visibleFields: ['grouping'],
