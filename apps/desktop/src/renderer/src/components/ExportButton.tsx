@@ -56,9 +56,6 @@ interface ExportButtonProps {
   addsToMusic?: boolean
   upToDate?: boolean
   narrow?: boolean
-  // Set for a selection: the button converts several tracks, so its menu stays reachable
-  // while nothing is ready, since a format or destination can be what leaves them all out.
-  count?: number
   // A selection's own words, worked out from the batch plan; a track's come from its state.
   label?: string
   // The keyboard chord shown on hover beside the label.
@@ -117,7 +114,6 @@ export function ExportButton({
   addsToMusic = false,
   upToDate = false,
   narrow = false,
-  count,
   label: batchLabel,
   hint,
   tip,
@@ -135,9 +131,8 @@ export function ExportButton({
   const { t: tr } = useTranslation()
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const processing = status === 'processing'
-  // A track missing required tags cannot be converted, so the gate covers the
-  // main action and the format menu alike. A selection keeps its menu (see count).
-  const blocked = processing || (incomplete && count === undefined)
+  // Missing tags block only the convert: the format menu stays reachable for a track and a
+  // selection alike, since a format or destination can be what leaves tracks out.
   // Missing tags block the convert softly: aria-disabled instead of disabled keeps the
   // button in the Tab order, so the keyboard can reach it and hear why it won't run.
   const softBlocked = incomplete && !processing
@@ -430,7 +425,7 @@ export function ExportButton({
           ref={toggleRef}
           aria-haspopup="menu"
           onClick={() => setOpen((v) => !v)}
-          disabled={blocked}
+          disabled={processing}
           className={
             quiet
               ? 'press flex h-8 w-6 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-40'

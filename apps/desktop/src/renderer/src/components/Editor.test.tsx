@@ -4125,7 +4125,7 @@ describe('Editor on a track opened from Serato', () => {
   it('blocks converting it, in place or not, and says Serato would lose the track and its cues', () => {
     renderEditor({ id: 'a', programs: ['serato'] })
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
+    expect(screen.getByTestId('process-format-toggle')).toBeEnabled()
     expect(screen.getByTestId('process-btn')).toHaveAccessibleDescription(
       'Serato would lose the track and its cues',
     )
@@ -4152,12 +4152,13 @@ describe('Editor on a track opened from Serato', () => {
 
 describe('Editor required-field gate', () => {
   // The convert button used to fail late: it stayed enabled with empty required
-  // fields and only surfaced the error after the click. Disabling it until the
-  // fields are filled turns a dead-end error into clear, upfront guidance.
-  it('disables both convert buttons while a required field is empty', () => {
+  // fields and only surfaced the error after the click. Blocking it until the fields
+  // are filled turns a dead-end error into clear, upfront guidance; the format menu
+  // stays open to use, as it does for a selection, since picking a format converts nothing.
+  it('blocks the convert while a required field is empty and keeps the format menu', () => {
     renderEditor({ id: 'a', meta: { artist: '' } }, 'wav', { requiredFields: ['artist'] })
     expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByTestId('process-format-toggle')).toBeDisabled()
+    expect(screen.getByTestId('process-format-toggle')).toBeEnabled()
   })
 
   // The blocked button names the gap on its face, so pressing it is the obvious next
