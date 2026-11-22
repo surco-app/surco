@@ -42,6 +42,26 @@ export function withCrateTracks(bytes: Uint8Array, tracks: CrateTrack[]): Uint8A
   return concat(out)
 }
 
+// Points the crate entry holding fromPfil at toPfil in the same position, since DJs order crates
+// by hand. The path keeps the form (NFC or NFD) the crate stored it in.
+export function withCrateTrackRepointed(
+  bytes: Uint8Array,
+  fromPfil: string,
+  toPfil: string,
+): Uint8Array | null {
+  const paths = crateTrackPaths(bytes)
+  if (!paths) return null
+  const wanted = fromPfil.normalize('NFC')
+  const at = paths.findIndex((path) => path.normalize('NFC') === wanted)
+  if (at === -1) return null
+  const decomposed = paths[at] !== paths[at].normalize('NFC')
+  const written = toPfil.normalize(decomposed ? 'NFD' : 'NFC')
+  return withCrateTracks(
+    bytes,
+    paths.map((_, i) => (i === at ? { path: written } : { keep: i })),
+  )
+}
+
 export function validCrateName(name: string): boolean {
   return name.trim() !== '' && !name.includes('%%') && !name.includes('/')
 }
