@@ -11,6 +11,7 @@ import {
   Scissors,
   Search,
   Tag,
+  Undo2,
 } from 'lucide-react'
 import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
@@ -61,10 +62,12 @@ import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import {
   type BatchPick,
+  batchFormats,
   batchSkips,
   batchWritesTagsOnly,
   convertGate,
   leftOutNote,
+  offersSourceFormat,
 } from '../lib/batch'
 import { type CopyReason, compareCopies } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
@@ -195,6 +198,7 @@ interface Props {
   onCancel?: () => void
   onConvertSelection?: () => void
   convertHint?: string
+  processHint?: string
   batchRun?: { done: number; total: number } | null
   onCancelBatch?: () => void
   // Reports the format chosen in the split-button menu so the keyboard convert
@@ -317,6 +321,7 @@ export const Editor = memo(function Editor({
   onCancel,
   onConvertSelection,
   convertHint,
+  processHint,
   batchRun,
   onCancelBatch,
   onFormatChange,
@@ -1060,7 +1065,7 @@ export const Editor = memo(function Editor({
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
   const readOnlyRows = blockedBy !== undefined
   const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
-  const firstMissing = (multiGate?.missing.fields ?? missing)[0]
+  const firstMissing = multiGate?.mixed ? undefined : (multiGate?.missing.fields ?? missing)[0]
   const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
   const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
   const otherReason = missing.length
@@ -1163,6 +1168,17 @@ export const Editor = memo(function Editor({
       ),
     [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
   )
+  const batchWrites = useMemo(
+    () =>
+      batchFormats(batchReady, batchPick, (t) =>
+        jobAudio(t, normalizeCfg, declickCfg, { normalize, declick }),
+      ),
+    [batchReady, batchPick, normalizeCfg, declickCfg, normalize, declick],
+  )
+  const offerSource = useMemo(
+    () => offersSourceFormat(multiTracks, formatPick),
+    [multiTracks, formatPick],
+  )
   const addsToMusic =
     !isMulti &&
     picked.addToAppleMusic &&
@@ -1244,32 +1260,23 @@ export const Editor = memo(function Editor({
     [isMulti, item.meta, item.cleaned, tr, onChange],
   )
 
-  const previousNotes = useMemo(
-    () =>
-      isMulti || !item.appliedRelease
-        ? undefined
-        : Object.fromEntries(
-            (Object.entries(item.appliedRelease.wrote) as [MetaTextKey, string][]).flatMap(
-              ([key, wrote]) => {
-                const before = item.appliedRelease?.before[key] ?? ''
-                if (!before || before === wrote || (item.meta[key] ?? '') !== wrote) return []
-                return [
-                  [
-                    key,
-                    {
-                      value: before,
-                      onRestore: () => {
-                        onRecordUndo?.([item.id])
-                        setField(key, before)
-                      },
-                    },
-                  ],
-                ]
-              },
-            ),
-          ),
-    [isMulti, item.id, item.meta, item.appliedRelease, onRecordUndo, setField],
-  )
+  // What the last applied release replaced and nobody has touched since: the fields that
+  // still hold what it wrote and had another value before. Offered as one action in More
+  // rather than as a line under every field.
+  const restorableRelease = useMemo(() => {
+    if (isMulti || !item.appliedRelease) return {}
+    const { before, wrote } = item.appliedRelease
+    return Object.fromEntries(
+      (Object.entries(wrote) as [MetaTextKey, string][]).flatMap(([key, value]) => {
+        const old = before[key] ?? ''
+        return old && old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
+      }),
+    ) as Partial<Record<MetaTextKey, string>>
+  }, [isMulti, item.appliedRelease, item.meta])
+  const restoreRelease = useStableCallback((): void => {
+    onRecordUndo?.([item.id])
+    onChange({ meta: { ...item.meta, ...restorableRelease } })
+  })
 
   const playlistTracks = useMemo(
     () => (isMulti && selectedTracks ? selectedTracks : [item]),
@@ -1309,6 +1316,7 @@ export const Editor = memo(function Editor({
         selectedTracks,
         visibleFields,
         requiredFields,
+        heldBackFields: multiGate?.missing.fields,
         item,
         genreChips,
         groupingPresets,
@@ -1332,7 +1340,6 @@ export const Editor = memo(function Editor({
         onChangeTracksMeta,
         numberTracks: onNumberTracks,
         cleanedNotes,
-        previousNotes,
         playlists: playlistsSpec,
         analyzedQuality: qualityAuto ? (resolvedMeta.quality ?? '') : undefined,
       }),
@@ -1341,6 +1348,7 @@ export const Editor = memo(function Editor({
       selectedTracks,
       visibleFields,
       requiredFields,
+      multiGate,
       item.meta,
       genreChips,
       groupingPresets,
@@ -1364,7 +1372,6 @@ export const Editor = memo(function Editor({
       onNumberTracks,
       fullReleaseDate,
       cleanedNotes,
-      previousNotes,
       playlistsSpec,
       qualityAuto,
       resolvedMeta.quality,
@@ -1468,6 +1475,18 @@ export const Editor = memo(function Editor({
       disabled: copiedMetaTitle === null,
       separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
     },
+    ...(Object.keys(restorableRelease).length > 0
+      ? [
+          {
+            id: 'restore-release',
+            testid: 'restore-release-btn',
+            label: tr('editor.restoreRelease'),
+            Icon: Undo2,
+            onSelect: restoreRelease,
+            separatorBefore: true,
+          },
+        ]
+      : []),
   ]
 
   const libraryName = librarySource === 'engineDj' ? 'Engine DJ' : 'Apple Music'
@@ -2071,18 +2090,37 @@ export const Editor = memo(function Editor({
           incomplete={incomplete}
           incompleteReason={incompleteReason}
           incompleteSummary={
-            [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') || undefined
+            multiGate
+              ? // Named on the face only when empty fields are why nothing is ready.
+                !multiGate.mixed && multiGate.ready.length === 0 && multiGate.missing.fields.length
+                ? missingSummary(
+                    multiGate.missing.fields.map((key) => tr(`fields.${key}`)),
+                    tr,
+                  )
+                : undefined
+              : [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') ||
+                undefined
           }
           leftOut={leftOut ?? undefined}
           onBlockedPress={() => {
-            if (firstMissing)
-              document.querySelector<HTMLElement>(`[data-testid="field-${firstMissing}"]`)?.focus()
+            if (!firstMissing) return
+            // Genre and Grouping over a selection have no box: land on their first chip, or
+            // on the per-track toggle when no tag exists yet.
+            const target =
+              document.querySelector<HTMLElement>(`[data-testid="field-${firstMissing}"]`) ??
+              document.querySelector<HTMLElement>(
+                `[data-testid="${firstMissing}-bulk"] fieldset button`,
+              ) ??
+              document.querySelector<HTMLElement>(
+                `[data-testid="${firstMissing}-per-track-toggle"]`,
+              )
+            target?.focus()
           }}
           willEditInPlace={willEditInPlace}
           tagsOnly={tagsOnlyExport}
           batchTagsOnly={batchTagsOnly}
-          batchFormatByHand={batchFormatPicked}
-          batchDestinationByHand={destinationPicked}
+          batchFormats={batchWrites}
+          offerSource={offerSource}
           clearAfterBatch={clearListAfterConvert}
           onToggleClearAfterBatch={onToggleClearList}
           sameFormat={formatMatchesInput(format, item.inputPath)}
@@ -2096,24 +2134,6 @@ export const Editor = memo(function Editor({
           normalizeCfg={normalizeCfg}
           onOpenNormalize={() => setSectionOpen('normalize', true)}
           onSelectFormat={(f) => {
-            // A second press on the format picked for a batch lets go of it: the batch is
-            // back on what Settings say, the only way to undo a pick made by mistake.
-            if (isMulti && batchFormatPicked && f === formatPick) {
-              setFormatPick(outputFormat)
-              setBatchFormatPicked(false)
-              formatByHand.current = false
-              setFormat(
-                resolveJobFormat(
-                  outputFormat,
-                  item.inputPath,
-                  'aiff',
-                  keepMp3Sources,
-                  item.fromAppleMusic,
-                ),
-              )
-              onFormatChange?.(null)
-              return
-            }
             setFormatPick(f)
             setBatchFormatPicked(true)
             // 'source' is only ever offered in the multi menu, so a real pick always
@@ -2164,6 +2184,7 @@ export const Editor = memo(function Editor({
           onCancel={isMulti ? undefined : onCancel}
           onConvertSelection={onConvertSelection}
           convertHint={convertHint}
+          processHint={processHint}
           batchRun={batchRun}
           onCancelBatch={onCancelBatch}
           onAddToAppleMusic={isMulti ? onAddAllToAppleMusic : onAddToAppleMusic}

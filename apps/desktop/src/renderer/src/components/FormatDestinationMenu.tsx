@@ -18,6 +18,8 @@ export function FormatDestinationMenu({
   destinations,
   onPickFormat,
   onPickDestination,
+  clearAfter = false,
+  onToggleClearAfter,
   className = SPLIT_MENU,
 }: {
   menuRef: React.RefObject<HTMLDivElement | null>
@@ -30,6 +32,8 @@ export function FormatDestinationMenu({
   destinations: readonly Destination[]
   onPickFormat: (format: FormatSetting) => void
   onPickDestination: (destination: Destination) => void
+  clearAfter?: boolean
+  onToggleClearAfter?: () => void
   className?: string
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -107,6 +111,27 @@ export function FormatDestinationMenu({
           </button>
         ))}
       </fieldset>
+      {/* Last and set apart: it is no choice of format or place but what happens to the
+          list once the batch ends, and it stays open so the mark shows what was switched. */}
+      {onToggleClearAfter && (
+        <div className="mt-1 border-t border-[var(--color-line)] pt-1">
+          <button
+            type="button"
+            data-testid="process-clear-after"
+            role="menuitemcheckbox"
+            aria-checked={clearAfter}
+            onClick={onToggleClearAfter}
+            className={SPLIT_ITEM}
+          >
+            {tr('settings.clearListAfterConvert')}
+            <Check
+              className={`h-3.5 w-3.5 shrink-0 text-[var(--color-accent)] ${clearAfter ? '' : 'invisible'}`}
+              strokeWidth={2.5}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

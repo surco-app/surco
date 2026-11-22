@@ -2,7 +2,7 @@ import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
 import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
+import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
@@ -14,7 +14,7 @@ import {
   SPLIT_BODY,
   SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
-  SPLIT_TOGGLE,
+  SPLIT_TOGGLE_FORMAT,
   SPLIT_TOGGLE_QUIET,
   SPLIT_TOGGLE_READY,
   useSplitMenu,
@@ -55,7 +55,20 @@ interface ExportButtonProps {
   addsToMusic?: boolean
   upToDate?: boolean
   narrow?: boolean
+  // Set for a selection: the button converts several tracks, so its menu stays reachable
+  // while nothing is ready, since a format or destination can be what leaves them all out.
   count?: number
+  // A selection's own words, worked out from the batch plan; a track's come from its state.
+  label?: string
+  // The keyboard chord shown on hover beside the label.
+  hint?: string
+  // What the hover says in place of the label, when the label alone does not tell it all.
+  tip?: string
+  // "Same as source", offered only where it differs from a real format.
+  offerSource?: boolean
+  // Clearing the list after a batch, offered as the menu's last option where it applies.
+  clearAfter?: boolean
+  onToggleClearAfter?: () => void
   // The export phase the track is in while processing. With it, the button mirrors the
   // track list's row: the stage as its label and a fill at that phase's progress mark.
   // Absent until the first progress event lands (and always in multi/quiet uses).
@@ -104,6 +117,12 @@ export function ExportButton({
   upToDate = false,
   narrow = false,
   count,
+  label: batchLabel,
+  hint,
+  tip,
+  offerSource = false,
+  clearAfter,
+  onToggleClearAfter,
   quiet,
   destination,
   destinations,
@@ -116,8 +135,8 @@ export function ExportButton({
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const processing = status === 'processing'
   // A track missing required tags cannot be converted, so the gate covers the
-  // main action and the format menu alike.
-  const blocked = processing || incomplete
+  // main action and the format menu alike. A selection keeps its menu (see count).
+  const blocked = processing || (incomplete && count === undefined)
   // Missing tags block the convert softly: aria-disabled instead of disabled keeps the
   // button in the Tab order, so the keyboard can reach it and hear why it won't run.
   const softBlocked = incomplete && !processing
@@ -127,6 +146,26 @@ export function ExportButton({
   // ("Same as source") rather than the uppercased extension every real format shows.
   const formatLabel =
     outputFormat === 'source' ? tr('settings.formats.source') : outputFormat.toUpperCase()
+
+  // The dropdown half shows the chosen format. Every candidate is stacked in one grid cell
+  // and only the chosen one is visible, so the half is as wide as the longest name in the
+  // app's language and switching formats never moves either half.
+  const shortName = (f: FormatSetting): string =>
+    f === 'source' ? tr('editor.formatSourceShort') : f.toUpperCase()
+  const formatPicker = (
+    <span className="relative grid text-xs opacity-80">
+      {FORMAT_SETTINGS.map((f) => (
+        <span
+          key={f}
+          data-testid={f === outputFormat ? 'process-format-current' : undefined}
+          aria-hidden={f !== outputFormat || undefined}
+          className={`[grid-area:1/1] ${f === outputFormat ? '' : 'invisible'}`}
+        >
+          {shortName(f)}
+        </span>
+      ))}
+    </span>
+  )
 
   const labelSpec = exportButtonLabel({
     processing,
@@ -155,7 +194,7 @@ export function ExportButton({
     !quiet && processing && !!onCancel && (stage === 'converting' || stage === 'tags')
   const label = liveStage
     ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
-    : tr(labelSpec.key, labelSpec.options)
+    : (batchLabel ?? tr(labelSpec.key, labelSpec.options))
   const shownBlocked = softBlocked && blockedLabel ? blockedLabel : undefined
   // The face keeps the last blocking text after it clears, so it can roll out of view
   // instead of vanishing the instant the field is filled.
@@ -222,21 +261,23 @@ export function ExportButton({
           type="button"
           data-testid="convert-update-anyway"
           onClick={() => onProcess(outputFormat)}
-          className={`press h-8 shrink-0 rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
+          className={`press h-8 min-w-0 truncate rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
         >
           {tr('editor.updateAnyway')}
+          <Tooltip label={tr('editor.updateAnyway')} hoverOnly />
         </button>
         <div ref={ref} className="relative">
           <button
             type="button"
             data-testid="process-format-toggle"
-            aria-label={tr('editor.chooseFormat')}
+            aria-label={tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })}
             aria-expanded={open}
             ref={toggleRef}
             aria-haspopup="menu"
             onClick={() => setOpen((v) => !v)}
-            className="press flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)]"
+            className="press flex h-8 items-center justify-center gap-1 rounded-lg border border-[var(--color-line-strong)] px-2 text-fg-dim hover:bg-[var(--color-hover)]"
           >
+            {formatPicker}
             <ChevronDown
               aria-hidden="true"
               className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -246,7 +287,7 @@ export function ExportButton({
             <FormatDestinationMenu
               menuRef={menuRef}
               onMenuKeyDown={onMenuKeyDown}
-              offerSource={count !== undefined}
+              offerSource={offerSource}
               outputFormat={outputFormat}
               exportedFormat={exportedFormat}
               destination={destination}
@@ -368,6 +409,7 @@ export function ExportButton({
             </span>
           )}
           {progressText && <span className="sr-only">{progressText}</span>}
+          {(hint || tip) && !softBlocked && <Tooltip label={tip ?? label} hint={hint} />}
           {cancellable && (
             <span className="relative hidden group-hover:inline group-focus-within:inline">
               {tr('common.cancel')}
@@ -377,7 +419,11 @@ export function ExportButton({
         <button
           type="button"
           data-testid="process-format-toggle"
-          aria-label={tr('editor.chooseFormat')}
+          aria-label={
+            quiet
+              ? tr('editor.chooseFormat')
+              : tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })
+          }
           aria-expanded={open}
           ref={toggleRef}
           aria-haspopup="menu"
@@ -389,13 +435,14 @@ export function ExportButton({
               : liveStage
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
-                  'press flex w-10 items-center justify-center rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 text-[var(--color-on-accent)] disabled:pointer-events-none'
-                : `${SPLIT_TOGGLE} ${faceBlocked ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`
+                  'press flex items-center justify-center gap-1 rounded-r-lg border-l border-on-scrim/20 bg-[var(--color-accent)]/40 px-3 text-[var(--color-on-accent)] disabled:pointer-events-none'
+                : `${SPLIT_TOGGLE_FORMAT} ${faceBlocked ? SPLIT_TOGGLE_QUIET : SPLIT_TOGGLE_READY}`
           }
         >
           {swapsFace && (
             <span aria-hidden="true" data-on={!faceBlocked || undefined} className="process-fill" />
           )}
+          {!quiet && formatPicker}
           <ChevronDown
             aria-hidden="true"
             className={`relative h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -411,13 +458,15 @@ export function ExportButton({
           <FormatDestinationMenu
             menuRef={menuRef}
             onMenuKeyDown={onMenuKeyDown}
-            offerSource={count !== undefined}
+            offerSource={offerSource}
             outputFormat={outputFormat}
             exportedFormat={exportedFormat}
             destination={destination}
             destinations={destinations}
             onPickFormat={pick}
             onPickDestination={pickDestination}
+            clearAfter={clearAfter}
+            onToggleClearAfter={onToggleClearAfter}
           />
         )}
       </div>

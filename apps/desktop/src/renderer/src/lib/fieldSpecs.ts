@@ -52,6 +52,24 @@ function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; co
   return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
 
+// What a mixed field shows in place of a value: the values themselves when few enough to read
+// (fewer still in a box sized for its value), otherwise how many there are. A track with
+// nothing counts as a value of its own: without it "A" would read as a value they all share.
+function mixedPlaceholder(
+  values: { value: string }[],
+  hasEmpty: boolean,
+  width: FieldWidth | undefined,
+  tr: BuildFieldSpecsParams['tr'],
+): { placeholder: string; placeholderListed: boolean } {
+  const shown = values.map((v) => v.value)
+  if (hasEmpty) shown.push(tr('editor.emptyValue'))
+  const listed = shown.length <= (width ? 2 : 3)
+  return {
+    placeholder: listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length }),
+    placeholderListed: listed,
+  }
+}
+
 // One renderable form field. The editor builds these per mode — bulk specs read the
 // selection's common value and write through onChangeAllMeta, single specs read the
 // open track and write through setField — so the form itself renders a single tree
@@ -63,6 +81,9 @@ export interface FieldSpec {
   value: string
   onChange: (v: string) => void
   placeholder?: string
+  // The placeholder spells out the values, so a tooltip adds the part a narrow box cuts;
+  // a bare count says everything it has to.
+  placeholderListed?: boolean
   width?: FieldWidth
   required?: boolean
   invalid?: boolean
@@ -81,9 +102,11 @@ export interface FieldSpec {
   formatResult?: string
   formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
-  previous?: FieldPreviousNote
   readOnly?: boolean
   readOnlyNote?: string
+  // Read-only because a selection cannot write one value into every track: drawn as text in
+  // the field's own row rather than as a box, unlike Quality, which is a box you cannot type in.
+  plain?: boolean
   // A button beside a read-only per-track field that fills it for the whole selection.
   action?: { label: string; onApply: () => void }
   perTrack?: {
@@ -103,11 +126,6 @@ export interface FieldCleanedNote {
 export interface FieldFormatAction {
   onApply: () => void
   disabled: boolean
-}
-
-export interface FieldPreviousNote {
-  value: string
-  onRestore: () => void
 }
 
 // The free-text fields that host the { } insert menu — the ones where composing a
@@ -133,6 +151,9 @@ export interface BuildFieldSpecsParams {
   selectedTracks: TrackItem[] | undefined
   visibleFields: string[]
   requiredFields: string[]
+  // The required fields the convert gate holds a selection back for (its `missing.fields`),
+  // so the form marks exactly the ones the footer names.
+  heldBackFields?: string[]
   item: TrackItem
   genreChips: string[]
   groupingPresets: string[]
@@ -171,7 +192,6 @@ export interface BuildFieldSpecsParams {
   // Year holds a whole release date, which needs a wider box than a year.
   fullReleaseDate: boolean
   cleanedNotes?: Partial<Record<string, FieldCleanedNote>>
-  previousNotes?: Partial<Record<string, FieldPreviousNote>>
   playlists?: Partial<Record<PlaylistLibrary, PlaylistsSpec>>
   // Quality as the next save writes it, set only while its Auto is on.
   analyzedQuality?: string
@@ -221,6 +241,7 @@ export function buildFieldSpecs({
   selectedTracks,
   visibleFields,
   requiredFields,
+  heldBackFields = [],
   item,
   genreChips,
   groupingPresets,
@@ -244,7 +265,6 @@ export function buildFieldSpecs({
   numberTracks,
   fullReleaseDate,
   cleanedNotes,
-  previousNotes,
   playlists,
   analyzedQuality,
 }: BuildFieldSpecsParams): FieldSpec[] {
@@ -255,6 +275,10 @@ export function buildFieldSpecs({
     isMulti && selectedTracks && customFields.length > 0
       ? selectedTracks.map((t) => effectiveMeta(t, customFields).custom ?? {})
       : []
+  const requirement = (key: string): Pick<FieldSpec, 'required' | 'invalid'> => ({
+    required: requiredFields.includes(key),
+    invalid: heldBackFields.includes(key),
+  })
   const bulkSpec = (key: (typeof BULK_FIELDS)[number], tracks: TrackItem[]): FieldSpec => {
     const shared = commonValue(tracks, key)
     const list = tagListFor(key, genreTags, groupingTags)
@@ -267,13 +291,15 @@ export function buildFieldSpecs({
       key,
       label: tr(`fields.${key}`),
       value: shared ?? '',
-      // "Multiple values" does not fit a box sized for its value; the mixed flag
-      // still says it in words to a screen reader.
-      placeholder: mixed
-        ? width
-          ? '…'
-          : tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
-        : undefined,
+      // The mixed flag still says "multiple values" in words to a screen reader.
+      ...(mixedValues
+        ? mixedPlaceholder(
+            mixedValues,
+            tracks.some((t) => !t.meta[key]),
+            width,
+            tr,
+          )
+        : {}),
       width,
       mixed,
       mixedValues,
@@ -288,6 +314,7 @@ export function buildFieldSpecs({
               : undefined,
       tagList: list,
       perTrack,
+      ...requirement(key),
     }
   }
   const customSpec = (f: CustomField): FieldSpec => {
@@ -298,18 +325,16 @@ export function buildFieldSpecs({
       key: f.key,
       label: f.label,
       value: shared ?? '',
-      placeholder:
-        shared === undefined
-          ? tr('editor.valuesCount', { count: mixedValues?.length ?? 0 })
-          : undefined,
+      ...(mixedValues ? mixedPlaceholder(mixedValues, values.includes(''), undefined, tr) : {}),
       mixed: shared === undefined,
       mixedValues,
       onChange: customBulkOnChange.get(f.key) ?? (() => {}),
+      ...requirement(f.key),
     }
   }
   // A per-track field over a selection: shown where the user put it so the form matches the
   // single one, but read-only because one value written into every track would erase what
-  // tells them apart. Differing values show as a blank with a placeholder, not a choice.
+  // tells them apart. Differing values show as a blank listing them, not as a choice.
   const perTrackSpec = (key: MetaTextKey, tracks: TrackItem[]): FieldSpec => {
     const shared = commonValue(tracks, key)
     const width = widthOf(key)
@@ -317,20 +342,26 @@ export function buildFieldSpecs({
       key,
       label: tr(`fields.${key}`),
       value: shared ?? '',
-      placeholder:
-        shared === undefined
-          ? width
-            ? '…'
-            : tr('editor.valuesCount', { count: valueCounts(tracks, key).length })
-          : undefined,
+      ...(shared === undefined
+        ? mixedPlaceholder(
+            valueCounts(tracks, key),
+            tracks.some((t) => !t.meta[key]),
+            width,
+            tr,
+          )
+        : shared === ''
+          ? { placeholder: tr('editor.emptyValue') }
+          : {}),
       width,
       readOnly: true,
+      plain: true,
       readOnlyNote: tr('editor.perTrackOnly'),
       action:
         key === 'trackNumber' && numberTracks
           ? { label: tr('editor.numberTracks', { count: tracks.length }), onApply: numberTracks }
           : undefined,
       onChange: () => {},
+      ...requirement(key),
     }
   }
   // One walk over visibleFields keeps the user's order; each key maps to its multi spec, or
@@ -389,7 +420,6 @@ export function buildFieldSpecs({
             formatResult: !isMulti && def.key === 'title' ? titleFormatResult : undefined,
             formatAction: def.key === 'title' ? titleFormatAction : undefined,
             cleaned: cleanedNotes?.[def.key],
-            previous: previousNotes?.[def.key],
             width: widthOf(def.key),
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),

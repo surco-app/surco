@@ -38,14 +38,14 @@ describe('exportButtonLabel', () => {
     }
   })
 
-  it('hands the format through for the convert, replace and replace anyway labels', () => {
-    expect(exportButtonLabel({ ...base, tagsOnly: false }).options).toEqual({ format: 'AIFF' })
-    expect(exportButtonLabel({ ...base, tagsOnly: false, replaces: true }).options).toEqual({
-      format: 'AIFF',
-    })
+  // The chosen format sits on the button's dropdown half, so the main half says only the
+  // verb: "Convert | AIFF" instead of "Convert to AIFF | ⌄".
+  it('leaves the format out of the convert, replace and replace anyway labels', () => {
+    expect(exportButtonLabel({ ...base, tagsOnly: false }).options).toBeUndefined()
+    expect(exportButtonLabel({ ...base, tagsOnly: false, replaces: true }).options).toBeUndefined()
     expect(
       exportButtonLabel({ ...base, tagsOnly: false, replaces: true, libraryBetter: true }).options,
-    ).toEqual({ format: 'AIFF' })
+    ).toBeUndefined()
   })
 
   // After an export, picking a different format from the menu only relabels the button —

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import { GENRE_TAGS } from '../lib/bulkEdit'
@@ -481,57 +481,6 @@ describe('Field audio-derived suggestion', () => {
   })
 })
 
-describe('Field previous value', () => {
-  // The strike-through already says the value is the old one; the word only spoke for it.
-  // A screen reader cannot hear a strike, so the word stays for it alone.
-  it('strikes the replaced value without a visible «Before:»', () => {
-    render(
-      <Field
-        name="title"
-        label="Title"
-        value="Release Title"
-        onChange={vi.fn()}
-        previous={{ value: 'My Title', onRestore: vi.fn() }}
-      />,
-    )
-    expect(screen.getByText('Before:')).toHaveClass('sr-only')
-    expect(screen.getByText('My Title')).toBeInTheDocument()
-    expect(screen.getByTestId('field-previous-restore-title')).toHaveTextContent('Restore')
-  })
-
-  it('brings the value a release replaced back from its restore button', () => {
-    const onRestore = vi.fn()
-    render(
-      <Field
-        name="title"
-        label="Title"
-        value="Release Title"
-        onChange={vi.fn()}
-        previous={{ value: 'My Title', onRestore }}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('field-previous-restore-title'))
-    expect(onRestore).toHaveBeenCalledTimes(1)
-  })
-
-  // A short box is only as wide as a year, and the replaced value split under it into
-  // "Before: 2000" and a stray "· Restore" that no longer read as one undo.
-  it('keeps the replaced value and its restore on one line under a short box', () => {
-    render(
-      <Field
-        name="year"
-        label="Year"
-        value="1999"
-        onChange={vi.fn()}
-        width="short"
-        previous={{ value: '2000', onRestore: vi.fn() }}
-      />,
-    )
-    expect(screen.getByTestId('field-year-previous').className).toContain('whitespace-nowrap')
-    expect(screen.getByTestId('field-column-year').className).not.toContain('w-[4.5rem]')
-  })
-})
-
 // A mixed field in a multi-select showed a blank box: the values it held were only
 // reachable by clicking through the rows. The chevron lists them, most common first, and
 // picking one writes it to every selected track like typing it would.
@@ -643,5 +592,79 @@ describe('Field read-only', () => {
       <Field name="title" label="Title" value="" onChange={vi.fn()} readOnly readOnlyNote="Own" />,
     )
     expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
+  })
+
+  // In a selection, Title is shown, not edited: it reads as text in the same row so the form
+  // does not jump between one track and many, while quality keeps its dashed box.
+  it('draws a plain read-only field as text without changing the row, and still announces its note', () => {
+    render(
+      <>
+        <Field
+          name="title"
+          label="Title"
+          value=""
+          onChange={vi.fn()}
+          readOnly
+          plain
+          readOnlyNote="Own"
+        />
+        <Field name="quality" label="Quality" value="Good" onChange={vi.fn()} readOnly />
+      </>,
+    )
+    expect(screen.getByTestId('field-title')).toHaveAttribute('data-plain', 'true')
+    expect(screen.getByTestId('field-quality')).not.toHaveAttribute('data-plain')
+    expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
+  })
+
+  // pointerenter does not bubble, so a real pointer reaches the Tooltip through the element
+  // that holds it, not the input inside.
+  const hoverBox = (name: string): void => {
+    const box = screen.getByTestId(`field-${name}`).parentElement as HTMLElement
+    for (const type of ['pointerenter', 'pointermove']) {
+      box.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10 }))
+    }
+  }
+
+  // The placeholder is cut with an ellipsis in a narrow form, so the whole text rides in a
+  // tooltip, on a mixed field and on a per-track one alike.
+  it.each([
+    ['mixed', { mixed: true }],
+    ['plain', { readOnly: true, plain: true }],
+  ])('keeps the whole list of differing values in a tooltip on a %s field', (_, props) => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        onChange={vi.fn()}
+        placeholder="A · B · C"
+        placeholderListed
+        {...props}
+      />,
+    )
+    hoverBox('artist')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('A · B · C')
+    vi.useRealTimers()
+  })
+
+  // A bare "4 values" is already all there is to say; a tooltip would only repeat it.
+  it('adds no tooltip when the placeholder is only a count', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="artist"
+        label="Artist"
+        value=""
+        onChange={vi.fn()}
+        mixed
+        placeholder="4 values"
+      />,
+    )
+    hoverBox('artist')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 })

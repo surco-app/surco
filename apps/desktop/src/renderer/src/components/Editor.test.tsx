@@ -38,6 +38,7 @@ vi.hoisted(() => {
 })
 
 import { djReads, type ProgramReads } from '../test/api'
+import { hoverTooltip } from '../test/tooltip'
 import { Editor } from './Editor'
 
 vi.mock('../lib/batch', async (importOriginal) => {
@@ -651,6 +652,109 @@ describe('Editor cover picker', () => {
 const openMore = (): void => {
   if (!screen.queryByRole('menu')) fireEvent.click(screen.getByTestId('meta-more'))
 }
+
+describe('Restoring the tags a release replaced', () => {
+  const applied = {
+    before: { title: 'My Title', album: 'My Album', year: '' },
+    wrote: { title: 'Release Title', album: 'Release Album', year: '1999' },
+  }
+
+  // The struck-through line under every field cluttered the form after each match; one
+  // action in More gives the same way back, and Undo covers the rest.
+  it('draws no previous value under the fields a release changed', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    expect(screen.getByTestId('field-title')).toHaveValue('Release Title')
+    expect(screen.queryByTestId('field-title-previous')).toBeNull()
+    expect(screen.queryByTestId('field-album-previous')).toBeNull()
+  })
+
+  // Copy and Paste are a pair; the release restore is a different kind of action, so it
+  // sits after them instead of splitting the pair.
+  it('lists the restore after Paste so Copy and Paste stay together', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    const ids = screen.getAllByRole('menuitem').map((el) => el.getAttribute('data-testid'))
+    expect(ids.indexOf('restore-release-btn')).toBe(ids.indexOf('paste-meta-btn') + 1)
+  })
+
+  // One click, one Undo step: restoring field by field would need one ⌘Z per field.
+  it('puts every replaced field back in a single patch and a single Undo step', () => {
+    const { onChange, onRecordUndo } = renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Release Title', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
+    expect(onRecordUndo).toHaveBeenCalledTimes(1)
+    expect(onRecordUndo.mock.calls[0][0]).toEqual(['a'])
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      title: 'My Title',
+      album: 'My Album',
+      year: '1999',
+    })
+  })
+
+  // A title the user rewrote after the match is theirs; restoring must not undo their work.
+  it('leaves alone a field the user changed after the release', () => {
+    const { onChange } = renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'My Own Edit', album: 'Release Album', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      title: 'My Own Edit',
+      album: 'My Album',
+    })
+  })
+
+  it('is not offered when no release was applied', () => {
+    renderEditor({ id: 'a', meta: { title: 'Strobe' } })
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).toBeNull()
+  })
+
+  it('is not offered once every replaced field is back or changed by the user', () => {
+    renderEditor(
+      {
+        id: 'a',
+        meta: { title: 'Mine', album: 'Mine too', year: '1999' },
+        appliedRelease: applied,
+      },
+      'wav',
+      { visibleFields: ['title', 'album', 'year'] },
+    )
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).toBeNull()
+  })
+})
 
 describe('Editor metadata header', () => {
   // With a library tree and the results column open in the smallest window the editor is
@@ -2197,77 +2301,75 @@ describe('Editor multi-select', () => {
     expect(landed).toBe('declick')
   })
 
-  // The toolbar's "Convert 2 selected" and the footer's "Convert (2)" ran the same batch,
-  // so a selection showed two convert buttons and no way to tell them apart. The footer
-  // keeps the plan and its format menu; converting is the toolbar's.
-  it('plans the batch in the footer and leaves converting to the toolbar', () => {
-    renderMulti()
+  // One track and a selection drew two different footers for one job; a selection now
+  // converts from the same split button, the chosen format on its dropdown half.
+  it('converts a selection from the same split button as one track', () => {
+    renderMulti({ fileA: '/music/a.flac', fileB: '/music/b.flac' })
     expect(screen.getByTestId('field-album')).toHaveValue('Shared')
     expect(screen.getByTestId('field-title')).toHaveAttribute('readonly')
-    expect(screen.queryByTestId('process-btn')).toBeNull()
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent('2')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
-    expect(screen.getByTestId('batch-destination-toggle')).toBeInTheDocument()
-  })
-
-  it('keeps the keyboard focus ring on the default format pill, whose inset line would otherwise replace it', () => {
-    renderMulti()
-    expect(screen.getByTestId('process-format-aiff').className).toContain(
-      'focus-visible:shadow-[inset_0_0_0_1px_var(--color-line-strong),var(--ring)]',
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
     )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByRole('menu')).toHaveTextContent(i18n.t('editor.menuFormat'))
+    expect(screen.getByRole('menu')).toHaveTextContent(i18n.t('editor.menuDestination'))
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('picks the batch format in the footer and marks it as the one in use', () => {
-    renderMulti()
+  // Over two FLACs "Same as source" is FLAC under a second name; over a mix it is the one
+  // choice that keeps each file in its own format.
+  it('offers Same as source only over files of more than one format', () => {
+    const { rerenderTracks } = renderMulti({ fileA: '/music/a.flac', fileB: '/music/b.flac' })
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('process-format-source')).toBeNull()
+    rerenderTracks({ fileA: '/music/a.flac', fileB: '/music/b.mp3' })
+    expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
+  })
+
+  // AIFF is what Settings say, but the keep setting leaves the MP3 as MP3: the dropdown
+  // shows the pick, so the button has to say the run writes both.
+  it('does not promise a single format when a kept MP3 stays MP3 beside a FLAC', () => {
+    renderMulti({
+      fileA: '/music/a.mp3',
+      fileB: '/music/b.flac',
+      settings: { outputFormat: 'aiff', keepMp3Sources: true },
+    })
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
+      i18n.t('header.convertSelected', { count: 2 }),
+    )
+    expect(hoverTooltip(screen.getByTestId('process-btn'))).toContain('MP3')
+  })
+
+  it('picks the batch format from the menu and marks it as the one in use', () => {
+    renderMulti({ fileA: '/music/a.flac', fileB: '/music/b.flac' })
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('data-state', 'picked')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'off')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('WAV')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
   })
 
   // The footer said "Convert" over MP3s that the keep setting leaves as MP3: with AIFF only
-  // highlighted as the Settings default, the run rewrites their tags and nothing else.
+  // the Settings default, the run rewrites their tags and nothing else.
   it('says it updates when the default format leaves every selected MP3 as it is', () => {
     renderMulti({
       fileA: '/music/a.mp3',
       fileB: '/music/b.mp3',
       settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
     })
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.updateSelected', { count: 2 }),
     )
   })
 
-  // There was no way back from a format picked by mistake: every press was another pick,
-  // so the batch could not return to what Settings say.
-  it('lets go of a picked format on a second press and returns to the Settings one', () => {
-    const onFormatChange = vi.fn()
-    renderMulti({
-      fileA: '/music/a.mp3',
-      fileB: '/music/b.mp3',
-      settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
-      onFormatChange,
-    })
-    fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
-    fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('process-format-wav')).toHaveAttribute('data-state', 'off')
-    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('data-state', 'default')
-    expect(onFormatChange).toHaveBeenLastCalledWith(null)
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
-      i18n.t('header.updateSelected', { count: 2 }),
-    )
-  })
-
-  it('paints the destination as picked only once one is chosen from its menu', () => {
+  it('picks the batch destination from the menu and marks it as the one in use', () => {
     renderMulti()
-    const toggle = (): HTMLElement => screen.getByTestId('batch-destination-toggle')
-    expect(toggle()).toHaveAttribute('data-state', 'default')
-    fireEvent.click(toggle())
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
-    expect(toggle()).toHaveAttribute('data-state', 'picked')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-destination-beside')).toHaveAttribute('aria-checked', 'true')
   })
 
   it('says it converts those MP3s once another format is picked by hand', () => {
@@ -2276,8 +2378,9 @@ describe('Editor multi-select', () => {
       fileB: '/music/b.mp3',
       settings: { outputFormat: 'aiff', keepMp3Sources: true, overwriteOriginal: true },
     })
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-wav'))
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSelected', { count: 2 }),
     )
   })
@@ -2291,9 +2394,22 @@ describe('Editor multi-select', () => {
       fileB: '/music/b.wav',
       settings: { outputFormat: 'source', addToAppleMusic: true },
     })
-    expect(screen.getByTestId('batch-destination-toggle')).toHaveTextContent(
-      i18n.t('settings.destinations.appleMusic'),
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-destination-appleMusic')).toHaveAttribute(
+      'aria-checked',
+      'true',
     )
+  })
+
+  // With nothing ready the button was a greyed "Convert 0 of 2" that did nothing; one track
+  // in the same spot names what is missing and a press takes the DJ to the field.
+  it('wears the blocked face of one track when nothing is ready, and a press focuses the missing field', () => {
+    renderMulti({ requiredFields: ['artist'], visibleFields: ['title', 'album', 'artist'] })
+    expect(screen.getByTestId('process-blocked-face')).toHaveTextContent(
+      i18n.t('editor.missingOne', { field: i18n.t('fields.artist') }),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(document.activeElement).toBe(screen.getByTestId('field-artist'))
   })
 
   // The section says it applies to every selected track, but only the open one took the
@@ -2419,7 +2535,7 @@ describe('Editor multi-select', () => {
       fileB: '/music/b.opus',
       settings: { outputFormat: 'source', overwriteOriginal: true },
     })
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.updateSomeSelected', { ready: 1, total: 2 }),
     )
   })
@@ -2493,7 +2609,7 @@ describe('Editor multi-select', () => {
   // skips; the plan counts what the click converts, and the amber line says what stays out.
   it('counts in the plan only the tracks the batch will convert, like the header', () => {
     renderMulti({ requiredFields: ['artist'], metaA: { artist: 'Kumara' } })
-    expect(screen.getByTestId('batch-convert')).toHaveTextContent(
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSomeSelected', { ready: 1, total: 2 }),
     )
   })
@@ -2508,7 +2624,117 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
       i18n.t('editor.mixedReplaceSelection'),
     )
-    expect(screen.getByTestId('batch-convert')).toBeDisabled()
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // Nothing converts because the selection mixes replacing with adding, not because of the
+  // empty field: the face must not send the DJ to a field that would change nothing.
+  it('keeps the plain face when something other than a missing field holds every track back', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'album', 'artist'],
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    expect(screen.getByTestId('batch-plan-blocked')).toHaveTextContent(
+      i18n.t('editor.mixedReplaceSelection'),
+    )
+    expect(screen.queryByTestId('process-blocked-face')).toBeNull()
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
+  })
+
+  it('does not send the DJ to a field from the amber note either when the selection mixes replacing with adding', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'album', 'artist'],
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    fireEvent.click(screen.getByTestId('batch-plan-blocked'))
+    expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
+  })
+
+  // One track marks its empty required field with the amber dot; a selection that held the
+  // same gap back showed only the note below, so the DJ could not see which field to fill.
+  it('marks a required Grouping that one selected track still misses, as one track does', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      groupingPresets: ['Warm-up'],
+    })
+    expect(screen.getByTestId('field-required-grouping')).toBeInTheDocument()
+  })
+
+  it('keeps the mark while only some of the selected tracks have the required Grouping', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      metaA: { grouping: 'Warm-up' },
+    })
+    expect(screen.getByTestId('field-required-grouping')).toBeInTheDocument()
+  })
+
+  it('drops the mark once every selected track has the required Grouping', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      metaA: { grouping: 'Warm-up' },
+      metaB: { grouping: 'Peak' },
+    })
+    expect(screen.queryByTestId('field-required-grouping')).toBeNull()
+  })
+
+  it('marks a required text field a selection misses in a track', () => {
+    renderMulti({
+      requiredFields: ['artist'],
+      visibleFields: ['title', 'artist'],
+      metaA: { artist: 'Kumara' },
+    })
+    expect(screen.getByTestId('field-required-artist')).toBeInTheDocument()
+  })
+
+  it('marks a required custom field a selection misses in a track', () => {
+    renderMulti({
+      requiredFields: ['mood'],
+      visibleFields: ['title', 'mood'],
+      customFields: [{ key: 'mood', label: 'Mood' }],
+    })
+    expect(screen.getByTestId('field-required-mood')).toBeInTheDocument()
+  })
+
+  // Genre and Grouping have no text box, so "field-grouping" does not exist for a selection:
+  // the press must land on their chips instead of doing nothing.
+  it('focuses the Grouping chips when the missing required field is Grouping and the notice is pressed', () => {
+    renderMulti({
+      requiredFields: ['grouping'],
+      visibleFields: ['title', 'grouping'],
+      groupingPresets: ['Warm-up'],
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(screen.getByTestId('grouping-bulk').contains(document.activeElement)).toBe(true)
+    expect(document.activeElement).not.toBe(document.body)
+  })
+
+  // Title is per track in a selection, so its box is read-only. A press that lands there
+  // must still be seen: the field is the answer to "why can't I convert".
+  it('takes a blocked press to a per-track Title that stays visible to the keyboard', () => {
+    renderMulti({
+      requiredFields: ['title'],
+      visibleFields: ['title', 'album'],
+      metaA: { title: '' },
+      metaB: { title: '' },
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    const title = screen.getByTestId('field-title')
+    expect(document.activeElement).toBe(title)
+    expect(title).not.toHaveAttribute('aria-hidden')
+  })
+
+  it('focuses the per-track toggle when Grouping has no chips to land on', () => {
+    renderMulti({ requiredFields: ['grouping'], visibleFields: ['title', 'grouping'] })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(document.activeElement).toBe(screen.getByTestId('grouping-per-track-toggle'))
   })
 
   it('names the missing fields in the batch plan', () => {
@@ -2537,7 +2763,11 @@ describe('Editor multi-select', () => {
   // single-track button does, so the user knows the batch will be added too.
   it('says the batch is added to Apple Music when the setting is on', () => {
     renderMulti({ platform: 'darwin', music: true })
-    expect(screen.getByTestId('batch-destination-toggle')).toHaveTextContent('Apple Music')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-destination-appleMusic')).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
   })
 
   it('writes a shared-field edit to every selected track', () => {
@@ -2785,9 +3015,8 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
     await waitFor(() =>
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
-    await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert to MP3'),
-    )
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert'))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
   })
 })
 
@@ -3464,8 +3693,8 @@ describe('Editor export control', () => {
   it('labels an overwrite into another format as a conversion', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
-    expect(button).toHaveAccessibleName('Convert to AIFF')
-    expect(button).not.toHaveAccessibleName('Update')
+    expect(button).toHaveAccessibleName('Convert')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
   })
 
   // Picking a format from the dropdown used to convert on the spot, so a misclick
@@ -3478,11 +3707,18 @@ describe('Editor export control', () => {
     expect(onProcess).not.toHaveBeenCalled()
   })
 
-  it('relabels the main button to the format chosen from the dropdown', () => {
-    renderEditor({ id: 'a' }, 'wav')
+  // The verb stays on the main half and the dropdown shows the pick over the same stack of
+  // names, so a format change moves neither half.
+  it('shows the format chosen from the dropdown on the dropdown, over the same stacked names', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.flac' }, 'aiff')
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    const sized = screen.getByTestId('process-format-toggle').textContent
     fireEvent.click(screen.getByTestId('process-format-toggle'))
-    fireEvent.click(screen.getByTestId('process-format-mp3'))
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('MP3')
+    fireEvent.click(screen.getByTestId('process-format-wav'))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('WAV')
+    expect(screen.getByTestId('process-format-toggle').textContent).toBe(sized)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
   })
 
   it('exports in the chosen format when the main button is clicked after picking it', () => {
@@ -4416,26 +4652,27 @@ describe('Editor Discogs apply', () => {
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Track One'))
   }
 
-  it('shows the title a release replaced and puts it back on Restaurar, so a bad match costs one click', async () => {
+  it('puts the title a release replaced back from More, so a bad match costs one click', async () => {
     const onRecordUndo = vi.fn()
     await applyFirstTrack(item({ id: 'a', meta: { title: 'My Own Title' } }), onRecordUndo)
-    const previous = screen.getByTestId('field-title-previous')
-    expect(previous).toHaveTextContent('My Own Title')
+    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
     onRecordUndo.mockClear()
-    fireEvent.click(within(previous).getByRole('button'))
+    openMore()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
     expect(onRecordUndo).toHaveBeenCalledWith(['a'])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('My Own Title'))
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 
-  it('shows no previous line for a field the release filled from empty, since there is nothing to restore', async () => {
+  it('offers no restore for a field the release filled from empty, since there is nothing to restore', async () => {
     await applyFirstTrack(item({ id: 'a' }))
     expect(screen.getByTestId('field-artist')).toHaveValue('The Artist')
-    expect(screen.queryByTestId('field-artist-previous')).not.toBeInTheDocument()
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 
-  it('drops the previous line once the DJ retypes the field, since the release value is no longer there to replace', () => {
+  it('offers no restore once the DJ retypes the field, since the release value is no longer there to replace', () => {
     renderEditor(
       {
         id: 'a',
@@ -4445,7 +4682,8 @@ describe('Editor Discogs apply', () => {
       'wav',
       { visibleFields: ['title'] },
     )
-    expect(screen.queryByTestId('field-title-previous')).not.toBeInTheDocument()
+    openMore()
+    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 })
 

@@ -103,7 +103,7 @@ describe('MetadataForm', () => {
     ])
   })
 
-  it('renders a per-track spec as the bulk grouping field, full width, instead of a text field', () => {
+  it('renders a per-track spec as the bulk grouping field, laid out in the form grid like a text field, instead of a text field', () => {
     renderForm([
       spec('genre', 'Techno'),
       {
@@ -114,7 +114,9 @@ describe('MetadataForm', () => {
     ])
     expect(screen.getByTestId('grouping-bulk')).toHaveTextContent('Bases,Vocals')
     expect(screen.queryByTestId('field-grouping')).toBeNull()
-    expect(screen.getByTestId('grouping-bulk').parentElement?.className).toContain('col-span-2')
+    expect(screen.getByTestId('grouping-bulk').parentElement).toBe(
+      screen.getByTestId('field-genre').parentElement,
+    )
   })
 
   // A selection where only some tracks are compilations showed a plain empty box, which

@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import { X } from 'lucide-react'
 import type React from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf } from '../../../shared/camelot'
 import { alternateGap } from '../../../shared/sessionBuild'
@@ -240,7 +240,9 @@ export function SessionWizard({
     return () => clearTimeout(timer)
   }, [leaving])
 
-  useEffect(() => {
+  // Rebound at commit, not after paint: a key pressed once a step shows must read that step,
+  // or ⌘Enter on the freshly shown last step steps past it instead of building.
+  useLayoutEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Enter' || !(e.metaKey || e.ctrlKey)) return
       e.preventDefault()

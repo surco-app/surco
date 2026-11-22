@@ -9,7 +9,6 @@ interface SuggestionChipsProps {
   isOn: (s: string) => boolean
   isPartial?: (s: string) => boolean
   partialLabel?: (s: string) => string
-  addable?: boolean
   onPick: (s: string) => void
   scope?: string
   dim?: boolean
@@ -46,7 +45,6 @@ export function SuggestionChips({
   isOn,
   isPartial,
   partialLabel,
-  addable,
   onPick,
   scope,
   dim,
@@ -147,16 +145,12 @@ export function SuggestionChips({
               state === 'on'
                 ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
                 : state === 'some'
-                  ? addable
-                    ? 'border-[var(--color-accent)] text-fg'
-                    : 'border-dashed border-[color-mix(in_srgb,var(--color-accent)_60%,transparent)] text-[var(--color-accent)]'
-                  : addable
-                    ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)] hover:text-fg'
-                    : dim
-                      ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
-                      : audioDerived
-                        ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)]'
-                        : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
+                  ? 'border-[var(--color-accent)] text-fg'
+                  : dim
+                    ? 'border-[var(--color-line)] text-fg-faint hover:bg-[var(--color-hover)]'
+                    : audioDerived
+                      ? 'border-dashed border-[var(--color-line-strong)] text-fg-faint hover:bg-[var(--color-hover)]'
+                      : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
             {audioDerived && <Tooltip label={tr('fields.suggestionDetected', { value: s })} />}

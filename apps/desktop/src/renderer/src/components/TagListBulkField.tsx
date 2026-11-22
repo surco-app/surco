@@ -20,6 +20,7 @@ interface TagListBulkFieldProps {
   list: TagList
   presets: string[]
   tracks: TrackItem[]
+  invalid?: boolean
   onChangeTracks: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
 }
 
@@ -68,6 +69,7 @@ export function TagListBulkField({
   list,
   presets,
   tracks,
+  invalid,
   onChangeTracks,
 }: TagListBulkFieldProps): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -78,32 +80,45 @@ export function TagListBulkField({
   const [order, setOrder] = useState(() => tagOrder(selection, tags, tracks, list, stateOf))
   if (order.selection !== selection) setOrder(tagOrder(selection, tags, tracks, list, stateOf))
   const summaryTags = sortedAs(tags, order.summary)
-  const varying = tags.filter((tag) => stateOf(tag) === 'some').length
   // Every row repeats the same chips, so each row is a group named by what it edits: the
   // summary by the field's label, a track's row by its number and title. min-w-0 undoes a
   // fieldset's min-content floor, which would stop the chip row and titles from shrinking.
   const baseId = useId()
   return (
-    <div className="block" data-testid={`${list.key}-bulk`}>
-      <fieldset aria-labelledby={`${baseId}-label`} className="min-w-0">
-        <span
-          id={`${baseId}-label`}
-          className="mb-1 flex items-center gap-1.5 text-xs font-medium text-fg-dim"
-        >
-          {label}
-          <span className="font-normal text-fg-faint">· {tr('editor.groupingAllTracks')}</span>
-        </span>
+    <div className="block beside:contents" data-testid={`${list.key}-bulk`}>
+      <span
+        id={`${baseId}-label`}
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim compact:mb-0.5 beside:col-start-1 beside:mb-0 beside:min-h-[34px] beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right compact:beside:min-h-[30px]"
+      >
+        {label}
+        {invalid && (
+          <span
+            data-testid={`field-required-${list.key}`}
+            aria-hidden="true"
+            className="h-1.5 w-1.5 rounded-full bg-warn"
+          />
+        )}
+      </span>
+      <fieldset
+        aria-labelledby={`${baseId}-label`}
+        aria-describedby={invalid ? `${baseId}-required` : undefined}
+        className="min-w-0 beside:col-start-2 beside:-mt-1.5"
+      >
         <SuggestionChips
           suggestions={summaryTags}
           foldKey={list.key}
           isOn={(tag) => stateOf(tag) === 'all'}
           isPartial={(tag) => stateOf(tag) === 'some'}
           partialLabel={(tag) => `${stateOf.count(tag)}/${tracks.length}`}
-          addable
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />
       </fieldset>
-      <div className="mt-2.5 ml-[5px] border-l-2 border-[var(--color-line-strong)] pl-2.5">
+      {invalid && (
+        <span id={`${baseId}-required`} className="sr-only">
+          {tr('editor.requiredEmpty')}
+        </span>
+      )}
+      <div className="mt-0.5 ml-[5px] border-l-2 beside:col-start-2 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"
           data-testid={`${list.key}-per-track-toggle`}
@@ -117,11 +132,6 @@ export function TagListBulkField({
             aria-hidden="true"
           />
           <span>{tr('editor.groupingPerTrack')}</span>
-          <span className="ml-auto text-label text-fg-faint">
-            {varying === 0
-              ? tr('editor.groupingSame')
-              : tr('editor.groupingVarying', { count: varying })}
-          </span>
         </button>
         {open && (
           <div id={`${baseId}-rows`} className="mt-1.5 flex flex-col gap-[7px]">

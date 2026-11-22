@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { hoverTooltip } from '../test/tooltip'
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -83,6 +84,16 @@ describe('ExportButton', () => {
     expect(screen.queryByTestId('process-btn')).toBeNull()
     fireEvent.click(screen.getByTestId('convert-update-anyway'))
     expect(onProcess).toHaveBeenCalledWith('aiff')
+  })
+
+  // The branch rule: the up-to-date row's dropdown reads like the split button's, the chosen
+  // format beside the chevron, sized by the same stacked names.
+  it('shows the chosen format on the up-to-date row dropdown, as on the split button', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    expect(screen.getByTestId('process-format-toggle')).toHaveAccessibleName(
+      'Format and destination, AIFF',
+    )
   })
 
   it('keeps the format menu on the quiet face', () => {
@@ -212,6 +223,30 @@ describe('ExportButton', () => {
     expect(btn).toHaveAccessibleDescription('Missing required fields: Year, Genre')
     fireEvent.click(btn)
     expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // The format hid behind a bare chevron and the verb carried it ("Convert to AIFF"): the
+  // dropdown half now shows what is chosen, and only the verb is left on the main half.
+  it('says the verb on the main half and the chosen format on the dropdown half', () => {
+    render(<ExportButton {...baseProps} incomplete={false} />)
+    expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    expect(screen.getByTestId('process-format-toggle')).toHaveAccessibleName(
+      'Format and destination, AIFF',
+    )
+  })
+
+  // A width that followed the text made the verb half jump each time the format changed, so
+  // every name sits in the dropdown's one stacked cell and only which one shows changes.
+  it('stacks every format name in the dropdown whatever format is chosen', () => {
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
+    const sized = screen.getByTestId('process-format-toggle').textContent
+    rerender(<ExportButton {...baseProps} incomplete={false} outputFormat="flac" />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('FLAC')
+    expect(screen.getByTestId('process-format-toggle').textContent).toBe(sized)
+    rerender(<ExportButton {...baseProps} incomplete={false} outputFormat="source" />)
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('Original')
+    expect(screen.getByTestId('process-format-toggle').textContent).toBe(sized)
   })
 
   // The chevron menu now carries both halves of the button's promise ("Convert to
@@ -564,12 +599,14 @@ describe('ExportButton', () => {
     }
   })
 
-  // "Same as source" only means something over several files at once — a single track's
-  // own format is just its own format, so resolving it there is equivalent and more
-  // informative. The menu must offer it only when converting a selection (count set).
-  it('offers "Same as source" in the format menu only over a multi-selection', () => {
-    render(<ExportButton {...baseProps} incomplete={false} count={2} />)
+  // "Same as source" only means something over files of more than one format: over one
+  // track, or a selection all in one format, it is that format under a second name. The
+  // caller works that out from the files; a selection alone no longer earns it.
+  it('offers "Same as source" in the format menu only when the caller says it applies', () => {
+    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} count={2} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('process-format-source')).not.toBeInTheDocument()
+    rerender(<ExportButton {...baseProps} incomplete={false} count={2} offerSource />)
     expect(screen.getByTestId('process-format-source')).toBeInTheDocument()
   })
 
@@ -584,19 +621,25 @@ describe('ExportButton', () => {
   it('reports a "source" pick without resolving it', () => {
     const onSelectFormat = vi.fn()
     render(
-      <ExportButton {...baseProps} incomplete={false} count={2} onSelectFormat={onSelectFormat} />,
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        count={2}
+        offerSource
+        onSelectFormat={onSelectFormat}
+      />,
     )
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-source'))
     expect(onSelectFormat).toHaveBeenCalledWith('source')
   })
 
-  // With 'source' picked, the button must show the translated "Same as source" label,
+  // With 'source' picked, the dropdown must show the translated short name ("Original"),
   // never the raw setting uppercased ("SOURCE" means nothing to the user).
   it('shows the translated label for "Same as source", not the raw setting', () => {
     render(<ExportButton {...baseProps} incomplete={false} count={2} outputFormat="source" />)
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('Same as source')
-    expect(screen.getByTestId('process-btn')).not.toHaveTextContent('SOURCE')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('Original')
+    expect(screen.getByTestId('process-format-toggle')).not.toHaveTextContent('SOURCE')
   })
 })
 
@@ -610,5 +653,25 @@ describe('ExportButton menu layer', () => {
     render(<ExportButton {...baseProps} incomplete={false} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     expect(layer(screen.getByRole('menu'))).toBeGreaterThan(20)
+  })
+
+  // The label may be cut with an ellipsis at the narrowest editor, so the full text must
+  // stay reachable: by name for a screen reader and on hover for everyone else.
+  it('keeps the full update-anyway label on hover and in its name when it is cut short', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        inPlace
+        tagsOnly
+        sameFormat
+        upToDate
+        narrow
+        onProcess={vi.fn()}
+      />,
+    )
+    const button = screen.getByTestId('convert-update-anyway')
+    expect(button).toHaveAccessibleName('Update anyway')
+    expect(hoverTooltip(button)).toBe('Update anyway')
   })
 })

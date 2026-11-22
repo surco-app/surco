@@ -417,7 +417,9 @@ export function CueFlowPreview({
   const shownLabel = onTrack ? track.label : null
   const shownCues = onTrack ? track.cues : null
   const shownMarks = found ? points : null
-  useEffect(() => {
+  // At commit, not after paint: the + beside the flows offers this track, and must do so as
+  // soon as the trigger names it, not one frame later.
+  useLayoutEffect(() => {
     onShown?.(
       shownLabel !== null && shownCues
         ? { label: shownLabel, cues: shownCues, ...(shownMarks && { marks: shownMarks }) }

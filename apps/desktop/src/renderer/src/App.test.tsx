@@ -740,7 +740,7 @@ describe('App Engine DJ cues', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    const convert = await screen.findByTestId('batch-convert')
+    const convert = await screen.findByTestId('process-btn')
     expect(convert).toHaveTextContent('Convert 2 selected')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
@@ -3422,7 +3422,7 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSelected', { count: 2 }),
     )
   })
@@ -3455,7 +3455,7 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSelected', { count: 2 }),
     )
   })
@@ -7565,7 +7565,7 @@ describe('App per-track format pick', () => {
     await waitFor(() =>
       expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'false'),
     )
-    expect(screen.getByTestId('process-btn')).toHaveTextContent('FLAC')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('FLAC')
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].format).toBe('flac')
@@ -8454,7 +8454,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    const convert = await screen.findByTestId('batch-convert')
+    const convert = await screen.findByTestId('process-btn')
     expect(convert).toHaveTextContent(i18n.t('header.convertSelected', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
@@ -8482,7 +8482,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('batch-convert')
+    const convert = await screen.findByTestId('process-btn')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -8525,7 +8525,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].format)).toEqual(['wav', 'wav'])
   })
@@ -8543,7 +8543,7 @@ describe('App multi-select convert', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     fireEvent.click(await screen.findByTestId('done-more'))
     fireEvent.click(await screen.findByTestId('process-btn'))
@@ -8600,7 +8600,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
@@ -8628,7 +8628,7 @@ describe('App multi-select convert', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalled())
     expect(await screen.findByTestId('batch-run-progress')).toHaveTextContent('Converting… 0/2')
     fireEvent.click(screen.getAllByTestId('track-row')[1])
@@ -8790,7 +8790,7 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSelected', { count: 2 }),
     )
   })
@@ -8816,7 +8816,7 @@ describe('App multi-select convert', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('batch-convert')).toHaveTextContent(
+    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
       i18n.t('header.convertSelected', { count: 3 }),
     )
   })
@@ -8851,7 +8851,9 @@ describe('App multi-select convert', () => {
       await walking
     })
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(4))
-    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(
+      screen.getAllByTestId('track-row').filter((r) => r.getAttribute('aria-selected') === 'true'),
+    ).toHaveLength(1)
     expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -8875,7 +8877,9 @@ describe('App multi-select convert', () => {
     fireEvent.click(screen.getByTestId('quality-filter-ext:MP3'))
     runMenu('add')
     await waitFor(() => expect(window.api.readTags).toHaveBeenCalledTimes(4))
-    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(
+      screen.getAllByTestId('track-row').filter((r) => r.getAttribute('aria-selected') === 'true'),
+    ).toHaveLength(1)
   })
 
   // "busco algo y añado una pista nueva... la pista nueva no la veo": a search left over
@@ -8973,7 +8977,9 @@ describe('App multi-select convert', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('field-title')).toBeInTheDocument()
-    expect(screen.queryByTestId('batch-convert')).toBeNull()
+    expect(
+      screen.getAllByTestId('track-row').filter((r) => r.getAttribute('aria-selected') === 'true'),
+    ).toHaveLength(1)
   })
 
   // The check after converting is how Surco says a file did not come out right. Clearing
@@ -9150,7 +9156,7 @@ describe('App multi-select convert', () => {
     )
   })
 
-  it('saves the clear-after-batch setting from the switch in the batch footer', async () => {
+  it('saves the clear-after-batch setting from the batch footer menu and shows it marked', async () => {
     const saveSettings = vi.fn().mockResolvedValue(undefined)
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings()),
@@ -9160,12 +9166,14 @@ describe('App multi-select convert', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
-    const toggle = await screen.findByTestId('batch-clear-toggle')
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
-    fireEvent.click(toggle)
+    fireEvent.click(await screen.findByTestId('process-format-toggle'))
+    const option = (): HTMLElement => screen.getByTestId('process-clear-after')
+    expect(option()).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(option())
     expect(saveSettings).toHaveBeenCalledWith(
       expect.objectContaining({ clearListAfterConvert: true }),
     )
+    await waitFor(() => expect(option()).toHaveAttribute('aria-checked', 'true'))
   })
 
   // With the setting on, the converted rows leave the list on their own and can be brought
@@ -9197,7 +9205,7 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
   })
 
-  it('applies a format and destination picked by hand to the whole selection', async () => {
+  it('applies a format and destination picked from the menu to the whole selection', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/x', inPlace: false })
     setApi({
       getSettings: vi
@@ -9213,14 +9221,17 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    await screen.findByTestId('batch-convert')
-    fireEvent.click(screen.getByTestId('process-format-wav'))
-    fireEvent.click(screen.getByTestId('batch-destination-toggle'))
+    const convert = await screen.findByTestId('process-btn')
+    expect(convert).toHaveTextContent(i18n.t('header.updateSelected', { count: 2 }))
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-alac'))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('ALAC')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
-    fireEvent.click(screen.getByTestId('batch-convert'))
+    fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
-      expect(job.format).toBe('wav')
+      expect(job.format).toBe('alac')
       expect(job.convertBesideOriginal).toBe(true)
     }
   })
@@ -9558,7 +9569,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('batch-convert')
+    const convert = await screen.findByTestId('process-btn')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -9585,7 +9596,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('batch-convert')
+    const convert = await screen.findByTestId('process-btn')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
@@ -9623,7 +9634,7 @@ describe('App editor format/destination reseed', () => {
     fireEvent.click(screen.getByTestId('settings-close'))
 
     await waitFor(() =>
-      expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert to AIFF'),
+      expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF'),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
@@ -9648,7 +9659,7 @@ describe('App editor format/destination reseed', () => {
     await renderApp()
     const rows = await addOneTrack()
     fireEvent.click(rows[0])
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+    expect(await screen.findByTestId('process-format-current')).toHaveTextContent('AIFF')
 
     fireEvent.click(screen.getByTestId('open-settings'))
     await screen.findByTestId('settings-tab-naming')
@@ -9738,7 +9749,7 @@ describe('App normalize peak preferences', () => {
     fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     await screen.findByTestId('normalize-scope')
     fireEvent.click(screen.getByTestId('normalize-mode-loudness'))
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     expect(processTrack.mock.calls.map((c) => c[0].normalize?.mode)).toEqual([
       'loudness',
@@ -9923,7 +9934,8 @@ describe('App on Windows', () => {
       await renderApp()
       fireEvent.click((await addTwoTracks())[0])
 
-      expect(await screen.findByTestId('process-btn')).toHaveTextContent('Convert to AIFF')
+      expect(await screen.findByTestId('process-btn')).toHaveTextContent(/Convert$/)
+      expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
     })
 
     it('checks the output folder in Settings instead of leaving no destination picked', async () => {
@@ -10886,7 +10898,7 @@ describe('App donate nudge', () => {
     const rows = await addTwoTracks()
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('batch-convert'))
+    fireEvent.click(await screen.findByTestId('process-btn'))
   }
 
   // The nudge moved off app launch onto the moment of value: opening Surco is when the

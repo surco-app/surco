@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useLatest } from '../hooks/useLatest'
 import type { TagList } from '../lib/bulkEdit'
 import { csvHas, toggleCsv } from '../lib/csv'
-import type { FieldCleanedNote, FieldFormatAction, FieldPreviousNote } from '../lib/fieldSpecs'
+import type { FieldCleanedNote, FieldFormatAction } from '../lib/fieldSpecs'
 import type { FieldWidth } from '../lib/fields'
 import { holdPendingEdit } from '../lib/pendingEdits'
 import { CleanSpark } from './CleanSpark'
@@ -43,6 +43,7 @@ interface FieldProps {
   mixed?: boolean
   mixedValues?: { value: string; count: number }[]
   placeholder?: string
+  placeholderListed?: boolean
   suggestions?: string[]
   tagList?: TagList
   // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
@@ -54,11 +55,12 @@ interface FieldProps {
   formatResult?: string
   formatAction?: FieldFormatAction
   cleaned?: FieldCleanedNote
-  previous?: FieldPreviousNote
   // Filled by Surco from the analysis (Quality with its Auto on): shown, not typed into.
   readOnly?: boolean
   // What a screen reader hears for a read-only field; Quality's own note when absent.
   readOnlyNote?: string
+  // Read-only text in a selection, not a box: no border or fill, same row height.
+  plain?: boolean
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -77,6 +79,7 @@ export const Field = memo(function Field({
   mixed,
   mixedValues,
   placeholder,
+  placeholderListed,
   suggestions,
   tagList,
   suggesting,
@@ -86,9 +89,9 @@ export const Field = memo(function Field({
   formatResult,
   formatAction,
   cleaned,
-  previous,
   readOnly,
   readOnlyNote,
+  plain,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
   const { t: tr } = useTranslation()
@@ -229,6 +232,7 @@ export const Field = memo(function Field({
           value={draft}
           readOnly={readOnly}
           placeholder={placeholder}
+          data-plain={plain || undefined}
           onChange={(e) => onType(e.target.value)}
           onKeyDown={onKeyDown}
           onBlur={() => {
@@ -239,10 +243,18 @@ export const Field = memo(function Field({
           // border defines the input, and focus brings the accent ring + surface up.
           // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
           // that dominated the form; now they wait quietly until you engage one.
-          className={`w-full rounded-lg border ${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 px-2.5 py-1.5 text-sm outline-none compact:py-1 transition-colors placeholder:text-fg-faint hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${
+          className={`w-full truncate rounded-lg border px-2.5 py-1.5 text-sm outline-none compact:py-1 placeholder:text-fg-faint ${
+            plain
+              ? 'border-transparent bg-transparent focus:border-[var(--color-accent)]'
+              : `${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]`
+          } ${
             formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''
           }`}
         />
+        {/* The placeholder is cut with an ellipsis in a narrow form; the tooltip keeps it whole. */}
+        {(mixed || plain) && placeholderListed && placeholder && (
+          <Tooltip label={placeholder} hoverOnly />
+        )}
         {listsValues && (
           <>
             <button
@@ -403,24 +415,6 @@ export const Field = memo(function Field({
             }
           />
         </div>
-      )}
-      {previous && (
-        <span
-          data-testid={`field-${name}-previous`}
-          className={`mt-1 block text-xs text-fg-faint ${width ? 'whitespace-nowrap' : 'beside:col-start-2 beside:-mt-1'}`}
-        >
-          <span className="sr-only">{`${tr('editor.previous.label')} `}</span>
-          <span className="line-through">{previous.value}</span>
-          {' · '}
-          <button
-            type="button"
-            data-testid={`field-previous-restore-${name}`}
-            onClick={previous.onRestore}
-            className="press text-fg-dim underline decoration-[var(--color-line-strong)] underline-offset-2 hover:text-fg hover:decoration-current"
-          >
-            {tr('editor.previous.restore')}
-          </button>
-        </span>
       )}
     </>
   )

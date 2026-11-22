@@ -54,6 +54,7 @@ function renderField(
         list={f.perTrack.list}
         presets={f.suggestions ?? []}
         tracks={f.perTrack.tracks}
+        invalid={f.invalid}
         onChangeTracks={f.perTrack.onChangeTracks}
       />
     )
@@ -82,6 +83,7 @@ function renderField(
       label={f.label}
       value={f.value}
       placeholder={f.placeholder}
+      placeholderListed={f.placeholderListed}
       onChange={f.onChange}
       width={f.width}
       inline={row.inline}
@@ -91,9 +93,9 @@ function renderField(
       formatResult={f.formatResult}
       formatAction={f.formatAction}
       cleaned={f.cleaned}
-      previous={f.previous}
       readOnly={f.readOnly}
       readOnlyNote={f.readOnlyNote}
+      plain={f.plain}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}
@@ -221,10 +223,6 @@ export function MetadataForm({
                     ],
                   })}
                 </Fragment>
-              ) : f.perTrack ? (
-                <div key={f.key} className="beside:col-span-2">
-                  {renderField(f)}
-                </div>
               ) : f.key === 'compilation' ? (
                 <div key={f.key} className="flex beside:col-start-2">
                   {renderField(f)}

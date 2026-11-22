@@ -4,12 +4,14 @@ import type { TrackItem, TrackStatus } from '../types'
 import { buildLibraryIndex } from './appleMusicLibrary'
 import {
   type BatchPick,
+  batchFormats,
   batchWritesTagsOnly,
   canProcessTrack,
   convertGate,
   eligibleForBatch,
   leavesListAfterBatch,
   leftOutForMissing,
+  offersSourceFormat,
   summarizeBatch,
 } from './batch'
 
@@ -372,6 +374,90 @@ describe('batchWritesTagsOnly', () => {
 
   it('fails with nothing to write', () => {
     expect(batchWritesTagsOnly([], pick({ destination: 'overwrite' }), quiet)).toBe(false)
+  })
+})
+
+// The button names one format only when the run really writes one: a label read off the
+// format picked or off Settings promised AIFF over MP3s the keep setting leaves as MP3.
+describe('batchFormats', () => {
+  const quiet = (): object => ({})
+  const base = {
+    outputFormat: 'aiff' as const,
+    keepMp3Sources: false,
+    overwriteOriginal: false,
+    convertBesideOriginal: false,
+    addToAppleMusic: false,
+  }
+  const pick = (over: Partial<BatchPick> = {}): BatchPick => ({
+    format: 'aiff',
+    formatByHand: false,
+    settings: base,
+    ...over,
+  })
+  const flacA = { ...track('a', 'idle'), inputPath: '/a.flac' }
+  const flacB = { ...track('b', 'idle'), inputPath: '/b.flac' }
+  const mp3 = { ...track('m', 'idle'), inputPath: '/m.mp3' }
+  const opus = { ...track('o', 'idle'), inputPath: '/o.opus' }
+
+  it('resolves every track to the one format picked', () => {
+    expect(batchFormats([flacA, flacB], pick(), quiet)).toEqual(['aiff'])
+    expect(batchFormats([flacA, mp3], pick({ format: 'alac', formatByHand: true }), quiet)).toEqual(
+      ['alac'],
+    )
+  })
+
+  it('lists the MP3 the keep setting leaves as it is beside the format the rest take', () => {
+    const keeps = { ...base, keepMp3Sources: true }
+    expect(batchFormats([mp3, flacA], pick({ settings: keeps }), quiet).sort()).toEqual([
+      'aiff',
+      'mp3',
+    ])
+  })
+
+  it('lists each format a mixed selection keeps under Same as source', () => {
+    expect(batchFormats([flacA, mp3], pick({ format: 'source' }), quiet).sort()).toEqual([
+      'flac',
+      'mp3',
+    ])
+  })
+
+  it('leaves out a track the run skips, so it does not decide the label', () => {
+    expect(batchFormats([flacA, opus], pick({ format: 'source' }), quiet)).toEqual(['flac'])
+  })
+
+  it('names nothing with nothing to write', () => {
+    expect(batchFormats([], pick(), quiet)).toEqual([])
+  })
+})
+
+// "Same as source" only does something a real format does not when the files differ: over
+// two FLACs it is FLAC, a second name for one choice.
+describe('offersSourceFormat', () => {
+  const flacA = { ...track('a', 'idle'), inputPath: '/a.flac' }
+  const flacB = { ...track('b', 'idle'), inputPath: '/b.FLAC' }
+  const mp3 = { ...track('m', 'idle'), inputPath: '/m.mp3' }
+  const aif = { ...track('c', 'idle'), inputPath: '/c.aif' }
+  const aiff = { ...track('d', 'idle'), inputPath: '/d.aiff' }
+
+  it('is held back over files that all share one format', () => {
+    expect(offersSourceFormat([flacA, flacB], 'aiff')).toBe(false)
+    expect(offersSourceFormat([aif, aiff], 'aiff')).toBe(false)
+  })
+
+  // A dot in a folder name is no extension: files without one share a single "format".
+  it('reads a file with no extension as one format, whatever its folder is called', () => {
+    const bare = { ...track('e', 'idle'), inputPath: '/Mix.2024/intro' }
+    const other = { ...track('g', 'idle'), inputPath: '/Set.v2/outro' }
+    expect(offersSourceFormat([bare, other], 'aiff')).toBe(false)
+  })
+
+  it('is offered once the files have more than one format', () => {
+    expect(offersSourceFormat([flacA, mp3], 'aiff')).toBe(true)
+  })
+
+  // Settings may already say Same as source: the menu must still show it, checked.
+  it('stays offered while it is the format in use', () => {
+    expect(offersSourceFormat([flacA, flacB], 'source')).toBe(true)
   })
 })
 
