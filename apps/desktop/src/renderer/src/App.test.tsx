@@ -12437,15 +12437,27 @@ describe('App paste metadata onto a selection', () => {
         : null
   const setup = async (copy = true) => {
     const tags: Record<string, Record<string, string>> = {
-      '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara', album: 'Source LP', trackNumber: '1' },
-      '/music/b.wav': { title: 'Bravo', artist: 'Old B', album: 'Old LP', trackNumber: '2' },
+      '/music/a.wav': {
+        title: 'Alpha',
+        artist: 'DJ Lara',
+        album: 'Source LP',
+        trackNumber: '1',
+        comment: '8 phrases - Alpha notes',
+      },
+      '/music/b.wav': {
+        title: 'Bravo',
+        artist: 'Old B',
+        album: 'Old LP',
+        trackNumber: '2',
+        comment: '5 phrases - Bravo notes',
+      },
       '/music/c.wav': { title: 'Charlie', artist: 'Old C', album: 'Old LP', trackNumber: '3' },
     }
     setApi({
       getSettings: vi
         .fn()
         .mockResolvedValue(
-          settings({ visibleFields: ['title', 'artist', 'album', 'trackNumber'] }),
+          settings({ visibleFields: ['title', 'artist', 'album', 'trackNumber', 'comment'] }),
         ),
       pickFiles: vi.fn().mockResolvedValue(Object.keys(tags)),
       readTags: vi.fn(async (path: string) => tags[path]),
@@ -12498,6 +12510,19 @@ describe('App paste metadata onto a selection', () => {
       expect(await open(row, 'field-title')).toBe(title)
       expect(await open(row, 'field-trackNumber')).toBe(number)
     }
+  })
+
+  // A comment opens with the track's own rekordbox phrase count, so pasting the copied
+  // one would stamp the source's count on every row; each track keeps its comment.
+  it('keeps each selected track its own comment', async () => {
+    const rows = await setup()
+    openMore()
+    fireEvent.click(screen.getByTestId('paste-meta-btn'))
+    expect(await screen.findByText('Metadata pasted')).toBeInTheDocument()
+
+    expect(await open(rows[1], 'field-artist')).toBe('DJ Lara')
+    expect(await open(rows[1], 'field-comment')).toBe('5 phrases - Bravo notes')
+    expect(await open(rows[2], 'field-comment')).toBe('')
   })
 
   // The paste asks for no confirmation because one undo gives every row back.

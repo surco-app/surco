@@ -6,6 +6,8 @@ import { renderOutputName } from '../lib/outputName'
 import type { CopiedTags, TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
+const PASTE_ALL_FIELDS = BULK_FIELDS.filter((key) => key !== 'comment')
+
 interface Params {
   // The one copied tag set (App's store slice): the hook reads it to paste and to
   // gate the menu's paste item, App keeps ownership so a session restore can seed it.
@@ -77,13 +79,15 @@ export function useMetadataClipboard({
     setNotice(tr('notices.pastedMeta'))
   })
   // On a selection only the release-level fields travel: a title or track number
-  // stamped on every row would flatten the album into copies of one song. No
+  // stamped on every row would flatten the album into copies of one song. The comment
+  // stays too: it opens with each track's own rekordbox phrase count. No
   // confirmation, because one ⌘Z gives every row back.
   const onPasteMetaAll = useStableCallback((ids: string[]) => {
     if (!copiedMeta) return
     recordMetaUndo(ids, { cover: true })
     const release: Partial<CopiedTags['meta']> = {}
-    for (const key of BULK_FIELDS) if (key in copiedMeta.meta) release[key] = copiedMeta.meta[key]
+    for (const key of PASTE_ALL_FIELDS)
+      if (key in copiedMeta.meta) release[key] = copiedMeta.meta[key]
     updateTracksMeta(ids, release)
     const cover = aliveCover(copiedMeta)
     if (cover) patchTracks(ids, cover)
