@@ -836,8 +836,8 @@ describe('Clearing the cues of several selected tracks', () => {
   it('puts Save beside Discard and above the grid block, so the DJ sees it saves the cleared cues and not the grid or a conversion', async () => {
     setup({}, TARGETS, CUES)
     fireEvent.click(screen.getByTestId('cues-batch-clear'))
-    const save = await screen.findByTestId('cues-batch-save')
-    const discard = screen.getByTestId('cues-batch-clear-discard')
+    const discard = await screen.findByTestId('cues-batch-clear-discard')
+    const save = screen.getByTestId('cues-batch-save')
     expect(discard.parentElement).toBe(save.parentElement)
     expect(
       save.compareDocumentPosition(screen.getByTestId('grid-batch')) &
