@@ -5,6 +5,7 @@ function deps(over: Partial<CommentFileDeps> = {}): CommentFileDeps {
   const mtimes = [1000, 2000]
   return {
     allowed: () => true,
+    idle: async () => {},
     readComment: async () => 'Remix',
     mtime: async () => mtimes.shift() ?? 2000,
     rewrite: vi.fn(async () => ({ outcomes: ['written' as const] })),
@@ -37,6 +38,33 @@ describe('writeCommentToFile', () => {
     })
     await writeCommentToFile('/m/a.wav', '2 - 8', 'prepend', d)
     expect(order).toEqual(['carry', 'noteWritten'])
+  })
+
+  it('waits for a Serato cue write on the same file before reading its comment, so neither rewrite erases the other', async () => {
+    const order: string[] = []
+    let release = () => {}
+    const d = deps({
+      idle: vi.fn(
+        (p: string) =>
+          new Promise<void>((resolve) => {
+            order.push(`idle ${p}`)
+            release = () => {
+              order.push('serato done')
+              resolve()
+            }
+          }),
+      ),
+      readComment: async () => {
+        order.push('readComment')
+        return 'Remix'
+      },
+    })
+    const writing = writeCommentToFile('/m/a.mp3', '2 - 8', 'prepend', d)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(order).toEqual(['idle /m/a.mp3'])
+    release()
+    expect(await writing).toBe(true)
+    expect(order).toEqual(['idle /m/a.mp3', 'serato done', 'readComment'])
   })
 
   it('writes a comment that has trailing spaces, since the file is read as it is held', async () => {

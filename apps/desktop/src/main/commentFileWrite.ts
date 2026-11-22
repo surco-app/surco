@@ -3,6 +3,7 @@ import type { FieldWrite, TagFieldChange } from './tagFieldSet'
 
 export interface CommentFileDeps {
   allowed: (path: string) => boolean
+  idle: (path: string) => Promise<void>
   readComment: (path: string) => Promise<string>
   mtime: (path: string) => Promise<number>
   rewrite: (path: string, changes: TagFieldChange[]) => Promise<{ outcomes: FieldWrite[] }>
@@ -18,6 +19,7 @@ export async function writeCommentToFile(
 ): Promise<boolean> {
   if (!deps.allowed(path)) return false
   try {
+    await deps.idle(path)
     const from = await deps.readComment(path)
     const to = phrasedComment(from, count, mode)
     if (to === from) return true

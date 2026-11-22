@@ -1702,6 +1702,7 @@ function registerIpc(): void {
     writeCommentToFile: (path, count, mode) =>
       writeCommentToFile(path, count, mode, {
         allowed: (p) => mediaAccess.isAllowed(p),
+        idle: (p) => seratoWriting.idle(p),
         readComment: (p) => runInWorker<string>({ type: 'heldComment', file: p }),
         mtime: async (p) => (await stat(p)).mtimeMs,
         rewrite: (p, changes) => rewriteTagFields(p, changes, tmpManifest, followLibrarySize),
