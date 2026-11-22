@@ -86,6 +86,18 @@ describe('measureReplaceShift', () => {
     expect(await measureReplaceShift(text, lead)).toEqual({ unmoved: 'unreadable' })
   })
 
+  // A replacement that cannot be read is not a cancel: a batch that took it for one would stop
+  // converting every other track, so the cues just stay where they were.
+  it('says noMatch when the new file is gone', async () => {
+    expect(await measureReplaceShift(old, join(dir, 'gone.flac'))).toEqual({ unmoved: 'noMatch' })
+  })
+
+  it('says noMatch when the new file is not audio', async () => {
+    const text = join(dir, 'text-new.mp3')
+    writeFileSync(text, 'not audio at all')
+    expect(await measureReplaceShift(old, text)).toEqual({ unmoved: 'noMatch' })
+  })
+
   // With under two windows apart there is no tail to confirm the head, and one window alone cannot
   // rule out an edit further in, so the cues stay put.
   it('says noMatch for a track too short for two windows', async () => {

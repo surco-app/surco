@@ -3528,15 +3528,17 @@ export async function headOffsetMs(
   return (lag / PAIR_RATE) * 1000
 }
 
+const REPLACE_OLD_SLACK_SAMPLES = 441
+
 // Decodes one window of a file at exact-sample precision, zero-padded or cut to `samples`
 // where `from` falls before the start or the file ends early. Padding is only for the new
-// file: the old window keeps its real length so a short one is seen as short.
+// file: the old window keeps its real length when it is clearly short, so a short one is seen as short.
 async function decodeReplaceWindow(
   input: string,
   from: number,
   samples: number,
   pad: boolean,
-  signal: AbortSignal,
+  signal?: AbortSignal,
 ): Promise<Float32Array> {
   const lead = Math.max(0, Math.round(-from * PAIR_RATE))
   const decoded = await decodePcm(input, {
@@ -3547,7 +3549,16 @@ async function decodeReplaceWindow(
     exactStart: true,
     signal,
   })
-  if (!pad) return decoded.slice(0, samples)
+  if (!pad) {
+    // ffmpeg's -t can land a few samples short of what it implies, and a length that is off by
+    // one would make every window read as "cut short" and the measure silently give up. A gap
+    // under REPLACE_OLD_SLACK_SAMPLES is rounding and is zero-padded; a bigger one is a short track.
+    const out = new Float32Array(
+      decoded.length >= samples - REPLACE_OLD_SLACK_SAMPLES ? samples : decoded.length,
+    )
+    out.set(decoded.subarray(0, out.length))
+    return out
+  }
   const out = new Float32Array(samples)
   out.set(decoded.subarray(0, samples - lead), lead)
   return out
@@ -3567,55 +3578,41 @@ export async function measureReplaceShift(
   const duration = await probeDuration(old, signal)
   signal?.throwIfAborted()
   if (duration === null) return { unmoved: 'unreadable' }
-  const ctl = new AbortController()
-  const stop = (): void => ctl.abort()
-  signal?.addEventListener('abort', stop)
   const width = REPLACE_WINDOW_SECONDS * PAIR_RATE
   const wide = width + 2 * REPLACE_REACH_SECONDS * PAIR_RATE
   const headAt = REPLACE_HEAD_AT_SECONDS
   const tailAt = duration - REPLACE_TAIL_BEFORE_END_SECONDS - REPLACE_WINDOW_SECONDS
   const tailWanted = tailAt >= headAt + REPLACE_WINDOW_SECONDS
-  const guard = <T>(work: Promise<T>): Promise<T> => {
-    work.catch(stop)
-    return work
-  }
   const windowAt = (t: number) => ({
-    old: guard(decodeReplaceWindow(old, t, width, false, ctl.signal)),
-    new: guard(decodeReplaceWindow(current, t - REPLACE_REACH_SECONDS, wide, true, ctl.signal)),
+    old: decodeReplaceWindow(old, t, width, false, signal),
+    new: decodeReplaceWindow(current, t - REPLACE_REACH_SECONDS, wide, true, signal),
   })
-  try {
-    const head = windowAt(headAt)
-    const tail = tailWanted ? windowAt(tailAt) : null
-    const settled = await Promise.allSettled([
-      head.old,
-      head.new,
-      ...(tail ? [tail.old, tail.new] : []),
-    ])
-    if (signal?.aborted) signal.throwIfAborted()
-    const [headOld, headNew, tailOld, tailNew] = settled
-    if (headOld.status === 'rejected' || (tailOld && tailOld.status === 'rejected')) {
-      const reason =
-        headOld.status === 'rejected' ? headOld.reason : (tailOld as PromiseRejectedResult).reason
-      if (isAbortError(reason)) throw reason
-      return { unmoved: 'unreadable' }
-    }
-    const windowOf = (
-      o: PromiseSettledResult<Float32Array> | undefined,
-      n: PromiseSettledResult<Float32Array> | undefined,
-    ): ReplaceWindow | null =>
-      o?.status === 'fulfilled' && n?.status === 'fulfilled' ? { old: o.value, new: n.value } : null
-    const headWindow = windowOf(headOld, headNew)
-    const tailWindow = windowOf(tailOld, tailNew)
-    const transfer = [headWindow, tailWindow].flatMap((w) =>
-      w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
-    )
-    return await runInWorker<ReplaceShift>(
-      { type: 'replaceShift', head: headWindow, tail: tailWindow },
-      transfer,
-    )
-  } finally {
-    signal?.removeEventListener('abort', stop)
+  const head = windowAt(headAt)
+  const tail = tailWanted ? windowAt(tailAt) : null
+  const settled = await Promise.allSettled([
+    head.old,
+    head.new,
+    ...(tail ? [tail.old, tail.new] : []),
+  ])
+  signal?.throwIfAborted()
+  const [headOld, headNew, tailOld, tailNew] = settled
+  if (headOld.status === 'rejected' || (tailOld && tailOld.status === 'rejected')) {
+    return { unmoved: 'unreadable' }
   }
+  const windowOf = (
+    o: PromiseSettledResult<Float32Array> | undefined,
+    n: PromiseSettledResult<Float32Array> | undefined,
+  ): ReplaceWindow | null =>
+    o?.status === 'fulfilled' && n?.status === 'fulfilled' ? { old: o.value, new: n.value } : null
+  const headWindow = windowOf(headOld, headNew)
+  const tailWindow = windowOf(tailOld, tailNew)
+  const transfer = [headWindow, tailWindow].flatMap((w) =>
+    w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
+  )
+  return await runInWorker<ReplaceShift>(
+    { type: 'replaceShift', head: headWindow, tail: tailWindow },
+    transfer,
+  )
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
