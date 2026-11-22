@@ -1307,15 +1307,16 @@ export const Editor = memo(function Editor({
   )
 
   // What the last applied release replaced and nobody has touched since: the fields that
-  // still hold what it wrote and had another value before. Offered as one action in More
-  // rather than as a line under every field.
+  // still hold what it wrote and had another value before, empty included, so a field the
+  // release filled goes back to empty. Offered as one action in More rather than as a line
+  // under every field.
   const restorableRelease = useMemo(() => {
     if (isMulti || !item.appliedRelease) return {}
     const { before, wrote } = item.appliedRelease
     return Object.fromEntries(
       (Object.entries(wrote) as [MetaTextKey, string][]).flatMap(([key, value]) => {
         const old = before[key] ?? ''
-        return old && old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
+        return old !== value && (item.meta[key] ?? '') === value ? [[key, old]] : []
       }),
     ) as Partial<Record<MetaTextKey, string>>
   }, [isMulti, item.appliedRelease, item.meta])

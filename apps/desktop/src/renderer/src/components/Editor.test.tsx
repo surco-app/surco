@@ -704,8 +704,10 @@ describe('Restoring the tags a release replaced', () => {
     expect(ids.indexOf('restore-release-btn')).toBe(ids.indexOf('paste-meta-btn') + 1)
   })
 
-  // One click, one Undo step: restoring field by field would need one ⌘Z per field.
-  it('puts every replaced field back in a single patch and a single Undo step', () => {
+  // One click, one Undo step: restoring field by field would need one ⌘Z per field. A field
+  // the release filled goes back to empty too: the action promises the tags from before, and
+  // leaving the release's year behind would keep a value the user just asked to drop.
+  it('puts every replaced field back, empty ones included, in a single patch and a single Undo step', () => {
     const { onChange, onRecordUndo } = renderEditor(
       {
         id: 'a',
@@ -723,7 +725,7 @@ describe('Restoring the tags a release replaced', () => {
     expect(onChange.mock.calls[0][0].meta).toMatchObject({
       title: 'My Title',
       album: 'My Album',
-      year: '1999',
+      year: '',
     })
   })
 
@@ -756,7 +758,7 @@ describe('Restoring the tags a release replaced', () => {
     renderEditor(
       {
         id: 'a',
-        meta: { title: 'Mine', album: 'Mine too', year: '1999' },
+        meta: { title: 'Mine', album: 'Mine too', year: '2005' },
         appliedRelease: applied,
       },
       'wav',
@@ -4702,11 +4704,14 @@ describe('Editor Discogs apply', () => {
     expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
   })
 
-  it('offers no restore for a field the release filled from empty, since there is nothing to restore', async () => {
+  // "The tags from before" includes the blanks: a wrong match that filled an empty artist
+  // would otherwise leave that artist behind with no way to drop it but ⌘Z.
+  it('empties again a field the release filled from empty', async () => {
     await applyFirstTrack(item({ id: 'a' }))
     expect(screen.getByTestId('field-artist')).toHaveValue('The Artist')
     openMore()
-    expect(screen.queryByTestId('restore-release-btn')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByTestId('restore-release-btn'))
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue(''))
   })
 
   it('offers no restore once the DJ retypes the field, since the release value is no longer there to replace', () => {
