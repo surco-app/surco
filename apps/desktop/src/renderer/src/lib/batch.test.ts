@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem, TrackStatus } from '../types'
 import { buildLibraryIndex } from './appleMusicLibrary'
 import {
@@ -11,6 +12,7 @@ import {
   eligibleForBatch,
   leavesListAfterBatch,
   leftOutForMissing,
+  leftOutNote,
   offersSourceFormat,
   summarizeBatch,
 } from './batch'
@@ -73,6 +75,21 @@ describe('eligibleForBatch', () => {
     // flagged in the list) — the same gate the single-track convert button enforces.
     const tracks = [track('a', 'idle', { artist: 'Alex' }), track('b', 'idle')]
     expect(eligibleForBatch(tracks, ['artist'])).toEqual(['a'])
+  })
+})
+
+// "le falta Título, Artista" reads as a list cut short; the language's own list words say
+// it as a sentence would ("Título y Artista", "Title and Artist").
+describe('leftOutNote', () => {
+  const gate = { missing: { count: 2, fields: ['title', 'artist'] }, serato: 0, mixed: false }
+
+  it.each([
+    ['en', 'Title and Artist'],
+    ['es', 'Título y Artista'],
+  ])('joins the missing fields with the %s list words', async (language, joined) => {
+    await i18n.changeLanguage(language)
+    expect(leftOutNote(gate, i18n.getFixedT(language), language)).toContain(joined)
+    await i18n.changeLanguage('en')
   })
 })
 

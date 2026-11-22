@@ -1096,7 +1096,7 @@ export const Editor = memo(function Editor({
         : null,
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
-  const leftOut = multiGate ? leftOutNote(multiGate, tr) : null
+  const leftOut = multiGate ? leftOutNote(multiGate, tr, i18n.language) : null
   const againGate = useMemo(
     () =>
       isMulti
@@ -1104,7 +1104,7 @@ export const Editor = memo(function Editor({
         : null,
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
-  const againLeftOut = againGate ? leftOutNote(againGate, tr) : null
+  const againLeftOut = againGate ? leftOutNote(againGate, tr, i18n.language) : null
   const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
   const readOnlyRows = blockedBy !== undefined
   const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
