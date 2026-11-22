@@ -109,6 +109,12 @@ describe('sessionEdits', () => {
     })
   })
 
+  // A relaunch must not hand a hand-edited track back to the sweep: the reopened row would
+  // look unmatched and the release would overwrite the tags the DJ typed before quitting.
+  it('keeps the mark of a track edited by hand', () => {
+    expect(sessionEdits([track({ handEdited: true })])['/music/a.wav'].handEdited).toBe(true)
+  })
+
   // blob: URLs die with the renderer, and the embedded-art data: thumb both re-derives
   // from the file and would balloon the session file if persisted per track — neither
   // belongs on disk. A picked cover keeps its file path; main re-mints its preview.

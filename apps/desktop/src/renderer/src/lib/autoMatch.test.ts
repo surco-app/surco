@@ -7,6 +7,7 @@ import {
   autoMatchRelease,
   clearedTrackPatch,
   holdsAutoMatch,
+  isHandEdit,
   MAX_AUTO_PROBE,
   matchActivityReport,
   matchTargetOf,
@@ -605,6 +606,12 @@ describe('tracksToAutoMatch', () => {
     expect(tracksToAutoMatch([track({ matchReview: true })])).toHaveLength(0)
   })
 
+  // A DJ who typed the artist of a white label they know better than any catalog must not
+  // see it swapped for the release's a few seconds later by a sweep nobody asked to touch it.
+  it('skips a track whose tags the user edited by hand', () => {
+    expect(tracksToAutoMatch([track({ handEdited: true })])).toHaveLength(0)
+  })
+
   it('skips tracks with nothing to search or score on', () => {
     expect(tracksToAutoMatch([track({ query: '   ' })])).toHaveLength(0)
     expect(tracksToAutoMatch([track({ meta: { title: '  ' } as TrackItem['meta'] })])).toHaveLength(
@@ -1129,6 +1136,15 @@ describe('clearedTrackPatch', () => {
     expect(tracksToAutoMatch([retyped])).toEqual([retyped])
   })
 
+  // Clearing is how the DJ hands a track back to the sweep, so the guard a hand edit put on
+  // it goes with the tags: otherwise the retyped title would never be matched again.
+  it('lets the sweep match a track edited by hand once it is cleared', () => {
+    const edited = { ...matchedTrack, matched: false, autoMatched: false, handEdited: true }
+    const cleared = { ...edited, ...clearedTrackPatch(edited) }
+    const retyped = { ...cleared, meta: { ...cleared.meta, title: 'Song' } }
+    expect(tracksToAutoMatch([retyped])).toEqual([retyped])
+  })
+
   // The ⌘K palette and the editor's eraser are the same action, so both must strip the
   // third-party tags too: the palette's clear left the Serato and Traktor cues in the file.
   it('marks every third-party tag of the file for removal', () => {
@@ -1136,5 +1152,33 @@ describe('clearedTrackPatch', () => {
       'SERATO_MARKERS_V2',
       'TRAKTOR4',
     ])
+  })
+})
+
+describe('isHandEdit', () => {
+  const track = (over: Partial<TrackItem> = {}): TrackItem =>
+    ({ meta: { title: 'Song', artist: 'Artist', rating: '' }, ...over }) as TrackItem
+
+  it('counts a changed tag a release would write as the user’s own edit', () => {
+    expect(isHandEdit(track(), { artist: 'Typed By Hand' })).toBe(true)
+  })
+
+  // Rating a track or filling a field of the DJ's own is not retagging it: no release
+  // writes either, and keeping the sweep away over a star would leave the crate unmatched.
+  it('does not count a rating or a custom field', () => {
+    expect(isHandEdit(track(), { rating: '4' })).toBe(false)
+    expect(isHandEdit(track(), { custom: { vinylCondition: 'VG+' } })).toBe(false)
+  })
+
+  // A field committed with the value it already held (a blur, a whole-meta patch from the
+  // form) changes nothing the sweep could overwrite.
+  it('does not count a field written with the value it already had', () => {
+    expect(isHandEdit(track(), { title: 'Song', artist: 'Artist', album: '' })).toBe(false)
+  })
+
+  // After a clear the DJ types the title back so the sweep can retag the track from
+  // scratch: that typing is the start of a rematch, not an edit to protect from one.
+  it('does not count typing into a cleared track', () => {
+    expect(isHandEdit(track({ metaCleared: true }), { title: 'Other' })).toBe(false)
   })
 })

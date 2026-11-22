@@ -1,4 +1,4 @@
-import { emptyMetadata, searchHintsOf } from '../../../shared/metadata'
+import { emptyMetadata, METADATA_KEYS, searchHintsOf } from '../../../shared/metadata'
 import { bareAlbumTitle, cleanMatchTitle, stripIgnoredWords } from '../../../shared/searchClean'
 import { yearFromDate } from '../../../shared/tagFields'
 import type {
@@ -8,6 +8,7 @@ import type {
   SearchHints,
   SearchProviderId,
   SearchResult,
+  TrackMetadata,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { LocalActivityReport } from './activityLog'
@@ -46,8 +47,21 @@ export function tracksToAutoMatch(tracks: TrackItem[]): TrackItem[] {
       // glance; re-probing it on every sweep would churn the same call and overwrite that
       // pending state, so leave it until the user confirms or clears it.
       !t.matchReview &&
+      !t.handEdited &&
       t.query.trim() !== '' &&
       t.meta.title.trim() !== '',
+  )
+}
+
+// Whether a metadata change the user made counts as retagging the track, the edit no
+// auto-match may overwrite: any tag it actually changes, except the rating and the custom
+// fields, which no release writes. Typing into a cleared track doesn't count either: a
+// clear is how the user hands a track back to the sweep, and the title typed after it is
+// what the sweep searches with.
+export function isHandEdit(track: TrackItem, patch: Partial<TrackMetadata>): boolean {
+  if (track.metaCleared) return false
+  return METADATA_KEYS.some(
+    (key) => key !== 'rating' && key in patch && (patch[key] ?? '') !== (track.meta[key] ?? ''),
   )
 }
 
@@ -175,6 +189,7 @@ export function clearedTrackPatch(track: TrackItem): Partial<TrackItem> {
     reviewMatch: undefined,
     matchProvider: undefined,
     inLibraryResolved: false,
+    handEdited: undefined,
     coverRemoved: true,
     coverUrl: undefined,
     metaCleared: true,

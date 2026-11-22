@@ -4556,6 +4556,36 @@ describe('Editor track preselection', () => {
     expect(onRecordUndo).not.toHaveBeenCalled()
   })
 
+  // Opening a track the DJ retagged by hand is not an invitation to retag it: the
+  // confident match waits for a click like any other suggestion.
+  it('never applies a confident match by itself to a track edited by hand', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', handEdited: true, meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    await loadTracklist({ autoOpens: true })
+    expect(await screen.findByTestId('track-confidence')).toHaveAttribute('data-confidence', 'high')
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
+  })
+
+  // The guard only keeps the sweep's hands off: the DJ picking a release for a track they
+  // edited by hand is a deliberate retag and applies as always.
+  it('still applies a release the user picks for a track edited by hand', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', handEdited: true, meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    const rows = await loadTracklist({ autoOpens: true })
+    fireEvent.click(rows[0])
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+  })
+
   it('still moves the focus to the title when nothing is being typed', async () => {
     withDiscogs()
     const { onChange } = renderEditor(

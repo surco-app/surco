@@ -178,6 +178,7 @@ import {
   acceptReviewPatch,
   clearedTrackPatch,
   holdsAutoMatch,
+  isHandEdit,
   type MatchCleanup,
   searchHintsFor,
   tracksToAutoMatch,
@@ -2061,12 +2062,29 @@ export default function App(): React.JSX.Element {
     )
   })
 
+  // Every tag change the user makes passes here before it lands, so no auto-match overwrites
+  // what they typed (isHandEdit decides, against the tags the change replaces). Only the
+  // user's own write paths call it: the sweep, the load cleanup, a release applied and
+  // ⌘Z all write tags too, and none of those is the user retagging the track.
+  const markHandEdited = useStableCallback(
+    (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
+      const byId = new Map(patches.map((p) => [p.id, p.meta]))
+      const ids = tracksRef.current
+        .filter((t) => {
+          const meta = byId.get(t.id)
+          return !!meta && !t.handEdited && isHandEdit(t, meta)
+        })
+        .map((t) => t.id)
+      if (ids.length > 0) patchTracks(ids, { handEdited: true })
+    },
+  )
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
   // per-field bulk edit records its own in onChangeAllMeta: Field commits it once per pause.
   const deriveTracksUndoable = useStableCallback(
     (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
       recordMetaUndo(patches.map((p) => p.id))
+      markHandEdited(patches)
       deriveTracks(patches)
       toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoMeta)
     },
@@ -2883,9 +2901,14 @@ export default function App(): React.JSX.Element {
     ),
   )
   const onAddAllSelectedToAppleMusic = useStableCallback(() => void addAllToAppleMusic(selectedIds))
+  // The user's one-patch-for-many tag write (the multi-select form, paste).
+  const editTracksMeta = useStableCallback((ids: string[], patch: Partial<TrackMetadata>) => {
+    markHandEdited(ids.map((id) => ({ id, meta: patch })))
+    updateTracksMeta(ids, patch)
+  })
   const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) => {
     recordMetaUndo(selectedIds)
-    updateTracksMeta(selectedIds, patch)
+    editTracksMeta(selectedIds, patch)
   })
   const onChangeSelection = useStableCallback((patch: Partial<TrackItem>) =>
     patchTracks(selectedIds, patch),
@@ -2904,7 +2927,7 @@ export default function App(): React.JSX.Element {
       filenameFormat: settings?.filenameFormat ?? '{artist} - {title}',
       customFields: settings?.customFields ?? [],
       recordMetaUndo,
-      updateTracksMeta,
+      updateTracksMeta: editTracksMeta,
       patchTracks,
       setNotice,
     })
@@ -2968,6 +2991,8 @@ export default function App(): React.JSX.Element {
   const onEditorChange = useStableCallback((patch: Partial<TrackItem>) => {
     if (!selected) return
     if (patch.matched) allowAutoMatch([selected.id])
+    // A patch that sets the match flags is a release applied or a clear, never a retag.
+    if (patch.meta && !('matched' in patch)) markHandEdited([{ id: selected.id, meta: patch.meta }])
     updateTrack(selected.id, patch)
   })
   // Converting a single track is the donate nudge's moment of value, so every entry
@@ -3244,6 +3269,12 @@ export default function App(): React.JSX.Element {
     const counts = await phraseCountsOf(queryClient, targets)
     if (counts.size > 0) {
       recordMetaUndo([...counts.keys()])
+      markHandEdited(
+        targets.flatMap((t) => {
+          const count = counts.get(t.id)
+          return count ? [{ id: t.id, meta: { comment: withPhraseCount(t.before, count) } }] : []
+        }),
+      )
       mapTracks((t) => {
         const count = counts.get(t.id)
         return count
@@ -4031,6 +4062,7 @@ export default function App(): React.JSX.Element {
     )
     if (!patches.length) return
     recordMetaUndo(patches.map((p) => p.id))
+    markHandEdited(patches)
     deriveTracks(patches)
     toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
   })

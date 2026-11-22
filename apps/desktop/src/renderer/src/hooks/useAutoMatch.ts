@@ -239,7 +239,8 @@ export function useAutoMatch({
       // happened.
       if (m.tier === 'high' && t.metaPartial) await completeTrackMeta(t.id)
       const live = tracksRef.current.find((x) => x.id === t.id)
-      if (!live || live.meta !== t.meta || editingRef.current.includes(t.id)) return
+      if (!live || live.meta !== t.meta || live.handEdited || editingRef.current.includes(t.id))
+        return
       if (m.tier === 'high' && live.metaPartial) return
       if (!replayed) reportActivity(matchActivityReport(t.meta.title, m, probes, ms))
       // A 'review'-tier match is plausible but unconfirmed: flag the row with its confidence

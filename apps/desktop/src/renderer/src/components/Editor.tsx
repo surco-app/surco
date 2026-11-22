@@ -862,9 +862,9 @@ export const Editor = memo(function Editor({
   // opens on a 'high' match the sweep never reached (filter-hidden row, auto-match off, no
   // token but a manual search surfaced one), apply it without waiting for the user to click
   // the suggested row. Guarded so it never fights the user — shouldAutoApplyMatch holds off
-  // on an already-matched track, mid-edit, or in multi-select, and the ref makes it fire at
-  // most once per opened release so the write (which lands as matched: true a tick later)
-  // can't loop. selectTrack moves focus to the title to verify, as a manual pick does,
+  // on an already-matched or hand-edited track, mid-edit, or in multi-select, and the ref
+  // makes it fire at most once per opened release so the write (which lands as matched: true
+  // a tick later) can't loop. selectTrack moves focus to the title to verify, as a manual pick does,
   // unless the user is typing somewhere when the match lands.
   const autoAppliedRelease = useRef<number | undefined>(undefined)
   // biome-ignore lint/correctness/useExhaustiveDependencies: selectTrack is recreated every render; the effect keys on the release/match signals that decide whether to apply, and the ref guards against re-firing.
@@ -878,7 +878,7 @@ export const Editor = memo(function Editor({
         autoMatchOn: autoMatch,
         tier: matchTier,
         hasMatchedTrack: true,
-        alreadyMatched: !!item.matched || !!autoMatchDeclined,
+        alreadyMatched: !!item.matched || !!item.handEdited || !!autoMatchDeclined,
         editing,
         multi: isMulti,
       })
@@ -887,7 +887,16 @@ export const Editor = memo(function Editor({
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
       void selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
     }
-  }, [autoMatch, release, matchedTrack, matchTier, item.matched, autoMatchDeclined, isMulti])
+  }, [
+    autoMatch,
+    release,
+    matchedTrack,
+    matchTier,
+    item.matched,
+    item.handEdited,
+    autoMatchDeclined,
+    isMulti,
+  ])
 
   // Stable identity so the field specs below can memoize: the body still reads the
   // current item.meta on every call (useStableCallback mirrors the latest closure),
