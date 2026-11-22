@@ -464,6 +464,64 @@ describe('LibrarySection', () => {
     expect(plain).toHaveTextContent('Música')
   })
 
+  it('lays every row on one shared grid so names, formats, states and chevrons line up instead of floating mid-row', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same', comparison: undefined }),
+        row({
+          id: 'traktor',
+          name: 'Traktor',
+          verdict: null,
+          comparable: false,
+          comparison: undefined,
+        }),
+      ],
+    })
+    const grid = screen.getByTestId('library-rows')
+    for (const libraryRow of screen.getAllByTestId('library-row')) {
+      expect(libraryRow.parentElement).toBe(grid)
+      expect(libraryRow).toHaveStyle({ gridColumn: '1 / -1', gridTemplateColumns: 'subgrid' })
+    }
+  })
+
+  it('keeps the chevron place on a row that opens nothing so the chevrons beside it fall on one vertical', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same', comparison: undefined }),
+      ],
+    })
+    const [opens, still] = screen.getAllByTestId('library-row')
+    expect(opens.tagName).toBe('BUTTON')
+    expect(still.tagName).not.toBe('BUTTON')
+    expect(within(still).getByTestId('library-row-chevron-slot').querySelector('svg')).toBeNull()
+  })
+
+  it('dresses the shared header state as the row states because both are the same datum', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'here' }),
+      ],
+    })
+    const header = screen.getByTestId('library-verdict').getAttribute('class')
+    cleanup()
+    mountApart({ verdict: 'here' })
+    const rowPill = within(screen.getAllByTestId('library-row')[0]).getByTestId('library-row-state')
+    expect(rowPill.getAttribute('class')).toBe(header)
+  })
+
+  it('keeps an opened comparison to a readable width aligned with its row so figures stay near their labels', () => {
+    mount({}, { comparisonOpen: true })
+    const id = screen.getByTestId('library-row').getAttribute('aria-controls') ?? ''
+    const box = document.getElementById(id)
+    expect(box).toContainElement(screen.getByTestId('comparison'))
+    expect(box).toHaveStyle({ width: 'min(520px, 100cqw)' })
+    expect(box?.parentElement).toHaveStyle({ gridColumn: '1 / -1' })
+    expect(box?.parentElement?.parentElement).toBe(screen.getByTestId('library-rows'))
+  })
+
   it('renders one row per program in the given order', () => {
     mount({
       rows: [
