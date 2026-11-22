@@ -25,9 +25,14 @@ const copyTags = (fields: Partial<TrackMetadata>): TrackMetadata => ({
   ...fields,
 })
 
-function setApi(readTags: ReturnType<typeof vi.fn<Api['readTags']>>): void {
-  ;(window as unknown as { api: unknown }).api = { readTags }
+function setApi(
+  readTags: ReturnType<typeof vi.fn<Api['readTags']>>,
+  readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(null),
+): void {
+  ;(window as unknown as { api: unknown }).api = { readTags, readCoverFull }
 }
+
+const COPY_COVER = 'data:image/jpeg;base64,QUJD'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -67,7 +72,7 @@ describe('useReplacedCopyFill', () => {
     )
 
     await waitFor(() => expect(onChange).toHaveBeenCalled())
-    expect(onRecordUndo).toHaveBeenCalledWith(['t1'])
+    expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: false })
     expect(order).toEqual(['undo', 'change'])
   })
 
@@ -171,5 +176,76 @@ describe('useReplacedCopyFill', () => {
     await waitFor(() => expect(readTags).toHaveBeenCalled())
     await Promise.resolve()
     expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('takes the copy artwork when the new file has none, so the replacement keeps its cover', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({})), readCoverFull)
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track(),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+        onRecordUndo,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(readCoverFull).toHaveBeenCalledWith('/old/your-love.mp3')
+    expect(onChange.mock.calls[0][0]).toMatchObject({ coverUrl: COPY_COVER, copyFilled: true })
+    expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
+  })
+
+  it('keeps the artwork the new file already shows', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+    setApi(
+      vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })),
+      readCoverFull,
+    )
+    const onChange = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverUrl: 'surco://cover/new.jpg' }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(readCoverFull).not.toHaveBeenCalled()
+    expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
+  })
+
+  it('leaves a cover the DJ removed by hand removed', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+    setApi(
+      vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })),
+      readCoverFull,
+    )
+    const onChange = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverRemoved: true }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
+  })
+
+  it('still fills the tags when the copy artwork cannot be read', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockRejectedValue(new Error('no art'))
+    setApi(
+      vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })),
+      readCoverFull,
+    )
+    const onChange = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({ item: track(), copyPath: '/old/your-love.mp3', onChange }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({ meta: { album: 'Your Love' } })
+    expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
   })
 })

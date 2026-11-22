@@ -120,6 +120,7 @@ beforeEach(() => {
     appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
     readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
+    readCoverFull: vi.fn().mockResolvedValue(null),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
     // that gives one a cover mounts this effect.
     prepareCoverDrag: vi.fn().mockResolvedValue(null),
@@ -5156,6 +5157,7 @@ describe('Editor Apple Music library section', () => {
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
       readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
+      readCoverFull: vi.fn().mockResolvedValue(null),
       cancelAnalysis: vi.fn().mockResolvedValue(undefined),
     }
   }
@@ -6647,6 +6649,6 @@ describe('Editor replacing a library copy', () => {
     expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
     const patch = onChange.mock.calls.find(([p]) => p.copyFilled)?.[0]
     expect(patch.meta).toMatchObject({ album: 'Your Love', genre: 'Euro House' })
-    expect(onRecordUndo).toHaveBeenCalledWith(['a'])
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
   })
 })
