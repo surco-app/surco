@@ -167,10 +167,10 @@ function LibraryRowItem({
           {row.format}
         </span>
       )}
-      {showState && (verdict || row.comparable) && (
+      {(verdict || row.comparable) && (
         <span
           data-testid="library-row-state-slot"
-          className="grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px]"
+          className={`grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px] ${showState ? '' : '@max-[22rem]:hidden'}`}
         >
           {reserved.map(({ key, words }) => (
             <span
@@ -185,7 +185,7 @@ function LibraryRowItem({
               {words}
             </span>
           ))}
-          {verdict && (
+          {showState && verdict && (
             <StatePill
               testid="library-row-state"
               verdict={verdict}

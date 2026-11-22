@@ -299,14 +299,17 @@ describe('LibrarySection', () => {
     }
   })
 
-  it('leaves no empty state place on rows whose state went up to the header', () => {
+  // The state place stays in every row, empty when the state rode up to the header, so the
+  // format chip sits in the same column whether the rows say their state or the header does.
+  it('keeps the empty state place on rows whose state went up to the header', () => {
     mount({
       rows: [
         row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
         row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
       ],
     })
-    expect(screen.queryByTestId('library-row-state-slot')).toBeNull()
+    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
+    expect(screen.queryByTestId('library-row-state')).toBeNull()
     expect(screen.getAllByTestId('library-row-format')).toHaveLength(2)
   })
 
