@@ -77,7 +77,10 @@ Hoy nadie los copia al fichero nuevo y la cola de Serato no reapunta (`repoint: 
   04/11:** reapuntar por `database V2` hace que Serato borre el asset y cree otro, y pierde el
   **rating** (solo vive en `master.sqlite`, que no se escribe). El reapuntado se revirtió entonces
   (99597884a) y hoy, si Serato usa el original, la conversión conserva el original y avisa.
-  **Pendiente de Vicent:** ver «Preguntas abiertas».
+  **Decidido por Vicent (22/11, opción A):** se reapunta igualmente. Antes de sustituir una pista
+  que está en Serato, Surco avisa de que en Serato perderá sus estrellas. Conserva BPM, tonalidad,
+  reproducciones y crates. Con el reapuntado, el original ya no queda retenido por Serato y se
+  retira como en los demás programas.
 
 ### 3. Medir el desfase al sustituir
 
@@ -167,12 +170,6 @@ Textos en los 5 idiomas, con tuteo, y medidos al ancho real.
   rekordbox o Music.
 - TDD con test en rojo primero. Mutación de la medida y de la regla de fiabilidad.
 
-## Preguntas abiertas para Vicent
-
-1. **Serato y el rating:** reapuntar pierde las estrellas de la pista en Serato. ¿Lo aceptamos con
-   aviso, o en Serato seguimos conservando el original (sin reapuntar) y solo copiamos los cues al
-   fichero nuevo?
-
 ## Lo que decide quien lo construya
 
 - La tolerancia exacta entre la medida del principio y la del final, y dónde caen las ventanas.
@@ -184,6 +181,6 @@ Textos en los 5 idiomas, con tuteo, y medidos al ancho real.
 ## Fases (cada una mergeable)
 
 1. Traktor sigue la sustitución con sus cues.
-2. Serato sigue la sustitución con sus cues (según la respuesta a la pregunta 1).
+2. Serato sigue la sustitución con sus cues, con el aviso de las estrellas.
 3. Medida del desfase y desplazamiento en los cinco programas.
 4. Almacén, nodo «To review», botón «Reviewed» y pastilla del editor.
