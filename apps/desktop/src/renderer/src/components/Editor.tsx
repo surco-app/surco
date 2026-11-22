@@ -6,6 +6,7 @@ import {
   Eraser,
   Folder,
   Globe,
+  Link,
   PanelLeftOpen,
   RefreshCw,
   Scissors,
@@ -267,6 +268,7 @@ interface Props {
   // Copies the Settings-pattern file name to the clipboard so the user can paste the track
   // into a search box. App owns the pattern and clipboard, so the editor just signals intent.
   onCopyFilename: () => void
+  onCopyPath: (track: TrackItem) => void
   // Opens a Google search for the same name in the default browser — the one-click twin of
   // copy-then-paste. App owns the pattern and the hand-off, so the editor just signals intent.
   onSearchWeb: () => void
@@ -359,6 +361,7 @@ export const Editor = memo(function Editor({
   onRegenerateName,
   onTrimDetectedAll,
   onCopyFilename,
+  onCopyPath,
   onSearchWeb,
   onCopyMeta,
   onPasteMeta,
@@ -1450,6 +1453,13 @@ export const Editor = memo(function Editor({
             label: tr('editor.copyFilename'),
             Icon: Copy,
             onSelect: onCopyFilename,
+          },
+          {
+            id: 'copy-path',
+            testid: 'copy-path-btn',
+            label: tr('trackList.context.copyPath'),
+            Icon: Link,
+            onSelect: () => onCopyPath(item),
           },
           {
             id: 'search-web',

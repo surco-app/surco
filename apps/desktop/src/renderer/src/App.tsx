@@ -5203,6 +5203,7 @@ export default function App(): React.JSX.Element {
                               onRegenerateName={onRegenerateName}
                               onTrimDetectedAll={onTrimDetectedAll}
                               onCopyFilename={onCopyFilename}
+                              onCopyPath={onCopyPath}
                               onSearchWeb={onSearchWeb}
                               onCopyMeta={onCopySelectedMeta}
                               onPasteMeta={onPasteSelectedMeta}
