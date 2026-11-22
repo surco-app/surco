@@ -1,7 +1,7 @@
 import { stat, unlink } from 'node:fs/promises'
 import { basename, dirname, extname, isAbsolute, join, relative, resolve } from 'node:path'
 import { errorWithKey } from '../shared/errorKeys'
-import { editsInPlace, formatExtension } from '../shared/format'
+import { editsInPlace, fileNamePart, formatExtension } from '../shared/format'
 import type { OutputFormat } from '../shared/types'
 import { keepOriginal } from './originalKeeper'
 
@@ -92,13 +92,14 @@ export function resolveOutputTarget(
   // so the outputDir escape guard doesn't apply here either.
   if (besideOriginal && !overwriteOriginal) {
     return {
-      outputPath: join(dirname(inputPath), `${name}.${formatExtension(format)}`),
+      outputPath: join(dirname(inputPath), `${fileNamePart(name)}.${formatExtension(format)}`),
       inPlace: false,
     }
   }
   const inPlace = editsInPlace(format, inputPath, overwriteOriginal)
-  const dir = inPlace ? dirname(inputPath) : outputDir
-  const outputPath = join(dir, `${name}.${formatExtension(format)}`)
+  const outputPath = inPlace
+    ? join(dirname(inputPath), `${fileNamePart(name)}.${formatExtension(format)}`)
+    : join(outputDir, `${name}.${formatExtension(format)}`)
   // Defense in depth on top of sanitizeOutputName (the primary guard against a
   // crafted tag's ".." walking the write target out of outputDir): only checked
   // for the output-folder branch, where `name` came from a template filled with

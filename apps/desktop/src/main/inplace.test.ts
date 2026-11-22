@@ -139,6 +139,31 @@ describe('resolveOutputTarget', () => {
     })
   })
 
+  it('keeps an in-place edit in its own folder when the pattern has subfolders', () => {
+    expect(
+      resolveOutputTarget('/music/2026/11/ATB/old.wav', '2026/11/ATB/Till I Come', 'wav', '/out'),
+    ).toEqual({
+      outputPath: '/music/2026/11/ATB/Till I Come.wav',
+      inPlace: true,
+    })
+  })
+
+  it('keeps an overwrite in its own folder when the pattern has subfolders', () => {
+    expect(resolveOutputTarget('/music/old.wav', '2026/11/old', 'aiff', '/out', true)).toEqual({
+      outputPath: '/music/old.aiff',
+      inPlace: true,
+    })
+  })
+
+  it('still files a conversion into the pattern subfolders of the output folder', () => {
+    expect(resolveOutputTarget('/music/old.wav', '2026/11/ATB/Till I Come', 'mp3', '/out')).toEqual(
+      {
+        outputPath: '/out/2026/11/ATB/Till I Come.mp3',
+        inPlace: false,
+      },
+    )
+  })
+
   it('writes a fresh file to the output folder when converting to a different format', () => {
     // WAV→MP3 re-encodes into a new container, so it lands in the configured output
     // folder and the original is left untouched (inPlace false).
@@ -193,6 +218,22 @@ describe('resolveOutputTarget', () => {
       // "old (2).wav" — what matters is inPlace false so the original survives.
       expect(resolveOutputTarget('/music/old.wav', 'old', 'wav', '/out', false, true)).toEqual({
         outputPath: '/music/old.wav',
+        inPlace: false,
+      })
+    })
+
+    it('lands next to the source, not in pattern subfolders inside its folder', () => {
+      expect(
+        resolveOutputTarget(
+          '/music/old.wav',
+          '2026/11/ATB/Till I Come',
+          'flac',
+          '/out',
+          false,
+          true,
+        ),
+      ).toEqual({
+        outputPath: '/music/Till I Come.flac',
         inPlace: false,
       })
     })

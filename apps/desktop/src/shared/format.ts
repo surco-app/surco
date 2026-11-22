@@ -30,6 +30,8 @@ export function formatExtension(format: OutputFormat): string {
   return format === 'alac' ? 'm4a' : format
 }
 
+export const fileNamePart = (name: string): string => name.slice(name.lastIndexOf('/') + 1)
+
 // Whether an export edits the source file in place (rewrite/rename where it lives)
 // instead of writing a fresh copy to the output folder: the target format is the one
 // the file is already in, or overwrite mode forces it. Overwrite never forces ALAC over

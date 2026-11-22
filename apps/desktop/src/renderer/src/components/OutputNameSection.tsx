@@ -1,7 +1,7 @@
 import { Pencil, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useTranslation } from 'react-i18next'
-import { formatExtension } from '../../../shared/format'
+import { fileNamePart, formatExtension } from '../../../shared/format'
 import type { OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { SectionBody } from './SectionBody'
@@ -19,6 +19,7 @@ interface Props {
   // "Regenerate from metadata" button is redundant and hidden (the pencil stays).
   autoApply: boolean
   willEditInPlace: boolean
+  inSourceFolder: boolean
   open: boolean
   onToggle: () => void
   onChangeName: (outputName: string) => void
@@ -35,6 +36,7 @@ export function OutputNameSection({
   defaultOutputName,
   autoApply,
   willEditInPlace,
+  inSourceFolder,
   open,
   onToggle,
   onChangeName,
@@ -43,12 +45,14 @@ export function OutputNameSection({
 }: Props): React.JSX.Element {
   const { t: tr } = useTranslation()
   const name = item.outputName ?? defaultOutputName
-  const folder = name
-    .split('/')
-    .map((segment) => segment.trim())
-    .filter(Boolean)
-    .slice(0, -1)
-    .join('/')
+  const folder = inSourceFolder
+    ? ''
+    : name
+        .split('/')
+        .map((segment) => segment.trim())
+        .filter(Boolean)
+        .slice(0, -1)
+        .join('/')
   return (
     <div className="mt-6 border-t border-[var(--color-line)] pt-6 compact:mt-3 compact:pt-3">
       <SectionHeader
@@ -57,7 +61,7 @@ export function OutputNameSection({
         open={open}
         onToggle={onToggle}
         // The exact name the export will write, verifiable without unfolding.
-        summary={`${item.outputName ?? defaultOutputName}.${formatExtension(format)}`}
+        summary={`${inSourceFolder ? fileNamePart(name) : name}.${formatExtension(format)}`}
         summaryTestId="output-name-summary"
         // Both buttons act on the name field below, so they fold with the section;
         // folded, the header keeps only the summary of what will be written.

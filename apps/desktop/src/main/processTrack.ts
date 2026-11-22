@@ -18,7 +18,7 @@ import {
   withNameLeftMarked,
 } from '../shared/errorKeys'
 import { foldAccents } from '../shared/foldAccents'
-import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../shared/format'
+import { editsInPlace, fileNamePart, formatMatchesInput, resolveJobFormat } from '../shared/format'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../shared/trackOrigin'
 import type {
   DeclickConfig,
@@ -621,10 +621,11 @@ export async function runProcessTrack(
     stage(tagsOnly ? 'tags' : 'converting')
     const currentName =
       besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
+    const requestedName = currentName === undefined ? job.outputName : fileNamePart(job.outputName)
     const keepsName =
-      inPlaceWrite && currentName?.normalize('NFC') === job.outputName.normalize('NFC')
+      inPlaceWrite && currentName?.normalize('NFC') === requestedName.normalize('NFC')
     const outputName = sanitizeOutputName(
-      settings.asciiFileNames && !keepsName ? foldAccents(job.outputName) : job.outputName,
+      settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
       currentName,
     )
     const resolved = resolveOutputTarget(

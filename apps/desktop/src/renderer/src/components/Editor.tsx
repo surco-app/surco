@@ -23,7 +23,12 @@ import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
+import {
+  editsInPlace,
+  fileNamePart,
+  formatMatchesInput,
+  resolveJobFormat,
+} from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
@@ -1130,6 +1135,9 @@ export const Editor = memo(function Editor({
   // must not carry the in-place rename warning.
   const willEditInPlace =
     !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
+  const inSourceFolder =
+    (picked.convertBesideOriginal && !picked.overwriteOriginal) ||
+    editsInPlace(format, item.inputPath, picked.overwriteOriginal)
   // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
   // quality-losing case worth a sharper warning before the user commits to it.
   const lossyOverwrite =
@@ -1219,7 +1227,7 @@ export const Editor = memo(function Editor({
     !hasStagedEdits(item) &&
     item.fillSignature !== item.diskSignature &&
     !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
-    (item.outputName?.trim() || defaultOutputName) === item.fileName
+    fileNamePart(item.outputName?.trim() || defaultOutputName) === item.fileName
 
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
@@ -2032,6 +2040,7 @@ export const Editor = memo(function Editor({
                             defaultOutputName={defaultOutputName}
                             autoApply={autoNamesFile(autoApplyFilename, item)}
                             willEditInPlace={willEditInPlace && !picked.overwriteOriginal}
+                            inSourceFolder={inSourceFolder}
                             open={outputOpen}
                             onToggle={() => setSectionOpen('output', !outputOpen)}
                             onChangeName={(outputName) => onChange({ outputName })}
