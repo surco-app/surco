@@ -4,6 +4,7 @@ import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import { buildLibraryIndex, findLibraryEntry } from '../lib/appleMusicLibrary'
 import { collectionCandidates } from '../lib/collectionCandidates'
 import { DJ_REACH_SETTINGS } from '../lib/djReach'
+import { pathKey } from '../lib/pathKey'
 import { useAppSettings } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
 
@@ -20,8 +21,6 @@ interface Args {
   suggestedMeta?: { title: string; artist: string }
   enabled: boolean
 }
-
-const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
 
 export function useProgramCopies({
   inputPath,

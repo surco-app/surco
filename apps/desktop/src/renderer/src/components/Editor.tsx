@@ -87,6 +87,7 @@ import {
   renderOutputName,
   titleFormatPatches,
 } from '../lib/outputName'
+import { pathKey } from '../lib/pathKey'
 import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { isMacOS, revealCommandKey } from '../lib/platform'
 import { splitPosition } from '../lib/position'
@@ -276,9 +277,6 @@ interface Props {
   onOpenBackup?: (track: TrackItem) => void
   // source; the trim section's own onKeyDown reads it to resolve its five commands.
 }
-
-// macOS paths compare without case, and Music may hand back the other Unicode form.
-const pathKey = (path: string): string => path.normalize('NFC').toLowerCase()
 
 const NARROW_EDITOR_PX = 400
 
