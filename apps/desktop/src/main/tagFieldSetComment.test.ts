@@ -103,6 +103,36 @@ describe('setTagFields — the comment tag', () => {
     f.dispose()
   })
 
+  it('rewrites a Beatport-style wav comment again although its fixed-length DivX copy kept only the start, so the next save does not fail', () => {
+    const file = track('wav', 'Purchased at Beatport')
+    const seed = TagFile.createFromPath(file)
+    seed.getTag(TagTypes.Id3v2, true)
+    seed.getTag(TagTypes.MovieId, true)
+    seed.getTag(TagTypes.DivX, true)
+    seed.tag.comment = 'Purchased at Beatport'
+    seed.save()
+    seed.dispose()
+    const types = TagFile.createFromPath(file)
+    expect(types.tagTypesOnDisk).toBe(
+      TagTypes.Id3v2 | TagTypes.RiffInfo | TagTypes.MovieId | TagTypes.DivX,
+    )
+    types.dispose()
+    const long = '2 - 2 - 2 - 2 - 2 - 6 - 2 - 2 - 6 · Purchased at Beatport'
+    expect(setTagFields(file, [{ field: 'comment', from: heldComment(file), to: long }])).toEqual([
+      'written',
+    ])
+    const f = TagFile.createFromPath(file)
+    const divx = f.getTag(TagTypes.DivX, false)?.comment ?? ''
+    f.dispose()
+    expect(divx).not.toBe(long)
+    expect(long.startsWith(divx.trim())).toBe(true)
+    expect(heldComment(file)).toBe(long)
+    expect(
+      setTagFields(file, [{ field: 'comment', from: heldComment(file), to: `3 - ${long}` }]),
+    ).toEqual(['written'])
+    expect(heldComment(file)).toBe(`3 - ${long}`)
+  })
+
   it('leaves the file alone when its comment is no longer the one read', () => {
     const file = track('mp3', 'Remix')
     const before = snapshotTags(file)

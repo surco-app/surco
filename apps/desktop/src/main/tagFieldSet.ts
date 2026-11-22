@@ -216,11 +216,23 @@ function onDiskTags(f: TagFile): Tag[] {
   return tags
 }
 
+const truncatedDivXComment = (
+  tag: Tag,
+  field: TagWriteField,
+  values: string[],
+  value: string,
+): boolean =>
+  field === 'comment' &&
+  tag.tagTypes === TagTypes.DivX &&
+  values.length === 1 &&
+  value.normalize('NFC').startsWith(values[0].normalize('NFC'))
+
 function holds(f: TagFile, field: TagWriteField, value: string): boolean {
   if (!matches(field, firstHeld(f, field), value)) return false
   for (const tag of onDiskTags(f)) {
     for (const values of readValues(tag, field)) {
-      if (values.length > 0 && !matches(field, values, value)) return false
+      if (values.length === 0 || matches(field, values, value)) continue
+      if (!truncatedDivXComment(tag, field, values, value)) return false
     }
   }
   return true
