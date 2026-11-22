@@ -302,10 +302,18 @@ function sameBytes(a: Uint8Array | null, b: Uint8Array): boolean {
 export async function carrySeratoCues(
   source: string,
   dest: string,
-  { trimMs, carry, strip, shiftMs }: { trimMs: number; carry: boolean; strip: boolean; shiftMs: number },
+  {
+    trimMs,
+    carry,
+    strip,
+    shiftMs,
+  }: { trimMs: number; carry: boolean; strip: boolean; shiftMs: number },
 ): Promise<void> {
   const ext = extname(dest).toLowerCase()
   const from = carry ? readSeratoTrack(source) : null
+  // An unreadable source is not one without cues: the caller must hear it, because a
+  // replacement whose cues could not be read must not have Serato pointed at it.
+  if (carry && !from) throw new Error(`cannot read ${source}`)
   const to = readSeratoTrack(dest)
   if (!to) return
   const sourceLead = from?.payload ? await seratoLeadOfFile(source, from.sampleRate) : 0

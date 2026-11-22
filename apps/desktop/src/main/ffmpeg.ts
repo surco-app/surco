@@ -2629,18 +2629,27 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
+    let seratoCarryFailed = false
     const carrySerato =
       !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
+    // A replacement's download never was in Serato: the cues the DJ set live in the file it
+    // replaces, so they come from there. The trim is not taken off them: the measure of the
+    // shift is taken on the finished file, which already includes it.
+    const replaceCueShiftMs = 0
     if (carrySerato || !seratoAnalysisKept)
       await runInWorker({
         type: 'carrySeratoCues',
-        source: input,
+        source: replacesPath ?? input,
         dest: tmp,
-        trimMs: trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
+        trimMs:
+          trimAf !== undefined && !replacesPath ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
         carry: carrySerato,
         strip: !seratoAnalysisKept,
-        shiftMs: 0,
-      }).catch((err) => log.warn(`Serato cues not carried to ${basename(output)}: ${err}`))
+        shiftMs: replacesPath ? replaceCueShiftMs : 0,
+      }).catch((err) => {
+        log.warn(`Serato cues not carried to ${basename(output)}: ${err}`)
+        if (replacesPath) seratoCarryFailed = true
+      })
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
@@ -2815,7 +2824,11 @@ export async function convertAudio(
       fromBytes,
       names: namesBefore && changedNames(namesBefore, meta),
     })
-    if (repoint) recordRekordboxRepoint(repoint)
+    if (repoint)
+      recordRekordboxRepoint({
+        ...repoint,
+        ...(seratoCarryFailed ? { seratoCarryFailed: true as const } : {}),
+      })
   } catch (e) {
     // The original was copied for a rename that never landed, so it is still on its own
     // path and the copy in Originals is a duplicate of a file nothing replaced.

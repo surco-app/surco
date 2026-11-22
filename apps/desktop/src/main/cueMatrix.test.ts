@@ -24,6 +24,7 @@ import type { TrackMetadata } from '../shared/types'
 import { encodeBase91 } from './base91'
 import { automaticCueOffsetOfFiles } from './cueCalibration'
 import { convertAudio } from './ffmpeg'
+import { recordedRekordboxRepoint } from './rekordboxBatch'
 import { seratoLeadOfFile } from './seratoClock'
 import { readSeratoTrack, setSeratoMarkers } from './seratoTags'
 import { snapshotTags } from './tagSnapshot'
@@ -725,5 +726,114 @@ describe('the Serato cue carry-over matrix', () => {
     )
 
     expect(await surcoMs(out)).toEqual({ cue: [SERATO_CUE_MS - 1500], loop: [] })
+  })
+})
+
+function plainSine(dir: string, ext: string): string {
+  const path = join(dir, `download${ext}`)
+  execFileSync(FF, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=4',
+    path,
+  ])
+  return path
+}
+
+function replace(
+  download: string,
+  out: string,
+  replaced: string,
+  trim?: { startSec: number },
+): ReturnType<typeof convertAudio> {
+  return convertAudio(
+    download,
+    out,
+    'aiff',
+    meta,
+    undefined,
+    undefined,
+    false,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    trim,
+    undefined,
+    undefined,
+    replaced,
+  )
+}
+
+describe('a replacement carries the Serato cues of the file it replaces', () => {
+  // The download never was in Serato: the cues the DJ set live in the file it replaces,
+  // and that file is retired once the check comes back.
+  it("writes the replaced file's Serato cues into the new file, not the download's", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(
+      (await surcoMs(replaced))?.cue[0] ?? Number.NaN,
+      0,
+    )
+  })
+
+  // Nothing to lose: a replaced file with no Serato cues must not wipe what the new one has.
+  it("keeps the download's own Serato cues when the replaced file has none", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-none-'))
+    const replaced = plainSine(dir, '.mp3')
+    const download = makeSeratoSource(dir, '.aiff')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(SERATO_CUE_MS, 0)
+  })
+
+  // The measure of phase 3 is taken on the finished file, trim included: taking the trim
+  // off again here would move the cues twice.
+  it("does not take a trim off the replaced file's cues", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-trim-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced, { startSec: 0.5 })
+
+    expect((await surcoMs(out))?.cue[0]).toBeCloseTo(
+      (await surcoMs(replaced))?.cue[0] ?? Number.NaN,
+      0,
+    )
+  })
+
+  // Serato must not be pointed at a file that lacks the cues it had: the repoint says so.
+  it('says so on the repoint when the replaced file could not be read, so Serato is not pointed at a file without its cues', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-gone-'))
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, join(dir, 'gone.mp3'))
+
+    expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
+  })
+
+  it('does not flag a failed carry when the replaced file was read', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-ok-'))
+    const replaced = makeSeratoSource(dir, '.mp3', false)
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
   })
 })

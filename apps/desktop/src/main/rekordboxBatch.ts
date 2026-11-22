@@ -8,6 +8,8 @@ export interface RekordboxRepoint {
   to: string
   // The conversion replaced a library file: `from` is that file, which the libraries hold.
   replaced?: true
+  // The replaced file's Serato cues could not be read, so a Serato entry must stay on it.
+  seratoCarryFailed?: true
   meta?: RekordboxMeta
   // The conversion rewrote the audio: rekordbox's analysis describes the old file, and its
   // cues land back on the beats they were set on once moved by cueShiftMs.
