@@ -372,6 +372,26 @@ export async function probeReleases(
   return opts.collectReview ? review : undefined
 }
 
+// A remembered 'high' verdict from an uncurated source holds the release as it was read when
+// it was saved, possibly before the label-page reading and the artist-contradiction rule
+// existed. Reading it again the way a fresh probe would keeps the stored verdicts without a
+// new cache namespace: still 'high' returns the re-read release and track, so what's written
+// is the corrected reading; anything else returns undefined and the file is probed again.
+export function rereadRemembered(m: ProbeMatch, target: TrackMatchTarget): ProbeMatch | undefined {
+  if (m.release.provider === 'discogs' || m.tier !== 'high') return m
+  const release = readLabelPage(m.release, target.artist)
+  const track =
+    release.tracklist.find((t) => t.position === m.track.position) ??
+    release.tracklist.find((t) => t.title === m.track.title)
+  if (!track) return undefined
+  const catalogMatched = catalogNumberMatches(target.catalogNumber, release)
+  if (corroboratedTier(m.confidence, target, release, track, catalogMatched) !== 'high') {
+    return undefined
+  }
+  const signals = matchSignals(target, release, track, catalogMatched)
+  return { ...m, release, track, signals }
+}
+
 // The slice of the IPC surface auto-matching needs, narrowed so the sweep is
 // testable with a stub instead of the whole window.api.
 export interface SearchApi {
