@@ -12,7 +12,7 @@ import {
   type WantedCue,
 } from '../shared/cueRules'
 import { GRID_BPM_MAX, GRID_BPM_MIN, gridBeats, gridTempos } from '../shared/gridEdit'
-import { withPhraseCount } from '../shared/phraseCount'
+import { phrasedComment } from '../shared/phraseCount'
 import type {
   PlaylistAddReport,
   RekordboxEditRefusal,
@@ -389,7 +389,7 @@ function planComment(probe: Db, op: CommentOp): Plan {
     .get(op.contentId) as { Commnt: string | null } | undefined
   if (!row) return { outcome: { id: op.id, applied: false, reason: 'stale', notices: [] } }
   const current = row.Commnt ?? ''
-  const next = withPhraseCount(current, op.count)
+  const next = phrasedComment(current, op.count, op.mode ?? 'prepend')
   if (next === current) return { outcome: { id: op.id, applied: true, notices: [] } }
   return { op, comment: next }
 }

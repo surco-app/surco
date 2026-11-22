@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { PlaylistSource } from '../../../shared/types'
 import { formatTime } from '../lib/duration'
 import { aggregateLibraryVerdict } from '../lib/libraryVerdict'
-import { PILL_TEXT, PILL_TONE } from './ListRow'
+import { PILL_TEXT } from './ListRow'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { SOURCE_ICON } from './SourceRail'
@@ -28,19 +28,25 @@ export type LibraryVerdict =
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
 // copy". The amber is never carried by colour alone, the word says it too.
 const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
-  same: { label: 'editor.libraryStateSame', className: 'bg-fg-faint/10 text-fg-faint' },
-  here: { label: 'editor.libraryStateHere', className: PILL_TONE.good },
-  library: { label: 'editor.libraryStateLibrary', className: PILL_TONE.warn },
-  different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
-  tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
-  missing: { label: 'editor.libraryStateMissing', className: 'bg-fg-faint/10 text-fg-faint' },
-  unreadable: { label: 'editor.libraryStateUnreadable', className: 'bg-fg-faint/10 text-fg-faint' },
+  same: { label: 'editor.libraryStateSame', className: 'bg-fg-faint/8 text-fg-faint' },
+  here: {
+    label: 'editor.libraryStateHere',
+    className: 'bg-good/12 text-[var(--color-good-label)]',
+  },
+  library: {
+    label: 'editor.libraryStateLibrary',
+    className: 'bg-warn/14 text-[var(--color-warn-label)]',
+  },
+  different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/10 text-fg-dim' },
+  tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/10 text-fg-dim' },
+  missing: { label: 'editor.libraryStateMissing', className: 'bg-fg-faint/8 text-fg-faint' },
+  unreadable: { label: 'editor.libraryStateUnreadable', className: 'bg-fg-faint/8 text-fg-faint' },
   unmeasurable: {
     label: 'editor.libraryStateUnmeasurable',
-    className: 'bg-fg-faint/10 text-fg-faint',
+    className: 'bg-fg-faint/8 text-fg-faint',
   },
-  thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/10 text-fg-faint' },
-  even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/15 text-fg-dim' },
+  thisFile: { label: 'editor.libraryStateThisFile', className: 'bg-fg-faint/8 text-fg-faint' },
+  even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/10 text-fg-dim' },
   measuring: {
     label: 'editor.libraryStateMeasuring',
     className: 'border border-dashed border-[var(--color-line-strong)] text-fg-faint',
@@ -100,7 +106,7 @@ function StatePill({
       data-state={verdict}
       role="img"
       aria-label={label}
-      className={`relative col-start-1 row-start-1 flex h-4 items-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${STATE[verdict].className}`}
+      className={`relative col-start-1 row-start-1 flex h-4 items-center justify-center gap-1 whitespace-nowrap rounded px-[5px] ${PILL_TEXT} ${STATE[verdict].className}`}
     >
       {verdict === 'measuring' && (
         <Loader2
@@ -176,7 +182,8 @@ function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): stri
 // name; the break is set by the panel's width, never by the state, so a row keeps its shape
 // while the measurement lands.
 const rowClass =
-  'flex min-h-[30px] w-full flex-wrap items-center gap-x-2 gap-y-1 pl-3 pr-3 text-left text-xs @max-[22rem]:py-[7px]'
+  'grid min-h-[30px] items-center gap-y-1 pl-3 pr-3 text-left text-xs @max-[22rem]:py-[7px]'
+const rowGrid: React.CSSProperties = { gridColumn: '1 / -1', gridTemplateColumns: 'subgrid' }
 
 function LibraryRowItem({
   row,
@@ -196,28 +203,28 @@ function LibraryRowItem({
         data-source={row.id}
         role="img"
         aria-label={row.name}
-        className="flex shrink-0 text-fg-dim"
+        className="col-start-1 row-start-1 flex w-3.5 justify-center text-fg-dim"
       >
         <LibraryIcon size={14} />
       </span>
-      <span className="min-w-0 flex-1 truncate text-fg">{row.name}</span>
+      <span className="col-start-2 row-start-1 min-w-0 truncate text-fg">{row.name}</span>
       {/* The track list's format chip, outlined rather than tinted: a tint there is the
             file's quality verdict, which this copy does not carry. */}
       {row.format && (
         <span
           data-testid="library-row-format"
-          className={`flex h-4 shrink-0 items-center rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+          className={`col-start-3 row-start-1 flex h-4 items-center justify-center whitespace-nowrap rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
         >
           {row.format}
         </span>
       )}
-      {(verdict || row.comparable) && (
+      {showState && (verdict || row.comparable) && (
         <span
           data-testid="library-row-state-slot"
-          className={`grid shrink-0 justify-items-end @max-[22rem]:order-last @max-[22rem]:basis-full @max-[22rem]:justify-items-start @max-[22rem]:pl-[22px] ${showState ? '' : '@max-[22rem]:hidden'}`}
+          className={`col-start-4 row-start-1 grid @max-[22rem]:col-[2/4] @max-[22rem]:row-start-2 @max-[22rem]:justify-self-start`}
         >
           <StateSizers />
-          {showState && verdict && (
+          {verdict && (
             <StatePill
               testid="library-row-state"
               verdict={verdict}
@@ -228,7 +235,10 @@ function LibraryRowItem({
         </span>
       )}
       {(comparison || verdict || row.comparable) && (
-        <span data-testid="library-row-chevron-slot" className="flex h-3 w-3 shrink-0">
+        <span
+          data-testid="library-row-chevron-slot"
+          className={`row-start-1 flex h-3 w-3 @max-[22rem]:col-start-4 ${showState ? 'col-start-5' : 'col-start-4'}`}
+        >
           {comparison && (
             <ChevronRight
               className={`h-3 w-3 text-fg-dim transition-transform ${comparisonOpen ? 'rotate-90' : ''}`}
@@ -249,16 +259,23 @@ function LibraryRowItem({
           aria-expanded={comparisonOpen}
           aria-controls={comparisonId}
           onClick={row.onToggleComparison}
+          style={rowGrid}
           className={`press rounded-md hover:bg-[var(--color-hover)] ${rowClass}`}
         >
           {rowContent}
         </button>
       ) : (
-        <div data-testid="library-row" data-row={row.id} className={rowClass}>
+        <div data-testid="library-row" data-row={row.id} style={rowGrid} className={rowClass}>
           {rowContent}
         </div>
       )}
-      {comparison && comparisonOpen && <div id={comparisonId}>{comparison}</div>}
+      {comparison && comparisonOpen && (
+        <div style={{ gridColumn: '1 / -1' }} className="w-0">
+          <div id={comparisonId} style={{ width: 'min(520px, 100cqw)' }}>
+            {comparison}
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -333,9 +350,14 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
       />
       <SectionBody open={open}>
         <div className="mt-2 @container">
-          {rows.map((row) => (
-            <LibraryRowItem key={row.id} row={row} showState={!shared} />
-          ))}
+          <div
+            data-testid="library-rows"
+            className={`grid justify-start gap-x-2 @max-[22rem]:grid-cols-[max-content_minmax(0,1fr)_max-content_max-content] ${shared ? 'grid-cols-[max-content_minmax(0,max-content)_max-content_max-content]' : 'grid-cols-[max-content_minmax(0,max-content)_max-content_max-content_max-content]'}`}
+          >
+            {rows.map((row) => (
+              <LibraryRowItem key={row.id} row={row} showState={!shared} />
+            ))}
+          </div>
         </div>
       </SectionBody>
     </div>

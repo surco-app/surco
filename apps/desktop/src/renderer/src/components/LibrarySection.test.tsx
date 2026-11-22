@@ -50,8 +50,8 @@ describe('LibrarySection', () => {
   // to this file in a short word, on its own row, next to its format.
   it.each([
     ['same', 'Son el mismo'],
-    ['here', 'Tu archivo es mejor'],
-    ['library', 'Tu archivo es peor'],
+    ['here', 'La nueva es mejor'],
+    ['library', 'La nueva es peor'],
     ['tie', 'Parecidas'],
     ['even', 'Ni mejor ni peor'],
     ['measuring', 'Comparando'],
@@ -97,10 +97,10 @@ describe('LibrarySection', () => {
   // The figures sit in the table; why they decide (a lossy source, a limiter) rides the pill
   // for a screen reader and the tooltip, so the row keeps one short word.
   it('names the reason with the state when there is one', () => {
-    const pill = mountApart({ verdict: 'library', detail: 'Este archivo tiene pérdida (MP3).' })
-    expect(pill).toHaveTextContent(/^Tu archivo es peor$/)
-    expect(pill).toHaveAccessibleName('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
-    expect(hoverTooltip(pill)).toBe('Tu archivo es peor. Este archivo tiene pérdida (MP3).')
+    const pill = mountApart({ verdict: 'library', detail: 'La nueva tiene pérdida (MP3).' })
+    expect(pill).toHaveTextContent(/^La nueva es peor$/)
+    expect(pill).toHaveAccessibleName('La nueva es peor. La nueva tiene pérdida (MP3).')
+    expect(hoverTooltip(pill)).toBe('La nueva es peor. La nueva tiene pérdida (MP3).')
   })
 
   // Japanese closes a sentence with 。, so the state and its reason join the way each
@@ -149,8 +149,8 @@ describe('LibrarySection', () => {
       expect(labels).toEqual([
         'Comparando',
         'Son el mismo',
-        'Tu archivo es mejor',
-        'Tu archivo es peor',
+        'La nueva es mejor',
+        'La nueva es peor',
         'Parecidas',
         'Ni mejor ni peor',
         'Otra versión · 0:00:00',
@@ -204,7 +204,7 @@ describe('LibrarySection', () => {
     })
     const pill = screen.getByTestId('library-verdict')
     expect(pill).toHaveAttribute('data-state', 'here')
-    expect(pill).toHaveAccessibleName('Tu archivo es mejor')
+    expect(pill).toHaveAccessibleName('La nueva es mejor')
   })
 
   // With several programs "better there" cannot say where, so the folded header names it.
@@ -266,7 +266,7 @@ describe('LibrarySection', () => {
 
   it('says the file is worse plainly when folded over one row', () => {
     mount({ open: false }, { verdict: 'library' })
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es peor$/)
   })
 
   it('says another version in the folded header without a length when the rows differ in state', () => {
@@ -295,24 +295,50 @@ describe('LibrarySection', () => {
     for (const open of [true, false]) {
       render(<LibrarySection open={open} onToggle={() => {}} rows={rows} />)
       expect(screen.getAllByTestId('library-verdict')).toHaveLength(1)
-      expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es mejor$/)
+      expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es mejor$/)
       expect(screen.queryByTestId('library-row-state')).toBeNull()
       cleanup()
     }
   })
 
-  // The state place stays in every row, empty when the state rode up to the header, so the
-  // format chip sits in the same column whether the rows say their state or the header does.
-  it('keeps the empty state place on rows whose state went up to the header', () => {
+  // A state the header already says leaves nothing for the rows to reserve: the chevron sits
+  // right after the format chip instead of behind an empty stretch.
+  it('closes the state place on rows whose state went up to the header', () => {
     mount({
       rows: [
         row({ id: 'appleMusic', name: 'Apple Music', verdict: 'same' }),
         row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
       ],
     })
-    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
-    expect(screen.queryByTestId('library-row-state')).toBeNull()
+    const rows = within(screen.getByTestId('library-rows'))
+    expect(rows.queryAllByTestId('library-row-state-slot')).toHaveLength(0)
+    expect(rows.queryAllByTestId('library-row-state-sizer')).toHaveLength(0)
     expect(screen.getAllByTestId('library-row-format')).toHaveLength(2)
+    expect(screen.getAllByTestId('library-row-chevron-slot')).toHaveLength(2)
+  })
+
+  it('closes the state place when every row is comparing and the header says it', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'measuring' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'measuring' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Comparando')
+    expect(screen.queryAllByTestId('library-row-state-slot')).toHaveLength(0)
+  })
+
+  it('brings the state place back in every row when the states differ', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'library' }),
+      ],
+    })
+    expect(screen.getAllByTestId('library-row-state-slot')).toHaveLength(2)
+    for (const libraryRow of screen.getAllByTestId('library-row')) {
+      expect(within(libraryRow).getAllByTestId('library-row-state-sizer').length).toBeGreaterThan(0)
+    }
   })
 
   // Different states keep one pill per row and nothing beside the title while it is open.
@@ -381,7 +407,7 @@ describe('LibrarySection', () => {
       ],
     })
     expect(screen.getByTestId('library-verdict')).toHaveAccessibleName(
-      'Tu archivo es peor. Razón uno. Razón dos.',
+      'La nueva es peor. Razón uno. Razón dos.',
     )
   })
 
@@ -414,7 +440,7 @@ describe('LibrarySection', () => {
         row({ id: 'engine', name: 'Engine DJ', verdict: 'library' }),
       ],
     })
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^Tu archivo es peor$/)
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent(/^La nueva es peor$/)
   })
 
   it('shows no folded state until there is one', () => {
@@ -462,6 +488,64 @@ describe('LibrarySection', () => {
     expect([...plain.querySelectorAll('svg')].filter((svg) => !icon.contains(svg))).toEqual([])
     expect(screen.queryByTestId('library-row-format')).toBeNull()
     expect(plain).toHaveTextContent('Música')
+  })
+
+  it('lays every row on one shared grid so names, formats, states and chevrons line up instead of floating mid-row', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same', comparison: undefined }),
+        row({
+          id: 'traktor',
+          name: 'Traktor',
+          verdict: null,
+          comparable: false,
+          comparison: undefined,
+        }),
+      ],
+    })
+    const grid = screen.getByTestId('library-rows')
+    for (const libraryRow of screen.getAllByTestId('library-row')) {
+      expect(libraryRow.parentElement).toBe(grid)
+      expect(libraryRow).toHaveStyle({ gridColumn: '1 / -1', gridTemplateColumns: 'subgrid' })
+    }
+  })
+
+  it('keeps the chevron place on a row that opens nothing so the chevrons beside it fall on one vertical', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same', comparison: undefined }),
+      ],
+    })
+    const [opens, still] = screen.getAllByTestId('library-row')
+    expect(opens.tagName).toBe('BUTTON')
+    expect(still.tagName).not.toBe('BUTTON')
+    expect(within(still).getByTestId('library-row-chevron-slot').querySelector('svg')).toBeNull()
+  })
+
+  it('dresses the shared header state as the row states because both are the same datum', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'here' }),
+      ],
+    })
+    const header = screen.getByTestId('library-verdict').getAttribute('class')
+    cleanup()
+    mountApart({ verdict: 'here' })
+    const rowPill = within(screen.getAllByTestId('library-row')[0]).getByTestId('library-row-state')
+    expect(rowPill.getAttribute('class')).toBe(header)
+  })
+
+  it('keeps an opened comparison to a readable width aligned with its row so figures stay near their labels', () => {
+    mount({}, { comparisonOpen: true })
+    const id = screen.getByTestId('library-row').getAttribute('aria-controls') ?? ''
+    const box = document.getElementById(id)
+    expect(box).toContainElement(screen.getByTestId('comparison'))
+    expect(box).toHaveStyle({ width: 'min(520px, 100cqw)' })
+    expect(box?.parentElement).toHaveStyle({ gridColumn: '1 / -1' })
+    expect(box?.parentElement?.parentElement).toBe(screen.getByTestId('library-rows'))
   })
 
   it('renders one row per program in the given order', () => {

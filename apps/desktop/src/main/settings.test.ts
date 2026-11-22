@@ -1320,6 +1320,16 @@ describe('cue flows', () => {
     rmSync(dir, { recursive: true, force: true })
   })
 
+  it('defaults phrase comments to the file and rekordbox, prepended, and repairs a hand-edited value', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings()).toMatchObject({ commentsToFile: true, commentsReplace: false })
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ commentsToFile: 'x', commentsReplace: 'x' }),
+    )
+    expect(getSettings()).toMatchObject({ commentsToFile: true, commentsReplace: false })
+  })
+
   it('leaves Serato off for a settings file from before it existed', () => {
     writeFileSync(
       join(app.getPath('userData'), 'settings.json'),

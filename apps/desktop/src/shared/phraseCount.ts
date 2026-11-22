@@ -42,3 +42,13 @@ export function withPhraseCount(comment: string, count: string): string {
   const rest = COUNT.test(head) ? (at === -1 ? '' : comment.slice(at + SEPARATOR.length)) : comment
   return rest ? `${count}${SEPARATOR}${rest}` : count
 }
+
+export type CommentMode = 'prepend' | 'replace'
+
+const MY_TAGS_BLOCK = /\/\*[\s\S]*?\*\/\s*$/
+
+export function phrasedComment(comment: string, count: string, mode: CommentMode): string {
+  if (mode === 'prepend') return withPhraseCount(comment, count)
+  const tags = comment.match(MY_TAGS_BLOCK)
+  return tags ? `${count}${SEPARATOR}${tags[0].trim()}` : count
+}

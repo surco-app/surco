@@ -5,6 +5,7 @@ import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/
 import type { DropInput } from '../shared/dropDetect'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
+import type { CommentMode } from '../shared/phraseCount'
 import type {
   CopyReason,
   FineWave,
@@ -30,6 +31,7 @@ export function registerCuesIpc(host: {
   provisional: Pick<ProvisionalList, 'add'>
   // The same file in each program the editor writes cues to, for a flow to reach them all.
   twins: (file: string) => Promise<LibraryTracks>
+  writeCommentToFile: (path: string, count: string, mode: CommentMode) => Promise<boolean>
   sources: Record<CueProgram, CueSource | null>
 }): void {
   const sourceOf = (contentId: string) => host.sources[programOf(contentId)]
@@ -140,13 +142,19 @@ export function registerCuesIpc(host: {
       t.applyQuietly()
     }
   })
-  ipcMain.handle('cues:saveComments', async (_e, items: SaveCommentRequest[]) => {
+  ipcMain.handle('cues:saveComments', async (_e, items: SaveCommentRequest[], toFile: boolean) => {
     const target = host.sources.rekordbox
     const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
     if (!target) throw new Error('rekordbox has no cue source')
-    if (mine.length === 0) return
+    const failed: string[] = []
+    if (mine.length === 0) return { failed }
     host.beginMoment?.('review', ['rekordbox'])
     target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
     target.applyQuietly()
+    if (toFile)
+      for (const item of mine)
+        if (!(await host.writeCommentToFile(item.path, item.count, item.mode)))
+          failed.push(item.path)
+    return { failed }
   })
 }

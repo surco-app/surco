@@ -1038,6 +1038,7 @@ describe('cues in the queue', () => {
     path: '/m/a.wav',
     label: 'a.wav',
     count,
+    mode: 'prepend',
   })
 
   it('shows a waiting comment on the track line, and keeps only the latest count of a track, since counting again replaces the last one', () => {

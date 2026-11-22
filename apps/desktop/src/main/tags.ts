@@ -883,7 +883,7 @@ function setItunesText(apple: Mpeg4AppleTag, name: string, value: string): void 
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
 // created if missing and its text replaced.
-function setUserText(tag: Id3v2Tag, description: string, text: string): void {
+export function setUserText(tag: Id3v2Tag, description: string, text: string): void {
   const frames = tag.getFramesByClassType<Id3v2UserTextInformationFrame>(
     Id3v2FrameClassType.UserTextInformationFrame,
   )

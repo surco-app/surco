@@ -33,7 +33,7 @@ describe('createCuesApi', () => {
     ['queued', 'cues:queued', ['engine:4']],
     ['undo', 'cues:undo', ['engine:4']],
     ['save', 'cues:save', [REQUESTS]],
-    ['saveComments', 'cues:saveComments', [COMMENTS]],
+    ['saveComments', 'cues:saveComments', [COMMENTS, true]],
   ] as const)(
     'invokes its own channel with the same arguments for %s',
     async (op, channel, args) => {

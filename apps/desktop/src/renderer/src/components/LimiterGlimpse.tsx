@@ -63,7 +63,7 @@ export function LimiterGlimpse({
   worsePath: string
   betterPath: string
   sampleRate: number
-  // Legend order and names: this file first, as in the table below. This file takes the
+  // Legend order and names: the new one first, as in the table below. It takes the
   // accent and the other copy the faint ink, as in the before/after waveform compare.
   layers: readonly { side: Side; label: string }[]
 }): React.JSX.Element | null {

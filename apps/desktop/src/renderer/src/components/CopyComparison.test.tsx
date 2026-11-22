@@ -54,7 +54,7 @@ describe('CopyComparison', () => {
     expect(screen.getByTestId('copy-comparison')).not.toHaveTextContent('limiter')
   })
 
-  // The pills say «Your file is better», so the table calls the open file the same thing.
+  // The pills say «The new one is better», so the table calls the open file the same thing.
   it('calls the open file by the subject the state pills use', () => {
     render(
       <CopyComparison
@@ -66,7 +66,7 @@ describe('CopyComparison', () => {
         libraryLabel="WAV"
       />,
     )
-    expect(screen.getByRole('columnheader', { name: 'Your file · AIF' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'The new one · AIF' })).toBeInTheDocument()
   })
 
   it('names the library it compares with in the table', () => {

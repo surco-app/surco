@@ -187,6 +187,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     sessionWizard: { ...DEFAULT_SESSION_WIZARD },
     sessionsMade: [],
     matchingDismissed: [],
+    commentsToFile: true,
+    commentsReplace: false,
     language: 'system',
     discogsToken: '',
     beatportUsername: '',
@@ -4808,16 +4810,23 @@ describe('App source playlists', () => {
       gridFingerprint: '',
     }))
     const commentOf = () => screen.getByTestId('field-comment') as HTMLInputElement
-    const phraseTwo = async (saveComments = vi.fn<Api['cues']['saveComments']>()) => {
+    const onDisk = new Map<string, string>()
+    const phraseTwo = async (
+      saveComments = vi.fn<Api['cues']['saveComments']>(async () => ({ failed: [] })),
+      commentsToFile = false,
+    ) => {
+      onDisk.clear()
       await openFactory({
         readTags: vi.fn(async (path: string) => ({
           title: TITLES[path],
           artist: 'DJ',
-          comment: 'Vocal fuerte',
+          comment: onDisk.get(path) ?? 'Vocal fuerte',
         })),
         cues: { ...stubApi().cues, trackCues: analysed, saveComments },
         onCueProfileChanged: () => () => {},
-        getSettings: vi.fn().mockResolvedValue(settings({ visibleFields: ['title', 'comment'] })),
+        getSettings: vi
+          .fn()
+          .mockResolvedValue(settings({ visibleFields: ['title', 'comment'], commentsToFile })),
       })
       const rows = screen.getAllByTestId('track-row')
       fireEvent.click(rows[0])
@@ -4831,10 +4840,25 @@ describe('App source playlists', () => {
       const saveComments = await phraseTwo()
       fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
       await waitFor(() =>
-        expect(saveComments).toHaveBeenCalledWith([
-          { contentId: 'c-l1', path: '/m/a.wav', label: 'Alpha', count: '2 - 8' },
-          { contentId: 'c-l2', path: '/m/b.wav', label: 'Bravo', count: '2 - 8' },
-        ]),
+        expect(saveComments).toHaveBeenCalledWith(
+          [
+            {
+              contentId: 'c-l1',
+              path: '/m/a.wav',
+              label: 'Alpha',
+              count: '2 - 8',
+              mode: 'prepend',
+            },
+            {
+              contentId: 'c-l2',
+              path: '/m/b.wav',
+              label: 'Bravo',
+              count: '2 - 8',
+              mode: 'prepend',
+            },
+          ],
+          false,
+        ),
       )
       await waitFor(() =>
         expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
@@ -4884,16 +4908,71 @@ describe('App source playlists', () => {
       await phraseAgain()
       fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
       await waitFor(() =>
-        expect(saveComments).toHaveBeenCalledWith([
-          { contentId: 'c-l1', path: '/m/a.wav', label: 'Alpha', count: '2 - 8' },
-          { contentId: 'c-l2', path: '/m/b.wav', label: 'Bravo', count: '2 - 8' },
-        ]),
+        expect(saveComments).toHaveBeenCalledWith(
+          [
+            {
+              contentId: 'c-l1',
+              path: '/m/a.wav',
+              label: 'Alpha',
+              count: '2 - 8',
+              mode: 'prepend',
+            },
+            {
+              contentId: 'c-l2',
+              path: '/m/b.wav',
+              label: 'Bravo',
+              count: '2 - 8',
+              mode: 'prepend',
+            },
+          ],
+          false,
+        ),
       )
       await waitFor(() =>
         expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
       )
       fireEvent.click(screen.getAllByTestId('track-row')[0])
       expect(commentOf().value).toBe('Vocal fuerte')
+    })
+
+    it('after saving to the file the comment field shows the phrases instead of going back, as the file now holds them', async () => {
+      const saveComments = vi.fn<Api['cues']['saveComments']>(async (items) => {
+        for (const i of items) onDisk.set(i.path, `${i.count} · Vocal fuerte`)
+        return { failed: [] }
+      })
+      await phraseTwo(saveComments, true)
+      fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+      await waitFor(() => expect(saveComments.mock.calls[0]?.[1]).toBe(true))
+      await waitFor(() =>
+        expect(screen.queryByTestId('cues-batch-comments-save')).not.toBeInTheDocument(),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      expect(commentOf().value).toBe('2 - 8 · Vocal fuerte')
+    })
+
+    it('rereads only the files that were written, so a track whose file write failed keeps its phrases pending', async () => {
+      const saveComments = vi.fn<Api['cues']['saveComments']>(async () => ({
+        failed: ['/m/b.wav'],
+      }))
+      await phraseTwo(saveComments, true)
+      const reads = (path: string) =>
+        vi.mocked(window.api.readTags).mock.calls.filter(([p]) => p === path).length
+      const [readsA, readsB] = [reads('/m/a.wav'), reads('/m/b.wav')]
+      fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+      expect(await screen.findByTestId('cues-batch-comments-failed')).toBeInTheDocument()
+      expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent('Save 1 comment')
+      await waitFor(() => expect(reads('/m/a.wav')).toBeGreaterThan(readsA))
+      expect(reads('/m/b.wav')).toBe(readsB)
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      expect(commentOf().value).toBe('2 - 8 · Vocal fuerte')
+    })
+
+    it('shows the count replacing the comment the moment Replace is picked, so the DJ sees what will be written', async () => {
+      await phraseTwo()
+      fireEvent.click(screen.getByTestId('cues-batch-comments-options'))
+      fireEvent.click(screen.getByTestId('cues-batch-comments-replace'))
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      expect(commentOf().value).toBe('2 - 8')
     })
 
     it('gives the form its comment back when discarding, so nothing of the batch stays to be converted', async () => {

@@ -163,6 +163,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
     flow: () => activeCueFlow(getSettings()),
     provisional: { add: () => {} },
     twins: async () => ({}),
+    writeCommentToFile: async () => true,
     sources,
   })
   return {

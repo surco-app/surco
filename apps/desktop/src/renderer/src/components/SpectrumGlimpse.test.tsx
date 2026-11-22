@@ -39,7 +39,7 @@ function renderGlimpse(
     <SpectrumGlimpse
       herePath={HERE}
       libraryPath={LIBRARY}
-      hereLabel="This file · FLAC"
+      hereLabel="The new one · FLAC"
       libraryLabel="Apple Music · M4A"
       loser={loser}
     />
@@ -57,7 +57,7 @@ describe('SpectrumGlimpse', () => {
   it('shows both copies, each with its own picture and name', async () => {
     renderGlimpse({ [HERE]: full, [LIBRARY]: lossy })
     expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
-    expect(strip('here')).toHaveTextContent('This file · FLAC')
+    expect(strip('here')).toHaveTextContent('The new one · FLAC')
     expect(strip('library')).toHaveTextContent('Apple Music · M4A')
     expect(strip('here').querySelector('img')).toHaveAttribute('src', full.image)
     expect(strip('library').querySelector('img')).toHaveAttribute('src', lossy.image)

@@ -18,6 +18,7 @@ import { app } from 'electron'
 import {
   analysisCacheStats,
   cachedAnalysis,
+  carryAnalysis,
   clearAnalysisCache,
   configureFileSignatures,
   dropAnalysis,
@@ -507,5 +508,40 @@ describe('pruneAnalysisCache', () => {
     const recompute = vi.fn().mockResolvedValue({ v: 2 })
     expect(await cachedAnalysis('demo', file, recompute)).toEqual({ v: 1 })
     expect(recompute).not.toHaveBeenCalled()
+  })
+})
+
+describe('carryAnalysis', () => {
+  beforeEach(() => {
+    rmSync(join(app.getPath('userData'), 'analysis-cache'), { recursive: true, force: true })
+  })
+
+  it("carries an entry to the file's new date so a tag-only rewrite does not re-measure", async () => {
+    const file = await makeFile()
+    const before = (await stat(file)).mtimeMs
+    await cachedAnalysis('ns', file, async () => ({ value: 1 }))
+    const later = new Date(Date.now() + 60_000)
+    await utimes(file, later, later)
+    await carryAnalysis(file, before, later.getTime(), ['ns'])
+    const compute = vi.fn().mockResolvedValue({ value: 2 })
+
+    const result = await cachedAnalysis('ns', file, compute)
+
+    expect(result).toEqual({ value: 1 })
+    expect(compute).not.toHaveBeenCalled()
+  })
+
+  it('does not carry a namespace it was not given, so tag reads are read again', async () => {
+    const file = await makeFile()
+    const before = (await stat(file)).mtimeMs
+    await cachedAnalysis('ns', file, async () => ({ value: 1 }))
+    const later = new Date(Date.now() + 60_000)
+    await utimes(file, later, later)
+    await carryAnalysis(file, before, later.getTime(), ['otro'])
+    const compute = vi.fn().mockResolvedValue({ value: 2 })
+
+    await cachedAnalysis('ns', file, compute)
+
+    expect(compute).toHaveBeenCalledTimes(1)
   })
 })
