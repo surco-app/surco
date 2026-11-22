@@ -775,7 +775,6 @@ export const Editor = memo(function Editor({
     replaceTargetPending,
     libraryCopyPath,
     libraryCopyPending,
-    libraryCopyUnlocated,
   } = useLibraryVerdict({
     item,
     libraryIndex,
@@ -1662,7 +1661,7 @@ export const Editor = memo(function Editor({
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           verdict: musicHoldsFile
             ? 'thisFile'
-            : libraryCopyUnlocated || musicCopyReach?.missing
+            : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
               ? 'missing'
               : musicCopyReach?.unreadable
                 ? 'unreadable'

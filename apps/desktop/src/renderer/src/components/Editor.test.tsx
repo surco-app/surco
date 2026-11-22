@@ -5224,6 +5224,7 @@ describe('Editor Apple Music library section', () => {
       properties: vi.fn().mockResolvedValue(null),
       hasClipboardImage: vi.fn().mockResolvedValue(false),
       onWindowFocus: vi.fn(() => () => {}),
+      appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
       readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
       readCoverFull: vi.fn().mockResolvedValue(null),
@@ -5301,6 +5302,42 @@ describe('Editor Apple Music library section', () => {
       { libraryIndex: null },
     )
     expect(screen.getByTestId('library-row')).toHaveTextContent('Apple Music')
+  })
+
+  // A shown row always says what its copy is: a track already in Music by its own persistent ID
+  // has a known copy, so its format is read from where Music keeps it.
+  it('names the format of the Music copy a track carries by its own persistent ID', async () => {
+    setApi('darwin')
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn(async (id: string) =>
+      id === 'ABCD1234' ? '/Music/Fresh.wav' : '',
+    )
+    api.properties = vi.fn(async (path: string) =>
+      path === '/Music/Fresh.wav'
+        ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
+        : null,
+    )
+    renderEditor(
+      { id: 'a', musicPersistentId: 'ABCD1234', meta: { title: 'Fresh', artist: 'New' } },
+      'wav',
+      { libraryIndex: null },
+    )
+    expect(await screen.findByTestId('library-row-format')).toHaveTextContent('WAV 16/44.1')
+  })
+
+  // Two Music entries match equally, so no copy can be named and nothing can be read about it:
+  // "can't be measured" blamed the measurement for a copy that was never located.
+  it('says the Music copy is not found when no single entry can be named for it', async () => {
+    setApi('darwin')
+    renderEditor({ id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } }, 'wav', {
+      libraryIndex: buildLibraryIndex([
+        { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF' },
+        { title: 'Strobe', artist: 'deadmau5', persistentId: 'FEDCBA9876543210' },
+      ]),
+    })
+    const state = await screen.findByTestId('library-row-state')
+    expect(state).toHaveAttribute('data-state', 'missing')
+    expect(state).toHaveAccessibleName('Not found')
   })
 
   // Until the snapshot arrives there is no verdict to show, so the section stays hidden
