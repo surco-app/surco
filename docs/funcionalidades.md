@@ -1098,8 +1098,8 @@ compartidas van en el binario y son extraíbles: el código las trata como públ
 (`discogs.ts:18-23`).
 
 **Auto-emparejar pide token propio solo si Discogs es una de las fuentes**, para no
-agotar el cupo compartido con un barrido de importación entera; con solo Bandcamp
-y/o Deezer funciona sin token (`shared/autoMatch.ts:14-20`). El tooltip de la pista
+agotar el cupo compartido con un barrido de importación entera; sin Discogs entre
+las fuentes (Bandcamp, Deezer, MusicBrainz o Apple Music) funciona sin token (`shared/autoMatch.ts:14-20`). El tooltip de la pista
 auto-emparejada nombra la fuente real de la que vino, y el buscador dice «Busca en
 tus fuentes o pega un ID de release de Discogs…» en vez de nombrar solo Discogs.
 
@@ -1274,13 +1274,14 @@ tonalidad si la pista no los tiene (`release.ts`, `base.bpm || track?.bpm`).
 enseña el valor anterior con un botón «Restaurar» que lo devuelve, y la restauración se
 puede deshacer (`editor.previous`, `Field.tsx:407-424`).
 
-**Bandcamp, con listón propio.** Discogs va siempre primero por ser la fuente
-curada; Bandcamp solo se prueba si Discogs no encuentra nada y el fichero tiene
-duración. Para aplicarse sola, una coincidencia de Bandcamp necesita un 92 %
+**Las demás fuentes, con listón propio.** Discogs va siempre primero por ser la fuente
+curada; Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music solo se prueban si Discogs no
+encuentra nada y el fichero tiene duración. Para aplicarse sola, una coincidencia de
+cualquiera de ellas necesita un 92 %
 (`lib/autoMatch.ts:420-423`). Por debajo, o si no llega a ese listón, se propone como
 «Por confirmar» solo si el artista coincide; sin artista es ruido (resubidas,
 sesiones con el nombre de la pista) y se descarta. Una sugerencia de Discogs manda
-sobre una de Bandcamp (`lib/autoMatch.ts:480-486`).
+sobre una de cualquier otra fuente (`lib/autoMatch.ts:480-486`).
 
 **Contradicción de título:** tres rips distintos colapsando sobre una misma
 entrada de «Rocket Man» fue el bug que motivó esta guarda (`assign.ts:44-48`).
