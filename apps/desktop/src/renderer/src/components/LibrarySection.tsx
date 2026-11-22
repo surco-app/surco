@@ -12,7 +12,14 @@ import { SectionHeader } from './SectionHeader'
 import { SOURCE_ICON } from './SourceRail'
 import { Tooltip } from './Tooltip'
 
-export type LibraryVerdict = 'here' | 'library' | 'same' | 'measuring' | 'different' | 'tie'
+export type LibraryVerdict =
+  | 'here'
+  | 'library'
+  | 'same'
+  | 'measuring'
+  | 'different'
+  | 'tie'
+  | 'even'
 
 // Each copy's relation to this file in a short word: a glyph alone did not read as "the same
 // copy". The amber is never carried by colour alone, the word says it too.
@@ -22,6 +29,7 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
   library: { label: 'editor.libraryStateLibrary', className: PILL_TONE.warn },
   different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/15 text-fg-dim' },
   tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/15 text-fg-dim' },
+  even: { label: 'editor.libraryStateEven', className: 'bg-fg-faint/15 text-fg-dim' },
   measuring: {
     label: 'editor.libraryStateMeasuring',
     className: 'border border-dashed border-[var(--color-line-strong)] text-fg-faint',
@@ -85,7 +93,7 @@ function StatePill({
   )
 }
 
-const RESERVED_STATES = ['measuring', 'same', 'here', 'library', 'tie', 'different'] as const
+const RESERVED_STATES = ['measuring', 'same', 'here', 'library', 'tie', 'even', 'different'] as const
 
 function rowWords(row: LibraryRow, verdict: LibraryVerdict, tr: TFunction): string {
   if (verdict === 'different' && row.durationSec != null) {

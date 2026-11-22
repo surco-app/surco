@@ -604,15 +604,15 @@ describe('compareCopies on the 26 measured pairs', () => {
 
   // S-drift (PG2, one master drifting against itself, 0.067), B (Nacho Division, one master
   // at 0.954) and an X pair (Kike Boy, Jumper) with equal lengths: the length gap another version needs is not there, so
-  // they are never called another version, and with no same-master evidence they show no
-  // state at all rather than «Parecidas». The CSV holds no lengths and no wider search, so
+  // they are never called another version, and with no same-master evidence they say neither
+  // copy is better rather than «Parecidas». The CSV holds no lengths and no wider search, so
   // this pins only the equal-length case; the shifted case is pinned in sameMaster.test.ts.
   it.each(
     MEASURED.filter((m) => m.cls === 'S-drift' || m.cls === 'B' || m.label === 'Kike Boy - Jumper'),
-  )('claims nothing about $cls $label at equal lengths', ({ a, b, pair }) => {
+  )('calls neither copy better for $cls $label at equal lengths', ({ a, b, pair }) => {
     const sameLength = { durationSec: 300, integratedLufs: -9 }
     const verdict = compareCopies({ ...a, ...sameLength }, { ...b, ...sameLength }, pair)
     expect(verdict.winner).not.toBe('different')
-    expect(verdictState(verdict, false)).toBeNull()
+    expect(verdictState(verdict, false)).toBe('even')
   })
 })
