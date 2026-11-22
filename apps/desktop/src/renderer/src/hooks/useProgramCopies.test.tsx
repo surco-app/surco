@@ -223,4 +223,26 @@ describe('useProgramCopies', () => {
     await waitFor(() => expect(result.current).toHaveLength(2))
     expect(build).toHaveBeenCalledTimes(2)
   })
+
+  it('shows this very file when the collection also holds a newer copy of the same recording', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: {
+          collection: async () => [
+            row('/r/Weekend.aiff', { durationSec: 361 }),
+            row('/r/Weekend.mp3', { durationSec: 361 }),
+          ],
+        },
+      }),
+    })
+    const { result } = renderHook(
+      () => useProgramCopies(args({ inputPath: '/R/weekend.mp3', durationSec: 361 })),
+      { wrapper: wrapperFor({ syncRekordbox: true }) },
+    )
+    await waitFor(() =>
+      expect(result.current).toEqual([
+        { program: 'rekordbox', path: '/R/weekend.mp3', isThisFile: true },
+      ]),
+    )
+  })
 })

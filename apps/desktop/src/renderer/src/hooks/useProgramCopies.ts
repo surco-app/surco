@@ -23,14 +23,22 @@ interface Args {
   enabled: boolean
 }
 
-const indexByCollection = new WeakMap<CollectionTrack[], AppleMusicIndex>()
+interface CollectionLookup {
+  index: AppleMusicIndex
+  pathKeys: ReadonlySet<string>
+}
 
-function indexFor(tracks: CollectionTrack[]): AppleMusicIndex {
-  const cached = indexByCollection.get(tracks)
+const lookupByCollection = new WeakMap<CollectionTrack[], CollectionLookup>()
+
+function lookupFor(tracks: CollectionTrack[]): CollectionLookup {
+  const cached = lookupByCollection.get(tracks)
   if (cached) return cached
-  const index = buildLibraryIndex(collectionCandidates(tracks))
-  indexByCollection.set(tracks, index)
-  return index
+  const lookup = {
+    index: buildLibraryIndex(collectionCandidates(tracks)),
+    pathKeys: new Set(tracks.flatMap((track) => (track.path ? [pathKey(track.path)] : []))),
+  }
+  lookupByCollection.set(tracks, lookup)
+  return lookup
 }
 
 export function useProgramCopies({
@@ -59,12 +67,14 @@ export function useProgramCopies({
   const { title, artist } = meta
   const suggestedTitle = suggestedMeta?.title
   const suggestedArtist = suggestedMeta?.artist
+  const thisKey = pathKey(inputPath)
   return useMemo(
     () =>
       DJ_PROGRAMS.flatMap((program, i) => {
         const tracks = collections[i]
         if (!active[i] || !tracks) return []
-        const index = indexFor(tracks)
+        const { index, pathKeys } = lookupFor(tracks)
+        if (pathKeys.has(thisKey)) return [{ program, path: inputPath, isThisFile: true }]
         const entry =
           findLibraryEntry(index, { title, artist }, durationSec) ??
           (suggestedTitle !== undefined && suggestedArtist !== undefined
@@ -75,10 +85,18 @@ export function useProgramCopies({
               )
             : null)
         if (!entry?.path) return []
-        return [
-          { program, path: entry.path, isThisFile: pathKey(entry.path) === pathKey(inputPath) },
-        ]
+        return [{ program, path: entry.path, isThisFile: pathKey(entry.path) === thisKey }]
       }),
-    [collections, active, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath],
+    [
+      collections,
+      active,
+      title,
+      artist,
+      durationSec,
+      suggestedTitle,
+      suggestedArtist,
+      inputPath,
+      thisKey,
+    ],
   )
 }
