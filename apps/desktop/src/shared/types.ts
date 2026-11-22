@@ -647,6 +647,9 @@ export interface SessionEdit extends TrackOrigin {
   // track and overwrite the very metadata the restore just brought back.
   matched?: boolean
   autoMatched?: boolean
+  // Rides along for the same reason: a reopened hand-edited row must still keep the sweep
+  // off the tags the user typed.
+  handEdited?: boolean
   matchConfidence?: number
   matchProvider?: SearchProviderId
   // What the last applied release wrote, so the next one can still take it back after a

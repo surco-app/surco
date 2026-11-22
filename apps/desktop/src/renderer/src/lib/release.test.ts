@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DEFAULT_IMPORT_FIELDS } from '../../../shared/defaults'
-import { METADATA_KEYS } from '../../../shared/metadata'
+import { emptyMetadata, METADATA_KEYS } from '../../../shared/metadata'
 import { cleanMatchTitle } from '../../../shared/searchClean'
 import type { Release, ReleaseTrack, SearchResult, TrackMetadata } from '../../../shared/types'
 import { IMPORTABLE_FIELDS } from './fields'
@@ -18,6 +18,7 @@ import {
   matchSignals,
   preRankResults,
   providerCountsOf,
+  RELEASE_WRITTEN_KEYS,
   releaseKey,
   resultFacts,
   resultFromRelease,
@@ -1626,5 +1627,42 @@ describe('buildReleaseMeta over a previously applied release', () => {
     expect(again.meta).toEqual(a.meta)
     expect(again.coverUrl).toBe(a.coverUrl)
     expect(applyAfter(again, right).meta.publisher).toBe('Own Label')
+  })
+})
+
+describe('RELEASE_WRITTEN_KEYS', () => {
+  // The hand-edit guard keeps the sweep off only the tags a release can overwrite; a field
+  // buildReleaseMeta starts writing later must join the list, or a DJ's value in it would
+  // be overwritten with nothing marking the track.
+  it('lists exactly the tags applying a release changes on a fully tagged track', () => {
+    const own = emptyMetadata()
+    for (const k of METADATA_KEYS) own[k] = `own ${k}`
+    const rel: Release = {
+      provider: 'discogs',
+      id: 7,
+      title: 'Release Album',
+      artists: [{ name: 'Release Artist' }],
+      year: 1999,
+      genres: ['Electronic'],
+      styles: ['House'],
+      labels: [{ name: 'Release Label', catno: 'REL 001' }],
+      country: 'UK',
+      formats: [{ name: 'Vinyl' }],
+      uri: 'https://www.discogs.com/release/7',
+      extraartists: [{ name: 'Release Writer', role: 'Written-By' }],
+      tracklist: [],
+    }
+    const track: ReleaseTrack = {
+      position: '2-3',
+      title: 'Release Title',
+      artists: [{ name: 'Track Artist' }],
+      bpm: '128',
+      key: '8A',
+      mixName: 'Release Mix',
+      isrc: 'GBREL9900001',
+    }
+    const { meta } = buildReleaseMeta(own, rel, track)
+    const changed = METADATA_KEYS.filter((k) => (meta[k] ?? '') !== (own[k] ?? ''))
+    expect(new Set(changed)).toEqual(new Set(RELEASE_WRITTEN_KEYS))
   })
 })

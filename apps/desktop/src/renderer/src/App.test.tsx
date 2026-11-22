@@ -31,6 +31,7 @@ import type {
   RekordboxSyncIssue,
   Release,
   RestoreResult,
+  SessionEdit,
   Settings,
   SourceNode,
   UsbExportEvent,
@@ -2708,6 +2709,175 @@ describe('App auto-match', () => {
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Hand Typed')
   })
 
+  // The DJ typed the album of a white label they know better than any catalog; the next
+  // sweep must fill the tracks nobody touched and leave that one exactly as typed.
+  describe('a track edited by hand', () => {
+    const handApi = (paths = ['/music/a.wav', '/music/b.wav']) => {
+      const getRelease = vi.fn<Api['getRelease']>().mockResolvedValue(release)
+      setApi({
+        getSettings: vi.fn().mockResolvedValue(
+          settings({
+            discogsToken: 'tok',
+            visibleFields: ['title', 'artist', 'album', 'trackNumber', 'comment'],
+          }),
+        ),
+        pickFiles: vi.fn().mockResolvedValue(paths),
+        readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+        readDuration: vi.fn().mockResolvedValue(180),
+        search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+        getRelease,
+      })
+    }
+    const typeField = async (name: string, value: string) => {
+      const field = await screen.findByTestId(`field-${name}`)
+      fireEvent.focus(field)
+      fireEvent.change(field, { target: { value } })
+      fireEvent.keyDown(field, { key: 'Enter' })
+      fireEvent.blur(field)
+    }
+    const typeAlbum = (value: string) => typeField('album', value)
+    const fieldOfRow = async (index: number, name: string) => {
+      fireEvent.click(screen.getAllByTestId('track-row')[index])
+      await waitFor(() => expect(screen.getByTestId(`field-${name}`)).toBeInTheDocument())
+      return (screen.getByTestId(`field-${name}`) as HTMLInputElement).value
+    }
+    const albumOfRow = (index: number) => fieldOfRow(index, 'album')
+
+    it('keeps its typed album through the sweep while the other track is matched', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      await typeAlbum('Hand Typed')
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+      expect(await albumOfRow(0)).toBe('Hand Typed')
+      expect(await albumOfRow(1)).toBe('Album')
+    })
+
+    it('keeps an album typed for a whole selection through the sweep', async () => {
+      handApi(['/music/a.wav', '/music/b.wav', '/music/c.wav'])
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      await typeAlbum('Hand Typed')
+      fireEvent.click(rows[2])
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+      expect(await albumOfRow(0)).toBe('Hand Typed')
+      expect(await albumOfRow(1)).toBe('Hand Typed')
+      expect(await albumOfRow(2)).toBe('Album')
+    })
+
+    // Numbering a selection is the album fix for a rip with no release behind it: the
+    // sweep must not swap those numbers for a release's tracklist positions.
+    it('keeps the numbers a selection was given through the sweep', async () => {
+      handApi(['/music/a.wav', '/music/b.wav', '/music/c.wav'])
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('add-files'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[1], { metaKey: true })
+      runMenu('number-tracks')
+      expect(
+        await screen.findByText(i18n.t('notices.numberedTracks', { count: 2 })),
+      ).toBeInTheDocument()
+      fireEvent.click(rows[2])
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+      expect(await fieldOfRow(0, 'trackNumber')).toBe('1')
+      expect(await fieldOfRow(1, 'trackNumber')).toBe('2')
+      expect(await albumOfRow(0)).toBe('')
+      expect(await albumOfRow(1)).toBe('')
+    })
+
+    // Clearing hands a track back to the sweep only until the DJ types into it again: the
+    // search it kept still finds the old release, which would land over the retyped tags.
+    it('keeps what was typed after a clear through the sweep', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+      await typeField('title', 'My Song')
+      await typeField('artist', 'Hand Artist')
+      await typeAlbum('Hand Album')
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(1))
+      await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
+
+      expect(await fieldOfRow(0, 'artist')).toBe('Hand Artist')
+      expect(await albumOfRow(0)).toBe('Hand Album')
+      expect(await albumOfRow(1)).toBe('Album')
+    })
+
+    // Clearing a selection is the multi-track twin of the single clear: what it empties
+    // is no longer the user's typing to protect, so the mark goes with the tags.
+    it('drops the mark from every track a selection clear empties', async () => {
+      handApi()
+      const saveLastSession = vi.fn().mockResolvedValue(undefined)
+      ;(window.api as unknown as { saveLastSession: unknown }).saveLastSession = saveLastSession
+      const lastEdits = () =>
+        Object.values(saveLastSession.mock.calls.at(-1)?.[1] ?? {}) as SessionEdit[]
+      await renderApp()
+      const rows = await addTwoTracks()
+      fireEvent.click(rows[1], { metaKey: true })
+      await typeAlbum('Hand Typed')
+      await waitFor(() => expect(lastEdits().map((e) => e.handEdited)).toEqual([true, true]), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+
+      await waitFor(
+        () => {
+          const edits = lastEdits()
+          expect(edits.map((e) => e.meta.album)).toEqual(['', ''])
+          expect(edits.map((e) => e.handEdited)).toEqual([undefined, undefined])
+        },
+        { timeout: 3000 },
+      )
+    })
+
+    // A note in the comment is not a retag: no release writes the comment, so the sweep
+    // still has the rest of the track's tags to fill.
+    it('still matches a track whose only change is its comment', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      await typeField('comment', 'warm up')
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+      expect(await fieldOfRow(0, 'comment')).toBe('warm up')
+    })
+
+    // A star is the DJ's judgement of the track, which no release writes: rating a crate
+    // before matching it must not keep the sweep away from every rated track.
+    it('still matches a track whose only change is its rating', async () => {
+      handApi()
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.click(screen.getByTestId('star-4'))
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    })
+  })
+
   // With two tracks selected, a field typed in the editor writes to both. While the
   // user is still in the form, a probe that read the tracks after that write must not
   // land on either one, or the second track gets Discogs's album over the one the user
@@ -2739,7 +2909,6 @@ describe('App auto-match', () => {
     const album = await screen.findByTestId('field-album')
     fireEvent.focus(album)
     fireEvent.change(album, { target: { value: 'Hand Typed' } })
-    fireEvent.keyDown(album, { key: 'Enter' })
 
     fireEvent.click(screen.getByTestId('auto-match'))
     await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(2))

@@ -48,6 +48,7 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved
   if (track.matched) edit.matched = true
   if (track.autoMatched) edit.autoMatched = true
+  if (track.handEdited) edit.handEdited = true
   if (track.matchConfidence !== undefined) edit.matchConfidence = track.matchConfidence
   if (track.matchProvider) edit.matchProvider = track.matchProvider
   if (track.appliedRelease) edit.appliedRelease = track.appliedRelease

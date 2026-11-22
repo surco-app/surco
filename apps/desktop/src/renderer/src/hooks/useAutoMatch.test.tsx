@@ -376,6 +376,31 @@ describe('useAutoMatch', () => {
     expect(updateTrack).not.toHaveBeenCalledWith('a', expect.anything())
   })
 
+  // A hand edit can land while the track's Discogs round trip is in flight: the release
+  // that comes back must not overwrite the tags the DJ just took charge of.
+  it('never applies a match to a track marked as edited by hand while it was probed', async () => {
+    let releaseGate: () => void = () => {}
+    const gate = new Promise<void>((res) => {
+      releaseGate = res
+    })
+    setApi({
+      getRelease: vi.fn(async () => {
+        await gate
+        return release
+      }),
+    })
+    const tracks = [track('a')]
+    const { result, updateTrack, tracksRef } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(window.api.getRelease).toHaveBeenCalled())
+    tracksRef.current = [{ ...tracks[0], handEdited: true }]
+    releaseGate()
+
+    await waitFor(() => expect(result.current.matching).toBeNull())
+    expect(updateTrack).not.toHaveBeenCalled()
+  })
+
   // A plausible-but-unconfirmed match (review tier) is flagged on the row for the user to
   // confirm in the editor — its metadata is NOT written, so the file keeps its own tags and
   // the sweep won't re-probe it.

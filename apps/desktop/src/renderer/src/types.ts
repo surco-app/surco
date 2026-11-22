@@ -119,6 +119,11 @@ export interface TrackItem extends TrackOrigin {
   // also guarded by meta.discogsReleaseId; this covers providers that write no such id
   // (Bandcamp). Cleared when the track's metadata is cleared.
   matched?: boolean
+  // The user changed this track's tags themselves (a field, a bulk edit, a paste, a Tag
+  // button), so no auto-match may overwrite them: the sweep, the toolbar button and the
+  // editor's self-applying match all skip it. Only a deliberate pick still applies a
+  // release, and a clear lifts it so the retyped track goes back to the sweep.
+  handEdited?: boolean
   // A plausible but unconfirmed auto-match the sweep found ('review' tier): its metadata is
   // NOT applied — the row is flagged so the user can confirm it in the editor — and the sweep
   // won't re-probe it. Cleared when the track's metadata is cleared so a retag re-probes.

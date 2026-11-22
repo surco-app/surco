@@ -1287,6 +1287,38 @@ describe('useTrackLibrary foreign tags', () => {
     expect(rb.foreignRemoved).toEqual(['TRAKTOR4'])
   })
 
+  // Clearing a selection hands it back to the sweep like the single-track clear does: the
+  // guard a hand edit left would otherwise keep the retyped tracks unmatched for good.
+  it('clearExtrasTracks lifts the hand-edit guard', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() => result.current.addPaths(['/m/a.wav']))
+    const id = result.current.tracks[0].id
+    act(() => result.current.patchTracks([id], { handEdited: true }))
+
+    act(() => result.current.clearExtrasTracks([id]))
+
+    expect(result.current.tracks[0].handEdited).toBeUndefined()
+  })
+
   // The multi-select sibling of the single-track clear: staging the removal has to take
   // the artwork off the editor as well, or a multi clear leaves every selected track
   // still showing the cover it just promised to strip.
@@ -1596,6 +1628,38 @@ describe('useTrackLibrary foreign tags', () => {
     )
 
     expect(result.current.tracks[0]?.appliedRelease).toEqual(appliedRelease)
+  })
+
+  // The sweep skips a hand-edited row only while it knows: a reopened session that forgot
+  // the mark would let the release overwrite what the DJ typed before quitting.
+  it('restores the mark of a track edited by hand', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': { meta: { title: 'Typed' } as never, handEdited: true },
+      }),
+    )
+
+    expect(result.current.tracks[0]?.handEdited).toBe(true)
   })
 
   it('restores that a track came from rekordbox, Engine DJ or Traktor, so converting it keeps its file name', async () => {

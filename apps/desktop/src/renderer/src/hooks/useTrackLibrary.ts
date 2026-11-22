@@ -601,6 +601,7 @@ export function useTrackLibrary({
     if (saved.outputName) patch.outputName = saved.outputName
     if (saved.matched) patch.matched = true
     if (saved.autoMatched) patch.autoMatched = true
+    if (saved.handEdited) patch.handEdited = true
     if (saved.matchConfidence !== undefined) patch.matchConfidence = saved.matchConfidence
     if (saved.matchProvider) patch.matchProvider = saved.matchProvider
     if (saved.appliedRelease) patch.appliedRelease = saved.appliedRelease
@@ -1227,6 +1228,8 @@ export function useTrackLibrary({
               coverUrl: undefined,
               metaCleared: true,
               foreignRemoved: (t.foreignTags ?? []).map((tag) => tag.name),
+              // A clear hands the tracks back to the sweep, like the single-track clear.
+              handEdited: undefined,
             }
           : t,
       )

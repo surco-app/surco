@@ -7,6 +7,7 @@ import {
   autoMatchRelease,
   clearedTrackPatch,
   holdsAutoMatch,
+  isHandEdit,
   MAX_AUTO_PROBE,
   matchActivityReport,
   matchTargetOf,
@@ -605,6 +606,12 @@ describe('tracksToAutoMatch', () => {
     expect(tracksToAutoMatch([track({ matchReview: true })])).toHaveLength(0)
   })
 
+  // A DJ who typed the artist of a white label they know better than any catalog must not
+  // see it swapped for the release's a few seconds later by a sweep nobody asked to touch it.
+  it('skips a track whose tags the user edited by hand', () => {
+    expect(tracksToAutoMatch([track({ handEdited: true })])).toHaveLength(0)
+  })
+
   it('skips tracks with nothing to search or score on', () => {
     expect(tracksToAutoMatch([track({ query: '   ' })])).toHaveLength(0)
     expect(tracksToAutoMatch([track({ meta: { title: '  ' } as TrackItem['meta'] })])).toHaveLength(
@@ -1120,13 +1127,18 @@ describe('clearedTrackPatch', () => {
     ],
   }
 
-  // "Clear all" is how a DJ retags a badly matched file from scratch, and the editor
-  // promises the cleared track goes back to the sweep. The flag the sweep itself left kept
-  // it out for good, so the retyped title was never matched again.
-  it('lets the sweep match the track again once a title is typed back', () => {
-    const cleared = { ...matchedTrack, ...clearedTrackPatch(matchedTrack) }
-    const retyped = { ...cleared, meta: { ...cleared.meta, title: 'Song' } }
-    expect(tracksToAutoMatch([retyped])).toEqual([retyped])
+  // "Clear all" empties the tags the match flags were about, so the flags go with them: a
+  // flag left behind would claim a release (or the sweep's own write) the track no longer
+  // carries, and the sweep's flag kept the track out of every later match for good.
+  it('drops the match flags the sweep and a manual pick left', () => {
+    expect(clearedTrackPatch(matchedTrack)).toMatchObject({ matched: false, autoMatched: false })
+  })
+
+  // The hand-edit mark protects tags the clear just emptied, so it goes too. What the user
+  // types afterwards marks the track again like any other edit.
+  it('drops the hand-edit mark along with the tags it protected', () => {
+    const patch = clearedTrackPatch({ ...matchedTrack, handEdited: true })
+    expect(patch).toHaveProperty('handEdited', undefined)
   })
 
   // The ⌘K palette and the editor's eraser are the same action, so both must strip the
@@ -1136,5 +1148,40 @@ describe('clearedTrackPatch', () => {
       'SERATO_MARKERS_V2',
       'TRAKTOR4',
     ])
+  })
+})
+
+describe('isHandEdit', () => {
+  const track = (over: Partial<TrackItem> = {}): TrackItem =>
+    ({ meta: { title: 'Song', artist: 'Artist', rating: '' }, ...over }) as TrackItem
+
+  it('counts a changed tag a release would write as the user’s own edit', () => {
+    expect(isHandEdit(track(), { artist: 'Typed By Hand' })).toBe(true)
+  })
+
+  // Rating a track or filling a field of the DJ's own is not retagging it: no release
+  // writes either, and keeping the sweep away over a star would leave the crate unmatched.
+  it('does not count a rating or a custom field', () => {
+    expect(isHandEdit(track(), { rating: '4' })).toBe(false)
+    expect(isHandEdit(track(), { custom: { vinylCondition: 'VG+' } })).toBe(false)
+  })
+
+  // A field committed with the value it already held (a blur, a whole-meta patch from the
+  // form) changes nothing the sweep could overwrite.
+  it('does not count a field written with the value it already had', () => {
+    expect(isHandEdit(track(), { title: 'Song', artist: 'Artist', album: '' })).toBe(false)
+  })
+
+  // What the DJ types after a clear is still theirs: the stale search the track kept
+  // would otherwise bring the old release back over the retyped title and artist.
+  it('counts typing into a cleared track', () => {
+    expect(isHandEdit(track({ metaCleared: true }), { title: 'Other' })).toBe(true)
+  })
+
+  // A release keeps the track's own BPM and key and never writes the comment, grouping,
+  // mood or energy: an edit to those leaves nothing for the sweep to overwrite.
+  it('does not count a tag no release overwrites', () => {
+    expect(isHandEdit(track(), { bpm: '128', key: '8A' })).toBe(false)
+    expect(isHandEdit(track(), { comment: 'warm up', grouping: 'Peak', mood: 'dark' })).toBe(false)
   })
 })
