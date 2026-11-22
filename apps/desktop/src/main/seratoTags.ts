@@ -267,7 +267,9 @@ function applyMarkers(f: TagFile, ext: string, payload: Uint8Array): void {
 
 function applyGrid(f: TagFile, ext: string, grid: (typeof GRIDS)[number], data: Uint8Array): void {
   if (ID3_EXTENSIONS.has(ext)) {
+    const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
     const tag = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    if (fresh) tag.version = 3
     for (const frame of tag.frames.slice())
       if (
         frame.frameId.toString() === 'GEOB' &&
@@ -275,6 +277,8 @@ function applyGrid(f: TagFile, ext: string, grid: (typeof GRIDS)[number], data: 
       )
         tag.removeFrame(frame)
     tag.addFrame(seratoFrame(grid.geob, data))
+    dropBrokenUfids(tag)
+    keepGenreParentheses(tag)
   } else if (ext === '.flac')
     (f.getTag(TagTypes.Xiph, true) as XiphComment).setFieldAsStrings(
       grid.vorbis,
@@ -383,6 +387,10 @@ async function measuredLeads(
   }
 }
 
+// What an ordinary conversion's caller must log: the carry runs in a worker with no logger,
+// and cues left out without a line in the log are cues lost with no trace.
+export type SeratoCarryOutcome = 'clock-unmeasured' | null
+
 // shiftMs is for a replacement master where the same audio sits later (positive) or earlier
 // than in the source; it moves the cues but not the trim cut, which is a position in the source.
 export async function carrySeratoCues(
@@ -401,7 +409,7 @@ export async function carrySeratoCues(
     shiftMs: number
     fallback?: { source: string; trimMs: number }
   },
-): Promise<void> {
+): Promise<SeratoCarryOutcome> {
   const ext = extname(dest).toLowerCase()
   const from = carry ? readSeratoTrack(source) : null
   // An unreadable source is not one without cues: a replacement's caller must hear it,
@@ -426,7 +434,7 @@ export async function carrySeratoCues(
       shiftMs: 0,
     })
   const to = readSeratoTrack(dest)
-  if (!to) return
+  if (!to) return null
   const timed = from?.payload || from?.grids.tempoMap || from?.grids.beatGrid
   // Without Serato's clock nothing can be placed. A replacement must hear it, like an
   // unreadable source; an ordinary conversion carries nothing and still strips.
@@ -452,7 +460,7 @@ export async function carrySeratoCues(
     const stripped = strip && dropSeratoAnalysis(f, ext)
     // On a replacement whose file had a grid but no cues, cues the download brought along
     // were never the DJ's in Serato.
-    const foreign = fallback !== undefined && !payload && to.payload !== null
+    const foreign = fallback !== undefined && !payload
     const dropped = ((changed !== null && fresh === null) || foreign) && dropSeratoCues(f, ext)
     if (fresh) applyMarkers(f, ext, fresh)
     const regridded = grids.filter(
@@ -463,4 +471,5 @@ export async function carrySeratoCues(
   } finally {
     f.dispose()
   }
+  return leads || !timed ? null : 'clock-unmeasured'
 }

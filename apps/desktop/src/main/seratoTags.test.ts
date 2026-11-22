@@ -395,4 +395,57 @@ describe('carrySeratoCues with a beat grid', () => {
 
     expect(readSeratoTrack(dest)?.tempoMap).toEqual({ firstBeatMs: 3000, bpm: 90 })
   })
+
+  // A tag Surco starts must be ID3v2.3, like every other Serato write: some CDJ, rekordbox
+  // and Serato setups mishandle v2.4.
+  it('starts a v2.3 tag when the grid is the only Serato data written', async () => {
+    const source = withTag(audioFile('wav'), (f) =>
+      addGeob(f, 'Serato Tempo Map', tempoMap(1, 120)),
+    )
+    const dest = audioFile('wav')
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs: 0 })
+
+    const f = TagFile.createFromPath(dest)
+    try {
+      expect((f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null)?.version).toBe(3)
+    } finally {
+      f.dispose()
+    }
+  })
+
+  // TagLib doubles every "(" of a v2.3 genre on each save: writing the grid must not turn
+  // Beatport's "Techno (Peak Time / Driving)" into "Techno ((Peak Time / Driving)".
+  it('keeps the genre as it was when it writes only the grid', async () => {
+    const source = withTag(audioFile('wav'), (f) =>
+      addGeob(f, 'Serato Tempo Map', tempoMap(1, 120)),
+    )
+    const dest = join(mkdtempSync(join(tmpdir(), 'surco-serato-tags-')), 'genre.mp3')
+    execFileSync(FFMPEG, [
+      '-v',
+      'error',
+      '-f',
+      'lavfi',
+      '-i',
+      'anullsrc=r=44100',
+      '-t',
+      '0.3',
+      '-id3v2_version',
+      '3',
+      '-metadata',
+      'genre=Techno (Peak Time / Driving)',
+      dest,
+      '-y',
+    ])
+
+    await carrySeratoCues(source, dest, { trimMs: 0, carry: true, strip: false, shiftMs: 0 })
+
+    expect(readSeratoTrack(dest)?.tempoMap).not.toBeNull()
+    const f = TagFile.createFromPath(dest)
+    try {
+      expect(f.tag.genres).toEqual(['Techno (Peak Time / Driving)'])
+    } finally {
+      f.dispose()
+    }
+  })
 })

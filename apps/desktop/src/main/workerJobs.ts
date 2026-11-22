@@ -15,7 +15,7 @@ import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
-import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
+import { carrySeratoCues, type SeratoCarryOutcome, setSeratoMarkers } from './seratoTags'
 import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
@@ -172,7 +172,7 @@ export type WorkerJobResult =
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
-  | null
+  | SeratoCarryOutcome
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
@@ -266,7 +266,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       setSeratoMarkers(job.file, job.payload)
       return null
     case 'carrySeratoCues':
-      return carrySeratoCues(job.source, job.dest, job).then(() => null)
+      return carrySeratoCues(job.source, job.dest, job)
     case 'genreFrame':
       return readGenreFrame(job.file)
     case 'setGenreFrame':

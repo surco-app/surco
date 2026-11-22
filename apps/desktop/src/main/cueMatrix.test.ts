@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import log from 'electron-log/main'
 import ffmpegStatic from 'ffmpeg-static'
 import {
   ByteVector,
@@ -591,6 +592,26 @@ describe('the Serato cue carry-over matrix', () => {
     expect(storedTree(out)).not.toBeNull()
   })
 
+  // The DJ's cues are left out of the output when the clock cannot be measured: the log must
+  // say so, or a support report has nothing to explain where they went.
+  it('says in the log that the Serato cues were not carried when the clock cannot be measured', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-fails-log-'))
+    const input = makeSeratoSource(dir, '.aiff')
+    const out = join(dir, 'out.mp3')
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => undefined as never)
+
+    seratoLeadFails = true
+    try {
+      await convertAudio(input, out, 'mp3', meta)
+    } finally {
+      seratoLeadFails = false
+    }
+
+    const calls = warn.mock.calls.map(([line]) => String(line))
+    warn.mockRestore()
+    expect(calls).toContainEqual(expect.stringContaining('Serato cues not carried to out.mp3'))
+  })
+
   // An ordinary conversion must still take the old analysis off when Serato's clock cannot
   // be measured, as it does for a source it cannot read: only a replacement fails the carry.
   it('still strips the Serato analysis of a source with a grid and no cues when the clock cannot be measured', async () => {
@@ -967,6 +988,43 @@ describe('a hand-set Serato grid', () => {
       expect(readSeratoTrack(out)?.markers ?? null).toBeNull()
     },
   )
+
+  // A grid alone is the replaced file's Serato data: without the clock it cannot be placed,
+  // and Serato must not be pointed at a file that lost it.
+  it('fails the carry of a replaced file with only a grid when the clock cannot be measured', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-fails-'))
+    const replaced = withSeratoGrid(plainSine(dir, '.mp3'))
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    seratoLeadFails = true
+    try {
+      await replace(download, out, replaced)
+    } finally {
+      seratoLeadFails = false
+    }
+
+    expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
+  })
+
+  // The old cue block is cues too: one a download brought along was never the DJ's in Serato.
+  it("takes the download's old Serato cue block off a replacement whose file had only a grid", async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-grid-replace-v1-'))
+    const replaced = withSeratoGrid(plainSine(dir, '.mp3'))
+    const download = plainSine(dir, '.aiff')
+    const f = TagFile.createFromPath(download)
+    ;(f.getTag(TagTypes.Id3v2, true) as Id3v2Tag).addFrame(
+      seratoGeob('Serato Markers_', seratoV1Block([SERATO_CUE_MS])),
+    )
+    f.save()
+    f.dispose()
+    const out = join(dir, 'out.aiff')
+
+    await replace(download, out, replaced)
+
+    expect(seratoLeftovers(out)).not.toContain('Serato Markers_')
+    expect(Math.abs((await gridOnAudio(out)) - (await gridOnAudio(replaced)))).toBeLessThan(1)
+  })
 
   // When the cues come from the download, so does the grid, on the download's clock.
   it("keeps the download's own grid when the replaced file has no Serato cues", async () => {

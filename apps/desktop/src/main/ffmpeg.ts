@@ -104,6 +104,7 @@ import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { carryRiffChunks } from './riffCarry'
+import type { SeratoCarryOutcome } from './seratoTags'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -2638,7 +2639,7 @@ export async function convertAudio(
     const replaceCueShiftMs = 0
     const inputTrimMs = trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0
     if (carrySerato || !seratoAnalysisKept)
-      await runInWorker({
+      await runInWorker<SeratoCarryOutcome>({
         type: 'carrySeratoCues',
         source: replacesPath ?? input,
         dest: tmp,
@@ -2647,10 +2648,15 @@ export async function convertAudio(
         carry: carrySerato,
         strip: !seratoAnalysisKept,
         shiftMs: replacesPath ? replaceCueShiftMs : 0,
-      }).catch((err) => {
-        log.warn(`Serato cues not carried to ${basename(output)}: ${err}`)
-        if (replacesPath) seratoCarryFailed = true
       })
+        .then((outcome) => {
+          if (outcome === 'clock-unmeasured')
+            log.warn(`Serato cues not carried to ${basename(output)}: ${outcome}`)
+        })
+        .catch((err) => {
+          log.warn(`Serato cues not carried to ${basename(output)}: ${err}`)
+          if (replacesPath) seratoCarryFailed = true
+        })
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
