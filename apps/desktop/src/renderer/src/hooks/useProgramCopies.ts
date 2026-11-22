@@ -1,7 +1,8 @@
 import { useQueries } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
-import { buildLibraryIndex, findLibraryEntry } from '../lib/appleMusicLibrary'
+import type { CollectionTrack } from '../../../shared/types'
+import { type AppleMusicIndex, buildLibraryIndex, findLibraryEntry } from '../lib/appleMusicLibrary'
 import { collectionCandidates } from '../lib/collectionCandidates'
 import { DJ_REACH_SETTINGS } from '../lib/djReach'
 import { pathKey } from '../lib/pathKey'
@@ -20,6 +21,16 @@ interface Args {
   durationSec?: number
   suggestedMeta?: { title: string; artist: string }
   enabled: boolean
+}
+
+const indexByCollection = new WeakMap<CollectionTrack[], AppleMusicIndex>()
+
+function indexFor(tracks: CollectionTrack[]): AppleMusicIndex {
+  const cached = indexByCollection.get(tracks)
+  if (cached) return cached
+  const index = buildLibraryIndex(collectionCandidates(tracks))
+  indexByCollection.set(tracks, index)
+  return index
 }
 
 export function useProgramCopies({
@@ -45,21 +56,15 @@ export function useProgramCopies({
     })),
     combine: (results) => results.map((result) => result.data),
   })
-  const indexes = useMemo(
-    () =>
-      collections.map((tracks) =>
-        tracks ? buildLibraryIndex(collectionCandidates(tracks)) : null,
-      ),
-    [collections],
-  )
   const { title, artist } = meta
   const suggestedTitle = suggestedMeta?.title
   const suggestedArtist = suggestedMeta?.artist
   return useMemo(
     () =>
       DJ_PROGRAMS.flatMap((program, i) => {
-        const index = indexes[i]
-        if (!active[i] || !index) return []
+        const tracks = collections[i]
+        if (!active[i] || !tracks) return []
+        const index = indexFor(tracks)
         const entry =
           findLibraryEntry(index, { title, artist }, durationSec) ??
           (suggestedTitle !== undefined && suggestedArtist !== undefined
@@ -74,6 +79,6 @@ export function useProgramCopies({
           { program, path: entry.path, isThisFile: pathKey(entry.path) === pathKey(inputPath) },
         ]
       }),
-    [indexes, active, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath],
+    [collections, active, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath],
   )
 }

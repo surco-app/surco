@@ -181,4 +181,46 @@ describe('useProgramCopies', () => {
     expect(build.mock.calls.length).toBe(calls)
     expect(calls).toBe(2)
   })
+
+  it('does not rebuild the index when the editor opens the next track', async () => {
+    const build = vi.spyOn(library, 'buildLibraryIndex')
+    installApi({
+      dj: djReads({ rekordbox: { collection: async () => [row('/r/weekend.aiff')] } }),
+    })
+    const wrapper = wrapperFor({ syncRekordbox: true })
+    const first = renderHook(() => useProgramCopies(args()), { wrapper })
+    await waitFor(() => expect(first.result.current).toHaveLength(1))
+    first.unmount()
+    expect(build).toHaveBeenCalledTimes(1)
+    const second = renderHook(() => useProgramCopies(args()), { wrapper })
+    await waitFor(() => expect(second.result.current).toHaveLength(1))
+    expect(build).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not rebuild a program index when another program arrives later', async () => {
+    const build = vi.spyOn(library, 'buildLibraryIndex')
+    let releaseTraktor: () => void = () => {}
+    const traktorReady = new Promise<void>((resolve) => {
+      releaseTraktor = resolve
+    })
+    installApi({
+      dj: djReads({
+        rekordbox: { collection: async () => [row('/r/weekend.aiff')] },
+        traktor: {
+          collection: async () => {
+            await traktorReady
+            return [row('/t/weekend.aiff')]
+          },
+        },
+      }),
+    })
+    const { result } = renderHook(() => useProgramCopies(args()), {
+      wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
+    })
+    await waitFor(() => expect(result.current).toHaveLength(1))
+    expect(build).toHaveBeenCalledTimes(1)
+    releaseTraktor()
+    await waitFor(() => expect(result.current).toHaveLength(2))
+    expect(build).toHaveBeenCalledTimes(2)
+  })
 })
