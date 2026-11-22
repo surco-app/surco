@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { CollectionTrack, PlaylistTrackRef, SourceNode } from '../../../shared/types'
-import { SOURCE_READ } from '../lib/sourcePrograms'
+import { sourceCollectionOptions } from '../lib/sourcePrograms'
 import {
   absentLines,
   chosenTracks,
@@ -77,10 +77,8 @@ export function PasteTracklistModal({
   const [filter, setFilter] = useState<'all' | Exclude<MatchLevel, 'absent'>>('all')
   const parsed = useMemo(() => parseTracklist(text), [text])
   const collection = useQuery({
-    queryKey: ['source-collection', program],
-    queryFn: () => SOURCE_READ[program].collection?.() ?? Promise.resolve([]),
+    ...sourceCollectionOptions(program),
     enabled: step === 'review',
-    staleTime: 60_000,
   })
   const matches = useMemo(
     () => (collection.data ? matchTracklist(parsed.lines, collection.data) : null),

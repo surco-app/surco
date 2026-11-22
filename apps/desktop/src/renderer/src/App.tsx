@@ -281,7 +281,12 @@ import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
-import { isUsbProgram, SOURCE_PROGRAMS, SOURCE_READ } from './lib/sourcePrograms'
+import {
+  isUsbProgram,
+  SOURCE_PROGRAMS,
+  SOURCE_READ,
+  sourceCollectionOptions,
+} from './lib/sourcePrograms'
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
@@ -3546,12 +3551,10 @@ export default function App(): React.JSX.Element {
     if (track) setSelection({ ids: [track.id], anchor: track.id })
   })
   const { data: rekordboxCollection } = useQuery({
-    queryKey: ['source-collection', 'rekordbox'],
-    queryFn: () => SOURCE_READ.rekordbox.collection?.() ?? Promise.resolve([]),
+    ...sourceCollectionOptions('rekordbox'),
     enabled:
       otherOpen ||
       (inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID)),
-    staleTime: 60_000,
   })
   const collectionById = useMemo(
     () => new Map((rekordboxCollection ?? []).map((t) => [t.contentId, t])),
