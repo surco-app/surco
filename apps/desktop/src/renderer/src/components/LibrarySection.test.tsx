@@ -40,6 +40,7 @@ describe('LibrarySection', () => {
     ['here', 'Esta es mejor'],
     ['library', 'Mejor allí'],
     ['tie', 'Parecidas'],
+    ['even', 'Ni mejor ni peor'],
     ['measuring', 'Comparando'],
   ] as const)('says the %s state in words on the row', (verdict, words) => {
     mount({}, { verdict })
@@ -106,13 +107,13 @@ describe('LibrarySection', () => {
   // The two greens and the amber used to be told apart by shape; now the word does it, so
   // the amber is never carried by colour alone.
   it('keeps every settled state in words of its own', () => {
-    const words = (['same', 'here', 'library', 'different', 'tie'] as const).map((verdict) => {
+    const words = (['same', 'here', 'library', 'different', 'tie', 'even'] as const).map((verdict) => {
       mount({}, { verdict })
       const text = screen.getByTestId('library-row-state').textContent
       cleanup()
       return text
     })
-    expect(new Set(words).size).toBe(5)
+    expect(new Set(words).size).toBe(6)
   })
 
   // Nothing moves when the measurement lands and the format chips line up from row to row:
@@ -138,6 +139,7 @@ describe('LibrarySection', () => {
         'Esta es mejor',
         'Mejor allí',
         'Parecidas',
+        'Ni mejor ni peor',
         'Otra versión · 0:00:00',
       ])
     }

@@ -10,7 +10,7 @@ export function verdictState(
   if (!verdict) return null
   if (verdict.winner === 'a') return 'here'
   if (verdict.winner === 'b') return 'library'
-  if (verdict.winner === 'tie' && !verdict.sameMaster) return null
+  if (verdict.winner === 'tie' && !verdict.sameMaster) return 'even'
   return verdict.winner
 }
 
@@ -19,7 +19,7 @@ export function rowVerdict(state: CopyVerdictState): LibraryVerdict | null {
 }
 
 export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): LibraryVerdict | null {
-  for (const verdict of ['library', 'measuring', 'here', 'different', 'tie', 'same'] as const) {
+  for (const verdict of ['library', 'measuring', 'here', 'different', 'tie', 'even', 'same'] as const) {
     if (rows.includes(verdict)) return verdict
   }
   return null

@@ -1372,6 +1372,7 @@
     "libraryStateDifferentBare": "Altra versione",
     "libraryStateDifferent": "Altra versione · {{duration}}",
     "libraryStateTie": "Simili",
+    "libraryStateEven": "Equivalenti",
     "libraryStateMeasuring": "Confronto",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },
