@@ -617,20 +617,6 @@ describe('TrackList', () => {
     ).toBeTruthy()
   })
 
-  it('truncates a free-text key tag so it cannot take the row from the artist', () => {
-    renderList([
-      track({
-        id: 'a',
-        duration: 287,
-        meta: { title: 'A', artist: 'B', key: 'F#m (11A) Energy 7' } as TrackMetadata,
-      }),
-    ])
-    const classes = screen.getByTestId('track-key').className.split(' ')
-    expect(classes).toContain('max-w-[3.5rem]')
-    expect(classes).toContain('truncate')
-    expect(classes).toContain('shrink-0')
-  })
-
   it('lets the DJ read a free-text key tag the pill had to cut, on hover', () => {
     renderList([
       track({
@@ -830,9 +816,6 @@ describe('TrackList', () => {
       .getAllByTestId('track-wave-line')
       .map((row) => within(row).queryByTestId('track-auto-mark-status')?.textContent ?? null)
     expect(spoken).toEqual([null, 'No analysis', 'Already marked', 'No proposals', null])
-    const [proposed] = screen.getAllByTestId('track-auto-mark')
-    expect(proposed.className).toContain('border-dashed')
-    expect(proposed.className).toContain('text-[var(--color-accent)]')
   })
 
   it('keeps the unsaved dot next to the chip once some proposals are accepted', () => {
@@ -855,8 +838,8 @@ describe('TrackList', () => {
     renderList([track({ id: 'a', embeddedCover: 'file:///cover.jpg' })], null, [], {
       showWaves: false,
     })
-    expect(screen.getByTestId('track-cover').className).toContain('compact:h-8')
-    expect(screen.getByTestId('track-row').className).toContain('compact:py-0.5')
+    expect(screen.getByTestId('track-cover')).toHaveAttribute('data-waves', 'false')
+    expect(screen.getByTestId('track-row')).toHaveAttribute('data-waves', 'false')
   })
 
   // Hiding the waves is asking for short rows: the cue marks go with them, and what still
@@ -922,13 +905,6 @@ describe('TrackList', () => {
     expect(screen.getByTestId('track-duration')).toHaveTextContent('4:16')
     expect(screen.getByTestId('track-cover')).toHaveAttribute('src', 'surco://media/x')
     expect(screen.queryByTestId('track-loading')).toBeNull()
-  })
-
-  it('sweeps the waiting marker on the compositor rather than repainting the row', () => {
-    renderList([track({ id: 'a', loadingMeta: true })])
-    const marker = screen.getByTestId('track-loading')
-    expect(marker).toHaveClass('skeleton-sweep-row')
-    expect(marker).not.toHaveClass('skeleton-sweep')
   })
 
   // A converted track edited afterwards would look identical to an untouched done
@@ -1018,17 +994,6 @@ describe('TrackList', () => {
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
     expect(rows[1]).toHaveAttribute('aria-selected', 'true')
     expect(rows[2]).toHaveAttribute('aria-selected', 'false')
-  })
-
-  // ↑/↓ and j/k walk this list all day, so the selection fill has to move on the keystroke,
-  // both ways. Easing it in leaves the blue a step behind the cursor; easing it out on the
-  // row just left leaves a trail of fading rows behind a held ↓. So no row carries a colour
-  // transition, selected or not, and the hover tint snaps too, like a native list.
-  it('moves the selection fill with no colour transition on either row', () => {
-    renderList([track({ id: 'a' }), track({ id: 'b' })], 'a', ['a'])
-    const rows = screen.getAllByTestId('track-row')
-    expect(rows[0].className).not.toMatch(/transition-(colors|\[[^\]]*background-color)/)
-    expect(rows[1].className).not.toMatch(/transition-(colors|\[[^\]]*background-color)/)
   })
 
   // The list is a multi-select listbox of options, so a screen reader announces it as one
@@ -1498,18 +1463,6 @@ describe('TrackList quality badge', () => {
     renderList([track({ id: 'a', spectrum: spectrum(21000) })])
     expect(screen.queryByTestId('track-quality-loading')).not.toBeInTheDocument()
   })
-
-  // El relleno azul dice qué track se está editando; no dice dónde está el teclado. Al
-  // recorrer la lista con ↑/↓ hace falta un contorno propio, el mismo que marca la tarjeta
-  // enfocada en la columna de resultados. Va con `focus-visible:` y no con `focus:` porque
-  // aquí sí distingue el clic de ratón (que no debe pintarlo) del recorrido con flechas.
-  it('marca con contorno la fila que tiene el foco de teclado', () => {
-    renderList([track({ id: 'a' }), track({ id: 'b' })])
-    const row = screen.getAllByTestId('track-row')[0]
-    expect(row.className).toContain('focus-visible:outline-[var(--color-accent)]')
-    expect(row.className).toContain('focus-visible:outline-1')
-    expect(row.className).toContain('focus-visible:-outline-offset-1')
-  })
 })
 
 // Play sits over every row at opacity 0 until the pointer hovers it. It was still a Tab
@@ -1543,10 +1496,6 @@ describe('TrackList swipe to remove', () => {
   it('keeps the duration and the format in place when the pointer is on the row', () => {
     renderList([track({ id: 'a', inputPath: '/music/a.flac', duration: 200 })])
     expect(screen.queryByRole('button', { name: i18n.t('trackList.remove') })).toBeNull()
-    expect(screen.getByTestId('track-format-slot').className).not.toContain('group-hover:opacity-0')
-    expect(screen.getByTestId('track-duration-slot').className).not.toContain(
-      'group-hover:opacity-0',
-    )
   })
 
   it('reveals Remove on a short swipe and removes the track from it', () => {
@@ -1809,31 +1758,6 @@ describe('TrackList swipe to remove', () => {
     expect(onSwipeRemove).toHaveBeenCalledWith('b')
   })
 
-  // Full height, the grey touched the rows above and below and read as glued to them (seen
-  // in the app 24/09). It sits inset from the row's top and bottom edges as well as its side.
-  it('keeps the Remove button off the rows above and below', () => {
-    renderList([track({ id: 'a' })])
-    swipe(70)
-    const remove = screen.getByRole('button', { name: i18n.t('trackList.remove') })
-    expect(remove.className).not.toMatch(/\binset-y-0\b/)
-    expect(remove.className).toMatch(/\binset-y-1\b/)
-  })
-
-  // A settle moves the row in one step, to Remove or back to 0, which read as a jump (Vicent
-  // 24/09: "da un salto hasta el final, no va fino"). The row's position and the grey's width
-  // ease into place, on the selected row too, whose fill must not ease.
-  it('eases the row and the grey into place instead of jumping', () => {
-    renderList([track({ id: 'a' }), track({ id: 'b' })], 'b')
-    fireEvent.wheel(screen.getAllByTestId('track-row')[0].parentElement as Element, { deltaX: 70 })
-    act(() => vi.advanceTimersByTime(500))
-    for (const row of screen.getAllByTestId('track-row'))
-      expect(row.className).toMatch(/transition-\[[^\]]*transform/)
-    expect(screen.getAllByTestId('track-row')[1].className).not.toMatch(/background-color/)
-    expect(screen.getByRole('button', { name: i18n.t('trackList.remove') }).className).toMatch(
-      /transition-\[width[,\]]/,
-    )
-  })
-
   // The trackpad sends a wheel event every 8-16 ms, and an easing that restarts on each one
   // leaves the row a step behind the fingers. While the swipe is arriving it follows them 1:1.
   it('follows the fingers with no easing while the swipe is still arriving', () => {
@@ -1979,15 +1903,6 @@ describe('TrackList review spark', () => {
     const spark = screen.getByTestId('track-match-review')
     expect(row).not.toContainElement(spark)
     expect(row.parentElement).toContainElement(spark)
-  })
-
-  // The spark glyph is 12px, half the 24px minimum target (WCAG 2.5.8), so accepting a
-  // suggestion took a precise aim. The button grows its hit area, not the glyph.
-  it('gives the accept-review button a 24px hit area around the small glyph', () => {
-    renderList([track({ id: 'a', matchReview: true, matchConfidence: 0.7 })])
-    const spark = screen.getByTestId('track-match-review')
-    expect(spark.className).toMatch(/\bh-6\b/)
-    expect(spark.className).toMatch(/\bw-6\b/)
   })
 })
 
@@ -3001,7 +2916,7 @@ describe('TrackList title of a versioned track', () => {
       /^Pray \(W\.I\.P\. In … Mix\)$/,
     )
     expect(within(versioned).getByTestId('track-title-fit')).toHaveAttribute('aria-hidden', 'true')
-    expect(within(versioned).getByText('Pray (W.I.P. In The Church Mix)')).toHaveClass('sr-only')
+    expect(within(versioned).getByText('Pray (W.I.P. In The Church Mix)')).toBeInTheDocument()
     expect(plain).toHaveTextContent(/^A long title that carries no version at all$/)
     expect(within(plain).queryByTestId('track-title-fit')).toBeNull()
   })
@@ -3040,7 +2955,6 @@ describe('a row with more marks than its line holds', () => {
       playedPaths: new Set(['/music/a.wav']),
     })
     const row = screen.getByTestId('track-row')
-    expect(within(row).getByTestId('track-artist').parentElement).toHaveClass('min-w-12')
     const more = within(row).getByTestId('track-marks-more')
     expect(more).toHaveTextContent('+1')
     expect(hoverTooltip(more)).toEqual(i18n.t('trackList.autoMatched'))

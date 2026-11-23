@@ -760,6 +760,7 @@ const TrackRow = memo(function TrackRow({
           // just left trails behind a held key. Only the swipe position eases, and only the
           // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
           // the fingers with no easing (inline transition: none).
+          data-waves={showWaves ? 'true' : 'false'}
           className={`${listRowClass(primary, selected, !showWaves)}${outsideFilter && !selected ? ' opacity-50' : ''}`}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
@@ -797,6 +798,7 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
+                data-waves={showWaves ? 'true' : 'false'}
                 className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10 compact:h-8 compact:w-8'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
