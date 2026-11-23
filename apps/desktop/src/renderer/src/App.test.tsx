@@ -11711,7 +11711,7 @@ describe('App metadata undo', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await screen.findByText('Imported Title')
-    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
 
     fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('')
@@ -11834,7 +11834,9 @@ describe('App metadata undo', () => {
     takeShortcutUndo()
   })
 
-  it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {
+  // What was typed after the clear is the newer step, so it goes first and the clear second;
+  // undoing the clear past the typing would leave the user unable to reach either.
+  it('takes back a title typed after a clear before the clear itself', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
@@ -11851,8 +11853,37 @@ describe('App metadata undo', () => {
     fireEvent.blur(title)
 
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    expect(screen.getByTestId('field-artist')).toHaveValue('')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
     await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
-    expect(screen.getByTestId('field-title')).toHaveValue('Typed Title')
+    expect(screen.getByTestId('field-title')).toHaveValue('Imported Title')
+  })
+
+  // Coming back to a field is a new thought: ⌘Z after the second visit has to land on what the
+  // first visit left, not jump past it to the value from before both.
+  it('undoes two visits to one field as two steps', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const title = await screen.findByTestId('field-title')
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'First visit' } })
+    fireEvent.blur(title)
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'Second visit' } })
+    fireEvent.blur(title)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('First visit'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
   })
 
   it('reapplies an undone clear with the redo shortcut and confirms it, so one ⌘Z too many is not a dead end', async () => {
@@ -12048,6 +12079,42 @@ describe('App metadata undo', () => {
     expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
   })
 
+  // The same field typed across a selection is one step too: every selected track gets its
+  // own value back with one ⌘Z however many pauses the typing had, the sweep under it stays
+  // until the next ⌘Z, and ⇧⌘Z puts it back.
+  it('undoes a field typed across a selection in one step before the sweep under it, and redoes the sweep', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Deep Mix', artist: 'Artist' }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('find-replace-find'), { target: { value: 'Deep' } })
+    fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Dub' } })
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix'))
+    fireEvent.click(screen.getByTestId('find-replace-cancel'))
+    fireEvent.click(rows[1], { metaKey: true })
+    const artist = await screen.findByTestId('field-artist')
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    fireEvent.focus(artist)
+    fireEvent.change(artist, { target: { value: 'Every' } })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    fireEvent.change(artist, { target: { value: 'Everyone' } })
+    fireEvent.blur(artist)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Deep Mix'))
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix'))
+    expect(screen.getByTestId('field-artist')).toHaveValue('Artist')
+  })
+
   const matchRelease: Release = {
     provider: 'discogs',
     id: 1,
@@ -12137,6 +12204,57 @@ describe('App metadata undo', () => {
 
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
     expect(screen.getByTestId('field-artist')).toHaveValue('Own Artist')
+  })
+
+  // Seen in the app: a release applied, then Grouping typed by hand. Once the field let go,
+  // ⌘Z skipped the typing and took the release away, and ⇧⌘Z could not put it back. The
+  // last thing the user did has to be the first thing ⌘Z takes back, and a step too far
+  // must be one ⇧⌘Z from undone, with the key as the browser sends it under Shift.
+  it('undoes a typed field before the release under it and redoes the release with Shift-Command-Z', async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'grouping'] }),
+        ),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Own Title', artist: 'Own Artist' }),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        tracklist: [{ position: '1', title: 'Release Title' }],
+      }),
+    })
+    await renderApp()
+    await addOneTrack()
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Release Title'))
+    const grouping = screen.getByTestId('field-grouping')
+    const groupingBefore = (grouping as HTMLInputElement).value
+    fireEvent.focus(grouping)
+    fireEvent.change(grouping, { target: { value: 'Warm up' } })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    fireEvent.change(grouping, { target: { value: 'Warm up set' } })
+    fireEvent.blur(grouping)
+    ;(document.activeElement as HTMLElement | null)?.blur()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-grouping')).toHaveValue(groupingBefore))
+    expect(screen.getByTestId('field-title')).toHaveValue('Release Title')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Release Title'))
+    expect(screen.getByTestId('field-grouping')).toHaveValue(groupingBefore)
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-grouping')).toHaveValue('Warm up set'))
   })
 
   it('takes the release artwork back off every selected track when a release applied across them is undone', async () => {

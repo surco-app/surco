@@ -2303,10 +2303,13 @@ describe('Editor multi-select', () => {
     const field = screen.getByTestId('field-vinylCondition')
     fireEvent.change(field, { target: { value: 'VG+' } })
     fireEvent.blur(field)
-    expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
-      { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
-    ])
+    expect(onChangeTracksMeta).toHaveBeenCalledWith(
+      [
+        { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
+        { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
+      ],
+      expect.objectContaining({ group: expect.any(String) }),
+    )
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
@@ -2867,13 +2870,19 @@ describe('Editor multi-select', () => {
     const album = screen.getByTestId('field-album')
     fireEvent.change(album, { target: { value: 'New Album' } })
     fireEvent.blur(album)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { album: 'New Album' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   it('tags every selected track with the selection size as its total tracks in one click', () => {
     const { onChangeAllMeta } = renderMulti({ visibleFields: ['title', 'trackTotal'] })
     fireEvent.click(screen.getByTestId('chip-2'))
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { trackTotal: '2' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // App owns the numbering so the button and the ⌘K command agree on the order; the
@@ -2908,7 +2917,10 @@ describe('Editor multi-select', () => {
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', false)
     fireEvent.click(box)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ compilation: '1' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { compilation: '1' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // Clearing over a selection goes through the same shared-form channel as any
@@ -4700,6 +4712,27 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('discogs-result'))
     await screen.findAllByTestId('discogs-track')
     fireEvent.click(screen.getByTestId('cover-next'))
+
+    expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
+      first.onRecordUndo.mock.calls[0][1].group,
+    )
+  })
+
+  // A field can commit without a focus event we saw (a menu that keeps the focus on mousedown).
+  // That edit belongs to its own track alone; sharing a step with another track's edit would
+  // let one ⌘Z take back both, the other one unseen.
+  it("keeps a field edit made without a focus event out of another track's undo step", () => {
+    const first = renderEditor({ id: 'a', meta: { title: 'One' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'One typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
+    cleanup()
+    const second = renderEditor({ id: 'b', meta: { title: 'Two' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Two typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
 
     expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
       first.onRecordUndo.mock.calls[0][1].group,

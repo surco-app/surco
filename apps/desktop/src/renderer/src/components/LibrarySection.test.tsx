@@ -388,6 +388,41 @@ describe('LibrarySection', () => {
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
+  // Rows that settled on different states will never hoist a state to the header, so a place
+  // kept there for it showed as an empty gap under the title in a narrow panel.
+  it('keeps no header place once the open rows settled on different states', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
+      ],
+    })
+    expect(screen.queryByTestId('library-verdict-slot')).toBeNull()
+  })
+
+  it('keeps the header place while an open row can still bring the rows to one state', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'measuring' }),
+      ],
+    })
+    expect(screen.getByTestId('library-verdict-slot')).toBeInTheDocument()
+  })
+
+  // Two settled copies that disagree can never be joined by a third, so keeping the place
+  // while the third compares only showed the gap and then shrank the section under the reader.
+  it('keeps no header place once two settled rows disagree while another still compares', () => {
+    mount({
+      rows: [
+        row({ id: 'appleMusic', name: 'Apple Music', verdict: 'here' }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'same' }),
+        row({ id: 'traktor', name: 'Traktor', verdict: 'measuring' }),
+      ],
+    })
+    expect(screen.queryByTestId('library-verdict-slot')).toBeNull()
+  })
+
   it('keeps no header place when no copy will ever be compared', () => {
     mount({}, { verdict: 'thisFile', comparable: false, comparison: undefined })
     expect(screen.queryByTestId('library-verdict-slot')).toBeNull()

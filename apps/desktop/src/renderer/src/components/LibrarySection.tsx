@@ -320,6 +320,16 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
       undefined
     : leading?.detail
   const canCarryState = rows.some((row) => row.comparable)
+  // Open with settled rows in different states, no state will ever go up to the header, and
+  // the place kept for it showed as an empty gap under the title in a narrow panel. While a
+  // row is still pending and the settled ones agree, the rows may yet agree, so the place
+  // stays and nothing grows later.
+  const pending = (row: LibraryRow): boolean => row.verdict === null || row.verdict === 'measuring'
+  const settled = new Set(rows.filter((row) => !pending(row)).map((row) => row.verdict))
+  const headerMayCarryState =
+    shared !== null ||
+    !open ||
+    (settled.size <= 1 && rows.some((row) => row.comparable && pending(row)))
   const longestName = rows.reduce(
     (long, row) => (row.name.length > long.length ? row.name : long),
     '',
@@ -341,7 +351,8 @@ export function LibrarySection({ open, onToggle, rows }: Props): React.JSX.Eleme
         open={open}
         onToggle={onToggle}
         status={
-          canCarryState && (
+          canCarryState &&
+          headerMayCarryState && (
             <span data-testid="library-verdict-slot" className="grid justify-items-start">
               <StateSizers program={longestName} />
               {(shared || !open) && verdict && (
