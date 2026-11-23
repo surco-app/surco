@@ -11553,7 +11553,7 @@ describe('App metadata undo', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await screen.findByText('Imported Title')
-    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
 
     fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('')
