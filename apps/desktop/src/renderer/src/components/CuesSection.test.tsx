@@ -16,11 +16,15 @@ import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
+import { offerShortcutUndo, takeShortcutUndo } from '../lib/shortcutUndo'
 import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
+afterEach(() => {
+  takeShortcutUndo()
+})
 afterEach(resetCueSession)
 afterEach(resetEditorSections)
 
@@ -322,6 +326,23 @@ describe('CuesSection', () => {
     screen.getByTestId('cue-wave').dispatchEvent(event)
     expect(event.defaultPrevented).toBe(true)
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+  })
+
+  // A Reviewed pressed in the folded editor offers its Undo to ⌘Z. With the keys still on
+  // the wave, ⌘Z must take that back first, as in the maximized editor, and only then step
+  // the cue draft.
+  it('gives cmd Z to a live Reviewed before the cue draft in the folded editor', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    expect(undoReviewed).toHaveBeenCalledOnce()
   })
 
   // Clearing every cue sat among the flows in the flow menu, where a pick meant to change

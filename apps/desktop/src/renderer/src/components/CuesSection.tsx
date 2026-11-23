@@ -1103,7 +1103,7 @@ function Editing({
       dispatch(removeOf(selected.key))
     } else if (e.key.toLowerCase() === 'z' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      dispatch({ type: e.shiftKey ? 'redo' : 'undo' })
+      run({ type: e.shiftKey ? 'redo' : 'undo' })
     }
   }
   const [colourFor, setColourFor] = useState<string | null>(null)
