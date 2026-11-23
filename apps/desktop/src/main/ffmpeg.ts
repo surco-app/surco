@@ -2554,14 +2554,18 @@ export async function convertAudio(
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       codecCueOffsetMs = await automaticCueOffsetOfFiles(input, tmp)
       // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
-      // it; put it under the name the DJ software reads (see setFlacComment). A FLAC source's
-      // repeated comments, which ffmpeg joined, come back in the same save unless cleared.
+      // it; put it under the name the DJ software reads (see setFlacComment). The source's
+      // multi-valued tags, which ffmpeg joined or cut to one, come back in the same save
+      // unless cleared.
       if (ext === '.flac')
         await runInWorker({
           type: 'setFlacComment',
           file: tmp,
           comment: meta.comment,
-          multiFrom: !clearExtras && FLAC_INPUT.test(input) ? input : undefined,
+          multiFrom:
+            !clearExtras && (FLAC_INPUT.test(input) || keepsCuesInId3(extname(input)))
+              ? input
+              : undefined,
         })
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
