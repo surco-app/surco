@@ -378,9 +378,6 @@ const _DEFAULT_NORMALIZE: NormalizeConfig = {
   peakDb: -1,
 }
 
-// macOS shows ⌘; everywhere else the shortcuts fire on Ctrl and read as "Ctrl".
-const isMac = window.api.platform === 'darwin'
-
 // Stable empty default for the Discogs format filter, so a settings-less first frame
 // doesn't hand the memoized Editor a fresh [] each render.
 const _EMPTY_FORMATS: string[] = []
@@ -2820,7 +2817,7 @@ export default function App(): React.JSX.Element {
   )
   const hintFor = useCallback(
     (id: string): string =>
-      formatShortcut(id === 'palette' ? ['mod', 'k'] : (bindings.get(id) ?? []), isMac),
+      formatShortcut(id === 'palette' ? ['mod', 'k'] : (bindings.get(id) ?? []), isMacOS()),
     [bindings],
   )
 
@@ -4382,8 +4379,8 @@ export default function App(): React.JSX.Element {
       editorDeclickRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
-      openApplePlaylist: isMac ? () => selectSource('appleMusic') : undefined,
-      openMusicReview: isMac ? (filter) => setReview({ source: 'music', filter }) : undefined,
+      openApplePlaylist: isMacOS() ? () => selectSource('appleMusic') : undefined,
+      openMusicReview: isMacOS() ? (filter) => setReview({ source: 'music', filter }) : undefined,
       openListReview: () => openTargetReview('all'),
       openUsbExport: usbAvailable ? () => openUsbExport() : undefined,
       openSessionWizard: sessionProgram ? () => openSessionAt('root') : undefined,
@@ -4575,7 +4572,7 @@ export default function App(): React.JSX.Element {
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
-    isMac,
+    isMac: isMacOS(),
     overlayOpen,
     paletteOpen: activeModal?.type === 'palette',
     bindings,
@@ -4672,7 +4669,7 @@ export default function App(): React.JSX.Element {
       rows: reviewPaths
         ? () => tracksViewRef.current.filter((t) => reviewPaths.has(t.inputPath))
         : () => tracksViewRef.current.filter(inFiles),
-      mac: isMac,
+      mac: isMacOS(),
       launchMusic: () =>
         !!settingsRef.current?.addToAppleMusic ||
         tracksRef.current.some((t) => t.fromAppleMusic || t.musicPersistentId),
