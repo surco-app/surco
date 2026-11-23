@@ -4718,6 +4718,27 @@ describe('Editor Discogs apply', () => {
     )
   })
 
+  // A field can commit without a focus event we saw (a menu that keeps the focus on mousedown).
+  // That edit belongs to its own track alone; sharing a step with another track's edit would
+  // let one ⌘Z take back both, the other one unseen.
+  it("keeps a field edit made without a focus event out of another track's undo step", () => {
+    const first = renderEditor({ id: 'a', meta: { title: 'One' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'One typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
+    cleanup()
+    const second = renderEditor({ id: 'b', meta: { title: 'Two' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Two typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
+
+    expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
+      first.onRecordUndo.mock.calls[0][1].group,
+    )
+  })
+
   // Discogs returns each track's length; showing it next to the title is what lets
   // the user match the rip they have against the right tracklist entry by time.
   it('shows each track length from the Discogs tracklist', async () => {

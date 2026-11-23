@@ -314,7 +314,10 @@ const NARROW_EDITOR_PX = 400
 // Counted across every mount, not per editor: the editor remounts per track, and a count
 // that started over could hand a field visited again the undo step of its last visit.
 let fieldFocuses = 0
-const fieldEdit = (focus: number, key: string) => ({ group: `field-${focus}-${key}` })
+// An edit with no focus we saw opens a step of its own rather than a shared «0» step.
+const fieldEdit = (focus: number, key: string) => ({
+  group: `field-${focus || ++fieldFocuses}-${key}`,
+})
 
 // What a release writes about where it came from rather than about the music.
 const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
