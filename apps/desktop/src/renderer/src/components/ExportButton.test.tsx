@@ -96,6 +96,31 @@ describe('ExportButton', () => {
     )
   })
 
+  // Reported 23/11: choosing FLAC on an unchanged FLAC turned the row up to date and the
+  // dropdown shrank from 83.7 to 77.7 px. Both faces stack the same names, so the box around
+  // them (padding and border across) must be the same too, or the dropdown jumps.
+  it('keeps the dropdown box across the same on the up-to-date row as on the split button', () => {
+    const boxOf = () =>
+      screen
+        .getByTestId('process-format-toggle')
+        .className.split(/\s+/)
+        .filter((c) => /^(p[xlr]?|border(-[xlr])?)(-|$)/.test(c))
+        .filter((c) => !/^border-\[/.test(c))
+        .sort()
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate={false} />)
+    const split = boxOf()
+    rerender(<ExportButton {...props} upToDate />)
+    expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+    expect(boxOf()).toEqual(split)
+  })
+
   it('keeps the format menu on the quiet face', () => {
     render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))

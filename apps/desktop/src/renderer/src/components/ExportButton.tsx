@@ -272,7 +272,7 @@ export function ExportButton({
             ref={toggleRef}
             aria-haspopup="menu"
             onClick={() => setOpen((v) => !v)}
-            className="press flex h-8 items-center justify-center gap-1 rounded-lg border border-[var(--color-line-strong)] px-2 text-fg-dim hover:bg-[var(--color-hover)]"
+            className="press flex h-8 items-center justify-center gap-1 rounded-lg px-3 text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset hover:bg-[var(--color-hover)]"
           >
             {formatPicker}
             <ChevronDown
