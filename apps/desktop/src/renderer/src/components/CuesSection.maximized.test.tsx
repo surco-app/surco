@@ -18,6 +18,7 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
+import type { ReplacedEntry } from '../../../shared/toReview'
 import type { Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
@@ -27,6 +28,7 @@ import { reduceDraft } from '../lib/cueDraft'
 import { claimCueSave } from '../lib/cueSaveEcho'
 import { autoMarkOf, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
+import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
 import { type ApiOverrides, installApi } from '../test/api'
 import { auditHeard } from '../test/heardGrid'
@@ -57,6 +59,7 @@ const TRACK = { title: 'Pray', artist: 'Gowan', bpm: '120', key: '6A' }
 
 afterEach(() => {
   cleanup()
+  takeShortcutUndo()
   resetEditorSections()
   resetCueSession()
   vi.unstubAllGlobals()
@@ -2673,5 +2676,146 @@ describe('CuesSection while the track loads', () => {
       expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
     )
     expect(screen.queryByTestId('cues-skeleton')).toBeNull()
+  })
+})
+
+describe('CuesSection maximized replaced track', () => {
+  it('shows the pill and the reason in the maximized editor too, where the DJ actually checks cues', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { unmoved: 'noMatch' },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('cues-header')).getByTestId('cues-replaced-pill'),
+      ).toHaveTextContent('not moved'),
+    )
+    expect(
+      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-replaced-reason'),
+    ).toBeInTheDocument()
+  })
+
+  // The maximized editor is where the DJ checks the cues by ear; making them fold it back
+  // just to close the review would break the flow at the very moment they are done.
+  it('offers Reviewed in the maximized editor, so the DJ can close the review without leaving it', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 0 },
+          pending: ['rekordbox'],
+        },
+      ],
+      reviewReplaced,
+    })
+    await maximize()
+    const button = await waitFor(() =>
+      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-reviewed'),
+    )
+    fireEvent.click(button)
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', undefined))
+  })
+
+  // Reviewed removes its own row, and with it the focused button. The keys must stay with the
+  // open track: ⌘Z first takes back Reviewed, as its notice says, and once that is spent it
+  // goes back to stepping the cue draft, never to the list behind the editor.
+  it('keeps the keys in the maximized editor after Reviewed, so ⌘Z undoes Reviewed and then the cues', async () => {
+    const entry: ReplacedEntry = {
+      newPath: '/m/g.wav',
+      oldPath: '/m/g.mp3',
+      replacedAt: 1,
+      shift: { moved: 0 },
+      pending: ['rekordbox'],
+    }
+    let listed: ReplacedEntry[] = [entry]
+    const restoreReplaced = vi.fn<Api['restoreReplaced']>(async () => {})
+    setup(
+      null,
+      {
+        ...READ,
+        cues: [
+          { id: 'l', ms: 32000, kind: 1, color: 1, loop: true },
+          { id: 'h', ms: 64000, kind: 2, color: 1 },
+        ],
+      },
+      {
+        replacedTracks: async () => listed,
+        reviewReplaced: async () => {
+          listed = []
+          return entry
+        },
+        restoreReplaced,
+      },
+    )
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-clear-all'))
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+    const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
+    reviewed.focus()
+    fireEvent.click(reviewed)
+    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    expect(document.activeElement).toBe(editor())
+
+    key('z', { metaKey: true })
+    await waitFor(() => expect(restoreReplaced).toHaveBeenCalledWith(entry))
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    expect(restoreReplaced).toHaveBeenCalledOnce()
+  })
+
+  // ⌘Z takes back the DJ's last step. A cue edit made after Reviewed is that step, so ⌘Z
+  // must undo the edit and leave the review closed, not reopen it behind their back.
+  it('undoes a cue edit made after Reviewed with ⌘Z, leaving the review closed', async () => {
+    const entry: ReplacedEntry = {
+      newPath: '/m/g.wav',
+      oldPath: '/m/g.mp3',
+      replacedAt: 1,
+      shift: { moved: 0 },
+      pending: ['rekordbox'],
+    }
+    let listed: ReplacedEntry[] = [entry]
+    const restoreReplaced = vi.fn<Api['restoreReplaced']>(async () => {})
+    setup(
+      null,
+      {
+        ...READ,
+        cues: [
+          { id: 'l', ms: 32000, kind: 1, color: 1, loop: true },
+          { id: 'h', ms: 64000, kind: 2, color: 1 },
+        ],
+      },
+      {
+        replacedTracks: async () => listed,
+        reviewReplaced: async () => {
+          listed = []
+          return entry
+        },
+        restoreReplaced,
+      },
+    )
+    await maximize()
+    const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
+    fireEvent.click(reviewed)
+    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    fireEvent.click(screen.getByTestId('cues-clear-all'))
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    await act(async () => {})
+    expect(restoreReplaced).not.toHaveBeenCalled()
   })
 })

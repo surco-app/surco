@@ -1,4 +1,5 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs'
+import log from 'electron-log/main'
 
 export interface MatchingStore {
   list(): [string, string][]
@@ -69,7 +70,14 @@ export function followConversion(
   exists: (path: string) => boolean,
 ): void {
   if (result.skipped) return
-  for (const from of [job.inputPath, job.replacesPath]) {
-    if (from && from !== result.outputPath && !exists(from)) store.movePath(from, result.outputPath)
+  // Called once the file has landed: a store that cannot be written is logged, never a
+  // failed job.
+  try {
+    for (const from of [job.inputPath, job.replacesPath]) {
+      if (from && from !== result.outputPath && !exists(from))
+        store.movePath(from, result.outputPath)
+    }
+  } catch (e) {
+    log.error('matching store: could not follow the converted file', e)
   }
 }

@@ -9,16 +9,22 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
+import type { DjProgram } from '../../../shared/djProgram'
+import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
+import { offerShortcutUndo, takeShortcutUndo } from '../lib/shortcutUndo'
 import { type ApiOverrides, installApi } from '../test/api'
 import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 afterEach(cleanup)
+afterEach(() => {
+  takeShortcutUndo()
+})
 afterEach(resetCueSession)
 afterEach(resetEditorSections)
 
@@ -227,6 +233,28 @@ describe('CuesSection', () => {
     ])
   })
 
+  it('takes a track out of To review in the program its cues were saved to, since the DJ has now fixed them there', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues } = setup(READ, null, undefined, { reviewReplaced })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', ['rekordbox']))
+  })
+
+  it('keeps the track in To review when the save failed, since nothing reached the program', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues } = setup(READ, null, undefined, { reviewReplaced })
+    saveRekordboxCues.mockRejectedValue(new Error('locked'))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeInTheDocument())
+    expect(reviewReplaced).not.toHaveBeenCalled()
+  })
+
   it('letters a cue placed before A as the new A and saves the old A as B with its CALL untouched, or keeps the pads as they were with the order off', async () => {
     const saved = {
       ...READ,
@@ -298,6 +326,23 @@ describe('CuesSection', () => {
     screen.getByTestId('cue-wave').dispatchEvent(event)
     expect(event.defaultPrevented).toBe(true)
     await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+  })
+
+  // A Reviewed pressed in the folded editor offers its Undo to ⌘Z. With the keys still on
+  // the wave, ⌘Z must take that back first, as in the maximized editor, and only then step
+  // the cue draft.
+  it('gives cmd Z to a live Reviewed before the cue draft in the folded editor', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+    fireEvent.keyDown(screen.getByTestId('cue-wave'), { key: 'z', metaKey: true })
+    await waitFor(() => expect(screen.queryByTestId('cue-wave-hot-A')).toBeNull())
+    expect(undoReviewed).toHaveBeenCalledOnce()
   })
 
   // Clearing every cue sat among the flows in the flow menu, where a pick meant to change
@@ -1286,5 +1331,49 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     await ready()
     expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
     expect(screen.queryByTestId('cues-provisional')).toBeNull()
+  })
+})
+
+describe('CuesSection replaced track', () => {
+  const entry = (pending: DjProgram[]): ReplacedEntry => ({
+    newPath: '/m/g.wav',
+    oldPath: '/m/g.mp3',
+    replacedAt: 1,
+    shift: { moved: 120 },
+    pending,
+  })
+
+  it('shows the pill on a replaced track only while this program still has it to review', async () => {
+    setup(READ, null, undefined, { replacedTracks: async () => [entry(['rekordbox'])] })
+    await ready()
+    expect(await screen.findByTestId('cues-replaced-pill')).toHaveTextContent('+120 ms')
+    cleanup()
+    setup(READ, null, undefined, { replacedTracks: async () => [entry(['traktor'])] })
+    await ready()
+    expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
+  })
+
+  // Reviewed removes itself with its row. Keyboard and VoiceOver users must land back on
+  // the cue editor, not on the page, so ⌘Z there still takes Reviewed back.
+  it('returns the focus to the cue editor after Reviewed, so the DJ keeps their place', async () => {
+    let listed = [entry(['rekordbox'])]
+    const restoreReplaced = vi.fn<Api['restoreReplaced']>(async () => {})
+    setup(READ, null, undefined, {
+      replacedTracks: async () => listed,
+      reviewReplaced: async () => {
+        const [was] = listed
+        listed = []
+        return was
+      },
+      restoreReplaced,
+    })
+    await ready()
+    const reviewed = await screen.findByTestId('cues-reviewed')
+    reviewed.focus()
+    fireEvent.click(reviewed)
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
+    expect(document.activeElement).toBe(screen.getByTestId('cues-editor'))
+    fireEvent.keyDown(document.activeElement as Element, { key: 'z', metaKey: true })
+    await waitFor(() => expect(restoreReplaced).toHaveBeenCalledOnce())
   })
 })

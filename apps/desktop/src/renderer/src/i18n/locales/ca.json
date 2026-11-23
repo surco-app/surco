@@ -489,6 +489,7 @@
     "trimApplied_other": "Retall aplicat a {{count}} pistes",
     "trimUndo": "Desfer",
     "undo": "Desfer",
+    "reviewed": "Revisada · {{name}}",
     "clearedMeta_one": "Metadades esborrades en {{count}} pista",
     "clearedMeta_other": "Metadades esborrades en {{count}} pistes",
     "filledMeasured_one": "{{count}} pista omplerta",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "Fa Matching amb la pista triada",
+    "cuesMoved": "Cues moguts",
+    "cuesNotMoved": "Cues sense moure",
     "cuesUnsaved": "Cues sense desar",
     "autoMark": {
       "proposed_one": "{{count}} proposta",
@@ -1314,6 +1317,13 @@
         "chip": "Graella de Surco · {{bpm}} BPM",
         "help": "rekordbox encara no ha analitzat aquesta pista. Surco n'ha calculat el tempo i la graella, així que ja pots posar els cues. Quan rekordbox l'analitzi, Surco els ajustarà a la seva graella.",
         "measuring": "Calculant la graella…"
+      },
+      "replaced": {
+        "notMoved": "sense moure",
+        "noMatch": "Surco no ha pogut alinear el fitxer nou amb el vell. Els cues continuen com estaven.",
+        "drift": "El principi i el final s'han mogut de manera diferent. Els cues continuen com estaven.",
+        "unreadable": "No s'ha pogut llegir el fitxer vell. Els cues continuen com estaven.",
+        "reviewed": "Revisada"
       },
       "twins": {
         "title": "En desar, el flux també es posa a",
@@ -2780,6 +2790,7 @@
     "matchingDismiss": "Descarta",
     "matchingMore": "Mostra'n més",
     "recentlyAdded": "Afegides recentment",
+    "toReview": "Per revisar",
     "search": "Cercar playlists",
     "loading": "Llegint les playlists…",
     "failed": {

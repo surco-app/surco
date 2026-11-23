@@ -489,6 +489,7 @@
     "trimApplied_other": "{{count}} トラックにトリムを適用しました",
     "trimUndo": "元に戻す",
     "undo": "元に戻す",
+    "reviewed": "確認済み · {{name}}",
     "clearedMeta_one": "{{count}} トラックのメタデータを消去しました",
     "clearedMeta_other": "{{count}} トラックのメタデータを消去しました",
     "filledMeasured_one": "{{count}} トラックに入力しました",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "選択したトラックとMatching",
+    "cuesMoved": "キューを移動しました",
+    "cuesNotMoved": "キューは移動していません",
     "cuesUnsaved": "キューが未保存",
     "autoMark": {
       "proposed_one": "{{count}} 件の提案",
@@ -1314,6 +1317,13 @@
         "chip": "Surco のグリッド · {{bpm}} BPM",
         "help": "rekordbox はまだこのトラックを解析していません。Surco がテンポとグリッドを計測したので、今すぐキューを設定できます。rekordbox が解析すると、Surco がキューを rekordbox のグリッドに合わせて移動します。",
         "measuring": "ビートグリッドを計測中…"
+      },
+      "replaced": {
+        "notMoved": "移動なし",
+        "noMatch": "Surco は新しいファイルを古いファイルに合わせられませんでした。キューは元のままです。",
+        "drift": "曲の始まりと終わりでずれ方が違いました。キューは元のままです。",
+        "unreadable": "古いファイルを読み込めませんでした。キューは元のままです。",
+        "reviewed": "確認済み"
       },
       "twins": {
         "title": "保存すると、フローは次にも配置されます",
@@ -2780,6 +2790,7 @@
     "matchingDismiss": "無視",
     "matchingMore": "もっと見る",
     "recentlyAdded": "最近追加した項目",
+    "toReview": "要確認",
     "search": "プレイリストを検索",
     "loading": "プレイリストを読み込み中…",
     "failed": {
