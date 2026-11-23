@@ -3233,6 +3233,81 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
   })
 
+  // Every program keeps pointing at the same path, but a normalize, trim or declick moved the
+  // audio under it: the waveform and grids read before belong to sound that no longer exists.
+  it('re-reads what the cue editor draws from the track’s file once a run rewrites a file in place, with no DJ program reached', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    for (const key of [
+      'rekordbox-track-cues',
+      'rekordbox-cue-wave-detail',
+      'rekordbox-cue-wave-fine',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
+  // Each re-read decodes the open track again, so a batch of in-place rewrites must cost one.
+  it('re-reads the cue editor’s file queries once per run, not once per rewritten track', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockImplementation(async (job) => ({ outputPath: job.inputPath, inPlace: true })),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    const fine = invalidate.mock.calls.filter(
+      ([filters]) => filters?.queryKey?.[0] === 'rekordbox-cue-wave-fine',
+    )
+    expect(fine).toHaveLength(1)
+  })
+
+  // Only the tags changed, so the audio the editor drew is still the audio on disk.
+  it('leaves the cue editor’s file queries alone when an in-place run only rewrote tags', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true, tagsOnly: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['rekordbox-cue-wave-fine'] })
+  })
+
   it('leaves the DJ collections alone when the conversion wrote nothing', async () => {
     setApi({
       processTrack: vi

@@ -209,16 +209,21 @@ export function useTrackProcessing({
         queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[program].membershipKey] })
   }
   const wroteRef = useRef(false)
+  // An in-place rewrite of the audio keeps every program's path and content id, so only
+  // this says the cue editor's reads of that file are stale.
+  const rewroteAudioRef = useRef(false)
   const rereadReachedCollections = (): void => {
     if (!wroteRef.current) return
     wroteRef.current = false
+    const rewroteAudio = rewroteAudioRef.current
+    rewroteAudioRef.current = false
     const reached = DJ_PROGRAMS.filter((program) => {
       const { sync, add } = DJ_REACH_SETTINGS[program]
       return settings?.[sync] || settings?.[add]
     })
     for (const program of reached)
       queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
-    if (reached.length > 0) rereadTrackFileQueries(queryClient)
+    if (reached.length > 0 || rewroteAudio) rereadTrackFileQueries(queryClient)
   }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
@@ -528,6 +533,7 @@ export function useTrackProcessing({
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
         wroteRef.current = true
+        if (result.inPlace && !result.tagsOnly) rewroteAudioRef.current = true
         if (result.replaceShift || (result.outputPath && result.outputPath !== track.inputPath))
           queryClient.invalidateQueries({ queryKey: REPLACED_QUERY })
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
