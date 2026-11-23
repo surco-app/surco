@@ -362,6 +362,7 @@ export const Field = memo(function Field({
             formatResult={formatResult}
             inputRef={inputRef}
             onChange={commit}
+            firstLine={multiline}
           />
         )}
       </span>

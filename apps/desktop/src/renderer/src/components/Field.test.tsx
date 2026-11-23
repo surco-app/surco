@@ -787,3 +787,21 @@ describe('Field word box', () => {
     expect(screen.getByTestId('field-key').parentElement?.className).toContain('w-28')
   })
 })
+
+describe('Field with several lines and its menu', () => {
+  it('pins the { } menu to the first line, so it does not float in the middle of a long note', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value={'Line one\nLine two\nLine three'}
+        onChange={vi.fn()}
+        multiline
+        insertSources={[{ key: 'title', label: 'Title', value: 'Song' }]}
+      />,
+    )
+    const trigger = screen.getByTestId('field-insert-comment')
+    expect(trigger).toHaveClass('top-1.5')
+    expect(trigger).not.toHaveClass('top-1/2')
+  })
+})
