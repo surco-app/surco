@@ -15,6 +15,7 @@ import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { makeRekordbox } from '../scenarios/rekordboxFixture'
 import { emptyMetadata } from '../shared/metadata'
 import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
@@ -922,5 +923,67 @@ describe('a repoint across Unicode forms', () => {
     const row = readRow(dbPath)
     expect(row.FolderPath).toBe(to)
     expect(row.FileNameL).toBe('Café.wav'.normalize('NFD'))
+  })
+})
+
+// The 23/11 replacement test on a copy of a real collection: a row moved from a 320 kbps
+// MP3 onto an AIFF still said 320 kbps, 16 bits and the MP3's length, because the repoint
+// only rewrote the file columns. rekordbox reads these off the file when it imports it, so
+// the moved row takes them from the new file the same way an added one does.
+describe('the technical columns of a moved row', () => {
+  const probe = {
+    properties: async () => ({ sampleRateHz: 48000, bitDepth: 24, channels: 2, bitrateKbps: null }),
+    duration: async () => 301.6,
+  }
+
+  async function moved(options: { probe?: typeof probe } = {}) {
+    const from = join(audioDir, 'Prueba.mp3')
+    const collection = makeRekordbox(join(audioDir, 'rekordbox'), [
+      { id: '100', path: from, title: 'Prueba', artist: 'Surco', fileType: 1, cuesMs: [] },
+    ])
+    const db = new Database(collection)
+    db.pragma(`cipher='sqlcipher'`)
+    db.pragma('legacy=4')
+    db.pragma(`key='${REKORDBOX_KEY}'`)
+    db.prepare(
+      `UPDATE djmdContent SET BitRate = 320, BitDepth = 16, SampleRate = 44100, Length = 280`,
+    ).run()
+    db.close()
+    const to = join(audioDir, 'Prueba.aiff')
+    await writeFile(to, 'aiff')
+    const [result] = await repointTracks(collection, [{ from, to }], {
+      backup: async () => {},
+      ...options,
+    })
+    expect(result.written).toBe(true)
+    const read = openRekordboxDb(collection, { readonly: true })
+    if (!read) throw new Error('collection did not open')
+    const row = read
+      .prepare(`SELECT BitRate, BitDepth, SampleRate, Length FROM djmdContent WHERE ID = '100'`)
+      .get()
+    read.close()
+    return row
+  }
+
+  it("takes the new file's bitrate, depth, rate and length", async () => {
+    expect(await moved({ probe })).toEqual({
+      BitRate: 2304,
+      BitDepth: 24,
+      SampleRate: 48000,
+      Length: 301,
+    })
+  })
+
+  it('keeps them when the new file cannot be read', async () => {
+    expect(
+      await moved({
+        probe: {
+          ...probe,
+          properties: async () => {
+            throw new Error('ffprobe failed')
+          },
+        },
+      }),
+    ).toEqual({ BitRate: 320, BitDepth: 16, SampleRate: 44100, Length: 280 })
   })
 })
