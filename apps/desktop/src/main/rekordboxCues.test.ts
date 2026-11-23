@@ -634,6 +634,24 @@ describe('shiftCues', () => {
     db.close()
   })
 
+  // A loop is as long as the bars the DJ chose: held at the start, its end moves only as far
+  // as its start did, or a two-second loop near the start comes back one second long.
+  it('keeps the length of a loop it holds at the start', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
+    ).run(JSON.stringify([{ ID: 'loop', Kind: 2, InMsec: 16000, OutMsec: 18000 }]))
+
+    shiftCues(db, '103', -17000, { now: NOW })
+
+    expect(rows(db)[0]).toMatchObject({ ID: 'loop', InMsec: 0, OutMsec: 2000 })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)[0]).toMatchObject({ InMsec: 0, OutMsec: 2000 })
+    db.close()
+  })
+
   // rekordbox also keeps MP3 positions as MPEG frame numbers on some cues. They describe the
   // old file, so they would contradict the moved milliseconds; zero is what Surco writes on
   // the cues it creates and what rekordbox read correctly in the same test.

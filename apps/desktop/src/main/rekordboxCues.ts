@@ -264,7 +264,7 @@ interface CuePosition {
 function shifted<T extends CuePosition>(cue: T, deltaMs: number) {
   const inMs = Math.max(0, cue.InMsec + deltaMs)
   const loop = cue.OutMsec !== null && cue.OutMsec >= 0
-  const outMs = loop ? Math.max(0, (cue.OutMsec as number) + deltaMs) : cue.OutMsec
+  const outMs = loop ? (cue.OutMsec as number) + inMs - cue.InMsec : cue.OutMsec
   return { inMs, outMs, loop }
 }
 
