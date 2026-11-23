@@ -144,6 +144,7 @@ export function libraryReaders(
             from: e.from,
             to: e.to,
             samplesKept: e.samplesKept,
+            reanalysed: e.cueShiftMs !== undefined,
             before: e.rekordbox ?? 'unreadable',
             added: e.rekordbox === 'absent',
             size: size[i],

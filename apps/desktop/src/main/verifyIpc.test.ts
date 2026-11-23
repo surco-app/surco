@@ -263,6 +263,36 @@ describe('library readers', () => {
     expect(seen.map((e) => (e as { playlists?: unknown }).playlists)).toEqual([house, undefined])
   })
 
+  // A repoint that moved the cues also emptied the analysis on purpose: without being told,
+  // the check reads that write as a lost analysis and holds the old file back.
+  it('tells the rekordbox check which repoints asked rekordbox to analyse again', async () => {
+    const path = collection()
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => path, engine: () => '', traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        checkRekordbox: (_db, list) => {
+          seen.push(...list)
+          return list.map(() => ({
+            place: 'rekordbox',
+            state: 'ok',
+            detail: { key: 'rekordboxOk' },
+          }))
+        },
+      },
+    )
+    const row = { id: '100', cues: 2, analysisDataPath: '', analysed: 0 }
+
+    await readers.readRekordbox([
+      entry({ rekordbox: row, cueShiftMs: 0 }),
+      entry({ rekordbox: row }),
+    ])
+
+    expect(seen.map((e) => (e as { reanalysed?: boolean }).reanalysed)).toEqual([true, false])
+  })
+
   // The check has to know the cut to tell cues that followed it from cues left behind.
   it('hands the Engine check the cut the conversion made', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))

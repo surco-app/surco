@@ -236,6 +236,18 @@ describe('checkRekordbox', () => {
     expect(checkOne(db, expectFor(before))[0].detail.key).toBe('rekordboxAnalysisEmptied')
   })
 
+  // The 23/11 replacement test on a copy of a real collection: the repoint emptied the
+  // analysis itself so rekordbox would draw the new file, and the check read its own write
+  // as a loss, kept the warning on the row and the old file from retiring.
+  it('an emptied analysis the repoint asked for on a sample-kept replacement is ok', () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    write(db, `UPDATE djmdContent SET AnalysisDataPath = '', Analysed = 0 WHERE ID = '100'`)
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
   // A re-encode moves the audio, so rekordbox must analyse it again: an empty analysis
   // is the intended state there, not a loss.
   it('an emptied AnalysisDataPath after a reencode is ok', () => {
