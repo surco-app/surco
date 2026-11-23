@@ -489,6 +489,7 @@
     "trimApplied_other": "Rognage appliqué à {{count}} morceaux",
     "trimUndo": "Annuler",
     "undo": "Annuler",
+    "reviewed": "Vérifié · {{name}}",
     "clearedMeta_one": "Métadonnées effacées sur {{count}} morceau",
     "clearedMeta_other": "Métadonnées effacées sur {{count}} morceaux",
     "filledMeasured_one": "{{count}} morceau rempli",
@@ -1320,7 +1321,8 @@
         "notMoved": "non déplacés",
         "noMatch": "Surco n’a pas pu aligner le nouveau fichier sur l’ancien. Les cues restent comme ils étaient.",
         "drift": "Le début et la fin se sont décalés différemment. Les cues restent comme ils étaient.",
-        "unreadable": "L’ancien fichier n’a pas pu être lu. Les cues restent comme ils étaient."
+        "unreadable": "L’ancien fichier n’a pas pu être lu. Les cues restent comme ils étaient.",
+        "reviewed": "Vérifié"
       },
       "twins": {
         "title": "En enregistrant, le flux est aussi placé dans",

@@ -143,6 +143,7 @@ import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
 import { ReplacedPill, ReplacedReason } from './ReplacedPill'
+import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
@@ -1881,12 +1882,13 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
-      {/* The full editor has no section header, so the why of a replaced track gets a row of
-      its own under the track's header. Only a replaced track has it, so no state inside the
-      open track toggles it and nothing above the wave changes width. */}
+      {/* The full editor has no section header, so the why of a replaced track and its
+      Reviewed get a row of their own under the track's header. Only a replaced track has it,
+      so no state inside the open track toggles it and nothing above the wave changes width. */}
       {maximized && replaced && (
         <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
           <ReplacedReason shift={replaced.shift} />
+          <ReviewedButton path={replaced.newPath} name={track?.title || cue.label} />
         </div>
       )}
       {maximized ? (
@@ -2494,9 +2496,10 @@ export function CuesSection({
         <SectionBody open={open}>
           <div className="mt-3">
             {body}
-            {replaced && 'unmoved' in replaced.shift && (
-              <div className="mt-2">
+            {replaced && (
+              <div className="mt-2 flex flex-col items-start gap-2">
                 <ReplacedReason shift={replaced.shift} />
+                <ReviewedButton path={replaced.newPath} name={track?.title || cue.label} />
               </div>
             )}
             {footer}

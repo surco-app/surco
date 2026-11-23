@@ -58,6 +58,7 @@ import { spellingGroups } from './lib/musicSpelling'
 import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
+import { offerShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import { formatCount } from './lib/stats'
 import { usbExportStore } from './lib/usbExportStore'
 import { type ApiOverrides, djReads, type ProgramReads, stubApi } from './test/api'
@@ -11696,6 +11697,28 @@ describe('App metadata undo', () => {
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
     expect(screen.getByText('Metadata restored on 1 track')).toBeInTheDocument()
+  })
+
+  // Reviewed's notice says what ⌘Z would take back. While it is up, ⌘Z belongs to it: falling
+  // through to an older tag edit would silently change tags the DJ was not even looking at.
+  it('⌘Z undoes Reviewed while its notice is up, before older tag edits', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+    expect(screen.getByTestId('field-title')).toHaveValue('')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('field-title')).toHaveValue('')
+    takeShortcutUndo()
   })
 
   it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {

@@ -489,6 +489,7 @@
     "trimApplied_other": "Kürzung auf {{count}} Tracks angewendet",
     "trimUndo": "Rückgängig",
     "undo": "Rückgängig",
+    "reviewed": "Geprüft · {{name}}",
     "clearedMeta_one": "Metadaten in {{count}} Track gelöscht",
     "clearedMeta_other": "Metadaten in {{count}} Tracks gelöscht",
     "filledMeasured_one": "{{count}} Track ausgefüllt",
@@ -1320,7 +1321,8 @@
         "notMoved": "nicht verschoben",
         "noMatch": "Surco konnte die neue Datei nicht an der alten ausrichten. Die Cues bleiben, wie sie waren.",
         "drift": "Anfang und Ende haben sich unterschiedlich verschoben. Die Cues bleiben, wie sie waren.",
-        "unreadable": "Die alte Datei konnte nicht gelesen werden. Die Cues bleiben, wie sie waren."
+        "unreadable": "Die alte Datei konnte nicht gelesen werden. Die Cues bleiben, wie sie waren.",
+        "reviewed": "Geprüft"
       },
       "twins": {
         "title": "Beim Speichern kommt der Ablauf auch nach",

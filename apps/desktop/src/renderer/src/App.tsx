@@ -284,6 +284,7 @@ import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
+import { hasShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import {
   isUsbProgram,
   SOURCE_PROGRAMS,
@@ -494,6 +495,7 @@ export default function App(): React.JSX.Element {
           onDismiss: onSettle,
           onExpire: onSettle,
         })
+        return () => dismissToast(store, id)
       },
     }),
     [store],
@@ -4166,7 +4168,11 @@ export default function App(): React.JSX.Element {
   })
   // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
   // silence would leave the user unsure whether anything was restored.
+  // A notice still offering its own Undo (Reviewed) comes first: it is what the DJ just did
+  // and can read on screen, older tag edits are not.
   const undoMeta = useStableCallback(() => {
+    const shortcut = takeShortcutUndo()
+    if (shortcut) return shortcut()
     const count = metaUndo.undo()
     if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
   })
@@ -4375,7 +4381,7 @@ export default function App(): React.JSX.Element {
       trimDetected: onTrimDetectedAll,
       titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
-      canUndoMeta: metaUndo.canUndo,
+      canUndoMeta: () => hasShortcutUndo() || metaUndo.canUndo(),
       redoMeta,
       canRedoMeta: metaUndo.canRedo,
       canReopenLastSession: lastSession.canReopen,

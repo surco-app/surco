@@ -489,6 +489,7 @@
     "trimApplied_other": "Taglio applicato a {{count}} brani",
     "trimUndo": "Annulla",
     "undo": "Annulla",
+    "reviewed": "Rivisto · {{name}}",
     "clearedMeta_one": "Metadati cancellati in {{count}} brano",
     "clearedMeta_other": "Metadati cancellati in {{count}} brani",
     "filledMeasured_one": "{{count}} brano compilato",
@@ -1320,7 +1321,8 @@
         "notMoved": "non spostati",
         "noMatch": "Surco non è riuscito ad allineare il nuovo file con quello vecchio. I cue restano com'erano.",
         "drift": "L'inizio e la fine si sono spostati in modo diverso. I cue restano com'erano.",
-        "unreadable": "Non è stato possibile leggere il vecchio file. I cue restano com'erano."
+        "unreadable": "Non è stato possibile leggere il vecchio file. I cue restano com'erano.",
+        "reviewed": "Rivisto"
       },
       "twins": {
         "title": "Al salvataggio, il flusso va anche in",

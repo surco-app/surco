@@ -489,6 +489,7 @@
     "trimApplied_other": "Corte aplicado em {{count}} faixas",
     "trimUndo": "Desfazer",
     "undo": "Desfazer",
+    "reviewed": "Revisada · {{name}}",
     "clearedMeta_one": "Metadados apagados em {{count}} faixa",
     "clearedMeta_other": "Metadados apagados em {{count}} faixas",
     "filledMeasured_one": "{{count}} faixa preenchida",
@@ -1320,7 +1321,8 @@
         "notMoved": "não movidos",
         "noMatch": "O Surco não conseguiu alinhar o arquivo novo com o antigo. Os cues continuam como estavam.",
         "drift": "O início e o fim se moveram de forma diferente. Os cues continuam como estavam.",
-        "unreadable": "Não foi possível ler o arquivo antigo. Os cues continuam como estavam."
+        "unreadable": "Não foi possível ler o arquivo antigo. Os cues continuam como estavam.",
+        "reviewed": "Revisada"
       },
       "twins": {
         "title": "Ao salvar, o fluxo também é colocado em",

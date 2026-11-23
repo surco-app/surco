@@ -2699,4 +2699,28 @@ describe('CuesSection maximized replaced track', () => {
       within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-replaced-reason'),
     ).toBeInTheDocument()
   })
+
+  // The maximized editor is where the DJ checks the cues by ear; making them fold it back
+  // just to close the review would break the flow at the very moment they are done.
+  it('offers Reviewed in the maximized editor, so the DJ can close the review without leaving it', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 0 },
+          pending: ['rekordbox'],
+        },
+      ],
+      reviewReplaced,
+    })
+    await maximize()
+    const button = await waitFor(() =>
+      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-reviewed'),
+    )
+    fireEvent.click(button)
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', undefined))
+  })
 })

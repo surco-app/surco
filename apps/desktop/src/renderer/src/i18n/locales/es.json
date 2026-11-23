@@ -489,6 +489,7 @@
     "trimApplied_other": "Recorte aplicado en {{count}} pistas",
     "trimUndo": "Deshacer",
     "undo": "Deshacer",
+    "reviewed": "Revisada · {{name}}",
     "clearedMeta_one": "Metadatos borrados en {{count}} pista",
     "clearedMeta_other": "Metadatos borrados en {{count}} pistas",
     "filledMeasured_one": "{{count}} pista rellenada",
@@ -1320,7 +1321,8 @@
         "notMoved": "sin mover",
         "noMatch": "Surco no pudo alinear el fichero nuevo con el viejo. Los cues siguen como estaban.",
         "drift": "El principio y el final se movieron distinto. Los cues siguen como estaban.",
-        "unreadable": "No se pudo leer el fichero viejo. Los cues siguen como estaban."
+        "unreadable": "No se pudo leer el fichero viejo. Los cues siguen como estaban.",
+        "reviewed": "Revisada"
       },
       "twins": {
         "title": "Al guardar, el flujo también se pone en",

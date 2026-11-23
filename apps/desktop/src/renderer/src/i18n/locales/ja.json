@@ -489,6 +489,7 @@
     "trimApplied_other": "{{count}} トラックにトリムを適用しました",
     "trimUndo": "元に戻す",
     "undo": "元に戻す",
+    "reviewed": "確認済み · {{name}}",
     "clearedMeta_one": "{{count}} トラックのメタデータを消去しました",
     "clearedMeta_other": "{{count}} トラックのメタデータを消去しました",
     "filledMeasured_one": "{{count}} トラックに入力しました",
@@ -1320,7 +1321,8 @@
         "notMoved": "移動なし",
         "noMatch": "Surco は新しいファイルを古いファイルに合わせられませんでした。キューは元のままです。",
         "drift": "曲の始まりと終わりでずれ方が違いました。キューは元のままです。",
-        "unreadable": "古いファイルを読み込めませんでした。キューは元のままです。"
+        "unreadable": "古いファイルを読み込めませんでした。キューは元のままです。",
+        "reviewed": "確認済み"
       },
       "twins": {
         "title": "保存すると、フローは次にも配置されます",
