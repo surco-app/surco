@@ -146,6 +146,17 @@ button:not(:disabled) {
   }
 }
 
+/* Loading bones breathe rather than sweep: a sheen reads as progress the page cannot
+   measure, a slow fade only says it is still working. */
+.skeleton {
+  animation: skeleton 1.6s ease-in-out infinite;
+}
+@keyframes skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* scroll-triggered reveal */
 .reveal-init {
   opacity: 0;
