@@ -3647,8 +3647,8 @@ async function decodeReplaceWindow(
 // How far a replacement moved the audio against the file it replaces: head and tail
 // windows of both are decoded in parallel by ffmpeg and the correlation runs in the worker,
 // since a 2^21-point FFT on the main process blocks it past 100 ms. A measurement that fails
-// never throws, only a cancel does, and a cancel (or the first failure) kills every ffmpeg
-// of the measurement before it settles.
+// never throws, only a cancel does. A cancel kills every ffmpeg of the measurement; a failed
+// decode does not stop the others, which all settle before it answers.
 export async function measureReplaceShift(
   old: string,
   current: string,
