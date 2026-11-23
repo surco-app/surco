@@ -241,7 +241,12 @@ import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerReplacedIpc } from './replacedIpc'
-import { createReplacedStore, followingPrograms, keepReplacedForReview } from './replacedStore'
+import {
+  createReplacedStore,
+  followingPrograms,
+  keepReplacedForReview,
+  leaveOutWhereStayed,
+} from './replacedStore'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
@@ -479,6 +484,14 @@ const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
 const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
 const replacedStore = createReplacedStore(join(app.getPath('userData'), 'replaced-tracks.json'))
+const leaveTraktorOutWhereStayed = (write: FlushOutcome['traktor']): void => {
+  if (
+    typeof write === 'object' &&
+    write.stayed &&
+    leaveOutWhereStayed(replacedStore, 'traktor', write.stayed)
+  )
+    broadcast('replaced:changed', null)
+}
 const fileSignatures = createFileSignatures({
   load: () => {
     try {
@@ -620,6 +633,7 @@ const programQueues = {
             async (path, list) => {
               const result = await syncCollection(path, list, sessions.traktor)
               write = traktorWrite(list, result)
+              leaveTraktorOutWhereStayed(write)
               return result
             },
             bootVolumeName(),
@@ -1957,6 +1971,7 @@ function registerIpc(): void {
             },
           },
         )
+        leaveTraktorOutWhereStayed(outcome.traktor)
       } finally {
         await verifyRegistry
           .afterFlush(outcome, upTo)

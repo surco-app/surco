@@ -275,6 +275,7 @@ export interface Api {
   djAppRunning: () => Promise<boolean>
   matchingPairs: () => Promise<[string, string][]>
   replacedTracks: () => Promise<ReplacedEntry[]>
+  onReplacedChanged: (cb: () => void) => () => void
   reviewReplaced: (path: string, programs?: DjProgram[]) => Promise<ReplacedEntry | null>
   restoreReplaced: (entry: ReplacedEntry) => Promise<void>
   addMatchingPair: (a: string, b: string) => Promise<void>

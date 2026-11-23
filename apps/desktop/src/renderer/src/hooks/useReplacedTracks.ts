@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect } from 'react'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { ReplacedEntry } from '../../../shared/toReview'
 
@@ -6,6 +7,14 @@ export const REPLACED_QUERY = ['replaced-tracks'] as const
 const NO_REPLACED: ReplacedEntry[] = []
 
 export function useReplacedTracks(): ReplacedEntry[] {
+  const queryClient = useQueryClient()
+  useEffect(
+    () =>
+      window.api.onReplacedChanged(() => {
+        void queryClient.invalidateQueries({ queryKey: REPLACED_QUERY })
+      }),
+    [queryClient],
+  )
   const { data } = useQuery({
     queryKey: REPLACED_QUERY,
     queryFn: () => window.api.replacedTracks(),

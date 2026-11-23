@@ -217,6 +217,11 @@ const api: Api = {
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   matchingPairs: (): Promise<[string, string][]> => ipcRenderer.invoke('matching:list'),
   replacedTracks: (): Promise<ReplacedEntry[]> => ipcRenderer.invoke('replaced:list'),
+  onReplacedChanged: (cb: () => void): (() => void) => {
+    const handler = () => cb()
+    ipcRenderer.on('replaced:changed', handler)
+    return () => ipcRenderer.removeListener('replaced:changed', handler)
+  },
   reviewReplaced: (path: string, programs?: DjProgram[]): Promise<ReplacedEntry | null> =>
     ipcRenderer.invoke('replaced:review', path, programs),
   restoreReplaced: (entry: ReplacedEntry): Promise<void> =>

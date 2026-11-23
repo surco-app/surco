@@ -380,6 +380,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     djAppRunning: async () => false,
     matchingPairs: async () => [],
     replacedTracks: async () => [],
+    onReplacedChanged: () => () => {},
     reviewReplaced: async () => null,
     restoreReplaced: async () => {},
     addMatchingPair: async () => {},

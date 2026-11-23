@@ -17,6 +17,7 @@ import {
   type OnDisk,
   refreshedCoverIds,
   replaceDuplicateInNml,
+  stayedRelocations,
 } from './traktorNml'
 import { traktorFileOf, traktorPathOf } from './traktorPlaylists'
 import { isTraktorRunning } from './traktorProcess'
@@ -52,6 +53,7 @@ export interface SyncResult {
   before?: (string | null)[]
   // The cues of those same entries, read at the same time.
   cues?: (string | null)[]
+  stayed?: string[]
 }
 
 export async function syncCollection(
@@ -88,10 +90,14 @@ export async function syncCollection(
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
   const { before, cues } = matchedEntryFacts(original, located, onDisk)
+  const stayed = stayedRelocations(original, located, onDisk).map((p) =>
+    traktorPathOf(p.outputVolume ?? '', p.outputDir ?? '', p.outputFile ?? '', bootVolume),
+  )
+  const facts = { before, cues, ...(stayed.length > 0 ? { stayed } : {}) }
   if (patched === original) {
     // A patch that matched nothing is the normal "Traktor doesn't have this track"
     // case, not a failure — no backup, no write, disk untouched.
-    return { written: false, matched: 0, reason: 'no-matches', before, cues }
+    return { written: false, matched: 0, reason: 'no-matches', ...facts }
   }
 
   const failure = await writeCollection(nmlPath, patched, session)
@@ -113,7 +119,7 @@ export async function syncCollection(
   //
   await markNewerThanCollection(nmlPath, detachedOutputPaths(original, located, onDisk))
 
-  return { written: true, matched: matchedPatchCount(original, located, onDisk), before, cues }
+  return { written: true, matched: matchedPatchCount(original, located, onDisk), ...facts }
 }
 
 // A replace's patch is recorded as soon as the conversion lands, before the steps that can
