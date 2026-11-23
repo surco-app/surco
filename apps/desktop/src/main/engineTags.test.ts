@@ -146,6 +146,16 @@ describe('updateEngineTags', () => {
     expect(await track(lib.dbPath)).toMatchObject({ title: 'Old Title', artist: 'DJ Lara' })
   })
 
+  // Add to Engine DJ writes the new tags into the row before the name patch runs, so a row that
+  // already holds what the review wrote is done, not changed behind its back.
+  it('counts a row that already holds the new artist as written without touching the library', async () => {
+    const lib = await library(['../music/c.mp3'], 'DJ Lara')
+    const bytes = await readFile(lib.dbPath)
+    const [result] = await updateEngineTags(lib.dir, [artist(lib.file, '', 'DJ Lara')])
+    expect(result).toEqual({ written: true })
+    expect(await readFile(lib.dbPath)).toEqual(bytes)
+  })
+
   it('compares names regardless of Unicode normalization', async () => {
     const lib = await library(['../music/c.mp3'], 'José'.normalize('NFC'))
     const [result] = await updateEngineTags(lib.dir, [
