@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, Sparkle } from 'lucide-react'
 import type React from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { programOf, programsInOrder } from '../../../shared/djProgram'
@@ -105,7 +105,15 @@ export function CuesBatchSection({
   const [unsavedComments, setUnsavedComments] = useState<PhrasedComment[]>([])
   const [commentsFailed, setCommentsFailed] = useState<'rekordbox' | number | null>(null)
   const commentsMenu = useSplitMenu()
-  useEffect(() => window.api.cues.onCommentProgress(setProgress), [])
+  const savingNow = useRef(false)
+  const progressId = useId()
+  useEffect(
+    () =>
+      window.api.cues.onCommentProgress((p) => {
+        if (savingNow.current) setProgress(p)
+      }),
+    [],
+  )
   const mode: CommentMode = settings.commentsReplace ? 'replace' : 'prepend'
   const putPhrases = async () => {
     setPhrasing(true)
@@ -124,6 +132,7 @@ export function CuesBatchSection({
     }
   }
   const saveComments = async () => {
+    savingNow.current = true
     setBusy(true)
     try {
       const toFile = settings.commentsToFile
@@ -155,6 +164,7 @@ export function CuesBatchSection({
       )
       setUnsavedComments(unsavedComments.filter((c) => pending.has(c.path)))
     } finally {
+      savingNow.current = false
       setProgress(null)
       setBusy(false)
     }
@@ -399,6 +409,7 @@ export function CuesBatchSection({
                 data-testid="cues-batch-comments-save"
                 disabled={busy && !progress}
                 aria-label={progress ? tr('common.cancel') : undefined}
+                aria-describedby={progress ? progressId : undefined}
                 onClick={() =>
                   progress ? void window.api.cues.cancelComments() : void saveComments()
                 }
@@ -425,14 +436,26 @@ export function CuesBatchSection({
                     {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
                   </span>
                   <span
+                    data-testid="cues-batch-comments-sizer"
+                    aria-hidden="true"
+                    className="invisible tabular-nums [grid-area:1/1]"
+                  >
+                    {tr('editor.cues.batch.savingComments', {
+                      done: progress?.total ?? unsavedComments.length,
+                      total: progress?.total ?? unsavedComments.length,
+                    })}
+                  </span>
+                  <span
+                    id={progressId}
                     data-testid="cues-batch-comments-progress"
                     aria-hidden={!progress}
                     className={`[grid-area:1/1] tabular-nums ${progress ? 'group-hover:invisible group-focus-visible:invisible' : 'invisible'}`}
                   >
-                    {tr('editor.cues.batch.savingComments', {
-                      done: progress?.done ?? unsavedComments.length,
-                      total: progress?.total ?? unsavedComments.length,
-                    })}
+                    {progress &&
+                      tr('editor.cues.batch.savingComments', {
+                        done: progress.done,
+                        total: progress.total,
+                      })}
                   </span>
                   <span
                     aria-hidden="true"

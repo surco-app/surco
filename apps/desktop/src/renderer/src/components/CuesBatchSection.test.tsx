@@ -489,9 +489,49 @@ describe('Phrases over several selected tracks', () => {
     await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
     await emitProgress({ done: 0, total: 2 })
     const labels = screen.getByTestId('cues-batch-comments-labels')
-    expect(labels.children).toHaveLength(3)
+    expect(labels.children).toHaveLength(4)
+    await emitProgress({ done: 1, total: 2 })
+    expect(screen.getByTestId('cues-batch-comments-sizer')).toHaveTextContent(
+      i18n.t('editor.cues.batch.savingComments', { done: 2, total: 2 }),
+    )
+    expect(screen.getByTestId('cues-batch-comments-sizer')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByTestId('cues-batch-comments-progress')).toHaveTextContent(
+      i18n.t('editor.cues.batch.savingComments', { done: 1, total: 2 }),
+    )
     expect(labels).toHaveTextContent(i18n.t('editor.cues.batch.saveComments', { count: 2 }))
     expect(labels).toHaveTextContent(i18n.t('common.cancel'))
+  })
+
+  it('ignores progress when this section has no save running, so a late event cannot leave the button stuck on cancel', async () => {
+    const { emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    const save = await putPhrases()
+    await emitProgress({ done: 2, total: 2 })
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(save).toHaveTextContent(i18n.t('editor.cues.batch.saveComments', { count: 2 }))
+    expect(save).not.toHaveAttribute('aria-label')
+  })
+
+  it('keeps the button disabled with no fill while the close-rekordbox dialog is open, since nothing is running to cancel yet', async () => {
+    const { askToApply, saveComments } = setup({}, TARGETS, {}, PHRASED)
+    askToApply.mockImplementationOnce(() => new Promise(() => {}))
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(askToApply).toHaveBeenCalledTimes(1))
+    expect(screen.getByTestId('cues-batch-comments-save')).toBeDisabled()
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(saveComments).not.toHaveBeenCalled()
+  })
+
+  it('describes the running button by its count, so a screen reader hears the progress and not only Cancel', async () => {
+    const { saveComments, emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    await emitProgress({ done: 1, total: 2 })
+    const progress = screen.getByTestId('cues-batch-comments-progress')
+    expect(screen.getByTestId('cues-batch-comments-save')).toHaveAttribute(
+      'aria-describedby',
+      progress.id,
+    )
   })
 
   it('offers the two choices as two checked groups split by a line, so where and how read as separate questions', async () => {
