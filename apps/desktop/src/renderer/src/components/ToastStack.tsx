@@ -381,6 +381,10 @@ function ToastCard({
   }
 
   const danger = toast.tone === 'danger'
+  // A notice that leaves on its own needs no ✕ when closing it would only do what waiting
+  // does; the swipe still takes it away. The ✕ stays where it is an answer of its own, like
+  // the session offer, whose ✕ declines for good while its timer only hides it.
+  const closable = !toast.duration || toast.onDismiss !== toast.onExpire
   // Single-line toasts read best vertically centred; only a long, scrollable error message
   // (no action, danger tone) pins to the top so its ✕ stays reachable as the body grows.
   const align = danger && !toast.action ? 'items-start' : 'items-center'
@@ -412,7 +416,7 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-1.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-1.5 rounded-xl bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
     >
       <span
         data-testid={toast.testid ? `${toast.testid}-message` : undefined}
@@ -427,7 +431,7 @@ function ToastCard({
           type="button"
           data-testid={toast.testid ? `${toast.testid}-action` : undefined}
           onClick={toast.action.onAction}
-          className="press shrink-0 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 py-0.5 text-xs font-medium hover:bg-[var(--color-line-strong)]"
+          className="press shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold text-accent hover:bg-[var(--color-hover)]"
         >
           {text(toast.action.label)}
         </button>
@@ -447,26 +451,16 @@ function ToastCard({
           )}
         </button>
       )}
-      <button
-        type="button"
-        data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
-        aria-label={tr('common.close')}
-        onClick={() => onClose(toast.id)}
-        className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
-      >
-        <X className="h-3 w-3" aria-hidden="true" />
-      </button>
-      {toast.duration && (
-        <span
-          key={toast.id}
-          aria-hidden="true"
-          data-testid={toast.testid ? `${toast.testid}-countdown` : undefined}
-          className="animate-toast-countdown absolute inset-x-0 bottom-0 h-0.5 bg-[var(--color-accent)]/60"
-          style={{
-            animationDuration: `${toast.duration}ms`,
-            animationPlayState: paused ? 'paused' : 'running',
-          }}
-        />
+      {closable && (
+        <button
+          type="button"
+          data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
+          aria-label={tr('common.close')}
+          onClick={() => onClose(toast.id)}
+          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+        >
+          <X className="h-3 w-3" aria-hidden="true" />
+        </button>
       )}
     </div>
   )

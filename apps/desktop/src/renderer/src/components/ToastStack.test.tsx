@@ -116,7 +116,7 @@ describe('ToastStack', () => {
       expect(pile().style.height).toBe(`${tall + 14}px`)
     })
 
-    it('spreads into a list under the pointer and holds every countdown, so each notice can be read and reached, then folds back', () => {
+    it('spreads into a list under the pointer, so each notice can be read and reached, then folds back', () => {
       show()
       fireEvent.pointerEnter(pile())
       const [front, second, third] = slots()
@@ -128,10 +128,8 @@ describe('ToastStack', () => {
         expect(slot).not.toHaveAttribute('inert')
       }
       expect(pile().style.height).toBe(`${3 * tall + 12}px`)
-      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'paused' })
       fireEvent.pointerLeave(pile())
       expect(slots()[1]).toHaveAttribute('data-behind')
-      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'running' })
     })
 
     it('spreads when the keyboard enters it too, and folds once focus leaves', () => {
@@ -202,26 +200,30 @@ describe('ToastStack', () => {
     expect(onAction).toHaveBeenCalledTimes(1)
   })
 
-  it('shows a countdown bar only on a toast that auto-dismisses', () => {
-    // The bar visualises the remaining time before a transient notice clears itself; a
-    // persistent prompt (no duration) has nothing to count down, so it must not show one.
-    const { rerender } = render(
+  // A notice that leaves on its own, where closing it means the same as letting it go, has
+  // no use for a ✕: it would be a third control next to Undo and the swipe for the same
+  // thing. One that stays, or whose ✕ is an answer of its own (the session offer declines
+  // for good, while letting it go only hides it), keeps the ✕ or could never be answered.
+  it('offers the ✕ only where closing does something that waiting would not', () => {
+    const settle = vi.fn()
+    render(
       <ToastStack
-        toasts={[toast({ testid: 'app-notice', duration: 4000 })]}
+        toasts={[
+          toast({ id: 'a', testid: 'plain', duration: 4000 }),
+          toast({ id: 'b', testid: 'undo', duration: 6000, onDismiss: settle, onExpire: settle }),
+          toast({ id: 'c', testid: 'offer', duration: 6000, onDismiss: vi.fn(), onExpire: vi.fn() }),
+          toast({ id: 'd', testid: 'stays' }),
+          toast({ id: 'e', testid: 'error', tone: 'danger' }),
+        ]}
         onExpire={vi.fn()}
         onClose={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('app-notice-countdown')).toBeInTheDocument()
-
-    rerender(
-      <ToastStack
-        toasts={[toast({ testid: 'new-tracks', action: { label: 'Load', onAction: vi.fn() } })]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    expect(screen.queryByTestId('new-tracks-countdown')).toBeNull()
+    expect(screen.queryByTestId('plain-dismiss')).toBeNull()
+    expect(screen.queryByTestId('undo-dismiss')).toBeNull()
+    expect(screen.getByTestId('offer-dismiss')).toBeInTheDocument()
+    expect(screen.getByTestId('stays-dismiss')).toBeInTheDocument()
+    expect(screen.getByTestId('error-dismiss')).toBeInTheDocument()
   })
 
   it('the ✕ routes through onClose so the toast’s own cleanup runs, not a bare removal', () => {
@@ -340,21 +342,39 @@ describe('ToastStack', () => {
       expect(onExpire).toHaveBeenCalledWith('n')
     })
 
-    it('keeps the countdown bar running instead of display-none while a dialog hides the notice', () => {
+    it('keeps the hidden notice mounted instead of display-none while a dialog is open, so it comes back as it was', () => {
       const toasts = [toast({ id: 'n', testid: 'notice', message: 'saved', duration: 6000 })]
       const { rerender } = render(withModal(false, toasts))
-      const bar = screen.getByTestId('notice-countdown')
+      const card = screen.getByTestId('notice')
       const slot = screen.getByTestId('toast-slot')
       rerender(withModal(true, toasts))
       expect(slot).not.toHaveAttribute('hidden')
       expect(slot).not.toBeVisible()
-      expect(screen.getByTestId('notice-countdown')).toBe(bar)
-      expect(bar).toHaveStyle({ animationPlayState: 'paused' })
+      expect(screen.getByTestId('notice')).toBe(card)
       rerender(withModal(false, toasts))
       expect(slot).not.toHaveAttribute('hidden')
       expect(slot).toBeVisible()
-      expect(screen.getByTestId('notice-countdown')).toBe(bar)
-      expect(bar).toHaveStyle({ animationPlayState: 'running' })
+      expect(screen.getByTestId('notice')).toBe(card)
+    })
+
+    // Spread, the pile shows every notice for reading; none may expire under the pointer
+    // while the user reads one of the others.
+    it('holds every notice in a spread pile and lets the clocks run again once it folds', () => {
+      const onExpire = vi.fn()
+      render(
+        <ToastStack
+          toasts={[toast({ id: 'a', duration: 4000 }), toast({ id: 'b', duration: 4000 })]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      fireEvent.pointerEnter(screen.getByTestId('toast-pile'))
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(onExpire).not.toHaveBeenCalled()
+      fireEvent.pointerLeave(screen.getByTestId('toast-pile'))
+      act(() => vi.advanceTimersByTime(4000))
+      expect(onExpire).toHaveBeenCalledWith('a')
+      expect(onExpire).toHaveBeenCalledWith('b')
     })
 
     // The re-push brings a fresh deadline, so the clock starts over even though the card
@@ -414,7 +434,6 @@ describe('ToastStack', () => {
       fireEvent.pointerEnter(screen.getByTestId('app-notice'))
       act(() => vi.advanceTimersByTime(10_000))
       expect(onExpire).not.toHaveBeenCalled()
-      expect(screen.getByTestId('app-notice-countdown').style.animationPlayState).toBe('paused')
       fireEvent.pointerLeave(screen.getByTestId('app-notice'))
       act(() => vi.advanceTimersByTime(2999))
       expect(onExpire).not.toHaveBeenCalled()

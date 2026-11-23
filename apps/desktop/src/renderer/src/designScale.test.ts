@@ -67,7 +67,6 @@ const NOT_A_RESPONSE = [
   'empty-disc-ping',
   'empty-disc-in',
   'empty-copy-in',
-  'toast-countdown',
   'result-new',
   'allow-discrete',
   '--progress',
