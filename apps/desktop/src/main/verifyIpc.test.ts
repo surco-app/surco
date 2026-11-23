@@ -318,6 +318,27 @@ describe('library readers', () => {
     ])
   })
 
+  it('hands the Engine check that the row was to be analysed again', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+
+    await readers.readEngine([entry({ reanalyse: true }), entry()])
+
+    expect(seen.map((e) => (e as { reanalysed?: boolean }).reanalysed)).toEqual([true, false])
+  })
+
   // Only the size the write expected tells a row the DJ left stale from one a write missed.
   it('hands the Engine check the size a rewrite in place expected the row to hold', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
@@ -496,6 +517,16 @@ describe('libraryRequeue', () => {
       [],
       [{ from: FROM, to: TO, audio: { cueShiftMs: -1900 }, engineShift: shift }],
     )
+  })
+
+  // A retry is the only write that still reaches a row left on the old file: without the
+  // re-analysis it would land the old file's grid and overview on another recording.
+  it('hands Engine the move with the re-analysis a replacement of another recording owes', () => {
+    const q = queues()
+
+    libraryRequeue(q)('engine', entry({ reanalyse: true }))
+
+    expect(q.engine.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO, reanalyse: true }])
   })
 
   // Rewritten in place, the row is found by the path it still has: only the size it still

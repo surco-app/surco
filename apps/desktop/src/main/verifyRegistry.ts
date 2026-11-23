@@ -51,6 +51,8 @@ export interface VerifyEntry {
   engineShift?: EngineShift
   // The source's size before a rewrite in place, handed again with the repoint.
   fromBytes?: number
+  // A replacement no measure vouches for the same audio, whose analysis Engine is to redo.
+  reanalyse?: true
   names?: EngineExpect['names']
   // The original held under «Nunca» for this verdict (claimHeldOriginal).
   heldOriginal?: string

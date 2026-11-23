@@ -103,6 +103,7 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
   engineSizeStaleCues: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   enginePerformanceChanged: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
   engineCuesMisplaced: [{ field: 'quickCues' }, { field: 'beatData' }, { field: 'loops' }],
+  engineAnalysisStale: [undefined],
   engineNameStale: [{ value: 'Old Title' }],
   enginePlaylistMissing: [{ playlist: 'Peak time' }],
   engineUnreadable: [undefined],

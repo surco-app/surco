@@ -10,6 +10,7 @@ export function withRecordedRun(entry: VerifyEntry): VerifyEntry {
     cueShiftMs: repoint?.audio?.cueShiftMs,
     engineShift: repoint?.engineShift,
     fromBytes: repoint?.fromBytes,
+    reanalyse: repoint?.reanalyse,
     names: repoint?.names,
   }
 }

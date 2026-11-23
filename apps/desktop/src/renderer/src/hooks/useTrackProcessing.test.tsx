@@ -55,7 +55,7 @@ function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = {
     conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
-    endConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(async () => {}),
     sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
     ...over,
   }
@@ -270,7 +270,7 @@ describe('useTrackProcessing', () => {
 
   it('still converts the batch when the close-program prompt fails, since the quiet path queues the change for an open program', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     const beginConversionBatch = vi.fn()
     setApi({
       processTrack,
@@ -2233,7 +2233,7 @@ describe('useTrackProcessing', () => {
   // The volume of the NML sync goes at the end of the batch, not per track: a
   // collection.nml can weigh tens of megabytes, so one write per run, not one per track.
   it('closes the conversion batch so the collection is written once', async () => {
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2262,7 +2262,7 @@ describe('useTrackProcessing', () => {
           releaseFirst = resolve
         }),
     )
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({ processTrack, cancelJob: vi.fn(), endConversionBatch })
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
     const { result } = renderHook(
@@ -2290,7 +2290,7 @@ describe('useTrackProcessing', () => {
   // (counted as if that batch produced it) or resetNmlPatches discards it outright.
   it('closes its own batch for a lone processOne call outside processAll', async () => {
     const beginConversionBatch = vi.fn()
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2317,7 +2317,7 @@ describe('useTrackProcessing', () => {
   // collection 300 times instead of the one write batching exists to produce.
   it('does not bracket processAll’s internal per-track conversions with their own batch', async () => {
     const beginConversionBatch = vi.fn()
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2348,7 +2348,7 @@ describe('useTrackProcessing', () => {
         .fn<Api['processTrack']>()
         .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
     })
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     ;(window as unknown as { api: { endConversionBatch: () => void } }).api.endConversionBatch =
       endConversionBatch
     // updateTrack runs synchronously inside processOne, outside its own try/catch — an
@@ -3306,6 +3306,40 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       await result.current.processOne('a')
     })
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['rekordbox-cue-wave-fine'] })
+  })
+
+  // The 23/11 test in the real Engine DJ: the libraries are written by the flush main runs
+  // after the batch ends, and the collections were re-read while it was still running, so the
+  // editor's In your library kept the Engine DJ row on the old MP3 though it was on the AIFF.
+  it('re-reads the collections the run reached once main has written them, not before', async () => {
+    let flushed = () => {}
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.aiff', inPlace: false }),
+      endConversionBatch: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            flushed = resolve
+          }),
+      ),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { syncEngineDj: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const keys = () => invalidate.mock.calls.map(([filters]) => filters?.queryKey)
+    expect(keys()).not.toContainEqual(['source-collection', 'engine'])
+
+    await act(async () => flushed())
+
+    expect(keys()).toContainEqual(['source-collection', 'engine'])
   })
 
   it('leaves the DJ collections alone when the conversion wrote nothing', async () => {

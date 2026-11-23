@@ -42,6 +42,9 @@ export interface EngineExpect {
   size: number
   added?: boolean
   shift?: EngineShift
+  // A replacement Engine is to analyse again: the write emptied the old file's analysis and
+  // kept the cues and loops (see writeEngineRepoints).
+  reanalysed?: boolean
   // The size the write expected the row to hold, for a rewrite in place.
   fromBytes?: number
   names?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
@@ -81,13 +84,18 @@ function decoded<T>(read: () => T | null | undefined): T | null {
   }
 }
 
+// A row emptied for Engine to analyse again has no rate of its own until Engine does: its cues
+// are read at the rate the write counted them in.
 function positionsOf(
   row: Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined,
+  fallbackRate?: number,
 ): Positions {
   const grid = decoded(() => row?.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
   const rate =
     decoded(() => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)))
-      ?.sampleRate || grid?.sampleRate
+      ?.sampleRate ||
+    grid?.sampleRate ||
+    fallbackRate
   if (!row || !rate) return { quickCues: null, beatData: null, loops: null }
   const sec = (sample: number) => (sample < 0 ? null : sample / rate)
   const cues = decoded(() => row.quickCues && decodeQuickCues(inflateEngineBlob(row.quickCues)))
@@ -110,7 +118,11 @@ function positionsOf(
   }
 }
 
-function performanceOf(db: EngineDb, id: number): Omit<EngineSnapshot, 'id'> {
+function performanceOf(
+  db: EngineDb,
+  id: number,
+  fallbackRate?: number,
+): Omit<EngineSnapshot, 'id'> {
   const row = db
     .prepare('SELECT trackData, quickCues, beatData, loops FROM PerformanceData WHERE trackId = ?')
     .get(id) as Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined
@@ -118,7 +130,7 @@ function performanceOf(db: EngineDb, id: number): Omit<EngineSnapshot, 'id'> {
     quickCues: digest(row?.quickCues ?? null),
     beatData: digest(row?.beatData ?? null),
     loops: digest(row?.loops ?? null),
-    positions: positionsOf(row),
+    positions: positionsOf(row, fallbackRate),
   }
 }
 
@@ -172,9 +184,10 @@ function misplacedField(
   before: EngineSnapshot,
   shift: EngineShift | undefined,
   now = performanceOf(db, id),
+  fields: readonly (typeof PERFORMANCE)[number][] = PERFORMANCE,
 ): (typeof PERFORMANCE)[number] | undefined {
   if (!shift) return undefined
-  return PERFORMANCE.find((field) => {
+  return fields.find((field) => {
     const was = before.positions?.[field] ?? null
     return was !== null && !sameAt(shifted(field, was, shift), now.positions?.[field] ?? null)
   })
@@ -234,6 +247,10 @@ function judge(
 
   const row = on[0]
   const before = e.before
+  // Engine's grid of the old file goes when it is to analyse the new one: only the cues and
+  // loops must have come through.
+  const kept = e.reanalysed ? (['quickCues', 'loops'] as const) : PERFORMANCE
+  const now = () => performanceOf(db, row.id, e.reanalysed ? e.shift?.sampleRateHz : undefined)
   if (!e.added && typeof before !== 'object') return noPhoto()
   if (typeof before === 'object' && row.id !== before.id) return check('mismatch', 'engineOtherRow')
   const fileType = (row.fileType ?? '').toLowerCase()
@@ -251,12 +268,13 @@ function judge(
       before.fileBytes !== e.fromBytes &&
       row.fileBytes === before.fileBytes
     ) {
-      const field = misplacedField(db, row.id, before, e.shift)
+      const field = misplacedField(db, row.id, before, e.shift, now(), kept)
       return field
         ? check('mismatch', 'engineSizeStaleCues', { field })
         : check('mismatch', 'engineSizeStale')
     }
-    const late = typeof before === 'object' && misplacedField(db, row.id, before, e.shift)
+    const late =
+      typeof before === 'object' && misplacedField(db, row.id, before, e.shift, now(), kept)
     return late
       ? check('mismatch', 'engineCuesMisplaced', { field: late })
       : check('mismatch', 'engineSizeDiffers')
@@ -276,14 +294,24 @@ function judge(
   // cue, beat or loop that changed is one the DJ set and lost. A trim, a resample or a
   // replacement whose audio sits elsewhere moves them, checked below against the shift, but
   // what the row had must still be there.
-  const now = performanceOf(db, row.id)
-  const changed = PERFORMANCE.find((field) =>
+  const after = now()
+  // The old file's grid still there, at its rate or moved to the new one, would sit over
+  // another recording: Engine does not analyse a row that says it is analysed.
+  const grid = before.positions?.beatData ?? null
+  if (
+    e.reanalysed &&
+    before.beatData !== EMPTY &&
+    (after.beatData === before.beatData ||
+      (grid !== null && sameAt(grid, after.positions?.beatData ?? null)))
+  )
+    return check('mismatch', 'engineAnalysisStale')
+  const changed = kept.find((field) =>
     e.samplesKept && !e.shift
-      ? now[field] !== before[field]
-      : before[field] !== EMPTY && now[field] === EMPTY,
+      ? after[field] !== before[field]
+      : before[field] !== EMPTY && after[field] === EMPTY,
   )
   if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
-  const misplaced = misplacedField(db, row.id, before, e.shift, now)
+  const misplaced = misplacedField(db, row.id, before, e.shift, after, kept)
   if (misplaced) return check('mismatch', 'engineCuesMisplaced', { field: misplaced })
   return ok()
 }

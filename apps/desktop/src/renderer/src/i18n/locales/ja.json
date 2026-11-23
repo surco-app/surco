@@ -3840,6 +3840,7 @@
       "engineCuesMisplaced_quickCues": "Engine DJのキューが音声に合わせて動いていません",
       "engineCuesMisplaced_beatData": "Engine DJのグリッドが音声に合わせて動いていません",
       "engineCuesMisplaced_loops": "Engine DJのループが音声に合わせて動いていません",
+      "engineAnalysisStale": "Engine DJに古いファイルの解析が残っています",
       "engineNameStale": "Engine DJにはまだ「{{value}}」と表示されています",
       "enginePlaylistMissing": "トラックがEngine DJのプレイリスト{{playlist}}にありません",
       "engineUnreadable": "Engine DJを確認できませんでした",

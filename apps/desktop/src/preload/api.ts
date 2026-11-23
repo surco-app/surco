@@ -333,9 +333,9 @@ export interface Api {
   beginConversionBatch: () => void
   conversionPrograms: (paths: string[]) => Promise<CueProgram[]>
   // Marks the end of a convert-all run so main flushes any Traktor collection.nml
-  // patches the batch recorded. Fire-and-forget; must fire even when the run was
-  // cancelled or failed, or its patches would leak into the next batch's flush.
-  endConversionBatch: () => void
+  // patches the batch recorded. Must fire even when the run was cancelled or failed, or its
+  // patches would leak into the next batch's flush. Settles once the libraries are written.
+  endConversionBatch: () => Promise<void>
   // Reaches an encode already in flight for this job id; a no-op if it already
   // finished or never started. Fire-and-forget, mirroring dock:frames/track:drag.
   cancelJob: (jobId: string) => void
