@@ -34,9 +34,38 @@ const hover = (el: HTMLElement): void => {
 }
 
 describe('ExportButton', () => {
-  // In a 262 px editor the words pushed the format menu's button off the panel, so the
-  // tick alone stays in sight and the words are still read out.
-  it('shows only the tick of an up-to-date track when the editor is narrow, so the buttons beside it stay on the panel', () => {
+  // The up-to-date footer is the normal split button in a discreet fill, so the footer keeps
+  // one shape whether or not there is something to write: body and format half share one group,
+  // as process-btn and its toggle do.
+  it('draws the up-to-date footer as one split button, body and format half in the same group', () => {
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate={false} />)
+    expect(screen.getByTestId('process-btn').parentElement).toBe(
+      screen.getByTestId('process-format-toggle').parentElement,
+    )
+    rerender(<ExportButton {...props} upToDate />)
+    const group = screen.getByTestId('convert-update-anyway').parentElement
+    expect(group).toBe(screen.getByTestId('process-format-toggle').parentElement)
+    expect(screen.getByTestId('convert-up-to-date-row')).toContainElement(group)
+  })
+
+  it('keeps the format menu opening from the up-to-date format half', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('process-format-mp3')).toBeInTheDocument()
+  })
+
+  // The words "No changes" left the screen to keep the footer to one button, but a blind user
+  // still needs to hear why the action is a re-update.
+  it('keeps "No changes" for screen readers as the description of the update button', () => {
     render(
       <ExportButton
         {...baseProps}
@@ -46,26 +75,12 @@ describe('ExportButton', () => {
         sameFormat
         upToDate
         narrow
-        onProcess={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('convert-up-to-date-label')).toHaveAttribute('data-narrow', 'true')
-    expect(screen.getByTestId('convert-update-anyway')).toBeInTheDocument()
-  })
-
-  it('spells out that a track is up to date when there is room', () => {
-    render(
-      <ExportButton
-        {...baseProps}
-        incomplete={false}
-        inPlace
-        tagsOnly
-        sameFormat
-        upToDate
-        onProcess={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('convert-up-to-date-label')).toHaveAttribute('data-narrow', 'false')
+    const body = screen.getByTestId('convert-update-anyway')
+    const described = body.getAttribute('aria-describedby')
+    expect(described).toBeTruthy()
+    expect(document.getElementById(described as string)).toHaveTextContent('No changes')
   })
 
   it('goes quiet when there is nothing to write', () => {
