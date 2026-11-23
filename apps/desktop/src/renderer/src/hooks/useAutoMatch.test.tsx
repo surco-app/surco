@@ -370,6 +370,18 @@ describe('useAutoMatch', () => {
     expect(recordUndo.mock.calls[2][1].group).not.toBe(first[1].group)
   })
 
+  // The sweep applies matches in the background, so its snapshots must leave the user's
+  // redo alone: a match landing after their ⌘Z would otherwise take back their ⌘⇧Z.
+  it('records its matches without dropping the redo step the user may still take', async () => {
+    setApi()
+    const tracks = [track('a')]
+    const { result, updateTrack, recordUndo } = setup(tracks)
+
+    act(() => result.current.enqueueAutoMatch(tracks))
+    await waitFor(() => expect(updateTrack).toHaveBeenCalledTimes(1))
+    expect(recordUndo).toHaveBeenCalledWith(['a'], expect.objectContaining({ keepRedo: true }))
+  })
+
   // The sweep is the one path that tags without anyone watching — a crate of 600 files
   // applies unattended — so it is where "don't fill this field" matters most. A field the
   // user switched off must survive the sweep untouched, and one left on must still be

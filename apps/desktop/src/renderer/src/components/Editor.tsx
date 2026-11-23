@@ -458,6 +458,11 @@ export const Editor = memo(function Editor({
   // A bulk field writes to every selected track, so all of them are under edit, not just
   // the anchor the form is keyed on.
   const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
+  // Leaving with a field focused removes it without a blur, so the guard is handed back on
+  // unmount. A layout cleanup runs before the next editor's layout phase, so it can never
+  // clear a field the new editor focuses as it mounts.
+  const focusChange = useLatest(onFieldFocusChange)
+  useLayoutEffect(() => () => focusChange.current?.([]), [focusChange])
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
@@ -900,11 +905,19 @@ export const Editor = memo(function Editor({
       : [replacedCopyPath]),
   )
 
-  const latestItem = useLatest(item)
+  // The editor remounts per track and App applies its patch to whichever row is selected,
+  // so a full read that returns after the user moved on must apply nothing.
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
     if (!release) return
     const current = item.metaPartial ? await readFullTrack(item.id) : item
-    if (!current || current.metaPartial || current.id !== latestItem.current.id) return
+    if (!current || current.metaPartial || !mounted.current) return
     // The cover flag protects only the file's ORIGINAL embedded art. While the shown
     // cover is still that original (coverUrl === embeddedCover), keep it — unless the user
     // opted into replacing low-res art and this original is small, in which case the
