@@ -11,6 +11,16 @@ if (typeof HTMLCanvasElement !== 'undefined') {
   ) as typeof HTMLCanvasElement.prototype.getContext
 }
 
+// jsdom has no Media Session API, which Chromium gives the app to report the playing
+// track to the system. An inert stand-in lets the app mount the player in tests.
+if (typeof navigator !== 'undefined' && !('mediaSession' in navigator)) {
+  Object.defineProperty(navigator, 'mediaSession', {
+    value: { metadata: null, setActionHandler: () => {} },
+    configurable: true,
+  })
+  ;(globalThis as unknown as { MediaMetadata: unknown }).MediaMetadata = class {}
+}
+
 // Vitest's jsdom environment only copies window properties it already knows the
 // name of onto the test global, and its allowlist predates Node's own (broken
 // without --localstorage-file) global `localStorage`. That Node global shadows
