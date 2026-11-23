@@ -99,6 +99,49 @@ describe('repointSerato', () => {
     expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(halfway)
   })
 
+  it('leaves the track alone when Serato already holds the new file, so it never shows twice with its plays and BPM split', async () => {
+    const lib = library({ internal: [['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']]] })
+    const both = databaseOf('Users/dj/Music/A.mp3', 'Users/dj/Music/A.aiff')
+    writeFileSync(join(lib.home.dir, 'database V2'), both)
+    const setBefore = readFileSync(crateFileOf(lib.home, 'Set'))
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: false, reason: 'occupied' }])
+    expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(both)
+    expect(readFileSync(crateFileOf(lib.home, 'Set'))).toEqual(setBefore)
+    expect(readdirSync(lib.base)).not.toContain('serato-backups')
+  })
+
+  it('leaves a crate that already lists the new file, so the track never appears in it twice', async () => {
+    const lib = library({
+      internal: [
+        ['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']],
+        ['Both', ['Users/dj/Music/A.mp3', 'Users/dj/Music/A.aiff']],
+      ],
+    })
+    writeFileSync(
+      join(lib.home.dir, 'database V2'),
+      databaseOf('Users/dj/Music/A.aiff', 'Users/dj/Music/B.mp3'),
+    )
+    const bothBefore = readFileSync(crateFileOf(lib.home, 'Both'))
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: true }])
+    expect(parseSeratoCrate(readFileSync(crateFileOf(lib.home, 'Set')))).toEqual([
+      'Users/dj/Music/A.aiff',
+      'Users/dj/Music/B.mp3',
+    ])
+    expect(readFileSync(crateFileOf(lib.home, 'Both'))).toEqual(bothBefore)
+  })
+
   it('waits while Serato is open, since Serato writes its own library over ours when it quits', async () => {
     const lib = library()
 

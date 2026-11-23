@@ -46,6 +46,7 @@ function repointOne(
   const from = seratoPathOn(repoint.from, root)
   const to = seratoPathOn(repoint.to, root)
   const repointed = withSeratoTrackRepointed(database, from, to)
+  if (repointed && seratoDatabaseHas(database, to)) return { written: false, reason: 'occupied' }
   // A commit whose rollback failed can leave the database on the new file and a crate still
   // on the old one: the retry finds no old entry, and the crates must still follow it, or
   // they keep a path that is about to be retired.
@@ -56,7 +57,9 @@ function repointOne(
   for (const name of draft.list(subcrates).filter((n) => n.endsWith('.crate'))) {
     const file = join(subcrates, name)
     const bytes = draft.read(file)
-    if (!bytes || crateTrackPaths(bytes) === null) return 'truncated'
+    const paths = bytes && crateTrackPaths(bytes)
+    if (!bytes || !paths) return 'truncated'
+    if (paths.some((path) => path.normalize('NFC') === to.normalize('NFC'))) continue
     const crate = withCrateTrackRepointed(bytes, from, to)
     if (crate) draft.write(file, crate)
   }
