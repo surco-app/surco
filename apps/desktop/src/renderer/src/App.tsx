@@ -1401,9 +1401,9 @@ export default function App(): React.JSX.Element {
   })
   const goToPlaylist = useStableCallback(
     (source: PlaylistSource, node: SourceNode, folders: string[]) => {
-      selectSource(source)
+      const restored = selectSource(source)
       if (node.id !== browser.playlist?.id || source !== browser.source) {
-        heldSelection.current ??= selection
+        heldSelection.current ??= restored
         setSelection({ ids: [], anchor: null })
         setSearch('')
       }

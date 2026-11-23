@@ -3444,6 +3444,61 @@ describe('App source rail', () => {
     expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
   })
 
+  // The palette jumps straight into another source's playlist: what that source had selected
+  // comes back, as from the rail. The row picked in the list being left opened instead.
+  it('gives the source a palette jump lands in back its own selected row', async () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
+        artist: 'DJ',
+      })),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+        },
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+
+    fireEvent.click(screen.getByTestId('open-palette'))
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Factory' },
+    })
+    await waitFor(() =>
+      expect(document.getElementById('palette-option-playlist:rekordbox:f')).not.toBeNull(),
+    )
+    fireEvent.click(document.getElementById('palette-option-playlist:rekordbox:f') as HTMLElement)
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Charlie')])
+  })
+
   function rekordboxWithFactory(over: Record<string, unknown> = {}): void {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
