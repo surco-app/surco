@@ -17,6 +17,7 @@ import type { ReviewWriteField } from '../shared/types'
 import {
   dropBrokenUfids,
   id3GroupingOf,
+  keepDescribedComments,
   keepGenreParentheses,
   setId3Date,
   setId3Grouping,
@@ -259,14 +260,14 @@ function setOne(
     }
     const taglibId = TAGLIB_INFO_ID[field]
     const before = taglibId ? info.getValues(taglibId) : []
-    assign(f.tag, field, to)
+    keepDescribedComments(f, () => assign(f.tag, field, to))
     if (taglibId && before.length > 0) info.setValues(taglibId, before)
     else if (taglibId) info.removeValue(taglibId)
     assignInfo(info, field, to)
     assignNative(f, field, to, ext)
     return 'written'
   }
-  assign(f.tag, field, to)
+  keepDescribedComments(f, () => assign(f.tag, field, to))
   assignNative(f, field, to, ext)
   return 'written'
 }

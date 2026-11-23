@@ -2,6 +2,7 @@ import { extname } from 'node:path'
 import {
   ByteVector,
   Id3v2AttachmentFrame,
+  Id3v2CommentsFrame,
   type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifier,
@@ -56,6 +57,15 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // any later save, writes the parts back with the first turned into its ID3v1 number, so a
 // pass that only adds cues left "House; Deep House" as "(35) Deep House".
 Id3v2Settings.useNonStandardV2V3GenreSeparators = false
+
+// TagLib knows TSOP, TSOA and TSOT as ID3v2.4 frames only and leaves them out of every v2.3
+// tag it saves, though iTunes and mp3tag write and read them on v2.3 all the same, so any
+// save of an iTunes-tagged MP3, AIFF or WAV (a list fix, a cue, an update) lost the sort
+// names. TagLib offers no way to name a frame for another version, and its readers and
+// setters compare these very identifier objects, so each one is given its v2.4 name for v2.3
+// too, here where every TagLib writer in Surco is loaded from.
+for (const id of ['TSOP', 'TSOA', 'TSOT'])
+  Object.assign(Id3v2FrameIdentifiers[id], { _version3: Id3v2FrameIdentifiers[id].render(4) })
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -391,7 +401,7 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
     style: userText('STYLE'),
     country: userText('COUNTRY'),
     mediaType: userText('MEDIATYPE'),
-    mood: userText('MOOD'),
+    mood: text('TMOO') || userText('MOOD'),
     quality: userText('QUALITY'),
   }
 }
@@ -517,7 +527,7 @@ const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
 // the bundled ffmpeg).
 function multiValuedTags(
   f: TagFile,
-): { name: string; values: string[]; carried: string; frame?: string }[] {
+): { name: string; values: string[]; carried: string; frame?: string; language?: string }[] {
   const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
   if (from)
     return from.fieldNames.map((name) => {
@@ -539,11 +549,22 @@ function multiValuedTags(
     if (name) byName.set(name, [...frame.text])
     if (name) frames.set(name, frame.frameId.toString())
   }
+  // iTunes' and other players' own fields, which ffmpeg reads under their description; the
+  // COMM with none is the comment Surco writes.
+  const languages = new Map<string, string>()
+  for (const frame of id3.getFramesByClassType<Id3v2CommentsFrame>(
+    Id3v2FrameClassType.CommentsFrame,
+  ))
+    if (frame.description && !byName.has(frame.description)) {
+      byName.set(frame.description, [frame.text])
+      languages.set(frame.description, frame.language)
+    }
   return [...byName].map(([name, values]) => ({
     name,
     values,
     carried: values[0],
     frame: frames.get(name),
+    language: languages.get(name),
   }))
 }
 
@@ -556,15 +577,6 @@ const NEVER_CARRIED = new Set([
   ...TXXX_NATIVE_MIRRORS.map((name) => name.toLowerCase()),
   FLAC_CUE_FIELD.toLowerCase(),
 ])
-
-// TagLib writes TSOP, TSOA and TSOT on ID3v2.4 only and drops them from the v2.3 tags every
-// ID3 target is pinned to, but iTunes and mp3tag write and read them on v2.3 all the same.
-const ID3V23_TEXT_FRAMES: Record<string, Id3v2TextFrameId> = {
-  TSOP: new Id3v2FrameIdentifier('TSOP', 'TSOP', 'TSP'),
-  TSOA: new Id3v2FrameIdentifier('TSOA', 'TSOA', 'TSA'),
-  TSOT: new Id3v2FrameIdentifier('TSOT', 'TSOT', 'TST'),
-  TLAN: Id3v2FrameIdentifiers.TLAN,
-}
 
 // The sort names' MP4 home: the atoms Music sorts the library by.
 const MP4_SORT_ATOMS: Record<string, string> = { TSOP: 'soar', TSOA: 'soal', TSOT: 'sonm' }
@@ -594,7 +606,9 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
         const carry = (tag: CarriedTag) =>
           extname(dest).toLowerCase() === '.m4a'
             ? carryToMp4(out.tag as Mpeg4AppleTag, tag)
-            : carryToId3(out, tag)
+            : tag.language !== undefined
+              ? carryCommentToId3(out, tag)
+              : carryToId3(out, tag)
         if (tags.filter(carry).length > 0) out.save()
       } finally {
         out.dispose()
@@ -607,7 +621,7 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
   }
 }
 
-type CarriedTag = { name: string; values: string[]; frame?: string }
+type CarriedTag = { name: string; values: string[]; frame?: string; language?: string }
 
 function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
   const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
@@ -625,10 +639,32 @@ function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
   if (texts.join(separator) === values.join(separator)) return false
   for (const fr of new Set([...held, ...mirrors])) id3.removeFrame(fr)
   const text = frame
-    ? Id3v2TextInformationFrame.fromIdentifier(ID3V23_TEXT_FRAMES[frame])
+    ? Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[frame])
     : Id3v2UserTextInformationFrame.fromDescription(name)
   text.text = values
   id3.addFrame(text)
+  return true
+}
+
+// A described COMM goes back as one, in place of the TXXX ffmpeg turned it into.
+function carryCommentToId3(f: TagFile, { name, values, language }: CarriedTag): boolean {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  if (fresh) id3.version = 3
+  const same = (description: string) => description.toLowerCase() === name.toLowerCase()
+  const mirrors = id3
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => same(fr.description))
+  const held = id3
+    .getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+    .filter((fr) => same(fr.description))
+  if (mirrors.length === 0 && held.length === 1 && held[0].text === values[0]) return false
+  for (const fr of [...held, ...mirrors]) id3.removeFrame(fr)
+  const comment = Id3v2CommentsFrame.fromDescription(name, language)
+  comment.text = values[0]
+  id3.addFrame(comment)
   return true
 }
 
@@ -1228,6 +1264,22 @@ function setItunesText(apple: Mpeg4AppleTag, name: string, value: string): void 
   else apple.setItunesStrings('com.apple.iTunes', name)
 }
 
+// TagLib's comment setter takes every COMM frame for the comment: emptied, it removed them
+// all, iTunes' Sound Check (iTunNORM) and gapless counts (iTunSMPB, iTunPGAP) and another
+// player's own field with them, and with no plain comment to reuse it wrote the new one
+// over one of those. The comment is the COMM with no description, the one ffmpeg and the
+// DJ software read, so the described ones are set aside while `write` sets it.
+export function keepDescribedComments(f: TagFile, write: () => void): void {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const described =
+    id3
+      ?.getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+      .filter((frame) => frame.description) ?? []
+  for (const frame of described) id3?.removeFrame(frame)
+  write()
+  for (const frame of described) id3?.addFrame(frame)
+}
+
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
@@ -1415,7 +1467,9 @@ export function writeTags(
     tag.year = toYear(meta.year)
     tag.genres = toArray(meta.genre)
     tag.grouping = meta.grouping
-    tag.comment = meta.comment
+    keepDescribedComments(f, () => {
+      tag.comment = meta.comment
+    })
     tag.track = toTrackNumber(meta.trackNumber)
     tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInNumber(meta.trackNumber)
     tag.disc = toDiscNumber(meta.discNumber)
@@ -1496,14 +1550,21 @@ export function writeTags(
     setId3Date(id3, meta.year)
     dropBrokenUfids(id3)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
-    // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
-    // matches the name outright. Applies always, not just on clearExtras.
+    // every TXXX and described COMM under that description, in any case as ffmpeg and the
+    // inspector match it, and any frame whose id matches the name outright, or that the
+    // inspector lists by ffmpeg's name for it (a TSOP as artist-sort). Applies always, not
+    // just on clearExtras.
     for (const name of foreignRemoved) {
-      setUserText(id3, name, '')
       const upper = name.toUpperCase()
-      for (const fr of id3.frames.filter(
-        (frame) => frame.frameId.toString().toUpperCase() === upper,
-      )) {
+      for (const fr of id3.frames.filter((frame) => {
+        const id = frame.frameId.toString()
+        return (
+          id.toUpperCase() === upper ||
+          FFMPEG_ID3_TEXT_NAMES[id] === upper ||
+          ((id === 'TXXX' || id === 'COMM') &&
+            (frame as Id3v2CommentsFrame).description.toUpperCase() === upper)
+        )
+      })) {
         id3.removeFrame(fr)
       }
     }
