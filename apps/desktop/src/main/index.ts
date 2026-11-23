@@ -554,6 +554,7 @@ const programQueues = {
         nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
         onChange: (state) =>
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'rekordbox', value: state }),
+        stack: stackRepoint,
       },
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {

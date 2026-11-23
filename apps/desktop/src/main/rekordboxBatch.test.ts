@@ -499,6 +499,28 @@ describe('stackRepoint on a replacement', () => {
     expect(stacked.fromBytes).toBe(10)
   })
 
+  // A replacement in place moved the audio 1.5 s, then the DJ retagged the track before
+  // rekordbox was closed. The retag says nothing about the audio, so the cues still owe the
+  // 1.5 s and rekordbox still owes its re-analysis: dropping them left every pad 1.5 s early
+  // while Engine DJ, which kept its shift, played right.
+  it('keeps the audio move of a replacement when a later retag of the file stacks on it', () => {
+    const p = '/m/a.aiff'
+    const meta = rekordboxMetaFrom(emptyMetadata())
+    const stacked = stackRepoint(
+      {
+        from: p,
+        to: p,
+        replaced: true,
+        audio: { cueShiftMs: 1500 },
+        engineShift: { trimmedMs: -1500 },
+      },
+      { from: p, to: p, meta },
+    )
+    expect(stacked.audio).toEqual({ cueShiftMs: 1500 })
+    expect(stacked.engineShift?.trimmedMs).toBe(-1500)
+    expect(stacked.meta).toEqual(meta)
+  })
+
   // The file on disk is the last one written: Engine must read its cues at that file's
   // rate, so a later same-path conversion's rate wins over the earlier one.
   it("keeps the last file's rate when a same-path replacement is converted again", () => {

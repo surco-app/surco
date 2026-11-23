@@ -450,6 +450,20 @@ describe('rekordbox queue', () => {
     ])
   })
 
+  // rekordbox open: a replacement in place moved the audio 1.5 s and the DJ then retagged the
+  // track. Both wait for the same file, and the retag must not wipe the cue move queued
+  // before it, or rekordbox's pads fire 1.5 s early while Engine DJ's play right.
+  it('keeps a queued cue move when a retag of the same file joins it', async () => {
+    const d = deps({ stack: stackRepoint })
+    const q = createRekordboxQueue(d)
+    q.enqueue([], [{ from: '/m/b.aiff', to: '/m/b.aiff', audio: { cueShiftMs: 1500 } }])
+    q.enqueue([], [{ from: '/m/b.aiff', to: '/m/b.aiff', fromBytes: 120 }])
+    await q.apply(closed)
+    expect(d.repoint).toHaveBeenCalledWith(expect.any(String), [
+      { from: '/m/b.aiff', to: '/m/b.aiff', audio: { cueShiftMs: 1500 }, fromBytes: 120 },
+    ])
+  })
+
   // A damage repair queued while Engine DJ was open and staged again from a fresh scan is the
   // same repair: summed, it moved every cue twice.
   it('keeps one damage repair when the same one is queued again', async () => {
