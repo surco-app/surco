@@ -17,6 +17,7 @@ import {
 import { isEngineDjRunning } from './engineProcess'
 import { backupOf } from './libraryBackups'
 import { pathKey } from './libraryPathKey'
+import { recordedRekordboxRepoint } from './rekordboxBatch'
 import { writeBackup } from './rekordboxSessionBackup'
 import { renameWithRetry } from './renameRetry'
 
@@ -108,6 +109,8 @@ const UPDATE_COLUMNS = [
 // BPM columns Engine also fills from its own analysis: a tag that carries a BPM should
 // update them, but a tag without one must not null out what Engine derived.
 const KEEP_WHEN_NULL = new Set(['bpm', 'bpmAnalyzed'])
+
+const FILE_COLUMNS = new Set(['filename', 'fileBytes', 'fileType'])
 
 interface PendingAdd {
   libraryDir: string
@@ -250,11 +253,18 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
         existingId = rowOfReplaced(libraryDir, existingByPath, add.replaces)
         moved = existingId !== undefined
       }
+      // A batch repoint that moves the cues with the file finds the row by its old path and
+      // size, so the file columns of that row are left to it: changed here, it matched nothing.
+      const repoint = add.replaces ? recordedRekordboxRepoint(add.filePath) : undefined
+      const repointed = !!repoint?.engineShift && (moved || repoint.from === repoint.to)
       let trackId: number
       if (existingId !== undefined) {
         trackId = existingId
         const cols = UPDATE_COLUMNS.filter(
-          (c) => live.has(c) && !(KEEP_WHEN_NULL.has(c) && row.get(c) == null),
+          (c) =>
+            live.has(c) &&
+            !(KEEP_WHEN_NULL.has(c) && row.get(c) == null) &&
+            !(repointed && FILE_COLUMNS.has(c)),
         )
         db.run(`UPDATE Track SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [
           ...cols.map((c) => row.get(c) ?? null),
@@ -263,10 +273,11 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
         if (moved) {
           // The row now describes another file: point it there, and clear the bitrate the
           // old file left, as Surco's own inserts do, for Engine to fill when it analyzes.
-          db.run('UPDATE Track SET path = ?, bitrate = NULL WHERE id = ?', [
-            track.relativePath,
-            trackId,
-          ])
+          if (!repointed)
+            db.run('UPDATE Track SET path = ?, bitrate = NULL WHERE id = ?', [
+              track.relativePath,
+              trackId,
+            ])
           for (const [p, id] of existingByPath) if (id === trackId) existingByPath.delete(p)
           existingByPath.set(track.relativePath.normalize('NFC'), trackId)
         }

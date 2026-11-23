@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import {
@@ -17,6 +18,7 @@ import {
   encodeLoops,
   inflateEngineBlob,
 } from './engineBlobs'
+import { addToEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
 import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
 import {
@@ -26,6 +28,12 @@ import {
   repointEngineTracks,
 } from './engineRepoint'
 import { backupOf } from './libraryBackups'
+import {
+  beginRekordboxBatch,
+  endRekordboxBatch,
+  type RekordboxRepoint,
+  recordRekordboxRepoint,
+} from './rekordboxBatch'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
 // happens to be running on the machine (Engine DJ itself, for instance).
@@ -892,6 +900,82 @@ describe.each(['2.18', '3.0.2'] as const)(
 
 // Measured on 23 analysed rows of a real m.db on 31/10: Engine shows the length rounded to the
 // nearest second of what its own trackData holds.
+// Engine as a destination with sync on runs the job's own Engine step before the batch's
+// repoint. That step used to move the row onto the new file, or record the new size of one
+// rewritten in place, so the repoint then found nothing owed and every cue, loop and beat
+// stayed where the cut audio no longer is: each pad fired late by the length of the trim.
+describe.each(['2.18', '3.0.2'] as const)(
+  'a trimmed conversion Engine DJ also receives as a destination, on a %s library',
+  (schema) => {
+    beforeEach(() => setEngineWriteGatherMs(0))
+
+    async function convert(lib: Library, repoint: RekordboxRepoint) {
+      beginRekordboxBatch()
+      recordRekordboxRepoint(repoint)
+      await addToEngineLibrary(lib.dir, repoint.to, emptyMetadata(), undefined, repoint.from)
+      return repointEngineTracks(lib.dir, endRekordboxBatch())
+    }
+
+    it('moves the cues with the row onto the new file', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+
+      const [result] = await convert(lib, {
+        from: lib.oldFile,
+        to: lib.newFile,
+        engineShift: { trimmedMs: TRIM_MS },
+      })
+
+      expect(result).toEqual({ written: true, id: '1' })
+      const after = await positionsOf(lib)
+      expect(after.hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)))
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT count(*) AS n, path, fileBytes FROM Track')).toEqual({
+        n: 1,
+        path: '../music/new.aiff',
+        fileBytes: 4321,
+      })
+      db.close()
+    })
+
+    it('moves the cues of a row rewritten in place', async () => {
+      const lib = await analysedLibrary(schema)
+      await writeFile(lib.oldFile, Buffer.alloc(4321))
+
+      const [result] = await convert(lib, {
+        from: lib.oldFile,
+        to: lib.oldFile,
+        fromBytes: 100,
+        audio: { cueShiftMs: -TRIM_MS },
+        engineShift: { trimmedMs: TRIM_MS },
+      })
+
+      expect(result).toEqual({ written: true, id: '1' })
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT fileBytes FROM Track')).toEqual({ fileBytes: 4321 })
+      db.close()
+    })
+
+    it('shifts nothing again when the source is converted once more onto the same file', async () => {
+      const lib = await analysedLibrary(schema)
+      const move = { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } }
+      await convert(lib, move)
+      const once = await positionsOf(lib)
+      await writeFile(lib.newFile, Buffer.alloc(5000))
+
+      const [again] = await convert(lib, move)
+
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT fileBytes FROM Track')).toEqual({ fileBytes: 5000 })
+      db.close()
+    })
+  },
+)
+
 describe('engineLengthOf', () => {
   it.each([
     [9609216, 44100, 218],
