@@ -250,7 +250,7 @@ interface Props {
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
-  rekordboxCue?: { contentId: string; path: string; label: string }
+  rekordboxCue?: { contentId: string; path: string; label: string; programPath?: string }
   matching?: Omit<React.ComponentProps<typeof MatchingSection>, 'open' | 'onToggle'>
   onCueJumpBars?: (bars: CueJumpBars) => void
   onCueQuantize?: (unit: CueQuantize) => void

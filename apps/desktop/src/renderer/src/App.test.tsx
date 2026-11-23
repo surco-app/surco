@@ -5913,6 +5913,56 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId('track-replaced')).not.toBeInTheDocument()
     })
 
+    // Right after Update the row is the Tracks item that made the new file: its own path is
+    // the download, and only the file it wrote is the one To review lists.
+    it('marks and opens a track replaced in this session by the file the replacement wrote', async () => {
+      const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/a.aiff',
+        inPlace: false,
+      })
+      await openFactory({
+        processTrack,
+        replacedTracks: vi.fn().mockResolvedValue([
+          {
+            newPath: '/m/a.aiff',
+            oldPath: '/m/a.mp3',
+            replacedAt: 1,
+            shift: { moved: 40 },
+            pending: ['rekordbox'],
+          },
+        ]),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === ALL_TRACKS_ID
+                  ? [
+                      {
+                        path: '/m/a.aiff',
+                        separator: false,
+                        meta: {},
+                        linkId: 'r1',
+                        contentId: 'r1',
+                      },
+                    ]
+                  : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('process-btn'))
+      await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+      await act(async () => {})
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      expect(screen.getByTestId('track-replaced')).toHaveAttribute('data-state', 'moved')
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('cues-replaced-pill')).toHaveAttribute('data-state', 'moved')
+      expect(screen.getByTestId('cues-reviewed')).toBeInTheDocument()
+    })
+
     it('gives no icon for a track pending review only in another program', async () => {
       await openFactory({
         replacedTracks: vi

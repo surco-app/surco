@@ -3361,6 +3361,7 @@ export default function App(): React.JSX.Element {
   const selectedContentId =
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
+  const selectedProgramPath = selected ? playlistScope?.rowPathOf.get(selected.id) : undefined
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const inRekordbox = sourceProgram === 'rekordbox'
@@ -3428,11 +3429,12 @@ export default function App(): React.JSX.Element {
     const shifts = new Map<string, ReplaceShift>()
     if (browser.playlist?.id !== TO_REVIEW_ID || sourceProgram === null) return shifts
     for (const t of scopeTracks) {
-      const entry = replacedEntryOf(replacedEntries, t.inputPath, sourceProgram)
+      const path = playlistScope?.rowPathOf.get(t.id) ?? t.inputPath
+      const entry = replacedEntryOf(replacedEntries, path, sourceProgram)
       if (entry) shifts.set(t.id, entry.shift)
     }
     return shifts
-  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries])
+  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
   const runMatchingEdits = useMatchingSteps(notifyEdit)
   const editMatchings = useMatchingEdits(notifyEdit)
@@ -3748,9 +3750,14 @@ export default function App(): React.JSX.Element {
   const rekordboxCue = useMemo(
     () =>
       selectedContentId && selectedPath !== undefined && selectedLabel !== undefined
-        ? { contentId: selectedContentId, path: selectedPath, label: selectedLabel }
+        ? {
+            contentId: selectedContentId,
+            path: selectedPath,
+            label: selectedLabel,
+            programPath: selectedProgramPath,
+          }
         : undefined,
-    [selectedContentId, selectedPath, selectedLabel],
+    [selectedContentId, selectedPath, selectedLabel, selectedProgramPath],
   )
   // A row read from an open rekordbox playlist names its collection entry; any other track
   // is looked up by its file, and by its converted file when a conversion moved the entry.

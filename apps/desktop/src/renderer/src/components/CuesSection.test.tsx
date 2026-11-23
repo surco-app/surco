@@ -89,7 +89,11 @@ function setup(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (
     current: Partial<Settings> | null,
-    cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' },
+    cue: { contentId: string; path: string; label: string; programPath?: string } = {
+      contentId: '103',
+      path: '/m/g.wav',
+      label: 'Gowan',
+    },
   ) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...current }}>
@@ -100,7 +104,7 @@ function setup(
   const { rerender } = render(tree(settings ?? null))
   return {
     changeSettings: (next: Partial<Settings>) => rerender(tree(next)),
-    changeTrack: (cue: { contentId: string; path: string; label: string }) =>
+    changeTrack: (cue: { contentId: string; path: string; label: string; programPath?: string }) =>
       rerender(tree(settings ?? null, cue)),
     logError,
     onFlow,
@@ -241,6 +245,19 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', ['rekordbox']))
+  })
+
+  // Right after Update the open track is the Tracks item that made the new file: its own path
+  // is the download, which To review does not know, so the save must name the program's file.
+  it('takes a track replaced in this session out of To review under the file its program lists', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues, changeTrack } = setup(READ, null, undefined, { reviewReplaced })
+    changeTrack({ contentId: '103', path: '/dl/g.wav', label: 'Gowan', programPath: '/m/g.aiff' })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.aiff', ['rekordbox']))
   })
 
   it('keeps the track in To review when the save failed, since nothing reached the program', async () => {

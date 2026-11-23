@@ -151,10 +151,13 @@ import { Select } from './Select'
 import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
+// programPath is the file the program's row names: a Tracks item that converted into it
+// still has its own path, and To review only knows the program's file.
 interface CueTarget {
   contentId: string
   path: string
   label: string
+  programPath?: string
 }
 
 export interface CueTrackInfo {
@@ -1184,7 +1187,10 @@ function Editing({
     forgetDrafts(reqs.map((r) => r.contentId))
     // A track the DJ just fixed in a program stops being asked about there. Not awaited and
     // not surfaced: the cues are already saved, so a failure here must not read as a failed save.
-    for (const [path, programs] of savedReviews(reqs)) {
+    const reviewed = reqs.map((r) =>
+      r.contentId === cue.contentId && cue.programPath ? { ...r, path: cue.programPath } : r,
+    )
+    for (const [path, programs] of savedReviews(reviewed)) {
       review(path, programs).catch((error) => window.api.logError(String(error)))
     }
     await refreshQueued()
@@ -2338,7 +2344,11 @@ export function CuesSection({
   const { colourHelp, provisionalHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
-  const replaced = replacedEntryOf(useReplacedTracks(), cue.path, programOf(cue.contentId))
+  const replaced = replacedEntryOf(
+    useReplacedTracks(),
+    cue.programPath ?? cue.path,
+    programOf(cue.contentId),
+  )
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
