@@ -35,6 +35,7 @@ import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
 import { type CommentMode, phrasedComment } from '../../shared/phraseCount'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import type { ReplaceShift } from '../../shared/replaceShift'
 import {
   childNames,
   nodeNameOf,
@@ -292,6 +293,7 @@ import {
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
+import { replacedEntryOf } from './lib/toReview'
 import { latestBackupByPath } from './lib/trashView'
 import {
   AUTO_MARK_FILTERS,
@@ -3404,6 +3406,15 @@ export default function App(): React.JSX.Element {
       ),
     )
   }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
+  const replacedShifts = useMemo(() => {
+    const shifts = new Map<string, ReplaceShift>()
+    if (browser.playlist?.id !== TO_REVIEW_ID || sourceProgram === null) return shifts
+    for (const t of scopeTracks) {
+      const entry = replacedEntryOf(replacedEntries, t.inputPath, sourceProgram)
+      if (entry) shifts.set(t.id, entry.shift)
+    }
+    return shifts
+  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries])
   const editMatching = useMatchingEdit(notifyEdit)
   const runMatchingEdits = useMatchingSteps(notifyEdit)
   const editMatchings = useMatchingEdits(notifyEdit)
@@ -5096,6 +5107,7 @@ export default function App(): React.JSX.Element {
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
                               matchingIds={matchingIds}
+                              replacedShifts={replacedShifts}
                               unsavedCueIds={unsavedCueIds}
                               playedPaths={playedPaths}
                               autoMarkById={autoMarkById}

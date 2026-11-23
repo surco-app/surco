@@ -638,6 +638,8 @@
   },
   "trackList": {
     "matchingPartner": "Hace Matching con la pista elegida",
+    "cuesMoved": "Cues movidos",
+    "cuesNotMoved": "Cues sin mover",
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",

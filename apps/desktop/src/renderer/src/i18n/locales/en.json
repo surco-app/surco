@@ -638,6 +638,8 @@
   },
   "trackList": {
     "matchingPartner": "Matches the chosen track",
+    "cuesMoved": "Cues moved",
+    "cuesNotMoved": "Cues not moved",
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",

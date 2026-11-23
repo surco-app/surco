@@ -19,6 +19,7 @@ vi.hoisted(() => {
 })
 
 import type { Api } from '../../../preload/api'
+import type { ReplaceShift } from '../../../shared/replaceShift'
 import { resolveBindings } from '../../../shared/shortcutDefaults'
 import type { Chord } from '../../../shared/shortcuts'
 import type { KeyNotation, TrackMetadata } from '../../../shared/types'
@@ -115,6 +116,7 @@ function renderList(
     showWaves,
     scrollRootRef,
     positions,
+    replacedShifts,
   }: {
     canPasteMeta?: boolean
     bindings?: Map<string, Chord>
@@ -133,6 +135,7 @@ function renderList(
     showWaves?: boolean
     scrollRootRef?: { current: HTMLElement | null }
     positions?: readonly (number | undefined)[]
+    replacedShifts?: ReadonlyMap<string, ReplaceShift>
   } = {},
 ) {
   const onSelect = vi.fn()
@@ -168,6 +171,7 @@ function renderList(
       reorder={reorder}
       scrollRootRef={scrollRootRef}
       pendingCuePaths={pendingCuePaths}
+      replacedShifts={replacedShifts}
       unsavedCueIds={unsavedCueIds}
       autoMarkById={autoMarkById}
       playedPaths={playedPaths}
@@ -2087,6 +2091,32 @@ describe('TrackList backup mark', () => {
     fireEvent.click(screen.getByTestId('track-backup'))
     expect(onOpenBackup).toHaveBeenCalledWith(expect.objectContaining({ id: 'a' }))
     expect(onSelect).not.toHaveBeenCalled()
+  })
+})
+
+describe('TrackList replaced mark', () => {
+  it('marks a track whose cues Surco moved with the green icon and says so to VoiceOver', () => {
+    renderList([track({ id: 'a' })], null, [], {
+      replacedShifts: new Map<string, ReplaceShift>([['a', { moved: 120 }]]),
+    })
+    const mark = screen.getByTestId('track-replaced')
+    expect(mark).toHaveAttribute('data-state', 'moved')
+    expect(mark).toHaveAttribute('aria-label', 'Cues moved')
+    expect(mark).toHaveTextContent('')
+  })
+
+  it('marks a track Surco left alone in amber, so the DJ checks it first', () => {
+    renderList([track({ id: 'a' })], null, [], {
+      replacedShifts: new Map<string, ReplaceShift>([['a', { unmoved: 'drift' }]]),
+    })
+    const mark = screen.getByTestId('track-replaced')
+    expect(mark).toHaveAttribute('data-state', 'unmoved')
+    expect(mark).toHaveAttribute('aria-label', 'Cues not moved')
+  })
+
+  it('shows no review icon outside the list, so other rows stay as they were', () => {
+    renderList([track({ id: 'a' })])
+    expect(screen.queryByTestId('track-replaced')).toBeNull()
   })
 })
 

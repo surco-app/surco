@@ -638,6 +638,8 @@
   },
   "trackList": {
     "matchingPartner": "Fa Matching amb la pista triada",
+    "cuesMoved": "Cues moguts",
+    "cuesNotMoved": "Cues sense moure",
     "cuesUnsaved": "Cues sense desar",
     "autoMark": {
       "proposed_one": "{{count}} proposta",

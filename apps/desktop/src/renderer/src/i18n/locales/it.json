@@ -638,6 +638,8 @@
   },
   "trackList": {
     "matchingPartner": "Fa Matching con il brano scelto",
+    "cuesMoved": "Cue spostati",
+    "cuesNotMoved": "Cue non spostati",
     "cuesUnsaved": "Cue non salvati",
     "autoMark": {
       "proposed_one": "{{count}} proposto",
