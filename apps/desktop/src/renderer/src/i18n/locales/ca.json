@@ -2881,6 +2881,7 @@
     },
     "tree": {
       "newPlaylist": "Nova playlist",
+      "unnamed": "Sense nom",
       "newFolder": "Nova carpeta",
       "newPlaylistInside": "Nova playlist",
       "newFolderInside": "Nova carpeta",

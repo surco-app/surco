@@ -571,8 +571,12 @@ export const SourceTree = memo(function SourceTree({
                 className="shrink-0 text-fg-faint"
               />
             )}
-            <span data-node-name dir="auto" className="min-w-0 truncate">
-              {node.name}
+            <span
+              data-node-name
+              dir="auto"
+              className={`min-w-0 truncate ${node.name.trim() === '' ? 'text-fg-faint' : ''}`}
+            >
+              {node.name.trim() === '' ? tr('sources.tree.unnamed') : node.name}
             </span>
             <Tooltip label={cutName === node.id ? node.name : ''} />
             {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}

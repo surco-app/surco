@@ -2881,6 +2881,7 @@
     },
     "tree": {
       "newPlaylist": "新規プレイリスト",
+      "unnamed": "名前なし",
       "newFolder": "新規フォルダー",
       "newPlaylistInside": "新規プレイリスト",
       "newFolderInside": "新規フォルダー",

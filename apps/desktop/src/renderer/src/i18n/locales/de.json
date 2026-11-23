@@ -2881,6 +2881,7 @@
     },
     "tree": {
       "newPlaylist": "Neue Playlist",
+      "unnamed": "Ohne Namen",
       "newFolder": "Neuer Ordner",
       "newPlaylistInside": "Neue Playlist",
       "newFolderInside": "Neuer Ordner",

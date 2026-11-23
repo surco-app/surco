@@ -1648,3 +1648,12 @@ describe('a deeply nested playlist', () => {
     expect(screen.getByTestId('source-node-deep')).toHaveStyle({ paddingLeft: '114px' })
   })
 })
+
+describe('a playlist with no name', () => {
+  it('reads as unnamed instead of leaving an empty row with only its count', () => {
+    setup(null, false, [{ id: 'blank', name: '   ', kind: 'playlist', count: 0 }])
+    expect(screen.getByTestId('source-node-blank')).toHaveTextContent(
+      i18n.t('sources.tree.unnamed'),
+    )
+  })
+})
