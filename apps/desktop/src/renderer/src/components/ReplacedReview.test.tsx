@@ -5,8 +5,10 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ReplacedEntry } from '../../../shared/toReview'
 import '../i18n'
+import { createAppStore } from '../lib/appStore'
 import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { ToastProvider } from '../lib/toastContext'
+import { pushToast } from '../lib/toastQueue'
 import { installApi } from '../test/api'
 import { ReviewedButton } from './ReplacedReview'
 
@@ -72,5 +74,41 @@ describe('ReviewedButton', () => {
     undo?.()
     await waitFor(() => expect(restoreReplaced).toHaveBeenCalledWith(ENTRY))
     expect(dismiss).toHaveBeenCalled()
+  })
+
+  // Two tracks closed one after the other are two steps: the second notice must not
+  // replace the first, or the first track could no longer be put back.
+  it('keeps one notice per Reviewed, so the first can still be undone after a second', async () => {
+    const other: ReplacedEntry = { ...ENTRY, newPath: '/m/other.flac', oldPath: '/m/other.mp3' }
+    const restoreReplaced = vi.fn(async () => {})
+    installApi({
+      reviewReplaced: vi.fn(async (path: string) => (path === ENTRY.newPath ? ENTRY : other)),
+      restoreReplaced,
+    })
+    const store = createAppStore()
+    const reportUndo = (
+      message: string,
+      onUndo: () => void,
+      _settle?: () => void,
+      key?: string,
+    ) => {
+      pushToast(store, { key, tone: 'neutral', message, action: { label: '', onAction: onUndo } })
+      return () => {}
+    }
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <ToastProvider value={{ reportError: vi.fn(), reportUndo }}>
+          <ReviewedButton path={ENTRY.newPath} name="One" />
+          <ReviewedButton path={other.newPath} name="Two" />
+        </ToastProvider>
+      </QueryClientProvider>,
+    )
+    const [one, two] = screen.getAllByTestId('cues-reviewed')
+    fireEvent.click(one)
+    await waitFor(() => expect(store.getState().toasts).toHaveLength(1))
+    fireEvent.click(two)
+    await waitFor(() => expect(store.getState().toasts).toHaveLength(2))
+    store.getState().toasts[0].action?.onAction()
+    await waitFor(() => expect(restoreReplaced).toHaveBeenCalledWith(ENTRY))
   })
 })

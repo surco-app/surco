@@ -29,12 +29,7 @@ export function ReviewedButton({
       withdraw()
       void restore(before)
     }
-    const dismiss = reportUndo(
-      tr('notices.reviewed', { name }),
-      undo,
-      () => withdraw(),
-      'replaced-reviewed',
-    )
+    const dismiss = reportUndo(tr('notices.reviewed', { name }), undo, () => withdraw())
     const withdraw = offerShortcutUndo(() => {
       dismiss()
       undo()
