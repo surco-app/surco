@@ -203,6 +203,19 @@ describe('setTagFields — a WAV that only carries INFO', () => {
     expect(id3Only(file)).toContain('id3 TIT1=Warm')
   })
 
+  // mp3tag ignores a v2.4 "id3 " chunk in a WAV, and older CDJ, rekordbox and Serato setups
+  // mishandle v2.4: Update writes v2.3 there, so the review's chunk has to be the same.
+  it('writes the new chunk as ID3v2.3, the version Update writes', () => {
+    const file = infoWav()
+    setTagFields(file, [{ field: 'grouping', from: '', to: 'Warm' }])
+    const f = TagFile.createFromPath(file)
+    try {
+      expect((f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).version).toBe(3)
+    } finally {
+      f.dispose()
+    }
+  })
+
   // A player that reads the ID3 chunk first would otherwise see a track with no title.
   it('carries what INFO says into the new chunk and leaves INFO as it was', () => {
     const file = infoWav()

@@ -388,7 +388,9 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
 
     const out = TagFile.createFromPath(dest)
     try {
+      const fresh = (out.tagTypesOnDisk & TagTypes.Id3v2) === 0
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      if (fresh) tag.version = 3
       removeCueFrames(tag)
       for (const frame of cues) tag.addFrame(frame)
       keepGenreParentheses(tag)
@@ -515,7 +517,9 @@ export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift)
 
     const out = TagFile.createFromPath(dest)
     try {
+      const fresh = (out.tagTypesOnDisk & TagTypes.Id3v2) === 0
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      if (fresh) tag.version = 3
       removeTraktorTextMirror(tag)
       removeCueFrames(tag)
       if (anchored) {

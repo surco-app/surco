@@ -251,6 +251,7 @@ function setOne(
     if (INFO_IDS[field].length === 0 && !elsewhere) {
       if (field !== 'grouping' || ext !== '.wav') return 'unchanged'
       const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      id3.version = 3
       id3.grouping = to
       setId3Grouping(id3, to, ext)
       keep.types |= TagTypes.Id3v2
