@@ -31,8 +31,7 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // track keeps its ID and therefore its playlists, cues and play history. Writing into a
 // library the user cannot rebuild is what shapes everything here: the collection is
 // backed up before it is touched, a running rekordbox refuses the write twice over, an
-// ambiguous match refuses rather than guesses, and a failed write is rolled back from the
-// backup.
+// ambiguous match refuses rather than guesses, and a failed write is rolled back.
 //
 // Best-effort, like the Traktor and Engine counterparts: the audio conversion has already
 // succeeded on disk by the time this runs, so nothing here throws to its caller. Every
@@ -135,8 +134,8 @@ const heldByAnother = (holder: ReturnType<TrackFinder>, ids: string[]): boolean 
 // process for minutes. Results come back per track, in the order given.
 //
 // One backup now stands behind the whole run, so the writes go in one transaction and a
-// failure restores that backup: no track is ever reported written from a collection that
-// was put back.
+// failure undoes all of them: no track is ever reported written from a collection that
+// was rolled back.
 export async function repointTracks(
   collectionPath: string,
   repoints: Repoint[],
@@ -326,10 +325,19 @@ export async function repointTracks(
       for (const w of writes) results[w.index] = { written: false, reason: 'read-only' }
       return settle({ written: false, reason: 'read-only' })
     }
-    // The collection is left exactly as it was found; the backup is the only copy that
-    // can guarantee that, so it is put back rather than trusting a half-applied write.
+    // SQLite has already undone the transaction, which leaves the collection exactly as it
+    // was found. The backup goes back only when even that rollback failed, and never over
+    // a master.db a rekordbox launched meanwhile holds open: its busy lock is a common way
+    // for this write to fail at all.
+    let known = true
+    try {
+      if (write.inTransaction) write.exec('ROLLBACK')
+    } catch (rollbackErr) {
+      log.error(`rekordbox repoint rollback failed: ${String(rollbackErr)}`)
+      known = false
+    }
     write.close()
-    await restoreCollection(collectionPath)
+    if (!known && !(await isRekordboxRunning())) await restoreCollection(collectionPath)
     for (const w of writes) results[w.index] = { written: false, reason: 'write-failed' }
     return settle({ written: false, reason: 'write-failed' })
   } finally {

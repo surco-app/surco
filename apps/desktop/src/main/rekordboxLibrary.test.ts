@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
 import log from 'electron-log/main'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeRekordbox } from '../scenarios/rekordboxFixture'
 import { emptyMetadata } from '../shared/metadata'
 import * as rekordboxDb from './rekordboxDb'
@@ -549,6 +549,95 @@ describe('repointTrack', () => {
 
     expect(result).toEqual({ written: false, reason: 'write-failed' })
     expect(await readFile(dbPath)).toEqual(before)
+  })
+
+  // A rekordbox launched between the last check and the write makes the UPDATE fail as
+  // busy. SQLite has already undone it by then, and copying the backup over a master.db
+  // rekordbox now holds open is the one thing that can lose or corrupt the library.
+  describe('a write that fails', () => {
+    const notTheCollection = async (_from: string, to: string) => {
+      mkdirSync(dirname(to), { recursive: true })
+      await writeFile(to, 'not the collection')
+    }
+    const busy = () => {
+      throw Object.assign(new Error('database is locked'), { code: 'SQLITE_BUSY' })
+    }
+
+    async function rollbackFails(): Promise<void> {
+      const { openRekordboxDb: open } = await vi.importActual<typeof rekordboxDb>('./rekordboxDb')
+      vi.spyOn(rekordboxDb, 'openRekordboxDb').mockImplementation((path, options) => {
+        const db = open(path, options)
+        if (!db || options?.readonly) return db
+        const exec = db.exec.bind(db)
+        return new Proxy(db, {
+          get(target, key) {
+            if (key === 'inTransaction') return true
+            if (key === 'exec')
+              return (sql: string) => {
+                if (sql === 'ROLLBACK') throw new Error('rollback failed')
+                return exec(sql)
+              }
+            const value = Reflect.get(target, key)
+            return typeof value === 'function' ? value.bind(target) : value
+          },
+        })
+      })
+    }
+
+    it('leaves the collection to SQLite rollback instead of copying the backup over it', async () => {
+      const output = join(audioDir, '02 Everybody.wav')
+      await writeFile(output, Buffer.alloc(5000))
+
+      const result = await repointTrack(dbPath, {
+        from: MP3,
+        to: output,
+        backup: notTheCollection,
+        onWrite: busy,
+      })
+
+      expect(result).toEqual({ written: false, reason: 'write-failed' })
+      expect(readRow(dbPath).FolderPath).toBe(MP3)
+    })
+
+    it('puts the backup back when even the rollback failed', async () => {
+      const output = join(audioDir, '02 Everybody.wav')
+      await writeFile(output, Buffer.alloc(5000))
+      await rollbackFails()
+
+      const result = await repointTrack(dbPath, {
+        from: MP3,
+        to: output,
+        backup: notTheCollection,
+        onWrite: busy,
+      })
+
+      expect(result).toEqual({ written: false, reason: 'write-failed' })
+      expect(await readFile(dbPath, 'utf8')).toBe('not the collection')
+    })
+
+    it('never puts the backup back over a collection rekordbox has open', async () => {
+      const output = join(audioDir, '02 Everybody.wav')
+      await writeFile(output, Buffer.alloc(5000))
+      await rollbackFails()
+      vi.mocked(isRekordboxRunning)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValue(true)
+
+      const result = await repointTrack(dbPath, {
+        from: MP3,
+        to: output,
+        backup: notTheCollection,
+        onWrite: busy,
+      })
+
+      expect(result).toEqual({ written: false, reason: 'write-failed' })
+      expect(await readFile(dbPath, 'utf8')).not.toBe('not the collection')
+    })
+
+    afterEach(() => {
+      vi.mocked(rekordboxDb.openRekordboxDb).mockRestore?.()
+    })
   })
 
   function walWriter(path: string): Database.Database {
