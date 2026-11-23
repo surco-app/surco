@@ -3,6 +3,7 @@ import type { DjProgram } from '../../../shared/djProgram'
 import type { ReplacedEntry } from '../../../shared/toReview'
 
 export const REPLACED_QUERY = ['replaced-tracks'] as const
+const NO_REPLACED: ReplacedEntry[] = []
 
 export function useReplacedTracks(): ReplacedEntry[] {
   const { data } = useQuery({
@@ -10,7 +11,7 @@ export function useReplacedTracks(): ReplacedEntry[] {
     queryFn: () => window.api.replacedTracks(),
     staleTime: Number.POSITIVE_INFINITY,
   })
-  return data ?? []
+  return data ?? NO_REPLACED
 }
 
 export function useReviewReplaced(): {

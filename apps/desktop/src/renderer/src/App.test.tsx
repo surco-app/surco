@@ -5835,6 +5835,24 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
     })
 
+    // Its order is Surco's review priority, unmoved tracks first, not an order the DJ set,
+    // so numbers down the side would read as positions in a playlist that does not exist.
+    it('leaves position numbers out of To review, whose order is not one the DJ set', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      await waitFor(() => expect(screen.getAllByTestId('track-number').length).toBeGreaterThan(0))
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+    })
+
     it('is never offered as a playlist to add tracks to', async () => {
       await openFactory({
         replacedTracks: vi.fn().mockResolvedValue(REPLACED),

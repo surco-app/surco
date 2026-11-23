@@ -2604,7 +2604,10 @@ export default function App(): React.JSX.Element {
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
   const showListPositions = settings?.showListPositions ?? true
   const numberedTracks =
-    showListPositions && sortBy === 'import' && browser.playlist?.id !== MATCHING_ID
+    showListPositions &&
+    sortBy === 'import' &&
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
       ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
       : undefined
   const listPositions = useMemo(
