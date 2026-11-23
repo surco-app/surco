@@ -76,6 +76,16 @@ describe('withTraktorCues', () => {
     expect(out).toContain('<STEMS STEMS="x"></STEMS>')
   })
 
+  // A moved cue was written as a fresh Traktor cue, so the DJ's "Drop" came back "n.n."
+  // after Onto the beat. Its name is the DJ's, and a new place does not make it another cue.
+  it('keeps the name of a cue it moves', () => {
+    const named = nml([GRID, AUTOGRID, LOAD, BLUE.replace('NAME="n.n."', 'NAME="Drop &amp; Roll"')])
+    const moved = asWanted(named).map((c) => (c.id === '3' ? { ...c, ms: 100000 } : c))
+    expect(withTraktorCues(block(named), moved)).toContain(
+      '<CUE_V2 NAME="Drop &amp; Roll" DISPL_ORDER="0" TYPE="0" START="100000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="2"></CUE_V2>',
+    )
+  })
+
   it('adds a new cue as a normal Traktor cue on the button after AutoGrid', () => {
     const bare = nml([GRID, AUTOGRID])
     const out = withTraktorCues(block(bare), [{ ms: 60000, kind: HOT_KINDS[0], color: 5 }])
