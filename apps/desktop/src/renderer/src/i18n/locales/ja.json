@@ -1452,6 +1452,7 @@
     "suggestionsMore": "さらに {{count}} 件を表示",
     "suggestionsLess": "表示を減らす",
     "suggestionDetected": "音声から検出：{{value}}",
+    "suggestionShare": "{{value}}、{{total}} 件中 {{count}} 件",
     "rowAutoFill": "{{name}} を自動入力",
     "rowRequired": "{{name}} 必須",
     "rowMoveUp": "{{name}} を上に移動",

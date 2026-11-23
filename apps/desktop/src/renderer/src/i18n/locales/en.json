@@ -1452,6 +1452,7 @@
     "suggestionsMore": "Show {{count}} more",
     "suggestionsLess": "Show fewer",
     "suggestionDetected": "Detected in the audio: {{value}}",
+    "suggestionShare": "{{value}}, {{count}} of {{total}}",
     "rowAutoFill": "Fill {{name}} automatically",
     "rowRequired": "{{name}} required",
     "rowMoveUp": "Move {{name}} up",

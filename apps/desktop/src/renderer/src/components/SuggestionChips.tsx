@@ -8,7 +8,7 @@ interface SuggestionChipsProps {
   suggestions: string[]
   isOn: (s: string) => boolean
   isPartial?: (s: string) => boolean
-  partialLabel?: (s: string) => string
+  partialOf?: { count: (s: string) => number; total: number }
   onPick: (s: string) => void
   scope?: string
   dim?: boolean
@@ -44,7 +44,7 @@ export function SuggestionChips({
   suggestions,
   isOn,
   isPartial,
-  partialLabel,
+  partialOf,
   onPick,
   scope,
   dim,
@@ -81,8 +81,7 @@ export function SuggestionChips({
   // Measured open or folded: an open row still has to know how many chips one line holds,
   // to offer the fold only where there is something to fold.
   const { containerRef, measureRef, visibleCount } = useChipOverflow(chips, chips.length > 0)
-  const appliedHidden =
-    !chipsExpanded && chips.slice(visibleCount).some((s) => stateOf(s) !== 'off')
+  const appliedHidden = !chipsExpanded && chips.slice(visibleCount).some((s) => stateOf(s) === 'on')
   if (appliedHidden && lead.key === listKey) {
     const next = appliedFirst()
     if (next.join('\n') !== chips.join('\n')) setLead({ key: listKey, chips: next })
@@ -90,7 +89,7 @@ export function SuggestionChips({
   // With more applied tags than one line holds, the row grows to hold them all, and only
   // them: the rest stay behind "+N", so the form is pushed down by what the track carries
   // and not by every suggestion there is.
-  const lastApplied = chips.reduce((last, s, i) => (stateOf(s) !== 'off' ? i : last), -1)
+  const lastApplied = chips.reduce((last, s, i) => (stateOf(s) === 'on' ? i : last), -1)
   const foldedCount = Math.max(visibleCount, lastApplied + 1)
   const foldable = chips.length > foldedCount
   const shownCount = chipsExpanded ? chips.length : foldedCount
@@ -107,18 +106,25 @@ export function SuggestionChips({
     revealFromRef.current = null
     firstRevealedRef.current?.focus()
   }, [chipsExpanded])
-  const content = (s: string): React.ReactNode => {
-    const state = stateOf(s)
-    return (
-      <>
-        <span data-chip-name dir="auto" className="min-w-0 truncate">
-          {s}
-        </span>
-        {partialLabel && state === 'some' && (
-          <span className="ml-1 shrink-0 tabular-nums text-fg-faint">{partialLabel(s)}</span>
-        )}
-      </>
-    )
+  const content = (s: string): React.ReactNode => (
+    <span data-chip-name dir="auto" className="min-w-0 truncate">
+      {s}
+    </span>
+  )
+  const shareOf = (s: string): string | undefined =>
+    partialOf && stateOf(s) === 'some'
+      ? tr('fields.suggestionShare', {
+          value: s,
+          count: partialOf.count(s),
+          total: partialOf.total,
+        })
+      : undefined
+  const fillOf = (s: string): React.CSSProperties | undefined => {
+    if (!partialOf || stateOf(s) !== 'some') return undefined
+    const at = `${(partialOf.count(s) / partialOf.total) * 100}%`
+    return {
+      backgroundImage: `linear-gradient(to right, var(--color-accent-soft) ${at}, transparent ${at})`,
+    }
   }
   return (
     <span
@@ -142,7 +148,8 @@ export function SuggestionChips({
             data-testid={scope ? `chip-${scope}-${s}` : `chip-${s}`}
             data-state={state}
             aria-pressed={state === 'on' ? true : state === 'some' ? 'mixed' : false}
-            aria-label={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
+            aria-label={audioDerived ? tr('fields.suggestionDetected', { value: s }) : shareOf(s)}
+            style={fillOf(s)}
             onClick={() => onPick(s)}
             onPointerEnter={(e) => measureCut(e.currentTarget, s)}
             onFocus={(e) => measureCut(e.currentTarget, s)}
@@ -165,7 +172,7 @@ export function SuggestionChips({
             {audioDerived ? (
               <Tooltip label={tr('fields.suggestionDetected', { value: s })} />
             ) : (
-              <Tooltip label={cut === s ? s : ''} hoverOnly />
+              <Tooltip label={shareOf(s) ?? (cut === s ? s : '')} hoverOnly />
             )}
             {content(s)}
           </button>
