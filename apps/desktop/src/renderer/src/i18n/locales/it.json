@@ -1316,6 +1316,12 @@
         "help": "rekordbox non ha ancora analizzato questo brano. Surco ha calcolato il tempo e la griglia, così puoi mettere subito i cue. Quando rekordbox lo analizzerà, Surco li adatterà alla sua griglia.",
         "measuring": "Calcolo della griglia…"
       },
+      "replaced": {
+        "notMoved": "non spostati",
+        "noMatch": "Surco non è riuscito ad allineare il nuovo file con quello vecchio. I cue restano com'erano.",
+        "drift": "L'inizio e la fine si sono spostati in modo diverso. I cue restano com'erano.",
+        "unreadable": "Non è stato possibile leggere il vecchio file. I cue restano com'erano."
+      },
       "twins": {
         "title": "Al salvataggio, il flusso va anche in",
         "hot_one": "{{count}} hot cue",

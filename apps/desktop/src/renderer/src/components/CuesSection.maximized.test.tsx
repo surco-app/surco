@@ -2675,3 +2675,28 @@ describe('CuesSection while the track loads', () => {
     expect(screen.queryByTestId('cues-skeleton')).toBeNull()
   })
 })
+
+describe('CuesSection maximized replaced track', () => {
+  it('shows the pill and the reason in the maximized editor too, where the DJ actually checks cues', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { unmoved: 'noMatch' },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    await waitFor(() =>
+      expect(
+        within(screen.getByTestId('cues-header')).getByTestId('cues-replaced-pill'),
+      ).toHaveTextContent('not moved'),
+    )
+    expect(
+      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-replaced-reason'),
+    ).toBeInTheDocument()
+  })
+})

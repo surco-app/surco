@@ -1316,6 +1316,12 @@
         "help": "rekordbox encara no ha analitzat aquesta pista. Surco n'ha calculat el tempo i la graella, així que ja pots posar els cues. Quan rekordbox l'analitzi, Surco els ajustarà a la seva graella.",
         "measuring": "Calculant la graella…"
       },
+      "replaced": {
+        "notMoved": "sense moure",
+        "noMatch": "Surco no ha pogut alinear el fitxer nou amb el vell. Els cues continuen com estaven.",
+        "drift": "El principi i el final s'han mogut de manera diferent. Els cues continuen com estaven.",
+        "unreadable": "No s'ha pogut llegir el fitxer vell. Els cues continuen com estaven."
+      },
       "twins": {
         "title": "En desar, el flux també es posa a",
         "hot_one": "{{count}} hot cue",

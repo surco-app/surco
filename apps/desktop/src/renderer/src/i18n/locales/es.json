@@ -1316,6 +1316,12 @@
         "help": "rekordbox aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya. Cuando rekordbox la analice, Surco los ajustará a su rejilla.",
         "measuring": "Calculando la rejilla…"
       },
+      "replaced": {
+        "notMoved": "sin mover",
+        "noMatch": "Surco no pudo alinear el fichero nuevo con el viejo. Los cues siguen como estaban.",
+        "drift": "El principio y el final se movieron distinto. Los cues siguen como estaban.",
+        "unreadable": "No se pudo leer el fichero viejo. Los cues siguen como estaban."
+      },
       "twins": {
         "title": "Al guardar, el flujo también se pone en",
         "hot_one": "{{count}} hot cue",

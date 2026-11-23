@@ -1316,6 +1316,12 @@
         "help": "O rekordbox ainda não analisou esta faixa. O Surco mediu o andamento e a grade, então você já pode colocar os cues. Quando o rekordbox analisar, o Surco vai ajustá-los à grade dele.",
         "measuring": "Medindo a grade…"
       },
+      "replaced": {
+        "notMoved": "não movidos",
+        "noMatch": "O Surco não conseguiu alinhar o arquivo novo com o antigo. Os cues continuam como estavam.",
+        "drift": "O início e o fim se moveram de forma diferente. Os cues continuam como estavam.",
+        "unreadable": "Não foi possível ler o arquivo antigo. Os cues continuam como estavam."
+      },
       "twins": {
         "title": "Ao salvar, o fluxo também é colocado em",
         "hot_one": "{{count}} hot cue",

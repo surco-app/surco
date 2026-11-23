@@ -46,9 +46,11 @@ import {
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
+import { useReplacedTracks } from '../hooks/useReplacedTracks'
 import {
   cueDropInputQuery,
   gridAuditQuery,
@@ -130,6 +132,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
+import { replacedEntryOf } from '../lib/toReview'
 import { CueDeck, CueMoves } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
@@ -139,6 +142,7 @@ import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
+import { ReplacedPill, ReplacedReason } from './ReplacedPill'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
@@ -532,6 +536,7 @@ function Editing({
   headerSlot,
   saveEcho,
   provisional,
+  replaced,
   actionsRef,
 }: {
   read: TrackCues
@@ -551,6 +556,7 @@ function Editing({
   headerSlot: HTMLElement | null
   saveEcho: ReturnType<typeof useCueSaveEcho>
   provisional?: SurcoGrid
+  replaced?: ReplacedEntry
   actionsRef?: { current: CueActions | null }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -1754,6 +1760,7 @@ function Editing({
             )}
           </div>
           {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+          {replaced && <ReplacedPill shift={replaced.shift} />}
         </div>
       </div>
       <span className="flex-1" />
@@ -1868,6 +1875,14 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
+      {/* The full editor has no section header, so the why of a replaced track gets a row of
+      its own under the track's header. Only a replaced track has it, so no state inside the
+      open track toggles it and nothing above the wave changes width. */}
+      {maximized && replaced && (
+        <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
+          <ReplacedReason shift={replaced.shift} />
+        </div>
+      )}
       {maximized ? (
         <>
           {toolbar}
@@ -2298,6 +2313,7 @@ export function CuesSection({
   const { colourHelp, provisionalHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
+  const replaced = replacedEntryOf(useReplacedTracks(), cue.path, programOf(cue.contentId))
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
@@ -2398,6 +2414,7 @@ export function CuesSection({
         key={`${draftKey}|${round}`}
         read={shown}
         provisional={provisional}
+        replaced={replaced}
         queued={queued}
         cue={cue}
         draftKey={draftKey}
@@ -2446,9 +2463,10 @@ export function CuesSection({
             ...(colourHelp ? [tr(colourHelp)] : []),
           ].join(' ')}
           status={
-            unsaved || provisional || saveEcho.saved ? (
+            unsaved || provisional || replaced || saveEcho.saved ? (
               <>
                 {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+                {replaced && <ReplacedPill shift={replaced.shift} />}
                 {unsaved ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
               </>
             ) : undefined
@@ -2470,6 +2488,11 @@ export function CuesSection({
         <SectionBody open={open}>
           <div className="mt-3">
             {body}
+            {replaced && 'unmoved' in replaced.shift && (
+              <div className="mt-2">
+                <ReplacedReason shift={replaced.shift} />
+              </div>
+            )}
             {footer}
           </div>
         </SectionBody>

@@ -1316,6 +1316,12 @@
         "help": "rekordbox hat diesen Track noch nicht analysiert. Surco hat Tempo und Raster selbst gemessen, du kannst die Cues also schon setzen. Sobald rekordbox ihn analysiert, rückt Surco sie auf dessen Raster.",
         "measuring": "Raster wird gemessen…"
       },
+      "replaced": {
+        "notMoved": "nicht verschoben",
+        "noMatch": "Surco konnte die neue Datei nicht an der alten ausrichten. Die Cues bleiben, wie sie waren.",
+        "drift": "Anfang und Ende haben sich unterschiedlich verschoben. Die Cues bleiben, wie sie waren.",
+        "unreadable": "Die alte Datei konnte nicht gelesen werden. Die Cues bleiben, wie sie waren."
+      },
       "twins": {
         "title": "Beim Speichern kommt der Ablauf auch nach",
         "hot_one": "{{count}} Hot Cue",

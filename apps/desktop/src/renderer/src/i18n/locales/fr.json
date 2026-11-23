@@ -1316,6 +1316,12 @@
         "help": "rekordbox n’a pas encore analysé ce morceau. Surco a mesuré le tempo et la grille, tu peux donc placer les cues dès maintenant. Quand rekordbox l’analysera, Surco les calera sur sa grille.",
         "measuring": "Mesure de la grille…"
       },
+      "replaced": {
+        "notMoved": "non déplacés",
+        "noMatch": "Surco n’a pas pu aligner le nouveau fichier sur l’ancien. Les cues restent comme ils étaient.",
+        "drift": "Le début et la fin se sont décalés différemment. Les cues restent comme ils étaient.",
+        "unreadable": "L’ancien fichier n’a pas pu être lu. Les cues restent comme ils étaient."
+      },
       "twins": {
         "title": "En enregistrant, le flux est aussi placé dans",
         "hot_one": "{{count}} hot cue",

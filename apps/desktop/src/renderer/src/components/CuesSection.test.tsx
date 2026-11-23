@@ -9,6 +9,8 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
+import type { DjProgram } from '../../../shared/djProgram'
+import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -1286,5 +1288,25 @@ describe('CuesSection on a track rekordbox has not analysed', () => {
     await ready()
     expect(rekordboxSurcoGrid).not.toHaveBeenCalled()
     expect(screen.queryByTestId('cues-provisional')).toBeNull()
+  })
+})
+
+describe('CuesSection replaced track', () => {
+  const entry = (pending: DjProgram[]): ReplacedEntry => ({
+    newPath: '/m/g.wav',
+    oldPath: '/m/g.mp3',
+    replacedAt: 1,
+    shift: { moved: 120 },
+    pending,
+  })
+
+  it('shows the pill on a replaced track only while this program still has it to review', async () => {
+    setup(READ, null, undefined, { replacedTracks: async () => [entry(['rekordbox'])] })
+    await ready()
+    expect(await screen.findByTestId('cues-replaced-pill')).toHaveTextContent('+120 ms')
+    cleanup()
+    setup(READ, null, undefined, { replacedTracks: async () => [entry(['traktor'])] })
+    await ready()
+    expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
   })
 })
