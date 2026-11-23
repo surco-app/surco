@@ -8,6 +8,11 @@ type Rgb = readonly [number, number, number]
 export type Ramp = { r: string; g: string; b: string }
 
 export function parseColor(value: string): Rgb {
+  const short = value.trim().match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i)
+  if (short) {
+    const channel = (c: string): number => Number.parseInt(c + c, 16)
+    return [channel(short[1]), channel(short[2]), channel(short[3])]
+  }
   const hex = value.trim().match(/^#([0-9a-f]{6})$/i)
   if (hex) {
     const n = Number.parseInt(hex[1], 16)
