@@ -1,4 +1,5 @@
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
+import { mkdir, mkdtemp, readFile, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -11,7 +12,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 
 import { djLibraryFileUse, type LibraryLocations } from './libraryFileUse'
 import { REKORDBOX_KEY } from './rekordboxDb'
-import { type RetireDeps, retireSuperseded } from './retireSuperseded'
+import { isRegularFile, type RetireDeps, retireSuperseded } from './retireSuperseded'
 
 const NONE: LibraryLocations = { rekordbox: '', engine: '', traktor: '', serato: [], virtualdj: [] }
 let root: string
@@ -66,6 +67,7 @@ function setup(libraries: LibraryLocations, over: Partial<RetireDeps> = {}) {
   const deps: RetireDeps = {
     usedByLibrary: djLibraryFileUse(libraries, { realPath: (p) => p }),
     exists: () => true,
+    isRegularFile: () => true,
     keepsTrash: () => true,
     policy: () => 'audioChanges',
     trash,
@@ -158,5 +160,33 @@ describe('retireSuperseded', () => {
     const { deps, trash } = setup(NONE, { exists: (p) => p === '/m/old' })
     expect(await retireSuperseded('/m/old/A.aiff', deps)).toBe('retired')
     expect(trash).not.toHaveBeenCalled()
+  })
+
+  // Nothing asks before this trash, so only a file a replacement left behind may reach it. A
+  // test run stamped a folder as the file replaced, and only a Music lookup that failed kept
+  // the whole folder, its collection.nml in it, out of the Trash.
+  it('keeps a folder it was pointed at, never trashing a directory', async () => {
+    const folder = await mkdtemp(join(root, 'lib-'))
+    await writeFile(join(folder, 'collection.nml'), '<NML/>')
+    const { deps, trash } = setup(NONE, { exists: existsSync, isRegularFile })
+    expect(await retireSuperseded(folder, deps)).toBe('used')
+    expect(trash).not.toHaveBeenCalled()
+  })
+
+  it('keeps a link to a folder, without following it to what it points at', async () => {
+    const folder = await mkdtemp(join(root, 'lib-'))
+    const link = join(root, `link-${Math.random().toString(36).slice(2)}.mp3`)
+    await symlink(folder, link)
+    const { deps, trash } = setup(NONE, { exists: existsSync, isRegularFile })
+    expect(await retireSuperseded(link, deps)).toBe('used')
+    expect(trash).not.toHaveBeenCalled()
+  })
+
+  it('still retires a regular file on disk that no library uses', async () => {
+    const file = join(await mkdtemp(join(root, 'old-')), 'A.aiff')
+    await writeFile(file, 'audio')
+    const { deps, trash } = setup(NONE, { exists: existsSync, isRegularFile })
+    expect(await retireSuperseded(file, deps)).toBe('retired')
+    expect(trash).toHaveBeenCalledWith(file, false)
   })
 })
