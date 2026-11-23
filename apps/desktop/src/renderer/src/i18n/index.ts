@@ -1,5 +1,6 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
+import { formatCount } from '../lib/stats'
 import { systemLocale } from './locale'
 import en from './locales/en.json'
 
@@ -36,14 +37,33 @@ async function ensureLocaleLoaded(lng: string): Promise<void> {
 // language preference (which may pin a locale or keep following the system).
 const language = systemLocale()
 
-void i18n.use(initReactI18next).init({
-  resources: {
-    en: { translation: en },
-  },
-  lng: language,
-  fallbackLng: 'en',
-  interpolation: { escapeValue: false },
-})
+const countFormatter = {
+  type: 'formatter' as const,
+  init: () => {},
+  add: () => {},
+  addCached: () => {},
+  format: (
+    value: unknown,
+    _format: string | undefined,
+    lng: string | undefined,
+    options?: { interpolationkey?: string },
+  ): unknown =>
+    options?.interpolationkey === 'count' && typeof value === 'number'
+      ? formatCount(value, lng ?? 'en')
+      : value,
+}
+
+void i18n
+  .use(countFormatter)
+  .use(initReactI18next)
+  .init({
+    resources: {
+      en: { translation: en },
+    },
+    lng: language,
+    fallbackLng: 'en',
+    interpolation: { escapeValue: false, alwaysFormat: true },
+  })
 
 // Every caller (useSettings, App's language toggle, tests) drives language switches
 // through this same changeLanguage — wrapping it here, once, on the shared instance is
