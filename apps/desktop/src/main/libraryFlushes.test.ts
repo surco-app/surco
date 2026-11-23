@@ -116,6 +116,7 @@ import {
   type LibraryHost,
   librariesKeepingOriginal,
   libraryUntouched,
+  queueLeftBehind,
   rekordboxFlushDeps,
   repointEngineQueued,
   repointRekordbox,
@@ -2429,5 +2430,191 @@ describe('repointRekordbox', () => {
     const call = WRITERS.repointTracks.mock.calls[0] as unknown[]
     const batch = call[2] as { probe?: { properties: unknown } }
     expect(batch?.probe?.properties).toBe(probeProperties)
+  })
+})
+
+describe('flushConversionBatch with a replacement a library did not follow', () => {
+  const quiet = () => ({ enqueue: vi.fn(), applyQuietly: vi.fn() })
+  async function replacing(run: () => Promise<void>) {
+    Object.assign(REPOINTS[0], { replaced: true })
+    try {
+      await run()
+    } finally {
+      delete (REPOINTS[0] as Record<string, unknown>).replaced
+    }
+  }
+  async function withEngine(run: () => Promise<void>) {
+    Object.assign(SETTINGS, { syncEngineDj: true, engineLibraryDir: '/e/Engine Library' })
+    STATUS.engine = { enabled: true, found: true }
+    try {
+      await run()
+    } finally {
+      Object.assign(SETTINGS, { syncEngineDj: false, engineLibraryDir: '' })
+      STATUS.engine = { enabled: false, found: false }
+    }
+  }
+  const virtualdjHome = (paths: string[]): VirtualdjRoot[] => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-flush-virtualdj-'))
+    writeFileSync(
+      join(dir, 'database.xml'),
+      `<?xml version="1.0" encoding="UTF-8"?>\r\n<VirtualDJ_Database Version="2026">\r\n${paths.map((p) => ` <Song FilePath="${p}" FileSize="3" Flag="268435456">\r\n </Song>\r\n`).join('')}</VirtualDJ_Database>\r\n`,
+    )
+    return [{ dir, root: '/' }]
+  }
+
+  it.each(['no-match', 'ambiguous', 'output-missing'])(
+    'names the new file rekordbox kept on the old one (%s), so To review never says its cues moved',
+    async (reason) => {
+      REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+      WRITERS.repointTracks.mockResolvedValueOnce([{ written: false, reason }] as never)
+      await replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
+        expect(outcome.stayed?.rekordbox).toEqual(['/m/a.flac'])
+      })
+    },
+  )
+
+  it('names the new file when rekordbox is not synced, since Add to rekordbox alone never moves the old entry', async () => {
+    Object.assign(SETTINGS, { syncRekordbox: false, addToRekordbox: true })
+    try {
+      await replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
+        expect(outcome.stayed?.rekordbox).toEqual(['/m/a.flac'])
+      })
+    } finally {
+      Object.assign(SETTINGS, { syncRekordbox: true, addToRekordbox: false })
+    }
+  })
+
+  it('names nothing for rekordbox once its entry moved', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    await replacing(async () => {
+      const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
+      expect(outcome.rekordbox).toBe('written')
+      expect(outcome.stayed?.rekordbox).toBeUndefined()
+    })
+  })
+
+  it('names nothing for rekordbox while its run waits in the queue, because the move can still land', async () => {
+    await replacing(async () => {
+      const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
+      expect(outcome.rekordbox).toBe('queued')
+      expect(outcome.stayed?.rekordbox).toBeUndefined()
+    })
+  })
+
+  it('names nothing for rekordbox while the collection is held, because the held run moves it later', async () => {
+    await replacing(async () => {
+      const outcome = await flushConversionBatch(host({ rekordboxHeld: () => true }), sessions, {
+        rekordbox: quiet(),
+      })
+      expect(outcome.rekordbox).toBe('queued')
+      expect(outcome.stayed?.rekordbox).toBeUndefined()
+    })
+  })
+
+  it('does not name a converted file that replaced nothing, since To review never listed it', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    WRITERS.repointTracks.mockResolvedValueOnce([{ written: false, reason: 'no-match' }] as never)
+    const outcome = await flushConversionBatch(host(), sessions, { rekordbox: quiet() })
+    expect(outcome.stayed?.rekordbox).toBeUndefined()
+  })
+
+  it('names the new file Engine DJ kept on the old one, so To review never says its cues moved', async () => {
+    WRITERS.repointEngineTracks.mockResolvedValueOnce([
+      { written: false, reason: 'no-match' },
+    ] as never)
+    await withEngine(() =>
+      replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          engine: quiet(),
+        })
+        expect(outcome.stayed?.engine).toEqual(['/m/a.flac'])
+      }),
+    )
+  })
+
+  it('names nothing for Engine DJ once its entry moved', async () => {
+    await withEngine(() =>
+      replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          engine: quiet(),
+        })
+        expect(outcome.engine).toBe('written')
+        expect(outcome.stayed?.engine).toBeUndefined()
+      }),
+    )
+  })
+
+  it('names nothing for Engine DJ while it is open and the run waits in its queue', async () => {
+    ENGINE_PROCESS.isEngineDjRunning.mockResolvedValueOnce(true)
+    await withEngine(() =>
+      replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          engine: quiet(),
+        })
+        expect(outcome.engine).toBe('queued')
+        expect(outcome.stayed?.engine).toBeUndefined()
+      }),
+    )
+  })
+
+  it('names the new file VirtualDJ never held, so a track Add to VirtualDJ only added is not shown as moved', async () => {
+    const roots = virtualdjHome([])
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      await replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          virtualdj: { ...quiet(), roots: () => roots },
+        })
+        expect(outcome.stayed?.virtualdj).toEqual(['/m/a.flac'])
+      })
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  })
+
+  it('names nothing for VirtualDJ when it holds the old file, because the queued move lands it', async () => {
+    const roots = virtualdjHome(['/m/a.mp3'])
+    Object.assign(SETTINGS, { syncVirtualdj: true })
+    try {
+      await replacing(async () => {
+        const outcome = await flushConversionBatch(host(), sessions, {
+          rekordbox: quiet(),
+          virtualdj: { ...quiet(), roots: () => roots },
+        })
+        expect(outcome.virtualdj).toBe('queued')
+        expect(outcome.stayed?.virtualdj).toBeUndefined()
+      })
+    } finally {
+      Object.assign(SETTINGS, { syncVirtualdj: false })
+    }
+  })
+})
+
+describe('queueLeftBehind', () => {
+  const moved = { from: '/m/a.mp3', to: '/m/a.flac', replaced: true as const }
+  const kept = { from: '/m/b.mp3', to: '/m/b.flac', replaced: true as const }
+
+  it('names the new files a queued move could not land, so To review leaves the program out of them', () => {
+    expect(
+      queueLeftBehind([moved, kept], [{ written: true }, { written: false, reason: 'no-match' }]),
+    ).toEqual(['/m/b.flac'])
+  })
+
+  it('names nothing while the program blocks the whole queue, because those moves stay queued', () => {
+    expect(
+      queueLeftBehind(
+        [moved, kept],
+        [
+          { written: false, reason: 'rekordbox-running' },
+          { written: false, reason: 'rekordbox-running' },
+        ],
+      ),
+    ).toEqual([])
   })
 })

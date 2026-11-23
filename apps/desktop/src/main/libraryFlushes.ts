@@ -47,7 +47,7 @@ import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordbo
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning } from './rekordboxProcess'
-import type { RekordboxQueue } from './rekordboxQueue'
+import { COLLECTION_WIDE, type RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { QueueOp } from './rekordboxQueueOps'
 import type { createSessionBackup } from './rekordboxSessionBackup'
@@ -488,22 +488,29 @@ export async function flushConversionBatch(
       if (paths.length > 0) added[place] = [...(added[place] ?? []), ...paths]
       enqueue(ops, ...rest)
     }
+  const stayed: NonNullable<FlushOutcome['stayed']> = {}
+  const staying = (place: 'rekordbox' | 'engine' | 'virtualdj') => (paths: string[]) => {
+    if (paths.length > 0) stayed[place] = [...(stayed[place] ?? []), ...paths]
+  }
   const flushers: { [P in WritableProgram]: ConversionFlusher<P> } = {
     traktor: traktorConversionFlusher(
       host,
       sessions,
       queues.traktor && { ...queues.traktor, enqueue: noting('traktor', queues.traktor.enqueue) },
     ),
-    rekordbox: rekordboxConversionFlusher(host, sessions, {
-      ...queues.rekordbox,
-      enqueue: noting('rekordbox', queues.rekordbox.enqueue),
-    }),
-    engine: engineConversionFlusher(host, sessions, queues.engine),
+    rekordbox: rekordboxConversionFlusher(
+      host,
+      sessions,
+      { ...queues.rekordbox, enqueue: noting('rekordbox', queues.rekordbox.enqueue) },
+      staying('rekordbox'),
+    ),
+    engine: engineConversionFlusher(host, sessions, queues.engine, staying('engine')),
     virtualdj: virtualdjConversionFlusher(
       queues.virtualdj && {
         ...queues.virtualdj,
         enqueue: noting('virtualdj', queues.virtualdj.enqueue),
       },
+      staying('virtualdj'),
     ),
   }
   for (const program of FLUSH_ORDER) await flushers[program].before()
@@ -523,11 +530,35 @@ export async function flushConversionBatch(
     } catch (err) {
       log.warn(`serato: queueing the converted tracks failed: ${String(err)}`)
     }
-  return { ...(outcome as FlushOutcome), added }
+  return { ...(outcome as FlushOutcome), added, stayed }
 }
+
+// The new files of the run's replacements whose entry did not move: the library never had
+// the old file, could not move it, or was not asked to. To review leaves the library out of
+// them, so its pill never tells the DJ cues moved there when they did not.
+function leftBehind(
+  repoints: RekordboxRepoint[],
+  moved: (repoint: RekordboxRepoint) => boolean,
+): string[] {
+  return repoints.filter((r) => r.replaced && !moved(r)).map((r) => r.to)
+}
+
+// The same for a queue's apply. A reason that stops the whole collection keeps every move
+// queued, so none of them has stayed yet.
+export function queueLeftBehind(
+  list: RekordboxRepoint[],
+  results: LibraryRepointResult[],
+): string[] {
+  if (results.some((r) => !r.written && COLLECTION_WIDE.has(r.reason))) return []
+  return leftBehind(list, (r) => results[list.indexOf(r)]?.written === true)
+}
+
+const writtenBy = (items: RekordboxRepoint[], results: LibraryRepointResult[]) =>
+  items.filter((_, i) => results[i]?.written)
 
 function virtualdjConversionFlusher(
   queue: ConversionQueues['virtualdj'],
+  stay: (paths: string[]) => void,
 ): ConversionFlusher<'virtualdj'> {
   return {
     before: async () => {},
@@ -548,6 +579,7 @@ function virtualdjConversionFlusher(
           addToVirtualdj,
           addToVirtualdj && addable ? virtualdjLibraryHas(roots) : undefined,
         )
+        stay(leftBehind(repoints, (r) => moves.includes(r)))
         if (ops.length + moves.length === 0) return 'off'
         queue.enqueue(ops, moves)
         queue.applyQuietly()
@@ -706,6 +738,7 @@ function rekordboxConversionFlusher(
   host: LibraryHost,
   sessions: Sessions,
   queue: ConversionQueues['rekordbox'],
+  stay: (paths: string[]) => void,
 ): ConversionFlusher<'rekordbox'> {
   return {
     before: async () => {},
@@ -717,6 +750,7 @@ function rekordboxConversionFlusher(
       const rekordboxUnplugged = onUnpluggedDrive(getSettings().rekordboxDbPath)
       let rekordboxResult: FlushResult | undefined
       let rekordboxQueued = false
+      const moved: RekordboxRepoint[] = []
       await queueConversionRun(repoints, {
         collectionPath,
         held: rekordbox.held,
@@ -728,7 +762,11 @@ function rekordboxConversionFlusher(
             unplugged: rekordboxUnplugged,
             showBlockedDialog: () => {},
             endBatch: () => list,
-            repointTracks: (path, items) => repointRekordbox(path, items, sessions),
+            repointTracks: async (path, items) => {
+              const results = await repointRekordbox(path, items, sessions)
+              moved.push(...writtenBy(items, results))
+              return results
+            },
           })
           logLibraryFlush('rekordbox repoint', result)
           rekordboxResult = result
@@ -747,6 +785,7 @@ function rekordboxConversionFlusher(
         },
         apply: queue.applyQuietly,
       })
+      if (!rekordboxQueued) stay(leftBehind(repoints, (r) => moved.includes(r)))
       return repointOutcome(
         repointsLater,
         repoints.length,
@@ -762,6 +801,7 @@ function engineConversionFlusher(
   host: LibraryHost,
   sessions: Sessions,
   engineQueue: ConversionQueues['engine'],
+  stay: (paths: string[]) => void,
 ): ConversionFlusher<'engine'> {
   return {
     before: async () => {},
@@ -776,6 +816,7 @@ function engineConversionFlusher(
       )
       const engineUnplugged = onUnpluggedDrive(getSettings().engineLibraryDir)
       const engineDeps = engineFlushDeps(host)
+      const moved: RekordboxRepoint[] = []
       const engineResult = await flushEngineSync({
         ...engineDeps,
         ...(engineQueue && {
@@ -784,7 +825,11 @@ function engineConversionFlusher(
           unplugged: engineUnplugged,
         }),
         endBatch: () => engineRepoints,
-        repointTracks: (libraryDir, list) => repointEngine(libraryDir, list, sessions),
+        repointTracks: async (libraryDir, list) => {
+          const results = await repointEngine(libraryDir, list, sessions)
+          moved.push(...writtenBy(list, results))
+          return results
+        },
       })
       logLibraryFlush('Engine DJ repoint', engineResult)
       const named = repoints.filter((repoint) => repoint.names)
@@ -810,7 +855,7 @@ function engineConversionFlusher(
       if (engineQueued) {
         engineQueue.enqueue([], engineRepoints)
         engineQueue.applyQuietly()
-      }
+      } else stay(leftBehind(repoints, (r) => moved.includes(r)))
       const addToEngineDj = getSettings().addToEngineDj
       const engineOps = libraryTrackOps(
         repoints,

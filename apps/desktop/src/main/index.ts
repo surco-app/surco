@@ -46,7 +46,7 @@ import { cacheBytesOf, smallCacheBytesFor } from '../shared/analysisCacheSize'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
-import { type CueProgram, exportsUsbOn } from '../shared/djProgram'
+import { type CueProgram, exportsUsbOn, type WritableProgram } from '../shared/djProgram'
 import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
@@ -173,6 +173,7 @@ import {
   type LibraryHost,
   librariesKeepingOriginal,
   libraryUntouched,
+  queueLeftBehind,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
   repointEngineQueued,
@@ -484,13 +485,11 @@ const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
 const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
 const replacedStore = createReplacedStore(join(app.getPath('userData'), 'replaced-tracks.json'))
+const leaveOutAndTell = (program: WritableProgram, paths: string[]): void => {
+  if (leaveOutWhereStayed(replacedStore, program, paths)) broadcast('replaced:changed', null)
+}
 const leaveTraktorOutWhereStayed = (write: FlushOutcome['traktor']): void => {
-  if (
-    typeof write === 'object' &&
-    write.stayed &&
-    leaveOutWhereStayed(replacedStore, 'traktor', write.stayed)
-  )
-    broadcast('replaced:changed', null)
+  if (typeof write === 'object' && write.stayed) leaveOutAndTell('traktor', write.stayed)
 }
 const fileSignatures = createFileSignatures({
   load: () => {
@@ -569,6 +568,7 @@ const programQueues = {
           }),
         repoint: async (collectionPath, list) => {
           const results = await repointRekordbox(collectionPath, list, sessions)
+          leaveOutAndTell('rekordbox', queueLeftBehind(list, results))
           queueChecks.repointed('rekordbox', results)
           return results
         },
@@ -605,6 +605,7 @@ const programQueues = {
           }),
         repoint: async (libraryDir, list) => {
           const results = await repointEngineQueued(libraryDir, list, sessions)
+          leaveOutAndTell('engine', queueLeftBehind(list, results))
           queueChecks.repointed('engine', results)
           return results
         },
@@ -711,6 +712,7 @@ const programQueues = {
               }
             },
           })
+          leaveOutAndTell('virtualdj', queueLeftBehind(list, results))
           queueChecks.repointed('virtualdj', results)
           return results
         },
@@ -1972,6 +1974,8 @@ function registerIpc(): void {
           },
         )
         leaveTraktorOutWhereStayed(outcome.traktor)
+        for (const [program, paths] of Object.entries(outcome.stayed ?? {}))
+          leaveOutAndTell(program as WritableProgram, paths)
       } finally {
         await verifyRegistry
           .afterFlush(outcome, upTo)
