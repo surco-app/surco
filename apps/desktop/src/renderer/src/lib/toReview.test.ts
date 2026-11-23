@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { ReplacedEntry } from '../../../shared/toReview'
 import { traktorContentId } from '../../../shared/traktorContent'
@@ -92,6 +92,23 @@ describe('toReviewEntriesFor', () => {
       'rekordbox',
     )
     expect(list.map((r) => r.path)).toEqual(['/m/u1', '/m/m3', '/m/m2'])
+  })
+
+  // Recomputed on every program tab, save and Reviewed: scanning the whole library once per
+  // pending track took two seconds on 30,000 tracks and froze the app each time.
+  it('reads the library once however many tracks wait, and not again for the same library', () => {
+    const rows = Array.from({ length: 1000 }, (_, i) => row(`/m/t${i}.flac`))
+    const entries = Array.from({ length: 50 }, (_, i) => replaced(`/m/t${i * 20}.flac`))
+    const normalize = vi.spyOn(String.prototype, 'normalize')
+    try {
+      expect(toReviewEntriesFor(rows, entries, 'rekordbox')).toHaveLength(50)
+      expect(normalize.mock.calls.length).toBeLessThanOrEqual(rows.length + 2 * entries.length)
+      normalize.mockClear()
+      expect(toReviewEntriesFor(rows, entries.slice(1), 'rekordbox')).toHaveLength(49)
+      expect(normalize.mock.calls.length).toBeLessThanOrEqual(2 * entries.length)
+    } finally {
+      normalize.mockRestore()
+    }
   })
 
   it('never lists separators', () => {
