@@ -354,6 +354,26 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     expect(result).toEqual({ written: false, reason: 'occupied' })
   })
 
+  // Two tracks converted onto one name both passed against the library as it was read, and
+  // Engine's one-row-per-path rule then failed the whole run's write.
+  it('moves only the first of two tracks the run sends to the same file', async () => {
+    const lib = await library(schema, ['../music/old.mp3', '../music/other.mp3'])
+    const results = await repointEngineTracks(lib.dir, [
+      { from: lib.oldFile, to: lib.newFile },
+      { from: join(lib.music, 'other.mp3'), to: lib.newFile },
+    ])
+    expect(results).toEqual([
+      { written: true, id: '1' },
+      { written: false, reason: 'occupied' },
+    ])
+    const db = await openDb(lib.dbPath)
+    expect(db.exec('SELECT id, path FROM Track ORDER BY id')[0].values).toEqual([
+      [1, '../music/new.aiff'],
+      [2, '../music/other.mp3'],
+    ])
+    db.close()
+  })
+
   it('backs the library up, and takes the run copy, before writing', async () => {
     const lib = await library(schema)
     const original = await readFile(lib.dbPath)
@@ -667,6 +687,47 @@ describe.each(['2.18', '3.0.2'] as const)(
       const after = await positionsOf(lib)
       expect(after.lengthSec * 48000).toBeCloseTo(2_000_003, 6)
       expect(after.gridLengthSec * 48000).toBeCloseTo(2_000_003, 6)
+    })
+
+    // The queue pools repoints by the file they start from, so a track converted and then
+    // converted again from that output arrives as two steps. Read against the library as it
+    // was, the second found no row on the first one's file: the row stayed on a file the
+    // second conversion replaced, every position short of the second cut.
+    it('follows a track converted twice onto the last file, moving its cues by both cuts', async () => {
+      const lib = await analysedLibrary(schema)
+      const flac = join(lib.music, 'new.flac')
+      await writeFile(flac, Buffer.alloc(999))
+      const results = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+        { from: lib.newFile, to: flac, engineShift: { trimmedMs: 100 } },
+      ])
+      expect(results).toEqual([
+        { written: true, id: '1' },
+        { written: true, id: '1' },
+      ])
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - (TRIM_MS + 100) / 1000, 6)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT count(*) AS n, path, fileBytes FROM Track')).toEqual({
+        n: 1,
+        path: '../music/new.flac',
+        fileBytes: 999,
+      })
+      db.close()
+    })
+
+    // The size guard asks whether the cut already came off, which the row cannot have taken
+    // when this same run is only now moving it onto the file.
+    it('follows a track whose output was then rewritten in place, moving its cues by both cuts', async () => {
+      const lib = await analysedLibrary(schema)
+      const results = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+        { from: lib.newFile, to: lib.newFile, fromBytes: 1234, engineShift: { trimmedMs: 100 } },
+      ])
+      expect(results).toEqual([
+        { written: true, id: '1' },
+        { written: true, id: '1' },
+      ])
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - (TRIM_MS + 100) / 1000, 6)
     })
 
     // The retry and the queue hand the same move again. The row already left the old path

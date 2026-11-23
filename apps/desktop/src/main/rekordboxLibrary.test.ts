@@ -231,6 +231,36 @@ describe('repointTrack', () => {
     expect(await readFile(join(share, `.${imagePath}`), 'utf8')).toBe('jpeg:cover')
   })
 
+  // Each staged cover is a folder in the DJ's rekordbox share: the first of two moves of one
+  // row would leave one nothing points at.
+  it('stages only the last cover of a track the run moves twice', async () => {
+    addMetadataTables(dbPath)
+    const share = join(dirname(dbPath), 'share')
+    await mkdir(share)
+    const wav = join(audioDir, '02 Everybody.wav')
+    const flac = join(audioDir, '02 Everybody.flac')
+    await writeFile(wav, Buffer.alloc(5000))
+    await writeFile(flac, Buffer.alloc(4000))
+
+    const meta = rekordboxMetaFrom({ ...emptyMetadata(), title: 'Everybody' })
+    await repointTracks(
+      dbPath,
+      [
+        { from: MP3, to: wav, meta },
+        { from: wav, to: flac, meta },
+      ],
+      { readCover: (file) => Buffer.from(file === flac ? 'flac' : 'wav') },
+    )
+
+    const imagePath = readImagePath(dbPath)
+    expect(await readFile(join(share, `.${imagePath}`), 'utf8')).toBe('jpeg:flac')
+    const shelves = await readdir(join(share, 'PIONEER', 'Artwork'))
+    const folders = await Promise.all(
+      shelves.map((s) => readdir(join(share, 'PIONEER', 'Artwork', s))),
+    )
+    expect(folders.flat()).toHaveLength(1)
+  })
+
   it('leaves the artwork alone when the file carries no cover', async () => {
     addMetadataTables(dbPath)
     await mkdir(join(dirname(dbPath), 'share'))
@@ -767,6 +797,42 @@ describe('repointTracks', () => {
     ])
   })
 
+  // Two tracks converted onto one name both passed against the collection as it was, and
+  // one file then had two rows: a DJ who loads it gets either set of cues and playlists.
+  it('moves only the first of two tracks the run sends to the same file', async () => {
+    addTrack(dbPath, '900002', MP3_B)
+    const [a] = await outputs('a.wav')
+
+    const results = await repointTracks(dbPath, [
+      { from: MP3, to: a },
+      { from: MP3_B, to: a },
+    ])
+
+    expect(results).toEqual([
+      { written: true, id: '900001' },
+      { written: false, reason: 'occupied' },
+    ])
+    expect(readRow(dbPath, '900002').FolderPath).toBe(MP3_B)
+  })
+
+  it('stops a second conversion of a track at a file another track of the run took', async () => {
+    addTrack(dbPath, '900002', MP3_B)
+    const [a, b] = await outputs('a.wav', 'b.wav')
+
+    const results = await repointTracks(dbPath, [
+      { from: MP3_B, to: b },
+      { from: MP3, to: a },
+      { from: a, to: b },
+    ])
+
+    expect(results).toEqual([
+      { written: true, id: '900002' },
+      { written: true, id: '900001' },
+      { written: false, reason: 'occupied' },
+    ])
+    expect([readRow(dbPath).FolderPath, readRow(dbPath, '900002').FolderPath]).toEqual([a, b])
+  })
+
   // One backup now stands behind the whole run, so a write that dies must put back the
   // whole run: a track can never be reported written from a collection that was restored.
   it('writes none of the run when one of its writes fails', async () => {
@@ -854,6 +920,29 @@ describe('a repoint whose audio was rewritten', () => {
     await repointTrack(dbPath, { from: MP3, to: output, audio: { cueShiftMs: -51 } })
 
     expect(readAfter(dbPath).cueMs).toBe(31949)
+  })
+
+  // The run pools its repoints by the file they start from, so a track converted and then
+  // converted again from that output arrives as two steps. Read against the collection as it
+  // was, the second found no row on the first one's file: the row stayed on a file the second
+  // conversion replaced, its cues short of the second move.
+  it('follows a track converted twice in one run onto the last file, moving its cues by both', async () => {
+    const wav = join(audioDir, '02 Everybody.wav')
+    const flac = join(audioDir, '02 Everybody.flac')
+    await writeFile(wav, Buffer.alloc(5000))
+    await writeFile(flac, Buffer.alloc(4000))
+
+    const results = await repointTracks(dbPath, [
+      { from: MP3, to: wav, audio: { cueShiftMs: -51 } },
+      { from: wav, to: flac, audio: { cueShiftMs: -10 } },
+    ])
+
+    expect(results).toEqual([
+      { written: true, id: '900001' },
+      { written: true, id: '900001' },
+    ])
+    expect(readRow(dbPath).FolderPath).toBe(flac)
+    expect(readAfter(dbPath).cueMs).toBe(31939)
   })
 
   // Same test: rekordbox never analysed the converted file on its own, not even with

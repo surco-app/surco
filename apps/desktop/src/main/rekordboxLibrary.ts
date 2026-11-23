@@ -17,6 +17,7 @@ import {
   type FindOptions,
   isAmbiguous,
   openRekordboxDb,
+  rekordboxPathKey,
   rekordboxStoredPath,
   sameFileOnDisk,
   type TrackFinder,
@@ -102,7 +103,11 @@ function stageCovers(
   const share = rekordboxShareDir(collectionPath)
   if (!readCover || !existsSync(share)) return staged
   const current = db.prepare('SELECT ImagePath FROM djmdContent WHERE ID = ?')
-  for (const w of writes) {
+  // A row the run moves twice ends on its last file, so only that file's cover is staged.
+  const last = new Set<string>()
+  for (const w of [...writes].reverse()) {
+    if (last.has(w.id)) continue
+    last.add(w.id)
     const { to, meta } = repoints[w.index]
     if (!meta) continue
     try {
@@ -194,8 +199,23 @@ export async function repointTracks(
   let folded = false
   try {
     const trackOf = trackFinder(db)
+    // The rows each earlier repoint of the run puts on a file, by that file: the collection
+    // read above does not know them yet.
+    const planned = new Map<string, string[]>()
     for (const p of pending) {
       const repoint = repoints[p.index]
+      const key = rekordboxPathKey(repoint)
+      const chained = planned.get(key(repoint.from))
+      if (chained) {
+        if (planned.get(key(repoint.to))?.some((id) => !chained.includes(id)))
+          results[p.index] = { written: false, reason: 'occupied' }
+        else {
+          for (const id of chained) writes.push({ ...p, id })
+          planned.delete(key(repoint.from))
+          planned.set(key(repoint.to), chained)
+        }
+        continue
+      }
       const match = trackOf(repoint.from, repoint)
       // A collection that never had this track is the normal case for a partly-imported
       // library, and nothing — not even a backup — should be written for it.
@@ -211,12 +231,18 @@ export async function repointTracks(
         continue
       }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
-      if (heldByAnother(trackOf(repoint.to, repoint), ids))
+      if (
+        heldByAnother(trackOf(repoint.to, repoint), ids) ||
+        planned.get(key(repoint.to))?.some((id) => !ids.includes(id))
+      )
         results[p.index] = { written: false, reason: 'occupied' }
       else {
         const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))
         if (unclaimed.length === 0) results[p.index] = { written: false, reason: 'occupied' }
-        else for (const id of unclaimed) writes.push({ ...p, id })
+        else {
+          for (const id of unclaimed) writes.push({ ...p, id })
+          planned.set(key(repoint.to), unclaimed)
+        }
       }
     }
     if (writes.length > 0) {

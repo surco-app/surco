@@ -313,10 +313,14 @@ export async function writeEngineRepoints(
       bitrate: number | null | undefined
       fixLength?: boolean
     }[] = []
+    // The row each earlier repoint of the run puts on a file, by that file: the rows read
+    // above do not know it yet.
+    const planned = new Map<string, (typeof stored)[number]>()
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
-      const matches = find(repoint.from, key)
+      const chained = planned.get(key(repoint.from))
+      const matches = chained ? [chained] : find(repoint.from, key)
       if (matches.length === 0) {
         results[i] = { written: false, reason: 'no-match' }
         continue
@@ -325,7 +329,8 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'ambiguous', ids: matches.map((m) => m.id) }
         continue
       }
-      const onTarget = find(repoint.to, key)
+      const claimed = planned.get(key(repoint.to))
+      const onTarget = [...find(repoint.to, key), ...(claimed ? [claimed] : [])]
       if (onTarget.some((row) => row.id !== matches[0].id)) {
         results[i] = { written: false, reason: 'occupied' }
         continue
@@ -334,6 +339,7 @@ export async function writeEngineRepoints(
       // records the source's size: the same write records the new one, so the shift lands once.
       const sizeUnknown = repoint.expectTrackData !== undefined && matches[0].fileBytes == null
       if (
+        !chained &&
         onTarget.length > 0 &&
         !sizeUnknown &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
@@ -366,6 +372,8 @@ export async function writeEngineRepoints(
         fixLength: repoint.fixLength,
       })
       results[i] = { written: true, id: matches[0].id }
+      planned.delete(key(repoint.from))
+      planned.set(key(repoint.to), { ...matches[0], fileBytes: sizes[i] })
     }
     if (updates.length === 0) return results as EngineRepointResult[]
 
