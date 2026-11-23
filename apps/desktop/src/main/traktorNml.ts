@@ -628,13 +628,16 @@ function patchFor(
   const relocation = patch.relocates
     ? relocationFor(nml, entries, patch, entry, claimed)
     : undefined
-  const repoints = patch.relocates
-    ? relocation !== undefined
-    : patch.newFile !== undefined && !pathTaken(entries, patch, entry)
   // The names are the file's own; a same-stem sibling is another file the review never read.
   const exact =
     locationKey(entry.volume, entry.dir, entry.file) ===
     locationKey(patch.volume, patch.dir, patch.file)
+  // Two stale entries matched by name would both land on the new file; only the first takes it.
+  const renamed = patchedFileKey(patch)
+  const repoints = patch.relocates
+    ? relocation !== undefined
+    : renamed !== undefined && !pathTaken(entries, patch, entry) && (exact || !claimed.has(renamed))
+  if (!patch.relocates && !exact && repoints && renamed) claimed.add(renamed)
   const safe = {
     ...patch,
     newFile: repoints ? patch.newFile : undefined,
@@ -842,14 +845,16 @@ export function matchedPatchCount(nml: string, patches: NmlPatch[], onDisk?: OnD
   const index = indexPatches(patches, entries, onDisk)
   const produced = producedOutputs(patches)
   const matched = new Set<NmlPatch>()
-  for (const entry of entries) {
+  const claimed = new Set<string>()
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const entry = entries[i]
     const patch = matchPatch(entry, index)
     const output = produced.get(locationKey(entry.volume, entry.dir, entry.file))
     if (!patch && !output) continue
     // Same rewrite applyPatches makes, or the count would claim a rename or a cue write
     // that the write itself declines to make.
     const block = nml.slice(entry.start, entry.end)
-    if (patch && patchEntry(block, patchFor(nml, entries, patch, entry)) !== block)
+    if (patch && patchEntry(block, patchFor(nml, entries, patch, entry, claimed)) !== block)
       matched.add(patch)
     if (output && rewriteEntry(block, entry, entries, undefined, output, nml) !== block)
       matched.add(output)

@@ -1116,6 +1116,23 @@ describe('applyPatches', () => {
 
     expect(out).toContain('FILE="A (edit).flac"')
   })
+
+  // Two stale copies of one track (Song.aiff and Song.wav, neither on disk) both match a
+  // conversion Traktor never had by name. Renamed together they leave two entries on the one
+  // new file, the clones Traktor stacks for a path it indexes once; only one may take it.
+  it('renames only one of two stale entries matched by name onto the new file', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="2">' +
+      '<ENTRY TITLE="S1"><LOCATION DIR="/:M/:" FILE="Song.aiff" VOLUME="HD"></LOCATION></ENTRY>' +
+      '<ENTRY TITLE="S2"><LOCATION DIR="/:M/:" FILE="Song.wav" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+    const patches = [{ volume: 'HD', dir: '/:M/:', file: 'Song.mp3', newFile: 'Song.flac' }]
+
+    const out = applyPatches(nml, patches, () => false)
+
+    expect(findEntries(out).filter((e) => e.file === 'Song.flac')).toHaveLength(1)
+    expect(matchedPatchCount(nml, patches, () => false)).toBe(1)
+  })
 })
 
 // Los ids que hay que refrescar se leen de la colección, que es lo único que sabe qué
