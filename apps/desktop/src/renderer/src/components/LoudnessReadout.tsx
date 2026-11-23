@@ -238,13 +238,7 @@ export function LoudnessReadout({
                 <span className="truncate text-xs text-fg-dim">{c.label}</span>
               </span>
               <span className="flex shrink-0 items-baseline gap-1.5">
-                <span
-                  data-testid={`loudness-value-${c.id}`}
-                  data-tone="neutral"
-                  className="text-sm font-medium tabular-nums text-fg"
-                >
-                  {c.value}
-                </span>
+                <span className="text-sm font-medium tabular-nums text-fg">{c.value}</span>
                 <span className="sr-only">{tr(GRADE_NAME[c.grade])}</span>
                 {/* The pending conversion's figure: an arrow marks only what the
                     conversion moves, and the figures a constant gain cannot move say

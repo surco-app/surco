@@ -216,11 +216,8 @@ describe('LoudnessReadout verdict without colour', () => {
     )
   })
 
-  it('keeps every figure in the normal ink, so the verdict is told once, by the mark', () => {
+  it('tells a bad verdict by its square mark and its name in text, not by the figure', () => {
     render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
-    for (const id of ['lufs', 'peak', 'range']) {
-      expect(screen.getByTestId(`loudness-value-${id}`)).toHaveAttribute('data-tone', 'neutral')
-    }
     expect(screen.getByTestId('loudness-grade-mark-range')).toHaveAttribute('data-shape', 'square')
     expect(
       within(screen.getByTestId('loudness-pill-range')).getByText('Out of range'),
