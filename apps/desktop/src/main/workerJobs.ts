@@ -103,7 +103,7 @@ export type WorkerJob =
   | { type: 'shiftFlacCues'; file: string; shift?: CueShift }
   // ffmpeg's flac muxer writes the comment as DESCRIPTION; moving it to COMMENT is another
   // TagLib save on the whole file (see setFlacComment).
-  | { type: 'setFlacComment'; file: string; comment: string }
+  | { type: 'setFlacComment'; file: string; comment: string; multiFrom?: string }
   // An ID3 source encoded to FLAC: the cues have to be re-armored across tag families,
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
@@ -274,7 +274,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       shiftFlacCues(job.file, job.shift)
       return null
     case 'setFlacComment':
-      setFlacComment(job.file, job.comment)
+      setFlacComment(job.file, job.comment, job.multiFrom)
       return null
     case 'copyCuesToFlac':
       copyCuesToFlac(job.source, job.dest, job.shift)
