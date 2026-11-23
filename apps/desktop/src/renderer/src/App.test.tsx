@@ -5289,6 +5289,32 @@ describe('App source playlists', () => {
   // stay in the working list. A selection kept across the switch made the editor, the row
   // menu and the bulk actions act on rows the DJ could no longer see, a rekordbox write
   // among them. Only what the new view shows may stay selected.
+  // Tracks keeps its selection while another source is on screen; a row trashed meanwhile
+  // takes the editor's row with it, and the rows still selected need one to show.
+  it('moves the editor of Tracks onto a selected row left when the one shown was trashed away', async () => {
+    await openFactory({ trashFile: vi.fn().mockResolvedValue({ where: 'trash' }) })
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('track-separator-s1')
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    runMenu('trash-selected')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Bravo')])
+    expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+  })
+
   describe('switching playlists inside rekordbox', () => {
     const HOUSE_ENTRIES = [linked('/m/b.wav', 'h2'), linked('/m/c.wav', 'h3')]
     const openThree = async (over: Record<string, unknown> = {}) => {
@@ -5374,6 +5400,18 @@ describe('App source playlists', () => {
       await openHouse()
       await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')]))
       expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+    })
+
+    // The editor and the arrow keys follow the anchor: losing it with rows still selected left
+    // them highlighted beside an empty editor, and ↑/↓ starting from nowhere.
+    it('moves the editor onto a selected row the new playlist holds when it lacks the one shown', async () => {
+      await openThree()
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[2], { metaKey: true })
+      await openHouse()
+      await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Charlie')]))
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
     })
 
     it('has no selection to trash when the new playlist holds none of it', async () => {

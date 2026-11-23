@@ -1386,9 +1386,10 @@ export default function App(): React.JSX.Element {
     setSearch(searchBySource.current.get(next) ?? '')
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
+    const ids = kept?.ids.filter((id) => alive.has(id)) ?? []
     const restored = {
-      ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
-      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
+      ids,
+      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : (ids[ids.length - 1] ?? null),
     }
     pendingRestoredReveal.current = restored.anchor
     setSelection(restored)
@@ -2354,7 +2355,8 @@ export default function App(): React.JSX.Element {
     setSelection((current) => {
       const from = held ?? current
       const ids = from.ids.filter((id) => shown.has(id))
-      const anchor = from.anchor && shown.has(from.anchor) ? from.anchor : null
+      const anchor =
+        from.anchor && shown.has(from.anchor) ? from.anchor : (ids[ids.length - 1] ?? null)
       return !held && ids.length === current.ids.length && anchor === current.anchor
         ? current
         : { ids, anchor }
