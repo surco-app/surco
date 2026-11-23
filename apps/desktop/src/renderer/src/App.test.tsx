@@ -11590,6 +11590,31 @@ describe('App metadata undo', () => {
     expect(screen.getByTestId('field-title')).toHaveValue('Imported Title')
   })
 
+  // Coming back to a field is a new thought: ⌘Z after the second visit has to land on what the
+  // first visit left, not jump past it to the value from before both.
+  it('undoes two visits to one field as two steps', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const title = await screen.findByTestId('field-title')
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'First visit' } })
+    fireEvent.blur(title)
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'Second visit' } })
+    fireEvent.blur(title)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('First visit'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+  })
+
   it('reapplies an undone clear with the redo shortcut and confirms it, so one ⌘Z too many is not a dead end', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
