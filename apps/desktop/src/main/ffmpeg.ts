@@ -5,7 +5,6 @@ import { constants as osConstants, setPriority, tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import { promisify } from 'node:util'
 import log from 'electron-log/main'
-import type { ReplaceShift } from '../shared/replaceShift'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
 import { customTagName } from '../shared/customFields'
@@ -13,6 +12,7 @@ import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/de
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
+import type { ReplaceShift } from '../shared/replaceShift'
 import { MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
 import { trimFilter } from '../shared/trim'
 import type {
@@ -66,7 +66,6 @@ import {
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
 import { measureBands } from './fftBands'
-import { bestLag, correlationAt, PAIR_RATE, PAIR_SILENT_RMS } from './pcmLag'
 import { carryFlacBlocks } from './flacCarry'
 import {
   detectFftKnee,
@@ -99,10 +98,12 @@ import {
   volumeFilter,
 } from './normalize'
 import { discardBackup, keepOriginal } from './originalKeeper'
+import { bestLag, correlationAt, PAIR_RATE, PAIR_SILENT_RMS } from './pcmLag'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
+import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { traktorReplaceShift } from './replaceCueShift'
 import {
   REPLACE_HEAD_AT_SECONDS,
@@ -111,7 +112,6 @@ import {
   REPLACE_WINDOW_SECONDS,
   type ReplaceWindow,
 } from './replaceShiftMeasure'
-import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { carryRiffChunks } from './riffCarry'
 import type { SeratoCarryOutcome } from './seratoTags'
 import { getSettings } from './settings'
