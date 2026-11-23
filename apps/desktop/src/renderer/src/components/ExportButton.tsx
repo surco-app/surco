@@ -11,6 +11,8 @@ import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
 import { FormatDestinationMenu } from './FormatDestinationMenu'
 import {
+  FORMAT_TOGGLE_BOX,
+  FORMAT_TOGGLE_BOX_NAME,
   SPLIT_BODY,
   SPLIT_BODY_QUIET,
   SPLIT_BODY_READY,
@@ -272,7 +274,8 @@ export function ExportButton({
             ref={toggleRef}
             aria-haspopup="menu"
             onClick={() => setOpen((v) => !v)}
-            className="press flex h-8 items-center justify-center gap-1 rounded-lg px-3 text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset hover:bg-[var(--color-hover)]"
+            data-box={FORMAT_TOGGLE_BOX_NAME}
+            className={`press flex h-8 items-center justify-center ${FORMAT_TOGGLE_BOX} rounded-lg text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset hover:bg-[var(--color-hover)]`}
           >
             {formatPicker}
             <ChevronDown
@@ -426,13 +429,14 @@ export function ExportButton({
           aria-haspopup="menu"
           onClick={() => setOpen((v) => !v)}
           disabled={processing}
+          data-box={quiet ? undefined : FORMAT_TOGGLE_BOX_NAME}
           className={
             quiet
               ? 'press flex h-8 w-6 items-center justify-center rounded-r-lg border border-l-0 border-[var(--color-line-strong)] bg-[var(--color-panel-2)] hover:bg-[var(--color-line-strong)] disabled:pointer-events-none disabled:opacity-40'
               : liveStage
                 ? // Matches the body's progress-bar look, or the split button would read
                   // as half-faded while the fill keeps the body vivid.
-                  'press relative flex items-center justify-center gap-1 rounded-r-lg bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px before:bg-[var(--color-on-accent)]/20 text-[var(--color-on-accent)] disabled:pointer-events-none'
+                  `press relative flex items-center justify-center ${FORMAT_TOGGLE_BOX} rounded-r-lg bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px before:bg-[var(--color-on-accent)]/20 text-[var(--color-on-accent)] disabled:pointer-events-none`
                 : `${SPLIT_TOGGLE_FORMAT} ${faceBlocked ? SPLIT_TOGGLE_QUIET : toggleDimmed ? SPLIT_TOGGLE_DIMMED : SPLIT_TOGGLE_READY}`
           }
         >
