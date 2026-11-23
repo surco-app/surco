@@ -3840,6 +3840,7 @@
       "engineCuesMisplaced_quickCues": "Los cues de Engine DJ no siguieron al audio",
       "engineCuesMisplaced_beatData": "La rejilla de Engine DJ no siguió al audio",
       "engineCuesMisplaced_loops": "Los loops de Engine DJ no siguieron al audio",
+      "engineAnalysisStale": "Engine DJ aún tiene el análisis del archivo anterior",
       "engineNameStale": "Engine DJ sigue mostrando «{{value}}»",
       "enginePlaylistMissing": "La pista no está en la playlist {{playlist}} de Engine DJ",
       "engineUnreadable": "No se pudo comprobar Engine DJ",

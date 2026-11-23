@@ -42,4 +42,14 @@ describe('withRecordedRun', () => {
       names: { title: { from: 'Old', to: 'New' } },
     })
   })
+
+  // Without it the check reads the analysis the write emptied on purpose as data the DJ lost.
+  it('hands the registry that the run has Engine analyse a replacement again', () => {
+    beginRekordboxBatch()
+    recordRekordboxRepoint({ from: '/m/a.mp3', to: '/m/b.aiff', replaced: true, reanalyse: true })
+
+    expect(withRecordedRun({ source: '/m/a.mp3', to: '/m/b.aiff' } as VerifyEntry)).toMatchObject({
+      reanalyse: true,
+    })
+  })
 })

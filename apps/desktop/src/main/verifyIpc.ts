@@ -169,6 +169,7 @@ export function libraryReaders(
             size: size[i],
             added: (e.engineStep === true || !!e.playlists?.engine) && typeof e.engine !== 'object',
             shift: e.engineShift,
+            reanalysed: e.reanalyse === true,
             ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
             ...(e.names ? { names: e.names } : {}),
             ...(e.playlists?.engine ? { playlists: e.playlists.engine } : {}),

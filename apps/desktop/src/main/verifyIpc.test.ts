@@ -318,6 +318,27 @@ describe('library readers', () => {
     ])
   })
 
+  it('hands the Engine check that the row was to be analysed again', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))
+    const seen: unknown[] = []
+    const readers = libraryReaders(
+      { rekordbox: () => '', engine: () => dir, traktor: () => '' },
+      {
+        realPath,
+        bootVolume: () => 'Macintosh HD',
+        openEngine: () => ({ close: () => {} }) as never,
+        checkEngine: (_db, _dir, list) => {
+          seen.push(...list)
+          return list.map(() => ({ place: 'engine', state: 'ok', detail: { key: 'engineOk' } }))
+        },
+      },
+    )
+
+    await readers.readEngine([entry({ reanalyse: true }), entry()])
+
+    expect(seen.map((e) => (e as { reanalysed?: boolean }).reanalysed)).toEqual([true, false])
+  })
+
   // Only the size the write expected tells a row the DJ left stale from one a write missed.
   it('hands the Engine check the size a rewrite in place expected the row to hold', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-verifyipc-engine-'))

@@ -55,6 +55,7 @@ export const VERIFY_DETAIL_KEYS = [
   'engineSizeStaleCues',
   'enginePerformanceChanged',
   'engineCuesMisplaced',
+  'engineAnalysisStale',
   'engineNameStale',
   'enginePlaylistMissing',
   'engineUnreadable',

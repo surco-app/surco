@@ -858,3 +858,82 @@ describe('checkEngine after a conversion that moved the audio', () => {
     })
   })
 })
+
+// A replacement no measure vouches for the same audio has Engine analyse the new file again:
+// its write empties the old analysis and keeps the cues and loops (engineRepoint.ts). The
+// check reads that emptied analysis as the plan, not as lost data, and flags the old one left
+// in place, which would draw the old file's grid and overview over another recording.
+describe('checkEngine after a replacement Engine is to analyse again', () => {
+  const SIZE_SMALL = 4321
+
+  async function replaced(sampleRateHz?: number) {
+    const dir = library()
+    const from = join(dir, '..', 'Title.aiff')
+    const to = join(dir, '..', 'Title.wav')
+    writeFileSync(from, Buffer.alloc(1))
+    writeFileSync(to, Buffer.alloc(SIZE_SMALL))
+    write(dir, 'UPDATE Track SET path = ?, isAnalyzed = 1 WHERE id = 1', relative(dir, from))
+    const before = snapshot(dir, from)
+    const shift = sampleRateHz ? { trimmedMs: 0, sampleRateHz } : undefined
+    const [result] = await repointEngineTracks(dir, [
+      { from, to, reanalyse: true, ...(shift ? { engineShift: shift } : {}) },
+    ])
+    expect(result.written).toBe(true)
+    const expected = expectFor(before, {
+      from,
+      to,
+      size: SIZE_SMALL,
+      reanalysed: true,
+      ...(shift ? { shift } : {}),
+    })
+    return { dir, expected }
+  }
+
+  it('the emptied analysis of a replacement Engine is to analyse again is ok', async () => {
+    const { dir, expected } = await replaced()
+    expect(checkOne(dir, expected)[0]).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
+  it('the emptied analysis of a replacement at another rate is ok', async () => {
+    const { dir, expected } = await replaced(48000)
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  it('a replacement Engine already analysed again on the new file is ok', async () => {
+    const { dir, expected } = await replaced()
+    write(
+      dir,
+      'UPDATE PerformanceData SET trackData = ?, beatData = ?',
+      trackDataBlob(44100, 44100 * 61),
+      beatDataBlob(44100, 44100 * 61, [
+        [9240, 0],
+        [44100 * 61 - 12810, 121],
+      ]),
+    )
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  it("the old file's analysis left on a row Engine was to analyse again is engineAnalysisStale", async () => {
+    const dir = library()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, { reanalysed: true }))[0]).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineAnalysisStale' },
+    })
+  })
+
+  it('cues lost from a row Engine is to analyse again are still enginePerformanceChanged', async () => {
+    const { dir, expected } = await replaced()
+    write(dir, 'UPDATE PerformanceData SET quickCues = NULL')
+    expect(checkOne(dir, expected)[0].detail).toEqual({
+      key: 'enginePerformanceChanged',
+      params: { field: 'quickCues' },
+    })
+  })
+})
