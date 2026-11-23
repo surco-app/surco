@@ -45,6 +45,7 @@ interface SummaryDetail {
   // How the finished step ended when it is not a plain success. The task still resolved,
   // so its value goes back to the caller either way.
   status?: 'warn' | 'error'
+  url?: string
 }
 
 export interface TrackOpts<T> {
@@ -121,6 +122,7 @@ export function createActivity(): Activity {
           detail: summary?.detail ?? detail,
           detailKey: summary?.detailKey ?? detailKey,
           detailParams: summary?.detailParams ?? detailParams,
+          url: summary?.url ?? url,
           ms: Math.round(performance.now() - startedAt),
         })
         return value
