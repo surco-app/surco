@@ -11,7 +11,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "paths": { "@surco/auto-cue-impl": ["./src/shared/autoCue/trained/index.ts"] }
+    "paths": { "@surco/auto-cue-impl": ["./src/shared/autoCue/basic.ts"] }
   },
   "include": [
     "src/testTmpRoot.ts",
@@ -23,6 +23,7 @@
     "src/main/**/*",
     "src/shared/**/*",
     "src/preload/**/*",
-    "electron.vite.config.ts"
+    "electron.vite.config.ts",
+    "scripts/**/*"
   ]
 }

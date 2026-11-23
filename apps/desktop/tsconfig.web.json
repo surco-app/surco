@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/renderer/src/*"],
-      "@surco/auto-cue-impl": ["./src/shared/autoCue/trained/index.ts"]
+      "@surco/auto-cue-impl": ["./src/shared/autoCue/basic.ts"]
     }
   },
   "include": [

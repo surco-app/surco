@@ -17,6 +17,7 @@ vi.mock('../../../../shared/autoCue', async (importOriginal) => {
     ...actual,
     autoCue: {
       ...actual.autoCue,
+      minTasteTracks: 30,
       get canLearn() {
         return engine.canLearn
       },

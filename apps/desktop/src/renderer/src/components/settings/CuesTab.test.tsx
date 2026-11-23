@@ -3,9 +3,10 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import type { Api } from '../../../../preload/api'
 import { ALL_TRACKS_ID } from '../../../../shared/allTracks'
+import type { DropInput, DropProposal, DropTaste } from '../../../../shared/autoCue'
 import {
   BUNDLED_FLOWS,
   CALLS_ONLY,
@@ -36,6 +37,15 @@ import type { SyncedDraft } from '../../lib/settingsDraft'
 import { djReads, installApi, type ProgramReads } from '../../test/api'
 import { hoverTooltip } from '../../test/tooltip'
 import { CuesTab } from './CuesTab'
+
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, taste: DropTaste | null) => DropProposal[]>(),
+)
+vi.mock('../../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../shared/autoCue')>()
+  dropProposals.mockImplementation(actual.autoCue.dropProposals)
+  return { ...actual, autoCue: { ...actual.autoCue, dropProposals } }
+})
 
 let afterTest: (() => unknown) | null = null
 
@@ -1765,6 +1775,14 @@ describe('a track with no mark of its own in the preview', () => {
 
   it('finds them with what Surco learned of the DJ, as the Auto mark of the editor does, so the preview and the editor never disagree on a track', async () => {
     const taste = { trees: [], picking: { threshold: -99, spacingBars: 1, maxDrops: 99 } }
+    const heard = dropProposals.getMockImplementation()
+    onTestFinished(() => {
+      dropProposals.mockImplementation(heard ?? (() => []))
+    })
+    dropProposals.mockImplementation((input, learned) => {
+      const found = heard?.(input, learned) ?? []
+      return learned ? [...found, { ms: exampleBar(129), sure: true, quietBars: 8 }] : found
+    })
     inTraktor(
       { dropInput: async () => INPUT },
       {
