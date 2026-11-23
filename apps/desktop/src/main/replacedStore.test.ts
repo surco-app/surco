@@ -90,6 +90,17 @@ describe('createReplacedStore', () => {
     expect(store.list()).toEqual([second])
   })
 
+  // While a program's repoint waits in its queue the row still shows the old file, and a
+  // replacement launched from it names that old file again. It is the same track: two
+  // entries would list it twice and one would never close.
+  it('starts the review over when the track is replaced again from the old file a queue still shows', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ newPath: '/m/a.flac', oldPath: '/m/a.mp3' }))
+    const again = entry({ newPath: '/m/a.aiff', oldPath: '/m/a.mp3', replacedAt: 2 })
+    store.add(again)
+    expect(store.list()).toEqual([again])
+  })
+
   it('follows the file when a later conversion moves it, without touching the old path', async () => {
     const store = createReplacedStore(await fileIn())
     store.add(entry())
