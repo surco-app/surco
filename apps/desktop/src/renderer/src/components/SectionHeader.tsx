@@ -122,11 +122,12 @@ export function SectionHeader({
     >
       {/* Under the title the line is held to the header's width and its marks wrap one
       under the other: two marks side by side (an amber pill and "Nicht gespeichert") ran
-      past the panel's edge at the window's minimum width. It only reaches that width when
-      it cannot fit beside the title anyway, so the measure above still decides alone. */}
+      past the panel's edge at the window's minimum width. It only drops there when it
+      cannot fit beside the title anyway, so the measure above still decides alone. */}
       <span
         ref={setStatusEl}
-        className="flex w-max max-w-full flex-wrap items-center gap-x-4 gap-y-1"
+        data-wrap={statusBelow || undefined}
+        className={`flex w-max items-center gap-x-4 ${statusBelow ? 'max-w-full flex-wrap gap-y-1' : ''}`}
       >
         {status}
       </span>

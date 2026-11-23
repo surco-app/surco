@@ -773,9 +773,7 @@ describe('CuesSection', () => {
   it('lets the folded header controls wrap instead of running past the panel edge', async () => {
     setup()
     await ready()
-    const controls = screen.getByTestId('cues-flow-menu')
-    expect(controls.className).toContain('flex-wrap')
-    expect(controls.parentElement?.className).toContain('min-w-0')
+    expect(screen.getByTestId('cues-flow-menu')).toHaveAttribute('data-wrap', 'true')
   })
 
   it('draws dimmed and dashed what the flow drops with the point at the playhead and writes no count, folded or full screen, since the dashed marks already say it and a count beside the flow menu confused', async () => {

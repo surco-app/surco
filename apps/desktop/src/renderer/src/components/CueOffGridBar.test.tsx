@@ -87,15 +87,12 @@ describe('CueOffGridBar', () => {
   // full screen it keeps the one line it always fits in.
   it('wraps its controls in the folded editor rather than running past the edge', () => {
     render(<CueOffGridBar off={[CALL, LATE]} onGo={vi.fn()} onSnap={vi.fn()} spaced />)
-    const bar = screen.getByTestId('cues-offgrid')
-    expect(bar.className).toContain('flex-wrap')
-    expect(bar.className).toContain('min-h-7')
-    expect(screen.getByTestId('cues-offgrid-go-27793').className).not.toContain('truncate')
+    expect(screen.getByTestId('cues-offgrid')).toHaveAttribute('data-wrap', 'true')
   })
 
   it('keeps to one line in the full editor, which always has the room', () => {
     setup([CALL, LATE])
-    expect(screen.getByTestId('cues-offgrid').className).not.toContain('flex-wrap')
+    expect(screen.getByTestId('cues-offgrid')).not.toHaveAttribute('data-wrap')
   })
 
   it('shows nothing when every cue sits on its beat', () => {

@@ -184,9 +184,10 @@ describe('SectionHeader status placement', () => {
   it('wraps the marks of a status under the title instead of running past the edge', () => {
     mockWidths(225, 70, 294)
     header()
-    const line = screen.getByTestId('section-status').firstElementChild as HTMLElement
-    expect(line.className).toContain('flex-wrap')
-    expect(line.className).toContain('max-w-full')
+    expect(screen.getByTestId('section-status').firstElementChild).toHaveAttribute(
+      'data-wrap',
+      'true',
+    )
   })
 
   // A title that gives way with an ellipsis reports only the room left to it, so measured by

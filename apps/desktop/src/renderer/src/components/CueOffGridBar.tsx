@@ -73,6 +73,7 @@ export function CueOffGridBar({
   return (
     <div
       data-testid="cues-offgrid"
+      data-wrap={spaced || undefined}
       className={`${spaced ? 'mb-2 min-h-7 flex-wrap gap-x-1 py-0.5' : 'h-7 shrink-0 gap-1'} flex items-center whitespace-nowrap rounded-md bg-[var(--color-warn)]/10 pr-1 pl-2.5 text-xs`}
     >
       <span aria-hidden="true" className="mr-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
