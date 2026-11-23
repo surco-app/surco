@@ -451,7 +451,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     // to cancel a single convert; stub all so processAll doesn't throw.
     conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
-    endConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(async () => {}),
     cancelJob: vi.fn(),
     reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
     ...over,

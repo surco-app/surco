@@ -212,7 +212,9 @@ export function useTrackProcessing({
   // An in-place rewrite of the audio keeps every program's path and content id, so only
   // this says the cue editor's reads of that file are stale.
   const rewroteAudioRef = useRef(false)
-  const rereadReachedCollections = (): void => {
+  // Main writes the libraries in the flush the batch's end starts, after the run: read before
+  // it lands, Engine DJ's row was still on the old file and stayed so in the editor.
+  const rereadReachedCollections = (flushed: Promise<void>): void => {
     if (!wroteRef.current) return
     wroteRef.current = false
     const rewroteAudio = rewroteAudioRef.current
@@ -221,9 +223,13 @@ export function useTrackProcessing({
       const { sync, add } = DJ_REACH_SETTINGS[program]
       return settings?.[sync] || settings?.[add]
     })
-    for (const program of reached)
-      queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
-    if (reached.length > 0 || rewroteAudio) rereadTrackFileQueries(queryClient)
+    void flushed
+      .catch(() => {})
+      .then(() => {
+        for (const program of reached)
+          queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
+        if (reached.length > 0 || rewroteAudio) rereadTrackFileQueries(queryClient)
+      })
   }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
@@ -635,9 +641,9 @@ export function useTrackProcessing({
           keepMp3,
         )
       } finally {
-        window.api.endConversionBatch()
+        const flushed = window.api.endConversionBatch()
         rereadMovedSources()
-        rereadReachedCollections()
+        rereadReachedCollections(flushed)
       }
     },
   )
@@ -832,9 +838,9 @@ export function useTrackProcessing({
         // In the finally, not after: a cancelled or failed run must still flush main's
         // recorded Traktor patches, or they linger and get applied to the collection
         // during the NEXT batch instead.
-        window.api.endConversionBatch()
+        const flushed = window.api.endConversionBatch()
         rereadMovedSources()
-        rereadReachedCollections()
+        rereadReachedCollections(flushed)
       }
       // After the summary, never mid-run: a run that converted nothing (all skipped or
       // failed) is no moment of value, so asking for support then would read as nagware.

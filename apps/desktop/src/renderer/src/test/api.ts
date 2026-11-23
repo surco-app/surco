@@ -431,7 +431,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     checkZoom: noop,
     conversionPrograms: vi.fn(async (_paths: string[]): Promise<CueProgram[]> => []),
     beginConversionBatch: noop,
-    endConversionBatch: noop,
+    endConversionBatch: async () => {},
     cancelJob: noop,
     reportUnsavedCues: noop,
     exportCover: async () => null,

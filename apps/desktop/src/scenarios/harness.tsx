@@ -1109,15 +1109,15 @@ function scenarioApi(
             },
           }),
         )
-      flushes.push(
-        verify
-          ? judgedFlush(verify, flush, later, options.sabotage).then(() =>
-              Promise.all(seratoApplies).then(() => {}),
-            )
-          : flush().then(() =>
-              Promise.all([...Object.values(applies), ...seratoApplies]).then(() => {}),
-            ),
-      )
+      const flushed = verify
+        ? judgedFlush(verify, flush, later, options.sabotage).then(() =>
+            Promise.all(seratoApplies).then(() => {}),
+          )
+        : flush().then(() =>
+            Promise.all([...Object.values(applies), ...seratoApplies]).then(() => {}),
+          )
+      flushes.push(flushed)
+      return flushed
     },
     processTrack: (job) =>
       processTrackInMain(job, reservations, options, errors, appleMusicSends, verify),

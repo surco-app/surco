@@ -1935,7 +1935,7 @@ function registerIpc(): void {
   // pending when it lands. The flush judges the tracks registered before this end arrived,
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
-  ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  ipcMain.handle('process:batch-end', (e) => endConversionBatch?.(e.sender))
   const programsDeps = {
     traktorRead: traktorReadPath,
     rootLibraries,
