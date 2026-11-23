@@ -331,6 +331,39 @@ export function keepId3Values(meta: TrackMetadata, values: Id3Values): TrackMeta
   return kept
 }
 
+// Every TXXX holding several values, by its description upper-cased as a custom field's
+// tag name is: one ID3v2.4 frame's null-separated values, or v2.3 frames sharing it.
+export type UserTextValues = Record<string, string[]>
+
+export function readUserTextValues(file: string): UserTextValues {
+  return withTagLibFile(file, userTextValuesOf, {})
+}
+
+function userTextValuesOf(f: TagFile): UserTextValues {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const byName: UserTextValues = {}
+  for (const frame of id3?.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  ) ?? []) {
+    const name = frame.description.toUpperCase()
+    byName[name] = [...(byName[name] ?? []), ...frame.text.filter((value) => value.trim())]
+  }
+  return Object.fromEntries(Object.entries(byName).filter(([, values]) => values.length > 1))
+}
+
+// A custom field shows the first value the inspector read, and every conversion hands the
+// custom fields over whole, so a field still holding just that first value is one the DJ
+// never touched: every value is written back, joined by ';' like a managed field's.
+export function keepCustomValues(meta: TrackMetadata, values: UserTextValues): TrackMetadata {
+  if (!meta.custom) return meta
+  const custom = { ...meta.custom }
+  for (const [key, value] of Object.entries(custom)) {
+    const list = values[customTagName(key)]
+    if (list && same(value, list[0])) custom[key] = list.join(';').trim()
+  }
+  return { ...meta, custom }
+}
+
 function albumArtistsOf(f: TagFile): string[] | undefined {
   return f.getTag(TagTypes.RiffInfo, false)
     ? f.getTag(TagTypes.Id3v2, false)?.albumArtists

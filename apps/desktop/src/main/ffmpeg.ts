@@ -132,6 +132,7 @@ import {
   type CueShift,
   dropsForeignCues,
   type Id3Values,
+  keepCustomValues,
   keepId3Values,
   keepsCuesInId3,
   preservesCuesInPlace,
@@ -139,6 +140,7 @@ import {
   readId3Lists,
   readTagLibExtras,
   type TagLibRead,
+  type UserTextValues,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -2369,11 +2371,18 @@ export async function convertAudio(
   written: ConversionWritten
 }> {
   // A field still holding only the first value of the source's multi-value ID3 frame is one
-  // the DJ never touched (see keepId3Values).
-  const meta = composeMeta(
+  // the DJ never touched (see keepId3Values and keepCustomValues).
+  const kept =
     !clearExtras && ID3_INPUT.test(input)
       ? keepId3Values(sourceMeta, await runInWorker<Id3Values>({ type: 'id3Values', file: input }))
-      : sourceMeta,
+      : sourceMeta
+  const meta = composeMeta(
+    !clearExtras && ID3_INPUT.test(input) && Object.keys(kept.custom ?? {}).length > 0
+      ? keepCustomValues(
+          kept,
+          await runInWorker<UserTextValues>({ type: 'userTextValues', file: input }),
+        )
+      : kept,
   )
   // What the file was named before, for each DJ program whose sync rewrites the names it
   // holds when the file changes. A replacement's entries were made from the replaced file,

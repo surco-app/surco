@@ -37,9 +37,11 @@ import {
   readCoverAndNumbers,
   readId3Values,
   readTagLibFields,
+  readUserTextValues,
   setFlacComment,
   shiftFlacCues,
   type TagLibRead,
+  type UserTextValues,
   writeTags,
 } from './tags'
 import { detectBpm } from './tempo'
@@ -168,6 +170,8 @@ export type WorkerJob =
   | { type: 'tagLibRead'; file: string }
   // Every value of a source's multi-value ID3 frames, which a save keeps (see keepId3Values).
   | { type: 'id3Values'; file: string }
+  // Every value of its multi-value TXXX, which a custom field keeps (see keepCustomValues).
+  | { type: 'userTextValues'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
   // The self-check's cover and M4A numbers, read beside that snapshot.
@@ -194,6 +198,7 @@ export type WorkerJobResult =
   | Uint8Array
   | TagLibRead
   | Id3Values
+  | UserTextValues
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
@@ -313,6 +318,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return readTagLibFields(job.file)
     case 'id3Values':
       return readId3Values(job.file)
+    case 'userTextValues':
+      return readUserTextValues(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
     case 'verifyTagExtras':
