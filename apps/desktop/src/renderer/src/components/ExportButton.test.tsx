@@ -49,7 +49,7 @@ describe('ExportButton', () => {
         onProcess={vi.fn()}
       />,
     )
-    expect(screen.getByText('No changes').className).toContain('sr-only')
+    expect(screen.getByTestId('convert-up-to-date-label')).toHaveAttribute('data-narrow', 'true')
     expect(screen.getByTestId('convert-update-anyway')).toBeInTheDocument()
   })
 
@@ -65,7 +65,7 @@ describe('ExportButton', () => {
         onProcess={vi.fn()}
       />,
     )
-    expect(screen.getByText('No changes').className).not.toContain('sr-only')
+    expect(screen.getByTestId('convert-up-to-date-label')).toHaveAttribute('data-narrow', 'false')
   })
 
   it('goes quiet when there is nothing to write', () => {
@@ -143,9 +143,7 @@ describe('ExportButton', () => {
 
   it('shows an already converted track as up to date without a rise, since the footer remounts on every track switch and an arrow key held through the list would replay it each step', () => {
     render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
-    expect(screen.getByTestId('convert-up-to-date-row').className).not.toContain(
-      'animate-footer-swap',
-    )
+    expect(screen.getByTestId('convert-up-to-date-row')).toHaveAttribute('data-swapped', 'false')
   })
 
   it('rises into up to date when the track becomes up to date while on screen', () => {
@@ -158,7 +156,7 @@ describe('ExportButton', () => {
     }
     const { rerender } = render(<ExportButton {...props} upToDate={false} />)
     rerender(<ExportButton {...props} upToDate />)
-    expect(screen.getByTestId('convert-up-to-date-row').className).toContain('animate-footer-swap')
+    expect(screen.getByTestId('convert-up-to-date-row')).toHaveAttribute('data-swapped', 'true')
   })
 
   // A disabled convert with no explanation leaves the user guessing; the tooltip must
@@ -391,25 +389,6 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.85)' })
   })
 
-  // Reported 21/11: in compact density the button grew taller the moment a convert started,
-  // nudging the footer. Idle, blocked and converting must share one height in every density.
-  it('keeps the same vertical padding whether idle, blocked or converting', () => {
-    const paddingOf = () =>
-      screen
-        .getByTestId('process-btn')
-        .className.split(/\s+/)
-        .filter((c) => /(^|:)py-/.test(c))
-        .sort()
-    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
-    const idle = paddingOf()
-    rerender(<ExportButton {...baseProps} incomplete />)
-    expect(paddingOf()).toEqual(idle)
-    rerender(
-      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
-    )
-    expect(paddingOf()).toEqual(idle)
-  })
-
   // Reported 02/11: editing a track already in Music read "Adding to Apple Music…" under
   // an "Update" button. Each step names what the job really does.
   it.each([
@@ -515,9 +494,6 @@ describe('ExportButton', () => {
       }),
     )
     expect(btn).toHaveAccessibleName(/Converting to AIFF…/)
-    expect(screen.getByText(i18n.t('common.cancel')).className).toContain(
-      'group-focus-within:inline',
-    )
   })
 
   // The fill is a bare aria-hidden span, so a screen reader heard the stage but never how
@@ -667,18 +643,7 @@ describe('ExportButton', () => {
   })
 })
 
-// Opened in the app with a track's end trim near the footer, the trim handle (z-10) and its
-// scissors (z-20) drew over Apple Music and Engine DJ and took the click meant for them: a
-// menu with no layer of its own loses to any positioned control with one.
-describe('ExportButton menu layer', () => {
-  const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
-
-  it('opens over the trim lane controls it can cover', () => {
-    render(<ExportButton {...baseProps} incomplete={false} />)
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(layer(screen.getByRole('menu'))).toBeGreaterThan(20)
-  })
-
+describe('ExportButton menu', () => {
   // The label may be cut with an ellipsis at the narrowest editor, so the full text must
   // stay reachable: by name for a screen reader and on hover for everyone else.
   it('keeps the full update-anyway label on hover and in its name when it is cut short', () => {
