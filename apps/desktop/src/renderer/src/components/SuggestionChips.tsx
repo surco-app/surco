@@ -216,10 +216,11 @@ export function SuggestionChips({
         // Fila gemela de medición: todos los chips más la sonda "+N" (con el mayor resto
         // posible, el caso más ancho), invisible y fuera del flujo. Debe replicar las clases
         // de tamaño de los chips reales (borde, padding, fuente) o las medidas mienten.
-        // Sin testids: duplicaría los selectores chip-* de los chips reales.
+        // Solo la fila lleva testid: duplicar el de cada chip chocaría con los chip-* reales.
         <span className="pointer-events-none absolute inset-0 overflow-hidden">
           <span
             ref={measureRef}
+            data-testid="field-suggestions-measure"
             aria-hidden="true"
             className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
           >
