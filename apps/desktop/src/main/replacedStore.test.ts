@@ -52,6 +52,16 @@ describe('createReplacedStore', () => {
     expect(store.list().map((e) => e.newPath)).toEqual(['/m/b.flac'])
   })
 
+  // A save in one program reviews the track that program still has to review. Another
+  // track whose new copy sits at the same path, already done there, must not take it.
+  it('closes the track still pending in the program that saved, even if another is at the path', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ newPath: '/m/p.flac', oldPath: '/m/b.mp3', pending: ['traktor'] }))
+    store.restore(entry({ newPath: '/m/a.flac', oldPath: '/m/p.flac', pending: ['rekordbox'] }))
+    expect(store.review('/m/p.flac', ['rekordbox'])?.newPath).toBe('/m/a.flac')
+    expect(store.list().map((e) => e.newPath)).toEqual(['/m/p.flac'])
+  })
+
   it('drops the entry once no program is left to review', async () => {
     const store = createReplacedStore(await fileIn())
     store.add(entry())

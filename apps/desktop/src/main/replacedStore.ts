@@ -119,11 +119,13 @@ export function createReplacedStore(file: string): ReplacedStore {
     review: (path, programs) => {
       const p = nfc(path)
       return mutate((all) => {
-        // A file can be one track's new copy and another's old one: it is the first's.
+        // A save reviews what its programs still have pending, as the editor shows it. A
+        // file can be one track's new copy and another's old one: it is the first's.
+        const here = programs ? all.filter((e) => e.pending.some((x) => programs.includes(x))) : all
         const found =
-          all.find((e) => e.newPath === p) ??
-          all.find((e) => e.formerPaths?.includes(p)) ??
-          all.find((e) => e.oldPath === p)
+          here.find((e) => e.newPath === p) ??
+          here.find((e) => e.formerPaths?.includes(p)) ??
+          here.find((e) => e.oldPath === p)
         if (!found) return { entries: all, out: null }
         const pending = programs ? found.pending.filter((x) => !programs.includes(x)) : []
         return {
