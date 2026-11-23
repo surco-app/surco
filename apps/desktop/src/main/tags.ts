@@ -1550,19 +1550,19 @@ export function writeTags(
     setId3Date(id3, meta.year)
     dropBrokenUfids(id3)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
-    // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
-    // matches the name outright, or that the inspector lists by ffmpeg's name for it (a
-    // TSOP as artist-sort, a described COMM by its description). Applies always, not just
-    // on clearExtras.
+    // every TXXX and described COMM under that description, in any case as ffmpeg and the
+    // inspector match it, and any frame whose id matches the name outright, or that the
+    // inspector lists by ffmpeg's name for it (a TSOP as artist-sort). Applies always, not
+    // just on clearExtras.
     for (const name of foreignRemoved) {
-      setUserText(id3, name, '')
       const upper = name.toUpperCase()
       for (const fr of id3.frames.filter((frame) => {
         const id = frame.frameId.toString()
         return (
           id.toUpperCase() === upper ||
           FFMPEG_ID3_TEXT_NAMES[id] === upper ||
-          (id === 'COMM' && (frame as Id3v2CommentsFrame).description.toUpperCase() === upper)
+          ((id === 'TXXX' || id === 'COMM') &&
+            (frame as Id3v2CommentsFrame).description.toUpperCase() === upper)
         )
       })) {
         id3.removeFrame(fr)
