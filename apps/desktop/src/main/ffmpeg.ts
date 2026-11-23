@@ -2236,6 +2236,7 @@ export interface ConversionWritten {
   // How far a replacement moved the audio against the file it replaces, present exactly
   // when the conversion replaced one.
   replaceShift?: ReplaceShift
+  seratoCarryFailed?: true
 }
 
 export interface DecodeProof {
@@ -2421,6 +2422,7 @@ export async function convertAudio(
   let codecCueOffsetMs = 0
   let seratoAnalysisKept = false
   let replaceShift: ReplaceShift | undefined
+  let seratoCarryFailed = false
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2704,7 +2706,6 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
-    let seratoCarryFailed = false
     const carrySerato =
       !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
     // Measured once, on the temp's finished audio and before the rename can land on the
@@ -3004,6 +3005,7 @@ export async function convertAudio(
       ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
       ...(proven ? { proven } : {}),
       ...(replaceShift ? { replaceShift } : {}),
+      ...(seratoCarryFailed ? { seratoCarryFailed: true as const } : {}),
       trimmedSec: trimAf !== undefined ? Math.max(0, trim?.startSec ?? 0) + cutTail : 0,
     },
   }

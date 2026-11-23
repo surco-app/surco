@@ -196,18 +196,20 @@ export function recordReplacement(
     replacementLandedPath?: string
     skipped?: boolean
     replaceShift?: ReplaceShift
+    seratoCarryFailed?: true
   },
   programs: DjProgram[],
   now: number,
 ): void {
   const landed = result.outputPath || result.replacementLandedPath
-  if (!job.replacesPath || result.skipped || !landed || programs.length === 0) return
+  const repointed = result.seratoCarryFailed ? programs.filter((p) => p !== 'serato') : programs
+  if (!job.replacesPath || result.skipped || !landed || repointed.length === 0) return
   store.add({
     newPath: landed,
     oldPath: job.replacesPath,
     replacedAt: now,
     shift: result.replaceShift ?? { unmoved: 'unreadable' },
-    pending: programs,
+    pending: repointed,
   })
 }
 

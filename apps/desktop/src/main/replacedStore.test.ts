@@ -251,6 +251,34 @@ describe('recordReplacement', () => {
     ])
   })
 
+  // Serato stays on the old file when its cues could not be carried: listing it there with
+  // the measured shift would tell the DJ cues moved that Serato never saw move.
+  it('leaves Serato out when its cues could not be carried, since Serato was never repointed', async () => {
+    const store = createReplacedStore(await fileIn())
+    recordReplacement(
+      store,
+      { replacesPath: '/m/old.mp3' },
+      { outputPath: '/m/new.flac', replaceShift: { moved: 1500 }, seratoCarryFailed: true },
+      ['rekordbox', 'serato'],
+      7,
+    )
+    expect(store.list()).toEqual([
+      entry({ shift: { moved: 1500 }, pending: ['rekordbox'], replacedAt: 7 }),
+    ])
+  })
+
+  it('records nothing when Serato was the only program and it stayed on the old file', async () => {
+    const store = createReplacedStore(await fileIn())
+    recordReplacement(
+      store,
+      { replacesPath: '/m/old.mp3' },
+      { outputPath: '/m/new.flac', replaceShift: { moved: 1500 }, seratoCarryFailed: true },
+      ['serato'],
+      7,
+    )
+    expect(store.list()).toEqual([])
+  })
+
   it('records nothing for a plain conversion, a skipped job or when no program follows the file', async () => {
     const store = createReplacedStore(await fileIn())
     recordReplacement(store, {}, { outputPath: '/m/new.flac' }, ['rekordbox'], 1)

@@ -4813,6 +4813,33 @@ describe('runProcessTrack — replacement shift', () => {
     expect(result.replaceShift).toEqual({ moved: 120 })
   })
 
+  // Serato stays on the replaced file when its cues could not be carried, and "To review"
+  // must not list Serato as moved: the flag has to reach the store from the converter.
+  it('says when the Serato cues of the replaced file could not be carried', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written: { ...written, replaceShift: { moved: 120 }, seratoCarryFailed: true },
+      })),
+    })
+    const result = await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+    expect(result.seratoCarryFailed).toBe(true)
+  })
+
+  it('says it on an Apple Music only replacement too', async () => {
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written: { ...written, replaceShift: { moved: 120 }, seratoCarryFailed: true },
+      })),
+    })
+    deps.settings = settings({ addToAppleMusic: true, keepOutputCopy: false })
+    deps.platform = 'darwin'
+    const result = await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(result.seratoCarryFailed).toBe(true)
+  })
+
   // An ordinary conversion replaced nothing, so it must not look like a measured one.
   it('says nothing about a shift on an ordinary conversion', async () => {
     const result = await runProcessTrack(job(), withShift())
