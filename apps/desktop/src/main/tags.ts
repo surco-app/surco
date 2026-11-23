@@ -570,9 +570,9 @@ const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
 // and its ID3 reader keeps only the first value of a frame (ID3v2.4 separates them with a
 // null) and the first of two TXXX frames sharing a description (measured 23/11/2026 with
 // the bundled ffmpeg).
-function multiValuedTags(
-  f: TagFile,
-): { name: string; values: string[]; carried: string; frame?: string; language?: string }[] {
+function multiValuedTags(f: TagFile): (CarriedTag & { carried: string })[] {
+  const apple = f.getTag(TagTypes.Apple, false) as Mpeg4AppleTag | null
+  if (apple) return m4aTags(apple).map((tag) => ({ ...tag, carried: tag.values.at(-1) ?? '' }))
   const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
   if (from)
     return from.fieldNames.map((name) => {
@@ -630,7 +630,8 @@ const MP4_SORT_ATOMS: Record<string, string> = { TSOP: 'soar', TSOA: 'soal', TSO
 // "artist-sort" nothing reads, and into a WAV or an ALAC not at all; a same-format MP3 or
 // AIFF update lost the sort names to TagLib's v2.3 rendering (measured 23/11/2026 with the
 // bundled ffmpeg). Each tag Surco does not manage comes back from the source in the target's
-// own form, a TXXX or text frame on ID3 and a freeform or sort atom on MP4. `owned` names
+// own form, a TXXX or text frame on ID3, a freeform or sort atom on MP4 and a comment on
+// the FLAC an M4A becomes (see m4aTags). `owned` names
 // what Surco wrote, cleared on purpose or the DJ deleted: those stay as they are.
 // Best-effort, like copyCueFrames: a file TagLib cannot open stays as ffmpeg wrote it.
 export function carryUnmanagedTags(dest: string, source: string, owned: string[]): void {
@@ -651,9 +652,11 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
         const carry = (tag: CarriedTag) =>
           extname(dest).toLowerCase() === '.m4a'
             ? carryToMp4(out.tag as Mpeg4AppleTag, tag)
-            : tag.language !== undefined
-              ? carryCommentToId3(out, tag)
-              : carryToId3(out, tag)
+            : extname(dest).toLowerCase() === '.flac'
+              ? carryToXiph(out.getTag(TagTypes.Xiph, true) as XiphComment, tag)
+              : tag.language !== undefined
+                ? carryCommentToId3(out, tag)
+                : carryToId3(out, tag)
         if (tags.filter(carry).length > 0) out.save()
       } finally {
         out.dispose()
@@ -666,7 +669,60 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
   }
 }
 
-type CarriedTag = { name: string; values: string[]; frame?: string; language?: string }
+type CarriedTag = {
+  name: string
+  values: string[]
+  frame?: string
+  language?: string
+  vorbis?: string
+}
+
+// An M4A's standard text atoms Surco does not manage, under the name ffmpeg lists each by,
+// or Picard's for the work and movement ffmpeg does not read, with the sort names' own
+// ID3 frame and Vorbis field. ffmpeg carried the rest of these into an MP3, AIFF or FLAC as
+// a TXXX or comment under that name, and the sort names where nothing sorts by them.
+const M4A_TEXT_ATOMS: [string, string, string?, string?][] = [
+  ['sonm', 'sort_name', 'TSOT', 'TITLESORT'],
+  ['soar', 'sort_artist', 'TSOP', 'ARTISTSORT'],
+  ['soaa', 'sort_album_artist', 'TSO2', 'ALBUMARTISTSORT'],
+  ['soal', 'sort_album', 'TSOA', 'ALBUMSORT'],
+  ['soco', 'sort_composer', 'TSOC', 'COMPOSERSORT'],
+  ['sosn', 'sort_show'],
+  ['catg', 'category'],
+  ['purd', 'purchase_date'],
+  ['©dir', 'director'],
+  ['©wrk', 'WORK'],
+  ['©mvn', 'MOVEMENTNAME'],
+]
+
+// Every freeform atom by the name ffmpeg reads it under, which drops its mean, and every
+// value it holds, where ffmpeg kept the last; Serato's stay with carrySeratoCues.
+function m4aTags(apple: Mpeg4AppleTag): CarriedTag[] {
+  const items =
+    (
+      apple as unknown as {
+        _ilstBox?: { children: { boxType: ByteVector; children: unknown[] }[] }
+      }
+    )._ilstBox?.children ?? []
+  const tags: CarriedTag[] = []
+  for (const item of items) {
+    if (item.boxType.toString(StringType.Latin1) !== '----') continue
+    const children = item.children as { boxType: ByteVector; text?: string }[]
+    const named = (type: string) =>
+      children.find((c) => c.boxType.toString(StringType.Latin1) === type)?.text ?? ''
+    const [mean, name] = [named('mean'), named('name')]
+    if (!mean || mean === 'com.serato.dj' || tags.some((tag) => tag.name === name)) continue
+    tags.push({ name, values: apple.getItunesStrings(mean, name) })
+  }
+  for (const [atom, name, frame, vorbis] of M4A_TEXT_ATOMS)
+    tags.push({
+      name,
+      values: apple.getQuickTimeStrings(ByteVector.fromString(atom, StringType.Latin1)),
+      frame,
+      vorbis,
+    })
+  return tags
+}
 
 function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
   const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
@@ -710,6 +766,15 @@ function carryCommentToId3(f: TagFile, { name, values, language }: CarriedTag): 
   const comment = Id3v2CommentsFrame.fromDescription(name, language)
   comment.text = values[0]
   id3.addFrame(comment)
+  return true
+}
+
+// Under its own Vorbis name, in place of the comment ffmpeg wrote under its MP4 one.
+function carryToXiph(xiph: XiphComment, { name, values, vorbis }: CarriedTag): boolean {
+  const field = vorbis ?? name
+  if (field === name && xiph.getField(field).join('\0') === values.join('\0')) return false
+  xiph.removeField(name)
+  xiph.setFieldAsStrings(field, ...values)
   return true
 }
 

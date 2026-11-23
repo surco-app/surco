@@ -2787,9 +2787,13 @@ export async function convertAudio(
         await carryFlacBlocks(input, tmp)
     }
     // The tags Surco does not manage, which ffmpeg cut to one value or left out of every
-    // target but a FLAC (see carryUnmanagedTags). The custom fields are Surco's to write, and
+    // target but a FLAC, and an M4A's into any (see carryUnmanagedTags). The custom fields are Surco's to write, and
     // the encoder stamp and the previous owner's chain are cleared on purpose.
-    if (!clearExtras && ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input)))
+    if (
+      !clearExtras &&
+      ((ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input))) ||
+        (ext !== '.m4a' && M4A_INPUT.test(input)))
+    )
       await runInWorker({
         type: 'carryUnmanagedTags',
         source: input,
