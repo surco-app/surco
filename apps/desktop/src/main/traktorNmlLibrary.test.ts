@@ -618,6 +618,13 @@ describe('syncCollection with a replace', () => {
     expect(readFileSync(nmlPath, 'utf8')).toBe(before)
   })
 
+  it('names the gone output whose move was dropped, so To review does not say the old entry moved', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    writeFileSync(nmlPath, withOld())
+    const result = await syncCollection(nmlPath, [replace('gone.aiff')], session, BOOT)
+    expect(result.stayed).toEqual([join(dir, 'new', 'gone.aiff')])
+  })
+
   it('moves the entry onto an output that is on disk', async () => {
     writeFileSync(join(dir, 'old.mp3'), 'old')
     mkdirSync(join(dir, 'new'))
