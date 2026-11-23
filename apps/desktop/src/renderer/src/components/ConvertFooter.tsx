@@ -784,6 +784,7 @@ export function ConvertFooter({
               libraryBetter={!isMulti && libraryBetter}
               done={!isMulti && done}
               outputFormat={format}
+              shownFormat={isMulti && batchFormats.length === 1 ? batchFormats[0] : format}
               exportedFormat={isMulti ? null : exportedFormat}
               incomplete={isMulti ? batchCount === 0 : incomplete}
               incompleteReason={isMulti ? leftOut : incompleteReason}

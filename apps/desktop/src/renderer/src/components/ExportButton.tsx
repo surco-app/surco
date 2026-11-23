@@ -36,6 +36,9 @@ interface ExportButtonProps {
   libraryBetter?: boolean
   done: boolean
   outputFormat: FormatSetting
+  // What the dropdown half displays when that differs from the pick the menu marks: a
+  // selection whose plan writes one other format (kept MP3s under an AIFF setting).
+  shownFormat?: FormatSetting
   exportedFormat: OutputFormat | null
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
@@ -105,6 +108,7 @@ export function ExportButton({
   done,
   stage,
   outputFormat,
+  shownFormat = outputFormat,
   exportedFormat,
   incomplete,
   incompleteReason,
@@ -156,9 +160,9 @@ export function ExportButton({
       {FORMAT_SETTINGS.map((f) => (
         <span
           key={f}
-          data-testid={f === outputFormat ? 'process-format-current' : undefined}
-          aria-hidden={f !== outputFormat || undefined}
-          className={`[grid-area:1/1] ${f === outputFormat ? '' : 'invisible'}`}
+          data-testid={f === shownFormat ? 'process-format-current' : undefined}
+          aria-hidden={f !== shownFormat || undefined}
+          className={`[grid-area:1/1] ${f === shownFormat ? '' : 'invisible'}`}
         >
           {shortName(f)}
         </span>
@@ -271,7 +275,7 @@ export function ExportButton({
           <button
             type="button"
             data-testid="process-format-toggle"
-            aria-label={tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })}
+            aria-label={tr('editor.formatDestinationToggle', { format: shortName(shownFormat) })}
             aria-expanded={open}
             ref={toggleRef}
             aria-haspopup="menu"
@@ -430,7 +434,7 @@ export function ExportButton({
           aria-label={
             quiet
               ? tr('editor.chooseFormat')
-              : tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })
+              : tr('editor.formatDestinationToggle', { format: shortName(shownFormat) })
           }
           aria-expanded={open}
           ref={toggleRef}

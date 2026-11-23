@@ -1306,6 +1306,21 @@ describe('ConvertFooter selection split button', () => {
     expect(screen.queryByTestId('batch-destination-toggle')).toBeNull()
   })
 
+  // Two MP3s with an AIFF setting write MP3 (kept sources), as a single track already shows:
+  // the dropdown must not promise AIFF next to an "Update" that rewrites MP3 tags.
+  it('shows on the dropdown the one format the plan writes, while the menu keeps the pick', () => {
+    render(plan({ format: 'aiff', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('keeps showing the picked format when the plan writes several', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff', 'mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+  })
+
   it('says out of how many it converts when the plan leaves some out', () => {
     render(plan({ batchFormats: ['aiff'], selectedCount: 3 }))
     expect(screen.getByTestId('process-btn')).toHaveTextContent(
