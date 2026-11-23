@@ -229,6 +229,28 @@ describe('CuesSection', () => {
     ])
   })
 
+  it('takes a track out of To review in the program its cues were saved to, since the DJ has now fixed them there', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues } = setup(READ, null, undefined, { reviewReplaced })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', ['rekordbox']))
+  })
+
+  it('keeps the track in To review when the save failed, since nothing reached the program', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues } = setup(READ, null, undefined, { reviewReplaced })
+    saveRekordboxCues.mockRejectedValue(new Error('locked'))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeInTheDocument())
+    expect(reviewReplaced).not.toHaveBeenCalled()
+  })
+
   it('letters a cue placed before A as the new A and saves the old A as B with its CALL untouched, or keeps the pads as they were with the order off', async () => {
     const saved = {
       ...READ,

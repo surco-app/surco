@@ -50,7 +50,7 @@ import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
-import { useReplacedTracks } from '../hooks/useReplacedTracks'
+import { useReplacedTracks, useReviewReplaced } from '../hooks/useReplacedTracks'
 import {
   cueDropInputQuery,
   gridAuditQuery,
@@ -132,7 +132,7 @@ import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
 import { claimKeys } from '../lib/spaceClaim'
-import { replacedEntryOf } from '../lib/toReview'
+import { replacedEntryOf, savedReviews } from '../lib/toReview'
 import { CueDeck, CueMoves } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
@@ -1144,6 +1144,7 @@ function Editing({
     locked: state.locked.includes(c.key),
   }))
   const [saveFailed, setSaveFailed] = useState(false)
+  const { review } = useReviewReplaced()
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
     saveEcho.expectSave(reqs)
     const saved = await window.api.dj
@@ -1168,6 +1169,11 @@ function Editing({
       }),
     )
     forgetDrafts(reqs.map((r) => r.contentId))
+    // A track the DJ just fixed in a program stops being asked about there. Not awaited and
+    // not surfaced: the cues are already saved, so a failure here must not read as a failed save.
+    for (const [path, programs] of savedReviews(reqs)) {
+      review(path, programs).catch((error) => window.api.logError(String(error)))
+    }
     await refreshQueued()
     return true
   }
