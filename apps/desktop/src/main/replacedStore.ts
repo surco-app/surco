@@ -213,6 +213,22 @@ export function recordReplacement(
   })
 }
 
+export function leaveOutWhereStayed(
+  store: ReplacedStore,
+  program: DjProgram,
+  paths: string[],
+): boolean {
+  let changed = false
+  for (const path of paths) {
+    try {
+      if (store.review(path, [program])) changed = true
+    } catch (e) {
+      log.error(`replaced-tracks store: could not leave ${program} out of ${path}`, e)
+    }
+  }
+  return changed
+}
+
 export function followReplaced(
   store: ReplacedStore,
   job: { inputPath: string },

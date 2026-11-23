@@ -122,6 +122,7 @@ import {
   syncTagsInLibraries,
   tagSyncPrograms,
   traktorFlushDeps,
+  traktorWrite,
 } from './libraryFlushes'
 import { beginNmlBatch, endNmlBatch, recordNmlPatch } from './nmlBatch'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
@@ -195,6 +196,26 @@ const sessions = {
   },
   virtualdj: fakeSession(),
 }
+
+describe('traktorWrite', () => {
+  const patch = { volume: '', dir: '/:m/:', file: 'old.mp3', relocates: true as const }
+
+  it('carries the new files the entry did not follow, so To review can leave Traktor out of them', () => {
+    const write = traktorWrite([patch], {
+      written: false,
+      matched: 0,
+      reason: 'no-matches',
+      before: ['old.mp3'],
+      stayed: ['/m/new.aiff'],
+    })
+    expect(write).toMatchObject({ stayed: ['/m/new.aiff'] })
+  })
+
+  it('carries none when every entry followed', () => {
+    const write = traktorWrite([patch], { written: true, matched: 1, before: ['old.mp3'] })
+    expect(write).not.toHaveProperty('stayed')
+  })
+})
 
 describe('flushConversionBatch with rekordbox open', () => {
   it('queues the run instead of showing the blocked dialog, because the queue applies it later', async () => {

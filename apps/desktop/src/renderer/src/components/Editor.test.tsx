@@ -382,6 +382,7 @@ describe('Editor cues section', () => {
         marked: 0,
       }),
       onCueProfileChanged: () => () => {},
+      onReplacedChanged: () => () => {},
     })
   })
 

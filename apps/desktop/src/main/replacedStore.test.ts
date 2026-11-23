@@ -10,6 +10,7 @@ import {
   followingPrograms,
   followReplaced,
   keepReplacedForReview,
+  leaveOutWhereStayed,
   recordReplacement,
 } from './replacedStore'
 
@@ -408,5 +409,43 @@ describe('keepReplacedForReview', () => {
       () => false,
     )
     expect(calls).toEqual(['movePath', 'add'])
+  })
+})
+
+describe('leaveOutWhereStayed', () => {
+  it('takes Traktor out of a track whose entry stayed on the old file, keeping the other programs', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ shift: { moved: 1500 } }))
+    expect(leaveOutWhereStayed(store, 'traktor', ['/m/new.flac'])).toBe(true)
+    expect(store.list()).toEqual([entry({ shift: { moved: 1500 }, pending: ['rekordbox'] })])
+  })
+
+  it('drops the track when Traktor was the only program left to review it', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ pending: ['traktor'] }))
+    leaveOutWhereStayed(store, 'traktor', ['/m/new.flac'])
+    expect(store.list()).toEqual([])
+  })
+
+  it('says nothing changed when no track there waits on Traktor', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ pending: ['rekordbox'] }))
+    expect(leaveOutWhereStayed(store, 'traktor', ['/m/new.flac', '/m/other.flac'])).toBe(false)
+    expect(store.list()).toEqual([entry({ pending: ['rekordbox'] })])
+  })
+
+  it('never throws past the collection write when the store cannot be written', () => {
+    vi.mocked(log.error).mockClear()
+    const store = {
+      list: () => [],
+      add: () => {},
+      review: () => {
+        throw new Error('disk full')
+      },
+      restore: () => {},
+      movePath: () => {},
+    }
+    expect(() => leaveOutWhereStayed(store, 'traktor', ['/m/new.flac'])).not.toThrow()
+    expect(log.error).toHaveBeenCalled()
   })
 })

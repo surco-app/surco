@@ -67,7 +67,7 @@ export const traktorPatchKey = (patch: NmlPatch) =>
 // no entry, and that entry's cues as the same read found them; or 'failed' when nothing was
 // written.
 export type TraktorWrite =
-  | { before: Map<string, string | null>; cues?: Map<string, string | null> }
+  | { before: Map<string, string | null>; cues?: Map<string, string | null>; stayed?: string[] }
   | 'failed'
 
 // 'failed' is a write that went wrong or a flush that threw: nothing is known, nothing pending.

@@ -16,6 +16,7 @@ import {
   refreshedCoverIds,
   replaceDuplicateInNml,
   spareEditedEntries,
+  stayedRelocations,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -1643,6 +1644,33 @@ describe('a replace moves the entry whole', () => {
     const out = applyPatches(collect(stale('wav'), stale('flac')), [replace()], () => false)
 
     expect(findEntries(out).filter((e) => e.file === 'Song.aiff')).toHaveLength(1)
+  })
+
+  it('names a replace whose entry stays on the old file because no entry names the new volume, so To review does not say its cues moved', () => {
+    const patch = replace({ outputVolume: 'USB', cueShift: { shiftMs: 120 } })
+
+    expect(stayedRelocations(NML_, [patch])).toEqual([patch])
+  })
+
+  it('names a replace whose entry stays because another entry already holds the new file', () => {
+    const patch = replace({ cueShift: { shiftMs: 120 } })
+    const both = collect(SONG, NAS, TAKEN)
+
+    expect(entryCues(applyPatches(both, [patch]))).toBe(entryCues(both))
+    expect(stayedRelocations(both, [patch])).toEqual([patch])
+  })
+
+  it('does not name a replace whose entry moved to the new file', () => {
+    expect(stayedRelocations(NML_, [replace({ cueShift: { shiftMs: 120 } })])).toEqual([])
+  })
+
+  it('does not name a replace when one of two stale entries matched by name moved', () => {
+    const stale = (ext: string) =>
+      `<ENTRY TITLE="Song"><LOCATION DIR="/:Music/:Old/:" FILE="Song.${ext}" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION></ENTRY>`
+
+    expect(
+      stayedRelocations(collect(stale('wav'), stale('flac')), [replace()], () => false),
+    ).toEqual([])
   })
 
   // Why the move is opt-in: a plain conversion into another folder never repointed the entry.

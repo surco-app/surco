@@ -628,6 +628,35 @@ describe('syncCollection with a replace', () => {
       `DIR="${nmlDir(join(dir, 'new'))}" FILE="here.aiff"`,
     )
   })
+
+  it('says which new files the entry did not follow, so To review leaves Traktor out of them', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(
+      nmlPath,
+      withOld().replace(
+        '</COLLECTION>',
+        `<ENTRY TITLE="Uno again"><LOCATION DIR="${nmlDir(join(dir, 'new'))}" FILE="here.aiff" VOLUME="${BOOT}" VOLUMEID="${BOOT}"></LOCATION></ENTRY>\n</COLLECTION>`,
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [{ ...replace('here.aiff'), cueShift: { shiftMs: -120 } }],
+      session,
+      BOOT,
+    )
+    expect(result.stayed).toEqual([join(dir, 'new', 'here.aiff')])
+  })
+
+  it('says nothing stayed when the entry followed its new file', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(nmlPath, withOld())
+    const result = await syncCollection(nmlPath, [replace('here.aiff')], session, BOOT)
+    expect(result.stayed).toBeUndefined()
+  })
 })
 
 describe('syncCollection refreshes the cached artwork', () => {

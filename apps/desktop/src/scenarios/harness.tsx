@@ -935,6 +935,7 @@ function scenarioApi(
     }),
     copiesStatus: async () => [],
     onCopiesChanged: () => () => {},
+    onReplacedChanged: () => () => {},
     traktorCanSave: async () => false,
     usbVolumes: async () => ({ volumes: [], lastKey: null }),
     onUsbVolumesChanged: () => () => {},

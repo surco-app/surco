@@ -857,7 +857,11 @@ export function traktorWrite(patches: NmlPatch[], result: SyncResult): TraktorWr
   const cues = result.cues
   const keyed = <T>(values: T[]) =>
     new Map(patches.map((p, i) => [traktorPatchKey(p), values[i] ?? null]))
-  return cues ? { before: keyed(before), cues: keyed(cues) } : { before: keyed(before) }
+  return {
+    before: keyed(before),
+    ...(cues ? { cues: keyed(cues) } : {}),
+    ...(result.stayed ? { stayed: result.stayed } : {}),
+  }
 }
 
 type LibraryHas = (path: string, from?: string, replaced?: boolean) => boolean

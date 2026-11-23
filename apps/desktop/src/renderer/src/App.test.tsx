@@ -396,6 +396,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked'),
     copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
     onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
+    onReplacedChanged: () => () => {},
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
