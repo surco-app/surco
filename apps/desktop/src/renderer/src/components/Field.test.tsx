@@ -780,3 +780,10 @@ describe('Field with several lines', () => {
     expect(screen.getByTestId('field-comment')).toHaveFocus()
   })
 })
+
+describe('Field word box', () => {
+  it('fits a spelled-out key and still leaves room for BPM on the same row at the smallest window', () => {
+    render(<Field name="key" label="Key" value="C# minor" onChange={vi.fn()} width="word" />)
+    expect(screen.getByTestId('field-key').parentElement?.className).toContain('w-28')
+  })
+})

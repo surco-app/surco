@@ -274,7 +274,7 @@ describe('the Playlists field of each library', () => {
 
 describe('bounded field widths', () => {
   it('gives Key the room of a spelled-out key, since files from stores and other tools spell it out as "C# minor"', () => {
-    expect(FIELD_DEFS.find((d) => d.key === 'key')?.width).toBe('medium')
+    expect(FIELD_DEFS.find((d) => d.key === 'key')?.width).toBe('word')
   })
 })
 

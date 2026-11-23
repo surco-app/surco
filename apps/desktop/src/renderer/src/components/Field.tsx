@@ -20,9 +20,13 @@ import { Tooltip } from './Tooltip'
 // the field instant and runs that walk once per edit instead of once per keypress.
 const COMMIT_DEBOUNCE_MS = 200
 
-// Sized for the longest value each tag holds: "128.5" or "10A" in a short box, a hyphenated
-// ISRC in a medium one.
-const WIDTH_CLASS: Record<FieldWidth, string> = { short: 'w-[4.5rem]', medium: 'w-40' }
+// Sized for the longest value each tag holds: "128.5" in a short box, "C# minor" in a word
+// one, a hyphenated ISRC in a medium one.
+const WIDTH_CLASS: Record<FieldWidth, string> = {
+  short: 'w-[4.5rem]',
+  word: 'w-28',
+  medium: 'w-40',
+}
 
 interface FieldProps {
   name: string
