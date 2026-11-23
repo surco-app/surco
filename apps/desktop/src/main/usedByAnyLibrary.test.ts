@@ -144,6 +144,7 @@ describe('usedByAnyLibrary', () => {
             rootLibraries: () => ({ serato: seratoLibraryRoots(home, []), virtualdj: [] }),
           }),
         exists: () => true,
+        isRegularFile: () => true,
         keepsTrash: () => true,
         policy: () => 'always',
         trash,

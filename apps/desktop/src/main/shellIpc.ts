@@ -7,7 +7,7 @@ import { libraryBackupRoot } from './libraryBackups'
 import type { MediaAccess } from './mediaAccess'
 import { currentBackupPolicy } from './originalKeeper'
 import { trashAsConfirmed } from './recoverableTrash'
-import { retireSuperseded } from './retireSuperseded'
+import { isRegularFile, retireSuperseded } from './retireSuperseded'
 import { volumeKeepsTrash } from './trashSupport'
 
 // The OS pass-throughs (reveal/open/trash + plain clipboard text), split out of
@@ -44,6 +44,7 @@ export function registerShellIpc(
     return retireSuperseded(path, {
       usedByLibrary: (file) => usedByLibrary(file, names),
       exists: existsSync,
+      isRegularFile,
       keepsTrash: volumeKeepsTrash,
       policy: currentBackupPolicy,
       trash: (file, permanentConfirmed) => trashAsConfirmed(file, { permanentConfirmed }),

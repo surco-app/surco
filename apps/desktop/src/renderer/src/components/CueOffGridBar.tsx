@@ -67,10 +67,14 @@ export function CueOffGridBar({
     onGo(stops[next].ms)
   }
   const shift = onShiftGrid ? sharedDrift(off, stops.length) : null
+  // Folded, the editor is as narrow as the window's minimum allows: the controls wrap onto a
+  // second line rather than cut the cue's name or run past the panel's edge. Full screen the
+  // bar always fits in its one line.
   return (
     <div
       data-testid="cues-offgrid"
-      className={`${spaced ? 'mb-2' : 'shrink-0'} flex h-7 items-center gap-1 whitespace-nowrap rounded-md bg-[var(--color-warn)]/10 pr-1 pl-2.5 text-xs`}
+      data-wrap={spaced || undefined}
+      className={`${spaced ? 'mb-2 min-h-7 flex-wrap gap-x-1 py-0.5' : 'h-7 shrink-0 gap-1'} flex items-center whitespace-nowrap rounded-md bg-[var(--color-warn)]/10 pr-1 pl-2.5 text-xs`}
     >
       <span aria-hidden="true" className="mr-1 h-1.5 w-1.5 shrink-0 rounded-full bg-warn" />
       <button
@@ -86,7 +90,7 @@ export function CueOffGridBar({
         type="button"
         data-testid={`cues-offgrid-go-${stop.ms}`}
         onClick={() => onGo(stop.ms)}
-        className="press min-w-0 truncate rounded px-1 tabular-nums text-fg hover:bg-[var(--color-hover)]"
+        className={`press rounded px-1 tabular-nums text-fg hover:bg-[var(--color-hover)] ${spaced ? '' : 'min-w-0 truncate'}`}
       >
         <Tooltip label={tr('editor.cues.offGrid.go')} />
         <span className="font-semibold">{stop.label}</span> {cueClock(stop.ms)} ·{' '}

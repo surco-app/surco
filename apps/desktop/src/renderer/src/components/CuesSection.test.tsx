@@ -14,6 +14,7 @@ import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import { claimCueSave } from '../lib/cueSaveEcho'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { offerShortcutUndo, takeShortcutUndo } from '../lib/shortcutUndo'
@@ -89,7 +90,11 @@ function setup(
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (
     current: Partial<Settings> | null,
-    cue = { contentId: '103', path: '/m/g.wav', label: 'Gowan' },
+    cue: { contentId: string; path: string; label: string; programPath?: string } = {
+      contentId: '103',
+      path: '/m/g.wav',
+      label: 'Gowan',
+    },
   ) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...current }}>
@@ -100,7 +105,7 @@ function setup(
   const { rerender } = render(tree(settings ?? null))
   return {
     changeSettings: (next: Partial<Settings>) => rerender(tree(next)),
-    changeTrack: (cue: { contentId: string; path: string; label: string }) =>
+    changeTrack: (cue: { contentId: string; path: string; label: string; programPath?: string }) =>
       rerender(tree(settings ?? null, cue)),
     logError,
     onFlow,
@@ -241,6 +246,19 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', ['rekordbox']))
+  })
+
+  // Right after Update the open track is the Tracks item that made the new file: its own path
+  // is the download, which To review does not know, so the save must name the program's file.
+  it('takes a track replaced in this session out of To review under the file its program lists', async () => {
+    const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+    const { saveRekordboxCues, changeTrack } = setup(READ, null, undefined, { reviewReplaced })
+    changeTrack({ contentId: '103', path: '/dl/g.wav', label: 'Gowan', programPath: '/m/g.aiff' })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.aiff', ['rekordbox']))
   })
 
   it('keeps the track in To review when the save failed, since nothing reached the program', async () => {
@@ -747,6 +765,15 @@ describe('CuesSection', () => {
     await ready()
     hoverAt(bar(64))
     expect(previewed()).toEqual([`call-${bar(64)}`, 'hot-A'])
+  })
+
+  // At the window's minimum width "Raster anpassen" and "Auto-Markieren" side by side are
+  // wider than the folded header, and Auto-Markieren ran past the panel's edge. They wrap
+  // onto a second line instead, in every language.
+  it('lets the folded header controls wrap instead of running past the panel edge', async () => {
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-flow-menu')).toHaveAttribute('data-wrap', 'true')
   })
 
   it('draws dimmed and dashed what the flow drops with the point at the playhead and writes no count, folded or full screen, since the dashed marks already say it and a count beside the flow menu confused', async () => {
@@ -1351,6 +1378,29 @@ describe('CuesSection replaced track', () => {
     setup(READ, null, undefined, { replacedTracks: async () => [entry(['traktor'])] })
     await ready()
     expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
+  })
+
+  // The editor stays on a track whose save took it out of To review (option B), so the save
+  // must read as done there: the pill goes with the review and the Saved mark shows.
+  it('drops the pill and shows Saved once a save takes the track out of To review', async () => {
+    let listed = [entry(['rekordbox'])]
+    setup(READ, null, undefined, {
+      replacedTracks: async () => listed,
+      reviewReplaced: async () => {
+        const [was] = listed
+        listed = []
+        return was
+      },
+    })
+    await ready()
+    expect(await screen.findByTestId('cues-replaced-pill')).toBeInTheDocument()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+    act(() => {
+      claimCueSave('rekordbox', { tracks: 1, changes: 0, cues: ['/m/g.wav'] })
+    })
+    expect(screen.getByTestId('cues-saved')).toBeInTheDocument()
   })
 
   // Reviewed removes itself with its row. Keyboard and VoiceOver users must land back on

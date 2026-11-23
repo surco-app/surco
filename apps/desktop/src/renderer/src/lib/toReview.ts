@@ -69,6 +69,24 @@ export function toReviewEntriesFor(
     .map(({ row }) => row)
 }
 
+// Vicent's call (option B): a track that leaves To review while the DJ has it selected keeps
+// its row, in its place, until they pick another one. Reviewed or a save is their last look at
+// it, and the editor closing under them hid the Saved mark and lost their place.
+export function keepOpenRows(
+  before: readonly SourcePlaylistEntry[],
+  now: SourcePlaylistEntry[],
+  open: ReadonlySet<string>,
+): SourcePlaylistEntry[] {
+  if (open.size === 0) return now
+  const listed = new Set(now.flatMap((e) => (e.path ? [nfc(e.path)] : [])))
+  const kept = [...now]
+  before.forEach((e, i) => {
+    if (e.path && open.has(nfc(e.path)) && !listed.has(nfc(e.path)))
+      kept.splice(Math.min(i, kept.length), 0, e)
+  })
+  return kept.length === now.length ? now : kept
+}
+
 export function savedReviews(
   reqs: readonly Pick<SaveCuesRequest, 'contentId' | 'path'>[],
 ): [path: string, programs: DjProgram[]][] {

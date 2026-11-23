@@ -327,6 +327,7 @@ import type { CopiedTags, TrackItem } from './types'
 const SIDEBAR_PEEK_DELAY_MS = 150
 const PEEK_TREE_WIDTH = 240
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
+const NO_SELECTED_PATHS: ReadonlySet<string> = new Set()
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 const NOTICE_NAMES = 3
@@ -808,9 +809,11 @@ export default function App(): React.JSX.Element {
   const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
   const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
   const replacedEntries = useReplacedTracks()
+  const [selectedPaths, setSelectedPaths] = useState<ReadonlySet<string>>(NO_SELECTED_PATHS)
   const browser = useSourceBrowser({
     matchingPathPairs,
     replacedEntries,
+    selectedPaths,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
@@ -2194,6 +2197,21 @@ export default function App(): React.JSX.Element {
     if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
   }, [tracks, selectedIdSet])
+  // Every file a selected track goes by, so a row it has in To review stays while it is
+  // selected, whichever of them the program's row names.
+  useEffect(() => {
+    setSelectedPaths(
+      selectedTracks.length === 0
+        ? NO_SELECTED_PATHS
+        : new Set(
+            selectedTracks.flatMap((t) =>
+              [t.inputPath, t.outputPath ?? [], t.movedFrom ?? []]
+                .flat()
+                .map((p) => p.normalize('NFC')),
+            ),
+          ),
+    )
+  }, [selectedTracks])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
   const {
@@ -3366,6 +3384,7 @@ export default function App(): React.JSX.Element {
   const selectedContentId =
     cuesOpen && selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const selectedPath = selected?.inputPath
+  const selectedProgramPath = selected ? playlistScope?.rowPathOf.get(selected.id) : undefined
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
   const inRekordbox = sourceProgram === 'rekordbox'
@@ -3433,11 +3452,12 @@ export default function App(): React.JSX.Element {
     const shifts = new Map<string, ReplaceShift>()
     if (browser.playlist?.id !== TO_REVIEW_ID || sourceProgram === null) return shifts
     for (const t of scopeTracks) {
-      const entry = replacedEntryOf(replacedEntries, t.inputPath, sourceProgram)
+      const path = playlistScope?.rowPathOf.get(t.id) ?? t.inputPath
+      const entry = replacedEntryOf(replacedEntries, path, sourceProgram)
       if (entry) shifts.set(t.id, entry.shift)
     }
     return shifts
-  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries])
+  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries, playlistScope])
   const editMatching = useMatchingEdit(notifyEdit)
   const runMatchingEdits = useMatchingSteps(notifyEdit)
   const editMatchings = useMatchingEdits(notifyEdit)
@@ -3753,9 +3773,14 @@ export default function App(): React.JSX.Element {
   const rekordboxCue = useMemo(
     () =>
       selectedContentId && selectedPath !== undefined && selectedLabel !== undefined
-        ? { contentId: selectedContentId, path: selectedPath, label: selectedLabel }
+        ? {
+            contentId: selectedContentId,
+            path: selectedPath,
+            label: selectedLabel,
+            programPath: selectedProgramPath,
+          }
         : undefined,
-    [selectedContentId, selectedPath, selectedLabel],
+    [selectedContentId, selectedPath, selectedLabel, selectedProgramPath],
   )
   // A row read from an open rekordbox playlist names its collection entry; any other track
   // is looked up by its file, and by its converted file when a conversion moved the entry.

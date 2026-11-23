@@ -17,12 +17,13 @@ import {
 import { matchingEntriesFor } from '../lib/matchingPaths'
 import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
-import { toReviewEntriesFor } from '../lib/toReview'
+import { keepOpenRows, toReviewEntriesFor } from '../lib/toReview'
 import { useProgramsAvailable } from './useProgramsAvailable'
 import { useRekordboxMatching } from './useRekordboxMatching'
 
 const NO_PAIRS: readonly (readonly [string, string])[] = []
 const NO_REPLACED: readonly ReplacedEntry[] = []
+const NO_PATHS: ReadonlySet<string> = new Set()
 
 import { useStableCallback } from './useStableCallback'
 import { useWindowFocus } from './useWindowFocus'
@@ -119,12 +120,14 @@ export function useSourceBrowser({
   matchingPathPairs = NO_PAIRS,
   libraryFolders = null,
   replacedEntries = NO_REPLACED,
+  selectedPaths = NO_PATHS,
 }: {
   onPlaylistGone: (name: string, source: PlaylistSource) => void
   hiddenSources: PlaylistSource[]
   matchingPathPairs?: readonly (readonly [string, string])[]
   libraryFolders?: readonly string[] | null
   replacedEntries?: readonly ReplacedEntry[]
+  selectedPaths?: ReadonlySet<string>
 }): SourceBrowser {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -223,6 +226,16 @@ export function useSourceBrowser({
     [recent.data, all.data, tr],
   )
   const playlist = source ? (playlists[source] ?? (hasRecent ? startingPlaylist : null)) : null
+  const reviewOpen = program !== null && playlist?.id === TO_REVIEW_ID
+  const shownReview = useRef<SourcePlaylistEntry[] | undefined>(undefined)
+  const reviewRows = useMemo(() => {
+    const rows =
+      reviewOpen && toReviewEntries
+        ? keepOpenRows(shownReview.current ?? [], toReviewEntries, selectedPaths)
+        : toReviewEntries
+    shownReview.current = reviewOpen ? rows : undefined
+    return rows
+  }, [reviewOpen, toReviewEntries, selectedPaths])
   const shownTree = useMemo(
     () =>
       hasRecent && tree.data
@@ -237,7 +250,7 @@ export function useSourceBrowser({
                   },
                 ]
               : []),
-            ...(reviewCount > 0
+            ...((reviewRows?.length ?? 0) > 0
               ? [
                   {
                     id: TO_REVIEW_ID,
@@ -270,10 +283,9 @@ export function useSourceBrowser({
             ...tree.data,
           ]
         : tree.data,
-    [hasRecent, tree.data, all.data, recent.data, reviewCount, matchingCount, tr],
+    [hasRecent, tree.data, all.data, recent.data, reviewRows, reviewCount, matchingCount, tr],
   )
   const otherMatchingOpen = otherProgram && playlist?.id === MATCHING_ID
-  const reviewOpen = program !== null && playlist?.id === TO_REVIEW_ID
   const entriesKey = ['source-playlist', source, playlist?.id]
   const entries = useQuery({
     queryKey: entriesKey,
@@ -291,7 +303,7 @@ export function useSourceBrowser({
   const shownEntries = otherMatchingOpen
     ? otherMatchingEntries
     : reviewOpen
-      ? toReviewEntries
+      ? reviewRows
       : entries.data
   const shownPending = otherMatchingOpen
     ? otherMatchingEntries === undefined

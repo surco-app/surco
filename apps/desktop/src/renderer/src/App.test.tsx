@@ -23,7 +23,7 @@ import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
-import { TO_REVIEW_ID } from '../../shared/toReview'
+import { type ReplacedEntry, TO_REVIEW_ID } from '../../shared/toReview'
 import type {
   ActivityEvent,
   ProgramCopies,
@@ -5911,6 +5911,164 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getByTestId('source-node-h'))
       await waitFor(() => expect(screen.getAllByTestId('track-row').length).toBeGreaterThan(0))
       expect(screen.queryByTestId('track-replaced')).not.toBeInTheDocument()
+    })
+
+    // Right after Update the row is the Tracks item that made the new file: its own path is
+    // the download, and only the file it wrote is the one To review lists.
+    it('marks and opens a track replaced in this session by the file the replacement wrote', async () => {
+      const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/a.aiff',
+        inPlace: false,
+      })
+      await openFactory({
+        processTrack,
+        replacedTracks: vi.fn().mockResolvedValue([
+          {
+            newPath: '/m/a.aiff',
+            oldPath: '/m/a.mp3',
+            replacedAt: 1,
+            shift: { moved: 40 },
+            pending: ['rekordbox'],
+          },
+        ]),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID
+                ? [
+                    {
+                      path: '/m/a.aiff',
+                      separator: false,
+                      meta: {},
+                      linkId: 'r1',
+                      contentId: 'r1',
+                    },
+                  ]
+                : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('process-btn'))
+      await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+      await act(async () => {})
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      expect(screen.getByTestId('track-replaced')).toHaveAttribute('data-state', 'moved')
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('cues-replaced-pill')).toHaveAttribute('data-state', 'moved')
+      expect(screen.getByTestId('cues-reviewed')).toBeInTheDocument()
+    })
+
+    const reviewable = () => {
+      let listed = REPLACED as ReplacedEntry[]
+      return {
+        replacedTracks: vi.fn(async () => listed),
+        reviewReplaced: vi.fn(async (path: string) => {
+          const was = listed.find((e) => e.newPath === path) ?? null
+          listed = listed.filter((e) => e !== was)
+          return was
+        }),
+        restoreReplaced: vi.fn(async (entry: ReplacedEntry) => {
+          listed = [...listed, entry]
+        }),
+        cues: {
+          trackCues: vi.fn<Api['cues']['trackCues']>(async (contentId) => ({
+            contentId,
+            analysed: true,
+            grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+            strong: [],
+            phrases: [],
+            cues: [],
+            wave: null,
+            durationMs: 400000,
+            fingerprint: 'f0',
+            gridFingerprint: '',
+          })),
+          queued: vi.fn<Api['cues']['queued']>(async () => null),
+        },
+        onCueProfileChanged: () => () => {},
+        dj: reviewReads(),
+      }
+    }
+    const openCharlie = async () => {
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+    }
+
+    // Vicent's call (option B): Reviewed or a save is the DJ's last look at the track, and the
+    // editor closing under them hid the Saved mark and lost their place. It stays on the track
+    // until they pick another; only then does the row leave the list.
+    it('keeps the editor on a track that leaves To review until the DJ picks another one', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(api.reviewReplaced).toHaveBeenCalledOnce())
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
+      expect(screen.getByTestId('cues-section')).toBeInTheDocument()
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getAllByTestId('track-replaced')).toHaveLength(1)
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      expect(screen.getByTestId('field-title')).toHaveValue('Alpha')
+    })
+
+    it('keeps the editor on the track when ⌘Z brings it back to To review', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      await waitFor(() => expect(api.restoreReplaced).toHaveBeenCalledOnce())
+      expect(await screen.findByTestId('cues-replaced-pill')).toBeInTheDocument()
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
+      expect(screen.getAllByTestId('track-replaced')).toHaveLength(2)
+    })
+
+    it('keeps the maximized cue editor open on a track Reviewed there', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      await screen.findByTestId('cue-wave')
+      fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
+      await screen.findByTestId('section-maximized-overlay')
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+      expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+    })
+
+    // Single and multi behave alike: a track that left the list stays while it is selected,
+    // alone or with others, and goes once the selection moves off it.
+    it('keeps a track that left To review while it stays in a selection of several', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+      await waitFor(() =>
+        expect(
+          screen.getAllByTestId('track-row').map((r) => r.getAttribute('aria-selected')),
+        ).toEqual(['true', 'true']),
+      )
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Alpha'),
+      ])
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
     })
 
     it('gives no icon for a track pending review only in another program', async () => {
