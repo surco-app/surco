@@ -19,6 +19,14 @@ describe('a count inside a sentence', () => {
     await i18n.changeLanguage('en')
   })
 
+  it('groups the other tallies a sentence counts with, such as how many of a selection are ready', async () => {
+    await i18n.changeLanguage('es')
+    expect(i18n.t('header.convertSomeSelected', { ready: 751, total: 1000 })).toBe(
+      'Convertir 751 de 1.000 seleccionadas',
+    )
+    await i18n.changeLanguage('en')
+  })
+
   it('leaves every other number as it is, since a year or a bitrate is not a tally', () => {
     expect(i18n.t('x {{year}}', { year: 2026 })).toBe('x 2026')
   })

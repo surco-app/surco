@@ -500,8 +500,8 @@ describe('QualityFilterBar', () => {
     const ring = screen.getByTestId('quality-filter-badGrid-progress')
     expect(ring).toHaveAttribute('role', 'progressbar')
     expect(ring).toHaveAttribute('aria-valuenow', '16')
-    expect(ring).toHaveAccessibleName('Measuring 344 of 2077')
-    expect(hoverTooltip(ring)).toEqual('Measuring 344 of 2077')
+    expect(ring).toHaveAccessibleName('Measuring 344 of 2,077')
+    expect(hoverTooltip(ring)).toEqual('Measuring 344 of 2,077')
   })
 
   // A filter still measuring has found nothing yet, which is not the same as holding nothing:

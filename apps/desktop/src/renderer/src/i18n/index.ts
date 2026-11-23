@@ -37,6 +37,21 @@ async function ensureLocaleLoaded(lng: string): Promise<void> {
 // language preference (which may pin a locale or keep following the system).
 const language = systemLocale()
 
+const TALLIES = new Set([
+  'count',
+  'total',
+  'ready',
+  'done',
+  'current',
+  'tracks',
+  'skipped',
+  'remaining',
+  'kept',
+  'changed',
+  'harmonic',
+  'milestone',
+])
+
 const countFormatter = {
   type: 'formatter' as const,
   init: () => {},
@@ -48,7 +63,7 @@ const countFormatter = {
     lng: string | undefined,
     options?: { interpolationkey?: string },
   ): unknown =>
-    options?.interpolationkey === 'count' && typeof value === 'number'
+    TALLIES.has(options?.interpolationkey ?? '') && typeof value === 'number'
       ? formatCount(value, lng ?? 'en')
       : value,
 }
