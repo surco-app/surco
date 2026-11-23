@@ -519,6 +519,16 @@ describe('libraryRequeue', () => {
     )
   })
 
+  // A retry is the only write that still reaches a row left on the old file: without the
+  // re-analysis it would land the old file's grid and overview on another recording.
+  it('hands Engine the move with the re-analysis a replacement of another recording owes', () => {
+    const q = queues()
+
+    libraryRequeue(q)('engine', entry({ reanalyse: true }))
+
+    expect(q.engine.enqueue).toHaveBeenCalledWith([], [{ from: FROM, to: TO, reanalyse: true }])
+  })
+
   // Rewritten in place, the row is found by the path it still has: only the size it still
   // records says the cut is owed, so the retry has to carry it.
   it('hands Engine a rewrite in place with the size that says its cut is owed', () => {
