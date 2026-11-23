@@ -32,7 +32,9 @@ import {
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  type Id3Values,
   readCoverAndNumbers,
+  readId3Values,
   readTagLibFields,
   setFlacComment,
   shiftFlacCues,
@@ -160,6 +162,8 @@ export type WorkerJob =
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
   | { type: 'heldComment'; file: string }
   | { type: 'tagLibRead'; file: string }
+  // Every value of a source's multi-value ID3 frames, which a save keeps (see keepId3Values).
+  | { type: 'id3Values'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
   // The self-check's cover and M4A numbers, read beside that snapshot.
@@ -185,6 +189,7 @@ export type WorkerJobResult =
   | Uint16Array
   | Uint8Array
   | TagLibRead
+  | Id3Values
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
@@ -299,6 +304,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return heldComment(job.file)
     case 'tagLibRead':
       return readTagLibFields(job.file)
+    case 'id3Values':
+      return readId3Values(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
     case 'verifyTagExtras':

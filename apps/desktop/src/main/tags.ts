@@ -32,7 +32,7 @@ import {
   WMP_RATING_USER,
 } from '../shared/rating'
 import { fullDateOf, MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
-import type { ReviewRawFields, TrackMetadata } from '../shared/types'
+import type { MetaTextKey, ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
@@ -230,6 +230,18 @@ export function readId3Lists(file: string): Partial<TrackMetadata> {
 }
 
 export function id3ListsOf(f: TagFile): Partial<TrackMetadata> {
+  return Object.fromEntries(
+    Object.entries(id3ValuesOf(f)).map(([key, values]) => [key, values.join(';').trim()]),
+  )
+}
+
+export type Id3Values = Partial<Record<MetaTextKey, string[]>>
+
+export function readId3Values(file: string): Id3Values {
+  return withTagLibFile(file, id3ValuesOf, {})
+}
+
+function id3ValuesOf(f: TagFile): Id3Values {
   const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
   if (id3?.version !== 4) return {}
   const lists = {
@@ -238,11 +250,21 @@ export function id3ListsOf(f: TagFile): Partial<TrackMetadata> {
     genre: id3.genres,
     composer: id3.composers,
   }
-  return Object.fromEntries(
-    Object.entries(lists)
-      .filter(([, values]) => values.length > 1)
-      .map(([key, values]) => [key, values.join(';').trim()]),
-  )
+  return Object.fromEntries(Object.entries(lists).filter(([, values]) => values.length > 1))
+}
+
+// A file read before every value was still serves its first one from readMeta's cache, and
+// moving that cache to a new namespace would re-read every library. So a field holding just
+// the first value of the source's multi-value frame is one the DJ never touched, and every
+// value is written back; a field the DJ changed or emptied is written as they left it.
+const same = (a: string, b: string): boolean =>
+  a.trim().normalize('NFC') === b.trim().normalize('NFC')
+
+export function keepId3Values(meta: TrackMetadata, values: Id3Values): TrackMetadata {
+  const kept = { ...meta }
+  for (const [key, list] of Object.entries(values) as [MetaTextKey, string[]][])
+    if (same(meta[key] ?? '', list[0])) kept[key] = list.join(';').trim()
+  return kept
 }
 
 function albumArtistsOf(f: TagFile): string[] | undefined {

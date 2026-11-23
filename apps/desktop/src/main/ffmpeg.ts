@@ -131,6 +131,8 @@ import { readTagFormats } from './tagFormats'
 import {
   type CueShift,
   dropsForeignCues,
+  type Id3Values,
+  keepId3Values,
   keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
@@ -2346,7 +2348,13 @@ export async function convertAudio(
   declickedSamples?: number
   written: ConversionWritten
 }> {
-  const meta = composeMeta(sourceMeta)
+  // A field still holding only the first value of the source's multi-value ID3 frame is one
+  // the DJ never touched (see keepId3Values).
+  const meta = composeMeta(
+    !clearExtras && ID3_INPUT.test(input)
+      ? keepId3Values(sourceMeta, await runInWorker<Id3Values>({ type: 'id3Values', file: input }))
+      : sourceMeta,
+  )
   // What the file was named before, for each DJ program whose sync rewrites the names it
   // holds when the file changes. A replacement's entries were made from the replaced file,
   // so its names are the ones they hold: a download spelled otherwise would read as the DJ's
