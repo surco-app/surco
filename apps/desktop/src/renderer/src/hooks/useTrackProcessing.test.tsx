@@ -3198,6 +3198,41 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     expect(keys).not.toContainEqual(['source-collection', 'engine'])
   })
 
+  // A direct repoint keeps the content id but moves the row onto the new file and empties its
+  // analysis: the open cue editor must drop what it read from the old file, or the DJ places
+  // cues against a waveform and a grid that are not the file they will play.
+  it('re-reads what the cue editor draws from the track’s file and analysis once a conversion reaches a DJ program', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/new.flac',
+        inPlace: false,
+        replaceShift: { moved: 120 },
+      }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { syncEngineDj: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    for (const key of [
+      'rekordbox-track-cues',
+      'rekordbox-cue-wave-detail',
+      'rekordbox-cue-wave-fine',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
   it('leaves the DJ collections alone when the conversion wrote nothing', async () => {
     setApi({
       processTrack: vi
