@@ -392,6 +392,7 @@ export const SourceTree = memo(function SourceTree({
     trail?: string,
   ): React.JSX.Element => {
     const isFolder = node.kind === 'folder'
+    const emptyFolder = isFolder && node.children?.length === 0
     const parentCrate =
       !hits && Boolean(edit?.crates) && !isFolder && (node.children?.length ?? 0) > 0
     const expandable = isFolder || parentCrate
@@ -492,7 +493,7 @@ export const SourceTree = memo(function SourceTree({
           <button
             type="button"
             data-testid={`source-node-${node.id}`}
-            aria-expanded={isFolder ? open : undefined}
+            aria-expanded={isFolder && !emptyFolder ? open : undefined}
             aria-current={selected || undefined}
             onClick={() => {
               if (pendingNode) return
@@ -536,9 +537,12 @@ export const SourceTree = memo(function SourceTree({
                 : ''
             }`}
           >
-            {isFolder && (
-              <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
-            )}
+            {isFolder &&
+              (emptyFolder ? (
+                <span className="w-3 shrink-0" />
+              ) : (
+                <Chevron size={12} className="shrink-0 text-fg-faint" aria-hidden="true" />
+              ))}
             {parentCrate && <span className="w-3 shrink-0" />}
             {recent && (
               <Clock

@@ -1657,3 +1657,17 @@ describe('a playlist with no name', () => {
     )
   })
 })
+
+describe('an empty folder', () => {
+  it('draws no disclosure arrow, since opening it would show nothing', () => {
+    setup(null, false, [
+      { id: 'empty', name: 'Empty folder', kind: 'folder', count: 0, children: [] },
+      { id: 'full', name: 'Sets', kind: 'folder', count: 1, children: [TODAS_BASES] },
+    ])
+    const empty = screen.getByTestId('source-node-empty')
+    expect(empty.querySelector('svg')).toBeNull()
+    expect(empty).not.toHaveAttribute('aria-expanded')
+    expect(screen.getByTestId('source-node-full').querySelector('svg')).not.toBeNull()
+    expect(screen.getByTestId('source-node-full')).toHaveAttribute('aria-expanded', 'false')
+  })
+})
