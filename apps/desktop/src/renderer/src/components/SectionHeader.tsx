@@ -136,6 +136,7 @@ export function SectionHeader({
   const summaryNode = !open && summary && (
     <span
       data-testid={summaryTestId}
+      data-muted={summaryMuted || undefined}
       className={`w-0 min-w-0 flex-1 truncate pl-3 text-right text-xs font-normal tabular-nums ${
         summaryMuted ? 'text-fg-faint' : 'text-fg-dim'
       }`}
@@ -149,6 +150,7 @@ export function SectionHeader({
         <div
           ref={leadRef}
           data-testid="section-header-lead"
+          data-wrap="true"
           className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2"
         >
           {/* The button stretches across the free width (and pads a few px vertically)
@@ -183,7 +185,11 @@ export function SectionHeader({
                 aria-hidden="true"
                 className={`h-3 w-3 shrink-0 transition-transform ${open ? 'rotate-90' : ''}`}
               />
-              <span ref={titleRef} data-testid="section-title" className="min-w-0 truncate">
+              <span
+                ref={titleRef}
+                data-testid="section-title"
+                data-truncate="true"
+                className="min-w-0 truncate">
                 {title}
               </span>
               <Tooltip label={titleCut ? title : ''} />
