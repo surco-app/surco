@@ -139,6 +139,7 @@ import {
   readCueTree,
   readId3Lists,
   readTagLibExtras,
+  type ShownList,
   type TagLibRead,
   type UserTextValues,
 } from './tags'
@@ -806,7 +807,10 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
     // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
     const [cover, foreignTags] = full
-      ? await Promise.all([extractCover(input, dims), readForeignTags(input)])
+      ? await Promise.all([
+          extractCover(input, dims),
+          readForeignTags(input).then((read) => withForeignLists(read, tagLib.foreignLists)),
+        ])
       : [null, []]
     return {
       tags,
@@ -820,6 +824,18 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // degraded state the three granular reads reached when each failed on its own.
     return null
   }
+}
+
+// Every value of the tags ffmpeg listed by one (see foreignListsOf), and the rows it left out.
+function withForeignLists(tags: ForeignTag[], lists: ShownList[] = []): ForeignTag[] {
+  const byName = new Map(lists.map((list) => [list.name.toLowerCase(), list.value]))
+  const listed = new Set(tags.map((tag) => tag.name.toLowerCase()))
+  return [
+    ...tags.map((tag) => ({ ...tag, value: byName.get(tag.name.toLowerCase()) ?? tag.value })),
+    ...lists
+      .filter((list) => list.unlisted && !listed.has(list.name.toLowerCase()))
+      .map(({ name, value }) => ({ name, value })),
+  ]
 }
 
 interface ProbeResult {

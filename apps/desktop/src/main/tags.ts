@@ -33,7 +33,7 @@ import {
   WMP_RATING_USER,
 } from '../shared/rating'
 import { fullDateOf, MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
-import type { MetaTextKey, ReviewRawFields, TrackMetadata } from '../shared/types'
+import type { ForeignTag, MetaTextKey, ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
@@ -540,17 +540,20 @@ export interface TagLibRead {
   id3Lists: Partial<TrackMetadata>
   popm: string
   reviewRaw: ReviewRawFields
+  foreignLists?: ShownList[]
 }
 
 export function readTagLibFields(file: string): TagLibRead {
   const taglib = lazyTagLibFile(file)
   try {
+    const foreignLists = taglib.use(foreignListsOf, [])
     return {
       grouping: taglib.use(itunesGroupingOf, ''),
       extras: taglib.use(tagLibExtrasOf, {}),
       id3Lists: taglib.use(id3ListsOf, {}),
       popm: taglib.use(popmRatingOf, ''),
       reviewRaw: taglib.use(tagLibReviewRawOf, {}),
+      ...(foreignLists.length > 0 && { foreignLists }),
     }
   } finally {
     taglib.dispose()
@@ -678,6 +681,22 @@ function multiValuedTags(f: TagFile): (CarriedTag & { carried: string })[] {
     frame: frames.get(name),
     language: languages.get(name),
   }))
+}
+
+// The inspector's rows for the tags holding several values, every value joined by ';' as
+// the ffmetadata dump it reads joins a FLAC's repeated comment: ffmpeg lists an ID3 frame or
+// TXXX by its first value and an M4A freeform atom by its last, and a v2.3 IPLS not at all
+// (`unlisted`, a row of its own).
+export type ShownList = ForeignTag & { unlisted?: true }
+
+function foreignListsOf(f: TagFile): ShownList[] {
+  return multiValuedTags(f)
+    .filter(({ values, language }) => values.length > 1 && language === undefined)
+    .map(({ name, values, carried, frame }) => ({
+      name,
+      value: values.join(';'),
+      ...(carried === '' && frame && { unlisted: true as const }),
+    }))
 }
 
 // Never carried by carryUnmanagedTags whatever the source holds: Surco's own fields, the
