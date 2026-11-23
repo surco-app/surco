@@ -1318,6 +1318,7 @@ export async function runProcessTrack(
         originalHeldBy,
         musicNameLeftMarked,
         verification,
+        ...(written.replaceShift ? { replaceShift: written.replaceShift } : {}),
       }
 
     // The conversion wrote a real file the renderer may play next — directly, or
@@ -1343,6 +1344,7 @@ export async function runProcessTrack(
       originalHeldBy,
       musicNameLeftMarked,
       verification,
+      ...(written.replaceShift ? { replaceShift: written.replaceShift } : {}),
     }
   } catch (e) {
     // The toast is all the user sees and it is gone once dismissed; the log is what a

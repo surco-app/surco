@@ -4741,3 +4741,40 @@ describe('runProcessTrack — a library that does not follow the rename', () => 
     expect(deps.librariesKeepingOriginal).not.toHaveBeenCalled()
   })
 })
+
+describe('runProcessTrack — replacement shift', () => {
+  const withShift = (replaceShift?: { moved: number }) =>
+    makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written: { ...written, ...(replaceShift ? { replaceShift } : {}) },
+      })),
+    })
+
+  // The "To review" list can only tell the DJ which replaced tracks moved if the measured
+  // shift survives the trip from the converter to the renderer.
+  it('hands the measured shift of a replacement to the renderer', async () => {
+    const result = await runProcessTrack(
+      job({ replacesPath: '/m/old.mp3' }),
+      withShift({ moved: 120 }),
+    )
+    expect(result.replaceShift).toEqual({ moved: 120 })
+  })
+
+  // Apple Music only returns early with a different shape; losing the shift there would
+  // hide exactly the replacements the DJ filed straight into Music.
+  it('hands it back on an Apple Music only replacement too', async () => {
+    const deps = withShift({ moved: 120 })
+    deps.settings = settings({ addToAppleMusic: true, keepOutputCopy: false })
+    deps.platform = 'darwin'
+    const result = await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(result.replaceShift).toEqual({ moved: 120 })
+  })
+
+  // An ordinary conversion replaced nothing, so it must not look like a measured one.
+  it('says nothing about a shift on an ordinary conversion', async () => {
+    const result = await runProcessTrack(job(), withShift())
+    expect('replaceShift' in result).toBe(false)
+  })
+})
