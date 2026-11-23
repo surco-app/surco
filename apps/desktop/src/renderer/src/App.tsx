@@ -327,6 +327,7 @@ import type { CopiedTags, TrackItem } from './types'
 const SIDEBAR_PEEK_DELAY_MS = 150
 const PEEK_TREE_WIDTH = 240
 const NO_HIDDEN_SOURCES: PlaylistSource[] = []
+const NO_SELECTED_PATHS: ReadonlySet<string> = new Set()
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
 const NOTICE_NAMES = 3
@@ -808,9 +809,11 @@ export default function App(): React.JSX.Element {
   const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
   const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
   const replacedEntries = useReplacedTracks()
+  const [selectedPaths, setSelectedPaths] = useState<ReadonlySet<string>>(NO_SELECTED_PATHS)
   const browser = useSourceBrowser({
     matchingPathPairs,
     replacedEntries,
+    selectedPaths,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
@@ -2191,6 +2194,21 @@ export default function App(): React.JSX.Element {
     if (!sameTracks(prevSelectedTracks.current, next)) prevSelectedTracks.current = next
     return prevSelectedTracks.current
   }, [tracks, selectedIdSet])
+  // Every file a selected track goes by, so a row it has in To review stays while it is
+  // selected, whichever of them the program's row names.
+  useEffect(() => {
+    setSelectedPaths(
+      selectedTracks.length === 0
+        ? NO_SELECTED_PATHS
+        : new Set(
+            selectedTracks.flatMap((t) =>
+              [t.inputPath, t.outputPath ?? [], t.movedFrom ?? []]
+                .flat()
+                .map((p) => p.normalize('NFC')),
+            ),
+          ),
+    )
+  }, [selectedTracks])
   // The floating player (audio element, visibility, follow-selection playback)
   // lives in the hook; App renders the <audio> element and the card.
   const {

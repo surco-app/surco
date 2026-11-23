@@ -14,6 +14,7 @@ import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import { claimCueSave } from '../lib/cueSaveEcho'
 import { focusCue, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { offerShortcutUndo, takeShortcutUndo } from '../lib/shortcutUndo'
@@ -1368,6 +1369,29 @@ describe('CuesSection replaced track', () => {
     setup(READ, null, undefined, { replacedTracks: async () => [entry(['traktor'])] })
     await ready()
     expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
+  })
+
+  // The editor stays on a track whose save took it out of To review (option B), so the save
+  // must read as done there: the pill goes with the review and the Saved mark shows.
+  it('drops the pill and shows Saved once a save takes the track out of To review', async () => {
+    let listed = [entry(['rekordbox'])]
+    setup(READ, null, undefined, {
+      replacedTracks: async () => listed,
+      reviewReplaced: async () => {
+        const [was] = listed
+        listed = []
+        return was
+      },
+    })
+    await ready()
+    expect(await screen.findByTestId('cues-replaced-pill')).toBeInTheDocument()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+    act(() => {
+      claimCueSave('rekordbox', { tracks: 1, changes: 0, cues: ['/m/g.wav'] })
+    })
+    expect(screen.getByTestId('cues-saved')).toBeInTheDocument()
   })
 
   // Reviewed removes itself with its row. Keyboard and VoiceOver users must land back on
