@@ -341,6 +341,91 @@ describe('registerCuesIpc', () => {
     expect(applyQuietly).toHaveBeenCalled()
   })
 
+  const fakeEvent = () => {
+    const send = vi.fn()
+    return { send, event: { sender: { isDestroyed: () => false, send } } }
+  }
+
+  const registerWriting = (writeCommentToFile: (path: string) => Promise<boolean>) => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    return enqueue
+  }
+
+  const commentItems = (...names: string[]) =>
+    names.map((name, i) => ({
+      contentId: String(103 + i),
+      path: `/m/${name}.wav`,
+      label: name,
+      count: '8',
+      mode: 'prepend',
+    }))
+
+  it('tells the window how many files are written after each one, so the button can fill', async () => {
+    registerWriting(async (path) => path !== '/m/a.wav')
+    const { send, event } = fakeEvent()
+    await handler('cues:saveComments')(event, commentItems('a', 'b'), true)
+    expect(send.mock.calls).toEqual([
+      ['cues:commentProgress', { done: 0, total: 2 }],
+      ['cues:commentProgress', { done: 1, total: 2 }],
+      ['cues:commentProgress', { done: 2, total: 2 }],
+    ])
+  })
+
+  it('stops after the file in progress when cancelled and hands back the rest, so they stay pending', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    const enqueue = registerWriting(writeCommentToFile)
+    const done = handler('cues:saveComments')(fakeEvent().event, commentItems('a', 'b', 'c'), true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await handler('cues:cancelComments')()
+    release[0](true)
+    expect(await done).toEqual({ failed: [], unwritten: ['/m/b.wav', '/m/c.wav'] })
+    expect(writeCommentToFile).toHaveBeenCalledTimes(1)
+    expect(enqueue.mock.calls[0][0]).toHaveLength(3)
+  })
+
+  it('a cancel during the last file leaves nothing unwritten, so the pending list empties', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    registerWriting(writeCommentToFile)
+    const done = handler('cues:saveComments')(fakeEvent().event, commentItems('a'), true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await handler('cues:cancelComments')()
+    release[0](true)
+    expect(await done).toEqual({ failed: [], unwritten: [] })
+  })
+
+  it('a cancel from an earlier save does not stop the next one', async () => {
+    const writeCommentToFile = vi.fn(async () => true)
+    registerWriting(writeCommentToFile)
+    await handler('cues:cancelComments')()
+    const result = await handler('cues:saveComments')(
+      fakeEvent().event,
+      commentItems('a', 'b'),
+      true,
+    )
+    expect(writeCommentToFile).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ failed: [], unwritten: [] })
+  })
+
+  it('sends no progress when only rekordbox is asked', async () => {
+    registerWriting(async () => true)
+    const { send, event } = fakeEvent()
+    await handler('cues:saveComments')(event, commentItems('a'), false)
+    expect(send).not.toHaveBeenCalled()
+  })
+
   it('writes each file after queueing rekordbox and reports the ones that failed, so the window can name them', async () => {
     const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
     const writeCommentToFile = vi.fn(async (path: string) => path !== '/m/b.wav')
@@ -359,13 +444,13 @@ describe('registerCuesIpc', () => {
       { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4', mode: 'prepend' },
       { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'replace' },
     ]
-    const result = await handler('cues:saveComments')({}, items, true)
+    const result = await handler('cues:saveComments')(fakeEvent().event, items, true)
     expect(enqueue).toHaveBeenCalledWith(
       items.map((item) => ({ ...item, id: expect.any(String), kind: 'comment' })),
     )
     expect(writeCommentToFile).toHaveBeenNthCalledWith(1, '/m/a.wav', '8 - 4', 'prepend')
     expect(writeCommentToFile).toHaveBeenNthCalledWith(2, '/m/b.wav', '6', 'replace')
-    expect(result).toEqual({ failed: ['/m/b.wav'] })
+    expect(result).toEqual({ failed: ['/m/b.wav'], unwritten: [] })
   })
 
   it('writes the files one at a time, since they sit on a NAS', async () => {
@@ -383,7 +468,7 @@ describe('registerCuesIpc', () => {
       writeCommentToFile,
     })
     const done = handler('cues:saveComments')(
-      {},
+      fakeEvent().event,
       [
         { contentId: '103', path: '/m/a.wav', label: 'a', count: '8', mode: 'prepend' },
         { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'prepend' },
@@ -396,7 +481,7 @@ describe('registerCuesIpc', () => {
     release[0](true)
     await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(2))
     release[1](true)
-    expect(await done).toEqual({ failed: [] })
+    expect(await done).toEqual({ failed: [], unwritten: [] })
   })
 
   it("leaves the files alone when only rekordbox is asked, since the choice is the user's", async () => {
@@ -418,7 +503,7 @@ describe('registerCuesIpc', () => {
       false,
     )
     expect(writeCommentToFile).not.toHaveBeenCalled()
-    expect(result).toEqual({ failed: [] })
+    expect(result).toEqual({ failed: [], unwritten: [] })
   })
 
   it('never queues a comment for a track of another program, since only rekordbox has the Comments column it fills', async () => {

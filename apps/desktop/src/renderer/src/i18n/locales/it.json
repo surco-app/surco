@@ -1214,6 +1214,7 @@
         "phrasesSkipped_other": "{{count}} senza due CALL, non toccati",
         "saveComments_one": "Salva {{count}} commento",
         "saveComments_other": "Salva {{count}} commenti",
+        "savingComments": "Salvataggio… {{done}}/{{total}}",
         "commentsFileFailed_one": "Impossibile scrivere in {{count}} file",
         "commentsFileFailed_other": "Impossibile scrivere in {{count}} file",
         "commentsWhere": "Opzioni di salvataggio",

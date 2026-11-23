@@ -1,7 +1,7 @@
 import type { IpcRenderer } from 'electron'
 import type { CuesApi } from './api'
 
-export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke'>): CuesApi {
+export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke' | 'on' | 'removeListener'>): CuesApi {
   return {
     trackCues: (contentId) => ipc.invoke('cues:trackCues', contentId),
     liveCues: (contentIds) => ipc.invoke('cues:liveCues', contentIds),
@@ -18,5 +18,11 @@ export function createCuesApi(ipc: Pick<IpcRenderer, 'invoke'>): CuesApi {
     undo: (contentId) => ipc.invoke('cues:undo', contentId),
     save: (reqs) => ipc.invoke('cues:save', reqs),
     saveComments: (items, toFile) => ipc.invoke('cues:saveComments', items, toFile),
+    cancelComments: () => ipc.invoke('cues:cancelComments'),
+    onCommentProgress: (cb) => {
+      const listener = (_e: unknown, p: { done: number; total: number }): void => cb(p)
+      ipc.on('cues:commentProgress', listener)
+      return () => ipc.removeListener('cues:commentProgress', listener)
+    },
   }
 }

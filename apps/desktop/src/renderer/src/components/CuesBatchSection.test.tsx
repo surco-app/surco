@@ -72,8 +72,15 @@ function setup(
   })
   const saveComments = vi.fn<Api['cues']['saveComments']>(async () => {
     calls.push('saveComments')
-    return { failed: [] }
+    return { failed: [], unwritten: [] }
   })
+  const cancelComments = vi.fn<Api['cues']['cancelComments']>(async () => {})
+  let progressListener: (p: { done: number; total: number }) => void = () => {}
+  const onCommentProgress = vi.fn<Api['cues']['onCommentProgress']>((cb) => {
+    progressListener = cb
+    return () => {}
+  })
+  const emitProgress = (p: { done: number; total: number }) => act(() => progressListener(p))
   const api = installApi({
     cues: {
       twins: vi.fn<Api['cues']['twins']>(async (file) => twins[file] ?? {}),
@@ -90,6 +97,8 @@ function setup(
       queued: vi.fn<Api['cues']['queued']>(async () => null),
       save: saveRekordboxCues,
       saveComments,
+      cancelComments,
+      onCommentProgress,
     },
   })
   api.dj.askToApply = askToApply
@@ -142,6 +151,8 @@ function setup(
     onCommentsSaved,
     onSaveSettings,
     saveComments,
+    cancelComments,
+    emitProgress,
     changeSettings,
     changeTargets,
   }
@@ -257,8 +268,8 @@ describe('Phrases over several selected tracks', () => {
     let finish = () => {}
     saveComments.mockImplementationOnce(
       () =>
-        new Promise<{ failed: string[] }>((resolve) => {
-          finish = () => resolve({ failed: [] })
+        new Promise<{ failed: string[]; unwritten: string[] }>((resolve) => {
+          finish = () => resolve({ failed: [], unwritten: [] })
         }),
     )
     fireEvent.click(await putPhrases())
@@ -406,7 +417,7 @@ describe('Phrases over several selected tracks', () => {
 
   it('keeps the files that failed pending and names only the file write, since rekordbox did save, so the DJ can retry just those', async () => {
     const { saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
-    saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'] })
+    saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'], unwritten: [] })
     fireEvent.click(await putPhrases())
     expect(await screen.findByTestId('cues-batch-comments-failed')).toHaveTextContent(
       "Couldn't write to 1 file",
@@ -416,6 +427,111 @@ describe('Phrases over several selected tracks', () => {
     )
     expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent('Save 1 comment')
     expect(onCommentsSaved).toHaveBeenCalledWith([PHRASED[0]], true)
+  })
+
+  const holdSave = (saveComments: ReturnType<typeof setup>['saveComments']) => {
+    let finish: (r: { failed: string[]; unwritten: string[] }) => void = () => {}
+    saveComments.mockImplementationOnce(() => new Promise((resolve) => (finish = resolve)))
+    return (r: { failed: string[]; unwritten: string[] }) => act(async () => finish(r))
+  }
+
+  it('fills the button and counts the files while they are written, so a long batch is not a dead button', async () => {
+    const { saveComments, emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    await emitProgress({ done: 1, total: 2 })
+    expect(screen.getByTestId('cues-batch-comments-progress')).toHaveTextContent(
+      i18n.t('editor.cues.batch.savingComments', { done: 1, total: 2 }),
+    )
+    expect(screen.getByTestId('cues-batch-comments-fill')).toHaveStyle({ transform: 'scaleX(0.5)' })
+    expect(screen.getByTestId('cues-batch-comments-save')).toBeEnabled()
+    expect(screen.getByTestId('cues-batch-comments-options')).toBeDisabled()
+    expect(screen.getByTestId('cues-batch-comments-discard')).toBeDisabled()
+  })
+
+  it('clicking the filling button cancels, and the unwritten tracks stay pending without a warning', async () => {
+    const { saveComments, cancelComments, onCommentsSaved, emitProgress } = setup(
+      {},
+      TARGETS,
+      {},
+      PHRASED,
+    )
+    const finish = holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    await emitProgress({ done: 1, total: 2 })
+    fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
+    expect(cancelComments).toHaveBeenCalledTimes(1)
+    await finish({ failed: [], unwritten: [PHRASED[1].path] })
+    await waitFor(() =>
+      expect(screen.getByTestId('cues-batch-comments-save')).toHaveTextContent('Save 1 comment'),
+    )
+    expect(screen.queryByTestId('cues-batch-comments-failed')).toBeNull()
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(onCommentsSaved).toHaveBeenCalledWith([PHRASED[0]], true)
+  })
+
+  it('shows no fill when only rekordbox is asked, since no file is written to count', async () => {
+    const { saveComments, changeSettings } = setup({}, TARGETS, {}, PHRASED)
+    changeSettings({ commentsToFile: false })
+    holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(screen.getByTestId('cues-batch-comments-save')).toBeDisabled()
+  })
+
+  it('keeps the button at one width while saving, so the label swap never moves the controls beside it', async () => {
+    const { saveComments, emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    await emitProgress({ done: 0, total: 2 })
+    const labels = screen.getByTestId('cues-batch-comments-labels')
+    expect(labels.children).toHaveLength(4)
+    await emitProgress({ done: 1, total: 2 })
+    expect(screen.getByTestId('cues-batch-comments-sizer')).toHaveTextContent(
+      i18n.t('editor.cues.batch.savingComments', { done: 2, total: 2 }),
+    )
+    expect(screen.getByTestId('cues-batch-comments-sizer')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByTestId('cues-batch-comments-progress')).toHaveTextContent(
+      i18n.t('editor.cues.batch.savingComments', { done: 1, total: 2 }),
+    )
+    expect(labels).toHaveTextContent(i18n.t('editor.cues.batch.saveComments', { count: 2 }))
+    expect(labels).toHaveTextContent(i18n.t('common.cancel'))
+  })
+
+  it('ignores progress when this section has no save running, so a late event cannot leave the button stuck on cancel', async () => {
+    const { emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    const save = await putPhrases()
+    await emitProgress({ done: 2, total: 2 })
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(save).toHaveTextContent(i18n.t('editor.cues.batch.saveComments', { count: 2 }))
+    expect(save).not.toHaveAttribute('aria-label')
+  })
+
+  it('keeps the button disabled with no fill while the close-rekordbox dialog is open, since nothing is running to cancel yet', async () => {
+    const { askToApply, saveComments } = setup({}, TARGETS, {}, PHRASED)
+    askToApply.mockImplementationOnce(() => new Promise(() => {}))
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(askToApply).toHaveBeenCalledTimes(1))
+    expect(screen.getByTestId('cues-batch-comments-save')).toBeDisabled()
+    expect(screen.queryByTestId('cues-batch-comments-fill')).toBeNull()
+    expect(saveComments).not.toHaveBeenCalled()
+  })
+
+  it('describes the running button by its count, so a screen reader hears the progress and not only Cancel', async () => {
+    const { saveComments, emitProgress } = setup({}, TARGETS, {}, PHRASED)
+    holdSave(saveComments)
+    fireEvent.click(await putPhrases())
+    await waitFor(() => expect(saveComments).toHaveBeenCalledTimes(1))
+    await emitProgress({ done: 1, total: 2 })
+    const progress = screen.getByTestId('cues-batch-comments-progress')
+    expect(screen.getByTestId('cues-batch-comments-save')).toHaveAttribute(
+      'aria-describedby',
+      progress.id,
+    )
   })
 
   it('offers the two choices as two checked groups split by a line, so where and how read as separate questions', async () => {
