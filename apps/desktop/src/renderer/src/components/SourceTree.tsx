@@ -562,7 +562,9 @@ export const SourceTree = memo(function SourceTree({
                 className="shrink-0 text-fg-faint"
               />
             )}
-            <span className="min-w-0 truncate">{node.name}</span>
+            <span dir="auto" className="min-w-0 truncate">
+              {node.name}
+            </span>
             {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}
             {dropOn?.id === node.id ? (
               <span

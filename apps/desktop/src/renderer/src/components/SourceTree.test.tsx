@@ -1584,3 +1584,12 @@ describe('SourceTree dropping nodes', () => {
     expect(onOuterDrop).not.toHaveBeenCalled()
   })
 })
+
+describe('a playlist name in a right-to-left script', () => {
+  it('runs from its own side, so a cut hides its end and not its start', () => {
+    setup(null, false, [{ id: 'ar', name: 'حفلة القاهرة الموسعة', kind: 'playlist', count: 2 }])
+    expect(
+      within(screen.getByTestId('source-node-ar')).getByText('حفلة القاهرة الموسعة'),
+    ).toHaveAttribute('dir', 'auto')
+  })
+})
