@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SuggestionChips } from './SuggestionChips'
 
@@ -192,5 +192,47 @@ describe('SuggestionChips', () => {
     render(<SuggestionChips {...props} foldKey="genre" />)
     expect(screen.queryByTestId('chip-less')).not.toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
+  })
+
+  it('keeps a long tag inside the form when the row is open, so it never pushes the editor sideways', () => {
+    overflow.visibleCount = 1
+    const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
+    render(<SuggestionChips suggestions={[long, 'V-Pop']} isOn={() => true} onPick={() => {}} />)
+    expect(screen.getByTestId(`chip-${long}`)).toHaveClass('max-w-full')
+  })
+
+  it('keeps the share of tracks readable when a long tag is cut', () => {
+    const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
+    render(
+      <SuggestionChips
+        suggestions={[long]}
+        isOn={() => false}
+        isPartial={() => true}
+        partialLabel={() => '1/7'}
+        onPick={() => {}}
+      />,
+    )
+    const name = within(screen.getByTestId(`chip-${long}`)).getByText(long)
+    expect(name).not.toHaveTextContent('1/7')
+    expect(screen.getByTestId(`chip-${long}`)).toHaveTextContent('1/7')
+  })
+
+  it('shows the whole tag on hover when the chip had to cut it', () => {
+    vi.useFakeTimers()
+    const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
+    render(<SuggestionChips suggestions={[long, 'Dub']} isOn={() => false} onPick={() => {}} />)
+    const name = within(screen.getByTestId(`chip-${long}`)).getByText(long)
+    Object.defineProperty(name, 'scrollWidth', { configurable: true, value: 358 })
+    Object.defineProperty(name, 'clientWidth', { configurable: true, value: 200 })
+    fireEvent.pointerEnter(screen.getByTestId(`chip-${long}`))
+    fireEvent.pointerMove(screen.getByTestId(`chip-${long}`), { clientX: 10, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(long)
+    fireEvent.pointerLeave(screen.getByTestId(`chip-${long}`))
+    fireEvent.pointerEnter(screen.getByTestId('chip-Dub'))
+    fireEvent.pointerMove(screen.getByTestId('chip-Dub'), { clientX: 10, clientY: 10 })
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 })
