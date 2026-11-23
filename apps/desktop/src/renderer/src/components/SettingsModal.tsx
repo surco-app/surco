@@ -503,6 +503,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${entry.id}`}
+            data-pinned-preview={tab === 'cues'}
             className={`${tab === 'cues' ? 'scroll-pt-40 ' : ''}-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]`}
           >
             <SettingsHintsVisible value={synced.showEditorHints}>

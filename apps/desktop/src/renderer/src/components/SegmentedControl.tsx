@@ -135,6 +135,7 @@ export function SegmentedControl<T extends string>({
       role="group"
       aria-label={label}
       data-layout={grid ? 'grid' : fill ? 'fill' : 'row'}
+      data-wrap={!grid}
       style={columns}
       // self-start: several callers stack settings in a flex column, whose default
       // stretch would pull the track to the panel's full width now that it paints a box.
@@ -159,6 +160,8 @@ export function SegmentedControl<T extends string>({
         ref={overlayRef}
         data-testid={`${testidPrefix}-highlight`}
         aria-hidden="true"
+        data-wrap={!grid}
+        data-settled={settled}
         // Mirrors the row's exact layout (same padding, gap and type), every copy
         // painted raised, then clips down to the active option's box. clip-path is
         // composited and a transition retargets from the current clip, so rapid

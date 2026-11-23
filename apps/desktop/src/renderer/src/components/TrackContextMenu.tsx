@@ -97,6 +97,7 @@ function MenuItem({
     >
       <span
         data-testid={`${testid}-label`}
+        data-wrap={wrap ? 'true' : 'false'}
         className={`block min-w-0 ${wrap ? 'break-words' : 'truncate'}`}
       >
         {label}

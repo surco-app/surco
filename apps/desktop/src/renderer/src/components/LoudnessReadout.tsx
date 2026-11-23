@@ -36,7 +36,7 @@ export const GRADE_NAME: Record<Grade, string> = {
   warn: 'editor.loudnessGradeWarn',
   bad: 'editor.loudnessGradeBad',
 }
-const GRADE_TEXT: Record<Grade, string> = {
+export const GRADE_TEXT: Record<Grade, string> = {
   good: 'text-fg',
   warn: 'text-warn',
   bad: 'text-danger',

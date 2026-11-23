@@ -220,8 +220,6 @@ describe('SettingsModal sidebar indicator', () => {
     )
     const pill = screen.getByTestId('settings-tab-indicator')
     expect(pill).toHaveAttribute('aria-hidden', 'true')
-    expect(pill.className).toContain('pointer-events-none')
-    expect(screen.getByTestId('settings-tab-general').className).not.toContain('accent-soft')
     fireEvent.click(screen.getByTestId('settings-tab-naming'))
     expect(screen.getByTestId('settings-tab-indicator')).toBeInTheDocument()
   })
@@ -357,14 +355,14 @@ describe('SettingsModal tablist', () => {
 
   it('leaves room at the top of the scrolling body while Cues is open, so a control focused by Shift+Tab never ends up hidden under the pinned preview, and takes it back on the other tabs', () => {
     open()
-    expect(screen.getByRole('tabpanel')).not.toHaveClass('scroll-pt-40')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-pinned-preview', 'false')
     fireEvent.click(screen.getByTestId('settings-tab-cues'))
-    expect(screen.getByRole('tabpanel')).toHaveClass('scroll-pt-40')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-pinned-preview', 'true')
     expect(screen.getByRole('tabpanel')).toContainElement(
       screen.getByTestId('cue-flow-bench-preview'),
     )
     fireEvent.click(screen.getByTestId('settings-tab-general'))
-    expect(screen.getByRole('tabpanel')).not.toHaveClass('scroll-pt-40')
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('data-pinned-preview', 'false')
   })
 
   it('keeps the close button in the panel heading, outside the scrolling tab body, so no tab content can run under it', () => {

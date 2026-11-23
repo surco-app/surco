@@ -130,6 +130,7 @@ export function PropertiesReadout({
                 <div
                   key={r.id}
                   data-testid={`property-${r.id}`}
+                  data-full-width={r.wide || r.id === lastShortId}
                   className={`flex items-center justify-between gap-3 bg-[var(--color-field)] px-3 py-2 ${
                     r.wide || r.id === lastShortId ? '@[30rem]:col-span-2' : ''
                   }`}

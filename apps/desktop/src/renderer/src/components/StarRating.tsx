@@ -75,6 +75,7 @@ export function StarRating({
             }}
             onMouseEnter={() => setHovered(n)}
             onAnimationEnd={() => setPunched(0)}
+            data-punched={punched === n}
             className={`press relative after:absolute after:-inset-x-px after:-inset-y-1 after:content-[''] ${punched === n ? 'star-punch' : ''} ${
               filled ? 'text-warn' : 'text-fg-faint'
             }`}

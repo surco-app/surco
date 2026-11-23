@@ -1463,6 +1463,7 @@ function Editing({
         type="button"
         data-testid="cues-save"
         disabled={unchanged || blocked}
+        data-filled={!unchanged}
         aria-label={maximized ? undefined : tr(copy.save)}
         onClick={() => void save()}
         className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
@@ -1668,6 +1669,7 @@ function Editing({
             type="button"
             data-testid="cues-save"
             disabled={unchanged || blocked}
+            data-filled={!unchanged}
             aria-label={tr(copy.save)}
             onClick={() => void save()}
             className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
