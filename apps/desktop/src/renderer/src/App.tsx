@@ -141,6 +141,7 @@ import {
 } from './hooks/useMatchingEdit'
 import { useMatchingPathPairs } from './hooks/useMatchingPathPairs'
 import { useMatchingSuggestions } from './hooks/useMatchingSuggestions'
+import { useMediaSession } from './hooks/useMediaSession'
 import { useMetadataClipboard } from './hooks/useMetadataClipboard'
 import { useMetaUndo } from './hooks/useMetaUndo'
 import { type SettingsTab, useOverlays } from './hooks/useOverlays'
@@ -2715,6 +2716,7 @@ export default function App(): React.JSX.Element {
     qualityFilterRef,
     revealRowRef,
   })
+  useMediaSession({ audioRef, track: playerVisible ? playerTrack : null, moveSelection })
   useEffect(() => {
     const id = pendingRestoredReveal.current
     if (!id) return
