@@ -3025,3 +3025,31 @@ describe('TrackList title of a versioned track', () => {
     expect(screen.queryByTestId('track-title-fit')).toBeNull()
   })
 })
+
+describe('a row with more marks than its line holds', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  it('keeps the artist readable and folds the marks that do not fit into a +N that names them', () => {
+    vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockImplementation(function (
+      this: HTMLElement,
+    ) {
+      return this.getAttribute('data-testid') === 'track-automatched' ? 16 : 2
+    })
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(16)
+    renderList([track({ id: 'a', autoMatched: true })], null, [], {
+      playedPaths: new Set(['/music/a.wav']),
+    })
+    const row = screen.getByTestId('track-row')
+    expect(within(row).getByTestId('track-artist').parentElement).toHaveClass('min-w-12')
+    const more = within(row).getByTestId('track-marks-more')
+    expect(more).toHaveTextContent('+1')
+    expect(hoverTooltip(more)).toEqual(i18n.t('trackList.autoMatched'))
+  })
+
+  it('shows no +N while every mark fits', () => {
+    renderList([track({ id: 'a', autoMatched: true })], null, [], {
+      playedPaths: new Set(['/music/a.wav']),
+    })
+    expect(screen.queryByTestId('track-marks-more')).not.toBeInTheDocument()
+  })
+})
