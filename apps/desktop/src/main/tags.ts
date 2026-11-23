@@ -3,14 +3,14 @@ import {
   ByteVector,
   Id3v2AttachmentFrame,
   Id3v2CommentsFrame,
-  type Id3v2Frame,
+  Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifier,
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
   Id3v2Settings,
-  type Id3v2Tag,
+  Id3v2Tag,
   Id3v2TextInformationFrame,
   Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
@@ -61,11 +61,71 @@ Id3v2Settings.useNonStandardV2V3GenreSeparators = false
 // TagLib knows TSOP, TSOA and TSOT as ID3v2.4 frames only and leaves them out of every v2.3
 // tag it saves, though iTunes and mp3tag write and read them on v2.3 all the same, so any
 // save of an iTunes-tagged MP3, AIFF or WAV (a list fix, a cue, an update) lost the sort
-// names. TagLib offers no way to name a frame for another version, and its readers and
-// setters compare these very identifier objects, so each one is given its v2.4 name for v2.3
-// too, here where every TagLib writer in Surco is loaded from.
-for (const id of ['TSOP', 'TSOA', 'TSOT'])
+// names. The disc subtitle (TSST), the producer notice (TPRO) and the musicians (TMCL) were
+// lost the same way to the v2.3 tag every update pins. TagLib offers no way to name a frame
+// for another version, and its readers and setters compare these very identifier objects,
+// so each one is given its v2.4 name for v2.3 too, here where every TagLib writer in Surco
+// is loaded from. TMOO stays out on purpose: Surco writes the mood as TXXX MOOD, and a TMOO
+// kept beside it would be read first, the old mood over the new.
+for (const id of ['TSOP', 'TSOA', 'TSOT', 'TSST', 'TPRO', 'TMCL'])
   Object.assign(Id3v2FrameIdentifiers[id], { _version3: Id3v2FrameIdentifiers[id].render(4) })
+
+// TagLib reads a v2.3 text frame up to its first null and writes its values joined by '/',
+// right for v2.3's single texts but not for its involved people list: IPLS holds role and
+// name pairs separated by nulls, as v2.4's TIPL and TMCL do, so a v2.3 IPLS read as its first
+// word and an update pinning a v2.4 tag to v2.3 wrote the pairs as one "producer/Ann" text.
+// These two keep their nulls on v2.3 as well.
+type RawTextFrame = {
+  frameId: Id3v2FrameIdentifier
+  text: string[]
+  textEncoding: StringType
+  _rawData?: ByteVector
+  _rawVersion: number
+  parseRawData(): void
+  renderFields(version: number): ByteVector
+}
+const textFrame = Id3v2TextInformationFrame.prototype as unknown as RawTextFrame
+const isCredits = (frame: RawTextFrame) =>
+  frame.frameId === Id3v2FrameIdentifiers.TIPL || frame.frameId === Id3v2FrameIdentifiers.TMCL
+const parseRawData = textFrame.parseRawData
+textFrame.parseRawData = function (this: RawTextFrame) {
+  if (!this._rawData || this._rawVersion !== 3 || !isCredits(this)) return parseRawData.call(this)
+  this._rawVersion = 4
+  try {
+    parseRawData.call(this)
+  } finally {
+    this._rawVersion = 3
+  }
+}
+const renderFields = textFrame.renderFields
+textFrame.renderFields = function (this: RawTextFrame, version: number) {
+  if (version !== 3 || !isCredits(this) || (this._rawData && this._rawVersion === 3))
+    return renderFields.call(this, version)
+  const encoding = (
+    Id3v2Frame as unknown as { correctEncoding(type: StringType, version: number): StringType }
+  ).correctEncoding(this.textEncoding, 3)
+  return ByteVector.concatenate(
+    encoding,
+    ...this.text.flatMap((value, i) => [
+      ...(i > 0 ? [ByteVector.getTextDelimiter(encoding)] : []),
+      ByteVector.fromString(value, encoding),
+    ]),
+  )
+}
+
+// Every save rebuilds TMCL from the performers' roles, which only a read of them fills, so a
+// tag saved without anyone asking for the roles lost its TMCL whatever its version.
+type TextFrameSetter = (id: Id3v2FrameIdentifier, ...text: string[]) => void
+const id3Tag = Id3v2Tag.prototype as unknown as {
+  _performersRole?: string[]
+  setTextFrame: TextFrameSetter
+}
+const setAnyTextFrame = id3Tag.setTextFrame
+id3Tag.setTextFrame = function (this: typeof id3Tag, id: Id3v2FrameIdentifier, ...text: string[]) {
+  if (id === Id3v2FrameIdentifiers.TMCL && text.length === 0 && this._performersRole === undefined)
+    return
+  setAnyTextFrame.apply(this, [id, ...text])
+}
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -556,13 +616,18 @@ const VORBIS_MANAGED = new Set(
 )
 
 // The ID3 text frames Surco does not manage that another program writes several values
-// into, under the name ffmpeg's ID3 reader gives them; every other text frame is either
-// Surco's own or one ffmpeg renames to a field Surco writes (TPE1 to artist).
+// into, or that ffmpeg leaves out of a WAV or ALAC, under the name ffmpeg's ID3 reader gives
+// them; every other text frame is either Surco's own or one ffmpeg renames to a field Surco
+// writes (TPE1 to artist).
 const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
   TSOP: 'ARTIST-SORT',
   TSOA: 'ALBUM-SORT',
   TSOT: 'TITLE-SORT',
   TLAN: 'LANGUAGE',
+  TSST: 'TSST',
+  TPRO: 'TPRO',
+  TIPL: 'TIPL',
+  TMCL: 'TMCL',
 }
 
 // A source tag with several values and the one value ffmpeg carries of it into a FLAC.
@@ -604,10 +669,12 @@ function multiValuedTags(f: TagFile): (CarriedTag & { carried: string })[] {
       byName.set(frame.description, [frame.text])
       languages.set(frame.description, frame.language)
     }
+  // ffmpeg reads no v2.3 IPLS at all, so it carries nothing of one.
+  const unread = (name: string) => id3.version === 3 && frames.get(name) === 'TIPL'
   return [...byName].map(([name, values]) => ({
     name,
     values,
-    carried: values[0],
+    carried: unread(name) ? '' : values[0],
     frame: frames.get(name),
     language: languages.get(name),
   }))
@@ -801,7 +868,8 @@ function carryRepeatedComments(xiph: XiphComment, source: string): void {
     for (const { name, values, carried } of multiValuedTags(f)) {
       if (values.length < 2 || VORBIS_MANAGED.has(name.toLowerCase())) continue
       const written = xiph.getField(name)
-      if (written.length === 1 && written[0] === carried) xiph.setFieldAsStrings(name, ...values)
+      if (written.join(';') === carried && written.length < 2)
+        xiph.setFieldAsStrings(name, ...values)
     }
   } finally {
     f.dispose()
