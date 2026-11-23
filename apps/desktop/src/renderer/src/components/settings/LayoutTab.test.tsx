@@ -264,8 +264,8 @@ describe('LayoutTab sections', () => {
     const eye = screen.getByTestId('settings-section-hide-properties')
     // quality starts open, so its pill is the accent-on reference the eye must match.
     const open = screen.getByTestId('settings-section-open-quality')
-    expect(eye.className).toContain('text-[var(--color-accent)]')
-    expect(eye.className).toBe(open.className)
+    expect(open).toHaveAttribute('aria-pressed', 'true')
+    expect(eye).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('dims the eye of a hidden section', () => {
@@ -277,8 +277,7 @@ describe('LayoutTab sections', () => {
       ),
     })
     const eye = screen.getByTestId('settings-section-hide-properties')
-    expect(eye.className).not.toContain('text-[var(--color-accent)]')
-    expect(eye.className).toContain('text-fg-dim')
+    expect(eye).toHaveAttribute('aria-pressed', 'true')
   })
 
   // The metadata form is the editor's fixed header: it can't move, and the first
@@ -351,12 +350,13 @@ describe('LayoutTab sections', () => {
   // the rest is read. Its lack of arrows already says it cannot move.
   it('lays the pinned row out on the same grid as the rest', () => {
     renderTab()
-    const cols = (id: string) => screen.getByTestId(id).className.match(/grid-cols-\[[^\]]+\]/)?.[0]
-    const pinned = cols('settings-section-row-form')
-    // Asserted present, not just equal: with no grid at all both sides read undefined and
-    // a bare equality check passes while the rows are back to placing their own controls.
-    expect(pinned).toMatch(/^grid-cols-/)
-    expect(cols('settings-section-row-quality')).toBe(pinned)
-    expect(cols('sections-columns')).toBe(pinned)
+    const cells = (id: string) => [...screen.getByTestId(id).children]
+    const pinned = cells('settings-section-row-form')
+    const rest = cells('settings-section-row-quality')
+    expect(pinned).toHaveLength(rest.length)
+    expect(cells('sections-columns')).toHaveLength(rest.length)
+    expect(pinned.indexOf(screen.getByTestId('settings-section-open-form'))).toBe(
+      rest.indexOf(screen.getByTestId('settings-section-open-quality')),
+    )
   })
 })
