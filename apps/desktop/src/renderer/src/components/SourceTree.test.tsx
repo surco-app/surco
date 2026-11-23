@@ -1593,3 +1593,30 @@ describe('a playlist name in a right-to-left script', () => {
     ).toHaveAttribute('dir', 'auto')
   })
 })
+
+describe('a playlist name the tree has to cut', () => {
+  const hover = (row: HTMLElement): void => {
+    fireEvent.pointerEnter(row)
+    row.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10 }))
+  }
+
+  it('shows the whole name on hover, since the row is the only place it is written', () => {
+    vi.useFakeTimers()
+    const long = 'Peak Time Techno — Closing Set at Fabric London'
+    setup(null, false, [
+      { id: 'long', name: long, kind: 'playlist', count: 12 },
+      { id: 'short', name: 'House', kind: 'playlist', count: 3 },
+    ])
+    const name = within(screen.getByTestId('source-node-long')).getByText(long)
+    Object.defineProperty(name, 'scrollWidth', { configurable: true, value: 300 })
+    Object.defineProperty(name, 'clientWidth', { configurable: true, value: 110 })
+    hover(screen.getByTestId('source-node-long'))
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.getByRole('tooltip')).toHaveTextContent(long)
+    fireEvent.pointerLeave(screen.getByTestId('source-node-long'))
+    hover(screen.getByTestId('source-node-short'))
+    act(() => vi.advanceTimersByTime(500))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})

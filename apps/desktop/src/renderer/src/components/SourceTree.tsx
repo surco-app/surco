@@ -163,6 +163,11 @@ export const SourceTree = memo(function SourceTree({
     setCreating(null)
   }
   const [renaming, setRenaming] = useState<string | null>(null)
+  const [cutName, setCutName] = useState<string | null>(null)
+  const measureName = (row: HTMLElement, id: string): void => {
+    const name = row.querySelector<HTMLElement>('[data-node-name]')
+    setCutName(name && name.scrollWidth > name.clientWidth ? id : null)
+  }
   const renameTarget = useRef<string | null>(null)
   const [deleting, setDeleting] = useState<SourceNode | null>(null)
   const askingDelete = deleting !== null
@@ -500,6 +505,8 @@ export const SourceTree = memo(function SourceTree({
               setDragging(node.id)
             }}
             onDragEnd={endNodeDrag}
+            onPointerEnter={(e) => measureName(e.currentTarget, node.id)}
+            onFocus={(e) => measureName(e.currentTarget, node.id)}
             data-dragging={dragging === node.id || undefined}
             onContextMenu={(e) => {
               if (!menuEdit && !pasteOnly) return
@@ -562,9 +569,10 @@ export const SourceTree = memo(function SourceTree({
                 className="shrink-0 text-fg-faint"
               />
             )}
-            <span dir="auto" className="min-w-0 truncate">
+            <span data-node-name dir="auto" className="min-w-0 truncate">
               {node.name}
             </span>
+            <Tooltip label={cutName === node.id ? node.name : ''} />
             {trail && <span className="min-w-0 truncate text-xs text-fg-faint">{trail}</span>}
             {dropOn?.id === node.id ? (
               <span
