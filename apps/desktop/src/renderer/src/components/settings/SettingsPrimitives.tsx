@@ -48,13 +48,14 @@ export function SettingsLabel({
   className?: string
   searchId?: string
 }): React.JSX.Element {
-  const cls = `block ${useContext(InNamedSection) ? NESTED_LABEL : HEADING} ${className}`
+  const nested = useContext(InNamedSection)
+  const cls = `block ${nested ? NESTED_LABEL : HEADING} ${className}`
   return htmlFor ? (
-    <label htmlFor={htmlFor} className={cls} data-search-id={searchId}>
+    <label htmlFor={htmlFor} className={cls} data-search-id={searchId} data-nested={nested}>
       {children}
     </label>
   ) : (
-    <p className={cls} data-search-id={searchId}>
+    <p className={cls} data-search-id={searchId} data-nested={nested}>
       {children}
     </p>
   )
@@ -112,6 +113,7 @@ export function SettingsSection({
     <section
       data-testid="settings-section"
       data-search-id={searchId}
+      data-ruled={!first}
       className={first ? '' : 'mt-6 border-t border-[var(--color-line)] pt-5'}
     >
       {eyebrow && <h3 className={`mb-3 ${HEADING}`}>{eyebrow}</h3>}

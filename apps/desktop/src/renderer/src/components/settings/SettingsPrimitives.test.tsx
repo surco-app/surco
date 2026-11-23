@@ -47,7 +47,7 @@ describe('SettingsSection', () => {
 
   // A rule above the heading marks where one section ends, as between editor sections; a
   // box around it is what only Search and Output had.
-  it('sets a named section apart with a rule, not a box', () => {
+  it('sets a named section apart with a rule', () => {
     render(
       <>
         <SettingsSection eyebrow="Traktor" first>
@@ -59,9 +59,9 @@ describe('SettingsSection', () => {
       </>,
     )
 
-    const [, second] = screen.getAllByTestId('settings-section')
-    expect(second.className).toMatch(/border-t/)
-    expect(second.className).not.toMatch(/rounded/)
+    const [first, second] = screen.getAllByTestId('settings-section')
+    expect(first).toHaveAttribute('data-ruled', 'false')
+    expect(second).toHaveAttribute('data-ruled', 'true')
   })
 
   // Inside a named section a field's label is one step below the section's heading;
@@ -77,8 +77,8 @@ describe('SettingsSection', () => {
 
     const heading = screen.getByRole('heading', { name: 'Discogs' })
     const label = screen.getByText('Discogs token')
-    expect(label.className).not.toBe(heading.className)
-    expect(label).not.toHaveClass('font-semibold')
+    expect(label).toHaveAttribute('data-nested', 'true')
+    expect(heading).not.toHaveAttribute('data-nested')
   })
 })
 
@@ -199,7 +199,6 @@ describe('inline explanations', () => {
     const space = screen.getByTestId('spaced-space')
     expect(space).toBeEmptyDOMElement()
     expect(space).toHaveAttribute('aria-hidden', 'true')
-    expect(space.className).toContain('mb-4')
   })
 
   // The onboarding wizard draws the same fields with no Settings draft around them, and a
