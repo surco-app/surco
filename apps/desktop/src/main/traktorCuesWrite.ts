@@ -135,6 +135,11 @@ const saneGrid = (grid: EditableGrid): boolean =>
   grid.bpm <= GRID_BPM_MAX &&
   Number.isFinite(grid.anchorMs)
 
+// withTraktorGrid rewrites a single marker: over several it would move the first and leave
+// the DJ's later ones setting the tempo from where they sit.
+const gridMarkerCount = (block: string): number =>
+  traktorCueElements(block).filter((el) => attr(el.element, 'TYPE') === '4').length
+
 function refusalOf(reason: string): RekordboxEditRefusal {
   if (reason === 'traktor-running') return 'rekordbox-running'
   if (reason === 'backup-failed' || reason === 'unreadable') return reason
@@ -189,7 +194,10 @@ function planBatch(
     const notices: RekordboxQueueNotice[] = op.wanted.some((w) => w.kind === NO_BUTTON)
       ? [{ code: 'cues-slot-dropped', track: op.label }]
       : []
-    if (op.grid && (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path)))
+    if (
+      op.grid &&
+      (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path) || gridMarkerCount(entry.block) > 1)
+    )
       return refused('cues-invalid')
     if (op.grid && read.gridFingerprint !== op.gridFingerprint) return refused('cues-changed')
     const cued = withTraktorCues(entry.block, op.wanted)

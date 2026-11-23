@@ -578,6 +578,29 @@ describe('saving an edited grid to Traktor', () => {
     expect(result).toMatchObject({ outcomes: [{ applied: false }] })
   })
 
+  // Surco writes a single marker, so it would move only the first and leave the DJ's later
+  // ones setting the tempo from where they sit: the beats past them would not be the ones
+  // Surco showed. The DJ's markers stay exactly as they were.
+  it('refuses a grid on a track with several grid markers and leaves every marker in place', async () => {
+    const second =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="60000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2>'
+    const marked = nml([GRID, second, AUTOGRID, LOAD, BLUE])
+    const file = await onDisk(marked)
+    const result = await applyTraktorBatch(
+      file,
+      [
+        {
+          ...op(marked, asWanted(marked)),
+          grid: { bpm: 128.5, anchorMs: 40 },
+          gridFingerprint: read(marked)?.gridFingerprint,
+        },
+      ],
+      { session, ensureClosed: async () => true, write },
+    )
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(await readFile(file, 'utf8')).toBe(marked)
+  })
+
   it('refuses a grid on a format whose clock in Traktor is not measured yet', async () => {
     const file = await onDisk(doc)
     const result = await applyTraktorBatch(file, [gridOp({ path: '/Users/dj/Music/power.m4a' })], {
