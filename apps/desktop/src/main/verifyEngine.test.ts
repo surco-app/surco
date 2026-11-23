@@ -741,6 +741,24 @@ describe('checkEngine after a conversion that moved the audio', () => {
     expect(checkOne(dir, expectFor(before, trimmedBy(CUT, 48000)))[0].state).toBe('ok')
   })
 
+  // The 23/11 replacement test on a copy of a real library: a FLAC copied into an AIFF keeps
+  // its samples, yet its audio sits 1.5 s later than the MP3's, so the repoint moved every cue
+  // and the grid by the measure. The check read that write as cues the DJ lost, warned on a
+  // right row and kept the old MP3 from retiring.
+  it('cues and grid moved by a replacement whose samples were kept are ok', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, -1.5)
+    expect(
+      checkOne(dir, expectFor(before, { samplesKept: true, shift: { trimmedMs: -1500 } }))[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
   // The bug this check exists for: the row followed the file and kept every blob intact,
   // so nothing looked lost, but each pad fired the length of the cut late.
   it('cues left where they were before the cut are engineCuesMisplaced', () => {
