@@ -3168,7 +3168,9 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     await act(async () => {
       await result.current.processOne('a')
     })
+    // The review list is re-read too: a moved file may be one a replacement just recorded.
     expect(invalidate.mock.calls.map(([filters]) => filters?.queryKey)).toEqual([
+      ['replaced-tracks'],
       ['source-playlist'],
       ['rekordbox-membership'],
     ])
@@ -3216,6 +3218,37 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
       'source-collection',
       'traktor',
     ])
+  })
+})
+
+describe('useTrackProcessing review list', () => {
+  async function run(result: Awaited<ReturnType<Api['processTrack']>>) {
+    setApi({ processTrack: vi.fn<Api['processTrack']>().mockResolvedValue(result) })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result: hook } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await hook.current.processOne('a')
+    })
+    return invalidate
+  }
+
+  it('rereads the review list when a replacement lands, so the new track shows up without a restart', async () => {
+    const invalidate = await run({
+      outputPath: '/m/new.flac',
+      inPlace: false,
+      replaceShift: { moved: 120 },
+    })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['replaced-tracks'] })
+  })
+
+  it('rereads the review list when a conversion moves a file, so the store and the list agree', async () => {
+    const invalidate = await run({ outputPath: '/m/other.flac', inPlace: false })
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['replaced-tracks'] })
   })
 })
 

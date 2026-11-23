@@ -6,6 +6,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { SourceNode } from '../../../shared/types'
 import i18n from '../i18n'
 import type { NewPlaylist } from '../lib/commands'
@@ -983,6 +984,38 @@ describe('SourceTree Matching', () => {
     fireEvent.drop(node(), { dataTransfer: dt })
     expect(edit.onMove).not.toHaveBeenCalled()
     expect(onOuterDrop).not.toHaveBeenCalled()
+  })
+})
+
+describe('SourceTree To review', () => {
+  const REVIEW: SourceNode = { id: TO_REVIEW_ID, name: 'To review', kind: 'playlist', count: 2 }
+  const node = () => screen.getByTestId(`source-node-${TO_REVIEW_ID}`)
+
+  // It is Surco's list of replaced tracks, not a playlist in the DJ program: a rename,
+  // a move or a dropped track would be sent to a playlist that does not exist there.
+  it('never renames, drags or drops onto To review, like the other fixed nodes', () => {
+    const { edit, onOuterDrop } = setup(null, true, [REVIEW, ...NODES])
+    fireEvent.contextMenu(node(), { clientX: 10, clientY: 10 })
+    expect(screen.queryByTestId('source-tree-menu')).not.toBeInTheDocument()
+    expect(node()).not.toHaveAttribute('draggable', 'true')
+    expect(screen.getByTestId('source-node-house')).toHaveAttribute('draggable', 'true')
+    const dt = files('a.wav')
+    fireEvent.dragOver(node(), { dataTransfer: dt })
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: dt })
+    expect(edit.onDropTracks).not.toHaveBeenCalled()
+    expect(onOuterDrop).not.toHaveBeenCalled()
+    const moved = dragNode('house')
+    over(node(), 24, moved)
+    expect(node()).not.toHaveAttribute('data-drop-target')
+    fireEvent.drop(node(), { dataTransfer: moved })
+    expect(edit.onMove).not.toHaveBeenCalled()
+  })
+
+  it("marks To review with its own icon so it reads as Surco's list, not a playlist", () => {
+    setup(null, true, [REVIEW, ...NODES])
+    expect(within(node()).getByTestId('source-node-review-icon')).toBeInTheDocument()
+    expect(screen.getAllByTestId('source-node-review-icon')).toHaveLength(1)
   })
 })
 

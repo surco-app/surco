@@ -46,9 +46,11 @@ import {
   shiftGrid,
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
+import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
+import { useReplacedTracks, useReviewReplaced } from '../hooks/useReplacedTracks'
 import {
   cueDropInputQuery,
   gridAuditQuery,
@@ -129,7 +131,9 @@ import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
+import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { claimKeys } from '../lib/spaceClaim'
+import { replacedEntryOf, savedReviews } from '../lib/toReview'
 import { CueDeck, CueMoves } from './CueDeck'
 import { CueGridControls } from './CueGridControls'
 import { CueGridStrip } from './CueGridStrip'
@@ -139,6 +143,8 @@ import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
+import { ReplacedPill, ReplacedReason } from './ReplacedPill'
+import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
@@ -532,6 +538,7 @@ function Editing({
   headerSlot,
   saveEcho,
   provisional,
+  replaced,
   actionsRef,
 }: {
   read: TrackCues
@@ -551,6 +558,7 @@ function Editing({
   headerSlot: HTMLElement | null
   saveEcho: ReturnType<typeof useCueSaveEcho>
   provisional?: SurcoGrid
+  replaced?: ReplacedEntry
   actionsRef?: { current: CueActions | null }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -571,7 +579,7 @@ function Editing({
   )
   const fresh = queued !== null && queued.fingerprint === read.fingerprint
   const baseline = fresh ? queued.wanted : inRekordbox
-  const [state, dispatch] = useReducer(
+  const [state, stepDraft] = useReducer(
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctxRef.current as DraftContext),
     undefined,
     () =>
@@ -587,6 +595,12 @@ function Editing({
         programGrid,
       ),
   )
+  // A cue step is the DJ's newest action, so it takes ⌘Z away from an older Reviewed whose
+  // card keeps its own Undo. Selecting or stepping back changes no cue.
+  const dispatch = useCallback((action: DraftAction) => {
+    if (action.type !== 'select' && action.type !== 'undo') takeShortcutUndo()
+    stepDraft(action)
+  }, [])
   const grid = useMemo(
     () =>
       state.grid && draftGridChanged(state) ? gridBeats(state.grid, read.durationMs) : read.grid,
@@ -835,7 +849,7 @@ function Editing({
     openedWith.current = settled
     setChosen(settled)
     if (settled !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: settled })
-  }, [settled])
+  }, [settled, dispatch])
   const menuRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLFieldSetElement>(null)
   const keysId = useId()
@@ -1058,8 +1072,13 @@ function Editing({
     else if (key.type === 'mark' && !manual) markHere()
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
-    else if (key.type === 'undo') dispatch({ type: 'undo' })
-    else if (key.type === 'redo') dispatch({ type: 'redo' })
+    else if (key.type === 'undo') {
+      // A notice still offering its Undo (Reviewed, pressed right here) is the DJ's last
+      // step, so ⌘Z takes that back before stepping the draft.
+      const shortcut = takeShortcutUndo()
+      if (shortcut) shortcut()
+      else dispatch({ type: 'undo' })
+    } else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
     else if (key.type === 'pin') pin(key.exact)
     else if (key.type === 'grid-shift' && state.grid && gridOff === null)
@@ -1090,7 +1109,7 @@ function Editing({
       dispatch(removeOf(selected.key))
     } else if (e.key.toLowerCase() === 'z' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
-      dispatch({ type: e.shiftKey ? 'redo' : 'undo' })
+      run({ type: e.shiftKey ? 'redo' : 'undo' })
     }
   }
   const [colourFor, setColourFor] = useState<string | null>(null)
@@ -1138,6 +1157,7 @@ function Editing({
     locked: state.locked.includes(c.key),
   }))
   const [saveFailed, setSaveFailed] = useState(false)
+  const { review } = useReviewReplaced()
   const send = async (reqs: SaveCuesRequest[]): Promise<boolean> => {
     saveEcho.expectSave(reqs)
     const saved = await window.api.dj
@@ -1162,6 +1182,11 @@ function Editing({
       }),
     )
     forgetDrafts(reqs.map((r) => r.contentId))
+    // A track the DJ just fixed in a program stops being asked about there. Not awaited and
+    // not surfaced: the cues are already saved, so a failure here must not read as a failed save.
+    for (const [path, programs] of savedReviews(reqs)) {
+      review(path, programs).catch((error) => window.api.logError(String(error)))
+    }
     await refreshQueued()
     return true
   }
@@ -1754,6 +1779,7 @@ function Editing({
             )}
           </div>
           {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+          {replaced && <ReplacedPill shift={replaced.shift} />}
         </div>
       </div>
       <span className="flex-1" />
@@ -1868,6 +1894,20 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
+      {/* The full editor has no section header, so the why of a replaced track and its
+      Reviewed get a row of their own under the track's header. Only a replaced track has it,
+      and Reviewed removes it with the track still open: the row only takes height, so nothing
+      above the wave changes width. */}
+      {maximized && replaced && (
+        <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
+          <ReplacedReason shift={replaced.shift} />
+          <ReviewedButton
+            path={replaced.newPath}
+            name={track?.title || cue.label}
+            onPress={focusEditor}
+          />
+        </div>
+      )}
       {maximized ? (
         <>
           {toolbar}
@@ -2298,6 +2338,7 @@ export function CuesSection({
   const { colourHelp, provisionalHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
+  const replaced = replacedEntryOf(useReplacedTracks(), cue.path, programOf(cue.contentId))
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
@@ -2398,6 +2439,7 @@ export function CuesSection({
         key={`${draftKey}|${round}`}
         read={shown}
         provisional={provisional}
+        replaced={replaced}
         queued={queued}
         cue={cue}
         draftKey={draftKey}
@@ -2446,9 +2488,10 @@ export function CuesSection({
             ...(colourHelp ? [tr(colourHelp)] : []),
           ].join(' ')}
           status={
-            unsaved || provisional || saveEcho.saved ? (
+            unsaved || provisional || replaced || saveEcho.saved ? (
               <>
                 {provisional && <ProvisionalMark bpm={provisional.bpm} />}
+                {replaced && <ReplacedPill shift={replaced.shift} />}
                 {unsaved ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
               </>
             ) : undefined
@@ -2470,6 +2513,20 @@ export function CuesSection({
         <SectionBody open={open}>
           <div className="mt-3">
             {body}
+            {/* Reviewed unmounts with its row: the focus goes back to the cue editor, not to
+            the page, so the keyboard keeps its place and ⌘Z there takes Reviewed back. */}
+            {replaced && (
+              <div className="mt-2 flex flex-col items-start gap-2">
+                <ReplacedReason shift={replaced.shift} />
+                <ReviewedButton
+                  path={replaced.newPath}
+                  name={track?.title || cue.label}
+                  onPress={() =>
+                    sectionRef.current?.querySelector<HTMLElement>('fieldset')?.focus()
+                  }
+                />
+              </div>
+            )}
             {footer}
           </div>
         </SectionBody>

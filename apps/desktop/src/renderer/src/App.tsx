@@ -35,6 +35,7 @@ import { type PairSuggestion, pairKey } from '../../shared/matchingSuggestions'
 import { emptyMetadata } from '../../shared/metadata'
 import { type CommentMode, phrasedComment } from '../../shared/phraseCount'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
+import type { ReplaceShift } from '../../shared/replaceShift'
 import {
   childNames,
   nodeNameOf,
@@ -48,6 +49,7 @@ import {
   wizardSettingsFrom,
 } from '../../shared/sessionSettings'
 import { resolveBindings } from '../../shared/shortcutDefaults'
+import { TO_REVIEW_ID } from '../../shared/toReview'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   BpmResult,
@@ -150,6 +152,7 @@ import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useRekordboxMatching } from './hooks/useRekordboxMatching'
 import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { useReplacedTracks } from './hooks/useReplacedTracks'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRows } from './hooks/useSessionRows'
@@ -168,6 +171,7 @@ import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
+import { useZoomFit } from './hooks/useZoomFit'
 import { nextLocale } from './i18n/locale'
 import { analysisKey, removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
@@ -281,6 +285,7 @@ import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
+import { hasShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import {
   isUsbProgram,
   SOURCE_PROGRAMS,
@@ -290,6 +295,7 @@ import {
 import { matchStatKey } from './lib/stats'
 import { ToastProvider, type ToastReporter } from './lib/toastContext'
 import { dismissToast, dismissToastByExpiry, dismissToastByUser, pushToast } from './lib/toastQueue'
+import { replacedEntryOf } from './lib/toReview'
 import { latestBackupByPath } from './lib/trashView'
 import {
   AUTO_MARK_FILTERS,
@@ -392,6 +398,7 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     document.documentElement.lang = i18n.language
   }, [i18n.language])
+  useZoomFit()
   const [selection, setSelectionState] = useState<Selection>({ ids: [], anchor: null })
   // Text still in a field's typing pause is committed before the selection moves, while
   // the editor still points at the track it was typed into.
@@ -474,6 +481,9 @@ export default function App(): React.JSX.Element {
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
       reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
+        // ⌘Z means the newest notice: a newer one takes the shortcut away from an older
+        // Reviewed, whose card keeps its own Undo button.
+        takeShortcutUndo()
         const id = pushToast(store, {
           key,
           tone: 'neutral',
@@ -490,6 +500,7 @@ export default function App(): React.JSX.Element {
           onDismiss: onSettle,
           onExpire: onSettle,
         })
+        return () => dismissToast(store, id)
       },
     }),
     [store],
@@ -796,8 +807,10 @@ export default function App(): React.JSX.Element {
   const listUndoCovers = useRef<(string | undefined)[][]>([])
   const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
   const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
+  const replacedEntries = useReplacedTracks()
   const browser = useSourceBrowser({
     matchingPathPairs,
+    replacedEntries,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
@@ -1636,13 +1649,22 @@ export default function App(): React.JSX.Element {
   })
   // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
   // through tracksRef so the stable callbacks capturing it never see a stale list.
-  const recordMetaUndo = useStableCallback(
+  const recordTagSnapshot = useStableCallback(
     (ids: string[], opts?: { cover?: boolean; group?: string }) => {
       const set = new Set(ids)
       metaUndo.record(
         tracksRef.current.filter((t) => set.has(t.id)),
         opts,
       )
+    },
+  )
+  // A tag step the DJ takes is their newest action, notice or not, so it takes ⌘Z away
+  // from an older Reviewed, whose card keeps its own Undo. The background auto-match
+  // records with the snapshot alone: it is no step of theirs.
+  const recordMetaUndo = useStableCallback(
+    (ids: string[], opts?: { cover?: boolean; group?: string }) => {
+      takeShortcutUndo()
+      recordTagSnapshot(ids, opts)
     },
   )
 
@@ -1674,7 +1696,7 @@ export default function App(): React.JSX.Element {
     matchCleanupRef,
     editingRef,
     reportActivity,
-    recordUndo: recordMetaUndo,
+    recordUndo: recordTagSnapshot,
   })
 
   const readingSourcePlaylist = useMemo(() => holdsAutoMatch(tracks), [tracks])
@@ -2094,7 +2116,7 @@ export default function App(): React.JSX.Element {
       )
       markHandEdited(patches)
       deriveTracks(patches)
-      toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoMeta)
+      toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoTags)
     },
   )
 
@@ -2603,7 +2625,10 @@ export default function App(): React.JSX.Element {
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
   const showListPositions = settings?.showListPositions ?? true
   const numberedTracks =
-    showListPositions && sortBy === 'import' && browser.playlist?.id !== MATCHING_ID
+    showListPositions &&
+    sortBy === 'import' &&
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
       ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
       : undefined
   const listPositions = useMemo(
@@ -3133,6 +3158,8 @@ export default function App(): React.JSX.Element {
       setNotice(tr('notices.trimApplied', { count: 0 }))
       return
     }
+    // An undo notice like reportUndo's, so it too takes ⌘Z from an older Reviewed.
+    takeShortcutUndo()
     pushToast(store, {
       tone: 'neutral',
       message: tr('notices.trimApplied', { count: cut.length }),
@@ -3190,7 +3217,8 @@ export default function App(): React.JSX.Element {
     !openSmart &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
     browser.playlist?.id !== ALL_TRACKS_ID &&
-    browser.playlist?.id !== MATCHING_ID
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -3401,6 +3429,15 @@ export default function App(): React.JSX.Element {
       ),
     )
   }, [inRekordbox, otherPartners, matchingPartners, scopeTracks, playlistScope])
+  const replacedShifts = useMemo(() => {
+    const shifts = new Map<string, ReplaceShift>()
+    if (browser.playlist?.id !== TO_REVIEW_ID || sourceProgram === null) return shifts
+    for (const t of scopeTracks) {
+      const entry = replacedEntryOf(replacedEntries, t.inputPath, sourceProgram)
+      if (entry) shifts.set(t.id, entry.shift)
+    }
+    return shifts
+  }, [browser.playlist?.id, sourceProgram, scopeTracks, replacedEntries])
   const editMatching = useMatchingEdit(notifyEdit)
   const runMatchingEdits = useMatchingSteps(notifyEdit)
   const editMatchings = useMatchingEdits(notifyEdit)
@@ -3959,6 +3996,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
           h.node.id !== MATCHING_ID &&
+          h.node.id !== TO_REVIEW_ID &&
           !h.node.smart &&
           fixed?.(h.node) !== 'locked',
       ),
@@ -4074,7 +4112,7 @@ export default function App(): React.JSX.Element {
     } else updateTrack(selected.id, clearedTrackPatch(selected))
     toastReporter.reportUndo(
       tr('notices.clearedMeta', { count: Math.max(selectedTracks.length, 1) }),
-      undoMeta,
+      undoTags,
     )
   })
   const deriveTags = useStableCallback(() => {
@@ -4094,7 +4132,7 @@ export default function App(): React.JSX.Element {
     if (!patches.length) return
     recordMetaUndo(patches.map((p) => p.id))
     deriveTracks(patches)
-    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
+    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoTags)
   })
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
@@ -4149,11 +4187,19 @@ export default function App(): React.JSX.Element {
         : tr('notices.titleFormatted', { count: patches.length }),
     )
   })
-  // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
-  // silence would leave the user unsure whether anything was restored.
-  const undoMeta = useStableCallback(() => {
+  // Rolls back the last batch tag operation and says how many rows came back —
+  // silence would leave the user unsure whether anything was restored. A tag notice's Undo
+  // runs this alone: its card names a tag edit, never another notice's action.
+  const undoTags = useStableCallback(() => {
     const count = metaUndo.undo()
     if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
+  })
+  // ⌘Z: a notice still offering its own Undo (Reviewed) comes first, since it is what the DJ
+  // just did and can read on screen; otherwise the tag undo above.
+  const undoMeta = useStableCallback(() => {
+    const shortcut = takeShortcutUndo()
+    if (shortcut) return shortcut()
+    undoTags()
   })
   const redoMeta = useStableCallback(() => {
     const count = metaUndo.redo()
@@ -4360,7 +4406,7 @@ export default function App(): React.JSX.Element {
       trimDetected: onTrimDetectedAll,
       titleFormatSet: !!settings?.titleFormat?.trim(),
       undoMeta,
-      canUndoMeta: metaUndo.canUndo,
+      canUndoMeta: () => hasShortcutUndo() || metaUndo.canUndo(),
       redoMeta,
       canRedoMeta: metaUndo.canRedo,
       canReopenLastSession: lastSession.canReopen,
@@ -5092,6 +5138,7 @@ export default function App(): React.JSX.Element {
                               backupAtByPath={backupAtByPath}
                               pendingCuePaths={pendingCuePaths}
                               matchingIds={matchingIds}
+                              replacedShifts={replacedShifts}
                               unsavedCueIds={unsavedCueIds}
                               playedPaths={playedPaths}
                               autoMarkById={autoMarkById}

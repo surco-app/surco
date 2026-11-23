@@ -3,6 +3,7 @@ import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shar
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
+import type { ReplacedEntry } from '../shared/toReview'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -215,6 +216,11 @@ const api: Api = {
   cues: createCuesApi(ipcRenderer),
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   matchingPairs: (): Promise<[string, string][]> => ipcRenderer.invoke('matching:list'),
+  replacedTracks: (): Promise<ReplacedEntry[]> => ipcRenderer.invoke('replaced:list'),
+  reviewReplaced: (path: string, programs?: DjProgram[]): Promise<ReplacedEntry | null> =>
+    ipcRenderer.invoke('replaced:review', path, programs),
+  restoreReplaced: (entry: ReplacedEntry): Promise<void> =>
+    ipcRenderer.invoke('replaced:restore', entry),
   addMatchingPair: (a: string, b: string): Promise<void> =>
     ipcRenderer.invoke('matching:add', a, b),
   removeMatchingPair: (a: string, b: string): Promise<void> =>
@@ -269,6 +275,7 @@ const api: Api = {
     ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
   prewarmPlayback: (path) => ipcRenderer.send('player:prewarm', path),
+  checkZoom: () => ipcRenderer.send('window:zoom-check'),
   conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),

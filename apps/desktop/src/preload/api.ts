@@ -11,6 +11,7 @@ import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
+import type { ReplacedEntry } from '../shared/toReview'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -273,6 +274,9 @@ export interface Api {
   cues: CuesApi
   djAppRunning: () => Promise<boolean>
   matchingPairs: () => Promise<[string, string][]>
+  replacedTracks: () => Promise<ReplacedEntry[]>
+  reviewReplaced: (path: string, programs?: DjProgram[]) => Promise<ReplacedEntry | null>
+  restoreReplaced: (entry: ReplacedEntry) => Promise<void>
   addMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPairs: (pairs: [string, string][]) => Promise<void>
@@ -321,6 +325,7 @@ export interface Api {
   // Resolves (and caches) the file the player would stream, so an AIFF's transcode runs
   // while the track is only selected. Fire-and-forget; main ignores a path it never handed out.
   prewarmPlayback: (path: string) => void
+  checkZoom: () => void
   // Marks the start of a convert-all run so main forgets any "apply to the rest"
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.

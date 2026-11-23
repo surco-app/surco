@@ -489,6 +489,7 @@
     "trimApplied_other": "Recorte aplicado en {{count}} pistas",
     "trimUndo": "Deshacer",
     "undo": "Deshacer",
+    "reviewed": "Revisada · {{name}}",
     "clearedMeta_one": "Metadatos borrados en {{count}} pista",
     "clearedMeta_other": "Metadatos borrados en {{count}} pistas",
     "filledMeasured_one": "{{count}} pista rellenada",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "Hace Matching con la pista elegida",
+    "cuesMoved": "Cues movidos",
+    "cuesNotMoved": "Cues sin mover",
     "cuesUnsaved": "Cues sin guardar",
     "autoMark": {
       "proposed_one": "{{count}} propuesta",
@@ -1315,6 +1318,13 @@
         "help": "rekordbox aún no ha analizado esta pista. Surco ha calculado el tempo y la rejilla, así que puedes poner los cues ya. Cuando rekordbox la analice, Surco los ajustará a su rejilla.",
         "measuring": "Calculando la rejilla…"
       },
+      "replaced": {
+        "notMoved": "sin mover",
+        "noMatch": "Surco no pudo alinear el fichero nuevo con el viejo. Los cues siguen como estaban.",
+        "drift": "El principio y el final se movieron distinto. Los cues siguen como estaban.",
+        "unreadable": "No se pudo leer el fichero viejo. Los cues siguen como estaban.",
+        "reviewed": "Revisada"
+      },
       "twins": {
         "title": "Al guardar, el flujo también se pone en",
         "hot_one": "{{count}} hot cue",
@@ -1442,6 +1452,7 @@
     "suggestionsMore": "Mostrar {{count}} más",
     "suggestionsLess": "Mostrar menos",
     "suggestionDetected": "Detectado en el audio: {{value}}",
+    "suggestionShare": "{{value}}, {{count}} de {{total}}",
     "rowAutoFill": "Rellenar {{name}} automáticamente",
     "rowRequired": "{{name}} obligatorio",
     "rowMoveUp": "Subir {{name}}",
@@ -2780,6 +2791,7 @@
     "matchingDismiss": "Descartar",
     "matchingMore": "Mostrar más",
     "recentlyAdded": "Añadidas recientemente",
+    "toReview": "Para revisar",
     "search": "Buscar playlists",
     "loading": "Leyendo playlists…",
     "failed": {

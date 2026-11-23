@@ -7,7 +7,10 @@ import { SuggestionChips } from './SuggestionChips'
 afterEach(cleanup)
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (k: string) => k }),
+  useTranslation: () => ({
+    t: (k: string, o?: { value?: string; count?: number; total?: number }) =>
+      o?.total != null ? `${k}:${o.value}:${o.count}/${o.total}` : k,
+  }),
 }))
 
 const overflow = vi.hoisted(() => ({ visibleCount: Number.POSITIVE_INFINITY }))
@@ -86,18 +89,69 @@ describe('SuggestionChips', () => {
   // A user with their own genres per folder could not see which ones a track carried: the
   // ones past the cut hid behind "+N" and the row read as if nothing else was applied.
   it('keeps the applied tags in view when the row collapses', () => {
-    overflow.visibleCount = 2
+    overflow.visibleCount = 1
     render(
       <SuggestionChips
         suggestions={['Acid', 'Bases', 'Cierre', 'Trance']}
         isOn={(s) => s === 'Trance'}
-        isPartial={(s) => s === 'Cierre'}
         onPick={() => {}}
       />,
     )
     expect(screen.getByTestId('chip-Trance')).toBeInTheDocument()
-    expect(screen.getByTestId('chip-Cierre')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-Acid')).not.toBeInTheDocument()
+  })
+
+  // 308 tracks carried some thirty genres between them, one or two tracks each, and every
+  // one of them held the row open: the folded genre row ran sixteen lines and pushed the
+  // rest of the editor out of view. Only a tag the whole selection carries may hold it open.
+  it('folds a tag only part of the selection carries behind "+N" like any suggestion', () => {
+    overflow.visibleCount = 1
+    render(
+      <SuggestionChips
+        suggestions={['Electronic', 'Dance', 'House']}
+        isOn={() => false}
+        isPartial={() => true}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Electronic')).toBeInTheDocument()
+    expect(screen.queryByTestId('chip-Dance')).not.toBeInTheDocument()
+    expect(screen.getByTestId('chip-more')).toHaveTextContent('+2')
+  })
+
+  // A partial chip wrote "146/308" after its name. Pressing it applied the tag to every
+  // track, the number went away, the chip narrowed and the chips after it slid under the
+  // pointer. The share is the chip's fill now, so pressing it changes its colour and not
+  // its width, and the number stays in what a screen reader or a hover reads.
+  it('fills a partial chip by the share of the selection that carries it instead of writing it', () => {
+    render(
+      <SuggestionChips
+        suggestions={['Electronic']}
+        isOn={() => false}
+        isPartial={() => true}
+        partialOf={{ count: () => 146, total: 308 }}
+        onPick={() => {}}
+      />,
+    )
+    const chip = screen.getByTestId('chip-Electronic')
+    expect(chip).toHaveTextContent(/^Electronic$/)
+    expect(chip.style.backgroundImage).toContain(`${(146 / 308) * 100}%`)
+    expect(chip).toHaveAttribute('aria-label', 'fields.suggestionShare:Electronic:146/308')
+  })
+
+  it('leaves a chip every track carries and one none carries without a fill', () => {
+    render(
+      <SuggestionChips
+        suggestions={['Bases', 'Cierre']}
+        isOn={(s) => s === 'Bases'}
+        isPartial={() => false}
+        partialOf={{ count: (s) => (s === 'Bases' ? 3 : 0), total: 3 }}
+        onPick={() => {}}
+      />,
+    )
+    expect(screen.getByTestId('chip-Bases').style.backgroundImage).toBe('')
+    expect(screen.getByTestId('chip-Cierre').style.backgroundImage).toBe('')
+    expect(screen.getByTestId('chip-Bases')).not.toHaveAttribute('aria-label')
   })
 
   // Reordering on every toggle would slide the chip out from under the pointer.
@@ -201,22 +255,6 @@ describe('SuggestionChips', () => {
     expect(screen.getByTestId(`chip-${long}`)).toHaveClass('max-w-full')
   })
 
-  it('keeps the share of tracks readable when a long tag is cut', () => {
-    const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
-    render(
-      <SuggestionChips
-        suggestions={[long]}
-        isOn={() => false}
-        isPartial={() => true}
-        partialLabel={() => '1/7'}
-        onPick={() => {}}
-      />,
-    )
-    const name = within(screen.getByTestId(`chip-${long}`)).getByText(long)
-    expect(name).not.toHaveTextContent('1/7')
-    expect(screen.getByTestId(`chip-${long}`)).toHaveTextContent('1/7')
-  })
-
   it('shows the whole tag on hover when the chip had to cut it', () => {
     vi.useFakeTimers()
     const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
@@ -236,13 +274,13 @@ describe('SuggestionChips', () => {
     vi.useRealTimers()
   })
 
-  it('keeps the share of tracks after an Arabic tag instead of letting it jump in front', () => {
+  it('lays an Arabic tag out right to left inside its chip', () => {
     render(
       <SuggestionChips
         suggestions={['شعبي']}
         isOn={() => false}
         isPartial={() => true}
-        partialLabel={() => '1/7'}
+        partialOf={{ count: () => 1, total: 7 }}
         onPick={() => {}}
       />,
     )

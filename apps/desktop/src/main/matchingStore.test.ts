@@ -1,8 +1,11 @@
 import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import log from 'electron-log/main'
+import { describe, expect, it, vi } from 'vitest'
 import { createMatchingStore, followConversion } from './matchingStore'
+
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
 async function fileIn(): Promise<string> {
   return join(await mkdtemp(join(tmpdir(), 'surco-matchstore-')), 'matching-pairs.json')
@@ -91,6 +94,24 @@ describe('createMatchingStore', () => {
 })
 
 describe('followConversion', () => {
+  // The file has landed and the programs are repointed by now: a Matching store that cannot
+  // be written must never turn the finished job into a failed one.
+  it('keeps a finished job finished when the Matching store cannot be written', () => {
+    const store = {
+      list: () => [],
+      add: () => {},
+      remove: () => {},
+      removeAll: () => {},
+      movePath: () => {
+        throw new Error('disk full')
+      },
+    }
+    expect(() =>
+      followConversion(store, { inputPath: '/m/a.flac' }, { outputPath: '/m/a.aiff' }, () => false),
+    ).not.toThrow()
+    expect(log.error).toHaveBeenCalled()
+  })
+
   async function storeWith(...pairs: [string, string][]) {
     const store = createMatchingStore(await fileIn())
     for (const [a, b] of pairs) store.add(a, b)

@@ -39,6 +39,7 @@ import { settleVerification } from '../lib/verificationBuffer'
 import type { TrackItem } from '../types'
 import { withMusicCover } from './useAppleMusicArtwork'
 import type { RememberedPick } from './useEditorPicks'
+import { REPLACED_QUERY } from './useReplacedTracks'
 import { useStableCallback } from './useStableCallback'
 
 // How many tracks convert at once in a bulk run. All logical cores but one (min 2): the
@@ -524,6 +525,8 @@ export function useTrackProcessing({
         // the source, so its (possibly different, when renamed) path is evicted too.
         removeAnalysisQueries(queryClient, [result.outputPath])
         wroteRef.current = true
+        if (result.replaceShift || (result.outputPath && result.outputPath !== track.inputPath))
+          queryClient.invalidateQueries({ queryKey: REPLACED_QUERY })
         if (result.outputPath && result.outputPath !== track.inputPath) movedRef.current = true
         // "Apple Music only" can move the row too: to the copy Music landed (exportedPatch).
         const movedTo = result.inPlace ? result.outputPath : result.musicLandedPath

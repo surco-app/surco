@@ -94,6 +94,8 @@ function setup(
     },
   })
   api.dj.askToApply = askToApply
+  const reviewReplaced = vi.fn<Api['reviewReplaced']>(async () => null)
+  api.reviewReplaced = reviewReplaced
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const tree = (over: Partial<Settings>) => (
     <QueryClientProvider client={client}>
@@ -108,7 +110,14 @@ function setup(
   )
   const { rerender } = render(tree(settings))
   const changeSettings = (over: Partial<Settings>) => rerender(tree({ ...settings, ...over }))
-  return { saveRekordboxCues, rekordboxCueTwins, changeSettings, askToApply, calls }
+  return {
+    saveRekordboxCues,
+    rekordboxCueTwins,
+    changeSettings,
+    askToApply,
+    calls,
+    reviewReplaced,
+  }
 }
 
 const ready = () => waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
@@ -140,6 +149,18 @@ describe('a flow placed in the cue editor reaches the other DJ programs', () => 
 
   // Saving works the other program's cues out again with the flows as they are now, so the
   // row must too: a row still counting with the old rules promises cues the save won't write.
+  it('takes the track out of To review in the twin programs the same save wrote to, so none keeps asking about a track already fixed', async () => {
+    const { saveRekordboxCues, reviewReplaced } = setup()
+    await ready()
+    markAt(bar(64))
+    await screen.findByTestId('cues-twin-traktor')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', ['rekordbox', 'traktor']),
+    )
+  })
+
   it('counts again with the new rules when the DJ changes the flow', async () => {
     const { saveRekordboxCues, changeSettings } = setup()
     await ready()

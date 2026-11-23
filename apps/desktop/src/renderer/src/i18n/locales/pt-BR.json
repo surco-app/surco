@@ -489,6 +489,7 @@
     "trimApplied_other": "Corte aplicado em {{count}} faixas",
     "trimUndo": "Desfazer",
     "undo": "Desfazer",
+    "reviewed": "Revisada · {{name}}",
     "clearedMeta_one": "Metadados apagados em {{count}} faixa",
     "clearedMeta_other": "Metadados apagados em {{count}} faixas",
     "filledMeasured_one": "{{count}} faixa preenchida",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "Faz Matching com a faixa escolhida",
+    "cuesMoved": "Cues movidos",
+    "cuesNotMoved": "Cues não movidos",
     "cuesUnsaved": "Cues não salvos",
     "autoMark": {
       "proposed_one": "{{count}} sugestão",
@@ -1315,6 +1318,13 @@
         "help": "O rekordbox ainda não analisou esta faixa. O Surco mediu o andamento e a grade, então você já pode colocar os cues. Quando o rekordbox analisar, o Surco vai ajustá-los à grade dele.",
         "measuring": "Medindo a grade…"
       },
+      "replaced": {
+        "notMoved": "não movidos",
+        "noMatch": "O Surco não conseguiu alinhar o arquivo novo com o antigo. Os cues continuam como estavam.",
+        "drift": "O início e o fim se moveram de forma diferente. Os cues continuam como estavam.",
+        "unreadable": "Não foi possível ler o arquivo antigo. Os cues continuam como estavam.",
+        "reviewed": "Revisada"
+      },
       "twins": {
         "title": "Ao salvar, o fluxo também é colocado em",
         "hot_one": "{{count}} hot cue",
@@ -1442,6 +1452,7 @@
     "suggestionsMore": "Mostrar mais {{count}}",
     "suggestionsLess": "Mostrar menos",
     "suggestionDetected": "Detectado no áudio: {{value}}",
+    "suggestionShare": "{{value}}, {{count}} de {{total}}",
     "rowAutoFill": "Preencher {{name}} automaticamente",
     "rowRequired": "{{name}} obrigatório",
     "rowMoveUp": "Mover {{name}} para cima",
@@ -2780,6 +2791,7 @@
     "matchingDismiss": "Descartar",
     "matchingMore": "Mostrar mais",
     "recentlyAdded": "Adicionadas recentemente",
+    "toReview": "Para revisar",
     "search": "Buscar playlist",
     "loading": "Lendo playlists…",
     "failed": {

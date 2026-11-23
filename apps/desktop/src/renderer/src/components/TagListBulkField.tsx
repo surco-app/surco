@@ -40,7 +40,9 @@ function tagOrder(
   const rank = { all: 0, some: 1, none: 2 }
   return {
     selection,
-    summary: [...tags].sort((a, b) => rank[stateOf(a)] - rank[stateOf(b)]),
+    summary: [...tags].sort(
+      (a, b) => rank[stateOf(a)] - rank[stateOf(b)] || stateOf.count(b) - stateOf.count(a),
+    ),
     rows: Object.fromEntries(
       tracks.map((t) => {
         const carried = tagsOf(t, list)
@@ -111,7 +113,7 @@ export function TagListBulkField({
           foldKey={list.key}
           isOn={(tag) => stateOf(tag) === 'all'}
           isPartial={(tag) => stateOf(tag) === 'some'}
-          partialLabel={(tag) => `${stateOf.count(tag)}/${tracks.length}`}
+          partialOf={{ count: stateOf.count, total: tracks.length }}
           onPick={(tag) => onChangeTracks(toggleTagListAll(tracks, list, tag))}
         />
       </fieldset>

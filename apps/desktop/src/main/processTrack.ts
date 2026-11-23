@@ -1315,6 +1315,7 @@ export async function runProcessTrack(
         oldMusicCopyKept,
         supersededPath,
         musicLandedPath,
+        ...(job.replacesPath && finalPath ? { replacementLandedPath: finalPath } : {}),
         originalKept,
         originalHeldBy,
         musicNameLeftMarked,

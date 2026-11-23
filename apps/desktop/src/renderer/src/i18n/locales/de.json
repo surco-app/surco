@@ -489,6 +489,7 @@
     "trimApplied_other": "Kürzung auf {{count}} Tracks angewendet",
     "trimUndo": "Rückgängig",
     "undo": "Rückgängig",
+    "reviewed": "Geprüft · {{name}}",
     "clearedMeta_one": "Metadaten in {{count}} Track gelöscht",
     "clearedMeta_other": "Metadaten in {{count}} Tracks gelöscht",
     "filledMeasured_one": "{{count}} Track ausgefüllt",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "Matching mit dem gewählten Track",
+    "cuesMoved": "Cues verschoben",
+    "cuesNotMoved": "Cues nicht verschoben",
     "cuesUnsaved": "Cues nicht gespeichert",
     "autoMark": {
       "proposed_one": "{{count}} Vorschlag",
@@ -1315,6 +1318,13 @@
         "help": "rekordbox hat diesen Track noch nicht analysiert. Surco hat Tempo und Raster selbst gemessen, du kannst die Cues also schon setzen. Sobald rekordbox ihn analysiert, rückt Surco sie auf dessen Raster.",
         "measuring": "Raster wird gemessen…"
       },
+      "replaced": {
+        "notMoved": "nicht verschoben",
+        "noMatch": "Surco konnte die neue Datei nicht an der alten ausrichten. Die Cues bleiben, wie sie waren.",
+        "drift": "Anfang und Ende haben sich unterschiedlich verschoben. Die Cues bleiben, wie sie waren.",
+        "unreadable": "Die alte Datei konnte nicht gelesen werden. Die Cues bleiben, wie sie waren.",
+        "reviewed": "Geprüft"
+      },
       "twins": {
         "title": "Beim Speichern kommt der Ablauf auch nach",
         "hot_one": "{{count}} Hot Cue",
@@ -1442,6 +1452,7 @@
     "suggestionsMore": "{{count}} weitere anzeigen",
     "suggestionsLess": "Weniger anzeigen",
     "suggestionDetected": "Im Audio erkannt: {{value}}",
+    "suggestionShare": "{{value}}, {{count}} von {{total}}",
     "rowAutoFill": "{{name}} automatisch füllen",
     "rowRequired": "{{name}} als Pflichtfeld",
     "rowMoveUp": "{{name}} nach oben",
@@ -2780,6 +2791,7 @@
     "matchingDismiss": "Verwerfen",
     "matchingMore": "Mehr anzeigen",
     "recentlyAdded": "Zuletzt hinzugefügt",
+    "toReview": "Zu prüfen",
     "search": "Playlist suchen",
     "loading": "Playlists werden gelesen…",
     "failed": {

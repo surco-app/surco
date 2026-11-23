@@ -12,7 +12,12 @@ afterEach(cleanup)
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (k: string, o?: { count?: number }) => (o?.count != null ? `${k}:${o.count}` : k),
+    t: (k: string, o?: { value?: string; count?: number; total?: number }) =>
+      o?.total != null
+        ? `${k}:${o.value}:${o.count}/${o.total}`
+        : o?.count != null
+          ? `${k}:${o.count}`
+          : k,
   }),
 }))
 
@@ -86,7 +91,7 @@ describe('TagListBulkField', () => {
   })
 
   // A partial tag was a dashed outline and an absent one a solid outline, so the tag no
-  // track carried looked the more present of the two. A partial chip now says on how many
+  // track carried looked the more present of the two. A partial chip now tells on how many
   // tracks it sits, and an absent one reads as something to add.
   it('counts a partial tag across the selection and marks an absent one as an addition', () => {
     render(
@@ -98,9 +103,31 @@ describe('TagListBulkField', () => {
         onChangeTracks={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('chip-Cantaditas')).toHaveTextContent('Cantaditas2/3')
+    expect(screen.getByTestId('chip-Cantaditas')).toHaveAttribute(
+      'aria-label',
+      'fields.suggestionShare:Cantaditas:2/3',
+    )
     expect(screen.getByTestId('chip-Vocals')).toHaveAttribute('data-state', 'off')
     expect(screen.getByTestId('chip-Vocals')).toHaveTextContent(/^Vocals$/)
+  })
+
+  // With 308 tracks the genre row opened on tags one or two tracks carried, ahead of the
+  // genre half of them shared. What most of the selection carries is what the user came for.
+  it('leads the row with the tags most of the selection carries', () => {
+    render(
+      <TagListBulkField
+        label="Grouping"
+        list={GROUPING_TAGS}
+        presets={['Cantaditas', 'Bases']}
+        tracks={[
+          track('x1', { grouping: 'Bases' }),
+          track('x2', { grouping: 'Bases' }),
+          track('x3', { grouping: 'Cantaditas' }),
+        ]}
+        onChangeTracks={vi.fn()}
+      />,
+    )
+    expect(summaryOrder()).toEqual(['Bases', 'Cantaditas'])
   })
 
   it('completes a partial tag on the tracks missing it without touching the rest', () => {

@@ -1,4 +1,4 @@
-import { execFile, spawn } from 'node:child_process'
+import { type ChildProcess, execFile, spawn } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
 import { copyFile, constants as fsConstants, open, readFile, stat, unlink } from 'node:fs/promises'
 import { constants as osConstants, setPriority, tmpdir } from 'node:os'
@@ -172,9 +172,24 @@ const backgroundThreads = (file: string, args: string[]): string[] =>
     ? ['-threads', '1', ...args]
     : args
 
+// execFile rejects the moment an abort kills its child, not when the child has gone: a
+// cancel that returned then would leave ffmpeg still holding the file, which on Windows
+// blocks the rename of the next one. Callers settle only once the process has exited.
+const exited = (child: ChildProcess | undefined): Promise<void> =>
+  !child || child.pid === undefined || child.exitCode !== null || child.signalCode !== null
+    ? Promise.resolve()
+    : new Promise((resolve) => child.once('close', () => resolve()))
+
 const niceDecode = (file: string, args: string[], opts?: RunOpts) => {
   const { onChild, ...execOpts } = opts ?? {}
-  const pending = execFileAsync(file, backgroundThreads(file, args), execOpts as never)
+  const started = execFileAsync(file, backgroundThreads(file, args), execOpts as never)
+  const pending = Object.assign(
+    started.catch(async (err) => {
+      await exited(started.child)
+      throw err
+    }),
+    { child: started.child },
+  ) as typeof started
   const pid = pending.child?.pid
   if (pid !== undefined) {
     try {
