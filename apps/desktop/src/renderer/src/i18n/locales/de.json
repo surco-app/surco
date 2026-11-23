@@ -968,6 +968,7 @@
     "missingRequired": "Pflichtfelder fehlen: {{fields}}",
     "missingOne": "{{field}} fehlt",
     "missingTwo": "{{first}} und {{second}} fehlen",
+    "missingEither": "{{first}} oder {{second}} fehlt",
     "missingCount_one": "{{count}} Pflichtfeld fehlt",
     "missingCount_other": "{{count}} Pflichtfelder fehlen",
     "mixedReplaceSelection": "Die Auswahl mischt Tracks, die eine Kopie in deiner Mediathek ersetzen, mit Tracks, die hinzugefügt werden. Trenne sie zum Konvertieren.",

@@ -1,5 +1,5 @@
 import { METADATA_KEYS } from '../../../shared/metadata'
-import { bareAlbumTitle } from '../../../shared/searchClean'
+import { bareAlbumTitle, dropOriginalMarker } from '../../../shared/searchClean'
 import { fullDateOf } from '../../../shared/tagFields'
 import type {
   AppliedRelease,
@@ -241,8 +241,15 @@ export function titleWithMix(track: ReleaseTrack): string {
   return `${track.title} (${mix})`
 }
 
+// The file's side reaches the scorer through cleanMatchTitle, which drops a trailing
+// "(Original Mix)"; the release title loses the same marker here so both sides are read
+// alike. A label page keeps it in the title, and against the bare file title it only
+// scored as containment and held a right match below Bandcamp's bar.
 function versionTitleSimilarity(target: string, track: ReleaseTrack): number {
-  const plain = titleSimilarity(target, track.title)
+  const plain = Math.max(
+    titleSimilarity(target, track.title),
+    titleSimilarity(target, dropOriginalMarker(track.title)),
+  )
   if (!track.mixName) return plain
   return Math.max(plain, titleSimilarity(target, trackDisplayTitle(track)))
 }

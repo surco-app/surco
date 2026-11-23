@@ -968,6 +968,7 @@
     "missingRequired": "Champs obligatoires manquants : {{fields}}",
     "missingOne": "Champ manquant : {{field}}",
     "missingTwo": "Champs manquants : {{first}} et {{second}}",
+    "missingEither": "Champ manquant : {{first}} ou {{second}}",
     "missingCount_one": "{{count}} champ obligatoire manquant",
     "missingCount_other": "{{count}} champs obligatoires manquants",
     "mixedReplaceSelection": "La sélection mélange des morceaux qui remplacent une copie de ta bibliothèque et des morceaux qui sont ajoutés. Sépare-les pour convertir.",

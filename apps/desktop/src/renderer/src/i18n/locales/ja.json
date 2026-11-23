@@ -968,6 +968,7 @@
     "missingRequired": "必須フィールドが不足しています：{{fields}}",
     "missingOne": "{{field}} が不足しています",
     "missingTwo": "{{first}} と {{second}} が不足しています",
+    "missingEither": "{{first}} または {{second}} が不足しています",
     "missingCount_one": "{{count}} 必須フィールドが不足しています",
     "missingCount_other": "{{count}} 必須フィールドが不足しています",
     "mixedReplaceSelection": "選択されたトラックは、ライブラリ内のコピーを置き換えるものと追加するものが混在しています。変換するには別々にしてください。",

@@ -70,17 +70,22 @@ export function leftOutForMissing(
   requiredFields: string[],
   customFields: readonly CustomField[] = [],
   again = false,
-): { count: number; fields: string[] } {
+): { count: number; fields: string[]; apart?: boolean } {
   const missing = new Set<string>()
-  let count = 0
+  const perTrack: number[] = []
   for (const track of tracks) {
     if (!inScope(track, again) || fromReadOnlyProgram(track)) continue
     const fields = missingRequiredOf(track, requiredFields, customFields)
     if (fields.length === 0) continue
-    count += 1
+    perTrack.push(fields.length)
     for (const field of fields) missing.add(field)
   }
-  return { count, fields: requiredFields.filter((f) => missing.has(f)) }
+  const apart = perTrack.some((n) => n < missing.size)
+  return {
+    count: perTrack.length,
+    fields: requiredFields.filter((f) => missing.has(f)),
+    ...(apart && { apart }),
+  }
 }
 
 // What Convert does with a set of tracks, answered once for every entry point: the header
@@ -91,7 +96,7 @@ export function leftOutForMissing(
 // holds everything back; a single track is never mixed.
 export type ConvertGate = {
   ready: TrackItem[]
-  missing: { count: number; fields: string[] }
+  missing: { count: number; fields: string[]; apart?: boolean }
   mixed: boolean
 } & Record<ReadOnlyProgram, number>
 
@@ -125,7 +130,8 @@ export function convertGate(
 // The words for what the gate keeps out, shared by the header's note and the editor's
 // batch plan so the two never describe one selection differently. The missing fields read
 // as a list in the UI language ("Title and Artist"), not as a bare comma run, with the verb
-// agreeing with how many fields are missing.
+// agreeing with how many fields are missing. When the tracks left out do not all lack every
+// field named, the fields read as alternatives ("Title or Artist") with a single field's verb.
 export function leftOutNote(
   gate: Omit<ConvertGate, 'ready'>,
   tr: TFunction,
@@ -135,12 +141,14 @@ export function leftOutNote(
   const notes = [
     gate.missing.count > 0
       ? tr(
-          gate.missing.fields.length > 1 ? 'header.leftOutMissingSeveral' : 'header.leftOutMissing',
+          gate.missing.fields.length > 1 && !gate.missing.apart
+            ? 'header.leftOutMissingSeveral'
+            : 'header.leftOutMissing',
           {
             count: gate.missing.count,
-            fields: new Intl.ListFormat(language, { type: 'conjunction' }).format(
-              gate.missing.fields.map((key) => tr(`fields.${key}`)),
-            ),
+            fields: new Intl.ListFormat(language, {
+              type: gate.missing.apart ? 'disjunction' : 'conjunction',
+            }).format(gate.missing.fields.map((key) => tr(`fields.${key}`))),
           },
         )
       : null,

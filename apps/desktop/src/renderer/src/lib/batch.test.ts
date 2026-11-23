@@ -109,6 +109,27 @@ describe('leftOutNote', () => {
   it('keeps the singular verb for one missing field', async () => {
     expect(await noteIn('es', ['artist'])).toContain('le falta Artista')
   })
+
+  // Three tracks out, one of them holding its title: «les faltan Título y Artista» told the
+  // user all three lacked a title, a claim the selection itself denied. When the tracks do
+  // not all lack every named field, the fields read as alternatives, with the verb a single
+  // field takes.
+  it.each([
+    ['es', '3 pistas se quedan fuera porque les falta Título o Artista'],
+    ['en', '3 tracks left out, they have no Title or Artist'],
+  ])(
+    'joins the fields as alternatives in %s when the tracks lack different ones',
+    async (language, said) => {
+      const tracks = [track('a', 'idle'), track('b', 'idle'), track('c', 'idle', { title: 'Song' })]
+      await i18n.changeLanguage(language)
+      try {
+        const gate = convertGate(tracks, ['title', 'artist'])
+        expect(leftOutNote(gate, i18n.getFixedT(language), language)).toBe(said)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
 })
 
 describe('leftOutForMissing', () => {
@@ -125,6 +146,7 @@ describe('leftOutForMissing', () => {
     expect(leftOutForMissing(tracks, ['title', 'artist'])).toEqual({
       count: 2,
       fields: ['title', 'artist'],
+      apart: true,
     })
   })
 })
