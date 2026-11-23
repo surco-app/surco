@@ -223,6 +223,20 @@ describe('a replacement measured in the conversion', () => {
     near(patch()?.cueShift?.shiftMs, -1449)
   }, 120_000)
 
+  // Traktor's codec offset is a property of the file the DJ's cues were set on: it has to be
+  // read from the replaced MP3 against the new file, not from the download, or every cue on a
+  // swapped MP3 lands off its kick by the MP3's decoder delay (51.18 ms that ffmpeg skips on
+  // a LAME MP3 and Traktor does not).
+  it("takes Traktor's codec offset from the replaced MP3, not from the download", async () => {
+    watch.traktorCueOffsetMs = -10
+    const oldMp3 = fresh('old.mp3')
+    lameMp3(oldWav, oldMp3)
+
+    await replace(later, fresh('Song.aiff'), oldMp3)
+
+    expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18 + 10, 1)
+  }, 120_000)
+
   // Another recording has no shift to measure: moving the cues to the best fit of noise would
   // scatter them, so nothing moves and the measure says why. The FLAC's samples reach the AIFF
   // untouched, so rekordbox gets no cue move at all and keeps its analysis.
