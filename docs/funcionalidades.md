@@ -1719,6 +1719,19 @@ el valor que tenía el fichero, así que un nombre editado a mano en el programa
 (una entrada sin `ARTIST`, por ejemplo) y que el DJ rellenó se escribe en la colección: antes
 se leía como vacío y el fichero sustituido no llegaba a retirarse (`TAG_HOSTS`, `traktorNml.ts:562`).
 
+**Los nombres de una sustitución llegan a los cinco programas** (23/11, sin publicar tras v1.42.0).
+Con el «Actualizar» de Traktor, Engine DJ, Serato o VirtualDJ encendido, Surco lee los nombres de
+antes de convertir (`namesBefore`, `ffmpeg.ts:2355-2362`). En una sustitución los lee del fichero
+sustituido que tienen las bibliotecas, no de la descarga, porque una descarga con otra grafía se
+tomaría por una edición del DJ y dejaría fuera los nombres nuevos (`readMeta(replacesPath ?? input)`).
+Un campo que el programa tenía vacío y que ahora lleva valor también se escribe. Engine DJ
+decide campo por campo (`writeEngineTags`, `engineTags.ts:90-100`), así que uno que Engine escribe
+distinto no frena a los demás. En Serato el cambio va en la misma cola que el movimiento que trae
+el fichero nuevo, aunque Serato aún tenga el viejo (`queueSeratoRun`, `libraryFlushes.ts:623-625`;
+`seratoTagOps`, `seratoTagSync.ts:19-39`). Si el fichero sustituido no se puede leer, no se envía
+ningún nombre a ningún programa (`namesBefore && changedNames(...)`, `ffmpeg.ts:2995`). Solo con
+tests, no comprobado en un programa real.
+
 **Una recarga a mitad no pierde los cambios** (v1.23.0). Si la ventana se recarga en mitad de
 una tanda, los cambios de biblioteca que llevaba se escriben en vez de tirarse
 (`foldRekordboxBatch`, `rekordboxBatch.ts:115`; `foldNmlBatch`, `nmlBatch.ts:70`;
