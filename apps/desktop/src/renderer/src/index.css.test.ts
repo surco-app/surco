@@ -424,7 +424,6 @@ describe('reduced motion', () => {
     '.animate-pulse',
     '.player-section',
     '.press',
-    '.animate-toast-countdown',
     '.copies-collapse',
     '.copies-feedback',
   ]) {
@@ -437,12 +436,6 @@ describe('reduced motion', () => {
     const rule = reduced.match(/\.copies-feedback\s*\{[^}]*\}/)
     expect(rule?.[0]).toContain('opacity')
     expect(rule?.[0]).not.toContain('transform')
-  })
-
-  it('drains the toast countdown by fading rather than sliding', () => {
-    expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
-    const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
-    expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
   })
 
   it('keeps the hover fade on pressable buttons but drops the shrink', () => {

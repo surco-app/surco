@@ -815,22 +815,6 @@ button:hover > .process-fill {
   animation: top-progress 1.1s linear infinite;
 }
 
-/* The discreet countdown bar under an auto-dismissing toast: drains left-to-right over the
-   toast's own duration (set inline as animation-duration) so the time left is visible. */
-@keyframes toast-countdown {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
-
-.animate-toast-countdown {
-  transform-origin: left;
-  animation: toast-countdown linear forwards;
-}
-
 /* A dismissed toast's exit: softer than the pop-in, a short fade sliding back toward the
    corner. Duration must stay in step with TOAST_LEAVE_MS in ToastStack.tsx — the timer
    there unmounts the card when this finishes. */
@@ -1088,21 +1072,6 @@ button:hover > .process-fill {
   }
   .press:active:not(:disabled) {
     transform: none;
-  }
-
-  /* The countdown still has to tell the time left, so it drains by fading in place instead
-     of sliding its bar across; the inline duration and the forwards fill carry over. */
-  .animate-toast-countdown {
-    animation-name: toast-countdown-fade;
-  }
-}
-
-@keyframes toast-countdown-fade {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
   }
 }
 

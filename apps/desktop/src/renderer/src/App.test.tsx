@@ -543,6 +543,17 @@ const openTab = (row: string, tab: string): void => {
   fireEvent.click(screen.getByTestId(`settings-subtab-${tab}`))
 }
 
+// A notice that leaves on its own has no ✕; the user takes it away early with a sideways
+// swipe, which jsdom only measures against a card that has a width.
+function swipeAway(testid: string): void {
+  const width = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+  try {
+    for (let i = 0; i < 7; i++) fireEvent.wheel(screen.getByTestId(testid), { deltaX: -20 })
+  } finally {
+    width.mockRestore()
+  }
+}
+
 describe('App unsaved cues', () => {
   afterEach(resetCueSession)
 
@@ -13366,30 +13377,37 @@ describe('App reopen last session', () => {
 
   // An unanswered launch offer for a paths-only session must not park in the corner
   // forever: like the new-tracks prompt it carries a duration, so the shared toast
-  // draws its countdown bar and retires the card on its own. Expiring only hides the
-  // offer; only the ✕ clears the saved session.
-  it('auto-dismisses the offer with a visible countdown', async () => {
+  // retires the card on its own. Expiring only hides the offer; only the ✕ clears the
+  // saved session, which is why this notice keeps its ✕ while it counts down.
+  const offerLeavesOnItsOwn = async (session: Awaited<ReturnType<Api['getLastSession']>>) => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi
-        .fn<Api['getLastSession']>()
-        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue(session),
+      saveLastSession,
     })
-    await renderApp()
-    await screen.findByTestId('last-session')
-    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      await renderApp()
+      await screen.findByTestId('last-session')
+      expect(screen.getByTestId('last-session-dismiss')).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(7000))
+      await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
+      expect(saveLastSession).not.toHaveBeenCalledWith([], {})
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('auto-dismisses the offer while still offering the ✕ that declines it', async () => {
+    await offerLeavesOnItsOwn({ paths: ['/music/a.wav'], edits: {} })
   })
 
   // A session with staged edits counts down the same way as a paths-only one.
   it('counts down the offer even when the session carries staged edits', async () => {
-    setApi({
-      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
-        paths: ['/music/a.wav'],
-        edits: { '/music/a.wav': { meta: { ...emptyMetadata(), title: 'Staged' } } },
-      }),
+    await offerLeavesOnItsOwn({
+      paths: ['/music/a.wav'],
+      edits: { '/music/a.wav': { meta: { ...emptyMetadata(), title: 'Staged' } } },
     })
-    await renderApp()
-    await screen.findByTestId('last-session')
-    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
   // If the user has already started importing, restoring the old list on top would mix
@@ -14774,7 +14792,7 @@ describe('App list review notice', { timeout: 15000 }, () => {
     expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
       '4 tracks loaded. 1 duplicate and 1 spelling to review',
     )
-    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
+    swipeAway('list-review-notice')
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     drop(['/music/d.wav'])
     await waitFor(() =>
@@ -14806,7 +14824,8 @@ describe('App list review notice', { timeout: 15000 }, () => {
     listApi({ readTags, getPathForFile: (f: { name: string }) => f.name })
     await renderApp()
     await addThree()
-    fireEvent.click(await screen.findByTestId('list-review-notice-dismiss'))
+    await screen.findByTestId('list-review-notice')
+    swipeAway('list-review-notice')
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
@@ -14886,7 +14905,7 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await renderApp()
     await addThree()
     await screen.findByTestId('list-review-notice')
-    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
+    swipeAway('list-review-notice')
     await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
     await act(async () => openWith?.(['/music/d.wav']))
     await waitFor(() =>
@@ -15068,8 +15087,8 @@ describe('App empty screen offers a single way in', () => {
         [{ path: '/m/a.wav' }, { path: null }],
         [{ path: '/m/a.wav' }, { path: null }, { path: null }],
       )
-      const notice = await screen.findByTestId('app-notice')
-      fireEvent.click(within(notice).getByTestId('app-notice-dismiss'))
+      await screen.findByTestId('app-notice')
+      swipeAway('app-notice')
       await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
       fireEvent.click(screen.getByTestId('source-rail-tracks'))
       fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
