@@ -60,7 +60,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 })
 
 import { withSeratoCues } from '../shared/seratoMarkers'
-import type { TrackMetadata } from '../shared/types'
+import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
 import { recordNmlPatch } from './nmlBatch'
 import { recordRekordboxRepoint } from './rekordboxBatch'
@@ -153,12 +153,13 @@ function replace(
     trim?: { startSec: number }
     isCancelled?: () => boolean
     onTmp?: (p: string) => void
+    format?: OutputFormat
   } = {},
 ) {
   return convertAudio(
     input,
     output,
-    'aiff',
+    extra.format ?? 'aiff',
     meta,
     undefined,
     undefined,
@@ -258,6 +259,21 @@ describe('a replacement measured in the conversion', () => {
     await replace(later, fresh('Song.aiff'), oldMp3)
 
     expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18, 1)
+  }, 120_000)
+
+  // A header-less MP3 download is copied as it is, and Traktor plays it exactly as ffmpeg
+  // decodes it, encoder delay included: the measured shift already holds that delay, so the
+  // cue moves by it alone. Adding libmp3lame's 1105 samples again put every cue 25 ms after
+  // the beat the DJ set.
+  it('moves Traktor cues by the measured shift alone onto a header-less MP3 replacement', async () => {
+    const bare = fresh('later.mp3')
+    derive(later, bare, ['-c:a', 'libmp3lame', '-b:a', '320k', '-write_xing', '0'])
+
+    const { written } = await replace(bare, fresh('Song.mp3'), oldWav, { format: 'mp3' })
+
+    const moved = (written.replaceShift as { moved: number }).moved
+    near(moved, 1525)
+    near(patch()?.cueShift?.shiftMs, -moved)
   }, 120_000)
 
   // Another recording has no shift to measure: moving the cues to the best fit of noise would
