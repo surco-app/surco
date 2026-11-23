@@ -1620,3 +1620,31 @@ describe('a playlist name the tree has to cut', () => {
     vi.useRealTimers()
   })
 })
+
+describe('a deeply nested playlist', () => {
+  const nest = (names: string[], leaf: SourceNode): SourceNode[] => [
+    names.reduceRight<SourceNode>(
+      (inner, name) => ({ id: name, name, kind: 'folder', count: 1, children: [inner] }),
+      leaf,
+    ),
+  ]
+
+  it('steps in less past the fourth level, so its name keeps room in a narrow tree', () => {
+    setup(
+      null,
+      false,
+      nest(['l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'], {
+        id: 'deep',
+        name: 'Last record of the night',
+        kind: 'playlist',
+        count: 3,
+      }),
+    )
+    for (const id of ['l0', 'l1', 'l2', 'l3', 'l4', 'l5', 'l6', 'l7'])
+      fireEvent.click(screen.getByTestId(`source-node-${id}`))
+    expect(screen.getByTestId('source-node-l2')).toHaveStyle({ paddingLeft: '46px' })
+    expect(screen.getByTestId('source-node-l4')).toHaveStyle({ paddingLeft: '82px' })
+    expect(screen.getByTestId('source-node-l5')).toHaveStyle({ paddingLeft: '90px' })
+    expect(screen.getByTestId('source-node-deep')).toHaveStyle({ paddingLeft: '114px' })
+  })
+})

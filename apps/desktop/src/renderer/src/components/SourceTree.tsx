@@ -42,6 +42,8 @@ function pathTo(nodes: SourceNode[], id: string, trail: SourceNode[] = []): Sour
 // Every playlist with the folder names above it. Search lists these flat: with names
 // repeated across folders (the measured collection has five "Todas"), the path is what
 // tells the hits apart.
+const indent = (depth: number): number => Math.min(depth, 4) * 18 + Math.max(depth - 4, 0) * 8
+
 export function flattenPlaylists(
   nodes: SourceNode[],
   folders: string[] = [],
@@ -329,7 +331,7 @@ export const SourceTree = memo(function SourceTree({
         key="drop-line"
         data-testid="source-tree-drop-line"
         aria-hidden="true"
-        style={{ paddingLeft: 10 + depth * 18 }}
+        style={{ paddingLeft: 10 + indent(depth) }}
         className="pointer-events-none h-0 pr-2.5"
       >
         <div className="h-0.5 -translate-y-px rounded-full bg-[var(--color-accent)]" />
@@ -357,7 +359,7 @@ export const SourceTree = memo(function SourceTree({
 
   const nameField = (parentId: string, depth: number): React.ReactNode =>
     creating?.parentId === parentId && (
-      <li key="creating" style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+      <li key="creating" style={{ paddingLeft: 10 + indent(depth) }} className="pr-2.5">
         <input
           ref={nameRef}
           data-testid="source-tree-name"
@@ -466,7 +468,7 @@ export const SourceTree = memo(function SourceTree({
     return (
       <li key={node.id} className={parentCrate ? 'relative' : undefined}>
         {renaming === node.id ? (
-          <div style={{ paddingLeft: 10 + depth * 18 }} className="pr-2.5">
+          <div style={{ paddingLeft: 10 + indent(depth) }} className="pr-2.5">
             <input
               ref={focusField}
               data-testid="source-tree-rename-field"
@@ -523,7 +525,7 @@ export const SourceTree = memo(function SourceTree({
               if (isTreeNodeDrag(e)) setDropAt(null)
             }}
             onDrop={drop}
-            style={{ paddingLeft: 10 + depth * 18 }}
+            style={{ paddingLeft: 10 + indent(depth) }}
             className={`flex h-[28px] w-full items-center gap-1.5 rounded-md compact:h-6 pr-2.5 text-left text-section ${
               selected
                 ? 'is-selected bg-[var(--color-row-selected)] text-[var(--color-on-row-selected)]'
@@ -602,7 +604,7 @@ export const SourceTree = memo(function SourceTree({
             onClick={() => toggle(node.id)}
             onDragOver={dragOver}
             onDrop={drop}
-            style={{ left: 8 + depth * 18 }}
+            style={{ left: 8 + indent(depth) }}
             className="press absolute top-[6px] flex h-4 w-4 items-center justify-center rounded text-fg-faint after:absolute after:-inset-1.5 after:content-[''] hover:text-fg"
           >
             <Chevron size={12} aria-hidden="true" />
