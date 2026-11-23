@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
 import '../i18n'
-import { GRADE_MARK, GRADE_TEXT, LoudnessReadout } from './LoudnessReadout'
+import { GRADE_MARK, LoudnessReadout } from './LoudnessReadout'
 
 afterEach(cleanup)
 
@@ -214,7 +214,17 @@ describe('LoudnessReadout verdict without colour', () => {
     expect(GRADE_MARK.bad).toEqual(
       expect.objectContaining({ className: expect.stringMatching(/bg-danger/) }),
     )
-    expect(GRADE_TEXT.good).not.toMatch(/text-good/)
+  })
+
+  it('keeps every figure in the normal ink, so the verdict is told once, by the mark', () => {
+    render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
+    for (const id of ['lufs', 'peak', 'range']) {
+      expect(screen.getByTestId(`loudness-value-${id}`)).toHaveAttribute('data-tone', 'neutral')
+    }
+    expect(screen.getByTestId('loudness-grade-mark-range')).toHaveAttribute('data-shape', 'square')
+    expect(
+      within(screen.getByTestId('loudness-pill-range')).getByText('Out of range'),
+    ).toBeInTheDocument()
   })
 })
 
