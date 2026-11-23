@@ -20,6 +20,7 @@ import {
   VIRTUALDJ_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { rereadTrackFileQueries } from './useTrackCues'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
 
@@ -112,12 +113,8 @@ export function useRekordboxQueue(
         ),
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-cue-wave-detail'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-audition-lead'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-surco-grid'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-grid-fit'] }),
+        ...rereadTrackFileQueries(queryClient),
         queryClient.invalidateQueries({ queryKey: ['source-collection', source.program] }),
       ]),
     [queryClient, source],

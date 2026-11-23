@@ -176,6 +176,20 @@ describe('useRekordboxQueue', () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
   })
 
+  // The fine waveform, the grid audit and the drop detector read the repointed file too: kept
+  // from the old file, the DJ would place cues against audio that is no longer the one played.
+  it('re-reads the fine waveform, the grid audit and the drop input when a queue lands', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    for (const key of [
+      'rekordbox-cue-wave-fine',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
   it('re-reads the rekordbox collection when a queue lands, so a track it just added shows in the editor', () => {
     const { invalidate, applied } = setup()
     act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))

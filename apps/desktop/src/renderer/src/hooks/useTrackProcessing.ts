@@ -41,6 +41,7 @@ import { withMusicCover } from './useAppleMusicArtwork'
 import type { RememberedPick } from './useEditorPicks'
 import { REPLACED_QUERY } from './useReplacedTracks'
 import { useStableCallback } from './useStableCallback'
+import { rereadTrackFileQueries } from './useTrackCues'
 
 // How many tracks convert at once in a bulk run. All logical cores but one (min 2): the
 // audio encoders ffmpeg uses (lame, flac, alac, pcm) are single-threaded, so each
@@ -211,11 +212,13 @@ export function useTrackProcessing({
   const rereadReachedCollections = (): void => {
     if (!wroteRef.current) return
     wroteRef.current = false
-    for (const program of DJ_PROGRAMS) {
+    const reached = DJ_PROGRAMS.filter((program) => {
       const { sync, add } = DJ_REACH_SETTINGS[program]
-      if (settings?.[sync] || settings?.[add])
-        queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
-    }
+      return settings?.[sync] || settings?.[add]
+    })
+    for (const program of reached)
+      queryClient.invalidateQueries({ queryKey: ['source-collection', program] })
+    if (reached.length > 0) rereadTrackFileQueries(queryClient)
   }
   // The convert-all loop and the Apple Music sweep outlive the render that started
   // them, while the list stays editable — each track must be read at the moment it's
