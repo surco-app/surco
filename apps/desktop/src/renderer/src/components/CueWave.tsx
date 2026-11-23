@@ -284,6 +284,7 @@ export function CueWave({
     <div
       ref={rootRef}
       data-testid="cue-wave"
+      data-slim={slim ? 'true' : 'false'}
       role="application"
       aria-label={t('cueWave.label')}
       tabIndex={-1}
