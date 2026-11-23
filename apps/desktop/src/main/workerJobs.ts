@@ -29,6 +29,7 @@ import {
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
+  carryUnmanagedTags,
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
@@ -106,6 +107,9 @@ export type WorkerJob =
   // ffmpeg's flac muxer writes the comment as DESCRIPTION; moving it to COMMENT is another
   // TagLib save on the whole file (see setFlacComment).
   | { type: 'setFlacComment'; file: string; comment: string; multiFrom?: string }
+  // The source's tags Surco does not manage, back in an MP3, AIFF, WAV or M4A ffmpeg wrote:
+  // another TagLib save on the whole file (see carryUnmanagedTags).
+  | { type: 'carryUnmanagedTags'; source: string; dest: string; owned: string[] }
   // An ID3 source encoded to FLAC: the cues have to be re-armored across tag families,
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
@@ -280,6 +284,9 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return null
     case 'setFlacComment':
       setFlacComment(job.file, job.comment, job.multiFrom)
+      return null
+    case 'carryUnmanagedTags':
+      carryUnmanagedTags(job.dest, job.source, job.owned)
       return null
     case 'copyCuesToFlac':
       copyCuesToFlac(job.source, job.dest, job.shift)

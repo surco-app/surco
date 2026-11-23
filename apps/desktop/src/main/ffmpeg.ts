@@ -2753,6 +2753,21 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
+    // The tags Surco does not manage, which ffmpeg cut to one value or left out of every
+    // target but a FLAC (see carryUnmanagedTags). The custom fields are Surco's to write, and
+    // the encoder stamp and the previous owner's chain are cleared on purpose.
+    if (!clearExtras && ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input)))
+      await runInWorker({
+        type: 'carryUnmanagedTags',
+        source: input,
+        dest: tmp,
+        owned: [
+          ...SOURCE_PROVENANCE,
+          'encoder',
+          ...Object.keys(meta.custom ?? {}).map(customTagName),
+          ...(foreignRemoved ?? []),
+        ],
+      })
     const carrySerato =
       !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
     // Measured once, on the temp's finished audio and before the rename can land on the

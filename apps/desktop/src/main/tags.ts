@@ -515,7 +515,9 @@ const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
 // and its ID3 reader keeps only the first value of a frame (ID3v2.4 separates them with a
 // null) and the first of two TXXX frames sharing a description (measured 23/11/2026 with
 // the bundled ffmpeg).
-function multiValuedTags(f: TagFile): { name: string; values: string[]; carried: string }[] {
+function multiValuedTags(
+  f: TagFile,
+): { name: string; values: string[]; carried: string; frame?: string }[] {
   const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
   if (from)
     return from.fieldNames.map((name) => {
@@ -529,13 +531,118 @@ function multiValuedTags(f: TagFile): { name: string; values: string[]; carried:
     Id3v2FrameClassType.UserTextInformationFrame,
   ))
     byName.set(frame.description, [...(byName.get(frame.description) ?? []), ...frame.text])
+  const frames = new Map<string, string>()
   for (const frame of id3.getFramesByClassType<Id3v2TextInformationFrame>(
     Id3v2FrameClassType.TextInformationFrame,
   )) {
     const name = FFMPEG_ID3_TEXT_NAMES[frame.frameId.toString()]
     if (name) byName.set(name, [...frame.text])
+    if (name) frames.set(name, frame.frameId.toString())
   }
-  return [...byName].map(([name, values]) => ({ name, values, carried: values[0] }))
+  return [...byName].map(([name, values]) => ({
+    name,
+    values,
+    carried: values[0],
+    frame: frames.get(name),
+  }))
+}
+
+// Never carried by carryUnmanagedTags whatever the source holds: Surco's own fields, the
+// mirrors writeTags clears, and the cue blobs the cue carries own. Traktor's tree rides a
+// FLAC as a TRAKTOR4 comment that copyCuesFromFlac re-armors as a PRIV, dropping its text
+// mirror; Serato's SERATO_ ones are carrySeratoCues' to keep or drop.
+const NEVER_CARRIED = new Set([
+  ...VORBIS_MANAGED,
+  ...TXXX_NATIVE_MIRRORS.map((name) => name.toLowerCase()),
+  FLAC_CUE_FIELD.toLowerCase(),
+])
+
+// TagLib writes TSOP, TSOA and TSOT on ID3v2.4 only and drops them from the v2.3 tags every
+// ID3 target is pinned to, but iTunes and mp3tag write and read them on v2.3 all the same.
+const ID3V23_TEXT_FRAMES: Record<string, Id3v2TextFrameId> = {
+  TSOP: new Id3v2FrameIdentifier('TSOP', 'TSOP', 'TSP'),
+  TSOA: new Id3v2FrameIdentifier('TSOA', 'TSOA', 'TSA'),
+  TSOT: new Id3v2FrameIdentifier('TSOT', 'TSOT', 'TST'),
+  TLAN: Id3v2FrameIdentifiers.TLAN,
+}
+
+// The sort names' MP4 home: the atoms Music sorts the library by.
+const MP4_SORT_ATOMS: Record<string, string> = { TSOP: 'soar', TSOA: 'soal', TSOT: 'sonm' }
+
+// ffmpeg carries a source's tags into an MP3 or AIFF cut to one value, a TSOP as a TXXX
+// "artist-sort" nothing reads, and into a WAV or an ALAC not at all; a same-format MP3 or
+// AIFF update lost the sort names to TagLib's v2.3 rendering (measured 23/11/2026 with the
+// bundled ffmpeg). Each tag Surco does not manage comes back from the source in the target's
+// own form, a TXXX or text frame on ID3 and a freeform or sort atom on MP4. `owned` names
+// what Surco wrote, cleared on purpose or the DJ deleted: those stay as they are.
+// Best-effort, like copyCueFrames: a file TagLib cannot open stays as ffmpeg wrote it.
+export function carryUnmanagedTags(dest: string, source: string, owned: string[]): void {
+  const skipped = new Set(owned.map((name) => name.toLowerCase()))
+  try {
+    const from = TagFile.createFromPath(source)
+    try {
+      const tags = multiValuedTags(from).filter(
+        ({ name, values }) =>
+          values.length > 0 &&
+          !NEVER_CARRIED.has(name.toLowerCase()) &&
+          !skipped.has(name.toLowerCase()) &&
+          !/^serato_/i.test(name),
+      )
+      if (tags.length === 0) return
+      const out = TagFile.createFromPath(dest)
+      try {
+        const carry = (tag: CarriedTag) =>
+          extname(dest).toLowerCase() === '.m4a'
+            ? carryToMp4(out.tag as Mpeg4AppleTag, tag)
+            : carryToId3(out, tag)
+        if (tags.filter(carry).length > 0) out.save()
+      } finally {
+        out.dispose()
+      }
+    } finally {
+      from.dispose()
+    }
+  } catch {
+    // The DJ's other tags are worth carrying, never worth failing a finished conversion for.
+  }
+}
+
+type CarriedTag = { name: string; values: string[]; frame?: string }
+
+function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  if (fresh) id3.version = 3
+  const mirrors = id3
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => fr.description.toLowerCase() === name.toLowerCase())
+  const held = frame ? id3.frames.filter((fr) => fr.frameId.toString() === frame) : mirrors
+  const texts = held.flatMap((fr) => [...(fr as Id3v2TextInformationFrame).text])
+  // An ID3v2.3 text frame keeps its values joined by '/', a TXXX by a null.
+  const separator = frame ? '/' : '\0'
+  if (texts.join(separator) === values.join(separator)) return false
+  for (const fr of new Set([...held, ...mirrors])) id3.removeFrame(fr)
+  const text = frame
+    ? Id3v2TextInformationFrame.fromIdentifier(ID3V23_TEXT_FRAMES[frame])
+    : Id3v2UserTextInformationFrame.fromDescription(name)
+  text.text = values
+  id3.addFrame(text)
+  return true
+}
+
+function carryToMp4(apple: Mpeg4AppleTag, { name, values, frame }: CarriedTag): boolean {
+  const atom = frame && MP4_SORT_ATOMS[frame]
+  if (atom) {
+    const type = ByteVector.fromString(atom, StringType.Latin1)
+    if (apple.getQuickTimeStrings(type).length > 0) return false
+    apple.setQuickTimeStrings(type, values)
+    return true
+  }
+  if (apple.getItunesStrings('com.apple.iTunes', name).length > 0) return false
+  apple.setItunesStrings('com.apple.iTunes', name, ...values)
+  return true
 }
 
 // Two MUSICBRAINZ_ARTISTID ids that ffmpeg turned into one nothing can look up. A tag Surco
