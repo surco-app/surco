@@ -2331,14 +2331,16 @@ export async function convertAudio(
 }> {
   const meta = composeMeta(sourceMeta)
   // What the file was named before, for each DJ program whose sync rewrites the names it
-  // holds when the file changes.
+  // holds when the file changes. A replacement's entries were made from the replaced file,
+  // so its names are the ones they hold: a download spelled otherwise would read as the DJ's
+  // own edit and keep the new names out.
   const settings = getSettings()
   const namesBefore =
     (settings.syncTraktor && settings.traktorNmlPath) ||
     settings.syncEngineDj ||
     settings.syncSerato ||
     settings.syncVirtualdj
-      ? await readMeta(input)
+      ? await readMeta(replacesPath ?? input)
           .then((read) => (read.failed ? undefined : read.tags))
           .catch(() => undefined)
       : undefined

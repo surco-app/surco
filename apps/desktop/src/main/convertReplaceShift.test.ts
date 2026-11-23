@@ -318,6 +318,30 @@ describe('a replacement measured in the conversion', () => {
     expect(repoint()?.fromBytes).toBe(statSync(oldWav).size)
   }, 120_000)
 
+  // The libraries hold the names of the file being replaced, not of the download: a download
+  // spelled otherwise read as the DJ's own edit in Traktor, Engine DJ and Serato, and the
+  // names typed in Surco never reached them.
+  it("hands the libraries the names to replace from the replaced file's tags, not the download's", async () => {
+    const old = fresh('old.mp3')
+    derive(oldWav, old, [
+      '-c:a',
+      'libmp3lame',
+      '-b:a',
+      '320k',
+      '-metadata',
+      'title=Old Spelling',
+      '-metadata',
+      'artist=A',
+    ])
+    const download = fresh('download.flac')
+    derive(later, download, ['-metadata', 'title=Download Spelling', '-metadata', 'artist=A'])
+
+    await replace(download, fresh('Song.aiff'), old)
+
+    expect(repoint()?.names).toEqual({ title: { from: 'Old Spelling', to: 'T' } })
+    expect(patch()?.tags).toEqual({ title: { from: 'Old Spelling', to: 'T' } })
+  }, 120_000)
+
   // A replaced file that is gone cannot be measured, but the DJ asked for the new file and
   // still gets it: a measurement never costs a conversion.
   it('finishes the conversion when the old file cannot be read', async () => {
