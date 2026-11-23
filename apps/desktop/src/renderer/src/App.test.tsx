@@ -1531,6 +1531,145 @@ describe('App VirtualDJ tab', () => {
     )
   })
 
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the renamed one yanked them back out of it.
+  const openOtra = async () => {
+    fireEvent.click(screen.getByTestId('source-node-Carpeta/Otra'))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  }
+  const RENAMED: SourceNode[] = [
+    {
+      id: 'Carpeta',
+      name: 'Carpeta',
+      kind: 'folder',
+      count: 2,
+      children: [
+        { id: 'Carpeta/Fuera', name: 'Fuera', kind: 'playlist', count: 1 },
+        { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+      ],
+    },
+  ]
+  const renameDentro = () => {
+    fireEvent.contextMenu(screen.getByTestId('source-node-Carpeta/Dentro'))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: 'Fuera' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+  }
+  async function editWhileOpeningAnother(
+    edit: () => void,
+    after: SourceNode[],
+    openOther: () => Promise<void> = openOtra,
+  ): Promise<ReturnType<typeof vi.fn<ProgramReads['playlist']>>> {
+    let tree: SourceNode[] = [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 2,
+        children: [
+          { id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+          { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+        ],
+      },
+    ]
+    let finish: () => void = () => {}
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            tree = after
+            resolve({ applied: true })
+          }
+        }),
+    )
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+      ])
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Carpeta/Dentro'))
+    edit()
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+
+    await openOther()
+    await act(async () => finish())
+    return playlist
+  }
+
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the edited one yanked them back out of it.
+  it('stays on the list opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED)
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list the palette opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED, async () => {
+      fireEvent.click(screen.getByTestId('open-palette'))
+      fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'Otra' } })
+      await waitFor(() =>
+        expect(
+          document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra'),
+        ).not.toBeNull(),
+      )
+      fireEvent.click(
+        document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra') as HTMLElement,
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+          'aria-current',
+          'true',
+        ),
+      )
+    })
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list opened while a move was being written', async () => {
+    const playlist = await editWhileOpeningAnother(() => {
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(screen.getByTestId('source-node-Carpeta/Dentro'), { dataTransfer: dt })
+      const folder = screen.getByTestId('source-node-Carpeta')
+      vi.spyOn(folder, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+      fireEvent.dragOver(folder, { dataTransfer: dt, clientY: 3 })
+      fireEvent.drop(folder, { dataTransfer: dt })
+    }, [
+      { id: 'Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 }],
+      },
+    ])
+    await waitFor(() => expect(screen.getByTestId('source-node-Dentro')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Dentro')
+  })
+
   it('asks before a tree edit in VirtualDJ too, as in the other programs', async () => {
     const editPlaylist = vi
       .fn<ProgramReads['editPlaylist']>()
