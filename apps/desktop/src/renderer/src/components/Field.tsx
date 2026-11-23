@@ -163,6 +163,7 @@ export const Field = memo(function Field({
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): void {
     if (
       e.key !== 'Enter' ||
+      multiline ||
       e.metaKey ||
       e.ctrlKey ||
       e.altKey ||

@@ -749,7 +749,7 @@ describe('Field with several lines', () => {
     expect(box.value).toBe('Line one\nLine two')
   })
 
-  it('still moves on with Enter and leaves Shift+Enter to break the line', () => {
+  it('breaks the line with Return, as a multi-line box does on macOS, and leaves moving on to Tab', () => {
     const onChange = vi.fn()
     render(
       <div>
@@ -760,11 +760,10 @@ describe('Field with several lines', () => {
     const box = screen.getByTestId('field-comment')
     box.focus()
     fireEvent.change(box, { target: { value: 'Cue at 1:32' } })
-    expect(fireEvent.keyDown(box, { key: 'Enter', shiftKey: true })).toBe(true)
+    expect(fireEvent.keyDown(box, { key: 'Enter' })).toBe(true)
     expect(box).toHaveFocus()
-    fireEvent.keyDown(box, { key: 'Enter' })
+    fireEvent.blur(box)
     expect(onChange).toHaveBeenCalledWith('Cue at 1:32')
-    expect(screen.getByTestId('field-bpm')).toHaveFocus()
   })
 
   it('is reached by Enter from the field before it', () => {
