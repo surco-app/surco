@@ -2655,10 +2655,12 @@ export async function convertAudio(
             coverPath: coverPath ?? carried ?? undefined,
             removeCover,
             clearExtras,
-            foreignRemoved,
+            // The loudness figures go with the rest of the deleted: an M4A encoded again gets
+            // its atoms back, but not the ones measured on the old samples.
+            foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
             cueSource: input,
             cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
-            carryAtoms: codec === 'copy' && ext === '.m4a' && M4A_INPUT.test(input),
+            carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is

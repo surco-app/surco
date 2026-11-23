@@ -1285,8 +1285,9 @@ function setTextFrame(tag: Id3v2Tag, frameId: Id3v2TextFrameId, value: string): 
 // ffmpeg's mp4 muxer writes only the atoms it has names for, so a same-format M4A update,
 // copied through with no backup under "Only when the audio changes", lost every "----"
 // atom the file had: the gapless iTunSMPB, Sound Check, MusicBrainz ids, other programs'
-// own. They still describe the copied audio, so each comes back from the source unless it
-// names a field Surco writes or reads, or one the user deleted. Serato's stay with
+// own, and an M4A encoded again lost them just the same. Each comes back from the source
+// unless it names a field Surco writes or reads, or one in `deleted`: what the user deleted,
+// and the loudness figures of samples the file no longer holds. Serato's stay with
 // carrySeratoCues, which keeps the cues and drops the analysis. Text atoms only, the kind
 // TagLib can write back.
 function carryFreeformAtoms(apple: Mpeg4AppleTag, source: string, deleted: string[]): void {
@@ -1537,8 +1538,8 @@ export function keepGenreParentheses(id3: Id3v2Tag): void {
 // goes via removeCover), so a cleared file keeps none of the fields we manage.
 // `foreignRemoved` names the third-party tags the inspector's per-tag delete marked —
 // applied on both ID3 and m4a regardless of clearExtras, unlike the fields above.
-// `carryAtoms` brings an m4a cueSource's freeform atoms back when its audio was copied
-// through (see carryFreeformAtoms).
+// `carryAtoms` brings an m4a cueSource's atoms back into the m4a written from it, copied
+// through or encoded again (see carryFreeformAtoms).
 export function writeTags(
   file: string,
   meta: TrackMetadata,

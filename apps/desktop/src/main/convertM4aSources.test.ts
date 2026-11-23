@@ -197,3 +197,53 @@ describe.each(['aac', 'alac'] as const)('an %s M4A tagged elsewhere', (codec) =>
     },
   )
 })
+
+function atoms(path: string) {
+  const f = TagFile.createFromPath(path)
+  try {
+    const apple = f.tag as Mpeg4AppleTag
+    return {
+      freeform: Object.fromEntries(
+        [...FREEFORM, ['com.apple.iTunes', 'iTunNORM']].map(([mean, name]) => [
+          name,
+          apple.getItunesStrings(mean as string, name as string),
+        ]),
+      ),
+      sorts: ATOMS.map(([atom]) => apple.getQuickTimeStrings(box(atom))),
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
+// Normalized or resampled, an M4A stays an M4A but is encoded again, and the mp4 muxer
+// writes back none of the atoms it has no name for: every one the DJ's other programs set
+// was gone. They describe the track, not its samples, so they come back; the loudness
+// figures measured on the old audio do not.
+describe.each(['aac', 'alac'] as const)('an %s M4A encoded again to M4A', (codec) => {
+  it('keeps the atoms Surco does not manage', async () => {
+    const src = tagged(codec)
+    const f = TagFile.createFromPath(src)
+    ;(f.tag as Mpeg4AppleTag).setItunesStrings('com.apple.iTunes', 'iTunNORM', ' 000003E8')
+    f.save()
+    f.dispose()
+    const out = join(dir, `out${n++}.m4a`)
+    await convertAudio(
+      src,
+      out,
+      'alac',
+      { ...(await readMeta(src)).tags, title: 'New title' },
+      undefined,
+      {
+        mode: 'peak',
+        targetLufs: -14,
+        peakDb: -1,
+        truePeakDb: -1,
+      },
+    )
+    const { freeform, sorts } = atoms(out)
+    for (const [, name, values] of FREEFORM) expect(freeform[name], name).toEqual(values)
+    expect(freeform.iTunNORM).toEqual([])
+    expect(sorts).toEqual(ATOMS.map(([atom]) => [`${atom} value`]))
+  })
+})

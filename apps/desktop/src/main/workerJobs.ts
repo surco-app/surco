@@ -99,7 +99,7 @@ export type WorkerJob =
       clearExtras?: boolean
       // The specific third-party tags the inspector's user marked for deletion.
       foreignRemoved?: string[]
-      // The m4a's audio was copied through: cueSource's freeform atoms still describe it.
+      // The m4a was written from cueSource, whose atoms it should keep.
       carryAtoms?: boolean
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
