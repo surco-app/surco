@@ -3004,6 +3004,11 @@ describe('App auto-match', () => {
     })
     await renderApp()
     const rows = await addTwoTracks()
+    // The editor opened on the first track loads its top release too, as soon as its own
+    // search answers. Under load that landed after the selection grew and was counted as a
+    // third sweep probe, so the test waits for it and counts the sweep's probes apart.
+    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(1))
+    const sweepProbes = () => getRelease.mock.calls.length - 1
     fireEvent.click(rows[1], { metaKey: true })
 
     const album = await screen.findByTestId('field-album')
@@ -3011,7 +3016,7 @@ describe('App auto-match', () => {
     fireEvent.change(album, { target: { value: 'Hand Typed' } })
 
     fireEvent.click(screen.getByTestId('auto-match'))
-    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(sweepProbes()).toBe(2))
     releaseGate()
     await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
 
