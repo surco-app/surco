@@ -31,7 +31,7 @@ import {
   TRAKTOR_RATING_USER,
   WMP_RATING_USER,
 } from '../shared/rating'
-import { fullDateOf, MANAGED_ALIASES } from '../shared/tagFields'
+import { fullDateOf, MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
 import type { ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
@@ -403,6 +403,34 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
   }
 }
 
+const VORBIS_MANAGED = new Set(
+  [...MANAGED_ALIASES, ...TAG_FIELDS.flatMap((f) => [f.vorbis ?? '', ...(f.vorbisAlso ?? [])])].map(
+    (name) => name.toLowerCase(),
+  ),
+)
+
+// ffmpeg's FLAC reader folds a comment's repeated entries into one value joined by ';'
+// and the muxer writes that back (measured 23/11/2026 with the bundled ffmpeg), so two
+// MUSICBRAINZ_ARTISTID ids became one nothing can look up. A comment Surco does not manage
+// gets its entries back from the source, only while the file still holds exactly the
+// joined value ffmpeg carried: one the user deleted in the inspector, or emptied with the
+// rest, was cleared and stays cleared.
+function carryRepeatedComments(xiph: XiphComment, source: string): void {
+  const f = TagFile.createFromPath(source)
+  try {
+    const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+    for (const name of from?.fieldNames ?? []) {
+      const values = from?.getField(name) ?? []
+      if (values.length < 2 || VORBIS_MANAGED.has(name.toLowerCase())) continue
+      const carried = xiph.getField(name)
+      if (carried.length === 1 && carried[0] === values.join(';'))
+        xiph.setFieldAsStrings(name, ...values)
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // ffmpeg's flac muxer renames the comment on write whatever spelling it is handed
 // (measured: `-metadata COMMENT=` and `-metadata comment=` both land as DESCRIPTION),
 // so a FLAC target came out with the one field Traktor, Engine and mp3tag read for the
@@ -410,14 +438,16 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
 // before and after an update (17/09/2026). Rewritten after the encode by TagLib, which
 // writes the field under its own name: the value goes to COMMENT and DESCRIPTION is
 // cleared, so a file an earlier Surco wrote does not keep the old text under the alias
-// the reader falls back to.
-export function setFlacComment(file: string, comment: string): void {
+// the reader falls back to. `multiFrom` is the FLAC the file was written from, whose
+// repeated comments come back in this same save (see carryRepeatedComments).
+export function setFlacComment(file: string, comment: string, multiFrom?: string): void {
   const f = TagFile.createFromPath(file)
   try {
     const xiph = f.getTag(TagTypes.Xiph, true) as XiphComment
     xiph.removeField('DESCRIPTION')
     if (comment.trim()) xiph.setFieldAsStrings('COMMENT', comment)
     else xiph.removeField('COMMENT')
+    if (multiFrom) carryRepeatedComments(xiph, multiFrom)
     f.save()
   } finally {
     f.dispose()
