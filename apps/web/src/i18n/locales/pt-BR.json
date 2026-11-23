@@ -345,8 +345,8 @@
           },
           {
             "t": "Substitui o que você já tem",
-            "s": "Uma cópia melhor ocupa o lugar da antiga no Apple Music e no rekordbox, com suas playlists.",
-            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music e no rekordbox, em vez de deixar você com duas. A faixa continua nas playlists, sem adicioná-la de novo a cada uma à mão, e no Apple Music mantém o número de reproduções e a sua avaliação. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
+            "s": "Uma cópia melhor ocupa o lugar da antiga no Apple Music e nos seus programas de DJ, com os cues.",
+            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, em vez de deixar você com duas. A faixa continua nas playlists, e os cues se movem com o áudio quando a cópia nova começa um pouco antes ou depois. Cada faixa substituída espera em “Para revisar” até você conferir. No Apple Music ela mantém o número de reproduções e a sua avaliação. O Serato mantém a faixa nas crates, mas ela perde as estrelas. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
           },
           {
             "t": "Erros de grafia e duplicados na biblioteca",
@@ -450,6 +450,7 @@
         "add": "Adicionar a faixa convertida",
         "names": "Levar título, artista, álbum e gênero",
         "follow": "Seguir a faixa nova com seus cues",
+        "replace": "Substituir uma faixa e manter os cues",
         "usb": "Pendrive para players Pioneer",
         "copies": "Cópia antes de gravar e restaurar",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "No lugar",
         "sameFolder": "Na mesma pasta",
         "keepsOriginal": "Mantém o original",
+        "losesStars": "Perde as estrelas",
         "engineUsb": "Pendrive do Engine",
         "noRestore": "Sem restaurar em Cópias",
         "beta": "Beta",
@@ -1021,7 +1023,7 @@
           "Se o programa está aberto, o Surco espera você fechar ou se oferece para fechar, e sempre faz backup antes de escrever.",
           "O Traktor não relê o arquivo, ele lê o collection.nml. Para ele ver seus cues novos, indique sua coleção ao Surco em Ajustes.",
           "Os cues do Traktor sobrevivem à conversão entre MP3, AIFF, FLAC e WAV e só se perdem em ALAC.",
-          "Carregue outra cópia de uma faixa que você já tem e o botão vira “Substituir”, mantendo playlists e cues."
+          "Carregue outra cópia de uma faixa que você tem e o botão vira “Substituir”. Os cues seguem o áudio e ela espera em “Para revisar”."
         ],
         "shot": "exportar-pt-BR.webp",
         "shotCaption": "Mandando a faixa para o Apple Music ou exportando a coleção."

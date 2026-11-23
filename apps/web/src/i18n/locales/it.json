@@ -345,8 +345,8 @@
           },
           {
             "t": "Sostituisci quello che hai già",
-            "s": "Una copia migliore prende il posto di quella vecchia in Apple Music e rekordbox, con le sue playlist.",
-            "d": "Carichi un'altra copia di un brano che hai già, in qualsiasi formato e anche nello stesso, e prende il suo posto in Apple Music e in rekordbox, invece di ritrovarti con due. Il brano resta nelle sue playlist, senza doverlo rimettere a mano in ognuna, e in Apple Music conserva i suoi ascolti e la tua valutazione. Il segno di Apple Music ti dice in che formato è la tua copia, così sai se ne vale la pena."
+            "s": "Una copia migliore prende il posto di quella vecchia in Apple Music e nei tuoi programmi DJ, con i cue.",
+            "d": "Carichi un’altra copia di un brano che hai già, in qualsiasi formato e anche nello stesso, e prende il suo posto in Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, invece di ritrovarti con due. Il brano resta nelle sue playlist, e i suoi cue si spostano con l’audio se la nuova copia inizia un po’ prima o un po’ dopo. Ogni brano sostituito aspetta in «Da rivedere» finché non lo guardi. In Apple Music conserva i suoi ascolti e la tua valutazione. Serato lo tiene nelle sue crate, ma perde le stelle. Il segno di Apple Music ti dice in che formato è la tua copia, così sai se ne vale la pena."
           },
           {
             "t": "Refusi e doppioni nella tua libreria",
@@ -450,6 +450,7 @@
         "add": "Aggiungere il brano convertito",
         "names": "Portare titolo, artista, album e genere",
         "follow": "Seguire il nuovo brano con i suoi cue",
+        "replace": "Sostituire un brano e tenere i cue",
         "usb": "USB per lettori Pioneer",
         "copies": "Copia prima di scrivere e ripristino",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "Al suo posto",
         "sameFolder": "Nella stessa cartella",
         "keepsOriginal": "Tiene l'originale",
+        "losesStars": "Perde le stelle",
         "engineUsb": "USB di Engine",
         "noRestore": "Senza ripristino in Copie",
         "beta": "Beta",
@@ -1021,7 +1023,7 @@
           "Se il programma è aperto, Surco aspetta che tu lo chiuda o si offre di chiuderlo, e salva sempre una copia prima di scrivere.",
           "Traktor non rilegge il file, legge il suo collection.nml. Perché veda i tuoi nuovi cue, indica la tua collezione in Impostazioni.",
           "I cue di Traktor sopravvivono alla conversione tra MP3, AIFF, FLAC e WAV, e si perdono solo in ALAC.",
-          "Se carichi un'altra copia di un brano che hai già, il pulsante diventa «Sostituisci» e mantiene le sue playlist e i suoi cue."
+          "Se carichi un’altra copia di un brano, il pulsante diventa «Sostituisci». I cue seguono l’audio e il brano aspetta in «Da rivedere»."
         ],
         "shot": "exportar-it.webp",
         "shotCaption": "Inviare il brano ad Apple Music o esportare la collezione."

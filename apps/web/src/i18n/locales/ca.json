@@ -345,8 +345,8 @@
           },
           {
             "t": "Substitueix el que ja tens",
-            "s": "Una còpia millor ocupa el lloc de la vella a Apple Music i rekordbox, amb les seves playlists.",
-            "d": "Carregues una altra còpia d'una pista que ja tens, en qualsevol format i també en el mateix, i n'ocupa el lloc a Apple Music i a rekordbox, en lloc d'acabar amb dues. La pista continua a les seves playlists, sense haver-la de tornar a posar a mà a cadascuna, i a Apple Music conserva les reproduccions i la teva puntuació. La marca d'Apple Music et diu en quin format és la teva còpia, perquè sàpigues si val la pena."
+            "s": "Una còpia millor ocupa el lloc de la vella a Apple Music i als teus programes DJ, amb els cues.",
+            "d": "Carregues una altra còpia d’una pista que ja tens, en qualsevol format i també en el mateix, i n’ocupa el lloc a Apple Music, rekordbox, Traktor, Engine DJ, Serato i VirtualDJ, en lloc d’acabar amb dues. La pista continua a les seves playlists, i els seus cues es mouen amb l’àudio si la còpia nova comença una mica abans o després. Cada pista substituïda espera a «Per revisar» fins que la mires. A Apple Music conserva les reproduccions i la teva puntuació. Serato la manté als seus crates, però perd les estrelles. La marca d’Apple Music et diu en quin format és la teva còpia, perquè sàpigues si val la pena."
           },
           {
             "t": "Errades i duplicats de la teva biblioteca",
@@ -450,6 +450,7 @@
         "add": "Afegir la pista convertida",
         "names": "Portar el títol, l'artista, l'àlbum i el gènere",
         "follow": "Seguir la pista nova amb els seus cues",
+        "replace": "Substituir una pista i conservar els cues",
         "usb": "USB per a reproductors Pioneer",
         "copies": "Còpia abans d'escriure i restaurar",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "Al seu lloc",
         "sameFolder": "A la mateixa carpeta",
         "keepsOriginal": "Conserva l'original",
+        "losesStars": "Perd les estrelles",
         "engineUsb": "USB d'Engine",
         "noRestore": "Sense restaurar a Còpies",
         "beta": "Beta",
@@ -1021,7 +1023,7 @@
           "Si el programa és obert, Surco espera que el tanquis o s'ofereix a tancar-lo, i sempre desa una còpia abans d'escriure.",
           "Traktor no torna a llegir el fitxer, llegeix el seu collection.nml. Perquè vegi els cues nous, indica la teva col·lecció a Configuració.",
           "Els cues de Traktor sobreviuen a la conversió entre MP3, AIFF, FLAC i WAV, i només es perden en ALAC.",
-          "Si carregues una altra còpia d'una pista que ja tens, el botó passa a «Substituir» i en conserva les playlists i els cues."
+          "Si carregues una altra còpia d’una pista que tens, el botó passa a «Substituir». Els cues segueixen l’àudio i espera a «Per revisar»."
         ],
         "shot": "exportar-ca.webp",
         "shotCaption": "Enviar la pista a Apple Music o exportar la col·lecció."

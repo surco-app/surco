@@ -345,8 +345,8 @@
           },
           {
             "t": "Replaces what you already have",
-            "s": "A better copy takes the old one's place in Apple Music and rekordbox, playlists included.",
-            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The track stays in its playlists, with no adding it back to each one by hand, and in Apple Music it keeps its play count and your rating. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
+            "s": "A better copy takes the old one’s place in Apple Music and your DJ programs, cues included.",
+            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one’s place in Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, instead of leaving you with two. The track stays in its playlists, and its cues move with the audio when the new copy starts a little earlier or later. Every replaced track waits in “To review” until you check it. In Apple Music it keeps its play count and your rating. Serato keeps it in its crates but loses its stars. The Apple Music badge shows what format your copy is in, so you know whether it’s worth it."
           },
           {
             "t": "Typos and duplicates in your library",
@@ -450,6 +450,7 @@
         "add": "Add the converted track",
         "names": "Carry title, artist, album and genre",
         "follow": "Follow the new track with its cues",
+        "replace": "Replace a track and keep its cues",
         "usb": "USB for Pioneer players",
         "copies": "Backup before writing, and restore",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "In place",
         "sameFolder": "Same folder",
         "keepsOriginal": "Keeps the original",
+        "losesStars": "Loses its stars",
         "engineUsb": "Engine USB",
         "noRestore": "Not in Backups",
         "beta": "Beta",
@@ -1021,7 +1023,7 @@
           "If the program is open, Surco waits until you close it or offers to close it, and always keeps a backup before writing.",
           "Traktor doesn't re-read the file, it reads its collection.nml. For it to see your new cues, point Surco at your collection in Settings.",
           "Traktor's cues survive conversion across MP3, AIFF, FLAC and WAV, and are only lost on ALAC.",
-          "Load another copy of a track you already have and the button changes to “Replace”, keeping its playlists and cues."
+          "Load another copy of a track you have and the button changes to “Replace”. Its cues follow the audio and it waits in “To review”."
         ],
         "shot": "exportar-en.webp",
         "shotCaption": "Sending the track to Apple Music or exporting the collection."
