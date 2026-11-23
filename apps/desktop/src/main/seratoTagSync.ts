@@ -16,8 +16,13 @@ const SERATO_FIELD: Partial<Record<MusicReviewField, SeratoTagField>> = {
   genre: 'tgen',
 }
 
-export function seratoTagOps(updates: LibraryTagUpdate[], roots: SeratoLibraryRoot[]): TagsOp[] {
-  const has = seratoLibraryHas(roots)
+// holds says which files Serato will have when the ops apply: a move queued with them lands
+// first, so a replaced file's new path counts though Serato still holds the old one.
+export function seratoTagOps(
+  updates: LibraryTagUpdate[],
+  roots: SeratoLibraryRoot[],
+  holds: (path: string) => boolean = seratoLibraryHas(roots),
+): TagsOp[] {
   return updates.flatMap((update): TagsOp[] => {
     const fields: TagsOp['fields'] = {}
     const from: NonNullable<TagsOp['from']> = {}
@@ -31,7 +36,7 @@ export function seratoTagOps(updates: LibraryTagUpdate[], roots: SeratoLibraryRo
       from[tag] = change.from
     }
     if (Object.keys(fields).length === 0) return []
-    if (!seratoRootOf(update.path, roots) || !has(update.path)) return []
+    if (!seratoRootOf(update.path, roots) || !holds(update.path)) return []
     return [
       {
         id: randomUUID(),

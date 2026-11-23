@@ -16,6 +16,9 @@ export interface RekordboxRepoint {
   audio?: { cueShiftMs: number }
   // The same move as Engine DJ counts it (see shiftEnginePerformance).
   engineShift?: EngineShift
+  // A replacement no measure vouches holds the replaced file's audio: a program's own
+  // analysis of the old file, its grid above all, does not describe the new one.
+  reanalyse?: true
   // The source's size before a conversion rewrote it in place (see EngineRepoint).
   fromBytes?: number
   names?: Partial<Record<'title' | 'artist' | 'album' | 'genre', TagChange>>
@@ -111,6 +114,7 @@ export function stackRepoint(
       ? { expectTrackData: earlier.expectTrackData }
       : {}),
     ...(earlier.fixLength ? { fixLength: true } : {}),
+    ...(stacks && earlier.reanalyse ? { reanalyse: true as const } : {}),
     ...(earlier.names || repoint.names ? { names: stackNames(earlier.names, repoint.names) } : {}),
   }
 }

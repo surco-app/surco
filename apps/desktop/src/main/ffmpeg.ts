@@ -2253,7 +2253,8 @@ const SERATO_FLAC_MARKERS = 'SERATO_MARKERS_V2'
 
 // What the programs need of the replaced file next to the measured shift: where rekordbox
 // places its first sample (at the rate sourceRate would use), the replacement's real rate,
-// the codec offset Traktor adds, and the old size when the new file lands on its path.
+// the codec offset Traktor adds, and the old size, taken before the new file may land on
+// its path.
 // A read that fails leaves its neutral value: none of them may cost the conversion.
 async function readReplaced(
   old: string,
@@ -2271,9 +2272,10 @@ async function readReplaced(
       .then((p) => Number(p.sampleRate) || undefined)
       .catch(() => undefined),
     replacedCueOffsetOfFiles(old, tmp).catch(() => 0),
-    isSameFile(old, output)
-      .then((same) => (same ? stat(old).then((s) => s.size) : undefined))
-      .catch(() => undefined),
+    stat(old).then(
+      (s) => s.size,
+      () => undefined,
+    ),
   ])
   return {
     oldShiftMs,
@@ -2329,9 +2331,17 @@ export async function convertAudio(
   written: ConversionWritten
 }> {
   const meta = composeMeta(sourceMeta)
+  // What the file was named before, for each DJ program whose sync rewrites the names it
+  // holds when the file changes. A replacement's entries were made from the replaced file,
+  // so its names are the ones they hold: a download spelled otherwise would read as the DJ's
+  // own edit and keep the new names out.
+  const settings = getSettings()
   const namesBefore =
-    (getSettings().syncTraktor && getSettings().traktorNmlPath) || getSettings().syncEngineDj
-      ? await readMeta(input)
+    (settings.syncTraktor && settings.traktorNmlPath) ||
+    settings.syncEngineDj ||
+    settings.syncSerato ||
+    settings.syncVirtualdj
+      ? await readMeta(replacesPath ?? input)
           .then((read) => (read.failed ? undefined : read.tags))
           .catch(() => undefined)
       : undefined
@@ -2955,7 +2965,7 @@ export async function convertAudio(
             },
           }
         : {}),
-      fromBytes: replaced?.oldBytes ?? fromBytes,
+      fromBytes: replaced ? replaced.oldBytes : fromBytes,
       names: namesBefore && changedNames(namesBefore, meta),
     })
     if (repoint)

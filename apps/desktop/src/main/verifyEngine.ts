@@ -272,12 +272,15 @@ function judge(
   }
   if (typeof before !== 'object') return ok()
 
-  // With the samples kept, Engine's repoint moves only the file columns, so a cue, beat or
-  // loop that changed is one the DJ set and lost. A trim or a resample moves them, checked
-  // below against the cut, but what the row had must still be there.
+  // With the samples kept and no shift, Engine's repoint moves only the file columns, so a
+  // cue, beat or loop that changed is one the DJ set and lost. A trim, a resample or a
+  // replacement whose audio sits elsewhere moves them, checked below against the shift, but
+  // what the row had must still be there.
   const now = performanceOf(db, row.id)
   const changed = PERFORMANCE.find((field) =>
-    e.samplesKept ? now[field] !== before[field] : before[field] !== EMPTY && now[field] === EMPTY,
+    e.samplesKept && !e.shift
+      ? now[field] !== before[field]
+      : before[field] !== EMPTY && now[field] === EMPTY,
   )
   if (changed) return check('mismatch', 'enginePerformanceChanged', { field: changed })
   const misplaced = misplacedField(db, row.id, before, e.shift, now)

@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
+import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import {
@@ -417,6 +418,7 @@ it('reports a library it cannot read', async () => {
 })
 
 const RATE = 44100
+const ENGINE_META = { title: 'One', artist: 'A', album: 'LP', genre: 'House' } as TrackMetadata
 const TRIM_MS = 1900
 const HOT_SEC = [1, 5, 12]
 const LOOP_SEC: [number, number] = [8, 10]
@@ -737,6 +739,38 @@ describe.each(['2.18', '3.0.2'] as const)(
       const move = { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } }
       await repointEngineTracks(lib.dir, [move])
       const once = await positionsOf(lib)
+      const [again] = await repointEngineTracks(lib.dir, [move])
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    // The 23/11 replacement test on a copy of a real library, with "Add to Engine DJ" and
+    // "Sync" both on: the add moved the row onto the new file during the conversion, the
+    // repoint then found nothing on the old path, and every cue stayed 1.5 s early with the
+    // grid and the length of the old file. The shift lands once whichever write moves the row.
+    it('shifts a replacement once when the Engine DJ destination already moved its row', async () => {
+      setEngineWriteGatherMs(0)
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await addToEngineLibrary(lib.dir, lib.newFile, ENGINE_META, undefined, lib.oldFile)
+      const move = {
+        from: lib.oldFile,
+        to: lib.newFile,
+        fromBytes: 100,
+        engineShift: { trimmedMs: -1500 },
+      }
+      const [result] = await repointEngineTracks(lib.dir, [move])
+      expect(result).toEqual({ written: true, id: '1' })
+      const once = await positionsOf(lib)
+      expect(once.hot?.[1]).toBeCloseTo(HOT_SEC[1] + 1.5, 6)
+      expect(once.grid).toEqual(before.grid?.map((s) => expect.closeTo(s + 1.5, 6)))
+      expect(once.lengthSec).toBeCloseTo(before.lengthSec + 1.5, 4)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT path, fileBytes FROM Track')).toEqual({
+        path: '../music/new.aiff',
+        fileBytes: 4321,
+      })
+      db.close()
       const [again] = await repointEngineTracks(lib.dir, [move])
       expect(again).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(once)

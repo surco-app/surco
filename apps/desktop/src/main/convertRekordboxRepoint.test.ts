@@ -259,6 +259,19 @@ describe('rekordboxRepointFor', () => {
     ).toBe(1234)
   })
 
+  // With "Add to Engine DJ" on, the destination moves the replaced row before the repoint
+  // runs: only the old file's size tells the repoint that row still owes its shift.
+  it('keeps the old size when the replacement lands on another path', () => {
+    expect(
+      rekordboxRepointFor('/dl/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        fromBytes: 1234,
+        replaceShift: { moved: 1500 },
+        replaceAudio: { oldShiftMs: 0, newShiftMs: 0 },
+      })?.fromBytes,
+    ).toBe(1234)
+  })
+
   // Traktor and Engine need to know the old file is held before adding the new one, or a
   // replace would leave a second entry beside the one that should move.
   it('marks a repoint that replaces a library file', () => {

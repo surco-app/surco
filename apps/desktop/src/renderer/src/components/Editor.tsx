@@ -898,11 +898,13 @@ export const Editor = memo(function Editor({
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
   useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
-  // A selection replaces what each track was stamped to replace by an earlier convert.
+  // The file each convert replaces: a selection's, what each track was stamped to replace by
+  // an earlier convert; one track's, the stamp the convert button puts first, else the one it
+  // already has, as onProcess below sends it.
   const seratoLosesStars = useSeratoLosesStars(
     ...(isMulti
       ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
-      : [replacedCopyPath]),
+      : [replacePatch(replaceTarget, item.inputPath)?.replacesPath ?? item.replacesPath ?? '']),
   )
 
   // The editor remounts per track and App applies its patch to whichever row is selected,

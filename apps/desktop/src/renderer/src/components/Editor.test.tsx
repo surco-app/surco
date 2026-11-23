@@ -199,6 +199,7 @@ function renderEditor(
     addToRekordbox?: boolean
     syncRekordbox?: boolean
     syncTraktor?: boolean
+    syncSerato?: boolean
     traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
@@ -315,6 +316,7 @@ function renderEditor(
     addToRekordbox: props.addToRekordbox ?? false,
     ...(props.syncRekordbox ? { syncRekordbox: true } : {}),
     ...(props.syncTraktor ? { syncTraktor: true } : {}),
+    ...(props.syncSerato ? { syncSerato: true } : {}),
     traktorNmlPath: props.traktorNmlPath ?? '',
     keepMp3Sources: props.keepMp3Sources ?? false,
     overwriteOriginal: props.overwriteOriginal ?? false,
@@ -2162,6 +2164,23 @@ describe('Editor multi-select', () => {
       }),
     })
     renderMulti({ replacesA: '/s/old.wav', settings: { syncSerato: true } })
+    expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
+  })
+
+  // The 23/11 replacement test: the same track stamped to replace a file Serato holds warned
+  // when selected with another and stayed silent alone, as the single path only asked the
+  // library lookup. One track and several warn about the same file the convert replaces.
+  it('warns that Serato loses the stars when a single track replaces a file Serato holds', async () => {
+    Object.assign(window.api, {
+      dj: djReads({
+        serato: {
+          collection: vi
+            .fn<ProgramReads['collection']>()
+            .mockResolvedValue([{ contentId: '1', path: '/s/old.wav', title: 'A', artist: '' }]),
+        },
+      }),
+    })
+    renderEditor({ id: 'a', replacesPath: '/s/old.wav' }, 'wav', { syncSerato: true })
     expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
   })
 

@@ -620,7 +620,9 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
       addToSerato,
       addToSerato && run.addable ? seratoLibraryHas(queue.roots()) : undefined,
     ),
-    ...(named.length > 0 ? seratoTagOps(named, queue.roots()) : []),
+    ...(named.length > 0
+      ? seratoTagOps(named, roots, (path) => held(path) || moves.some((r) => r.to === path))
+      : []),
   ]
   if (ops.length + moves.length === 0) return
   if (moves.length > 0) queue.enqueue(ops, moves)

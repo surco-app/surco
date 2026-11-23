@@ -264,6 +264,7 @@ function movedSong(
     },
     -(shift?.trimmedMs ?? 0) / 1000,
     shift ? (facts.endSeconds ?? null) : null,
+    repoint.reanalyse === true,
   )
   if (moved === null) return { written: false, reason: 'unwritable' }
   const names = repoint.names ?? {}

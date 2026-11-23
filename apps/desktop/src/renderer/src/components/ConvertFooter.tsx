@@ -72,7 +72,8 @@ interface ConvertFooterProps {
   // Whether this track would supersede a copy already in the library.
   replaces?: boolean
   // Serato holds the copy a replacement would supersede and will lose its stars; with several
-  // tracks, the copy any of them supersedes.
+  // tracks, the copy any of them supersedes. A track stamped to replace a file supersedes it
+  // even when no copy is found now, as each track of a selection does.
   seratoLosesStars?: boolean
   // The library's copy measured better than this file.
   libraryBetter?: boolean
@@ -755,7 +756,7 @@ export function ConvertFooter({
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
               </p>
             )}
-            {(isMulti || replaces) && seratoLosesStars && (
+            {(isMulti || replaces || !!item.replacesPath) && seratoLosesStars && (
               <p
                 data-testid="convert-serato-stars-note"
                 className="text-center text-xs text-fg-dim"
