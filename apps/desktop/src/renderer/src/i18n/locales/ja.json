@@ -3821,6 +3821,7 @@
       "rekordboxCuesChanged_one": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxCuesChanged_other": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxAnalysisEmptied": "rekordboxの解析が変わりました",
+      "rekordboxAnalysisStale": "rekordboxに古いファイルの解析が残っています",
       "rekordboxPlaylistMissing": "トラックがrekordboxのプレイリスト{{playlist}}にありません",
       "rekordboxUnreadable": "rekordboxを確認できませんでした",
       "engineStillOld": "Engine DJはまだ{{format}}を参照しています",

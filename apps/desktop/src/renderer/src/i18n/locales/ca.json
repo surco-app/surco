@@ -3821,6 +3821,7 @@
       "rekordboxCuesChanged_one": "rekordbox tenia {{count}} cue i ara {{after}}",
       "rekordboxCuesChanged_other": "rekordbox tenia {{count}} cues i ara {{after}}",
       "rekordboxAnalysisEmptied": "L'anàlisi de rekordbox ha canviat",
+      "rekordboxAnalysisStale": "rekordbox encara té l'anàlisi del fitxer anterior",
       "rekordboxPlaylistMissing": "La pista no és a la playlist {{playlist}} de rekordbox",
       "rekordboxUnreadable": "No s'ha pogut comprovar rekordbox",
       "engineStillOld": "Engine DJ continua en el {{format}}",

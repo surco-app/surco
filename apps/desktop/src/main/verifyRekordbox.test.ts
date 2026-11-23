@@ -248,6 +248,40 @@ describe('checkRekordbox', () => {
     expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
   })
 
+  // rekordbox never analyses a repointed file by itself: a row that was to be analysed again
+  // but still holds the old analysis would show the old file's waveform and grid over the
+  // new audio, the very thing emptying it is there to prevent.
+  it("the old file's analysis left on a row that was to be re-analysed is rekordboxAnalysisStale", () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAnalysisStale' },
+    })
+  })
+
+  it('a row that was never analysed is not stale when it was to be re-analysed', () => {
+    const db = collection([{}])
+    const before = snapshot(db)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
+  it('a row rekordbox already analysed again on the new file is ok', () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    write(
+      db,
+      `UPDATE djmdContent SET AnalysisDataPath = '/PIONEER/USBANLZ/0b2/new/ANLZ0000.DAT' WHERE ID = '100'`,
+    )
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
   // A re-encode moves the audio, so rekordbox must analyse it again: an empty analysis
   // is the intended state there, not a loss.
   it('an emptied AnalysisDataPath after a reencode is ok', () => {

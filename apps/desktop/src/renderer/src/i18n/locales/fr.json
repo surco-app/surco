@@ -3821,6 +3821,7 @@
       "rekordboxCuesChanged_one": "rekordbox avait {{count}} cue et en a maintenant {{after}}",
       "rekordboxCuesChanged_other": "rekordbox avait {{count}} cues et en a maintenant {{after}}",
       "rekordboxAnalysisEmptied": "L’analyse de rekordbox a changé",
+      "rekordboxAnalysisStale": "rekordbox a encore l’analyse de l’ancien fichier",
       "rekordboxPlaylistMissing": "Le morceau n’est pas dans la playlist {{playlist}} de rekordbox",
       "rekordboxUnreadable": "Impossible de vérifier rekordbox",
       "engineStillOld": "Engine DJ pointe toujours vers le {{format}}",
