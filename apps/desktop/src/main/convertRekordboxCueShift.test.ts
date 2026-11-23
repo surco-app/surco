@@ -471,8 +471,9 @@ describe('what a conversion tells Engine DJ about its cues', () => {
     expect(recorded()?.fromBytes).toBeUndefined()
   })
 
-  // The library's row is the replaced copy, not the file this cut was measured on: rekordbox
-  // moves nothing there either.
+  // The library's row is the replaced copy, not the file this cut was measured on: nothing
+  // moves there in time. Engine keeps cues in samples, so the row still learns the new file's
+  // rate and its true length.
   it('carries nothing when the conversion replaces another copy in the library', async () => {
     const src = join(dir, 'engine-replaces.wav')
     pcm(src, 'pcm_s16le')
@@ -497,6 +498,10 @@ describe('what a conversion tells Engine DJ about its cues', () => {
       old,
     )
     expect(recorded()?.from).toBe(old)
-    expect(recorded()?.engineShift).toBeUndefined()
+    expect(recorded()?.engineShift).toEqual({
+      trimmedMs: 0,
+      sampleRateHz: 44100,
+      sampleCount: 66150,
+    })
   })
 })

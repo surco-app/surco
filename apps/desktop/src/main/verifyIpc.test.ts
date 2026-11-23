@@ -507,6 +507,32 @@ describe('libraryRequeue', () => {
     })
   })
 
+  // "Check again" after a replace the collection did not take yet: handed back as a plain
+  // patch, it could never move the entry, so the old file would be kept forever and the
+  // retry would look like it did something.
+  it('hands Traktor a replace back as a move of the whole entry', () => {
+    const q = queues()
+    const replace = {
+      volume: 'Macintosh HD',
+      dir: '/:Musica/:',
+      file: 'uno.mp3',
+      relocates: true as const,
+      outputVolume: 'Macintosh HD',
+      outputDir: '/:Nueva/:',
+      outputFile: 'uno.aiff',
+    }
+
+    libraryRequeue(q)('traktor', entry({ traktorPatch: replace }))
+
+    const [, [queued]] = q.traktor.enqueue.mock.calls[0]
+    const moved = applyPatches(
+      '<NML VERSION="19"><COLLECTION ENTRIES="1"><ENTRY TITLE="Uno"><LOCATION DIR="/:Musica/:" FILE="uno.mp3" VOLUME="Macintosh HD"></LOCATION></ENTRY></COLLECTION></NML>',
+      [nmlPatchOf(queued)],
+      () => true,
+    )
+    expect(moved).toContain('DIR="/:Nueva/:" FILE="uno.aiff"')
+  })
+
   describe('on a Traktor collection', () => {
     const entryAt = (file: string, start: number) =>
       `<ENTRY TITLE="Uno"><LOCATION DIR="/:Musica/:" FILE="${file}" VOLUME="Macintosh HD"></LOCATION>` +

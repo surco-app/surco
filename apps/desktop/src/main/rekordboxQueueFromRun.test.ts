@@ -497,3 +497,32 @@ describe('queueConversionRun', () => {
     expect(d.apply).not.toHaveBeenCalled()
   })
 })
+
+// Add to Traktor must not add a stranger next to the entry a replace is about to move: the
+// old file is the one the collection holds, and a second entry would leave the DJ with the
+// old one (cues, playlists) lost when the file is retired.
+describe('libraryTrackOps with a replaced track', () => {
+  it('does not add a replaced track whose old file the library holds', () => {
+    expect(
+      libraryTrackOps(
+        [{ from: '/m/old.mp3', to: '/m/new.flac', replaced: true, meta: META }],
+        'traktor',
+        () => 'id',
+        true,
+        (path, from, replaced) => (replaced === true && from === '/m/old.mp3') || path === '/x',
+      ),
+    ).toEqual([])
+  })
+
+  it('still adds the new file of an ordinary conversion when only the source is held', () => {
+    const ops = libraryTrackOps(
+      [{ from: '/m/old.mp3', to: '/m/new.flac', meta: META }],
+      'traktor',
+      () => 'id',
+      true,
+      (path, from, replaced) => (replaced === true && from === '/m/old.mp3') || path === '/x',
+    )
+    expect(ops).toHaveLength(1)
+    expect(ops[0]).toMatchObject({ add: true })
+  })
+})

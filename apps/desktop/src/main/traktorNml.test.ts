@@ -1514,3 +1514,143 @@ describe('patches written after the DJ edited the entry', () => {
     )
   })
 })
+
+// A replace swaps the file a track lives in for a better one. Traktor identifies a track
+// by its ENTRY (cues, grid, play count, playlists), so the DJ keeps all of it only if that
+// same ENTRY follows the file instead of being orphaned at the old path.
+describe('a replace moves the entry whole', () => {
+  const OLD = { volume: 'Macintosh HD', dir: '/:Music/:Old/:', file: 'Song.mp3' }
+  const NEW = { outputVolume: 'Macintosh HD', outputDir: '/:Music/:New/:', outputFile: 'Song.aiff' }
+  const HOTCUE =
+    '<CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>'
+  const GRID =
+    '<CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" START="25.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="128.000000"></GRID></CUE_V2>'
+  const SONG = `<ENTRY TITLE="Song"><LOCATION DIR="/:Music/:Old/:" FILE="Song.mp3" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION>${HOTCUE}${GRID}</ENTRY>`
+  const NAS = `<ENTRY TITLE="Other"><LOCATION DIR="/:Set/:" FILE="Other.mp3" VOLUME="NAS" VOLUMEID="nas-1234"></LOCATION></ENTRY>`
+  const TAKEN = `<ENTRY TITLE="Song again" AUDIO_ID="taken-audio"><LOCATION DIR="/:Music/:New/:" FILE="Song.aiff" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION></ENTRY>`
+  const collect = (...entries: string[]) =>
+    `<NML VERSION="20"><COLLECTION ENTRIES="${entries.length}">${entries.join('')}</COLLECTION>` +
+    '<PLAYLISTS><NODE TYPE="FOLDER" NAME="$ROOT"><SUBNODES COUNT="1">' +
+    '<NODE TYPE="PLAYLIST" NAME="Set"><PLAYLIST ENTRIES="1" TYPE="LIST" UUID="u1">' +
+    '<ENTRY><PRIMARYKEY TYPE="TRACK" KEY="Macintosh HD/:Music/:Old/:Song.mp3"></PRIMARYKEY></ENTRY>' +
+    '</PLAYLIST></NODE></SUBNODES></NODE></PLAYLISTS></NML>'
+  const NML_ = collect(SONG, NAS)
+  const replace = (extra: Partial<NmlPatch> = {}): NmlPatch => ({
+    ...OLD,
+    relocates: true,
+    ...NEW,
+    ...extra,
+  })
+  const locationOf = (nml: string, file: string) =>
+    nml.match(new RegExp(`<LOCATION[^>]*FILE="${file}"[^>]*>`))?.[0]
+  const entryCues = (nml: string) => (nml.match(/<CUE_V2\b[\s\S]*?<\/CUE_V2>/g) ?? []).join('')
+
+  it('moves VOLUME, DIR and FILE of the replaced entry to the new file', () => {
+    const out = applyPatches(NML_, [replace()])
+
+    expect(locationOf(out, 'Song.aiff')).toContain('DIR="/:Music/:New/:"')
+    expect(out).not.toContain('FILE="Song.mp3"')
+    expect(findEntries(out).filter((e) => e.file === 'Song.aiff')).toHaveLength(1)
+  })
+
+  // The DJ's hotcues and grid are the work a replace must not cost him.
+  it('keeps every CUE_V2 of the entry byte for byte', () => {
+    expect(entryCues(applyPatches(NML_, [replace()]))).toBe(entryCues(NML_))
+  })
+
+  // A playlist item names the track by its path; left on the old one, the track would drop
+  // out of every playlist the DJ built.
+  it('rewrites the playlist key so the track stays in its playlists', () => {
+    const out = applyPatches(NML_, [replace()])
+
+    expect(out).toContain('KEY="Macintosh HD/:Music/:New/:Song.aiff"')
+    expect(out).not.toContain('KEY="Macintosh HD/:Music/:Old/:Song.mp3"')
+  })
+
+  // Traktor locates a file by VOLUMEID as well as by VOLUME; the name alone leaves it lost.
+  it('takes the VOLUMEID of another entry on the new volume', () => {
+    const out = applyPatches(NML_, [replace({ outputVolume: 'NAS' })])
+
+    const location = locationOf(out, 'Song.aiff')
+    expect(location).toContain('VOLUME="NAS"')
+    expect(location).toContain('VOLUMEID="nas-1234"')
+  })
+
+  // Only Traktor knows a volume's id: guessing one would point at a disk that is not there.
+  it('leaves the entry where it was when no entry names the new volume', () => {
+    const out = applyPatches(NML_, [replace({ outputVolume: 'USB' })])
+
+    expect(locationOf(out, 'Song.mp3')).toBe(locationOf(NML_, 'Song.mp3'))
+    expect(out).not.toContain('Song.aiff')
+  })
+
+  // Two entries on one path is a duplicate Traktor indexes badly; the entry that already
+  // holds the output keeps its own identity.
+  it('does not move onto a location another entry already holds', () => {
+    const both = collect(SONG, NAS, TAKEN)
+
+    const out = applyPatches(both, [replace()])
+
+    expect(locationOf(out, 'Song.mp3')).toBe(locationOf(both, 'Song.mp3'))
+    expect(locationOf(out, 'Song.aiff')).toBe(locationOf(both, 'Song.aiff'))
+    expect(findEntries(out).filter((e) => e.file)).toHaveLength(3)
+    expect(out).toContain('AUDIO_ID="taken-audio"')
+  })
+
+  // The replace of phase 3 carries a shift when the new file is cut differently.
+  it('moves the entry cues by the shift a replace carries', () => {
+    const out = applyPatches(NML_, [replace({ cueShift: { shiftMs: 120 } })])
+
+    expect(out).toContain('START="9880.000000"')
+  })
+
+  it('counts a moved entry as a patch that changed the collection', () => {
+    expect(matchedPatchCount(NML_, [replace()])).toBe(1)
+  })
+
+  // The DJ touches a cue while the replace waits for Traktor to close; the move still has to
+  // happen or the track shows as missing, but his edit must not be shifted or overwritten.
+  it('an entry edited while the replace waited still moves to the new file', () => {
+    const patch = replace({ cueShift: { shiftMs: 120 } })
+    const states = entryStates(NML_, [patch], 'Macintosh HD')
+    const edited = NML_.replace('START="10000.000000"', 'START="12000.000000"')
+
+    const out = applyPatches(edited, spareEditedEntries(edited, [patch], states, 'Macintosh HD'))
+
+    expect(locationOf(out, 'Song.aiff')).toContain('DIR="/:Music/:New/:"')
+    expect(out).toContain('START="12000.000000"')
+  })
+
+  // Finder hands paths decomposed while the collection may spell the volume composed (or the
+  // other way round). The entry has to carry the spelling Traktor already uses for that
+  // volume, or Traktor reads it as another disk and the track shows as missing.
+  it('writes the new volume as the collection spells it', () => {
+    const decomposed = 'Mu\u0301sica'
+    const other = NAS.replaceAll('NAS', decomposed)
+    const out = applyPatches(collect(SONG, other), [replace({ outputVolume: 'M\u00fasica' })])
+
+    expect(locationOf(out, 'Song.aiff')).toContain(`VOLUME="${decomposed}"`)
+    expect(out).toContain(`KEY="${decomposed}/:Music/:New/:Song.aiff"`)
+  })
+
+  // Two stale copies of one track (same name, other extension, neither on disk) both match a
+  // replace by name. Moved together they would leave two entries on one file, the duplicate
+  // Traktor indexes badly; only one may take the new path.
+  it('moves only one of two stale entries matched by name onto the new file', () => {
+    const stale = (ext: string) =>
+      `<ENTRY TITLE="Song"><LOCATION DIR="/:Music/:Old/:" FILE="Song.${ext}" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION></ENTRY>`
+
+    const out = applyPatches(collect(stale('wav'), stale('flac')), [replace()], () => false)
+
+    expect(findEntries(out).filter((e) => e.file === 'Song.aiff')).toHaveLength(1)
+  })
+
+  // Why the move is opt-in: a plain conversion into another folder never repointed the entry.
+  it('an ordinary conversion into another folder still leaves LOCATION alone', () => {
+    const { relocates: _relocates, ...plain } = replace()
+
+    const out = applyPatches(NML_, [plain])
+
+    expect(locationOf(out, 'Song.mp3')).toBe(locationOf(NML_, 'Song.mp3'))
+  })
+})

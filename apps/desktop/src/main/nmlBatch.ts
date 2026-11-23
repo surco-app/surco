@@ -39,7 +39,8 @@ export function recordedNmlPatch(input: string): NmlPatch | undefined {
 // With "Apple Music only" the conversion lands in a private temp folder, so the patch is
 // recorded without a newFile; Music then copies the file into its Media folder. Traktor
 // rewrites FILE only, never DIR or VOLUME, so the entry can follow only when the landed
-// file sits in the source's own folder.
+// file sits in the source's own folder. A replace's patch relocates: the entry moves whole
+// to the landed location, so it follows the file into Music's folder whatever that is.
 // Finder and NAS paths come back decomposed while Music's AppleScript location can be
 // composed, so the same accented folder must still count as the same folder.
 const sameFolder = (a: string, b: string) => a.normalize('NFC') === b.normalize('NFC')
@@ -61,6 +62,7 @@ export function redirectNmlPatch(
     patch.outputDir = landedLocation.dir
     patch.outputFile = landedLocation.file
   }
+  if (patch.relocates) return true
   if (!sameFolder(dirname(landedAt), dirname(found.input))) return false
   const name = basename(landedAt)
   if (name !== patch.file) patch.newFile = name

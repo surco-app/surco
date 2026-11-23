@@ -18,7 +18,7 @@ import {
   refreshedCoverIds,
   replaceDuplicateInNml,
 } from './traktorNml'
-import { traktorFileOf } from './traktorPlaylists'
+import { traktorFileOf, traktorPathOf } from './traktorPlaylists'
 import { isTraktorRunning } from './traktorProcess'
 
 // Writes converted tracks back into the user's real collection.nml — the whole Traktor
@@ -74,11 +74,16 @@ export async function syncCollection(
     return { written: false, matched: 0, reason: 'unreadable' }
   }
 
-  const located = patches.map((p) => ({
-    ...p,
-    volume: p.volume || bootVolume,
-    outputVolume: p.outputVolume || bootVolume,
-  }))
+  const located = patches.map((p) =>
+    withoutLostMove(
+      {
+        ...p,
+        volume: p.volume || bootVolume,
+        outputVolume: p.outputVolume || bootVolume,
+      },
+      bootVolume,
+    ),
+  )
   const onDisk: OnDisk = (entry) =>
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
@@ -109,6 +114,20 @@ export async function syncCollection(
   await markNewerThanCollection(nmlPath, detachedOutputPaths(original, located, onDisk))
 
   return { written: true, matched: matchedPatchCount(original, located, onDisk), before, cues }
+}
+
+// A replace's patch is recorded as soon as the conversion lands, before the steps that can
+// still fail it: with Apple Music only and Music not copying files into its folder, the
+// entry and the temp file are deleted after it. Moving the entry onto an output that is gone
+// would leave the DJ's track, cues and playlists on nothing, so the move is dropped and the
+// entry stays on the old file, where the check finds it still old and keeps that file. Same
+// reasoning as the onDisk guard above and rekordbox's output-missing.
+function withoutLostMove(patch: NmlPatch, bootVolume: string): NmlPatch {
+  const { outputVolume, outputDir, outputFile } = patch
+  if (!patch.relocates || outputVolume === undefined || !outputDir || !outputFile) return patch
+  if (existsSync(traktorPathOf(outputVolume, outputDir, outputFile, bootVolume))) return patch
+  const { relocates: _relocates, ...kept } = patch
+  return kept
 }
 
 // Traktor builds a track's cover only when it finds the audio newer than the collection it

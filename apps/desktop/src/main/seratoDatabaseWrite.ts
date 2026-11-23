@@ -82,6 +82,40 @@ export function withSeratoTrackFields(
   return found ? concat(parts) : null
 }
 
+// Rewrites the path of the entry that holds fromPfil (and its type when the format changes),
+// leaving every other byte as it was: BPM, key, added date and plays ride in these entries and
+// survive Serato's re-import only if they are untouched. The path keeps the form (NFC or NFD)
+// the database stored it in, or Serato would see a different file.
+export function withSeratoTrackRepointed(
+  bytes: Uint8Array,
+  fromPfil: string,
+  toPfil: string,
+): Uint8Array | null {
+  const frames = rawFramesOf(bytes)
+  if (!frames) return null
+  const wanted = fromPfil.normalize('NFC')
+  const newType = seratoFileType(toPfil)
+  let found = false
+  const parts = frames.map((f) => {
+    if (f.tag !== 'otrk') return f.raw
+    const inner = rawFramesOf(f.body)
+    if (!inner || pfilOf(inner) !== wanted) return f.raw
+    found = true
+    const stored = utf16.decode(inner.find((sub) => sub.tag === 'pfil')?.body)
+    const decomposed = stored !== stored.normalize('NFC')
+    const written = toPfil.normalize(decomposed ? 'NFD' : 'NFC')
+    const body = inner.map((sub) => {
+      if (sub.tag === 'pfil') return textFrame('pfil', written)
+      if (sub.tag === 'ttyp' && newType && utf16.decode(sub.body) !== newType) {
+        return textFrame('ttyp', newType)
+      }
+      return sub.raw
+    })
+    return frame('otrk', concat(body))
+  })
+  return found ? concat(parts) : null
+}
+
 export function withSeratoTrackAdded(bytes: Uint8Array, track: NewSeratoTrack): Uint8Array | null {
   if (!rawFramesOf(bytes)) return null
   const texts: [string, string][] = [

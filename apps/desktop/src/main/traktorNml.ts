@@ -92,6 +92,10 @@ export interface NmlPatch {
   // a real value that clears them.
   ranking?: number
   newFile?: string
+  // A replace: the entry matching volume/dir/file (the replaced file's) moves whole onto
+  // outputVolume/outputDir/outputFile, VOLUME, DIR and FILE together. Without it the
+  // patch behaves as before and only newFile repoints.
+  relocates?: true
   // Names fixed in the file's tags. Each applies only while the entry still says what the
   // review read, so a name the DJ edited in Traktor is left alone. Traktor keeps no album
   // artist.
@@ -303,6 +307,9 @@ function coexistingOutputs(entries: NmlEntry[], patches: NmlPatch[]): Map<string
   const present = new Set(entries.map((e) => locationKey(e.volume, e.dir, e.file)))
   const out = new Map<string, NmlPatch>()
   for (const patch of patches) {
+    // A replace is not a conversion living beside its source: the source entry moves onto
+    // the output, so nobody's AUDIO_ID or COVERARTID is stripped.
+    if (patch.relocates) continue
     if (!patch.outputVolume || !patch.outputDir || !patch.outputFile) continue
     const source = locationKey(patch.volume, patch.dir, patch.file)
     const output = locationKey(patch.outputVolume, patch.outputDir, patch.outputFile)
@@ -512,8 +519,16 @@ function replaceRanking(block: string, ranking: number): string {
   return block.replace(/<INFO\b/, `<INFO RANKING="${value}"`)
 }
 
-function patchEntry(block: string, patch: NmlPatch): string {
+interface Relocation {
+  volume: string
+  volumeId?: string
+  dir: string
+  file: string
+}
+
+function patchEntry(block: string, patch: NmlPatch & { relocation?: Relocation }): string {
   let out = block
+  if (patch.relocation) out = relocateEntry(out, patch.relocation)
   if (patch.newFile) {
     // Callback form for the same reason replaceCues uses it: the file name is the DJ's
     // own, and a string replacement expands $&, $`, $' and $n inside it — a track named
@@ -568,10 +583,13 @@ function replaceTags(block: string, tags: NonNullable<NmlPatch['tags']>): string
 // repointing does not update — so the right move is to leave both alone and let the cues
 // land on whichever entry matched.
 function pathTaken(entries: NmlEntry[], patch: NmlPatch, self: NmlEntry): boolean {
-  if (!patch.newFile) return false
-  const target = locationKey(patch.volume, patch.dir, patch.newFile)
+  const target = patch.relocates ? outputKey(patch) : patchedFileKey(patch)
+  if (target === undefined) return false
   return entries.some((e) => e !== self && locationKey(e.volume, e.dir, e.file) === target)
 }
+
+const patchedFileKey = (patch: NmlPatch): string | undefined =>
+  patch.newFile ? locationKey(patch.volume, patch.dir, patch.newFile) : undefined
 
 const outputKey = (patch: NmlPatch): string | undefined =>
   patch.outputVolume && patch.outputDir && patch.outputFile
@@ -583,8 +601,19 @@ const outputKey = (patch: NmlPatch): string | undefined =>
 // an entry that describes that file: one at the output's own location, or one the patch
 // repoints there. An entry left pointing at a source that stayed where it was keeps its
 // own cues, since that audio did not change.
-function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPatch {
-  const repoints = patch.newFile !== undefined && !pathTaken(entries, patch, entry)
+function patchFor(
+  nml: string,
+  entries: NmlEntry[],
+  patch: NmlPatch,
+  entry: NmlEntry,
+  claimed = new Set<string>(),
+): NmlPatch & { relocation?: Relocation } {
+  const relocation = patch.relocates
+    ? relocationFor(nml, entries, patch, entry, claimed)
+    : undefined
+  const repoints = patch.relocates
+    ? relocation !== undefined
+    : patch.newFile !== undefined && !pathTaken(entries, patch, entry)
   // The names are the file's own; a same-stem sibling is another file the review never read.
   const exact =
     locationKey(entry.volume, entry.dir, entry.file) ===
@@ -593,6 +622,7 @@ function patchFor(entries: NmlEntry[], patch: NmlPatch, entry: NmlEntry): NmlPat
     ...patch,
     newFile: repoints ? patch.newFile : undefined,
     tags: exact ? patch.tags : undefined,
+    relocation,
   }
   const output = outputKey(patch)
   if (
@@ -623,14 +653,45 @@ function rewriteEntry(
   entries: NmlEntry[],
   patch: NmlPatch | undefined,
   produced: NmlPatch | undefined,
+  nml: string,
+  claimed?: Set<string>,
 ): string {
-  let out = patch ? patchEntry(block, patchFor(entries, patch, entry)) : block
+  let out = patch ? patchEntry(block, patchFor(nml, entries, patch, entry, claimed)) : block
   if (produced?.cueTree && produced !== patch)
     out = replaceCues(out, produced.cueTree, produced.bpm)
   return out
 }
 
-const LOCATION_FILE_RE = /<LOCATION\b[^>]*\bFILE="([^"]*)"/
+// Where a replace sends the entry, or undefined when it has to stay. Traktor locates a file
+// by VOLUMEID as well as by VOLUME, and only the collection knows a volume's id, so an
+// output on a volume no entry names cannot be pointed at without guessing it. An output
+// another entry already holds is left alone for the reason given at pathTaken.
+//
+// claimed holds the paths earlier moves in the same pass took: two stale entries matched by
+// name would otherwise both move onto the one new file, the duplicate pathTaken prevents.
+// The volume is written as the collection spells it (Finder hands paths decomposed, the
+// collection may hold them composed): another spelling reads to Traktor as another disk.
+function relocationFor(
+  nml: string,
+  entries: NmlEntry[],
+  patch: NmlPatch,
+  entry: NmlEntry,
+  claimed: Set<string>,
+): Relocation | undefined {
+  const { outputVolume: volume, outputDir: dir, outputFile: file } = patch
+  if (volume === undefined || !dir || !file || pathTaken(entries, patch, entry)) return undefined
+  const target = locationKey(volume, dir, file)
+  if (claimed.has(target)) return undefined
+  const claim = (relocation: Relocation): Relocation => {
+    claimed.add(target)
+    return relocation
+  }
+  if (sameText(volume, entry.volume)) return claim({ volume: entry.volume, dir, file })
+  const known = volumeOf(nml, volume, '')
+  return known ? claim({ volume: known.volume, volumeId: known.id, dir, file }) : undefined
+}
+
+const LOCATION_TAG_RE = /<LOCATION\b[^>]*>/
 
 export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk): string {
   const entries = findEntries(nml)
@@ -639,6 +700,7 @@ export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk):
   const sharedCover = sharedCoverSubstitutions(nml, entries, patches, onDisk)
   const produced = producedOutputs(patches)
   const moves: [string, string][] = []
+  const claimed = new Set<string>()
   let out = nml
   for (let i = entries.length - 1; i >= 0; i--) {
     const entry = entries[i]
@@ -657,10 +719,16 @@ export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk):
       entries,
       matchPatch(entry, index),
       produced.get(at),
+      nml,
+      claimed,
     )
     if (patched === block) continue
-    const file = unescapeAttr(patched.match(LOCATION_FILE_RE)?.[1] ?? escapeAttr(entry.file))
-    if (!sameText(file, entry.file)) moves.push([keyOf(entry), keyOf({ ...entry, file })])
+    const tag = patched.match(LOCATION_TAG_RE)?.[0] ?? ''
+    const now = tag
+      ? { volume: attr(tag, 'VOLUME'), dir: attr(tag, 'DIR'), file: attr(tag, 'FILE') }
+      : entry
+    // Only a replace changes VOLUME or DIR; any other patch moves FILE alone.
+    if (!sameText(keyOf(now), keyOf(entry))) moves.push([keyOf(entry), keyOf(now)])
     out = out.slice(0, entry.start) + patched + out.slice(entry.end)
   }
   return rewritePlaylists(out, moves)
@@ -713,8 +781,19 @@ export function spareEditedEntries(
   return patches.map((patch, i) => {
     const held = states[i]
     if (held === undefined || now[i] === undefined || now[i] === held) return patch
-    const { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile } = patch
-    return { volume, dir, file, newFile, outputPath, outputVolume, outputDir, outputFile }
+    const { volume, dir, file, newFile, relocates } = patch
+    const { outputPath, outputVolume, outputDir, outputFile } = patch
+    return {
+      volume,
+      dir,
+      file,
+      newFile,
+      relocates,
+      outputPath,
+      outputVolume,
+      outputDir,
+      outputFile,
+    }
   })
 }
 
@@ -740,8 +819,9 @@ export function matchedPatchCount(nml: string, patches: NmlPatch[], onDisk?: OnD
     // Same rewrite applyPatches makes, or the count would claim a rename or a cue write
     // that the write itself declines to make.
     const block = nml.slice(entry.start, entry.end)
-    if (patch && patchEntry(block, patchFor(entries, patch, entry)) !== block) matched.add(patch)
-    if (output && rewriteEntry(block, entry, entries, undefined, output) !== block)
+    if (patch && patchEntry(block, patchFor(nml, entries, patch, entry)) !== block)
+      matched.add(patch)
+    if (output && rewriteEntry(block, entry, entries, undefined, output, nml) !== block)
       matched.add(output)
   }
   return matched.size
@@ -836,6 +916,23 @@ function rewritePlaylists(nml: string, moves: [fromKey: string, toKey: string][]
   })
 }
 
+// The whole address of the entry: VOLUME, DIR and FILE, plus VOLUMEID when the volume is
+// another one. Callback replacements, as everywhere here, so a `$` in a name is not expanded.
+function relocateEntry(block: string, to: Relocation): string {
+  return block.replace(LOCATION_TAG_RE, (tag) => {
+    const moved = tag
+      .replace(/(\sVOLUME=")[^"]*(")/, (_m, a, b) => `${a}${escapeAttr(to.volume)}${b}`)
+      .replace(/(\sDIR=")[^"]*(")/, (_m, a, b) => `${a}${escapeAttr(to.dir)}${b}`)
+      .replace(/(\sFILE=")[^"]*(")/, (_m, a, b) => `${a}${escapeAttr(to.file)}${b}`)
+    return to.volumeId === undefined
+      ? moved
+      : moved.replace(
+          /(\sVOLUMEID=")[^"]*(")/,
+          (_m, a, b) => `${a}${escapeAttr(to.volumeId ?? '')}${b}`,
+        )
+  })
+}
+
 function replaceLocation(block: string, dir: string, file: string): string {
   return block.replace(/<LOCATION\b[^>]*>/, (tag) =>
     tag
@@ -908,4 +1005,25 @@ export function nmlCopyInfo(
     ),
   ).length
   return { cues, playlists }
+}
+
+export function volumeOf(
+  nml: string,
+  volume: string | null,
+  bootVolume: string,
+): { volume: string; id: string } | null {
+  const collection = nml.match(/<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/)?.[0] ?? ''
+  for (const [tag] of collection.matchAll(/<LOCATION\b[^>]*>/g)) {
+    const name = attr(tag, 'VOLUME')
+    const id = attr(tag, 'VOLUMEID')
+    if (!id) continue
+    const same =
+      volume === null
+        ? name === '' || name === bootVolume
+        : /^[A-Za-z]:$/.test(volume)
+          ? name.toUpperCase() === volume.toUpperCase()
+          : name.normalize('NFC') === volume.normalize('NFC')
+    if (same) return { volume: name, id }
+  }
+  return null
 }

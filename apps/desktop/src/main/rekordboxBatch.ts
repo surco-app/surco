@@ -6,6 +6,10 @@
 export interface RekordboxRepoint {
   from: string
   to: string
+  // The conversion replaced a library file: `from` is that file, which the libraries hold.
+  replaced?: true
+  // The replaced file's Serato cues could not be read, so a Serato entry must stay on it.
+  seratoCarryFailed?: true
   meta?: RekordboxMeta
   // The conversion rewrote the audio: rekordbox's analysis describes the old file, and its
   // cues land back on the beats they were set on once moved by cueShiftMs.
@@ -91,10 +95,16 @@ export function stackRepoint(
           trimmedMs: earlier.engineShift.trimmedMs + (repoint.engineShift?.trimmedMs ?? 0),
         }
       : repoint.engineShift
+  // A later repoint that says nothing about the audio — a retag, a copy — moved nothing, so
+  // the earlier move still stands: it adds as zero rather than wiping the cue shift and the
+  // re-analysis rekordbox is still owed.
+  const audio =
+    stacks && (earlier.audio || repoint.audio)
+      ? { cueShiftMs: (earlier.audio?.cueShiftMs ?? 0) + (repoint.audio?.cueShiftMs ?? 0) }
+      : repoint.audio
   return {
-    ...(earlier.audio && repoint.audio && stacks
-      ? { ...repoint, audio: { cueShiftMs: earlier.audio.cueShiftMs + repoint.audio.cueShiftMs } }
-      : repoint),
+    ...repoint,
+    ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
     ...(stacks && earlier.fromBytes !== undefined ? { fromBytes: earlier.fromBytes } : {}),
     ...(earlier.expectTrackData && !repoint.expectTrackData

@@ -916,6 +916,7 @@
     "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
     "regenerateCustom": "Dateinamen-Muster für diesen Track anpassen…",
     "lossyToLossless": "Die Quelle ist verlustbehaftet: {{format}} stellt ihre Qualität nicht wieder her.",
+    "seratoLosesStars": "Serato verliert die Sterne dieses Tracks.",
     "damagedSource": "Diese Datei ist beschädigt oder unvollständig, die Kopie wird es also auch sein.",
     "exportAgain": "Erneut konvertieren",
     "chooseFormat": "Format wählen",

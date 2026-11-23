@@ -916,6 +916,7 @@
     "regenerateHint": "Reconstruit le nom du fichier à partir des métadonnées ci-dessus selon ton modèle de Réglages → Noms",
     "regenerateCustom": "Personnaliser le modèle de nom pour ce morceau…",
     "lossyToLossless": "La source est avec pertes : la convertir en {{format}} ne lui rendra pas sa qualité.",
+    "seratoLosesStars": "Serato perdra les étoiles de ce morceau.",
     "damagedSource": "Ce fichier est endommagé ou incomplet, la copie le sera donc aussi.",
     "exportAgain": "Convertir à nouveau",
     "chooseFormat": "Choisir le format",

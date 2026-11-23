@@ -62,6 +62,7 @@ import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
 import { useProgramCopies } from '../hooks/useProgramCopies'
+import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
@@ -881,6 +882,12 @@ export const Editor = memo(function Editor({
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
   useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
+  // A selection replaces what each track was stamped to replace by an earlier convert.
+  const seratoLosesStars = useSeratoLosesStars(
+    ...(isMulti
+      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
+      : [replacedCopyPath]),
+  )
 
   const latestItem = useLatest(item)
   async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
@@ -2276,6 +2283,7 @@ export const Editor = memo(function Editor({
             !musicHoldsFile &&
             !replaceTargetPending
           }
+          seratoLosesStars={seratoLosesStars}
           libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}

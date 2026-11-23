@@ -84,13 +84,13 @@ export function libraryTrackOps(
   library: 'traktor' | 'engine' | 'serato' | 'virtualdj',
   newId: () => string = randomUUID,
   addNew = false,
-  known?: (path: string, from?: string) => boolean,
+  known?: (path: string, from?: string, replaced?: boolean) => boolean,
 ): TrackOp[] {
   return repoints.flatMap((r) => {
     const choice = REPOINT_PLAYLISTS[library](r)
     const adding = !choice && addNew && !!r.meta
     if (!choice && !adding) return []
-    if (adding && known?.(r.to, r.from)) return []
+    if (adding && known?.(r.to, r.from, r.replaced)) return []
     return [
       {
         id: newId(),

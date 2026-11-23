@@ -255,6 +255,9 @@ export function libraryRequeue(queues: {
           dir: p.dir,
           file: p.file,
           newFile: p.newFile,
+          // A replace only ever moves the entry whole: without this the retry is a plain
+          // patch that leaves it on the old file, however many times the DJ checks again.
+          ...(p.relocates ? { relocates: true } : {}),
           ...(p.cueShift ? { cueShift: p.cueShift } : {}),
           // Where the file is: an entry that cannot take the new name (another holds
           // it) keeps its cues, so a retry shifts them only along with the move.

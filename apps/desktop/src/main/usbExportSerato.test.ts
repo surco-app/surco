@@ -188,6 +188,7 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 44100,
       trackNo: 4,
@@ -196,6 +197,7 @@ describe('seratoExportMarks', () => {
         loops: [{ index: 0, startMs: 2000, endMs: 6000, name: '' }],
       },
       tempoMap: { firstBeatMs: 500, bpm: 120 },
+      grids: { tempoMap: null, beatGrid: null },
     })
     vi.mocked(seratoLeadOfFile).mockResolvedValue(51.18)
     vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(26.12)
@@ -212,11 +214,13 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 22050,
       trackNo: 0,
       markers: { cues: [{ index: 0, ms: 1000, color: 0xcc0000, name: 'Drop' }], loops: [] },
       tempoMap: { firstBeatMs: 500, bpm: 120 },
+      grids: { tempoMap: null, beatGrid: null },
     })
     vi.mocked(seratoLeadOfFile).mockResolvedValue(0)
     vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(null)
@@ -234,11 +238,13 @@ describe('seratoExportMarks', () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,
       oldBlockDisagrees: false,
+      oldBlock: null,
       durationMs: 10000,
       sampleRate: 22050,
       trackNo: 0,
       markers: { cues: [], loops: [] },
       tempoMap: null,
+      grids: { tempoMap: null, beatGrid: null },
     })
     vi.mocked(seratoLeadOfFile).mockResolvedValue(0)
     vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(null)

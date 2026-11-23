@@ -22,6 +22,7 @@
     "sweep:library": "vitest run src/main/librarySweep.test.ts",
     "search-sweep": "vitest run src/main/searchSweep.test.ts",
     "bits-sweep": "vitest run src/main/bitsWindowSweep.test.ts",
+    "replace-sweep": "vitest run src/main/replaceShiftSweep.test.ts",
     "corpus": "vitest run src/main/tagCorpus.test.ts",
     "matrix": "SURCO_MATRIX=1 vitest run src/scenarios/matrix/full.test.tsx",
     "mutate": "stryker run"

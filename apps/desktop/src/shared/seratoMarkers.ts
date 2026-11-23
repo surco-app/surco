@@ -227,6 +227,23 @@ export function seratoArmored(payload: Uint8Array): string {
   return `${encodeBase64Wrapped(concat([bytesOf(ARMOR_HEADER), seratoGeobBody(payload)]))}\n`
 }
 
+function objectArmorHeader(description: string): string {
+  return `application/octet-stream\0\0${description}\0`
+}
+
+// FLAC and M4A hold a Serato object as the GEOB would: base64 of its MIME type and
+// description ahead of the bytes, wrapped like the Markers2 value Serato wrote.
+export function seratoObjectArmored(description: string, data: Uint8Array): string {
+  return `${encodeBase64Wrapped(concat([bytesOf(objectArmorHeader(description)), data]))}\n`
+}
+
+export function seratoObjectUnarmored(value: string, description: string): Uint8Array | null {
+  const header = objectArmorHeader(description)
+  const armored = decodeBase64(value.replace(/\s/g, ''))
+  if (!armored || !latin1(armored.subarray(0, header.length)).startsWith(header)) return null
+  return armored.subarray(header.length)
+}
+
 const MIN_TEMPO_BPM = 20
 const MAX_TEMPO_BPM = 400
 
@@ -248,6 +265,56 @@ export function readSeratoTempoMap(data: Uint8Array): SeratoTempoMap | null {
   )
     return null
   return { firstBeatMs, bpm }
+}
+
+// The Tempo Map Serato 5 writes is on the cues' clock: moving its first beat by the cues'
+// shift keeps every beat under the same audio, and the BPM and the bytes after it stay.
+// A first beat pushed before the start moves forward by whole beats, which keeps the phase:
+// a negative position is not one Serato is known to read.
+export function retimedSeratoTempoMap(data: Uint8Array, shiftMs: number): Uint8Array | null {
+  const tempo = readSeratoTempoMap(data)
+  if (!tempo) return null
+  const beatSeconds = 60 / tempo.bpm
+  let first = tempo.firstBeatMs / 1000 + shiftMs / 1000
+  if (first < 0) first += Math.ceil(-first / beatSeconds) * beatSeconds
+  const out = data.slice()
+  new DataView(out.buffer).setFloat64(4, first)
+  return out
+}
+
+const BEATGRID_MARKER_BYTES = 8
+const BEATGRID_FOOTER_BYTES = 1
+
+// The older Serato BeatGrid, never measured in a file of ours: `01 00`, a u32 count, then
+// markers of a f32 position in seconds and a u32 beat count (a f32 BPM on the last one),
+// then one footer byte. Anything else is a shape Surco cannot vouch for, and is not copied.
+// Markers a shift puts before the start are left out, since the grid from the next one on
+// stands alone; a last marker there leaves no grid at all, and nothing is copied.
+export function retimedSeratoBeatGrid(data: Uint8Array, shiftMs: number): Uint8Array | null {
+  if (data.length < 6 || data[0] !== 1 || data[1] !== 0) return null
+  const count = u32(data, 2)
+  if (count < 1 || data.length !== 6 + count * BEATGRID_MARKER_BYTES + BEATGRID_FOOTER_BYTES)
+    return null
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength)
+  const bpm = view.getFloat32(6 + (count - 1) * BEATGRID_MARKER_BYTES + 4)
+  if (!(bpm >= MIN_TEMPO_BPM && bpm <= MAX_TEMPO_BPM)) return null
+  const kept: Uint8Array[] = []
+  for (let marker = 0; marker < count; marker++) {
+    const at = 6 + marker * BEATGRID_MARKER_BYTES
+    const seconds = view.getFloat32(at)
+    if (!Number.isFinite(seconds)) return null
+    const moved = seconds + shiftMs / 1000
+    if (moved < 0) {
+      if (marker === count - 1) return null
+      continue
+    }
+    const entry = data.slice(at, at + BEATGRID_MARKER_BYTES)
+    new DataView(entry.buffer).setFloat32(0, moved)
+    kept.push(entry)
+  }
+  const head = data.slice(0, 6)
+  new DataView(head.buffer).setUint32(2, kept.length)
+  return concat([head, ...kept, data.subarray(data.length - BEATGRID_FOOTER_BYTES)])
 }
 
 export function readSeratoTempoMapArmored(value: string): SeratoTempoMap | null {
@@ -312,6 +379,64 @@ function m4aV1CueTimes(block: Uint8Array): (number | null)[] | null {
     times.push(ms === V1_M4A_UNSET ? null : ms)
   }
   return times
+}
+
+const V1_COLOR_AT = 16
+const V1_M4A_COLOR_AT = 14
+
+export interface SeratoV1Cues {
+  cues: SeratoCue[]
+  loops: boolean
+}
+
+// The old block holds no names; a cue's colour sits 7 bits to a byte in an MP3 and as three
+// plain bytes in an M4A. A loop slot set in it is a loop Surco has never measured there.
+function v1CuesOf(
+  block: Uint8Array,
+  times: (number | null)[] | null,
+  entryBytes: number,
+  colorAt: (at: number) => number | null,
+  loopSet: (at: number) => boolean,
+): SeratoV1Cues | null {
+  if (!times) return null
+  const cues: SeratoCue[] = []
+  for (const [slot, ms] of times.entries()) {
+    if (ms === null) continue
+    const color = colorAt(6 + slot * entryBytes)
+    if (color === null) return null
+    cues.push({ index: slot, ms, color, name: '' })
+  }
+  let loops = false
+  for (let slot = V1_CUE_SLOTS; slot < u32(block, 2); slot++)
+    if (loopSet(6 + slot * entryBytes)) loops = true
+  return { cues, loops }
+}
+
+export function seratoV1Cues(block: Uint8Array): SeratoV1Cues | null {
+  return v1CuesOf(
+    block,
+    seratoV1CueTimes(block),
+    V1_ENTRY_BYTES,
+    (at) => sevenBit(block, at + V1_COLOR_AT),
+    (at) => block[at] === V1_SET,
+  )
+}
+
+export function seratoV1CuesArmored(value: string): SeratoV1Cues | null {
+  const armored = decodeBase64(value.replace(/\s/g, ''))
+  if (!armored || !latin1(armored.subarray(0, V1_ARMOR_HEADER.length)).startsWith(V1_ARMOR_HEADER))
+    return null
+  const block = armored.subarray(V1_ARMOR_HEADER.length)
+  return v1CuesOf(
+    block,
+    m4aV1CueTimes(block),
+    V1_M4A_ENTRY_BYTES,
+    (at) =>
+      (block[at + V1_M4A_COLOR_AT] << 16) |
+      (block[at + V1_M4A_COLOR_AT + 1] << 8) |
+      block[at + V1_M4A_COLOR_AT + 2],
+    (at) => u32(block, at) !== V1_M4A_UNSET,
+  )
 }
 
 export function seratoV1Agrees(

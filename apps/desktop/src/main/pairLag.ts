@@ -22,6 +22,41 @@ export function bestLag(
   window = 5 * PAIR_RATE,
   eitherPolarity = false,
 ): number | null {
+  const scored = lagScores(a, b, from, reach, window, eitherPolarity)
+  if (!scored) return null
+  let best: number | null = null
+  let bestScore = -Infinity
+  for (let k = 0; k <= 2 * reach; k++) {
+    if (scored.scores[k] > bestScore) {
+      bestScore = scored.scores[k]
+      best = k - reach
+    }
+  }
+  return best
+}
+
+// The normalised correlation at every lag of bestLag's search, index k for lag k − reach, so a
+// caller can see whether a second lag fits almost as well as the best one (a looped intro). -1
+// where the other side is silent, null when the window itself is.
+export function lagCorrelations(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach = PAIR_RATE,
+): Float64Array | null {
+  const scored = lagScores(a, b, from, reach, 5 * PAIR_RATE, false)
+  if (!scored) return null
+  return scored.scores.map((score) => (score === -Infinity ? -1 : score / scored.norm))
+}
+
+function lagScores(
+  a: Float32Array,
+  b: Float32Array,
+  from: number,
+  reach: number,
+  window: number,
+  eitherPolarity: boolean,
+): { scores: Float64Array; norm: number } | null {
   const width = Math.min(a.length, from + window) - from
   const silent = width * PAIR_SILENT_RMS ** 2
   const span = width + 2 * reach
@@ -52,18 +87,33 @@ export function bestLag(
     sIm[k] = -im
   }
   fft(sRe, sIm)
-  let best: number | null = null
-  let bestScore = -Infinity
+  const scores = new Float64Array(2 * reach + 1).fill(-Infinity)
   for (let k = 0; k <= 2 * reach; k++) {
     const e = energy[k + width] - energy[k]
-    if (e < silent) continue
-    const score = (eitherPolarity ? Math.abs(sRe[k]) : sRe[k]) / Math.sqrt(e)
-    if (score > bestScore) {
-      bestScore = score
-      best = k - reach
-    }
+    if (e >= silent) scores[k] = (eitherPolarity ? Math.abs(sRe[k]) : sRe[k]) / Math.sqrt(e)
   }
-  return best
+  return { scores, norm: n * Math.sqrt(windowEnergy) }
+}
+
+// Normalised correlation of b from bFrom against a from aFrom over `width` samples, without
+// removing the mean. Null when either side has no energy, since nothing correlates with silence.
+export function correlationAt(
+  a: Float32Array,
+  aFrom: number,
+  b: Float32Array,
+  bFrom: number,
+  width: number,
+): number | null {
+  let xx = 0
+  let yy = 0
+  let xy = 0
+  for (let i = 0; i < width; i++) {
+    xx += a[aFrom + i] * a[aFrom + i]
+    yy += b[bFrom + i] * b[bFrom + i]
+    xy += a[aFrom + i] * b[bFrom + i]
+  }
+  if (xx === 0 || yy === 0) return null
+  return xy / Math.sqrt(xx * yy)
 }
 
 export { VERSION_RATE, VERSION_REACH_MAX_SECONDS }

@@ -53,6 +53,7 @@ import type { QueueOp } from './rekordboxQueueOps'
 import type { createSessionBackup } from './rekordboxSessionBackup'
 import { updateRekordboxTags } from './rekordboxTags'
 import { seratoLibraryHas } from './seratoCrateEdits'
+import { seratoRootOf } from './seratoCrateFile'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { seratoTagOps, syncSeratoTags } from './seratoTagSync'
 import { getSettings } from './settings'
@@ -356,6 +357,15 @@ export function repointRekordbox(
   )
 }
 
+// Whether Surco never writes this library, for the Copias screen. Each Add toggle writes on
+// its own: Traktor gets added tracks and a replace's moved entry, rekordbox and VirtualDJ
+// queued adds, Engine DJ tracks added to m.db. So a library is untouched only with both its
+// Sync and its Add toggle off.
+export function libraryUntouched(program: WritableProgram): boolean {
+  const settings = getSettings()
+  return !settings[UPDATE_SETTING[program]] && !settings[ADD_SETTING[program]]
+}
+
 export function traktorFlushDeps(host: LibraryHost, session: SessionBackup) {
   return {
     // Same rule as rekordbox below: the toggle grants permission, the path only says
@@ -554,6 +564,21 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
   const named = syncSerato
     ? run.repoints.flatMap((r) => (r.names ? [{ path: r.to, fields: r.names }] : []))
     : []
+  // Serato follows a replacement with Add to Serato alone, as Traktor does: the old file is
+  // retired, and the entry left on it loses its cues and crates. Tags, adds and crates stay
+  // behind their own settings, so this gate opens only the repoint.
+  // A file outside every Serato library is never held there, and a move queued for it would
+  // wait for nothing.
+  const roots = queue.roots()
+  const held = syncSerato || addToSerato ? seratoLibraryHas(roots) : (_path: string) => false
+  const moves = run.repoints.filter(
+    (r) =>
+      r.replaced &&
+      !r.seratoCarryFailed &&
+      r.from !== r.to &&
+      seratoRootOf(r.from, roots) !== null &&
+      held(r.from),
+  )
   const ops = [
     ...libraryTrackOps(
       run.repoints,
@@ -564,8 +589,9 @@ function queueSeratoRun(queue: NonNullable<ConversionQueues['serato']>, run: Con
     ),
     ...(named.length > 0 ? seratoTagOps(named, queue.roots()) : []),
   ]
-  if (ops.length === 0) return
-  queue.enqueue(ops)
+  if (ops.length + moves.length === 0) return
+  if (moves.length > 0) queue.enqueue(ops, moves)
+  else queue.enqueue(ops)
   queue.applyQuietly()
 }
 
@@ -578,6 +604,32 @@ async function settle<P extends WritableProgram>(
   outcome[program] = await flusher.after(run)
 }
 
+// Add to Traktor alone opens the collection for a conversion run's replace moves and
+// nothing else: the DJ asked for the swap, and an entry left on a file Surco retires loses
+// its cues and playlists. Every other Traktor write (review renames, duplicate repoints,
+// cue repairs) goes through traktorFlushDeps, which only Sync Traktor opens. Patches
+// recorded while Sync Traktor was still on are dropped here unless they relocate, so
+// switching it off mid-run sends no stars, names, covers or cues.
+function conversionTraktorDeps(host: LibraryHost, session: SessionBackup) {
+  const deps = traktorFlushDeps(host, session)
+  const settings = getSettings()
+  if (settings.syncTraktor || !settings.addToTraktor) {
+    return { deps, allowed: (patches: NmlPatch[]) => patches }
+  }
+  const found = currentLibraryStatus().traktor.found
+  // A missing collection is a move that did not happen, not one with nothing to do: said
+  // as missing, the check keeps the old file, and on an unplugged drive the move waits in
+  // the queue for it to come back.
+  return {
+    deps: {
+      ...deps,
+      traktorNmlPath: found ? settings.traktorNmlPath : '',
+      collectionMissing: !found,
+    },
+    allowed: (patches: NmlPatch[]) => patches.filter((patch) => patch.relocates),
+  }
+}
+
 function traktorConversionFlusher(
   host: LibraryHost,
   sessions: Sessions,
@@ -586,7 +638,7 @@ function traktorConversionFlusher(
   let traktor: FlushOutcome['traktor'] = 'off'
   return {
     before: async () => {
-      const traktorDeps = traktorFlushDeps(host, sessions.traktor)
+      const { deps: traktorDeps, allowed } = conversionTraktorDeps(host, sessions.traktor)
       const traktorHold = traktorQueue && holdInQueue(traktorQueue, bootVolumeName)
       let patches: NmlPatch[] = []
       let synced: { patches: NmlPatch[]; result: SyncResult } | undefined
@@ -600,7 +652,7 @@ function traktorConversionFlusher(
           showBlockedDialog: () => {},
         }),
         endNmlBatch: () => {
-          patches = endNmlBatch()
+          patches = allowed(endNmlBatch())
           traktorLater = nmlBatchOpen()
           return patches
         },
@@ -808,7 +860,7 @@ export function traktorWrite(patches: NmlPatch[], result: SyncResult): TraktorWr
   return cues ? { before: keyed(before), cues: keyed(cues) } : { before: keyed(before) }
 }
 
-type LibraryHas = (path: string, from?: string) => boolean
+type LibraryHas = (path: string, from?: string, replaced?: boolean) => boolean
 
 function pathsHeld(path: string, from: string | undefined, followsFrom: boolean): string[] {
   return followsFrom && from !== undefined ? [path, from] : [path]
@@ -825,8 +877,12 @@ async function traktorCollectionHas(
     return undefined
   }
   const { byPath } = traktorCollectionIndex(nml, bootVolumeName())
-  return (path, from) =>
-    pathsHeld(path, from, followsFrom).some((p) => byPath.has(p.normalize('NFC')))
+  // A replace looks at the old file even when Sync Traktor is off: that entry is the one
+  // that moves, and adding the new file beside it would strand the old one.
+  return (path, from, replaced) =>
+    pathsHeld(path, from, followsFrom || replaced === true).some((p) =>
+      byPath.has(p.normalize('NFC')),
+    )
 }
 
 async function engineLibraryHas(

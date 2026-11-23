@@ -193,6 +193,26 @@ describe('useTrackProcessing', () => {
     expect(calls).toEqual(['askToApply', 'processTrack', 'processTrack'])
   })
 
+  it('asks the programs that hold the replaced file too, so Serato saves its cues into it before they are copied', async () => {
+    // Serato 5 writes cues into the file only when it quits: asked about the download alone
+    // (which Serato never saw), the carry would copy the cues from before the session.
+    const conversionPrograms = vi.fn<Api['conversionPrograms']>().mockResolvedValue(['serato'])
+    setApi({
+      processTrack: vi.fn().mockResolvedValue({ outputPath: '/m/new.aiff' }),
+      conversionPrograms,
+      dj: { askToApply: vi.fn().mockResolvedValue({}) },
+    })
+    const tracks = [track({ id: 'a', inputPath: '/dl/new.flac', replacesPath: '/m/old.mp3' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient() },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(conversionPrograms).toHaveBeenCalledWith(['/dl/new.flac', '/m/old.mp3'])
+  })
+
   it('converts the same whatever the DJ answers, because the library write itself waits or applies', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
     setApi({
