@@ -220,6 +220,31 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
   )
 }
 
+// The bundled ffprobe reads an ID3v2.4 text frame holding several values ("Ann\0Bob", what
+// Picard, foobar2000 and beets write) as its first value alone, so the editor showed "Ann"
+// and the next save, a title edit included, wrote "Ann" back as the whole artist. These are
+// the fields whose frame holds more than one value, joined by ';' as the probe already
+// joins a FLAC's repeated comments.
+export function readId3Lists(file: string): Partial<TrackMetadata> {
+  return withTagLibFile(file, id3ListsOf, {})
+}
+
+export function id3ListsOf(f: TagFile): Partial<TrackMetadata> {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (id3?.version !== 4) return {}
+  const lists = {
+    artist: id3.performers,
+    albumArtist: id3.albumArtists,
+    genre: id3.genres,
+    composer: id3.composers,
+  }
+  return Object.fromEntries(
+    Object.entries(lists)
+      .filter(([, values]) => values.length > 1)
+      .map(([key, values]) => [key, values.join(';').trim()]),
+  )
+}
+
 function albumArtistsOf(f: TagFile): string[] | undefined {
   return f.getTag(TagTypes.RiffInfo, false)
     ? f.getTag(TagTypes.Id3v2, false)?.albumArtists
@@ -333,6 +358,7 @@ export function popmRatingOf(f: TagFile): string {
 export interface TagLibRead {
   grouping: string
   extras: Partial<TrackMetadata>
+  id3Lists: Partial<TrackMetadata>
   popm: string
   reviewRaw: ReviewRawFields
 }
@@ -343,6 +369,7 @@ export function readTagLibFields(file: string): TagLibRead {
     return {
       grouping: taglib.use(itunesGroupingOf, ''),
       extras: taglib.use(tagLibExtrasOf, {}),
+      id3Lists: taglib.use(id3ListsOf, {}),
       popm: taglib.use(popmRatingOf, ''),
       reviewRaw: taglib.use(tagLibReviewRawOf, {}),
     }

@@ -272,6 +272,6 @@ describe('tagLibRead', () => {
 
   it('answers empty fields for a file TagLib cannot open, as the inline read did', async () => {
     const read = (await runWorkerJob({ type: 'tagLibRead', file: '/no/such.mp3' })) as TagLibRead
-    expect(read).toEqual({ grouping: '', extras: {}, popm: '', reviewRaw: {} })
+    expect(read).toEqual({ grouping: '', extras: {}, id3Lists: {}, popm: '', reviewRaw: {} })
   })
 })

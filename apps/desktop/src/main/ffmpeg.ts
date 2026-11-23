@@ -134,6 +134,7 @@ import {
   keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
+  readId3Lists,
   readTagLibExtras,
   type TagLibRead,
 } from './tags'
@@ -502,7 +503,9 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return composeMeta(withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout))))
+  return composeMeta(
+    withId3Lists(input, withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout)))),
+  )
 }
 
 // The containers ffprobe reads only partly (see readTagLibExtras): whatever the probe
@@ -520,6 +523,18 @@ function withTagLibExtras(
     if (typeof value === 'string' && value && !tags[key]?.trim()) tags[key] = value
   }
   return tags
+}
+
+// Every value of a multi-value ID3 frame, over the first one the probe kept (see
+// readId3Lists). Only where the tag the user edits is ID3: a FLAC or M4A reads its own.
+const ID3_INPUT = /\.(mp3|aiff?|wav)$/i
+
+function withId3Lists(
+  input: string,
+  tags: TrackMetadata,
+  lists: () => Partial<TrackMetadata> = () => readId3Lists(input),
+): TrackMetadata {
+  return ID3_INPUT.test(input) ? Object.assign(tags, lists()) : tags
 }
 
 // Pulls the first embedded picture out as a still image (no audio), letting the
@@ -775,6 +790,7 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // fall back to reading GRP1 directly through TagLib (ID3 containers only; a no-op elsewhere).
     if (!tags.grouping.trim() && tagLib.grouping) tags.grouping = tagLib.grouping
     withTagLibExtras(input, tags, () => tagLib.extras)
+    withId3Lists(input, tags, () => tagLib.id3Lists)
     // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
     // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
     // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
