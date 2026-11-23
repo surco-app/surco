@@ -17,6 +17,7 @@ import {
 } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
 import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
+import { createReplacedStore, recordReplacement } from './replacedStore'
 
 function settings(overrides: Partial<Settings> = {}): Settings {
   return {
@@ -2262,6 +2263,28 @@ describe('runProcessTrack — Apple Music only', () => {
     )
 
     expect(deps.allowMedia).toHaveBeenCalledWith('/m/old.mp3')
+  })
+
+  // The DJ programs were already repointed at the file Music copied, so their cues may
+  // have moved: a replacement with no output copy must still reach "To review", under the
+  // file the libraries now play.
+  it('hands back where a Music-only replacement landed so it is kept for review', async () => {
+    const deps = musicOnly()
+    deps.appleMusicEntryLocation = vi.fn(async () => '/Users/me/Music/Media/Artist - Title.aiff')
+    const replacing = job({
+      musicPersistentId: 'old-id',
+      replacesPath: '/m/old.mp3',
+      replacesLabel: 'A - T',
+    })
+
+    const result = await runProcessTrack(replacing, deps)
+    const store = createReplacedStore(join(mkdtempSync(join(tmpdir(), 'surco-pt-')), 'r.json'))
+    recordReplacement(store, replacing, result, ['rekordbox'], 1)
+
+    expect(result.outputPath).toBe('')
+    expect(store.list().map((e) => [e.newPath, e.oldPath])).toEqual([
+      ['/Users/me/Music/Media/Artist - Title.aiff', '/m/old.mp3'],
+    ])
   })
 
   it('removes the temp dir even when the Apple Music add throws', async () => {

@@ -195,7 +195,7 @@ describe('recordReplacement', () => {
     recordReplacement(
       store,
       { replacesPath: '/m/old.mp3' },
-      { outputPath: '', musicLandedPath: '/music/new.flac' },
+      { outputPath: '', replacementLandedPath: '/music/new.flac' },
       ['rekordbox'],
       1,
     )

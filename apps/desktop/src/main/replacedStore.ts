@@ -166,14 +166,14 @@ export function recordReplacement(
   job: { replacesPath?: string },
   result: {
     outputPath: string
-    musicLandedPath?: string
+    replacementLandedPath?: string
     skipped?: boolean
     replaceShift?: ReplaceShift
   },
   programs: DjProgram[],
   now: number,
 ): void {
-  const landed = result.outputPath || result.musicLandedPath
+  const landed = result.outputPath || result.replacementLandedPath
   if (!job.replacesPath || result.skipped || !landed || programs.length === 0) return
   store.add({
     newPath: landed,
