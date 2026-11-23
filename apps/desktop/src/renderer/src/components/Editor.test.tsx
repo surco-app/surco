@@ -2303,10 +2303,13 @@ describe('Editor multi-select', () => {
     const field = screen.getByTestId('field-vinylCondition')
     fireEvent.change(field, { target: { value: 'VG+' } })
     fireEvent.blur(field)
-    expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
-      { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
-    ])
+    expect(onChangeTracksMeta).toHaveBeenCalledWith(
+      [
+        { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
+        { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
+      ],
+      expect.objectContaining({ group: expect.any(String) }),
+    )
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
@@ -2867,13 +2870,19 @@ describe('Editor multi-select', () => {
     const album = screen.getByTestId('field-album')
     fireEvent.change(album, { target: { value: 'New Album' } })
     fireEvent.blur(album)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { album: 'New Album' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   it('tags every selected track with the selection size as its total tracks in one click', () => {
     const { onChangeAllMeta } = renderMulti({ visibleFields: ['title', 'trackTotal'] })
     fireEvent.click(screen.getByTestId('chip-2'))
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { trackTotal: '2' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // App owns the numbering so the button and the ⌘K command agree on the order; the
@@ -2908,7 +2917,10 @@ describe('Editor multi-select', () => {
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', false)
     fireEvent.click(box)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ compilation: '1' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { compilation: '1' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // Clearing over a selection goes through the same shared-form channel as any

@@ -2085,10 +2085,13 @@ export default function App(): React.JSX.Element {
   )
   // Every deriveTracks consumer is a discrete batch overwrite (fill-all, find & replace,
   // the Tag buttons), so recording the undo snapshot at this seam covers them all. The
-  // per-field bulk edit records its own in onChangeAllMeta: Field commits it once per pause.
+  // per-field bulk edit records its own in onChangeAllMeta, one step per field focus.
   const deriveTracksUndoable = useStableCallback(
-    (patches: { id: string; meta: Partial<TrackMetadata> }[]) => {
-      recordMetaUndo(patches.map((p) => p.id))
+    (patches: { id: string; meta: Partial<TrackMetadata> }[], opts?: { group?: string }) => {
+      recordMetaUndo(
+        patches.map((p) => p.id),
+        opts,
+      )
       markHandEdited(patches)
       deriveTracks(patches)
       toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoMeta)
@@ -2911,10 +2914,12 @@ export default function App(): React.JSX.Element {
     markHandEdited(ids.map((id) => ({ id, meta: patch })))
     updateTracksMeta(ids, patch)
   })
-  const onChangeAllMeta = useStableCallback((patch: Partial<TrackMetadata>) => {
-    recordMetaUndo(selectedIds)
-    editTracksMeta(selectedIds, patch)
-  })
+  const onChangeAllMeta = useStableCallback(
+    (patch: Partial<TrackMetadata>, opts?: { group?: string }) => {
+      recordMetaUndo(selectedIds, opts)
+      editTracksMeta(selectedIds, patch)
+    },
+  )
   const onChangeSelection = useStableCallback((patch: Partial<TrackItem>) =>
     patchTracks(selectedIds, patch),
   )

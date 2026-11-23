@@ -182,7 +182,7 @@ interface Props {
   onAddAllToAppleMusic?: () => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
-  onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
+  onChangeAllMeta?: (patch: Partial<TrackMetadata>, opts?: { group?: string }) => void
   // Stages a per-track setting (the volume) on every selected track, so a multi-select
   // pick reaches each of them and not only the anchor.
   onChangeSelection?: (patch: Partial<TrackItem>) => void
@@ -190,7 +190,10 @@ interface Props {
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
-  onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  onChangeTracksMeta?: (
+    patches: { id: string; meta: Partial<TrackMetadata> }[],
+    opts?: { group?: string },
+  ) => void
   // Numbers the selection 1..N in list order — App owns it so the button and the ⌘K
   // command share one order, one undo and one toast.
   onNumberTracks?: () => void
@@ -200,8 +203,8 @@ interface Props {
   // nothing" notices; the editor's format button is just a second trigger for it.
   onApplyTitleFormat?: () => void
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button, a
-  // release pick or a cover change overwrites them (derive is already recorded inside
-  // onDeriveTags).
+  // release pick, a cover change or a field typed into overwrites them (derive is already
+  // recorded inside onDeriveTags).
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   onClearAll?: () => void
   autoMatchDeclined?: boolean
@@ -307,6 +310,11 @@ interface Props {
 }
 
 const NARROW_EDITOR_PX = 400
+
+// Counted across every mount, not per editor: the editor remounts per track, and a count
+// that started over could hand a field visited again the undo step of its last visit.
+let fieldFocuses = 0
+const fieldEdit = (focus: number, key: string) => ({ group: `field-${focus}-${key}` })
 
 // What a release writes about where it came from rather than about the music.
 const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
@@ -1286,6 +1294,14 @@ export const Editor = memo(function Editor({
     !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
     fileNamePart(item.outputName?.trim() || defaultOutputName) === item.fileName
 
+  // Everything typed into one field while it holds the focus is one ⌘Z step, the same step
+  // whether the field writes one track or the whole selection: the Field commits on every
+  // pause, and those commits join the step its focus opened.
+  const fieldFocus = useRef(0)
+  const typeField = useStableCallback((key: string, write: () => void): void => {
+    onRecordUndo?.([item.id], fieldEdit(fieldFocus.current, key))
+    write()
+  })
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
   // memoized on this exact prop — closing over `key` inline inside
@@ -1294,12 +1310,24 @@ export const Editor = memo(function Editor({
   // defeat that memo, re-rendering every visible field instead of just the one
   // whose value moved.
   const singleOnChange = useMemo(
-    () => new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)])),
-    [setField],
+    () =>
+      new Map(
+        FIELD_DEFS.map((def) => [
+          def.key,
+          (v: string) => typeField(def.key, () => setField(def.key, v)),
+        ]),
+      ),
+    [setField, typeField],
   )
   const customOnChange = useMemo(
-    () => new Map(customFields.map((f) => [f.key, (v: string) => setCustom(f.key, v)])),
-    [customFields, setCustom],
+    () =>
+      new Map(
+        customFields.map((f) => [
+          f.key,
+          (v: string) => typeField(`custom.${f.key}`, () => setCustom(f.key, v)),
+        ]),
+      ),
+    [customFields, setCustom, typeField],
   )
   // Across a selection each track keeps its other custom values: the edit is merged into
   // that track's own set, not stamped as one shared set over all of them.
@@ -1314,6 +1342,7 @@ export const Editor = memo(function Editor({
                 id: t.id,
                 meta: { custom: { ...effectiveMeta(t, customFields).custom, [f.key]: v } },
               })),
+              fieldEdit(fieldFocus.current, `custom.${f.key}`),
             ),
         ]),
       ),
@@ -1321,7 +1350,13 @@ export const Editor = memo(function Editor({
   )
   const customValueMap = useMemo(() => resolvedMeta.custom ?? {}, [resolvedMeta])
   const bulkOnChange = useMemo(
-    () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
+    () =>
+      new Map(
+        BULK_FIELDS.map((key) => [
+          key,
+          (v: string) => onChangeAllMeta?.({ [key]: v }, fieldEdit(fieldFocus.current, key)),
+        ]),
+      ),
     [onChangeAllMeta],
   )
 
@@ -1887,7 +1922,10 @@ export const Editor = memo(function Editor({
                 reopen the very window it closes. onChange (a text commit) also confirms the rows
                 are under active edit, in case focus arrived without a focus event we saw. */}
               <div
-                onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+                onFocusCapture={() => {
+                  fieldFocus.current = ++fieldFocuses
+                  onFieldFocusChange?.(editedIds)
+                }}
                 onChangeCapture={() => onFieldFocusChange?.(editedIds)}
                 onBlurCapture={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget as Node | null))
