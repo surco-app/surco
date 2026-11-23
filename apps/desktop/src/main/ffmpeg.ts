@@ -1000,6 +1000,26 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
 const SOURCE_PROVENANCE = ['engineer', 'technician', 'software', 'originator', 'product', 'source']
 
+// What other programs measured of the audio itself: Sound Check, ReplayGain, R128 and
+// MP3Gain figures, and iTunSMPB, the encoder priming and padding of that very stream.
+// Carried onto samples Surco re-encoded, normalized or cut, a player turned the new file up
+// or down by the old one's loudness and trimmed its start and end by the old encoder's
+// counts, so they ride only an output whose samples are the source's own.
+const AUDIO_MEASUREMENTS = [
+  'iTunNORM',
+  'iTunSMPB',
+  'REPLAYGAIN_TRACK_GAIN',
+  'REPLAYGAIN_TRACK_PEAK',
+  'REPLAYGAIN_ALBUM_GAIN',
+  'REPLAYGAIN_ALBUM_PEAK',
+  'REPLAYGAIN_REFERENCE_LOUDNESS',
+  'R128_TRACK_GAIN',
+  'R128_ALBUM_GAIN',
+  'MP3GAIN_MINMAX',
+  'MP3GAIN_ALBUM_MINMAX',
+  'MP3GAIN_UNDO',
+]
+
 const argValue = (v: string | undefined): string => (v ?? '').replaceAll('\0', '').trim()
 
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
@@ -2446,6 +2466,7 @@ export async function convertAudio(
   let declickedSamples: number | undefined
   let archived: TrashEntry | null = null
   const samplesKept = copiedVerbatim || plan.samplesKept === true
+  const staleMeasurements = samplesKept ? [] : AUDIO_MEASUREMENTS
   let sourcePcm: PcmDigest | undefined
   let absorbedPcm: PcmDigest | null | undefined
   let sourceDurationSec: number | undefined
@@ -2519,7 +2540,7 @@ export async function convertAudio(
             coverPath,
             filter,
             clearExtras,
-            foreignRemoved,
+            [...(foreignRemoved ?? []), ...staleMeasurements],
             removeCover,
           ),
           {
@@ -2766,6 +2787,7 @@ export async function convertAudio(
           'encoder',
           ...Object.keys(meta.custom ?? {}).map(customTagName),
           ...(foreignRemoved ?? []),
+          ...staleMeasurements,
         ],
       })
     const carrySerato =
