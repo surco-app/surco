@@ -462,6 +462,56 @@ describe('useSourceBrowser', () => {
       expect(playlist).not.toHaveBeenCalledWith(TO_REVIEW_ID)
     })
 
+    // Reading a whole rekordbox collection with previews takes seconds on a big library,
+    // and the window gets the focus back on every alt-tab: only counting the node must not
+    // cost that each time. Opening the node, or All tracks, reads what rekordbox holds now.
+    it('reads the whole collection again only when To review or All tracks is opened after the focus comes back', async () => {
+      const playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? allTracks : []))
+      const { result, focus } = setup(
+        rekordbox(playlist),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 })],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      const wholeReads = () => playlist.mock.calls.filter(([id]) => id === ALL_TRACKS_ID).length
+      const treeReads = () =>
+        vi.mocked(window.api.dj.tree).mock.calls.filter(([p]) => p === 'rekordbox').length
+      expect(wholeReads()).toBe(1)
+      const trees = treeReads()
+      act(() => focus())
+      await waitFor(() => expect(treeReads()).toBeGreaterThan(trees))
+      await act(async () => {})
+      expect(wholeReads()).toBe(1)
+      act(() => result.current.selectPlaylist(result.current.tree?.[1] as SourceNode, []))
+      await waitFor(() => expect(wholeReads()).toBe(2))
+      act(() => focus())
+      await waitFor(() => expect(wholeReads()).toBe(3))
+    })
+
+    it('reads All tracks fresh when it is opened after the focus came back', async () => {
+      const playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? allTracks : []))
+      const { result, focus } = setup(
+        rekordbox(playlist),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 })],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      const wholeReads = () => playlist.mock.calls.filter(([id]) => id === ALL_TRACKS_ID).length
+      act(() => focus())
+      await act(async () => {})
+      expect(wholeReads()).toBe(1)
+      act(() => result.current.selectPlaylist(result.current.tree?.[2] as SourceNode, []))
+      await waitFor(() => expect(wholeReads()).toBe(2))
+    })
+
     // Reviewing the last track is the DJ finishing the job; telling them the list went
     // away in rekordbox would read as something having gone wrong.
     it('goes back to the tree without a "playlist deleted" notice when the last track is reviewed', async () => {

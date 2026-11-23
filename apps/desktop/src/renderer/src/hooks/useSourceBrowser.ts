@@ -1,4 +1,4 @@
-import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query'
+import { hashKey, skipToken, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
@@ -319,10 +319,33 @@ export function useSourceBrowser({
       onPlaylistGoneRef.current(playlist.name, source)
   }, [playlist, source, shownTree])
 
+  // All tracks read only to count To review: a focus marks it stale instead of reading a
+  // whole collection with previews on every alt-tab; opening the node reads it again.
+  const allTracksKey = ['source-playlist', source, ALL_TRACKS_ID]
+  const onlyCounted =
+    reviewHere &&
+    !(otherProgram && matchingPathPairs.length > 0) &&
+    !reviewOpen &&
+    playlist?.id !== ALL_TRACKS_ID
+  useEffect(() => {
+    if (reviewOpen)
+      queryClient.refetchQueries({
+        queryKey: ['source-playlist', source, ALL_TRACKS_ID],
+        exact: true,
+        stale: true,
+      })
+  }, [reviewOpen, source, queryClient])
+
   const rereadLibraries = useStableCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['source-available'] })
     queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
-    queryClient.invalidateQueries({ queryKey: ['source-playlist'], predicate: notMusic })
+    queryClient.invalidateQueries({
+      queryKey: ['source-playlist'],
+      predicate: (query) =>
+        notMusic(query) && !(onlyCounted && query.queryHash === hashKey(allTracksKey)),
+    })
+    if (onlyCounted)
+      queryClient.invalidateQueries({ queryKey: allTracksKey, exact: true, refetchType: 'none' })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
     for (const p of DJ_PROGRAMS)
       queryClient.invalidateQueries({ queryKey: [SOURCE_PROGRAMS[p].membershipKey] })
