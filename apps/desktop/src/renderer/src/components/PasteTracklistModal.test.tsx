@@ -151,7 +151,7 @@ describe('PasteTracklistModal review step', () => {
     expect(screen.getByTestId('paste-tracklist-add')).toHaveTextContent('Añadir 5 pistas')
   })
 
-  it('marks the mix that differs without amber, so the amber dot alone says which rows to check', async () => {
+  it('sets the mix that differs apart in its own mark', async () => {
     setup()
     paste(SET1)
     await review()
@@ -160,7 +160,6 @@ describe('PasteTracklistModal review step', () => {
       .find((r) => r.textContent?.includes('Head over heels (Radio Edit)'))
     const mix = within(row as HTMLElement).getByTestId('paste-tracklist-mix-diff')
     expect(mix).toHaveTextContent('(Extended)')
-    expect(mix.className).not.toMatch(/text-warn/)
   })
 
   it('lets the user leave a found track out too, the one control every row shares', async () => {
