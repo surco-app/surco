@@ -87,6 +87,26 @@ describe('readTags on what ffprobe does not surface', () => {
     expect(tags.album).toBe('MQDRFREE015')
   })
 
+  // A tagger on ID3v2.4 keeps the mood in TMOO, which ffprobe does not surface from a WAV's
+  // id3 chunk: the editor showed no mood, and the next update wrote the field empty, while
+  // the same frame in an MP3 or AIFF read fine, and won over a TXXX MOOD as it does there.
+  it('reads the mood a WAV keeps in a single-value TMOO', async () => {
+    const file = join(dir, 'mood.wav')
+    execFileSync(FF, ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', 'sine=d=1', file])
+    const f = TagFile.createFromPath(file)
+    const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+    id3.version = 4
+    const tmoo = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TMOO)
+    tmoo.text = ['Dark']
+    id3.addFrame(tmoo)
+    const txxx = Id3v2UserTextInformationFrame.fromDescription('MOOD')
+    txxx.text = ['Calm']
+    id3.addFrame(txxx)
+    f.save()
+    f.dispose()
+    expect((await readTags(file)).mood).toBe('Dark')
+  })
+
   it('reads the BPM an M4A keeps in tmpo', async () => {
     const tags = await readTags(m4a)
     expect(tags.bpm).toBe('150')

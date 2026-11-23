@@ -401,7 +401,7 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
     style: userText('STYLE'),
     country: userText('COUNTRY'),
     mediaType: userText('MEDIATYPE'),
-    mood: userText('MOOD'),
+    mood: text('TMOO') || userText('MOOD'),
     quality: userText('QUALITY'),
   }
 }
