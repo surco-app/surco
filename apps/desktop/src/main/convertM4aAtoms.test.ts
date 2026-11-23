@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { type Mpeg4AppleTag, File as TagFile } from 'node-taglib-sharp'
+import { ByteVector, type Mpeg4AppleTag, StringType, File as TagFile } from 'node-taglib-sharp'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -44,6 +44,39 @@ function atom(path: string, mean: string, name: string): string | undefined {
   const f = TagFile.createFromPath(path)
   try {
     return (f.tag as Mpeg4AppleTag).getFirstItunesString(mean, name)
+  } finally {
+    f.dispose()
+  }
+}
+
+const box = (type: string) => ByteVector.fromString(type, StringType.Latin1)
+
+function aacWithBoxes(texts: [string, string][], numbers: [string, number[]][] = []): string {
+  const path = aacWith([])
+  const f = TagFile.createFromPath(path)
+  const apple = f.tag as Mpeg4AppleTag
+  for (const [type, value] of texts) apple.setQuickTimeString(box(type), value)
+  for (const [type, bytes] of numbers)
+    apple.setQuickTimeData(box(type), [ByteVector.fromByteArray(new Uint8Array(bytes))], 21)
+  f.save()
+  f.dispose()
+  return path
+}
+
+function boxText(path: string, type: string): string | undefined {
+  const f = TagFile.createFromPath(path)
+  try {
+    return (f.tag as Mpeg4AppleTag).getFirstQuickTimeString(box(type))
+  } finally {
+    f.dispose()
+  }
+}
+
+function boxBytes(path: string, type: string): number[] | undefined {
+  const f = TagFile.createFromPath(path)
+  try {
+    const data = (f.tag as Mpeg4AppleTag).getFirstQuickTimeData(box(type), 21)
+    return data ? Array.from(data.toByteArray()) : undefined
   } finally {
     f.dispose()
   }
@@ -96,6 +129,67 @@ describe('a same-format M4A update', () => {
     expect(atom(src, ITUNES, 'CATALOGNUMBER')).toBeUndefined()
     expect(atom(src, ITUNES, 'LABEL')).toBeUndefined()
     expect(atom(src, 'com.example.tagger', 'notes')).toBeUndefined()
+  })
+
+  // Measured 23/11/2026 the same way: besides the "----" atoms, the update lost the sort
+  // names, the classical work and movement, the category, purchase date, director and
+  // narrator. Surco edits none of them, and Music sorts the library by the sort names.
+  it('keeps the standard atoms Surco does not manage', async () => {
+    const texts: [string, string][] = [
+      ['sonm', 'Title, The'],
+      ['soar', 'Artist, The'],
+      ['soaa', 'Album Artist, The'],
+      ['soal', 'Album, The'],
+      ['soco', 'Composer, The'],
+      ['sosn', 'Show, The'],
+      ['©wrk', 'Symphony No. 5'],
+      ['©mvn', 'Allegro con brio'],
+      ['catg', 'Electronic'],
+      ['purd', '2026-11-23 10:00:00'],
+      ['©dir', 'Director'],
+      ['©nrt', 'Narrator'],
+    ]
+    const numbers: [string, number[]][] = [
+      ['©mvi', [0, 1]],
+      ['©mvc', [0, 4]],
+      ['shwm', [1]],
+    ]
+    const src = aacWithBoxes(texts, numbers)
+    await convertAudio(src, src, 'alac', meta)
+    for (const [type, value] of texts) expect(boxText(src, type), type).toBe(value)
+    for (const [type, bytes] of numbers) expect(boxBytes(src, type), type).toEqual(bytes)
+  })
+
+  // The conductor and the label read back from ©con and ©pub, so a cleared one must not
+  // return from the source; a sort name the user deleted in the inspector stays deleted.
+  it('leaves out the standard atoms of a cleared field or a deleted tag', async () => {
+    const src = aacWithBoxes([
+      ['©con', 'Conductor'],
+      ['©pub', 'Label'],
+      ['sonm', 'Title, The'],
+      ['soar', 'Artist, The'],
+    ])
+    await convertAudio(
+      src,
+      src,
+      'alac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      ['sort_name'],
+    )
+    expect(boxText(src, '©con')).toBeUndefined()
+    expect(boxText(src, '©pub')).toBeUndefined()
+    expect(boxText(src, 'sonm')).toBeUndefined()
+    expect(boxText(src, 'soar')).toBe('Artist, The')
   })
 
   // iTunSMPB counts the encoder's priming and padding of the stream it was written for: on

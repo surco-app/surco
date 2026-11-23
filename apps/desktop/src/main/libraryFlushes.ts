@@ -553,6 +553,10 @@ export function queueLeftBehind(
   return leftBehind(list, (r) => results[list.indexOf(r)]?.written === true)
 }
 
+// A discarded queue writes none of its moves.
+export const discardLeftBehind = (list: RekordboxRepoint[]): string[] =>
+  leftBehind(list, () => false)
+
 const writtenBy = (items: RekordboxRepoint[], results: LibraryRepointResult[]) =>
   items.filter((_, i) => results[i]?.written)
 

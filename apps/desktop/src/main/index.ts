@@ -167,6 +167,7 @@ import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryF
 import {
   conversionPrograms,
   currentLibraryStatus,
+  discardLeftBehind,
   duplicateLibraryDeps,
   engineFlushDeps,
   flushConversionBatch,
@@ -297,7 +298,7 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
+import { discardedRelocations, type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { traktorEdit } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { traktorRead } from './traktorPlaylistsIpc'
@@ -489,7 +490,7 @@ const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
 const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
 const replacedStore = createReplacedStore(join(app.getPath('userData'), 'replaced-tracks.json'))
-const leaveOutAndTell = (program: WritableProgram, paths: string[]): void => {
+const leaveOutAndTell = (program: CueProgram, paths: string[]): void => {
   if (leaveOutWhereStayed(replacedStore, program, paths)) broadcast('replaced:changed', null)
 }
 const leaveTraktorOutWhereStayed = (write: FlushOutcome['traktor']): void => {
@@ -580,6 +581,7 @@ const programQueues = {
         onChange: (state) =>
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'rekordbox', value: state }),
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('rekordbox', discardLeftBehind(list)),
       },
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {
@@ -617,6 +619,7 @@ const programQueues = {
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'engine', value: state }),
         addsTracks: false,
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('engine', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
@@ -649,6 +652,8 @@ const programQueues = {
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'traktor', value: state }),
         addsTracks: false,
+        onDiscard: (patches) =>
+          leaveOutAndTell('traktor', discardedRelocations(patches, bootVolumeName())),
       },
     },
     programQueueDeps,
@@ -683,6 +688,7 @@ const programQueues = {
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
+        onDiscard: (list) => leaveOutAndTell('serato', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
@@ -727,6 +733,7 @@ const programQueues = {
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'virtualdj', value: state }),
         addsTracks: false,
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('virtualdj', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
