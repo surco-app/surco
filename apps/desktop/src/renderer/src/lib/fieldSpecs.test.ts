@@ -377,14 +377,16 @@ describe('buildFieldSpecs (bulk mode)', () => {
     })
   })
 
-  // A box sized for "2001" cuts even "3 values" to "3 …", so there the bare count rides in a
-  // tooltip as well; in a full-width box the count reads whole and a tooltip would repeat it.
-  it('keeps a bare count in a tooltip only where a fixed-width box cuts it', () => {
+  // A box sized for "2001" cut even "3 values" to "3 …" and two years to "2…". There the box
+  // shows the mixed mark and the count rides in the tooltip; a bare number would read as the
+  // value itself. In a full-width box the count reads whole and a tooltip would repeat it.
+  it('marks a fixed-width box as mixed and keeps the count in its tooltip', () => {
     const tracks = [
       track('a', { year: '2001', trackNumber: '1', artist: 'A' }),
       track('b', { year: '2002', trackNumber: '2', artist: 'B' }),
       track('c', { artist: 'C' }),
       track('d', { year: '2002', trackNumber: '2', artist: 'D' }),
+      track('e', { year: '2003', trackNumber: '3', artist: 'E' }),
     ]
     const specs = buildFieldSpecs(
       params({
@@ -395,18 +397,25 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     const tooltipOf = (key: string) => {
       const spec = specs.find((s) => s.key === key)
-      return { placeholder: spec?.placeholder, placeholderTooltip: spec?.placeholderTooltip }
+      return {
+        placeholder: spec?.placeholder,
+        placeholderHint: spec?.placeholderHint,
+        placeholderTooltip: spec?.placeholderTooltip,
+      }
     }
     expect(tooltipOf('year')).toEqual({
-      placeholder: 'editor.valuesCount',
+      placeholder: '≠',
+      placeholderHint: 'editor.valuesCount',
       placeholderTooltip: true,
     })
     expect(tooltipOf('trackNumber')).toEqual({
-      placeholder: 'editor.valuesCount',
+      placeholder: '≠',
+      placeholderHint: 'editor.valuesCount',
       placeholderTooltip: true,
     })
     expect(tooltipOf('artist')).toEqual({
       placeholder: 'editor.valuesCount',
+      placeholderHint: undefined,
       placeholderTooltip: false,
     })
   })
@@ -451,10 +460,10 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(genre?.placeholder).toBe('Techno · House')
   })
 
-  // "Multiple values" does not fit a box sized for four digits and got cut to "Multi". A
-  // short box says it with an ellipsis; the words still reach a screen reader through the
-  // mixed flag.
-  it('marks a short field whose selection disagrees with an ellipsis', () => {
+  // "Multiple values" does not fit a box sized for four digits and got cut to "Multi", and
+  // two years to "2…". A short box shows the mixed mark and names the years in its tooltip;
+  // the words still reach a screen reader through the mixed flag.
+  it('marks a short field whose selection disagrees with the mixed mark', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
@@ -464,7 +473,8 @@ describe('buildFieldSpecs (bulk mode)', () => {
     )
     const year = specs.find((s) => s.key === 'year')
     expect(year?.width).toBe('short')
-    expect(year?.placeholder).toBe('2007 · 2008')
+    expect(year?.placeholder).toBe('≠')
+    expect(year?.placeholderHint).toBe('2007 · 2008')
     expect(year?.mixed).toBe(true)
   })
 
@@ -689,7 +699,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
-  it('names two differing values in a field with a width and counts three', () => {
+  it('marks a box with a width as mixed and names up to three values in its tooltip', () => {
     const specs = buildFieldSpecs(
       params({
         isMulti: true,
@@ -697,7 +707,12 @@ describe('buildFieldSpecs (bulk mode)', () => {
         visibleFields: ['bpm'],
       }),
     )
-    expect(specs[0]).toMatchObject({ readOnly: true, value: '', placeholder: '120 · 128' })
+    expect(specs[0]).toMatchObject({
+      readOnly: true,
+      value: '',
+      placeholder: '≠',
+      placeholderHint: '120 · 128',
+    })
     const three = buildFieldSpecs(
       params({
         isMulti: true,
@@ -709,7 +724,7 @@ describe('buildFieldSpecs (bulk mode)', () => {
         visibleFields: ['year'],
       }),
     )
-    expect(three[0].placeholder).toBe('editor.valuesCount')
+    expect(three[0]).toMatchObject({ placeholder: '≠', placeholderHint: '2019 · 2020 · 2021' })
   })
 
   it('shows the common BPM read-only and keeps the width that pairs it with Key', () => {

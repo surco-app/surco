@@ -54,24 +54,25 @@ function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; co
   return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
 
-// What a mixed field shows in place of a value: the values themselves when few enough to read
-// (fewer still in a box sized for its value), otherwise how many there are. A track with
-// nothing counts as a value of its own: without it "A" would read as a value they all share.
-// A box sized for its value cuts even the count, so there the tooltip carries it too; a bare
-// number would be shorter but reads as the value itself ("3" in Track No.).
+// What a mixed field shows in place of a value: the values themselves when few enough to read,
+// otherwise how many there are. A track with nothing counts as a value of its own: without it
+// "A" would read as a value they all share. A box sized for its value cuts even the count, so
+// there it shows the mixed mark and the tooltip says what it stands for; a bare number would
+// be shorter but reads as the value itself ("3" in Track No.).
+const MIXED_MARK = '≠'
+
 function mixedPlaceholder(
   values: { value: string }[],
   hasEmpty: boolean,
   width: FieldWidth | undefined,
   tr: BuildFieldSpecsParams['tr'],
-): { placeholder: string; placeholderTooltip: boolean } {
+): { placeholder: string; placeholderHint?: string; placeholderTooltip: boolean } {
   const shown = values.map((v) => v.value)
   if (hasEmpty) shown.push(tr('editor.emptyValue'))
-  const listed = shown.length <= (width ? 2 : 3)
-  return {
-    placeholder: listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length }),
-    placeholderTooltip: listed || width !== undefined,
-  }
+  const listed = shown.length <= 3
+  const text = listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length })
+  if (width) return { placeholder: MIXED_MARK, placeholderHint: text, placeholderTooltip: true }
+  return { placeholder: text, placeholderTooltip: listed }
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -88,6 +89,7 @@ export interface FieldSpec {
   // The placeholder spells out the values, or sits in a box too narrow for any of it, so a
   // tooltip adds the part the box cuts; a bare count in a full-width box says it all.
   placeholderTooltip?: boolean
+  placeholderHint?: string
   multiline?: boolean
   width?: FieldWidth
   required?: boolean

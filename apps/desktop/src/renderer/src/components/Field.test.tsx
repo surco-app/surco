@@ -805,3 +805,35 @@ describe('Field with several lines and its menu', () => {
     expect(trigger).not.toHaveClass('top-1/2')
   })
 })
+
+describe('Field marked as mixed', () => {
+  it('says what the mark stands for on hover and to a screen reader on the values button', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="year"
+        label="Year"
+        value=""
+        onChange={vi.fn()}
+        width="short"
+        mixed
+        mixedValues={[
+          { value: '2001', count: 1 },
+          { value: '2002', count: 2 },
+        ]}
+        placeholder="≠"
+        placeholderHint="2002 · 2001"
+        placeholderTooltip
+      />,
+    )
+    expect(screen.getByTestId('field-year')).toHaveAttribute('placeholder', '≠')
+    expect(screen.getByTestId('field-values-year')).toHaveAccessibleName('Year: 2002 · 2001')
+    const box = screen.getByTestId('field-year').parentElement as HTMLElement
+    for (const type of ['pointerenter', 'pointermove']) {
+      box.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10 }))
+    }
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2002 · 2001')
+    vi.useRealTimers()
+  })
+})

@@ -49,6 +49,7 @@ interface FieldProps {
   mixedValues?: { value: string; count: number }[]
   placeholder?: string
   placeholderTooltip?: boolean
+  placeholderHint?: string
   suggestions?: string[]
   tagList?: TagList
   // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
@@ -86,6 +87,7 @@ export const Field = memo(function Field({
   mixedValues,
   placeholder,
   placeholderTooltip,
+  placeholderHint,
   suggestions,
   tagList,
   suggesting,
@@ -275,7 +277,7 @@ export const Field = memo(function Field({
         )}
         {/* The placeholder is cut with an ellipsis in a narrow form; the tooltip keeps it whole. */}
         {(mixed || plain) && placeholderTooltip && placeholder && (
-          <Tooltip label={placeholder} hoverOnly />
+          <Tooltip label={placeholderHint ?? placeholder} hoverOnly />
         )}
         {draft !== '' && <Tooltip label={valueCut ? draft : ''} hoverOnly />}
         {listsValues && (
@@ -283,7 +285,7 @@ export const Field = memo(function Field({
             <button
               type="button"
               data-testid={`field-values-${name}`}
-              aria-label={`${label}: ${placeholder ?? ''}`}
+              aria-label={`${label}: ${placeholderHint ?? placeholder ?? ''}`}
               aria-haspopup="listbox"
               aria-expanded={valuesOpen}
               onClick={() => setValuesOpen((o) => !o)}
