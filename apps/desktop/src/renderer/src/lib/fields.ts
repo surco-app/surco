@@ -18,6 +18,7 @@ export type FieldWidth = 'short' | 'medium'
 interface FieldDef {
   key: MetaTextKey
   width?: FieldWidth
+  multiline?: true
 }
 
 export const FIELD_DEFS: FieldDef[] = [
@@ -33,7 +34,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'trackTotal', width: 'short' },
   { key: 'discNumber', width: 'short' },
   { key: 'discTotal', width: 'short' },
-  { key: 'comment' },
+  { key: 'comment', multiline: true },
   { key: 'bpm', width: 'short' },
   { key: 'key', width: 'medium' },
   { key: 'remixArtist' },

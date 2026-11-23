@@ -277,3 +277,10 @@ describe('bounded field widths', () => {
     expect(FIELD_DEFS.find((d) => d.key === 'key')?.width).toBe('medium')
   })
 })
+
+describe('multi-line fields', () => {
+  it('lets Comment hold several lines, since DJ notes and store comments arrive with line breaks', () => {
+    expect(FIELD_DEFS.find((d) => d.key === 'comment')?.multiline).toBe(true)
+    expect(FIELD_DEFS.filter((d) => d.multiline).map((d) => d.key)).toEqual(['comment'])
+  })
+})

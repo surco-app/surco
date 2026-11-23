@@ -24,13 +24,19 @@ vi.mock('./Field', () => ({
     value,
     inline,
     trailing,
+    multiline,
   }: {
     name: string
     value: string
     inline?: boolean
     trailing?: React.ReactNode
+    multiline?: boolean
   }) => (
-    <div data-testid={`field-${name}`} data-inline={inline ? 'true' : undefined}>
+    <div
+      data-testid={`field-${name}`}
+      data-inline={inline ? 'true' : undefined}
+      data-multiline={multiline ? 'true' : undefined}
+    >
       {value}
       {trailing}
     </div>
@@ -230,5 +236,11 @@ describe('the rekordbox Playlists field', () => {
     cleanup()
     renderForm([{ ...spec('rekordboxPlaylists'), playlists: { ...playlists, multi: true } }])
     expect(screen.getByTestId('playlists-bulk')).toBeInTheDocument()
+  })
+
+  it('hands the multi-line request down to the field', () => {
+    renderForm([{ ...spec('comment', 'a'), multiline: true }, spec('title', 'b')])
+    expect(screen.getByTestId('field-comment')).toHaveAttribute('data-multiline', 'true')
+    expect(screen.getByTestId('field-title')).not.toHaveAttribute('data-multiline')
   })
 })

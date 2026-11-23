@@ -802,3 +802,19 @@ describe('a BPM of zero', () => {
     expect(specs[0].value).toBe('100')
   })
 })
+
+describe('a multi-line Comment', () => {
+  it('asks for a multi-line box on one track and across a selection alike', () => {
+    const single = buildFieldSpecs(params({ visibleFields: ['comment', 'title'] }))
+    expect(single.find((s) => s.key === 'comment')?.multiline).toBe(true)
+    expect(single.find((s) => s.key === 'title')?.multiline).toBeFalsy()
+    const multi = buildFieldSpecs(
+      params({
+        isMulti: true,
+        selectedTracks: [track('a', { comment: 'x' }), track('b', { comment: 'y' })],
+        visibleFields: ['comment'],
+      }),
+    )
+    expect(multi.find((s) => s.key === 'comment')?.multiline).toBe(true)
+  })
+})

@@ -88,6 +88,7 @@ export interface FieldSpec {
   // The placeholder spells out the values, or sits in a box too narrow for any of it, so a
   // tooltip adds the part the box cuts; a bare count in a full-width box says it all.
   placeholderTooltip?: boolean
+  multiline?: boolean
   width?: FieldWidth
   required?: boolean
   invalid?: boolean
@@ -274,6 +275,8 @@ export function buildFieldSpecs({
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
     key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
+  const multilineOf = (key: MetaTextKey): boolean | undefined =>
+    FIELD_DEFS.find((d) => d.key === key)?.multiline
   // Each selected track's custom values, resolved once for every custom field below.
   const selectedCustom =
     isMulti && selectedTracks && customFields.length > 0
@@ -305,6 +308,7 @@ export function buildFieldSpecs({
           )
         : {}),
       width,
+      multiline: multilineOf(key),
       mixed,
       mixedValues,
       onChange: bulkOnChange.get(key) ?? (() => {}),
@@ -427,6 +431,7 @@ export function buildFieldSpecs({
             formatAction: def.key === 'title' ? titleFormatAction : undefined,
             cleaned: cleanedNotes?.[def.key],
             width: widthOf(def.key),
+            multiline: def.multiline,
             required: requiredFields.includes(def.key),
             invalid: requiredFields.includes(def.key) && !stored.trim(),
             suggestions:

@@ -732,3 +732,51 @@ describe('Field cut value', () => {
     vi.useRealTimers()
   })
 })
+
+describe('Field with several lines', () => {
+  it('keeps the line breaks of a comment instead of gluing its lines together', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value={'Line one\nLine two'}
+        onChange={vi.fn()}
+        multiline
+      />,
+    )
+    const box = screen.getByTestId('field-comment') as HTMLTextAreaElement
+    expect(box.tagName).toBe('TEXTAREA')
+    expect(box.value).toBe('Line one\nLine two')
+  })
+
+  it('still moves on with Enter and leaves Shift+Enter to break the line', () => {
+    const onChange = vi.fn()
+    render(
+      <div>
+        <Field name="comment" label="Comment" value="" onChange={onChange} multiline />
+        <Field name="bpm" label="BPM" value="" onChange={vi.fn()} />
+      </div>,
+    )
+    const box = screen.getByTestId('field-comment')
+    box.focus()
+    fireEvent.change(box, { target: { value: 'Cue at 1:32' } })
+    expect(fireEvent.keyDown(box, { key: 'Enter', shiftKey: true })).toBe(true)
+    expect(box).toHaveFocus()
+    fireEvent.keyDown(box, { key: 'Enter' })
+    expect(onChange).toHaveBeenCalledWith('Cue at 1:32')
+    expect(screen.getByTestId('field-bpm')).toHaveFocus()
+  })
+
+  it('is reached by Enter from the field before it', () => {
+    render(
+      <div>
+        <Field name="title" label="Title" value="" onChange={vi.fn()} />
+        <Field name="comment" label="Comment" value="" onChange={vi.fn()} multiline />
+      </div>,
+    )
+    const title = screen.getByTestId('field-title')
+    title.focus()
+    fireEvent.keyDown(title, { key: 'Enter' })
+    expect(screen.getByTestId('field-comment')).toHaveFocus()
+  })
+})

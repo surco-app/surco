@@ -26,7 +26,7 @@ interface Props {
   // resolved and only passed when it changes something — a title already wearing
   // the pattern gets no row, so a second apply can never stack the prefix.
   formatResult?: string
-  inputRef: React.RefObject<HTMLInputElement | null>
+  inputRef: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
   onChange: (value: string) => void
 }
 
