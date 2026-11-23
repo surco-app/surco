@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analyze.",
-            "text": "Open a track's quality section, or analyze the whole queue with the toolbar button or ⌘⇧A."
+            "text": "Open a track's quality section, or analyze the whole queue with the toolbar button or ⇧⌘A."
           },
           {
             "lead": "Read the verdict.",
@@ -944,7 +944,7 @@
         "title": "Convert your tracks",
         "s": "One track or the whole queue, to the format you pick or in its own.",
         "body": [
-          "⌘Enter converts the selected track and ⌘⇧Enter the whole queue, skipping what's already done. If you've filtered the list, only what you see gets converted."
+          "⌘Enter converts the selected track and ⇧⌘Enter the whole queue, skipping what's already done. If you've filtered the list, only what you see gets converted."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "If the conversion changes an original's audio, Surco keeps a backup first. The mark on the row takes you back to it.",
           "With “Edit the original”, changing the format deletes the original.",
-          "Converting doesn't search your sources. If you want fresh data, run Match first (⌘⇧D)."
+          "Converting doesn't search your sources. If you want fresh data, run Match first (⇧⌘D)."
         ],
         "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."

@@ -89,7 +89,9 @@ function setup({
   settings = {},
   actionsRef,
   profile = null,
+  platform = 'darwin',
 }: {
+  platform?: 'darwin' | 'win32'
   profile?: CueProfile | null
   read?: TrackCues
   words?: Uint16Array | null
@@ -98,6 +100,7 @@ function setup({
 } = {}) {
   const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
+    platform,
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
         ...read,
@@ -262,6 +265,13 @@ describe('Auto marcar', () => {
     expect(proposals()).toHaveLength(2)
   })
 
+  it('names Enter on the accept button where the host has no Return glyph', async () => {
+    setup({ platform: 'win32' })
+    await ready()
+    await autoMark()
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and saveEnter$/)
+  })
+
   // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark
   // button. A bar of their own says how many there are and what accepting or removing them
   // does, in words, the same folded and in full screen.
@@ -275,7 +285,7 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↵$/)
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↩$/)
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
     expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
       screen.getByTestId('cues-auto-accept'),

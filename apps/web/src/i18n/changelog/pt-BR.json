@@ -741,7 +741,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "O editor de cues ampliado abre com ⌘⇧C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todos os cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
+        "text": "O editor de cues ampliado abre com ⇧⌘C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todos os cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
         "in": "1.27.3"
       },
       {

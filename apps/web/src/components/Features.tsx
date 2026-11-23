@@ -31,8 +31,8 @@ export default function Features() {
   const shortcutLabels = t('shortcuts.items', { returnObjects: true }) as string[]
   const shortcutKeys: string[][] = [
     ['⌘', 'O'],
-    ['⌘', '↵'],
-    ['⌘', '⇧', '↵'],
+    ['⌘', '↩'],
+    ['⇧', '⌘', '↩'],
     [t('keys.space')],
     ['J', 'K'],
     ['/'],

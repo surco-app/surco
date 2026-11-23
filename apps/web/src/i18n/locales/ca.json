@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analitza.",
-            "text": "Obre la secció de qualitat d'una pista, o analitza tota la cua amb el botó de la barra o amb ⌘⇧A."
+            "text": "Obre la secció de qualitat d'una pista, o analitza tota la cua amb el botó de la barra o amb ⇧⌘A."
           },
           {
             "lead": "Llegeix el veredicte.",
@@ -944,7 +944,7 @@
         "title": "Converteix les teves pistes",
         "s": "Una pista o tota la cua, al format que triïs o en el seu propi.",
         "body": [
-          "⌘Retorn converteix la pista seleccionada i ⌘⇧Retorn tota la cua, i se salta el que ja està fet. Si has filtrat la llista, només es converteix el que veus."
+          "⌘Retorn converteix la pista seleccionada i ⇧⌘Retorn tota la cua, i se salta el que ja està fet. Si has filtrat la llista, només es converteix el que veus."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "Si la conversió canvia l'àudio d'un original, Surco en desa abans una còpia. La marca de la fila t'hi torna.",
           "Amb «Editar l'original», canviar de format elimina l'original.",
-          "Convertir no cerca a les teves fonts. Si vols dades fresques, passa abans Aparellar (⌘⇧D)."
+          "Convertir no cerca a les teves fonts. Si vols dades fresques, passa abans Aparellar (⇧⌘D)."
         ],
         "shot": "convertir-ca.webp",
         "shotCaption": "El botó de convertir amb el selector de format."

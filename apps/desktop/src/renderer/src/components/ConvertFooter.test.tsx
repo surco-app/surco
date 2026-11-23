@@ -1158,6 +1158,20 @@ describe('ConvertFooter batch verification', () => {
     })
   }
 
+  // The pill after a batch names the format the batch wrote (MP3 sources kept as MP3), so the
+  // ••• menu must not mark the AIFF the setting says instead.
+  it('marks in the done menu the one format the batch wrote, as the pill names it', () => {
+    render(
+      cloneElement(batchFooter({ ok: 2 }), {
+        format: 'aiff',
+        batchFormats: ['mp3'],
+      }),
+    )
+    fireEvent.click(screen.getByTestId('done-more'))
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
   it('the batch line counts verified and mismatched', () => {
     render(batchFooter({ ok: 38, mismatch: 2 }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(
@@ -1304,6 +1318,35 @@ describe('ConvertFooter selection split button', () => {
     expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByTestId('process-destination-beside')).toBeInTheDocument()
     expect(screen.queryByTestId('batch-destination-toggle')).toBeNull()
+  })
+
+  // Two MP3s with an AIFF setting write MP3 (kept sources), as a single track already shows:
+  // the dropdown must not promise AIFF next to an "Update" that rewrites MP3 tags.
+  it('shows on the dropdown and marks in the menu the one format the plan writes', () => {
+    render(plan({ format: 'aiff', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('shows and marks the picked format when the plan writes exactly that', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    openMenu()
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('shows and marks the one real format a "Same as source" pick resolves to', () => {
+    render(plan({ format: 'source', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('keeps showing the picked format when the plan writes several', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff', 'mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
   })
 
   it('says out of how many it converts when the plan leaves some out', () => {

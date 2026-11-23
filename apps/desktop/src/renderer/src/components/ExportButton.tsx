@@ -36,6 +36,10 @@ interface ExportButtonProps {
   libraryBetter?: boolean
   done: boolean
   outputFormat: FormatSetting
+  // The format the dropdown half displays and the menu marks, when it differs from the pick:
+  // a selection whose plan writes one other format (kept MP3s under an AIFF setting). Picking
+  // and converting still use outputFormat.
+  shownFormat?: FormatSetting
   exportedFormat: OutputFormat | null
   incomplete: boolean
   // The reason the convert is blocked (the empty required fields), shown as a tooltip on
@@ -105,6 +109,7 @@ export function ExportButton({
   done,
   stage,
   outputFormat,
+  shownFormat = outputFormat,
   exportedFormat,
   incomplete,
   incompleteReason,
@@ -139,13 +144,14 @@ export function ExportButton({
   // nothing, and in a selection the format can be what leaves tracks out.
   const softBlocked = incomplete && !processing
   const reasonId = useId()
+  const upToDateId = useId()
 
   // 'source' names no real format, so its display text is the translated setting label
   // ("Same as source") rather than the uppercased extension every real format shows.
   const formatLabel =
     outputFormat === 'source' ? tr('settings.formats.source') : outputFormat.toUpperCase()
 
-  // The dropdown half shows the chosen format. Every candidate is stacked in one grid cell
+  // The dropdown half shows the format the button writes (shownFormat). Every candidate is stacked in one grid cell
   // and only the chosen one is visible, so the half is as wide as the longest name in the
   // app's language and switching formats never moves either half.
   const shortName = (f: FormatSetting): string =>
@@ -155,9 +161,9 @@ export function ExportButton({
       {FORMAT_SETTINGS.map((f) => (
         <span
           key={f}
-          data-testid={f === outputFormat ? 'process-format-current' : undefined}
-          aria-hidden={f !== outputFormat || undefined}
-          className={`[grid-area:1/1] ${f === outputFormat ? '' : 'invisible'}`}
+          data-testid={f === shownFormat ? 'process-format-current' : undefined}
+          aria-hidden={f !== shownFormat || undefined}
+          className={`[grid-area:1/1] ${f === shownFormat ? '' : 'invisible'}`}
         >
           {shortName(f)}
         </span>
@@ -246,43 +252,37 @@ export function ExportButton({
         key="up-to-date"
         data-testid="convert-up-to-date-row"
         data-swapped={upToDateSwapped.current ? 'true' : 'false'}
-        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center ${narrow ? 'gap-2' : 'gap-3'}`}
+        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center`}
       >
-        <span
-          data-testid="convert-up-to-date"
-          className="flex flex-1 items-center justify-center gap-1.5 text-sm text-fg-dim"
-        >
-          <span aria-hidden="true" className="text-good">
-            ✓
-          </span>
-          <span
-            data-testid="convert-up-to-date-label"
-            data-narrow={narrow ? 'true' : 'false'}
-            className={narrow ? 'sr-only' : undefined}
+        {/* The normal split button's geometry with the accent fill swapped for an outline, so
+          the footer keeps one shape and an edit only brings the fill back. */}
+        <div ref={ref} className="relative flex flex-1 self-stretch">
+          <button
+            type="button"
+            data-testid="convert-update-anyway"
+            aria-describedby={upToDateId}
+            onClick={() => onProcess(outputFormat)}
+            className={`press relative -mr-px flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-l-lg ${narrow ? 'px-2' : 'px-3'} text-sm font-medium text-fg hover:bg-[var(--color-hover)]`}
           >
+            <span aria-hidden="true" className="text-good">
+              ✓
+            </span>
+            <span className="truncate">{tr('editor.updateAnyway')}</span>
+            <Tooltip label={tr('editor.updateAnyway')} hint={hint} hoverOnly />
+          </button>
+          <span id={upToDateId} data-testid="convert-up-to-date" className="sr-only">
             {tr('editor.upToDate')}
           </span>
-        </span>
-        <button
-          type="button"
-          data-testid="convert-update-anyway"
-          onClick={() => onProcess(outputFormat)}
-          className={`press h-8 min-w-0 truncate rounded-lg border border-[var(--color-line-strong)] ${narrow ? 'px-2' : 'px-3'} text-xs text-fg-dim hover:bg-[var(--color-hover)]`}
-        >
-          {tr('editor.updateAnyway')}
-          <Tooltip label={tr('editor.updateAnyway')} hoverOnly />
-        </button>
-        <div ref={ref} className="relative">
           <button
             type="button"
             data-testid="process-format-toggle"
-            aria-label={tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })}
+            aria-label={tr('editor.formatDestinationToggle', { format: shortName(shownFormat) })}
             aria-expanded={open}
             ref={toggleRef}
             aria-haspopup="menu"
             onClick={() => setOpen((v) => !v)}
             data-box={FORMAT_TOGGLE_BOX_NAME}
-            className={`press flex h-8 items-center justify-center ${FORMAT_TOGGLE_BOX} rounded-lg text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset hover:bg-[var(--color-hover)]`}
+            className={`${SPLIT_TOGGLE_FORMAT} text-fg-dim before:bg-[var(--color-line-strong)] hover:bg-[var(--color-hover)]`}
           >
             {formatPicker}
             <ChevronDown
@@ -290,12 +290,18 @@ export function ExportButton({
               className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
             />
           </button>
+          {/* Drawn over both halves so one outline wraps the pair and the hover fills stay
+            inside it, with the short divider as the only seam. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 z-20 rounded-lg ring-1 ring-[var(--color-line-strong)] ring-inset"
+          />
           {open && (
             <FormatDestinationMenu
               menuRef={menuRef}
               onMenuKeyDown={onMenuKeyDown}
               offerSource={offerSource}
-              outputFormat={outputFormat}
+              outputFormat={shownFormat}
               exportedFormat={exportedFormat}
               destination={destination}
               destinations={destinations}
@@ -429,7 +435,7 @@ export function ExportButton({
           aria-label={
             quiet
               ? tr('editor.chooseFormat')
-              : tr('editor.formatDestinationToggle', { format: shortName(outputFormat) })
+              : tr('editor.formatDestinationToggle', { format: shortName(shownFormat) })
           }
           aria-expanded={open}
           ref={toggleRef}
@@ -472,7 +478,7 @@ export function ExportButton({
             menuRef={menuRef}
             onMenuKeyDown={onMenuKeyDown}
             offerSource={offerSource}
-            outputFormat={outputFormat}
+            outputFormat={shownFormat}
             exportedFormat={exportedFormat}
             destination={destination}
             destinations={destinations}

@@ -741,7 +741,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "El editor de cues a pantalla completa se abre con ⌘⇧C desde la pista seleccionada. Sus botones de abajo van en grupos, pads, CALL, rejilla y zoom, y «Borrar todos los cues» queda solo al final. El zoom acerca hasta un compás, «Aceptar y guardar» guarda las propuestas de «Auto marcar» en tu programa de DJ con un clic, y con «Letras en orden de la pista» un pad vacío te dice qué letra tendrá el cue.",
+        "text": "El editor de cues a pantalla completa se abre con ⇧⌘C desde la pista seleccionada. Sus botones de abajo van en grupos, pads, CALL, rejilla y zoom, y «Borrar todos los cues» queda solo al final. El zoom acerca hasta un compás, «Aceptar y guardar» guarda las propuestas de «Auto marcar» en tu programa de DJ con un clic, y con «Letras en orden de la pista» un pad vacío te dice qué letra tendrá el cue.",
         "in": "1.27.3"
       },
       {

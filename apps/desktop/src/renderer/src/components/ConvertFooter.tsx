@@ -344,6 +344,9 @@ export function ConvertFooter({
     isMulti && batchFormats.length > 1
       ? [batchLabel, ...batchFormats.map((f) => f.toUpperCase())].join(' · ')
       : undefined
+  // The one format a selection really writes, which the pill and the menus mark in place of
+  // the picked one (sources kept as MP3 write MP3 whatever the setting says).
+  const writtenFormat = isMulti && batchFormats.length === 1 ? batchFormats[0] : format
   const lossyToLossless =
     !isMulti &&
     isLosslessContainer(format) &&
@@ -718,7 +721,7 @@ export function ConvertFooter({
                 )}
                 <DoneMenu
                   multi={isMulti}
-                  outputFormat={format}
+                  outputFormat={writtenFormat}
                   exportedFormat={isMulti ? null : exportedFormat}
                   inPlace={!isMulti && willEditInPlace}
                   tagsOnly={!isMulti && tagsOnly}
@@ -784,6 +787,7 @@ export function ConvertFooter({
               libraryBetter={!isMulti && libraryBetter}
               done={!isMulti && done}
               outputFormat={format}
+              shownFormat={writtenFormat}
               exportedFormat={isMulti ? null : exportedFormat}
               incomplete={isMulti ? batchCount === 0 : incomplete}
               incompleteReason={isMulti ? leftOut : incompleteReason}

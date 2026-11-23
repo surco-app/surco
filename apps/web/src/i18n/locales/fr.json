@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analyse.",
-            "text": "Ouvre la section qualité d’un morceau, ou analyse toute la file avec le bouton de la barre ou ⌘⇧A."
+            "text": "Ouvre la section qualité d’un morceau, ou analyse toute la file avec le bouton de la barre ou ⇧⌘A."
           },
           {
             "lead": "Lis le verdict.",
@@ -944,7 +944,7 @@
         "title": "Convertis tes morceaux",
         "s": "Un morceau ou toute la file, dans le format choisi ou dans le sien.",
         "body": [
-          "⌘Entrée convertit le morceau sélectionné et ⌘⇧Entrée toute la file, en sautant ce qui est déjà fait. Si tu as filtré la liste, seul ce que tu vois est converti."
+          "⌘Entrée convertit le morceau sélectionné et ⇧⌘Entrée toute la file, en sautant ce qui est déjà fait. Si tu as filtré la liste, seul ce que tu vois est converti."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "Si la conversion change l’audio d’un original, Surco en garde d’abord une sauvegarde. La marque sur la ligne te ramène à lui.",
           "Avec « Modifier l’original », changer de format supprime l’original.",
-          "Convertir ne cherche pas dans tes sources. Si tu veux des données fraîches, lance d’abord Associer (⌘⇧D)."
+          "Convertir ne cherche pas dans tes sources. Si tu veux des données fraîches, lance d’abord Associer (⇧⌘D)."
         ],
         "shot": "convertir-fr.webp",
         "shotCaption": "Le bouton de conversion avec son choix de format."

@@ -741,7 +741,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "Der große Cue-Editor öffnet sich mit ⌘⇧C für den ausgewählten Track. Seine Buttons unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben nach Position im Track“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
+        "text": "Der große Cue-Editor öffnet sich mit ⇧⌘C für den ausgewählten Track. Seine Buttons unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben nach Position im Track“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
         "in": "1.27.3"
       },
       {

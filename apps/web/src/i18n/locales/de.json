@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analysiere.",
-            "text": "Öffne den Qualitätsabschnitt eines Tracks oder analysiere die ganze Warteschlange mit dem Button in der Leiste oder ⌘⇧A."
+            "text": "Öffne den Qualitätsabschnitt eines Tracks oder analysiere die ganze Warteschlange mit dem Button in der Leiste oder ⇧⌘A."
           },
           {
             "lead": "Lies das Urteil.",
@@ -944,7 +944,7 @@
         "title": "Konvertiere deine Tracks",
         "s": "Ein Track oder die ganze Warteschlange, ins gewählte Format oder im eigenen.",
         "body": [
-          "⌘Enter konvertiert den gewählten Track und ⌘⇧Enter die ganze Warteschlange, ohne das, was schon fertig ist. Hast du die Liste gefiltert, wird nur konvertiert, was du siehst."
+          "⌘Enter konvertiert den gewählten Track und ⇧⌘Enter die ganze Warteschlange, ohne das, was schon fertig ist. Hast du die Liste gefiltert, wird nur konvertiert, was du siehst."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "Ändert die Konvertierung das Audio eines Originals, legt Surco vorher ein Backup an. Die Markierung in der Zeile bringt dich zurück.",
           "Mit „Original bearbeiten“ löscht ein Formatwechsel das Original.",
-          "Konvertieren sucht nicht in deinen Quellen. Willst du frische Daten, lass vorher Abgleichen laufen (⌘⇧D)."
+          "Konvertieren sucht nicht in deinen Quellen. Willst du frische Daten, lass vorher Abgleichen laufen (⇧⌘D)."
         ],
         "shot": "convertir-de.webp",
         "shotCaption": "Der Konvertieren-Button mit seiner Formatauswahl."
