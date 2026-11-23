@@ -29,10 +29,13 @@ import {
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
+  carryUnmanagedTags,
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  type Id3Values,
   readCoverAndNumbers,
+  readId3Values,
   readTagLibFields,
   setFlacComment,
   shiftFlacCues,
@@ -104,6 +107,9 @@ export type WorkerJob =
   // ffmpeg's flac muxer writes the comment as DESCRIPTION; moving it to COMMENT is another
   // TagLib save on the whole file (see setFlacComment).
   | { type: 'setFlacComment'; file: string; comment: string; multiFrom?: string }
+  // The source's tags Surco does not manage, back in an MP3, AIFF, WAV or M4A ffmpeg wrote:
+  // another TagLib save on the whole file (see carryUnmanagedTags).
+  | { type: 'carryUnmanagedTags'; source: string; dest: string; owned: string[] }
   // An ID3 source encoded to FLAC: the cues have to be re-armored across tag families,
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
@@ -160,6 +166,8 @@ export type WorkerJob =
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
   | { type: 'heldComment'; file: string }
   | { type: 'tagLibRead'; file: string }
+  // Every value of a source's multi-value ID3 frames, which a save keeps (see keepId3Values).
+  | { type: 'id3Values'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
   // The self-check's cover and M4A numbers, read beside that snapshot.
@@ -185,6 +193,7 @@ export type WorkerJobResult =
   | Uint16Array
   | Uint8Array
   | TagLibRead
+  | Id3Values
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
@@ -276,6 +285,9 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'setFlacComment':
       setFlacComment(job.file, job.comment, job.multiFrom)
       return null
+    case 'carryUnmanagedTags':
+      carryUnmanagedTags(job.dest, job.source, job.owned)
+      return null
     case 'copyCuesToFlac':
       copyCuesToFlac(job.source, job.dest, job.shift)
       return null
@@ -299,6 +311,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return heldComment(job.file)
     case 'tagLibRead':
       return readTagLibFields(job.file)
+    case 'id3Values':
+      return readId3Values(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
     case 'verifyTagExtras':
