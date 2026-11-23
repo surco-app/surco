@@ -8,6 +8,7 @@ import type { Release, TrackMetadata } from '../../../shared/types'
 import { coverSourceOf, keepCoverArg } from '../lib/coverSource'
 import { trackSignature } from '../lib/dirty'
 import { buildReleaseMeta } from '../lib/release'
+import { resetEditorSections, useMaximizedSection } from './useEditorSections'
 import { useTrackLibrary } from './useTrackLibrary'
 
 // readMeta resolves the whole tag shape in the real app; a partial object makes
@@ -1644,5 +1645,44 @@ describe('a playlist whose disk check streams its files back', () => {
 
     expect(result.current.tracks.map((t) => t.inputPath)).toEqual(paths)
     expect(bigVisits).toBeLessThan(batches * N)
+  })
+})
+
+// Saving cues re-reads the playlist, and an entry whose file is gone is never a row, so every
+// re-read offers it again as new. Only an import is a change of crate that should leave the
+// full-screen editor; a playlist read again under it must leave the DJ where they were.
+describe('the full-screen section across playlist reads', () => {
+  const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))
+  afterEach(() => resetEditorSections())
+
+  it('stays full screen when the playlist is read again with a file missing on disk', async () => {
+    const expandPaths = vi.fn((paths: string[]) =>
+      Promise.resolve(paths.filter((p) => p !== '/m/gone.mp3')),
+    )
+    const { result } = setup({ expandPaths })
+    const playlist = entries(['/m/a.aiff', '/m/gone.mp3'])
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'rekordbox')
+    })
+    const section = renderHook(() => useMaximizedSection())
+    act(() => section.result.current.setMaximized('cues'))
+
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'rekordbox')
+    })
+
+    expect(section.result.current.maximized).toBe('cues')
+  })
+
+  it('leaves full screen when a crate is imported', async () => {
+    const { result } = setup()
+    const section = renderHook(() => useMaximizedSection())
+    act(() => section.result.current.setMaximized('cues'))
+
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'])
+    })
+
+    expect(section.result.current.maximized).toBeNull()
   })
 })

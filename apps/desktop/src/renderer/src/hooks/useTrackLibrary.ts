@@ -472,8 +472,10 @@ export function useTrackLibrary({
     onPathsAddedRef.current?.(fresh)
     // Importing a new crate is a context change, not a track step: if a section was blown
     // up to the whole window, leave that view now so the freshly selected track's spectrum
-    // doesn't render full-screen behind the editor while it analyzes.
-    clearMaximizedSection()
+    // doesn't render full-screen behind the editor while it analyzes. A playlist read again
+    // under the editor (a cue save re-reads it) is no import: an entry whose file is gone
+    // comes back as new on every read, and it closed the full editor after each save.
+    if (toFiles) clearMaximizedSection()
     // Show the rows the instant they're dropped, parsed from the file name, then fill in
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
