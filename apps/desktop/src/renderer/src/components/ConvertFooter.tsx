@@ -489,6 +489,7 @@ export function ConvertFooter({
       <div
         key={String(showDone)}
         data-testid="footer-state"
+        data-swapped={swapped.current ? 'true' : 'false'}
         className={`space-y-2${swapped.current ? ' animate-footer-swap' : ''}`}
       >
         {normalizeCfg.mode !== 'none' && (
