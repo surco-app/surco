@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
-import type { TasteTrack, TunedTaste } from '../shared/autoCue'
+import { autoCue, type TasteTrack, type TunedTaste } from '../shared/autoCue'
 import { fingerprintOf, roundedCandidates } from '../shared/autoCue/tasteTracks'
 import type { CueProfile } from '../shared/cueProfile'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
@@ -184,6 +184,7 @@ export function createCueTaste(
   }
 
   const learnInBackground = (): void => {
+    if (!autoCue.canLearn) return
     learnWhenIdle().catch((err) =>
       log.warn(`cue taste: learning from edits failed: ${String(err)}`),
     )

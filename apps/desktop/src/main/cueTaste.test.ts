@@ -12,6 +12,20 @@ import {
 } from './cueTaste'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 
+const engine = vi.hoisted(() => ({ canLearn: true }))
+vi.mock('../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../shared/autoCue')>()
+  return {
+    ...actual,
+    autoCue: {
+      ...actual.autoCue,
+      get canLearn() {
+        return engine.canLearn
+      },
+    },
+  }
+})
+
 function memoryStore(text: string | null = null) {
   let saved = text
   return {
@@ -102,6 +116,20 @@ describe('createCueTaste', () => {
     expect(tune).not.toHaveBeenCalled()
     taste.record(track('last'), true)
     await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+  })
+
+  it('does not queue relearning when the engine cannot learn', async () => {
+    engine.canLearn = false
+    try {
+      const tune = vi.fn(async () => TUNED)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: () => 5 }))
+      for (let i = 0; i < RELEARN_EVERY * 2; i++) taste.record(track(`t${i}`), true)
+      await taste.refresh(true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+    } finally {
+      engine.canLearn = true
+    }
   })
 
   it('never learns on its own when the DJ turned it off', async () => {

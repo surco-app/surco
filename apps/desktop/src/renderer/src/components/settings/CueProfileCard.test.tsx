@@ -10,7 +10,24 @@ import '../../i18n'
 import { installApi } from '../../test/api'
 import { CueProfileCard, useCueProfileRead } from './CueProfileCard'
 
+const engine = vi.hoisted(() => ({ canLearn: true }))
+vi.mock('../../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../../shared/autoCue')>()
+  return {
+    ...actual,
+    autoCue: {
+      ...actual.autoCue,
+      get canLearn() {
+        return engine.canLearn
+      },
+    },
+  }
+})
+
 afterEach(cleanup)
+afterEach(() => {
+  engine.canLearn = true
+})
 
 const COUNTDOWN = MY_FLOW.rules[0]
 
@@ -231,6 +248,17 @@ describe('CueProfileCard', () => {
     const hint = await screen.findByTestId('cue-profile-from-edits-hint')
     expect(hint).toHaveTextContent('other Macs')
     expect(hint).not.toHaveTextContent('every 10')
+  })
+
+  it('hides the learning controls when the engine cannot learn', async () => {
+    engine.canLearn = false
+    setup(read({ profile: PROFILE }))
+    await openDetails('cue-profile-countdown')
+    expect(screen.queryByTestId('cue-profile-auto')).not.toBeInTheDocument()
+    cleanup()
+    engine.canLearn = true
+    setup(read({ profile: PROFILE }))
+    expect(await openDetails('cue-profile-auto')).toBeInTheDocument()
   })
 
   it('lets the DJ stop Auto from learning from what they save', async () => {
