@@ -2770,7 +2770,10 @@ export async function convertAudio(
       if (isCancelled?.()) measuring.abort()
     }, CANCEL_POLL_MS)
     const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
-    const countSamples = trimAf !== undefined || !!plan.sampleRateHz
+    // A replacement is counted too: Engine DJ's row still holds the replaced file's length,
+    // and only the new file's own count says how long it is (another master can be seconds
+    // longer or shorter), or Surco's own scan would later read the row as damaged.
+    const countSamples = trimAf !== undefined || !!plan.sampleRateHz || !!replacesPath
     const measures = [
       proveDecodable(
         tmp,

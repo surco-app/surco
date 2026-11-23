@@ -269,7 +269,23 @@ describe('a replacement measured in the conversion', () => {
   it('rescales Engine DJ to a 48 kHz replacement it could not measure', async () => {
     await replace(other48, fresh('Song.aiff'), oldWav)
 
-    expect(repoint()?.engineShift).toEqual({ trimmedMs: 0, sampleRateHz: 48000 })
+    expect(repoint()?.engineShift).toEqual({
+      trimmedMs: 0,
+      sampleRateHz: 48000,
+      sampleCount: SECONDS * 48000,
+    })
+  }, 120_000)
+
+  // Engine DJ stores each track's length in samples and Surco's own scan reads a row longer or
+  // shorter than its file as damaged: a 30 s longer master left with the old length would be
+  // flagged as lost cues, or "repaired" from the retired original, moving the cues twice.
+  it("gives Engine DJ the replacement's real length when it lasts longer", async () => {
+    const longer = fresh('longer.flac')
+    derive(oldWav, longer, ['-af', 'apad=pad_dur=30'])
+
+    await replace(longer, fresh('Song.aiff'), oldWav)
+
+    expect(repoint()?.engineShift?.sampleCount).toBe((SECONDS + 30) * 44100)
   }, 120_000)
 
   // When the new file lands on the old file's path, the rename destroys the old audio: measured
