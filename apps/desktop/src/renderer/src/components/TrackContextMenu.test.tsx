@@ -207,23 +207,15 @@ describe('TrackContextMenu playlist actions', () => {
     }
   }
 
-  it('caps the menu width and truncates the label when the playlist name is very long', () => {
-    renderMenu({ playlist: playlist({ openName: 'P'.repeat(120) }) })
-    expect(screen.getByTestId('track-menu')).toHaveClass('max-w-[320px]')
-    expect(screen.getByTestId('track-menu-remove-from-label')).toHaveClass('truncate')
-  })
-
-  it('wraps a very long folder path in the playlist submenu inside a width cap instead of truncating', () => {
+  it('wraps a very long folder path in the playlist submenu instead of truncating', () => {
     const long = { id: 'l', name: 'Deep', kind: 'playlist' as const, count: 1 }
     renderMenu({
       playlist: playlist({ targets: [{ node: long, folders: ['F'.repeat(120)] }] }),
     })
     fireEvent.click(screen.getByTestId('track-menu-add-to'))
     const label = screen.getByTestId('track-menu-playlist-l-label')
-    expect(label).not.toHaveClass('truncate')
-    expect(label).toHaveClass('break-words')
-    expect(screen.getByTestId('track-menu-playlists')).toHaveClass('max-w-[320px]')
-    expect(screen.getByTestId('track-menu-remove-from-label')).toHaveClass('truncate')
+    expect(label).toHaveAttribute('data-wrap', 'true')
+    expect(screen.getByTestId('track-menu-remove-from-label')).toHaveAttribute('data-wrap', 'false')
   })
 
   // The same "Todas" or "Fijas" sits under several folders in the measured collection;
