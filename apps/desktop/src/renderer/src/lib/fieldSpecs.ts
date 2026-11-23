@@ -364,7 +364,9 @@ export function buildFieldSpecs({
           : {}),
       width,
       readOnly: true,
-      plain: true,
+      // Track no. keeps its box: its numbering button sits beside it, and beside loose text
+      // the button read as unrelated to the field it numbers, unlike next to Year's box.
+      plain: key !== 'trackNumber',
       readOnlyNote: tr('editor.perTrackOnly'),
       action:
         key === 'trackNumber' && numberTracks

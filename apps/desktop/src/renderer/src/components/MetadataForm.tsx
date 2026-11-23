@@ -216,7 +216,7 @@ export function MetadataForm({
                               type="button"
                               data-testid="number-tracks-btn"
                               onClick={f.action.onApply}
-                              className="press h-[26px] self-end rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
+                              className="press h-[26px] self-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
                             >
                               {f.action.label}
                             </button>,

@@ -2924,6 +2924,22 @@ describe('Editor multi-select', () => {
     expect(onChangeTracksMeta).not.toHaveBeenCalled()
   })
 
+  // Year and Track no. sit in the same short column; Track no. drawn as loose text left a
+  // gap of an invisible box between the ≠ and its button, so the button read as unrelated.
+  it('draws mixed track numbers in a box like the year, with the numbering button beside it', () => {
+    renderMulti({
+      visibleFields: ['year', 'trackNumber'],
+      metaA: { year: '2019', trackNumber: '1' },
+      metaB: { year: '2020', trackNumber: '5' },
+    })
+    const year = screen.getByTestId('field-year')
+    const number = screen.getByTestId('field-trackNumber')
+    expect(number).toHaveAttribute('placeholder', year.getAttribute('placeholder'))
+    expect(number).not.toHaveAttribute('data-plain')
+    expect(year).not.toHaveAttribute('data-plain')
+    expect(screen.getByTestId('number-tracks-btn')).toBeInTheDocument()
+  })
+
   it('derives tags for every selected track from its own file name in one click', () => {
     const { onDeriveTags } = renderMulti()
     fireEvent.click(screen.getByTestId('derive-btn'))
