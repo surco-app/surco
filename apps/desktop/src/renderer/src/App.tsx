@@ -48,6 +48,7 @@ import {
   wizardSettingsFrom,
 } from '../../shared/sessionSettings'
 import { resolveBindings } from '../../shared/shortcutDefaults'
+import { TO_REVIEW_ID } from '../../shared/toReview'
 import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   BpmResult,
@@ -150,6 +151,7 @@ import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useRekordboxMatching } from './hooks/useRekordboxMatching'
 import { useOfferPlaylistFields } from './hooks/useRekordboxPlaylists'
 import { PROGRAM_QUEUES, useRekordboxQueue } from './hooks/useRekordboxQueue'
+import { useReplacedTracks } from './hooks/useReplacedTracks'
 import { useRetireSuperseded } from './hooks/useRetireSuperseded'
 import { useSessionPersistence } from './hooks/useSessionPersistence'
 import { useSessionRows } from './hooks/useSessionRows'
@@ -796,8 +798,10 @@ export default function App(): React.JSX.Element {
   const listUndoCovers = useRef<(string | undefined)[][]>([])
   const listRemoval = useRef<{ targets: TrackItem[]; covers: (string | undefined)[] } | null>(null)
   const heldCovers = () => [...metaUndo.heldCovers(), ...listUndoCovers.current.flat()]
+  const replacedEntries = useReplacedTracks()
   const browser = useSourceBrowser({
     matchingPathPairs,
+    replacedEntries,
     hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
@@ -3185,7 +3189,8 @@ export default function App(): React.JSX.Element {
     !openSmart &&
     browser.playlist?.id !== RECENTLY_ADDED_ID &&
     browser.playlist?.id !== ALL_TRACKS_ID &&
-    browser.playlist?.id !== MATCHING_ID
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -3954,6 +3959,7 @@ export default function App(): React.JSX.Element {
           h.node.id !== RECENTLY_ADDED_ID &&
           h.node.id !== ALL_TRACKS_ID &&
           h.node.id !== MATCHING_ID &&
+          h.node.id !== TO_REVIEW_ID &&
           !h.node.smart &&
           fixed?.(h.node) !== 'locked',
       ),

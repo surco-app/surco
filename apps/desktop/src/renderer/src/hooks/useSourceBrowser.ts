@@ -5,6 +5,7 @@ import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
 import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import { type ReplacedEntry, TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import {
   distinctTracks,
@@ -16,10 +17,12 @@ import {
 import { matchingEntriesFor } from '../lib/matchingPaths'
 import { takeOwnRemoval } from '../lib/ownRemovals'
 import { SOURCE_PROGRAMS, SOURCE_READ } from '../lib/sourcePrograms'
+import { toReviewEntriesFor } from '../lib/toReview'
 import { useProgramsAvailable } from './useProgramsAvailable'
 import { useRekordboxMatching } from './useRekordboxMatching'
 
 const NO_PAIRS: readonly (readonly [string, string])[] = []
+const NO_REPLACED: readonly ReplacedEntry[] = []
 
 import { useStableCallback } from './useStableCallback'
 import { useWindowFocus } from './useWindowFocus'
@@ -115,11 +118,13 @@ export function useSourceBrowser({
   hiddenSources,
   matchingPathPairs = NO_PAIRS,
   libraryFolders = null,
+  replacedEntries = NO_REPLACED,
 }: {
   onPlaylistGone: (name: string, source: PlaylistSource) => void
   hiddenSources: PlaylistSource[]
   matchingPathPairs?: readonly (readonly [string, string])[]
   libraryFolders?: readonly string[] | null
+  replacedEntries?: readonly ReplacedEntry[]
 }): SourceBrowser {
   const queryClient = useQueryClient()
   const { t: tr } = useTranslation()
@@ -171,10 +176,14 @@ export function useSourceBrowser({
   })
   const matching = useRekordboxMatching(program === 'rekordbox')
   const otherProgram = program !== null && program !== 'rekordbox'
+  // To review lists rows of All tracks, so the collection is read once for both lists, and
+  // only while a replaced track is still to review in this program.
+  const reviewHere =
+    program !== null && replacedEntries.some((entry) => entry.pending.includes(program))
   const allForMatching = useQuery({
     queryKey: ['source-playlist', source, ALL_TRACKS_ID],
     queryFn: () => readPlaylist(source as PlaylistSource, ALL_TRACKS_ID),
-    enabled: otherProgram && matchingPathPairs.length > 0,
+    enabled: (otherProgram && matchingPathPairs.length > 0) || reviewHere,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const otherMatchingEntries = useMemo(
@@ -186,6 +195,17 @@ export function useSourceBrowser({
           : allForMatching.data && matchingEntriesFor(allForMatching.data, matchingPathPairs),
     [otherProgram, matchingPathPairs, allForMatching.data],
   )
+  const toReviewEntries = useMemo(
+    () =>
+      program === null
+        ? undefined
+        : !reviewHere
+          ? []
+          : allForMatching.data &&
+            toReviewEntriesFor(allForMatching.data, replacedEntries, program),
+    [program, reviewHere, replacedEntries, allForMatching.data],
+  )
+  const reviewCount = toReviewEntries?.length ?? 0
   const otherCount = otherMatchingEntries?.filter((e) => !e.separator).length
   const matchingCount =
     program === 'rekordbox'
@@ -217,6 +237,16 @@ export function useSourceBrowser({
                   },
                 ]
               : []),
+            ...(reviewCount > 0
+              ? [
+                  {
+                    id: TO_REVIEW_ID,
+                    name: tr('sources.toReview'),
+                    kind: 'playlist' as const,
+                    count: reviewCount,
+                  },
+                ]
+              : []),
             ...(all.data !== undefined
               ? [
                   {
@@ -240,9 +270,10 @@ export function useSourceBrowser({
             ...tree.data,
           ]
         : tree.data,
-    [hasRecent, tree.data, all.data, recent.data, matchingCount, tr],
+    [hasRecent, tree.data, all.data, recent.data, reviewCount, matchingCount, tr],
   )
   const otherMatchingOpen = otherProgram && playlist?.id === MATCHING_ID
+  const reviewOpen = program !== null && playlist?.id === TO_REVIEW_ID
   const entriesKey = ['source-playlist', source, playlist?.id]
   const entries = useQuery({
     queryKey: entriesKey,
@@ -254,11 +285,19 @@ export function useSourceBrowser({
           queryClient.setQueryData(entriesKey, last)
       })
     },
-    enabled: source !== null && playlist !== null && !otherMatchingOpen,
+    enabled: source !== null && playlist !== null && !otherMatchingOpen && !reviewOpen,
     staleTime: Number.POSITIVE_INFINITY,
   })
-  const shownEntries = otherMatchingOpen ? otherMatchingEntries : entries.data
-  const shownPending = otherMatchingOpen ? otherMatchingEntries === undefined : entries.isPending
+  const shownEntries = otherMatchingOpen
+    ? otherMatchingEntries
+    : reviewOpen
+      ? toReviewEntries
+      : entries.data
+  const shownPending = otherMatchingOpen
+    ? otherMatchingEntries === undefined
+    : reviewOpen
+      ? toReviewEntries === undefined
+      : entries.isPending
 
   const hasSeparator = program && SOURCE_PROGRAMS[program].separator
   const separator = useQuery({
@@ -271,11 +310,13 @@ export function useSourceBrowser({
   // holds it, the list goes back to the tree instead of showing rows of a playlist that is
   // gone. The tree stays open where it was, which is the "back to the folder" of the spec,
   // and the caller is told which playlist went, unless Surco itself removed it. A failed
-  // re-read keeps the tree it had, so it never reads as a deletion.
+  // re-read keeps the tree it had, so it never reads as a deletion. To review empties
+  // because the DJ reviewed its last track, which is no deletion to tell them about.
   useEffect(() => {
     if (!playlist || !source || !shownTree || containsNode(shownTree, playlist.id)) return
     setPlaylists(({ [source]: _, ...rest }) => rest)
-    if (!takeOwnRemoval(playlist.id)) onPlaylistGoneRef.current(playlist.name, source)
+    if (playlist.id !== TO_REVIEW_ID && !takeOwnRemoval(playlist.id))
+      onPlaylistGoneRef.current(playlist.name, source)
   }, [playlist, source, shownTree])
 
   const rereadLibraries = useStableCallback(() => {

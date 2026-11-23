@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Clock,
   FolderPlus,
+  History,
   Library,
   ListFilter,
   ListPlus,
@@ -15,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
 import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
@@ -391,9 +393,10 @@ export const SourceTree = memo(function SourceTree({
     const recent = node.id === RECENTLY_ADDED_ID
     const all = node.id === ALL_TRACKS_ID
     const matching = node.id === MATCHING_ID
+    const review = node.id === TO_REVIEW_ID
     const smart = node.smart === true
     const pendingNode = isPendingNode(node.id)
-    const nodeEdit = recent || all || matching || smart || pendingNode ? undefined : edit
+    const nodeEdit = recent || all || matching || review || smart || pendingNode ? undefined : edit
     const fixedAs = fixed?.(node) ?? null
     const canDrag =
       Boolean(edit?.onMove) &&
@@ -401,6 +404,7 @@ export const SourceTree = memo(function SourceTree({
       !recent &&
       !all &&
       !matching &&
+      !review &&
       !smart &&
       fixedAs === null &&
       !pendingNode &&
@@ -417,6 +421,7 @@ export const SourceTree = memo(function SourceTree({
         recent ||
         all ||
         matching ||
+        review ||
         smart ||
         pendingNode ||
         draggedIds.has(node.id) ||
@@ -535,6 +540,14 @@ export const SourceTree = memo(function SourceTree({
               <Clock
                 size={13}
                 data-testid="source-node-recent-icon"
+                className="shrink-0 text-fg-faint"
+                aria-hidden="true"
+              />
+            )}
+            {review && (
+              <History
+                size={13}
+                data-testid="source-node-review-icon"
                 className="shrink-0 text-fg-faint"
                 aria-hidden="true"
               />

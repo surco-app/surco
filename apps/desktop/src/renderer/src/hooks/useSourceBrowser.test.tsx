@@ -8,6 +8,7 @@ import type { DjApi } from '../../../shared/djApi'
 import type { DjProgram } from '../../../shared/djProgram'
 import { MATCHING_ID } from '../../../shared/matching'
 import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
+import { type ReplacedEntry, TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import { markOwnRemovals, takeOwnRemoval } from '../lib/ownRemovals'
 import type { DjReads, ProgramReads } from '../test/api'
@@ -90,11 +91,17 @@ function setup(
   onPlaylistGone: (name: string, source: string) => void = () => {},
   hiddenSources: PlaylistSource[] = [],
   matchingPathPairs: [string, string][] = [],
+  replacedEntries: ReplacedEntry[] = [],
 ) {
   let focus: (focused: boolean) => void = () => {}
-  const state: { hidden: PlaylistSource[]; folders: string[] | null } = {
+  const state: {
+    hidden: PlaylistSource[]
+    folders: string[] | null
+    replaced: ReplacedEntry[]
+  } = {
     hidden: hiddenSources,
     folders: null,
+    replaced: replacedEntries,
   }
   ;(window as unknown as { api: unknown }).api = {
     platform,
@@ -121,6 +128,7 @@ function setup(
         hiddenSources: state.hidden,
         matchingPathPairs,
         libraryFolders: state.folders,
+        replacedEntries: state.replaced,
       }),
     {
       wrapper,
@@ -136,6 +144,10 @@ function setup(
     },
     pickFolders: (next: string[]) => {
       state.folders = next
+      hook.rerender()
+    },
+    replace: (next: ReplacedEntry[]) => {
+      state.replaced = next
       hook.rerender()
     },
   }
@@ -345,6 +357,131 @@ describe('useSourceBrowser', () => {
       expect(result.current.entries?.map((e) => e.path)).toEqual(['/m/b.wav', '/m/a.wav']),
     )
     expect(playlist).not.toHaveBeenCalledWith(MATCHING_ID)
+  })
+
+  describe('To review', () => {
+    const row = (path: string) => ({
+      path,
+      separator: false,
+      meta: {},
+      preview: {
+        title: path,
+        artist: '',
+        durationSec: 1,
+        cues: [{ ms: 1000, kind: 0, color: null }],
+      },
+    })
+    const replaced = (
+      newPath: string,
+      replacedAt: number,
+      shift: ReplacedEntry['shift'],
+      pending: DjProgram[] = ['rekordbox'],
+    ): ReplacedEntry => ({ newPath, oldPath: `${newPath}.old`, replacedAt, shift, pending })
+    const allTracks = [row('/m/a.flac'), row('/m/b.flac'), row('/m/c.flac')]
+    const rekordbox = (
+      playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? allTracks : [])),
+    ) => ({
+      dj: {
+        rekordbox: {
+          recentCount: vi.fn().mockResolvedValue(1),
+          trackCount: vi.fn().mockResolvedValue(3),
+          playlist,
+        },
+      },
+    })
+
+    // A replaced track lands where the DJ looks first; right under Recently added it sits
+    // with the other fresh arrivals instead of being buried among their playlists.
+    it('adds To review right below Recently added, counting the tracks still to review here', async () => {
+      const { result } = setup(
+        rekordbox(),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 }), replaced('/m/b.flac', 2, { moved: -40 })],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      expect(result.current.tree?.map((n) => n.id).slice(0, 3)).toEqual([
+        RECENTLY_ADDED_ID,
+        TO_REVIEW_ID,
+        ALL_TRACKS_ID,
+      ])
+      expect(result.current.tree?.[1]).toEqual({
+        id: TO_REVIEW_ID,
+        name: 'sources.toReview',
+        kind: 'playlist',
+        count: 2,
+      })
+    })
+
+    // A track reviewed or never replaced for this program has nothing to check here, and
+    // an empty node would only ask the DJ to open a list with nothing in it.
+    it('hides To review when nothing is left to review in this program', async () => {
+      const { result } = setup(
+        rekordbox(),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 }, ['traktor'])],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(ALL_TRACKS_ID))
+      await act(async () => {})
+      expect(result.current.tree?.some((n) => n.id === TO_REVIEW_ID)).toBe(false)
+    })
+
+    // The tracks Surco could not line up are the ones whose cues are surely off; they
+    // come first so the DJ fixes those before the ones that only moved.
+    it('opens To review with the unmoved tracks first', async () => {
+      const playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? allTracks : []))
+      const { result } = setup(
+        rekordbox(playlist),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [
+          replaced('/m/a.flac', 3, { moved: 120 }),
+          replaced('/m/b.flac', 1, { unmoved: 'noMatch' }),
+          replaced('/m/c.flac', 2, { moved: 0 }),
+        ],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      act(() => result.current.selectPlaylist(result.current.tree?.[1] as SourceNode, []))
+      await waitFor(() =>
+        expect(result.current.entries?.map((e) => e.path)).toEqual([
+          '/m/b.flac',
+          '/m/a.flac',
+          '/m/c.flac',
+        ]),
+      )
+      expect(playlist).not.toHaveBeenCalledWith(TO_REVIEW_ID)
+    })
+
+    // Reviewing the last track is the DJ finishing the job; telling them the list went
+    // away in rekordbox would read as something having gone wrong.
+    it('goes back to the tree without a "playlist deleted" notice when the last track is reviewed', async () => {
+      const onPlaylistGone = vi.fn()
+      const { result, replace } = setup(
+        rekordbox(),
+        'darwin',
+        onPlaylistGone,
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 })],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      act(() => result.current.selectPlaylist(result.current.tree?.[1] as SourceNode, []))
+      await waitFor(() => expect(result.current.entries).toHaveLength(1))
+      replace([])
+      await waitFor(() => expect(result.current.playlist?.id).not.toBe(TO_REVIEW_ID))
+      expect(onPlaylistGone).not.toHaveBeenCalled()
+    })
   })
 
   it('reads the Serato tree, its counts and the picked crate from Serato’s own library, never from rekordbox’s', async () => {

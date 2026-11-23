@@ -23,6 +23,7 @@ import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
+import { TO_REVIEW_ID } from '../../shared/toReview'
 import type {
   ActivityEvent,
   ProgramCopies,
@@ -5777,6 +5778,73 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
       expect(screen.queryByTestId('track-menu-playlist-sm')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('To review', () => {
+    const ALL_ENTRIES = [
+      { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+      { path: '/m/a.wav', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+    ]
+    const REPLACED = [
+      {
+        newPath: '/m/c.wav',
+        oldPath: '/m/c.mp3',
+        replacedAt: 2,
+        shift: { moved: 40 },
+        pending: ['rekordbox'],
+      },
+      {
+        newPath: '/m/a.wav',
+        oldPath: '/m/a.mp3',
+        replacedAt: 1,
+        shift: { moved: -20 },
+        pending: ['rekordbox'],
+      },
+    ]
+    const reviewReads = () =>
+      djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+            ),
+        },
+      })
+
+    // Its rows are Surco's list of replaced tracks, not a playlist in rekordbox: a reorder,
+    // removal or separator would name a playlist rekordbox does not have.
+    it('opens To review with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    it('is never offered as a playlist to add tracks to', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      await screen.findByTestId(`source-node-${TO_REVIEW_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${TO_REVIEW_ID}`)).not.toBeInTheDocument()
     })
   })
 
