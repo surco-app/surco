@@ -155,6 +155,7 @@ describe('runWorkerJob', () => {
       undefined,
       undefined,
       undefined,
+      undefined,
     )
   })
 
@@ -176,6 +177,7 @@ describe('runWorkerJob', () => {
       undefined,
       true,
       undefined,
+      undefined,
     )
   })
 
@@ -195,6 +197,7 @@ describe('runWorkerJob', () => {
       undefined,
       '/in.mp3',
       { shiftMs: 1300 },
+      undefined,
       undefined,
       undefined,
     )

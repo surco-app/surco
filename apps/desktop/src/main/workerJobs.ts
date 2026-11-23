@@ -94,6 +94,8 @@ export type WorkerJob =
       clearExtras?: boolean
       // The specific third-party tags the inspector's user marked for deletion.
       foreignRemoved?: string[]
+      // The m4a's audio was copied through: cueSource's freeform atoms still describe it.
+      carryAtoms?: boolean
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // FLAC's armored cue comment survives the re-encode on its own; only a trim
@@ -262,6 +264,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
         job.cueShift,
         job.clearExtras,
         job.foreignRemoved,
+        job.carryAtoms,
       )
       return null
     case 'copyCueFrames':

@@ -527,6 +527,36 @@ describe('convertAudio cue preservation', () => {
     expect(hasTraktorTxxx(out)).toBe(false)
   })
 
+  // The other crossing: an AIFF crate moving to FLAC re-armors its ID3 cues into a Vorbis
+  // comment, and "clear metadata" has to win over that carry-over too.
+  it('does not re-armor the ID3 cues on a cleared convert to FLAC', async () => {
+    const own = mkdtempSync(join(tmpdir(), 'surco-aiff2flacclear-'))
+    const cued = join(own, 'in.aiff')
+    execFileSync(FF, ['-y', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=4', cued])
+    injectAiffCue(cued)
+    expect(hasCue(cued)).toBe(true)
+
+    const out = join(own, 'out.flac')
+    await convertAudio(
+      cued,
+      out,
+      'flac',
+      meta,
+      undefined, // coverPath
+      undefined, // normalize
+      false, // removeCover
+      undefined, // quality
+      undefined, // onChild
+      undefined, // onTmp
+      undefined, // finderCovers
+      undefined, // declick
+      undefined, // trim
+      true, // clearExtras
+    )
+
+    expect(readCueTree(out)).toBeNull()
+  })
+
   // El NML se actualiza con lo que la conversión dejó en el fichero de salida, así
   // que el patch se registra después de escribir los cues, no antes. Sin ruta de
   // colección configurada no se registra nada: la feature está apagada.
