@@ -242,6 +242,7 @@ function changedEntries(
       if (u.ms !== undefined) {
         e.InMsec = u.ms
         e.InFrame = frameOf(u.ms)
+        for (const k of ['InMpegFrame', 'InMpegAbs']) if (k in e) e[k] = 0
       }
       e.updated_at = iso
     }
@@ -395,7 +396,7 @@ export function applyCueChanges(
   )
   const move = statementOf(
     db,
-    'UPDATE djmdCue SET InMsec = ?, InFrame = ? WHERE ID = ? AND ContentID = ?',
+    'UPDATE djmdCue SET InMsec = ?, InFrame = ?, InMpegFrame = 0, InMpegAbs = 0 WHERE ID = ? AND ContentID = ?',
   )
   for (const u of changes.update) {
     update.run(u.kind, u.color, takeLocalUsn(db, stamp), stamp, u.id, contentId)
