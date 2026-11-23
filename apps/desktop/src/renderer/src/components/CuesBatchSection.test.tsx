@@ -72,7 +72,7 @@ function setup(
   })
   const saveComments = vi.fn<Api['cues']['saveComments']>(async () => {
     calls.push('saveComments')
-    return { failed: [] }
+    return { failed: [], unwritten: [] }
   })
   const api = installApi({
     cues: {
@@ -257,8 +257,8 @@ describe('Phrases over several selected tracks', () => {
     let finish = () => {}
     saveComments.mockImplementationOnce(
       () =>
-        new Promise<{ failed: string[] }>((resolve) => {
-          finish = () => resolve({ failed: [] })
+        new Promise<{ failed: string[]; unwritten: string[] }>((resolve) => {
+          finish = () => resolve({ failed: [], unwritten: [] })
         }),
     )
     fireEvent.click(await putPhrases())
@@ -406,7 +406,7 @@ describe('Phrases over several selected tracks', () => {
 
   it('keeps the files that failed pending and names only the file write, since rekordbox did save, so the DJ can retry just those', async () => {
     const { saveComments, onCommentsSaved } = setup({}, TARGETS, {}, PHRASED)
-    saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'] })
+    saveComments.mockResolvedValueOnce({ failed: ['/m/b.wav'], unwritten: [] })
     fireEvent.click(await putPhrases())
     expect(await screen.findByTestId('cues-batch-comments-failed')).toHaveTextContent(
       "Couldn't write to 1 file",

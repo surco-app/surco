@@ -4812,7 +4812,10 @@ describe('App source playlists', () => {
     const commentOf = () => screen.getByTestId('field-comment') as HTMLInputElement
     const onDisk = new Map<string, string>()
     const phraseTwo = async (
-      saveComments = vi.fn<Api['cues']['saveComments']>(async () => ({ failed: [] })),
+      saveComments = vi.fn<Api['cues']['saveComments']>(async () => ({
+        failed: [],
+        unwritten: [],
+      })),
       commentsToFile = false,
     ) => {
       onDisk.clear()
@@ -4938,7 +4941,7 @@ describe('App source playlists', () => {
     it('after saving to the file the comment field shows the phrases instead of going back, as the file now holds them', async () => {
       const saveComments = vi.fn<Api['cues']['saveComments']>(async (items) => {
         for (const i of items) onDisk.set(i.path, `${i.count} · Vocal fuerte`)
-        return { failed: [] }
+        return { failed: [], unwritten: [] }
       })
       await phraseTwo(saveComments, true)
       fireEvent.click(screen.getByTestId('cues-batch-comments-save'))
@@ -4953,6 +4956,7 @@ describe('App source playlists', () => {
     it('rereads only the files that were written, so a track whose file write failed keeps its phrases pending', async () => {
       const saveComments = vi.fn<Api['cues']['saveComments']>(async () => ({
         failed: ['/m/b.wav'],
+        unwritten: [],
       }))
       await phraseTwo(saveComments, true)
       const reads = (path: string) =>
