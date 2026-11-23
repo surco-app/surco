@@ -1491,6 +1491,9 @@ export interface ProcessResult {
   // "Apple Music only" replaced the entry of the track's own source: where Music copied the
   // new file, which the row moves to like an in-place conversion.
   musicLandedPath?: string
+  // "Apple Music only" replaced another file: where Music copied the new one, which the DJ
+  // programs were repointed at. Not musicLandedPath, which also moves the row.
+  replacementLandedPath?: string
   appleMusicFailed?: true
   // The stamped reason the Apple Music step failed, when it had one the user can act on.
   appleMusicErrorKey?: ErrorKey

@@ -489,6 +489,7 @@
     "trimApplied_other": "Trim applied to {{count}} tracks",
     "trimUndo": "Undo",
     "undo": "Undo",
+    "reviewed": "Reviewed · {{name}}",
     "clearedMeta_one": "Metadata cleared on {{count}} track",
     "clearedMeta_other": "Metadata cleared on {{count}} tracks",
     "filledMeasured_one": "{{count}} track filled in",
@@ -638,6 +639,8 @@
   },
   "trackList": {
     "matchingPartner": "Matches the chosen track",
+    "cuesMoved": "Cues moved",
+    "cuesNotMoved": "Cues not moved",
     "cuesUnsaved": "Cues not saved",
     "autoMark": {
       "proposed_one": "{{count}} proposal",
@@ -1314,6 +1317,13 @@
         "chip": "Surco grid · {{bpm}} BPM",
         "help": "rekordbox has not analysed this track yet. Surco measured the tempo and the grid, so you can set the cues now. Once rekordbox analyses it, Surco moves them onto its grid.",
         "measuring": "Measuring the beat grid…"
+      },
+      "replaced": {
+        "notMoved": "not moved",
+        "noMatch": "Surco couldn't line up the new file with the old one. Cues left as they were.",
+        "drift": "The start and the end moved by different amounts. Cues left as they were.",
+        "unreadable": "The old file couldn't be read. Cues left as they were.",
+        "reviewed": "Reviewed"
       },
       "twins": {
         "title": "Saving also places the flow in",
@@ -2780,6 +2790,7 @@
     "matchingDismiss": "Dismiss",
     "matchingMore": "Show more",
     "recentlyAdded": "Recently added",
+    "toReview": "To review",
     "search": "Search playlists",
     "loading": "Reading playlists…",
     "failed": {

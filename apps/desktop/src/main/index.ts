@@ -240,6 +240,8 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { registerReplacedIpc } from './replacedIpc'
+import { createReplacedStore, followingPrograms, keepReplacedForReview } from './replacedStore'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
@@ -475,6 +477,7 @@ const broadcast = (channel: string, payload: unknown): void => {
 const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
 const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
+const replacedStore = createReplacedStore(join(app.getPath('userData'), 'replaced-tracks.json'))
 const fileSignatures = createFileSignatures({
   load: () => {
     try {
@@ -1589,6 +1592,7 @@ function registerIpc(): void {
     askInOrder(askToApply, programs, BrowserWindow.fromWebContents(e.sender)),
   )
   registerMatchingIpc(matchingStore)
+  registerReplacedIpc(replacedStore)
   registerDjIpc({
     rekordbox: {
       read: rekordboxRead(rekordboxCollectionNow, rekordboxCollectionPath, { allowMedia }),
@@ -2340,6 +2344,14 @@ function registerIpc(): void {
             }),
     }).then((result) => {
       followConversion(matchingStore, job, result, existsSync)
+      keepReplacedForReview(
+        replacedStore,
+        job,
+        result,
+        followingPrograms(getSettings()),
+        Date.now(),
+        existsSync,
+      )
       return result
     }),
   )

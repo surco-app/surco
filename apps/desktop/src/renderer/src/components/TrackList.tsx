@@ -2,6 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   Check,
   CircleAlert,
+  CircleCheck,
   Copy,
   CopyCheck,
   CopyMinus,
@@ -26,6 +27,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { camelotOf, keyIn } from '../../../shared/camelot'
+import type { ReplaceShift } from '../../../shared/replaceShift'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
@@ -115,6 +117,8 @@ interface Props {
   backupAtByPath?: ReadonlyMap<string, number>
   pendingCuePaths?: ReadonlySet<string>
   matchingIds?: ReadonlySet<string>
+  // Only in the To review list: what Surco did to each replaced track's cues, by track id.
+  replacedShifts?: ReadonlyMap<string, ReplaceShift>
   unsavedCueIds?: ReadonlySet<string>
   // The tracks played long enough to count as heard, by path.
   playedPaths?: ReadonlySet<string>
@@ -379,6 +383,7 @@ interface RowProps {
   outsideFilter: boolean
   played: boolean
   matched: boolean
+  replaced?: ReplaceShift
   note?: GridNote
 }
 
@@ -412,6 +417,7 @@ const TrackRow = memo(function TrackRow({
   backupAt,
   cuesPending,
   matched,
+  replaced,
   cuesUnsaved,
   autoMark,
   onOpenBackup,
@@ -996,6 +1002,23 @@ const TrackRow = memo(function TrackRow({
                     <span className="sr-only">{tr('trackList.matchingPartner')}</span>
                   </span>
                 )}
+                {replaced && (
+                  <span
+                    data-testid="track-replaced"
+                    data-state={'moved' in replaced ? 'moved' : 'unmoved'}
+                    role="img"
+                    aria-label={tr(
+                      'moved' in replaced ? 'trackList.cuesMoved' : 'trackList.cuesNotMoved',
+                    )}
+                    className="flex shrink-0 items-center"
+                  >
+                    {'moved' in replaced ? (
+                      <CircleCheck className="h-3 w-3 text-good" aria-hidden="true" />
+                    ) : (
+                      <CircleAlert className="h-3 w-3 text-warn" aria-hidden="true" />
+                    )}
+                  </span>
+                )}
                 {key && (
                   <span
                     data-testid="track-key"
@@ -1230,6 +1253,7 @@ export const TrackList = memo(function TrackList({
   backupAtByPath,
   pendingCuePaths,
   matchingIds,
+  replacedShifts,
   unsavedCueIds,
   playedPaths,
   autoMarkById,
@@ -1577,6 +1601,7 @@ export const TrackList = memo(function TrackList({
         backupAt={backupAtByPath?.get(t.inputPath)}
         cuesPending={pendingCuePaths?.has(t.inputPath) ?? false}
         matched={matchingIds?.has(t.id) ?? false}
+        replaced={replacedShifts?.get(t.id)}
         cuesUnsaved={unsavedCueIds?.has(t.id) ?? false}
         autoMark={autoMarkById?.get(t.id)}
         onOpenBackup={onOpenBackup}

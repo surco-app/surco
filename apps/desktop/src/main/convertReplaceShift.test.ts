@@ -19,6 +19,7 @@ const watch = vi.hoisted(() => ({
     | ((args: string[], child: { exitCode: number | null; signalCode: string | null }) => void)
     | undefined,
   traktorCueOffsetMs: 0,
+  killDelayMs: 0,
 }))
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -41,7 +42,15 @@ vi.mock('node:child_process', async (importOriginal) => {
     (...a: unknown[]) => (real.execFile as unknown as (...b: unknown[]) => unknown)(...a),
     {
       [promisify.custom]: (...a: unknown[]) => {
-        const pending = promised(...a) as { child: never }
+        const pending = promised(...a) as {
+          child: { kill: (...k: unknown[]) => boolean; exitCode: null; signalCode: null }
+        }
+        const realKill = pending.child.kill.bind(pending.child)
+        if (watch.killDelayMs > 0)
+          pending.child.kill = (...k) => {
+            setTimeout(() => realKill(...k), watch.killDelayMs)
+            return true
+          }
         watch.onDecode?.(a[1] as string[], pending.child)
         return pending
       },
@@ -186,6 +195,7 @@ beforeEach(() => {
   vi.mocked(recordNmlPatch).mockClear()
   watch.traktorCueOffsetMs = 0
   watch.onDecode = undefined
+  watch.killDelayMs = 0
 })
 
 describe('a replacement measured in the conversion', () => {
@@ -320,6 +330,7 @@ describe('a replacement measured in the conversion', () => {
     const before = sha(oldFile)
     let cancelled = false
     let tmp = ''
+    watch.killDelayMs = 300
     const decodes: { exitCode: number | null; signalCode: string | null }[] = []
     watch.onDecode = (args, child) => {
       if (!args.includes(oldFile) || !args.includes('f32le')) return

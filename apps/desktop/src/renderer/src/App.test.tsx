@@ -23,6 +23,7 @@ import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
+import { TO_REVIEW_ID } from '../../shared/toReview'
 import type {
   ActivityEvent,
   ProgramCopies,
@@ -57,6 +58,7 @@ import { spellingGroups } from './lib/musicSpelling'
 import { holdPendingEdit } from './lib/pendingEdits'
 import { createQueryClient } from './lib/queryClient'
 import { clearDraggedRows, draggedRows, TREE_NODE_TYPE } from './lib/reorderDrag'
+import { offerShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import { formatCount } from './lib/stats'
 import { usbExportStore } from './lib/usbExportStore'
 import { type ApiOverrides, djReads, type ProgramReads, stubApi } from './test/api'
@@ -2606,6 +2608,27 @@ describe('App auto-match', () => {
     await addTwoTracks()
 
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+  })
+
+  // The sweep runs on its own in the background; it is no step the DJ took. A Reviewed they
+  // just pressed keeps ⌘Z while its notice is up, whatever the sweep matched meanwhile.
+  it('leaves ⌘Z with a live Reviewed when a background auto-match lands', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+    })
+    await renderApp()
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    takeShortcutUndo()
   })
 
   // The track you're looking at shouldn't need the toolbar button: with auto-match on,
@@ -5777,6 +5800,140 @@ describe('App source playlists', () => {
       fireEvent.click(await screen.findByTestId('track-menu-add-to'))
       expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
       expect(screen.queryByTestId('track-menu-playlist-sm')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('To review', () => {
+    const ALL_ENTRIES = [
+      { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+      { path: '/m/a.wav', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+    ]
+    const REPLACED = [
+      {
+        newPath: '/m/c.wav',
+        oldPath: '/m/c.mp3',
+        replacedAt: 2,
+        shift: { moved: 40 },
+        pending: ['rekordbox'],
+      },
+      {
+        newPath: '/m/a.wav',
+        oldPath: '/m/a.mp3',
+        replacedAt: 1,
+        shift: { moved: -20 },
+        pending: ['rekordbox'],
+      },
+    ]
+    const reviewReads = () =>
+      djReads({
+        rekordbox: {
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID ? ALL_ENTRIES : FACTORY_ENTRIES,
+            ),
+        },
+      })
+
+    // Its rows are Surco's list of replaced tracks, not a playlist in rekordbox: a reorder,
+    // removal or separator would name a playlist rekordbox does not have.
+    it('opens To review with no reorder, removal or separator on its rows', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('reorder-hint')).not.toBeInTheDocument()
+      expectNoReorderLine()
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      await screen.findByTestId('track-menu-add-to')
+      expect(screen.queryByTestId('track-menu-remove-from')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('track-menu-insert-separator')).not.toBeInTheDocument()
+    })
+
+    // Its order is Surco's review priority, unmoved tracks first, not an order the DJ set,
+    // so numbers down the side would read as positions in a playlist that does not exist.
+    it('leaves position numbers out of To review, whose order is not one the DJ set', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      await waitFor(() => expect(screen.getAllByTestId('track-number').length).toBeGreaterThan(0))
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+    })
+
+    // The icon says what Surco did to a replaced track's cues, so it matters only where the DJ
+    // reviews them: the same files in an ordinary playlist are just tracks.
+    it('marks To review rows by new or old path with their state, and no row anywhere else', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue([
+          { ...REPLACED[0] },
+          {
+            newPath: '/m/a.wav',
+            oldPath: '/m/a.mp3',
+            replacedAt: 1,
+            shift: { unmoved: 'drift' },
+            pending: ['rekordbox'],
+          },
+        ]),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID
+                ? [
+                    { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+                    { path: '/m/a.mp3', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+                  ]
+                : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-replaced')).toHaveLength(2))
+      expect(
+        screen.getAllByTestId('track-replaced').map((el) => el.getAttribute('data-state')),
+      ).toEqual(['unmoved', 'moved'])
+      fireEvent.click(screen.getByTestId('source-node-h'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row').length).toBeGreaterThan(0))
+      expect(screen.queryByTestId('track-replaced')).not.toBeInTheDocument()
+    })
+
+    it('gives no icon for a track pending review only in another program', async () => {
+      await openFactory({
+        replacedTracks: vi
+          .fn()
+          .mockResolvedValue([REPLACED[0], { ...REPLACED[1], pending: ['traktor'] }]),
+        dj: reviewReads(),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-replaced')).toHaveLength(1))
+      expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    })
+
+    it('is never offered as a playlist to add tracks to', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue(REPLACED),
+        dj: reviewReads(),
+      })
+      await screen.findByTestId(`source-node-${TO_REVIEW_ID}`)
+      fireEvent.contextMenu(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('track-menu-add-to'))
+      expect(screen.getByTestId('track-menu-playlist-h')).toBeInTheDocument()
+      expect(screen.queryByTestId(`track-menu-playlist-${TO_REVIEW_ID}`)).not.toBeInTheDocument()
     })
   })
 
@@ -11561,6 +11718,119 @@ describe('App metadata undo', () => {
     fireEvent.keyDown(window, { key: 'z', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
     expect(screen.getByText('Metadata restored on 1 track')).toBeInTheDocument()
+  })
+
+  // Reviewed's notice says what ⌘Z would take back. While it is up, ⌘Z belongs to it: falling
+  // through to an older tag edit would silently change tags the DJ was not even looking at.
+  it('⌘Z undoes Reviewed while its notice is up, before older tag edits', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
+    fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
+    expect(screen.getByTestId('field-title')).toHaveValue('')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    expect(screen.getByTestId('field-title')).toHaveValue('')
+    takeShortcutUndo()
+  })
+
+  // A tag notice's Undo names the tag edit on its card. Taking back a Reviewed from another
+  // notice instead would bring a track back to To review and leave the tags wiped.
+  it('undoes the tags from a tag notice even while Reviewed still offers its undo', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
+  // ⌘Z means the newest notice. A tag edit made after Reviewed is what the DJ just did, so
+  // ⌘Z takes back the tags, not the older Reviewed underneath.
+  it('gives ⌘Z to a newer tag notice over an older Reviewed', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
+  // A tag edit with no notice of its own is still the DJ's newest step: ⌘Z after it takes
+  // back the edit, not an older Reviewed they are no longer looking at.
+  it('gives ⌘Z to a tag edit made after Reviewed even when the edit shows no notice', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    const artist = await screen.findByTestId('field-artist')
+    fireEvent.change(artist, { target: { value: 'Someone Else' } })
+    fireEvent.blur(artist)
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Someone Else'))
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
+  // The trim summary is an undo notice too. Pushed after Reviewed it is what the DJ just did,
+  // so ⌘Z must no longer reach the older Reviewed underneath.
+  it('lets a newer trim notice take ⌘Z from an older Reviewed', async () => {
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 && i < 180 ? 0.3 : 0.0005))
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+      waveform: vi.fn().mockResolvedValue({ peaks, rms: peaks, durationSec: 100 }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    const option = document.getElementById('palette-option-trim-detected')
+    expect(option).not.toBeNull()
+    if (option) fireEvent.click(option)
+    expect(await screen.findByText(i18n.t('notices.trimApplied', { count: 1 }))).toBeInTheDocument()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
   })
 
   it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {

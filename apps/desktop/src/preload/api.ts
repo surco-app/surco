@@ -11,6 +11,7 @@ import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
+import type { ReplacedEntry } from '../shared/toReview'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -273,6 +274,9 @@ export interface Api {
   cues: CuesApi
   djAppRunning: () => Promise<boolean>
   matchingPairs: () => Promise<[string, string][]>
+  replacedTracks: () => Promise<ReplacedEntry[]>
+  reviewReplaced: (path: string, programs?: DjProgram[]) => Promise<ReplacedEntry | null>
+  restoreReplaced: (entry: ReplacedEntry) => Promise<void>
   addMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPairs: (pairs: [string, string][]) => Promise<void>
