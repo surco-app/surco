@@ -3,7 +3,15 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
-import { File as TagFile, TagTypes, type XiphComment } from 'node-taglib-sharp'
+import {
+  Id3v2FrameIdentifiers,
+  type Id3v2Tag,
+  Id3v2TextInformationFrame,
+  Id3v2UserTextInformationFrame,
+  File as TagFile,
+  TagTypes,
+  type XiphComment,
+} from 'node-taglib-sharp'
 import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('electron', () => ({ app: { isPackaged: false } }))
@@ -12,6 +20,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import { emptyMetadata } from '../shared/metadata'
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio, readMeta } from './ffmpeg'
+import { encodeSine } from './sineTone.fixture'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-flac-multi-'))
@@ -124,5 +133,116 @@ describe('a FLAC written from a FLAC', () => {
     const emptied = flacWith(MULTI)
     await update(emptied, emptyMetadata(), { clearExtras: true })
     for (const name of Object.keys(MULTI)) expect(field(emptied, name), name).toEqual([])
+  })
+})
+
+function id3With(ext: 'mp3' | 'aiff' | 'wav', version: 3 | 4, txxx: [string, string[]][]): string {
+  const path = encodeSine(dir, `track${n++}`, ext)
+  const f = TagFile.createFromPath(path)
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  id3.version = version
+  for (const [description, values] of txxx) {
+    const frame = Id3v2UserTextInformationFrame.fromDescription(description)
+    frame.text = values
+    id3.addFrame(frame)
+  }
+  if (version === 4) {
+    id3.performersSort = ['Ann', 'Bob']
+    const language = Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers.TLAN)
+    language.text = ['eng', 'spa']
+    id3.addFrame(language)
+  }
+  f.save()
+  f.dispose()
+  return path
+}
+
+const toFlac = (
+  path: string,
+  meta: TrackMetadata,
+  options: { clearExtras?: boolean; foreignRemoved?: string[] } = {},
+) => {
+  const out = join(dir, `track${n++}.flac`)
+  return convertAudio(
+    path,
+    out,
+    'flac',
+    meta,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    options.clearExtras,
+    options.foreignRemoved,
+  ).then(() => out)
+}
+
+// Measured 23/11/2026 with the bundled ffmpeg: its ID3 reader keeps only the first value of
+// a multi-valued frame (ID3v2.4 separates them with a null) and only the first of two TXXX
+// frames sharing a description, so an MP3, AIFF or WAV converted to FLAC lost the second
+// MusicBrainz id, artist sort name or language another program wrote. The DJ's own tags must
+// come out of Surco whole whatever format they cross into.
+describe.each(['mp3', 'aiff', 'wav'] as const)('a FLAC written from an ID3 %s', (ext) => {
+  const MULTI: [string, string[]][] = [
+    ['MUSICBRAINZ ARTIST ID', ['id-1', 'id-2']],
+    ['X', ['7', '8']],
+  ]
+
+  it('keeps every value of a tag Surco does not manage', async () => {
+    const src = id3With(ext, 4, [
+      ...MULTI,
+      ['REPEATED', ['a']],
+      ['REPEATED', ['b']],
+      ['SINGLE', ['one']],
+    ])
+    const out = await toFlac(src, await editedTitle(src))
+    for (const [name, values] of MULTI) expect(field(out, name), name).toEqual(values)
+    expect(field(out, 'REPEATED')).toEqual(['a', 'b'])
+    expect(field(out, 'ARTIST-SORT')).toEqual(['Ann', 'Bob'])
+    expect(field(out, 'LANGUAGE')).toEqual(['eng', 'spa'])
+    expect(field(out, 'SINGLE')).toEqual(['one'])
+    expect(field(out, 'TITLE')).toEqual(['New title'])
+  })
+
+  // An ID3v2.3 text value is one string; a slash or semicolon inside it is the DJ's text,
+  // not a separator Surco may split on.
+  it('keeps an ID3v2.3 value with a separator in it as one value', async () => {
+    const src = id3With(ext, 3, [
+      ['SLASH', ['7/8']],
+      ['SEMI', ['7;8']],
+    ])
+    const out = await toFlac(src, await editedTitle(src))
+    expect(field(out, 'SLASH')).toEqual(['7/8'])
+    expect(field(out, 'SEMI')).toEqual(['7;8'])
+  })
+
+  // A field Surco writes holds what the editor holds, one value, even untouched: the
+  // source's other values must not come back over it.
+  it('leaves a field Surco writes as Surco wrote it', async () => {
+    const src = id3With(ext, 4, [
+      ['STYLE', ['Deep', 'Dark']],
+      ['CATALOGNUMBER', ['CAT-1', 'CAT-2']],
+    ])
+    const meta = { ...(await editedTitle(src)), style: 'Minimal' }
+    const out = await toFlac(src, meta)
+    expect(field(out, 'STYLE')).toEqual(['Minimal'])
+    expect(field(out, 'CATALOGNUMBER')).toEqual([meta.catalogNumber])
+  })
+
+  it('does not bring back a tag the DJ deleted or a file the DJ emptied', async () => {
+    const deleted = id3With(ext, 4, MULTI)
+    const kept = await toFlac(deleted, await editedTitle(deleted), { foreignRemoved: ['x'] })
+    expect(field(kept, 'X')).toEqual([])
+    expect(field(kept, 'MUSICBRAINZ ARTIST ID')).toEqual(['id-1', 'id-2'])
+
+    const emptied = id3With(ext, 4, MULTI)
+    const cleared = await toFlac(emptied, emptyMetadata(), { clearExtras: true })
+    for (const name of ['MUSICBRAINZ ARTIST ID', 'X', 'ARTIST-SORT', 'LANGUAGE'])
+      expect(field(cleared, name), name).toEqual([])
   })
 })

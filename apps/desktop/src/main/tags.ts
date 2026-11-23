@@ -409,22 +409,55 @@ const VORBIS_MANAGED = new Set(
   ),
 )
 
-// ffmpeg's FLAC reader folds a comment's repeated entries into one value joined by ';'
-// and the muxer writes that back (measured 23/11/2026 with the bundled ffmpeg), so two
-// MUSICBRAINZ_ARTISTID ids became one nothing can look up. A comment Surco does not manage
-// gets its entries back from the source, only while the file still holds exactly the
-// joined value ffmpeg carried: one the user deleted in the inspector, or emptied with the
-// rest, was cleared and stays cleared.
+// The ID3 text frames Surco does not manage that another program writes several values
+// into, under the name ffmpeg's ID3 reader gives them; every other text frame is either
+// Surco's own or one ffmpeg renames to a field Surco writes (TPE1 to artist).
+const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
+  TSOP: 'ARTIST-SORT',
+  TSOA: 'ALBUM-SORT',
+  TSOT: 'TITLE-SORT',
+  TLAN: 'LANGUAGE',
+}
+
+// A source tag with several values and the one value ffmpeg carries of it into a FLAC.
+// ffmpeg's FLAC reader folds a comment's repeated entries into one value joined by ';',
+// and its ID3 reader keeps only the first value of a frame (ID3v2.4 separates them with a
+// null) and the first of two TXXX frames sharing a description (measured 23/11/2026 with
+// the bundled ffmpeg).
+function multiValuedTags(f: TagFile): { name: string; values: string[]; carried: string }[] {
+  const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+  if (from)
+    return from.fieldNames.map((name) => {
+      const values = from.getField(name)
+      return { name, values, carried: values.join(';') }
+    })
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (!id3) return []
+  const byName = new Map<string, string[]>()
+  for (const frame of id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  ))
+    byName.set(frame.description, [...(byName.get(frame.description) ?? []), ...frame.text])
+  for (const frame of id3.getFramesByClassType<Id3v2TextInformationFrame>(
+    Id3v2FrameClassType.TextInformationFrame,
+  )) {
+    const name = FFMPEG_ID3_TEXT_NAMES[frame.frameId.toString()]
+    if (name) byName.set(name, [...frame.text])
+  }
+  return [...byName].map(([name, values]) => ({ name, values, carried: values[0] }))
+}
+
+// Two MUSICBRAINZ_ARTISTID ids that ffmpeg turned into one nothing can look up. A tag Surco
+// does not manage gets its values back from the source, only while the file still holds
+// exactly the value ffmpeg carried: one the user deleted in the inspector, or emptied with
+// the rest, was cleared and stays cleared.
 function carryRepeatedComments(xiph: XiphComment, source: string): void {
   const f = TagFile.createFromPath(source)
   try {
-    const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
-    for (const name of from?.fieldNames ?? []) {
-      const values = from?.getField(name) ?? []
+    for (const { name, values, carried } of multiValuedTags(f)) {
       if (values.length < 2 || VORBIS_MANAGED.has(name.toLowerCase())) continue
-      const carried = xiph.getField(name)
-      if (carried.length === 1 && carried[0] === values.join(';'))
-        xiph.setFieldAsStrings(name, ...values)
+      const written = xiph.getField(name)
+      if (written.length === 1 && written[0] === carried) xiph.setFieldAsStrings(name, ...values)
     }
   } finally {
     f.dispose()
@@ -438,8 +471,8 @@ function carryRepeatedComments(xiph: XiphComment, source: string): void {
 // before and after an update (17/09/2026). Rewritten after the encode by TagLib, which
 // writes the field under its own name: the value goes to COMMENT and DESCRIPTION is
 // cleared, so a file an earlier Surco wrote does not keep the old text under the alias
-// the reader falls back to. `multiFrom` is the FLAC the file was written from, whose
-// repeated comments come back in this same save (see carryRepeatedComments).
+// the reader falls back to. `multiFrom` is the file it was written from, whose
+// multi-valued tags come back in this same save (see carryRepeatedComments).
 export function setFlacComment(file: string, comment: string, multiFrom?: string): void {
   const f = TagFile.createFromPath(file)
   try {
