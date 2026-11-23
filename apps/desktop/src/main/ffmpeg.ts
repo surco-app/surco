@@ -76,6 +76,7 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import { isSameFile } from './inplace'
+import { landOverTrashed } from './landOverTrashed'
 import { glimpseColumns, pickCeilingWindow } from './limiterGlimpse'
 import { isMissingInputError } from './missingInput'
 import { absorbMp3HeadJunk } from './mp3Head'
@@ -2869,11 +2870,16 @@ export async function convertAudio(
     // 'copy' exactly when the audio passes through untouched — so that rides along.
     const inPlace = await isSameFile(input, output)
     const fromBytes = inPlace ? (await stat(input)).size : undefined
+    let trashReplaced: ((path: string) => Promise<void>) | undefined
+    const trashOnceReplaced = (trash: (path: string) => Promise<void>) => {
+      trashReplaced = trash
+    }
     if (inPlace) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
+        trashOnceReplaced,
         ...(rekordboxAudio && !replacesPath
           ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceSamples, tmp)
           : {}),
@@ -2885,7 +2891,7 @@ export async function convertAudio(
     // like a file with no encode to judge, which only 'never' skips. A re-export over the
     // track's own previous output never asks, and keeps nothing.
     else if (keepOverwritten && (await stat(output).catch(() => null)))
-      archived = await keepOriginal(output, 'replaced', output)
+      archived = await keepOriginal(output, 'replaced', output, { trashOnceReplaced })
     // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
     // so a cancel can land while it runs. The rename is the first step that cannot be
     // taken back: checked once more right before it, the original stays as it was and
@@ -2898,19 +2904,23 @@ export async function convertAudio(
     const replaceTraktorShift: CueShift = replaceShift
       ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0)
       : { shiftMs: 0 }
-    await renameWithRetry(tmp, output, {
-      onRetry: ({ attempt, code, waitMs, path }) =>
-        log.warn(
-          `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
-        ),
-      // The temp is a finished conversion by now — audio, tags and cues all written —
-      // so a destination that never frees must not cost the user the whole job. When
-      // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
-      // temp alone; when it cannot land (read-only remount, quota, a scanner holding
-      // the whole directory), the temp is still where it was and the catch deletes it
-      // as it would any half-written output.
-      rescue: rescuePath,
-    })
+    const land = () =>
+      renameWithRetry(tmp, output, {
+        onRetry: ({ attempt, code, waitMs, path }) =>
+          log.warn(
+            `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
+          ),
+        // The temp is a finished conversion by now — audio, tags and cues all written —
+        // so a destination that never frees must not cost the user the whole job. When
+        // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
+        // temp alone; when it cannot land (read-only remount, quota, a scanner holding
+        // the whole directory), the temp is still where it was and the catch deletes it
+        // as it would any half-written output.
+        rescue: rescuePath,
+      })
+    if (trashReplaced)
+      await landOverTrashed(inPlace ? input : output, tmp, output, land, trashReplaced)
+    else await land()
     archived = null
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
