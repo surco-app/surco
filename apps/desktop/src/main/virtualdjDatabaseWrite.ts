@@ -180,6 +180,7 @@ export function withVirtualdjSongMoved(
   to: { path: string; size: number; lengthSeconds?: number; bitrateKbps?: number | null },
   shiftSeconds: number,
   keepUntilSeconds: number | null,
+  reanalyse = false,
 ): string | null {
   if (!Number.isFinite(shiftSeconds)) return null
   if (to.lengthSeconds !== undefined && !placeable(to.lengthSeconds)) return null
@@ -194,6 +195,13 @@ export function withVirtualdjSongMoved(
   const beat = secondsPerBeat(lines)
   const moved = lines.flatMap((line) => {
     if (isTag(line, 'Infos')) return [withInfos(line, to)]
+    // VirtualDJ's scan and grid of a file the new one may not share: without them it scans
+    // the new file as it does a song it never scanned. Cues and automix points are kept.
+    if (
+      reanalyse &&
+      (isTag(line, 'Scan') || (isTag(line, 'Poi') && attr(line, 'Type') === 'beatgrid'))
+    )
+      return []
     if (shiftSeconds !== 0 && isTag(line, 'Scan'))
       return [withPhaseShifted(line, shiftSeconds, beat)]
     const poi = poiOf(line)

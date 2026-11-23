@@ -521,6 +521,17 @@ describe('stackRepoint on a replacement', () => {
     expect(stacked.meta).toEqual(meta)
   })
 
+  // A replacement of another recording, then retagged before VirtualDJ was closed: the retag
+  // says nothing about the audio, so VirtualDJ still owes the scan of the new file.
+  it('keeps the re-analysis a replacement of another recording owes when a retag stacks on it', () => {
+    const p = '/m/a.aiff'
+    const stacked = stackRepoint(
+      { from: p, to: p, replaced: true, audio: { cueShiftMs: 0 }, reanalyse: true },
+      { from: p, to: p, meta: rekordboxMetaFrom(emptyMetadata()) },
+    )
+    expect(stacked.reanalyse).toBe(true)
+  })
+
   // The file on disk is the last one written: Engine must read its cues at that file's
   // rate, so a later same-path conversion's rate wins over the earlier one.
   it("keeps the last file's rate when a same-path replacement is converted again", () => {
