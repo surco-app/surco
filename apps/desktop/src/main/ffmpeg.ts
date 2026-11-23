@@ -2688,7 +2688,8 @@ export async function convertAudio(
       // that predicate here silently routed it to shiftFlacCues — which had no comment to
       // re-anchor, so the cues were dropped. ID3_SOURCED names the real property this
       // branch needs: "the source keeps its cues in an ID3 tag".
-      else if (ext === '.flac')
+      // A clear wins over both, as over every other carry-over: the cues go with the rest.
+      else if (ext === '.flac' && !clearExtras)
         await runInWorker(
           keepsCuesInId3(extname(input))
             ? {
