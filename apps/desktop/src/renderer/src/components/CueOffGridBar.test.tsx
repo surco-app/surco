@@ -81,6 +81,23 @@ describe('CueOffGridBar', () => {
     expect(screen.queryByTestId('cues-offgrid-shift-grid')).toBeNull()
   })
 
+  // At the window's minimum width the folded editor is narrower than the bar in German,
+  // Catalan, French, Italian and Portuguese, and "Auf den Beat" ran past the panel's edge
+  // while the cue it names was cut to nothing. Folded, its controls wrap onto a second line;
+  // full screen it keeps the one line it always fits in.
+  it('wraps its controls in the folded editor rather than running past the edge', () => {
+    render(<CueOffGridBar off={[CALL, LATE]} onGo={vi.fn()} onSnap={vi.fn()} spaced />)
+    const bar = screen.getByTestId('cues-offgrid')
+    expect(bar.className).toContain('flex-wrap')
+    expect(bar.className).toContain('min-h-7')
+    expect(screen.getByTestId('cues-offgrid-go-27793').className).not.toContain('truncate')
+  })
+
+  it('keeps to one line in the full editor, which always has the room', () => {
+    setup([CALL, LATE])
+    expect(screen.getByTestId('cues-offgrid').className).not.toContain('flex-wrap')
+  })
+
   it('shows nothing when every cue sits on its beat', () => {
     setup([])
     expect(screen.queryByTestId('cues-offgrid')).toBeNull()

@@ -767,6 +767,17 @@ describe('CuesSection', () => {
     expect(previewed()).toEqual([`call-${bar(64)}`, 'hot-A'])
   })
 
+  // At the window's minimum width "Raster anpassen" and "Auto-Markieren" side by side are
+  // wider than the folded header, and Auto-Markieren ran past the panel's edge. They wrap
+  // onto a second line instead, in every language.
+  it('lets the folded header controls wrap instead of running past the panel edge', async () => {
+    setup()
+    await ready()
+    const controls = screen.getByTestId('cues-flow-menu')
+    expect(controls.className).toContain('flex-wrap')
+    expect(controls.parentElement?.className).toContain('min-w-0')
+  })
+
   it('draws dimmed and dashed what the flow drops with the point at the playhead and writes no count, folded or full screen, since the dashed marks already say it and a count beside the flow menu confused', async () => {
     setup()
     await ready()

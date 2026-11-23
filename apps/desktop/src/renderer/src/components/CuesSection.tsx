@@ -1564,8 +1564,10 @@ function Editing({
     </AtHead>
   )
   const toCallAt = (ms: number) => barsToNextCall(ctx.beats, pointMs, ms)
+  // In the folded header the flow, Fit grid and Auto mark wrap onto a second line when the
+  // panel is narrower than the three side by side, as German at the window's minimum width.
   const flowControl = (
-    <span data-testid="cues-flow-menu" className="flex min-w-0 items-center gap-2">
+    <span data-testid="cues-flow-menu" className="flex min-w-0 flex-wrap items-center gap-2">
       <Select
         testid="cues-flow"
         portal
