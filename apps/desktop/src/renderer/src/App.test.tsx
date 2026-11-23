@@ -71,13 +71,14 @@ const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
 
 // Pass-through Editor wrapped in its own memo, so the counter only ticks when App
 // hands it a changed prop identity — the contract the editor-stability test pins.
-const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0 } }))
+const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0, crash: false } }))
 vi.mock('./components/Editor', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/Editor')>()
   const { memo } = await import('react')
   const CountingEditor = memo(function CountingEditor(
     props: React.ComponentProps<typeof real.Editor>,
   ): React.JSX.Element {
+    if (editorRenders.crash) throw new Error('boom')
     editorRenders.count++
     return <real.Editor {...props} />
   })
@@ -16484,12 +16485,7 @@ describe('App sidebar', () => {
 describe('App editor crash', () => {
   it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
     const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.resetModules()
-    vi.doMock('./components/Editor', () => ({
-      Editor: () => {
-        throw new Error('boom')
-      },
-    }))
+    editorRenders.crash = true
     try {
       const pending: ((v: unknown) => void)[] = []
       const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
@@ -16514,8 +16510,7 @@ describe('App editor crash', () => {
       expect(cancelJob).toHaveBeenCalled()
       await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
     } finally {
-      vi.doUnmock('./components/Editor')
-      vi.resetModules()
+      editorRenders.crash = false
       silenced.mockRestore()
     }
   })
