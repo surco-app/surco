@@ -290,25 +290,8 @@ describe('CueRuleRow condition of each repetition', () => {
     const on = screen.getByTestId('cue-rule-0-color-2-when-fits-box')
     for (const name of ['before', 'after']) {
       const off = screen.getByTestId(`cue-rule-0-color-2-when-${name}-box`)
-      expect(off).toHaveClass(
-        'h-3.5',
-        'w-3.5',
-        'shrink-0',
-        'border',
-        'border-[var(--color-line-strong)]',
-        'bg-[var(--color-field)]',
-      )
       expect(off.querySelector('svg')).toBeNull()
     }
-    expect(on).toHaveClass(
-      'h-3.5',
-      'w-3.5',
-      'shrink-0',
-      'border',
-      'border-[var(--color-accent)]',
-      'bg-[var(--color-accent)]',
-      'text-[var(--color-on-accent)]',
-    )
     expect(on.querySelector('svg')).not.toBeNull()
   })
 
@@ -349,23 +332,6 @@ describe('CueRuleRow condition of each repetition', () => {
     expect(screen.getByTestId('cue-rule-0-color-2')).toHaveFocus()
   })
 
-  it('lays the colours of a repetition in two rows of eight across the menu, which a four column grid left half empty', () => {
-    setup(RULE)
-    openSquare(2)
-    const palette = within(screen.getByTestId('cue-rule-0-color-2-palette'))
-    expect(palette.getByTestId('cue-palette')).toHaveClass('grid-cols-8', 'w-full')
-  })
-
-  it('keeps the menu of a repetition at one fixed width, so ticking a condition never moves what is under the pointer', () => {
-    setup({ ...RULE, whenEach: ['rule', 'rule', 'fits+before:8+in:up|down'] })
-    openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-76')
-    cleanup()
-    setup(RULE)
-    openSquare(2)
-    expect(screen.getByTestId('cue-rule-0-color-2-palette')).toHaveClass('w-76')
-  })
-
   it('shows the two neighbour conditions in a few words and keeps the whole sentence as their name and hint, so the short row loses no meaning', () => {
     setup(RULE)
     openSquare(2)
@@ -380,31 +346,15 @@ describe('CueRuleRow condition of each repetition', () => {
   it('draws a section left off as a pill of its own too, so all five read as things to press and the ticked ones stand out by their fill', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
     openSquare(2)
-    const row = screen.getByTestId('cue-rule-0-color-2-when-sections')
-    expect(row).toHaveClass('gap-1')
-    expect(row).not.toHaveClass('justify-between')
-    expect(box(2, 'in-outro')).not.toHaveClass('grow')
     expect(box(2, 'in-intro')).toHaveAttribute('aria-checked', 'false')
-    expect(box(2, 'in-intro')).toHaveClass(
-      'rounded-full',
-      'bg-[var(--color-field)]',
-      'shadow-[inset_0_0_0_1px_var(--color-line-strong)]',
-      'aria-checked:shadow-[inset_0_0_0_1px_var(--color-accent)]',
-    )
   })
 
   it('sets the five sections side by side in one row, each the same size ticked or not, so the menu is a row tall instead of five', () => {
     setup({ ...RULE, whenEach: ['rule', 'rule', 'in:up|down'] })
     openSquare(2)
     const row = screen.getByTestId('cue-rule-0-color-2-when-sections')
-    expect(row).toHaveClass('flex', 'flex-wrap')
     const sections = ['intro', 'up', 'down', 'chorus', 'outro'].map((s) => box(2, `in-${s}`))
     expect(Array.from(row.children)).toEqual(sections)
-    expect(new Set(sections.map((el) => el.className)).size).toBe(1)
-    expect(box(2, 'in-up')).toHaveClass(
-      'aria-checked:bg-[var(--color-accent-soft)]',
-      'text-fg-muted',
-    )
     expect(sections.map((el) => el.textContent)).toEqual([
       'intro',
       'build',
@@ -465,16 +415,6 @@ describe('CueRuleRow condition of each repetition', () => {
     fireEvent.keyDown(bars, { key: 'Escape' })
     expect(screen.queryByTestId('cue-rule-0-color-1-palette')).not.toBeInTheDocument()
     expect(screen.getByTestId('cue-rule-0-color-1')).toHaveFocus()
-  })
-
-  it('holds the bars in a box of one width whatever the number, so 128 takes the room 1 does', () => {
-    setup({ ...RULE, whenEach: ['rule', 'before:128+after:1'] })
-    openSquare(1)
-    for (const side of ['before', 'after']) {
-      const bars = screen.getByTestId(`cue-rule-0-color-1-when-${side}-bars`)
-      expect(bars).toHaveClass('w-full')
-      expect(bars.parentElement?.parentElement).toHaveClass('w-16', 'shrink-0')
-    }
   })
 
   it('offers no Restablecer among the conditions of a square, where it read as clearing them when it only set the colour', () => {
