@@ -279,24 +279,36 @@ const ID3_LIST_FRAMES: [MetaTextKey, string[]][] = [
   ['discogsUrl', ['TXXX:DISCOGS_RELEASE_URL']],
 ]
 
+// A TXXX's values are every frame under its description, in any case: ID3v2.3 has no null
+// separator, so a tagger writing a second style there writes a second TXXX STYLE, which the
+// probe never reads. Only those carry several values on v2.3; its text frames keep one.
 function id3ValuesOf(f: TagFile): Id3Values {
   const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-  if (id3?.version !== 4) return {}
+  if (!id3) return {}
+  const v4 = id3.version === 4
   const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
     Id3v2FrameClassType.UserTextInformationFrame,
   )
   const textOf = (name: string): string[] => {
     const [id, description] = name.split(':')
-    const frame = description
-      ? Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, description)
-      : (id3.frames.find((fr) => fr.frameId.toString() === id) as Id3v2TextInformationFrame)
-    return frame?.text?.filter((value) => value.trim()) ?? []
+    const frames = description
+      ? txxx.filter((fr) => fr.description.toUpperCase() === description)
+      : v4
+        ? id3.frames.filter((fr) => fr.frameId.toString() === id).slice(0, 1)
+        : []
+    return frames
+      .flatMap((fr) => (fr as Id3v2TextInformationFrame).text ?? [])
+      .filter((value) => value.trim())
   }
   const lists: [string, string[]][] = [
-    ['artist', id3.performers],
-    ['albumArtist', id3.albumArtists],
-    ['genre', id3.genres],
-    ['composer', id3.composers],
+    ...((v4
+      ? [
+          ['artist', id3.performers],
+          ['albumArtist', id3.albumArtists],
+          ['genre', id3.genres],
+          ['composer', id3.composers],
+        ]
+      : []) as [string, string[]][]),
     ...ID3_LIST_FRAMES.map(([key, names]): [string, string[]] => [
       key,
       names.map(textOf).find((values) => values.length > 0) ?? [],
@@ -1284,11 +1296,16 @@ export function keepDescribedComments(f: TagFile, write: () => void): void {
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
 // created if missing and its text replaced.
+// Every frame under the description is the field's, in any case: a second one an ID3v2.3
+// tagger wrote for a second value would otherwise read back beside what the DJ set.
 export function setUserText(tag: Id3v2Tag, description: string, text: string): void {
-  const frames = tag.getFramesByClassType<Id3v2UserTextInformationFrame>(
-    Id3v2FrameClassType.UserTextInformationFrame,
-  )
-  let frame = Id3v2UserTextInformationFrame.findUserTextInformationFrame(frames, description)
+  const [found, ...extra] = tag
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => fr.description.toUpperCase() === description.toUpperCase())
+  for (const fr of extra) tag.removeFrame(fr)
+  let frame = found
   if (!text) {
     if (frame) tag.removeFrame(frame)
     return
