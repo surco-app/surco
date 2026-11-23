@@ -57,6 +57,15 @@ const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
 // pass that only adds cues left "House; Deep House" as "(35) Deep House".
 Id3v2Settings.useNonStandardV2V3GenreSeparators = false
 
+// TagLib knows TSOP, TSOA and TSOT as ID3v2.4 frames only and leaves them out of every v2.3
+// tag it saves, though iTunes and mp3tag write and read them on v2.3 all the same, so any
+// save of an iTunes-tagged MP3, AIFF or WAV (a list fix, a cue, an update) lost the sort
+// names. TagLib offers no way to name a frame for another version, and its readers and
+// setters compare these very identifier objects, so each one is given its v2.4 name for v2.3
+// too, here where every TagLib writer in Surco is loaded from.
+for (const id of ['TSOP', 'TSOA', 'TSOT'])
+  Object.assign(Id3v2FrameIdentifiers[id], { _version3: Id3v2FrameIdentifiers[id].render(4) })
+
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
 // stream copy and re-emits only the frames it understands, so GEOB is silently
@@ -557,15 +566,6 @@ const NEVER_CARRIED = new Set([
   FLAC_CUE_FIELD.toLowerCase(),
 ])
 
-// TagLib writes TSOP, TSOA and TSOT on ID3v2.4 only and drops them from the v2.3 tags every
-// ID3 target is pinned to, but iTunes and mp3tag write and read them on v2.3 all the same.
-const ID3V23_TEXT_FRAMES: Record<string, Id3v2TextFrameId> = {
-  TSOP: new Id3v2FrameIdentifier('TSOP', 'TSOP', 'TSP'),
-  TSOA: new Id3v2FrameIdentifier('TSOA', 'TSOA', 'TSA'),
-  TSOT: new Id3v2FrameIdentifier('TSOT', 'TSOT', 'TST'),
-  TLAN: Id3v2FrameIdentifiers.TLAN,
-}
-
 // The sort names' MP4 home: the atoms Music sorts the library by.
 const MP4_SORT_ATOMS: Record<string, string> = { TSOP: 'soar', TSOA: 'soal', TSOT: 'sonm' }
 
@@ -625,7 +625,7 @@ function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
   if (texts.join(separator) === values.join(separator)) return false
   for (const fr of new Set([...held, ...mirrors])) id3.removeFrame(fr)
   const text = frame
-    ? Id3v2TextInformationFrame.fromIdentifier(ID3V23_TEXT_FRAMES[frame])
+    ? Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[frame])
     : Id3v2UserTextInformationFrame.fromDescription(name)
   text.text = values
   id3.addFrame(text)
@@ -1497,13 +1497,15 @@ export function writeTags(
     dropBrokenUfids(id3)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
     // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
-    // matches the name outright. Applies always, not just on clearExtras.
+    // matches the name outright, or that the inspector lists by ffmpeg's name for it (a
+    // TSOP as artist-sort). Applies always, not just on clearExtras.
     for (const name of foreignRemoved) {
       setUserText(id3, name, '')
       const upper = name.toUpperCase()
-      for (const fr of id3.frames.filter(
-        (frame) => frame.frameId.toString().toUpperCase() === upper,
-      )) {
+      for (const fr of id3.frames.filter((frame) => {
+        const id = frame.frameId.toString()
+        return id.toUpperCase() === upper || FFMPEG_ID3_TEXT_NAMES[id] === upper
+      })) {
         id3.removeFrame(fr)
       }
     }
