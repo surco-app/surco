@@ -39,49 +39,103 @@ const normalized = (e: ReplacedEntry): ReplacedEntry => ({
   oldPath: nfc(e.oldPath),
 })
 
+type Read = { entries: ReplacedEntry[]; state: 'ok' | 'absent' | 'corrupt' | 'unreadable' }
+
 export function createReplacedStore(file: string): ReplacedStore {
-  const load = (): ReplacedEntry[] => {
+  const read = (): Read => {
+    let text: string
     try {
-      const data = JSON.parse(readFileSync(file, 'utf8')) as Partial<StoreFile>
-      return Array.isArray(data.entries) ? data.entries.filter(isEntry) : []
-    } catch {
-      return []
+      text = readFileSync(file, 'utf8')
+    } catch (e) {
+      return (e as NodeJS.ErrnoException).code === 'ENOENT'
+        ? { entries: [], state: 'absent' }
+        : { entries: [], state: 'unreadable' }
     }
+    try {
+      const data = JSON.parse(text) as Partial<StoreFile>
+      if (Array.isArray(data.entries)) return { entries: data.entries.filter(isEntry), state: 'ok' }
+    } catch {}
+    return { entries: [], state: 'corrupt' }
   }
+  const load = (): ReplacedEntry[] => read().entries
   const save = (entries: ReplacedEntry[]): void => {
     const tmp = `${file}.tmp`
     writeFileSync(tmp, JSON.stringify({ version: 1, entries } satisfies StoreFile))
     renameSync(tmp, file)
   }
+  // A write built on a failed read would erase every pending review: a transient read
+  // error refuses the mutation, and a broken file is moved aside before it is replaced.
+  const mutate = <T>(
+    change: (entries: ReplacedEntry[]) => { entries: ReplacedEntry[]; out: T },
+    none: T,
+  ): T => {
+    const { entries, state } = read()
+    if (state === 'unreadable') {
+      console.warn(`replaced-tracks store unreadable, change skipped: ${file}`)
+      return none
+    }
+    if (state === 'corrupt') {
+      const aside = `${file}.corrupt-${Date.now()}`
+      renameSync(file, aside)
+      console.warn(`replaced-tracks store was corrupt, kept as ${aside}`)
+    }
+    const { entries: next, out } = change(entries)
+    save(next)
+    return out
+  }
   return {
     list: load,
     add: (entry) => {
       const next = normalized(entry)
-      save([
-        ...load().filter((e) => e.newPath !== next.newPath && e.newPath !== next.oldPath),
-        next,
-      ])
+      mutate(
+        (all) => ({
+          entries: [
+            ...all.filter((e) => e.newPath !== next.newPath && e.newPath !== next.oldPath),
+            next,
+          ],
+          out: undefined,
+        }),
+        undefined,
+      )
     },
     review: (path, programs) => {
       const p = nfc(path)
-      const all = load()
-      const found = all.find((e) => e.newPath === p || e.oldPath === p)
-      if (!found) return null
-      const pending = programs ? found.pending.filter((x) => !programs.includes(x)) : []
-      save(
-        pending.length === 0
-          ? all.filter((e) => e !== found)
-          : all.map((e) => (e === found ? { ...e, pending } : e)),
-      )
-      return found
+      return mutate((all) => {
+        const found = all.find((e) => e.newPath === p || e.oldPath === p)
+        if (!found) return { entries: all, out: null }
+        const pending = programs ? found.pending.filter((x) => !programs.includes(x)) : []
+        return {
+          entries:
+            pending.length === 0
+              ? all.filter((e) => e !== found)
+              : all.map((e) => (e === found ? { ...e, pending } : e)),
+          out: found,
+        }
+      }, null)
     },
     restore: (entry) => {
       const next = normalized(entry)
-      save([...load().filter((e) => e.newPath !== next.newPath), next])
+      mutate(
+        (all) => ({
+          entries: [...all.filter((e) => e.newPath !== next.newPath), next],
+          out: undefined,
+        }),
+        undefined,
+      )
     },
     movePath: (from, to) => {
       const [f, t] = [nfc(from), nfc(to)]
-      save(load().map((e) => (e.newPath === f ? { ...e, newPath: t } : e)))
+      mutate(
+        (all) => ({
+          // Two entries at one path would make a review find the wrong one, so the entry
+          // that was moved wins over whatever already sat at the destination.
+          entries: all
+            .filter((e) => e.newPath !== t || e.newPath === f || !all.some((x) => x.newPath === f))
+            .map((e) => (e.newPath === f ? { ...e, newPath: t } : e)),
+          out: undefined,
+        }),
+        undefined,
+      )
     },
   }
 }

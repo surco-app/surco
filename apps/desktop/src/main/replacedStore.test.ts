@@ -1,6 +1,6 @@
-import { mkdtemp, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { DJ_PROGRAMS } from '../shared/djProgram'
 import type { ReplacedEntry } from '../shared/toReview'
@@ -88,6 +88,54 @@ describe('createReplacedStore', () => {
     const file = await fileIn()
     await writeFile(file, '{not json')
     expect(createReplacedStore(file).list()).toEqual([])
+  })
+
+  it('keeps the unreadable content as a .corrupt copy before the next add, so no pending review is erased', async () => {
+    const file = await fileIn()
+    await writeFile(file, '{not json')
+    createReplacedStore(file).add(entry())
+    const copies = (await readdir(dirname(file))).filter((f) =>
+      f.startsWith(`${basename(file)}.corrupt`),
+    )
+    expect(copies).toHaveLength(1)
+    expect(await readFile(join(dirname(file), copies[0]), 'utf8')).toBe('{not json')
+    expect(createReplacedStore(file).list()).toEqual([entry()])
+  })
+
+  it('treats a file whose entries is not a list as corrupt and keeps it aside', async () => {
+    const file = await fileIn()
+    await writeFile(file, JSON.stringify({ version: 1, entries: 'x' }))
+    createReplacedStore(file).add(entry())
+    const copies = (await readdir(dirname(file))).filter((f) =>
+      f.startsWith(`${basename(file)}.corrupt`),
+    )
+    expect(copies).toHaveLength(1)
+  })
+
+  it('does not write at all when the file cannot be read, since a transient failure must not wipe the list', async () => {
+    const file = await fileIn()
+    await mkdir(file)
+    const store = createReplacedStore(file)
+    store.add(entry())
+    expect(store.review('/m/new.flac')).toBeNull()
+    expect((await stat(file)).isDirectory()).toBe(true)
+    expect(await readdir(dirname(file))).toEqual([basename(file)])
+  })
+
+  it('does not leave two entries at the same path when a move lands on an existing one', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ newPath: '/m/new.flac', oldPath: '/m/old.mp3' }))
+    store.add(entry({ newPath: '/m/other.flac', oldPath: '/m/other.mp3' }))
+    store.movePath('/m/new.flac', '/m/other.flac')
+    expect(store.list()).toHaveLength(1)
+    expect(store.list()[0].oldPath).toBe('/m/old.mp3')
+  })
+
+  it('keeps the entry at the destination when nothing sits at the source', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry())
+    store.movePath('/m/ghost.flac', '/m/new.flac')
+    expect(store.list()).toEqual([entry()])
   })
 
   it('discards malformed entries when reading', async () => {
