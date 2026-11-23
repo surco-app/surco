@@ -21,8 +21,10 @@ let traktorNmlPath = ''
 // to hold, so every case here that expects a patch sets both.
 let syncTraktor = true
 let syncEngineDj = false
+let syncSerato = false
+let syncVirtualdj = false
 vi.mock('./settings', () => ({
-  getSettings: () => ({ traktorNmlPath, syncTraktor, syncEngineDj }),
+  getSettings: () => ({ traktorNmlPath, syncTraktor, syncEngineDj, syncSerato, syncVirtualdj }),
 }))
 
 import type { TrackMetadata } from '../shared/types'
@@ -574,6 +576,51 @@ describe('convertAudio cue preservation', () => {
     expect(endNmlBatch()[0].tags).toEqual({
       title: { from: 'Old Title', to: 'Till I Come' },
       album: { from: 'Old Album', to: 'Movin Melodies' },
+    })
+  })
+
+  // The 23/11 replacement test: an artist typed in Surco reached neither Serato nor VirtualDJ,
+  // whose sync reads the names with the move, because the names were only read for Traktor
+  // and Engine DJ.
+  it.each([
+    ['Serato', () => (syncSerato = true)],
+    ['VirtualDJ', () => (syncVirtualdj = true)],
+  ])('hands %s the names a conversion changed with the move', async (_, sync) => {
+    traktorNmlPath = ''
+    syncTraktor = false
+    sync()
+    const tagged = join(dir, 'program-tagged.aiff')
+    execFileSync(FF, [
+      '-y',
+      '-loglevel',
+      'error',
+      '-i',
+      src,
+      '-c',
+      'copy',
+      '-write_id3v2',
+      '1',
+      '-metadata',
+      'title=Old Title',
+      '-metadata',
+      'artist=ATB',
+      '-metadata',
+      'album=Movin Melodies',
+      '-metadata',
+      'genre=Trance',
+      tagged,
+    ])
+    beginRekordboxBatch()
+    try {
+      await convertAudio(tagged, join(dir, 'program-out.flac'), 'flac', meta)
+    } finally {
+      syncSerato = false
+      syncVirtualdj = false
+      syncTraktor = true
+    }
+
+    expect(endRekordboxBatch()[0].names).toEqual({
+      title: { from: 'Old Title', to: 'Till I Come' },
     })
   })
 
