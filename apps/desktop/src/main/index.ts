@@ -336,6 +336,7 @@ import { onWatchedFilesChanged } from './watchedFiles'
 import { dirRoots, FolderWatcher } from './watcher'
 import { loadWindowState, resolveWindowBounds, saveWindowState } from './windowState'
 import { runInWorker } from './worker'
+import { zoomFit } from './zoomFit'
 
 // At module load so even a throw during startup leaves a trace in the log file.
 installCrashGuards(process, log)
@@ -1242,6 +1243,25 @@ function trackDragIcon(coverUrl?: string): NativeImage {
 
 function registerIpc(): void {
   // Synchronous so the preload can expose api.version as a plain value.
+  ipcMain.on('window:zoom-check', (e) => {
+    const win = BrowserWindow.fromWebContents(e.sender)
+    if (!win) return
+    const area = screen.getDisplayMatching(win.getBounds()).workArea
+    const fit = zoomFit(e.sender.getZoomLevel(), area, WINDOW_MIN_SIZE)
+    if (fit.level !== e.sender.getZoomLevel()) e.sender.setZoomLevel(fit.level)
+    win.setMinimumSize(fit.minimum.width, fit.minimum.height)
+    const bounds = win.getBounds()
+    if (bounds.width >= fit.minimum.width && bounds.height >= fit.minimum.height) return
+    const width = Math.max(bounds.width, fit.minimum.width)
+    const height = Math.max(bounds.height, fit.minimum.height)
+    win.setBounds({
+      x: Math.max(area.x, Math.min(bounds.x, area.x + area.width - width)),
+      y: Math.max(area.y, Math.min(bounds.y, area.y + area.height - height)),
+      width,
+      height,
+    })
+  })
+
   ipcMain.on('app:version', (e) => {
     e.returnValue = app.getVersion()
   })

@@ -424,6 +424,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     verifyMusicAdded: async () => {},
     releasePlayingFile: async () => {},
     prewarmPlayback: noop,
+    checkZoom: noop,
     conversionPrograms: vi.fn(async (_paths: string[]): Promise<CueProgram[]> => []),
     beginConversionBatch: noop,
     endConversionBatch: noop,

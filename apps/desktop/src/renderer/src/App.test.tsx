@@ -343,6 +343,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     version: '0.0.0-test',
     releasePlayingFile: vi.fn<Api['releasePlayingFile']>().mockResolvedValue(undefined),
     prewarmPlayback: vi.fn<Api['prewarmPlayback']>(),
+    checkZoom: vi.fn<Api['checkZoom']>(),
     matchingPairs: vi.fn<Api['matchingPairs']>().mockResolvedValue([]),
     addMatchingPair: vi.fn<Api['addMatchingPair']>().mockResolvedValue(undefined),
     removeMatchingPair: vi.fn<Api['removeMatchingPair']>().mockResolvedValue(undefined),

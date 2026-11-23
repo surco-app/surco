@@ -913,6 +913,7 @@ function scenarioApi(
     cues: wiredCues(),
     rowWaves: async () => ({}),
     prewarmPlayback: () => {},
+    checkZoom: () => {},
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({
       profile: null,

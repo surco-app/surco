@@ -168,6 +168,7 @@ import { useUsbVolumes } from './hooks/useUsbVolumes'
 import { useVerificationUpdates } from './hooks/useVerificationUpdates'
 import { waveformOptions } from './hooks/useWaveform'
 import { useWindowSnapshot } from './hooks/useWindowSnapshot'
+import { useZoomFit } from './hooks/useZoomFit'
 import { nextLocale } from './i18n/locale'
 import { analysisKey, removeAnalysisQueries, seedCachedAnalyses } from './lib/analysisQueries'
 import type { AppleMusicIndex } from './lib/appleMusicLibrary'
@@ -392,6 +393,7 @@ export default function App(): React.JSX.Element {
   useEffect(() => {
     document.documentElement.lang = i18n.language
   }, [i18n.language])
+  useZoomFit()
   const [selection, setSelectionState] = useState<Selection>({ ids: [], anchor: null })
   // Text still in a field's typing pause is committed before the selection moves, while
   // the editor still points at the track it was typed into.
