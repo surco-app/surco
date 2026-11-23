@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { SessionData, SessionEdit } from '../../../shared/types'
 import { type AppStore, useAppStore } from '../lib/appStore'
+import { flushPendingEdits } from '../lib/pendingEdits'
 import { sessionEdits } from '../lib/sessionEdits'
 import {
   parseSessionView,
@@ -234,8 +235,10 @@ export function useSessionPersistence({
   // synchronously: an async IPC sent from a dying page is not sure to reach main. It also
   // writes with nothing pending, since the spot in the playing track schedules no save,
   // but never before this run has saved: that would wipe the session the launch offered.
+  // Text still in a field's typing pause is committed first, which reaches tracksRef at once.
   useEffect(() => {
     const flush = (): void => {
+      flushPendingEdits()
       if (!sessionSaveTimer.current && savedSessionSig.current === null) return
       if (sessionSaveTimer.current) clearTimeout(sessionSaveTimer.current)
       sessionSaveTimer.current = null

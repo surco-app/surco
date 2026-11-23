@@ -1531,6 +1531,145 @@ describe('App VirtualDJ tab', () => {
     )
   })
 
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the renamed one yanked them back out of it.
+  const openOtra = async () => {
+    fireEvent.click(screen.getByTestId('source-node-Carpeta/Otra'))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  }
+  const RENAMED: SourceNode[] = [
+    {
+      id: 'Carpeta',
+      name: 'Carpeta',
+      kind: 'folder',
+      count: 2,
+      children: [
+        { id: 'Carpeta/Fuera', name: 'Fuera', kind: 'playlist', count: 1 },
+        { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+      ],
+    },
+  ]
+  const renameDentro = () => {
+    fireEvent.contextMenu(screen.getByTestId('source-node-Carpeta/Dentro'))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: 'Fuera' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+  }
+  async function editWhileOpeningAnother(
+    edit: () => void,
+    after: SourceNode[],
+    openOther: () => Promise<void> = openOtra,
+  ): Promise<ReturnType<typeof vi.fn<ProgramReads['playlist']>>> {
+    let tree: SourceNode[] = [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 2,
+        children: [
+          { id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+          { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+        ],
+      },
+    ]
+    let finish: () => void = () => {}
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            tree = after
+            resolve({ applied: true })
+          }
+        }),
+    )
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+      ])
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Carpeta/Dentro'))
+    edit()
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+
+    await openOther()
+    await act(async () => finish())
+    return playlist
+  }
+
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the edited one yanked them back out of it.
+  it('stays on the list opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED)
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list the palette opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED, async () => {
+      fireEvent.click(screen.getByTestId('open-palette'))
+      fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'Otra' } })
+      await waitFor(() =>
+        expect(
+          document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra'),
+        ).not.toBeNull(),
+      )
+      fireEvent.click(
+        document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra') as HTMLElement,
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+          'aria-current',
+          'true',
+        ),
+      )
+    })
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list opened while a move was being written', async () => {
+    const playlist = await editWhileOpeningAnother(() => {
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(screen.getByTestId('source-node-Carpeta/Dentro'), { dataTransfer: dt })
+      const folder = screen.getByTestId('source-node-Carpeta')
+      vi.spyOn(folder, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+      fireEvent.dragOver(folder, { dataTransfer: dt, clientY: 3 })
+      fireEvent.drop(folder, { dataTransfer: dt })
+    }, [
+      { id: 'Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 }],
+      },
+    ])
+    await waitFor(() => expect(screen.getByTestId('source-node-Dentro')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Dentro')
+  })
+
   it('asks before a tree edit in VirtualDJ too, as in the other programs', async () => {
     const editPlaylist = vi
       .fn<ProgramReads['editPlaylist']>()
@@ -3444,6 +3583,61 @@ describe('App source rail', () => {
     expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
   })
 
+  // The palette jumps straight into another source's playlist: what that source had selected
+  // comes back, as from the rail. The row picked in the list being left opened instead.
+  it('gives the source a palette jump lands in back its own selected row', async () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
+        artist: 'DJ',
+      })),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+        },
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+
+    fireEvent.click(screen.getByTestId('open-palette'))
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Factory' },
+    })
+    await waitFor(() =>
+      expect(document.getElementById('palette-option-playlist:rekordbox:f')).not.toBeNull(),
+    )
+    fireEvent.click(document.getElementById('palette-option-playlist:rekordbox:f') as HTMLElement)
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Charlie')])
+  })
+
   function rekordboxWithFactory(over: Record<string, unknown> = {}): void {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
@@ -5289,6 +5483,32 @@ describe('App source playlists', () => {
   // stay in the working list. A selection kept across the switch made the editor, the row
   // menu and the bulk actions act on rows the DJ could no longer see, a rekordbox write
   // among them. Only what the new view shows may stay selected.
+  // Tracks keeps its selection while another source is on screen; a row trashed meanwhile
+  // takes the editor's row with it, and the rows still selected need one to show.
+  it('moves the editor of Tracks onto a selected row left when the one shown was trashed away', async () => {
+    await openFactory({ trashFile: vi.fn().mockResolvedValue({ where: 'trash' }) })
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('track-separator-s1')
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    runMenu('trash-selected')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Bravo')])
+    expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+  })
+
   describe('switching playlists inside rekordbox', () => {
     const HOUSE_ENTRIES = [linked('/m/b.wav', 'h2'), linked('/m/c.wav', 'h3')]
     const openThree = async (over: Record<string, unknown> = {}) => {
@@ -5374,6 +5594,18 @@ describe('App source playlists', () => {
       await openHouse()
       await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')]))
       expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+    })
+
+    // The editor and the arrow keys follow the anchor: losing it with rows still selected left
+    // them highlighted beside an empty editor, and ↑/↓ starting from nowhere.
+    it('moves the editor onto a selected row the new playlist holds when it lacks the one shown', async () => {
+      await openThree()
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[2], { metaKey: true })
+      await openHouse()
+      await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Charlie')]))
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
     })
 
     it('has no selection to trash when the new playlist holds none of it', async () => {
@@ -12929,6 +13161,25 @@ describe('App metadata undo', () => {
 })
 
 describe('App reopen last session', () => {
+  // ⌘Q right after typing: the field holds the last keystrokes for a short pause before they
+  // reach the track, and the session written as the window goes away lost them.
+  it('saves the text still in a field’s typing pause when the window goes away', async () => {
+    const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      saveLastSessionSync,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.change(await screen.findByTestId('field-title'), {
+      target: { value: 'Hand Typed' },
+    })
+
+    window.dispatchEvent(new Event('pagehide'))
+
+    expect(saveLastSessionSync.mock.lastCall?.[1]['/music/a.wav']?.meta.title).toBe('Hand Typed')
+  })
+
   // The app opens empty every launch; someone cleaning the same downloads folder over
   // days re-imported it by hand every time. The launch offer restores the previous
   // list in one click — through the same expand pipeline as a drop, so media access

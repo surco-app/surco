@@ -1276,9 +1276,14 @@ export default function App(): React.JSX.Element {
   // rekordbox write among its items) and the bulk actions act on rows no longer on screen.
   // It is set aside while the new rows load and comes back narrowed to them once they land.
   const heldSelection = useRef<Selection | null>(null)
+  // Counts the playlists the user opens, so a tree edit that reopens the edited
+  // playlist once its write lands can tell the user went elsewhere while it was written. The
+  // open playlist alone cannot: the edit's own redraw of the tree already closes it.
+  const playlistPicks = useRef(0)
   // Opening another playlist is going to see what it holds, so a search typed in the one
   // left goes too: kept, it made the new playlist look short or empty.
   const selectPlaylist = useStableCallback((node: SourceNode, folders: string[]) => {
+    playlistPicks.current++
     if (node.id !== browser.playlist?.id) {
       heldSelection.current ??= selection
       setSelection({ ids: [], anchor: null })
@@ -1386,9 +1391,10 @@ export default function App(): React.JSX.Element {
     setSearch(searchBySource.current.get(next) ?? '')
     const kept = selectionBySource.current.get(next)
     const alive = new Set(tracks.filter((t) => next || t.inFiles).map((t) => t.id))
+    const ids = kept?.ids.filter((id) => alive.has(id)) ?? []
     const restored = {
-      ids: kept?.ids.filter((id) => alive.has(id)) ?? [],
-      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : null,
+      ids,
+      anchor: kept?.anchor && alive.has(kept.anchor) ? kept.anchor : (ids[ids.length - 1] ?? null),
     }
     pendingRestoredReveal.current = restored.anchor
     setSelection(restored)
@@ -1400,9 +1406,10 @@ export default function App(): React.JSX.Element {
   })
   const goToPlaylist = useStableCallback(
     (source: PlaylistSource, node: SourceNode, folders: string[]) => {
-      selectSource(source)
+      playlistPicks.current++
+      const restored = selectSource(source)
       if (node.id !== browser.playlist?.id || source !== browser.source) {
-        heldSelection.current ??= selection
+        heldSelection.current ??= restored
         setSelection({ ids: [], anchor: null })
         setSearch('')
       }
@@ -2354,7 +2361,8 @@ export default function App(): React.JSX.Element {
     setSelection((current) => {
       const from = held ?? current
       const ids = from.ids.filter((id) => shown.has(id))
-      const anchor = from.anchor && shown.has(from.anchor) ? from.anchor : null
+      const anchor =
+        from.anchor && shown.has(from.anchor) ? from.anchor : (ids[ids.length - 1] ?? null)
       return !held && ids.length === current.ids.length && anchor === current.anchor
         ? current
         : { ids, anchor }
@@ -3835,8 +3843,9 @@ export default function App(): React.JSX.Element {
   }
   const renameInRekordbox = useStableCallback(async (node: SourceNode, name: string) => {
     const open = browser.playlist
+    const picks = playlistPicks.current
     const result = await editRekordbox({ kind: 'rename', playlistId: node.id, name }, node.name)
-    if (!result.applied || !idJoin || !open) return
+    if (!result.applied || !idJoin || !open || playlistPicks.current !== picks) return
     const above = node.id.split(idJoin).slice(0, -1)
     reopenAt(open, node, {
       id: [...above, name].join(idJoin),
@@ -3876,11 +3885,12 @@ export default function App(): React.JSX.Element {
   const moveInTree = useStableCallback(
     async (node: SourceNode, parentId: string, beforeId: string | null, folders: string[]) => {
       const open = browser.playlist
+      const picks = playlistPicks.current
       const result = await editRekordbox(
         { kind: 'moveNode', playlistId: node.id, parentId, beforeId },
         node.name,
       )
-      if (result.applied && idJoin)
+      if (result.applied && idJoin && playlistPicks.current === picks)
         reopenAt(open, node, {
           id: parentId === 'root' ? node.name : `${parentId}${idJoin}${node.name}`,
           name: node.name,

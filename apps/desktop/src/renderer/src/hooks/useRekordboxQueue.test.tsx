@@ -162,6 +162,20 @@ describe('useRekordboxQueue', () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
   })
 
+  // A queued repoint moves the row onto the converted file and empties its analysis: the
+  // waveform, the decoder lead and the grids read for the old file no longer belong to it.
+  it('re-reads what the cue editor draws from the track’s file and analysis when a queue lands', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    for (const key of [
+      'rekordbox-cue-wave-detail',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
   it('re-reads the rekordbox collection when a queue lands, so a track it just added shows in the editor', () => {
     const { invalidate, applied } = setup()
     act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
