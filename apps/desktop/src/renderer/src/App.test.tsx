@@ -11762,6 +11762,33 @@ describe('App metadata undo', () => {
     takeShortcutUndo()
   })
 
+  // The trim summary is an undo notice too. Pushed after Reviewed it is what the DJ just did,
+  // so ⌘Z must no longer reach the older Reviewed underneath.
+  it('lets a newer trim notice take ⌘Z from an older Reviewed', async () => {
+    const peaks = Array.from({ length: 200 }, (_, i) => (i >= 20 && i < 180 ? 0.3 : 0.0005))
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+      waveform: vi.fn().mockResolvedValue({ peaks, rms: peaks, durationSec: 100 }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    const option = document.getElementById('palette-option-trim-detected')
+    expect(option).not.toBeNull()
+    if (option) fireEvent.click(option)
+    expect(await screen.findByText(i18n.t('notices.trimApplied', { count: 1 }))).toBeInTheDocument()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
   it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),

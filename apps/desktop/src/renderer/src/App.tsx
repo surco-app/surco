@@ -3142,6 +3142,8 @@ export default function App(): React.JSX.Element {
       setNotice(tr('notices.trimApplied', { count: 0 }))
       return
     }
+    // An undo notice like reportUndo's, so it too takes ⌘Z from an older Reviewed.
+    takeShortcutUndo()
     pushToast(store, {
       tone: 'neutral',
       message: tr('notices.trimApplied', { count: cut.length }),
