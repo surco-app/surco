@@ -102,7 +102,8 @@ export function createReplacedStore(file: string): ReplacedStore {
     review: (path, programs) => {
       const p = nfc(path)
       return mutate((all) => {
-        const found = all.find((e) => e.newPath === p || e.oldPath === p)
+        // A file can be one track's new copy and another's old one: it is the first's.
+        const found = all.find((e) => e.newPath === p) ?? all.find((e) => e.oldPath === p)
         if (!found) return { entries: all, out: null }
         const pending = programs ? found.pending.filter((x) => !programs.includes(x)) : []
         return {

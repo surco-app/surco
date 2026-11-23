@@ -14,9 +14,10 @@ export function replacedEntryOf(
   program: DjProgram,
 ): ReplacedEntry | undefined {
   const p = nfc(path)
-  return replaced.find(
-    (entry) =>
-      pendingHere(entry, program) && (nfc(entry.newPath) === p || nfc(entry.oldPath) === p),
+  const here = replaced.filter((entry) => pendingHere(entry, program))
+  // A file can be one track's new copy and another's old one: it is the first's.
+  return (
+    here.find((entry) => nfc(entry.newPath) === p) ?? here.find((entry) => nfc(entry.oldPath) === p)
   )
 }
 
@@ -43,10 +44,14 @@ export function toReviewEntriesFor(
   program: DjProgram,
 ): SourcePlaylistEntry[] {
   const byPath = reviewableByPath(all)
+  const here = replaced
+    .filter((entry) => pendingHere(entry, program))
+    .map((entry) => ({ entry, now: nfc(entry.newPath), old: nfc(entry.oldPath) }))
+  // A file that is one track's new copy and another's old one is listed for the first only.
+  const newCopies = new Set(here.map(({ now }) => now))
   const listed: { row: SourcePlaylistEntry; entry: ReplacedEntry }[] = []
-  for (const entry of replaced) {
-    if (!pendingHere(entry, program)) continue
-    const row = byPath.get(nfc(entry.newPath)) ?? byPath.get(nfc(entry.oldPath))
+  for (const { entry, now, old } of here) {
+    const row = byPath.get(now) ?? (newCopies.has(old) ? undefined : byPath.get(old))
     if (row) listed.push({ row, entry })
   }
   const unmoved = (entry: ReplacedEntry) => ('unmoved' in entry.shift ? 0 : 1)

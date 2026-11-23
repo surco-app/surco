@@ -111,6 +111,18 @@ describe('toReviewEntriesFor', () => {
     }
   })
 
+  it("lists a file once when it is one track's new copy and another's old one", () => {
+    const list = toReviewEntriesFor(
+      [row('/m/c.flac')],
+      [
+        replaced('/m/b.flac', { oldPath: '/m/c.flac' }),
+        replaced('/m/c.flac', { oldPath: '/m/a.mp3' }),
+      ],
+      'rekordbox',
+    )
+    expect(list.map((r) => r.path)).toEqual(['/m/c.flac'])
+  })
+
   it('never lists separators', () => {
     const rows = [{ ...row('/m/a.flac'), separator: true }, row(null)]
     expect(toReviewEntriesFor(rows, [replaced('/m/a.flac')], 'rekordbox')).toEqual([])
@@ -123,6 +135,14 @@ describe('replacedEntryOf', () => {
     expect(replacedEntryOf([entry], '/m/a.flac', 'traktor')).toBe(entry)
     expect(replacedEntryOf([entry], '/m/a.flac.old', 'traktor')).toBe(entry)
     expect(replacedEntryOf([entry], '/m/a.flac', 'rekordbox' as DjProgram)).toBeUndefined()
+  })
+
+  // The editor's pill and Reviewed belong to the track that now lives in the file, not to
+  // one whose old copy happened to sit at the same path.
+  it('prefers the track whose new copy is at the path over one that only used to be there', () => {
+    const before = replaced('/m/b.flac', { oldPath: '/m/c.flac' })
+    const now = replaced('/m/c.flac', { oldPath: '/m/a.mp3' })
+    expect(replacedEntryOf([before, now], '/m/c.flac', 'rekordbox')).toBe(now)
   })
 })
 

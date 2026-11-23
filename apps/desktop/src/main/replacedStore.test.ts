@@ -42,6 +42,16 @@ describe('createReplacedStore', () => {
     expect(store.list()[0].pending).toEqual(['rekordbox'])
   })
 
+  // A file can be one track's new copy and another's old one (a later conversion moved it
+  // there). Saving cues on that file is a review of the track that now lives in it.
+  it('closes the track whose new copy is at the path before one that only used to be there', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ newPath: '/m/b.flac', oldPath: '/m/c.flac' }))
+    store.add(entry({ newPath: '/m/c.flac', oldPath: '/m/a.mp3' }))
+    expect(store.review('/m/c.flac')?.newPath).toBe('/m/c.flac')
+    expect(store.list().map((e) => e.newPath)).toEqual(['/m/b.flac'])
+  })
+
   it('drops the entry once no program is left to review', async () => {
     const store = createReplacedStore(await fileIn())
     store.add(entry())
