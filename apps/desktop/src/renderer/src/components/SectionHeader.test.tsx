@@ -28,8 +28,7 @@ describe('SectionHeader folded summary', () => {
         summaryMuted
       />,
     )
-    const muted = screen.getByTestId('s').className
-    expect(muted).toContain('text-fg-faint')
+    expect(screen.getByTestId('s')).toHaveAttribute('data-muted', 'true')
 
     rerender(
       <SectionHeader
@@ -40,8 +39,7 @@ describe('SectionHeader folded summary', () => {
         summaryTestId="s"
       />,
     )
-    const live = screen.getByTestId('s').className
-    expect(live).not.toContain('text-fg-faint')
+    expect(screen.getByTestId('s')).not.toHaveAttribute('data-muted')
   })
 
   it('shows no summary while the section is open', () => {
@@ -94,13 +92,13 @@ describe('SectionHeader folded row', () => {
       statusAction: <span data-testid="state">a long flow name</span>,
     })
     const lead = screen.getByTestId('section-header-lead')
-    expect(lead.className).toContain('flex-wrap')
+    expect(lead).toHaveAttribute('data-wrap', 'true')
     expect(lead).toContainElement(screen.getByRole('heading', { level: 3 }))
     expect(lead).toContainElement(screen.getByTestId('state'))
     expect(lead).not.toContainElement(screen.getByTestId('section-maximize'))
     expect(lead).not.toContainElement(screen.getByTestId('section-help'))
     const row = lead.parentElement as HTMLElement
-    expect(row.className).not.toContain('flex-wrap')
+    expect(row).not.toHaveAttribute('data-wrap')
     expect(row).toContainElement(screen.getByTestId('section-maximize'))
   })
 
@@ -260,7 +258,7 @@ describe('SectionHeader title that does not fit', () => {
       vi.useFakeTimers()
       cutTitle(cut)
       render(<SectionHeader title="12 Tracks werden bearbeitet" open onToggle={() => {}} />)
-      expect(screen.getByTestId('section-title').className).toContain('truncate')
+      expect(screen.getByTestId('section-title')).toHaveAttribute('data-truncate', 'true')
       hoverTitle()
       if (tip) expect(screen.getByRole('tooltip')).toHaveTextContent('12 Tracks werden bearbeitet')
       else expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
