@@ -241,12 +241,7 @@ import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
 import { registerReplacedIpc } from './replacedIpc'
-import {
-  createReplacedStore,
-  followingPrograms,
-  followReplaced,
-  recordReplacement,
-} from './replacedStore'
+import { createReplacedStore, followingPrograms, keepReplacedForReview } from './replacedStore'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
@@ -2349,8 +2344,14 @@ function registerIpc(): void {
             }),
     }).then((result) => {
       followConversion(matchingStore, job, result, existsSync)
-      followReplaced(replacedStore, job, result, existsSync)
-      recordReplacement(replacedStore, job, result, followingPrograms(getSettings()), Date.now())
+      keepReplacedForReview(
+        replacedStore,
+        job,
+        result,
+        followingPrograms(getSettings()),
+        Date.now(),
+        existsSync,
+      )
       return result
     }),
   )

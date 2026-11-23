@@ -194,3 +194,26 @@ export function followReplaced(
   if (job.inputPath !== result.outputPath && !exists(job.inputPath))
     store.movePath(job.inputPath, result.outputPath)
 }
+
+export function keepReplacedForReview(
+  store: ReplacedStore,
+  job: { inputPath: string; replacesPath?: string },
+  result: Parameters<typeof recordReplacement>[2],
+  programs: DjProgram[],
+  now: number,
+  exists: (path: string) => boolean,
+): void {
+  // The file has landed and the programs are repointed: a store that cannot be written
+  // (a full disk, a broken file that cannot be moved aside) is logged, never a failed job,
+  // and an older entry that cannot follow does not cost this job's own entry.
+  try {
+    followReplaced(store, job, result, exists)
+  } catch (e) {
+    log.error('replaced-tracks store: could not follow the converted file', e)
+  }
+  try {
+    recordReplacement(store, job, result, programs, now)
+  } catch (e) {
+    log.error('replaced-tracks store: could not record the replacement', e)
+  }
+}

@@ -9,6 +9,7 @@ import {
   createReplacedStore,
   followingPrograms,
   followReplaced,
+  keepReplacedForReview,
   recordReplacement,
 } from './replacedStore'
 
@@ -254,5 +255,56 @@ describe('followReplaced', () => {
       () => false,
     )
     expect(store.list()[0].newPath).toBe('/m/new.flac')
+  })
+})
+
+describe('keepReplacedForReview', () => {
+  const failing = (fails: 'movePath' | 'add') => {
+    const calls: string[] = []
+    const store = {
+      list: () => [entry()],
+      add: () => {
+        calls.push('add')
+        if (fails === 'add') throw new Error('disk full')
+      },
+      review: () => null,
+      restore: () => {},
+      movePath: () => {
+        calls.push('movePath')
+        if (fails === 'movePath') throw new Error('disk full')
+      },
+    }
+    return { store, calls }
+  }
+
+  // The file has landed and the programs are repointed by now: a store that cannot be
+  // written must never turn the finished job into a failed one.
+  it('keeps a finished job finished when the review store cannot be written', () => {
+    const { store } = failing('add')
+    expect(() =>
+      keepReplacedForReview(
+        store,
+        { inputPath: '/m/new.flac', replacesPath: '/m/old.mp3' },
+        { outputPath: '/m/new.aiff' },
+        ['rekordbox'],
+        1,
+        () => false,
+      ),
+    ).not.toThrow()
+    expect(log.error).toHaveBeenCalled()
+  })
+
+  // Failing to move an older entry is no reason to lose the one this job just made.
+  it('still records the replacement when following an older entry fails', () => {
+    const { store, calls } = failing('movePath')
+    keepReplacedForReview(
+      store,
+      { inputPath: '/m/new.flac', replacesPath: '/m/old.mp3' },
+      { outputPath: '/m/new.aiff' },
+      ['rekordbox'],
+      1,
+      () => false,
+    )
+    expect(calls).toEqual(['movePath', 'add'])
   })
 })
