@@ -72,9 +72,11 @@ export function useProgramCopies({
     () =>
       DJ_PROGRAMS.flatMap((program, i) => {
         const tracks = collections[i]
-        if (!active[i] || !tracks) return []
+        if (!enabled || !active[i] || !tracks) return []
         const { index, pathKeys } = lookupFor(tracks)
         if (pathKeys.has(thisKey)) return [{ program, path: inputPath, isThisFile: true }]
+        // Without the length as a last resort: a copy of another edit is still that title
+        // in that library, and its row says so (another version) instead of hiding it.
         const entry =
           findLibraryEntry(index, { title, artist }, durationSec) ??
           (suggestedTitle !== undefined && suggestedArtist !== undefined
@@ -83,11 +85,13 @@ export function useProgramCopies({
                 { title: suggestedTitle, artist: suggestedArtist },
                 durationSec,
               )
-            : null)
+            : null) ??
+          findLibraryEntry(index, { title, artist })
         if (!entry?.path) return []
         return [{ program, path: entry.path, isThisFile: pathKey(entry.path) === thisKey }]
       }),
     [
+      enabled,
       collections,
       active,
       title,

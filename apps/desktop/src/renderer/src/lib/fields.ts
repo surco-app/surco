@@ -11,13 +11,15 @@ import type {
 } from '../../../shared/types'
 
 // A field whose tag holds a bounded value gets a box sized to it: 'short' fits a year, a
-// BPM with a decimal, a Camelot key or a track number; 'medium' an ISRC or a Discogs id.
-// The rest are free text with no reliable limit and take the column's width.
-export type FieldWidth = 'short' | 'medium'
+// BPM with a decimal or a track number; 'word' a key spelled out as "C# minor"; 'medium' an
+// ISRC or a Discogs id. The rest are free text with no reliable limit and take the column's
+// width.
+export type FieldWidth = 'short' | 'word' | 'medium'
 
 interface FieldDef {
   key: MetaTextKey
   width?: FieldWidth
+  multiline?: true
 }
 
 export const FIELD_DEFS: FieldDef[] = [
@@ -33,9 +35,9 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'trackTotal', width: 'short' },
   { key: 'discNumber', width: 'short' },
   { key: 'discTotal', width: 'short' },
-  { key: 'comment' },
+  { key: 'comment', multiline: true },
   { key: 'bpm', width: 'short' },
-  { key: 'key', width: 'short' },
+  { key: 'key', width: 'word' },
   { key: 'remixArtist' },
   { key: 'mixName' },
   { key: 'composer' },

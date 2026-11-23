@@ -21,7 +21,7 @@ import type {
   MusicFileLookup,
   MusicFixProgress,
   MusicReviewEntry,
-  PairFacts,
+  PairProbe,
   ProcessProgress,
   ProgramCopies,
   RememberedAutoMatch,
@@ -268,6 +268,7 @@ const api: Api = {
   verifyMusicAdded: (trackId, persistentId) =>
     ipcRenderer.invoke('verify:musicAdded', trackId, persistentId),
   releasePlayingFile: (path) => ipcRenderer.invoke('player:release', path),
+  prewarmPlayback: (path) => ipcRenderer.send('player:prewarm', path),
   conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
   endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
@@ -348,7 +349,8 @@ const api: Api = {
     invokeAudio('audio:loudness', path, priority),
   fingerprint: (path: string, priority: 'high' | 'low' = 'low'): Promise<string | null> =>
     invokeAudio('audio:fingerprint', path, priority),
-  comparePair: (a: string, b: string): Promise<PairFacts | null> => invokeAudio('audio:pair', a, b),
+  comparePair: (a: string, b: string, version?: boolean): Promise<PairProbe | null> =>
+    invokeAudio('audio:pair', a, b, version),
   limiterGlimpse: (
     worse: string,
     better: string,
@@ -357,6 +359,7 @@ const api: Api = {
     invokeAudio('audio:limiterGlimpse', worse, better, sampleRate),
   properties: (path: string): Promise<TrackProperties | null> =>
     invokeAudio('audio:properties', path),
+  fileExists: (path: string): Promise<boolean> => invokeAudio('audio:fileExists', path),
   bpm: (path: string, priority: 'high' | 'low' = 'low'): Promise<BpmResult | null> =>
     invokeAudio('audio:bpm', path, priority),
   key: (path: string, priority: 'high' | 'low' = 'low'): Promise<KeyResult | null> =>

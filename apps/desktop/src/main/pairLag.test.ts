@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bestLag, correlationAt, lagCorrelations, PAIR_RATE } from './pcmLag'
+import { bestLag, correlationAt, lagCorrelations, PAIR_RATE } from './pairLag'
 
 function noise(seed: number, samples: number): Float32Array {
   let state = seed
@@ -11,7 +11,7 @@ function noise(seed: number, samples: number): Float32Array {
   return out
 }
 
-describe('pcmLag', () => {
+describe('pairLag', () => {
   const a = noise(1, 20 * PAIR_RATE)
 
   // The sign of every shift measured in the replaced-track review comes from here: positive

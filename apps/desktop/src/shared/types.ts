@@ -9,6 +9,7 @@ import type { DjProgram, LibraryProgram, UsbProgram, WritableProgram } from './d
 import type { EditorSectionPref } from './editorSections'
 import type { ErrorKey } from './errorKeys'
 import type { EditableGrid } from './gridEdit'
+import type { CommentMode } from './phraseCount'
 import type { SessionWizardSettings } from './sessionTypes'
 import type { Chord } from './shortcuts'
 import type { TrackOrigin } from './trackOrigin'
@@ -268,6 +269,8 @@ export interface Settings {
   sessionWizard: SessionWizardSettings
   sessionsMade: string[]
   matchingDismissed: string[]
+  commentsToFile: boolean
+  commentsReplace: boolean
   rekordboxPlaylistsFieldOffered: boolean
   traktorPlaylistsFieldOffered: boolean
   enginePlaylistsFieldOffered: boolean
@@ -1621,7 +1624,19 @@ export interface PairFacts {
   correlation: number
   residualDb: number
   gainDb: number
+  // Set only when the copies' lengths differ by more than VERSION_GAP_SEC (shared/copyVersion): the |correlation|
+  // at the best lag of a wider search, as far as the length gap plus a second either way and
+  // in either polarity, so a copy of one master with a trimmed or padded head is found again.
+  versionCorrelation?: number
 }
+
+// Two copies the ±1 s probe could not line up whose lengths differ by more than
+// VERSION_GAP_SEC: only the wider search has something to say about them.
+export interface UnalignedPair {
+  versionCorrelation: number
+}
+
+export type PairProbe = PairFacts | UnalignedPair
 
 // A short stretch of two copies of one master where the worse copy pins the most samples
 // to its ceiling, the better one lined up and scaled to the same loudness. Each side is
@@ -2027,6 +2042,7 @@ export interface SaveCommentRequest {
   path: string
   label: string
   count: string
+  mode: CommentMode
 }
 
 export type CopyReason =

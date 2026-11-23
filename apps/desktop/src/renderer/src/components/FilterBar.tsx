@@ -4,6 +4,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { foldText } from '../lib/normalizeText'
+import { formatCount } from '../lib/stats'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
@@ -89,6 +90,7 @@ export function FilterOption({
   selected: boolean
   onClick: () => void
 }): React.JSX.Element {
+  const { i18n } = useTranslation()
   return (
     <button
       type="button"
@@ -117,7 +119,7 @@ export function FilterOption({
       </span>
       <span className="flex-1">{label}</span>
       <span className="tabular-nums text-fg-dim group-data-[empty]:text-fg-faint">
-        {unknown ? '–' : count}
+        {unknown ? '–' : formatCount(count, i18n.language)}
       </span>
       <Check aria-hidden="true" className={`size-3 shrink-0 ${selected ? '' : 'invisible'}`} />
     </button>
@@ -486,7 +488,7 @@ export function FilterBar({
   selectedCount,
   onRevealSelected,
 }: Props): React.JSX.Element {
-  const { t: tr } = useTranslation()
+  const { t: tr, i18n } = useTranslation()
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
@@ -632,7 +634,7 @@ export function FilterBar({
           aria-label={tr('sidebar.selectedCount', { count: selectedCount })}
           className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-dim outline-none hover:text-fg"
         >
-          {selectedCount}
+          {formatCount(selectedCount, i18n.language)}
           <Tooltip label={tr('header.revealSelected')} />
         </button>
       ) : (
@@ -649,7 +651,7 @@ export function FilterBar({
             })}
             className="press relative ml-auto self-center rounded pr-0.5 pl-1 text-xs tabular-nums text-fg-faint outline-none hover:text-fg"
           >
-            {`${selectedPosition}/${visibleCount}`}
+            {`${formatCount(selectedPosition, i18n.language)}/${formatCount(visibleCount, i18n.language)}`}
             <Tooltip label={tr('header.revealSelected')} />
           </button>
         ) : (
@@ -657,7 +659,7 @@ export function FilterBar({
             data-testid={`${counterTestId}-position`}
             className="relative ml-auto self-center pr-0.5 pl-1 text-xs tabular-nums text-fg-faint"
           >
-            {`‒/${visibleCount}`}
+            {`‒/${formatCount(visibleCount, i18n.language)}`}
           </span>
         ))
       )}

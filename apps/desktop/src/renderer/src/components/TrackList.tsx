@@ -25,7 +25,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { keyIn } from '../../../shared/camelot'
+import { camelotOf, keyIn } from '../../../shared/camelot'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
@@ -820,7 +820,12 @@ const TrackRow = memo(function TrackRow({
                 artist a few letters. */}
               <span data-testid="track-title-line" className="flex h-[18px] items-center gap-2">
                 <span className="relative block min-w-0 flex-1 truncate">
-                  <span ref={titleFit.ref} data-testid="track-title" className={ROW_TITLE}>
+                  <span
+                    ref={titleFit.ref}
+                    data-testid="track-title"
+                    dir="auto"
+                    className={ROW_TITLE}
+                  >
                     <Tooltip label={rowTooltip(t, tr)} />
                     {titleFit.text === shown.title ? (
                       shown.title
@@ -844,6 +849,7 @@ const TrackRow = memo(function TrackRow({
                 <span className={ROW_DETAIL}>
                   <span
                     data-testid="track-artist"
+                    dir="auto"
                     className="relative block w-fit max-w-full truncate"
                   >
                     <Tooltip label={rowTooltip(t, tr)} />
@@ -993,8 +999,11 @@ const TrackRow = memo(function TrackRow({
                 {key && (
                   <span
                     data-testid="track-key"
-                    className={`max-w-[5.5rem] shrink-0 truncate rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
+                    className={`max-w-[3.5rem] shrink-0 truncate rounded px-[5px] text-fg-dim ring-1 ring-[var(--color-line-strong)] ring-inset ${PILL_TEXT}`}
                   >
+                    {camelotOf(t.meta.key) === null && (
+                      <Tooltip label={key} align="end" scope="dot" />
+                    )}
                     {key}
                   </span>
                 )}

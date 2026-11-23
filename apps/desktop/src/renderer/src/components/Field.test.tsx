@@ -639,7 +639,7 @@ describe('Field read-only', () => {
         value=""
         onChange={vi.fn()}
         placeholder="A · B · C"
-        placeholderListed
+        placeholderTooltip
         {...props}
       />,
     )
@@ -665,6 +665,174 @@ describe('Field read-only', () => {
     hoverBox('artist')
     act(() => vi.advanceTimersByTime(400))
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})
+
+describe('Field direction', () => {
+  it('lets an Arabic or Hebrew value run right to left, so a cut hides its end and not its start', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value="تسجيل حي من حفلة القاهرة 2026 (النسخة الكاملة)"
+        onChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('field-comment')).toHaveAttribute('dir', 'auto')
+  })
+})
+
+describe('Field medium box', () => {
+  it('is wide enough for a hyphenated ISRC such as GB-HSP-26-00001, the longest value it is sized for', () => {
+    render(
+      <Field name="isrc" label="ISRC" value="GB-HSP-26-00001" onChange={vi.fn()} width="medium" />,
+    )
+    expect(screen.getByTestId('field-isrc').parentElement?.className).toContain('w-40')
+  })
+})
+
+describe('Field cut value', () => {
+  const hover = (name: string): void => {
+    const box = screen.getByTestId(`field-${name}`).parentElement as HTMLElement
+    fireEvent.pointerEnter(box)
+    box.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10 }))
+  }
+  const cut = (name: string, scroll: number, client: number): void => {
+    const input = screen.getByTestId(`field-${name}`)
+    Object.defineProperty(input, 'scrollWidth', { configurable: true, value: scroll })
+    Object.defineProperty(input, 'clientWidth', { configurable: true, value: client })
+  }
+
+  it('shows the whole value on hover when the box had to cut it, so "Ab minor / G# minor" is never left as "Ab mi…"', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="key"
+        label="Key"
+        value="Ab minor / G# minor"
+        onChange={vi.fn()}
+        width="medium"
+      />,
+    )
+    cut('key', 180, 120)
+    hover('key')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Ab minor / G# minor')
+    vi.useRealTimers()
+  })
+
+  it('stays quiet over a value that fits, since repeating it adds nothing', () => {
+    vi.useFakeTimers()
+    render(<Field name="key" label="Key" value="8A" onChange={vi.fn()} width="medium" />)
+    cut('key', 40, 120)
+    hover('key')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})
+
+describe('Field with several lines', () => {
+  it('keeps the line breaks of a comment instead of gluing its lines together', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value={'Line one\nLine two'}
+        onChange={vi.fn()}
+        multiline
+      />,
+    )
+    const box = screen.getByTestId('field-comment') as HTMLTextAreaElement
+    expect(box.tagName).toBe('TEXTAREA')
+    expect(box.value).toBe('Line one\nLine two')
+  })
+
+  it('breaks the line with Return, as a multi-line box does on macOS, and leaves moving on to Tab', () => {
+    const onChange = vi.fn()
+    render(
+      <div>
+        <Field name="comment" label="Comment" value="" onChange={onChange} multiline />
+        <Field name="bpm" label="BPM" value="" onChange={vi.fn()} />
+      </div>,
+    )
+    const box = screen.getByTestId('field-comment')
+    box.focus()
+    fireEvent.change(box, { target: { value: 'Cue at 1:32' } })
+    expect(fireEvent.keyDown(box, { key: 'Enter' })).toBe(true)
+    expect(box).toHaveFocus()
+    fireEvent.blur(box)
+    expect(onChange).toHaveBeenCalledWith('Cue at 1:32')
+  })
+
+  it('is reached by Enter from the field before it', () => {
+    render(
+      <div>
+        <Field name="title" label="Title" value="" onChange={vi.fn()} />
+        <Field name="comment" label="Comment" value="" onChange={vi.fn()} multiline />
+      </div>,
+    )
+    const title = screen.getByTestId('field-title')
+    title.focus()
+    fireEvent.keyDown(title, { key: 'Enter' })
+    expect(screen.getByTestId('field-comment')).toHaveFocus()
+  })
+})
+
+describe('Field word box', () => {
+  it('fits a spelled-out key and still leaves room for BPM on the same row at the smallest window', () => {
+    render(<Field name="key" label="Key" value="C# minor" onChange={vi.fn()} width="word" />)
+    expect(screen.getByTestId('field-key').parentElement?.className).toContain('w-28')
+  })
+})
+
+describe('Field with several lines and its menu', () => {
+  it('pins the { } menu to the first line, so it does not float in the middle of a long note', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value={'Line one\nLine two\nLine three'}
+        onChange={vi.fn()}
+        multiline
+        insertSources={[{ key: 'title', label: 'Title', value: 'Song' }]}
+      />,
+    )
+    const trigger = screen.getByTestId('field-insert-comment')
+    expect(trigger).toHaveClass('top-1.5')
+    expect(trigger).not.toHaveClass('top-1/2')
+  })
+})
+
+describe('Field marked as mixed', () => {
+  it('says what the mark stands for on hover and to a screen reader on the values button', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="year"
+        label="Year"
+        value=""
+        onChange={vi.fn()}
+        width="short"
+        mixed
+        mixedValues={[
+          { value: '2001', count: 1 },
+          { value: '2002', count: 2 },
+        ]}
+        placeholder="≠"
+        placeholderHint="2002 · 2001"
+        placeholderTooltip
+      />,
+    )
+    expect(screen.getByTestId('field-year')).toHaveAttribute('placeholder', '≠')
+    expect(screen.getByTestId('field-values-year')).toHaveAccessibleName('Year: 2002 · 2001')
+    const box = screen.getByTestId('field-year').parentElement as HTMLElement
+    for (const type of ['pointerenter', 'pointermove']) {
+      box.dispatchEvent(new MouseEvent(type, { clientX: 10, clientY: 10 }))
+    }
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('2002 · 2001')
     vi.useRealTimers()
   })
 })

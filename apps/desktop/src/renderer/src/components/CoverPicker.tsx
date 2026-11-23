@@ -475,7 +475,7 @@ export function CoverPicker({
             className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl bg-[var(--color-field)] p-2 text-center text-xs outline outline-1 -outline-offset-1 transition-colors @[26rem]:h-32 @[26rem]:w-32 compact:@[26rem]:h-24 compact:@[26rem]:w-24 ${
               coverDragging
                 ? 'text-[var(--color-accent)] outline-[var(--color-accent)]'
-                : 'text-fg-faint outline-on-scrim/10 hover:text-fg-dim'
+                : 'text-fg-faint outline-[var(--color-line)] hover:text-fg-dim'
             }`}
           >
             {coversLabel && !coverDragging ? (

@@ -20,6 +20,15 @@ for (const [names, camelot, suffix] of [
 export function camelotOf(key: string | undefined): string | null {
   const text = (key ?? '').trim()
   if (text === '') return null
+  if (text.includes('/')) {
+    const halves = text.split('/').map(singleCamelot)
+    return halves.every((h) => h !== null && h === halves[0]) ? halves[0] : null
+  }
+  return singleCamelot(text)
+}
+
+function singleCamelot(key: string): string | null {
+  const text = key.trim()
   const direct = text.match(CAMELOT)
   if (direct) return `${direct[1]}${direct[2].toUpperCase()}`
   const worded = text.match(WORDED)

@@ -25,7 +25,7 @@ const props = {
   betterPath: '/downloads/memories.aif',
   sampleRate: 44100,
   layers: [
-    { side: 'better', label: 'This file · AIF' },
+    { side: 'better', label: 'The new one · AIF' },
     { side: 'worse', label: 'Apple Music · WAV' },
   ],
 } as const
@@ -51,7 +51,7 @@ describe('LimiterGlimpse', () => {
     renderWithQuery(<LimiterGlimpse {...props} />)
     const here = await screen.findByTestId('glimpse-toggle-better')
     const library = screen.getByTestId('glimpse-toggle-worse')
-    expect(here).toHaveTextContent('This file · AIF')
+    expect(here).toHaveTextContent('The new one · AIF')
     fireEvent.click(here)
     expect(here).toHaveAttribute('aria-pressed', 'false')
     expect(library).toHaveAttribute('aria-pressed', 'true')

@@ -72,6 +72,7 @@ import { createActiveConversions } from './activeConversions'
 import { activity } from './activity'
 import {
   analysisCacheStats,
+  carryAnalysis,
   clearAnalysisCache,
   configureFileSignatures,
   pruneAnalysisCache,
@@ -103,8 +104,10 @@ import { cachedBeatGrid, cachedGridAudit } from './beatGridCache'
 import { setBeatportSession } from './beatport'
 import { beatportSession, connectBeatport, disconnectBeatport } from './beatportCredentials'
 import { createBusyPaths } from './busyPaths'
+import { AUDIO_ONLY_NAMESPACES } from './carriedAnalysis'
 import { clipboardHasImage, readClipboardImage, writeClipboardImage } from './clipboardImage'
 import { createQuitIntent, handleGuardedClose } from './closeToQuit'
+import { writeCommentToFile } from './commentFileWrite'
 import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
@@ -195,6 +198,7 @@ import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMemoryWatch, processSamples } from './memoryWatch'
 import { createMoments } from './moments'
 import { isIssuedPair } from './musicDuplicates'
+import { rewriteTagFields } from './musicFieldWrite'
 import { musicReviewLog } from './musicReviewLog'
 import { isInternalNavigation, isWebUrl } from './navigation'
 import { beginNmlBatch, foldNmlBatch, redirectNmlPatch } from './nmlBatch'
@@ -1710,6 +1714,16 @@ function registerIpc(): void {
     beginMoment: moments.begin,
     flow: () => activeCueFlow(getSettings()),
     provisional: provisionalCues,
+    writeCommentToFile: (path, count, mode) =>
+      writeCommentToFile(path, count, mode, {
+        allowed: (p) => mediaAccess.isAllowed(p),
+        idle: (p) => seratoWriting.idle(p),
+        readComment: (p) => runInWorker<string>({ type: 'heldComment', file: p }),
+        mtime: async (p) => (await stat(p)).mtimeMs,
+        rewrite: (p, changes) => rewriteTagFields(p, changes, tmpManifest, followLibrarySize),
+        carry: (p, from, to) => carryAnalysis(p, from, to, AUDIO_ONLY_NAMESPACES),
+        noteWritten: (p) => fileSignatures.changed(p),
+      }),
     twins: (file) =>
       libraryTracksOf(
         file,
@@ -2038,6 +2052,10 @@ function registerIpc(): void {
   // asks Chromium to cancel, which reaches main asynchronously — the race the user
   // reported as "it updates on the third or fourth try".
   ipcMain.handle('player:release', (_e, path: string) => releaseMediaFile(path))
+  // The same allowlist the surco:// handler applies: only a path the app handed out warms.
+  ipcMain.on('player:prewarm', (_e, path: string) => {
+    if (mediaAccess.isAllowed(path)) void resolvePlayable(path).catch(() => {})
+  })
 
   ipcMain.handle('process:track', (e, job: ProcessJob) =>
     runProcessTrack(job, {

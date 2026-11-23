@@ -1084,14 +1084,14 @@ describe('DiscogsPanel once a match is applied', () => {
     tracklist: [{ position: '1', title: 'Cara A' }],
   }
 
-  function renderApplied(applied: boolean) {
-    return render(appliedPanel(applied))
+  function renderApplied(applied: boolean, found = results) {
+    return render(appliedPanel(applied, found))
   }
 
-  function appliedPanel(applied: boolean) {
+  function appliedPanel(applied: boolean, found = results) {
     return (
       <DiscogsPanel
-        browser={browser({ results, openKey: 'discogs:2', release: dos })}
+        browser={browser({ results: found, openKey: 'discogs:2', release: dos })}
         matchedTrack={undefined}
         matchTier={undefined}
         appliedTrack={applied ? dos.tracklist[0] : undefined}
@@ -1120,6 +1120,14 @@ describe('DiscogsPanel once a match is applied', () => {
     expect(cards).toHaveLength(1)
     expect(cards[0]).toHaveTextContent('Dos')
     expect(screen.getByTestId('discogs-show-rest')).toHaveTextContent('Show 3 more results')
+  })
+
+  // A search that found only the applied release has nothing waiting behind it: a button
+  // promising "0 more results" opens onto nothing.
+  it('offers no button when the applied release was the only result', () => {
+    renderApplied(true, [results[1]])
+    expect(screen.getAllByTestId('result-card')).toHaveLength(1)
+    expect(screen.queryByTestId('discogs-show-rest')).toBeNull()
   })
 
   it('shows every result once the button is pressed', () => {

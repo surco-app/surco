@@ -1,8 +1,6 @@
-import { cachedAnalysis } from './analysisCache'
+import { CUE_WAVE_WORDS_NAMESPACE, cachedAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import { measureCueWaveWords } from './ffmpeg'
-
-export const CUE_WAVE_WORDS_NAMESPACE = 'cue-wave-words-v1'
 
 export async function cachedCueWaveWords(file: string): Promise<Uint16Array | null> {
   const words = await cachedAnalysis(CUE_WAVE_WORDS_NAMESPACE, file, async () => {

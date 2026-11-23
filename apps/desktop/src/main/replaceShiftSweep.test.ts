@@ -20,7 +20,7 @@ import { forcedInputArgs } from '../shared/inputFormat'
 import type { AppleMusicLookupCandidate } from '../shared/types'
 import { ffmpegPath } from './binaries'
 import { probeDuration, readTags } from './ffmpeg'
-import { lagCorrelations, PAIR_RATE } from './pcmLag'
+import { lagCorrelations, PAIR_RATE } from './pairLag'
 import { openRekordboxDb } from './rekordboxDb'
 import { readRekordboxCollection } from './rekordboxPlaylists'
 

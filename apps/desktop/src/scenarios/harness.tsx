@@ -870,7 +870,9 @@ function wiredCues(): CuesApi {
     queued: async () => null,
     undo: async () => {},
     save: async () => {},
-    saveComments: async () => {},
+    saveComments: async () => ({ failed: [], unwritten: [] }),
+    cancelComments: async () => {},
+    onCommentProgress: () => () => {},
   }
 }
 
@@ -910,6 +912,7 @@ function scenarioApi(
     dj: wiredDj(),
     cues: wiredCues(),
     rowWaves: async () => ({}),
+    prewarmPlayback: () => {},
     rekordboxCountCompletable: async () => 0,
     cueProfile: async () => ({
       profile: null,
@@ -1028,6 +1031,9 @@ function scenarioApi(
     // Only the log line saying why an old file was kept; there is no main log to write to.
     logInfo: () => {},
     properties: (path) => invokeMain('audio:properties', path),
+    readTags: (path) => invokeMain('audio:tags', path),
+    readCoverFull: (path) => invokeMain('audio:coverFull', path),
+    fileExists: (path) => invokeMain('audio:fileExists', path),
     ...(drivesMusic(options) && {
       appleMusicEntryLocation: (pid) => invokeMain('applemusic:entryLocation', pid),
       appleMusicEntryMeta: (path, pids) => invokeMain('applemusic:entryMeta', path, pids),
@@ -1428,6 +1434,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
           librarySource: librarySourceOf(settings, process.platform === 'darwin'),
           suggestedMeta: undefined,
           onChange,
+          describesCopy: true,
         })
         const target = verdict.replaceTarget
         useAppleMusicFill({

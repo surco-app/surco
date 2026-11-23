@@ -4,7 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createQueryClient } from '../lib/queryClient'
-import { useCopyFacts, usePairFacts } from './useCopyFacts'
+import { pairOptions, useCopyFacts, usePairFacts } from './useCopyFacts'
 
 const loudness = {
   integratedLufs: -12.2,
@@ -202,6 +202,15 @@ describe('usePairFacts', () => {
       expect(result.current[1]).toEqual({ correlation: 0.99, residualDb: -20, gainDb: -2 }),
     )
     expect(comparePair).toHaveBeenCalledTimes(1)
+    expect(comparePair).toHaveBeenCalledWith('/a', '/b', true)
+  })
+
+  // The wider search for another version costs main-process time; only the library copy row,
+  // which names another version, asks for it. Duplicate groups and triage never pay for it.
+  it('leaves the wider search out of the pairs duplicate groups and triage read', async () => {
+    const comparePair = vi.fn().mockResolvedValue(null)
+    setApi({ comparePair })
+    await createQueryClient().fetchQuery(pairOptions('/b', '/a'))
     expect(comparePair).toHaveBeenCalledWith('/a', '/b')
   })
 

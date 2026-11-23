@@ -1,3 +1,4 @@
+import { access } from 'node:fs/promises'
 import { basename } from 'node:path'
 import type { IpcMainInvokeEvent } from 'electron'
 import { ipcMain } from 'electron'
@@ -15,11 +16,17 @@ import type {
 } from '../shared/types'
 import { activity } from './activity'
 import {
+  AUTO_MATCH_NAMESPACE,
+  BPM_NAMESPACE,
+  CHANNELSCAN_NAMESPACE,
+  CLICKS_NAMESPACE,
   cachedAnalysis,
   FINGERPRINT_NAMESPACE,
+  KEY_NAMESPACE,
   LOUDNESS_NAMESPACE,
   peekAnalysis,
   peekVerdict,
+  SPECTROGRAM_NAMESPACE,
   storeAnalysis,
   WAVEFORM_NAMESPACE,
 } from './analysisCache'
@@ -90,12 +97,7 @@ function cancellable<T>(
 // and the audio:cached-batch handler so the two can never drift onto different keys for
 // the same family — a batch peek under a stale namespace would silently show as a
 // permanent miss instead of the warm hit the live handler already wrote.
-const SPECTROGRAM_NAMESPACE = 'spectrogram-mono-v31'
-const CLICKS_NAMESPACE = 'clickcount-v2'
 const PROPERTIES_NAMESPACE = 'properties-v2'
-const BPM_NAMESPACE = 'bpm'
-const KEY_NAMESPACE = 'key'
-const CHANNELSCAN_NAMESPACE = 'channelscan-v1'
 
 // An .m4a is graded by the codec it holds (AAC or ALAC), which entries cached before the
 // analysis kept it lack. Its own key measures only those files again; every other format
@@ -105,9 +107,6 @@ function spectrogramNamespace(inputPath: string): string {
     ? `${SPECTROGRAM_NAMESPACE}-codec`
     : SPECTROGRAM_NAMESPACE
 }
-
-// Bumped when what a verdict means changes, so verdicts reached before are probed again.
-const AUTO_MATCH_NAMESPACE = 'automatch-v1'
 
 const META_CACHED_READS_AT_ONCE = 8
 
@@ -402,10 +401,10 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
   )
 
   // Not cached on disk: pairs are few, and the answer changes when either file does.
-  handleAudio('audio:pair', async (_e, a: string, b: string) => {
+  handleAudio('audio:pair', async (_e, a: string, b: string, version?: boolean) => {
     try {
       return await cancellable(a, 'low', (signal) =>
-        analysisLimiter.run(() => comparePair(a, b, signal), 'low', signal),
+        analysisLimiter.run(() => comparePair(a, b, version === true, signal), 'low', signal),
       )
     } catch (err) {
       if (!isAbortError(err)) log.error('audio:pair failed', err)
@@ -452,6 +451,13 @@ export function registerAudioIpc(allowMedia: (path: string) => void): void {
       return null
     }
   })
+
+  handleAudio('audio:fileExists', (_e, path: string) =>
+    access(path).then(
+      () => true,
+      () => false,
+    ),
+  )
 
   handleAudio('audio:bpm', async (_e, inputPath: string, priority: 'high' | 'low' = 'low') => {
     try {

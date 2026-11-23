@@ -12,13 +12,20 @@ import { prependFlacId3 } from './flacFinderCover'
 import { readGenreFrame, setGenreFrame } from './genreFrame'
 import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
+import { versionMatch } from './pairLag'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
 import { type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
 import { carrySeratoCues, type SeratoCarryOutcome, setSeratoMarkers } from './seratoTags'
-import { type FieldWrite, setTagFields, type TagFieldChange, tagFieldsHeld } from './tagFieldSet'
+import {
+  type FieldWrite,
+  heldComment,
+  setTagFields,
+  type TagFieldChange,
+  tagFieldsHeld,
+} from './tagFieldSet'
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
@@ -61,6 +68,7 @@ export type WorkerJob =
       withFit: boolean
     }
   | { type: 'key'; pcm: Float32Array; sampleRate: number }
+  | { type: 'versionMatch'; a: Float32Array; b: Float32Array; reachSec: number }
   | { type: 'shelf'; pcm: Float32Array; sampleRate: number }
   // The click detector's second-difference scan over the whole native-rate side (~21M
   // samples): one O(n) pass, but big enough to jank the surco:// audition it fires during,
@@ -148,6 +156,7 @@ export type WorkerJob =
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
+  | { type: 'heldComment'; file: string }
   | { type: 'tagLibRead'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
@@ -158,6 +167,7 @@ export type WorkerJob =
 
 export type WorkerJobResult =
   | Record<string, TrackCues | null>
+  | number
   | Map<string, number>
   | BpmResult
   | BeatGridFit
@@ -167,6 +177,7 @@ export type WorkerJobResult =
   | string[]
   | FieldWrite[]
   | boolean[]
+  | string
   | { peaks: number[]; rms: number[] }
   | FullScan
   | Uint16Array
@@ -231,6 +242,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return detectBpm(job.pcm, job.sampleRate)
     case 'key':
       return detectKey(job.pcm, job.sampleRate)
+    case 'versionMatch':
+      return versionMatch(job.a, job.b, job.reachSec)
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'replaceShift':
@@ -279,6 +292,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return setGenreFrame(job.file, job.changes)
     case 'tagFieldsHeld':
       return tagFieldsHeld(job.file, job.changes)
+    case 'heldComment':
+      return heldComment(job.file)
     case 'tagLibRead':
       return readTagLibFields(job.file)
     case 'tagSnapshot':

@@ -72,6 +72,8 @@ export const testSettings: Settings = {
   sessionWizard: { ...DEFAULT_SESSION_WIZARD },
   sessionsMade: [],
   matchingDismissed: [],
+  commentsToFile: true,
+  commentsReplace: false,
   rekordboxPlaylistsFieldOffered: false,
   traktorPlaylistsFieldOffered: false,
   enginePlaylistsFieldOffered: false,
@@ -288,7 +290,9 @@ const NO_CUES: CuesApi = {
   queued: async () => null,
   undo: async () => {},
   save: async () => {},
-  saveComments: async () => {},
+  saveComments: async () => ({ failed: [], unwritten: [] }),
+  cancelComments: async () => {},
+  onCommentProgress: () => () => {},
 }
 
 export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
@@ -419,6 +423,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     retryVerification: async () => 'rechecked',
     verifyMusicAdded: async () => {},
     releasePlayingFile: async () => {},
+    prewarmPlayback: noop,
     conversionPrograms: vi.fn(async (_paths: string[]): Promise<CueProgram[]> => []),
     beginConversionBatch: noop,
     endConversionBatch: noop,
@@ -480,6 +485,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     comparePair: async () => null,
     limiterGlimpse: async () => null,
     properties: async () => null,
+    fileExists: async () => true,
     bpm: async () => null,
     key: async () => null,
     waveform: async () => null,

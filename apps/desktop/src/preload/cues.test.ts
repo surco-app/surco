@@ -33,17 +33,30 @@ describe('createCuesApi', () => {
     ['queued', 'cues:queued', ['engine:4']],
     ['undo', 'cues:undo', ['engine:4']],
     ['save', 'cues:save', [REQUESTS]],
-    ['saveComments', 'cues:saveComments', [COMMENTS]],
+    ['saveComments', 'cues:saveComments', [COMMENTS, true]],
+    ['cancelComments', 'cues:cancelComments', []],
   ] as const)(
     'invokes its own channel with the same arguments for %s',
     async (op, channel, args) => {
-      const ipc = { invoke: vi.fn(async () => undefined) }
+      const ipc = { invoke: vi.fn(async () => undefined), on: vi.fn(), removeListener: vi.fn() }
       const api = createCuesApi(ipc)
       const call = api[op] as (...a: unknown[]) => Promise<unknown>
       await call(...args)
       expect(ipc.invoke).toHaveBeenCalledWith(channel, ...args)
     },
   )
+
+  it('onCommentProgress relays each progress event and stops on unsubscribe', () => {
+    const ipc = { invoke: vi.fn(), on: vi.fn(), removeListener: vi.fn() }
+    const seen = vi.fn()
+    const stop = createCuesApi(ipc).onCommentProgress(seen)
+    expect(ipc.on).toHaveBeenCalledWith('cues:commentProgress', expect.any(Function))
+    const listener = ipc.on.mock.calls[0][1] as (e: unknown, p: unknown) => void
+    listener({}, { done: 1, total: 3 })
+    expect(seen).toHaveBeenCalledWith({ done: 1, total: 3 })
+    stop()
+    expect(ipc.removeListener).toHaveBeenCalledWith('cues:commentProgress', listener)
+  })
 })
 
 describe('the preload bridge', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PAIR_RATE } from './pcmLag'
+import { PAIR_RATE } from './pairLag'
 import {
   REPLACE_HEAD_AT_SECONDS,
   REPLACE_REACH_SECONDS,

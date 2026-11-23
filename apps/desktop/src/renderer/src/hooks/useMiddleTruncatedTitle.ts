@@ -27,7 +27,7 @@ export function useMiddleTruncatedTitle(title: string): {
 } {
   const ref = useRef<HTMLSpanElement>(null)
   const [box, setBox] = useState<Box | null>(null)
-  const versioned = title.endsWith(')')
+  const versioned = title.endsWith(')') || title.endsWith(']')
   useLayoutEffect(() => {
     const el = ref.current
     const slot = el?.parentElement

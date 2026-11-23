@@ -3,7 +3,7 @@ import type {
   KeyResult,
   LimiterGlimpse,
   LoudnessResult,
-  PairFacts,
+  PairProbe,
   RememberedAutoMatch,
   ScanVerdict,
   SpectrumResult,
@@ -68,8 +68,8 @@ export interface AudioAnalysisIpc {
     result: string | null
   }
   'audio:pair': {
-    args: [a: string, b: string]
-    result: PairFacts | null
+    args: [a: string, b: string, version?: boolean]
+    result: PairProbe | null
   }
   'audio:limiterGlimpse': {
     args: [worse: string, better: string, sampleRate: number]
@@ -82,6 +82,10 @@ export interface AudioAnalysisIpc {
   'audio:properties': {
     args: [inputPath: string]
     result: TrackProperties | null
+  }
+  'audio:fileExists': {
+    args: [path: string]
+    result: boolean
   }
   'audio:bpm': {
     args: [inputPath: string, priority?: 'high' | 'low']

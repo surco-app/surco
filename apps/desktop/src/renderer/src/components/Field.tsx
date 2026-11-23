@@ -20,9 +20,13 @@ import { Tooltip } from './Tooltip'
 // the field instant and runs that walk once per edit instead of once per keypress.
 const COMMIT_DEBOUNCE_MS = 200
 
-// Sized for the longest value each tag holds: "128.5" or "10A" in a short box, a hyphenated
-// ISRC in a medium one.
-const WIDTH_CLASS: Record<FieldWidth, string> = { short: 'w-[4.5rem]', medium: 'w-36' }
+// Sized for the longest value each tag holds: "128.5" in a short box, "C# minor" in a word
+// one, a hyphenated ISRC in a medium one.
+const WIDTH_CLASS: Record<FieldWidth, string> = {
+  short: 'w-[4.5rem]',
+  word: 'w-28',
+  medium: 'w-40',
+}
 
 interface FieldProps {
   name: string
@@ -30,6 +34,7 @@ interface FieldProps {
   value: string
   onChange: (v: string) => void
   width?: FieldWidth
+  multiline?: boolean
   // Joined onto a row after another bounded field: the label sits beside the box instead of
   // in the form's label column.
   inline?: boolean
@@ -43,7 +48,8 @@ interface FieldProps {
   mixed?: boolean
   mixedValues?: { value: string; count: number }[]
   placeholder?: string
-  placeholderListed?: boolean
+  placeholderTooltip?: boolean
+  placeholderHint?: string
   suggestions?: string[]
   tagList?: TagList
   // An audio-derived suggestion (BPM/Key) is still being detected — show a placeholder
@@ -72,6 +78,7 @@ export const Field = memo(function Field({
   value,
   onChange,
   width,
+  multiline,
   inline,
   trailing,
   required,
@@ -79,7 +86,8 @@ export const Field = memo(function Field({
   mixed,
   mixedValues,
   placeholder,
-  placeholderListed,
+  placeholderTooltip,
+  placeholderHint,
   suggestions,
   tagList,
   suggesting,
@@ -93,7 +101,7 @@ export const Field = memo(function Field({
   readOnlyNote,
   plain,
 }: FieldProps): React.JSX.Element {
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   const { t: tr } = useTranslation()
   const inputId = useId()
   const requiredNoteId = useId()
@@ -107,6 +115,7 @@ export const Field = memo(function Field({
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
   const [valuesOpen, setValuesOpen] = useState(false)
+  const [valueCut, setValueCut] = useState(false)
   const valuesRef = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (!valuesOpen) return
@@ -151,9 +160,10 @@ export const Field = memo(function Field({
   // same set Tab steps through; the last field just commits with nowhere to advance. Any
   // modifier (⌘/Ctrl/Alt/Shift, and the IME composition Enter) is left alone so it can't
   // steal ⌘⏎ (convert) or an insert-menu selection.
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>): void {
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): void {
     if (
       e.key !== 'Enter' ||
+      multiline ||
       e.metaKey ||
       e.ctrlKey ||
       e.altKey ||
@@ -164,7 +174,9 @@ export const Field = memo(function Field({
     e.preventDefault()
     if (dirty.current) commit(draft)
     const fields = Array.from(
-      document.querySelectorAll<HTMLElement>('input[data-testid^="field-"]'),
+      document.querySelectorAll<HTMLElement>(
+        'input[data-testid^="field-"], textarea[data-testid^="field-"]',
+      ),
     )
     const next = fields[fields.indexOf(e.currentTarget) + 1]
     next?.focus()
@@ -215,52 +227,66 @@ export const Field = memo(function Field({
       )}
     </label>
   )
+  const boxProps = {
+    ref: inputRef,
+    id: inputId,
+    'data-testid': `field-${name}`,
+    // Empty-but-required is not a wrong entry, so it isn't aria-invalid: the field
+    // says it is required and, while empty, describes why the dot is there.
+    'aria-required': required || undefined,
+    'aria-describedby': describedBy,
+    value: draft,
+    dir: 'auto',
+    readOnly,
+    placeholder,
+    'data-plain': plain || undefined,
+    onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      onType(e.target.value),
+    onKeyDown,
+    onBlur: () => {
+      if (dirty.current) commit(draft)
+    },
+  }
+  // An empty field should recede, not punch a dark hole in the panel: the fill
+  // sits a hair above the panel (not the heavy near-black --color-field), the
+  // border defines the input, and focus brings the accent ring + surface up.
+  // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
+  // that dominated the form; now they wait quietly until you engage one.
+  const boxClass = `w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none compact:py-1 placeholder:text-fg-faint ${
+    plain
+      ? 'border-transparent bg-transparent focus:border-[var(--color-accent)]'
+      : `${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]`
+  } ${formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''}`
   const control = (
     <>
       <span
         ref={valuesRef}
         className={`relative block ${width ? WIDTH_CLASS[width] : 'beside:col-start-2'}`}
+        onPointerEnter={() => {
+          const input = inputRef.current
+          setValueCut(!!input && input.scrollWidth > input.clientWidth)
+        }}
       >
-        <input
-          ref={inputRef}
-          id={inputId}
-          data-testid={`field-${name}`}
-          // Empty-but-required is not a wrong entry, so it isn't aria-invalid: the field
-          // says it is required and, while empty, describes why the dot is there.
-          aria-required={required || undefined}
-          aria-describedby={describedBy}
-          value={draft}
-          readOnly={readOnly}
-          placeholder={placeholder}
-          data-plain={plain || undefined}
-          onChange={(e) => onType(e.target.value)}
-          onKeyDown={onKeyDown}
-          onBlur={() => {
-            if (dirty.current) commit(draft)
-          }}
-          // An empty field should recede, not punch a dark hole in the panel: the fill
-          // sits a hair above the panel (not the heavy near-black --color-field), the
-          // border defines the input, and focus brings the accent ring + surface up.
-          // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
-          // that dominated the form; now they wait quietly until you engage one.
-          className={`w-full truncate rounded-lg border px-2.5 py-1.5 text-sm outline-none compact:py-1 placeholder:text-fg-faint ${
-            plain
-              ? 'border-transparent bg-transparent focus:border-[var(--color-accent)]'
-              : `${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]`
-          } ${
-            formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''
-          }`}
-        />
-        {/* The placeholder is cut with an ellipsis in a narrow form; the tooltip keeps it whole. */}
-        {(mixed || plain) && placeholderListed && placeholder && (
-          <Tooltip label={placeholder} hoverOnly />
+        {multiline ? (
+          <textarea
+            rows={1}
+            {...boxProps}
+            className={`max-h-40 resize-none field-sizing-content ${boxClass}`}
+          />
+        ) : (
+          <input {...boxProps} className={`truncate ${boxClass}`} />
         )}
+        {/* The placeholder is cut with an ellipsis in a narrow form; the tooltip keeps it whole. */}
+        {(mixed || plain) && placeholderTooltip && placeholder && (
+          <Tooltip label={placeholderHint ?? placeholder} hoverOnly />
+        )}
+        {draft !== '' && <Tooltip label={valueCut ? draft : ''} hoverOnly />}
         {listsValues && (
           <>
             <button
               type="button"
               data-testid={`field-values-${name}`}
-              aria-label={`${label}: ${placeholder ?? ''}`}
+              aria-label={`${label}: ${placeholderHint ?? placeholder ?? ''}`}
               aria-haspopup="listbox"
               aria-expanded={valuesOpen}
               onClick={() => setValuesOpen((o) => !o)}
@@ -339,6 +365,7 @@ export const Field = memo(function Field({
             formatResult={formatResult}
             inputRef={inputRef}
             onChange={commit}
+            firstLine={multiline}
           />
         )}
       </span>

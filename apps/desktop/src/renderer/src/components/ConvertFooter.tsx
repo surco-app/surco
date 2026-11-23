@@ -796,7 +796,6 @@ export function ConvertFooter({
               narrow={narrow}
               destination={destination}
               destinations={destinations}
-              count={isMulti ? selectedCount : undefined}
               label={batchLabel}
               hint={isMulti ? convertHint : processHint}
               tip={batchTip}

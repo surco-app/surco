@@ -58,6 +58,11 @@ export function SuggestionChips({
     rememberOpen(foldKey, open)
   }
   const moreRef = useRef<HTMLButtonElement>(null)
+  const [cut, setCut] = useState<string | null>(null)
+  const measureCut = (chip: HTMLElement, s: string): void => {
+    const name = chip.querySelector<HTMLElement>('[data-chip-name]')
+    setCut(name && name.scrollWidth > name.clientWidth ? s : null)
+  }
   const foldedByHand = useRef(false)
   const firstRevealedRef = useRef<HTMLButtonElement>(null)
   const revealFromRef = useRef<number | null>(null)
@@ -106,9 +111,11 @@ export function SuggestionChips({
     const state = stateOf(s)
     return (
       <>
-        {s}
+        <span data-chip-name dir="auto" className="min-w-0 truncate">
+          {s}
+        </span>
         {partialLabel && state === 'some' && (
-          <span className="ml-1 tabular-nums text-fg-faint">{partialLabel(s)}</span>
+          <span className="ml-1 shrink-0 tabular-nums text-fg-faint">{partialLabel(s)}</span>
         )}
       </>
     )
@@ -137,10 +144,12 @@ export function SuggestionChips({
             aria-pressed={state === 'on' ? true : state === 'some' ? 'mixed' : false}
             aria-label={audioDerived ? tr('fields.suggestionDetected', { value: s }) : undefined}
             onClick={() => onPick(s)}
+            onPointerEnter={(e) => measureCut(e.currentTarget, s)}
+            onFocus={(e) => measureCut(e.currentTarget, s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
-            className={`press rounded-full border px-2 py-0.5 text-label transition-colors ${
-              showAll ? 'shrink-0' : 'min-w-0 truncate'
+            className={`press inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-label transition-colors ${
+              showAll ? 'shrink-0' : 'min-w-0'
             } ${
               state === 'on'
                 ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-fg'
@@ -153,7 +162,11 @@ export function SuggestionChips({
                       : 'border-[var(--color-line-strong)] text-fg-muted hover:bg-[var(--color-hover)]'
             }`}
           >
-            {audioDerived && <Tooltip label={tr('fields.suggestionDetected', { value: s })} />}
+            {audioDerived ? (
+              <Tooltip label={tr('fields.suggestionDetected', { value: s })} />
+            ) : (
+              <Tooltip label={cut === s ? s : ''} hoverOnly />
+            )}
             {content(s)}
           </button>
         )
@@ -196,17 +209,19 @@ export function SuggestionChips({
         // posible, el caso más ancho), invisible y fuera del flujo. Debe replicar las clases
         // de tamaño de los chips reales (borde, padding, fuente) o las medidas mienten.
         // Sin testids: duplicaría los selectores chip-* de los chips reales.
-        <span
-          ref={measureRef}
-          aria-hidden="true"
-          className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
-        >
-          {chips.map((s) => (
-            <span key={s} className="rounded-full border px-2 py-0.5 text-label">
-              {content(s)}
-            </span>
-          ))}
-          <span className="rounded-full border px-2 py-0.5 text-label">+{chips.length - 1}</span>
+        <span className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span
+            ref={measureRef}
+            aria-hidden="true"
+            className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
+          >
+            {chips.map((s) => (
+              <span key={s} className="rounded-full border px-2 py-0.5 text-label">
+                {content(s)}
+              </span>
+            ))}
+            <span className="rounded-full border px-2 py-0.5 text-label">+{chips.length - 1}</span>
+          </span>
         </span>
       }
     </span>

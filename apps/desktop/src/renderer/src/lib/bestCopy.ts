@@ -1,4 +1,5 @@
-import type { PairFacts } from '../../../shared/types'
+import { beyondVersionReach, VERSION_GAP_SEC } from '../../../shared/copyVersion'
+import type { PairFacts, PairProbe } from '../../../shared/types'
 import { type ReplaceSide, replaceWarning } from './replaceWarning'
 
 export interface CopyFacts {
@@ -13,6 +14,7 @@ export interface CopyFacts {
   peakCount?: number | null
   crestDb?: number | null
   integratedLufs?: number
+  durationSec?: number
 }
 
 export type CopyReason =
@@ -27,7 +29,8 @@ export type CopyReason =
 export type CopyVerdict =
   | { winner: 'a' | 'b'; reason: CopyReason }
   | { winner: 'same' }
-  | { winner: 'tie' }
+  | { winner: 'tie'; sameMaster?: true }
+  | { winner: 'different' }
 
 export interface CopyMargins {
   sameMasterCorrelation: number
@@ -40,6 +43,43 @@ export const COPY_MARGINS: CopyMargins = {
   sameMasterCorrelation: 0.98,
   peakCountRatio: 10,
   crestDb: 1.5,
+}
+
+// Another version is read from PairFacts.versionCorrelation alone: the |correlation| of
+// comparePair's wider search (4410 Hz, as far as the length gap plus a second either way,
+// either polarity), which is only run when the lengths differ by more than VERSION_GAP_SEC, so
+// a copy of one master with a trimmed or padded head lines up again. The 0.5 line comes from
+// the 22/11 measurement: different edits of one title correlated about 0 (0.19 at best,
+// searched 60 s either way) and one master stayed at 0.95 or above. Both files must also have
+// given the search real audio: 10 s or more and above the -70 LUFS gate.
+// Past the search's own reach (VERSION_REACH_MAX_SECONDS, about 54 s) nothing is measured, and
+// the lengths alone decide: a master with a trimmed or padded head differs by seconds, so one
+// that carries more than that much extra audio is a longer or shorter edit, another version.
+export const OTHER_VERSION = {
+  maxCorrelation: 0.5,
+  minDurationSec: 10,
+  silentLufs: -70,
+}
+
+function aligned(pair: PairProbe | null | undefined): PairFacts | null {
+  return pair && 'correlation' in pair ? pair : null
+}
+
+function isOtherVersion(a: CopyFacts, b: CopyFacts, pair: PairProbe | null): boolean {
+  if (a.durationSec == null || b.durationSec == null) return false
+  const gapSec = Math.abs(a.durationSec - b.durationSec)
+  if (gapSec <= VERSION_GAP_SEC) return false
+  if (beyondVersionReach(gapSec)) {
+    return Math.min(a.durationSec, b.durationSec) >= OTHER_VERSION.minDurationSec
+  }
+  if (pair?.versionCorrelation == null) return false
+  if (pair.versionCorrelation >= OTHER_VERSION.maxCorrelation) return false
+  const probed = (f: CopyFacts): boolean =>
+    f.durationSec != null &&
+    f.durationSec >= OTHER_VERSION.minDurationSec &&
+    f.integratedLufs != null &&
+    f.integratedLufs > OTHER_VERSION.silentLufs
+  return probed(a) && probed(b)
 }
 
 const IDENTICAL_RESIDUAL_DB = -60
@@ -93,8 +133,9 @@ function bitsClass(f: CopyFacts): '16' | 'full' | null {
 export function isSameAudio(
   a: CopyFacts,
   b: CopyFacts,
-  pair: PairFacts | null | undefined,
+  probe: PairProbe | null | undefined,
 ): boolean {
+  const pair = aligned(probe)
   if (a.sampleRateHz !== b.sampleRateHz) return false
   const bits = bitsClass(a)
   if (bits === null || bits !== bitsClass(b)) return false
@@ -107,10 +148,11 @@ export function isSameAudio(
 export function compareCopies(
   a: CopyFacts,
   b: CopyFacts,
-  pair?: PairFacts | null,
+  probe?: PairProbe | null,
   margins: CopyMargins = COPY_MARGINS,
 ): CopyVerdict {
-  if (isSameAudio(a, b, pair)) return { winner: 'same' }
+  const pair = probe === undefined ? undefined : aligned(probe)
+  if (isSameAudio(a, b, probe)) return { winner: 'same' }
   const bWorse = replaceWarning(side(a), side(b))
   const aWorse = replaceWarning(side(b), side(a))
   if (bWorse && !aWorse) return { winner: 'a', reason: REASON[bWorse.reason] }
@@ -118,8 +160,11 @@ export function compareCopies(
   const cleaner =
     flag(a.processed, b.processed, 'processed') ?? flag(a.upsampled, b.upsampled, 'upsampled')
   if (cleaner) return cleaner
-  if (!pair || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
+  if (pair === undefined) return { winner: 'tie' }
+  if (isOtherVersion(a, b, probe ?? null)) return { winner: 'different' }
+  if (pair === null || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
   return (
-    byPeakCount(a, b, margins.peakCountRatio) ?? byCrest(a, b, margins.crestDb) ?? { winner: 'tie' }
+    byPeakCount(a, b, margins.peakCountRatio) ??
+    byCrest(a, b, margins.crestDb) ?? { winner: 'tie', sameMaster: true }
   )
 }

@@ -1,6 +1,13 @@
+import {
+  VERSION_RATE,
+  VERSION_REACH_MAX_SECONDS,
+  VERSION_WINDOW_SECONDS,
+} from '../shared/copyVersion'
 import { fft } from './fft'
 
 export const PAIR_RATE = 44100
+export const PAIR_WINDOW_SECONDS = 60
+export const PAIR_MIN_SECONDS = 10
 export const PAIR_SILENT_RMS = 1e-6
 
 // The lag (in samples, a[i] lines up with b[i + lag]) within one second either way that
@@ -12,8 +19,10 @@ export function bestLag(
   b: Float32Array,
   from: number,
   reach = PAIR_RATE,
+  window = 5 * PAIR_RATE,
+  eitherPolarity = false,
 ): number | null {
-  const scored = lagScores(a, b, from, reach)
+  const scored = lagScores(a, b, from, reach, window, eitherPolarity)
   if (!scored) return null
   let best: number | null = null
   let bestScore = -Infinity
@@ -35,7 +44,7 @@ export function lagCorrelations(
   from: number,
   reach = PAIR_RATE,
 ): Float64Array | null {
-  const scored = lagScores(a, b, from, reach)
+  const scored = lagScores(a, b, from, reach, 5 * PAIR_RATE, false)
   if (!scored) return null
   return scored.scores.map((score) => (score === -Infinity ? -1 : score / scored.norm))
 }
@@ -45,8 +54,10 @@ function lagScores(
   b: Float32Array,
   from: number,
   reach: number,
+  window: number,
+  eitherPolarity: boolean,
 ): { scores: Float64Array; norm: number } | null {
-  const width = Math.min(a.length, from + 5 * PAIR_RATE) - from
+  const width = Math.min(a.length, from + window) - from
   const silent = width * PAIR_SILENT_RMS ** 2
   const span = width + 2 * reach
   let n = 1
@@ -79,7 +90,7 @@ function lagScores(
   const scores = new Float64Array(2 * reach + 1).fill(-Infinity)
   for (let k = 0; k <= 2 * reach; k++) {
     const e = energy[k + width] - energy[k]
-    if (e >= silent) scores[k] = sRe[k] / Math.sqrt(e)
+    if (e >= silent) scores[k] = (eitherPolarity ? Math.abs(sRe[k]) : sRe[k]) / Math.sqrt(e)
   }
   return { scores, norm: n * Math.sqrt(windowEnergy) }
 }
@@ -103,4 +114,45 @@ export function correlationAt(
   }
   if (xx === 0 || yy === 0) return null
   return xy / Math.sqrt(xx * yy)
+}
+
+export { VERSION_RATE, VERSION_REACH_MAX_SECONDS }
+
+// The |correlation| of two copies decoded at VERSION_RATE, lined up on the best lag within
+// reachSec either way in either polarity and compared over a minute (from 30 s when a is long
+// enough). Null when either is too short or silent, or they share too little audio.
+export function versionMatch(pa: Float32Array, pb: Float32Array, reachSec: number): number | null {
+  const minSamples = PAIR_MIN_SECONDS * VERSION_RATE
+  if (pa.length < minSamples || pb.length < minSamples) return null
+  const from = pa.length >= 90 * VERSION_RATE ? 30 * VERSION_RATE : 0
+  const lag = bestLag(
+    pa,
+    pb,
+    from,
+    Math.round(reachSec * VERSION_RATE),
+    VERSION_WINDOW_SECONDS * VERSION_RATE,
+    true,
+  )
+  if (lag === null) return null
+  const start = Math.max(from, -lag)
+  const end = Math.min(from + PAIR_WINDOW_SECONDS * VERSION_RATE, pa.length, pb.length - lag)
+  const n = end - start
+  if (n < minSamples) return null
+  let sa = 0
+  let sb = 0
+  let saa = 0
+  let sbb = 0
+  let sab = 0
+  for (let i = start; i < end; i++) {
+    const x = pa[i]
+    const y = pb[i + lag]
+    sa += x
+    sb += y
+    saa += x * x
+    sbb += y * y
+    sab += x * y
+  }
+  const silent = n * PAIR_SILENT_RMS ** 2
+  if (saa < silent || sbb < silent) return null
+  return Math.abs((n * sab - sa * sb) / Math.sqrt((n * saa - sa * sa) * (n * sbb - sb * sb)))
 }

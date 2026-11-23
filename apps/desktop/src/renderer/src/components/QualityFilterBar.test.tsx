@@ -999,6 +999,22 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('track-position')).toHaveTextContent('250/498')
   })
 
+  it('groups the thousands of a big crate, the way the playlist tree counts the same tracks', () => {
+    renderBar({ selectedPosition: 1250, visibleCount: 13245 })
+    expect(screen.getByTestId('track-position')).toHaveTextContent('1,250/13,245')
+  })
+
+  it('groups the thousands of a big selection too', () => {
+    renderBar({ selectedCount: 13245, visibleCount: 13245 })
+    expect(screen.getByTestId('track-selected-count')).toHaveTextContent(/^13,245$/)
+  })
+
+  it('groups the thousands of a filter option count', () => {
+    renderBar({ tally: tally({ unplayed: 13245, played: 306 }) })
+    openMenu('list')
+    expect(screen.getByTestId('quality-filter-unplayed')).toHaveTextContent(/^Unplayed13,245$/)
+  })
+
   // The counter must stay visible even when the selected track is filtered out of the
   // current bucket: the user relies on it to know how many tracks are left to go through,
   // so it falls back to "‒/total" rather than disappearing.

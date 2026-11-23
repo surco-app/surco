@@ -83,12 +83,14 @@ export function TagListBulkField({
   // Every row repeats the same chips, so each row is a group named by what it edits: the
   // summary by the field's label, a track's row by its number and title. min-w-0 undoes a
   // fieldset's min-content floor, which would stop the chip row and titles from shrinking.
+  // Beside the chips there is no text box, so the label sits on the first chip's baseline
+  // instead of a box-high row, and "Per track" follows as close as it does when stacked.
   const baseId = useId()
   return (
     <div className="block beside:contents" data-testid={`${list.key}-bulk`}>
       <span
         id={`${baseId}-label`}
-        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim compact:mb-0.5 beside:col-start-1 beside:mb-0 beside:min-h-[34px] beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:text-right compact:beside:min-h-[30px]"
+        className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-fg-dim compact:mb-0.5 beside:col-start-1 beside:mb-0 beside:max-w-32 beside:flex-row-reverse beside:justify-start beside:self-baseline beside:text-right"
       >
         {label}
         {invalid && (
@@ -102,7 +104,7 @@ export function TagListBulkField({
       <fieldset
         aria-labelledby={`${baseId}-label`}
         aria-describedby={invalid ? `${baseId}-required` : undefined}
-        className="min-w-0 beside:col-start-2 beside:-mt-1.5"
+        className="min-w-0 beside:col-start-2 beside:-mt-1.5 beside:self-baseline"
       >
         <SuggestionChips
           suggestions={summaryTags}
@@ -118,7 +120,7 @@ export function TagListBulkField({
           {tr('editor.requiredEmpty')}
         </span>
       )}
-      <div className="mt-0.5 ml-[5px] border-l-2 beside:col-start-2 border-[var(--color-line-strong)] pl-2.5">
+      <div className="mt-0.5 ml-[5px] border-l-2 beside:col-start-2 beside:-mt-1.5 compact:beside:-mt-0.5 border-[var(--color-line-strong)] pl-2.5">
         <button
           type="button"
           data-testid={`${list.key}-per-track-toggle`}

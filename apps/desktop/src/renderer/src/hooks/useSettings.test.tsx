@@ -397,6 +397,30 @@ describe('switching the theme cross-fades instead of jumping the whole window fr
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
+  it('swallows a cross-fade the browser cuts short, so a quick second theme change never raises the error toast', async () => {
+    mediaQueries(false)
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    startViewTransition.mockImplementation((update: () => void) => {
+      update()
+      const aborted = new DOMException(
+        'Transition was aborted because of invalid state',
+        'AbortError',
+      )
+      return {
+        ready: Promise.reject(aborted),
+        finished: Promise.reject(aborted),
+        updateCallbackDone: Promise.resolve(),
+      }
+    })
+    const { result } = await renderLoadedLight()
+    act(() => result.current.setThemePreview('dark'))
+    await new Promise((r) => setTimeout(r, 0))
+    process.off('unhandledRejection', unhandled)
+    expect(unhandled).not.toHaveBeenCalled()
+    expect(document.documentElement.dataset.theme).toBe('dark')
+  })
+
   it('switches instantly when the user asked for reduced motion', async () => {
     mediaQueries(true)
     const { result } = await renderLoadedLight()

@@ -50,11 +50,124 @@ describe('compareCopies', () => {
   })
 
   // Wiki Wiki: two masters of one title, 822 against 3.5 samples at the peak. Level says
-  // nothing about which master is better, so no winner.
+  // nothing about which master is better, so no winner; at 0.86 they still share an edit,
+  // so "another version" would be a claim the probe does not support.
   it('never ranks two different masters by level', () => {
     const a = { ...netzwerkAif, fingerprint: 'p', peakCount: 822.5, crestDb: 11 }
     const b = { ...netzwerkAif, fingerprint: 'q', peakCount: 3.5, crestDb: 11 }
     expect(compareCopies(a, b, otherMaster)).toEqual({ winner: 'tie' })
+  })
+
+  describe('another version', () => {
+    const edit = (durationSec: number, integratedLufs = -9): CopyFacts => ({
+      ...netzwerkAif,
+      fingerprint: `e${durationSec}`,
+      durationSec,
+      integratedLufs,
+    })
+    const searched = (versionCorrelation: number) => ({ versionCorrelation })
+
+    // 3 Ways: two lossless edits, 447 s and 483 s, that the ±1 s probe could not line up and
+    // the wider search found nothing between. Saying nothing hid another version.
+    it('calls two edits the wider search found no match between different', () => {
+      expect(compareCopies(edit(447), edit(483), searched(0.19))).toEqual({ winner: 'different' })
+      expect(
+        compareCopies(edit(447), edit(483), {
+          correlation: 0.3,
+          residualDb: -1,
+          gainDb: -6,
+          versionCorrelation: 0.19,
+        }),
+      ).toEqual({ winner: 'different' })
+    })
+
+    // A 30 s Music copy against a 95 s file: the wider search stops at about 54 s, so nothing
+    // was measured and the row stayed blank. One master cannot carry that much more audio than
+    // the other, so the lengths alone say it is another version, with or without a probe.
+    it.each([null, { correlation: 0.1, residualDb: -1, gainDb: -3 }] as const)(
+      'calls copies further apart than the wider search reaches another version from their lengths (%j)',
+      (pair) => {
+        expect(compareCopies(edit(95), edit(30), pair)).toEqual({ winner: 'different' })
+      },
+    )
+
+    it('keeps measuring while the pair is still being read, however far apart the lengths are', () => {
+      expect(compareCopies(edit(95), edit(30), undefined)).toEqual({ winner: 'tie' })
+    })
+
+    // The renderer and the main process decide from the same two lengths: right at the edge of
+    // the reach, a gap the main process still searches is never called another version here.
+    it.each([
+      [53, 'tie'],
+      [54, 'different'],
+    ] as const)(
+      'calls a gap of %i s another version only once the search no longer reaches it',
+      (gap, winner) => {
+        expect(compareCopies(edit(100 + gap), edit(100), null)).toEqual({ winner })
+      },
+    )
+
+    it('never calls a copy too short to hold a track another version from its length alone', () => {
+      expect(compareCopies(edit(95), edit(4), null)).toEqual({ winner: 'tie' })
+    })
+
+    // One master with 3 s of its head trimmed is 3 s shorter and slips past the ±1 s probe;
+    // the wider search lines it up again, so it is no other version.
+    it('never calls a shifted copy of one master another version', () => {
+      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({ winner: 'tie' })
+    })
+
+    // Without the wider search there is no evidence the audio differs.
+    it('never calls copies another version without the wider search', () => {
+      expect(compareCopies(edit(447), edit(483), null)).toEqual({ winner: 'tie' })
+      expect(
+        compareCopies(edit(447), edit(483), { correlation: 0.1, residualDb: -0.1, gainDb: -9 }),
+      ).toEqual({ winner: 'tie' })
+    })
+
+    // PG2 Hey-Heeey: one master drifting against itself correlated 0.067. A length within 2 s
+    // is what a drift leaves, and calling it another version would be false.
+    it('never calls copies of nearly the same length another version', () => {
+      expect(compareCopies(edit(447), edit(448.9), searched(0.05))).toEqual({ winner: 'tie' })
+    })
+
+    it('never calls a correlation of 0.5 or more another version', () => {
+      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({ winner: 'tie' })
+    })
+
+    it('never calls a short or silent copy another version', () => {
+      expect(compareCopies(edit(9.9), edit(483), searched(0.1))).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(483, -71), searched(0.1))).toEqual({ winner: 'tie' })
+    })
+
+    it('never calls copies of unknown length another version', () => {
+      const a = { ...netzwerkAif, fingerprint: 'p' }
+      const b = { ...netzwerkAif, fingerprint: 'q' }
+      expect(compareCopies(a, b, searched(0.1))).toEqual({ winner: 'tie' })
+    })
+  })
+
+  // «Parecidas» claims one master: only a tie whose pair correlated at or above the
+  // same-master line carries that evidence.
+  describe('same master', () => {
+    it('marks a tie of one master that nothing separates', () => {
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, sameMaster)).toEqual({
+        winner: 'tie',
+        sameMaster: true,
+      })
+    })
+
+    it('leaves a tie without that evidence unmarked', () => {
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, otherMaster)).toEqual(
+        { winner: 'tie' },
+      )
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, null)).toEqual({
+        winner: 'tie',
+      })
+      expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' })).toEqual({
+        winner: 'tie',
+      })
+    })
   })
 
   it('never ranks by level without the pair probe', () => {
@@ -92,7 +205,7 @@ describe('compareCopies', () => {
         { ...netzwerkAif, fingerprint: 'q', integratedLufs: -20 },
         sameMaster,
       ),
-    ).toEqual({ winner: 'tie' })
+    ).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   // Night Power: peak counts within 3x, crest 3.8 dB apart.
@@ -106,13 +219,13 @@ describe('compareCopies', () => {
   it('calls a small crest gap a tie', () => {
     const a = { ...netzwerkAif, fingerprint: 's', peakCount: 1176, crestDb: 12 }
     const b = { ...netzwerkAif, fingerprint: 't', peakCount: 2706, crestDb: 13.18 }
-    expect(compareCopies(a, b, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(a, b, sameMaster)).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   it('skips a criterion one side has not measured', () => {
     expect(
       compareCopies({ ...netzwerkWav, peakCount: null, crestDb: null }, netzwerkAif, sameMaster),
-    ).toEqual({ winner: 'tie' })
+    ).toEqual({ winner: 'tie', sameMaster: true })
   })
 })
 
@@ -168,7 +281,10 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'a',
       reason: 'peakCount',
     })
-    expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(9, 12), level(98, 12), sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
   })
 
   it('decides on a crest gap of exactly 1.5 dB and not just under it', () => {
@@ -176,7 +292,10 @@ describe('compareCopies, every branch and both directions', () => {
       winner: 'b',
       reason: 'crest',
     })
-    expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(level(10, 12), level(10, 13.49), sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
   })
 
   it('reads a correlation of exactly 0.98 as one master and just under it as two', () => {
@@ -195,6 +314,7 @@ describe('compareCopies, every branch and both directions', () => {
     })
     expect(compareCopies(lossless, b, { correlation: 1, residualDb: -59.9, gainDb: 0 })).toEqual({
       winner: 'tie',
+      sameMaster: true,
     })
   })
 
@@ -204,19 +324,31 @@ describe('compareCopies, every branch and both directions', () => {
     const pair = (gainDb: number) => ({ correlation: 1, residualDb: -80, gainDb })
     expect(compareCopies(lossless, b, pair(0.009))).toEqual({ winner: 'same' })
     expect(compareCopies(lossless, b, pair(-0.009))).toEqual({ winner: 'same' })
-    expect(compareCopies(lossless, b, pair(0.01))).toEqual({ winner: 'tie' })
-    expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie' })
+    expect(compareCopies(lossless, b, pair(0.01))).toEqual({ winner: 'tie', sameMaster: true })
+    expect(compareCopies(lossless, b, pair(-0.01))).toEqual({ winner: 'tie', sameMaster: true })
   })
 
   // One copy measured and the other not is partial data: the measured figure alone must
   // not read as a gap of 1000 samples or 12 dB against nothing.
   it('skips a level criterion only one side has measured, from either side', () => {
     const missingPeaks = { ...level(1000, 12), fingerprint: 'p', peakCount: null }
-    expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({ winner: 'tie' })
-    expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(missingPeaks, level(1000, 12), sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
+    expect(compareCopies(level(1000, 12), missingPeaks, sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
     const missingCrest = { ...level(10, 12), fingerprint: 'c', crestDb: null }
-    expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({ winner: 'tie' })
-    expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({ winner: 'tie' })
+    expect(compareCopies(missingCrest, level(10, 12), sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
+    expect(compareCopies(level(10, 12), missingCrest, sameMaster)).toEqual({
+      winner: 'tie',
+      sameMaster: true,
+    })
   })
 
   // Two files that both failed to fingerprint share no MD5; null must not equal null.

@@ -1,11 +1,16 @@
 const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' })
 
+const OPENER: Record<string, string> = { ')': '(', ']': '[' }
+const RIGHT_TO_LEFT = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/
+
 function tailStart(title: string): number {
-  if (!title.endsWith(')')) return -1
+  const close = title.at(-1) ?? ''
+  const open = OPENER[close]
+  if (!open || RIGHT_TO_LEFT.test(title)) return -1
   let depth = 0
   for (let i = title.length - 1; i >= 0; i--) {
-    if (title[i] === ')') depth++
-    else if (title[i] === '(' && --depth === 0) {
+    if (title[i] === close) depth++
+    else if (title[i] === open && --depth === 0) {
       const space = title.lastIndexOf(' ')
       return space >= i - 1 ? space : i
     }

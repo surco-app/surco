@@ -1,5 +1,5 @@
 import type { ReplaceShift } from '../shared/replaceShift'
-import { correlationAt, lagCorrelations, PAIR_RATE } from './pcmLag'
+import { correlationAt, lagCorrelations, PAIR_RATE } from './pairLag'
 
 // Fixed by replaceShiftSweep.test.ts (22/11) on 234 real same-track pairs (12 kept originals, 75
 // Apple Music/rekordbox copies, 147 downloads against their Apple Music copy) and two negative

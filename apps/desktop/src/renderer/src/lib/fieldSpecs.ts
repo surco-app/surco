@@ -48,26 +48,31 @@ function countValues(values: string[]): { value: string; count: number }[] {
   return [...counts].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count)
 }
 
+const UNMEASURED_BPM = /^\s*0+(\.0+)?\s*$/
+
 function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
   return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
 
-// What a mixed field shows in place of a value: the values themselves when few enough to read
-// (fewer still in a box sized for its value), otherwise how many there are. A track with
-// nothing counts as a value of its own: without it "A" would read as a value they all share.
+// What a mixed field shows in place of a value: the values themselves when few enough to read,
+// otherwise how many there are. A track with nothing counts as a value of its own: without it
+// "A" would read as a value they all share. A box sized for its value cuts even the count, so
+// there it shows the mixed mark and the tooltip says what it stands for; a bare number would
+// be shorter but reads as the value itself ("3" in Track No.).
+const MIXED_MARK = '≠'
+
 function mixedPlaceholder(
   values: { value: string }[],
   hasEmpty: boolean,
   width: FieldWidth | undefined,
   tr: BuildFieldSpecsParams['tr'],
-): { placeholder: string; placeholderListed: boolean } {
+): { placeholder: string; placeholderHint?: string; placeholderTooltip: boolean } {
   const shown = values.map((v) => v.value)
   if (hasEmpty) shown.push(tr('editor.emptyValue'))
-  const listed = shown.length <= (width ? 2 : 3)
-  return {
-    placeholder: listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length }),
-    placeholderListed: listed,
-  }
+  const listed = shown.length <= 3
+  const text = listed ? shown.join(' · ') : tr('editor.valuesCount', { count: shown.length })
+  if (width) return { placeholder: MIXED_MARK, placeholderHint: text, placeholderTooltip: true }
+  return { placeholder: text, placeholderTooltip: listed }
 }
 
 // One renderable form field. The editor builds these per mode — bulk specs read the
@@ -81,9 +86,11 @@ export interface FieldSpec {
   value: string
   onChange: (v: string) => void
   placeholder?: string
-  // The placeholder spells out the values, so a tooltip adds the part a narrow box cuts;
-  // a bare count says everything it has to.
-  placeholderListed?: boolean
+  // The placeholder spells out the values, or sits in a box too narrow for any of it, so a
+  // tooltip adds the part the box cuts; a bare count in a full-width box says it all.
+  placeholderTooltip?: boolean
+  placeholderHint?: string
+  multiline?: boolean
   width?: FieldWidth
   required?: boolean
   invalid?: boolean
@@ -270,6 +277,8 @@ export function buildFieldSpecs({
 }: BuildFieldSpecsParams): FieldSpec[] {
   const widthOf = (key: MetaTextKey): FieldWidth | undefined =>
     key === 'year' && fullReleaseDate ? 'medium' : FIELD_DEFS.find((d) => d.key === key)?.width
+  const multilineOf = (key: MetaTextKey): boolean | undefined =>
+    FIELD_DEFS.find((d) => d.key === key)?.multiline
   // Each selected track's custom values, resolved once for every custom field below.
   const selectedCustom =
     isMulti && selectedTracks && customFields.length > 0
@@ -301,6 +310,7 @@ export function buildFieldSpecs({
           )
         : {}),
       width,
+      multiline: multilineOf(key),
       mixed,
       mixedValues,
       onChange: bulkOnChange.get(key) ?? (() => {}),
@@ -405,11 +415,13 @@ export function buildFieldSpecs({
           ]
         }
         const analyzed = def.key === 'quality' ? analyzedQuality : undefined
+        const stored = item.meta[def.key] ?? ''
+        const shown = def.key === 'bpm' && UNMEASURED_BPM.test(stored) ? '' : stored
         return [
           {
             key: def.key,
             label: tr(`fields.${def.key}`),
-            value: analyzed ?? item.meta[def.key] ?? '',
+            value: analyzed ?? shown,
             readOnly: analyzed !== undefined,
             onChange: singleOnChange.get(def.key) ?? (() => {}),
             // Only the free-text fields host the { } menu (see INSERT_TARGET_FIELDS);
@@ -421,8 +433,9 @@ export function buildFieldSpecs({
             formatAction: def.key === 'title' ? titleFormatAction : undefined,
             cleaned: cleanedNotes?.[def.key],
             width: widthOf(def.key),
+            multiline: def.multiline,
             required: requiredFields.includes(def.key),
-            invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
+            invalid: requiredFields.includes(def.key) && !stored.trim(),
             suggestions:
               def.key === 'genre'
                 ? genreChips

@@ -15,6 +15,28 @@ describe('aggregateLibraryVerdict', () => {
     expect(aggregateLibraryVerdict(['here', 'same'])).toBe('here')
   })
 
+  // A folded header shows one state: the one that asks the most of the reader. Another
+  // version in the library is worth knowing before two copies that are merely alike, and
+  // both before an identical copy, which asks nothing.
+  it('ranks the states from the most to the least urgent', () => {
+    const order = [
+      'library',
+      'measuring',
+      'here',
+      'different',
+      'missing',
+      'unreadable',
+      'unmeasurable',
+      'tie',
+      'even',
+      'same',
+      'thisFile',
+    ] as const
+    order.forEach((verdict, i) => {
+      expect(aggregateLibraryVerdict([...order.slice(i)].reverse())).toBe(verdict)
+    })
+  })
+
   it('reports same when it is the only decision', () => {
     expect(aggregateLibraryVerdict(['same', null])).toBe('same')
   })
@@ -26,15 +48,52 @@ describe('aggregateLibraryVerdict', () => {
 })
 
 describe('rowVerdict', () => {
-  const facts = { verdict: null, measuring: false, format: '' }
+  const facts = {
+    verdict: null,
+    measuring: false,
+    format: '',
+    missing: false,
+    unreadable: false,
+    checking: false,
+  }
   it.each([
     [{ ...facts, measuring: true }, 'measuring'],
-    [facts, null],
-    [{ ...facts, verdict: { winner: 'tie' } }, null],
+    [facts, 'unmeasurable'],
+    [{ ...facts, verdict: { winner: 'tie', sameMaster: true } }, 'tie'],
+    [{ ...facts, verdict: { winner: 'tie' } }, 'even'],
+    [{ ...facts, verdict: { winner: 'different' } }, 'different'],
     [{ ...facts, verdict: { winner: 'a', reason: 'format' } }, 'here'],
     [{ ...facts, verdict: { winner: 'b', reason: 'format' } }, 'library'],
     [{ ...facts, verdict: { winner: 'same' } }, 'same'],
+    [{ ...facts, missing: true }, 'missing'],
+    [{ ...facts, unreadable: true }, 'unreadable'],
+    [{ ...facts, checking: true }, 'measuring'],
   ] as const)('maps %j to %s', (state, expected) => {
     expect(rowVerdict(state as unknown as CopyVerdictState)).toBe(expected)
+  })
+
+  // Two copies nothing separates, not shown to be one master, used to leave the row blank,
+  // and a blank row read as if Surco had not looked: the row says neither copy is better.
+  it('says a tie between two masters instead of leaving the row blank', () => {
+    expect(rowVerdict({ ...facts, verdict: { winner: 'tie' } })).toBe('even')
+  })
+
+  // A copy that cannot be reached says so, even where a verdict would have been measured.
+  it('says a copy is gone or unreadable over any measurement', () => {
+    expect(rowVerdict({ ...facts, measuring: true, missing: true } as CopyVerdictState)).toBe(
+      'missing',
+    )
+  })
+
+  // A verdict computed while a fact was still pending would call two copies different
+  // before the probe that lines them up had answered.
+  it('keeps measuring over any verdict while a fact is pending', () => {
+    expect(
+      rowVerdict({
+        ...facts,
+        measuring: true,
+        verdict: { winner: 'different' },
+      } as CopyVerdictState),
+    ).toBe('measuring')
   })
 })

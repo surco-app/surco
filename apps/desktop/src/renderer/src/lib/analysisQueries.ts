@@ -72,6 +72,7 @@ const ANALYSIS_QUERY_KEYS = [
   'loudnessVerdict',
   'clicks',
   'coverFull',
+  'duration',
 ] as const
 
 // One predicate pass for the whole batch: every removeQueries call scans the entire cache,

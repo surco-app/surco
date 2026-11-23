@@ -7,6 +7,7 @@ import { promisify } from 'node:util'
 import log from 'electron-log/main'
 import { processesAudio } from '../shared/audioProcessing'
 import { composeMeta } from '../shared/composeAccents'
+import { beyondVersionReach, VERSION_GAP_SEC } from '../shared/copyVersion'
 import { customTagName } from '../shared/customFields'
 import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/declick'
 import { errorWithKey } from '../shared/errorKeys'
@@ -31,6 +32,7 @@ import type {
   NormalizeConfig,
   OutputFormat,
   PairFacts,
+  PairProbe,
   ReviewRawFields,
   TrackMetadata,
   TrackProperties,
@@ -98,7 +100,15 @@ import {
   volumeFilter,
 } from './normalize'
 import { discardBackup, keepOriginal } from './originalKeeper'
-import { bestLag, correlationAt, PAIR_RATE, PAIR_SILENT_RMS } from './pcmLag'
+import {
+  bestLag,
+  correlationAt,
+  PAIR_MIN_SECONDS,
+  PAIR_RATE,
+  PAIR_SILENT_RMS,
+  PAIR_WINDOW_SECONDS,
+  VERSION_RATE,
+} from './pairLag'
 import { recordRekordboxRepoint } from './rekordboxBatch'
 import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
@@ -3569,8 +3579,6 @@ export async function audioFingerprint(
 // away: the coarse search then hands the refinement the wrong neighbourhood. The first
 // 91 s of each copy (~16 MB) hold the 60 s compared plus the one second of reach.
 const PAIR_DECODE_SECONDS = 91
-const PAIR_WINDOW_SECONDS = 60
-const PAIR_MIN_SECONDS = 10
 
 const HEAD_WINDOW_SECONDS = 5
 const HEAD_SAME_CORRELATION = 0.9
@@ -3606,6 +3614,49 @@ export async function headOffsetMs(
   const correlation = correlationAt(cur, 0, orig, lag, end)
   if (correlation === null || correlation < HEAD_SAME_CORRELATION) return null
   return (lag / PAIR_RATE) * 1000
+}
+
+// The wider search behind PairFacts.versionCorrelation. Lengths that differ by more than
+// VERSION_GAP_SEC may be one master with a trimmed or padded head, shifted further than the
+// probe's one second; both copies are decoded here and searched again in the analysis worker
+// (pairLag.versionMatch) as far as the gap plus a second. A gap past its bounded reach
+// (beyondVersionReach) is not searched: the renderer calls those lengths another version from
+// the durations alone.
+async function versionCorrelation(
+  a: string,
+  b: string,
+  gapSec: number,
+  signal?: AbortSignal,
+): Promise<number | undefined> {
+  const reachSec = gapSec + 1
+  if (beyondVersionReach(gapSec)) return undefined
+  const decode = (input: string): Promise<Float32Array> =>
+    decodePcm(input, {
+      sampleRate: VERSION_RATE,
+      seconds: PAIR_DECODE_SECONDS + Math.ceil(reachSec),
+      maxBufferMb: 16,
+      signal,
+    })
+  let pa: Float32Array
+  let pb: Float32Array
+  try {
+    ;[pa, pb] = await Promise.all([decode(a), decode(b)])
+  } catch (err) {
+    if (isAbortError(err)) throw err
+    return undefined
+  }
+  // The pool runs a job to its end, with no way to cancel it: the abortable part is the
+  // decode above, and the search itself is bounded (an FFT of 2^19 points). A failed search
+  // says nothing, so comparePair keeps its ±1 s facts.
+  try {
+    const match = await runInWorker<number | null>(
+      { type: 'versionMatch', a: pa, b: pb, reachSec },
+      [pa.buffer as ArrayBuffer, pb.buffer as ArrayBuffer],
+    )
+    return match ?? undefined
+  } catch {
+    return undefined
+  }
 }
 
 const REPLACE_OLD_SLACK_SAMPLES = 441
@@ -3704,8 +3755,22 @@ export async function measureReplaceShift(
 export async function comparePair(
   a: string,
   b: string,
+  version = false,
   signal?: AbortSignal,
-): Promise<PairFacts | null> {
+): Promise<PairProbe | null> {
+  if (!version) return alignedPair(a, b, signal)
+  const [facts, aSec, bSec] = await Promise.all([
+    alignedPair(a, b, signal),
+    probeDuration(a, signal),
+    probeDuration(b, signal),
+  ])
+  const gapSec = aSec != null && bSec != null ? Math.abs(aSec - bSec) : 0
+  const wide = gapSec > VERSION_GAP_SEC ? await versionCorrelation(a, b, gapSec, signal) : undefined
+  if (wide === undefined) return facts
+  return facts ? { ...facts, versionCorrelation: wide } : { versionCorrelation: wide }
+}
+
+async function alignedPair(a: string, b: string, signal?: AbortSignal): Promise<PairFacts | null> {
   const decode = (input: string): Promise<Float32Array> =>
     decodePcm(input, {
       sampleRate: PAIR_RATE,

@@ -106,6 +106,12 @@ describe('CoverPicker copy/paste', () => {
     })
   })
 
+  it('outlines the empty well with the theme line, since the scrim tone is near white and vanishes on the light panel', () => {
+    renderPicker()
+    expect(screen.getByTestId('cover-pick')).toHaveClass('outline-[var(--color-line)]')
+    expect(screen.getByTestId('cover-pick')).not.toHaveClass('outline-on-scrim/10')
+  })
+
   it('pastes with Cmd+V while keyboard focus is on the empty well', async () => {
     api.pasteCoverImage.mockResolvedValue({
       coverUrl: 'data:image/png;base64,AAAA',

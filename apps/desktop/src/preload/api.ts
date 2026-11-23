@@ -49,7 +49,7 @@ import type {
   MusicFixOutcome,
   MusicFixProgress,
   MusicReviewEntry,
-  PairFacts,
+  PairProbe,
   ProcessJob,
   ProcessProgress,
   ProcessResult,
@@ -107,7 +107,12 @@ export interface CuesApi {
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>
-  saveComments: (items: SaveCommentRequest[]) => Promise<void>
+  saveComments: (
+    items: SaveCommentRequest[],
+    toFile: boolean,
+  ) => Promise<{ failed: string[]; unwritten: string[] }>
+  cancelComments: () => Promise<void>
+  onCommentProgress: (cb: (p: { done: number; total: number }) => void) => () => void
 }
 
 export interface Api {
@@ -313,6 +318,9 @@ export interface Api {
   // descriptor is gone. Must be awaited before an in-place export: on Windows the
   // rename fails while the handle lives, and Surco's own player is the holder.
   releasePlayingFile: (path: string) => Promise<void>
+  // Resolves (and caches) the file the player would stream, so an AIFF's transcode runs
+  // while the track is only selected. Fire-and-forget; main ignores a path it never handed out.
+  prewarmPlayback: (path: string) => void
   // Marks the start of a convert-all run so main forgets any "apply to the rest"
   // file-conflict choice the previous run left. Fire-and-forget; single converts skip it,
   // so their conflicts always prompt.
@@ -410,13 +418,14 @@ export interface Api {
   rememberAutoMatch: (path: string, verdict: RememberedAutoMatch) => Promise<null>
   loudness: (path: string, priority?: 'high' | 'low') => Promise<LoudnessResult | null>
   fingerprint: (path: string, priority?: 'high' | 'low') => Promise<string | null>
-  comparePair: (a: string, b: string) => Promise<PairFacts | null>
+  comparePair: (a: string, b: string, version?: boolean) => Promise<PairProbe | null>
   limiterGlimpse: (
     worse: string,
     better: string,
     sampleRate: number,
   ) => Promise<LimiterGlimpse | null>
   properties: (path: string) => Promise<TrackProperties | null>
+  fileExists: (path: string) => Promise<boolean>
   bpm: (path: string, priority?: 'high' | 'low') => Promise<BpmResult | null>
   key: (path: string, priority?: 'high' | 'low') => Promise<KeyResult | null>
   waveform: (path: string, priority?: 'urgent' | 'high' | 'low') => Promise<WaveformResult | null>

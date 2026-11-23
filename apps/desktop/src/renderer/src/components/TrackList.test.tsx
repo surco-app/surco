@@ -622,9 +622,31 @@ describe('TrackList', () => {
       }),
     ])
     const classes = screen.getByTestId('track-key').className.split(' ')
-    expect(classes).toContain('max-w-[5.5rem]')
+    expect(classes).toContain('max-w-[3.5rem]')
     expect(classes).toContain('truncate')
     expect(classes).toContain('shrink-0')
+  })
+
+  it('lets the DJ read a free-text key tag the pill had to cut, on hover', () => {
+    renderList([
+      track({
+        id: 'a',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: 'F#m (11A) Energy 7' } as TrackMetadata,
+      }),
+    ])
+    expect(hoverTooltip(screen.getByTestId('track-key'))).toEqual('F#m (11A) Energy 7')
+  })
+
+  it('raises no tooltip on a key the pill shows whole, so hovering the column stays quiet', () => {
+    renderList([
+      track({
+        id: 'a',
+        duration: 287,
+        meta: { title: 'A', artist: 'B', key: '8A' } as TrackMetadata,
+      }),
+    ])
+    expect(hoverTooltip(screen.getByTestId('track-key'))).toBeNull()
   })
 
   it('writes the key in the notation chosen in Settings, so the list reads like the DJ software', () => {
@@ -1282,6 +1304,22 @@ describe('TrackList format pill', () => {
     ])
     expect(screen.getAllByTestId('track-format-slot')).toHaveLength(3)
     expect(screen.getAllByTestId('track-duration-slot')).toHaveLength(3)
+  })
+})
+
+describe('TrackList right-to-left names', () => {
+  it('lets an Arabic or Hebrew title and artist set their own direction, so a cut name keeps its start and the ellipsis lands at its end', () => {
+    renderList([
+      track({
+        id: 'a',
+        meta: {
+          title: 'ليلة في القاهرة (ريمكس ممتد)',
+          artist: 'عمرو دياب وفرقة القاهرة الموسيقية',
+        },
+      }),
+    ])
+    expect(screen.getByTestId('track-title')).toHaveAttribute('dir', 'auto')
+    expect(screen.getByTestId('track-artist')).toHaveAttribute('dir', 'auto')
   })
 })
 
@@ -2936,6 +2974,16 @@ describe('TrackList title of a versioned track', () => {
     expect(within(versioned).getByText('Pray (W.I.P. In The Church Mix)')).toHaveClass('sr-only')
     expect(plain).toHaveTextContent(/^A long title that carries no version at all$/)
     expect(within(plain).queryByTestId('track-title-fit')).toBeNull()
+  })
+
+  it('cuts the middle of a version in square brackets too, so a remaster still reads as one on the row', () => {
+    renderList([
+      track({ id: 'a', meta: { title: 'Strings of Life (Original) [Remastered 2026]' } }),
+    ])
+    act(() => {
+      for (const o of observed) o.fire()
+    })
+    expect(screen.getByTestId('track-title-fit')).toHaveTextContent(/… 2026\]$/)
   })
 
   it('shows the whole title when it fits', () => {

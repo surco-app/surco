@@ -47,6 +47,7 @@ function registerWithSources(host: {
   fine?: Parameters<typeof rekordboxCueSource>[0]['fine']
   provisional: Parameters<typeof registerCuesIpc>[0]['provisional']
   twins: Parameters<typeof registerCuesIpc>[0]['twins']
+  writeCommentToFile?: Parameters<typeof registerCuesIpc>[0]['writeCommentToFile']
   engine?: Parameters<typeof engineCueSource>[0]
   traktor?: Omit<Parameters<typeof traktorCueSource>[0], 'fine'>
   serato?: Omit<Parameters<typeof seratoCueSource>[0], 'words' | 'fine'>
@@ -60,6 +61,7 @@ function registerWithSources(host: {
     flow: host.flow,
     provisional: host.provisional,
     twins: host.twins,
+    writeCommentToFile: host.writeCommentToFile ?? (async () => true),
     sources: {
       rekordbox: rekordboxCueSource({ ...host, gridAudit: host.gridAudit ?? (async () => null) }),
       traktor: host.traktor
@@ -327,16 +329,181 @@ describe('registerCuesIpc', () => {
       twins: async () => ({}),
     })
     const items = [
-      { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4' },
-      { contentId: '104', path: '/m/b.wav', label: 'b', count: '6' },
+      { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4', mode: 'prepend' },
+      { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'replace' },
     ]
-    await handler('cues:saveComments')({}, items)
+    await handler('cues:saveComments')({}, items, false)
     expect(order).toEqual(['begin:review', 'enqueue'])
     expect(beginMoment).toHaveBeenCalledWith('review', ['rekordbox'])
     expect(enqueue).toHaveBeenCalledWith(
       items.map((item) => ({ ...item, id: expect.any(String), kind: 'comment' })),
     )
     expect(applyQuietly).toHaveBeenCalled()
+  })
+
+  const fakeEvent = () => {
+    const send = vi.fn()
+    return { send, event: { sender: { isDestroyed: () => false, send } } }
+  }
+
+  const registerWriting = (writeCommentToFile: (path: string) => Promise<boolean>) => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    return enqueue
+  }
+
+  const commentItems = (...names: string[]) =>
+    names.map((name, i) => ({
+      contentId: String(103 + i),
+      path: `/m/${name}.wav`,
+      label: name,
+      count: '8',
+      mode: 'prepend',
+    }))
+
+  it('tells the window how many files are written after each one, so the button can fill', async () => {
+    registerWriting(async (path) => path !== '/m/a.wav')
+    const { send, event } = fakeEvent()
+    await handler('cues:saveComments')(event, commentItems('a', 'b'), true)
+    expect(send.mock.calls).toEqual([
+      ['cues:commentProgress', { done: 0, total: 2 }],
+      ['cues:commentProgress', { done: 1, total: 2 }],
+      ['cues:commentProgress', { done: 2, total: 2 }],
+    ])
+  })
+
+  it('stops after the file in progress when cancelled and hands back the rest, so they stay pending', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    const enqueue = registerWriting(writeCommentToFile)
+    const done = handler('cues:saveComments')(fakeEvent().event, commentItems('a', 'b', 'c'), true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await handler('cues:cancelComments')()
+    release[0](true)
+    expect(await done).toEqual({ failed: [], unwritten: ['/m/b.wav', '/m/c.wav'] })
+    expect(writeCommentToFile).toHaveBeenCalledTimes(1)
+    expect(enqueue.mock.calls[0][0]).toHaveLength(3)
+  })
+
+  it('a cancel during the last file leaves nothing unwritten, so the pending list empties', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    registerWriting(writeCommentToFile)
+    const done = handler('cues:saveComments')(fakeEvent().event, commentItems('a'), true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await handler('cues:cancelComments')()
+    release[0](true)
+    expect(await done).toEqual({ failed: [], unwritten: [] })
+  })
+
+  it('a cancel from an earlier save does not stop the next one', async () => {
+    const writeCommentToFile = vi.fn(async () => true)
+    registerWriting(writeCommentToFile)
+    await handler('cues:cancelComments')()
+    const result = await handler('cues:saveComments')(
+      fakeEvent().event,
+      commentItems('a', 'b'),
+      true,
+    )
+    expect(writeCommentToFile).toHaveBeenCalledTimes(2)
+    expect(result).toEqual({ failed: [], unwritten: [] })
+  })
+
+  it('sends no progress when only rekordbox is asked', async () => {
+    registerWriting(async () => true)
+    const { send, event } = fakeEvent()
+    await handler('cues:saveComments')(event, commentItems('a'), false)
+    expect(send).not.toHaveBeenCalled()
+  })
+
+  it('writes each file after queueing rekordbox and reports the ones that failed, so the window can name them', async () => {
+    const enqueue = vi.fn<RekordboxQueue['enqueue']>(() => true)
+    const writeCommentToFile = vi.fn(async (path: string) => path !== '/m/b.wav')
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    const items = [
+      { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4', mode: 'prepend' },
+      { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'replace' },
+    ]
+    const result = await handler('cues:saveComments')(fakeEvent().event, items, true)
+    expect(enqueue).toHaveBeenCalledWith(
+      items.map((item) => ({ ...item, id: expect.any(String), kind: 'comment' })),
+    )
+    expect(writeCommentToFile).toHaveBeenNthCalledWith(1, '/m/a.wav', '8 - 4', 'prepend')
+    expect(writeCommentToFile).toHaveBeenNthCalledWith(2, '/m/b.wav', '6', 'replace')
+    expect(result).toEqual({ failed: ['/m/b.wav'], unwritten: [] })
+  })
+
+  it('writes the files one at a time, since they sit on a NAS', async () => {
+    const release: Array<(ok: boolean) => void> = []
+    const writeCommentToFile = vi.fn(() => new Promise<boolean>((resolve) => release.push(resolve)))
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue: vi.fn(() => true) }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    const done = handler('cues:saveComments')(
+      fakeEvent().event,
+      [
+        { contentId: '103', path: '/m/a.wav', label: 'a', count: '8', mode: 'prepend' },
+        { contentId: '104', path: '/m/b.wav', label: 'b', count: '6', mode: 'prepend' },
+      ],
+      true,
+    )
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(1))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(writeCommentToFile).toHaveBeenCalledTimes(1)
+    release[0](true)
+    await vi.waitFor(() => expect(writeCommentToFile).toHaveBeenCalledTimes(2))
+    release[1](true)
+    expect(await done).toEqual({ failed: [], unwritten: [] })
+  })
+
+  it("leaves the files alone when only rekordbox is asked, since the choice is the user's", async () => {
+    const writeCommentToFile = vi.fn(async () => true)
+    registerWithSources({
+      collection: () => '/c/master.db',
+      queue: queue({ enqueue: vi.fn(() => true) }),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+      writeCommentToFile,
+    })
+    const result = await handler('cues:saveComments')(
+      {},
+      [{ contentId: '103', path: '/m/a.wav', label: 'a', count: '8', mode: 'prepend' }],
+      false,
+    )
+    expect(writeCommentToFile).not.toHaveBeenCalled()
+    expect(result).toEqual({ failed: [], unwritten: [] })
   })
 
   it('never queues a comment for a track of another program, since only rekordbox has the Comments column it fills', async () => {
@@ -361,9 +528,11 @@ describe('registerCuesIpc', () => {
         words: async () => null,
       },
     })
-    await handler('cues:saveComments')({}, [
-      { contentId: 'engine:4', path: '/m/e.mp3', label: 'e', count: '8' },
-    ])
+    await handler('cues:saveComments')(
+      {},
+      [{ contentId: 'engine:4', path: '/m/e.mp3', label: 'e', count: '8', mode: 'prepend' }],
+      false,
+    )
     expect(enqueue).not.toHaveBeenCalled()
     expect(engineEnqueue).not.toHaveBeenCalled()
     expect(beginMoment).not.toHaveBeenCalled()
@@ -378,12 +547,15 @@ describe('registerCuesIpc', () => {
       flow: () => MY_FLOW,
       provisional: { add: vi.fn() },
       twins: async () => ({}),
+      writeCommentToFile: async () => true,
       sources: { rekordbox: null, engine: null, traktor: null, serato: null, virtualdj: null },
     })
     await expect(
-      handler('cues:saveComments')({}, [
-        { contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4' },
-      ]),
+      handler('cues:saveComments')(
+        {},
+        [{ contentId: '103', path: '/m/a.wav', label: 'a', count: '8 - 4', mode: 'prepend' }],
+        false,
+      ),
     ).rejects.toThrow('rekordbox has no cue source')
     expect(beginMoment).not.toHaveBeenCalled()
   })
@@ -1160,6 +1332,7 @@ describe('cues:liveCues', () => {
       flow: () => MY_FLOW,
       provisional: { add: vi.fn() },
       twins: async () => ({}),
+      writeCommentToFile: async () => true,
       sources: {
         rekordbox: source({ trackCues: vi.fn(), liveCues }),
         engine: source({ trackCues }),

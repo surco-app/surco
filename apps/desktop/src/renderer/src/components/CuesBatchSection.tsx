@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Sparkle } from 'lucide-react'
+import { Check, ChevronDown, Sparkle } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { programOf, programsInOrder } from '../../../shared/djProgram'
 import type { GridCheck } from '../../../shared/gridAudit'
-import type { CueLibrary } from '../../../shared/types'
+import type { CommentMode } from '../../../shared/phraseCount'
+import type { CueLibrary, Settings } from '../../../shared/types'
 import {
   type AutoMarkTarget,
   acceptAutoMarks,
@@ -32,6 +33,7 @@ import type { AutoMarkKind } from '../lib/triage'
 import { saveAllKey } from './CuesSection'
 import { GridBatchBlock } from './GridBatchBlock'
 import { Select } from './Select'
+import { useSplitMenu } from './SplitButton'
 
 const LIBRARIES = programsInOrder(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'])
 const LIBRARY_NAME: Record<CueLibrary, string> = {
@@ -46,6 +48,16 @@ const BUTTON =
   'press inline-flex items-center gap-2 rounded-lg border border-[var(--color-line-strong)] px-3 py-1.5 text-xs text-fg-muted transition-colors hover:text-fg disabled:opacity-40'
 const PRIMARY =
   'press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
+const PRIMARY_BODY =
+  'press -mr-px inline-flex items-center gap-2 rounded-l-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
+const PRIMARY_BODY_RUNNING =
+  'press group relative -mr-px inline-flex items-center gap-2 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)]'
+const PRIMARY_TOGGLE =
+  'press relative inline-flex items-center rounded-r-lg bg-[var(--color-accent)] px-1.5 text-[var(--color-on-accent)] before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-[var(--color-on-accent)]/20 hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
+const OPTIONS_MENU =
+  'animate-pop-flat absolute bottom-full left-0 z-50 mb-2 min-w-48 origin-bottom-left overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+const OPTIONS_ITEM =
+  'flex w-full items-center gap-2 whitespace-nowrap px-3 py-1.5 text-left text-xs hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:shadow-none'
 
 // The cues slot with several tracks selected: pick the flow, Auto marcar them all, accept
 // every proposal at once and save, without opening each track. Accepting leaves the cues as
@@ -60,6 +72,9 @@ export function CuesBatchSection({
   onOpen,
   onPhrases,
   onRestoreComments,
+  onRecomposeComments,
+  onCommentsSaved,
+  onSaveSettings,
 }: {
   targets: AutoMarkTarget[]
   onMark: () => void
@@ -68,8 +83,13 @@ export function CuesBatchSection({
   onShowBadGrid: () => void
   onShowMarked: (kind: AutoMarkKind) => void
   onOpen: (contentId: string) => void
-  onPhrases: () => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
+  onPhrases: (
+    mode: CommentMode,
+  ) => Promise<{ done: number; skipped: number; comments: PhrasedComment[] }>
   onRestoreComments: (comments: PhrasedComment[]) => void
+  onRecomposeComments: (comments: PhrasedComment[], mode: CommentMode) => PhrasedComment[]
+  onCommentsSaved: (comments: PhrasedComment[], toFile: boolean) => void
+  onSaveSettings: (patch: Partial<Settings>) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -77,16 +97,28 @@ export function CuesBatchSection({
   const marks = useAutoMarks()
   const unsavedAll = useUnsavedCueTracks()
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [saveFailed, setSaveFailed] = useState(false)
   const [phrasing, setPhrasing] = useState(false)
   const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
   const [phrased, setPhrased] = useState<{ done: number; skipped: number } | null>(null)
   const [unsavedComments, setUnsavedComments] = useState<PhrasedComment[]>([])
-  const [commentsFailed, setCommentsFailed] = useState(false)
+  const [commentsFailed, setCommentsFailed] = useState<'rekordbox' | number | null>(null)
+  const commentsMenu = useSplitMenu()
+  const savingNow = useRef(false)
+  const progressId = useId()
+  useEffect(
+    () =>
+      window.api.cues.onCommentProgress((p) => {
+        if (savingNow.current) setProgress(p)
+      }),
+    [],
+  )
+  const mode: CommentMode = settings.commentsReplace ? 'replace' : 'prepend'
   const putPhrases = async () => {
     setPhrasing(true)
     try {
-      const { comments, ...result } = await onPhrases()
+      const { comments, ...result } = await onPhrases(mode)
       setPhrased(result)
       setUnsavedComments((kept) => {
         const byId = new Map(kept.map((c) => [c.id, c]))
@@ -94,42 +126,79 @@ export function CuesBatchSection({
           byId.set(c.id, { ...c, before: byId.get(c.id)?.before ?? c.before })
         return [...byId.values()]
       })
-      setCommentsFailed(false)
+      setCommentsFailed(null)
     } finally {
       setPhrasing(false)
     }
   }
   const saveComments = async () => {
+    savingNow.current = true
     setBusy(true)
     try {
-      const saved = await window.api.dj
+      const toFile = settings.commentsToFile
+      const result = await window.api.dj
         .askToApply(['rekordbox'])
-        .then(() =>
-          window.api.cues.saveComments(
+        .then(() => {
+          if (toFile) setProgress({ done: 0, total: unsavedComments.length })
+          return window.api.cues.saveComments(
             unsavedComments.map(({ contentId, path, label, count }) => ({
               contentId,
               path,
               label,
               count,
+              mode,
             })),
-          ),
-        )
+            toFile,
+          )
+        })
         .then(
-          () => true,
-          () => false,
+          (saved) => saved,
+          () => null,
         )
-      setCommentsFailed(!saved)
-      if (!saved) return
-      onRestoreComments(unsavedComments)
-      setUnsavedComments([])
+      setCommentsFailed(!result ? 'rekordbox' : result.failed.length || null)
+      if (!result) return
+      const pending = new Set([...result.failed, ...result.unwritten])
+      onCommentsSaved(
+        unsavedComments.filter((c) => !pending.has(c.path)),
+        toFile,
+      )
+      setUnsavedComments(unsavedComments.filter((c) => pending.has(c.path)))
     } finally {
+      savingNow.current = false
+      setProgress(null)
       setBusy(false)
     }
   }
+  const pickToFile = (toFile: boolean) => {
+    commentsMenu.setOpen(false)
+    onSaveSettings({ commentsToFile: toFile })
+  }
+  const pickReplace = (replace: boolean) => {
+    commentsMenu.setOpen(false)
+    onSaveSettings({ commentsReplace: replace })
+    setUnsavedComments(onRecomposeComments(unsavedComments, replace ? 'replace' : 'prepend'))
+  }
+  const commentOption = (id: string, key: string, checked: boolean, pick: () => void) => (
+    <button
+      type="button"
+      data-testid={`cues-batch-comments-${id}`}
+      role="menuitemradio"
+      aria-checked={checked}
+      onClick={pick}
+      className={OPTIONS_ITEM}
+    >
+      <Check
+        className={`h-3.5 w-3.5 shrink-0 text-[var(--color-accent)] ${checked ? '' : 'invisible'}`}
+        strokeWidth={2.5}
+        aria-hidden="true"
+      />
+      {tr(`editor.cues.batch.${key}`)}
+    </button>
+  )
   const discardComments = () => {
     onRestoreComments(unsavedComments)
     setUnsavedComments([])
-    setCommentsFailed(false)
+    setCommentsFailed(null)
     setPhrased(null)
   }
   const ids = targets.map((t) => t.contentId)
@@ -334,15 +403,111 @@ export function CuesBatchSection({
       {unsavedComments.length > 0 && (
         <div className="mt-3 grid gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              data-testid="cues-batch-comments-save"
-              disabled={busy}
-              onClick={() => void saveComments()}
-              className={PRIMARY}
-            >
-              {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
-            </button>
+            <div ref={commentsMenu.ref} className="relative flex">
+              <button
+                type="button"
+                data-testid="cues-batch-comments-save"
+                disabled={busy && !progress}
+                aria-label={progress ? tr('common.cancel') : undefined}
+                aria-describedby={progress ? progressId : undefined}
+                onClick={() =>
+                  progress ? void window.api.cues.cancelComments() : void saveComments()
+                }
+                className={progress ? PRIMARY_BODY_RUNNING : PRIMARY_BODY}
+              >
+                {progress && (
+                  <>
+                    <span
+                      data-testid="cues-batch-comments-fill"
+                      aria-hidden="true"
+                      className="absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-240 ease-standard"
+                      style={{
+                        transform: `scaleX(${progress.total > 0 ? progress.done / progress.total : 0})`,
+                      }}
+                    />
+                    <span aria-hidden="true" className="progress-sweep absolute inset-0" />
+                  </>
+                )}
+                <span data-testid="cues-batch-comments-labels" className="relative grid">
+                  <span
+                    aria-hidden={!!progress}
+                    className={`[grid-area:1/1] ${progress ? 'invisible' : ''}`}
+                  >
+                    {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
+                  </span>
+                  <span
+                    data-testid="cues-batch-comments-sizer"
+                    aria-hidden="true"
+                    className="invisible tabular-nums [grid-area:1/1]"
+                  >
+                    {tr('editor.cues.batch.savingComments', {
+                      done: progress?.total ?? unsavedComments.length,
+                      total: progress?.total ?? unsavedComments.length,
+                    })}
+                  </span>
+                  <span
+                    id={progressId}
+                    data-testid="cues-batch-comments-progress"
+                    aria-hidden={!progress}
+                    className={`[grid-area:1/1] tabular-nums ${progress ? 'group-hover:invisible group-focus-visible:invisible' : 'invisible'}`}
+                  >
+                    {progress &&
+                      tr('editor.cues.batch.savingComments', {
+                        done: progress.done,
+                        total: progress.total,
+                      })}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`[grid-area:1/1] invisible ${progress ? 'group-hover:visible group-focus-visible:visible' : ''}`}
+                  >
+                    {tr('common.cancel')}
+                  </span>
+                </span>
+              </button>
+              <button
+                type="button"
+                data-testid="cues-batch-comments-options"
+                ref={commentsMenu.toggleRef}
+                disabled={busy}
+                aria-label={tr('editor.cues.batch.commentsWhere')}
+                aria-haspopup="menu"
+                aria-expanded={commentsMenu.open}
+                onClick={() => commentsMenu.setOpen((v) => !v)}
+                className={PRIMARY_TOGGLE}
+              >
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              {commentsMenu.open && (
+                <div
+                  ref={commentsMenu.menuRef}
+                  role="menu"
+                  aria-label={tr('editor.cues.batch.commentsWhere')}
+                  onKeyDown={commentsMenu.onMenuKeyDown}
+                  className={OPTIONS_MENU}
+                >
+                  <fieldset className="min-w-0">
+                    {commentOption('to-file', 'commentsToFile', settings.commentsToFile, () =>
+                      pickToFile(true),
+                    )}
+                    {commentOption(
+                      'rekordbox-only',
+                      'commentsRekordboxOnly',
+                      !settings.commentsToFile,
+                      () => pickToFile(false),
+                    )}
+                  </fieldset>
+                  <fieldset className="mt-1 min-w-0 border-t border-[var(--color-line)] pt-1">
+                    {commentOption('prepend', 'commentsPrepend', mode === 'prepend', () =>
+                      pickReplace(false),
+                    )}
+                    {commentOption('replace', 'commentsReplace', mode === 'replace', () =>
+                      pickReplace(true),
+                    )}
+                  </fieldset>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               data-testid="cues-batch-comments-discard"
@@ -353,9 +518,11 @@ export function CuesBatchSection({
               {tr('editor.cues.batch.clearDiscard')}
             </button>
           </div>
-          {commentsFailed && (
+          {commentsFailed !== null && (
             <p data-testid="cues-batch-comments-failed" className="text-xs text-warn">
-              {tr('editor.cues.saveFailed')}
+              {commentsFailed === 'rekordbox'
+                ? tr('editor.cues.saveFailed')
+                : tr('editor.cues.batch.commentsFileFailed', { count: commentsFailed })}
             </p>
           )}
         </div>

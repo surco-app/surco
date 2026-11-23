@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto'
-import { ipcMain } from 'electron'
+import { type IpcMainInvokeEvent, ipcMain } from 'electron'
 import type { CueFlow } from '../shared/cueFlows'
 import { CUE_PROGRAMS, type CueProgram, isWritable, programOf } from '../shared/djProgram'
 import type { DropInput } from '../shared/dropDetect'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
+import type { CommentMode } from '../shared/phraseCount'
 import type {
   CopyReason,
   FineWave,
@@ -30,6 +31,7 @@ export function registerCuesIpc(host: {
   provisional: Pick<ProvisionalList, 'add'>
   // The same file in each program the editor writes cues to, for a flow to reach them all.
   twins: (file: string) => Promise<LibraryTracks>
+  writeCommentToFile: (path: string, count: string, mode: CommentMode) => Promise<boolean>
   sources: Record<CueProgram, CueSource | null>
 }): void {
   const sourceOf = (contentId: string) => host.sources[programOf(contentId)]
@@ -140,13 +142,44 @@ export function registerCuesIpc(host: {
       t.applyQuietly()
     }
   })
-  ipcMain.handle('cues:saveComments', async (_e, items: SaveCommentRequest[]) => {
-    const target = host.sources.rekordbox
-    const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
-    if (!target) throw new Error('rekordbox has no cue source')
-    if (mine.length === 0) return
-    host.beginMoment?.('review', ['rekordbox'])
-    target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
-    target.applyQuietly()
+  const savingComments = new Set<{ cancelled: boolean }>()
+  ipcMain.handle(
+    'cues:saveComments',
+    async (e: IpcMainInvokeEvent, items: SaveCommentRequest[], toFile: boolean) => {
+      const target = host.sources.rekordbox
+      const mine = items.filter((item) => programOf(item.contentId) === 'rekordbox')
+      if (!target) throw new Error('rekordbox has no cue source')
+      const failed: string[] = []
+      const unwritten: string[] = []
+      if (mine.length === 0) return { failed, unwritten }
+      host.beginMoment?.('review', ['rekordbox'])
+      target.queue.enqueue(mine.map((item) => ({ ...item, id: randomUUID(), kind: 'comment' })))
+      target.applyQuietly()
+      if (!toFile) return { failed, unwritten }
+      const run = { cancelled: false }
+      savingComments.add(run)
+      const report = (done: number): void => {
+        if (!e.sender.isDestroyed())
+          e.sender.send('cues:commentProgress', { done, total: mine.length })
+      }
+      try {
+        report(0)
+        for (const [i, item] of mine.entries()) {
+          if (run.cancelled) {
+            unwritten.push(item.path)
+            continue
+          }
+          if (!(await host.writeCommentToFile(item.path, item.count, item.mode)))
+            failed.push(item.path)
+          report(i + 1)
+        }
+      } finally {
+        savingComments.delete(run)
+      }
+      return { failed, unwritten }
+    },
+  )
+  ipcMain.handle('cues:cancelComments', () => {
+    for (const run of savingComments) run.cancelled = true
   })
 }

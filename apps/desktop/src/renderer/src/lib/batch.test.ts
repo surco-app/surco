@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { TrackMetadata } from '../../../shared/types'
+import i18n from '../i18n'
 import type { TrackItem, TrackStatus } from '../types'
 import { buildLibraryIndex } from './appleMusicLibrary'
 import {
@@ -11,6 +12,7 @@ import {
   eligibleForBatch,
   leavesListAfterBatch,
   leftOutForMissing,
+  leftOutNote,
   offersSourceFormat,
   summarizeBatch,
 } from './batch'
@@ -73,6 +75,39 @@ describe('eligibleForBatch', () => {
     // flagged in the list) — the same gate the single-track convert button enforces.
     const tracks = [track('a', 'idle', { artist: 'Alex' }), track('b', 'idle')]
     expect(eligibleForBatch(tracks, ['artist'])).toEqual(['a'])
+  })
+})
+
+// "le falta Título, Artista" reads as a list cut short; the language's own list words say
+// it as a sentence would ("Título y Artista", "Title and Artist"), and the verb agrees with
+// how many fields are missing ("le faltan" for two, "le falta" for one).
+describe('leftOutNote', () => {
+  const gate = (fields: string[]) => ({ missing: { count: 1, fields }, serato: 0, mixed: false })
+  const noteIn = async (language: string, fields: string[]) => {
+    await i18n.changeLanguage(language)
+    try {
+      return leftOutNote(gate(fields), i18n.getFixedT(language), language)
+    } finally {
+      await i18n.changeLanguage('en')
+    }
+  }
+
+  it.each([
+    ['en', 'Title and Artist'],
+    ['es', 'le faltan Título y Artista'],
+    ['ca', 'li falten Títol i Artista'],
+    ['de', 'ihm fehlen Titel und Künstler'],
+    ['it', 'mancano Titolo e Artista'],
+    ['pt-BR', 'faltam Título e Artista'],
+  ])(
+    'joins several missing fields with the %s list words and a plural verb',
+    async (language, said) => {
+      expect(await noteIn(language, ['title', 'artist'])).toContain(said)
+    },
+  )
+
+  it('keeps the singular verb for one missing field', async () => {
+    expect(await noteIn('es', ['artist'])).toContain('le falta Artista')
   })
 })
 

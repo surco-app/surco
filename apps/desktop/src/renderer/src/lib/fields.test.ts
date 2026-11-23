@@ -271,3 +271,16 @@ describe('the Playlists field of each library', () => {
     expect(labeledFields([], tr, ['engine']).some((f) => f.key === 'traktorPlaylists')).toBe(false)
   })
 })
+
+describe('bounded field widths', () => {
+  it('gives Key the room of a spelled-out key, since files from stores and other tools spell it out as "C# minor"', () => {
+    expect(FIELD_DEFS.find((d) => d.key === 'key')?.width).toBe('word')
+  })
+})
+
+describe('multi-line fields', () => {
+  it('lets Comment hold several lines, since DJ notes and store comments arrive with line breaks', () => {
+    expect(FIELD_DEFS.find((d) => d.key === 'comment')?.multiline).toBe(true)
+    expect(FIELD_DEFS.filter((d) => d.multiline).map((d) => d.key)).toEqual(['comment'])
+  })
+})

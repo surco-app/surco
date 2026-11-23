@@ -1,11 +1,10 @@
 import { createHash } from 'node:crypto'
 import type { GridAudit } from '../shared/gridAudit'
-import { cachedAnalysis, peekAnalysis, storeAnalysis } from './analysisCache'
+import { BEAT_GRID_NAMESPACE, cachedAnalysis, peekAnalysis, storeAnalysis } from './analysisCache'
 import { analysisLimiter } from './analysisLimiter'
 import type { BeatGridFit } from './beatGrid'
 import { measureBeatGrid, measureGridAudit } from './ffmpeg'
 
-export const BEAT_GRID_NAMESPACE = 'beat-grid-v4'
 const GRID_AUDIT_NAMESPACE = 'grid-audit-v1'
 
 export function cachedBeatGrid(

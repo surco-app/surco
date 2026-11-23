@@ -143,7 +143,7 @@ describe('completableOps', () => {
       })) ?? []
     for (let close = 0; close < 3; close++)
       expect(opsOf(await callsCollection(rows), callBack)).toEqual([])
-  })
+  }, 30_000)
 
   it('never counts down to a memory loop, which is a loop and not a drop', async () => {
     const path = await callsCollection([

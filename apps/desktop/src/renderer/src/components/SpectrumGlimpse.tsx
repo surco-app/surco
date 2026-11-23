@@ -82,6 +82,9 @@ function Strip({
           className="pointer-events-none absolute inset-x-0 top-0 bg-warn/15"
         />
       )}
+      {/* The cutoff label sits clear of the strip's name tag, which owns the top left: below its
+          line, or below the tag when the line is near the top, and above the line only when the
+          line is near the bottom. */}
       {cutoff !== null && chip && (
         <div
           data-testid="spectrum-glimpse-cutoff"
@@ -89,7 +92,7 @@ function Strip({
           className={`pointer-events-none absolute inset-x-0 border-t border-dashed ${lost ? 'border-warn' : 'border-[var(--color-fg-muted)]'}`}
         >
           <span
-            className={`absolute right-1 rounded border bg-[var(--color-panel)]/80 px-1 text-label font-medium ${at(cutoff) < 20 ? 'top-0.5' : 'bottom-0.5'} ${lost ? 'border-warn/40 text-warn' : 'border-[var(--color-line)] text-[var(--color-fg)]'}`}
+            className={`absolute right-1 rounded border bg-[var(--color-panel)]/80 px-1 text-label font-medium ${at(cutoff) < 20 ? 'top-6' : at(cutoff) > 80 ? 'bottom-0.5' : 'top-0.5'} ${lost ? 'border-warn/40 text-warn' : 'border-[var(--color-line)] text-[var(--color-fg)]'}`}
           >
             {tr(chip.key, { cutoff: chip.cutoff })}
           </span>
@@ -126,7 +129,7 @@ export function SpectrumGlimpse({
   libraryPath: string
   hereLabel: string
   libraryLabel: string
-  loser: Side
+  loser: Side | null
 }): React.JSX.Element | null {
   const here = useSpectrogram(herePath, true)
   const library = useSpectrogram(libraryPath, true)

@@ -83,9 +83,11 @@ function renderField(
       label={f.label}
       value={f.value}
       placeholder={f.placeholder}
-      placeholderListed={f.placeholderListed}
+      placeholderTooltip={f.placeholderTooltip}
+      placeholderHint={f.placeholderHint}
       onChange={f.onChange}
       width={f.width}
+      multiline={f.multiline}
       inline={row.inline}
       trailing={row.trailing}
       insertSources={f.insertSources}
