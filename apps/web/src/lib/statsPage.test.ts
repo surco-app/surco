@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { I18nextProvider } from 'react-i18next'
 import { describe, expect, it } from 'vitest'
 import Footer from '../components/Footer'
-import { StatsView } from '../components/Stats'
+import { StatsSkeleton, StatsView } from '../components/Stats'
 import { loadI18n } from '../i18n'
 import { PAGES } from './nav'
 import type { Stats } from './stats'
@@ -43,6 +43,18 @@ describe('footer', () => {
     const html = render(Footer, {})
     expect(html).not.toContain('download-count')
     expect(html).toMatch(new RegExp(`href="${PAGES.stats.es}"[^>]*data-testid="footer-stats"`))
+  })
+})
+
+// The figures take a GitHub round trip or two. A line of text in their place left the page
+// empty and then pushed everything down when they arrived; the skeleton keeps their shape
+// and says nothing on screen, while a screen reader still hears that they are loading.
+describe('stats skeleton', () => {
+  it('announces the loading to assistive tech without visible text', () => {
+    const html = render(StatsSkeleton, {})
+    expect(html).toMatch(/data-testid="stats-loading"[^>]*role="status"/)
+    expect(html).toContain('aria-label="Cargando cifras…"')
+    expect(html.replace(/<[^>]*>/g, '')).toBe('')
   })
 })
 
