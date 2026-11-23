@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
 import { type ActivityRow, activityFeedText, rowDetailText } from '../lib/activityLog'
+import { LAYER } from '../lib/layers'
 import { prefersReducedMotion } from '../lib/motion'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 import { SectionBody } from './SectionBody'
@@ -93,6 +94,7 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
       <>
         <Loader2
           data-testid="activity-status-icon"
+          data-tone="muted"
           className="h-3.5 w-3.5 shrink-0 animate-spin text-fg-muted"
           aria-hidden="true"
         />
@@ -104,6 +106,7 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
       <>
         <AlertTriangle
           data-testid="activity-status-icon"
+          data-tone="warn"
           className="h-3.5 w-3.5 shrink-0 text-warn"
           aria-hidden="true"
         />
@@ -115,6 +118,7 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
       <>
         <AlertCircle
           data-testid="activity-status-icon"
+          data-tone="danger"
           className="h-3.5 w-3.5 shrink-0 text-danger"
           aria-hidden="true"
         />
@@ -125,6 +129,7 @@ function StatusIcon({ status }: { status: ActivityRow['status'] }): React.JSX.El
     <>
       <CheckCircle2
         data-testid="activity-status-icon"
+        data-tone="faint"
         className="h-3.5 w-3.5 shrink-0 text-fg-faint"
         aria-hidden="true"
       />
@@ -456,8 +461,14 @@ export function ActivityPanel({
       data-testid="activity-panel"
       ref={panelRef}
       aria-label={tr('activity.title')}
-      className="fixed z-[45] flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
-      style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}
+      className="fixed flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
+      style={{
+        left: pos.x,
+        top: pos.y,
+        width: size.width,
+        height: size.height,
+        zIndex: LAYER.activityPanel,
+      }}
     >
       <header
         data-testid="activity-panel-handle"

@@ -97,6 +97,7 @@ import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
+import { LAYER } from '../lib/layers'
 import { librarySourceOf } from '../lib/librarySource'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
@@ -2307,7 +2308,8 @@ export const Editor = memo(function Editor({
                 <div
                   ref={maximizeMotion.overlayRef}
                   data-testid="section-maximized-overlay"
-                  className="fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                  className="fixed inset-0 origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                  style={{ zIndex: LAYER.maximizedSection }}
                 >
                   {lifted}
                 </div>,

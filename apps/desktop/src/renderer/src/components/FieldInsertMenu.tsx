@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
 import { stripTitleNumberingLoose } from '../lib/hygiene'
+import { LAYER } from '../lib/layers'
 import { titleCase } from '../lib/textCase'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 import { Tooltip } from './Tooltip'
@@ -223,7 +224,8 @@ export function FieldInsertMenu({
               // A pointer-only click catcher: keyboard users close with Escape or Tab.
               tabIndex={-1}
               onClick={close}
-              className="fixed inset-0 z-50 cursor-default"
+              className="fixed inset-0 cursor-default"
+              style={{ zIndex: LAYER.overlay }}
             />
             <div
               ref={menuRef}
@@ -231,6 +233,7 @@ export function FieldInsertMenu({
               data-testid="field-insert-menu"
               aria-label={tr('editor.fieldActions')}
               onKeyDown={onMenuKeyDown}
+              data-opens={pos.bottom !== undefined ? 'up' : 'down'}
               style={{
                 top: pos.top,
                 bottom: pos.bottom,

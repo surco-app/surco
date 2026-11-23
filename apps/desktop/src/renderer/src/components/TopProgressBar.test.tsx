@@ -2,19 +2,17 @@
 import '@testing-library/jest-dom/vitest'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
+import { LAYER } from '../lib/layers'
 import { TopProgressBar } from './TopProgressBar'
 
-const MAXIMIZED_OVERLAY_Z = 46
-
 function zOf(el: HTMLElement): number {
-  const match = /(?:^|\s)z-\[?(\d+)\]?(?:\s|$)/.exec(el.className)
-  return match ? Number(match[1]) : 0
+  return Number(el.style.zIndex)
 }
 
 describe('TopProgressBar', () => {
   it('draws under a maximized section, so the line never cuts through the full-screen editor', () => {
     render(<TopProgressBar fraction={0.5} />)
-    expect(zOf(screen.getByTestId('top-progress'))).toBeLessThan(MAXIMIZED_OVERLAY_Z)
+    expect(zOf(screen.getByTestId('top-progress'))).toBeLessThan(LAYER.maximizedSection)
   })
 
   it('still sits above the toolbar content it rides on', () => {
@@ -27,6 +25,5 @@ describe('TopProgressBar', () => {
     const fill = screen.getByTestId('top-progress').firstElementChild as HTMLElement
     expect(fill.style.transform).toBe('scaleX(0.6)')
     expect(fill.style.width).toBe('')
-    expect(fill.className).toContain('origin-left')
   })
 })

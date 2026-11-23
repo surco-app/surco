@@ -273,6 +273,7 @@ function TooltipBubble({
       ref={ref}
       id={id}
       role="tooltip"
+      data-instant={instant}
       style={{
         left: flipX ? x - OFFSET : x + OFFSET,
         top: flipY ? y - OFFSET : y + OFFSET,

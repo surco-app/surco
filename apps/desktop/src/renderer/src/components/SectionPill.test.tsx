@@ -16,7 +16,7 @@ describe('SectionPill', () => {
         Good quality
       </SectionPill>,
     )
-    expect(screen.getByText('Good quality')).not.toHaveClass('sr-only')
+    expect(screen.getByText('Good quality')).toBeVisible()
   })
 
   // A status that asks for a look has to read before the eye finds the dot.
@@ -26,6 +26,6 @@ describe('SectionPill', () => {
         Review
       </SectionPill>,
     )
-    expect(screen.getByText('Review')).not.toHaveClass('sr-only')
+    expect(screen.getByText('Review')).toBeVisible()
   })
 })

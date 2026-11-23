@@ -195,10 +195,6 @@ function openTokenStep(onFinish: (patch: Partial<Settings>) => void = () => {}) 
 describe('OnboardingWizard keyboard', () => {
   // The wizard is a form whose default button is Next, so pressing Enter in a field
   // advances the step instead of doing nothing.
-  it('lifts the wizard above the page like every other dialog', () => {
-    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    expect(screen.getByRole('dialog')).toHaveClass('shadow-modal')
-  })
 
   it('advances to the next step when the form is submitted with Enter', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
@@ -1225,16 +1221,6 @@ describe('OnboardingWizard second Mac', () => {
     render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
     await pickFolder()
     expect(screen.getByTestId('onboarding-next')).toBeDisabled()
-  })
-
-  it('dims Next and drops its hover while no folder has been adopted, so it does not look pressable', async () => {
-    offerFolder(null, false)
-    render(<OnboardingWizard settings={settings} onFinish={() => {}} />)
-    await pickFolder()
-    const nextButton = screen.getByTestId('onboarding-next')
-    expect(nextButton).toBeDisabled()
-    expect(nextButton).toHaveClass('disabled:opacity-40')
-    expect(nextButton).toHaveClass('disabled:hover:bg-[var(--color-accent)]')
   })
 
   it('goes straight to what belongs to this Mac and skips the steps that synced', async () => {

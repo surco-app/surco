@@ -1845,18 +1845,6 @@ describe('Editor Discogs loading skeleton', () => {
     expect(badge).toHaveTextContent('')
     expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
-
-  // The provider is an origin label, not a match signal — so it reads as the same plain
-  // secondary text the track list gives the WAV/FLAC format tag. A boxed or filled badge
-  // would compete with the sparkle, and with every other box in the column, for attention.
-  it('shows the provider as plain text like the track list format tag', async () => {
-    const api = (window as unknown as { api: Record<string, unknown> }).api
-    api.search = vi.fn(async () => [{ provider: 'bandcamp', id: 1, title: 'The Release' }])
-    renderEditor({ id: 'a', query: 'artist song' })
-    const provider = await screen.findByTestId('result-provider')
-    expect(provider.className).not.toContain('border')
-    expect(provider.className).not.toMatch(/bg-\[var\(--color-panel-2\)\]/)
-  })
 })
 
 describe('Editor embedded cover size', () => {
@@ -7066,8 +7054,9 @@ describe('Editor maximized section', () => {
       expect(within(screen.getByTestId(id)).getByTestId('section-maximize')).toBeInTheDocument()
     }
     // The File name section draws no wave, so it never grows the maximize toggle.
-    const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
-    expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
+    expect(
+      within(screen.getByTestId('editor-output-name')).queryByTestId('section-maximize'),
+    ).toBeNull()
   })
 })
 

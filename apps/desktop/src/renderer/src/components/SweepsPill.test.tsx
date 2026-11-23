@@ -8,8 +8,7 @@ import { TopProgressBar } from './TopProgressBar'
 afterEach(cleanup)
 
 function zOf(el: HTMLElement): number {
-  const match = /(?:^|\s)z-\[?(\d+)\]?(?:\s|$)/.exec(el.className)
-  return match ? Number(match[1]) : 0
+  return Number(el.style.zIndex)
 }
 
 describe('SweepsPill', () => {

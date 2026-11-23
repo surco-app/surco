@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { useRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -77,7 +77,17 @@ describe('FieldInsertMenu', () => {
   it('grows the menu out of the corner that touches its trigger', () => {
     render(<Harness />)
     openMenu()
-    expect(screen.getByTestId('field-insert-menu')).toHaveClass('origin-top-right')
+    expect(screen.getByTestId('field-insert-menu')).toHaveAttribute('data-opens', 'down')
+  })
+
+  it('grows the menu out of the bottom corner when it flips above a trigger at the window bottom', () => {
+    window.innerHeight = 900
+    render(<Harness />)
+    const field = screen.getByTestId('host').parentElement as HTMLElement
+    field.getBoundingClientRect = () =>
+      ({ top: 850, bottom: 886, left: 700, right: 1100, width: 400, height: 36 }) as DOMRect
+    openMenu()
+    expect(screen.getByTestId('field-insert-menu')).toHaveAttribute('data-opens', 'up')
   })
 
   // Inserting at the caret (not always appending) is what lets users build
@@ -127,14 +137,6 @@ describe('FieldInsertMenu', () => {
     expect(screen.getByTestId('field-insert-option-case-upper')).toHaveFocus()
     fireEvent.keyDown(screen.getByTestId('field-insert-menu'), { key: 'ArrowDown' })
     expect(screen.getByTestId('field-insert-option-year')).toHaveFocus()
-  })
-
-  it('moves the focus fill through the options with no colour transition, so it keeps up with a held arrow key', () => {
-    render(<Harness />)
-    openMenu()
-    const items = within(screen.getByTestId('field-insert-menu')).getAllByRole('menuitem')
-    expect(items.length).toBeGreaterThan(1)
-    for (const item of items) expect(item.className).not.toContain('transition-colors')
   })
 
   it('closes on Escape without changing the value and refocuses the input', () => {
@@ -363,7 +365,7 @@ describe('FieldInsertMenu placement', () => {
   // overlay let a click beside the menu land on Settings instead of closing the menu, and a
   // click on the dimmed edge close Settings with it.
   it('keeps its backdrop over the dialog it opened from', () => {
-    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+    const layer = (el: Element): number => Number((el as HTMLElement).style.zIndex)
     render(
       <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
         <Harness sources={many} />

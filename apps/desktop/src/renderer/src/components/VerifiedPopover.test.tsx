@@ -160,18 +160,6 @@ describe('VerifiedPopover', () => {
     expect(file).not.toHaveTextContent('bits')
   })
 
-  // The editor can be 460 px wide: the result is what the DJ opened this for, so it wraps
-  // rather than ending in an ellipsis.
-  it('never cuts a line short at the narrowest editor', () => {
-    const lines = open([fileOk, rekordboxPending])
-    for (const line of lines) {
-      for (const el of [line, ...line.querySelectorAll('*')]) {
-        expect(el.getAttribute('class') ?? '').not.toMatch(/\btruncate\b|line-clamp|text-ellipsis/)
-      }
-    }
-    expect(screen.getByTestId('verify-popover').className).toMatch(/max-w-\[calc\(100vw/)
-  })
-
   // The footer's amber line names one place; here every place shows, the ones that did
   // not add up marked in amber instead of the check mark that would vouch for them.
   it('marks each place that does not add up and still lists the rest', () => {

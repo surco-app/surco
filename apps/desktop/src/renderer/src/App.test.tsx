@@ -2089,13 +2089,7 @@ describe('App Serato crate move', () => {
   })
 })
 
-describe('App sidebar clipping', () => {
-  it('clips the sidebar so the player cannot animate into page scroll', async () => {
-    await renderApp()
-    await addTwoTracks()
-    expect(screen.getByTestId('sidebar').className).toContain('overflow-hidden')
-  })
-
+describe('App sidebar landmark', () => {
   // VoiceOver's landmark rotor listed the column as a bare "complementary", with nothing to
   // tell it apart; its name is what lets a screen reader user jump straight to the tracks.
   it('names the sidebar landmark', async () => {

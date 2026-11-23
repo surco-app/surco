@@ -19,7 +19,7 @@ async function inList(title: string): Promise<Verdict> {
   const pill = await within(row).findByTestId('track-quality', undefined, { timeout: 60_000 })
   return {
     tone: pill.getAttribute('data-tone'),
-    label: pill.querySelector('.sr-only')?.textContent ?? '',
+    label: within(pill).getByTestId('track-quality-label').textContent ?? '',
   }
 }
 

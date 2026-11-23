@@ -3,6 +3,7 @@ import type React from 'react'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { LAYER } from '../lib/layers'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
@@ -274,7 +275,8 @@ export function Select({
       data-testid={`${testid}-backdrop`}
       aria-label={tr('common.close')}
       onClick={close}
-      className={`fixed inset-0 cursor-default ${portaled ? 'z-50' : 'z-40'}`}
+      className="fixed inset-0 cursor-default"
+      style={{ zIndex: portaled ? LAYER.overlay : LAYER.clickCatcher }}
     />
   )
 

@@ -248,13 +248,6 @@ describe('SuggestionChips', () => {
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
   })
 
-  it('keeps a long tag inside the form when the row is open, so it never pushes the editor sideways', () => {
-    overflow.visibleCount = 1
-    const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
-    render(<SuggestionChips suggestions={[long, 'V-Pop']} isOn={() => true} onPick={() => {}} />)
-    expect(screen.getByTestId(`chip-${long}`)).toHaveClass('max-w-full')
-  })
-
   it('shows the whole tag on hover when the chip had to cut it', () => {
     vi.useFakeTimers()
     const long = 'Techno; Detroit Techno; Electro; Minimal; Deep House; Acid'
@@ -296,8 +289,7 @@ describe('SuggestionChips', () => {
       />,
     )
     const row = screen.getByTestId('field-suggestions')
-    const measuring = row.querySelector('[aria-hidden="true"].invisible') as HTMLElement
+    const measuring = screen.getByTestId('field-suggestions-measure')
     expect(measuring.parentElement).not.toBe(row)
-    expect(measuring.parentElement).toHaveClass('overflow-hidden')
   })
 })

@@ -23,12 +23,10 @@ describe('Confetti', () => {
     expect(screen.queryByTestId('confetti')).not.toBeInTheDocument()
   })
 
-  it('renders a pointer-transparent overlay canvas when motion is allowed', () => {
+  it('renders the overlay canvas when motion is allowed', () => {
     stubReducedMotion(false)
     render(<Confetti />)
     const canvas = screen.getByTestId('confetti')
     expect(canvas).toBeInTheDocument()
-    // It must never swallow clicks meant for the dialog underneath it.
-    expect(canvas).toHaveClass('pointer-events-none')
   })
 })

@@ -3,6 +3,7 @@ import { FilePlus, Gauge, type LucideIcon, Snail, Sparkles } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { LAYER } from '../lib/layers'
 import type { SweepTask } from '../lib/progress'
 import { formatCount } from '../lib/stats'
 
@@ -110,7 +111,8 @@ export function SweepsPill({
       {open && (
         <div
           data-testid="sweeps-menu"
-          className="animate-pop-flat absolute top-full right-0 z-50 mt-1.5 grid w-80 origin-top-right gap-3.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3.5 text-xs shadow-[var(--shadow-float)]"
+          style={{ zIndex: LAYER.overlay }}
+          className="animate-pop-flat absolute top-full right-0 mt-1.5 grid w-80 origin-top-right gap-3.5 rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-3.5 text-xs shadow-[var(--shadow-float)]"
         >
           {tasks.map((task) => {
             const { label, count } = sweepText(tr, i18n.language, task, slowed)

@@ -148,7 +148,7 @@ describe('Tooltip', () => {
   it('shows at once on a keyboard focus, so tabbing along a toolbar does not wait on a fade at every icon', () => {
     renderTooltip()
     fireEvent.focusIn(screen.getByTestId('trigger'))
-    expect(screen.getByRole('tooltip').className).not.toContain('animate-overlay')
+    expect(screen.getByRole('tooltip')).toHaveAttribute('data-instant', 'true')
   })
 
   it('hides again when focus leaves the trigger', () => {
@@ -206,7 +206,7 @@ describe('Tooltip', () => {
       renderTooltip()
       hover(screen.getByTestId('trigger'))
       act(() => vi.advanceTimersByTime(400))
-      expect(screen.getByRole('tooltip').className).toContain('animate-overlay')
+      expect(screen.getByRole('tooltip')).toHaveAttribute('data-instant', 'false')
     } finally {
       vi.useRealTimers()
     }

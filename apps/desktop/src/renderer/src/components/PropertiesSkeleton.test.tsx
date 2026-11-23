@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { PropertiesSkeleton } from './PropertiesSkeleton'
 
@@ -15,7 +15,7 @@ describe('PropertiesSkeleton', () => {
     const root = screen.getByTestId('properties-skeleton')
     expect(root).toBeInTheDocument()
     // Two grid groups (AUDIO + FILE), each a two-column grid.
-    const grids = root.querySelectorAll('.grid-cols-2')
+    const grids = within(root).getAllByTestId('properties-skeleton-group')
     expect(grids).toHaveLength(2)
   })
 })

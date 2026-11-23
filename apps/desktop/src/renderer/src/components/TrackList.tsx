@@ -301,7 +301,9 @@ function QualityPill({
         </span>
       )}
       <Tooltip label={label} align="end" scope="dot" />
-      <span className="sr-only">{label}</span>
+      <span data-testid="track-quality-label" className="sr-only">
+        {label}
+      </span>
     </TonePill>
   )
 }

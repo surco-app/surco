@@ -1,4 +1,5 @@
 import type React from 'react'
+import { LAYER } from '../lib/layers'
 
 interface Props {
   // 0..1 for a known fraction of work done, or null for an indeterminate run (an import
@@ -17,7 +18,8 @@ export function TopProgressBar({ fraction }: Props): React.JSX.Element {
       data-testid="top-progress"
       data-indeterminate={determinate ? 'false' : 'true'}
       aria-hidden="true"
-      className="pointer-events-none absolute inset-x-0 bottom-0 z-[45] h-0.5 overflow-hidden"
+      style={{ zIndex: LAYER.progressLine }}
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"
     >
       <div
         className={`h-full bg-[var(--color-accent)] ${

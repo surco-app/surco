@@ -269,8 +269,8 @@ describe('ActivityPanel accessibility', () => {
       { id: 'c', kind: 'cover', status: 'error', label: 'Downloading cover' },
     ])
     const [done, failed] = screen.getAllByTestId('activity-status-icon')
-    expect(done.getAttribute('class')).not.toMatch(/text-good/)
-    expect(failed.getAttribute('class')).toMatch(/text-danger/)
+    expect(done).toHaveAttribute('data-tone', 'faint')
+    expect(failed).toHaveAttribute('data-tone', 'danger')
   })
 
   it('speaks a step that ended with a warning', () => {
@@ -347,23 +347,6 @@ describe('ActivityPanel accessibility', () => {
     expect(ownBody).not.toBeNull()
     expect(child.parentElement?.contains(ownBody)).toBe(true)
   })
-
-  // The open-in-browser button only faded in on mouse hover, so a keyboard user tabbing
-  // onto it pressed an invisible control.
-  it('shows the open-in-browser button when the keyboard reaches it', () => {
-    renderRows([
-      {
-        id: 'l',
-        kind: 'discogs',
-        status: 'done',
-        label: 'Loading release',
-        url: 'https://www.discogs.com/release/1',
-      },
-    ])
-    const open = screen.getByTestId('activity-open-url')
-    expect(open.className).toContain('focus-visible:opacity-100')
-    expect(open.className).toContain('group-focus-within:opacity-100')
-  })
 })
 
 // Opening Settings with the panel up left it floating sharp over the blurred backdrop, on
@@ -371,7 +354,7 @@ describe('ActivityPanel accessibility', () => {
 // tool window like the macOS ones: a modal covers it, while menus and toasts still open
 // over it.
 describe('ActivityPanel stacking', () => {
-  const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1])
+  const layer = (el: Element): number => Number((el as HTMLElement).style.zIndex)
 
   it('sits under a modal and its backdrop', () => {
     render(

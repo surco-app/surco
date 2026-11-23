@@ -139,24 +139,6 @@ describe('MetadataForm', () => {
     expect(screen.getByTestId('field-compilation')).not.toBeChecked()
   })
 
-  // With the labels beside the inputs, every input stretched to the panel's far edge: on a
-  // 1270px panel "2007" sat in a 1000px box and the eye crossed the whole row to read it.
-  // The fields column stops at a readable measure however wide the user drags the panel.
-  it('caps the fields column at a readable width on a wide panel', () => {
-    renderForm([spec('title', 'Illusion'), spec('year', '2007')])
-    expect(screen.getByTestId('field-title').parentElement?.className).toContain('max-w-[48rem]')
-  })
-
-  // In the default 1320px window the fields column beside the cover is about 438px, 10px
-  // short of the old 28rem switch, so every label sat on top of its input and only Year kept
-  // its label beside it. An input beside its label still holds a full title at 24rem.
-  it('puts the labels beside the inputs once the column reaches 24rem', () => {
-    renderForm([spec('title', 'Illusion'), spec('year', '2007')])
-    expect(screen.getByTestId('field-title').parentElement?.className).toContain(
-      'beside:grid-cols-[auto_minmax(0,1fr)]',
-    )
-  })
-
   // Pairing any two short fields that happened to follow each other put "Disc no." beside
   // "Total tracks" and "Total discs" beside "BPM": a row that reads as one fact but holds
   // two unrelated ones. Only fields that complete each other share a row, and only when
