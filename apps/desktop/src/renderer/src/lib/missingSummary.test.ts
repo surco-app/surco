@@ -15,4 +15,22 @@ describe('missingSummary', () => {
       '6 required fields missing',
     )
   })
+
+  // Over several tracks that lack different fields, «Missing Title and Artist» told the user
+  // every track lacked both. The two names then read as alternatives, with one field's verb.
+  it.each([
+    ['es', 'Falta Título o Artista'],
+    ['en', 'Missing Title or Artist'],
+  ])(
+    'names two fields as alternatives in %s when the tracks lack different ones',
+    async (language, said) => {
+      await i18n.changeLanguage(language)
+      try {
+        const t = i18n.getFixedT(language)
+        expect(missingSummary([t('fields.title'), t('fields.artist')], t, true)).toBe(said)
+      } finally {
+        await i18n.changeLanguage('en')
+      }
+    },
+  )
 })

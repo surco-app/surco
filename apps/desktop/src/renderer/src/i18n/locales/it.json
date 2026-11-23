@@ -968,6 +968,7 @@
     "missingRequired": "Mancano campi obbligatori ({{fields}})",
     "missingOne": "Manca {{field}}",
     "missingTwo": "Mancano {{first}} e {{second}}",
+    "missingEither": "Manca {{first}} o {{second}}",
     "missingCount_one": "Manca {{count}} campo obbligatorio",
     "missingCount_other": "Mancano {{count}} campi obbligatori",
     "mixedReplaceSelection": "La selezione mescola brani che sostituiscono una copia della tua libreria e brani che vengono aggiunti. Separali per convertirli.",

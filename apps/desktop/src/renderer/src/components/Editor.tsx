@@ -2295,6 +2295,7 @@ export const Editor = memo(function Editor({
                 ? missingSummary(
                     multiGate.missing.fields.map((key) => tr(`fields.${key}`)),
                     tr,
+                    multiGate.missing.apart,
                   )
                 : undefined
               : [...readOnlyReason, ...(otherSummary ? [otherSummary] : [])].join(' · ') ||

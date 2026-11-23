@@ -968,6 +968,7 @@
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
     "missingOne": "Falta {{field}}",
     "missingTwo": "Faltan {{first}} y {{second}}",
+    "missingEither": "Falta {{first}} o {{second}}",
     "missingCount_one": "Falta {{count}} campo obligatorio",
     "missingCount_other": "Faltan {{count}} campos obligatorios",
     "mixedReplaceSelection": "La selección mezcla pistas que sustituyen a una copia de tu biblioteca y pistas que se añaden. Sepáralas para convertirlas.",
