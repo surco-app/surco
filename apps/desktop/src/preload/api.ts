@@ -87,6 +87,7 @@ import type {
   WaveformScan,
   WritableProgram,
 } from '../shared/types'
+import type { ReplacedEntry } from '../shared/toReview'
 import type { Verification } from '../shared/verification'
 
 export interface CuesApi {
@@ -273,6 +274,9 @@ export interface Api {
   cues: CuesApi
   djAppRunning: () => Promise<boolean>
   matchingPairs: () => Promise<[string, string][]>
+  replacedTracks: () => Promise<ReplacedEntry[]>
+  reviewReplaced: (path: string, programs?: DjProgram[]) => Promise<ReplacedEntry | null>
+  restoreReplaced: (entry: ReplacedEntry) => Promise<void>
   addMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPair: (a: string, b: string) => Promise<void>
   removeMatchingPairs: (pairs: [string, string][]) => Promise<void>
