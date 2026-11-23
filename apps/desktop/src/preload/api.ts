@@ -107,7 +107,12 @@ export interface CuesApi {
   queued: (contentId: string) => Promise<QueuedCues | null>
   undo: (contentId: string) => Promise<void>
   save: (reqs: SaveCuesRequest[]) => Promise<void>
-  saveComments: (items: SaveCommentRequest[], toFile: boolean) => Promise<{ failed: string[] }>
+  saveComments: (
+    items: SaveCommentRequest[],
+    toFile: boolean,
+  ) => Promise<{ failed: string[]; unwritten: string[] }>
+  cancelComments: () => Promise<void>
+  onCommentProgress: (cb: (p: { done: number; total: number }) => void) => () => void
 }
 
 export interface Api {

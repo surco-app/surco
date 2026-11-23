@@ -290,7 +290,9 @@ const NO_CUES: CuesApi = {
   queued: async () => null,
   undo: async () => {},
   save: async () => {},
-  saveComments: async () => ({ failed: [] }),
+  saveComments: async () => ({ failed: [], unwritten: [] }),
+  cancelComments: async () => {},
+  onCommentProgress: () => () => {},
 }
 
 export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {

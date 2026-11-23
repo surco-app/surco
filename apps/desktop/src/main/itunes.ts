@@ -16,8 +16,15 @@ const MAX_DELAY_MS = 8000
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
+const FALLBACK_STORES = ['GB', 'US']
+
 function country(): string {
   return app.getLocaleCountryCode().toUpperCase() || 'US'
+}
+
+function stores(): string[] {
+  const home = country()
+  return [home, ...FALLBACK_STORES.filter((cc) => cc !== home)]
 }
 
 async function api<T>(url: string, priority?: SearchPriority): Promise<T> {
@@ -95,8 +102,11 @@ export function hitsNamingEveryWord<H extends ItunesHit>(query: string, hits: H[
 
 const cacheStore = createLookupCacheStore<SearchResult[], Release>('itunes-lookup-cache')
 
-export async function searchOnce(text: string, priority?: SearchPriority): Promise<SearchResult[]> {
-  const cc = country()
+export async function searchOnce(
+  text: string,
+  priority?: SearchPriority,
+  cc: string = country(),
+): Promise<SearchResult[]> {
   const key = `q:${cc}:${text.trim().toLowerCase()}`
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
@@ -117,7 +127,14 @@ export async function search(
   return activity.track(
     'itunes',
     'activity.searchItunes',
-    () => searchCandidates(query, hints, (candidate) => searchOnce(candidate, priority)),
+    () =>
+      searchCandidates(query, hints, async (candidate) => {
+        for (const cc of stores()) {
+          const results = await searchOnce(candidate, priority, cc)
+          if (results.length) return results
+        }
+        return []
+      }),
     {
       labelParams: { query },
       summary: (r) => ({ detailKey: 'activity.resultCount', detailParams: { count: r.length } }),
@@ -190,27 +207,29 @@ export async function getRelease(id: number, priority?: SearchPriority): Promise
   const cacheKey = String(id)
   const cached = cacheStore.getRelease(cacheKey)
   if (cached) return cached
-  const cc = country()
-  return activity.track(
+  const albumUrl = (cc: string): string => `https://music.apple.com/${cc.toLowerCase()}/album/${id}`
+  const found = await activity.track(
     'itunes',
     'activity.loadItunesRelease',
     async () => {
-      const data = await api<{ results?: ItunesLookupItem[] }>(
-        `${BASE}/lookup?id=${id}&entity=song&country=${cc}`,
-        priority,
-      )
-      const items = data.results ?? []
-      if (!items.some((i) => i.wrapperType === 'collection')) {
-        throw errorWithKey('itunesUnavailable', `no album ${id}`)
+      for (const cc of stores()) {
+        const data = await api<{ results?: ItunesLookupItem[] }>(
+          `${BASE}/lookup?id=${id}&entity=song&country=${cc}`,
+          priority,
+        )
+        const items = data.results ?? []
+        if (items.some((i) => i.wrapperType === 'collection')) {
+          return { release: mapRelease(items), cc }
+        }
       }
-      const release = mapRelease(items)
-      cacheStore.setRelease(cacheKey, release)
-      return release
+      throw errorWithKey('itunesUnavailable', `no album ${id}`)
     },
     {
       detail: String(id),
-      summary: (r) => ({ detail: r.title }),
-      url: `https://music.apple.com/${cc.toLowerCase()}/album/${id}`,
+      summary: ({ release, cc }) => ({ detail: release.title, url: albumUrl(cc) }),
+      url: albumUrl(country()),
     },
   )
+  cacheStore.setRelease(cacheKey, found.release)
+  return found.release
 }

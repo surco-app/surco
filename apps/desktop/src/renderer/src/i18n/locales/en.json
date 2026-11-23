@@ -1214,6 +1214,7 @@
         "phrasesSkipped_other": "{{count}} without two CALLs, left alone",
         "saveComments_one": "Save {{count}} comment",
         "saveComments_other": "Save {{count}} comments",
+        "savingComments": "Saving… {{done}}/{{total}}",
         "commentsFileFailed_one": "Couldn't write to {{count}} file",
         "commentsFileFailed_other": "Couldn't write to {{count}} files",
         "commentsWhere": "Save options",
