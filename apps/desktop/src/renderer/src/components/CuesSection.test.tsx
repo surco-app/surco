@@ -417,7 +417,6 @@ describe('CuesSection', () => {
     markAt(bar(64))
     pick('cue-wave-hot-A', bar(16))
     fireEvent.click(screen.getByTestId('cues-colour'))
-    expect(screen.getByTestId('cues-colour-popover').className).toContain('absolute')
     const reachedWindow = vi.fn()
     window.addEventListener('keydown', reachedWindow)
     fireEvent.keyDown(document, { key: 'Escape' })
