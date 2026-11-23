@@ -211,18 +211,16 @@ describe('ShortcutsTab reset all', () => {
   })
 })
 
-// The key box sizes itself to the longest thing it ever shows ("Press keys…" in the
-// current language), so it neither jumps when recording starts nor differs between a
-// short and a long chord. jsdom does not lay out, so the reserved text is what we check.
-describe('ShortcutsTab key box width', () => {
-  it('reserves the recording label on every key box, idle or recording', () => {
+// Recording shows a wordless "…" (the tab intro already explains the gesture) in the same
+// button, so the box does not change; screen readers still hear the recording label.
+describe('ShortcutsTab recording state', () => {
+  it('keeps the same button, shows an ellipsis and names itself with the recording label', () => {
     renderTab()
-    const recording = i18n.t('settings.shortcuts.recording')
     const idle = screen.getByTestId('shortcut-record-play')
-    const other = screen.getByTestId('shortcut-record-find-replace')
-    expect(idle).toHaveAttribute('data-sizer', recording)
-    expect(other).toHaveAttribute('data-sizer', recording)
     fireEvent.click(idle)
-    expect(screen.getByTestId('shortcut-record-play')).toHaveAttribute('data-sizer', recording)
+    const recording = screen.getByTestId('shortcut-record-play')
+    expect(recording).toBe(idle)
+    expect(recording).toHaveTextContent('…')
+    expect(recording).toHaveAccessibleName(i18n.t('settings.shortcuts.recording'))
   })
 })

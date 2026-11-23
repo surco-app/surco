@@ -126,7 +126,6 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
               <Tooltip label={tr('settings.shortcuts.reset')} />
             </button>
           )}
-          {/* The hidden ::after carries the recording label, so the box never resizes when recording starts. */}
           <button
             type="button"
             data-testid={`shortcut-record-${def.id}`}
@@ -134,8 +133,8 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
             onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
             onBlur={() => isRecording && setRecording(null)}
             aria-pressed={isRecording}
-            data-sizer={tr('settings.shortcuts.recording')}
-            className={`press rounded-md border px-2.5 py-1 text-center text-sm tracking-wide after:invisible after:block after:h-0 after:overflow-hidden after:whitespace-nowrap after:content-[attr(data-sizer)] ${
+            aria-label={isRecording ? tr('settings.shortcuts.recording') : undefined}
+            className={`press min-w-[4.5rem] rounded-md border px-2.5 py-1 text-center text-sm tracking-wide ${
               isRecording
                 ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
                 : conflictIds.has(def.id)
@@ -144,7 +143,7 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
             }`}
           >
             {isRecording
-              ? tr('settings.shortcuts.recording')
+              ? '…'
               : chord.length
                 ? formatShortcut(chord, isMac)
                 : tr('settings.shortcuts.unbound')}
