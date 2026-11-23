@@ -238,14 +238,12 @@ describe('a replacement measured in the conversion', () => {
     near(10000 + (repoint()?.audio?.cueShiftMs ?? Number.NaN), 9949)
   }, 120_000)
 
-  // The DJ's own Traktor offset is applied to every conversion; a replacement that moves the
-  // cues is no exception, or the DJ's calibration is lost on exactly the tracks they swap.
-  it("applies the DJ's Traktor offset on a moved replacement", async () => {
+  it("moves a replaced entry's cues by the measured shift alone, since the DJ set them by ear in Traktor where the rig offset already counts", async () => {
     watch.traktorCueOffsetMs = -51
 
     await replace(later, fresh('Song.aiff'), oldWav)
 
-    near(patch()?.cueShift?.shiftMs, -1449)
+    near(patch()?.cueShift?.shiftMs, -1500)
   }, 120_000)
 
   // Traktor's codec offset is a property of the file the DJ's cues were set on: it has to be
@@ -259,7 +257,7 @@ describe('a replacement measured in the conversion', () => {
 
     await replace(later, fresh('Song.aiff'), oldMp3)
 
-    expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18 + 10, 1)
+    expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18, 1)
   }, 120_000)
 
   // Another recording has no shift to measure: moving the cues to the best fit of noise would

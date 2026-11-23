@@ -2896,7 +2896,7 @@ export async function convertAudio(
     // these lines are the whole evidence — whether the destination was still held,
     // by how many attempts, and whether it ever freed.
     const replaceTraktorShift: CueShift = replaceShift
-      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0, traktorCueOffsetMs())
+      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0)
       : { shiftMs: 0 }
     await renameWithRetry(tmp, output, {
       onRetry: ({ attempt, code, waitMs, path }) =>
