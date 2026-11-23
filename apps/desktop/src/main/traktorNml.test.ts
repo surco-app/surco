@@ -1263,6 +1263,29 @@ describe('applyPatches with tags', () => {
     expect(out).toBe(bare)
   })
 
+  // A DJ who fills in a field Traktor never held (a bare entry has no ARTIST) must see it in
+  // the collection, or the check reads the missing attribute as the old empty name and the
+  // replaced file is never retired.
+  it('adds an attribute the entry never had when the review read it as empty', () => {
+    const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM></ALBUM><INFO RANKING="102"></INFO></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(bare, [
+      patch({
+        artist: { from: '', to: 'A & B' },
+        album: { from: '', to: 'New' },
+        genre: { from: '', to: 'House' },
+      }),
+    ])
+    expect(out).toContain('<ENTRY ARTIST="A &amp; B" TITLE="X">')
+    expect(out).toContain('<ALBUM TITLE="New">')
+    expect(out).toContain('<INFO GENRE="House" RANKING="102">')
+  })
+
+  it('does not add an attribute when the review read a name there', () => {
+    const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(bare, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
+    expect(out).toBe(bare)
+  })
+
   it('changes nothing but the attribute when the patch carries only tags', () => {
     const rich = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="Bleeding Love" ARTIST="Dj Lara"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM TITLE="Need You"></ALBUM><INFO GENRE="electronic" RANKING="102"></INFO><CUE_V2 NAME="Drop" START="79672.640000" TYPE="0"></CUE_V2></ENTRY></COLLECTION></NML>`
     const out = applyPatches(rich, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
