@@ -1,4 +1,5 @@
 import { readFileSync, renameSync, writeFileSync } from 'node:fs'
+import log from 'electron-log/main'
 import { DJ_PROGRAMS, type DjProgram } from '../shared/djProgram'
 import { DJ_REACH_SETTINGS } from '../shared/djSettings'
 import type { ReplaceShift } from '../shared/replaceShift'
@@ -71,13 +72,13 @@ export function createReplacedStore(file: string): ReplacedStore {
   ): T => {
     const { entries, state } = read()
     if (state === 'unreadable') {
-      console.warn(`replaced-tracks store unreadable, change skipped: ${file}`)
+      log.warn(`replaced-tracks store unreadable, change skipped: ${file}`)
       return none
     }
     if (state === 'corrupt') {
       const aside = `${file}.corrupt-${Date.now()}`
       renameSync(file, aside)
-      console.warn(`replaced-tracks store was corrupt, kept as ${aside}`)
+      log.warn(`replaced-tracks store was corrupt, kept as ${aside}`)
     }
     const { entries: next, out } = change(entries)
     save(next)

@@ -1,15 +1,18 @@
 import { mkdir, mkdtemp, readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
-import { describe, expect, it } from 'vitest'
+import log from 'electron-log/main'
+import { describe, expect, it, vi } from 'vitest'
 import { DJ_PROGRAMS } from '../shared/djProgram'
 import type { ReplacedEntry } from '../shared/toReview'
 import {
   createReplacedStore,
-  followReplaced,
   followingPrograms,
+  followReplaced,
   recordReplacement,
 } from './replacedStore'
+
+vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
 
 async function fileIn(): Promise<string> {
   return join(await mkdtemp(join(tmpdir(), 'surco-replacedstore-')), 'replaced-tracks.json')
@@ -120,6 +123,7 @@ describe('createReplacedStore', () => {
     expect(store.review('/m/new.flac')).toBeNull()
     expect((await stat(file)).isDirectory()).toBe(true)
     expect(await readdir(dirname(file))).toEqual([basename(file)])
+    expect(log.warn).toHaveBeenCalled()
   })
 
   it('does not leave two entries at the same path when a move lands on an existing one', async () => {
