@@ -1647,16 +1647,22 @@ export default function App(): React.JSX.Element {
   })
   // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
   // through tracksRef so the stable callbacks capturing it never see a stale list.
-  // A tag step is the DJ's newest action, notice or not, so it takes ⌘Z away from an older
-  // Reviewed, whose card keeps its own Undo.
-  const recordMetaUndo = useStableCallback(
+  const recordTagSnapshot = useStableCallback(
     (ids: string[], opts?: { cover?: boolean; group?: string }) => {
-      takeShortcutUndo()
       const set = new Set(ids)
       metaUndo.record(
         tracksRef.current.filter((t) => set.has(t.id)),
         opts,
       )
+    },
+  )
+  // A tag step the DJ takes is their newest action, notice or not, so it takes ⌘Z away
+  // from an older Reviewed, whose card keeps its own Undo. The background auto-match
+  // records with the snapshot alone: it is no step of theirs.
+  const recordMetaUndo = useStableCallback(
+    (ids: string[], opts?: { cover?: boolean; group?: string }) => {
+      takeShortcutUndo()
+      recordTagSnapshot(ids, opts)
     },
   )
 
@@ -1688,7 +1694,7 @@ export default function App(): React.JSX.Element {
     matchCleanupRef,
     editingRef,
     reportActivity,
-    recordUndo: recordMetaUndo,
+    recordUndo: recordTagSnapshot,
   })
 
   const readingSourcePlaylist = useMemo(() => holdsAutoMatch(tracks), [tracks])

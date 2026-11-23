@@ -2610,6 +2610,27 @@ describe('App auto-match', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
   })
 
+  // The sweep runs on its own in the background; it is no step the DJ took. A Reviewed they
+  // just pressed keeps ⌘Z while its notice is up, whatever the sweep matched meanwhile.
+  it('leaves ⌘Z with a live Reviewed when a background auto-match lands', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ discogsToken: 'tok', autoMatch: true })),
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'Artist' }),
+      readDuration: vi.fn().mockResolvedValue(180),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue(release),
+    })
+    await renderApp()
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+    await addTwoTracks()
+    await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    expect(undoReviewed).toHaveBeenCalledOnce()
+    takeShortcutUndo()
+  })
+
   // The track you're looking at shouldn't need the toolbar button: with auto-match on,
   // once the selection rests on a row it gets matched even if it was never scrolled into
   // view (the import gating only holds back the rows you aren't looking at).
