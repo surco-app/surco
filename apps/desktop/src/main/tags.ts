@@ -2,7 +2,7 @@ import { extname } from 'node:path'
 import {
   ByteVector,
   Id3v2AttachmentFrame,
-  type Id3v2CommentsFrame,
+  Id3v2CommentsFrame,
   type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifier,
@@ -527,7 +527,7 @@ const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
 // the bundled ffmpeg).
 function multiValuedTags(
   f: TagFile,
-): { name: string; values: string[]; carried: string; frame?: string }[] {
+): { name: string; values: string[]; carried: string; frame?: string; language?: string }[] {
   const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
   if (from)
     return from.fieldNames.map((name) => {
@@ -549,11 +549,22 @@ function multiValuedTags(
     if (name) byName.set(name, [...frame.text])
     if (name) frames.set(name, frame.frameId.toString())
   }
+  // iTunes' and other players' own fields, which ffmpeg reads under their description; the
+  // COMM with none is the comment Surco writes.
+  const languages = new Map<string, string>()
+  for (const frame of id3.getFramesByClassType<Id3v2CommentsFrame>(
+    Id3v2FrameClassType.CommentsFrame,
+  ))
+    if (frame.description && !byName.has(frame.description)) {
+      byName.set(frame.description, [frame.text])
+      languages.set(frame.description, frame.language)
+    }
   return [...byName].map(([name, values]) => ({
     name,
     values,
     carried: values[0],
     frame: frames.get(name),
+    language: languages.get(name),
   }))
 }
 
@@ -595,7 +606,9 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
         const carry = (tag: CarriedTag) =>
           extname(dest).toLowerCase() === '.m4a'
             ? carryToMp4(out.tag as Mpeg4AppleTag, tag)
-            : carryToId3(out, tag)
+            : tag.language !== undefined
+              ? carryCommentToId3(out, tag)
+              : carryToId3(out, tag)
         if (tags.filter(carry).length > 0) out.save()
       } finally {
         out.dispose()
@@ -608,7 +621,7 @@ export function carryUnmanagedTags(dest: string, source: string, owned: string[]
   }
 }
 
-type CarriedTag = { name: string; values: string[]; frame?: string }
+type CarriedTag = { name: string; values: string[]; frame?: string; language?: string }
 
 function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
   const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
@@ -630,6 +643,28 @@ function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
     : Id3v2UserTextInformationFrame.fromDescription(name)
   text.text = values
   id3.addFrame(text)
+  return true
+}
+
+// A described COMM goes back as one, in place of the TXXX ffmpeg turned it into.
+function carryCommentToId3(f: TagFile, { name, values, language }: CarriedTag): boolean {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  if (fresh) id3.version = 3
+  const same = (description: string) => description.toLowerCase() === name.toLowerCase()
+  const mirrors = id3
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => same(fr.description))
+  const held = id3
+    .getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+    .filter((fr) => same(fr.description))
+  if (mirrors.length === 0 && held.length === 1 && held[0].text === values[0]) return false
+  for (const fr of [...held, ...mirrors]) id3.removeFrame(fr)
+  const comment = Id3v2CommentsFrame.fromDescription(name, language)
+  comment.text = values[0]
+  id3.addFrame(comment)
   return true
 }
 

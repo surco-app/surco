@@ -131,7 +131,7 @@ describe('a conversion that changes the audio', () => {
   ] as [Source, OutputFormat][])('drops the old measurements from %s to %s', async (from, to) => {
     const tags = await convert(tagged(from, true), to)
     expect(tags.filter((name) => lower(MEASUREMENTS).includes(name))).toEqual([])
-    expect(tags).toContain('vinyl_side')
+    for (const name of lower(OTHERS)) expect(tags, name).toContain(name)
   })
 
   it.each([

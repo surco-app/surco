@@ -5,11 +5,19 @@ import {
   Id3v2CommentsFrame,
   Id3v2FrameClassType,
   type Id3v2Tag,
+  type Id3v2UserTextInformationFrame,
+  type Mpeg4AppleTag,
   File as TagFile,
   TagTypes,
 } from 'node-taglib-sharp'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('electron', () => ({ app: { isPackaged: false } }))
+vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
+
 import { emptyMetadata } from '../shared/metadata'
+import type { OutputFormat } from '../shared/types'
+import { convertAudio, readMeta } from './ffmpeg'
 import { encodeSine } from './sineTone.fixture'
 import { setTagFields } from './tagFieldSet'
 import { writeTags } from './tags'
@@ -93,5 +101,87 @@ describe.each(['mp3', 'aiff', 'wav'] as const)('an iTunes-tagged %s', (ext) => {
     ])
     const { iTunPGAP: _, ...rest } = DESCRIBED
     expect(comments(path)).toEqual({ ...rest, '': 'Old comment' })
+  })
+})
+
+function userTexts(path: string): string[] {
+  const f = TagFile.createFromPath(path)
+  try {
+    const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+    return (
+      id3?.getFramesByClassType<Id3v2UserTextInformationFrame>(
+        Id3v2FrameClassType.UserTextInformationFrame,
+      ) ?? []
+    ).map((frame) => frame.description)
+  } finally {
+    f.dispose()
+  }
+}
+
+function freeform(path: string, name: string): string[] {
+  const f = TagFile.createFromPath(path)
+  try {
+    return (f.tag as Mpeg4AppleTag).getItunesStrings('com.apple.iTunes', name)
+  } finally {
+    f.dispose()
+  }
+}
+
+async function convert(
+  path: string,
+  target: OutputFormat,
+  options: { clearExtras?: boolean; foreignRemoved?: string[] } = {},
+): Promise<string> {
+  const out = join(dir, `out${n++}.${target === 'alac' ? 'm4a' : target}`)
+  const tags = options.clearExtras ? emptyMetadata() : (await readMeta(path)).tags
+  await convertAudio(
+    path,
+    out,
+    target,
+    { ...tags, title: 'New title' },
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    options.clearExtras,
+    options.foreignRemoved,
+  )
+  return out
+}
+
+const { iTunNORM, iTunSMPB, ...UNMEASURED } = DESCRIBED
+const SAME_SAMPLES = new Set(['mp3>mp3', 'aiff>aiff', 'wav>wav', 'aiff>wav', 'wav>aiff'])
+
+// ffmpeg reads a described COMM under its description and wrote it back as a TXXX into an
+// MP3 or AIFF, where iTunes looks for its own fields only in a COMM, and into a WAV or an
+// ALAC not at all, the WAV even when the update copied the audio through.
+describe.each(['mp3', 'aiff', 'wav'] as const)('an iTunes-tagged %s', (ext) => {
+  it.each(['mp3', 'aiff', 'wav'] as const)(
+    'keeps its described comments as such into %s',
+    async (target) => {
+      const out = await convert(itunesTagged(ext), target)
+      const same = SAME_SAMPLES.has(`${ext}>${target}`)
+      expect(comments(out)).toEqual({ ...(same ? DESCRIBED : UNMEASURED), '': 'Old comment' })
+      expect(userTexts(out).filter((name) => name in DESCRIBED)).toEqual([])
+    },
+  )
+
+  it('keeps them as freeform atoms into ALAC', async () => {
+    const out = await convert(itunesTagged(ext), 'alac')
+    for (const [name, text] of Object.entries(UNMEASURED))
+      expect(freeform(out, name)).toEqual([text])
+  })
+
+  it('does not bring back one the DJ deleted or cleared with the rest', async () => {
+    const kept = await convert(itunesTagged(ext), 'wav', { foreignRemoved: ['songs-db_custom1'] })
+    expect(comments(kept)['Songs-DB_Custom1']).toBeUndefined()
+    expect(comments(kept).iTunPGAP).toBe('1')
+    const cleared = await convert(itunesTagged(ext), 'wav', { clearExtras: true })
+    expect(comments(cleared)).toEqual({})
   })
 })
