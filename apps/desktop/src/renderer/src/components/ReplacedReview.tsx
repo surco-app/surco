@@ -7,11 +7,22 @@ import { useToast } from '../lib/toastContext'
 
 // Closes the review in every program at once, with no question: the notice's Undo (and ⌘Z
 // while it is up) puts the entry back exactly as it was, so a misclick costs nothing.
-export function ReviewedButton({ path, name }: { path: string; name: string }): React.JSX.Element {
+// onPress runs before the review: the button is about to unmount with its row, so the
+// maximized editor takes the focus back while it still can, and its keys stay with the track.
+export function ReviewedButton({
+  path,
+  name,
+  onPress,
+}: {
+  path: string
+  name: string
+  onPress?: () => void
+}): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { review, restore } = useReviewReplaced()
   const { reportUndo } = useToast()
   const onClick = async () => {
+    onPress?.()
     const before = await review(path)
     if (!before) return
     const undo = () => {

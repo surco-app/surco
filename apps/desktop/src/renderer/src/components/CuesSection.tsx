@@ -131,6 +131,7 @@ import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { cueLetter } from '../lib/rowCues'
 import { useAppSettings } from '../lib/settingsContext'
 import { formatShortcut } from '../lib/shortcuts'
+import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { claimKeys } from '../lib/spaceClaim'
 import { replacedEntryOf, savedReviews } from '../lib/toReview'
 import { CueDeck, CueMoves } from './CueDeck'
@@ -1065,8 +1066,13 @@ function Editing({
     else if (key.type === 'mark' && !manual) markHere()
     else if (key.type === 'hot') pad(key.kind)
     else if (key.type === 'remove' && selected) dispatch(removeOf(selected.key))
-    else if (key.type === 'undo') dispatch({ type: 'undo' })
-    else if (key.type === 'redo') dispatch({ type: 'redo' })
+    else if (key.type === 'undo') {
+      // A notice still offering its Undo (Reviewed, pressed right here) is the DJ's last
+      // step, so ⌘Z takes that back before stepping the draft.
+      const shortcut = takeShortcutUndo()
+      if (shortcut) shortcut()
+      else dispatch({ type: 'undo' })
+    } else if (key.type === 'redo') dispatch({ type: 'redo' })
     else if (key.type === 'zoom') setZoom((z) => zoomStep(z, key.dir))
     else if (key.type === 'pin') pin(key.exact)
     else if (key.type === 'grid-shift' && state.grid && gridOff === null)
@@ -1884,11 +1890,16 @@ function Editing({
       {maximized && header}
       {/* The full editor has no section header, so the why of a replaced track and its
       Reviewed get a row of their own under the track's header. Only a replaced track has it,
-      so no state inside the open track toggles it and nothing above the wave changes width. */}
+      and Reviewed removes it with the track still open: the row only takes height, so nothing
+      above the wave changes width. */}
       {maximized && replaced && (
         <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
           <ReplacedReason shift={replaced.shift} />
-          <ReviewedButton path={replaced.newPath} name={track?.title || cue.label} />
+          <ReviewedButton
+            path={replaced.newPath}
+            name={track?.title || cue.label}
+            onPress={focusEditor}
+          />
         </div>
       )}
       {maximized ? (
