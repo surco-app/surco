@@ -107,6 +107,7 @@ export const Field = memo(function Field({
   // touch the global track array (and its O(n) pipeline) until they pause or leave.
   const [draft, setDraft] = useState(value)
   const [valuesOpen, setValuesOpen] = useState(false)
+  const [valueCut, setValueCut] = useState(false)
   const valuesRef = useRef<HTMLSpanElement>(null)
   useEffect(() => {
     if (!valuesOpen) return
@@ -220,6 +221,10 @@ export const Field = memo(function Field({
       <span
         ref={valuesRef}
         className={`relative block ${width ? WIDTH_CLASS[width] : 'beside:col-start-2'}`}
+        onPointerEnter={() => {
+          const input = inputRef.current
+          setValueCut(!!input && input.scrollWidth > input.clientWidth)
+        }}
       >
         <input
           ref={inputRef}
@@ -256,6 +261,7 @@ export const Field = memo(function Field({
         {(mixed || plain) && placeholderTooltip && placeholder && (
           <Tooltip label={placeholder} hoverOnly />
         )}
+        {draft !== '' && <Tooltip label={valueCut ? draft : ''} hoverOnly />}
         {listsValues && (
           <>
             <button

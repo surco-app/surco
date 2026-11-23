@@ -691,3 +691,44 @@ describe('Field medium box', () => {
     expect(screen.getByTestId('field-isrc').parentElement?.className).toContain('w-40')
   })
 })
+
+describe('Field cut value', () => {
+  const hover = (name: string): void => {
+    const box = screen.getByTestId(`field-${name}`).parentElement as HTMLElement
+    fireEvent.pointerEnter(box)
+    box.dispatchEvent(new MouseEvent('pointermove', { clientX: 10, clientY: 10 }))
+  }
+  const cut = (name: string, scroll: number, client: number): void => {
+    const input = screen.getByTestId(`field-${name}`)
+    Object.defineProperty(input, 'scrollWidth', { configurable: true, value: scroll })
+    Object.defineProperty(input, 'clientWidth', { configurable: true, value: client })
+  }
+
+  it('shows the whole value on hover when the box had to cut it, so "Ab minor / G# minor" is never left as "Ab mi…"', () => {
+    vi.useFakeTimers()
+    render(
+      <Field
+        name="key"
+        label="Key"
+        value="Ab minor / G# minor"
+        onChange={vi.fn()}
+        width="medium"
+      />,
+    )
+    cut('key', 180, 120)
+    hover('key')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Ab minor / G# minor')
+    vi.useRealTimers()
+  })
+
+  it('stays quiet over a value that fits, since repeating it adds nothing', () => {
+    vi.useFakeTimers()
+    render(<Field name="key" label="Key" value="8A" onChange={vi.fn()} width="medium" />)
+    cut('key', 40, 120)
+    hover('key')
+    act(() => vi.advanceTimersByTime(400))
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    vi.useRealTimers()
+  })
+})
