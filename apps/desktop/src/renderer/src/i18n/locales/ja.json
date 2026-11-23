@@ -606,7 +606,7 @@
     "toggleLanguage": "言語を切り替える",
     "toggleTheme": "テーマを切り替える (システム / ライト / ダーク)",
     "toggleListWaves": "リストの波形を表示/非表示",
-    "toggleListPositions": "プレイリストの番号を表示/非表示",
+    "toggleListPositions": "番号を表示/非表示",
     "toggleRailNames": "ソース名を表示/非表示",
     "toggleSidebar": "サイドバーを表示/非表示",
     "confetti": "紙吹雪を飛ばす 🎉",
