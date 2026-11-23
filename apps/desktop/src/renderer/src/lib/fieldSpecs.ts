@@ -48,6 +48,8 @@ function countValues(values: string[]): { value: string; count: number }[] {
   return [...counts].map(([value, count]) => ({ value, count })).sort((a, b) => b.count - a.count)
 }
 
+const UNMEASURED_BPM = /^\s*0+(\.0+)?\s*$/
+
 function valueCounts(tracks: TrackItem[], key: MetaTextKey): { value: string; count: number }[] {
   return countValues(tracks.map((t) => t.meta[key] ?? ''))
 }
@@ -407,11 +409,13 @@ export function buildFieldSpecs({
           ]
         }
         const analyzed = def.key === 'quality' ? analyzedQuality : undefined
+        const stored = item.meta[def.key] ?? ''
+        const shown = def.key === 'bpm' && UNMEASURED_BPM.test(stored) ? '' : stored
         return [
           {
             key: def.key,
             label: tr(`fields.${def.key}`),
-            value: analyzed ?? item.meta[def.key] ?? '',
+            value: analyzed ?? shown,
             readOnly: analyzed !== undefined,
             onChange: singleOnChange.get(def.key) ?? (() => {}),
             // Only the free-text fields host the { } menu (see INSERT_TARGET_FIELDS);
@@ -424,7 +428,7 @@ export function buildFieldSpecs({
             cleaned: cleanedNotes?.[def.key],
             width: widthOf(def.key),
             required: requiredFields.includes(def.key),
-            invalid: requiredFields.includes(def.key) && !item.meta[def.key]?.trim(),
+            invalid: requiredFields.includes(def.key) && !stored.trim(),
             suggestions:
               def.key === 'genre'
                 ? genreChips

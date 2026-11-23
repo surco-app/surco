@@ -786,3 +786,19 @@ describe('the Playlists field of each library', () => {
     ])
   })
 })
+
+describe('a BPM of zero', () => {
+  it('reads as empty, since tools write 0 when they never measured one and the detected tempo should be the offer', () => {
+    const specs = buildFieldSpecs(
+      params({ item: track('a', { bpm: '0' }), visibleFields: ['bpm'] }),
+    )
+    expect(specs[0].value).toBe('')
+  })
+
+  it('leaves a real tempo as it is', () => {
+    const specs = buildFieldSpecs(
+      params({ item: track('a', { bpm: '100' }), visibleFields: ['bpm'] }),
+    )
+    expect(specs[0].value).toBe('100')
+  })
+})
