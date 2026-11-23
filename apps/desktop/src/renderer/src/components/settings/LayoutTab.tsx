@@ -194,14 +194,14 @@ export function LayoutTab({ synced, patch }: Props): React.JSX.Element {
                   >
                     <ChevronDown className="h-4 w-4" aria-hidden="true" />
                   </button>
-                  <span />
-                  <span />
                 </>
               ) : (
                 // No "FIXED" label: it sat in the arrows' columns and pushed this row's
                 // Open control out of the line every other row keeps — and the row having
                 // no grip and no arrows already says it doesn't move.
                 <>
+                  <span />
+                  <span />
                 </>
               )}
               {/* Hidden removes the section from the editor entirely; the form has no
