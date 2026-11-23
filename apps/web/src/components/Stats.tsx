@@ -1,20 +1,42 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { installsInLast, type Stats, type Week, weeklyInstalls } from '../lib/stats'
+import { fetchAllReleases } from '../lib/downloads'
+import {
+  installsInLast,
+  recordSnapshot,
+  type Stats,
+  type StatsRelease,
+  type Week,
+  weeklyInstalls,
+} from '../lib/stats'
 import Footer from './Footer'
 import Header from './Header'
 import Kicker from './Kicker'
 import Reveal from './Reveal'
 
-// Written once a day by .github/workflows/stats.yml on its own branch, so the page reads
-// fresh figures without a redeploy.
+// Written by .github/workflows/stats.yml on its own branch, so the page reads the history
+// without a redeploy. GitHub runs that hourly schedule only every 4 to 11 hours.
 const STATS_URL = 'https://raw.githubusercontent.com/surco-app/surco-releases/stats/stats.json'
+const RELEASES_REPO = 'surco-app/surco-releases'
 
 export const fetchStats = () =>
   fetch(STATS_URL).then((res) => {
     if (!res.ok) throw new Error(`GitHub returned ${res.status}`)
     return res.json() as Promise<Stats>
   })
+
+// The stored file lags by however long GitHub delays the workflow, so the stats page counts
+// today itself, the way the workflow would. A refused live count, such as GitHub's limit of
+// 60 requests an hour per visitor, leaves the stored figures.
+export async function fetchLiveStats(now = new Date().toISOString()): Promise<Stats> {
+  const stored = await fetchStats()
+  try {
+    const releases = (await fetchAllReleases(RELEASES_REPO)) as StatsRelease[]
+    return recordSnapshot(stored, releases, now)
+  } catch {
+    return stored
+  }
+}
 
 export const hasFigures = (stats: Stats) => stats.days.length > 0 && Boolean(stats.versions)
 
@@ -266,7 +288,7 @@ export default function StatsPage() {
 
   useEffect(() => {
     let cancelled = false
-    fetchStats()
+    fetchLiveStats()
       .then((data) => {
         if (!cancelled) setStats(hasFigures(data) ? data : 'error')
       })
