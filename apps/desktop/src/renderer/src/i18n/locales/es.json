@@ -505,7 +505,9 @@
     "redoneMeta_one": "Edición de metadatos rehecha en {{count}} pista",
     "redoneMeta_other": "Edición de metadatos rehecha en {{count}} pistas",
     "metaReadFailed_one": "No se pudieron leer los metadatos de {{count}} archivo, así que solo se muestra su nombre.",
-    "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos, así que solo se muestran sus nombres."
+    "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos, así que solo se muestran sus nombres.",
+    "metaFilesMissing_one": "{{count}} archivo ya no está donde estaba. Puede que se haya movido o renombrado.",
+    "metaFilesMissing_other": "{{count}} archivos ya no están donde estaban. Puede que se hayan movido o renombrado."
   },
   "newTracks": {
     "prompt_one": "{{count}} pista nueva en «{{folder}}»",

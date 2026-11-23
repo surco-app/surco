@@ -5,6 +5,7 @@ import { pushToast } from './toastQueue'
 // skips duplicates and fails a read still shows both cards.
 type ImportNotice =
   | 'meta-read-failed'
+  | 'meta-files-missing'
   | 'duplicates-skipped'
   | 'no-audio-found'
   | 'not-audio-skipped'

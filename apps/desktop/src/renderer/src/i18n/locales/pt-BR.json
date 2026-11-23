@@ -505,7 +505,9 @@
     "redoneMeta_one": "Edição de metadados refeita em {{count}} faixa",
     "redoneMeta_other": "Edição de metadados refeita em {{count}} faixas",
     "metaReadFailed_one": "Não foi possível ler as tags de {{count}} arquivo, então só o nome dele aparece.",
-    "metaReadFailed_other": "Não foi possível ler as tags de {{count}} arquivos, então só os nomes deles aparecem."
+    "metaReadFailed_other": "Não foi possível ler as tags de {{count}} arquivos, então só os nomes deles aparecem.",
+    "metaFilesMissing_one": "{{count}} arquivo não está mais onde estava. Ele pode ter sido movido ou renomeado.",
+    "metaFilesMissing_other": "{{count}} arquivos não estão mais onde estavam. Eles podem ter sido movidos ou renomeados."
   },
   "newTracks": {
     "prompt_one": "{{count}} faixa nova em “{{folder}}”",

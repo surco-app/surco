@@ -954,6 +954,8 @@ export default function App(): React.JSX.Element {
     onNoAudioFound: reportNoAudioFound,
     onMetaReadFailed: (count) =>
       pushImportNotice(store, 'meta-read-failed', tr('notices.metaReadFailed', { count })),
+    onMetaFilesMissing: (count) =>
+      pushImportNotice(store, 'meta-files-missing', tr('notices.metaFilesMissing', { count })),
     // Same card as the files missing when the playlist opened: the background check found
     // these gone later, since the files Surco knows are taken as there at the opening.
     onSourceFilesGone: (count) => {

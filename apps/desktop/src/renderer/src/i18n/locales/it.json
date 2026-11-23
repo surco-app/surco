@@ -505,7 +505,9 @@
     "redoneMeta_one": "Modifica dei metadati ripetuta in {{count}} brano",
     "redoneMeta_other": "Modifica dei metadati ripetuta in {{count}} brani",
     "metaReadFailed_one": "Non è stato possibile leggere i metadati di {{count}} file, quindi viene mostrato solo il suo nome.",
-    "metaReadFailed_other": "Non è stato possibile leggere i metadati di {{count}} file, quindi vengono mostrati solo i loro nomi."
+    "metaReadFailed_other": "Non è stato possibile leggere i metadati di {{count}} file, quindi vengono mostrati solo i loro nomi.",
+    "metaFilesMissing_one": "{{count}} file non è più dove era. Forse è stato spostato o rinominato.",
+    "metaFilesMissing_other": "{{count}} file non sono più dove erano. Forse sono stati spostati o rinominati."
   },
   "newTracks": {
     "prompt_one": "{{count}} brano nuovo in «{{folder}}»",

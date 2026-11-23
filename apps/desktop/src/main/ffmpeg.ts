@@ -733,7 +733,15 @@ export async function readMeta(input: string): Promise<MetaRead> {
   if (result) return composed(result)
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
-  return FAILED_READ
+  return failedRead(input)
+}
+
+async function failedRead(input: string): Promise<MetaRead> {
+  const missing = await stat(input).then(
+    () => false,
+    (e: NodeJS.ErrnoException) => e.code === 'ENOENT',
+  )
+  return missing ? { ...FAILED_READ, missing: true } : FAILED_READ
 }
 
 export async function readMetaLight(input: string): Promise<MetaRead & { partial: boolean }> {
@@ -742,7 +750,9 @@ export async function readMetaLight(input: string): Promise<MetaRead & { partial
   const light = await cachedAnalysis(readMetaLightNamespace(input), input, () =>
     readMetaUncached(input, false),
   )
-  return light ? { ...composed(light), partial: true } : { ...FAILED_READ, partial: false }
+  return light
+    ? { ...composed(light), partial: true }
+    : { ...(await failedRead(input)), partial: false }
 }
 
 // What readMeta (or readMetaLight, for a light row) would answer from disk, without ever
