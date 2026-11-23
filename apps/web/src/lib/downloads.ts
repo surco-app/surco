@@ -11,7 +11,7 @@ interface Release {
 // releases (and their download counts) once the repo passes 100 of them. Walks
 // the pages until one comes back short. Throws on any failed page: a partial
 // list would silently undercount, which is the very bug this exists to avoid.
-// Used by the daily stats snapshot (apps/web/scripts/stats-snapshot.ts).
+// Used by the stats snapshot (apps/web/scripts/stats-snapshot.ts) and the stats page.
 export async function fetchAllReleases(
   repo: string,
   headers: Record<string, string> = {},
