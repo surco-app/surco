@@ -71,13 +71,14 @@ const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
 
 // Pass-through Editor wrapped in its own memo, so the counter only ticks when App
 // hands it a changed prop identity — the contract the editor-stability test pins.
-const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0 } }))
+const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0, crash: false } }))
 vi.mock('./components/Editor', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/Editor')>()
   const { memo } = await import('react')
   const CountingEditor = memo(function CountingEditor(
     props: React.ComponentProps<typeof real.Editor>,
   ): React.JSX.Element {
+    if (editorRenders.crash) throw new Error('boom')
     editorRenders.count++
     return <real.Editor {...props} />
   })
@@ -13993,7 +13994,6 @@ const spellingFixture = () => ({
 describe('App Music review', () => {
   // The review takes the list column while open and gives it back as it was.
   it('swaps the list for the Music review and back', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     await addOneTrack()
@@ -14007,7 +14007,6 @@ describe('App Music review', () => {
   // The review needs the room of the main pane for the group it is deciding; the empty
   // screen's invitation to add tracks would sit where that decision goes.
   it('shows the selected group in the main pane instead of the empty screen', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     expect(screen.getByTestId('add-files')).toBeInTheDocument()
@@ -14022,7 +14021,6 @@ describe('App Music review', () => {
   // Ignoring is saved for good, so the toast right after it is the only way back from a
   // misclick; pressing its Undo returns the group to the review and retires the toast.
   it('brings an ignored group back from the toast Undo', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     runMenu('music-review')
@@ -14041,7 +14039,6 @@ describe('App Music review', () => {
   // The review's batch is the screen's main action while it is open, so it takes the
   // toolbar's main button.
   it('puts Apply in the toolbar while the review is open', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     await addOneTrack()
@@ -14058,7 +14055,6 @@ describe('App Music review', () => {
   })
 
   it('takes Apply out of the toolbar when the review closes', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     await addOneTrack()
@@ -14071,7 +14067,6 @@ describe('App Music review', () => {
   // A running batch has its progress and its only Cancel in the footer; opening the
   // review must not take them away.
   it('keeps the running batch and its cancel in the footer when the review opens', async () => {
-    vi.resetModules()
     const cancelJob = vi.fn()
     const processTrack = vi.fn(() => new Promise(() => {}))
     reviewApi({ processTrack, cancelJob, ...spellingFixture() })
@@ -14091,7 +14086,6 @@ describe('App Music review', () => {
   // The offer reopens tracks into a list the review hides; it steps aside without
   // answering for the user, so the next launch still offers the session and its edits.
   it('withdraws the reopen offer when the review opens and keeps the saved session', async () => {
-    vi.resetModules()
     const saveLastSession = vi.fn()
     reviewApi({
       saveLastSession,
@@ -14112,7 +14106,6 @@ describe('App Music review', () => {
 
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-review')
@@ -14120,7 +14113,6 @@ describe('App Music review', () => {
   })
 
   it('opens on the duplicates filter from its own command', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-duplicates')
@@ -14131,7 +14123,6 @@ describe('App Music review', () => {
   // A file the review rewrote may be open in the list. The row has to say what the file
   // now says and count as clean, or a later Update writes the old artist back over the fix.
   it('shows the fixed artist on a listed track and leaves it with nothing pending', async () => {
-    vi.resetModules()
     const readTags = vi.fn().mockResolvedValue({ title: 'T', artist: 'Dj Lara' })
     const fixture = spellingFixture()
     const applied = await fixture.applyMusicFixes()
@@ -14164,7 +14155,6 @@ describe('App Music review', () => {
   // The list is hidden while the review is open; a track shortcut acting on it would
   // remove or convert files the user cannot see.
   it('does not let list shortcuts reach the hidden tracks', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     const [row] = await addOneTrack()
@@ -14180,7 +14170,6 @@ describe('App Music review', () => {
 
   // Escape peels one layer at a time: closing Settings must not also throw away the review.
   it('closes only the dialog on top of the review with Escape', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     await addOneTrack()
@@ -14194,7 +14183,6 @@ describe('App Music review', () => {
   })
 
   it('does not convert the hidden selected track on the process shortcut', async () => {
-    vi.resetModules()
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     reviewApi({ processTrack })
     await renderApp()
@@ -14210,7 +14198,6 @@ describe('App Music review', () => {
   })
 
   it('holds the review Apply while a conversion is running', async () => {
-    vi.resetModules()
     const processTrack = vi.fn(() => new Promise(() => {}))
     reviewApi({ processTrack, ...spellingFixture() })
     await renderApp()
@@ -14225,7 +14212,6 @@ describe('App Music review', () => {
   })
 
   it('switches the filter when a Music command runs while the review is open', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-review')
@@ -14240,7 +14226,6 @@ describe('App Music review', () => {
   // The sheet and the app both listen for Escape; closing the sheet must not also
   // close the review the user is in the middle of.
   it('closes only the confirmation sheet on Escape', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     const [row] = await addOneTrack()
@@ -14275,7 +14260,6 @@ describe('App Music review', () => {
       '/m/copper.wav': '0000000000000005',
     }
     const openFriday = async (persistentIds: Record<string, string> = fridayIds) => {
-      vi.resetModules()
       reviewApi({
         loadMusicReview: vi.fn().mockResolvedValue(library),
         appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
@@ -14385,7 +14369,6 @@ const addThree = async () => {
 
 describe('App list review', () => {
   it('opens a track missing a field only the editor fills in the editor', async () => {
-    vi.resetModules()
     listApi({
       getSettings: vi
         .fn()
@@ -14417,7 +14400,6 @@ describe('App list review', () => {
 
   // The user's ask: pick the tracks missing required data in the list and fix them all at once.
   it('fills a track missing required data from the filter, in the review', async () => {
-    vi.resetModules()
     listApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
       readTags: vi.fn(async (path: string) =>
@@ -14452,7 +14434,6 @@ describe('App list review', () => {
 
   // Windows has no Music, but it has the list and the DJ libraries.
   it('opens over the list on Windows and gives the list back as it was', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14467,7 +14448,6 @@ describe('App list review', () => {
   // A clean review used to leave the main pane blank: nothing said the list was fine, and the
   // only way back was a small X that reads like clearing the search.
   it('says the list is fine when there is nothing to review and leads back to it', async () => {
-    vi.resetModules()
     listApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']) })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -14482,7 +14462,6 @@ describe('App list review', () => {
   })
 
   it('does nothing with an empty list', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     runMenu('list-review')
@@ -14494,7 +14473,6 @@ describe('App list review', () => {
   // The row shows the fixed artist straight away, so a later Update cannot write the old
   // spelling back over the fix.
   it('fixes a spelling in the file and shows it on the row', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     const rows = await addThree()
@@ -14520,7 +14498,6 @@ describe('App list review', () => {
   })
 
   it('takes a trashed duplicate out of the list', async () => {
-    vi.resetModules()
     listApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Ann' }),
@@ -14548,7 +14525,6 @@ describe('App list review', () => {
   // The source remembers what the review wrote and trashed; a second click on the entry
   // must not start the review over and drop what the user had staged.
   it('keeps the open review as it is when it is asked for again', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14564,7 +14540,6 @@ describe('App list review', () => {
   // The search, the order and the open sheet belong to the review they were set in; the
   // other review starting with them would hide its groups behind a filter nobody typed.
   it('starts the list review clean when it replaces the Music review', async () => {
-    vi.resetModules()
     listApi({
       platform: 'darwin',
       loadMusicReview: vi.fn().mockResolvedValue([]),
@@ -14581,7 +14556,6 @@ describe('App list review', () => {
   })
 
   it('saves what is ignored in the list apart from Music', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14599,7 +14573,6 @@ describe('App list review', () => {
   // The list's own tools live in its header; the review is one of them now that it works
   // on the loaded tracks.
   it('opens from the list header, and holds the button still while a conversion runs', async () => {
-    vi.resetModules()
     listApi({ processTrack: vi.fn(() => new Promise(() => {})) })
     await renderApp()
     await addThree()
@@ -14617,7 +14590,6 @@ describe('App list review', () => {
 
   // No source open, the review is the list's, and the line says it writes the files.
   it('says under Review metadata that it changes the files of the whole list', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14632,7 +14604,6 @@ describe('App list review', () => {
   // it, not in every file that ever passed through the list, and it keeps to the rows the
   // menu named even when another playlist is picked while it is open.
   it('reviews only the open rekordbox playlist and keeps to it when another one is picked', async () => {
-    vi.resetModules()
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     listApi({
       dj: djReads({
@@ -14683,7 +14654,6 @@ describe('App list review', () => {
 // libraries; the notice says what the review would find without opening it uninvited.
 describe('App list review notice', { timeout: 15000 }, () => {
   it('says what a finished load leaves to review and opens the review from there', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14696,7 +14666,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('counts duplicates and spellings together after a drop', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Song', artist: 'Ann' },
       '/music/b.wav': { title: 'Song', artist: 'Ann' },
@@ -14718,7 +14687,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('waits for every file of the load to be read before it counts', async () => {
-    vi.resetModules()
     let release: () => void = () => {}
     const slow = new Promise<void>((resolve) => {
       release = resolve
@@ -14747,7 +14715,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('stays quiet when the list has nothing to review', async () => {
-    vi.resetModules()
     const clean: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'Ann' },
       '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
@@ -14765,7 +14732,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 
   // What the user already chose to ignore in the list review is not news.
   it('leaves out the groups the list review ignores', async () => {
-    vi.resetModules()
     const entry = (id: string, title: string, artist: string) => ({
       id,
       title,
@@ -14791,7 +14757,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   // The groups the list already had were told about with their own load; a second drop
   // repeating them would read as if the new files brought them.
   it('counts only the groups a later drop takes part in', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
       '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
@@ -14836,7 +14801,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 
   // The user is already in a review; a prompt to open one would only cover it.
   it('stays quiet about a load that lands while a review is open', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
       '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
@@ -14878,7 +14842,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   // Files that arrive another way while the drop's tags are still being read are not
   // part of what the user dropped.
   it('counts only what the drop or the pick handed over', async () => {
-    vi.resetModules()
     let release: () => void = () => {}
     const slow = new Promise<void>((resolve) => {
       release = resolve
@@ -14912,7 +14875,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('tells once per load', async () => {
-    vi.resetModules()
     let openWith: ((paths: string[]) => void) | undefined
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
@@ -14951,7 +14913,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 // rekordbox playlist. The rail and the palette are the way in now; the toolbar has no copy.
 describe('App list toolbar leaves opening Music to the rail', () => {
   it('has no Music button in Tracks, Music or rekordbox', async () => {
-    vi.resetModules()
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     setApi({
       platform: 'darwin',
@@ -14994,7 +14955,6 @@ describe('App list toolbar leaves opening Music to the rail', () => {
 // the menus, where they are reached once there is something to act on.
 describe('App empty screen offers a single way in', () => {
   it('puts adding files in the centre panel, not in the track column', async () => {
-    vi.resetModules()
     setApi({ platform: 'darwin' })
     await renderApp()
 
@@ -15003,7 +14963,6 @@ describe('App empty screen offers a single way in', () => {
   })
 
   it('says only where to drop and which key opens the dialog, with no headers or other doors', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -15019,7 +14978,6 @@ describe('App empty screen offers a single way in', () => {
 
   // The hint teaches the key that really opens the dialog, and off macOS that key is Ctrl.
   it('names the shortcut the way the platform writes it', async () => {
-    vi.resetModules()
     reviewApi({ platform: 'win32' })
     await renderApp()
 
@@ -15029,7 +14987,6 @@ describe('App empty screen offers a single way in', () => {
   // The whole panel is the target: aiming at the text, the disc or the space around them
   // has to open the dialog, the way the panel already takes a drop anywhere on it.
   it('opens the file dialog from a click anywhere on the panel', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -15044,7 +15001,6 @@ describe('App empty screen offers a single way in', () => {
   // a clickable div would leave the keyboard user with no way in. Its name says the action,
   // since the visible line only says where to drop.
   it('is a native button the keyboard can reach, named for adding tracks', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -15057,7 +15013,6 @@ describe('App empty screen offers a single way in', () => {
   })
 
   it('keeps the Music doors in the rail and the palette now that the empty screen drops them', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -15073,7 +15028,6 @@ describe('App empty screen offers a single way in', () => {
   // A source with no playlist open has nothing to add files into; its one action is
   // picking a playlist, so the panel says that and a click there opens no dialog.
   it('asks for a playlist instead of files in a source with none open', async () => {
-    vi.resetModules()
     reviewApi({ loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]) })
     await renderApp()
 
@@ -15094,7 +15048,6 @@ describe('App empty screen offers a single way in', () => {
       missing: rows.filter((r) => !r.path).length,
     })
     const openMusic = async (rows: { path: string | null }[], later = rows) => {
-      vi.resetModules()
       reviewApi({
         loadAppleMusicPlaylists: vi
           .fn()
@@ -15141,7 +15094,6 @@ describe('App empty screen offers a single way in', () => {
   // The panel is where people aim a folder: a drop anywhere on it, the text included,
   // has to bring the tracks in rather than be taken as a click on the button.
   it('adds the files dropped on the empty panel', async () => {
-    vi.resetModules()
     reviewApi({ getPathForFile: vi.fn(() => '/music/dropped.wav') })
     await renderApp()
 
@@ -15157,7 +15109,6 @@ describe('App empty screen offers a single way in', () => {
   // The panel is where the tracks visibly land, so it has to answer the drag the copy
   // invites. Previously only the sidebar carried the drop state.
   it('answers the drag in the panel the copy points at', async () => {
-    vi.resetModules()
     setApi({ platform: 'darwin' })
     await renderApp()
 
@@ -15726,7 +15677,6 @@ describe('App clean-up on load', () => {
   }
 
   it('leaves every row as read while the settings are off', async () => {
-    vi.resetModules()
     cleanApi({}, spaced)
     await renderApp()
     await load(2)
@@ -15738,7 +15688,6 @@ describe('App clean-up on load', () => {
   // The row's spark is the whole signal: a toolbar tally of cleaned rows only repeated what
   // the marked rows already show, beside controls that do something.
   it('stages the clean value and marks the row, writing nothing and tallying nothing in the toolbar', async () => {
-    vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
@@ -15752,7 +15701,6 @@ describe('App clean-up on load', () => {
   })
 
   it('says what was cleaned in the editor and puts the value as read back on undo', async () => {
-    vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
@@ -15766,7 +15714,6 @@ describe('App clean-up on load', () => {
   })
 
   it('writes a name the way most of the list does only when the majority is clear', async () => {
-    vi.resetModules()
     cleanApi(
       { autoCleanCase: true },
       {
@@ -15783,7 +15730,6 @@ describe('App clean-up on load', () => {
   })
 
   it('leaves a close call to the review', async () => {
-    vi.resetModules()
     listApi({ getSettings: vi.fn().mockResolvedValue(settings({ autoCleanCase: true })) })
     await renderApp()
     await addThree()
@@ -15828,7 +15774,6 @@ describe('App clean-up of a space the read already trimmed', () => {
     (save.mock.calls.at(-1)?.[1] ?? {}) as Record<string, { meta: { title: string } }>
 
   it('keeps the trim as a pending change and writes the trimmed title', async () => {
-    vi.resetModules()
     const { saveLastSession, processTrack } = spacedApi({ autoCleanSpacing: true })
     await renderApp()
     await load()
@@ -15851,7 +15796,6 @@ describe('App clean-up of a space the read already trimmed', () => {
   })
 
   it('leaves the row clean while the setting is off', async () => {
-    vi.resetModules()
     const { saveLastSession } = spacedApi({})
     await renderApp()
     await load()
@@ -15861,7 +15805,6 @@ describe('App clean-up of a space the read already trimmed', () => {
   })
 
   it('undoes back to the file as it is, with nothing left to save', async () => {
-    vi.resetModules()
     const { saveLastSession } = spacedApi({ autoCleanSpacing: true })
     await renderApp()
     await load()
@@ -16545,12 +16488,7 @@ describe('App sidebar', () => {
 describe('App editor crash', () => {
   it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
     const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.resetModules()
-    vi.doMock('./components/Editor', () => ({
-      Editor: () => {
-        throw new Error('boom')
-      },
-    }))
+    editorRenders.crash = true
     try {
       const pending: ((v: unknown) => void)[] = []
       const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
@@ -16575,8 +16513,7 @@ describe('App editor crash', () => {
       expect(cancelJob).toHaveBeenCalled()
       await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
     } finally {
-      vi.doUnmock('./components/Editor')
-      vi.resetModules()
+      editorRenders.crash = false
       silenced.mockRestore()
     }
   })

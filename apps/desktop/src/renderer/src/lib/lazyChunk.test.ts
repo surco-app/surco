@@ -1,5 +1,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { createElement, Suspense } from 'react'
+import { renderToString } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { lazyChunk, preloadLazy } from './lazyChunk'
 
@@ -36,6 +38,16 @@ describe('lazyChunk', () => {
     await preloadLazy()
     expect(outer).toHaveBeenCalledTimes(1)
     expect(inner).toHaveBeenCalledTimes(1)
+  })
+
+  it('renders a preloaded chunk on its first mount instead of suspending, so the screen it holds is there the moment it opens', async () => {
+    const Screen = lazyChunk(async () => ({ default: () => createElement('p', null, 'screen') }))
+    await preloadLazy()
+    const html = renderToString(
+      createElement(Suspense, { fallback: 'waiting' }, createElement(Screen)),
+    )
+    expect(html).toContain('<p>screen</p>')
+    expect(html).not.toContain('waiting')
   })
 })
 
