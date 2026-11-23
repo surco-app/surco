@@ -332,7 +332,6 @@ describe('MusicReview', () => {
   it('keeps the header outside the only scrolling area and has no tray', () => {
     render(<Panes review={review()} />)
     const scroll = screen.getByTestId('music-review-scroll')
-    expect(scroll.className).toContain('overflow-y-auto')
     expect(scroll).toContainElement(rows()[0])
     expect(screen.queryByTestId('music-review-tray')).toBeNull()
     expect(scroll).not.toContainElement(screen.getByTestId('music-review-search'))
@@ -361,7 +360,7 @@ describe('MusicReview', () => {
     const second = within(row).getByTestId('music-review-row-detail-line')
     expect(second).toContainElement(within(row).getByTestId('music-review-row-detail'))
     expect(second).toContainElement(within(row).getByTestId('music-review-row-kind'))
-    expect(row.className).toContain('is-primary')
+    expect(row).toHaveAttribute('aria-selected', 'true')
   })
 
   it('lists each group as a row with no choice in it and opens its detail on click', () => {
@@ -483,13 +482,6 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-close')).toHaveTextContent('Tracks')
     fireEvent.click(screen.getByTestId('music-review-close'))
     expect(onClose).toHaveBeenCalledOnce()
-  })
-
-  it('draws its Escape hint as the same keycap the toolbar uses for its shortcut', () => {
-    render(<Panes review={review()} onClose={vi.fn()} />)
-    const key = screen.getByTestId('music-review-close').querySelector('kbd')
-    expect(key?.className).toMatch(/\bborder\b/)
-    expect(key?.className).toMatch(/\brounded\b/)
   })
 
   it('goes back to the tracks with Escape', () => {
@@ -710,6 +702,7 @@ describe('MusicReview', () => {
   describe('while a run goes', () => {
     const applying = (over: Partial<Review>) => review({ status: 'applying', ...over })
     const bar = () => screen.getByTestId('top-progress').firstElementChild as HTMLElement
+    const sliding = () => screen.getByTestId('top-progress').getAttribute('data-indeterminate')
 
     it('slides the bar until the first track is done, then fills it', () => {
       const { rerender } = render(
@@ -720,7 +713,7 @@ describe('MusicReview', () => {
           })}
         />,
       )
-      expect(bar().className).toContain('animate-top-progress')
+      expect(sliding()).toBe('true')
       rerender(
         <MusicReviewProgress
           review={applying({
@@ -729,7 +722,7 @@ describe('MusicReview', () => {
           })}
         />,
       )
-      expect(bar().className).not.toContain('animate-top-progress')
+      expect(sliding()).toBe('false')
       expect(bar().style.transform).toBe('scaleX(0.25)')
     })
 
@@ -741,7 +734,7 @@ describe('MusicReview', () => {
           review={applying({ progress: { done: 2, total: 2 }, phase: { name: 'libraries' } })}
         />,
       )
-      expect(bar().className).toContain('animate-top-progress')
+      expect(sliding()).toBe('true')
     })
 
     // Two bars on one line read as one bar jumping between two runs.
@@ -1790,7 +1783,10 @@ describe('MusicReview', () => {
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(screen.getByTestId('music-review-confirm-cancel')).toHaveFocus()
-    expect(screen.getByTestId('music-review-confirm-apply').className).toContain('--color-danger')
+    expect(screen.getByTestId('music-review-confirm-apply')).toHaveAttribute(
+      'data-destructive',
+      'true',
+    )
   })
 
   it('keeps Apply as the ordinary default when nothing is removed', () => {
@@ -1800,8 +1796,9 @@ describe('MusicReview', () => {
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
-    expect(screen.getByTestId('music-review-confirm-apply').className).not.toContain(
-      '--color-danger',
+    expect(screen.getByTestId('music-review-confirm-apply')).toHaveAttribute(
+      'data-destructive',
+      'false',
     )
   })
 

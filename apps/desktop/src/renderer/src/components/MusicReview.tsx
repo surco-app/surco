@@ -253,6 +253,7 @@ function Confirm({
           type="button"
           data-testid="music-review-confirm-apply"
           ref={applyRef}
+          data-destructive={destructive ? 'true' : 'false'}
           className={
             destructive ? `${DIALOG_BUTTON} bg-[var(--color-danger)] hover:brightness-110` : OK
           }
