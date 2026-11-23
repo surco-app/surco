@@ -652,13 +652,15 @@ describe('App Engine DJ cues', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
 
-  // A playlist is read by its numbers, the files dropped into Tracks are not one.
-  it('numbers the rows of a playlist in its own order, and not the rows of Tracks', async () => {
+  // Tracks takes the same numbers as a playlist, in the order the files came in, so the
+  // one View switch reads the same on every tab.
+  it('numbers the rows of Tracks in their import order and a playlist in its own', async () => {
     openEngine()
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-number').map((n) => n.textContent)).toEqual(['1', '2']),
+    )
     fireEvent.click(await screen.findByTestId('source-rail-engine'))
     fireEvent.click(await screen.findByTestId('source-node-7'))
     await waitFor(() =>
@@ -721,6 +723,14 @@ describe('App Engine DJ cues', () => {
   it('leaves the playlist rows bare once the numbers are turned off', async () => {
     openEngine({ getSettings: vi.fn().mockResolvedValue(settings({ showListPositions: false })) })
     await openFriday()
+    expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
+  })
+
+  it('leaves the Tracks rows bare once the numbers are turned off', async () => {
+    openEngine({ getSettings: vi.fn().mockResolvedValue(settings({ showListPositions: false })) })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
     expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
   })
 

@@ -2601,7 +2601,7 @@ export default function App(): React.JSX.Element {
   const showListPositions = settings?.showListPositions ?? true
   const numberedTracks =
     showListPositions && sortBy === 'import' && browser.playlist?.id !== MATCHING_ID
-      ? playlistScope?.tracks
+      ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
       : undefined
   const listPositions = useMemo(
     () => (numberedTracks ? playlistPositions(numberedTracks, visibleRows) : undefined),
