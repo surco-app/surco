@@ -201,6 +201,34 @@ describe('rekordboxRepointFor', () => {
     ).toEqual({ cueShiftMs: 200 })
   })
 
+  // The most common replacement: the lossless master of the MP3 the DJ prepared, the same
+  // audio to the sample. Nothing moved for ffmpeg, but rekordbox placed the old LAME MP3
+  // 51 ms into its timeline and places the AIFF at 0, so the kick marked at 10 000 ms now
+  // sounds at 9 949 ms. The cue has to follow it, and rekordbox has to analyse the new file,
+  // or every pad fires 51 ms late over a grid drawn for the MP3.
+  it('moves rekordbox cues by the lead of the old MP3 when the measured shift is zero', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.mp3',
+        replaceShift: { moved: 0 },
+        replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+      })?.audio,
+    ).toEqual({ cueShiftMs: -51 })
+  })
+
+  // Same audio, and rekordbox places both files at the same point of its timeline: the cues
+  // and the analysis still describe the new file, so neither moves. Re-analysing would only
+  // throw away a grid the DJ may have corrected by hand.
+  it('leaves rekordbox alone when a copied replacement moved nothing in its timeline', () => {
+    expect(
+      rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+        replaces: '/m/a.wav',
+        replaceShift: { moved: 0 },
+        replaceAudio: { oldShiftMs: 0, newShiftMs: 0 },
+      })?.audio,
+    ).toBeUndefined()
+  })
+
   // Engine DJ and VirtualDJ tell a row still owed its shift from one already written by the
   // size it had before: without it a replacement on the very path it replaces looks done and
   // its cues are never moved.

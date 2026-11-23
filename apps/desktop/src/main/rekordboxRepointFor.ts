@@ -57,17 +57,15 @@ export function rekordboxRepointFor(
       ? options.replaceShift.moved
       : undefined
   const replaceAudio = options.replaceAudio ?? { oldShiftMs: 0, newShiftMs: 0 }
-  // A replacement that moved the audio leaves rekordbox's waveform and grid describing the
-  // old file even when the samples were copied, so it gets the same re-analysis a
-  // re-encoded one does.
+  const replaceCueShiftMs =
+    moved === undefined ? 0 : Math.round(moved + replaceAudio.newShiftMs - replaceAudio.oldShiftMs)
+  // A replacement whose audio moved in rekordbox's own timeline leaves its waveform and grid
+  // describing the old file even when the samples were copied, so it gets the same
+  // re-analysis a re-encoded one does. A shift of zero is not enough to skip it: the lossless
+  // master of a LAME MP3 measures 0 on ffmpeg's clock yet sits 51 ms earlier in rekordbox's.
   const audio =
-    options.replaces && (options.audio || moved)
-      ? {
-          cueShiftMs:
-            moved === undefined
-              ? 0
-              : Math.round(moved + replaceAudio.newShiftMs - replaceAudio.oldShiftMs),
-        }
+    options.replaces && (options.audio || replaceCueShiftMs !== 0)
+      ? { cueShiftMs: replaceCueShiftMs }
       : options.audio && {
           cueShiftMs: Math.round(
             options.audio.outputShiftMs - options.audio.sourceShiftMs - options.audio.trimmedMs,

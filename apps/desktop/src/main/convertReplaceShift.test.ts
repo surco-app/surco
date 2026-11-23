@@ -213,6 +213,21 @@ describe('a replacement measured in the conversion', () => {
     near(repoint()?.audio?.cueShiftMs, 1449)
   }, 120_000)
 
+  // The lossless master of the LAME MP3 the DJ prepared: the same audio, so ffmpeg measures
+  // no shift, but rekordbox placed the MP3 51 ms into its timeline and the AIFF at 0. A cue
+  // set on the kick at 10 000 ms has to land at 9 949 ms, or every pad fires 51 ms late.
+  it("takes the old LAME MP3's rekordbox lead off a replacement that moved nothing", async () => {
+    const oldMp3 = fresh('old.mp3')
+    lameMp3(oldWav, oldMp3)
+    const same = fresh('same.flac')
+    derive(oldWav, same, [])
+
+    const { written } = await replace(same, fresh('Song.aiff'), oldMp3)
+
+    near((written.replaceShift as { moved: number }).moved, 0)
+    near(10000 + (repoint()?.audio?.cueShiftMs ?? Number.NaN), 9949)
+  }, 120_000)
+
   // The DJ's own Traktor offset is applied to every conversion; a replacement that moves the
   // cues is no exception, or the DJ's calibration is lost on exactly the tracks they swap.
   it("applies the DJ's Traktor offset on a moved replacement", async () => {
