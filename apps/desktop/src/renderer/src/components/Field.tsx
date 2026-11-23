@@ -230,6 +230,7 @@ export const Field = memo(function Field({
           aria-required={required || undefined}
           aria-describedby={describedBy}
           value={draft}
+          dir="auto"
           readOnly={readOnly}
           placeholder={placeholder}
           data-plain={plain || undefined}

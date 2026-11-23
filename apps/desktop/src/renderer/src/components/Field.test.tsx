@@ -668,3 +668,17 @@ describe('Field read-only', () => {
     vi.useRealTimers()
   })
 })
+
+describe('Field direction', () => {
+  it('lets an Arabic or Hebrew value run right to left, so a cut hides its end and not its start', () => {
+    render(
+      <Field
+        name="comment"
+        label="Comment"
+        value="تسجيل حي من حفلة القاهرة 2026 (النسخة الكاملة)"
+        onChange={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId('field-comment')).toHaveAttribute('dir', 'auto')
+  })
+})
