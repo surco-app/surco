@@ -177,6 +177,18 @@ describe('SectionHeader status placement', () => {
     )
   })
 
+  // At the window's minimum width the folded cue section's line under the title ran past
+  // the panel's edge in German and French: "nicht verschoben" and "Nicht gespeichert" side
+  // by side are wider than the header. Under the title the line is held to the header's
+  // width and its marks wrap one under the other, so no state is ever cut.
+  it('wraps the marks of a status under the title instead of running past the edge', () => {
+    mockWidths(225, 70, 294)
+    header()
+    const line = screen.getByTestId('section-status').firstElementChild as HTMLElement
+    expect(line.className).toContain('flex-wrap')
+    expect(line.className).toContain('max-w-full')
+  })
+
   // A title that gives way with an ellipsis reports only the room left to it, so measured by
   // its box the status always seemed to fit and stayed beside a cut title. The status drops
   // first, measured against the whole title, and the title is cut only if that is not enough.
