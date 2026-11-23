@@ -200,6 +200,16 @@ describe('CuesSection folded', () => {
     expect(screen.queryByTestId('cue-wave-bars')).toBeNull()
   })
 
+  it('lets the folded row wrap its actions so Save never runs past the panel at the narrowest window', async () => {
+    setup()
+    await ready()
+    const row = screen.getByTestId('cues-folded-row')
+    expect(row).toHaveAttribute('data-wrap', 'true')
+    const actions = screen.getByTestId('cues-folded-actions')
+    expect(actions).toHaveAttribute('data-wrap', 'true')
+    expect(actions).toContainElement(screen.getByTestId('cues-save'))
+  })
+
   it('draws both waves on one surface and a row with play, zoom, time and Guardar, with the flow control up in the header', async () => {
     setup()
     await ready()

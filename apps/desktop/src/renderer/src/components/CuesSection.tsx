@@ -1598,7 +1598,8 @@ function Editing({
   const foldedRow = (
     <div
       data-testid="cues-folded-row"
-      className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-xs"
+      data-wrap="true"
+      className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 whitespace-nowrap text-xs"
     >
       <button
         type="button"
@@ -1644,108 +1645,113 @@ function Editing({
           )
         }}
       </AtHead>
-      <span className="flex-1" />
-      {addCallButton}
-      <button
-        type="button"
-        data-testid="cues-clear-all"
-        aria-label={tr('editor.cues.clearAll')}
-        disabled={!clearable}
-        onClick={clearAll}
-        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      <div
+        data-testid="cues-folded-actions"
+        data-wrap="true"
+        className="ml-auto flex shrink-0 items-center gap-2"
       >
-        <Tooltip label={tr('editor.cues.clearAll')} />
-        <Trash2 className="h-3 w-3" aria-hidden="true" />
-      </button>
-      {undoButton}
-      <div ref={saveMenu.ref} className="relative flex shrink-0">
+        {addCallButton}
         <button
           type="button"
-          data-testid="cues-save"
-          disabled={unchanged || blocked}
-          aria-label={tr(copy.save)}
-          onClick={() => void save()}
-          className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-            saveMenuShown ? 'rounded-l-md' : 'rounded-md'
-          } ${
-            unchanged
-              ? 'text-fg-dim'
-              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
-          }`}
+          data-testid="cues-clear-all"
+          aria-label={tr('editor.cues.clearAll')}
+          disabled={!clearable}
+          onClick={clearAll}
+          className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
         >
-          {tr('editor.cues.saveShort')}
+          <Tooltip label={tr('editor.cues.clearAll')} />
+          <Trash2 className="h-3 w-3" aria-hidden="true" />
         </button>
-        {saveMenuShown && (
+        {undoButton}
+        <div ref={saveMenu.ref} className="relative flex shrink-0">
           <button
             type="button"
-            data-testid="cues-save-more"
-            ref={saveMenu.toggleRef}
-            disabled={savingAll}
-            aria-label={tr('editor.cues.saveMore')}
-            aria-haspopup="menu"
-            aria-expanded={saveMenu.open}
-            onClick={() => saveMenu.setOpen((v) => !v)}
-            className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-md border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
+            data-testid="cues-save"
+            disabled={unchanged || blocked}
+            aria-label={tr(copy.save)}
+            onClick={() => void save()}
+            className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
+              saveMenuShown ? 'rounded-l-md' : 'rounded-md'
+            } ${
+              unchanged
+                ? 'text-fg-dim'
+                : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
+            }`}
           >
-            {saveAllButton && unsavedTracks}
-            <ChevronDown className="h-3 w-3" aria-hidden="true" />
+            {tr('editor.cues.saveShort')}
           </button>
-        )}
-        {saveMenuShown && saveMenu.open && (
-          <div
-            ref={saveMenu.menuRef}
-            role="menu"
-            aria-label={tr('editor.cues.saveMore')}
-            onKeyDown={saveMenu.onMenuKeyDown}
-            className={`${SPLIT_MENU} w-auto min-w-56`}
-          >
-            {saveAllButton && (
-              <>
-                <button
-                  type="button"
-                  data-testid="cues-save-this"
-                  role="menuitem"
-                  disabled={unchanged || blocked}
-                  onClick={() => {
-                    saveMenu.setOpen(false)
-                    void save()
-                  }}
-                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                >
-                  {tr('editor.cues.saveThis')}
-                </button>
-                <button
-                  type="button"
-                  data-testid="cues-save-all"
-                  role="menuitem"
-                  disabled={savingAll}
-                  onClick={() => {
-                    saveMenu.setOpen(false)
-                    void saveAll()
-                  }}
-                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                >
-                  {saveAllLabel}
-                </button>
-              </>
-            )}
+          {saveMenuShown && (
             <button
               type="button"
-              data-testid="cues-discard"
-              role="menuitem"
-              disabled={!discardable}
-              onClick={() => {
-                saveMenu.setOpen(false)
-                onDiscard()
-              }}
-              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40 ${
-                saveAllButton ? 'mt-1 border-t border-[var(--color-line)]' : ''
-              }`}
+              data-testid="cues-save-more"
+              ref={saveMenu.toggleRef}
+              disabled={savingAll}
+              aria-label={tr('editor.cues.saveMore')}
+              aria-haspopup="menu"
+              aria-expanded={saveMenu.open}
+              onClick={() => saveMenu.setOpen((v) => !v)}
+              className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-md border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
             >
-              {tr('editor.cues.discard')}
+              {saveAllButton && unsavedTracks}
+              <ChevronDown className="h-3 w-3" aria-hidden="true" />
             </button>
-          </div>
-        )}
+          )}
+          {saveMenuShown && saveMenu.open && (
+            <div
+              ref={saveMenu.menuRef}
+              role="menu"
+              aria-label={tr('editor.cues.saveMore')}
+              onKeyDown={saveMenu.onMenuKeyDown}
+              className={`${SPLIT_MENU} w-auto min-w-56`}
+            >
+              {saveAllButton && (
+                <>
+                  <button
+                    type="button"
+                    data-testid="cues-save-this"
+                    role="menuitem"
+                    disabled={unchanged || blocked}
+                    onClick={() => {
+                      saveMenu.setOpen(false)
+                      void save()
+                    }}
+                    className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+                  >
+                    {tr('editor.cues.saveThis')}
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="cues-save-all"
+                    role="menuitem"
+                    disabled={savingAll}
+                    onClick={() => {
+                      saveMenu.setOpen(false)
+                      void saveAll()
+                    }}
+                    className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+                  >
+                    {saveAllLabel}
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                data-testid="cues-discard"
+                role="menuitem"
+                disabled={!discardable}
+                onClick={() => {
+                  saveMenu.setOpen(false)
+                  onDiscard()
+                }}
+                className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40 ${
+                  saveAllButton ? 'mt-1 border-t border-[var(--color-line)]' : ''
+                }`}
+              >
+                {tr('editor.cues.discard')}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
