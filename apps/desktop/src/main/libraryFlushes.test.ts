@@ -1102,6 +1102,29 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
       })
     })
 
+    // The 23/11 replacement test: the artist typed in Surco never reached Serato. The names
+    // were queued only for a file Serato already held, and before the queue's move it holds
+    // the old file, not the new one the names are written to.
+    it('queues the names of a replacement with its move when Sync Serato is on', async () => {
+      await replacing(
+        { syncSerato: true, addToSerato: false },
+        { names: { artist: { from: '', to: 'Surco Prueba' } } },
+        async (serato) => {
+          await flush(serato)
+          expect(serato.enqueue).toHaveBeenCalledWith(
+            [
+              expect.objectContaining({
+                kind: 'tags',
+                path: '/m/a.flac',
+                fields: { tart: 'Surco Prueba' },
+              }),
+            ],
+            [expect.objectContaining(MOVE)],
+          )
+        },
+      )
+    })
+
     it('sends nothing but the repoint to Serato with only Add on, so Add never opens its tag writes', async () => {
       await replacing(
         { syncSerato: false, addToSerato: true },
