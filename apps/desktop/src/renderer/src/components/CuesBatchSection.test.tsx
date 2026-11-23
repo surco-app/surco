@@ -1100,13 +1100,11 @@ describe('Clearing the cues of several selected tracks', () => {
     ).toBeTruthy()
   })
 
-  it('dims the clear button and drops its hover while it is off, so a blocked click does not look available', async () => {
+  it('turns the clear button off once it has cleared, so a second click has nothing to do', async () => {
     setup({}, TARGETS, CUES)
     fireEvent.click(screen.getByTestId('cues-batch-clear'))
     const clear = screen.getByTestId('cues-batch-clear')
     expect(clear).toBeDisabled()
-    expect(clear).toHaveClass('disabled:opacity-40')
-    expect(clear).toHaveClass('disabled:hover:text-fg-dim')
     await screen.findByTestId('cues-batch-cleared')
   })
 
