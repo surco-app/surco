@@ -1408,6 +1408,19 @@ describe('runProcessTrack — Apple Music only copy verification', () => {
     expect(deps.rm).toHaveBeenCalled()
   })
 
+  // macOS's temp folder is a link: os.tmpdir() says /var/folders/…, Music answers with
+  // where the file really is, /private/var/folders/…. Read as two different folders, the
+  // check passed and the cleanup deleted the only file the new entry plays.
+  it('rolls back the add when Music names the temp file through its resolved path', async () => {
+    const deps = musicOnly()
+    deps.realPath = (p) => p.replace(/^\/tmp\//, '/private/tmp/')
+    deps.appleMusicEntryLocation = vi.fn(async () => '/private/tmp/surco-abc/Artist - Title.aiff')
+    await expect(
+      runProcessTrack(job({ meta: { artist: 'Artist', title: 'Title' } as TrackMetadata }), deps),
+    ).rejects.toThrow('appleMusicNoMediaCopy')
+    expect(deps.deleteAppleMusic).toHaveBeenCalledWith('added-id', 'Artist - Title')
+  })
+
   it('cleans the temp and succeeds when Music copied the file into its own folder', async () => {
     const deps = musicOnly()
     deps.appleMusicEntryLocation = vi.fn(async () => '/Users/me/Music/Media/Artist - Title.aiff')

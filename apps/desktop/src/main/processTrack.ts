@@ -391,7 +391,8 @@ async function verifyMediaCopy(
   errorKey: 'appleMusicNoMediaCopy' | 'appleMusicNoMediaCopyKept',
 ): Promise<MediaCopy> {
   const entryPath = await deps.appleMusicEntryLocation(persistentId)
-  if (tmpDir && entryPath.startsWith(tmpDir)) {
+  const key = pathKey({ realPath: deps.realPath })
+  if (tmpDir && key(entryPath).startsWith(`${key(tmpDir).replace(/\/+$/, '')}/`)) {
     await deps.deleteAppleMusic(persistentId, metaLabel(job))
     throw errorWithKey(errorKey, entryPath)
   }
