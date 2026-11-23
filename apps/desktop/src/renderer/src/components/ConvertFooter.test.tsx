@@ -659,6 +659,25 @@ describe('ConvertFooter Serato stars note', () => {
     )
   })
 
+  // A track stamped to replace a file is converted over that file whatever the lookup finds
+  // now, as each track of a selection is: alone it has to warn as it does in a selection.
+  it('says Serato will lose the stars when the track is stamped to replace a Serato track', () => {
+    render(
+      cloneElement(withStars({ replaces: false }), {
+        item: {
+          id: 't1',
+          status: 'idle',
+          inputPath: '/crate/a.aiff',
+          replacesPath: '/s/old.wav',
+          meta: {},
+        } as TrackItem,
+      }),
+    )
+    expect(screen.getByTestId('convert-serato-stars-note')).toHaveTextContent(
+      i18n.t('editor.seratoLosesStars'),
+    )
+  })
+
   it('says nothing when the button adds instead of replacing', () => {
     render(withStars({ replaces: false }))
     expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
