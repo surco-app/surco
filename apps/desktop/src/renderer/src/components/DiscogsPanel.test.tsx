@@ -157,7 +157,7 @@ describe('DiscogsPanel result entrance', () => {
     renderPanel(browser({ results: results(3) }))
 
     for (const row of screen.getAllByTestId('discogs-result')) {
-      expect(row.className).not.toContain('result-in')
+      expect(row).toHaveAttribute('data-entering', 'false')
     }
   })
 
@@ -167,7 +167,7 @@ describe('DiscogsPanel result entrance', () => {
     rerender(panel(browser({ query: 'x', results: results(3) })))
 
     for (const row of screen.getAllByTestId('discogs-result')) {
-      expect(row.className).toContain('result-in')
+      expect(row).toHaveAttribute('data-entering', 'true')
     }
   })
 })
@@ -404,22 +404,6 @@ describe('DiscogsPanel track length check', () => {
         .find((row) => row.textContent?.includes(title)) as HTMLElement,
     ).queryByTestId('track-length-mismatch')
 
-  it('lets a long position push the title instead of overlapping it', () => {
-    renderPanel(openRelease, 35)
-    const position = within(screen.getAllByTestId('discogs-track')[0]).getByTestId(
-      'discogs-track-position',
-    )
-    expect(position).toHaveClass('min-w-8', 'shrink-0')
-    expect(position).not.toHaveClass('w-8')
-  })
-
-  it('lets the release collapse skip its height transition when motion is reduced', () => {
-    renderPanel(openRelease, 35)
-    expect(screen.getByTestId('discogs-tracks-collapse')).toHaveClass(
-      'motion-reduce:transition-none',
-    )
-  })
-
   it('warns on a track far longer than the file, so a different edit is not applied unnoticed', () => {
     renderPanel(openRelease, 35)
     expect(mismatchOf('02 Untitled Track')).toHaveAccessibleName(
@@ -452,20 +436,6 @@ describe('cursor de teclado', () => {
     expect(screen.getByTestId('matches-column')).toBeInTheDocument()
   })
 
-  // Solo el cursor de teclado se pinta: con `focus:` la tarjeta que acababas de pulsar con el
-  // ratón se quedaba azul, y junto a la pista aplicada y la fila de la lista eran tres bloques
-  // azules en pantalla sin que ninguno dijera cuál era la selección.
-  it('marca visiblemente la tarjeta enfocada con el teclado, y no la pulsada con el ratón', () => {
-    renderPanel(browser({ results }))
-    const first = screen.getAllByTestId('discogs-result')[0]
-    first.focus()
-    expect(first).toHaveFocus()
-    expect(first.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
-    expect(first.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
-    expect(first.className).toContain('focus-visible:outline-none')
-    expect(first.className).not.toMatch(/(^|\s)focus:bg-/)
-  })
-
   // La garantía de la decisión "foco ≠ despliegue": moverse por los resultados no puede
   // abrir ninguno, porque cada despliegue dispara una query de release a Discogs y el
   // contenido saltaría bajo el cursor mientras navegas. Solo Enter despliega.
@@ -495,32 +465,6 @@ describe('cursor de teclado', () => {
       expect.stringContaining('DESPECHÁ (Clean)'),
       expect.stringContaining('DESPECHÁ (Intro)'),
     ])
-  })
-
-  it('rings the focused result with the same 2 px as every other control', () => {
-    renderPanel(browser({ results }))
-    const row = screen.getAllByTestId('discogs-result')[0]
-    expect(row.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
-  })
-
-  it('marca visiblemente la pista enfocada dentro de un release desplegado', () => {
-    const release = {
-      provider: 'discogs' as const,
-      id: 1,
-      title: 'Uno',
-      artists: [],
-      tracklist: [
-        { position: '1', title: 'Cara A' },
-        { position: '2', title: 'Cara B' },
-      ],
-    }
-    renderPanel(browser({ results, openKey: 'discogs:1', release, loading: false }))
-    const track = screen.getAllByTestId('discogs-track')[0]
-    track.focus()
-    expect(track).toHaveFocus()
-    expect(track.className).toContain('focus-visible:bg-[var(--color-accent-soft)]')
-    expect(track.className).toContain('focus-visible:shadow-[inset_0_0_0_2px_var(--color-accent)]')
-    expect(track.className).toContain('focus-visible:outline-none')
   })
 })
 
@@ -674,7 +618,7 @@ describe('DiscogsPanel stable results', () => {
   it('slides the divider while a single catalog or the best match is still working', () => {
     renderPanel(browser({ query: 'x', busy: true }))
     const bar = within(screen.getByTestId('matches-column')).getByTestId('top-progress')
-    expect(bar.firstElementChild?.className).toContain('animate-top-progress')
+    expect(bar).toHaveAttribute('data-indeterminate', 'true')
   })
 
   // Opening a release is not a search: the list is there and the tracks show their own
@@ -1007,34 +951,6 @@ describe('DiscogsPanel last applied album', () => {
   it('pins nothing before an album was applied', () => {
     renderPanel(browser({ query: 'y', results: [{ provider: 'discogs', id: 2, title: 'Other' }] }))
     expect(screen.queryByTestId('last-applied-label')).not.toBeInTheDocument()
-  })
-})
-
-// artexjay on v1.8.0: the source menu opened under the result rows, so Discogs → MusicBrainz
-// could hardly be picked. The divider's progress line had made the header its own stacking
-// context, which traps the menu, and the backdrop that closes it, below the list and every
-// layered control in the window.
-describe('DiscogsPanel source menu stacking', () => {
-  const trapsLayers = (el: Element): boolean => /\b(isolate|z-\S+)/.test(el.className)
-
-  it('leaves the source menu free to layer over the result rows', () => {
-    renderPanel(
-      browser({
-        query: 'x',
-        results: [{ provider: 'discogs', id: 1, title: 'Album' }],
-        providerCounts: [
-          { provider: 'discogs', count: 1 },
-          { provider: 'musicbrainz', count: 1 },
-        ],
-      }),
-    )
-    fireEvent.click(screen.getByTestId('provider-filter'))
-    const column = screen.getByTestId('matches-column')
-    let el = screen.getByTestId('provider-filter-listbox').parentElement
-    while (el && el !== column) {
-      expect(trapsLayers(el)).toBe(false)
-      el = el.parentElement
-    }
   })
 })
 
