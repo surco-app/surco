@@ -1255,7 +1255,7 @@ describe('applyPatches with tags', () => {
     expect(albumOnly).toContain('<ALBUM TITLE="Need You Now">')
   })
 
-  it('leaves an absent attribute absent instead of inserting it', () => {
+  it('does not create an ALBUM or INFO element the entry never had', () => {
     const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION></ENTRY></COLLECTION></NML>`
     const out = applyPatches(bare, [
       patch({ album: { from: '', to: 'New' }, genre: { from: '', to: 'House' } }),
