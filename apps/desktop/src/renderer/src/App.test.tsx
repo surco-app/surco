@@ -11721,6 +11721,47 @@ describe('App metadata undo', () => {
     takeShortcutUndo()
   })
 
+  // A tag notice's Undo names the tag edit on its card. Taking back a Reviewed from another
+  // notice instead would bring a track back to To review and leave the tags wiped.
+  it('undoes the tags from a tag notice even while Reviewed still offers its undo', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    fireEvent.click(await screen.findByTestId('app-notice-action'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
+  // ⌘Z means the newest notice. A tag edit made after Reviewed is what the DJ just did, so
+  // ⌘Z takes back the tags, not the older Reviewed underneath.
+  it('gives ⌘Z to a newer tag notice over an older Reviewed', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    fireEvent.click(await screen.findByTestId('clear-meta-btn'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
   it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),

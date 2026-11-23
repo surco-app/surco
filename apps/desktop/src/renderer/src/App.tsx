@@ -479,6 +479,9 @@ export default function App(): React.JSX.Element {
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
       reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
+        // ⌘Z means the newest notice: a newer one takes the shortcut away from an older
+        // Reviewed, whose card keeps its own Undo button.
+        takeShortcutUndo()
         const id = pushToast(store, {
           key,
           tone: 'neutral',
@@ -2099,7 +2102,7 @@ export default function App(): React.JSX.Element {
       recordMetaUndo(patches.map((p) => p.id))
       markHandEdited(patches)
       deriveTracks(patches)
-      toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoMeta)
+      toastReporter.reportUndo(tr('notices.updatedMeta', { count: patches.length }), undoTags)
     },
   )
 
@@ -4091,7 +4094,7 @@ export default function App(): React.JSX.Element {
     } else updateTrack(selected.id, clearedTrackPatch(selected))
     toastReporter.reportUndo(
       tr('notices.clearedMeta', { count: Math.max(selectedTracks.length, 1) }),
-      undoMeta,
+      undoTags,
     )
   })
   const deriveTags = useStableCallback(() => {
@@ -4111,7 +4114,7 @@ export default function App(): React.JSX.Element {
     if (!patches.length) return
     recordMetaUndo(patches.map((p) => p.id))
     deriveTracks(patches)
-    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoMeta)
+    toastReporter.reportUndo(tr('notices.filledMeasured', { count: patches.length }), undoTags)
   })
   // Stamps 1..N (list order) onto the bulk scope's track numbers — the album fix for
   // rips with no Discogs release to take positions from. Plain digits on purpose: the
@@ -4166,15 +4169,19 @@ export default function App(): React.JSX.Element {
         : tr('notices.titleFormatted', { count: patches.length }),
     )
   })
-  // ⌘Z: rolls back the last batch tag operation and says how many rows came back —
-  // silence would leave the user unsure whether anything was restored.
-  // A notice still offering its own Undo (Reviewed) comes first: it is what the DJ just did
-  // and can read on screen, older tag edits are not.
+  // Rolls back the last batch tag operation and says how many rows came back —
+  // silence would leave the user unsure whether anything was restored. A tag notice's Undo
+  // runs this alone: its card names a tag edit, never another notice's action.
+  const undoTags = useStableCallback(() => {
+    const count = metaUndo.undo()
+    if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
+  })
+  // ⌘Z: a notice still offering its own Undo (Reviewed) comes first, since it is what the DJ
+  // just did and can read on screen; otherwise the tag undo above.
   const undoMeta = useStableCallback(() => {
     const shortcut = takeShortcutUndo()
     if (shortcut) return shortcut()
-    const count = metaUndo.undo()
-    if (count > 0) setNotice(tr('notices.undoneMeta', { count }))
+    undoTags()
   })
   const redoMeta = useStableCallback(() => {
     const count = metaUndo.redo()
