@@ -1352,4 +1352,28 @@ describe('CuesSection replaced track', () => {
     await ready()
     expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
   })
+
+  // Reviewed removes itself with its row. Keyboard and VoiceOver users must land back on
+  // the cue editor, not on the page, so ⌘Z there still takes Reviewed back.
+  it('returns the focus to the cue editor after Reviewed, so the DJ keeps their place', async () => {
+    let listed = [entry(['rekordbox'])]
+    const restoreReplaced = vi.fn<Api['restoreReplaced']>(async () => {})
+    setup(READ, null, undefined, {
+      replacedTracks: async () => listed,
+      reviewReplaced: async () => {
+        const [was] = listed
+        listed = []
+        return was
+      },
+      restoreReplaced,
+    })
+    await ready()
+    const reviewed = await screen.findByTestId('cues-reviewed')
+    reviewed.focus()
+    fireEvent.click(reviewed)
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
+    expect(document.activeElement).toBe(screen.getByTestId('cues-editor'))
+    fireEvent.keyDown(document.activeElement as Element, { key: 'z', metaKey: true })
+    await waitFor(() => expect(restoreReplaced).toHaveBeenCalledOnce())
+  })
 })

@@ -2513,10 +2513,18 @@ export function CuesSection({
         <SectionBody open={open}>
           <div className="mt-3">
             {body}
+            {/* Reviewed unmounts with its row: the focus goes back to the cue editor, not to
+            the page, so the keyboard keeps its place and ⌘Z there takes Reviewed back. */}
             {replaced && (
               <div className="mt-2 flex flex-col items-start gap-2">
                 <ReplacedReason shift={replaced.shift} />
-                <ReviewedButton path={replaced.newPath} name={track?.title || cue.label} />
+                <ReviewedButton
+                  path={replaced.newPath}
+                  name={track?.title || cue.label}
+                  onPress={() =>
+                    sectionRef.current?.querySelector<HTMLElement>('fieldset')?.focus()
+                  }
+                />
               </div>
             )}
             {footer}

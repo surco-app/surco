@@ -8,7 +8,7 @@ import { useToast } from '../lib/toastContext'
 // Closes the review in every program at once, with no question: the notice's Undo (and ⌘Z
 // while it is up) puts the entry back exactly as it was, so a misclick costs nothing.
 // onPress runs before the review: the button is about to unmount with its row, so the
-// maximized editor takes the focus back while it still can, and its keys stay with the track.
+// cue editor takes the focus back while it still can, and its keys stay with the track.
 export function ReviewedButton({
   path,
   name,
