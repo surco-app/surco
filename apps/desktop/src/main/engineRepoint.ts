@@ -59,6 +59,8 @@ export interface EngineRepoint extends PathMatchOptions {
   // repair already landed, and whether the length is rewritten from the row's own trackData.
   expectTrackData?: { sampleRate: number; sampleCount: number }
   fixLength?: boolean
+  // A replacement no measure vouches holds the replaced file's audio (see RekordboxRepoint).
+  reanalyse?: true
 }
 
 export const engineLengthOf = (sampleCount: number, sampleRate: number): number =>
@@ -312,6 +314,7 @@ export async function writeEngineRepoints(
       inPlace: boolean
       bitrate: number | null | undefined
       fixLength?: boolean
+      reanalyse?: true
     }[] = []
     // The row each earlier repoint of the run puts on a file, by that file: the rows read
     // above do not know it yet.
@@ -363,6 +366,7 @@ export async function writeEngineRepoints(
         onTarget.length > 0 &&
         !repoint.engineShift &&
         !repoint.fixLength &&
+        !repoint.reanalyse &&
         sizes[i] === matches[0].fileBytes &&
         (bitrates[i] === undefined || bitrates[i] === matches[0].bitrate)
       ) {
@@ -377,6 +381,7 @@ export async function writeEngineRepoints(
         inPlace: onTarget.length > 0,
         bitrate: bitrates[i],
         fixLength: repoint.fixLength,
+        reanalyse: repoint.reanalyse,
       })
       results[i] = { written: true, id: matches[0].id }
       planned.delete(key(repoint.from))
@@ -435,6 +440,17 @@ export async function writeEngineRepoints(
             Number(u.id),
           ],
         )
+      // Engine never analyses a row that says it is analysed, so the old file's grid, key and
+      // overview would sit over another recording. Emptied, with isAnalyzed at 0, Engine
+      // analyses the file again on its next start and keeps the hot cues and loops as they
+      // are (measured in Engine DJ 5.3.0 on 23/11).
+      if (u.reanalyse) {
+        db.run(
+          'UPDATE PerformanceData SET trackData = NULL, overviewWaveFormData = NULL, beatData = NULL WHERE trackId = ?',
+          [Number(u.id)],
+        )
+        db.run('UPDATE Track SET isAnalyzed = 0 WHERE id = ?', [Number(u.id)])
+      }
     }
 
     // Engine launched while the rows were being read would have loaded the old library and

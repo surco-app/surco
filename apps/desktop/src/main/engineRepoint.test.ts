@@ -6,6 +6,7 @@ import { dirname, join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { emptyMetadata } from '../shared/metadata'
+import type { ReplaceShift } from '../shared/replaceShift'
 import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
@@ -20,7 +21,7 @@ import {
   inflateEngineBlob,
 } from './engineBlobs'
 import { addToEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
-import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
+import { analysedTrack, overviewBlob, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
 import {
   engineBitrateKbps,
@@ -29,6 +30,7 @@ import {
   repointEngineTracks,
 } from './engineRepoint'
 import { backupOf } from './libraryBackups'
+import { rekordboxRepointFor } from './rekordboxRepointFor'
 import {
   beginRekordboxBatch,
   endRekordboxBatch,
@@ -1067,6 +1069,107 @@ describe.each(['2.18', '3.0.2'] as const)(
       const db = await openDb(lib.dbPath)
       expect(one(db, 'SELECT fileBytes FROM Track')).toEqual({ fileBytes: 5000 })
       db.close()
+    })
+  },
+)
+
+// The 23/11 test in the real Engine DJ 5.3.0: a FLAC of another recording replaced an MP3 and
+// the row kept the MP3's grid, key and overview, 210 ms off every beat of the new audio, and
+// Engine never analyses a row that says it is analysed. Emptied of trackData, overview and
+// beatData with isAnalyzed at 0, Engine analysed it again on its next start and kept the hot
+// cues byte for byte. Without a measure vouching for the same audio, that is what it gets.
+describe.each(['2.18', '3.0.2'] as const)(
+  'a replacement by another recording, on a %s library',
+  (schema) => {
+    beforeEach(() => setEngineWriteGatherMs(0))
+
+    async function replacedLibrary(): Promise<Library> {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        overviewBlob([[1, 2, 3]]),
+      ])
+      db.run('UPDATE Track SET isAnalyzed = 1 WHERE id = 1')
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      return lib
+    }
+
+    async function replace(lib: Library, replaceShift: ReplaceShift, sampleRateHz?: number) {
+      const repoint = rekordboxRepointFor('/downloads/new.flac', lib.newFile, {
+        replaces: lib.oldFile,
+        replaceShift,
+        replaceAudio: {
+          oldShiftMs: 26.12,
+          newShiftMs: 0,
+          ...(sampleRateHz ? { sampleRateHz } : {}),
+        },
+        fromBytes: 100,
+      })
+      if (!repoint) throw new Error('the replacement told the libraries nothing')
+      beginRekordboxBatch()
+      recordRekordboxRepoint(repoint)
+      await addToEngineLibrary(lib.dir, lib.newFile, emptyMetadata(), undefined, lib.oldFile)
+      return repointEngineTracks(lib.dir, endRekordboxBatch())
+    }
+
+    async function rowOf(lib: Library) {
+      const db = await openDb(lib.dbPath)
+      try {
+        return one(
+          db,
+          `SELECT t.isAnalyzed, t.path, p.trackData, p.overviewWaveFormData, p.beatData, p.quickCues, p.loops
+             FROM Track t JOIN PerformanceData p ON p.trackId = t.id WHERE t.id = 1`,
+        )
+      } finally {
+        db.close()
+      }
+    }
+
+    it.each(['noMatch', 'drift', 'unreadable'] as const)(
+      "empties Engine's analysis of the old file and keeps the cues and loops when the shift is %s",
+      async (unmoved) => {
+        const lib = await replacedLibrary()
+        const before = await rowOf(lib)
+
+        expect(await replace(lib, { unmoved })).toEqual([{ written: true, id: '1' }])
+
+        expect(await rowOf(lib)).toEqual({
+          isAnalyzed: 0,
+          path: '../music/new.aiff',
+          trackData: null,
+          overviewWaveFormData: null,
+          beatData: null,
+          quickCues: before.quickCues,
+          loops: before.loops,
+        })
+      },
+    )
+
+    // Engine counts cues in samples: a replacement at another rate keeps each cue at its time,
+    // so the cues still take the new rate even though the analysis that carried it goes.
+    it('keeps each cue at its time at the new rate while the analysis goes', async () => {
+      const lib = await replacedLibrary()
+
+      await replace(lib, { unmoved: 'noMatch' }, 48000)
+
+      const row = await rowOf(lib)
+      expect(row.beatData).toBeNull()
+      const cues = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))
+      expect(cues?.slots.slice(0, 3).map((s) => s.cue?.sample)).toEqual(
+        HOT_SEC.map((s) => s * 48000),
+      )
+    })
+
+    // The same audio measured at the same spot: Engine's grid still fits, and may be one the DJ
+    // corrected by hand.
+    it('keeps the analysis of a replacement measured as the same audio', async () => {
+      const lib = await replacedLibrary()
+      const before = await rowOf(lib)
+
+      await replace(lib, { moved: 0 })
+
+      expect(await rowOf(lib)).toEqual({ ...before, path: '../music/new.aiff' })
     })
   },
 )
