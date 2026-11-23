@@ -2775,4 +2775,47 @@ describe('CuesSection maximized replaced track', () => {
     expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
     expect(restoreReplaced).toHaveBeenCalledOnce()
   })
+
+  // ⌘Z takes back the DJ's last step. A cue edit made after Reviewed is that step, so ⌘Z
+  // must undo the edit and leave the review closed, not reopen it behind their back.
+  it('undoes a cue edit made after Reviewed with ⌘Z, leaving the review closed', async () => {
+    const entry: ReplacedEntry = {
+      newPath: '/m/g.wav',
+      oldPath: '/m/g.mp3',
+      replacedAt: 1,
+      shift: { moved: 0 },
+      pending: ['rekordbox'],
+    }
+    let listed: ReplacedEntry[] = [entry]
+    const restoreReplaced = vi.fn<Api['restoreReplaced']>(async () => {})
+    setup(
+      null,
+      {
+        ...READ,
+        cues: [
+          { id: 'l', ms: 32000, kind: 1, color: 1, loop: true },
+          { id: 'h', ms: 64000, kind: 2, color: 1 },
+        ],
+      },
+      {
+        replacedTracks: async () => listed,
+        reviewReplaced: async () => {
+          listed = []
+          return entry
+        },
+        restoreReplaced,
+      },
+    )
+    await maximize()
+    const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
+    fireEvent.click(reviewed)
+    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    fireEvent.click(screen.getByTestId('cues-clear-all'))
+    expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
+
+    key('z', { metaKey: true })
+    expect(screen.getByTestId('cue-wave-hot-B')).toBeInTheDocument()
+    await act(async () => {})
+    expect(restoreReplaced).not.toHaveBeenCalled()
+  })
 })

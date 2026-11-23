@@ -11762,6 +11762,29 @@ describe('App metadata undo', () => {
     takeShortcutUndo()
   })
 
+  // A tag edit with no notice of its own is still the DJ's newest step: ⌘Z after it takes
+  // back the edit, not an older Reviewed they are no longer looking at.
+  it('gives ⌘Z to a tag edit made after Reviewed even when the edit shows no notice', async () => {
+    setApi({ readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Artist' }) })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+    const undoReviewed = vi.fn()
+    offerShortcutUndo(undoReviewed)
+
+    const artist = await screen.findByTestId('field-artist')
+    fireEvent.change(artist, { target: { value: 'Someone Else' } })
+    fireEvent.blur(artist)
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Someone Else'))
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    expect(undoReviewed).not.toHaveBeenCalled()
+    takeShortcutUndo()
+  })
+
   // The trim summary is an undo notice too. Pushed after Reviewed it is what the DJ just did,
   // so ⌘Z must no longer reach the older Reviewed underneath.
   it('lets a newer trim notice take ⌘Z from an older Reviewed', async () => {

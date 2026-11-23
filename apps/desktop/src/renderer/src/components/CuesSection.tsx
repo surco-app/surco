@@ -579,7 +579,7 @@ function Editing({
   )
   const fresh = queued !== null && queued.fingerprint === read.fingerprint
   const baseline = fresh ? queued.wanted : inRekordbox
-  const [state, dispatch] = useReducer(
+  const [state, stepDraft] = useReducer(
     (s: CueDraft, a: DraftAction) => reduceDraft(s, a, ctxRef.current as DraftContext),
     undefined,
     () =>
@@ -595,6 +595,12 @@ function Editing({
         programGrid,
       ),
   )
+  // A cue step is the DJ's newest action, so it takes ⌘Z away from an older Reviewed whose
+  // card keeps its own Undo. Selecting or stepping back changes no cue.
+  const dispatch = useCallback((action: DraftAction) => {
+    if (action.type !== 'select' && action.type !== 'undo') takeShortcutUndo()
+    stepDraft(action)
+  }, [])
   const grid = useMemo(
     () =>
       state.grid && draftGridChanged(state) ? gridBeats(state.grid, read.durationMs) : read.grid,
@@ -843,7 +849,7 @@ function Editing({
     openedWith.current = settled
     setChosen(settled)
     if (settled !== MANUAL_CUE_FLOW) dispatch({ type: 'use-flow', flowId: settled })
-  }, [settled])
+  }, [settled, dispatch])
   const menuRef = useRef<HTMLDivElement>(null)
   const editorRef = useRef<HTMLFieldSetElement>(null)
   const keysId = useId()
