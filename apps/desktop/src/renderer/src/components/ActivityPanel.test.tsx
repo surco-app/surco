@@ -269,8 +269,8 @@ describe('ActivityPanel accessibility', () => {
       { id: 'c', kind: 'cover', status: 'error', label: 'Downloading cover' },
     ])
     const [done, failed] = screen.getAllByTestId('activity-status-icon')
-    expect(done.getAttribute('class')).not.toMatch(/text-good/)
-    expect(failed.getAttribute('class')).toMatch(/text-danger/)
+    expect(done).toHaveAttribute('data-tone', 'faint')
+    expect(failed).toHaveAttribute('data-tone', 'danger')
   })
 
   it('speaks a step that ended with a warning', () => {
