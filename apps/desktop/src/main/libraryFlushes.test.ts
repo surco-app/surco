@@ -107,6 +107,7 @@ vi.mock('./rekordboxProcess', async (importOriginal) => ({
 
 import { activity } from './activity'
 import { writeEngineLibraryFixture } from './enginePlaylistsFixture'
+import { probeProperties } from './ffmpeg'
 import {
   conversionPrograms,
   duplicateLibraryDeps,
@@ -117,6 +118,7 @@ import {
   libraryUntouched,
   rekordboxFlushDeps,
   repointEngineQueued,
+  repointRekordbox,
   SYNC_BLOCKED_KEY,
   SYNC_ISSUE_PROGRAMS,
   syncTagsInLibraries,
@@ -2392,4 +2394,19 @@ describe('libraryUntouched', () => {
       }
     },
   )
+})
+
+// Without the probe the moved row keeps the replaced file's bitrate, depth, rate and length:
+// the 23/11 test on a copy of a real collection showed an AIFF at the MP3's 320 kbps.
+describe('repointRekordbox', () => {
+  it("hands the rekordbox write a probe to read the new file's technical columns", async () => {
+    WRITERS.repointTracks.mockClear()
+    await repointRekordbox('/c/master.db', [{ from: '/m/a.mp3', to: '/m/a.aiff' }], {
+      rekordbox: { ensure: async () => {} },
+    } as never)
+
+    const call = WRITERS.repointTracks.mock.calls[0] as unknown[]
+    const batch = call[2] as { probe?: { properties: unknown } }
+    expect(batch?.probe?.properties).toBe(probeProperties)
+  })
 })
