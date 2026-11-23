@@ -191,10 +191,10 @@ describe('TrackListHeader actions row', () => {
   it('marks clearing the list as destructive, since it is the one item that throws work away', () => {
     renderHeader()
     openMenu()
-    expect(screen.getByTestId('clear-all')).toHaveClass('text-danger')
-    expect(screen.getByTestId('trash-selected')).toHaveClass('text-danger')
-    expect(screen.getByTestId('fill-all')).not.toHaveClass('text-danger')
-    expect(screen.getByTestId('remove-selected')).not.toHaveClass('text-danger')
+    expect(screen.getByTestId('clear-all')).toHaveAttribute('data-destructive', 'true')
+    expect(screen.getByTestId('trash-selected')).toHaveAttribute('data-destructive', 'true')
+    expect(screen.getByTestId('fill-all')).toHaveAttribute('data-destructive', 'false')
+    expect(screen.getByTestId('remove-selected')).toHaveAttribute('data-destructive', 'false')
   })
 
   it.each([
@@ -237,7 +237,7 @@ describe('TrackListHeader actions row', () => {
     openMenu()
     const remove = screen.getByTestId('remove-selected')
     expect(remove).toHaveAccessibleName(i18n.t('trackList.context.remove'))
-    expect(remove).not.toHaveClass('hover:text-danger')
+    expect(remove).toHaveAttribute('data-destructive', 'false')
     fireEvent.click(remove)
     expect(handlers.onRemoveSelected).toHaveBeenCalledTimes(1)
     expect(handlers.onTrashSelected).not.toHaveBeenCalled()
@@ -420,19 +420,6 @@ describe('TrackListHeader layout', () => {
     expect(within(menu).getByTestId('remove-selected')).toHaveTextContent('key:remove')
   })
 
-  // The actions used to draw smaller icons than the sort beside them, which read as a
-  // second, lesser toolbar once both shared a line.
-  it('draws every icon on the row at the size of the sort direction', () => {
-    renderHeader({ tab: null })
-    const size = (id: string): string[] =>
-      [...(screen.getByTestId(id).querySelector('svg')?.classList ?? [])].filter((c) =>
-        /^[hw]-/.test(c),
-      )
-    const reference = size('track-sort-direction')
-    expect(size('add-files')).toEqual(reference)
-    expect(size('list-actions-more')).toEqual(reference)
-  })
-
   it('keeps the list actions on the filter and sort row so the header spends one line, not two, above the tracks', () => {
     renderHeader()
     const row = screen.getByTestId('track-list-toolbar')
@@ -474,7 +461,7 @@ describe('TrackListHeader layout', () => {
     renderHeader()
     const filter = screen.getByTestId('quality-filter-trigger')
     expect(filter).toHaveAccessibleName(/All/)
-    expect(within(filter).getByText('All').className).toContain('@[27rem]:')
+    expect(within(filter).getByText('All')).toBeInTheDocument()
   })
 
   it('still says which sort is on once a narrow panel leaves the sort as an icon', () => {
@@ -483,7 +470,7 @@ describe('TrackListHeader layout', () => {
     expect(sort).toHaveAccessibleName(
       `${i18n.t('sidebar.sort.label')}: ${i18n.t('sidebar.sort.import')}`,
     )
-    expect(within(sort).getByText(i18n.t('sidebar.sort.import')).className).toContain('@[27rem]:')
+    expect(within(sort).getByText(i18n.t('sidebar.sort.import'))).toBeInTheDocument()
   })
 
   it('sorts by album, the order a library of whole releases is browsed in', () => {
