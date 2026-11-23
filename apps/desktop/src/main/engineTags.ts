@@ -94,9 +94,12 @@ async function writeEngineTags(
         matches.length === 1
           ? set.filter(([field, change]) => sameText(matches[0][field], change.from))
           : []
+      const already =
+        matches.length === 1 && set.some(([field, change]) => sameText(matches[0][field], change.to))
       if (matches.length === 0) results[index] = { written: false, reason: 'no-match' }
       else if (matches.length > 1) results[index] = { written: false, reason: 'ambiguous' }
-      else if (still.length === 0) results[index] = { written: false, reason: 'changed' }
+      else if (still.length === 0)
+        results[index] = already ? { written: true } : { written: false, reason: 'changed' }
       else writes.push({ index, id: matches[0].id, set: still })
     }
     if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
