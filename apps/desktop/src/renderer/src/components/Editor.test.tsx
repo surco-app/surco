@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
-import { createRef, useState } from 'react'
+import { createRef, useLayoutEffect, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
@@ -7406,5 +7406,77 @@ describe('Editor replacing a library copy', () => {
     expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
     expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+})
+
+// App keys the editor per track and the auto-match sweep skips every row it believes is
+// under edit. Switching tracks with a field focused removes that field without a blur, so
+// the editor must hand the guard back as it goes, or the old track never gets matched.
+describe('the under-edit guard across a track switch', () => {
+  function Host({
+    id,
+    focusTitle,
+    editing,
+  }: {
+    id: string
+    focusTitle?: boolean
+    editing: { current: readonly string[] }
+  }) {
+    useLayoutEffect(() => {
+      if (focusTitle) screen.getByTestId('field-title').focus()
+    }, [focusTitle])
+    return (
+      <Editor
+        key={id}
+        item={item({ id })}
+        libraryIndex={null}
+        searchInputRef={createRef<HTMLInputElement>()}
+        onChange={vi.fn()}
+        onProcess={vi.fn()}
+        onAddToAppleMusic={vi.fn()}
+        resultsFolded={false}
+        onFoldResults={vi.fn()}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
+        onHideEditorHints={vi.fn()}
+        onOpenRename={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onTrimDetectedAll={vi.fn()}
+        onCopyFilename={vi.fn()}
+        onCopyPath={vi.fn()}
+        onSearchWeb={vi.fn()}
+        onCopyMeta={vi.fn()}
+        onPasteMeta={vi.fn()}
+        copiedMetaTitle={null}
+        onExportCollection={vi.fn()}
+        readFullTrack={async () => undefined}
+        filesOpen
+        onFieldFocusChange={(ids) => {
+          editing.current = ids
+        }}
+      />
+    )
+  }
+
+  it('releases the old track when the editor moves on with one of its fields focused', () => {
+    const editing: { current: readonly string[] } = { current: [] }
+    const { rerenderUi } = renderWithQuery(<Host id="a" editing={editing} />, {
+      showLoudness: false,
+    })
+    act(() => screen.getByTestId('field-title').focus())
+    expect(editing.current).toEqual(['a'])
+    rerenderUi(<Host id="b" editing={editing} />)
+    expect(editing.current).toEqual([])
+  })
+
+  it('keeps the new track under edit when its field takes focus as the editor switches', () => {
+    const editing: { current: readonly string[] } = { current: [] }
+    const { rerenderUi } = renderWithQuery(<Host id="a" editing={editing} />, {
+      showLoudness: false,
+    })
+    act(() => screen.getByTestId('field-title').focus())
+    rerenderUi(<Host id="b" focusTitle editing={editing} />)
+    expect(editing.current).toEqual(['b'])
   })
 })

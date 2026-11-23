@@ -57,6 +57,7 @@ import { useDiskCacheSeed } from '../hooks/useDiskCacheSeed'
 import type { RememberedPick } from '../hooks/useEditorPicks'
 import { useEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKey } from '../hooks/useKey'
+import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
@@ -457,6 +458,11 @@ export const Editor = memo(function Editor({
   // A bulk field writes to every selected track, so all of them are under edit, not just
   // the anchor the form is keyed on.
   const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
+  // Leaving with a field focused removes it without a blur, so the guard is handed back on
+  // unmount. A layout cleanup runs before the next editor's layout phase, so it can never
+  // clear a field the new editor focuses as it mounts.
+  const focusChange = useLatest(onFieldFocusChange)
+  useLayoutEffect(() => () => focusChange.current?.([]), [focusChange])
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
