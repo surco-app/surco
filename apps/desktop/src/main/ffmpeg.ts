@@ -132,6 +132,7 @@ import {
   type CueShift,
   dropsForeignCues,
   type Id3Values,
+  keepCustomValues,
   keepId3Values,
   keepsCuesInId3,
   preservesCuesInPlace,
@@ -139,6 +140,7 @@ import {
   readId3Lists,
   readTagLibExtras,
   type TagLibRead,
+  type UserTextValues,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -1180,8 +1182,11 @@ export function convertArgs(
   // campo propio borraba el VINYLCONDITION recién escrito.
   for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   // The M4A's content advisory rides -map_metadata 0 as `rating`, which every target
-  // format reads back as stars.
-  if (M4A_INPUT.test(input)) args.push('-metadata', 'rating=')
+  // format reads back as stars, and its file-type box as three tags naming a container the
+  // output is not.
+  if (M4A_INPUT.test(input))
+    for (const name of ['rating', 'major_brand', 'minor_version', 'compatible_brands'])
+      args.push('-metadata', `${name}=`)
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
@@ -2369,11 +2374,18 @@ export async function convertAudio(
   written: ConversionWritten
 }> {
   // A field still holding only the first value of the source's multi-value ID3 frame is one
-  // the DJ never touched (see keepId3Values).
-  const meta = composeMeta(
+  // the DJ never touched (see keepId3Values and keepCustomValues).
+  const kept =
     !clearExtras && ID3_INPUT.test(input)
       ? keepId3Values(sourceMeta, await runInWorker<Id3Values>({ type: 'id3Values', file: input }))
-      : sourceMeta,
+      : sourceMeta
+  const meta = composeMeta(
+    !clearExtras && ID3_INPUT.test(input) && Object.keys(kept.custom ?? {}).length > 0
+      ? keepCustomValues(
+          kept,
+          await runInWorker<UserTextValues>({ type: 'userTextValues', file: input }),
+        )
+      : kept,
   )
   // What the file was named before, for each DJ program whose sync rewrites the names it
   // holds when the file changes. A replacement's entries were made from the replaced file,
@@ -2643,10 +2655,12 @@ export async function convertAudio(
             coverPath: coverPath ?? carried ?? undefined,
             removeCover,
             clearExtras,
-            foreignRemoved,
+            // The loudness figures go with the rest of the deleted: an M4A encoded again gets
+            // its atoms back, but not the ones measured on the old samples.
+            foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
             cueSource: input,
             cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
-            carryAtoms: codec === 'copy' && ext === '.m4a' && M4A_INPUT.test(input),
+            carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is
@@ -2775,9 +2789,13 @@ export async function convertAudio(
         await carryFlacBlocks(input, tmp)
     }
     // The tags Surco does not manage, which ffmpeg cut to one value or left out of every
-    // target but a FLAC (see carryUnmanagedTags). The custom fields are Surco's to write, and
+    // target but a FLAC, and an M4A's into any (see carryUnmanagedTags). The custom fields are Surco's to write, and
     // the encoder stamp and the previous owner's chain are cleared on purpose.
-    if (!clearExtras && ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input)))
+    if (
+      !clearExtras &&
+      ((ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input))) ||
+        (ext !== '.m4a' && M4A_INPUT.test(input)))
+    )
       await runInWorker({
         type: 'carryUnmanagedTags',
         source: input,
