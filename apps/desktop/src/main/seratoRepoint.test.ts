@@ -116,7 +116,9 @@ describe('repointSerato', () => {
     expect(readdirSync(lib.base)).not.toContain('serato-backups')
   })
 
-  it('leaves a crate that already lists the new file, so the track never appears in it twice', async () => {
+  // The original is retired once database V2 no longer holds it, which never looks in crates:
+  // a crate keeping its old row would be left with a dead entry.
+  it('drops the old row from a crate that already lists the new file, so the track is in it once and never dead', async () => {
     const lib = library({
       internal: [
         ['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']],
@@ -127,7 +129,6 @@ describe('repointSerato', () => {
       join(lib.home.dir, 'database V2'),
       databaseOf('Users/dj/Music/A.aiff', 'Users/dj/Music/B.mp3'),
     )
-    const bothBefore = readFileSync(crateFileOf(lib.home, 'Both'))
 
     const results = await repointSerato(
       [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
@@ -139,7 +140,9 @@ describe('repointSerato', () => {
       'Users/dj/Music/A.aiff',
       'Users/dj/Music/B.mp3',
     ])
-    expect(readFileSync(crateFileOf(lib.home, 'Both'))).toEqual(bothBefore)
+    expect(parseSeratoCrate(readFileSync(crateFileOf(lib.home, 'Both')))).toEqual([
+      'Users/dj/Music/A.aiff',
+    ])
   })
 
   it('waits while Serato is open, since Serato writes its own library over ours when it quits', async () => {

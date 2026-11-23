@@ -8,6 +8,7 @@ import {
   seratoPathOn,
   seratoRootOf,
   withCrateTrackRepointed,
+  withCrateTracks,
 } from './seratoCrateFile'
 import { seratoDatabaseTruncated } from './seratoDatabase'
 import { seratoDatabaseHas, withSeratoTrackRepointed } from './seratoDatabaseWrite'
@@ -26,6 +27,15 @@ import {
 const DATABASE = 'database V2'
 
 type Outcome = LibraryRepointResult | 'truncated'
+
+// A crate already holding the new file only loses the old row, or the track would be in it
+// twice. Null when the crate never held the old file.
+function withoutTrack(bytes: Uint8Array, paths: string[], from: string): Uint8Array | null {
+  const kept = paths.flatMap((path, i) =>
+    path.normalize('NFC') === from.normalize('NFC') ? [] : [{ keep: i }],
+  )
+  return kept.length === paths.length ? null : withCrateTracks(bytes, kept)
+}
 
 // Each volume keeps its own _Serato_ library, and an entry stores a path relative to its
 // volume, so a file that moved to another drive cannot be followed by pointing the old entry.
@@ -59,8 +69,9 @@ function repointOne(
     const bytes = draft.read(file)
     const paths = bytes && crateTrackPaths(bytes)
     if (!bytes || !paths) return 'truncated'
-    if (paths.some((path) => path.normalize('NFC') === to.normalize('NFC'))) continue
-    const crate = withCrateTrackRepointed(bytes, from, to)
+    const crate = paths.some((path) => path.normalize('NFC') === to.normalize('NFC'))
+      ? withoutTrack(bytes, paths, from)
+      : withCrateTrackRepointed(bytes, from, to)
     if (crate) draft.write(file, crate)
   }
   return { written: true }
