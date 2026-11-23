@@ -243,6 +243,7 @@ function renderEditor(
   onFoldResults: ReturnType<typeof vi.fn>
   changeSettings: (next: Partial<Settings>) => void
   setFilesOpen: (filesOpen: boolean) => void
+  unmount: () => void
 } {
   const onProcess = vi.fn()
   const onFoldResults = vi.fn()
@@ -303,7 +304,7 @@ function renderEditor(
       />
     </OpenSettingsProvider>
   )
-  const { changeSettings, rerenderUi } = renderWithQuery(ui(props.filesOpen ?? true), {
+  const { changeSettings, rerenderUi, unmount } = renderWithQuery(ui(props.filesOpen ?? true), {
     outputFormat,
     // The membership badge follows the conversion destination now; Apple Music (the
     // pre-destination-aware behaviour every badge test was written against) unless a
@@ -365,6 +366,7 @@ function renderEditor(
     onFoldResults,
     changeSettings,
     setFilesOpen: (filesOpen: boolean) => rerenderUi(ui(filesOpen)),
+    unmount,
   }
 }
 
@@ -4567,6 +4569,29 @@ describe('Editor Discogs apply', () => {
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     await waitFor(() => expect(readFullTrack).toHaveBeenCalledWith('a'))
     await act(async () => {})
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
+  })
+
+  // App applies the editor's patch to whatever row is selected when it lands, so a full read
+  // that returns after the user moved on must not write this track's release onto the next one.
+  it('applies nothing once the user has moved to another track before the full read returns', async () => {
+    withImages()
+    let finishRead: (track: TrackItem) => void = () => {}
+    const readFullTrack = vi.fn(
+      () =>
+        new Promise<TrackItem | undefined>((resolve) => {
+          finishRead = resolve
+        }),
+    )
+    const { onChange, unmount } = renderEditor({ id: 'a', metaPartial: true }, 'wav', {
+      readFullTrack,
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(readFullTrack).toHaveBeenCalledWith('a'))
+    unmount()
+    await act(async () => finishRead(item({ id: 'a' })))
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
   })
 
