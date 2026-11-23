@@ -213,7 +213,9 @@ describe('search', () => {
     const fetchMock = mockStores({ US: { resultCount: 1, results: [reviveHit] } })
     const results = await search('Revive Bad Radio Edit')
     expect(results.map((r) => r.id)).toEqual([6797715483])
-    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    const stores = fetchMock.mock.calls.map((c) =>
+      new URL(c[0] as string).searchParams.get('country'),
+    )
     expect(stores).toEqual(['ES', 'GB', 'US'])
   })
 
@@ -237,7 +239,11 @@ describe('search', () => {
         const exact = params.get('term')?.includes('Extended Club Mix')
         const hits =
           params.get('country') === 'GB' ? [savemeHit, skydivinHit] : exact ? [] : [skydivinHit]
-        return { status: 200, ok: true, json: async () => ({ resultCount: hits.length, results: hits }) }
+        return {
+          status: 200,
+          ok: true,
+          json: async () => ({ resultCount: hits.length, results: hits }),
+        }
       }),
     )
     const results = await search('Darren Styles - Save Me (Extended Club Mix)', 'high', {
@@ -261,7 +267,9 @@ describe('search', () => {
     locale.country = 'gb'
     const fetchMock = mockStores({})
     await search('nada en ninguna tienda gb')
-    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    const stores = fetchMock.mock.calls.map((c) =>
+      new URL(c[0] as string).searchParams.get('country'),
+    )
     expect(stores).toEqual(['GB', 'US'])
   })
 
@@ -406,7 +414,10 @@ describe('getRelease', () => {
 
   it('loads an album sold only in another store from that store and links the row there, so a release found abroad opens instead of failing', async () => {
     const fetchMock = mockStores({
-      GB: { ...reviveLookup, results: reviveLookup.results.map((r) => ({ ...r, collectionId: 43 })) },
+      GB: {
+        ...reviveLookup,
+        results: reviveLookup.results.map((r) => ({ ...r, collectionId: 43 })),
+      },
     })
     const urls: (string | undefined)[] = []
     const off = activity.subscribe((e) => urls.push(e.url))
@@ -416,7 +427,9 @@ describe('getRelease', () => {
     } finally {
       off()
     }
-    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    const stores = fetchMock.mock.calls.map((c) =>
+      new URL(c[0] as string).searchParams.get('country'),
+    )
     expect(stores).toEqual(['ES', 'GB'])
     expect(urls.at(-1)).toBe('https://music.apple.com/gb/album/43')
   })
