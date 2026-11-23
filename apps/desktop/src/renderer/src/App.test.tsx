@@ -5853,6 +5853,55 @@ describe('App source playlists', () => {
       expect(screen.queryByTestId('track-number')).not.toBeInTheDocument()
     })
 
+    // The icon says what Surco did to a replaced track's cues, so it matters only where the DJ
+    // reviews them: the same files in an ordinary playlist are just tracks.
+    it('marks To review rows by new or old path with their state, and no row anywhere else', async () => {
+      await openFactory({
+        replacedTracks: vi.fn().mockResolvedValue([
+          { ...REPLACED[0] },
+          {
+            newPath: '/m/a.wav',
+            oldPath: '/m/a.mp3',
+            replacedAt: 1,
+            shift: { unmoved: 'drift' },
+            pending: ['rekordbox'],
+          },
+        ]),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID
+                ? [
+                    { path: '/m/c.wav', separator: false, meta: {}, linkId: 'r3', contentId: 'r3' },
+                    { path: '/m/a.mp3', separator: false, meta: {}, linkId: 'r1', contentId: 'r1' },
+                  ]
+                : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-replaced')).toHaveLength(2))
+      expect(
+        screen.getAllByTestId('track-replaced').map((el) => el.getAttribute('data-state')),
+      ).toEqual(['unmoved', 'moved'])
+      fireEvent.click(screen.getByTestId('source-node-h'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row').length).toBeGreaterThan(0))
+      expect(screen.queryByTestId('track-replaced')).not.toBeInTheDocument()
+    })
+
+    it('gives no icon for a track pending review only in another program', async () => {
+      await openFactory({
+        replacedTracks: vi
+          .fn()
+          .mockResolvedValue([REPLACED[0], { ...REPLACED[1], pending: ['traktor'] }]),
+        dj: reviewReads(),
+      })
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(screen.getAllByTestId('track-replaced')).toHaveLength(1))
+      expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    })
+
     it('is never offered as a playlist to add tracks to', async () => {
       await openFactory({
         replacedTracks: vi.fn().mockResolvedValue(REPLACED),
