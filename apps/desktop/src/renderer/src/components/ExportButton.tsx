@@ -36,8 +36,9 @@ interface ExportButtonProps {
   libraryBetter?: boolean
   done: boolean
   outputFormat: FormatSetting
-  // What the dropdown half displays when that differs from the pick the menu marks: a
-  // selection whose plan writes one other format (kept MP3s under an AIFF setting).
+  // The format the dropdown half displays and the menu marks, when it differs from the pick:
+  // a selection whose plan writes one other format (kept MP3s under an AIFF setting). Picking
+  // and converting still use outputFormat.
   shownFormat?: FormatSetting
   exportedFormat: OutputFormat | null
   incomplete: boolean
@@ -300,7 +301,7 @@ export function ExportButton({
               menuRef={menuRef}
               onMenuKeyDown={onMenuKeyDown}
               offerSource={offerSource}
-              outputFormat={outputFormat}
+              outputFormat={shownFormat}
               exportedFormat={exportedFormat}
               destination={destination}
               destinations={destinations}
@@ -477,7 +478,7 @@ export function ExportButton({
             menuRef={menuRef}
             onMenuKeyDown={onMenuKeyDown}
             offerSource={offerSource}
-            outputFormat={outputFormat}
+            outputFormat={shownFormat}
             exportedFormat={exportedFormat}
             destination={destination}
             destinations={destinations}

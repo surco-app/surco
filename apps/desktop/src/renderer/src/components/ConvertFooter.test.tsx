@@ -1308,12 +1308,26 @@ describe('ConvertFooter selection split button', () => {
 
   // Two MP3s with an AIFF setting write MP3 (kept sources), as a single track already shows:
   // the dropdown must not promise AIFF next to an "Update" that rewrites MP3 tags.
-  it('shows on the dropdown the one format the plan writes, while the menu keeps the pick', () => {
+  it('shows on the dropdown and marks in the menu the one format the plan writes', () => {
     render(plan({ format: 'aiff', batchFormats: ['mp3'] }))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
     openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('shows and marks the picked format when the plan writes exactly that', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    openMenu()
     expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
-    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('shows and marks the one real format a "Same as source" pick resolves to', () => {
+    render(plan({ format: 'source', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
   })
 
   it('keeps showing the picked format when the plan writes several', () => {
