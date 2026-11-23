@@ -130,7 +130,9 @@ export function useSettings({
       }
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       if (themePainted.current && document.startViewTransition && !reduced) {
-        document.startViewTransition(set)
+        const fade = document.startViewTransition(set)
+        fade.ready.catch(() => {})
+        fade.finished.catch(() => {})
       } else {
         set()
       }
