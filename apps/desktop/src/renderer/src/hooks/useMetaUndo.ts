@@ -27,7 +27,8 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
       Object.entries(custom ?? {}).map(([key, value]) => [`custom.${key}`, value]),
     ),
     // Everything a batch metadata operation can touch: the tags themselves plus the match
-    // flags a clear drops (matched/review/confidence and the resolved library verdict).
+    // flags a clear drops (matched/review/confidence, the resolved library verdict, the
+    // hand-edit mark) and the stamps a release apply leaves (provider, applied release).
     // Restoring the tags without those flags would hand the track back to the auto-match
     // sweep, which would promptly overwrite the metadata the undo just brought back.
     matched: t.matched,
@@ -36,6 +37,9 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
     reviewMatch: t.reviewMatch,
     matchConfidence: t.matchConfidence,
     inLibraryResolved: t.inLibraryResolved,
+    handEdited: t.handEdited,
+    matchProvider: t.matchProvider,
+    appliedRelease: t.appliedRelease,
     // The "clear all" intents ride the same snapshot as the fields they clear alongside:
     // metaCleared/coverRemoved wipe the rating and art on convert, foreignRemoved marks the
     // inspector's foreign tags for deletion. Undoing a clear must revert these too, or ⌘Z
