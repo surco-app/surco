@@ -371,7 +371,7 @@ function CueKeys({
     ['C', tr('editor.cues.keys.centre')],
     ['M', tr('editor.cues.keys.memory')],
     ['1…8', tr('editor.cues.keys.hot')],
-    ['↵', tr('editor.cues.keys.enter')],
+    ['↩', tr('editor.cues.keys.enter')],
     [formatShortcut(['backspace'], mac), tr('editor.cues.keys.remove')],
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
     [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
@@ -1371,7 +1371,7 @@ function Editing({
           <Tooltip label={acceptLabel} />
           {tr('editor.cues.auto.acceptSave')}
           <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
-            ↵
+            ↩
           </kbd>
         </button>
         <button

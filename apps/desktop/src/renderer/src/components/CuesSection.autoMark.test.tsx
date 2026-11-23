@@ -275,7 +275,7 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↵$/)
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↩$/)
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
     expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
       screen.getByTestId('cues-auto-accept'),

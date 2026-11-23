@@ -1001,7 +1001,7 @@ describe('SettingsModal shortcuts', () => {
     const onSave = vi.fn()
     openShortcuts(onSave)
     record('add', { key: 'x', metaKey: true, shiftKey: true })
-    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⇧⌘X')
     fireEvent.click(screen.getByTestId('settings-close'))
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ shortcutOverrides: { add: ['mod', 'shift', 'x'] } }),
@@ -1023,7 +1023,7 @@ describe('SettingsModal shortcuts', () => {
     record('add', { key: 'x', metaKey: true, shiftKey: true })
     fireEvent.click(screen.getByTestId('shortcuts-reset-all'), { detail: 1 })
     fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 2 })
-    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘⇧X')
+    expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⇧⌘X')
     fireEvent.click(screen.getByTestId('shortcuts-reset-all-confirm'), { detail: 1 })
     expect(screen.getByTestId('shortcut-record-add')).toHaveTextContent('⌘O')
     fireEvent.click(screen.getByTestId('settings-close'))
