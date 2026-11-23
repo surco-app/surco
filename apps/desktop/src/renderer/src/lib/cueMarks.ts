@@ -85,6 +85,7 @@ export const HOT_MARK_PX: Record<MarkSize, number> = { row: 12, wave: 14 }
 export const WAVE_MARK_LANE_PX = HOT_MARK_PX.wave + 1
 
 export const GONE_ROW_TOP_PX = HOT_MARK_PX.row + 2
+export const GONE_EDGE_SHARE = 55
 
 export function placeCues(
   cues: MarkInput[],

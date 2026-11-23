@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
+import { GONE_EDGE_SHARE } from '../lib/cueMarks'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { resetRowWaves } from '../lib/rowWaves'
 import { hoverTooltip } from '../test/tooltip'
@@ -497,6 +500,43 @@ describe('CueWave', () => {
         borderStyle: 'dashed',
         opacity: '0.3',
       })
+    })
+
+    it('mixes enough of the text colour into the edge of a hot cue the flow would take away for every colour rekordbox has to pass 3:1 against the wave ground in the light and the dark theme, so the hollow square is seen whatever its colour', () => {
+      setup({ readOnly: true, cues, diff })
+      expect(screen.getByTestId('cue-wave-ghost-gone-24000').style.borderColor).toContain(
+        `${GONE_EDGE_SHARE}%`,
+      )
+      const share = GONE_EDGE_SHARE / 100
+      const css = readFileSync(join(__dirname, '..', 'index.css'), 'utf8')
+      const light = css.slice(css.indexOf(':root[data-theme="light"] {'))
+      const token = (sheet: string, name: string): string =>
+        new RegExp(`${name}: (#[0-9a-f]{6});`).exec(sheet)?.[1] ?? ''
+      const rgb = (hex: string): number[] =>
+        [1, 3, 5].map((i) => Number.parseInt(hex.slice(i, i + 2), 16))
+      const luminance = (colour: number[]): number => {
+        const [r, g, b] = colour.map((c) =>
+          c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4,
+        )
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+      }
+      const contrast = (a: number[], b: number[]): number => {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+        return (hi + 0.05) / (lo + 0.05)
+      }
+      for (const sheet of [css, light]) {
+        const fg = rgb(token(sheet, '--color-fg'))
+        const ground = rgb(token(sheet, '--color-panel-2'))
+        const worst = Math.min(
+          ...Array.from({ length: 62 }, (_, i) =>
+            contrast(
+              rgb(hotCueColor(i + 1)).map((c, j) => c * share + fg[j] * (1 - share)),
+              ground,
+            ),
+          ),
+        )
+        expect(worst).toBeGreaterThanOrEqual(3)
+      }
     })
 
     it('gives the hot cues the flow would take away a row of their own under the cue squares and over the wave, so they never cover a new cue nor sit under one left out by a rule', () => {
