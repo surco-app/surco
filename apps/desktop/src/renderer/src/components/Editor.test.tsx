@@ -2738,6 +2738,24 @@ describe('Editor multi-select', () => {
     expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
   })
 
+  it('measures no library copy with several tracks selected, since the button warns about one track only', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Sunrise.wav')
+    api.loudness = vi.fn().mockResolvedValue(null)
+    api.comparePair = vi.fn().mockResolvedValue(null)
+    renderMulti({
+      platform: 'darwin',
+      music: true,
+      loudness: true,
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('P1'))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(api.comparePair).not.toHaveBeenCalled()
+    expect(api.loudness).not.toHaveBeenCalledWith('/Music/Sunrise.wav', expect.anything())
+  })
+
   it('does not send the DJ to a field from the amber note either when the selection mixes replacing with adding', () => {
     renderMulti({
       requiredFields: ['artist'],
@@ -5624,6 +5642,7 @@ describe('Editor Apple Music library section', () => {
     libraryProperties,
     libraryGone,
     filesOpen,
+    editorSections,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -5643,6 +5662,7 @@ describe('Editor Apple Music library section', () => {
     libraryProperties?: TrackProperties
     libraryGone?: 'missing' | 'unreadable' | 'checking'
     filesOpen?: boolean
+    editorSections?: Settings['editorSections']
   }): {
     api: Record<string, unknown>
     onProcess: ReturnType<typeof vi.fn>
@@ -5702,6 +5722,7 @@ describe('Editor Apple Music library section', () => {
         showLoudness: true,
         addToAppleMusic: music,
         filesOpen,
+        editorSections,
       },
     )
     return { api, onProcess, setFilesOpen }
@@ -5772,7 +5793,7 @@ describe('Editor Apple Music library section', () => {
     expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
-  it('shows no library section and measures no copy for a track opened from a program tab', async () => {
+  it('shows no library section but measures the replace target for a track opened from a program tab', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
       library: wavLoudness,
@@ -5780,10 +5801,10 @@ describe('Editor Apple Music library section', () => {
     })
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByTestId('library-section')).toBeNull()
-    expect(api.comparePair).not.toHaveBeenCalled()
+    expect(api.comparePair).toHaveBeenCalled()
     expect(api.fileExists).not.toHaveBeenCalled()
     expect(api.properties).not.toHaveBeenCalledWith('/Music/Strobe.wav')
-    expect(api.loudness).not.toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
+    expect(api.loudness).toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
   })
 
   it('describes no Apple Music copy in a program tab, since describing it is the section own work', async () => {
@@ -6105,6 +6126,28 @@ describe('Editor Apple Music library section', () => {
     )
     fireEvent.click(screen.getByTestId('process-btn'))
     expect(onProcess).toHaveBeenCalled()
+  })
+
+  it('warns before replacing a better Apple Music copy from a program tab', async () => {
+    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness, filesOpen: false })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
+    )
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('warns before replacing a better Apple Music copy with the library section hidden', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'library' ? { ...s, hidden: true } : s,
+      ),
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
+    )
+    expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
   it('says it is still comparing while the copies are being measured', async () => {

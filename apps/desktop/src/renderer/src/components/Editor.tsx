@@ -812,7 +812,7 @@ export const Editor = memo(function Editor({
   // format and spectrum still decide.
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const libraryCopyIsThisFile = pathKey(libraryCopyPath) === pathKey(item.inputPath)
-  const comparedCopyPath = libraryCopyIsThisFile || !libraryShown ? '' : libraryCopyPath
+  const comparedCopyPath = libraryCopyIsThisFile || isMulti ? '' : libraryCopyPath
   const musicHoldsFile = !!libraryCopyPath && libraryCopyIsThisFile
   const [musicCopyReach] = useCopyReach(
     comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
