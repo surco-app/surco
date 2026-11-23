@@ -577,28 +577,6 @@ describe('Field read-only', () => {
     expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
   })
 
-  // In a selection, Title is shown, not edited: it reads as text in the same row so the form
-  // does not jump between one track and many, while quality keeps its dashed box.
-  it('draws a plain read-only field as text without changing the row, and still announces its note', () => {
-    render(
-      <>
-        <Field
-          name="title"
-          label="Title"
-          value=""
-          onChange={vi.fn()}
-          readOnly
-          plain
-          readOnlyNote="Own"
-        />
-        <Field name="quality" label="Quality" value="Good" onChange={vi.fn()} readOnly />
-      </>,
-    )
-    expect(screen.getByTestId('field-title')).toHaveAttribute('data-plain', 'true')
-    expect(screen.getByTestId('field-quality')).not.toHaveAttribute('data-plain')
-    expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
-  })
-
   // pointerenter does not bubble, so a real pointer reaches the Tooltip through the element
   // that holds it, not the input inside.
   const hoverBox = (name: string): void => {
@@ -612,7 +590,7 @@ describe('Field read-only', () => {
   // tooltip, on a mixed field and on a per-track one alike.
   it.each([
     ['mixed', { mixed: true }],
-    ['plain', { readOnly: true, plain: true }],
+    ['read-only', { readOnly: true }],
   ])('keeps the whole list of differing values in a tooltip on a %s field', (_, props) => {
     vi.useFakeTimers()
     render(

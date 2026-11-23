@@ -2940,6 +2940,19 @@ describe('Editor multi-select', () => {
     expect(screen.getByTestId('number-tracks-btn')).toBeInTheDocument()
   })
 
+  // Title and BPM are per-track like Track no.; loose text for them made the selection form
+  // look unfinished next to the boxed Year, so every per-track field wears the same dashed box.
+  it('draws differing titles and BPMs in the same box as the track number', () => {
+    renderMulti({
+      visibleFields: ['title', 'bpm', 'trackNumber'],
+      metaA: { title: 'One', bpm: '120', trackNumber: '1' },
+      metaB: { title: 'Two', bpm: '128', trackNumber: '5' },
+    })
+    expect(screen.getByTestId('field-title')).not.toHaveAttribute('data-plain')
+    expect(screen.getByTestId('field-bpm')).not.toHaveAttribute('data-plain')
+    expect(screen.getByTestId('field-trackNumber')).not.toHaveAttribute('data-plain')
+  })
+
   it('derives tags for every selected track from its own file name in one click', () => {
     const { onDeriveTags } = renderMulti()
     fireEvent.click(screen.getByTestId('derive-btn'))

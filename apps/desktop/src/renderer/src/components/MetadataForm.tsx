@@ -97,7 +97,6 @@ function renderField(
       cleaned={f.cleaned}
       readOnly={f.readOnly}
       readOnlyNote={f.readOnlyNote}
-      plain={f.plain}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}

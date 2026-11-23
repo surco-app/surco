@@ -111,9 +111,6 @@ export interface FieldSpec {
   cleaned?: FieldCleanedNote
   readOnly?: boolean
   readOnlyNote?: string
-  // Read-only because a selection cannot write one value into every track: drawn as text in
-  // the field's own row rather than as a box, unlike Quality, which is a box you cannot type in.
-  plain?: boolean
   // A button beside a read-only per-track field that fills it for the whole selection.
   action?: { label: string; onApply: () => void }
   perTrack?: {
@@ -364,9 +361,6 @@ export function buildFieldSpecs({
           : {}),
       width,
       readOnly: true,
-      // Track no. keeps its box: its numbering button sits beside it, and beside loose text
-      // the button read as unrelated to the field it numbers, unlike next to Year's box.
-      plain: key !== 'trackNumber',
       readOnlyNote: tr('editor.perTrackOnly'),
       action:
         key === 'trackNumber' && numberTracks
