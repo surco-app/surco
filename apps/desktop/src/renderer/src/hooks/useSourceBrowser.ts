@@ -1,4 +1,4 @@
-import { hashKey, skipToken, useQuery, useQueryClient } from '@tanstack/react-query'
+import { skipToken, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../../shared/allTracks'
@@ -337,14 +337,17 @@ export function useSourceBrowser({
   }, [reviewOpen, source, queryClient])
 
   const rereadLibraries = useStableCallback(() => {
+    // Another view showing the same read (the cue flow preview's track picker) still gets
+    // it fresh: it is only counted when this hook is all that watches it.
+    const counted = queryClient.getQueryCache().find({ queryKey: allTracksKey, exact: true })
+    const skip = onlyCounted && counted !== undefined && counted.getObserversCount() <= 1
     queryClient.invalidateQueries({ queryKey: ['source-available'] })
     queryClient.invalidateQueries({ queryKey: ['source-tree'], predicate: notMusic })
     queryClient.invalidateQueries({
       queryKey: ['source-playlist'],
-      predicate: (query) =>
-        notMusic(query) && !(onlyCounted && query.queryHash === hashKey(allTracksKey)),
+      predicate: (query) => notMusic(query) && !(skip && query === counted),
     })
-    if (onlyCounted)
+    if (skip)
       queryClient.invalidateQueries({ queryKey: allTracksKey, exact: true, refetchType: 'none' })
     queryClient.invalidateQueries({ queryKey: ['source-separator'] })
     for (const p of DJ_PROGRAMS)

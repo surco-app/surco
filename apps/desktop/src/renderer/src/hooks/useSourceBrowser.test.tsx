@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query'
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import type React from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -490,6 +490,34 @@ describe('useSourceBrowser', () => {
       await waitFor(() => expect(wholeReads()).toBe(2))
       act(() => focus())
       await waitFor(() => expect(wholeReads()).toBe(3))
+    })
+
+    // The cue flow preview picks its track from the same All tracks read. While it is open
+    // it is shown, not only counted, so a focus refreshes it as it always did.
+    it('still reads All tracks on focus while another view shows it, such as the flow preview', async () => {
+      const playlist = vi.fn(async (id: string) => (id === ALL_TRACKS_ID ? allTracks : []))
+      const { result, focus, client } = setup(
+        rekordbox(playlist),
+        'darwin',
+        () => {},
+        [],
+        [],
+        [replaced('/m/a.flac', 1, { moved: 120 })],
+      )
+      act(() => result.current.selectSource('rekordbox'))
+      await waitFor(() => expect(result.current.tree?.[1]?.id).toBe(TO_REVIEW_ID))
+      const wholeReads = () => playlist.mock.calls.filter(([id]) => id === ALL_TRACKS_ID).length
+      const preview = new QueryObserver(client, {
+        queryKey: ['source-playlist', 'rekordbox', ALL_TRACKS_ID],
+        staleTime: Number.POSITIVE_INFINITY,
+      })
+      const stop = preview.subscribe(() => {})
+      try {
+        act(() => focus())
+        await waitFor(() => expect(wholeReads()).toBe(2))
+      } finally {
+        stop()
+      }
     })
 
     it('reads All tracks fresh when it is opened after the focus came back', async () => {
