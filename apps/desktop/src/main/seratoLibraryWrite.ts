@@ -125,6 +125,7 @@ export interface SeratoCommitDeps {
   roots: () => SeratoLibraryRoot[]
   seratoOpen: () => Promise<boolean>
   now?: () => Date
+  sessionBackup?: () => Promise<void>
 }
 
 export type SeratoCommit =
@@ -176,6 +177,39 @@ function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, strin
   return copies
 }
 
+function takeSessionCopy(dir: string, roots: SeratoLibraryRoot[]): void {
+  const partial = `${dir}.partial`
+  rmSync(partial, { recursive: true, force: true })
+  mkdirSync(partial, { recursive: true })
+  for (const root of roots) {
+    const subcrates = join(root.dir, 'Subcrates')
+    const crates = existsSync(subcrates)
+      ? readdirSync(subcrates)
+          .filter((name) => name.endsWith('.crate'))
+          .map((name) => join(subcrates, name))
+      : []
+    for (const file of [join(root.dir, 'database V2'), ...crates].filter((f) => existsSync(f))) {
+      const copy = join(partial, backupPathOf(file, roots))
+      mkdirSync(dirname(copy), { recursive: true })
+      copyFileSync(file, copy)
+    }
+  }
+  rmSync(dir, { recursive: true, force: true })
+  renameSync(partial, dir)
+}
+
+export function createSeratoSessionCopy(
+  dir: string,
+  roots: () => SeratoLibraryRoot[],
+): () => Promise<void> {
+  let taken = false
+  return async () => {
+    if (taken) return
+    takeSessionCopy(dir, roots())
+    taken = true
+  }
+}
+
 type Undo = { restore: string } | { unlink: string }
 
 export function recoverSeratoTemps(roots: SeratoLibraryRoot[]): void {
@@ -210,6 +244,7 @@ export async function commitSeratoDraft(
   if (await deps.seratoOpen()) return 'cancelled'
   let copies: Map<string, string>
   try {
+    await deps.sessionBackup?.()
     const touched = [...writes.map((w) => w.file), ...renames.map((r) => r.from), ...removals]
     copies = takeBackups([...new Set(touched.filter(existed))], deps)
   } catch (e) {

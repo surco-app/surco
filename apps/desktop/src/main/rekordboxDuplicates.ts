@@ -1,11 +1,15 @@
+import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import log from 'electron-log/main'
 import type { DuplicatePair } from '../shared/types'
 import { backupOf } from './libraryBackups'
 import { type FindOptions, isAmbiguous, openRekordboxDb, trackFinder } from './rekordboxDb'
 import { repointTracks } from './rekordboxLibrary'
+import { playlistXmlPath, withNodeTimestamp } from './rekordboxMasterXml'
 import { isRekordboxRunning } from './rekordboxProcess'
 import { checkpointCollection, writeBackup } from './rekordboxSessionBackup'
 import { nextUsn, stamp } from './rekordboxTags'
+import { replaceFile } from './replaceFile'
 
 // When the user removes a duplicate copy from Music, rekordbox moves to the copy they kept.
 // With only the removed copy in the collection its row is repointed (rekordboxLibrary.ts),
@@ -44,8 +48,8 @@ interface Entry {
 }
 
 // Whether a playlist already holds the kept copy is read before anything moves, so a song
-// the DJ put in a playlist twice keeps both places.
-function replace(db: Db, usn: number, fromId: string, toId: string): void {
+// the DJ put in a playlist twice keeps both places. Returns the playlists it changed.
+function replace(db: Db, usn: number, fromId: string, toId: string): Set<string> {
   const entries = db
     .prepare(
       `SELECT ID, PlaylistID, TrackNo FROM djmdSongPlaylist WHERE ContentID = ? AND ${LIVE} ORDER BY PlaylistID, TrackNo`,
@@ -58,7 +62,9 @@ function replace(db: Db, usn: number, fromId: string, toId: string): void {
         .all(toId) as { PlaylistID: string }[]
     ).map((r) => r.PlaylistID),
   )
+  const changed = new Set<string>()
   for (const entry of entries) {
+    changed.add(entry.PlaylistID)
     if (!holding.has(entry.PlaylistID)) {
       touch(db, usn, entry.ID, { ContentID: toId })
       continue
@@ -76,6 +82,7 @@ function replace(db: Db, usn: number, fromId: string, toId: string): void {
       .all(entry.PlaylistID, at.TrackNo) as { ID: string; TrackNo: number }[]
     for (const row of after) touch(db, usn, row.ID, { TrackNo: row.TrackNo - 1 })
   }
+  return changed
 }
 
 export async function replaceRekordboxDuplicates(
@@ -138,6 +145,7 @@ async function writeReplaces(
   replaces: { fromId: string; toId: string }[],
   options: ReplaceOptions,
 ): Promise<string | null> {
+  const xmlPath = playlistXmlPath(collectionPath)
   try {
     checkpointCollection(collectionPath)
     await options.sessionBackup?.(collectionPath)
@@ -148,17 +156,34 @@ async function writeReplaces(
   if (await isRekordboxRunning()) return 'rekordbox-running'
   const write = openRekordboxDb(collectionPath)
   if (!write) return 'unreadable'
+  const changed = new Set<string>()
   try {
     write.transaction(() => {
       const usn = nextUsn(write)
-      for (const r of replaces) replace(write, usn, r.fromId, r.toId)
+      for (const r of replaces)
+        for (const id of replace(write, usn, r.fromId, r.toId)) changed.add(id)
     })()
-    return null
   } catch (e) {
     if (String((e as { code?: unknown })?.code).startsWith('SQLITE_READONLY')) return 'read-only'
     log.warn(`rekordbox duplicates: write failed: ${(e as Error).message}`)
     return 'write-failed'
   } finally {
     write.close()
+  }
+  await stampPlaylists(xmlPath, changed)
+  return null
+}
+
+// The playlists' entries changed, so their nodes take a new Timestamp as every other
+// playlist write gives them: rekordbox's stick sync goes by it to resync a playlist.
+async function stampPlaylists(xmlPath: string, ids: Set<string>): Promise<void> {
+  if (ids.size === 0 || !existsSync(xmlPath)) return
+  try {
+    const now = Date.now()
+    let xml = await readFile(xmlPath, 'utf8')
+    for (const id of ids) xml = withNodeTimestamp(xml, id, now)
+    await replaceFile(xmlPath, xml)
+  } catch (e) {
+    log.warn(`rekordbox duplicates: playlist timestamps not written: ${(e as Error).message}`)
   }
 }

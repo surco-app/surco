@@ -27,6 +27,7 @@ import {
   backupFolderName,
   commitSeratoDraft,
   createSeratoDraft,
+  createSeratoSessionCopy,
   recoverSeratoTemps,
 } from './seratoLibraryWrite'
 
@@ -187,6 +188,41 @@ describe('commitSeratoDraft', () => {
       readFileSync(join(deps.backupDir, backupFolderName(earlier), 'Music/Subcrates/C20.crate')),
     ).toEqual(bytes.internal.C20)
     expect(readdirSync(deps.backupDir)).toHaveLength(20)
+  })
+
+  // The per-commit folders rotate, and every queue apply, crate edit, tag sync and repoint
+  // is a commit: after 20 of them the library as it was before Surco touched it is gone.
+  // The session copy is what puts it back after a whole session the DJ wants undone.
+  it('keeps the library as it was before the session after more commits than backups kept', async () => {
+    const ids = Array.from({ length: 21 }, (_, i) => `C${i}`)
+    const { base, roots, deps, bytes } = twoRoots({ internal: ids })
+    const sessionDir = join(base, 'serato-session')
+    writeFileSync(join(roots[0].dir, 'database V2'), 'before the session')
+    const sessionBackup = createSeratoSessionCopy(sessionDir, () => roots)
+    for (const [i, id] of ids.entries())
+      await apply(
+        roots,
+        {
+          ...deps,
+          now: () => new Date(T0 + i * 1000),
+          sessionBackup,
+        },
+        del(id),
+      )
+    expect(readFileSync(join(sessionDir, 'Music/Subcrates/C0.crate'))).toEqual(bytes.internal.C0)
+    expect(readFileSync(join(sessionDir, 'Music/Subcrates/C20.crate'))).toEqual(bytes.internal.C20)
+    expect(readFileSync(join(sessionDir, 'Music/database V2'), 'utf8')).toBe('before the session')
+  })
+
+  it('refuses to write when the session copy cannot be made', async () => {
+    const { roots, deps, bytes } = twoRoots({ internal: ['A'] })
+    const draft = createSeratoDraft()
+    draft.remove(crateFileOf(roots[0], 'A'))
+    const sessionBackup = async () => {
+      throw new Error('disk full')
+    }
+    expect(await commitSeratoDraft(draft, { ...deps, sessionBackup })).toBe('backup-failed')
+    expect(readFileSync(crateFileOf(roots[0], 'A'))).toEqual(bytes.internal.A)
   })
 
   it('takes no backup when the batch only creates crates, so it evicts no real one', async () => {

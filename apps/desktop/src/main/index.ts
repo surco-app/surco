@@ -252,7 +252,7 @@ import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
-import { recoverSeratoTemps } from './seratoLibraryWrite'
+import { createSeratoSessionCopy, recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
 import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
@@ -441,6 +441,10 @@ const virtualdjSessionBackup = createSessionBackup({
     }
   },
 })
+const seratoSessionCopy = createSeratoSessionCopy(
+  join(app.getPath('userData'), 'serato-session'),
+  seratoRoots,
+)
 function seratoRoots() {
   try {
     const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
@@ -667,12 +671,14 @@ const programQueues = {
             tracking: tmpManifest,
             rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
+            sessionBackup: seratoSessionCopy,
           }),
         repoint: (_library, list) =>
           repointSerato(list, {
             roots: seratoRoots,
             backupDir: join(app.getPath('userData'), 'serato-backups'),
             seratoOpen: DJ_PROCESSES.serato.isRunning,
+            sessionBackup: seratoSessionCopy,
           }),
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),

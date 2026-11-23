@@ -1,5 +1,5 @@
 import { mkdirSync } from 'node:fs'
-import { access, chmod, mkdtemp, writeFile } from 'node:fs/promises'
+import { access, chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import Database from 'better-sqlite3-multiple-ciphers'
@@ -11,6 +11,7 @@ import { replaceRekordboxDuplicates } from './rekordboxDuplicates'
 vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
 import { backupOf } from './libraryBackups'
+import { nodeTimestamps } from './rekordboxMasterXml'
 import { isRekordboxRunning } from './rekordboxProcess'
 
 const OLD = '2024-01-01 00:00:00.000 +00:00'
@@ -255,6 +256,32 @@ describe('replaceRekordboxDuplicates with both copies in the collection', () => 
     await chmod(dbPath, 0o644)
     expect(r).toEqual({ written: false, reason: 'read-only' })
     expect(entry('e1').ContentID).toBe('A')
+  })
+
+  // rekordbox's automatic stick sync tells a changed playlist by its node's Timestamp in
+  // masterPlaylists6.xml, later than the one in the stick's sync file. Left as it was, a
+  // playlist that lost the removed copy reads as unchanged and the stick keeps its row.
+  it('stamps the node of every playlist it changed and leaves the others', async () => {
+    const db = open(dbPath)
+    db.exec(`UPDATE djmdSongPlaylist SET PlaylistID = '1001' WHERE PlaylistID = 'p1'`)
+    db.exec(`UPDATE djmdSongPlaylist SET PlaylistID = '1002' WHERE PlaylistID = 'p2'`)
+    db.exec(`UPDATE djmdSongPlaylist SET PlaylistID = '1003' WHERE PlaylistID = 'p3'`)
+    db.close()
+    const xmlPath = join(dir, 'masterPlaylists6.xml')
+    const node = (id: string) =>
+      `<NODE Id="${id}" ParentId="0" Attribute="0" Timestamp="1000" Lib_Type="0" CheckType="0"/>`
+    await writeFile(
+      xmlPath,
+      `<MASTER_PLAYLIST Version="1.0.0" AutomaticSync="0" Rekordbox_Version="7.2.2">\r\n<PRODUCT Name="rekordbox" Version="7.2.2" Company="AlphaTheta"/>\r\n<PLAYLISTS>\r\n${['3E9', '3EA', '3EB', '3EC'].map(node).join('\r\n')}\r\n</PLAYLISTS>\r\n</MASTER_PLAYLIST>\r\n`,
+    )
+
+    await replaceRekordboxDuplicates(dbPath, pair())
+
+    const stamps = nodeTimestamps(await readFile(xmlPath, 'utf8'))
+    expect(stamps['1001']).toBeGreaterThan(1000)
+    expect(stamps['1002']).toBeGreaterThan(1000)
+    expect(stamps['1003']).toBe(1000)
+    expect(stamps['1004']).toBe(1000)
   })
 
   it('does nothing when both paths name the same row', async () => {
