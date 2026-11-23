@@ -263,13 +263,14 @@ describe('a replacement measured in the conversion', () => {
   }, 120_000)
 
   // Another recording has no shift to measure: moving the cues to the best fit of noise would
-  // scatter them, so nothing moves and the measure says why. The FLAC's samples reach the AIFF
-  // untouched, so rekordbox gets no cue move at all and keeps its analysis.
-  it('moves nothing and says why when the new file is another recording', async () => {
+  // scatter them, so nothing moves and the measure says why. The row now points at other audio
+  // and rekordbox never analyses a repointed file by itself, so it is told to analyse it again
+  // with its cues left where they were.
+  it('moves no cue and has rekordbox re-analyse when the new file is another recording', async () => {
     const { written } = await replace(other, fresh('Song.aiff'), oldWav)
 
     expect(written.replaceShift).toEqual({ unmoved: 'noMatch' })
-    expect(repoint()?.audio).toBeUndefined()
+    expect(repoint()?.audio).toEqual({ cueShiftMs: 0 })
     expect(repoint()?.engineShift?.trimmedMs).toBe(0)
     expect(patch()?.cueShift).toBeUndefined()
   }, 120_000)
