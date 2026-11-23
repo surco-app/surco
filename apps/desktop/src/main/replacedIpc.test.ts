@@ -25,9 +25,7 @@ const entry: ReplacedEntry = {
 }
 
 async function setup() {
-  const store = createReplacedStore(
-    join(await mkdtemp(join(tmpdir(), 'surco-ripc-')), 'r.json'),
-  )
+  const store = createReplacedStore(join(await mkdtemp(join(tmpdir(), 'surco-ripc-')), 'r.json'))
   registerReplacedIpc(store)
   return store
 }

@@ -11,6 +11,7 @@ import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
+import type { ReplacedEntry } from '../shared/toReview'
 import type {
   ActivityEvent,
   AppleMusicAddJob,
@@ -87,7 +88,6 @@ import type {
   WaveformScan,
   WritableProgram,
 } from '../shared/types'
-import type { ReplacedEntry } from '../shared/toReview'
 import type { Verification } from '../shared/verification'
 
 export interface CuesApi {

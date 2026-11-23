@@ -3,6 +3,7 @@ import type { AudioAnalysisIpc, CachedBatchHit, PeekableAnalyses } from '../shar
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
+import type { ReplacedEntry } from '../shared/toReview'
 import type {
   ActivityEvent,
   AppleMusicLookupCandidate,
@@ -45,7 +46,6 @@ import type {
   WaveformScan,
   WritableProgram,
 } from '../shared/types'
-import type { ReplacedEntry } from '../shared/toReview'
 import type { Verification } from '../shared/verification'
 import type { Api } from './api'
 import { createCuesApi } from './cues'

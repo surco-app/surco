@@ -193,13 +193,6 @@ import { registerListReviewIpc } from './listReviewIpc'
 import { listReviewDeps } from './listReviewWiring'
 import { registerMatchingIpc } from './matchingIpc'
 import { createMatchingStore, followConversion } from './matchingStore'
-import { registerReplacedIpc } from './replacedIpc'
-import {
-  createReplacedStore,
-  followingPrograms,
-  followReplaced,
-  recordReplacement,
-} from './replacedStore'
 import { createMediaAccess } from './mediaAccess'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMemoryWatch, processSamples } from './memoryWatch'
@@ -247,6 +240,13 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { registerReplacedIpc } from './replacedIpc'
+import {
+  createReplacedStore,
+  followingPrograms,
+  followReplaced,
+  recordReplacement,
+} from './replacedStore'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
