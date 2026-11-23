@@ -910,6 +910,55 @@ function carryFreeformAtoms(apple: Mpeg4AppleTag, source: string, deleted: strin
   }
 }
 
+// The same remux lost these standard atoms too (measured 23/11/2026 with the bundled ffmpeg):
+// the sort names Music sorts the library by, the classical work and movement, category,
+// purchase date, director and narrator. Surco edits none of them, so each comes back from
+// the source unless the user deleted it in the inspector, under the name ffmpeg lists it by.
+// Left out on purpose, as fields Surco reads or writes: ©con (conductor), ©pub (label),
+// ©enc (encoded by), rtng and stik (read as rating and media type), and ©too, the encoder
+// stamp ffmpeg owns.
+const CARRIED_ATOMS: [string, string?][] = [
+  ['sonm', 'sort_name'],
+  ['soar', 'sort_artist'],
+  ['soaa', 'sort_album_artist'],
+  ['soal', 'sort_album'],
+  ['soco', 'sort_composer'],
+  ['sosn', 'sort_show'],
+  ['catg', 'category'],
+  ['purd', 'purchase_date'],
+  ['©dir', 'director'],
+  ['akID', 'account_type'],
+  ['©wrk'],
+  ['©mvn'],
+  ['©mvi'],
+  ['©mvc'],
+  ['shwm'],
+  ['©nrt'],
+]
+
+type DataBoxes = { getQuickTimeDataBoxes(type: ByteVector): { data: ByteVector; flags: number }[] }
+
+function carryStandardAtoms(apple: Mpeg4AppleTag, source: string, deleted: string[]): void {
+  const dropped = new Set(deleted.map((name) => name.toLowerCase()))
+  const f = TagFile.createFromPath(source)
+  try {
+    for (const [atom, listedAs] of CARRIED_ATOMS) {
+      if (listedAs && dropped.has(listedAs)) continue
+      const type = ByteVector.fromString(atom, StringType.Latin1)
+      const boxes =
+        (f.tag as unknown as { _ilstBox?: DataBoxes })._ilstBox?.getQuickTimeDataBoxes(type) ?? []
+      if (boxes.length > 0)
+        apple.setQuickTimeData(
+          type,
+          boxes.map((b) => b.data),
+          boxes[0].flags,
+        )
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
 // is empty. setItunesStrings with no data strings is TagLib's own way of clearing one, so
 // an emptied field leaves nothing behind rather than keeping the previous value.
@@ -1165,8 +1214,10 @@ export function writeTags(
       // only ever looks for POPM. Armoring it into a freeform atom would write bytes
       // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
-      if (carryAtoms && cueSource && !clearExtras)
+      if (carryAtoms && cueSource && !clearExtras) {
         carryFreeformAtoms(apple, cueSource, foreignRemoved)
+        carryStandardAtoms(apple, cueSource, foreignRemoved)
+      }
       const date = fullDateOf(meta.year)
       if (date) apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
