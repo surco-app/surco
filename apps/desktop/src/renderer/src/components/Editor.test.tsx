@@ -7054,8 +7054,9 @@ describe('Editor maximized section', () => {
       expect(within(screen.getByTestId(id)).getByTestId('section-maximize')).toBeInTheDocument()
     }
     // The File name section draws no wave, so it never grows the maximize toggle.
-    const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
-    expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
+    expect(
+      within(screen.getByTestId('editor-output-name')).queryByTestId('section-maximize'),
+    ).toBeNull()
   })
 })
 
