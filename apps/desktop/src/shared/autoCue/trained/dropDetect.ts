@@ -1,31 +1,14 @@
-import type { FlowPhrase, PhraseKind } from './cueFlows'
-import { nearestBeat } from './cueRules'
+import type { PhraseKind } from '../../cueFlows'
+import { nearestBeat } from '../../cueRules'
+import type { DropInput, DropPicking, DropProposal } from '../types'
 import dropModel from './dropModel.json'
 import { predictTrees, type TreesModel } from './dropTrees'
-
-export interface DropInput {
-  grid: { ms: number; beat: number }[]
-  phrases: FlowPhrase[]
-  words: Uint16Array
-}
 
 export interface DropCandidate {
   bar: number
   ms: number
   quietBars: number
   features: number[]
-}
-
-export interface DropProposal {
-  ms: number
-  sure: boolean
-  quietBars: number
-}
-
-export interface DropPicking {
-  threshold: number
-  spacingBars: number
-  maxDrops: number
 }
 
 export interface DropModel extends TreesModel {

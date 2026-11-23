@@ -1,4 +1,4 @@
-import { type TasteTrack, type TunedTaste, tuneDropTaste } from '../shared/dropTaste'
+import { autoCue, type TasteTrack, type TunedTaste } from '../shared/autoCue'
 import type { ReplaceShift } from '../shared/replaceShift'
 import type { BpmResult, KeyResult, TrackCues, TrackMetadata } from '../shared/types'
 import { auditGrid, type BeatGridFit, fitBeatGrid, type GridAuditRun } from './beatGrid'
@@ -301,7 +301,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
     case 'verifyTagExtras':
       return readCoverAndNumbers(job.file)
     case 'tuneDrops':
-      return tuneDropTaste(job.tracks)
+      return autoCue.tuneDropTaste(job.tracks)
     case 'prependFlacId3':
       prependFlacId3(job.file, job.meta, job.coverPath)
       return null

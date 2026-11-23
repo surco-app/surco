@@ -16,9 +16,9 @@ vi.mock('./rekordboxDb', async (actual) => {
   return { ...real, openRekordboxDb: vi.fn(real.openRekordboxDb) }
 })
 
+import type { DropInput } from '../shared/autoCue'
 import { CALLS_ONLY, MY_FLOW } from '../shared/cueFlows'
 import { flowOutcome, HOT_KINDS } from '../shared/cueRules'
-import type { DropInput } from '../shared/dropDetect'
 import type { TrackCues } from '../shared/types'
 import { anlzFile, pqtzSection, pwv5Section } from './anlzFixture'
 import { registerCuesIpc } from './cuesIpc'

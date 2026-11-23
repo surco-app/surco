@@ -1,5 +1,5 @@
+import type { DropInput } from '../shared/autoCue'
 import type { WantedCue } from '../shared/cueRules'
-import type { DropInput } from '../shared/dropDetect'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'
 import type { FineWave, LiveCues, SurcoGrid, TrackCues } from '../shared/types'

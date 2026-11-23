@@ -4,14 +4,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import type { DropInput, DropProposal, DropTaste } from '../../../shared/autoCue'
 import { type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { CueProfile } from '../../../shared/cueProfile'
-import {
-  DROP_MODEL,
-  type DropInput,
-  type DropModel,
-  type DropProposal,
-} from '../../../shared/dropDetect'
 import type { Settings, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
@@ -34,12 +29,12 @@ const recordCueEdits = vi.hoisted(() => vi.fn())
 vi.mock('../lib/cueTasteEdits', () => ({ recordCueEdits }))
 
 const dropProposals = vi.hoisted(() =>
-  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+  vi.fn<(input: DropInput, taste: DropTaste | null) => DropProposal[]>(),
 )
-vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  dropProposals,
-}))
+vi.mock('../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/autoCue')>()
+  return { ...actual, autoCue: { ...actual.autoCue, dropProposals } }
+})
 
 const sure = (ms: number, quietBars = 8): DropProposal => ({ ms, sure: true, quietBars })
 const doubt = (ms: number, quietBars = 1): DropProposal => ({ ms, sure: false, quietBars })
@@ -183,7 +178,7 @@ describe('Auto marcar', () => {
     await autoMark()
     expect(dropProposals).toHaveBeenCalledWith(
       { grid: READ.grid, phrases: READ.phrases, words: WORDS },
-      DROP_MODEL,
+      null,
     )
   })
 
@@ -193,9 +188,7 @@ describe('Auto marcar', () => {
     await ready()
     await waitFor(() => expect(window.api.cueProfile).toHaveBeenCalled())
     await autoMark()
-    await waitFor(() =>
-      expect(dropProposals.mock.calls.at(-1)?.[1]?.trees).toHaveLength(DROP_MODEL.trees.length + 1),
-    )
+    await waitFor(() => expect(dropProposals.mock.calls.at(-1)?.[1]).toEqual(taste))
   })
 
   it('draws a sure proposal with a solid line and a doubtful one dashed, asking only about the doubtful', async () => {

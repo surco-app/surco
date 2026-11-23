@@ -1,6 +1,4 @@
-export type TreeNode =
-  | [feature: number, threshold: number, left: number, right: number]
-  | [value: number]
+import type { TreeNode } from '../types'
 
 export interface TreesModel {
   base: number

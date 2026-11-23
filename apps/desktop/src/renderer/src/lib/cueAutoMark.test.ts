@@ -2,14 +2,9 @@
 import { QueryClient } from '@tanstack/react-query'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import type { DropInput, DropProposal, DropTaste } from '../../../shared/autoCue'
 import { MIX_IN, MIX_IN_32, normalizeCueFlows } from '../../../shared/cueFlows'
 import type { CueProfile } from '../../../shared/cueProfile'
-import {
-  DROP_MODEL,
-  type DropInput,
-  type DropModel,
-  type DropProposal,
-} from '../../../shared/dropDetect'
 import type { QueuedCues, TrackCues } from '../../../shared/types'
 import { installApi } from '../test/api'
 import { acceptAutoMarks, autoMarkTracks, clearCueDrafts } from './cueAutoMark'
@@ -26,12 +21,12 @@ import {
 import { quantizePoints } from './cueWave'
 
 const dropProposals = vi.hoisted(() =>
-  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+  vi.fn<(input: DropInput, taste: DropTaste | null) => DropProposal[]>(),
 )
-vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  dropProposals,
-}))
+vi.mock('../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/autoCue')>()
+  return { ...actual, autoCue: { ...actual.autoCue, dropProposals } }
+})
 
 const sure = (ms: number): DropProposal => ({ ms, sure: true, quietBars: 8 })
 const doubt = (ms: number): DropProposal => ({ ms, sure: false, quietBars: 1 })
@@ -117,7 +112,7 @@ describe('Auto marcar over several tracks', () => {
     await autoMarkTracks(client, ['103'])
     expect(dropProposals).toHaveBeenCalledWith(
       { grid: GRID, phrases: READ.phrases, words: WORDS },
-      DROP_MODEL,
+      null,
     )
   })
 
@@ -147,11 +142,7 @@ describe('Auto marcar over several tracks', () => {
     const taste = { trees: [[[0.5]]], picking: { threshold: 0, spacingBars: 16, maxDrops: 2 } }
     const { client } = setup({ profile: { taste } as unknown as CueProfile })
     await autoMarkTracks(client, ['103'])
-    expect(dropProposals.mock.calls[0][1]).toEqual({
-      base: DROP_MODEL.base,
-      trees: [...DROP_MODEL.trees, ...taste.trees],
-      picking: taste.picking,
-    })
+    expect(dropProposals.mock.calls[0][1]).toEqual(taste)
   })
 
   it('says so when the detector finds nothing', async () => {
@@ -323,7 +314,7 @@ describe('Auto marcar over several Engine DJ tracks', () => {
       dropInputs: { 'engine:4': REKORDBOX_INPUT },
     })
     await autoMarkTracks(client, ['engine:4'])
-    expect(dropProposals).toHaveBeenCalledWith(REKORDBOX_INPUT, DROP_MODEL)
+    expect(dropProposals).toHaveBeenCalledWith(REKORDBOX_INPUT, null)
     expect(api.cues.waveDetail).not.toHaveBeenCalled()
   })
 
@@ -354,7 +345,7 @@ describe('Auto marcar over a Traktor track', () => {
       dropInputs: { 'traktor:HD/:m/:t.wav': input },
     })
     await autoMarkTracks(client, ['traktor:HD/:m/:t.wav'])
-    expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
+    expect(dropProposals).toHaveBeenCalledWith(input, null)
     expect(api.cues.waveDetail).not.toHaveBeenCalled()
   })
 })

@@ -1,20 +1,15 @@
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { findDrops } from '../shared/cueRules'
+import type { DropInput, TasteTrack } from '../shared/autoCue'
+import { barIndexOf } from '../shared/autoCue/tasteTracks'
 import {
   DROP_MODEL,
-  type DropInput,
   type DropModel,
   dropCandidates,
   dropProposals,
-} from '../shared/dropDetect'
-import {
-  barIndexOf,
-  modelWithTaste,
-  type TasteTrack,
-  tasteTrackOf,
-  tuneDropTaste,
-} from '../shared/dropTaste'
+} from '../shared/autoCue/trained/dropDetect'
+import { modelWithTaste, tasteTrackOf, tuneDropTaste } from '../shared/autoCue/trained/dropTaste'
+import { findDrops } from '../shared/cueRules'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
 import { openRekordboxDb, rekordboxRawKey } from './rekordboxDb'

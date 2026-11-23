@@ -34,15 +34,15 @@ vi.mock('./channelScan', () => ({
   runChannelScan: vi.fn(async () => ({ clipped: [false, true], channels: [] })),
 }))
 
-vi.mock('../shared/dropTaste', () => ({
-  tuneDropTaste: vi.fn(() => null),
+vi.mock('../shared/autoCue', () => ({
+  autoCue: { tuneDropTaste: vi.fn(() => null) },
 }))
 
 vi.mock('./cueWaveWords', () => ({
   runCueWaveWords: vi.fn(async () => new Uint16Array([1, 2, 3])),
 }))
 
-import { tuneDropTaste } from '../shared/dropTaste'
+import { autoCue } from '../shared/autoCue'
 import { auditGrid } from './beatGrid'
 import { runChannelScan } from './channelScan'
 import { detectClicks } from './clickDetect'
@@ -57,7 +57,7 @@ describe('runWorkerJob', () => {
   it('routes tuneDrops jobs to the taste tuner, which can take seconds and must stay off the main loop', () => {
     const tracks = [{ key: 'a', candidates: [{ bar: 0, features: [1] }], drops: [0] }]
     const out = runWorkerJob({ type: 'tuneDrops', tracks })
-    expect(tuneDropTaste).toHaveBeenCalledWith(tracks)
+    expect(autoCue.tuneDropTaste).toHaveBeenCalledWith(tracks)
     expect(out).toBeNull()
   })
 

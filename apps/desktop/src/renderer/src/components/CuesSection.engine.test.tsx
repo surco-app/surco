@@ -4,13 +4,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import type { DropInput, DropProposal, DropTaste } from '../../../shared/autoCue'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
-import {
-  DROP_MODEL,
-  type DropInput,
-  type DropModel,
-  type DropProposal,
-} from '../../../shared/dropDetect'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { TRAKTOR_CUE_COLOR } from '../../../shared/traktorContent'
 import type { TrackCues } from '../../../shared/types'
@@ -25,12 +20,12 @@ import { hoverTooltip } from '../test/tooltip'
 import { CuesSection } from './CuesSection'
 
 const dropProposals = vi.hoisted(() =>
-  vi.fn<(input: DropInput, model?: DropModel) => DropProposal[]>(),
+  vi.fn<(input: DropInput, taste: DropTaste | null) => DropProposal[]>(),
 )
-vi.mock('../../../shared/dropDetect', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../../../shared/dropDetect')>()),
-  dropProposals,
-}))
+vi.mock('../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/autoCue')>()
+  return { ...actual, autoCue: { ...actual.autoCue, dropProposals } }
+})
 
 afterEach(cleanup)
 afterEach(resetCueSession)
@@ -137,7 +132,7 @@ describe('CuesSection on an Engine DJ track', () => {
         proposals: [{ ms: bar(64), sure: true, quietBars: 8 }],
       }),
     )
-    expect(dropProposals).toHaveBeenCalledWith(input, DROP_MODEL)
+    expect(dropProposals).toHaveBeenCalledWith(input, null)
   })
 
   it('spins over its hidden label and says it is reading the track while the audio is decoded, without the button changing width', async () => {

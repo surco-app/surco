@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
+import type { TasteTrack, TunedTaste } from '../shared/autoCue'
+import { fingerprintOf } from '../shared/autoCue/tasteTracks'
 import type { LearnTrack } from '../shared/learnFlow'
 import {
   type CueTasteDeps,

@@ -1,17 +1,17 @@
 import { writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { findDrops, nearestBeat, proposeDrops } from '../shared/cueRules'
+import type { DropPicking } from '../shared/autoCue'
 import {
   DROP_MODEL,
   type DropCandidate,
   type DropModel,
-  type DropPicking,
   detectDrops,
   dropCandidates,
   pickDrops,
-} from '../shared/dropDetect'
-import { predictTrees, type TreesModel, trainTrees } from '../shared/dropTrees'
+} from '../shared/autoCue/trained/dropDetect'
+import { predictTrees, type TreesModel, trainTrees } from '../shared/autoCue/trained/dropTrees'
+import { findDrops, nearestBeat, proposeDrops } from '../shared/cueRules'
 import type { TrackCues } from '../shared/types'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'

@@ -1,10 +1,9 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { autoCue, type DropInput, type DropProposal, type DropTaste } from '../../../shared/autoCue'
 import type { CueFlow } from '../../../shared/cueFlows'
 import { MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { nearestBeat } from '../../../shared/cueRules'
-import { type DropInput, type DropProposal, dropProposals } from '../../../shared/dropDetect'
-import { modelWithTaste } from '../../../shared/dropTaste'
 import {
   cueDropInputQuery,
   cueProfileQuery,
@@ -43,10 +42,10 @@ export function withoutCallInBar(
 export function dropsOnGrid(
   input: DropInput,
   grid: { ms: number }[],
-  taste: Parameters<typeof modelWithTaste>[0] = null,
+  taste: DropTaste | null = null,
 ): DropProposal[] {
   const beats = grid.map((b) => b.ms)
-  return dropProposals(input, modelWithTaste(taste)).map((p) => ({
+  return autoCue.dropProposals(input, taste).map((p) => ({
     ...p,
     ms: beats[nearestBeat(beats, p.ms)],
   }))

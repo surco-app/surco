@@ -2,9 +2,9 @@ import { ChevronRight, Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { autoCue } from '../../../../shared/autoCue'
 import type { CueFlow, CueRule } from '../../../../shared/cueFlows'
 import type { CueProfile, CueProfileRead } from '../../../../shared/cueProfile'
-import { MIN_TASTE_TRACKS } from '../../../../shared/dropTaste'
 import { hotCueColor } from '../../../../shared/rekordboxCueColors'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -232,7 +232,7 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
             label={tr('editor.cues.auto.button')}
             sub={
               !check
-                ? tr('settings.cueProfile.autoFewHint', { count: MIN_TASTE_TRACKS })
+                ? tr('settings.cueProfile.autoFewHint', { count: autoCue.minTasteTracks })
                 : profile.taste
                   ? tr('settings.cueProfile.autoTuned', { before: tenths(check.before.found) })
                   : tr('settings.cueProfile.autoGeneral')

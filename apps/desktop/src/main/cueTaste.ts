@@ -1,12 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
+import type { TasteTrack, TunedTaste } from '../shared/autoCue'
+import { fingerprintOf, roundedCandidates } from '../shared/autoCue/tasteTracks'
 import type { CueProfile } from '../shared/cueProfile'
-import {
-  fingerprintOf,
-  roundedCandidates,
-  type TasteTrack,
-  type TunedTaste,
-} from '../shared/dropTaste'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'

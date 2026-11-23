@@ -10,7 +10,8 @@
     "skipLibCheck": true,
     "noEmit": true,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": { "@surco/auto-cue-impl": ["./src/shared/autoCue/trained/index.ts"] }
   },
   "include": [
     "src/testTmpRoot.ts",

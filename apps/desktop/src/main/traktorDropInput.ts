@@ -1,4 +1,4 @@
-import type { DropInput } from '../shared/dropDetect'
+import type { DropInput } from '../shared/autoCue'
 import { traktorKey } from '../shared/traktorContent'
 import { type EngineDropSources, rekordboxInput } from './engineDropInput'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'

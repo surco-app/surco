@@ -12,7 +12,10 @@
     "noEmit": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "paths": { "@/*": ["./src/renderer/src/*"] }
+    "paths": {
+      "@/*": ["./src/renderer/src/*"],
+      "@surco/auto-cue-impl": ["./src/shared/autoCue/trained/index.ts"]
+    }
   },
   "include": [
     "src/renderer/src/**/*",

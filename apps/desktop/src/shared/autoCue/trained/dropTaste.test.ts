@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { type DropInput, type DropModel, pickDrops } from './dropDetect'
+import type { DropInput, TasteTrack } from '../types'
+import { type DropModel, pickDrops } from './dropDetect'
 import {
   MIN_TASTE_TRACKS,
   modelWithTaste,
-  type TasteTrack,
   tasteTrackOf,
   tuneDropTaste,
   weighedForLearning,

@@ -1,14 +1,15 @@
-import { nearestBeat } from './cueRules'
-import {
-  DROP_MODEL,
-  type DropInput,
-  type DropModel,
-  type DropPicking,
-  dropCandidates,
-  dropProposals,
-  pickDrops,
-} from './dropDetect'
-import { predictTrees, type TreeNode, type TreesModel, trainTrees } from './dropTrees'
+import { barIndexOf, fingerprintOf, hashOf, roundedCandidates } from '../tasteTracks'
+import type {
+  DropInput,
+  DropPicking,
+  DropTaste,
+  TasteOutcome,
+  TasteRates,
+  TasteTrack,
+  TunedTaste,
+} from '../types'
+import { DROP_MODEL, type DropModel, dropCandidates, dropProposals, pickDrops } from './dropDetect'
+import { predictTrees, type TreesModel, trainTrees } from './dropTrees'
 
 export const MIN_TASTE_TRACKS = 30
 const MAX_TASTE_TRACKS = 600
@@ -20,73 +21,9 @@ const PICKINGS: DropPicking[] = [-2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1].flatMap((t
   ),
 )
 
-export interface TasteTrack {
-  key: string
-  candidates: { bar: number; features: number[] }[]
-  drops: number[]
-  outcome?: TasteOutcome
-}
-
-export type TasteOutcome = 'accepted' | 'corrected' | 'manual'
-
-export interface DropTaste {
-  trees: TreeNode[][]
-  picking: DropPicking
-}
-
-export interface TasteRates {
-  found: number
-  right: number
-}
-
-export interface TasteCheck {
-  tracks: number
-  checked: number
-  before: TasteRates
-  after: TasteRates
-}
-
-export interface TunedTaste {
-  taste: DropTaste | null
-  check: TasteCheck
-}
-
-function hashOf(text: string): number {
-  let h = 2166136261
-  for (const c of text) {
-    h ^= c.charCodeAt(0)
-    h = Math.imul(h, 16777619) >>> 0
-  }
-  return h
-}
-
-export function barIndexOf(grid: DropInput['grid'], ms: number): number {
-  const beat = nearestBeat(
-    grid.map((b) => b.ms),
-    ms,
-  )
-  let bars = 0
-  for (let i = 0; i <= beat; i++) if (grid[i].beat === 1) bars++
-  return bars - 1
-}
-
-export function fingerprintOf(candidates: TasteTrack['candidates']): string {
-  const text = candidates
-    .map((c) => `${c.bar}:${c.features.map((f) => f.toFixed(3)).join(',')}`)
-    .join(';')
-  return `${hashOf(text).toString(36)}${hashOf(`#${text}`).toString(36)}`
-}
-
 function outcomeOf(proposed: number[], kept: number[]): TasteOutcome {
   if (proposed.length === kept.length && proposed.every((b) => kept.includes(b))) return 'accepted'
   return proposed.some((b) => kept.includes(b)) ? 'corrected' : 'manual'
-}
-
-export function roundedCandidates(candidates: TasteTrack['candidates']): TasteTrack['candidates'] {
-  return candidates.map((c) => ({
-    bar: c.bar,
-    features: c.features.map((f) => Number(f.toFixed(3))),
-  }))
 }
 
 export function tasteTrackOf(

@@ -24,6 +24,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import type { DropInput, DropProposal } from '../../../shared/autoCue'
 import { withBars } from '../../../shared/barPhase'
 import { activeCueFlow, DEFAULT_CUE_FLOW_ID, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { offGridCues } from '../../../shared/cueGrid'
@@ -31,7 +32,6 @@ import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { BEATS_PER_BAR, nearestBeat, SAME_POSITION_MS } from '../../../shared/cueRules'
 import { type DjProgram, programOf } from '../../../shared/djProgram'
-import type { DropInput, DropProposal } from '../../../shared/dropDetect'
 import { auditNear, checkOfAudit, needsGridFix } from '../../../shared/gridAudit'
 import {
   autoFitGrid,

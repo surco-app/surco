@@ -1,7 +1,7 @@
+import type { DropTaste, TasteCheck } from './autoCue'
 import type { CueFlow } from './cueFlows'
-import type { DropTaste, TasteCheck } from './dropTaste'
 
-export type { TasteTrack } from './dropTaste'
+export type { TasteTrack } from './autoCue'
 
 export interface CueProfile {
   learnedAt: string

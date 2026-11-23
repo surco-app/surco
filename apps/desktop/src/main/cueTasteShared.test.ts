@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import type { TasteTrack } from '../shared/dropTaste'
+import type { TasteTrack } from '../shared/autoCue'
 import { createSharedEdits } from './cueTasteShared'
 
 const track = (key: string): TasteTrack => ({

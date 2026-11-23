@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { FlowPhrase, PhraseKind } from './cueFlows'
+import type { FlowPhrase, PhraseKind } from '../../cueFlows'
+import type { DropInput } from '../types'
 import {
   DROP_MODEL,
-  type DropInput,
   type DropModel,
   detectDrops,
   dropCandidates,
