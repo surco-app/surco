@@ -241,16 +241,58 @@ export function readId3Values(file: string): Id3Values {
   return withTagLibFile(file, id3ValuesOf, {})
 }
 
+// Every other managed field riding an ID3 text frame or a TXXX, in the order the probe reads
+// them (TMOO before TXXX MOOD, ENERGYLEVEL before ENERGY). The numbers and dates are left
+// out: a second value there is nothing the editor can hold.
+const ID3_LIST_FRAMES: [MetaTextKey, string[]][] = [
+  ['title', ['TIT2']],
+  ['album', ['TALB']],
+  ['grouping', ['TIT1']],
+  ['key', ['TKEY']],
+  ['publisher', ['TPUB']],
+  ['remixArtist', ['TPE4']],
+  ['isrc', ['TSRC']],
+  ['mixName', ['TIT3']],
+  ['originalArtist', ['TOPE']],
+  ['lyricist', ['TEXT']],
+  ['conductor', ['TPE3']],
+  ['copyright', ['TCOP']],
+  ['encodedBy', ['TENC']],
+  ['mood', ['TMOO', 'TXXX:MOOD']],
+  ['catalogNumber', ['TXXX:CATALOGNUMBER']],
+  ['discogsReleaseId', ['TXXX:DISCOGS_RELEASE_ID']],
+  ['energy', ['TXXX:ENERGYLEVEL', 'TXXX:ENERGY']],
+  ['style', ['TXXX:STYLE']],
+  ['country', ['TXXX:COUNTRY']],
+  ['quality', ['TXXX:QUALITY']],
+  ['mediaType', ['TXXX:MEDIATYPE']],
+  ['discogsUrl', ['TXXX:DISCOGS_RELEASE_URL']],
+]
+
 function id3ValuesOf(f: TagFile): Id3Values {
   const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
   if (id3?.version !== 4) return {}
-  const lists = {
-    artist: id3.performers,
-    albumArtist: id3.albumArtists,
-    genre: id3.genres,
-    composer: id3.composers,
+  const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  )
+  const textOf = (name: string): string[] => {
+    const [id, description] = name.split(':')
+    const frame = description
+      ? Id3v2UserTextInformationFrame.findUserTextInformationFrame(txxx, description)
+      : (id3.frames.find((fr) => fr.frameId.toString() === id) as Id3v2TextInformationFrame)
+    return frame?.text?.filter((value) => value.trim()) ?? []
   }
-  return Object.fromEntries(Object.entries(lists).filter(([, values]) => values.length > 1))
+  const lists: [string, string[]][] = [
+    ['artist', id3.performers],
+    ['albumArtist', id3.albumArtists],
+    ['genre', id3.genres],
+    ['composer', id3.composers],
+    ...ID3_LIST_FRAMES.map(([key, names]): [string, string[]] => [
+      key,
+      names.map(textOf).find((values) => values.length > 0) ?? [],
+    ]),
+  ]
+  return Object.fromEntries(lists.filter(([, values]) => values.length > 1))
 }
 
 // A file read before every value was still serves its first one from readMeta's cache, and
