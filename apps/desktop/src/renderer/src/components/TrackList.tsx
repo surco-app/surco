@@ -443,9 +443,11 @@ const TrackRow = memo(function TrackRow({
   const format = sourceFormat(t)
   const readFailedLabel = t.analyzeFailed
     ? tr('trackList.audioReadFailed')
-    : t.metaReadFailed
-      ? tr('trackList.metaReadFailed')
-      : ''
+    : t.metaFileMissing
+      ? tr('errors.fileMissing')
+      : t.metaReadFailed
+        ? tr('trackList.metaReadFailed')
+        : ''
   const backupLabel =
     backupAt === undefined
       ? ''

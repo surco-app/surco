@@ -505,7 +505,9 @@
     "redoneMeta_one": "Metadata edit redone on {{count}} track",
     "redoneMeta_other": "Metadata edit redone on {{count}} tracks",
     "metaReadFailed_one": "Couldn't read the tags of {{count}} file, so only its file name is shown.",
-    "metaReadFailed_other": "Couldn't read the tags of {{count}} files, so only their file names are shown."
+    "metaReadFailed_other": "Couldn't read the tags of {{count}} files, so only their file names are shown.",
+    "metaFilesMissing_one": "{{count}} file is no longer where it was. It may have been moved or renamed.",
+    "metaFilesMissing_other": "{{count}} files are no longer where they were. They may have been moved or renamed."
   },
   "newTracks": {
     "prompt_one": "{{count}} new track in “{{folder}}”",

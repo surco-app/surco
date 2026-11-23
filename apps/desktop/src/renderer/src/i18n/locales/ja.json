@@ -505,7 +505,9 @@
     "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",
     "redoneMeta_other": "{{count}} トラックのメタデータ編集をやり直しました",
     "metaReadFailed_one": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。",
-    "metaReadFailed_other": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。"
+    "metaReadFailed_other": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。",
+    "metaFilesMissing_one": "{{count}} 件のファイルが元の場所にありません。移動または名前変更された可能性があります。",
+    "metaFilesMissing_other": "{{count}} 件のファイルが元の場所にありません。移動または名前変更された可能性があります。"
   },
   "newTracks": {
     "prompt_one": "「{{folder}}」に新しいトラックが {{count}} 件あります",

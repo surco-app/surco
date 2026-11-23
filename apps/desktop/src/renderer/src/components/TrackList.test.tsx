@@ -400,6 +400,15 @@ describe('TrackList', () => {
     expect(screen.getAllByTestId('track-meta-failed')).toHaveLength(1)
   })
 
+  it('says the file is no longer there rather than unreadable when it was moved or deleted', () => {
+    renderList([track({ id: 'a', metaReadFailed: true, metaFileMissing: true })])
+    expect(screen.getByTestId('track-meta-failed')).toBeInTheDocument()
+    expect(screen.getAllByRole('option')[0]).toHaveTextContent(i18n.t('errors.fileMissing'))
+    expect(screen.getAllByRole('option')[0]).not.toHaveTextContent(
+      i18n.t('trackList.metaReadFailed'),
+    )
+  })
+
   it('marks a row whose audio could not be read, so the files the quality sweep skipped can be found in a long list', () => {
     renderList([track({ id: 'a', analyzeFailed: true }), track({ id: 'b' })])
     expect(screen.getAllByTestId('track-audio-failed')).toHaveLength(1)

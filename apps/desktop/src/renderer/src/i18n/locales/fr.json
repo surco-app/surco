@@ -505,7 +505,9 @@
     "redoneMeta_one": "Modification de métadonnées rétablie sur {{count}} morceau",
     "redoneMeta_other": "Modification de métadonnées rétablie sur {{count}} morceaux",
     "metaReadFailed_one": "Impossible de lire les tags de {{count}} fichier, seul son nom est affiché.",
-    "metaReadFailed_other": "Impossible de lire les tags de {{count}} fichiers, seuls leurs noms sont affichés."
+    "metaReadFailed_other": "Impossible de lire les tags de {{count}} fichiers, seuls leurs noms sont affichés.",
+    "metaFilesMissing_one": "{{count}} fichier n’est plus là où il était. Il a peut-être été déplacé ou renommé.",
+    "metaFilesMissing_other": "{{count}} fichiers ne sont plus là où ils étaient. Ils ont peut-être été déplacés ou renommés."
   },
   "newTracks": {
     "prompt_one": "{{count}} nouveau morceau dans « {{folder}} »",

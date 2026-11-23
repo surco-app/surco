@@ -814,6 +814,9 @@ export interface MetaRead {
   // left a degraded read indistinguishable from a file that simply carries no tags —
   // so an unreadable one sat in the list saying nothing. Absent on a successful read.
   failed?: true
+  // The failed read found nothing at the path: the file was moved or deleted since the row
+  // was listed, which the DJ fixes by finding the file, not by retagging a damaged one.
+  missing?: true
 }
 
 export interface ProcessJob extends TrackOrigin {

@@ -505,7 +505,9 @@
     "redoneMeta_one": "Metadaten-Änderung in {{count}} Track wiederholt",
     "redoneMeta_other": "Metadaten-Änderung in {{count}} Tracks wiederholt",
     "metaReadFailed_one": "Die Tags von {{count}} Datei konnten nicht gelesen werden, daher wird nur ihr Dateiname angezeigt.",
-    "metaReadFailed_other": "Die Tags von {{count}} Dateien konnten nicht gelesen werden, daher werden nur ihre Dateinamen angezeigt."
+    "metaReadFailed_other": "Die Tags von {{count}} Dateien konnten nicht gelesen werden, daher werden nur ihre Dateinamen angezeigt.",
+    "metaFilesMissing_one": "{{count}} Datei ist nicht mehr dort, wo sie war. Womöglich wurde sie verschoben oder umbenannt.",
+    "metaFilesMissing_other": "{{count}} Dateien sind nicht mehr dort, wo sie waren. Womöglich wurden sie verschoben oder umbenannt."
   },
   "newTracks": {
     "prompt_one": "{{count}} neuer Track in „{{folder}}“",

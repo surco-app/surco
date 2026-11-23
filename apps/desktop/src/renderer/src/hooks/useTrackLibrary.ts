@@ -123,6 +123,9 @@ interface Params {
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
   onMetaReadFailed: (count: number) => void
+  // How many of those failed because no file was at the path any more, told apart so the
+  // notice sends the DJ looking for a moved file instead of blaming its tags.
+  onMetaFilesMissing?: (count: number) => void
   // How many rows of an open playlist went because the background check found their files
   // gone, so App can say so as it does for the ones missing when the playlist opens.
   onSourceFilesGone?: (count: number) => void
@@ -220,6 +223,7 @@ export function useTrackLibrary({
   onDuplicatesSkipped,
   onNoAudioFound,
   onMetaReadFailed,
+  onMetaFilesMissing,
   onSourceFilesGone,
   onPathsAdded,
   filesOpen = true,
@@ -279,6 +283,7 @@ export function useTrackLibrary({
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
   // 300-file drop yields one "couldn't read N" notice rather than a toast per file.
   const importFailed = useRef(new Set<string>())
+  const importMissing = useRef(new Set<string>())
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
@@ -297,6 +302,8 @@ export function useTrackLibrary({
   onNoAudioFoundRef.current = onNoAudioFound
   const onMetaReadFailedRef = useRef(onMetaReadFailed)
   onMetaReadFailedRef.current = onMetaReadFailed
+  const onMetaFilesMissingRef = useRef(onMetaFilesMissing)
+  onMetaFilesMissingRef.current = onMetaFilesMissing
   const onPathsAddedRef = useRef(onPathsAdded)
   onPathsAddedRef.current = onPathsAdded
 
@@ -545,9 +552,13 @@ export function useTrackLibrary({
             // The import is done: whatever reads are still waiting on the window land with
             // the pill's end, not a moment after it.
             flushMetaPatches()
-            const failed = tracksRef.current.filter((t) => importFailed.current.has(t.id)).length
+            const failedRows = tracksRef.current.filter((t) => importFailed.current.has(t.id))
+            const missing = failedRows.filter((t) => importMissing.current.has(t.id)).length
+            const failed = failedRows.length - missing
             importFailed.current = new Set()
+            importMissing.current = new Set()
             if (failed > 0) onMetaReadFailedRef.current(failed)
+            if (missing > 0) onMetaFilesMissingRef.current?.(missing)
           } else {
             progressPending.current = true
             scheduleMetaFlush()
@@ -667,7 +678,8 @@ export function useTrackLibrary({
   ): boolean {
     const path = base.inputPath
     const savedOrigin = saved && fromLegacy(saved)
-    const { tags, duration, cover, foreignTags, failed, reviewRaw, fileDate } = read
+    const { tags, duration, cover, foreignTags, failed, missing, reviewRaw, fileDate } = read
+    if (missing) importMissing.current.add(base.id)
     const s = searchFromTags(parseFileName(path), tags)
     // Whatever Music knows that this file does not. Consumed once, like the restored
     // edit above: a later start-over must rebuild from the file alone.
@@ -748,6 +760,11 @@ export function useTrackLibrary({
       // A read that succeeded clears the mark a failed one left; a degraded read sets
       // it, so the row says so instead of looking like a file with no tags.
       ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
+      ...(missing
+        ? { metaFileMissing: true }
+        : t.metaFileMissing
+          ? { metaFileMissing: false }
+          : {}),
       ...(t.queryTyped && { query: t.query, queryTyped: true }),
       meta: mergeReadMeta(base.meta, t.meta, finalMeta),
     }))
@@ -1383,6 +1400,7 @@ export function useTrackLibrary({
     importDone.current = 0
     importTotal.current = 0
     importFailed.current = new Set()
+    importMissing.current = new Set()
     progressPending.current = false
     setImportProgress(null)
   }

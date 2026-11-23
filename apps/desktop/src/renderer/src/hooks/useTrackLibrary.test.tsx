@@ -1851,6 +1851,49 @@ describe('useTrackLibrary meta read failures', () => {
     expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
   })
 
+  // A Tracks row restored from last session whose file was deleted or moved since fails
+  // its read like a damaged file, and the notice said the tags could not be read. The file
+  // is not damaged, it is gone, and the DJ needs to look for it, not retag it.
+  it('reports a file that is no longer there apart from a file it could not read', async () => {
+    const onMetaReadFailed = vi.fn()
+    const onMetaFilesMissing = vi.fn()
+    setApi({
+      readMeta: vi.fn((path: string) =>
+        Promise.resolve({
+          tags: emptyMetadata(),
+          duration: null,
+          cover: null,
+          foreignTags: [],
+          failed: true,
+          ...(path.includes('gone') && { missing: true }),
+        }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed,
+        onMetaFilesMissing,
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/music/gone one.mp3', '/music/gone two.mp3', '/music/bad.mp3']),
+    )
+
+    const gone = result.current.tracks.find((t) => t.fileName.includes('gone one'))
+    const bad = result.current.tracks.find((t) => t.fileName.includes('bad'))
+    expect(gone?.metaFileMissing).toBe(true)
+    expect(bad?.metaFileMissing).toBeUndefined()
+    expect(onMetaFilesMissing).toHaveBeenCalledExactlyOnceWith(2)
+    expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
   // A clean import must stay quiet — the aggregate notice exists for failures only, and a
   // second import's counter must not inherit the first one's failures.
   it('reports nothing for a clean batch and resets the count between batches', async () => {

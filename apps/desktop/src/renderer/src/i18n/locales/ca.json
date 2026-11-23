@@ -505,7 +505,9 @@
     "redoneMeta_one": "Edició de metadades refeta en {{count}} pista",
     "redoneMeta_other": "Edició de metadades refeta en {{count}} pistes",
     "metaReadFailed_one": "No s'han pogut llegir les metadades de {{count}} fitxer, així que només se'n mostra el nom.",
-    "metaReadFailed_other": "No s'han pogut llegir les metadades de {{count}} fitxers, així que només se'n mostren els noms."
+    "metaReadFailed_other": "No s'han pogut llegir les metadades de {{count}} fitxers, així que només se'n mostren els noms.",
+    "metaFilesMissing_one": "{{count}} fitxer ja no és on era. Potser s'ha mogut o se n'ha canviat el nom.",
+    "metaFilesMissing_other": "{{count}} fitxers ja no són on eren. Potser s'han mogut o se n'ha canviat el nom."
   },
   "newTracks": {
     "prompt_one": "{{count}} pista nova a «{{folder}}»",

@@ -7897,6 +7897,32 @@ describe('App import skeleton', () => {
     )
   })
 
+  // A Tracks row reopened from last session whose file was deleted or moved since was
+  // reported as a file whose tags could not be read, which sends the DJ to retag a file
+  // that is not damaged, only gone.
+  it('says a reopened file is no longer where it was instead of saying its tags could not be read', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/gone.mp3']),
+      expandPaths: vi.fn().mockResolvedValue(['/music/gone.mp3']),
+      readMeta: vi.fn().mockResolvedValue({
+        tags: emptyMetadata(),
+        duration: null,
+        cover: null,
+        foreignTags: [],
+        failed: true,
+        missing: true,
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.metaFilesMissing', { count: 1 }),
+    )
+    expect(screen.getByTestId('app-notice')).not.toHaveTextContent(
+      i18n.t('notices.metaReadFailed', { count: 1 }),
+    )
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.
