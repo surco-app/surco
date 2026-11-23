@@ -12,6 +12,13 @@ describe('parseColor', () => {
     expect(parseColor('rgba(20, 22, 38, 0.12)')).toEqual([20, 22, 38])
   })
 
+  // The CSS build minifies #ffffff to #fff, so the light theme's panel token reaches the
+  // renderer in short form. Read as black, the light spectrogram drew a black slab.
+  it('reads a 3-digit hex token the build minified', () => {
+    expect(parseColor('#fff')).toEqual([255, 255, 255])
+    expect(parseColor('#2a5')).toEqual([34, 170, 85])
+  })
+
   it('falls back to black when the token is missing', () => {
     expect(parseColor('')).toEqual([0, 0, 0])
   })
