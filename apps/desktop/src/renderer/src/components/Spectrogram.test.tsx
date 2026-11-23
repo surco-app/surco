@@ -145,14 +145,13 @@ describe('Spectrogram maximized height', () => {
   it('lets the image fill its box while maximized instead of a fixed short strip', () => {
     render(<Maximized />)
     const img = screen.getByTestId('spectrogram')
-    expect(img.className).toContain('h-full')
-    expect(img.className).not.toContain('h-80')
+    expect(img).toHaveAttribute('data-tall', 'true')
   })
 
   it('keeps the compact fixed height when not maximized', () => {
     render(<Spectrogram spectrum={base} />)
     const img = screen.getByTestId('spectrogram')
-    expect(img.className).toContain('h-80')
+    expect(img).toHaveAttribute('data-tall', 'false')
   })
 })
 
