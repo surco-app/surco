@@ -1187,7 +1187,7 @@ describe('ProgramsTab layout', () => {
   it('opens every program without a rule above it, since each one shows on its own under the bar', () => {
     renderPrograms()
     for (const section of screen.getAllByTestId('settings-section')) {
-      expect(section.className).not.toMatch(/border-t/)
+      expect(section).toHaveAttribute('data-ruled', 'false')
     }
   })
 })
