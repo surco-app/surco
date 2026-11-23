@@ -1507,6 +1507,7 @@ export interface ProcessResult {
   // How far the audio of a replacement moved against the file it replaced, measured by
   // the conversion. Absent on an ordinary conversion. Kept by the "To review" list.
   replaceShift?: ReplaceShift
+  seratoCarryFailed?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

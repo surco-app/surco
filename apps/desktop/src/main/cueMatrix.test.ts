@@ -891,15 +891,28 @@ describe('a replacement carries the Serato cues of the file it replaces', () => 
     expect(recordedRekordboxRepoint(out)).toMatchObject({ replaced: true, seratoCarryFailed: true })
   })
 
+  // "To review" is recorded from the conversion's result, not from the repoint: without the
+  // flag there it lists Serato as moved while Serato stays on the replaced file.
+  it('says so in what it wrote when the replaced file could not be read, so To review leaves Serato out', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-gone-written-'))
+    const download = plainSine(dir, '.flac')
+    const out = join(dir, 'out.aiff')
+
+    const { written } = await replace(download, out, join(dir, 'gone.mp3'))
+
+    expect(written.seratoCarryFailed).toBe(true)
+  })
+
   it('does not flag a failed carry when the replaced file was read', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-replace-ok-'))
     const replaced = makeSeratoSource(dir, '.mp3', false)
     const download = plainSine(dir, '.flac')
     const out = join(dir, 'out.aiff')
 
-    await replace(download, out, replaced)
+    const { written } = await replace(download, out, replaced)
 
     expect(recordedRekordboxRepoint(out)?.seratoCarryFailed).toBeUndefined()
+    expect(written.seratoCarryFailed).toBeUndefined()
   })
 
   // Emptying the tags of the new file does not empty the replaced one, which Serato still
