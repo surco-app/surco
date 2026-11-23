@@ -101,6 +101,17 @@ describe('createReplacedStore', () => {
     expect(store.list()).toEqual([again])
   })
 
+  // A moved track still shows its earlier path in a program whose repoint is queued, and a
+  // replacement launched from that row names it as the old file: it is the same track.
+  it('starts the review over when a moved track is replaced again from the path it had before', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry({ newPath: '/m/a.flac', oldPath: '/m/a.mp3' }))
+    store.movePath('/m/a.flac', '/m/a.aiff')
+    const again = entry({ newPath: '/m/a.wav', oldPath: '/m/a.flac', replacedAt: 2 })
+    store.add(again)
+    expect(store.list()).toEqual([again])
+  })
+
   it('follows the file when a later conversion moves it, without touching the old path', async () => {
     const store = createReplacedStore(await fileIn())
     store.add(entry())

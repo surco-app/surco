@@ -92,14 +92,16 @@ export function createReplacedStore(file: string): ReplacedStore {
       const next = normalized(entry)
       mutate(
         (all) => ({
-          // The same track replaced again: from its new copy, or from the old file a queued
-          // repoint still shows. Its review starts over under the newest entry.
+          // The same track replaced again: from its new copy, or from the old file or an
+          // earlier path a queued repoint still shows. Its review starts over under the
+          // newest entry. An old file the new one lands on is another track's, so it stays.
           entries: [
             ...all.filter(
               (e) =>
                 e.newPath !== next.newPath &&
                 e.newPath !== next.oldPath &&
-                e.oldPath !== next.oldPath,
+                e.oldPath !== next.oldPath &&
+                !e.formerPaths?.includes(next.oldPath),
             ),
             next,
           ],
