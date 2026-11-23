@@ -3,6 +3,7 @@ import { createContext, useContext, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useExitPresence } from '../hooks/useExitPresence'
 import { lastInputWasKeyboard } from '../lib/inputModality'
+import { LAYER } from '../lib/layers'
 import { useFocusTrap } from './useFocusTrap'
 
 // The fast duration, shorter than the panel-length entrance: leaving needs no ceremony.
@@ -89,7 +90,8 @@ export function ModalShell({
   return (
     <div
       inert={leaving}
-      className={`fixed inset-0 z-50 flex justify-center ${
+      style={{ zIndex: LAYER.overlay }}
+      className={`fixed inset-0 flex justify-center ${
         align === 'top' ? 'items-start pt-[8vh]' : 'items-center'
       }${leaving ? ' pointer-events-none' : ''}`}
     >

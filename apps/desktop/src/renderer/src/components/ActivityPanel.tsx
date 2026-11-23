@@ -27,6 +27,7 @@ import { useTranslation } from 'react-i18next'
 import type { ActivityKind } from '../../../shared/types'
 import { type ActivityStore, useActivityRows } from '../hooks/useActivityLog'
 import { type ActivityRow, activityFeedText, rowDetailText } from '../lib/activityLog'
+import { LAYER } from '../lib/layers'
 import { prefersReducedMotion } from '../lib/motion'
 import { MIN_HEIGHT, MIN_WIDTH, type PanelGeometry } from '../lib/panelGeometry'
 import { SectionBody } from './SectionBody'
@@ -456,8 +457,14 @@ export function ActivityPanel({
       data-testid="activity-panel"
       ref={panelRef}
       aria-label={tr('activity.title')}
-      className="fixed z-[45] flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
-      style={{ left: pos.x, top: pos.y, width: size.width, height: size.height }}
+      className="fixed flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
+      style={{
+        left: pos.x,
+        top: pos.y,
+        width: size.width,
+        height: size.height,
+        zIndex: LAYER.activityPanel,
+      }}
     >
       <header
         data-testid="activity-panel-handle"

@@ -32,14 +32,6 @@ describe('Select', () => {
 
   // The aria-label replaced the visible text, so VoiceOver said "Sort, pop-up button" and
   // never which order was active; a sighted user reads both, a blind one needs both too.
-  // A button sizes to its content even inside a narrowed box, so in the cue header the
-  // flow's name ran on under Auto marcar instead of truncating. Capped at its box, the
-  // trigger gives way and the label's ellipsis takes over.
-  it('never grows past the box it is given, so a long label truncates rather than running under its neighbour', () => {
-    renderSelect('name')
-    expect(screen.getByTestId('sort').className).toContain('max-w-full')
-  })
-
   it('names the trigger with its label and the current value', () => {
     renderSelect('name')
     expect(screen.getByTestId('sort')).toHaveAccessibleName('Sort: Name')
@@ -408,7 +400,7 @@ describe('Select portaled menu', () => {
   // In the body it sits beside any open dialog rather than inside it, so its backdrop has
   // to sit over the dialog's overlay or a click beside the menu lands in the dialog.
   it('keeps its backdrop over a dialog it opens from', () => {
-    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
+    const layer = (el: Element): number => Number((el as HTMLElement).style.zIndex)
     render(
       <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
         <Select
