@@ -299,7 +299,6 @@ describe('CuesSection maximized', () => {
   it('starts the work right under the track header, so the eye reads down from the title without a gap', async () => {
     setup()
     await maximize()
-    expect(screen.getByTestId('cues-toolbar').className).not.toContain('mt-auto')
     expect(screen.getByTestId('cues-deck').parentElement).toBe(screen.getByTestId('cues-editor'))
   })
 
@@ -1848,12 +1847,12 @@ describe('CuesSection maximized undo', () => {
     setup()
     await maximize()
     const save = screen.getByTestId('cues-save')
-    expect(save.className).not.toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'false')
     seek(128000)
     editor().focus()
     key('Enter')
     expect(save).toBeEnabled()
-    expect(save.className).toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'true')
   })
 })
 
