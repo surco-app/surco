@@ -28,6 +28,14 @@ function track(id: string, artist: string, title: string): TrackItem {
 }
 
 describe('CommandPalette', () => {
+  // The palette is opened dozens of times a day, often from the keyboard: paying an
+  // entrance on every open makes the whole app feel slower than it is.
+  it('opens bare, without an entrance', () => {
+    render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-bare', 'true')
+    expect(screen.getByTestId('palette-backdrop')).toHaveAttribute('data-bare', 'true')
+  })
+
   it('exposes an accessible name on the dialog and search field', () => {
     render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
