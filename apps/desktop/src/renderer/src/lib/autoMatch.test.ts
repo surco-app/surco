@@ -516,6 +516,32 @@ describe('autoMatchRelease Bandcamp suggestions', () => {
     expect(m?.confidence).toBe(1)
   })
 
+  // The sweep scores the file's title as matchTargetOf cleans it, which drops "(Original
+  // mix)". A label page keeps that marker in its track title, so the scorer must read the
+  // release side the same way or the real case stalls at 85 % and never applies itself.
+  it('applies a label page track scored from the file through matchTargetOf', async () => {
+    const api = {
+      ...bandcampOnly([]),
+      getRelease: vi.fn().mockResolvedValue(
+        release(2, {
+          provider: 'bandcamp',
+          title: 'Label Traxx Sampler',
+          artists: [{ name: 'Label Traxx' }],
+          tracklist: [{ position: '1', title: 'Da Crew - Song (Original mix)', duration: '0:30' }],
+        }),
+      ),
+    }
+    const file = {
+      query: 'da crew song',
+      duration: 30,
+      meta: { title: 'Song (Original mix)', artist: 'Da Crew' },
+    } as TrackItem
+    const m = await autoMatchRelease(file.query, matchTargetOf(file), api)
+
+    expect(m?.confidence).toBeGreaterThanOrEqual(0.92)
+    expect(m?.tier).toBe('high')
+  })
+
   // Same length is all a wrong release shares with the file; with the act contradicting,
   // the sweep must not write that release unattended. It is not suggested either: an
   // uncurated review is only collected when the artist agrees, so the hit is dropped.

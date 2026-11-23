@@ -5,6 +5,7 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
 import { ExportButton } from './ExportButton'
+import { FORMAT_TOGGLE_BOX_NAME } from './SplitButton'
 
 afterEach(cleanup)
 
@@ -93,6 +94,30 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
     expect(screen.getByTestId('process-format-toggle')).toHaveAccessibleName(
       'Format and destination, AIFF',
+    )
+  })
+
+  // Reported 23/11: choosing FLAC on an unchanged FLAC turned the row up to date and the
+  // dropdown shrank from 83.7 to 77.7 px. Both faces stack the same names, so both toggles are
+  // drawn from the one shared box, or the dropdown jumps when the row changes face.
+  it('draws the up-to-date row dropdown from the same box as the split button one', () => {
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate={false} />)
+    expect(screen.getByTestId('process-format-toggle')).toHaveAttribute(
+      'data-box',
+      FORMAT_TOGGLE_BOX_NAME,
+    )
+    rerender(<ExportButton {...props} upToDate />)
+    expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+    expect(screen.getByTestId('process-format-toggle')).toHaveAttribute(
+      'data-box',
+      FORMAT_TOGGLE_BOX_NAME,
     )
   })
 

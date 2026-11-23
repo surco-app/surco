@@ -12,9 +12,13 @@ export const SPLIT_BODY_READY =
   'text-[var(--color-on-accent)] aria-disabled:pointer-events-none aria-disabled:opacity-40'
 export const SPLIT_TOGGLE =
   'press relative flex w-10 items-center justify-center overflow-hidden rounded-r-lg before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none'
+// The box around the stacked format names, shared by every toggle that shows the format, so
+// the dropdown keeps one width whichever face of the footer draws it. A border would widen
+// it, so a toggle that needs an outline draws it as an inset ring.
+export const FORMAT_TOGGLE_BOX = 'gap-1 px-3'
+export const FORMAT_TOGGLE_BOX_NAME = 'format-toggle'
 // The same toggle sized by the chosen format it shows instead of a fixed chevron width.
-export const SPLIT_TOGGLE_FORMAT =
-  'press relative flex items-center justify-center gap-1 overflow-hidden rounded-r-lg px-3 before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none'
+export const SPLIT_TOGGLE_FORMAT = `press relative flex items-center justify-center ${FORMAT_TOGGLE_BOX} overflow-hidden rounded-r-lg before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none`
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET =
   'bg-[var(--color-panel-2)] text-fg-faint before:bg-[var(--color-line-strong)]'

@@ -968,6 +968,7 @@
     "missingRequired": "Falten camps obligatoris: {{fields}}",
     "missingOne": "Falta {{field}}",
     "missingTwo": "Falten {{first}} i {{second}}",
+    "missingEither": "Falta {{first}} o {{second}}",
     "missingCount_one": "Falta {{count}} camp obligatori",
     "missingCount_other": "Falten {{count}} camps obligatoris",
     "mixedReplaceSelection": "La selecció barreja pistes que substitueixen una còpia de la teva biblioteca i pistes que s'hi afegeixen. Separa-les per convertir-les.",
