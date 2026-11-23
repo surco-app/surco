@@ -3,8 +3,21 @@ import { lazy } from 'react'
 const loaders: (() => Promise<unknown>)[] = []
 
 export const lazyChunk: typeof lazy = (load) => {
-  loaders.push(load)
-  return lazy(load)
+  let loaded: Awaited<ReturnType<typeof load>> | undefined
+  const remember = () =>
+    load().then((chunk) => {
+      loaded = chunk
+      return chunk
+    })
+  loaders.push(remember)
+  return lazy(() => {
+    const chunk = loaded
+    if (!chunk) return remember()
+    // biome-ignore lint/suspicious/noThenProperty: React.lazy renders without suspending only when its thenable settles synchronously
+    return { then: (resolve: (value: typeof chunk) => void) => resolve(chunk) } as ReturnType<
+      typeof load
+    >
+  })
 }
 
 export async function preloadLazy(): Promise<void> {
