@@ -1,5 +1,68 @@
 [
   {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Sostituisci un brano senza perdere i cue",
+    "items": [
+      {
+        "text": "Sostituisci un brano con una copia migliore e i suoi cue restano sul battito in rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. Surco confronta le due copie e sposta i cue se la nuova inizia un po’ prima o un po’ dopo. Se è un’altra registrazione, rekordbox, Engine DJ e VirtualDJ la analizzano di nuovo.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Anche Serato segue un brano sostituito, con i suoi cue, la sua griglia e le sue crate. Perde le stelle, e Surco te lo dice prima di sostituire.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Ogni brano che sostituisci compare in «Da rivedere», sotto «Aggiunti di recente» in ogni programma DJ. Un segno verde dice che i cue si sono spostati con l’audio, uno ambra che sono rimasti dov’erano. Salva i suoi cue o premi «Rivisto» ed esce dalla lista. ⌘Z lo riporta.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Una copia che ne sostituisce un’altra prende dalla vecchia i tag che le mancano. Se non ha copertina, prende anche quella.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La nuova sezione «Nella tua libreria» dell’editor trova un brano di Tracks in tutti i programmi DJ che usi e in Apple Music. Ogni copia ti dice se è uguale, migliore, peggiore o un’altra versione. Apri una riga per confrontare i due spettri.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music entra nelle «Sorgenti di ricerca», con le sue copertine grandi. Funziona anche su Windows, e se lo store del tuo paese non ha un’uscita, Surco la cerca in quelli del Regno Unito e degli Stati Uniti.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Con più brani selezionati, l’editor funziona come con uno solo. Modifica i campi dell’album di tutti, incolla un’uscita, valutali insieme o numerali nell’ordine della lista. Un campo che differisce mostra ogni valore invece di contarli.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "I commenti delle frasi possono andare anche nei tuoi file. Accanto a «Salva N commenti», scegli «File e rekordbox», poi «Prima del commento» o «Sostituisci il commento». Mentre salva, il pulsante si riempie, e un clic lo ferma.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La conversione conserva tutti i tuoi tag, anche quelli che Surco non mostra. I campi con più valori, come due artisti o due generi, li conservano tutti.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z annulla quello che hai scritto in un campo e ⇧⌘Z lo ripristina. Commento conserva gli a capo, e Invio inizia una riga nuova.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Mostra numeri» numera anche Tracks, nell’ordine in cui hai aggiunto i brani. Ogni scheda tiene la sua ricerca, quindi quello che scrivi in un programma DJ resta lì.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "L’abbinamento automatico non tocca più un brano che hai modificato a mano. Nella pagina di un’etichetta su Bandcamp, l’etichetta non finisce più come artista.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Ripristina i tag di prima» passa al menu ⋯ dell’editor invece di stare sotto ogni campo. Anche «Copia il percorso del file» è lì.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ ingrandisce la finestra insieme allo zoom e si ferma allo zoom più grande che sta nel tuo schermo.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Porta le frasi in rekordbox",

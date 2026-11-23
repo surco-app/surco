@@ -1,5 +1,68 @@
 [
   {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Substitueix una pista sense perdre els cues",
+    "items": [
+      {
+        "text": "Substitueix una pista per una còpia millor i els seus cues continuen al cop a rekordbox, Traktor, Engine DJ, Serato i VirtualDJ. Surco compara les dues còpies i mou els cues si la nova comença una mica abans o després. Si és una altra gravació, rekordbox, Engine DJ i VirtualDJ la tornen a analitzar.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Serato també segueix una pista substituïda, amb els seus cues, la seva graella i els seus crates. Perd les estrelles, i Surco t’avisa abans de substituir.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Cada pista que substitueixes apareix a «Per revisar», sota «Afegides recentment» a cada programa DJ. Una marca verda diu que els seus cues s’han mogut amb l’àudio, una d’ambre que s’han quedat on eren. Desa els seus cues o prem «Revisada» i surt de la llista. ⌘Z la torna.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Una còpia que en substitueix una altra agafa de la vella les etiquetes que li falten. Si no té caràtula, també es queda la seva.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La nova secció «A la teva biblioteca» de l’editor troba una pista de Tracks a tots els programes DJ que fas servir i a Apple Music. Cada còpia et diu si és igual, millor, pitjor o una altra versió. Obre una fila per comparar els dos espectres.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music s’afegeix a les «Fonts de cerca», amb les seves caràtules grans. També funciona a Windows, i si la botiga del teu país no té un llançament, Surco el busca a la del Regne Unit i a la dels Estats Units.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Amb diverses pistes seleccionades, l’editor funciona igual que amb una. Edita els camps de l’àlbum de totes, enganxa un llançament, puntua-les alhora o numera-les en l’ordre de la llista. Un camp que difereix mostra cada valor en lloc de comptar-los.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Els comentaris de frases també poden anar als teus fitxers. Al costat de «Desar N comentaris», tria «Fitxer i rekordbox», i després «Davant del comentari» o «Substituir el comentari». Mentre desa, el botó es va omplint, i un clic l’atura.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "En convertir es conserven totes les teves etiquetes, també les que Surco no mostra. Els camps amb diversos valors, com dos artistes o dos gèneres, els conserven tots.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z desfà el que has escrit en un camp i ⇧⌘Z ho refà. Comentari conserva els salts de línia, i Retorn comença una línia nova.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Mostrar els números» també numera Tracks, en l’ordre en què hi vas afegir les pistes. Cada pestanya guarda la seva pròpia cerca, així que el que escrius en un programa DJ s’hi queda.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "L’aparellament automàtic ja no toca una pista que has editat a mà. A la pàgina d’un segell de Bandcamp, el segell ja no acaba com a artista.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Restaura les etiquetes d’abans» passa al menú ⋯ de l’editor en lloc d’estar sota cada camp. «Copiar la ruta del fitxer» també hi és.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ amplia la finestra amb el zoom, i s’atura al zoom més gran que cap a la teva pantalla.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Passa les frases a rekordbox",

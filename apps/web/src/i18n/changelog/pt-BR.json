@@ -1,5 +1,68 @@
 [
   {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Substitua uma faixa sem perder os cues",
+    "items": [
+      {
+        "text": "Substitua uma faixa por uma cópia melhor e os cues continuam no tempo no rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. O Surco compara as duas cópias e move os cues quando a nova começa um pouco antes ou depois. Se for outra gravação, o rekordbox, o Engine DJ e o VirtualDJ analisam de novo.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "O Serato também acompanha uma faixa substituída, com os cues, o grid e as crates. Ela perde as estrelas, e o Surco avisa você antes de substituir.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Cada faixa que você substitui aparece em “Para revisar”, abaixo de “Adicionadas recentemente” em cada programa de DJ. Uma marca verde diz que os cues se moveram com o áudio, uma âmbar que ficaram onde estavam. Salve os cues ou toque em “Revisada” e ela sai da lista. ⌘Z traz de volta.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Uma cópia que substitui outra pega da antiga as tags que faltam. Se não tiver capa, fica com a dela também.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "A nova seção “Na sua biblioteca” do editor encontra uma faixa de Tracks em todos os programas de DJ que você usa e no Apple Music. Cada cópia diz se é igual, melhor, pior ou outra versão. Abra uma linha para comparar os dois espectros.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "O Apple Music entra nas “Fontes de busca”, com capas grandes. Funciona também no Windows, e quando a loja do seu país não tem um lançamento, o Surco procura nas do Reino Unido e dos Estados Unidos.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Com várias faixas selecionadas, o editor funciona como com uma. Edite os campos do álbum de todas, cole um lançamento, avalie todas de uma vez ou numere na ordem da lista. Um campo que difere mostra cada valor em vez de uma contagem.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Os comentários de frases também podem ir para os seus arquivos. Ao lado de “Salvar N comentários”, escolha “Arquivo e rekordbox” e depois “Antes do comentário” ou “Substituir o comentário”. Enquanto salva, o botão vai enchendo, e um clique para.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Converter mantém todas as suas tags, até as que o Surco não mostra. Campos com vários valores, como dois artistas ou dois gêneros, mantêm todos eles.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z desfaz o que você digitou num campo e ⇧⌘Z refaz. Comentário mantém as quebras de linha, e Return começa uma linha nova.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Mostrar números” também numera Tracks, na ordem em que você adicionou as faixas. Cada aba guarda a própria busca, então o que você digita num programa de DJ fica lá.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "A correspondência automática não mexe mais numa faixa que você editou à mão. Na página de um selo no Bandcamp, o selo não vira mais o artista.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Restaurar as tags de antes” passa para o menu ⋯ do editor em vez de ficar embaixo de cada campo. “Copiar caminho do arquivo” também está lá.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ aumenta a janela junto com o zoom e para no maior zoom que cabe na sua tela.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Leve suas frases para o rekordbox",

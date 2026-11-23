@@ -1,5 +1,68 @@
 [
   {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Replace a track and keep its cues",
+    "items": [
+      {
+        "text": "Replace a track with a better copy and its cues stay on the beat in rekordbox, Traktor, Engine DJ, Serato and VirtualDJ. Surco compares both copies and moves the cues when the new one starts a little earlier or later. If it is another recording, rekordbox, Engine DJ and VirtualDJ analyse it again.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Serato now follows a replaced track too, with its cues, its grid and its crates. It loses its stars, and Surco tells you before you replace.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Every track you replace shows up in “To review”, under “Recently added” in each DJ program. A green mark means its cues moved with the audio, an amber one that they stayed put. Save its cues or press “Reviewed” and it leaves the list. ⌘Z brings it back.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "A copy that replaces another takes the tags it is missing from the old one. If it has no cover, it takes that one too.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "The new “In your library” section in the editor finds a track from Tracks in every DJ program you use and in Apple Music. Each copy tells you if it is the same, better, worse or another version. Open a row to compare both spectra.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music joins the “Search sources”, with its large covers. It works on Windows too, and when your country’s store does not have a release, Surco looks in the UK and US ones.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "With several tracks selected, the editor works as it does with one. Edit the album fields for all of them, paste a release, rate them at once or number them in list order. A field that differs shows each value instead of a count.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Phrase comments can also go into your files. Next to “Save N comments”, pick “File and rekordbox”, and choose “Before the comment” or “Replace the comment”. While it saves, the button fills up, and a click stops it.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Converting keeps all your tags, even the ones Surco does not show. Fields with several values, like two artists or two genres, keep every one of them.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z undoes what you typed in a field and ⇧⌘Z redoes it. Comment keeps its line breaks, and Return starts a new line.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Show Numbers” also numbers Tracks, in the order you added them. Each tab keeps its own search, so what you type in a DJ program stays there.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Auto-match no longer touches a track you edited by hand. On a Bandcamp label page, the label no longer ends up as the artist.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Restore the previous tags” moves to the editor’s ⋯ menu instead of sitting under each field. “Copy file path” is there too.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ makes the window bigger along with the zoom, and stops at the largest zoom that fits your screen.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Send your phrases to rekordbox",
