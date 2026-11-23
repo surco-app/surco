@@ -17,6 +17,7 @@ import {
   type FindOptions,
   isAmbiguous,
   openRekordboxDb,
+  rekordboxPathKey,
   rekordboxStoredPath,
   sameFileOnDisk,
   type TrackFinder,
@@ -31,8 +32,7 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // track keeps its ID and therefore its playlists, cues and play history. Writing into a
 // library the user cannot rebuild is what shapes everything here: the collection is
 // backed up before it is touched, a running rekordbox refuses the write twice over, an
-// ambiguous match refuses rather than guesses, and a failed write is rolled back from the
-// backup.
+// ambiguous match refuses rather than guesses, and a failed write is rolled back.
 //
 // Best-effort, like the Traktor and Engine counterparts: the audio conversion has already
 // succeeded on disk by the time this runs, so nothing here throws to its caller. Every
@@ -103,7 +103,11 @@ function stageCovers(
   const share = rekordboxShareDir(collectionPath)
   if (!readCover || !existsSync(share)) return staged
   const current = db.prepare('SELECT ImagePath FROM djmdContent WHERE ID = ?')
-  for (const w of writes) {
+  // A row the run moves twice ends on its last file, so only that file's cover is staged.
+  const last = new Set<string>()
+  for (const w of [...writes].reverse()) {
+    if (last.has(w.id)) continue
+    last.add(w.id)
     const { to, meta } = repoints[w.index]
     if (!meta) continue
     try {
@@ -135,8 +139,8 @@ const heldByAnother = (holder: ReturnType<TrackFinder>, ids: string[]): boolean 
 // process for minutes. Results come back per track, in the order given.
 //
 // One backup now stands behind the whole run, so the writes go in one transaction and a
-// failure restores that backup: no track is ever reported written from a collection that
-// was put back.
+// failure undoes all of them: no track is ever reported written from a collection that
+// was rolled back.
 export async function repointTracks(
   collectionPath: string,
   repoints: Repoint[],
@@ -195,8 +199,23 @@ export async function repointTracks(
   let folded = false
   try {
     const trackOf = trackFinder(db)
+    // The rows each earlier repoint of the run puts on a file, by that file: the collection
+    // read above does not know them yet.
+    const planned = new Map<string, string[]>()
     for (const p of pending) {
       const repoint = repoints[p.index]
+      const key = rekordboxPathKey(repoint)
+      const chained = planned.get(key(repoint.from))
+      if (chained) {
+        if (planned.get(key(repoint.to))?.some((id) => !chained.includes(id)))
+          results[p.index] = { written: false, reason: 'occupied' }
+        else {
+          for (const id of chained) writes.push({ ...p, id })
+          planned.delete(key(repoint.from))
+          planned.set(key(repoint.to), chained)
+        }
+        continue
+      }
       const match = trackOf(repoint.from, repoint)
       // A collection that never had this track is the normal case for a partly-imported
       // library, and nothing — not even a backup — should be written for it.
@@ -212,12 +231,18 @@ export async function repointTracks(
         continue
       }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
-      if (heldByAnother(trackOf(repoint.to, repoint), ids))
+      if (
+        heldByAnother(trackOf(repoint.to, repoint), ids) ||
+        planned.get(key(repoint.to))?.some((id) => !ids.includes(id))
+      )
         results[p.index] = { written: false, reason: 'occupied' }
       else {
         const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))
         if (unclaimed.length === 0) results[p.index] = { written: false, reason: 'occupied' }
-        else for (const id of unclaimed) writes.push({ ...p, id })
+        else {
+          for (const id of unclaimed) writes.push({ ...p, id })
+          planned.set(key(repoint.to), unclaimed)
+        }
       }
     }
     if (writes.length > 0) {
@@ -326,10 +351,19 @@ export async function repointTracks(
       for (const w of writes) results[w.index] = { written: false, reason: 'read-only' }
       return settle({ written: false, reason: 'read-only' })
     }
-    // The collection is left exactly as it was found; the backup is the only copy that
-    // can guarantee that, so it is put back rather than trusting a half-applied write.
+    // SQLite has already undone the transaction, which leaves the collection exactly as it
+    // was found. The backup goes back only when even that rollback failed, and never over
+    // a master.db a rekordbox launched meanwhile holds open: its busy lock is a common way
+    // for this write to fail at all.
+    let known = true
+    try {
+      if (write.inTransaction) write.exec('ROLLBACK')
+    } catch (rollbackErr) {
+      log.error(`rekordbox repoint rollback failed: ${String(rollbackErr)}`)
+      known = false
+    }
     write.close()
-    await restoreCollection(collectionPath)
+    if (!known && !(await isRekordboxRunning())) await restoreCollection(collectionPath)
     for (const w of writes) results[w.index] = { written: false, reason: 'write-failed' }
     return settle({ written: false, reason: 'write-failed' })
   } finally {
