@@ -153,6 +153,7 @@ export function compareCopies(
 ): CopyVerdict {
   const pair = probe === undefined ? undefined : aligned(probe)
   if (isSameAudio(a, b, probe)) return { winner: 'same' }
+  if (probe !== undefined && isOtherVersion(a, b, probe)) return { winner: 'different' }
   const bWorse = replaceWarning(side(a), side(b))
   const aWorse = replaceWarning(side(b), side(a))
   if (bWorse && !aWorse) return { winner: 'a', reason: REASON[bWorse.reason] }
@@ -161,7 +162,6 @@ export function compareCopies(
     flag(a.processed, b.processed, 'processed') ?? flag(a.upsampled, b.upsampled, 'upsampled')
   if (cleaner) return cleaner
   if (pair === undefined) return { winner: 'tie' }
-  if (isOtherVersion(a, b, probe ?? null)) return { winner: 'different' }
   if (pair === null || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
   return (
     byPeakCount(a, b, margins.peakCountRatio) ??
