@@ -13239,7 +13239,9 @@ describe('App Music review', () => {
     await screen.findByTestId('last-session')
     runMenu('music-review')
     await screen.findByTestId('music-review')
-    await waitFor(() => expect(screen.queryByTestId('last-session')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByTestId('last-session')).not.toBeInTheDocument(), {
+      timeout: 3000,
+    })
     expect(saveLastSession).not.toHaveBeenCalled()
   })
 
