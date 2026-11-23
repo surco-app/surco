@@ -128,6 +128,24 @@ describe('updateEngineTags', () => {
     expect(await readFile(lib.dbPath)).toEqual(bytes)
   })
 
+  // The 23/11 replacement test: the row's title came from the file name and the file had no
+  // title tag, so the title Surco filled in did not match, and the artist the DJ typed was
+  // held back with it. Each field is judged on its own, as Traktor's are.
+  it('rewrites the artist when Engine already spells the title otherwise', async () => {
+    const lib = await library()
+    const [result] = await updateEngineTags(lib.dir, [
+      {
+        path: lib.file,
+        fields: {
+          title: { from: '', to: 'New Title' },
+          artist: { from: 'Dj Lara', to: 'DJ Lara' },
+        },
+      },
+    ])
+    expect(result).toEqual({ written: true })
+    expect(await track(lib.dbPath)).toMatchObject({ title: 'Old Title', artist: 'DJ Lara' })
+  })
+
   it('compares names regardless of Unicode normalization', async () => {
     const lib = await library(['../music/c.mp3'], 'José'.normalize('NFC'))
     const [result] = await updateEngineTags(lib.dir, [
