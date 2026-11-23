@@ -413,6 +413,27 @@ describe('LibrarySection', () => {
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
+  // Folded beside a copy that was compared, the count still says nothing about this file: the
+  // header leaves it on its row and says what the compared copy found, never a raw key.
+  it('leaves the copy count out of the folded header and says the compared copy state', () => {
+    mount({
+      open: false,
+      rows: [
+        row({
+          verdict: 'several',
+          copies: 2,
+          format: '',
+          comparable: false,
+          comparison: undefined,
+        }),
+        row({ id: 'rekordbox', name: 'rekordbox', verdict: 'even' }),
+      ],
+    })
+    const pill = screen.getByTestId('library-verdict')
+    expect(pill).toHaveAttribute('data-state', 'even')
+    expect(pill).toHaveTextContent(/^Ni mejor ni peor$/)
+  })
+
   // The rows lose their pills when the state goes up, so their reasons go up with it.
   it('joins every row reason in the shared header state', () => {
     mount({
