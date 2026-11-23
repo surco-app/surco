@@ -2,6 +2,7 @@ import { extname } from 'node:path'
 import {
   ByteVector,
   Id3v2AttachmentFrame,
+  type Id3v2CommentsFrame,
   type Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifier,
@@ -1228,6 +1229,22 @@ function setItunesText(apple: Mpeg4AppleTag, name: string, value: string): void 
   else apple.setItunesStrings('com.apple.iTunes', name)
 }
 
+// TagLib's comment setter takes every COMM frame for the comment: emptied, it removed them
+// all, iTunes' Sound Check (iTunNORM) and gapless counts (iTunSMPB, iTunPGAP) and another
+// player's own field with them, and with no plain comment to reuse it wrote the new one
+// over one of those. The comment is the COMM with no description, the one ffmpeg and the
+// DJ software read, so the described ones are set aside while `write` sets it.
+export function keepDescribedComments(f: TagFile, write: () => void): void {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const described =
+    id3
+      ?.getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+      .filter((frame) => frame.description) ?? []
+  for (const frame of described) id3?.removeFrame(frame)
+  write()
+  for (const frame of described) id3?.addFrame(frame)
+}
+
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
@@ -1415,7 +1432,9 @@ export function writeTags(
     tag.year = toYear(meta.year)
     tag.genres = toArray(meta.genre)
     tag.grouping = meta.grouping
-    tag.comment = meta.comment
+    keepDescribedComments(f, () => {
+      tag.comment = meta.comment
+    })
     tag.track = toTrackNumber(meta.trackNumber)
     tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInNumber(meta.trackNumber)
     tag.disc = toDiscNumber(meta.discNumber)
@@ -1498,13 +1517,18 @@ export function writeTags(
     // The foreign tags the user marked in the inspector: remove them by name. Covers
     // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
     // matches the name outright, or that the inspector lists by ffmpeg's name for it (a
-    // TSOP as artist-sort). Applies always, not just on clearExtras.
+    // TSOP as artist-sort, a described COMM by its description). Applies always, not just
+    // on clearExtras.
     for (const name of foreignRemoved) {
       setUserText(id3, name, '')
       const upper = name.toUpperCase()
       for (const fr of id3.frames.filter((frame) => {
         const id = frame.frameId.toString()
-        return id.toUpperCase() === upper || FFMPEG_ID3_TEXT_NAMES[id] === upper
+        return (
+          id.toUpperCase() === upper ||
+          FFMPEG_ID3_TEXT_NAMES[id] === upper ||
+          (id === 'COMM' && (frame as Id3v2CommentsFrame).description.toUpperCase() === upper)
+        )
       })) {
         id3.removeFrame(fr)
       }
