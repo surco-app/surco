@@ -13161,6 +13161,25 @@ describe('App metadata undo', () => {
 })
 
 describe('App reopen last session', () => {
+  // ⌘Q right after typing: the field holds the last keystrokes for a short pause before they
+  // reach the track, and the session written as the window goes away lost them.
+  it('saves the text still in a field’s typing pause when the window goes away', async () => {
+    const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      saveLastSessionSync,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.change(await screen.findByTestId('field-title'), {
+      target: { value: 'Hand Typed' },
+    })
+
+    window.dispatchEvent(new Event('pagehide'))
+
+    expect(saveLastSessionSync.mock.lastCall?.[1]['/music/a.wav']?.meta.title).toBe('Hand Typed')
+  })
+
   // The app opens empty every launch; someone cleaning the same downloads folder over
   // days re-imported it by hand every time. The launch offer restores the previous
   // list in one click — through the same expand pipeline as a drop, so media access
