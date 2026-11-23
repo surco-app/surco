@@ -1016,3 +1016,16 @@ describe('the track row shimmer stays on the compositor, so a long import does n
     expect(css).toMatch(/\.skeleton-sweep-row::after\s*\{[^}]*animation: none;[^}]*opacity: 0/)
   })
 })
+
+describe('the big figure size', () => {
+  it('tightens its tracking, since digits read too loose as they grow', () => {
+    const spacing = /--text-figure--letter-spacing:\s*(-[\d.]+)em/.exec(css)?.[1]
+    expect(Number(spacing)).toBeLessThan(0)
+  })
+})
+
+describe('the beside layout', () => {
+  it('puts labels beside their inputs once a column reaches 24rem', () => {
+    expect(css).toMatch(/@custom-variant beside \{\s*@container \(min-width: 24rem\)/)
+  })
+})
