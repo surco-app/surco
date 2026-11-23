@@ -128,6 +128,33 @@ node guide-shots.mjs [sectionId ...] [--lang es,en]  # /guia walkthrough
   NAS) and needs the network for the live search. The rekordbox scene runs on an APFS
   clone of this Mac's collection and never saves; conversions go to a throwaway profile.
 
+## Worst-case data (break-ui)
+
+The fixtures and captures behind the /break-ui passes over the list, the editor, the
+playlist tree, the filter bar, the zoom and a row carrying many marks. Build first; every
+script launches the `out/` of the tree it lives in, quietly, one app at a time.
+
+```bash
+cd apps/desktop/.claude/skills/run-desktop/worst-case
+node fixtures-list.mjs      # demo, worst (16 files: RTL, CJK, emoji, 2 h set…), one, big (1,000), marks
+node fixtures-editor.mjs    # editor, editor-demo: long tags, odd covers, multi-line comment, BPM 0
+node fixtures-traktor.mjs   # nml-*: 12,345 tracks, 9 levels deep, blank and Arabic names, 300 crates
+node shoot-list.mjs worst es dark 1080x620 1 1 normal
+node shoot-editor.mjs editor es dark 1080x620 all
+node shoot-tree.mjs nml-worst es dark 1080x620
+node shoot-filters.mjs worst de dark 1080x620
+node shoot-zoom.mjs editor worst es 1080x620 1,1.25,1.5,2
+node shoot-marks.mjs 1080x620
+```
+
+- Everything lands in `$WORST_DIR` (default `/tmp/surco-worst-case`): `fx/` the files,
+  `*shots/` the PNG and a JSON of what each capture measured (cut text, overflow, widths).
+- Leave a few seconds between two runs; launching apps back to back times out.
+- `shoot-zoom.mjs` captures through `capturePage`, since a Playwright screenshot of a zoomed
+  page is cropped. With `STEPS=6` it presses ⌘+ six times and records the window it grows to.
+- `shoot-marks.mjs` adds clones of a real mark to the first row: played, backup, matching
+  and replaced need a DJ program to appear, so the many-marks case is simulated.
+
 ## Memory load test (rekordbox)
 
 `soak.mjs` checks that the renderer's heap stays flat while a DJ works through a big rekordbox
