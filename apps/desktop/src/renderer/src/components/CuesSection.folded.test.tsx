@@ -208,6 +208,8 @@ describe('CuesSection folded', () => {
     const actions = screen.getByTestId('cues-folded-actions')
     expect(actions).toHaveAttribute('data-wrap', 'true')
     expect(actions).toContainElement(screen.getByTestId('cues-save'))
+    placeAtPlayhead()
+    expect(actions).toContainElement(screen.getByTestId('cues-step-back'))
   })
 
   it('draws both waves on one surface and a row with play, zoom, time and Guardar, with the flow control up in the header', async () => {
