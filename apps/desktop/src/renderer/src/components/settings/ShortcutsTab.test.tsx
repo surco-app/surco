@@ -210,3 +210,19 @@ describe('ShortcutsTab reset all', () => {
     )
   })
 })
+
+// The key box sizes itself to the longest thing it ever shows ("Press keys…" in the
+// current language), so it neither jumps when recording starts nor differs between a
+// short and a long chord. jsdom does not lay out, so the reserved text is what we check.
+describe('ShortcutsTab key box width', () => {
+  it('reserves the recording label on every key box, idle or recording', () => {
+    renderTab()
+    const recording = i18n.t('settings.shortcuts.recording')
+    const idle = screen.getByTestId('shortcut-record-play')
+    const other = screen.getByTestId('shortcut-record-find-replace')
+    expect(idle).toHaveAttribute('data-sizer', recording)
+    expect(other).toHaveAttribute('data-sizer', recording)
+    fireEvent.click(idle)
+    expect(screen.getByTestId('shortcut-record-play')).toHaveAttribute('data-sizer', recording)
+  })
+})
