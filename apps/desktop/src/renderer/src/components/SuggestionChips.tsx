@@ -209,17 +209,19 @@ export function SuggestionChips({
         // posible, el caso más ancho), invisible y fuera del flujo. Debe replicar las clases
         // de tamaño de los chips reales (borde, padding, fuente) o las medidas mienten.
         // Sin testids: duplicaría los selectores chip-* de los chips reales.
-        <span
-          ref={measureRef}
-          aria-hidden="true"
-          className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
-        >
-          {chips.map((s) => (
-            <span key={s} className="rounded-full border px-2 py-0.5 text-label">
-              {content(s)}
-            </span>
-          ))}
-          <span className="rounded-full border px-2 py-0.5 text-label">+{chips.length - 1}</span>
+        <span className="pointer-events-none absolute inset-0 overflow-hidden">
+          <span
+            ref={measureRef}
+            aria-hidden="true"
+            className="invisible absolute top-0 left-0 flex items-center gap-1.5 whitespace-nowrap"
+          >
+            {chips.map((s) => (
+              <span key={s} className="rounded-full border px-2 py-0.5 text-label">
+                {content(s)}
+              </span>
+            ))}
+            <span className="rounded-full border px-2 py-0.5 text-label">+{chips.length - 1}</span>
+          </span>
         </span>
       }
     </span>

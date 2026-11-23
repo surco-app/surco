@@ -248,4 +248,18 @@ describe('SuggestionChips', () => {
     )
     expect(within(screen.getByTestId('chip-شعبي')).getByText('شعبي')).toHaveAttribute('dir', 'auto')
   })
+
+  it('keeps the hidden measuring row from widening the editor, so the form never scrolls sideways', () => {
+    render(
+      <SuggestionChips
+        suggestions={['Techno; Detroit Techno; Electro; Minimal; Deep House; Acid', 'V-Pop']}
+        isOn={() => false}
+        onPick={() => {}}
+      />,
+    )
+    const row = screen.getByTestId('field-suggestions')
+    const measuring = row.querySelector('[aria-hidden="true"].invisible') as HTMLElement
+    expect(measuring.parentElement).not.toBe(row)
+    expect(measuring.parentElement).toHaveClass('overflow-hidden')
+  })
 })
