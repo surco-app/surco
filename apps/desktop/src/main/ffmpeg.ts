@@ -1182,8 +1182,11 @@ export function convertArgs(
   // campo propio borraba el VINYLCONDITION recién escrito.
   for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   // The M4A's content advisory rides -map_metadata 0 as `rating`, which every target
-  // format reads back as stars.
-  if (M4A_INPUT.test(input)) args.push('-metadata', 'rating=')
+  // format reads back as stars, and its file-type box as three tags naming a container the
+  // output is not.
+  if (M4A_INPUT.test(input))
+    for (const name of ['rating', 'major_brand', 'minor_version', 'compatible_brands'])
+      args.push('-metadata', `${name}=`)
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
