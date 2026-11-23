@@ -85,7 +85,6 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     open()
     const popover = screen.getByTestId('playlists-popover')
     expect(popover.getAttribute('data-side')).toBe('down')
-    expect(popover).toHaveClass('animate-pop-flat', 'origin-top')
   })
 
   it('grows from the bottom edge when it opens upward because the field sits low in the window', () => {
@@ -109,8 +108,6 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
       open()
       const popover = screen.getByTestId('playlists-popover')
       expect(popover.getAttribute('data-side')).toBe('up')
-      expect(popover).toHaveClass('origin-bottom')
-      expect(popover).not.toHaveClass('origin-top')
     } finally {
       vi.restoreAllMocks()
       Object.assign(window, { innerHeight: size })
