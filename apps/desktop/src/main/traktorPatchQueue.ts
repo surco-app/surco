@@ -4,6 +4,7 @@ import type { LibraryRepointResult } from './libraryRepointFlush'
 import type { RekordboxQueue } from './rekordboxQueue'
 import { entryStates, type NmlPatch, spareEditedEntries } from './traktorNml'
 import type { SyncResult } from './traktorNmlLibrary'
+import { traktorPathOf } from './traktorPlaylists'
 
 // A conversion's collection patch kept in the Traktor queue (traktor-cue-queue.json) when
 // the collection could not take it as the run ended: Traktor was open, or the write
@@ -30,6 +31,16 @@ export function queuedNmlPatch(patch: NmlPatch, entryState?: string): QueuedNmlP
     patch: cueTree ? { ...rest, cueTree: Buffer.from(cueTree).toString('base64') } : rest,
     ...(entryState === undefined ? {} : { entryState }),
   }
+}
+
+// The new files of the replacements among discarded patches, by the full path To review
+// keeps them under: a discarded relocation leaves the entry on the replaced file.
+export function discardedRelocations(queued: QueuedNmlPatch[], bootVolume: string): string[] {
+  return queued
+    .filter((q) => q.patch.relocates)
+    .map(({ patch: p }) =>
+      traktorPathOf(p.outputVolume ?? '', p.outputDir ?? '', p.outputFile ?? '', bootVolume),
+    )
 }
 
 const readCollection = (path: string): Promise<string | null> =>

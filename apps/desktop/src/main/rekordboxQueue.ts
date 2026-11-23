@@ -74,6 +74,8 @@ export interface QueueDeps<R extends QueuedRepoint = RekordboxRepoint> {
   // How a repoint for a file already waiting joins the one there; the later replaces it
   // otherwise.
   stack?: (earlier: R, later: R) => R
+  // The repoints a discard or a restore dropped: those moves are never written.
+  onDiscard?: (repoints: R[]) => void
 }
 
 export type QueueApply =
@@ -257,12 +259,14 @@ export function createRekordboxQueue<R extends QueuedRepoint = RekordboxRepoint>
   }
 
   const clear = (gone: CollectionQueue<R>[]): void => {
+    const dropped = gone.flatMap((q) => q.repoints)
     for (const q of gone) {
       q.repoints = []
       q.ops = []
       delete q.halted
     }
     save()
+    if (dropped.length > 0) deps.onDiscard?.(dropped)
   }
 
   const refused = (reason: RekordboxEditRefusal): QueueApply => ({ status: 'refused', reason })

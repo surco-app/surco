@@ -114,6 +114,7 @@ import {
   engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
+  discardLeftBehind,
   librariesKeepingOriginal,
   libraryUntouched,
   queueLeftBehind,
@@ -2639,5 +2640,18 @@ describe('queueLeftBehind', () => {
         ],
       ),
     ).toEqual([])
+  })
+})
+
+describe('discardLeftBehind', () => {
+  // A move the DJ discards from the queue never lands, so the program's entry stays on the
+  // replaced file and To review must not say it moved there.
+  it('names the new file of every replacement the discard drops, and nothing for a plain conversion', () => {
+    expect(
+      discardLeftBehind([
+        { from: '/m/a.mp3', to: '/m/a.flac', replaced: true },
+        { from: '/m/b.wav', to: '/m/b.flac' },
+      ]),
+    ).toEqual(['/m/a.flac'])
   })
 })
