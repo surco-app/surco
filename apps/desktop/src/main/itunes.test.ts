@@ -41,6 +41,17 @@ function mockStatuses(statuses: number[], body: unknown): ReturnType<typeof vi.f
   return fn
 }
 
+function mockStores(byCountry: Record<string, unknown>): ReturnType<typeof vi.fn> {
+  const fn = vi.fn(async (url: string) => ({
+    status: 200,
+    ok: true,
+    json: async () =>
+      byCountry[new URL(url).searchParams.get('country') ?? ''] ?? { resultCount: 0, results: [] },
+  }))
+  vi.stubGlobal('fetch', fn)
+  return fn
+}
+
 const reviveHit = {
   artistName: 'Revive DJs',
   trackName: 'Not So Bad (Radio Edit)',
@@ -198,6 +209,62 @@ describe('search', () => {
     expect(url.searchParams.get('country')).toBe('US')
   })
 
+  it('looks in the UK and then the US store when the system store has nothing, because singles like Darren Styles - Save Me are only sold in some stores', async () => {
+    const fetchMock = mockStores({ US: { resultCount: 1, results: [reviveHit] } })
+    const results = await search('Revive Bad Radio Edit')
+    expect(results.map((r) => r.id)).toEqual([6797715483])
+    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    expect(stores).toEqual(['ES', 'GB', 'US'])
+  })
+
+  it('prefers the exact version in another store over a looser query at home, because the mix in the title is what the user is looking for', async () => {
+    const savemeHit = {
+      artistName: 'Darren Styles',
+      trackName: 'Save Me (Extended Club Mix)',
+      collectionId: 1492464969,
+      collectionName: 'Save Me',
+    }
+    const skydivinHit = {
+      artistName: 'Darren Styles',
+      trackName: 'Save Me',
+      collectionId: 1426682480,
+      collectionName: "Skydivin'",
+    }
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        const params = new URL(url).searchParams
+        const exact = params.get('term')?.includes('Extended Club Mix')
+        const hits =
+          params.get('country') === 'GB' ? [savemeHit, skydivinHit] : exact ? [] : [skydivinHit]
+        return { status: 200, ok: true, json: async () => ({ resultCount: hits.length, results: hits }) }
+      }),
+    )
+    const results = await search('Darren Styles - Save Me (Extended Club Mix)', 'high', {
+      artist: 'Darren Styles',
+      title: 'Save Me (Extended Club Mix)',
+    })
+    expect(results.map((r) => r.id)).toEqual([1492464969])
+  })
+
+  it('keeps to the system store when it already has the release, so the other stores cost no requests', async () => {
+    const fetchMock = mockStores({
+      ES: { resultCount: 1, results: [reviveHit] },
+      GB: { resultCount: 1, results: [{ ...reviveHit, collectionId: 1 }] },
+    })
+    const results = await search('Revive So Bad EP')
+    expect(results.map((r) => r.id)).toEqual([6797715483])
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not ask the same store twice when the system store is one of the fallbacks', async () => {
+    locale.country = 'gb'
+    const fetchMock = mockStores({})
+    await search('nada en ninguna tienda gb')
+    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    expect(stores).toEqual(['GB', 'US'])
+  })
+
   it('returns the one release whose hits name every word, out of a page full of homonyms', async () => {
     mockFetch([{ resultCount: 3, results: [guettaHit, jacksonHit, reviveHit] }])
     const results = await search('Not So Bad Radio Edit')
@@ -329,11 +396,29 @@ describe('getRelease', () => {
   })
 
   it('fails instead of caching an empty release when Apple returns no album, so a lookup hiccup does not hide the release for good', async () => {
-    const fetchMock = mockFetch([{ resultCount: 0, results: [] }, reviveLookup])
+    const empty = { resultCount: 0, results: [] }
+    const fetchMock = mockFetch([empty, empty, empty, reviveLookup])
     await expect(getRelease(7)).rejects.toThrow(/^SURCO_ERR:itunesUnavailable/)
     const rel = await getRelease(7)
     expect(rel.title).toBe('Not So Bad - EP')
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+  })
+
+  it('loads an album sold only in another store from that store and links the row there, so a release found abroad opens instead of failing', async () => {
+    const fetchMock = mockStores({
+      GB: { ...reviveLookup, results: reviveLookup.results.map((r) => ({ ...r, collectionId: 43 })) },
+    })
+    const urls: (string | undefined)[] = []
+    const off = activity.subscribe((e) => urls.push(e.url))
+    try {
+      const rel = await getRelease(43)
+      expect(rel.title).toBe('Not So Bad - EP')
+    } finally {
+      off()
+    }
+    const stores = fetchMock.mock.calls.map((c) => new URL(c[0] as string).searchParams.get('country'))
+    expect(stores).toEqual(['ES', 'GB'])
+    expect(urls.at(-1)).toBe('https://music.apple.com/gb/album/43')
   })
 
   it('links the activity row to the album on Apple Music, so the user can open the release page', async () => {
