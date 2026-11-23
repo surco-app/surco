@@ -714,15 +714,13 @@ export function stayedRelocations(nml: string, patches: NmlPatch[], onDisk?: OnD
   const entries = findEntries(nml)
   const index = indexPatches(patches, entries, onDisk)
   const claimed = new Set<string>()
-  const matched = new Set<NmlPatch>()
   const moved = new Set<NmlPatch>()
   for (let i = entries.length - 1; i >= 0; i--) {
     const patch = matchPatch(entries[i], index)
     if (!patch?.relocates) continue
-    matched.add(patch)
     if (relocationFor(nml, entries, patch, entries[i], claimed)) moved.add(patch)
   }
-  return patches.filter((patch) => matched.has(patch) && !moved.has(patch))
+  return patches.filter((patch) => patch.relocates && !moved.has(patch))
 }
 
 export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk): string {

@@ -1683,6 +1683,12 @@ describe('a replace moves the entry whole', () => {
     expect(stayedRelocations(both, [patch])).toEqual([patch])
   })
 
+  it('names a replace Traktor has no entry for, so a track it never held is not left in its To review', () => {
+    const patch = replace({ cueShift: { shiftMs: 120 } })
+
+    expect(stayedRelocations(collect(NAS), [patch])).toEqual([patch])
+  })
+
   it('does not name a replace whose entry moved to the new file', () => {
     expect(stayedRelocations(NML_, [replace({ cueShift: { shiftMs: 120 } })])).toEqual([])
   })

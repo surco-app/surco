@@ -649,6 +649,16 @@ describe('syncCollection with a replace', () => {
     expect(result.stayed).toEqual([join(dir, 'new', 'here.aiff')])
   })
 
+  it('names the new file of a track the collection never held, so To review leaves Traktor out of it', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(nmlPath, withOld().replace('FILE="old.mp3"', 'FILE="another.mp3"'))
+    const result = await syncCollection(nmlPath, [replace('here.aiff')], session, BOOT)
+    expect(result.reason).toBe('no-matches')
+    expect(result.stayed).toEqual([join(dir, 'new', 'here.aiff')])
+  })
+
   it('says nothing stayed when the entry followed its new file', async () => {
     writeFileSync(join(dir, 'old.mp3'), 'old')
     mkdirSync(join(dir, 'new'))
