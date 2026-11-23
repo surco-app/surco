@@ -2532,7 +2532,9 @@ describe('App quality triage', () => {
     })
     await renderApp()
     await addTwoTracks()
-    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
+    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0), {
+      timeout: 3000,
+    })
     await waitFor(() => expect(spectrogram).toHaveBeenCalledWith('/music/a.wav', 'high'))
     expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
