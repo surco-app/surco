@@ -146,6 +146,7 @@ function MenuAction({
       type="button"
       role="menuitem"
       data-testid={testid}
+      data-destructive={danger ? 'true' : 'false'}
       disabled={disabled}
       onClick={onClick}
       aria-label={label}

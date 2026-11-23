@@ -245,6 +245,7 @@ export function ExportButton({
       <div
         key="up-to-date"
         data-testid="convert-up-to-date-row"
+        data-swapped={upToDateSwapped.current ? 'true' : 'false'}
         className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center ${narrow ? 'gap-2' : 'gap-3'}`}
       >
         <span
@@ -254,7 +255,13 @@ export function ExportButton({
           <span aria-hidden="true" className="text-good">
             ✓
           </span>
-          <span className={narrow ? 'sr-only' : undefined}>{tr('editor.upToDate')}</span>
+          <span
+            data-testid="convert-up-to-date-label"
+            data-narrow={narrow ? 'true' : 'false'}
+            className={narrow ? 'sr-only' : undefined}
+          >
+            {tr('editor.upToDate')}
+          </span>
         </span>
         <button
           type="button"

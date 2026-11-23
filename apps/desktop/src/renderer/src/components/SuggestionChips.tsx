@@ -130,6 +130,7 @@ export function SuggestionChips({
     <span
       ref={containerRef}
       data-testid={scope ? `field-suggestions-${scope}` : 'field-suggestions'}
+      data-expanded={showAll ? 'true' : 'false'}
       // Colapsada, la fila es UNA línea pase lo que pase: nowrap + overflow-hidden, y el
       // corte medido (useChipOverflow) decide cuántos chips entran dejando hueco al "+N" —
       // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y

@@ -186,6 +186,7 @@ export function FieldInsertMenu({
         ref={triggerRef}
         type="button"
         data-testid={`field-insert-${fieldName}`}
+        data-first-line={firstLine ? 'true' : 'false'}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={tr('editor.fieldActions')}
