@@ -682,3 +682,12 @@ describe('Field direction', () => {
     expect(screen.getByTestId('field-comment')).toHaveAttribute('dir', 'auto')
   })
 })
+
+describe('Field medium box', () => {
+  it('is wide enough for a hyphenated ISRC such as GB-HSP-26-00001, the longest value it is sized for', () => {
+    render(
+      <Field name="isrc" label="ISRC" value="GB-HSP-26-00001" onChange={vi.fn()} width="medium" />,
+    )
+    expect(screen.getByTestId('field-isrc').parentElement?.className).toContain('w-40')
+  })
+})

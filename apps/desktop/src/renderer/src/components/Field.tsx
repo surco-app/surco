@@ -22,7 +22,7 @@ const COMMIT_DEBOUNCE_MS = 200
 
 // Sized for the longest value each tag holds: "128.5" or "10A" in a short box, a hyphenated
 // ISRC in a medium one.
-const WIDTH_CLASS: Record<FieldWidth, string> = { short: 'w-[4.5rem]', medium: 'w-36' }
+const WIDTH_CLASS: Record<FieldWidth, string> = { short: 'w-[4.5rem]', medium: 'w-40' }
 
 interface FieldProps {
   name: string

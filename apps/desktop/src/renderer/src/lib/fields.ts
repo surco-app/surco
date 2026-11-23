@@ -35,7 +35,7 @@ export const FIELD_DEFS: FieldDef[] = [
   { key: 'discTotal', width: 'short' },
   { key: 'comment' },
   { key: 'bpm', width: 'short' },
-  { key: 'key', width: 'short' },
+  { key: 'key', width: 'medium' },
   { key: 'remixArtist' },
   { key: 'mixName' },
   { key: 'composer' },

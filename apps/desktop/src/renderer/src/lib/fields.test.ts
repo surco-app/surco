@@ -271,3 +271,9 @@ describe('the Playlists field of each library', () => {
     expect(labeledFields([], tr, ['engine']).some((f) => f.key === 'traktorPlaylists')).toBe(false)
   })
 })
+
+describe('bounded field widths', () => {
+  it('gives Key the room of a spelled-out key, since files from stores and other tools spell it out as "C# minor"', () => {
+    expect(FIELD_DEFS.find((d) => d.key === 'key')?.width).toBe('medium')
+  })
+})

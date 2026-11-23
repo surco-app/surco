@@ -250,7 +250,7 @@ describe('buildFieldSpecs (single mode)', () => {
     const width = (key: string) => specs.find((s) => s.key === key)?.width
     expect(width('year')).toBe('short')
     expect(width('bpm')).toBe('short')
-    expect(width('key')).toBe('short')
+    expect(width('key')).toBe('medium')
     expect(width('trackNumber')).toBe('short')
     expect(width('isrc')).toBe('medium')
     expect(width('title')).toBeUndefined()
