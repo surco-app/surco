@@ -47,7 +47,7 @@ import { currentAnalysisLane } from './analysisLane'
 import type { BeatGridFit, GridAuditRun } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
-import { automaticCueOffsetOfFiles } from './cueCalibration'
+import { automaticCueOffsetOfFiles, replacedCueOffsetOfFiles } from './cueCalibration'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -2270,7 +2270,7 @@ async function readReplaced(
     probeAudio(tmp)
       .then((p) => Number(p.sampleRate) || undefined)
       .catch(() => undefined),
-    automaticCueOffsetOfFiles(old, tmp).catch(() => 0),
+    replacedCueOffsetOfFiles(old, tmp).catch(() => 0),
     isSameFile(old, output)
       .then((same) => (same ? stat(old).then((s) => s.size) : undefined))
       .catch(() => undefined),

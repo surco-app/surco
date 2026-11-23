@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HOT_KINDS } from '../shared/cueRules'
+import { editableGridOf } from '../shared/gridEdit'
 import { hotCueColor } from '../shared/rekordboxCueColors'
 import { traktorContentId } from '../shared/traktorContent'
 import { readTraktorTrackCues, traktorEntryBlock } from './traktorCues'
@@ -78,6 +79,33 @@ describe('readTraktorTrackCues', () => {
     const read = readTraktorTrackCues(nml(entry([late])), ID)
     expect(read?.grid[0].ms).toBeCloseTo(62.5, 6)
     expect(read?.grid.find((b) => Math.abs(b.ms - 1000) < 0.001)?.beat).toBe(1)
+  })
+
+  // A DJ adds a grid marker where the tempo changes or the beat drifts, and Traktor plays the
+  // beats from each marker at its own tempo, the marker on a downbeat. Reading only the first
+  // one showed a single tempo past the second marker, so the cues Surco snapped there fell
+  // off the beats the DJ hears in Traktor.
+  it('lays the beats of each grid marker from where it sits, at its own tempo', () => {
+    const second =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="60000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2>'
+    const grid = readTraktorTrackCues(nml(entry([GRID, second])), ID)?.grid ?? []
+    const before = grid.filter((b) => b.ms < 60000)
+    const after = grid.filter((b) => b.ms >= 60000)
+    expect(before[0]).toEqual({ ms: 11.333358, beat: 1 })
+    expect(before[1].ms - before[0].ms).toBeCloseTo(468.75, 6)
+    expect(after[0]).toEqual({ ms: 60000, beat: 1 })
+    expect(after[1].ms - after[0].ms).toBeCloseTo(500, 6)
+    expect(after.slice(0, 5).map((b) => b.beat)).toEqual([1, 2, 3, 4, 1])
+    expect(after.at(-1)?.ms).toBeLessThanOrEqual(240000)
+  })
+
+  // Surco writes one marker back to Traktor: a grid with several is shown in zones, which the
+  // editor keeps locked for Traktor instead of saving a single tempo over the DJ's markers.
+  it('reads a grid with several markers as zones, so the editor does not offer it as one tempo', () => {
+    const second =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="60000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2>'
+    const grid = readTraktorTrackCues(nml(entry([GRID, second])), ID)?.grid ?? []
+    expect(editableGridOf(grid)?.zones?.length).toBeGreaterThan(0)
   })
 
   it('says a track Traktor never analysed has no grid, so Auto mark asks for the analysis', () => {

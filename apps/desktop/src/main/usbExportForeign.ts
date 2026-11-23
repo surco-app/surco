@@ -34,12 +34,15 @@ export function marksOnRekordboxClock(
   grid: { ms: number; beat: number }[],
   deltaMs: number,
 ): ExportMarks {
-  const moved = cues.map((c) => ({
-    inMs: Math.max(0, c.ms + deltaMs),
-    outMs: c.endMs === undefined ? -1 : Math.max(0, c.endMs + deltaMs),
-    kind: c.kind,
-    comment: c.name,
-  }))
+  const moved = cues.map((c) => {
+    const inMs = Math.max(0, c.ms + deltaMs)
+    return {
+      inMs,
+      outMs: c.endMs === undefined ? -1 : c.endMs + inMs - c.ms,
+      kind: c.kind,
+      comment: c.name,
+    }
+  })
   if (grid.length < 2) return { cues: moved, grid: [] }
   const bpm = (60000 * (grid.length - 1)) / (grid[grid.length - 1].ms - grid[0].ms)
   return {

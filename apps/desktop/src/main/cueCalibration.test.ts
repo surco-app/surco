@@ -4,7 +4,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { describe, expect, it } from 'vitest'
-import { automaticCueOffsetMs, automaticCueOffsetOfFiles } from './cueCalibration'
+import {
+  automaticCueOffsetMs,
+  automaticCueOffsetOfFiles,
+  replacedCueOffsetMs,
+  replacedCueOffsetOfFiles,
+} from './cueCalibration'
 import { leadingId3v2Size } from './id3Header'
 
 const FF = ffmpegStatic as unknown as string
@@ -78,6 +83,35 @@ describe('automatic Traktor codec cue calibration', () => {
 
   it('does not move PCM to PCM', () => {
     expect(automaticCueOffsetMs(null, null)).toBe(0)
+  })
+})
+
+// A replacement's shift is measured on ffmpeg's decodes of both files, so it already holds
+// every sample ffmpeg kept. Traktor draws ahead of that decode only what ffmpeg skipped: on
+// a header-less MP3 nothing, since ffmpeg keeps its encoder delay exactly as Traktor does.
+// Adding libmp3lame's delay there puts every cue 25 ms after the beat the DJ set.
+describe('replacedCueOffsetMs', () => {
+  it('adds nothing for a header-less MP3 replacing PCM, its delay being in the measured shift', () => {
+    expect(replacedCueOffsetMs(null, bare44)).toBe(0)
+  })
+
+  it('adds the Xing frame and delay ffmpeg skips on a tagged MP3 replacing PCM', () => {
+    expect(replacedCueOffsetMs(null, xing44)).toBeCloseTo(ms(XING_FRAME + ENCODER_DELAY, 44100))
+  })
+
+  it('takes off what ffmpeg skipped on the replaced MP3', () => {
+    expect(replacedCueOffsetMs(xing44, bare44)).toBeCloseTo(-ms(XING_FRAME + ENCODER_DELAY, 44100))
+    expect(replacedCueOffsetMs(xing44, xing48)).toBeCloseTo(
+      ms(XING_FRAME + ENCODER_DELAY, 48000) - ms(XING_FRAME + ENCODER_DELAY, 44100),
+    )
+  })
+
+  it('reads both files', async () => {
+    const wav = encode('replaced.wav', [])
+    const bare = encode('replacing-bare.mp3', ['-c:a', 'libmp3lame', '-write_xing', '0'])
+
+    expect(await replacedCueOffsetOfFiles(wav, bare)).toBe(0)
+    expect(await replacedCueOffsetOfFiles(bare, wav)).toBe(0)
   })
 })
 

@@ -67,3 +67,20 @@ export function automaticCueOffsetMs(source: Mp3Timing | null, output: Mp3Timing
 export async function automaticCueOffsetOfFiles(input: string, output: string): Promise<number> {
   return automaticCueOffsetMs(await mp3TimingOfFile(input), await mp3TimingOfFile(output))
 }
+
+// A replacement's shift is measured on ffmpeg's decodes of the replaced file and the new one,
+// so it already holds whatever delay ffmpeg kept. Traktor draws each file ahead of that
+// decode by what ffmpeg skipped alone, whoever encoded it.
+export function replacedCueOffsetMs(
+  replaced: Mp3Timing | null,
+  replacing: Mp3Timing | null,
+): number {
+  return skippedByFfmpegMs(replacing) - skippedByFfmpegMs(replaced)
+}
+
+export async function replacedCueOffsetOfFiles(
+  replaced: string,
+  replacing: string,
+): Promise<number> {
+  return replacedCueOffsetMs(await mp3TimingOfFile(replaced), await mp3TimingOfFile(replacing))
+}
