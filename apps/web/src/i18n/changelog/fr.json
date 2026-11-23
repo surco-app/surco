@@ -741,7 +741,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "Le grand éditeur de cues s’ouvre avec ⌘⇧C depuis le morceau sélectionné. Ses boutons du bas sont rangés par groupes, pads, CALL, grille et zoom, et « Effacer tous les cues » reste seul au bout. Le zoom s’approche jusqu’à une mesure, « Accepter et enregistrer » enregistre les propositions de « Marquage auto » dans ton logiciel DJ en un clic, et avec « Lettres dans l’ordre du morceau » un pad vide te dit quelle lettre aura le cue.",
+        "text": "Le grand éditeur de cues s’ouvre avec ⇧⌘C depuis le morceau sélectionné. Ses boutons du bas sont rangés par groupes, pads, CALL, grille et zoom, et « Effacer tous les cues » reste seul au bout. Le zoom s’approche jusqu’à une mesure, « Accepter et enregistrer » enregistre les propositions de « Marquage auto » dans ton logiciel DJ en un clic, et avec « Lettres dans l’ordre du morceau » un pad vide te dit quelle lettre aura le cue.",
         "in": "1.27.3"
       },
       {

@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analise.",
-            "text": "Abra a seção de qualidade de uma faixa, ou analise a fila toda com o botão da barra ou ⌘⇧A."
+            "text": "Abra a seção de qualidade de uma faixa, ou analise a fila toda com o botão da barra ou ⇧⌘A."
           },
           {
             "lead": "Leia o veredito.",
@@ -944,7 +944,7 @@
         "title": "Converta suas faixas",
         "s": "Uma faixa ou a fila toda, no formato que você escolher ou no dela.",
         "body": [
-          "⌘Enter converte a faixa selecionada e ⌘⇧Enter a fila toda, pulando o que já está pronto. Se você filtrou a lista, só se converte o que está à vista."
+          "⌘Enter converte a faixa selecionada e ⇧⌘Enter a fila toda, pulando o que já está pronto. Se você filtrou a lista, só se converte o que está à vista."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "Se a conversão muda o áudio de um original, o Surco guarda antes um backup. A marca na linha leva você de volta a ele.",
           "Com “Editar o original”, mudar de formato apaga o original.",
-          "Converter não busca nas suas fontes. Se quiser dados novos, rode antes Associar (⌘⇧D)."
+          "Converter não busca nas suas fontes. Se quiser dados novos, rode antes Associar (⇧⌘D)."
         ],
         "shot": "convertir-pt-BR.webp",
         "shotCaption": "O botão de converter com o seletor de formato."

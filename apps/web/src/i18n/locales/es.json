@@ -885,7 +885,7 @@
         "steps": [
           {
             "lead": "Analiza.",
-            "text": "Abre la sección de calidad de una pista, o analiza toda la cola con el botón de la barra o ⌘⇧A."
+            "text": "Abre la sección de calidad de una pista, o analiza toda la cola con el botón de la barra o ⇧⌘A."
           },
           {
             "lead": "Lee el veredicto.",
@@ -944,7 +944,7 @@
         "title": "Convierte tus pistas",
         "s": "Una pista o toda la cola, al formato que elijas o en el suyo propio.",
         "body": [
-          "⌘Enter convierte la pista seleccionada y ⌘⇧Enter toda la cola, saltándose lo que ya está hecho. Si has filtrado la lista, solo se convierte lo que ves."
+          "⌘Enter convierte la pista seleccionada y ⇧⌘Enter toda la cola, saltándose lo que ya está hecho. Si has filtrado la lista, solo se convierte lo que ves."
         ],
         "steps": [
           {
@@ -963,7 +963,7 @@
         "points": [
           "Si la conversión cambia el audio de un original, Surco guarda antes una copia. La marca de la fila te devuelve a él.",
           "Con «Editar el original», cambiar de formato elimina el original.",
-          "Convertir no busca en tus fuentes. Si quieres datos frescos, pasa antes Emparejar (⌘⇧D)."
+          "Convertir no busca en tus fuentes. Si quieres datos frescos, pasa antes Emparejar (⇧⌘D)."
         ],
         "shot": "convertir-es.webp",
         "shotCaption": "El botón de convertir con su selector de formato."

@@ -741,7 +741,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "The full cue editor opens with ⌘⇧C from the selected track. Its bottom buttons sit in groups, pads, CALL, grid and zoom, with “Clear all cues” alone at the end. The zoom closes in to a single bar, “Accept and save” saves the “Auto mark” suggestions to your DJ software in one click, and with “Letters in track order” an empty pad tells you which letter the cue will get.",
+        "text": "The full cue editor opens with ⇧⌘C from the selected track. Its bottom buttons sit in groups, pads, CALL, grid and zoom, with “Clear all cues” alone at the end. The zoom closes in to a single bar, “Accept and save” saves the “Auto mark” suggestions to your DJ software in one click, and with “Letters in track order” an empty pad tells you which letter the cue will get.",
         "in": "1.27.3"
       },
       {
