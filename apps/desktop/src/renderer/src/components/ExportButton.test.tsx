@@ -679,6 +679,13 @@ describe('ExportButton menu', () => {
     expect(hoverTooltip(button)).toBe('Update anyway')
   })
 
+  it('shows the convert shortcut on the up-to-date body, where it still works', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} tagsOnly sameFormat upToDate hint="⌘↩" />,
+    )
+    expect(hoverTooltip(screen.getByTestId('convert-update-anyway'))).toMatch(/⌘↩$/)
+  })
+
   it('dims the format half with the body when a held-back selection cannot convert, while its menu still opens since another format can unblock it', () => {
     render(<ExportButton {...baseProps} incomplete incompleteReason="Separate them" />)
     const toggle = screen.getByTestId('process-format-toggle')

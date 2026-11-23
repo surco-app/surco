@@ -1158,6 +1158,20 @@ describe('ConvertFooter batch verification', () => {
     })
   }
 
+  // The pill after a batch names the format the batch wrote (MP3 sources kept as MP3), so the
+  // ••• menu must not mark the AIFF the setting says instead.
+  it('marks in the done menu the one format the batch wrote, as the pill names it', () => {
+    render(
+      cloneElement(batchFooter({ ok: 2 }), {
+        format: 'aiff',
+        batchFormats: ['mp3'],
+      }),
+    )
+    fireEvent.click(screen.getByTestId('done-more'))
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
   it('the batch line counts verified and mismatched', () => {
     render(batchFooter({ ok: 38, mismatch: 2 }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(

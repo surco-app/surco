@@ -89,7 +89,9 @@ function setup({
   settings = {},
   actionsRef,
   profile = null,
+  platform = 'darwin',
 }: {
+  platform?: 'darwin' | 'win32'
   profile?: CueProfile | null
   read?: TrackCues
   words?: Uint16Array | null
@@ -98,6 +100,7 @@ function setup({
 } = {}) {
   const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
+    platform,
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
         ...read,
@@ -260,6 +263,13 @@ describe('Auto marcar', () => {
     fireEvent.click(screen.getByTestId('cues-flow-option-one-at-32'))
     expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/)).toHaveLength(2)
     expect(proposals()).toHaveLength(2)
+  })
+
+  it('names Enter on the accept button where the host has no Return glyph', async () => {
+    setup({ platform: 'win32' })
+    await ready()
+    await autoMark()
+    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and saveEnter$/)
   })
 
   // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark

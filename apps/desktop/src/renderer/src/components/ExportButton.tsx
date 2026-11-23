@@ -151,7 +151,7 @@ export function ExportButton({
   const formatLabel =
     outputFormat === 'source' ? tr('settings.formats.source') : outputFormat.toUpperCase()
 
-  // The dropdown half shows the chosen format. Every candidate is stacked in one grid cell
+  // The dropdown half shows the format the button writes (shownFormat). Every candidate is stacked in one grid cell
   // and only the chosen one is visible, so the half is as wide as the longest name in the
   // app's language and switching formats never moves either half.
   const shortName = (f: FormatSetting): string =>
@@ -252,7 +252,7 @@ export function ExportButton({
         key="up-to-date"
         data-testid="convert-up-to-date-row"
         data-swapped={upToDateSwapped.current ? 'true' : 'false'}
-        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center gap-3`}
+        className={`${upToDateSwapped.current ? 'animate-footer-swap ' : ''}flex h-10 items-center`}
       >
         {/* The normal split button's geometry with the accent fill swapped for an outline, so
           the footer keeps one shape and an edit only brings the fill back. */}
@@ -268,7 +268,7 @@ export function ExportButton({
               ✓
             </span>
             <span className="truncate">{tr('editor.updateAnyway')}</span>
-            <Tooltip label={tr('editor.updateAnyway')} hoverOnly />
+            <Tooltip label={tr('editor.updateAnyway')} hint={hint} hoverOnly />
           </button>
           <span id={upToDateId} data-testid="convert-up-to-date" className="sr-only">
             {tr('editor.upToDate')}

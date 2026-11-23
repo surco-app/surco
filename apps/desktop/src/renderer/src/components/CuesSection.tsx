@@ -371,10 +371,10 @@ function CueKeys({
     ['C', tr('editor.cues.keys.centre')],
     ['M', tr('editor.cues.keys.memory')],
     ['1…8', tr('editor.cues.keys.hot')],
-    ['↩', tr('editor.cues.keys.enter')],
+    [formatShortcut(['enter'], mac), tr('editor.cues.keys.enter')],
     [formatShortcut(['backspace'], mac), tr('editor.cues.keys.remove')],
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
-    [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
+    [formatShortcut(['mod', 'shift', 'z'], mac), tr('editor.cues.keys.redo')],
     [`${alt}← ${alt}→`, tr('editor.cues.keys.grid')],
     [`G ${shift}G`, tr('editor.cues.keys.pin')],
     ['+ −', tr('editor.cues.keys.zoom')],
@@ -1297,7 +1297,7 @@ function Editing({
         maximized ? 'h-8 w-8 rounded-lg' : 'h-6 w-6 rounded-md'
       }`}
     >
-      <Tooltip label={tr('editor.cues.undo')} hint="⌘Z" />
+      <Tooltip label={tr('editor.cues.undo')} hint={formatShortcut(['mod', 'z'], isMacOS())} />
       <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
@@ -1371,7 +1371,7 @@ function Editing({
           <Tooltip label={acceptLabel} />
           {tr('editor.cues.auto.acceptSave')}
           <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
-            ↩
+            {formatShortcut(['enter'], isMacOS())}
           </kbd>
         </button>
         <button

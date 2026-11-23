@@ -709,6 +709,31 @@ describe('CuesSection maximized', () => {
     expect(legend).toHaveTextContent('close the open menu')
   })
 
+  // ⌘ and the glyphs are mac-only: the list and the undo hint must spell the keys a Windows
+  // user actually has, with Ctrl first in the redo chord.
+  it('spells the key list and the undo hint for the host platform', async () => {
+    setup(null, READ, { platform: 'win32' })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    const legend = screen.getByTestId('cues-legend')
+    expect(legend).toHaveTextContent('Enter')
+    expect(legend).toHaveTextContent('Ctrl+Z')
+    expect(legend).toHaveTextContent('Ctrl+Shift+Z')
+    expect(legend).not.toHaveTextContent('⌘')
+    expect(legend).not.toHaveTextContent('↩')
+    expect(hoverTooltip(screen.getByTestId('cues-step-back'))).toMatch(/Ctrl\+Z$/)
+  })
+
+  it('writes the key list and the undo hint in Apple order on macOS', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    const legend = screen.getByTestId('cues-legend')
+    expect(legend).toHaveTextContent('⇧⌘Z')
+    expect(legend).toHaveTextContent('↩')
+    expect(hoverTooltip(screen.getByTestId('cues-step-back'))).toMatch(/⌘Z$/)
+  })
+
   it('closes the key list on Escape without restoring the full editor and gives the keys back to it', async () => {
     setup()
     await maximize()
