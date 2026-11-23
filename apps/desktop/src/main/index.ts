@@ -172,6 +172,7 @@ import {
   flushConversionBatch,
   type LibraryHost,
   librariesKeepingOriginal,
+  libraryUntouched,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
   repointEngineQueued,
@@ -246,6 +247,7 @@ import { seratoLibraryRoots } from './seratoLibrary'
 import { recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
+import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
 import {
   clearPreviousSession,
   loadLastSession,
@@ -506,8 +508,14 @@ const traktorReadPath = (): string =>
     }),
     existsSync,
   )
-const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
-  usedByAnyLibrary(path, titles, {
+const holdsInAnyLibrary = async (path: string, titles: string[]): Promise<boolean> => {
+  await settleSeratoRepoint(path, {
+    queue: programQueues.serato.queue,
+    serial: serialLibraryFlush,
+    isRunning: DJ_PROCESSES.serato.isRunning,
+    onApplied: programQueues.serato.announceApplied,
+  })
+  return usedByAnyLibrary(path, titles, {
     traktorRead: traktorReadPath,
     rootLibraries,
     ...(process.platform === 'darwin' && { musicEntries: musicReaders.entriesForFile }),
@@ -515,6 +523,7 @@ const holdsInAnyLibrary = (path: string, titles: string[]): Promise<boolean> =>
     fileLike: fileLikeForMusic,
     ...(process.platform === 'darwin' && { musicHolds: musicHoldsFile }),
   })
+}
 const traktorWritePath = (): string => {
   const path = getSettings().traktorNmlPath
   return path && existsSync(path) ? path : ''
@@ -549,6 +558,7 @@ const programQueues = {
         nodeStamps: async (collectionPath) => readNodeStamps(collectionPath),
         onChange: (state) =>
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'rekordbox', value: state }),
+        stack: stackRepoint,
       },
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {
@@ -639,7 +649,12 @@ const programQueues = {
             rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
           }),
-        repoint: async () => [],
+        repoint: (_library, list) =>
+          repointSerato(list, {
+            roots: seratoRoots,
+            backupDir: join(app.getPath('userData'), 'serato-backups'),
+            seratoOpen: DJ_PROCESSES.serato.isRunning,
+          }),
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
@@ -2471,7 +2486,7 @@ function registerIpc(): void {
     {
       rekordbox: {
         collectionPath: () => rekordboxCollectionPath() || null,
-        untouched: () => !getSettings().syncRekordbox,
+        untouched: () => libraryUntouched('rekordbox'),
         session: rekordboxSessionBackup,
         queue: rekordboxQueue,
         ensureClosed: (win) => ensureClosed('rekordbox', win, 'restore'),
@@ -2482,7 +2497,7 @@ function registerIpc(): void {
       },
       traktor: {
         collectionPath: () => traktorWritePath() || null,
-        untouched: () => !getSettings().syncTraktor,
+        untouched: () => libraryUntouched('traktor'),
         session: traktorSessionBackup,
         queue: traktorCueQueue,
         ensureClosed: (win) => ensureClosed('traktor', win, 'restore'),
@@ -2496,7 +2511,7 @@ function registerIpc(): void {
           const dir = engineLibraryPath()
           return dir ? engineDatabasePath(dir) : null
         },
-        untouched: () => !getSettings().syncEngineDj,
+        untouched: () => libraryUntouched('engine'),
         session: engineSessionBackup,
         queue: engineCueQueue,
         ensureClosed: (win) => ensureClosed('engine', win, 'restore'),
@@ -2507,7 +2522,7 @@ function registerIpc(): void {
       },
       virtualdj: {
         collectionPath: () => virtualdjCopyKey(virtualdjRoots()) || null,
-        untouched: () => !getSettings().syncVirtualdj,
+        untouched: () => libraryUntouched('virtualdj'),
         session: virtualdjSessionBackup,
         queue: virtualdjCueQueue,
         ensureClosed: (win) => ensureClosed('virtualdj', win, 'restore'),

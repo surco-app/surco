@@ -114,6 +114,7 @@ import {
   flushConversionBatch,
   type LibraryHost,
   librariesKeepingOriginal,
+  libraryUntouched,
   rekordboxFlushDeps,
   repointEngineQueued,
   SYNC_BLOCKED_KEY,
@@ -1033,6 +1034,100 @@ describe('flushConversionBatch with a converted track Serato does not have', () 
     await withRun(true, async () => {
       await flush(serato)
       expect(serato.enqueue).not.toHaveBeenCalled()
+    })
+  })
+
+  // Decided 22/11 (option A): Serato follows a replacement even though it costs the stars,
+  // because the old file is retired and Serato would otherwise lose the track and its cues.
+  describe('when a replacement lands', () => {
+    const MOVE = { from: '/m/a.mp3', to: '/m/a.flac', replaced: true }
+    async function replacing(
+      settings: { syncSerato: boolean; addToSerato: boolean },
+      extra: Record<string, unknown>,
+      run: (serato: ReturnType<typeof queue>) => Promise<void>,
+    ) {
+      Object.assign(REPOINTS[0], { replaced: true, ...extra })
+      Object.assign(SETTINGS, settings)
+      try {
+        await run(queue())
+      } finally {
+        for (const key of ['replaced', 'seratoCarryFailed', 'names']) {
+          delete (REPOINTS[0] as Record<string, unknown>)[key]
+        }
+        Object.assign(SETTINGS, { syncSerato: false, addToSerato: false })
+      }
+    }
+    const queue = () => ({
+      enqueue: vi.fn(),
+      applyQuietly: vi.fn(),
+      roots: () => seratoHome(['m/a.mp3']),
+    })
+
+    it('queues a Serato repoint for a replaced file Serato holds', async () => {
+      await replacing({ syncSerato: true, addToSerato: false }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+        expect(serato.applyQuietly).toHaveBeenCalled()
+      })
+    })
+
+    it('repoints Serato with only Add to Serato on, since the old file is retired either way', async () => {
+      await replacing({ syncSerato: false, addToSerato: true }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+      })
+    })
+
+    it('sends nothing but the repoint to Serato with only Add on, so Add never opens its tag writes', async () => {
+      await replacing(
+        { syncSerato: false, addToSerato: true },
+        { names: { title: { from: 'Old', to: 'New' } }, meta: { artist: 'J', title: 'P' } },
+        async (serato) => {
+          await flush(serato)
+          expect(serato.enqueue).toHaveBeenCalledWith([], [expect.objectContaining(MOVE)])
+        },
+      )
+      delete (REPOINTS[0] as Record<string, unknown>).meta
+    })
+
+    it('queues no move for a replaced file outside every Serato library, which Serato cannot hold', async () => {
+      await replacing({ syncSerato: true, addToSerato: true }, {}, async () => {
+        const serato = {
+          ...queue(),
+          roots: () => [{ dir: seratoHome([])[0].dir, root: '/Volumes/Other' }],
+        }
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      })
+    })
+
+    it('does not repoint Serato with both Sync and Add off', async () => {
+      await replacing({ syncSerato: false, addToSerato: false }, {}, async (serato) => {
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      })
+    })
+
+    it('does not repoint Serato for a plain conversion, which keeps its original instead', async () => {
+      Object.assign(SETTINGS, { syncSerato: true })
+      try {
+        const serato = queue()
+        await flush(serato)
+        expect(serato.enqueue).not.toHaveBeenCalled()
+      } finally {
+        Object.assign(SETTINGS, { syncSerato: false })
+      }
+    })
+
+    it('does not repoint Serato when the cues could not be carried into the new file, which would lose them', async () => {
+      await replacing(
+        { syncSerato: true, addToSerato: false },
+        { seratoCarryFailed: true },
+        async (serato) => {
+          await flush(serato)
+          expect(serato.enqueue).not.toHaveBeenCalled()
+        },
+      )
     })
   })
 })
@@ -2116,4 +2211,185 @@ describe('librariesKeepingOriginal', () => {
     expect(held).toEqual([])
     expect(FILE_USE.open).not.toHaveBeenCalled()
   })
+})
+
+// A replace asked for by the DJ with only Add to Traktor on still has to write the move,
+// otherwise the old entry is left on a file Surco is about to retire and loses its cues
+// and playlists. That permission is the conversion run's alone: every other Traktor write
+// (review renames, duplicate repoints, cue repairs) is Sync Traktor's, and a DJ who left it
+// off must find none of them in the collection. With both toggles off nothing is written.
+describe('Traktor writes with only Add to Traktor on', () => {
+  const relocating = {
+    volume: 'HD',
+    dir: '/:m/:',
+    file: 'old.mp3',
+    relocates: true as const,
+    outputVolume: 'HD',
+    outputDir: '/:m/:',
+    outputFile: 'new.flac',
+  }
+  const traktorQueue = () => ({
+    enqueue: vi.fn(),
+    applyQuietly: vi.fn(),
+    state: () => ({ tracks: 0, changes: 0, items: [] }),
+  })
+  async function addOnly(run: () => Promise<void>, found = true) {
+    Object.assign(SETTINGS, {
+      syncTraktor: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    STATUS.traktor = { enabled: false, found }
+    EFFECTS.length = 0
+    try {
+      await run()
+    } finally {
+      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
+      STATUS.traktor = { enabled: false, found: false }
+    }
+  }
+
+  it('writes the move a replace recorded', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).toContain('traktor sync')
+    })
+  })
+
+  it('drops what a conversion recorded while Sync Traktor was still on, keeping only moves', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch({
+        volume: 'HD',
+        dir: '/:m/:',
+        file: 'a.mp3',
+        tags: { title: { from: 'a', to: 'b' } },
+      })
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).not.toContain('traktor sync')
+    })
+  })
+
+  // A move that never reached the collection must not read as Traktor having nothing to
+  // do, or the check lets the old file go while the entry still points at it.
+  it('says Traktor failed when the collection is missing, instead of off', async () => {
+    await addOnly(async () => {
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(outcome.traktor).toBe('failed')
+    }, false)
+  })
+
+  it('holds the move for when the collection drive is back', async () => {
+    await addOnly(async () => {
+      Object.assign(SETTINGS, { traktorNmlPath: '/Volumes/Surco Desconectado/collection.nml' })
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      const traktor = traktorQueue()
+      const outcome = await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+        traktor,
+      })
+      expect(traktor.enqueue).toHaveBeenCalledWith(
+        [],
+        [expect.objectContaining({ patch: expect.objectContaining({ relocates: true }) })],
+      )
+      expect(outcome.traktor).toBe('queued')
+    }, false)
+  })
+
+  it('writes nothing once Add to Traktor is off too', async () => {
+    await addOnly(async () => {
+      Object.assign(SETTINGS, { addToTraktor: false })
+      beginNmlBatch()
+      recordNmlPatch(relocating)
+      await flushConversionBatch(host(), sessions, {
+        rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+      })
+      expect(EFFECTS).not.toContain('traktor sync')
+    })
+  })
+
+  it("never writes a review rename, since renames are Sync Traktor's to send", async () => {
+    await addOnly(async () => {
+      const traktor = traktorQueue()
+      const update = [{ path: '/m/a.flac', fields: { title: { from: 'a', to: 'b' } } }]
+      const result = await syncTagsInLibraries(
+        update,
+        host(),
+        sessions,
+        vi.fn(),
+        undefined,
+        undefined,
+        traktor,
+      )
+      expect(EFFECTS).not.toContain('traktor sync')
+      expect(traktor.enqueue).not.toHaveBeenCalled()
+      expect(result.traktor).toEqual({ outcome: 'nothing' })
+    })
+  })
+
+  it('leaves the shared Traktor permission closed for every other write', async () => {
+    await addOnly(async () => {
+      expect(traktorFlushDeps(host(), sessions.traktor).traktorNmlPath).toBe('')
+    })
+  })
+
+  it('writes nothing when the collection is not found', () => {
+    Object.assign(SETTINGS, {
+      syncTraktor: false,
+      addToTraktor: true,
+      traktorNmlPath: '/c/collection.nml',
+    })
+    STATUS.traktor = { enabled: true, found: false }
+    try {
+      expect(traktorFlushDeps(recordingHost().libraryHost, sessions.traktor).traktorNmlPath).toBe(
+        '',
+      )
+    } finally {
+      Object.assign(SETTINGS, { syncTraktor: false, addToTraktor: false, traktorNmlPath: '' })
+      STATUS.traktor = { enabled: false, found: false }
+    }
+  })
+})
+
+// The Copias screen shows a program Surco never writes as "untouched", a hint that its
+// copies cannot hold anything Surco did. Each Add toggle writes its library on its own
+// (Traktor: added tracks and replace moves; rekordbox and VirtualDJ: queued adds; Engine
+// DJ: tracks added to m.db), so calling it untouched would steer the DJ away from the copy
+// that undoes those writes.
+describe('libraryUntouched', () => {
+  it.each([
+    ['rekordbox', 'syncRekordbox', 'addToRekordbox'],
+    ['engine', 'syncEngineDj', 'addToEngineDj'],
+    ['traktor', 'syncTraktor', 'addToTraktor'],
+    ['virtualdj', 'syncVirtualdj', 'addToVirtualdj'],
+  ] as const)(
+    'counts %s as written whenever its Sync or Add toggle is on',
+    (program, sync, add) => {
+      const saved = { ...SETTINGS }
+      try {
+        for (const [synced, added, untouched] of [
+          [false, false, true],
+          [true, false, false],
+          [false, true, false],
+          [true, true, false],
+        ] as const) {
+          Object.assign(SETTINGS, { [sync]: synced, [add]: added })
+          expect(libraryUntouched(program)).toBe(untouched)
+        }
+      } finally {
+        Object.assign(SETTINGS, saved)
+      }
+    },
+  )
 })

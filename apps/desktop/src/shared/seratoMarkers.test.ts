@@ -4,13 +4,17 @@ import {
   markersFromGeob,
   readSeratoTempoMap,
   readSeratoTempoMapArmored,
+  retimedSeratoBeatGrid,
   retimedSeratoPayload,
+  retimedSeratoTempoMap,
   seratoArmored,
   seratoGeobBody,
   seratoPayloadOf,
   seratoV1Agrees,
   seratoV1CueTimes,
   seratoV1CueTimesArmored,
+  seratoV1Cues,
+  seratoV1CuesArmored,
   withSeratoCues,
 } from './seratoMarkers'
 import {
@@ -378,6 +382,109 @@ describe('readSeratoTempoMapArmored', () => {
   })
 })
 
+const tempoMapAt = (firstBeatSeconds: number, bpm: number) => {
+  const data = Uint8Array.from(PRAY_MP3_TEMPO)
+  new DataView(data.buffer).setFloat64(4, firstBeatSeconds)
+  new DataView(data.buffer).setFloat64(24, bpm)
+  return data
+}
+
+describe('retimedSeratoTempoMap', () => {
+  // The grid and the cues share Serato's clock: a copy whose audio starts later must move
+  // the first beat as far as the cues, or every beat lands beside the drop the DJ marked.
+  it('moves the first beat of a tempo map by the shift and keeps its BPM', () => {
+    const before = tempoMapAt(2.95, 128)
+    const moved = retimedSeratoTempoMap(before, 120)
+    expect(moved && readSeratoTempoMap(moved)).toEqual({
+      firstBeatMs: expect.closeTo(3070, 6),
+      bpm: 128,
+    })
+    expect(Array.from(moved?.subarray(12) ?? [])).toEqual(Array.from(before.subarray(12)))
+    expect(Array.from(before)).toEqual(Array.from(tempoMapAt(2.95, 128)))
+  })
+
+  // A trim can cut before the first beat: a negative position is not one Serato is known to
+  // read, and moving it by whole beats leaves every later beat exactly where it was.
+  it('moves a first beat pushed before the start forward by whole beats, keeping its phase', () => {
+    const moved = retimedSeratoTempoMap(tempoMapAt(0.05, 120), -120)
+    expect(moved && readSeratoTempoMap(moved)).toEqual({
+      firstBeatMs: expect.closeTo(430, 6),
+      bpm: 120,
+    })
+    const far = retimedSeratoTempoMap(tempoMapAt(0.05, 120), -1620)
+    expect(far && readSeratoTempoMap(far)?.firstBeatMs).toBeCloseTo(430, 6)
+  })
+
+  // Rewriting bytes Surco cannot read could hand Serato a grid it never wrote; leaving the
+  // grid out only makes Serato analyse the track again.
+  it('answers null for a tempo map shape that was never measured', () => {
+    const two = tempoMapAt(2.95, 128)
+    two[3] = 2
+    expect(retimedSeratoTempoMap(two, 120)).toBeNull()
+    expect(retimedSeratoTempoMap(new Uint8Array(), 120)).toBeNull()
+  })
+})
+
+const beatGrid = (markers: [number, number][], terminal: [number, number], footer = 0) => {
+  const data = new Uint8Array(6 + (markers.length + 1) * 8 + 1)
+  const view = new DataView(data.buffer)
+  data.set([1, 0])
+  view.setUint32(2, markers.length + 1)
+  markers.forEach(([seconds, beats], i) => {
+    view.setFloat32(6 + i * 8, seconds)
+    view.setUint32(10 + i * 8, beats)
+  })
+  view.setFloat32(6 + markers.length * 8, terminal[0])
+  view.setFloat32(10 + markers.length * 8, terminal[1])
+  data[data.length - 1] = footer
+  return data
+}
+const beatGridPositions = (data: Uint8Array | null) =>
+  data
+    ? Array.from({ length: new DataView(data.buffer).getUint32(2) }, (_, i) =>
+        new DataView(data.buffer).getFloat32(6 + i * 8),
+      )
+    : null
+
+describe('retimedSeratoBeatGrid', () => {
+  // Older Serato kept the grid as a list of markers, each on the same clock as the cues:
+  // all of them move, or the tempo changes the DJ marked fall between beats.
+  it('moves every marker of an old BeatGrid by the shift', () => {
+    const before = beatGrid([[1.5, 16]], [9.5, 128], 7)
+    const moved = retimedSeratoBeatGrid(before, 120)
+    expect(beatGridPositions(moved)).toEqual([expect.closeTo(1.62, 5), expect.closeTo(9.62, 5)])
+    const view = new DataView((moved as Uint8Array).buffer)
+    expect(view.getUint32(10)).toBe(16)
+    expect(view.getFloat32(18)).toBe(128)
+    expect(moved?.at(-1)).toBe(7)
+    expect(beatGridPositions(before)).toEqual([1.5, 9.5])
+  })
+
+  // A marker before the start has no audio to sit on; the grid after the next marker is
+  // still whole, so only the markers a trim cut away are left out.
+  it('leaves out the old BeatGrid markers a shift puts before the start', () => {
+    const moved = retimedSeratoBeatGrid(beatGrid([[0.05, 16]], [9.5, 128], 7), -120)
+    expect(beatGridPositions(moved)).toEqual([expect.closeTo(9.38, 5)])
+    expect(moved && new DataView(moved.buffer).getFloat32(10)).toBe(128)
+    expect(moved?.length).toBe(6 + 8 + 1)
+    expect(moved?.at(-1)).toBe(7)
+  })
+
+  it('answers null when the shift puts the last marker of an old BeatGrid before the start', () => {
+    expect(retimedSeratoBeatGrid(beatGrid([[0.05, 16]], [0.1, 128]), -120)).toBeNull()
+  })
+
+  it('answers null for an old BeatGrid it cannot read whole', () => {
+    const whole = beatGrid([[1.5, 16]], [9.5, 128])
+    expect(retimedSeratoBeatGrid(whole.subarray(0, whole.length - 1), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([...whole, 0]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([2, ...whole.subarray(1)]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(Uint8Array.from([1, 0, 0, 0, 0, 0, 0]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(beatGrid([], [Number.NaN, 128]), 120)).toBeNull()
+    expect(retimedSeratoBeatGrid(beatGrid([], [9.5, 0]), 120)).toBeNull()
+  })
+})
+
 const REAL_V1_ENTRY = '00000342067f7f7f7f7f007f7f7f7f7f063000000100'
 
 describe('seratoV1CueTimes', () => {
@@ -438,6 +545,56 @@ describe('seratoV1CueTimes', () => {
     expect(
       seratoV1Agrees(seratoV1CueTimesArmored(seratoV1Armored([3000, 6000, 9000])), clicks),
     ).toBe(false)
+  })
+})
+
+// A replaced MP3 or M4A whose old block disagrees shows that block's cues in Serato: they
+// are rebuilt from it, colours included, and a set loop Surco cannot place is told apart.
+describe('seratoV1Cues', () => {
+  it('reads the time and colour of each hot cue in a real MP3 old block', () => {
+    const block = Uint8Array.from(Buffer.from(`020500000001${REAL_V1_ENTRY}077f7f7f`, 'hex'))
+    expect(seratoV1Cues(block)).toEqual({
+      cues: [{ index: 0, ms: 57606, color: 0xcc0000, name: '' }],
+      loops: false,
+    })
+  })
+
+  it('keeps the pad of each cue past the empty slots and sees no loop in empty loop slots', () => {
+    expect(seratoV1Cues(seratoV1Block([null, 1000], 9))?.cues.map((c) => [c.index, c.ms])).toEqual([
+      [1, 1000],
+    ])
+    expect(seratoV1Cues(seratoV1Block([1000], 9))?.loops).toBe(false)
+  })
+
+  it('tells a set loop slot apart', () => {
+    const block = seratoV1Block([1000], 1)
+    block[6 + 5 * 22] = 0
+    expect(seratoV1Cues(block)?.loops).toBe(true)
+  })
+
+  it('cannot read a block whose cue times cannot be read', () => {
+    const garbled = seratoV1Block([57606])
+    garbled[7] = 0x80
+    expect(seratoV1Cues(garbled)).toBeNull()
+  })
+
+  it('reads the times and colours of a real M4A old block', () => {
+    const pray = seratoV1M4aArmored([...SERATO_V1_M4A_PRAY, ...Array(11).fill(SERATO_V1_M4A_UNSET)])
+    expect(seratoV1CuesArmored(pray)).toEqual({
+      cues: [
+        { index: 0, ms: 7444, color: 0xcc0000, name: '' },
+        { index: 1, ms: 12756, color: 0xcc8800, name: '' },
+        { index: 2, ms: 19019, color: 0x0000cc, name: '' },
+      ],
+      loops: false,
+    })
+  })
+
+  it('tells a set loop slot apart in an M4A old block', () => {
+    const loop = `000003e8000007d000ffffffff00cc00000300`
+    expect(
+      seratoV1CuesArmored(seratoV1M4aArmored([...Array(5).fill(SERATO_V1_M4A_UNSET), loop]))?.loops,
+    ).toBe(true)
   })
 })
 

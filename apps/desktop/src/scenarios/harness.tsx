@@ -1028,6 +1028,8 @@ function scenarioApi(
     trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
     retireSuperseded: (path, titles) => invokeMain('shell:retireSuperseded', path, titles),
+    // Only the log line saying why an old file was kept; there is no main log to write to.
+    logInfo: () => {},
     properties: (path) => invokeMain('audio:properties', path),
     readTags: (path) => invokeMain('audio:tags', path),
     readCoverFull: (path) => invokeMain('audio:coverFull', path),

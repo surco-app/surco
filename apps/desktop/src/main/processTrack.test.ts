@@ -3802,6 +3802,40 @@ describe('runProcessTrack — checking what it wrote', () => {
     expect(entry.music).toBeUndefined()
   })
 
+  // With only Add to Traktor on, a replace still moves the old entry in collection.nml, and
+  // the old file must not be retired until Traktor is seen to follow: if the move was refused
+  // (the new path already has its own entry, an unknown volume, Traktor open and its queue
+  // discarded) the old entry still points at that file, and retiring it loses the track with
+  // its cues and playlists. A plain conversion writes nothing to Traktor there, so it waits
+  // on nothing.
+  it('waits on Traktor for a replace when only Add to Traktor is on', async () => {
+    const run = async (replacesPath?: string) => {
+      const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+      const deps = makeDeps({
+        settings: settings({
+          syncTraktor: false,
+          addToTraktor: true,
+          traktorNmlPath: '/t/collection.nml',
+        }),
+        registerVerification,
+      })
+      const result = await runProcessTrack(
+        job({ meta, ...(replacesPath && { replacesPath }) }),
+        deps,
+      )
+      return {
+        places: registerVerification.mock.calls[0][0].places,
+        checked: result.verification?.checks.map((c) => c.place),
+      }
+    }
+    const replace = await run('/m/old.mp3')
+    expect(replace.places.has('traktor')).toBe(true)
+    expect(replace.checked).toContain('traktor')
+    const plain = await run()
+    expect(plain.places.has('traktor')).toBe(false)
+    expect(plain.checked).not.toContain('traktor')
+  })
+
   // A source no library has was never touched there: listing it would leave a place
   // "checking" that nothing will ever answer for. One that could not be read is kept,
   // or a locked database would pass for a track the library does not have.
@@ -4723,5 +4757,42 @@ describe('runProcessTrack — a library that does not follow the rename', () => 
     await runProcessTrack(job({ outputName: 'song', format: 'wav' }), deps)
 
     expect(deps.librariesKeepingOriginal).not.toHaveBeenCalled()
+  })
+})
+
+describe('runProcessTrack — replacement shift', () => {
+  const withShift = (replaceShift?: { moved: number }) =>
+    makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async () => ({
+        normalizeSkipped: false,
+        written: { ...written, ...(replaceShift ? { replaceShift } : {}) },
+      })),
+    })
+
+  // The "To review" list can only tell the DJ which replaced tracks moved if the measured
+  // shift survives the trip from the converter to the renderer.
+  it('hands the measured shift of a replacement to the renderer', async () => {
+    const result = await runProcessTrack(
+      job({ replacesPath: '/m/old.mp3' }),
+      withShift({ moved: 120 }),
+    )
+    expect(result.replaceShift).toEqual({ moved: 120 })
+  })
+
+  // Apple Music only returns early with a different shape; losing the shift there would
+  // hide exactly the replacements the DJ filed straight into Music.
+  it('hands it back on an Apple Music only replacement too', async () => {
+    const deps = withShift({ moved: 120 })
+    deps.settings = settings({ addToAppleMusic: true, keepOutputCopy: false })
+    deps.platform = 'darwin'
+    const result = await runProcessTrack(job({ replacesPath: '/m/old.mp3' }), deps)
+    expect(result.addedToMusicOnly).toBe(true)
+    expect(result.replaceShift).toEqual({ moved: 120 })
+  })
+
+  // An ordinary conversion replaced nothing, so it must not look like a measured one.
+  it('says nothing about a shift on an ordinary conversion', async () => {
+    const result = await runProcessTrack(job(), withShift())
+    expect('replaceShift' in result).toBe(false)
   })
 })

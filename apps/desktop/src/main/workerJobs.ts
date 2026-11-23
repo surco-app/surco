@@ -1,4 +1,5 @@
 import { type TasteTrack, type TunedTaste, tuneDropTaste } from '../shared/dropTaste'
+import type { ReplaceShift } from '../shared/replaceShift'
 import type { BpmResult, KeyResult, TrackCues, TrackMetadata } from '../shared/types'
 import { auditGrid, type BeatGridFit, fitBeatGrid, type GridAuditRun } from './beatGrid'
 import { type FullScan, killScansFor, runChannelScan } from './channelScan'
@@ -13,10 +14,11 @@ import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { versionMatch } from './pairLag'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
+import { type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
-import { carrySeratoCues, setSeratoMarkers } from './seratoTags'
+import { carrySeratoCues, type SeratoCarryOutcome, setSeratoMarkers } from './seratoTags'
 import {
   type FieldWrite,
   heldComment,
@@ -148,6 +150,8 @@ export type WorkerJob =
       trimMs: number
       carry: boolean
       strip: boolean
+      shiftMs: number
+      fallback?: { source: string; trimMs: number }
     }
   | { type: 'genreFrame'; file: string }
   | { type: 'setGenreFrame'; file: string; changes: TagFieldChange[] }
@@ -159,6 +163,7 @@ export type WorkerJob =
   // The self-check's cover and M4A numbers, read beside that snapshot.
   | { type: 'verifyTagExtras'; file: string }
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
+  | { type: 'replaceShift'; head: ReplaceWindow | null; tail: ReplaceWindow | null }
 
 export type WorkerJobResult =
   | Record<string, TrackCues | null>
@@ -181,7 +186,8 @@ export type WorkerJobResult =
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
-  | null
+  | SeratoCarryOutcome
+  | ReplaceShift
 
 export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJobResult> {
   switch (job.type) {
@@ -240,6 +246,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return versionMatch(job.a, job.b, job.reachSec)
     case 'shelf':
       return bandEnergiesDb(job.pcm, job.sampleRate)
+    case 'replaceShift':
+      return replaceShiftOf(job.head, job.tail)
     case 'clicks':
       return detectClicks(job.pcm, job.sampleRate)
     case 'waveformPeaks':
@@ -277,7 +285,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       setSeratoMarkers(job.file, job.payload)
       return null
     case 'carrySeratoCues':
-      return carrySeratoCues(job.source, job.dest, job).then(() => null)
+      return carrySeratoCues(job.source, job.dest, job)
     case 'genreFrame':
       return readGenreFrame(job.file)
     case 'setGenreFrame':

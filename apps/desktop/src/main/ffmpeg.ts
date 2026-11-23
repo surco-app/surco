@@ -13,6 +13,7 @@ import { DEFAULT_DECLICK, declickCacheSuffix, declickFilter } from '../shared/de
 import { errorWithKey } from '../shared/errorKeys'
 import { forcedInputArgs } from '../shared/inputFormat'
 import { formatRatingTag, starsToRating, starsToWmpRating } from '../shared/rating'
+import type { ReplaceShift } from '../shared/replaceShift'
 import { MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
 import { trimFilter } from '../shared/trim'
 import type {
@@ -101,6 +102,7 @@ import {
 import { discardBackup, keepOriginal } from './originalKeeper'
 import {
   bestLag,
+  correlationAt,
   PAIR_MIN_SECONDS,
   PAIR_RATE,
   PAIR_SILENT_RMS,
@@ -112,7 +114,16 @@ import { rekordboxMetaFrom } from './rekordboxMetadata'
 import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
+import { traktorReplaceShift } from './replaceCueShift'
+import {
+  REPLACE_HEAD_AT_SECONDS,
+  REPLACE_REACH_SECONDS,
+  REPLACE_TAIL_BEFORE_END_SECONDS,
+  REPLACE_WINDOW_SECONDS,
+  type ReplaceWindow,
+} from './replaceShiftMeasure'
 import { carryRiffChunks } from './riffCarry'
+import type { SeratoCarryOutcome } from './seratoTags'
 import { getSettings } from './settings'
 import { createSharedScan } from './sharedScan'
 import { readTagFormats } from './tagFormats'
@@ -1849,6 +1860,13 @@ function assertNotTruncated(file: string, stderr: string, stdout: string): void 
   )
 }
 
+// Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
+// rather than a NaN that would silently drop every cue at shiftTraktorCues.
+function traktorCueOffsetMs(): number {
+  const configured = Number(getSettings().traktorCueOffsetMs)
+  return Number.isFinite(configured) ? configured : 0
+}
+
 // The cue re-anchoring a trim demands, in Traktor's millisecond units: positions
 // move back by the head cut and clamp to the trimmed length when the tail was
 // cut too. The tempo rides along for the grid marker, whose phase can't be
@@ -1871,10 +1889,7 @@ function cueShiftFor(
   bpm: string,
   codecCueOffsetMs: number,
 ): CueShift | undefined {
-  // Free-text in the UI, so a blank or garbage value has to read as "no adjustment"
-  // rather than a NaN that would silently drop every cue at shiftTraktorCues.
-  const configured = Number(getSettings().traktorCueOffsetMs)
-  const userOffsetMs = Number.isFinite(configured) ? configured : 0
+  const userOffsetMs = traktorCueOffsetMs()
   const trimmed = active && trim !== undefined
   if (!trimmed && userOffsetMs === 0 && codecCueOffsetMs === 0) return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
@@ -2016,6 +2031,11 @@ export async function holdUnderCeiling(
 // ENTRY pointed at the file Traktor still knows, with that file's own cues: the
 // output location below is what lets applyPatches send the shifted tree only to
 // an ENTRY that describes the converted file.
+//
+// A replace (replaces) is the other case: the entry Traktor has is the replaced
+// copy's, so the patch addresses that path and relocates it whole onto the output.
+// It carries no cue tree and no download-to-output shift, since the entry's own
+// cues are the ones that count.
 const NML_NAMES = ['title', 'artist', 'album', 'genre'] as const
 
 function changedNames(before: TrackMetadata, after: TrackMetadata): NmlPatch['tags'] {
@@ -2028,6 +2048,14 @@ function changedNames(before: TrackMetadata, after: TrackMetadata): NmlPatch['ta
   return Object.keys(changes).length > 0 ? changes : undefined
 }
 
+// Only a shift that moves something is recorded for a replace, so a zero leaves the entry's
+// CUE_V2 byte for byte as they were.
+function replacedCueShift(shift: CueShift): NmlPatch['cueShift'] {
+  return shift.shiftMs !== 0 || shift.maxMs !== undefined
+    ? { shiftMs: shift.shiftMs, maxMs: shift.maxMs }
+    : undefined
+}
+
 function recordConversionPatch(
   input: string,
   output: string,
@@ -2036,17 +2064,41 @@ function recordConversionPatch(
   clearedExtras: boolean,
   cueShift: CueShift | undefined,
   namesBefore: TrackMetadata | undefined,
+  replaces?: { path: string; cueShift: CueShift },
 ): void {
   // Both have to hold: the toggle is the permission and the path is the address. Checking
   // only the path would keep recording patches for a sync the user has switched off, and
   // reading a cue tree per track is not free.
-  if (!getSettings().syncTraktor || !getSettings().traktorNmlPath) return
+  if (!getSettings().traktorNmlPath) return
+  // With Sync Traktor off the collection is only written for a replace under Add to
+  // Traktor, where the DJ asked for the swap: the entry moves with the file, and nothing
+  // else (stars, names, covers, cues) is synced.
+  const syncing = getSettings().syncTraktor
+  if (!syncing && !(replaces && getSettings().addToTraktor)) return
   try {
-    const { volume, dir, file } = toNmlLocation(input)
+    // A replace is addressed to the file it supersedes: that is the path Traktor has, while
+    // the download it was converted from is a file the collection never saw.
+    const { volume, dir, file } = toNmlLocation(replaces?.path ?? input)
     // Where Traktor would address the output. Compared against the source below, this is
     // what separates a conversion whose source survives from a substitution.
     const outputLocation = toNmlLocation(output)
     const outputName = basename(output)
+    if (!syncing && replaces) {
+      recordNmlPatch(
+        {
+          volume,
+          dir,
+          file,
+          relocates: true,
+          outputVolume: outputLocation.volume,
+          outputDir: outputLocation.dir,
+          outputFile: outputLocation.file,
+          cueShift: replacedCueShift(replaces.cueShift),
+        },
+        { input, output },
+      )
+      return
+    }
     const sameDir = dirname(input) === dirname(output)
     // meta.bpm is user-editable free text; empty or non-numeric must come out as
     // undefined; a NaN would pass around looking like a value and only fail
@@ -2058,9 +2110,15 @@ function recordConversionPatch(
         volume,
         dir,
         file,
-        newFile: sameDir && outputName !== file ? outputName : undefined,
-        cueTree: readCueTree(output) ?? undefined,
-        cueShift: cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
+        // A replace moves the whole entry (relocates) so newFile stays out of it. Its cues
+        // are the entry's own: the tag on the output and the download-to-output shift
+        // describe a different pair of files, so neither is sent.
+        newFile: !replaces && sameDir && outputName !== file ? outputName : undefined,
+        relocates: replaces ? true : undefined,
+        cueTree: replaces ? undefined : (readCueTree(output) ?? undefined),
+        cueShift: replaces
+          ? replacedCueShift(replaces.cueShift)
+          : cueShift && { shiftMs: cueShift.shiftMs, maxMs: cueShift.maxMs },
         bpm,
         // Traktor reads a library track's stars from the collection, not the file, so
         // writing the POPM byte alone left the DJ looking at the ENTRY's stale RANKING —
@@ -2160,6 +2218,9 @@ export interface ConversionWritten {
   // The output as it stood when its decode was proven, and the length that decode
   // delivered: a check that finds the same bytes needs no decode of its own.
   proven?: DecodeProof
+  // How far a replacement moved the audio against the file it replaces, present exactly
+  // when the conversion replaced one.
+  replaceShift?: ReplaceShift
 }
 
 export interface DecodeProof {
@@ -2172,6 +2233,38 @@ export interface DecodeProof {
 }
 
 const SERATO_FLAC_MARKERS = 'SERATO_MARKERS_V2'
+
+// What the programs need of the replaced file next to the measured shift: where rekordbox
+// places its first sample (at the rate sourceRate would use), the replacement's real rate,
+// the codec offset Traktor adds, and the old size when the new file lands on its path.
+// A read that fails leaves its neutral value: none of them may cost the conversion.
+async function readReplaced(
+  old: string,
+  tmp: string,
+  output: string,
+): Promise<{ oldShiftMs: number; newRate?: number; codecMs: number; oldBytes?: number }> {
+  const oldRate = [old, output].some((f) => extname(f).toLowerCase() === '.m4a')
+    ? await probeAudio(old)
+        .then((p) => Number(p.sampleRate) || 44100)
+        .catch(() => 44100)
+    : 44100
+  const [oldShiftMs, newRate, codecMs, oldBytes] = await Promise.all([
+    rekordboxShiftOfFile(old, oldRate).catch(() => 0),
+    probeAudio(tmp)
+      .then((p) => Number(p.sampleRate) || undefined)
+      .catch(() => undefined),
+    automaticCueOffsetOfFiles(old, tmp).catch(() => 0),
+    isSameFile(old, output)
+      .then((same) => (same ? stat(old).then((s) => s.size) : undefined))
+      .catch(() => undefined),
+  ])
+  return {
+    oldShiftMs,
+    codecMs,
+    ...(newRate ? { newRate } : {}),
+    ...(oldBytes !== undefined ? { oldBytes } : {}),
+  }
+}
 
 export async function convertAudio(
   input: string,
@@ -2312,6 +2405,7 @@ export async function convertAudio(
   let originalKept = false
   let codecCueOffsetMs = 0
   let seratoAnalysisKept = false
+  let replaceShift: ReplaceShift | undefined
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2595,17 +2689,54 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
+    let seratoCarryFailed = false
     const carrySerato =
       !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
-    if (carrySerato || !seratoAnalysisKept)
-      await runInWorker({
+    // Measured once, on the temp's finished audio and before the rename can land on the
+    // replaced file's path, and handed to every program. The decodes run in ffmpeg and the
+    // correlation in the worker; a cancel kills them, any other failure moves nothing.
+    if (replacesPath) {
+      const measuringShift = new AbortController()
+      const watchShiftCancel = setInterval(() => {
+        if (isCancelled?.()) measuringShift.abort()
+      }, CANCEL_POLL_MS)
+      try {
+        replaceShift = await measureReplaceShift(replacesPath, tmp, measuringShift.signal)
+      } catch (err) {
+        if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+        log.warn(`replace shift not measured for ${basename(output)}: ${err}`)
+        replaceShift = { unmoved: 'unreadable' }
+      } finally {
+        clearInterval(watchShiftCancel)
+      }
+      if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+    }
+    // A replacement's download never was in Serato: the cues the DJ set live in the file it
+    // replaces, so they come from there. The trim is not taken off them: the measure of the
+    // shift is taken on the finished file, which already includes it.
+    const replaceCueShiftMs = replaceShift && 'moved' in replaceShift ? replaceShift.moved : 0
+    const inputTrimMs = trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0
+    // A replacement always runs it: with the carry off it still has to say whether the
+    // replaced file held Serato data the copy now lacks.
+    if (carrySerato || !seratoAnalysisKept || replacesPath)
+      await runInWorker<SeratoCarryOutcome>({
         type: 'carrySeratoCues',
-        source: input,
+        source: replacesPath ?? input,
         dest: tmp,
-        trimMs: trimAf !== undefined ? Math.round((trim?.startSec ?? 0) * 1000) : 0,
+        trimMs: replacesPath ? 0 : inputTrimMs,
+        ...(replacesPath ? { fallback: { source: input, trimMs: inputTrimMs } } : {}),
         carry: carrySerato,
         strip: !seratoAnalysisKept,
-      }).catch((err) => log.warn(`Serato cues not carried to ${basename(output)}: ${err}`))
+        shiftMs: replacesPath ? replaceCueShiftMs : 0,
+      })
+        .then((outcome) => {
+          if (outcome === 'clock-unmeasured')
+            log.warn(`Serato cues not carried to ${basename(output)}: ${outcome}`)
+        })
+        .catch((err) => {
+          log.warn(`Serato cues not carried to ${basename(output)}: ${err}`)
+          if (replacesPath) seratoCarryFailed = true
+        })
     // Last touch before the rename so the header rides the same atomic landing.
     // Only when there's a cover to show — the header exists solely for Finder's
     // thumbnail, so a coverless (or cover-removed) FLAC stays fully standard.
@@ -2649,7 +2780,10 @@ export async function convertAudio(
       if (isCancelled?.()) measuring.abort()
     }, CANCEL_POLL_MS)
     const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
-    const countSamples = trimAf !== undefined || !!plan.sampleRateHz
+    // A replacement is counted too: Engine DJ's row still holds the replaced file's length,
+    // and only the new file's own count says how long it is (another master can be seconds
+    // longer or shorter), or Surco's own scan would later read the row as damaged.
+    const countSamples = trimAf !== undefined || !!plan.sampleRateHz || !!replacesPath
     const measures = [
       proveDecodable(
         tmp,
@@ -2695,6 +2829,9 @@ export async function convertAudio(
       : 44100
     const sourceShiftMs = await rekordboxShiftOfFile(input, sourceRate)
     const outputShiftMs = await rekordboxShiftOfFile(tmp, plan.sampleRateHz ?? sourceRate)
+    // The replaced file's side of the shift, read before the rename because the new file can
+    // land on its path. Each read that fails leaves its neutral value.
+    const replaced = replacesPath ? await readReplaced(replacesPath, tmp, output) : undefined
     // rekordbox's timeline follows the stream it decodes, so kept samples never move in it
     // (ALAC↔WAV measured 31/10), the same rule the self-check holds the analysis to.
     const rekordboxAudio = samplesKept
@@ -2742,6 +2879,9 @@ export async function convertAudio(
     // attach a debugger to: when a user reports "another program is using the file",
     // these lines are the whole evidence — whether the destination was still held,
     // by how many attempts, and whether it ever freed.
+    const replaceTraktorShift: CueShift = replaceShift
+      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0, traktorCueOffsetMs())
+      : { shiftMs: 0 }
     await renameWithRetry(tmp, output, {
       onRetry: ({ attempt, code, waitMs, path }) =>
         log.warn(
@@ -2767,6 +2907,7 @@ export async function convertAudio(
       clearExtras ?? false,
       cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
       namesBefore,
+      replacesPath ? { path: replacesPath, cueShift: replaceTraktorShift } : undefined,
     )
     // rekordbox indexes by path too, and unlike Traktor it stores the whole path in one
     // column, so the entry can follow the file even into another folder. Recorded here
@@ -2775,10 +2916,25 @@ export async function convertAudio(
       replaces: replacesPath,
       meta: rekordboxMetaFrom(meta),
       audio: rekordboxAudio,
-      fromBytes,
+      ...(replaced
+        ? {
+            replaceShift,
+            replaceAudio: {
+              oldShiftMs: replaced.oldShiftMs,
+              newShiftMs: outputShiftMs,
+              ...(replaced.newRate ? { sampleRateHz: replaced.newRate } : {}),
+              ...(sampleCount ? { sampleCount } : {}),
+            },
+          }
+        : {}),
+      fromBytes: replaced?.oldBytes ?? fromBytes,
       names: namesBefore && changedNames(namesBefore, meta),
     })
-    if (repoint) recordRekordboxRepoint(repoint)
+    if (repoint)
+      recordRekordboxRepoint({
+        ...repoint,
+        ...(seratoCarryFailed ? { seratoCarryFailed: true as const } : {}),
+      })
   } catch (e) {
     // The original was copied for a rename that never landed, so it is still on its own
     // path and the copy in Originals is a duplicate of a file nothing replaced.
@@ -2832,6 +2988,7 @@ export async function convertAudio(
       },
       ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
       ...(proven ? { proven } : {}),
+      ...(replaceShift ? { replaceShift } : {}),
       trimmedSec: trimAf !== undefined ? Math.max(0, trim?.startSec ?? 0) + cutTail : 0,
     },
   }
@@ -3454,15 +3611,8 @@ export async function headOffsetMs(
   const lag = bestLag(cur, orig, 0, Math.round(maxSec * PAIR_RATE))
   if (lag === null || lag < 0) return null
   const end = Math.min(HEAD_WINDOW_SECONDS * PAIR_RATE, cur.length, orig.length - lag)
-  let xx = 0
-  let yy = 0
-  let xy = 0
-  for (let i = 0; i < end; i++) {
-    xx += cur[i] * cur[i]
-    yy += orig[i + lag] * orig[i + lag]
-    xy += cur[i] * orig[i + lag]
-  }
-  if (xx === 0 || yy === 0 || xy / Math.sqrt(xx * yy) < HEAD_SAME_CORRELATION) return null
+  const correlation = correlationAt(cur, 0, orig, lag, end)
+  if (correlation === null || correlation < HEAD_SAME_CORRELATION) return null
   return (lag / PAIR_RATE) * 1000
 }
 
@@ -3507,6 +3657,93 @@ async function versionCorrelation(
   } catch {
     return undefined
   }
+}
+
+const REPLACE_OLD_SLACK_SAMPLES = 441
+
+// Decodes one window of a file at exact-sample precision, zero-padded or cut to `samples`
+// where `from` falls before the start or the file ends early. Padding is only for the new
+// file: the old window keeps its real length when it is clearly short, so a short one is seen as short.
+async function decodeReplaceWindow(
+  input: string,
+  from: number,
+  samples: number,
+  pad: boolean,
+  signal?: AbortSignal,
+): Promise<Float32Array> {
+  const lead = Math.max(0, Math.round(-from * PAIR_RATE))
+  const decoded = await decodePcm(input, {
+    sampleRate: PAIR_RATE,
+    startSec: Math.max(0, from),
+    seconds: (samples - lead) / PAIR_RATE,
+    maxBufferMb: 8,
+    exactStart: true,
+    signal,
+  })
+  if (!pad) {
+    // ffmpeg's -t can land a few samples short of what it implies, and a length that is off by
+    // one would make every window read as "cut short" and the measure silently give up. A gap
+    // under REPLACE_OLD_SLACK_SAMPLES is rounding and is zero-padded; a bigger one is a short track.
+    const out = new Float32Array(
+      decoded.length >= samples - REPLACE_OLD_SLACK_SAMPLES ? samples : decoded.length,
+    )
+    out.set(decoded.subarray(0, out.length))
+    return out
+  }
+  const out = new Float32Array(samples)
+  out.set(decoded.subarray(0, samples - lead), lead)
+  return out
+}
+
+// How far a replacement moved the audio against the file it replaces: head and tail
+// windows of both are decoded in parallel by ffmpeg and the correlation runs in the worker,
+// since a 2^21-point FFT on the main process blocks it past 100 ms. A measurement that fails
+// never throws, only a cancel does. A cancel kills every ffmpeg of the measurement; a failed
+// decode does not stop the others, which all settle before it answers.
+export async function measureReplaceShift(
+  old: string,
+  current: string,
+  signal?: AbortSignal,
+): Promise<ReplaceShift> {
+  signal?.throwIfAborted()
+  const duration = await probeDuration(old, signal)
+  signal?.throwIfAborted()
+  if (duration === null) return { unmoved: 'unreadable' }
+  const width = REPLACE_WINDOW_SECONDS * PAIR_RATE
+  const wide = width + 2 * REPLACE_REACH_SECONDS * PAIR_RATE
+  const headAt = REPLACE_HEAD_AT_SECONDS
+  const tailAt = duration - REPLACE_TAIL_BEFORE_END_SECONDS - REPLACE_WINDOW_SECONDS
+  const tailWanted = tailAt >= headAt + REPLACE_WINDOW_SECONDS
+  const windowAt = (t: number) => ({
+    old: decodeReplaceWindow(old, t, width, false, signal),
+    new: decodeReplaceWindow(current, t - REPLACE_REACH_SECONDS, wide, true, signal),
+  })
+  const head = windowAt(headAt)
+  const tail = tailWanted ? windowAt(tailAt) : null
+  const settled = await Promise.allSettled([
+    head.old,
+    head.new,
+    ...(tail ? [tail.old, tail.new] : []),
+  ])
+  signal?.throwIfAborted()
+  const [headOld, headNew, tailOld, tailNew] = settled
+  if (headOld.status === 'rejected' || (tailOld && tailOld.status === 'rejected')) {
+    return { unmoved: 'unreadable' }
+  }
+  const windowOf = (
+    o: PromiseSettledResult<Float32Array> | undefined,
+    n: PromiseSettledResult<Float32Array> | undefined,
+  ): ReplaceWindow | null =>
+    o?.status === 'fulfilled' && n?.status === 'fulfilled' ? { old: o.value, new: n.value } : null
+  const headWindow = windowOf(headOld, headNew)
+  const tailWindow = windowOf(tailOld, tailNew)
+  const transfer = [headWindow, tailWindow].flatMap((w) =>
+    w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
+  )
+  return await runInWorker<ReplaceShift>(
+    { type: 'replaceShift', head: headWindow, tail: tailWindow },
+    transfer,
+  )
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
@@ -3719,13 +3956,20 @@ async function decodePcm(
     seconds?: number
     maxBufferMb: number
     signal?: AbortSignal
+    exactStart?: boolean
   },
 ): Promise<Float32Array> {
   const args = ['-hide_banner', '-loglevel', 'error']
+  const seekAfterInput = opts.exactStart === true
   // Input seek (-ss before -i): ffmpeg jumps straight to the window instead of
-  // decoding its way there — what keeps the zoomed re-decode interactive.
-  if (opts.startSec !== undefined && opts.startSec > 0) args.push('-ss', String(opts.startSec))
+  // decoding its way there — what keeps the zoomed re-decode interactive. With
+  // exactStart it goes after -i instead: ffmpeg decodes from the top and discards, which
+  // lands on the sample even where a VBR MP3's header seeks to the wrong frame.
+  if (!seekAfterInput && opts.startSec !== undefined && opts.startSec > 0)
+    args.push('-ss', String(opts.startSec))
   args.push(...forcedInputArgs(input), '-i', input)
+  if (seekAfterInput && opts.startSec !== undefined && opts.startSec > 0)
+    args.push('-ss', String(opts.startSec))
   if (opts.seconds !== undefined) args.push('-t', String(opts.seconds))
   // Cap the downmix matrix at unity gain. ffmpeg's mono downmix is power-preserving,
   // so two correlated channels come back ×√2 (+3.01 dB) — and every threshold

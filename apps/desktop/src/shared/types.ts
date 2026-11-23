@@ -3,6 +3,7 @@ import type { CueFlow, FlowPhrase, PhraseSection } from './cueFlows'
 import type { CueGridTolerance } from './cueGrid'
 import type { CueJumpBars } from './cueJump'
 import type { CueQuantize } from './cueQuantize'
+import type { ReplaceShift } from './replaceShift'
 import type { StrongPart, WantedCue } from './cueRules'
 import type { DjProgram, LibraryProgram, UsbProgram, WritableProgram } from './djProgram'
 import type { EditorSectionPref } from './editorSections'
@@ -1500,6 +1501,9 @@ export interface ProcessResult {
   // The replaced Apple Music entry kept the " [surco-replacing]" mark in its name: Music
   // could not be asked to take it off, so the DJ has to.
   musicNameLeftMarked?: true
+  // How far the audio of a replacement moved against the file it replaced, measured by
+  // the conversion. Absent on an ordinary conversion. Kept by the "To review" list.
+  replaceShift?: ReplaceShift
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

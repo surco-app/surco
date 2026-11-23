@@ -190,7 +190,7 @@ describe('View menu list waves', () => {
 describe('View menu playlist numbers', () => {
   it('ticks the numbers only while they are shown and toggles them through the command', () => {
     const { template, run } = build()
-    const item = itemFor(menu(template, 'View'), 'Show Playlist Numbers')
+    const item = itemFor(menu(template, 'View'), 'Show Numbers')
     expect(item.type).toBe('checkbox')
     expect(item.checked).toBe(false)
     click(item)

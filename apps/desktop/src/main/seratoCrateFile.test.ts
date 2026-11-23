@@ -10,10 +10,15 @@ import {
   seratoPathOn,
   seratoRootOf,
   validCrateName,
+  withCrateTrackRepointed,
   withCrateTracks,
 } from './seratoCrateFile'
 import { concat, frame, utf16be } from './seratoDatabaseFixture'
 
+const present = <T>(value: T | null | undefined): T => {
+  if (value === null || value === undefined) throw new Error('expected a value')
+  return value
+}
 const DIR = 'Users/vicent/Music/Serato Pruebas/Medida Q'
 const Q_XING = `${DIR}/Q mp3 Xing.mp3`
 const Q_WAV = `${DIR}/Q wav.wav`
@@ -142,5 +147,46 @@ describe('serato crate files', () => {
     expect(parseSeratoLinkId('1:%E0%A4%A:a.mp3')).toBeNull()
     expect(parseSeratoLinkId('7')).toBeNull()
     expect(parseSeratoLinkId(`0:${encodeURIComponent(file)}:`)).toBeNull()
+  })
+})
+
+describe('withCrateTrackRepointed', () => {
+  // DJs order crates by hand, so a replaced file must take the old one's place, not go to the end.
+  it('points the crate at the new file in the same position, since DJs order crates by hand', () => {
+    const out = present(withCrateTrackRepointed(MEDIDA_Q, Q_XING, `${DIR}/Q mp3 Xing.aiff`))
+    expect(crateTrackPaths(out)).toEqual([
+      `${DIR}/Q mp3 Xing.aiff`,
+      ...present(crateTrackPaths(MEDIDA_Q)).slice(1),
+    ])
+    expect(out.subarray(0, COLUMNS_END)).toEqual(HEAD)
+  })
+
+  it('keeps the decomposed form the crate stored the path in', () => {
+    const nfd = `${DIR}/Canción.mp3`.normalize('NFD')
+    const crate = concat([HEAD, otrk(nfd)])
+    const out = present(
+      withCrateTrackRepointed(
+        crate,
+        `${DIR}/Canción.mp3`.normalize('NFC'),
+        `${DIR}/Canción.wav`.normalize('NFC'),
+      ),
+    )
+    expect(crateTrackPaths(out)).toEqual([`${DIR}/Canción.wav`.normalize('NFD')])
+  })
+
+  // A crate can list the same file twice; an entry left on the old path is a dead row once
+  // the replaced file is retired.
+  it('points every entry of the replaced file at the new one', () => {
+    const crate = concat([HEAD, otrk(Q_XING), otrk(Q_WAV), otrk(Q_XING)])
+    const out = present(withCrateTrackRepointed(crate, Q_XING, `${DIR}/Q mp3 Xing.aiff`))
+    expect(crateTrackPaths(out)).toEqual([
+      `${DIR}/Q mp3 Xing.aiff`,
+      Q_WAV,
+      `${DIR}/Q mp3 Xing.aiff`,
+    ])
+  })
+
+  it('answers null for a crate without the file', () => {
+    expect(withCrateTrackRepointed(MEDIDA_Q, `${DIR}/absent.mp3`, `${DIR}/absent.wav`)).toBeNull()
   })
 })

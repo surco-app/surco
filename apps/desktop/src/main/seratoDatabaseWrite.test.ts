@@ -8,6 +8,7 @@ import {
   seratoFileType,
   withSeratoTrackAdded,
   withSeratoTrackFields,
+  withSeratoTrackRepointed,
 } from './seratoDatabaseWrite'
 
 const PRAY_PFIL = 'Users/vicent/Music/Serato Pruebas/Pray.aiff'
@@ -193,5 +194,98 @@ describe('seratoFileType', () => {
     ['a.ogg', null],
   ])('types %s as %s', (path, type) => {
     expect(seratoFileType(path)).toBe(type)
+  })
+})
+
+describe('withSeratoTrackRepointed', () => {
+  const MP3_PFIL = 'Users/vicent/Music/other.mp3'
+  const fieldsOf = (db: Uint8Array, at: number) =>
+    entryFrames(present(entries(db)[at]).body).map((f) => ({ tag: f.tag, raw: f.raw }))
+  const textOf = (db: Uint8Array, at: number, tag: string) =>
+    new TextDecoder('utf-16be').decode(
+      present(entryFrames(present(entries(db)[at]).body).find((f) => f.tag === tag)).body,
+    )
+
+  // Serato keeps BPM, key, added date and plays across the re-import only because they ride in
+  // database V2 (measured 04/11): a rewrite that lost any of them would cost more than the stars.
+  it('changes only the path and the type, leaving tbpm, tkey, uadd and utpc as they were', () => {
+    const db = concat([VRSN, REAL_ENTRY])
+    const out = present(
+      withSeratoTrackRepointed(db, PRAY_PFIL, 'Users/vicent/Music/Serato Pruebas/Pray.flac'),
+    )
+    const before = fieldsOf(db, 0)
+    const after = fieldsOf(out, 0)
+    expect(after.map((f) => f.tag)).toEqual(before.map((f) => f.tag))
+    for (const [i, f] of before.entries()) {
+      if (f.tag === 'pfil' || f.tag === 'ttyp') continue
+      expect(after[i].raw).toEqual(f.raw)
+    }
+    expect(textOf(out, 0, 'pfil')).toBe('Users/vicent/Music/Serato Pruebas/Pray.flac')
+    expect(out.subarray(0, VRSN.length)).toEqual(VRSN)
+  })
+
+  // Serato decides how to read the file from ttyp, so a path that says .wav under 'mp3' would
+  // import as a broken track.
+  it('writes the new type Serato expects when the format changes', () => {
+    const out = present(
+      withSeratoTrackRepointed(
+        concat([VRSN, OTHER_ENTRY]),
+        MP3_PFIL,
+        'Users/vicent/Music/other.wav',
+      ),
+    )
+    expect(textOf(out, 0, 'ttyp')).toBe('wave')
+    expect(textOf(out, 0, 'pfil')).toBe('Users/vicent/Music/other.wav')
+  })
+
+  it('keeps the type bytes when the format is the same', () => {
+    const db = concat([VRSN, OTHER_ENTRY])
+    const out = present(withSeratoTrackRepointed(db, MP3_PFIL, 'Users/vicent/Music/renamed.mp3'))
+    expect(fieldsOf(out, 0)[0]).toEqual(fieldsOf(db, 0)[0])
+  })
+
+  // Serato matches paths byte for byte after its own normalization: rewriting an NFD entry in NFC
+  // would make it look like a different file and Serato would drop it as missing.
+  it('keeps the decomposed form the database stored the path in', () => {
+    const nfd = 'Users/vicent/Música/Canción.mp3'.normalize('NFD')
+    const db = concat([VRSN, track({ ttyp: 'mp3', pfil: nfd, tsng: 'x' })])
+    const out = present(
+      withSeratoTrackRepointed(
+        db,
+        'Users/vicent/Música/Canción.mp3'.normalize('NFC'),
+        'Users/vicent/Música/Canción.wav'.normalize('NFC'),
+      ),
+    )
+    expect(textOf(out, 0, 'pfil')).toBe('Users/vicent/Música/Canción.wav'.normalize('NFD'))
+  })
+
+  it('keeps the composed form when the database stored it composed', () => {
+    const nfc = 'Users/vicent/Música/Canción.mp3'.normalize('NFC')
+    const db = concat([VRSN, track({ ttyp: 'mp3', pfil: nfc })])
+    const out = present(
+      withSeratoTrackRepointed(db, nfc, 'Users/vicent/Música/Canción.wav'.normalize('NFD')),
+    )
+    expect(textOf(out, 0, 'pfil')).toBe('Users/vicent/Música/Canción.wav'.normalize('NFC'))
+  })
+
+  it('leaves every other track untouched', () => {
+    const db = concat([VRSN, OTHER_ENTRY, REAL_ENTRY, OTHER_ENTRY])
+    const out = present(
+      withSeratoTrackRepointed(db, PRAY_PFIL, 'Users/vicent/Music/Serato Pruebas/Pray.wav'),
+    )
+    const before = entries(db)
+    const after = entries(out)
+    expect(after).toHaveLength(3)
+    expect(after[0].raw).toEqual(before[0].raw)
+    expect(after[2].raw).toEqual(before[2].raw)
+    expect(after[1].raw).not.toEqual(before[1].raw)
+  })
+
+  it('answers null for a path the database does not hold', () => {
+    expect(withSeratoTrackRepointed(concat([VRSN, REAL_ENTRY]), 'nope.mp3', 'nope.wav')).toBeNull()
+  })
+
+  it('answers null for a database it cannot read whole', () => {
+    expect(withSeratoTrackRepointed(Uint8Array.from([1, 2, 3]), PRAY_PFIL, 'a.wav')).toBeNull()
   })
 })

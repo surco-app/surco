@@ -4,7 +4,7 @@ import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY, traktorKey } from '../shared/traktor
 import type { PlaylistAddReport, PlaylistTrackRef, RekordboxEditRefusal } from '../shared/types'
 import type { RekordboxMeta } from './rekordboxMetadata'
 import { type EditOp, type OpOutcome, opRank, type TrackOp } from './rekordboxQueueOps'
-import { attr, escapeAttr, withAttr } from './traktorNml'
+import { escapeAttr, volumeOf, withAttr } from './traktorNml'
 import {
   type ModelNode,
   type ModelRow,
@@ -294,27 +294,6 @@ function locationOf(path: string): { volume: string | null; dir: string; file: s
   const parts = rest.split(/[\\/]/).filter(Boolean)
   const file = parts.pop() ?? ''
   return { volume, dir: `/:${parts.map((p) => `${p}/:`).join('')}`, file }
-}
-
-function volumeOf(
-  nml: string,
-  volume: string | null,
-  bootVolume: string,
-): { volume: string; id: string } | null {
-  const collection = nml.match(/<COLLECTION\b[^>]*>[\s\S]*?<\/COLLECTION>/)?.[0] ?? ''
-  for (const [tag] of collection.matchAll(/<LOCATION\b[^>]*>/g)) {
-    const name = attr(tag, 'VOLUME')
-    const id = attr(tag, 'VOLUMEID')
-    if (!id) continue
-    const same =
-      volume === null
-        ? name === '' || name === bootVolume
-        : /^[A-Za-z]:$/.test(volume)
-          ? name.toUpperCase() === volume.toUpperCase()
-          : name.normalize('NFC') === volume.normalize('NFC')
-    if (same) return { volume: name, id }
-  }
-  return null
 }
 
 function attrs(pairs: [string, string][]): string {
