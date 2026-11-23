@@ -1,6 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
 import type React from 'react'
 import {
   createContext,
+  useCallback,
   useContext,
   useDeferredValue,
   useEffect,
@@ -15,6 +17,7 @@ import {
   type ReviewFilter,
   useMusicReview,
 } from '../hooks/useMusicReview'
+import { rereadTrackFileQueries } from '../hooks/useTrackCues'
 import type { ReviewSource } from '../lib/reviewSource'
 import {
   MusicReview,
@@ -95,7 +98,11 @@ function Owner({
   filter,
   ...options
 }: Options & { onChange: (r: Review | null) => void }) {
-  const review = useMusicReview({ initialFilter: filter, ...options })
+  const client = useQueryClient()
+  const onLibrariesRepointed = useCallback(() => {
+    rereadTrackFileQueries(client)
+  }, [client])
+  const review = useMusicReview({ initialFilter: filter, ...options, onLibrariesRepointed })
   const { setFilter } = review
   useEffect(() => setFilter(filter), [filter, setFilter])
   useLayoutEffect(() => onChange(review), [review, onChange])

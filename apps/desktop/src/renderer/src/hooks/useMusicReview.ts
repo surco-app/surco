@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CueProgram, ReadOnlyProgram } from '../../../shared/djProgram'
+import { type CueProgram, type ReadOnlyProgram, WRITABLE_PROGRAMS } from '../../../shared/djProgram'
 import type {
   DamageFinding,
   DamageKind,
@@ -276,12 +276,14 @@ export function useMusicReview({
   ignored,
   saveIgnored,
   onFilesChanged,
+  onLibrariesRepointed,
 }: {
   source?: ReviewSource
   initialFilter: ReviewFilter
   ignored: string[]
   saveIgnored: (keys: string[]) => void
   onFilesChanged: (updates: ReviewedFileUpdate[]) => void
+  onLibrariesRepointed?: () => void
 }): MusicReview {
   const { t } = useTranslation()
   const { reportUndo } = useToast()
@@ -734,6 +736,12 @@ export function useMusicReview({
           onCheckingMusic: () => setPhase({ name: 'checking-music' }),
         })
       const { removed, replaced } = removal
+      if (
+        replaced.some((r) =>
+          WRITABLE_PROGRAMS.some((p) => r[p] === 'repointed' || r[p] === 'replaced'),
+        )
+      )
+        onLibrariesRepointed?.()
       if (updates.length && !librariesPhase) setPhase({ name: 'libraries' })
       let librarySync: ReviewRun['librarySync'] = removal.replaceFailed ? 'failed' : 'none'
       let tagSync: LibraryTagSyncReport | undefined
@@ -803,6 +811,7 @@ export function useMusicReview({
     load,
     scanDamage,
     onFilesChanged,
+    onLibrariesRepointed,
     fill,
     source,
   ])

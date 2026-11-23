@@ -839,6 +839,45 @@ describe('useMusicReview', () => {
       expect(result.current.status).toBe('done')
       expect(result.current.lastRun).toMatchObject({ librarySync: 'failed', replaced: [] })
     })
+
+    // The kept copy now sits under the content id the removed one had: the open cue editor
+    // must stop drawing the removed file, or the DJ places cues against audio they won't play.
+    it.each(['repointed', 'replaced'] as const)(
+      'asks for the cue editor’s file reads again once a library entry is %s onto the kept copy',
+      async (outcome) => {
+        setApi({
+          loadMusicReview: vi.fn().mockResolvedValue(THREE),
+          removeMusicDuplicate: vi.fn().mockResolvedValue(removedWith('/m/q.aiff')),
+          replaceDuplicatesInLibraries: vi
+            .fn()
+            .mockResolvedValue([
+              { from: '/m/q.aiff', fileTrashed: true, keptForLibrary: false, engine: outcome },
+            ]),
+        })
+        const onLibrariesRepointed = vi.fn()
+        const { result } = await ready({ onLibrariesRepointed })
+        act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+        await act(() => result.current.apply())
+        expect(onLibrariesRepointed).toHaveBeenCalledOnce()
+      },
+    )
+
+    it('leaves the cue editor’s file reads alone when no library entry moved', async () => {
+      setApi({
+        loadMusicReview: vi.fn().mockResolvedValue(THREE),
+        removeMusicDuplicate: vi.fn().mockResolvedValue(removedWith('/m/q.aiff')),
+        replaceDuplicatesInLibraries: vi
+          .fn()
+          .mockResolvedValue([
+            { from: '/m/q.aiff', fileTrashed: true, keptForLibrary: false, rekordbox: 'none' },
+          ]),
+      })
+      const onLibrariesRepointed = vi.fn()
+      const { result } = await ready({ onLibrariesRepointed })
+      act(() => result.current.toggleStaged(result.current.duplicates[0].group.key))
+      await act(() => result.current.apply())
+      expect(onLibrariesRepointed).not.toHaveBeenCalled()
+    })
   })
 
   // A failed apply leaves Music in an unknown state; removing copies on top of it would
