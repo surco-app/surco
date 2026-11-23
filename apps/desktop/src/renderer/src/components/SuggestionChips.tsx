@@ -111,7 +111,7 @@ export function SuggestionChips({
     const state = stateOf(s)
     return (
       <>
-        <span data-chip-name className="min-w-0 truncate">
+        <span data-chip-name dir="auto" className="min-w-0 truncate">
           {s}
         </span>
         {partialLabel && state === 'some' && (

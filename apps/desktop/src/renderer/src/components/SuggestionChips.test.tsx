@@ -235,4 +235,17 @@ describe('SuggestionChips', () => {
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
     vi.useRealTimers()
   })
+
+  it('keeps the share of tracks after an Arabic tag instead of letting it jump in front', () => {
+    render(
+      <SuggestionChips
+        suggestions={['شعبي']}
+        isOn={() => false}
+        isPartial={() => true}
+        partialLabel={() => '1/7'}
+        onPick={() => {}}
+      />,
+    )
+    expect(within(screen.getByTestId('chip-شعبي')).getByText('شعبي')).toHaveAttribute('dir', 'auto')
+  })
 })
