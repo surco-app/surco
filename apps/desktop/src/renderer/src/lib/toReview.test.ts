@@ -123,6 +123,14 @@ describe('toReviewEntriesFor', () => {
     expect(list.map((r) => r.path)).toEqual(['/m/c.flac'])
   })
 
+  // A later conversion moved the file; a program whose repoint is still queued shows the
+  // path it had before, and the track must not vanish from the list meanwhile.
+  it('lists a moved track under the path it had before while a program still shows that one', () => {
+    const moved = replaced('/m/a.aiff', { formerPaths: ['/m/a.flac'] })
+    expect(toReviewEntriesFor([row('/m/a.flac')], [moved], 'rekordbox')).toHaveLength(1)
+    expect(replacedEntryOf([moved], '/m/a.flac', 'rekordbox')).toBe(moved)
+  })
+
   it('never lists separators', () => {
     const rows = [{ ...row('/m/a.flac'), separator: true }, row(null)]
     expect(toReviewEntriesFor(rows, [replaced('/m/a.flac')], 'rekordbox')).toEqual([])

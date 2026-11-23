@@ -17,7 +17,9 @@ function isEntry(e: unknown): e is ReplacedEntry {
     typeof x.replacedAt === 'number' &&
     typeof x.shift === 'object' &&
     x.shift !== null &&
-    isProgramList(x.pending)
+    isProgramList(x.pending) &&
+    (x.formerPaths === undefined ||
+      (Array.isArray(x.formerPaths) && x.formerPaths.every((p) => typeof p === 'string')))
   )
 }
 

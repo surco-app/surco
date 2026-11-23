@@ -54,4 +54,15 @@ describe('registerReplacedIpc', () => {
     await handler('replaced:restore')({}, null)
     expect(await handler('replaced:list')({})).toEqual([])
   })
+
+  // Undo hands back the entry as it was, earlier paths included, so a moved track keeps
+  // closing from the path a queued program still shows; anything else there is refused.
+  it('restores a moved track with its earlier paths and refuses earlier paths that are not paths', async () => {
+    const store = await setup()
+    const moved = { ...entry, formerPaths: ['/m/new.wav'] }
+    await handler('replaced:restore')({}, { ...entry, formerPaths: [3] })
+    expect(store.list()).toEqual([])
+    await handler('replaced:restore')({}, moved)
+    expect(store.list()).toEqual([moved])
+  })
 })

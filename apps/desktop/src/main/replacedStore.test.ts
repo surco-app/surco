@@ -109,6 +109,15 @@ describe('createReplacedStore', () => {
     expect(store.list()[0].oldPath).toBe('/m/old.mp3')
   })
 
+  // A program whose repoint waits in its queue still shows the file the track was at
+  // before the move: saving or Reviewed there must still find it, or it never closes.
+  it('still finds a moved track by the path it had before, which a queued program still shows', async () => {
+    const store = createReplacedStore(await fileIn())
+    store.add(entry())
+    store.movePath('/m/new.flac', '/m/new.aiff')
+    expect(store.review('/m/new.flac')?.newPath).toBe('/m/new.aiff')
+  })
+
   it('reads a corrupt file as an empty list instead of failing every call', async () => {
     const file = await fileIn()
     await writeFile(file, '{not json')
@@ -162,6 +171,15 @@ describe('createReplacedStore', () => {
     store.add(entry())
     store.movePath('/m/ghost.flac', '/m/new.flac')
     expect(store.list()).toEqual([entry()])
+  })
+
+  it('discards an entry whose earlier paths are not a list, so a lookup never throws', async () => {
+    const file = await fileIn()
+    await writeFile(
+      file,
+      JSON.stringify({ version: 1, entries: [entry(), { ...entry(), formerPaths: 'x' }] }),
+    )
+    expect(createReplacedStore(file).list()).toEqual([entry()])
   })
 
   it('discards malformed entries when reading', async () => {

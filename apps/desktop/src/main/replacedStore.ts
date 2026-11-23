@@ -30,7 +30,8 @@ function isEntry(e: unknown): e is ReplacedEntry {
     typeof x.replacedAt === 'number' &&
     typeof x.shift === 'object' &&
     x.shift !== null &&
-    Array.isArray(x.pending)
+    Array.isArray(x.pending) &&
+    (x.formerPaths === undefined || Array.isArray(x.formerPaths))
   )
 }
 
@@ -38,6 +39,7 @@ const normalized = (e: ReplacedEntry): ReplacedEntry => ({
   ...e,
   newPath: nfc(e.newPath),
   oldPath: nfc(e.oldPath),
+  ...(e.formerPaths ? { formerPaths: e.formerPaths.map(nfc) } : {}),
 })
 
 type Read = { entries: ReplacedEntry[]; state: 'ok' | 'absent' | 'corrupt' | 'unreadable' }
@@ -110,7 +112,10 @@ export function createReplacedStore(file: string): ReplacedStore {
       const p = nfc(path)
       return mutate((all) => {
         // A file can be one track's new copy and another's old one: it is the first's.
-        const found = all.find((e) => e.newPath === p) ?? all.find((e) => e.oldPath === p)
+        const found =
+          all.find((e) => e.newPath === p) ??
+          all.find((e) => e.formerPaths?.includes(p)) ??
+          all.find((e) => e.oldPath === p)
         if (!found) return { entries: all, out: null }
         const pending = programs ? found.pending.filter((x) => !programs.includes(x)) : []
         return {
@@ -140,7 +145,11 @@ export function createReplacedStore(file: string): ReplacedStore {
           // that was moved wins over whatever already sat at the destination.
           entries: all
             .filter((e) => e.newPath !== t || e.newPath === f || !all.some((x) => x.newPath === f))
-            .map((e) => (e.newPath === f ? { ...e, newPath: t } : e)),
+            .map((e) =>
+              e.newPath === f
+                ? { ...e, newPath: t, formerPaths: [...(e.formerPaths ?? []), f] }
+                : e,
+            ),
           out: undefined,
         }),
         undefined,

@@ -17,7 +17,9 @@ export function replacedEntryOf(
   const here = replaced.filter((entry) => pendingHere(entry, program))
   // A file can be one track's new copy and another's old one: it is the first's.
   return (
-    here.find((entry) => nfc(entry.newPath) === p) ?? here.find((entry) => nfc(entry.oldPath) === p)
+    here.find((entry) => nfc(entry.newPath) === p) ??
+    here.find((entry) => entry.formerPaths?.some((f) => nfc(f) === p)) ??
+    here.find((entry) => nfc(entry.oldPath) === p)
   )
 }
 
@@ -46,12 +48,19 @@ export function toReviewEntriesFor(
   const byPath = reviewableByPath(all)
   const here = replaced
     .filter((entry) => pendingHere(entry, program))
-    .map((entry) => ({ entry, now: nfc(entry.newPath), old: nfc(entry.oldPath) }))
+    .map((entry) => ({
+      entry,
+      now: nfc(entry.newPath),
+      before: [...(entry.formerPaths ?? []).map(nfc).reverse(), nfc(entry.oldPath)],
+    }))
   // A file that is one track's new copy and another's old one is listed for the first only.
+  // Before the new copy come the paths a queued program may still show, latest first.
   const newCopies = new Set(here.map(({ now }) => now))
   const listed: { row: SourcePlaylistEntry; entry: ReplacedEntry }[] = []
-  for (const { entry, now, old } of here) {
-    const row = byPath.get(now) ?? (newCopies.has(old) ? undefined : byPath.get(old))
+  for (const { entry, now, before } of here) {
+    const row =
+      byPath.get(now) ??
+      before.map((p) => (newCopies.has(p) ? undefined : byPath.get(p))).find(Boolean)
     if (row) listed.push({ row, entry })
   }
   const unmoved = (entry: ReplacedEntry) => ('unmoved' in entry.shift ? 0 : 1)
