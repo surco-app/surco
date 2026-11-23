@@ -52,7 +52,7 @@ export function MatchingSuggestionsToggle({
       onClick={onToggle}
       className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40 aria-pressed:bg-[var(--color-accent-soft)] aria-pressed:text-[var(--color-accent)]"
     >
-      <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+      <Sparkles className="h-4 w-4" aria-hidden="true" />
       <Tooltip label={tr('sources.matchingSuggested')} />
     </button>
   )

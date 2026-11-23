@@ -5841,7 +5841,7 @@ describe('App source playlists', () => {
 
   // Inside a playlist, taking a track out of the list and out of the playlist were two actions
   // and the DJ could not tell them apart; now every way to remove reaches the playlist.
-  it('removes from the open rekordbox playlist with the key and with the list button too', async () => {
+  it('removes from the open rekordbox playlist with the key and with the list menu too', async () => {
     const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getAllByTestId('track-row')[1])
@@ -5860,6 +5860,7 @@ describe('App source playlists', () => {
       ),
     )
     fireEvent.click(screen.getAllByTestId('track-row')[1])
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     await waitFor(() =>
       expect(screen.getByTestId('remove-selected')).toHaveAttribute(
         'aria-label',
@@ -15458,7 +15459,7 @@ describe('App list header', () => {
 
   // The visible button only drops rows from the list, so it must never reach the files. It
   // takes the selection at once, like the context menu's Remove, since Undo brings it back.
-  it('removes the selection from the list with the visible button at once, never trashing files', async () => {
+  it('removes the selection from the list from the list menu at once, never trashing files', async () => {
     const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -15471,15 +15472,17 @@ describe('App list header', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     fireEvent.click(screen.getByTestId('remove-selected'))
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(trashFile).not.toHaveBeenCalled()
   })
 
-  it('disables the remove-from-list button while nothing is selected', async () => {
+  it('disables remove-from-list in the list menu while nothing is selected', async () => {
     await renderApp()
     await addTwoTracks()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     expect(screen.getByTestId('remove-selected')).toBeEnabled()
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.getByTestId('remove-selected')).toBeDisabled())

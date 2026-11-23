@@ -437,6 +437,7 @@ async function main() {
     if (album.length) {
       const { app, page } = await launch(lang)
       await open(app, page, albumTakes())
+      await page.click('[data-testid="list-actions-more"]')
       await page.click('[data-testid="select-all"]')
       await settle(page)
       for (const [id, scene] of album) await shoot(app, page, lang, id, scene)
