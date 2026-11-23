@@ -90,7 +90,8 @@ export async function syncCollection(
     existsSync(traktorFileOf(original.slice(entry.start, entry.end), bootVolume))
   const patched = applyPatches(original, located, onDisk)
   const { before, cues } = matchedEntryFacts(original, located, onDisk)
-  const stayed = stayedRelocations(original, located, onDisk).map((p) =>
+  const lost = located.filter((p, i) => patches[i].relocates && !p.relocates)
+  const stayed = [...stayedRelocations(original, located, onDisk), ...lost].map((p) =>
     traktorPathOf(p.outputVolume ?? '', p.outputDir ?? '', p.outputFile ?? '', bootVolume),
   )
   const facts = { before, cues, ...(stayed.length > 0 ? { stayed } : {}) }
