@@ -2581,6 +2581,7 @@ export async function convertAudio(
             foreignRemoved,
             cueSource: input,
             cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            carryAtoms: codec === 'copy' && ext === '.m4a' && M4A_INPUT.test(input),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is

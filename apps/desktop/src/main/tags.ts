@@ -31,7 +31,7 @@ import {
   TRAKTOR_RATING_USER,
   WMP_RATING_USER,
 } from '../shared/rating'
-import { fullDateOf } from '../shared/tagFields'
+import { fullDateOf, MANAGED_ALIASES } from '../shared/tagFields'
 import type { ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
@@ -871,6 +871,41 @@ function setTextFrame(tag: Id3v2Tag, frameId: Id3v2TextFrameId, value: string): 
   tag.addFrame(frame)
 }
 
+// ffmpeg's mp4 muxer writes only the atoms it has names for, so a same-format M4A update,
+// copied through with no backup under "Only when the audio changes", lost every "----"
+// atom the file had: the gapless iTunSMPB, Sound Check, MusicBrainz ids, other programs'
+// own. They still describe the copied audio, so each comes back from the source unless it
+// names a field Surco writes or reads, or one the user deleted. Serato's stay with
+// carrySeratoCues, which keeps the cues and drops the analysis. Text atoms only, the kind
+// TagLib can write back.
+function carryFreeformAtoms(apple: Mpeg4AppleTag, source: string, deleted: string[]): void {
+  const dropped = new Set(deleted.map((name) => name.toLowerCase()))
+  const f = TagFile.createFromPath(source)
+  try {
+    const items =
+      (
+        f.tag as unknown as {
+          _ilstBox?: { children: { boxType: ByteVector; children: unknown[] }[] }
+        }
+      )._ilstBox?.children ?? []
+    for (const box of items) {
+      if (box.boxType.toString(StringType.Latin1) !== '----') continue
+      const children = box.children as { boxType: ByteVector; text?: string }[]
+      const named = (type: string) =>
+        children.find((c) => c.boxType.toString(StringType.Latin1) === type)?.text ?? ''
+      const [mean, name] = [named('mean'), named('name')]
+      const key = name.toLowerCase()
+      if (!mean || mean === 'com.serato.dj' || MANAGED_ALIASES.has(key) || dropped.has(key))
+        continue
+      if (apple.getItunesStrings(mean, name).length > 0) continue
+      const texts = (f.tag as Mpeg4AppleTag).getItunesStrings(mean, name)
+      if (texts.length > 0) apple.setItunesStrings(mean, name, ...texts)
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
 // is empty. setItunesStrings with no data strings is TagLib's own way of clearing one, so
 // an emptied field leaves nothing behind rather than keeping the previous value.
@@ -1021,6 +1056,8 @@ export function keepGenreParentheses(id3: Id3v2Tag): void {
 // goes via removeCover), so a cleared file keeps none of the fields we manage.
 // `foreignRemoved` names the third-party tags the inspector's per-tag delete marked —
 // applied on both ID3 and m4a regardless of clearExtras, unlike the fields above.
+// `carryAtoms` brings an m4a cueSource's freeform atoms back when its audio was copied
+// through (see carryFreeformAtoms).
 export function writeTags(
   file: string,
   meta: TrackMetadata,
@@ -1030,6 +1067,7 @@ export function writeTags(
   cueShift?: CueShift,
   clearExtras = false,
   foreignRemoved: string[] = [],
+  carryAtoms = false,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -1123,6 +1161,8 @@ export function writeTags(
       // only ever looks for POPM. Armoring it into a freeform atom would write bytes
       // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
+      if (carryAtoms && cueSource && !clearExtras)
+        carryFreeformAtoms(apple, cueSource, foreignRemoved)
       const date = fullDateOf(meta.year)
       if (date) apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
