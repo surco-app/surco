@@ -78,6 +78,9 @@ export interface FlushOutcome {
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
   virtualdj: 'written' | 'queued' | 'off' | 'failed' | 'later'
   added?: Partial<Record<'rekordbox' | 'traktor' | 'virtualdj', string[]>>
+  // The new files of replacements whose entry stayed on the old file there, the way
+  // TraktorWrite.stayed says it for Traktor.
+  stayed?: Partial<Record<'rekordbox' | 'engine' | 'virtualdj', string[]>>
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.
