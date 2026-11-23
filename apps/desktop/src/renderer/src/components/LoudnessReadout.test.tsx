@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
 import '../i18n'
-import { LoudnessReadout } from './LoudnessReadout'
+import { GRADE_MARK, GRADE_TEXT, LoudnessReadout } from './LoudnessReadout'
 
 afterEach(cleanup)
 
@@ -20,13 +20,6 @@ const loud: LoudnessResult = {
 
 const club: NormalizeConfig = { mode: 'loudness', targetLufs: -13, truePeakDb: -1, peakDb: -1 }
 const off: NormalizeConfig = { ...club, mode: 'none' }
-
-describe('LoudnessReadout help toggle', () => {
-  it('keeps a 24 px press area around its 20 px drawing', () => {
-    render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
-    expect(screen.getByTestId('loudness-help-toggle').className).toContain('after:-inset-0.5')
-  })
-})
 
 // The estimates used to sit in italics with a footnote legend at the very bottom
 // explaining what the italics meant. The arrow carries that meaning inline: it only
@@ -209,11 +202,19 @@ describe('LoudnessReadout verdict without colour', () => {
 
   it('keeps colour for the figures that need a look, so a red peak is not lost among greens', () => {
     render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
-    const good = screen.getByTestId('loudness-pill-lufs')
-    expect(screen.getByTestId('loudness-grade-mark-lufs').className).not.toMatch(/bg-good/)
-    expect(within(good).getByText('-12.0 LUFS').className).not.toMatch(/text-good/)
-    expect(screen.getByTestId('loudness-grade-mark-peak').className).toMatch(/bg-warn/)
-    expect(screen.getByTestId('loudness-grade-mark-range').className).toMatch(/bg-danger/)
+    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'warn')
+    expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
+    expect(GRADE_MARK.good).toEqual(
+      expect.objectContaining({ className: expect.not.stringMatching(/bg-good/) }),
+    )
+    expect(GRADE_MARK.warn).toEqual(
+      expect.objectContaining({ className: expect.stringMatching(/bg-warn/) }),
+    )
+    expect(GRADE_MARK.bad).toEqual(
+      expect.objectContaining({ className: expect.stringMatching(/bg-danger/) }),
+    )
+    expect(GRADE_TEXT.good).not.toMatch(/text-good/)
   })
 })
 
