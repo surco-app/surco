@@ -477,6 +477,58 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('Second')
   })
 
+  // The auto-match sweep records in the background, so a match landing after the user's ⌘Z
+  // is no step of theirs and must not cost them the ⌘⇧Z they may still press.
+  it('keeps the redo step when the background sweep records a match on another track', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record([result.current.tracks[0]])
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Filled' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record([result.current.tracks[1]], { keepRedo: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    let reapplied = 0
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(1)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Filled', 'Matched'])
+  })
+
+  // A kept redo step may name a track the sweep has since tagged: redo must not replay the
+  // user's old value over what the sweep wrote, exactly as it keeps a field typed since.
+  it('never replays a kept redo step over a field the background sweep wrote since', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record(result.current.tracks, { keepRedo: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Matched' } })),
+      )
+    })
+    act(() => {
+      result.current.redo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Matched')
+  })
+
   it('leaves a converted track with no custom fields matching its converted signature after undoing a paste that added one, so it does not read as stale', () => {
     const { result } = setup([track('a', { title: 'A' })])
     const converted = trackSignature(result.current.tracks[0])

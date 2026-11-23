@@ -1653,7 +1653,7 @@ export default function App(): React.JSX.Element {
   // Snapshots the given rows' tags so ⌘Z can roll the batch operation back. Reads
   // through tracksRef so the stable callbacks capturing it never see a stale list.
   const recordTagSnapshot = useStableCallback(
-    (ids: string[], opts?: { cover?: boolean; group?: string }) => {
+    (ids: string[], opts?: { cover?: boolean; group?: string; keepRedo?: boolean }) => {
       const set = new Set(ids)
       metaUndo.record(
         tracksRef.current.filter((t) => set.has(t.id)),

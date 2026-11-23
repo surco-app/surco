@@ -70,7 +70,7 @@ interface Params {
   // Drops a probe's verdict into the activity feed (useActivityLog.report): which release
   // won or was suggested, why, and every candidate scored along the way.
   reportActivity: (report: LocalActivityReport) => void
-  recordUndo: (ids: string[], opts: { cover: boolean; group: string }) => void
+  recordUndo: (ids: string[], opts: { cover: boolean; group: string; keepRedo: boolean }) => void
 }
 
 interface AutoMatchSweep {
@@ -289,7 +289,7 @@ export function useAutoMatch({
           durationSec: live.duration,
         }) &&
         isInLibrary(index, { title: patch.meta.title, artist: patch.meta.artist })
-      recordUndo([t.id], { cover: true, group: `auto-match-${sweepRun.current}` })
+      recordUndo([t.id], { cover: true, group: `auto-match-${sweepRun.current}`, keepRedo: true })
       updateTrack(t.id, {
         meta: patch.meta,
         coverUrl: patch.coverUrl,

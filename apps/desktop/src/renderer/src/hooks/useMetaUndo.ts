@@ -82,8 +82,13 @@ function settle(s: MetaSnapshot, t: TrackItem | undefined): void {
 
 interface MetaUndo {
   // Snapshots the given tracks' tags before a batch operation overwrites them;
-  // cover: true also snapshots the artwork for operations that overwrite it.
-  record: (targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => void
+  // cover: true also snapshots the artwork for operations that overwrite it; keepRedo: true
+  // is for background writes (the auto-match sweep), which are no step of the user's and so
+  // leave their redo in place.
+  record: (
+    targets: TrackItem[],
+    opts?: { cover?: boolean; group?: string; keepRedo?: boolean },
+  ) => void
   // Restores the most recent snapshot that still changes something; returns how many
   // tracks actually changed (0 once no snapshot left on the stack changes anything),
   // so the caller can word — or skip — its confirmation toast.
@@ -136,14 +141,16 @@ export function useMetaUndo(
   })
 
   const record = useCallback(
-    (targets: TrackItem[], opts?: { cover?: boolean; group?: string }) => {
+    (targets: TrackItem[], opts?: { cover?: boolean; group?: string; keepRedo?: boolean }) => {
       if (targets.length === 0) return
-      const undone = redoStack.current
-      redoStack.current = []
-      revokeDisplacedCovers(coversOf(undone), [
-        ...tracksRef.current.map((t) => t.coverUrl),
-        ...coversOf(stack.current),
-      ])
+      if (!opts?.keepRedo) {
+        const undone = redoStack.current
+        redoStack.current = []
+        revokeDisplacedCovers(coversOf(undone), [
+          ...tracksRef.current.map((t) => t.coverUrl),
+          ...coversOf(stack.current),
+        ])
+      }
       const top = stack.current.at(-1)
       const joining = top && opts?.group !== undefined && opts.group === topGroup.current
       const cover = !!opts?.cover
