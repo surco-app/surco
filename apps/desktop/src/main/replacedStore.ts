@@ -42,6 +42,11 @@ const normalized = (e: ReplacedEntry): ReplacedEntry => ({
   ...(e.formerPaths ? { formerPaths: e.formerPaths.map(nfc) } : {}),
 })
 
+// A file edited by hand may hold anything among the earlier paths, and every reader
+// normalizes them: only strings are kept.
+const withPathsOnly = (e: ReplacedEntry): ReplacedEntry =>
+  e.formerPaths ? { ...e, formerPaths: e.formerPaths.filter((p) => typeof p === 'string') } : e
+
 type Read = { entries: ReplacedEntry[]; state: 'ok' | 'absent' | 'corrupt' | 'unreadable' }
 
 export function createReplacedStore(file: string): ReplacedStore {
@@ -56,7 +61,8 @@ export function createReplacedStore(file: string): ReplacedStore {
     }
     try {
       const data = JSON.parse(text) as Partial<StoreFile>
-      if (Array.isArray(data.entries)) return { entries: data.entries.filter(isEntry), state: 'ok' }
+      if (Array.isArray(data.entries))
+        return { entries: data.entries.filter(isEntry).map(withPathsOnly), state: 'ok' }
     } catch {}
     return { entries: [], state: 'corrupt' }
   }

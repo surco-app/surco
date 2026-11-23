@@ -193,6 +193,20 @@ describe('createReplacedStore', () => {
     expect(createReplacedStore(file).list()).toEqual([entry()])
   })
 
+  // The renderer normalizes every earlier path; one that is not a string, in a file edited
+  // by hand, would throw there, so it is dropped on read and the entry kept.
+  it('drops earlier paths that are not strings when reading, keeping the entry', async () => {
+    const file = await fileIn()
+    await writeFile(
+      file,
+      JSON.stringify({
+        version: 1,
+        entries: [{ ...entry(), formerPaths: ['/m/a.flac', 3, null] }],
+      }),
+    )
+    expect(createReplacedStore(file).list()).toEqual([entry({ formerPaths: ['/m/a.flac'] })])
+  })
+
   it('discards malformed entries when reading', async () => {
     const file = await fileIn()
     await writeFile(file, JSON.stringify({ version: 1, entries: [entry(), { newPath: 3 }, null] }))
