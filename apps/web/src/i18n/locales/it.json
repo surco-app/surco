@@ -129,8 +129,8 @@
           },
           {
             "t": "Modifica in blocco",
-            "s": "Modifica i campi di un disco intero in una volta, con cerca e sostituisci.",
-            "d": "I campi che un disco ha in comune, più cerca e sostituisci con le regex."
+            "s": "Modifica più brani come ne modifichi uno, incollando un’uscita, con stelle e numeri di traccia.",
+            "d": "Con più brani selezionati, l’editor mostra gli stessi campi che con uno solo. Modifica i campi che un’uscita condivide, incolla un’uscita, valutali tutti, numerali nell’ordine della lista e cerca e sostituisci con regex. Un campo che differisce mostra ogni valore."
           },
           {
             "t": "Copertine",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, non v2.4",
             "s": "Scrive la versione dei tag che i CDJ e rekordbox leggono senza problemi.",
-            "d": "Così i CDJ e rekordbox li leggono senza stranezze."
+            "d": "Convertire e «Aggiorna» scrivono in v2.3, così i CDJ e rekordbox la leggono senza sorprese. Una piccola modifica, come aggiungere un cue, lascia un tag v2.4 com’era."
           },
           {
             "t": "Rating che va e torna",
@@ -236,8 +236,8 @@
           },
           {
             "t": "Quello che hai già",
-            "s": "Ti avvisa se un brano è già nel tuo Apple Music o Engine DJ.",
-            "d": "Ti avvisa se il brano è nel tuo Apple Music o Engine DJ e filtra quelli che ti mancano."
+            "s": "Trova un brano in tutti i programmi DJ che usi e in Apple Music, e ti dice quale copia è migliore.",
+            "d": "Nell’editor, «Nella tua libreria» mostra ogni copia di un brano di Tracks nei tuoi programmi DJ e in Apple Music. Ognuna dice se è uguale, migliore, peggiore o un’altra versione, e una riga si apre per confrontare i due spettri. Il filtro «Migliori che in Music» lascia solo ciò che suona meglio della tua copia in Apple Music."
           },
           {
             "t": "I bit, verificati",

@@ -129,8 +129,8 @@
           },
           {
             "t": "Edição em lote",
-            "s": "Edita os campos de um release inteiro de uma vez, com localizar e substituir.",
-            "d": "Os campos que um release compartilha, mais localizar e substituir com regex."
+            "s": "Edite várias faixas como edita uma, colando um lançamento, com estrelas e números de faixa.",
+            "d": "Com várias faixas selecionadas, o editor mostra os mesmos campos que com uma. Edite os campos que um lançamento compartilha, cole um lançamento, avalie todas, numere na ordem da lista e localize e substitua com regex. Um campo que difere mostra cada valor."
           },
           {
             "t": "Capa",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, não v2.4",
             "s": "Grava a versão de tags que CDJs e rekordbox leem sem surpresas.",
-            "d": "Para que CDJs e rekordbox leiam sem surpresas."
+            "d": "Converter e “Atualizar” gravam em v2.3, para que os CDJs e o rekordbox leiam sem surpresas. Uma edição pequena, como adicionar um cue, deixa uma tag v2.4 como estava."
           },
           {
             "t": "Avaliações que vão e voltam",
@@ -236,8 +236,8 @@
           },
           {
             "t": "O que você já tem",
-            "s": "Avisa se uma faixa já está no seu Apple Music ou Engine DJ.",
-            "d": "Diz se uma faixa está no seu Apple Music ou Engine DJ, e filtra o resto."
+            "s": "Encontra uma faixa em todos os seus programas de DJ e no Apple Music, e diz qual cópia é melhor.",
+            "d": "No editor, “Na sua biblioteca” mostra cada cópia de uma faixa de Tracks nos seus programas de DJ e no Apple Music. Cada uma diz se é igual, melhor, pior ou outra versão, e uma linha se abre para comparar os dois espectros. O filtro “Melhor que no Music” deixa só o que soa melhor que a sua cópia no Apple Music."
           },
           {
             "t": "Bits conferidos",

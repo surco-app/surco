@@ -129,8 +129,8 @@
           },
           {
             "t": "Edició en bloc",
-            "s": "Edita els camps d'un disc sencer d'una vegada, amb cercar i substituir.",
-            "d": "Els camps que comparteix un disc, més cercar i substituir amb regex."
+            "s": "Edita diverses pistes com n’edites una, enganxant un llançament, amb estrelles i números de pista.",
+            "d": "Amb diverses pistes seleccionades, l’editor mostra els mateixos camps que amb una. Edita els camps que comparteix un llançament, enganxa un llançament, puntua-les totes, numera-les en l’ordre de la llista i cerca i substitueix amb regex. Un camp que difereix mostra cada valor."
           },
           {
             "t": "Caràtules",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, no v2.4",
             "s": "Escriu la versió d'etiquetes que els CDJ i rekordbox llegeixen sense problemes.",
-            "d": "Perquè els CDJ i rekordbox ho llegeixin sense coses estranyes."
+            "d": "Convertir i «Actualitzar» escriuen v2.3, perquè els CDJ i rekordbox la llegeixin sense sorpreses. Un canvi petit, com afegir un cue, deixa com estava una etiqueta v2.4."
           },
           {
             "t": "Puntuació d'anada i tornada",
@@ -236,8 +236,8 @@
           },
           {
             "t": "El que ja tens",
-            "s": "T'avisa si una pista ja és al teu Apple Music o Engine DJ.",
-            "d": "Avisa si la pista ja és al teu Apple Music o Engine DJ i filtra les que et falten."
+            "s": "Troba una pista a tots els teus programes DJ i a Apple Music, i et diu quina còpia és millor.",
+            "d": "A l’editor, «A la teva biblioteca» mostra cada còpia d’una pista de Tracks als teus programes DJ i a Apple Music. Cadascuna diu si és igual, millor, pitjor o una altra versió, i una fila s’obre per comparar els dos espectres. El filtre «Millors que a Music» deixa només el que sona millor que la teva còpia d’Apple Music."
           },
           {
             "t": "Els bits, comprovats",

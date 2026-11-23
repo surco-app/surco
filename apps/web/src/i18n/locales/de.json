@@ -129,8 +129,8 @@
           },
           {
             "t": "Massenbearbeitung",
-            "s": "Bearbeite die Felder eines ganzen Releases auf einmal, mit Suchen und Ersetzen.",
-            "d": "Die Felder, die ein Release teilt, plus Suchen und Ersetzen mit Regex."
+            "s": "Bearbeite mehrere Tracks wie einen, mit eingefügtem Release, Sternen und Tracknummern.",
+            "d": "Mit mehreren ausgewählten Tracks zeigt der Editor dieselben Felder wie mit einem. Bearbeite die Felder, die ein Release teilt, füge ein Release ein, bewerte alle, nummeriere sie in Listenreihenfolge und suche und ersetze mit Regex. Ein Feld mit verschiedenen Werten zeigt jeden davon."
           },
           {
             "t": "Cover",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, nicht v2.4",
             "s": "Schreibt die Tag-Version, die CDJs und rekordbox ohne Überraschungen lesen.",
-            "d": "Damit CDJs und rekordbox es ohne Überraschungen lesen."
+            "d": "Konvertieren und „Aktualisieren“ schreiben v2.3, damit CDJs und rekordbox es ohne Überraschungen lesen. Eine kleine Änderung, etwa ein neuer Cue, lässt ein v2.4-Tag, wie es war."
           },
           {
             "t": "Bewertungen, die in beide Richtungen gehen",
@@ -236,8 +236,8 @@
           },
           {
             "t": "Was du schon hast",
-            "s": "Sagt dir, ob ein Track schon in deinem Apple Music oder Engine DJ ist.",
-            "d": "Sagt dir, ob ein Track in deinem Apple Music oder Engine DJ ist, und filtert den Rest."
+            "s": "Findet einen Track in jedem DJ-Programm, das du nutzt, und in Apple Music, und sagt, welche Kopie besser ist.",
+            "d": "Im Editor zeigt „In deiner Bibliothek“ jede Kopie eines Tracks aus Tracks in deinen DJ-Programmen und in Apple Music. Jede sagt, ob sie gleich, besser, schlechter oder eine andere Version ist, und eine Zeile öffnet sich, um beide Spektren zu vergleichen. Der Filter „Besser als in Music“ lässt nur, was besser klingt als deine Kopie in Apple Music."
           },
           {
             "t": "Bits, geprüft",

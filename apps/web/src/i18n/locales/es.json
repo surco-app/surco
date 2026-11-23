@@ -129,8 +129,8 @@
           },
           {
             "t": "Edición en bloque",
-            "s": "Edita los campos de un disco entero de una vez, con buscar y reemplazar.",
-            "d": "Los campos que comparte un disco, más buscar y reemplazar con regex."
+            "s": "Edita varias pistas como editas una, pegando un lanzamiento, con estrellas y números de pista.",
+            "d": "Con varias pistas seleccionadas, el editor enseña los mismos campos que con una. Edita los campos que comparte un lanzamiento, pega un lanzamiento, puntúalas todas, numéralas en el orden de la lista y busca y reemplaza con regex. Un campo que difiere enseña cada valor."
           },
           {
             "t": "Carátulas",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, no v2.4",
             "s": "Escribe la versión de etiquetas que los CDJ y rekordbox leen sin problemas.",
-            "d": "Para que los CDJ y rekordbox lo lean sin rarezas."
+            "d": "Convertir y «Actualizar» escriben v2.3, para que los CDJ y rekordbox la lean sin sorpresas. Un cambio pequeño, como añadir un cue, deja como estaba una etiqueta v2.4."
           },
           {
             "t": "Rating que da la vuelta",
@@ -236,8 +236,8 @@
           },
           {
             "t": "Lo que ya tienes",
-            "s": "Te avisa si una pista ya está en tu Apple Music o Engine DJ.",
-            "d": "Avisa si la pista está en tu Apple Music o Engine DJ y filtra las que te faltan."
+            "s": "Encuentra una pista en todos tus programas DJ y en Apple Music, y te dice qué copia es mejor.",
+            "d": "En el editor, «En tu biblioteca» enseña cada copia de una pista de Tracks en tus programas DJ y en Apple Music. Cada una dice si es igual, mejor, peor u otra versión, y una fila se abre para comparar los dos espectros. El filtro «Mejor que Music» deja solo lo que suena mejor que tu copia de Apple Music."
           },
           {
             "t": "Los bits, comprobados",
