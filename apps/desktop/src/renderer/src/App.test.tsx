@@ -2842,6 +2842,66 @@ describe('App auto-match', () => {
       expect(await albumOfRow(1)).toBe('')
     })
 
+    const libraryApi = (over: Record<string, unknown>) => {
+      handApi()
+      Object.assign(window.api, {
+        platform: 'darwin',
+        getSettings: vi.fn().mockResolvedValue(
+          settings({
+            discogsToken: 'tok',
+            addToAppleMusic: true,
+            visibleFields: ['title', 'artist', 'album', 'year', 'trackNumber', 'comment'],
+          }),
+        ),
+        loadAppleMusicLibrary: vi
+          .fn()
+          .mockResolvedValue([
+            { title: 'My Song', artist: 'Artist', persistentId: '0123456789ABCDEF' },
+          ]),
+        appleMusicEntryMeta: vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue(null),
+        ...over,
+      })
+    }
+
+    it('still matches a track whose empty year Apple Music filled when it was opened', async () => {
+      libraryApi({
+        appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
+        appleMusicEntryMeta: vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue({
+          year: '1999',
+        }),
+      })
+      await renderApp()
+      await addTwoTracks()
+      await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('1999'), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    })
+
+    it('still matches a track whose empty fields the copy it replaces filled', async () => {
+      libraryApi({
+        appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/my-song.mp3'),
+        readCoverFull: vi.fn<Api['readCoverFull']>().mockResolvedValue(null),
+        readTags: vi.fn((path: string) =>
+          Promise.resolve(
+            path === '/music/old/my-song.mp3'
+              ? { ...emptyMetadata(), title: 'My Song', artist: 'Artist', year: '1999' }
+              : { title: 'My Song', artist: 'Artist' },
+          ),
+        ),
+      })
+      await renderApp()
+      await addTwoTracks()
+      await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('1999'), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    })
+
     // Clearing hands a track back to the sweep only until the DJ types into it again: the
     // search it kept still finds the old release, which would land over the retyped tags.
     it('keeps what was typed after a clear through the sweep', async () => {

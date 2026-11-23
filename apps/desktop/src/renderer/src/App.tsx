@@ -3045,7 +3045,8 @@ export default function App(): React.JSX.Element {
     if (!selected) return
     if (patch.matched) allowAutoMatch([selected.id])
     // A patch that sets the match flags is a release applied or a clear, never a retag.
-    if (patch.meta && !('matched' in patch)) markHandEdited([{ id: selected.id, meta: patch.meta }])
+    const automatic = 'matched' in patch || patch.copyFilled || patch.appleMusicFilled
+    if (patch.meta && !automatic) markHandEdited([{ id: selected.id, meta: patch.meta }])
     updateTrack(selected.id, patch)
   })
   // Converting a single track is the donate nudge's moment of value, so every entry
