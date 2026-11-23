@@ -263,13 +263,17 @@ function masked(raw: Buffer, ranges: [number, number][]): Buffer {
 const REAL_OVERVIEW = readFileSync(join(import.meta.dirname, 'fixtures', 'engine-4-overview.bin'))
 
 describe('shifting real Engine DJ blobs', () => {
-  // The overview Engine drew for the same track as REAL_TRACK_DATA. A cut drops the entries
-  // that drew the lead-in and nothing else: every remaining entry, and the peak after them,
-  // has to come through byte for byte, with only the count and the run per entry rewritten.
-  it('drops only the cut’s entries from a real overview and recounts its header', () => {
+  // The overview Engine drew for the same track as REAL_TRACK_DATA. Engine draws only its 1024
+  // entries over the whole file (measured 23/11), so a cut is resampled onto 1024 entries of the
+  // new length: the lead-in's entries no longer start the drawing, the loudest bar moves earlier
+  // by the cut and the peak after the entries comes through byte for byte.
+  it('resamples a real overview onto 1024 entries of the cut file, the wave moved by the cut', () => {
     const was = inflateEngineBlob(REAL_OVERVIEW)
-    expect(decodeOverview(was)?.entries).toHaveLength(1024)
+    const old = decodeOverview(was)
+    expect(old?.entries).toHaveLength(1024)
     const run = was.readDoubleBE(16)
+    const track = decodeTrackData(inflateEngineBlob(Buffer.from(REAL_TRACK_DATA, 'hex')))
+    if (!old || !track) throw new Error('the real blobs did not decode')
     const after = shiftEnginePerformance(
       {
         trackData: Buffer.from(REAL_TRACK_DATA, 'hex'),
@@ -281,12 +285,25 @@ describe('shifting real Engine DJ blobs', () => {
       { trimmedMs: 1700, sampleRateHz: 48000 },
     )
     const now = inflateEngineBlob(after.overviewWaveFormData ?? new Uint8Array(5))
-    const dropped = Math.round((1.7 * 44100) / run)
-    expect(dropped).toBe(5)
-    expect(Number(now.readBigInt64BE(0))).toBe(1024 - dropped)
-    expect(Number(now.readBigInt64BE(8))).toBe(1024 - dropped)
-    expect(now.readDoubleBE(16)).toBeCloseTo((run * 48000) / 44100, 9)
-    expect(now.subarray(24).equals(was.subarray(24 + dropped * 3))).toBe(true)
+    const resampled = decodeOverview(now)
+    const lengthSec = track.sampleCount / track.sampleRate - 1.7
+    expect(Number(now.readBigInt64BE(0))).toBe(1024)
+    expect(Number(now.readBigInt64BE(8))).toBe(1024)
+    expect(now.readDoubleBE(16)).toBeCloseTo(Math.round(lengthSec * 48000) / 1024, 3)
+    expect(resampled?.max).toEqual(old.max)
+    const oldEntryAt = (sec: number) => (sec * 44100) / run
+    const firstDrawn = old.entries.slice(
+      Math.floor(oldEntryAt(1.7)),
+      Math.ceil(oldEntryAt(1.7 + lengthSec / 1024)),
+    )
+    expect(resampled?.entries[0]).toEqual(
+      [0, 1, 2].map((b) => Math.max(...firstDrawn.map((e) => e[b]))),
+    )
+    const sums = old.entries.map((e) => e[0] + e[1] + e[2])
+    const loudest = sums.indexOf(Math.max(...sums))
+    const centreSec = ((loudest + 0.5) * run) / 44100 - 1.7
+    const drawn = resampled?.entries[Math.floor((centreSec / lengthSec) * 1024)] ?? []
+    expect(drawn.every((band, b) => band >= old.entries[loudest][b])).toBe(true)
   })
 
   it('reads the set loop laid out as the real blob lays out its slots', () => {

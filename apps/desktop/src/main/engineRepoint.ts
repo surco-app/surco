@@ -91,6 +91,8 @@ const BITRATE_EXTENSIONS = new Set(['wav', 'aif', 'aiff', 'mp3', 'm4a', 'aac', '
 
 type Blob = Uint8Array | null
 
+const ENGINE_OVERVIEW_ENTRIES = 1024
+
 interface Performance {
   trackData: Blob
   overviewWaveFormData: Blob
@@ -157,21 +159,34 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
     next.beatData = deflateEngineBlob(grid)
   }
 
+  // Engine draws an overview only with its 1024 entries spread over the whole file: the 1032
+  // a shift once left drew the list's thumbnail and the deck's strip black (measured in Engine
+  // DJ 5.3.0 on 23/11). So the wave is resampled onto 1024 entries of the new length, each
+  // the loudest of the old entries under it, and audio the old file did not have is silence.
   const overview = inflated(perf.overviewWaveFormData)
   const runSamples = overview && decodeOverview(overview) ? overview.readDoubleBE(16) : 0
   if (overview && runSamples > 0) {
     const count = Number(overview.readBigInt64BE(0))
-    const runs = Math.round(((shift.trimmedMs / 1000) * from) / runSamples)
-    // A cut put back (a negative trim) comes back as silent entries: the ones it dropped are gone.
-    const dropped = Math.min(count, Math.max(0, runs))
-    const added = Math.max(0, -runs)
+    const span = samples ?? Math.max(0, Math.round(moved(count * runSamples)))
+    const run = span / ENGINE_OVERVIEW_ENTRIES
+    const old = (sample: number) => ((sample / to + shift.trimmedMs / 1000) * from) / runSamples
+    const entries = Buffer.alloc(ENGINE_OVERVIEW_ENTRIES * 3)
+    for (let i = 0; i < ENGINE_OVERVIEW_ENTRIES; i++) {
+      const end = old((i + 1) * run)
+      if (end <= 0) continue
+      const first = Math.max(0, Math.floor(old(i * run)))
+      const last = Math.min(count, Math.max(first + 1, Math.ceil(end)))
+      for (let o = first; o < last; o++)
+        for (let b = 0; b < 3; b++)
+          entries[i * 3 + b] = Math.max(entries[i * 3 + b], overview[24 + o * 3 + b])
+    }
     const head = Buffer.from(overview.subarray(0, 24))
-    head.writeBigInt64BE(BigInt(count - dropped + added), 0)
+    head.writeBigInt64BE(BigInt(ENGINE_OVERVIEW_ENTRIES), 0)
     if (Number(head.readBigInt64BE(8)) === count)
-      head.writeBigInt64BE(BigInt(count - dropped + added), 8)
-    head.writeDoubleBE((runSamples * to) / from, 16)
+      head.writeBigInt64BE(BigInt(ENGINE_OVERVIEW_ENTRIES), 8)
+    head.writeDoubleBE(run, 16)
     next.overviewWaveFormData = deflateEngineBlob(
-      Buffer.concat([head, Buffer.alloc(added * 3), overview.subarray(24 + dropped * 3)]),
+      Buffer.concat([head, entries, overview.subarray(24 + count * 3)]),
     )
   }
 
