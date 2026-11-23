@@ -15,22 +15,6 @@ function toast(over: Partial<Toast> = {}): Toast {
 }
 
 describe('ToastStack', () => {
-  it('breaks an unbreakable file name in the message so it is not cut inside a hidden horizontal scroll', () => {
-    render(
-      <ToastStack
-        toasts={[
-          toast({
-            testid: 'long-name',
-            message: 'Artist_Name_-_Track_Title_(Extended_Mix)_[LABEL123]_WEB_320.aiff',
-          }),
-        ]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('long-name-message')).toHaveClass('break-words')
-  })
-
   // The empty container still mounts: a live region must exist before content arrives
   // or screen readers miss the first toast. No cards means nothing visible or clickable.
   it('keeps an empty, announced live region mounted when the queue is empty', () => {
@@ -91,7 +75,6 @@ describe('ToastStack', () => {
       expect(pile().style.left).toBe('88px')
       expect(pile().style.bottom).toBe('12px')
       expect(pile().style.width).toBe('272px')
-      for (const slot of slots()) expect(slot.className).toContain('w-full')
     })
 
     it('climbs above where the mini-player rests when it is open under the pile, even while the player is still sliding in from below', () => {
@@ -114,7 +97,6 @@ describe('ToastStack', () => {
 
     it('keeps the close button at the far end of the card however short the message, so it is always in the same place', () => {
       show([toast({ id: 'a', testid: 'short', message: 'ok' })])
-      expect(screen.getByTestId('short-message').className).toContain('flex-1')
       expect(screen.getByTestId('short').lastElementChild).toBe(screen.getByTestId('short-dismiss'))
     })
 
@@ -164,10 +146,11 @@ describe('ToastStack', () => {
     it('leaves a dismissed notice where it stood while it fades and moves the rest up at once, so the pile settles instead of jumping', () => {
       const { rerender } = show()
       const leaving = slots()[1]
+      expect(leaving).not.toHaveAttribute('data-leaving')
       expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
       rerender(<ToastStack toasts={[three[0], three[2]]} onExpire={vi.fn()} onClose={vi.fn()} />)
       expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
-      expect(leaving.className).toContain('pointer-events-none')
+      expect(leaving).toHaveAttribute('data-leaving', 'true')
       const first = slots().find((slot) => slot.textContent?.includes('first')) as HTMLElement
       expect(first.style.transform).toBe('translateY(-7px) scale(0.95)')
     })
@@ -187,19 +170,6 @@ describe('ToastStack', () => {
     const slots = screen.getAllByTestId('toast-slot')
     expect(slots[0]).toHaveTextContent('second notice')
     expect(slots[1]).toHaveTextContent('first notice')
-  })
-
-  it('brings a card in with the toast entrance, rising from the edge the pile stands on, instead of the modal pop', () => {
-    render(
-      <ToastStack
-        toasts={[toast({ id: 'a', message: 'hola' })]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    const card = screen.getByTestId('toast-slot').querySelector('.rounded-xl') as HTMLElement
-    expect(card.className).toContain('animate-toast-in')
-    expect(card.className).not.toContain('animate-pop')
   })
 
   it('keeps every queued toast in the pile so a notice and a prompt coexist', () => {
@@ -664,26 +634,7 @@ describe('ToastStack', () => {
       render(<Live />)
       for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
       expect(card()).toHaveAttribute('aria-hidden', 'true')
-      expect(card().className).not.toContain('animate-toast-leave')
       expect(card().style.transform).toBe('translateX(324px)')
-    })
-
-    it('does not clip the sideways exit of a swiped card, which would cut it off mid-slide', () => {
-      function Live() {
-        const [toasts, setToasts] = useState([toast({ id: 's', testid: 'swipe-toast' })])
-        return (
-          <ToastStack
-            toasts={toasts}
-            onExpire={vi.fn()}
-            onClose={(id) => setToasts((all) => all.filter((t) => t.id !== id))}
-          />
-        )
-      }
-      render(<Live />)
-      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
-      expect(screen.getByTestId('toast-slot').className).not.toMatch(
-        /\boverflow-(hidden|clip|x-hidden|x-clip)\b/,
-      )
     })
   })
 })

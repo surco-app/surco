@@ -235,6 +235,7 @@ export function ToastStack({
             }}
             data-testid="toast-slot"
             data-behind={behind || undefined}
+            data-leaving={leaving || undefined}
             aria-hidden={stepAside || undefined}
             inert={behind || undefined}
             style={{ ...place, ...(stepAside ? { visibility: 'hidden' } : null) }}
