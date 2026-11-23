@@ -253,8 +253,14 @@ async function writeBatch(libraryDir: string, adds: PendingAdd[]): Promise<void>
       let trackId: number
       if (existingId !== undefined) {
         trackId = existingId
+        // A moved row keeps the old file's size: the repoint that follows tells by it that the
+        // replacement's shift is still owed, and records the new size with it (see
+        // writeEngineRepoints).
         const cols = UPDATE_COLUMNS.filter(
-          (c) => live.has(c) && !(KEEP_WHEN_NULL.has(c) && row.get(c) == null),
+          (c) =>
+            live.has(c) &&
+            !(KEEP_WHEN_NULL.has(c) && row.get(c) == null) &&
+            !(moved && c === 'fileBytes'),
         )
         db.run(`UPDATE Track SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`, [
           ...cols.map((c) => row.get(c) ?? null),

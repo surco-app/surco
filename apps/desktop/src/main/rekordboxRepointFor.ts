@@ -42,7 +42,8 @@ export function rekordboxRepointFor(
       sampleRateHz?: number
       sampleCount?: number
     }
-    // The source's size before the conversion rewrote it on its own path.
+    // The size of the file the row is on before the conversion: the source rewritten on its
+    // own path, or the replaced file.
     fromBytes?: number
     names?: RekordboxRepoint['names']
   } = {},
@@ -97,9 +98,7 @@ export function rekordboxRepointFor(
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
-    ...((!options.replaces || options.replaces === output) && options.fromBytes !== undefined
-      ? { fromBytes: options.fromBytes }
-      : {}),
+    ...(options.fromBytes !== undefined ? { fromBytes: options.fromBytes } : {}),
     ...(options.names ? { names: options.names } : {}),
   }
   if (from === output && !options.meta && !audio) return null

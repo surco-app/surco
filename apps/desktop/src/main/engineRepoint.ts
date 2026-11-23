@@ -316,7 +316,14 @@ export async function writeEngineRepoints(
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
-      const matches = find(repoint.from, key)
+      // The Engine DJ destination moves a replaced row onto the new file during the
+      // conversion, before this runs: a row there still on the old file's size is that one,
+      // its shift still owed.
+      const onOld = find(repoint.from, key)
+      const matches =
+        onOld.length === 0 && repoint.fromBytes !== undefined && repoint.from !== repoint.to
+          ? find(repoint.to, key)
+          : onOld
       if (matches.length === 0) {
         results[i] = { written: false, reason: 'no-match' }
         continue

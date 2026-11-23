@@ -310,6 +310,14 @@ describe('a replacement measured in the conversion', () => {
     expect(repoint()).toMatchObject({ from: oldAiff, to: oldAiff, fromBytes: bytes })
   }, 120_000)
 
+  // With "Add to Engine DJ" on, the destination moves the old row onto the new file before
+  // the repoint runs, and only the old file's size tells the repoint the shift is still owed.
+  it("hands the libraries the replaced file's size when the new file lands elsewhere", async () => {
+    await replace(later, fresh('Song.aiff'), oldWav)
+
+    expect(repoint()?.fromBytes).toBe(statSync(oldWav).size)
+  }, 120_000)
+
   // A replaced file that is gone cannot be measured, but the DJ asked for the new file and
   // still gets it: a measurement never costs a conversion.
   it('finishes the conversion when the old file cannot be read', async () => {
