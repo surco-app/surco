@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, ChevronDown, Sparkle } from 'lucide-react'
 import type React from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { activeCueFlow, MANUAL_CUE_FLOW } from '../../../shared/cueFlows'
 import { programOf, programsInOrder } from '../../../shared/djProgram'
@@ -50,6 +50,8 @@ const PRIMARY =
   'press inline-flex items-center gap-2 rounded-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
 const PRIMARY_BODY =
   'press -mr-px inline-flex items-center gap-2 rounded-l-lg bg-[var(--color-accent)] px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
+const PRIMARY_BODY_RUNNING =
+  'press group relative -mr-px inline-flex items-center gap-2 overflow-hidden rounded-l-lg bg-[var(--color-accent)]/40 px-3 py-1.5 text-xs font-semibold text-[var(--color-on-accent)]'
 const PRIMARY_TOGGLE =
   'press relative inline-flex items-center rounded-r-lg bg-[var(--color-accent)] px-1.5 text-[var(--color-on-accent)] before:absolute before:inset-y-1.5 before:left-0 before:w-px before:bg-[var(--color-on-accent)]/20 hover:bg-[var(--color-accent-hover)] disabled:opacity-40'
 const OPTIONS_MENU =
@@ -95,6 +97,7 @@ export function CuesBatchSection({
   const marks = useAutoMarks()
   const unsavedAll = useUnsavedCueTracks()
   const [busy, setBusy] = useState(false)
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [saveFailed, setSaveFailed] = useState(false)
   const [phrasing, setPhrasing] = useState(false)
   const [cleared, setCleared] = useState<{ result: ClearedCues; forIds: string } | null>(null)
@@ -102,6 +105,7 @@ export function CuesBatchSection({
   const [unsavedComments, setUnsavedComments] = useState<PhrasedComment[]>([])
   const [commentsFailed, setCommentsFailed] = useState<'rekordbox' | number | null>(null)
   const commentsMenu = useSplitMenu()
+  useEffect(() => window.api.cues.onCommentProgress(setProgress), [])
   const mode: CommentMode = settings.commentsReplace ? 'replace' : 'prepend'
   const putPhrases = async () => {
     setPhrasing(true)
@@ -125,8 +129,9 @@ export function CuesBatchSection({
       const toFile = settings.commentsToFile
       const result = await window.api.dj
         .askToApply(['rekordbox'])
-        .then(() =>
-          window.api.cues.saveComments(
+        .then(() => {
+          if (toFile) setProgress({ done: 0, total: unsavedComments.length })
+          return window.api.cues.saveComments(
             unsavedComments.map(({ contentId, path, label, count }) => ({
               contentId,
               path,
@@ -135,21 +140,22 @@ export function CuesBatchSection({
               mode,
             })),
             toFile,
-          ),
-        )
+          )
+        })
         .then(
           (saved) => saved,
           () => null,
         )
       setCommentsFailed(!result ? 'rekordbox' : result.failed.length || null)
       if (!result) return
-      const failed = new Set(result.failed)
+      const pending = new Set([...result.failed, ...result.unwritten])
       onCommentsSaved(
-        unsavedComments.filter((c) => !failed.has(c.path)),
+        unsavedComments.filter((c) => !pending.has(c.path)),
         toFile,
       )
-      setUnsavedComments(unsavedComments.filter((c) => failed.has(c.path)))
+      setUnsavedComments(unsavedComments.filter((c) => pending.has(c.path)))
     } finally {
+      setProgress(null)
       setBusy(false)
     }
   }
@@ -391,11 +397,50 @@ export function CuesBatchSection({
               <button
                 type="button"
                 data-testid="cues-batch-comments-save"
-                disabled={busy}
-                onClick={() => void saveComments()}
-                className={PRIMARY_BODY}
+                disabled={busy && !progress}
+                aria-label={progress ? tr('common.cancel') : undefined}
+                onClick={() =>
+                  progress ? void window.api.cues.cancelComments() : void saveComments()
+                }
+                className={progress ? PRIMARY_BODY_RUNNING : PRIMARY_BODY}
               >
-                {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
+                {progress && (
+                  <>
+                    <span
+                      data-testid="cues-batch-comments-fill"
+                      aria-hidden="true"
+                      className="absolute inset-0 origin-left bg-[var(--color-accent)] transition-transform duration-240 ease-standard"
+                      style={{
+                        transform: `scaleX(${progress.total > 0 ? progress.done / progress.total : 0})`,
+                      }}
+                    />
+                    <span aria-hidden="true" className="progress-sweep absolute inset-0" />
+                  </>
+                )}
+                <span data-testid="cues-batch-comments-labels" className="relative grid">
+                  <span
+                    aria-hidden={!!progress}
+                    className={`[grid-area:1/1] ${progress ? 'invisible' : ''}`}
+                  >
+                    {tr('editor.cues.batch.saveComments', { count: unsavedComments.length })}
+                  </span>
+                  <span
+                    data-testid="cues-batch-comments-progress"
+                    aria-hidden={!progress}
+                    className={`[grid-area:1/1] tabular-nums ${progress ? 'group-hover:invisible group-focus-visible:invisible' : 'invisible'}`}
+                  >
+                    {tr('editor.cues.batch.savingComments', {
+                      done: progress?.done ?? unsavedComments.length,
+                      total: progress?.total ?? unsavedComments.length,
+                    })}
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className={`[grid-area:1/1] invisible ${progress ? 'group-hover:visible group-focus-visible:visible' : ''}`}
+                  >
+                    {tr('common.cancel')}
+                  </span>
+                </span>
               </button>
               <button
                 type="button"

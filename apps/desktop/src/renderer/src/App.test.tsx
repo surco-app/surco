@@ -450,8 +450,8 @@ function setApi(over: Record<string, unknown> = {}): void {
     endConversionBatch: vi.fn(),
     cancelJob: vi.fn(),
     reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
-    cues: stubApi().cues,
     ...over,
+    cues: { ...stubApi().cues, ...(over.cues as object | undefined) },
     dj: djReads(
       {
         rekordbox: {

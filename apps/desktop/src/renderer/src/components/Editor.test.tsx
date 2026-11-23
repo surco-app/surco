@@ -135,7 +135,7 @@ beforeEach(() => {
     // whether to show its paste button; default to empty and a no-op unsubscribe.
     hasClipboardImage: vi.fn().mockResolvedValue(false),
     onWindowFocus: vi.fn(() => () => {}),
-    cues: {},
+    cues: { onCommentProgress: vi.fn(() => () => {}) },
     dj: djReads({
       rekordbox: { available: vi.fn<ProgramReads['available']>().mockResolvedValue(false) },
     }),
