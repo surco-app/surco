@@ -11,10 +11,10 @@ import {
   seratoGeobBody,
   seratoPayloadOf,
   seratoV1Agrees,
-  seratoV1CueTimes,
-  seratoV1CueTimesArmored,
   seratoV1Cues,
   seratoV1CuesArmored,
+  seratoV1CueTimes,
+  seratoV1CueTimesArmored,
   withSeratoCues,
 } from './seratoMarkers'
 import {

@@ -2,11 +2,11 @@ import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import log from 'electron-log/main'
 import { describe, expect, it, vi } from 'vitest'
+import type { QueueApply } from './rekordboxQueue'
 import { crateFileOf } from './seratoCrateFile'
 import { parseSeratoCrate, parseSeratoDatabase } from './seratoDatabase'
 import { concat, frame, track, utf16be } from './seratoDatabaseFixture'
 import { crateBytes, onlyBackupOf, tempsUnder, twoRoots } from './seratoLibraryFixture'
-import type { QueueApply } from './rekordboxQueue'
 import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
 
 vi.mock('electron-log/main', () => ({ default: { warn: vi.fn(), info: vi.fn(), error: vi.fn() } }))
