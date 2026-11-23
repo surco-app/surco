@@ -10,6 +10,7 @@ import {
   type StagedArtwork,
   stageArtwork,
 } from './rekordboxArtwork'
+import { type ContentProbe, type FileFacts, readFileFacts } from './rekordboxContentAdd'
 import { shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
@@ -68,6 +69,9 @@ export interface RepointBatchOptions {
   // the write like any other missing backup.
   sessionBackup?: (collectionPath: string) => Promise<void>
   readCover?: (file: string) => Buffer | null
+  // Reads the new file's bitrate, depth, rate and length; without it those columns keep
+  // what they held.
+  probe?: ContentProbe
 }
 
 // rekordbox stores the format as a number, so an entry left on the old code would
@@ -140,7 +144,7 @@ export async function repointTracks(
 ): Promise<RepointResult[]> {
   const copy = batch.backup ?? writeBackup
   const results: (RepointResult | undefined)[] = repoints.map(() => undefined)
-  const pending: { index: number; size: number; fileType: number }[] = []
+  const pending: { index: number; size: number; fileType: number; file?: FileFacts | null }[] = []
   for (const [index, { from, to }] of repoints.entries()) {
     // The pair the renderer handed over, logged before any guard runs. A lookup miss can
     // come from the wrong `from` (the renderer named a file rekordbox never had) or from
@@ -166,6 +170,13 @@ export async function repointTracks(
   // Every track still undecided gets the reason that stopped the run.
   const settle = (result: RepointResult): RepointResult[] => results.map((r) => r ?? result)
   if (pending.length === 0) return settle({ written: false, reason: 'output-missing' })
+  const { probe } = batch
+  if (probe)
+    await Promise.all(
+      pending.map(async (p) => {
+        p.file = await readFileFacts(repoints[p.index].to, p.fileType, probe).catch(() => null)
+      }),
+    )
 
   // rekordbox holds master.db open through SQLCipher for as long as it runs, so a write
   // underneath it can be lost or can corrupt the file. Checked again below, right before
@@ -174,7 +185,13 @@ export async function repointTracks(
 
   const db = openRekordboxDb(collectionPath)
   if (!db) return settle({ written: false, reason: 'unreadable' })
-  const writes: { index: number; id: string; size: number; fileType: number }[] = []
+  const writes: {
+    index: number
+    id: string
+    size: number
+    fileType: number
+    file?: FileFacts | null
+  }[] = []
   let folded = false
   try {
     const trackOf = trackFinder(db)
@@ -245,6 +262,13 @@ export async function repointTracks(
               rb_local_usn = ?, updated_at = ?
         WHERE ID = ?`,
     )
+    // rekordbox reads these off the file when it imports it and never again, so a row moved
+    // onto another file kept describing the old one: an AIFF listed at the MP3's 320 kbps.
+    const technical = writes.some((w) => w.file)
+      ? write.prepare(
+          `UPDATE djmdContent SET BitRate = ?, BitDepth = ?, SampleRate = ?, Length = ? WHERE ID = ?`,
+        )
+      : null
     const now = new Date()
     const stamp = rekordboxStamp(now)
     write.transaction(() => {
@@ -259,6 +283,14 @@ export async function repointTracks(
           stamp,
           w.id,
         )
+        if (w.file)
+          technical?.run(
+            w.file.bitRateKbps,
+            w.file.bitDepth,
+            w.file.sampleRate,
+            Math.floor(w.file.durationSec),
+            w.id,
+          )
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
         if (audio) {
           shiftCues(write, w.id, audio.cueShiftMs, { now })

@@ -89,6 +89,7 @@ const SENT: Record<VerifyDetailKey, CheckDetail['params'][]> = {
     { before: 3, after: 8 },
   ],
   rekordboxAnalysisEmptied: [undefined],
+  rekordboxAnalysisStale: [undefined],
   rekordboxPlaylistMissing: [{ playlist: 'Peak time' }],
   rekordboxUnreadable: [undefined],
   engineOk: [{ format: 'WAV' }, { format: 'WAV', playlists: ['House', 'Peak time'] }],

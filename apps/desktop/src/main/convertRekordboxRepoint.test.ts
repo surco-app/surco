@@ -216,6 +216,21 @@ describe('rekordboxRepointFor', () => {
     ).toEqual({ cueShiftMs: -51 })
   })
 
+  // The 23/11 replacement test on a copy of a real collection: a FLAC of another recording
+  // copied into an AIFF kept the old MP3's analysis, and rekordbox never analyses a repointed
+  // file by itself, so it would draw the MP3's waveform and grid over the new audio. Without
+  // a measure saying it is the same audio, the cues stay put and the analysis goes.
+  it('has rekordbox re-analyse a copied replacement whose shift could not be trusted', () => {
+    for (const unmoved of ['noMatch', 'drift', 'unreadable'] as const)
+      expect(
+        rekordboxRepointFor('/downloads/b.flac', '/m/b.aiff', {
+          replaces: '/m/b.mp3',
+          replaceShift: { unmoved },
+          replaceAudio: { oldShiftMs: 26.12, newShiftMs: 0 },
+        })?.audio,
+      ).toEqual({ cueShiftMs: 0 })
+  })
+
   // Same audio, and rekordbox places both files at the same point of its timeline: the cues
   // and the analysis still describe the new file, so neither moves. Re-analysing would only
   // throw away a grid the DJ may have corrected by hand.

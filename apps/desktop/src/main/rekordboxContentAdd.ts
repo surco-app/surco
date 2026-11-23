@@ -35,6 +35,31 @@ export interface ContentProbe {
 const PCM = new Set([11, 12])
 const LOSSY = new Set([1, 4])
 
+export type FileFacts = Pick<
+  ContentFacts,
+  'durationSec' | 'sampleRate' | 'bitDepth' | 'bitRateKbps'
+>
+
+// What rekordbox reads off the file itself when it imports it, shared by an added row and
+// one a repoint moved onto another file.
+export async function readFileFacts(
+  path: string,
+  fileType: number,
+  probe: ContentProbe,
+): Promise<FileFacts | null> {
+  const [props, duration] = await Promise.all([probe.properties(path), probe.duration(path)])
+  if (duration === null) return null
+  const bitDepth = LOSSY.has(fileType) ? 16 : (props.bitDepth ?? 16)
+  return {
+    durationSec: duration,
+    sampleRate: props.sampleRateHz,
+    bitDepth,
+    bitRateKbps: PCM.has(fileType)
+      ? Math.floor((props.sampleRateHz * bitDepth * props.channels) / 1000)
+      : (props.bitrateKbps ?? 0),
+  }
+}
+
 export async function readContentFacts(
   path: string,
   meta: RekordboxMeta,
@@ -42,25 +67,18 @@ export async function readContentFacts(
 ): Promise<ContentFacts | null> {
   const fileType = FILE_TYPES[extname(path).slice(1).toLowerCase()]
   if (fileType === undefined) return null
-  const [st, props, duration] = await Promise.all([
+  const [st, file] = await Promise.all([
     stat(path, { bigint: true }),
-    probe.properties(path),
-    probe.duration(path),
+    readFileFacts(path, fileType, probe),
   ])
-  if (duration === null) return null
-  const bitDepth = LOSSY.has(fileType) ? 16 : (props.bitDepth ?? 16)
+  if (file === null) return null
   return {
     path,
     fileType,
     fileSize: Number(st.size),
     inode: BigInt.asIntN(64, st.ino).toString(),
     createdMs: Number(st.birthtimeMs),
-    durationSec: duration,
-    sampleRate: props.sampleRateHz,
-    bitDepth,
-    bitRateKbps: PCM.has(fileType)
-      ? Math.floor((props.sampleRateHz * bitDepth * props.channels) / 1000)
-      : (props.bitrateKbps ?? 0),
+    ...file,
     meta,
   }
 }

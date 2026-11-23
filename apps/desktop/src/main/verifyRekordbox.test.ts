@@ -236,6 +236,52 @@ describe('checkRekordbox', () => {
     expect(checkOne(db, expectFor(before))[0].detail.key).toBe('rekordboxAnalysisEmptied')
   })
 
+  // The 23/11 replacement test on a copy of a real collection: the repoint emptied the
+  // analysis itself so rekordbox would draw the new file, and the check read its own write
+  // as a loss, kept the warning on the row and the old file from retiring.
+  it('an emptied analysis the repoint asked for on a sample-kept replacement is ok', () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    write(db, `UPDATE djmdContent SET AnalysisDataPath = '', Analysed = 0 WHERE ID = '100'`)
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
+  // rekordbox never analyses a repointed file by itself: a row that was to be analysed again
+  // but still holds the old analysis would show the old file's waveform and grid over the
+  // new audio, the very thing emptying it is there to prevent.
+  it("the old file's analysis left on a row that was to be re-analysed is rekordboxAnalysisStale", () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0]).toEqual({
+      place: 'rekordbox',
+      state: 'mismatch',
+      detail: { key: 'rekordboxAnalysisStale' },
+    })
+  })
+
+  it('a row that was never analysed is not stale when it was to be re-analysed', () => {
+    const db = collection([{}])
+    const before = snapshot(db)
+    repoint(db, '100')
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
+  it('a row rekordbox already analysed again on the new file is ok', () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    repoint(db, '100')
+    write(
+      db,
+      `UPDATE djmdContent SET AnalysisDataPath = '/PIONEER/USBANLZ/0b2/new/ANLZ0000.DAT' WHERE ID = '100'`,
+    )
+    expect(checkOne(db, expectFor(before, { reanalysed: true }))[0].state).toBe('ok')
+  })
+
   // A re-encode moves the audio, so rekordbox must analyse it again: an empty analysis
   // is the intended state there, not a loss.
   it('an emptied AnalysisDataPath after a reencode is ok', () => {
@@ -666,5 +712,31 @@ describe('the repoint and its check together', () => {
     expect(checked.state).toBe('mismatch')
     expect([rekordboxRow(db, '100').path, rekordboxRow(db, '101').path]).toEqual([one, two])
     expect(rekordboxRow(db, '101').cuesMs).toEqual(thirteen)
+  }, 30000)
+
+  // Track B of the 23/11 test on a copy of a real collection: another recording copied into
+  // an AIFF, its shift not trusted. The repoint keeps the cues, empties the analysis so
+  // rekordbox draws the new audio, and the check reads that as done, not as a lost analysis.
+  it('a copied replacement of another recording is re-analysed with its cues and checks ok', async () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    const to = onDisk(join(MUSIC, 'Artist', 'Other.aiff'), 4321)
+    const [result] = await repointTracks(
+      db,
+      [{ from: FROM, to, audio: { cueShiftMs: 0 }, ...find }],
+      {
+        backup: async () => {},
+      },
+    )
+    const [checked] = checkRekordbox(
+      readOnly(db),
+      [{ from: FROM, to, samplesKept: true, reanalysed: true, before, added: false, size: 4321 }],
+      find,
+    )
+
+    expect(result.written).toBe(true)
+    expect(rekordboxRow(db, '100')).toMatchObject({ cuesMs: thirteen, analysisDataPath: '' })
+    expect(checked.state).toBe('ok')
   }, 30000)
 })

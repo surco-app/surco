@@ -59,12 +59,16 @@ export function rekordboxRepointFor(
   const replaceAudio = options.replaceAudio ?? { oldShiftMs: 0, newShiftMs: 0 }
   const replaceCueShiftMs =
     moved === undefined ? 0 : Math.round(moved + replaceAudio.newShiftMs - replaceAudio.oldShiftMs)
-  // A replacement whose audio moved in rekordbox's own timeline leaves its waveform and grid
-  // describing the old file even when the samples were copied, so it gets the same
-  // re-analysis a re-encoded one does. A shift of zero is not enough to skip it: the lossless
-  // master of a LAME MP3 measures 0 on ffmpeg's clock yet sits 51 ms earlier in rekordbox's.
+  // A replacement points the row at another file, and rekordbox never analyses a repointed
+  // file by itself (measured 24/10), so its waveform and grid would keep describing the old
+  // one even when the samples were copied: it gets the same re-analysis a re-encoded one
+  // does. Only a measure that matched both ends of the two files at one spot of rekordbox's
+  // timeline vouches for the same audio, and keeps a grid the DJ may have corrected by hand.
+  // A shift of zero is not enough alone: the lossless master of a LAME MP3 measures 0 on
+  // ffmpeg's clock yet sits 51 ms earlier in rekordbox's.
   const audio =
-    options.replaces && (options.audio || replaceCueShiftMs !== 0)
+    options.replaces &&
+    (options.audio || (options.replaceShift && moved === undefined) || replaceCueShiftMs !== 0)
       ? { cueShiftMs: replaceCueShiftMs }
       : options.audio && {
           cueShiftMs: Math.round(

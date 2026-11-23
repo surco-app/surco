@@ -353,6 +353,7 @@ export function repointRekordbox(
     {
       sessionBackup: (db) => sessions.rekordbox.ensure(db),
       readCover: readEmbeddedCover,
+      probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
     },
   )
 }
