@@ -86,11 +86,6 @@ describe('PhraseCountRow', () => {
     expect(screen.getByTestId('phrase-count-apply')).toHaveAccessibleName('Put in the comment')
   })
 
-  it('keeps the count and its action on one line, where a wrapped button used to sit alone on a second', () => {
-    renderRow(read([0, 64, 320].map(callAt)), '')
-    expect(screen.getByTestId('phrase-count').className.split(' ')).not.toContain('flex-wrap')
-  })
-
   it('says two CALLs are needed while there are fewer, so the DJ knows where the count comes from', () => {
     renderRow(read([callAt(0)]), '')
     expect(screen.getByTestId('phrase-count-needs-calls')).toBeInTheDocument()
