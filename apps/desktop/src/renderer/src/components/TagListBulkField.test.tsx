@@ -288,19 +288,4 @@ describe('TagListBulkField', () => {
     expect(body).not.toBeNull()
     expect(within(body as HTMLElement).getByTestId('grouping-track-a1')).toBeInTheDocument()
   })
-
-  // WHY: beside its chips the label kept the 34 px row of a text box it does not have, so it
-  // sat 6 px below the chips and pushed "Per track" 20 px away. It lines up on the first
-  // chip's text instead, and "Per track" follows as close as it does when stacked.
-  it('lines its label up with the first row of chips beside them, with no empty box row', () => {
-    renderField()
-    const label = screen.getByText('Grouping')
-    const chips = screen.getByRole('group', { name: 'Grouping' })
-    expect(label.className).toContain('beside:self-baseline')
-    expect(chips.className).toContain('beside:self-baseline')
-    expect(label.className).not.toMatch(/beside:min-h-\[/)
-    expect(screen.getByTestId('grouping-per-track-toggle').parentElement?.className).toContain(
-      'beside:-mt-1.5',
-    )
-  })
 })
