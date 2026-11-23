@@ -12,6 +12,7 @@ import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { RekordboxRepoint } from './rekordboxBatch'
 import { createRekordboxQueue } from './rekordboxQueue'
+import { rekordboxRepointFor } from './rekordboxRepointFor'
 import { applyVirtualdjBatch } from './virtualdjBatch'
 import { parseVirtualdjDatabase } from './virtualdjDatabase'
 import { readVirtualdjLibrary, virtualdjLibraryRoots, virtualdjPlaylist } from './virtualdjLibrary'
@@ -104,6 +105,30 @@ describe('repointVirtualdjTracks', () => {
     const others = (x: string) =>
       parseVirtualdjDatabase(x).filter((s) => s.path !== FROM && s.path !== to)
     expect(others(xml)).toEqual(others(FIXTURE_XML))
+  })
+
+  // A new master whose audio starts 1.5 s later: the kick the DJ marked at 10 s in the old file
+  // now sounds at 11.5 s. VirtualDJ counts from the first sample with no codec lead, so its
+  // cue has to land exactly there, or every hot cue fires 1.5 s before its kick.
+  it('lands a cue set at 10 s at 11.5 s after a replacement measured 1.5 s later', async () => {
+    const lib = library()
+    const block = songBlock(FIXTURE_XML, FROM)
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(block, block.replace('Pos="29.973878"', 'Pos="10.0"')),
+    )
+    const to = lib.track('Pray.aiff')
+    const repoint = rekordboxRepointFor('/downloads/Pray.flac', to, {
+      replaces: FROM,
+      replaceShift: { moved: 1500 },
+      replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+    })
+    if (!repoint) throw new Error('the replacement told the libraries nothing')
+
+    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
+
+    const cue = /<Poi Name="Surco" Pos="([\d.]+)"/.exec(songBlock(lib.database(), to))?.[1]
+    expect(Number(cue)).toBeCloseTo(11.5, 3)
   })
 
   it('writes the converted file’s own bitrate, so a FLAC turned MP3 does not keep showing the FLAC’s', async () => {
