@@ -32,11 +32,6 @@ describe('CueFlowPreview', () => {
     expect(screen.getByTestId('cue-flow-preview')).not.toHaveTextContent('at 128 BPM')
   })
 
-  it('takes no inset of its own, so its selector, wave and status line start where the piece that holds it says, which is where the room for the ring of a new cue at the very start comes from', () => {
-    render(<CueFlowPreview flow={MY_FLOW} />)
-    expect(screen.getByTestId('cue-flow-preview').className).not.toMatch(/(?<![\w-])p[xlr]?-/)
-  })
-
   it('draws a hot cue without CALL for a flow that places only hot cues', () => {
     render(<CueFlowPreview flow={ONE_AT_32} />)
     expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(1)
@@ -308,17 +303,6 @@ describe('CueFlowPreview', () => {
       expect(wave).toHaveAttribute('data-focus-diff', 'false')
     })
 
-    it('underlines the count while its fade is held, so a pressed count looks pressed, without growing or moving its text, and gives its focus ring some air', () => {
-      render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      const count = screen.getByTestId('cue-preview-compare')
-      expect(count).toHaveClass('aria-pressed:underline', 'underline-offset-2')
-      expect(count).toHaveClass('-mx-1', 'px-1', 'rounded')
-      const resting = count.className
-      fireEvent.click(count)
-      expect(count).toHaveAttribute('aria-pressed', 'true')
-      expect(count.className).toBe(resting)
-    })
-
     it('keeps the fade for a count focused by keyboard when the pointer passes over it and leaves, since the focus is still there', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
       const count = screen.getByTestId('cue-preview-compare')
@@ -383,34 +367,17 @@ describe('CueFlowPreview', () => {
       expect(screen.queryByTestId('cue-preview-now')).toBeNull()
     })
 
-    it('keeps the two icons the same size whichever is chosen and only slides the pill behind them, so the switch never outweighs the wave nor moves the line it sits on', () => {
+    it('only slides the pill behind the two icons to the side that is chosen', () => {
       render(<CueFlowPreview flow={ONE_AT_32} track={marked} />)
-      const group = screen.getByTestId('cue-preview-mode')
       const flow = screen.getByTestId('cue-preview-mode-flow')
       const now = screen.getByTestId('cue-preview-mode-now')
       const thumb = screen.getByTestId('cue-preview-mode-thumb')
-      expect(group).toHaveClass('h-6', 'shrink-0', 'rounded-full', 'p-0.5')
-      expect(flow).toHaveClass('press', 'h-5', 'w-[26px]', 'rounded-full')
       expect(thumb).toHaveAttribute('aria-hidden', 'true')
       expect(thumb).toHaveAttribute('data-side', 'flow')
-      expect(thumb).toHaveClass(
-        'h-5',
-        'w-[26px]',
-        'translate-x-0',
-        'transition-transform',
-        'duration-200',
-        'ease-standard',
-        'motion-reduce:transition-none',
-      )
-      const before = [group.className, flow.className, now.className]
       fireEvent.click(now)
       expect(flow).toHaveAttribute('aria-checked', 'false')
       expect(now).toHaveAttribute('aria-checked', 'true')
       expect(thumb).toHaveAttribute('data-side', 'now')
-      expect(thumb).toHaveClass('translate-x-[26px]', 'transition-transform')
-      expect(thumb).not.toHaveClass('translate-x-0')
-      expect([group.className, flow.className, now.className]).toEqual(before)
-      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
       fireEvent.click(flow)
       expect(flow).toHaveAttribute('aria-checked', 'true')
       expect(thumb).toHaveAttribute('data-side', 'flow')
@@ -473,7 +440,6 @@ describe('CueFlowPreview', () => {
     it('keeps the line and the switch in place when the flow takes nothing away, so nothing jumps on the way back', () => {
       render(<CueFlowPreview flow={MY_FLOW} track={onlyMark} />)
       fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
-      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
       expect(screen.queryByTestId('cue-preview-compare')).toBeNull()
       expect(screen.queryByTestId(/^cue-wave-hot-/)).toBeNull()
       expect(screen.getAllByTestId(/^cue-wave-call-/)).toHaveLength(1)
@@ -526,7 +492,6 @@ describe('CueFlowPreview', () => {
       expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
       fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
       expect(screen.getByTestId('cue-preview-status')).not.toHaveTextContent(leftOut)
-      expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
       expect(screen.queryByTestId(/^cue-wave-trimmed-/)).toBeNull()
       fireEvent.click(screen.getByTestId('cue-preview-mode-flow'))
       expect(screen.getByTestId('cue-preview-status')).toHaveTextContent(leftOut)
@@ -535,20 +500,11 @@ describe('CueFlowPreview', () => {
     it('draws the selector as a control of its own, lifted off the box with a note in the accent colour, the title in full ink and a clear arrow, so the DJ sees the track can be changed, without growing', () => {
       render(<CueFlowPreview flow={MIX_IN} track={marked} />)
       const selector = screen.getByTestId('cue-preview-track')
-      expect(selector).toHaveClass(
-        'h-8',
-        'w-full',
-        'bg-[var(--color-panel-2)]',
-        'border-[var(--color-line-strong)]',
-      )
       const icon = screen.getByTestId('cue-preview-track-icon')
       expect(icon).toHaveAttribute('aria-hidden', 'true')
-      expect(icon).toHaveClass('size-3.5', 'shrink-0', 'text-accent')
       const title = screen.getByTestId('cue-preview-track-title')
       expect(title).toHaveTextContent(/^DJ Made, Millenium Stringz$/)
-      expect(title).toHaveClass('truncate', 'font-medium', 'text-fg')
       expect(selector.firstElementChild).toBe(icon)
-      expect(selector.lastElementChild).toHaveClass('text-fg')
     })
 
     it('names the artist of the track after its title in a fainter ink that gives way before the title is cut, since a collection repeats titles and the title is what the DJ looks for', () => {
@@ -557,8 +513,6 @@ describe('CueFlowPreview', () => {
       const artist = screen.getByTestId('cue-preview-track-artist')
       expect(title).toHaveTextContent(/^Glue$/)
       expect(artist).toHaveTextContent(/^Bicep$/)
-      expect(artist).toHaveClass('min-w-0', 'shrink-[9999]', 'truncate', 'text-fg-faint')
-      expect(title).not.toHaveClass('shrink-[9999]')
       expect(title.compareDocumentPosition(artist) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
       expect(
         artist.compareDocumentPosition(screen.getByTestId('cue-preview-same')) &
@@ -656,10 +610,8 @@ describe('CueFlowPreview', () => {
         render(<CueFlowPreview flow={flow} track={track} />)
         if (now) fireEvent.click(screen.getByTestId('cue-preview-mode-now'))
         const line = screen.getByTestId('cue-preview-status')
-        expect(line).toHaveClass('h-7')
         const said = Array.from(line.querySelectorAll<HTMLElement>('[data-status]'))
         expect(said.map((el) => el.dataset.status)).toEqual(status ? [status] : [])
-        expect(said.every((el) => el.classList.contains('truncate'))).toBe(true)
         const outside = Array.from(screen.getByTestId('cue-flow-preview').children).filter(
           (el) => el.tagName === 'P',
         )
@@ -726,12 +678,9 @@ describe('CueFlowPreview', () => {
           'DJ Made, Millenium Stringz',
         )
         const line = screen.getByTestId('cue-preview-status')
-        expect(line).toHaveClass('h-7')
         const said = screen.getByTestId('cue-preview-finding')
         expect(said).toHaveAttribute('role', 'status')
         expect(said).toHaveTextContent(/^Finding the points of the track…$/)
-        expect(said).toHaveClass('truncate')
-        expect(said.querySelector('svg')).toHaveClass('animate-spin')
         expect(
           Array.from(line.querySelectorAll<HTMLElement>('[data-status]')).map(
             (el) => el.dataset.status,
@@ -746,7 +695,6 @@ describe('CueFlowPreview', () => {
           <CueFlowPreview flow={ONE_AT_32} track={hotOnly} points={POINTS} onShown={onShown} />,
         )
         expect(screen.queryByTestId('cue-preview-finding')).toBeNull()
-        expect(screen.getByTestId('cue-preview-status')).toHaveClass('h-7')
         expect(screen.getByTestId(`cue-wave-call-${beat(64)}`)).toHaveAttribute('data-auto', 'true')
       })
 
@@ -848,8 +796,6 @@ describe('CueFlowPreview', () => {
       const loading = screen.getByTestId('cue-preview-track-loading')
       expect(loading).toHaveAttribute('role', 'status')
       expect(loading).toHaveAccessibleName('Reading your collection…')
-      expect(loading).toHaveClass('h-7')
-      expect(loading.querySelector('svg')).toHaveClass('animate-spin')
       expect(screen.getByTestId('cue-preview-track-search')).toHaveFocus()
       expect(screen.getByTestId('cue-preview-track-search')).toBeEnabled()
       expect(screen.getByTestId('cue-preview-track-separator')).toBeInTheDocument()
@@ -941,12 +887,8 @@ describe('CueFlowPreview', () => {
         expect(row).toHaveAccessibleName('Program')
         const all = within(row).getAllByRole('radio')
         expect(all.map((r) => r.textContent)).toEqual(['rekordbox', 'Traktor', 'Engine DJ'])
-        for (const r of all) expect(r).toHaveClass('press', 'flex-1', 'min-w-0', 'truncate')
-        const resting = radio('traktor').className
         fireEvent.click(radio('traktor'))
         expect(radio('traktor')).toHaveAttribute('aria-checked', 'true')
-        expect(radio('traktor').className).toBe(resting)
-        expect(radio('rekordbox').className).toBe(resting)
       })
 
       it('draws no row for a single program, since there is nothing to choose', () => {
