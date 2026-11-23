@@ -679,4 +679,30 @@ describe('the repoint and its check together', () => {
     expect([rekordboxRow(db, '100').path, rekordboxRow(db, '101').path]).toEqual([one, two])
     expect(rekordboxRow(db, '101').cuesMs).toEqual(thirteen)
   }, 30000)
+
+  // Track B of the 23/11 test on a copy of a real collection: another recording copied into
+  // an AIFF, its shift not trusted. The repoint keeps the cues, empties the analysis so
+  // rekordbox draws the new audio, and the check reads that as done, not as a lost analysis.
+  it('a copied replacement of another recording is re-analysed with its cues and checks ok', async () => {
+    const db = collection([{}])
+    analyse(db, '100')
+    const before = snapshot(db)
+    const to = onDisk(join(MUSIC, 'Artist', 'Other.aiff'), 4321)
+    const [result] = await repointTracks(
+      db,
+      [{ from: FROM, to, audio: { cueShiftMs: 0 }, ...find }],
+      {
+        backup: async () => {},
+      },
+    )
+    const [checked] = checkRekordbox(
+      readOnly(db),
+      [{ from: FROM, to, samplesKept: true, reanalysed: true, before, added: false, size: 4321 }],
+      find,
+    )
+
+    expect(result.written).toBe(true)
+    expect(rekordboxRow(db, '100')).toMatchObject({ cuesMs: thirteen, analysisDataPath: '' })
+    expect(checked.state).toBe('ok')
+  }, 30000)
 })
