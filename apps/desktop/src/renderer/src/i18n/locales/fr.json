@@ -1089,7 +1089,9 @@
       "pending": "Créée à l’écriture du morceau",
       "some": "Seulement sur certains morceaux. Clique pour l’ajouter à tous",
       "options": "Playlists {{app}}",
-      "unconfirmed": "Choisis la collection dans Réglages → Logiciels DJ → Traktor"
+      "unconfirmed": "Choisis la collection dans Réglages → Logiciels DJ → Traktor",
+      "copyRemoved_one": "{{count}} morceau retiré de « {{name}} »",
+      "copyRemoved_other": "{{count}} morceaux retirés de « {{name}} »"
     },
     "cues": {
       "title": "Cues",

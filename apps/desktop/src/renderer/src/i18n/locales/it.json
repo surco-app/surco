@@ -1089,7 +1089,9 @@
       "pending": "Verrà creata quando il brano viene scritto",
       "some": "Solo in alcuni brani. Fai clic per metterla in tutti",
       "options": "Playlist di {{app}}",
-      "unconfirmed": "Scegli la collezione in Impostazioni → Programmi DJ → Traktor"
+      "unconfirmed": "Scegli la collezione in Impostazioni → Programmi DJ → Traktor",
+      "copyRemoved_one": "{{count}} brano tolto da «{{name}}»",
+      "copyRemoved_other": "{{count}} brani tolti da «{{name}}»"
     },
     "cues": {
       "title": "Cue",

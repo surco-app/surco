@@ -1089,7 +1089,9 @@
       "pending": "Wird beim Schreiben des Tracks erstellt",
       "some": "Nur bei einigen Tracks. Klicken, um sie allen hinzuzufügen",
       "options": "{{app}}-Playlists",
-      "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor"
+      "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor",
+      "copyRemoved_one": "{{count}} Track aus „{{name}}“ entfernt",
+      "copyRemoved_other": "{{count}} Tracks aus „{{name}}“ entfernt"
     },
     "cues": {
       "title": "Cues",

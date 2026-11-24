@@ -1089,7 +1089,9 @@
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
       "options": "{{app}} プレイリスト",
-      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください"
+      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください",
+      "copyRemoved_one": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyRemoved_other": "「{{name}}」から {{count}} 件のトラックを外しました"
     },
     "cues": {
       "title": "キュー",

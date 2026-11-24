@@ -1089,7 +1089,9 @@
       "pending": "Es crearà en escriure la pista",
       "some": "Només en algunes pistes. Fes clic per posar-la a totes",
       "options": "Playlists de {{app}}",
-      "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor"
+      "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor",
+      "copyRemoved_one": "{{count}} pista treta de «{{name}}»",
+      "copyRemoved_other": "{{count}} pistes tretes de «{{name}}»"
     },
     "cues": {
       "title": "Cues",

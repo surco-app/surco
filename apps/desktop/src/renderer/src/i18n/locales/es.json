@@ -1089,7 +1089,9 @@
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
       "options": "Playlists de {{app}}",
-      "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor"
+      "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor",
+      "copyRemoved_one": "{{count}} pista quitada de «{{name}}»",
+      "copyRemoved_other": "{{count}} pistas quitadas de «{{name}}»"
     },
     "cues": {
       "title": "Cues",

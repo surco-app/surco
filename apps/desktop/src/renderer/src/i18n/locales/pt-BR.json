@@ -1089,7 +1089,9 @@
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
       "options": "Playlists do {{app}}",
-      "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor"
+      "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor",
+      "copyRemoved_one": "{{count}} faixa removida de “{{name}}”",
+      "copyRemoved_other": "{{count}} faixas removidas de “{{name}}”"
     },
     "cues": {
       "title": "Cues",
