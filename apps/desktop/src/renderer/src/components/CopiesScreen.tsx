@@ -393,7 +393,7 @@ function MusicFiles({
               onChange={(e) => setQuery(e.target.value)}
               aria-label={tr('trash.search')}
               placeholder={tr('trash.search')}
-              className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none placeholder:text-fg-faint"
+              className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
             />
           </div>
         </div>

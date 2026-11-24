@@ -184,7 +184,7 @@ export function FindReplaceModal({
               // field read it out on focus instead of leaving it to the red border.
               aria-describedby={badRegex ? 'find-replace-error' : undefined}
               spellCheck={false}
-              className={`min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none ${
+              className={`min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none focus-visible:shadow-none ${
                 regex ? 'pr-1 pl-1.5 font-mono' : ''
               }`}
             />
