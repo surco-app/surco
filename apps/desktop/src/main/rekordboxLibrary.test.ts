@@ -1025,6 +1025,49 @@ describe('a repoint whose audio was rewritten', () => {
     })
   })
 
+  describe('another master, whose cues settle on the grid rekordbox draws next', () => {
+    function hotCueAt(path: string, ms: number): void {
+      const db = openRekordboxDb(path)
+      if (!db) throw new Error('could not reopen the collection')
+      db.exec('ALTER TABLE djmdCue ADD COLUMN Kind INTEGER')
+      db.exec('ALTER TABLE djmdCue ADD COLUMN ColorTableIndex INTEGER')
+      db.prepare(`UPDATE djmdCue SET InMsec = ?, Kind = 1 WHERE ID = 'c1'`).run(ms)
+      db.close()
+    }
+
+    // The provisional list compares these against what rekordbox holds once it has analysed
+    // the new file, so they have to be the cues as this very write left them: 290 ms earlier,
+    // where the new master's kick sounds.
+    it('hands back the cues as the shift left them', async () => {
+      hotCueAt(dbPath, 10_000)
+      const output = join(audioDir, '02 Everybody.aiff')
+      await writeFile(output, Buffer.alloc(5000))
+
+      const [result] = await repointTracks(dbPath, [
+        { from: MP3, to: output, audio: { cueShiftMs: -290 }, snapToGrid: true },
+      ])
+
+      expect(result).toEqual({
+        written: true,
+        id: '900001',
+        settleOnGrid: { '900001': [{ id: 'c1', ms: 9710, kind: 1, color: null }] },
+      })
+    })
+
+    // The same master keeps the grid the cues were set on: nothing waits for rekordbox.
+    it('hands back nothing for a row that does not settle on the grid', async () => {
+      hotCueAt(dbPath, 10_000)
+      const output = join(audioDir, '02 Everybody.aiff')
+      await writeFile(output, Buffer.alloc(5000))
+
+      const [result] = await repointTracks(dbPath, [
+        { from: MP3, to: output, audio: { cueShiftMs: -290 } },
+      ])
+
+      expect(result).toEqual({ written: true, id: '900001' })
+    })
+  })
+
   it('keeps the analysis and the cues when the audio was not rewritten', async () => {
     const output = join(audioDir, '02 Everybody.wav')
     await writeFile(output, Buffer.alloc(5000))

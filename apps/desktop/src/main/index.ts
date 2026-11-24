@@ -572,7 +572,7 @@ const programQueues = {
             realPath: (p: string) => realpathSync(p),
           }),
         repoint: async (collectionPath, list) => {
-          const results = await repointRekordbox(collectionPath, list, sessions)
+          const results = await repointRekordbox(collectionPath, list, sessions, provisionalCues)
           leaveOutAndTell('rekordbox', queueLeftBehind(list, results))
           queueChecks.repointed('rekordbox', results)
           return results
@@ -1873,6 +1873,7 @@ function registerIpc(): void {
         sender.send(DJ_SYNC_ISSUE, { program, value: issue })
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
+    provisional: provisionalCues,
   })
 
   // Queued behind any review sync still writing, and the other way round.

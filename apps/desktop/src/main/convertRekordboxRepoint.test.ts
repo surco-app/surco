@@ -201,6 +201,31 @@ describe('rekordboxRepointFor', () => {
     ).toEqual({ cueShiftMs: 200 })
   })
 
+  // Another master of the same track can run a hair faster or slower: the real case drifts
+  // about 30 ms over the track. One shift puts each cue near its beat but not on it, so
+  // rekordbox has to draw the new file's own grid and Surco then settles every cue onto it;
+  // the shift itself is the same an exact measure of that figure would give.
+  it('has rekordbox re-analyse another master and settle its moved cues on the new grid', () => {
+    const options = {
+      replaces: '/m/a.mp3',
+      replaceAudio: { oldShiftMs: 26.12, newShiftMs: 0 },
+    }
+    const other = rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+      ...options,
+      replaceShift: { moved: -264, master: 'other' },
+    })
+    const exact = rekordboxRepointFor('/downloads/a.flac', '/m/a.aiff', {
+      ...options,
+      replaceShift: { moved: -264 },
+    })
+    expect(other?.reanalyse).toBe(true)
+    expect(other?.snapToGrid).toBe(true)
+    expect(other?.audio).toEqual(exact?.audio)
+    expect(other?.audio).toEqual({ cueShiftMs: -290 })
+    expect(exact?.reanalyse).toBeUndefined()
+    expect(exact?.snapToGrid).toBeUndefined()
+  })
+
   // The most common replacement: the lossless master of the MP3 the DJ prepared, the same
   // audio to the sample. Nothing moved for ffmpeg, but rekordbox placed the old LAME MP3
   // 51 ms into its timeline and places the AIFF at 0, so the kick marked at 10 000 ms now

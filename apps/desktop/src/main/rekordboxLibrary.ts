@@ -11,7 +11,8 @@ import {
   stageArtwork,
 } from './rekordboxArtwork'
 import { type ContentProbe, type FileFacts, readFileFacts } from './rekordboxContentAdd'
-import { shiftCues } from './rekordboxCues'
+import type { WantedCue } from '../shared/cueRules'
+import { liveCues, shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
   type FindOptions,
@@ -44,7 +45,14 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // net. rekordbox keeps its own rotating backups beside it as well.
 
 export type RepointResult =
-  | { written: true; id: string; ids?: string[] }
+  | {
+      written: true
+      id: string
+      ids?: string[]
+      // The cues each row of another master holds after this write, by row: what the
+      // provisional list settles on the grid rekordbox draws once it has analysed the file.
+      settleOnGrid?: Record<string, WantedCue[]>
+    }
   | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
@@ -56,6 +64,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   to: string
   meta?: RekordboxMeta
   audio?: { cueShiftMs: number }
+  snapToGrid?: true
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -296,6 +305,7 @@ export async function repointTracks(
       : null
     const now = new Date()
     const stamp = rekordboxStamp(now)
+    const onGrid = new Map<number, Record<string, WantedCue[]>>()
     write.transaction(() => {
       for (const w of writes) {
         const { to, meta, audio, onWrite } = repoints[w.index]
@@ -334,11 +344,27 @@ export async function repointTracks(
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()
       }
+      // Read once every write of the run is in, so a row moved twice hands back where its
+      // cues ended. Loops go with them though they never move: the provisional list only
+      // touches a row whose cues in rekordbox are still exactly this set, loops included.
+      for (const w of writes) {
+        if (!repoints[w.index].snapToGrid) continue
+        const cues = liveCues(write, w.id)
+        if (cues.every((c) => c.loop)) continue
+        const byRow = onGrid.get(w.index) ?? {}
+        byRow[w.id] = cues.map((c) => ({ id: c.id, ms: c.ms, kind: c.kind, color: c.color }))
+        onGrid.set(w.index, byRow)
+      }
     })()
     for (const w of writes) {
       const ids = writes.filter((o) => o.index === w.index).map((o) => o.id)
-      results[w.index] ??=
-        ids.length > 1 ? { written: true, id: w.id, ids } : { written: true, id: w.id }
+      const settleOnGrid = onGrid.get(w.index)
+      results[w.index] ??= {
+        written: true,
+        id: w.id,
+        ...(ids.length > 1 ? { ids } : {}),
+        ...(settleOnGrid ? { settleOnGrid } : {}),
+      }
     }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {

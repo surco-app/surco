@@ -449,6 +449,7 @@ function libraryHost(errors: string[]): LibraryHost {
         errors.push(`${program}:sync-issue: ${JSON.stringify(issue)}`)
     },
     rekordboxHeld: () => false,
+    provisional: { add: () => {} },
   }
 }
 
@@ -632,7 +633,9 @@ function rekordboxQueueInMemory(checks: { current?: QueueChecks }): RekordboxQue
         realPath: (p: string) => realpathSync(p),
       }),
     repoint: async (collectionPath, list) => {
-      const results = await repointRekordbox(collectionPath, list, sessions)
+      const results = await repointRekordbox(collectionPath, list, sessions, {
+        add: () => {},
+      })
       checks.current?.repointed('rekordbox', results)
       return results
     },

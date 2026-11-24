@@ -161,6 +161,7 @@ function host(overrides: Partial<Closers & LibraryHost> = {}) {
     showBlockedDialog: vi.fn(),
     reportIssue: vi.fn(),
     rekordboxHeld: () => false,
+    provisional: { add: vi.fn() },
     ...rest,
     ensureTraktorClosed,
     ensureRekordboxClosed,
@@ -1841,6 +1842,7 @@ function recordingHost() {
       if (SYNC_ISSUE_PROGRAMS.has(program)) channels.push(program)
     },
     rekordboxHeld: () => false,
+    provisional: { add: () => {} },
   }
   return { libraryHost, closed, blocked, channels }
 }
@@ -2447,13 +2449,74 @@ describe('libraryUntouched', () => {
 describe('repointRekordbox', () => {
   it("hands the rekordbox write a probe to read the new file's technical columns", async () => {
     WRITERS.repointTracks.mockClear()
-    await repointRekordbox('/c/master.db', [{ from: '/m/a.mp3', to: '/m/a.aiff' }], {
-      rekordbox: { ensure: async () => {} },
-    } as never)
+    await repointRekordbox(
+      '/c/master.db',
+      [{ from: '/m/a.mp3', to: '/m/a.aiff' }],
+      { rekordbox: { ensure: async () => {} } } as never,
+      { add: () => {} },
+    )
 
     const call = WRITERS.repointTracks.mock.calls[0] as unknown[]
     const batch = call[2] as { probe?: { properties: unknown } }
     expect(batch?.probe?.properties).toBe(probeProperties)
+  })
+
+  const cue = { id: 'c1', ms: 9710, kind: 1, color: null }
+
+  // rekordbox analyses another master on its next launch and draws a grid of its own. Each
+  // row has to wait in the provisional list with the cues this write left, or nothing
+  // settles them on that grid and they stay a few ms off the beat the DJ set them on.
+  it('leaves each row of another master waiting for rekordbox to draw its grid', async () => {
+    WRITERS.repointTracks.mockResolvedValueOnce([
+      {
+        written: true,
+        id: '7',
+        ids: ['7', '8'],
+        settleOnGrid: { '7': [cue], '8': [{ ...cue, id: 'c2' }] },
+      },
+    ] as never)
+    const provisional = { add: vi.fn() }
+    await repointRekordbox(
+      '/c/master.db',
+      [{ from: '/m/World of Dreams.mp3', to: '/m/World of Dreams.aiff', snapToGrid: true }],
+      { rekordbox: { ensure: async () => {} } } as never,
+      provisional,
+    )
+
+    expect(provisional.add.mock.calls).toEqual([
+      [{ contentId: '7', label: 'World of Dreams', wanted: [cue] }],
+      [{ contentId: '8', label: 'World of Dreams', wanted: [{ ...cue, id: 'c2' }] }],
+    ])
+  })
+
+  // A row on the same master keeps the grid its cues were set on: watching it would only
+  // queue moves rekordbox never asked for.
+  it('leaves nothing waiting for a row that does not settle on the grid', async () => {
+    WRITERS.repointTracks.mockResolvedValueOnce([{ written: true, id: '7' }] as never)
+    const provisional = { add: vi.fn() }
+    await repointRekordbox(
+      '/c/master.db',
+      [{ from: '/m/a.mp3', to: '/m/a.aiff' }],
+      { rekordbox: { ensure: async () => {} } } as never,
+      provisional,
+    )
+
+    expect(provisional.add).not.toHaveBeenCalled()
+  })
+
+  // A conversion run writes rekordbox straight away when it is closed, without the queue:
+  // that path has to leave the rows waiting too.
+  it('leaves another master waiting when a conversion run writes rekordbox itself', async () => {
+    REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
+    WRITERS.repointTracks.mockResolvedValueOnce([
+      { written: true, id: '7', settleOnGrid: { '7': [cue] } },
+    ] as never)
+    const provisional = { add: vi.fn() }
+    await flushConversionBatch(host({ provisional }), sessions, {
+      rekordbox: { enqueue: vi.fn(), applyQuietly: vi.fn() },
+    })
+
+    expect(provisional.add).toHaveBeenCalledWith({ contentId: '7', label: 'a', wanted: [cue] })
   })
 })
 
