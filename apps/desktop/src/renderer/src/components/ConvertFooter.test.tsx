@@ -11,6 +11,7 @@ import {
 } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
+import type { LibraryCopyOffer } from '../lib/libraryCopy'
 import type { BatchVerification, SelectionStatus } from '../lib/selectionStatus'
 import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
@@ -612,10 +613,17 @@ describe('ConvertFooter lossy source note', () => {
 })
 
 describe('ConvertFooter Serato stars note', () => {
-  const withStars = (over: { replaces?: boolean }): React.JSX.Element =>
+  const replacing: LibraryCopyOffer = {
+    name: 'Serato',
+    format: 'AIFF 16/44.1',
+    action: 'replace',
+    better: false,
+    held: false,
+  }
+  const withStars = (over: { libraryCopy?: LibraryCopyOffer }): React.JSX.Element =>
     cloneElement(footer(false), {
       item: { id: 't1', status: 'idle', inputPath: '/crate/a.aiff', meta: {} } as TrackItem,
-      replaces: true,
+      libraryCopy: replacing,
       seratoLosesStars: true,
       ...over,
     })
@@ -633,7 +641,7 @@ describe('ConvertFooter Serato stars note', () => {
   // track the batch replaces are lost the same way.
   it('says Serato will lose the stars before several tracks replace a Serato track', () => {
     render(
-      cloneElement(withStars({ replaces: false }), {
+      cloneElement(withStars({ libraryCopy: undefined }), {
         isMulti: true,
         selectedCount: 2,
         readyCount: 2,
@@ -649,7 +657,7 @@ describe('ConvertFooter Serato stars note', () => {
   // now, as each track of a selection is: alone it has to warn as it does in a selection.
   it('says Serato will lose the stars when the track is stamped to replace a Serato track', () => {
     render(
-      cloneElement(withStars({ replaces: false }), {
+      cloneElement(withStars({ libraryCopy: undefined }), {
         item: {
           id: 't1',
           status: 'idle',
@@ -664,8 +672,14 @@ describe('ConvertFooter Serato stars note', () => {
     )
   })
 
+  // Update rewrites the copy's tags where it sits, so Serato keeps the same file and its stars.
+  it('does not warn about Serato stars when only the copy tags are updated', () => {
+    render(withStars({ libraryCopy: { ...replacing, action: 'update' } }))
+    expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
+  })
+
   it('says nothing when the button adds instead of replacing', () => {
-    render(withStars({ replaces: false }))
+    render(withStars({ libraryCopy: undefined }))
     expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
   })
 })

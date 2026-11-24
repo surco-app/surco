@@ -1065,6 +1065,8 @@
     "copyLimitedBare": "{{loser}} のコピーはリミッティングが強いです。",
     "copyLimitedHereBare": "新しい方はリミッティングが強いです。",
     "libraryHasBetter": "それでも置き換え",
+    "libraryCopyKeepsAudio": "音声はそのまま",
+    "libraryCopyWithThisFile": "このファイルで",
     "requiredEmpty": "必須：変換前に入力してください",
     "coverMixed": "選択したトラックのアートワークが異なります",
     "coversDistinct_one": "{{count}} 種類のアートワーク",

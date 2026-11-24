@@ -3,9 +3,15 @@ import type React from 'react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
+import type {
+  FormatSetting,
+  LibraryCopyAction,
+  OutputFormat,
+  ProcessStage,
+} from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { exportButtonLabel } from '../lib/exportLabel'
+import type { LibraryCopyOffer } from '../lib/libraryCopy'
 import { panelDurationMs, standardEasing } from '../lib/motion'
 import { STAGE_PROGRESS } from '../lib/progress'
 import type { TrackItem } from '../types'
@@ -29,11 +35,13 @@ export const FORMATS = OUTPUT_FORMATS
 interface ExportButtonProps {
   status: TrackItem['status']
   stale: boolean
-  // The file would supersede a copy already in the library, so the button offers a
-  // replacement instead of an add.
-  replaces?: boolean
-  // The library's copy measured better, so the replace offer says so instead.
-  libraryBetter?: boolean
+  // A copy of this track already in a library: the body runs the remembered Update or Replace
+  // on it instead of converting a second file beside it.
+  libraryCopy?: LibraryCopyOffer
+  // Runs the action on the copy.
+  onLibraryAction?: (action: LibraryCopyAction) => void
+  // Remembers the action picked from the menu as the body's next press.
+  onLibraryActionChange?: (action: LibraryCopyAction) => void
   done: boolean
   outputFormat: FormatSetting
   // The format the dropdown half displays and the menu marks, when it differs from the pick:
@@ -106,12 +114,13 @@ interface ExportButtonProps {
 export function ExportButton({
   status,
   stale,
-  replaces,
-  libraryBetter,
+  libraryCopy,
+  onLibraryAction,
+  onLibraryActionChange,
   done,
   stage,
   outputFormat,
-  shownFormat = outputFormat,
+  shownFormat: pickedShownFormat = outputFormat,
   exportedFormat,
   incomplete,
   incompleteReason,
@@ -154,6 +163,31 @@ export function ExportButton({
   const formatLabel =
     outputFormat === 'source' ? tr('settings.formats.source') : outputFormat.toUpperCase()
 
+  const labelSpec = exportButtonLabel({
+    processing,
+    quiet,
+    inPlace,
+    tagsOnly,
+    sameFormat,
+    addsToMusic,
+    stale,
+    libraryAction: libraryCopy?.action,
+    libraryBetter: libraryCopy?.better,
+    done,
+    format: formatLabel,
+    exportedFormat: exportedFormat?.toUpperCase() ?? null,
+  })
+  const libraryAction = labelSpec.library
+  // Update rewrites only the copy's tags, so what gets written keeps the copy's own format
+  // whatever the pick says.
+  const shownFormat =
+    libraryAction === 'update' && libraryCopy?.keptFormat
+      ? libraryCopy.keptFormat
+      : pickedShownFormat
+  // A copy still being compared may yet turn out to be another version, and one without a
+  // path gives nothing to act on: the press waits for both.
+  const libraryHeld = !!libraryAction && !!libraryCopy?.held
+
   // The dropdown half shows the format the button writes (shownFormat). Every candidate is stacked in one grid cell
   // and only the chosen one is visible, so the half is as wide as the longest name in the
   // app's language and switching formats never moves either half.
@@ -174,20 +208,6 @@ export function ExportButton({
     </span>
   )
 
-  const labelSpec = exportButtonLabel({
-    processing,
-    quiet,
-    inPlace,
-    tagsOnly,
-    sameFormat,
-    addsToMusic,
-    stale,
-    replaces,
-    libraryBetter,
-    done,
-    format: formatLabel,
-    exportedFormat: exportedFormat?.toUpperCase() ?? null,
-  })
   // The in-flight view mirrors the track list's row: the stage names what's
   // happening, the fill below marks where in the pipeline it is (same keys, same
   // STAGE_PROGRESS marks). Only for the prominent button — the quiet re-export
@@ -248,6 +268,18 @@ export function ExportButton({
   function pickDestination(d: Destination): void {
     setOpen(false)
     onSelectDestination(d)
+  }
+
+  function pickLibraryAction(action: LibraryCopyAction): void {
+    setOpen(false)
+    onLibraryActionChange?.(action)
+    if (!libraryCopy?.held && !softBlocked) onLibraryAction?.(action)
+  }
+
+  const libraryMenu = libraryCopy && {
+    heading: `${libraryCopy.name} · ${libraryCopy.format}`,
+    action: libraryCopy.action,
+    onPick: pickLibraryAction,
   }
 
   if (prevUpToDate.current !== upToDate) {
@@ -356,12 +388,16 @@ export function ExportButton({
                     setShaking(true)
                     onBlockedPress?.()
                   }
-                : () => onProcess(outputFormat)
+                : libraryHeld
+                  ? undefined
+                  : libraryAction
+                    ? () => onLibraryAction?.(libraryAction)
+                    : () => onProcess(outputFormat)
           }
           // Cancellable keeps the button live during the convert; a non-cancellable processing
           // state still disables it outright, and missing tags only mark it aria-disabled.
           disabled={processing && !cancellable}
-          aria-disabled={softBlocked || undefined}
+          aria-disabled={softBlocked || libraryHeld || undefined}
           aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
           // The visible text is the stage, but pressing cancels: the name says both, keeping
           // the visible words first so voice control still finds it by what it shows.
@@ -495,6 +531,7 @@ export function ExportButton({
             onPickDestination={pickDestination}
             clearAfter={clearAfter}
             onToggleClearAfter={onToggleClearAfter}
+            libraryCopy={libraryMenu}
           />
         )}
       </div>

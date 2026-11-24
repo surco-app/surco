@@ -1065,6 +1065,8 @@
     "copyLimitedBare": "A cópia do {{loser}} está mais limitada.",
     "copyLimitedHereBare": "A nova está mais limitada.",
     "libraryHasBetter": "Substituir mesmo assim",
+    "libraryCopyKeepsAudio": "Mantém o áudio",
+    "libraryCopyWithThisFile": "Com este arquivo",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
     "coverMixed": "As faixas selecionadas têm capas diferentes",
     "coversDistinct_one": "{{count}} capa diferente",

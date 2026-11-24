@@ -1065,6 +1065,8 @@
     "copyLimitedBare": "Die {{loser}}-Kopie ist stärker limitiert.",
     "copyLimitedHereBare": "Die neue ist stärker limitiert.",
     "libraryHasBetter": "Trotzdem ersetzen",
+    "libraryCopyKeepsAudio": "Behält sein Audio",
+    "libraryCopyWithThisFile": "Mit dieser Datei",
     "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen",
     "coverMixed": "Die ausgewählten Tracks haben unterschiedliche Cover",
     "coversDistinct_one": "{{count}} unterschiedliches Cover",

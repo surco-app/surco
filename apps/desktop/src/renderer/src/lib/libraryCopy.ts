@@ -2,7 +2,7 @@ import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
 import type { DjProgram } from '../../../shared/djProgram'
 import { formatMatchesInput } from '../../../shared/format'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { OutputFormat, PlaylistSource } from '../../../shared/types'
+import type { LibraryCopyAction, OutputFormat, PlaylistSource } from '../../../shared/types'
 import type { LibraryVerdict } from '../components/LibrarySection'
 import type { TrackItem } from '../types'
 import { isAmbiguousCandidate, type ReplaceCandidate } from './appleMusicLibrary'
@@ -136,4 +136,16 @@ export function copyRefOf(target: LibraryCopyTarget): LibraryCopyRef {
 
 export function keptFormatOf(path: string): OutputFormat | undefined {
   return OUTPUT_FORMATS.find((format) => formatMatchesInput(format, path))
+}
+
+export interface LibraryCopyOffer {
+  // "rekordbox", "Apple Music"
+  name: string
+  // As the section's row shows it, e.g. "AIFF 16/44.1".
+  format: string
+  action: LibraryCopyAction
+  better: boolean
+  held: boolean
+  // The copy's own format, which Update keeps since it never touches the audio.
+  keptFormat?: OutputFormat
 }

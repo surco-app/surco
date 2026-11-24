@@ -1065,6 +1065,8 @@
     "copyLimitedBare": "La còpia de {{loser}} està més limitada.",
     "copyLimitedHereBare": "La nova està més limitada.",
     "libraryHasBetter": "Substituir igualment",
+    "libraryCopyKeepsAudio": "Manté el seu àudio",
+    "libraryCopyWithThisFile": "Amb aquest fitxer",
     "requiredEmpty": "Obligatori. Omple'l abans de convertir",
     "coverMixed": "Les pistes seleccionades tenen caràtules diferents",
     "coversDistinct_one": "{{count}} caràtula diferent",
