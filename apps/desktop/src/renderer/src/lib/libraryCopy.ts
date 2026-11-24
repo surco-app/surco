@@ -1,3 +1,4 @@
+import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { LibraryVerdict } from '../components/LibrarySection'
 
@@ -17,9 +18,31 @@ export function countsAsCopy(verdict: LibraryVerdict | null | undefined): boolea
   return verdict != null && COPY_VERDICTS.has(verdict)
 }
 
+interface CopyRow {
+  program: DjProgram
+  path: string
+  verdict: LibraryVerdict | null
+  durationSec?: number
+}
+
+const UNDECIDED: ReadonlySet<LibraryVerdict> = new Set(['measuring', 'unmeasurable'])
+
+// While the comparison runs, or when it cannot run, nothing has ruled out that the copy is
+// another edit, which only the verdict would call another version. Until then only a copy of
+// the open file's length is filed in the DJ's set.
+function sameLength(row: CopyRow, fileDurationSec: number | undefined): boolean {
+  if (row.verdict === null || !UNDECIDED.has(row.verdict)) return true
+  if (row.durationSec === undefined || fileDurationSec === undefined) return false
+  return Math.abs(row.durationSec - fileDurationSec) <= VERSION_GAP_SEC
+}
+
 export function copyPathIn(
   program: DjProgram,
-  rows: readonly { program: DjProgram; path: string; verdict: LibraryVerdict | null }[],
+  rows: readonly CopyRow[],
+  fileDurationSec?: number,
 ): string | undefined {
-  return rows.find((row) => row.program === program && countsAsCopy(row.verdict))?.path
+  return rows.find(
+    (row) =>
+      row.program === program && countsAsCopy(row.verdict) && sameLength(row, fileDurationSec),
+  )?.path
 }

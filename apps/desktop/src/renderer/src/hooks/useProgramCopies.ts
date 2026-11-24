@@ -19,6 +19,7 @@ export interface ProgramCopy {
   program: DjProgram
   path: string
   isThisFile: boolean
+  durationSec?: number
 }
 
 interface Args {
@@ -150,7 +151,7 @@ export function useProgramCopies({
   const thisKey = pathKey(inputPath)
   return useMemo(
     () =>
-      DJ_PROGRAMS.flatMap((program, i) => {
+      DJ_PROGRAMS.flatMap((program, i): ProgramCopy[] => {
         const tracks = collections[i]
         if (!tracks) return []
         const { index, pathKeys } = lookupFor(tracks)
@@ -168,7 +169,14 @@ export function useProgramCopies({
             : null) ??
           findLibraryEntry(index, { title, artist })
         if (!entry?.path) return []
-        return [{ program, path: entry.path, isThisFile: pathKey(entry.path) === thisKey }]
+        return [
+          {
+            program,
+            path: entry.path,
+            isThisFile: pathKey(entry.path) === thisKey,
+            durationSec: entry.durationSec,
+          },
+        ]
       }),
     [collections, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath, thisKey],
   )

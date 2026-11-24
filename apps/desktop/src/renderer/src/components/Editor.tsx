@@ -904,11 +904,14 @@ export const Editor = memo(function Editor({
     program: copy.program,
     path: copy.path,
     verdict: rowVerdict(programVerdicts[i]),
+    durationSec: copy.durationSec,
   }))
   // Keyed on each program's copy target after the verdict filter, not on the rows (new on
   // every render, so a new copyPathOf would read the membership again each time) nor on the
   // raw paths: a copy that turns out to be another version must stop being the target.
-  const copyTargets = JSON.stringify(DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows)))
+  const copyTargets = JSON.stringify(
+    DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows, item.duration)),
+  )
   // A selection has no section rows, so its copies come from the collections by title, artist
   // and length. Only the playlists fields use them, so no collection is read without one.
   // Keyed like copyTargets: the selection is a new array on every progress tick.

@@ -207,7 +207,7 @@ describe('useProgramCopies', () => {
     )
     await waitFor(() =>
       expect(result.current).toEqual([
-        { program: 'rekordbox', path: '/r/real-love.wav', isThisFile: false },
+        { program: 'rekordbox', path: '/r/real-love.wav', isThisFile: false, durationSec: 447.9 },
       ]),
     )
   })
@@ -242,7 +242,7 @@ describe('useProgramCopies', () => {
     )
     await waitFor(() =>
       expect(result.current).toEqual([
-        { program: 'rekordbox', path: '/r/same.wav', isThisFile: false },
+        { program: 'rekordbox', path: '/r/same.wav', isThisFile: false, durationSec: 483.4 },
       ]),
     )
   })

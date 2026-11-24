@@ -5629,7 +5629,13 @@ describe('Editor Apple Music library section', () => {
           .mockResolvedValue([{ id: 'p1', name: 'Friday', kind: 'playlist', count: 0 }]),
         membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
         collection: async () => [
-          { contentId: 'r1', path: copyPath, title: 'Strobe', artist: 'deadmau5' },
+          {
+            contentId: 'r1',
+            path: copyPath,
+            title: 'Strobe',
+            artist: 'deadmau5',
+            durationSec: 300,
+          },
         ],
         editPlaylist,
       },
@@ -5649,7 +5655,7 @@ describe('Editor Apple Music library section', () => {
   it('adds the rekordbox copy to a playlist from the field while the copy is still being compared', async () => {
     const editPlaylist = rekordboxWithCopy('/r/Strobe.aiff')
     const { onChange } = renderEditor(
-      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      { id: 'a', duration: 300, meta: { title: 'Strobe', artist: 'deadmau5' } },
       'wav',
       { addToAppleMusic: false, syncRekordbox: true, visibleFields: ['rekordboxPlaylists'] },
     )
