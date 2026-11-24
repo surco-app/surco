@@ -21,7 +21,7 @@ export const DEFAULT_GEOMETRY: PanelGeometry = {
 // Air kept between the card and the window edge, and between the card and the button it
 // hangs from (the same 8 px the capped menus keep clear of the edge).
 export const PANEL_MARGIN = 8
-const DEFAULT_WIDTH = 380
+const DEFAULT_WIDTH = 440
 
 // Where the button that opens the card sits, measured when it opens.
 export interface PanelAnchor {

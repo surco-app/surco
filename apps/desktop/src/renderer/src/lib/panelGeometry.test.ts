@@ -48,9 +48,9 @@ describe('clampPanelGeometry', () => {
 describe('clampPanelGeometry with nothing saved and a button to hang from', () => {
   const button = { right: 1420, bottom: 44 }
 
-  it('lines its right edge up with the button, below it, at 380 wide', () => {
+  it('lines its right edge up with the button, below it, at 440 wide', () => {
     const g = clampPanelGeometry(null, viewport, button)
-    expect(g.size.width).toBe(380)
+    expect(g.size.width).toBe(440)
     expect(g.pos.x + g.size.width).toBe(button.right)
     expect(g.pos.y).toBeGreaterThan(button.bottom)
   })
