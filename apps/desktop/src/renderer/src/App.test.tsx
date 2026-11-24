@@ -3884,6 +3884,24 @@ describe('App source rail', () => {
     expect(loading).toHaveAttribute('role', 'status')
     expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
     expect(within(loading).queryByTestId('track-row')).toBeNull()
+    expect(within(loading).getAllByTestId('track-row-skeleton-wave')).toHaveLength(8)
+  })
+
+  it('drops the wave bar from the placeholder rows when the list hides waves, so the rows do not shrink when the tracks arrive', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showListWaves: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
+    expect(within(loading).queryByTestId('track-row-skeleton-wave')).toBeNull()
   })
 
   it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {

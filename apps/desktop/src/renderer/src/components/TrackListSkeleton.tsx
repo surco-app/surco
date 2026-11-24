@@ -1,4 +1,5 @@
 import type React from 'react'
+import { COVER_SIZE, ROW_WAVE_HEIGHT, rowBox, rowTextHeight } from './ListRow'
 
 const TITLE_WIDTHS = ['62%', '48%', '71%', '55%', '66%', '43%', '58%', '51%']
 const ARTIST_WIDTHS = ['38%', '29%', '44%', '33%', '25%', '40%', '31%', '36%']
@@ -7,9 +8,11 @@ const BAR = 'rounded bg-[var(--color-panel-2)]'
 export function TrackListSkeleton({
   testid,
   label,
+  showWaves,
 }: {
   testid: string
   label: string
+  showWaves: boolean
 }): React.JSX.Element {
   return (
     <div
@@ -23,11 +26,15 @@ export function TrackListSkeleton({
           key={title + ARTIST_WIDTHS[i]}
           data-testid="track-row-skeleton"
           aria-hidden="true"
-          className="flex items-center gap-2.5 px-2.5 py-2"
+          className={rowBox(!showWaves)}
           style={{ opacity: 1 - i * 0.09 }}
         >
-          <span className={`h-16 w-16 shrink-0 rounded-md ${BAR}`} />
-          <span className="ml-0.5 flex h-16 min-w-0 flex-1 flex-col justify-between">
+          <span
+            className={`${COVER_SIZE[showWaves ? 'large' : 'medium']} shrink-0 rounded-md ${BAR}`}
+          />
+          <span
+            className={`ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${rowTextHeight(showWaves)}`}
+          >
             <span className="flex flex-col gap-px">
               <span className="flex h-[18px] items-center gap-2">
                 <span className={`h-2.5 ${BAR}`} style={{ width: title }} />
@@ -37,7 +44,12 @@ export function TrackListSkeleton({
                 <span className={`h-2 ${BAR}`} style={{ width: ARTIST_WIDTHS[i] }} />
               </span>
             </span>
-            <span className={`h-4 w-full opacity-60 ${BAR}`} />
+            {showWaves && (
+              <span
+                data-testid="track-row-skeleton-wave"
+                className={`${ROW_WAVE_HEIGHT} w-full opacity-60 ${BAR}`}
+              />
+            )}
           </span>
         </div>
       ))}
