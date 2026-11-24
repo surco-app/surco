@@ -2,7 +2,6 @@ import { app } from 'electron'
 import type { CueSource } from '../../main/cueSource'
 import { registerCuesIpc } from '../../main/cuesIpc'
 import { registerDjIpc } from '../../main/djIpc'
-import { engineCueQueueSection } from '../../main/engineCueQueueIpc'
 import { engineCueSource } from '../../main/engineCueSource'
 import { engineEdit } from '../../main/enginePlaylistEditIpc'
 import { engineRead } from '../../main/enginePlaylistsIpc'
@@ -16,7 +15,6 @@ import { seratoCueSource } from '../../main/seratoCueSource'
 import { seratoEdit } from '../../main/seratoPlaylistEditIpc'
 import { seratoRead } from '../../main/seratoPlaylistsIpc'
 import { getSettings } from '../../main/settings'
-import { traktorCueQueueSection } from '../../main/traktorCueQueueIpc'
 import { traktorCueSource } from '../../main/traktorCueSource'
 import { bootVolumeName } from '../../main/traktorNmlLibrary'
 import { traktorEdit } from '../../main/traktorPlaylistEditIpc'
@@ -74,7 +72,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
         queue: queues.engine,
         isRunning: notRunning,
       }),
-      cueQueue: engineCueQueueSection(queues.engine, section),
+      cueQueue: rekordboxQueueSection(queues.engine, section),
     },
     traktor: {
       read: traktorRead(traktorNml, { bootVolume: bootVolumeName }),
@@ -83,7 +81,7 @@ export function registerDoor(current: () => Queues): { settled: () => Promise<vo
         queue: queues.traktor,
         isRunning: notRunning,
       }),
-      cueQueue: traktorCueQueueSection(queues.traktor, section),
+      cueQueue: rekordboxQueueSection(queues.traktor, section),
     },
     serato: {
       read: seratoRead({ roots: seratoRoots }),

@@ -7,14 +7,14 @@ import { mediaPathFromUrl } from '../shared/media'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { pathAliasesOf } from './libraryPathKey'
 import { serialLibraryFlush } from './libraryTagSync'
+import { applyEditOps, type PlaylistEditHost } from './playlistEditApply'
 import { rekordboxRawKey } from './rekordboxDb'
 import { readNodeStamps } from './rekordboxMasterXml'
-import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
-import { type EditOp, editResultOfOutcome, type QueueOp } from './rekordboxQueueOps'
-import { stillWaiting } from './rekordboxQueueWatch'
+import type { EditOp, QueueOp } from './rekordboxQueueOps'
 import type { RekordboxReadAnswer, RekordboxReadArg, RekordboxReadName } from './rekordboxReads'
 import { readRekordbox } from './worker'
 
+export type { PlaylistEditHost } from './playlistEditApply'
 export { collectionMemo, withCollection } from './rekordboxCollection'
 
 // Whether to offer rekordbox in the rail. Asked on every focus, so it only looks for the
@@ -23,14 +23,6 @@ export { collectionMemo, withCollection } from './rekordboxCollection'
 // does not read is offered anyway, and its tree says it could not be read.
 export function collectionAvailable(path: string): boolean {
   return path !== '' && existsSync(path)
-}
-
-export interface PlaylistEditHost {
-  isRunning: () => Promise<boolean>
-  queue: Pick<RekordboxQueue, 'applyNew' | 'drop' | 'outcomeOf'>
-  onApplied?: (result: QueueApply) => void
-  onWaiting?: () => void
-  beginLoose?: (collectionPath: string) => void
 }
 
 export interface RekordboxReadHost {
@@ -82,29 +74,7 @@ export function rekordboxRead(
 // The collection path is resolved on every call, not captured once: the user can change
 // the override in Settings while Surco runs.
 export function rekordboxEdit(collection: () => string, host: PlaylistEditHost): DjEditMain {
-  const run = async (path: string, ops: QueueOp[]): Promise<RekordboxEditResult[]> => {
-    host.beginLoose?.(path)
-    const result = await host.queue.applyNew(ops, async () => !(await host.isRunning()))
-    if (result.status === 'applied') {
-      const others = ops.reduce((rest, op) => withoutOp(rest, op.id), result)
-      if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
-        host.onApplied?.(others)
-    }
-    if (stillWaiting(result)) {
-      host.onWaiting?.()
-      return ops.map((op) => ({ applied: false, queued: true, opId: op.id }))
-    }
-    if (result.status === 'refused') {
-      for (const op of ops) host.queue.drop(op.id)
-      return ops.map(() => ({ applied: false, reason: result.reason }))
-    }
-    return ops.map((op) => {
-      const written = host.queue.outcomeOf(op.id)
-      const outcome =
-        result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-      return editResultOfOutcome(outcome ?? written)
-    })
-  }
+  const run = (path: string, ops: QueueOp[]) => applyEditOps(host, ops, path)
   return {
     hasSeparator: async () => {
       const path = collection()
