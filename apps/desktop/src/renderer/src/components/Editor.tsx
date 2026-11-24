@@ -136,7 +136,6 @@ import {
   type ReleaseMetaPatch,
   titleWithMix,
 } from '../lib/release'
-import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { selectionStatus } from '../lib/selectionStatus'
@@ -1945,6 +1944,19 @@ export const Editor = memo(function Editor({
   })
   const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
   const showLibrary = libraryShown && libraryRows.length > 0
+  const musicEntryId =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? replaceTarget.persistentId : ''
+  // Music's own length for its copy, like a DJ collection's: while Music still says where the
+  // file lives or its length is being read, the measured one is missing, and without a length
+  // the Music copy would drop out and let a DJ copy act in its place.
+  const musicEntryDurationSec = useMemo(() => {
+    if (!musicEntryId || !libraryIndex) return undefined
+    for (const entries of libraryIndex.values()) {
+      const entry = entries.find((e) => e.persistentId === musicEntryId)
+      if (entry) return entry.durationSec
+    }
+    return undefined
+  }, [libraryIndex, musicEntryId])
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.
   const copyCandidates: CopyCandidate[] = isMulti
@@ -1958,7 +1970,7 @@ export const Editor = memo(function Editor({
                 format: replacedCopyFormat,
                 verdict: musicRow.verdict,
                 better: libraryCopyBetter,
-                durationSec: musicRow.durationSec,
+                durationSec: musicRow.durationSec ?? musicEntryDurationSec,
                 music: replaceTarget,
               },
             ]
@@ -1977,9 +1989,11 @@ export const Editor = memo(function Editor({
       ]
   const libraryTarget = pickLibraryCopy(copyCandidates, item.duration)
   const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
-  // A copy in no format Surco writes can't be updated in place nor named on the button.
+  // A copy in no format Surco writes can't be updated in place nor named on the button. A held
+  // copy is offered still, so the body names the action it waits for instead of saying
+  // Convert and then flipping; its format half shows the pick until the path is known.
   const libraryCopy: LibraryCopyOffer | undefined =
-    libraryTarget && keptFormat
+    libraryTarget && (keptFormat || libraryTarget.held)
       ? {
           name:
             libraryTarget.program === 'appleMusic'
@@ -2036,7 +2050,7 @@ export const Editor = memo(function Editor({
     ...(isMulti
       ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
       : [
-          libraryTarget && libraryCopyAction === 'replace'
+          bodyActsOnCopy && libraryTarget && !libraryTarget.held && libraryCopyAction === 'replace'
             ? libraryTarget.path
             : (item.replacesPath ?? ''),
         ]),
@@ -2665,14 +2679,18 @@ export const Editor = memo(function Editor({
             isMulti
               ? (f) => onProcessAll?.(f)
               : (f) => {
-                  // Stamped BEFORE the convert runs: musicPersistentId is what makes the
-                  // Apple Music step update that copy instead of importing a sibling, and
-                  // replacesPath is the file rekordbox has indexed — the one being
-                  // converted may sit in any download folder the collection never saw.
-                  // The button already offered a replacement; without this the action
-                  // stayed an add, leaving two library entries and two files on disk.
-                  const patch = replacePatch(replaceTarget, item.inputPath)
-                  if (patch) onChange(patch)
+                  // Every replace of a library copy goes through the library action. A plain
+                  // convert only names the Music entry when that entry IS the open file, so
+                  // the convert retags it instead of importing a sibling; any other entry
+                  // (another version, missing, still measuring) is left alone and this file
+                  // is added.
+                  if (
+                    replaceTarget &&
+                    !isAmbiguousCandidate(replaceTarget) &&
+                    replaceTarget.path &&
+                    pathKey(replaceTarget.path) === pathKey(item.inputPath)
+                  )
+                    onChange({ musicPersistentId: replaceTarget.persistentId })
                   onProcess(f as OutputFormat)
                 }
           }

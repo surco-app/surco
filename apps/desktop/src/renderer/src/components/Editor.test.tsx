@@ -6709,6 +6709,29 @@ describe('Editor Apple Music library section', () => {
     expect(lengths.map((cell) => cell.textContent)).toEqual(['8:03', '7:28'])
   })
 
+  // Music says its copy is another version: a plain Convert must add this file, never write
+  // over that entry. Only Update or Replace act on a library copy, and none is offered here.
+  it('converts without stamping the Music entry when its copy is another version', async () => {
+    const { onChange, onProcess } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: Promise.resolve({ versionCorrelation: 0.1 }),
+      hereDuration: 483.2,
+      libraryDuration: 448.4,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ replacesPath: expect.anything() }),
+    )
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: expect.anything() }),
+    )
+  })
+
   // Absolom's Secret, as reported: a FLAC and the library's WAV, both clean, that line up only
   // at 0.92. Nothing makes either better, yet a blank row read as if Surco had not looked:
   // the row says neither is better and opens the figures for the reader to weigh.
@@ -6920,6 +6943,9 @@ describe('Editor Apple Music library section', () => {
       copyFilled,
       libraryLoading,
       libraryCopyAction,
+      musicLocation,
+      musicReadable = false,
+      musicDurationPending = false,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6936,6 +6962,11 @@ describe('Editor Apple Music library section', () => {
       copyFilled?: boolean
       libraryLoading?: boolean
       libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
+      // Music's answer to where its copy lives, held back to test the wait for it.
+      musicLocation?: Promise<string>
+      // Music's copy at the `music` path reads as a WAV, like the DJ copies.
+      musicReadable?: boolean
+      musicDurationPending?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6950,9 +6981,13 @@ describe('Editor Apple Music library section', () => {
           durationSec: copyAt(path)?.durationSec,
         },
       ]
-      if (music) api.appleMusicEntryLocation = vi.fn().mockResolvedValue(music)
-      api.readDuration = vi.fn(async (path: string) =>
-        path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+      if (music) api.appleMusicEntryLocation = vi.fn(() => musicLocation ?? Promise.resolve(music))
+      api.readDuration = vi.fn((path: string) =>
+        musicDurationPending && path === music
+          ? new Promise<number | null>(() => {})
+          : Promise.resolve(
+              path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+            ),
       )
       api.readTags = vi.fn(async (path: string) => {
         const copy = tags[path]
@@ -6995,7 +7030,9 @@ describe('Editor Apple Music library section', () => {
           )
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
-        (copyAt(path) && !copyAt(path)?.gone) || path === herePath
+        (copyAt(path) && !copyAt(path)?.gone) ||
+        path === herePath ||
+        (musicReadable && path === music)
           ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
           : null,
       )
@@ -7349,6 +7386,75 @@ describe('Editor Apple Music library section', () => {
       fireEvent.click(screen.getByTestId('process-btn'))
       expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
       expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    // Music goes first. While it still says where its copy lives, or its copy's length is
+    // still being read, the body names the action and waits: offering Convert and then
+    // flipping, or acting on the rekordbox copy meanwhile, would update the wrong copy.
+    const musicIndex = buildLibraryIndex([
+      { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF', durationSec: 95 },
+    ])
+
+    it('waits for Music to say where its copy lives before acting on any copy', async () => {
+      let locate: (path: string) => void = () => {}
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        index: musicIndex,
+        musicLocation: new Promise<string>((resolve) => {
+          locate = resolve
+        }),
+      })
+      await waitFor(() => {
+        const rekordboxRow = screen
+          .getAllByTestId('library-row')
+          .find((row) => row.dataset.row === 'rekordbox')
+        expect(
+          within(rekordboxRow as HTMLElement).getByTestId('library-row-state'),
+        ).toHaveAttribute('data-state', 'same')
+      })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+      await act(async () => locate('/Music/Strobe.wav'))
+      await waitFor(() =>
+        expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled'),
+      )
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/Music/Strobe.wav',
+        program: 'appleMusic',
+        musicPersistentId: '0123456789ABCDEF',
+      })
+    })
+
+    it("names Music's copy and waits while its length is still being read", async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        musicDurationPending: true,
+        index: musicIndex,
+      })
+      await waitFor(() =>
+        expect(screen.getAllByTestId('library-row').map((r) => r.dataset.row)).toEqual([
+          'appleMusic',
+          'rekordbox',
+        ]),
+      )
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(/^Apple Music · /)
     })
 
     // Another version is another track: updating its tags or replacing it would lose it.
