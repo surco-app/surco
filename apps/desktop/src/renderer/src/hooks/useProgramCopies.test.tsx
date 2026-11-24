@@ -387,6 +387,29 @@ describe('useSelectionCopies', () => {
     await waitFor(() => expect(result.current).toEqual({ rekordbox: { a: '/r/weekend.aiff' } }))
   })
 
+  it('does not look a track up again on a progress tick, which hands over a new array of the same tracks', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: { collection: async () => [row('/r/weekend.aiff', { durationSec: 361 })] },
+      }),
+    })
+    const lookup = vi.spyOn(library, 'findLibraryEntry')
+    const { result, rerender } = renderHook(
+      ({ tracks }: { tracks: TrackItem[] }) => useSelectionCopies(tracks, true),
+      {
+        wrapper: wrapperFor({ syncRekordbox: true }),
+        initialProps: { tracks: [selected('a', 'Weekend'), selected('b', 'Hills')] },
+      },
+    )
+    await waitFor(() => expect(result.current).toEqual({ rekordbox: { a: '/r/weekend.aiff' } }))
+    const calls = lookup.mock.calls.length
+    rerender({ tracks: [selected('a', 'Weekend'), selected('b', 'Hills')] })
+    expect(result.current).toEqual({ rekordbox: { a: '/r/weekend.aiff' } })
+    expect(lookup.mock.calls.length).toBe(calls)
+    rerender({ tracks: [selected('a', 'Weekend'), selected('b', 'Hills'), selected('c', 'Sun')] })
+    expect(lookup.mock.calls.length).toBe(calls + 1)
+  })
+
   it('reads nothing while disabled', async () => {
     const rekordbox = vi.fn(async () => [row('/r/weekend.aiff', { durationSec: 361 })])
     installApi({ dj: djReads({ rekordbox: { collection: rekordbox } }) })

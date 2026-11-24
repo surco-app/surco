@@ -86,6 +86,28 @@ export function sameLengthCopyIn(
   return pathKey(entry.path) === pathKey(track.inputPath) ? undefined : entry.path
 }
 
+const copiesByCollection = new WeakMap<CollectionTrack[], Map<string, string | undefined>>()
+
+// During a conversion the selection comes back as a new array on every progress tick, and
+// searching every collection for every selected track each time costs ~70 ms with 5,000 tracks
+// in 5 programs. Each answer is kept per collection, keyed on all the lookup reads, so a tick
+// only searches for the tracks that changed.
+function cachedCopyIn(
+  tracks: CollectionTrack[],
+  track: { inputPath: string; meta: { title: string; artist: string }; durationSec?: number },
+): string | undefined {
+  let copies = copiesByCollection.get(tracks)
+  if (!copies) {
+    copies = new Map()
+    copiesByCollection.set(tracks, copies)
+  }
+  const key = [track.inputPath, track.meta.title, track.meta.artist, track.durationSec].join('\0')
+  if (copies.has(key)) return copies.get(key)
+  const path = sameLengthCopyIn(tracks, track)
+  copies.set(key, path)
+  return path
+}
+
 export function useSelectionCopies(
   tracks: TrackItem[],
   enabled: boolean,
@@ -99,7 +121,7 @@ export function useSelectionCopies(
           if (!collection) return []
           const copies = Object.fromEntries(
             tracks.flatMap((t) => {
-              const path = sameLengthCopyIn(collection, {
+              const path = cachedCopyIn(collection, {
                 inputPath: t.inputPath,
                 meta: t.meta,
                 durationSec: t.duration,
