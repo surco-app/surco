@@ -29,6 +29,7 @@ export function replacePatch(
         musicPersistentId: target.persistentId,
         replacesPath: target.path,
         replacesLabel: target.label,
+        replaceDone: undefined,
       }
     : { musicPersistentId: target.persistentId }
 }
