@@ -276,6 +276,29 @@ describe('CuesSection', () => {
     expect(onStepTrack).not.toHaveBeenCalled()
   })
 
+  // The DJ may move on by hand while the program writes. Stepping again from wherever the list
+  // now sits would skip a track they never saw.
+  it('does not move on when another track is open by the time the save lands', async () => {
+    const onStepTrack = vi.fn()
+    let land: () => void = () => {}
+    const { saveRekordboxCues, changeTrack } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    saveRekordboxCues.mockImplementation(() => new Promise<void>((r) => (land = r)))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
+    await act(async () => land())
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(onStepTrack).not.toHaveBeenCalled()
+  })
+
   it('remembers the way picked from the menu and saves with it', async () => {
     const onStepTrack = vi.fn()
     const onSaveThen = vi.fn()
@@ -300,7 +323,7 @@ describe('CuesSection', () => {
     expect(screen.getByTestId('cues-save-mode-next')).toHaveAttribute('aria-checked', 'false')
     fireEvent.click(screen.getByTestId('cues-save-mode-next'))
     expect(onSaveThen).toHaveBeenCalledWith('next')
-    await new Promise((r) => setTimeout(r, 20))
+    await act(() => new Promise((r) => setTimeout(r, 20)))
     expect(saveRekordboxCues).not.toHaveBeenCalled()
     expect(onStepTrack).not.toHaveBeenCalled()
   })

@@ -1235,9 +1235,20 @@ function Editing({
     if (saved) setProposed(null)
     return saved
   }
+  // Null once this editor is gone, so a save that lands after the DJ moved on knows it.
+  const shownTrack = useRef<string | null>(cue.contentId)
+  useEffect(() => {
+    shownTrack.current = cue.contentId
+    return () => {
+      shownTrack.current = null
+    }
+  }, [cue.contentId])
   // A failed save keeps the track in view, so its unsaved cues and the warning stay with it.
+  // A save that lands after the DJ already moved to another track must not step again, or
+  // the list would skip a track they never saw.
   const saveWith = async (mode: CueSaveThen) => {
-    if ((await save()) && mode === 'next') onStepTrack?.()
+    const savedOn = cue.contentId
+    if ((await save()) && mode === 'next' && shownTrack.current === savedOn) onStepTrack?.()
   }
   useEffect(() => {
     if (!saveAccepted.current) return
