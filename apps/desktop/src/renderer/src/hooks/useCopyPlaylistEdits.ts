@@ -5,6 +5,7 @@ import type {
   RekordboxEditResult,
   RekordboxPlaylistEdit,
   RekordboxPlaylistTarget,
+  SourcePlaylistEntry,
 } from '../../../shared/types'
 import { linkAfter, linkIdsOf, type Membership } from '../lib/rekordboxPlaylists'
 import { offerShortcutUndo } from '../lib/shortcutUndo'
@@ -21,6 +22,11 @@ export interface CopyPlaylistEdits {
 export const queuedKey = (path: string, playlistId: string): string => `${path}\n${playlistId}`
 
 type Said = { text: string; tone: 'neutral' | 'danger' } | null
+
+function rowsLeft(entries: readonly SourcePlaylistEntry[], linkIds: readonly string[]): string[] {
+  const gone = new Set(linkIds)
+  return entries.flatMap((e) => (e.linkId !== undefined && !gone.has(e.linkId) ? [e.linkId] : []))
+}
 
 // Ticks and unticks the playlists of a library copy in the program itself, through the same
 // write path as the sidebar tree, so the copy is filed at once instead of at the next
@@ -122,15 +128,19 @@ export function useCopyPlaylistEdits(
 
   // The order of a playlist is the DJ's set, so the copy goes back in front of the row that
   // followed it, not at the end. Programs skip a track already present on add, so a copy that
-  // sat twice in the playlist comes back as one row.
+  // sat twice in the playlist comes back as one row. Traktor names a row by its position, so
+  // once the copy left, the row that followed it is kept by its place among the rows that
+  // stayed, not by its handle.
   const putBack = useCallback(
-    async (paths: string[], playlistId: string, name: string, next: string | null) => {
+    async (paths: string[], playlistId: string, name: string, next: number | null) => {
       const tracks = paths.map((p) => ({ paths: [p] }))
       const result = await sendQuietly({ kind: 'add', playlistId, tracks }, name)
       if (!result.applied || next === null || !canMove) return
-      const linkIds = linkIdsOf(await window.api.dj.playlist(library, playlistId), paths)
-      if (linkIds.length > 0)
-        await sendQuietly({ kind: 'move', playlistId, linkIds, beforeLinkId: next }, name)
+      const entries = await window.api.dj.playlist(library, playlistId)
+      const linkIds = linkIdsOf(entries, paths)
+      const before = rowsLeft(entries, linkIds)[next]
+      if (linkIds.length > 0 && before !== undefined)
+        await sendQuietly({ kind: 'move', playlistId, linkIds, beforeLinkId: before }, name)
     },
     [library, sendQuietly, canMove],
   )
@@ -139,7 +149,7 @@ export function useCopyPlaylistEdits(
     async (paths: string[], target: RekordboxPlaylistTarget, on: boolean) => {
       const tracks = paths.map((p) => ({ paths: [p] }))
       let change: RekordboxPlaylistEdit
-      let next: string | null = null
+      let next: number | null = null
       let removed = 0
       let before: ReadonlySet<string> = new Set()
       if (on) {
@@ -153,7 +163,8 @@ export function useCopyPlaylistEdits(
         const entries = await window.api.dj.playlist(library, target.id)
         const linkIds = linkIdsOf(entries, paths)
         if (linkIds.length === 0) return
-        next = linkAfter(entries, linkIds)
+        const after = linkAfter(entries, linkIds)
+        if (after !== null) next = rowsLeft(entries, linkIds).indexOf(after)
         removed = linkIds.length
         change = { kind: 'remove', playlistId: target.id, linkIds }
       }

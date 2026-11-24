@@ -202,6 +202,26 @@ describe('useCopyPlaylistEdits', () => {
     )
   })
 
+  it('puts the copy back in its place on Undo in a program whose row handles are positions, like Traktor', async () => {
+    const { hook, dj, undo } = setup({
+      library: 'traktor',
+      edits: [{ applied: true }, ADDED_ONE],
+      playlists: [
+        [row('/r/x.aiff', 'u:0:x'), row(COPY, 'u:1:c'), row('/r/y.aiff', 'u:2:y')],
+        [row('/r/x.aiff', 'u:0:x'), row('/r/y.aiff', 'u:1:y'), row(COPY, 'u:2:c')],
+      ],
+      membership: { [COPY]: ['p1'] },
+    })
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, false))
+    await undo()
+    await waitFor(() => expect(dj.editPlaylist).toHaveBeenCalledTimes(3))
+    expect(dj.editPlaylist).toHaveBeenLastCalledWith(
+      'traktor',
+      { kind: 'move', playlistId: 'p1', linkIds: ['u:2:c'], beforeLinkId: 'u:1:y' },
+      'Verano',
+    )
+  })
+
   it('creates the playlist with the copy inside and deletes it on Undo', async () => {
     const { hook, dj, undo } = setup({
       edits: [{ ...ADDED_ONE, createdId: 'n1' }],
