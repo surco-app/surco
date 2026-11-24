@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
+import type { WantedCue } from '../shared/cueRules'
 import { backupOf } from './libraryBackups'
 import {
   discardArtwork,
@@ -11,7 +12,6 @@ import {
   stageArtwork,
 } from './rekordboxArtwork'
 import { type ContentProbe, type FileFacts, readFileFacts } from './rekordboxContentAdd'
-import type { WantedCue } from '../shared/cueRules'
 import { liveCues, shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
