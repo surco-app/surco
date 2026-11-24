@@ -228,7 +228,7 @@ import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
-import { clampPanelGeometry } from './lib/panelGeometry'
+import { clampPanelGeometry, type PanelAnchor } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { type PhrasedComment, phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
@@ -513,6 +513,7 @@ export default function App(): React.JSX.Element {
     report: reportActivity,
   } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
+  const [activityAnchor, setActivityAnchor] = useState<PanelAnchor | undefined>()
   // Surco's own trash (main/surcoTrash.ts): the list is read when Copias opens and
   // after every run that could have added to it.
   const [sidebarPeek, setSidebarPeek] = useState(false)
@@ -2895,7 +2896,14 @@ export default function App(): React.JSX.Element {
   // Toolbar is memoized so a keystroke in a metadata field doesn't re-render it;
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
-  const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
+  const measureActivityAnchor = useStableCallback(() => {
+    const r = document.querySelector('[data-testid="open-activity"]')?.getBoundingClientRect()
+    setActivityAnchor(r && { right: r.right, bottom: r.bottom })
+  })
+  const onToggleActivity = useStableCallback(() => {
+    measureActivityAnchor()
+    setActivityOpen((v) => !v)
+  })
   const openCopies = (openMusic: boolean, query: string): void => {
     void refreshTrash()
     setCopiesOpen((open) => ({ openMusic, query, key: (open?.key ?? 0) + 1 }))
@@ -4447,7 +4455,10 @@ export default function App(): React.JSX.Element {
       openExport: overlays.openExport,
       openRename: overlays.openRename,
       openInfo: overlays.openInfo,
-      openActivity: () => setActivityOpen(true),
+      openActivity: () => {
+        measureActivityAnchor()
+        setActivityOpen(true)
+      },
       openBackups: onOpenTrash,
       hasBackup: (track) => backupAtByPath.has(track.inputPath),
       openTrackBackup: onOpenBackup,
@@ -5515,10 +5526,14 @@ export default function App(): React.JSX.Element {
                   void window.api.copyText(text)
                   setNotice(tr('notices.copiedActivity'))
                 }}
-                geometry={clampPanelGeometry(settings?.activityPanel, {
-                  width: window.innerWidth,
-                  height: window.innerHeight,
-                })}
+                geometry={clampPanelGeometry(
+                  settings?.activityPanel,
+                  {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                  },
+                  activityAnchor,
+                )}
                 onGeometryChange={(g) =>
                   saveSettings({
                     activityPanel: {
