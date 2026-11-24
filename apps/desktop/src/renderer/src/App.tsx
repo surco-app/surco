@@ -5350,6 +5350,7 @@ export default function App(): React.JSX.Element {
                               onOpenCueTrack={openCueTrack}
                               cueActionsRef={cueActionsRef}
                               libraryIndex={libraryIndex}
+                              libraryFailed={libraryFailed}
                               searchInputRef={searchInputRef}
                               selectedTracks={selectedTracks}
                               onApplyMatches={onApplyMatches}

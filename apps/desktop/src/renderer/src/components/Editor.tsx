@@ -168,6 +168,9 @@ interface Props {
   // the same one the list and quality filter read, so the "already owned" section can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
+  // A Music that refused the dump also leaves the index null; only a dump still on its way
+  // is worth waiting for.
+  libraryFailed?: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
   // The whole multi-selection, when more than one track is picked. Its presence flips the
   // Discogs column to album-match mode (map every file to a tracklist entry at once) and
@@ -351,6 +354,7 @@ const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
 export const Editor = memo(function Editor({
   item,
   libraryIndex,
+  libraryFailed = false,
   searchInputRef,
   selectedTracks,
   onApplyMatches,
@@ -963,15 +967,17 @@ export const Editor = memo(function Editor({
   })
   // Only a copy of the same recording lends its fields: another version of the track has other
   // tags. In Music that is the copy a replacement would supersede, and it goes first because
-  // the convert puts this file in its place; otherwise the first DJ copy, once its comparison
-  // (or, when it cannot be compared, its length) rules out another version.
+  // the convert puts this file in its place, so a DJ copy waits while the Music library is still
+  // loading; otherwise the first DJ copy, once its comparison (or, when it cannot be compared,
+  // its length) rules out another version.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
   useReplacedCopyFill({
     item,
     copyPath: fillCopyPath({
       musicCopyPath: replacedCopyPath,
-      musicCopyPending: replaceTargetPending,
+      musicCopyPending:
+        replaceTargetPending || (librarySource === 'appleMusic' && !libraryIndex && !libraryFailed),
       programs: copyRows,
       fileDurationSec: item.duration,
     }),

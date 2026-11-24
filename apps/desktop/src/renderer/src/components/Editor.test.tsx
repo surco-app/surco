@@ -205,6 +205,7 @@ function renderEditor(
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
+    libraryFailed?: boolean
     replaceLowResCover?: boolean
     autoApplyFilename?: boolean
     filenameFormat?: string
@@ -272,6 +273,7 @@ function renderEditor(
       <Editor
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
+        libraryFailed={props.libraryFailed}
         rekordboxCue={props.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onChange={onChange}
@@ -6782,6 +6784,9 @@ describe('Editor Apple Music library section', () => {
     }
 
     let rendered: ReturnType<typeof renderEditor>
+    const copyTags = { album: 'Strobe EP', genre: 'Progressive House' }
+    const filledPatches = () =>
+      rendered.onChange.mock.calls.map(([patch]) => patch).filter((patch) => patch.copyFilled)
 
     function renderWithPrograms({
       rekordbox,
@@ -6796,6 +6801,7 @@ describe('Editor Apple Music library section', () => {
       pairPending = false,
       music,
       copyFilled,
+      libraryFailed,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6803,12 +6809,13 @@ describe('Editor Apple Music library section', () => {
       herePath?: string
       hereDuration?: number
       syncTraktor?: boolean
-      index?: AppleMusicIndex
+      index?: AppleMusicIndex | null
       filesOpen?: boolean
       tags?: Record<string, Partial<TrackMetadata>>
       pairPending?: boolean
       music?: string
       copyFilled?: boolean
+      libraryFailed?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6882,7 +6889,8 @@ describe('Editor Apple Music library section', () => {
         },
         'wav',
         {
-          libraryIndex: index ?? (music ? ownedWithId : owned),
+          libraryIndex: index === undefined ? (music ? ownedWithId : owned) : index,
+          libraryFailed,
           showLoudness: true,
           addToAppleMusic: !!music,
           syncRekordbox: true,
@@ -7081,10 +7089,6 @@ describe('Editor Apple Music library section', () => {
     })
 
     // With one program row its state goes up to the header, so these tests read the verdict there.
-    const copyTags = { album: 'Strobe EP', genre: 'Progressive House' }
-    const filledPatches = () =>
-      rendered.onChange.mock.calls.map(([patch]) => patch).filter((patch) => patch.copyFilled)
-
     it('fills the empty fields from the rekordbox copy once it proves to be the same recording', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
@@ -7157,6 +7161,39 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // Until the Music library lands there is no telling whether it holds a copy to replace,
+    // and that copy has the say over a DJ copy.
+    it('waits for the Apple Music library before reading a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: null,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('fills from the DJ copy when the Apple Music library could not be read', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: null,
+        libraryFailed: true,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
     })
 
     it('does not fill from a DJ copy when the track was already filled once', async () => {
