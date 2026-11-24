@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   ListFilter,
+  Loader2,
   PanelLeftClose,
   SearchX,
   Sparkles,
@@ -306,6 +307,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     },
     [searchInputRef],
   )
+  const pendingNames = pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', ')
   const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
   const lengthMismatchLabel =
     fileDurationSec !== undefined
@@ -805,11 +807,18 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             </div>
           )}
           {listed.length > 0 && pendingProviders.length > 0 && (
-            <p data-testid="discogs-pending" className="px-3 py-2 text-label text-fg-faint">
-              {tr('editor.stillSearching', {
-                providers: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
-              })}
-            </p>
+            <div className="px-1.5 py-1">
+              <p
+                data-testid="discogs-pending"
+                role="note"
+                aria-label={tr('editor.stillSearching', { providers: pendingNames })}
+                className="relative flex w-fit items-center gap-1.5 px-1.5 py-1 text-label text-fg-faint"
+              >
+                <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
+                <span aria-hidden="true">{pendingNames}</span>
+                <Tooltip label={tr('editor.stillSearching', { providers: pendingNames })} />
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -858,7 +867,7 @@ function DiscogsWait({
       aria-label={label}
       className="press relative flex items-center gap-1.5 rounded-md px-1.5 py-1 text-label text-fg-faint transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
     >
-      <svg viewBox="0 0 12 12" className="h-3.5 w-3.5 shrink-0 -rotate-90" aria-hidden="true">
+      <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0 -rotate-90" aria-hidden="true">
         <circle cx="6" cy="6" r="5" fill="none" stroke="var(--color-line)" strokeWidth="2" />
         <circle
           cx="6"
