@@ -919,7 +919,7 @@
     "overwriteLossyHintBackup": "Substitueix l'original sense pèrdua per un MP3 de 320 kbps al seu lloc. Abans, Surco desa una còpia de seguretat de l'original, que pots restaurar des de la pista.",
     "regenerate": "Regenerar el nom del fitxer amb les metadades",
     "regenerateAll": "Regenerar els noms dels fitxers amb les metadades",
-    "regenerateHint": "Reconstruir el nom del fitxer amb les metadades de dalt fent servir el teu patró de Configuració → Noms",
+    "regenerateHint": "Reconstruir el nom del fitxer amb les metadades de dalt fent servir el teu patró de Configuració → Fitxers → Noms",
     "regenerateCustom": "Personalitzar el patró del nom per a aquesta pista…",
     "lossyToLossless": "La font té pèrdua. Convertir a {{format}} no en recupera la qualitat.",
     "seratoLosesStars": "Serato perdrà les estrelles d'aquesta pista.",
@@ -2439,7 +2439,7 @@
     "items": {
       "token": {
         "q": "Necessito un token de Discogs?",
-        "a": "No. Surco cerca a Discogs sense configurar res, amb les seves pròpies credencials d'app, així que pots començar a etiquetar de seguida.\n\nAquestes credencials compartides tenen un límit comú (60 peticions per minut entre tots els usuaris de Surco). Per això, en moments de molt d'ús, una cerca pot fallar amb un avís de «límit assolit». Espera uns segons i torna-ho a provar.\n\nSi etiquetes molt, genera gratis el teu propi token personal a discogs.com/settings/developers i enganxa'l a Configuració → Fonts. El teu token té el seu propi límit privat, així que les cerques van ràpides independentment de quanta gent faci servir Surco."
+        "a": "No. Surco cerca a Discogs sense configurar res, amb les seves pròpies credencials d'app, així que pots començar a etiquetar de seguida.\n\nAquestes credencials compartides tenen un límit comú (60 peticions per minut entre tots els usuaris de Surco). Per això, en moments de molt d'ús, una cerca pot fallar amb un avís de «límit assolit». Espera uns segons i torna-ho a provar.\n\nSi etiquetes molt, genera gratis el teu propi token personal a discogs.com/settings/developers i enganxa'l a Configuració → Fonts. El teu token té el seu propi límit privat, així que les cerques van ràpides independentment de quanta gent faci servir Surco. Aparellar automàticament tota la llista sí que necessita el teu propi token."
       },
       "quality": {
         "q": "Per què una pista surt marcada com a «Dubtosa»?",

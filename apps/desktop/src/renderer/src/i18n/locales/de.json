@@ -919,7 +919,7 @@
     "overwriteLossyHintBackup": "Das verlustfreie Original wird direkt durch eine 320-kbps-MP3 ersetzt. Vorher legt Surco eine Sicherungskopie des Originals an, die du über den Track wiederherstellen kannst.",
     "regenerate": "Dateinamen aus den Metadaten neu erzeugen",
     "regenerateAll": "Dateinamen aus den Metadaten neu erzeugen",
-    "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Benennung",
+    "regenerateHint": "Baut den Dateinamen aus den Metadaten oben neu, mit deinem Muster aus Einstellungen → Dateien → Benennung",
     "regenerateCustom": "Dateinamen-Muster für diesen Track anpassen…",
     "lossyToLossless": "Die Quelle ist verlustbehaftet: {{format}} stellt ihre Qualität nicht wieder her.",
     "seratoLosesStars": "Serato verliert die Sterne dieses Tracks.",
@@ -2439,7 +2439,7 @@
     "items": {
       "token": {
         "q": "Brauche ich einen Discogs-Token?",
-        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen. Warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Quellen ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist."
+        "a": "Nein. Surco durchsucht Discogs ohne Einrichtung mit eigenen App-Zugangsdaten, du kannst also sofort mit dem Taggen loslegen.\n\nDiese geteilten Zugangsdaten haben ein gemeinsames Limit (60 Anfragen pro Minute über alle Surco-Nutzer), deshalb kann eine Suche in Stoßzeiten gelegentlich mit der Meldung „Limit erreicht“ fehlschlagen. Warte ein paar Sekunden und versuch es erneut.\n\nWenn du viel taggst, erstell dir kostenlos einen persönlichen Token auf discogs.com/settings/developers und füg ihn unter Einstellungen → Quellen ein. Dein Token bekommt ein eigenes privates Limit, die Suchen bleiben also schnell, egal wie viel bei Surco los ist. Das automatische Abgleichen der ganzen Liste braucht dagegen deinen eigenen Token."
       },
       "quality": {
         "q": "Warum ist ein Track als „Zweifelhaft“ markiert?",

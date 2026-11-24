@@ -919,7 +919,7 @@
     "overwriteLossyHintBackup": "Substitui o original sem perdas por um MP3 de 320 kbps no lugar. Antes, o Surco guarda um backup do original, que você pode restaurar a partir da faixa.",
     "regenerate": "Regenerar nome do arquivo com os metadados",
     "regenerateAll": "Regenerar os nomes de arquivo com os metadados",
-    "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Nomes",
+    "regenerateHint": "Reconstruir o nome do arquivo com os metadados acima usando seu padrão de Ajustes → Arquivos → Nomes",
     "regenerateCustom": "Personalizar o padrão do nome para esta faixa…",
     "lossyToLossless": "A fonte tem perdas: converter para {{format}} não recupera a qualidade.",
     "seratoLosesStars": "O Serato vai perder as estrelas desta faixa.",
@@ -2439,7 +2439,7 @@
     "items": {
       "token": {
         "q": "Preciso de um token do Discogs?",
-        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Fontes. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco."
+        "a": "Não. O Surco busca no Discogs sem configurar nada, usando as próprias credenciais do app, então você pode começar a etiquetar na hora.\n\nEssas credenciais compartilhadas têm um limite comum (60 requisições por minuto entre todos os usuários do Surco), então em momentos de pico uma busca pode falhar de vez em quando com um aviso de “limite atingido”: espere alguns segundos e tente de novo.\n\nSe você etiqueta muito, gere de graça seu próprio token pessoal em discogs.com/settings/developers e cole em Ajustes → Fontes. Seu token tem um limite privado próprio, então as buscas continuam rápidas não importa quanta gente esteja usando o Surco. Já associar automaticamente toda a lista precisa do seu próprio token."
       },
       "quality": {
         "q": "Por que uma faixa aparece marcada como “Duvidosa”?",
