@@ -15281,7 +15281,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await addThree()
     await screen.findByTestId('list-review-notice')
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
     const root = screen.getByTestId('app-root')
