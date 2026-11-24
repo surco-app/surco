@@ -108,7 +108,9 @@ describe('fillCopyPath', () => {
   it.each(['different', 'unreadable', 'missing', 'thisFile', null] as const)(
     'skips copies whose tags belong to another file (%s)',
     (verdict) => {
-      expect(fill({ programs: [rekordbox(verdict), traktor('same')] })).toBe('/t/a.wav')
+      expect(
+        fill({ programs: [rekordbox(verdict, 200), traktor('same')], fileDurationSec: 200 }),
+      ).toBe('/t/a.wav')
     },
   )
 
