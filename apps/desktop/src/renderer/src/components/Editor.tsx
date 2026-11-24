@@ -97,7 +97,7 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
 import { libraryMembership, librarySourceOf } from '../lib/librarySource'
-import { copyPathIn } from '../lib/libraryCopy'
+import { copyPathIn, fillCopyPath } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -961,11 +961,23 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
-  // Only the copy a replacement would supersede lends its fields: a copy the section merely
-  // describes may be another version of the track, whose tags would not be this file's.
+  // Only a copy of the same recording lends its fields: another version of the track has other
+  // tags. In Music that is the copy a replacement would supersede, and it goes first because
+  // the convert puts this file in its place; otherwise the first DJ copy, once its comparison
+  // (or, when it cannot be compared, its length) rules out another version.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
+  useReplacedCopyFill({
+    item,
+    copyPath: fillCopyPath({
+      musicCopyPath: replacedCopyPath,
+      musicCopyPending: replaceTargetPending,
+      programs: copyRows,
+      fileDurationSec: item.duration,
+    }),
+    onChange,
+    onRecordUndo,
+  })
   // The file each convert replaces: a selection's, what each track was stamped to replace by
   // an earlier convert; one track's, the stamp the convert button puts first, else the one it
   // already has, as onProcess below sends it.

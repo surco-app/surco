@@ -6778,32 +6778,60 @@ describe('Editor Apple Music library section', () => {
       loudness: LoudnessResult | null
       lossy?: boolean
       gone?: 'missing' | 'unreadable'
+      durationSec?: number
     }
+
+    let rendered: ReturnType<typeof renderEditor>
 
     function renderWithPrograms({
       rekordbox,
       traktor,
       here = aifLoudness,
       herePath = '/music/Strobe.aif',
+      hereDuration,
       syncTraktor = true,
-      index = owned,
+      index,
       filesOpen,
+      tags = {},
+      pairPending = false,
+      music,
+      copyFilled,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
       here?: LoudnessResult
       herePath?: string
+      hereDuration?: number
       syncTraktor?: boolean
       index?: AppleMusicIndex
       filesOpen?: boolean
+      tags?: Record<string, Partial<TrackMetadata>>
+      pairPending?: boolean
+      music?: string
+      copyFilled?: boolean
     }): Record<string, unknown> {
-      setApi('win32')
+      setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
       const copies = [rekordbox, traktor].filter((c): c is Copy => !!c && c !== 'other')
       const copyAt = (path: string) => copies.find((c) => c.path === path)
       const entry = (path: string, title = 'Strobe') => [
-        { contentId: path, path, title, artist: 'deadmau5' },
+        {
+          contentId: path,
+          path,
+          title,
+          artist: 'deadmau5',
+          durationSec: copyAt(path)?.durationSec,
+        },
       ]
+      if (music) api.appleMusicEntryLocation = vi.fn().mockResolvedValue(music)
+      api.readDuration = vi.fn(async (path: string) =>
+        path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+      )
+      api.readTags = vi.fn(async (path: string) => {
+        const copy = tags[path]
+        if (!copy) throw new Error('no tags for this path in this test')
+        return { ...emptyMetadata(), ...copy }
+      })
       api.dj = djReads({
         rekordbox: {
           collection: async () =>
@@ -6831,24 +6859,32 @@ describe('Editor Apple Music library section', () => {
         return copy ? copy.loudness : here
       })
       api.fingerprint = vi.fn(async (path: string) => path)
-      api.comparePair = vi.fn(async () => ({
-        correlation: 0.9956,
-        residualDb: -20.5,
-        gainDb: -2.2,
-      }))
+      api.comparePair = pairPending
+        ? vi.fn(() => new Promise(() => {}))
+        : vi.fn(async () => ({
+            correlation: 0.9956,
+            residualDb: -20.5,
+            gainDb: -2.2,
+          }))
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
         (copyAt(path) && !copyAt(path)?.gone) || path === herePath
           ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
           : null,
       )
-      renderEditor(
-        { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
+      rendered = renderEditor(
+        {
+          id: 'a',
+          inputPath: herePath,
+          duration: hereDuration,
+          copyFilled,
+          meta: { title: 'Strobe', artist: 'deadmau5' },
+        },
         'wav',
         {
-          libraryIndex: index,
+          libraryIndex: index ?? (music ? ownedWithId : owned),
           showLoudness: true,
-          addToAppleMusic: false,
+          addToAppleMusic: !!music,
           syncRekordbox: true,
           syncTraktor,
           filesOpen,
@@ -7042,6 +7078,102 @@ describe('Editor Apple Music library section', () => {
       await new Promise((r) => setTimeout(r, 50))
       expect(screen.queryByTestId('library-section')).toBeNull()
       expect(dj.collection).not.toHaveBeenCalledWith('traktor')
+    })
+
+    // With one program row its state goes up to the header, so these tests read the verdict there.
+    const copyTags = { album: 'Strobe EP', genre: 'Progressive House' }
+    const filledPatches = () =>
+      rendered.onChange.mock.calls.map(([patch]) => patch).filter((patch) => patch.copyFilled)
+
+    it('fills the empty fields from the rekordbox copy once it proves to be the same recording', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()[0].meta).toMatchObject(copyTags)
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+    })
+
+    // 95 s here and 30 s in rekordbox: another edit, whose album or genre may not be this file's.
+    it('never fills from a DJ copy that is another version, its tags are another edit', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()).toEqual([])
+    })
+
+    it('waits for the comparison before reading a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+        pairPending: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'measuring'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('fills from the next program when the first holds another version', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags, '/t/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(api.readTags).toHaveBeenCalledWith('/t/Strobe.wav'))
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('lets the Apple Music copy a replacement supersedes fill before a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        tags: {
+          '/m/old/Strobe.mp3': { album: 'From Music' },
+          '/r/Strobe.wav': { album: 'From rekordbox' },
+        },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('does not fill from a DJ copy when the track was already filled once', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+        copyFilled: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
     })
   })
 })
