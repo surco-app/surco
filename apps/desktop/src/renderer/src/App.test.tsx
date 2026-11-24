@@ -9541,7 +9541,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -9659,7 +9659,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-update-anyway'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
@@ -10280,13 +10280,14 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    const convert = await screen.findByTestId('process-btn')
-    expect(convert).toHaveTextContent(i18n.t('header.updateSelected', { count: 2 }))
+    expect(await screen.findByTestId('convert-up-to-date-row')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-alac'))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('ALAC')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
+    const convert = screen.getByTestId('process-btn')
+    expect(convert).toHaveTextContent(i18n.t('header.convertSelected', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
@@ -10628,7 +10629,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -10655,7 +10656,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')

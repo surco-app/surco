@@ -3393,6 +3393,149 @@ describe('Editor export control', () => {
       )
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
     })
+
+    // Right after importing a folder every track is selected and none is edited: the footer
+    // has to read as quietly as it does for one untouched track, or the new user is pushed
+    // to rewrite files that already carry what the editor shows.
+    describe('over a selection', () => {
+      const untouched = (id: string): TrackItem =>
+        item({ id, meta: read, diskSignature: trackSignature(item({ id, meta: read })) })
+
+      function renderSelection(
+        tracks: TrackItem[],
+        libraryIndex: AppleMusicIndex | null = null,
+        settings: Partial<Settings> = {},
+      ) {
+        const onConvertSelection = vi.fn()
+        const ui = (selected: TrackItem[]) => (
+          <Editor
+            item={selected[0]}
+            selectedTracks={selected}
+            libraryIndex={libraryIndex}
+            searchInputRef={createRef<HTMLInputElement>()}
+            onExportCollection={vi.fn()}
+            readFullTrack={async () => undefined}
+            filesOpen
+            resultsFolded={false}
+            onFoldResults={vi.fn()}
+            onResultsResizeStart={vi.fn()}
+            onResultsFit={vi.fn()}
+            onApplyMatches={vi.fn()}
+            onProcessAll={vi.fn()}
+            onConvertSelection={onConvertSelection}
+            onAddAllToAppleMusic={vi.fn()}
+            onChangeAllMeta={vi.fn()}
+            onApplyCoverAll={vi.fn()}
+            onDeriveTags={vi.fn()}
+            onChange={vi.fn()}
+            onProcess={vi.fn()}
+            onAddToAppleMusic={vi.fn()}
+            onShowLoudnessHelp={vi.fn()}
+            onHideEditorHints={vi.fn()}
+            onOpenRename={vi.fn()}
+            onRegenerateName={vi.fn()}
+            onTrimDetectedAll={vi.fn()}
+            onCopyFilename={vi.fn()}
+            onCopyPath={vi.fn()}
+            onSearchWeb={vi.fn()}
+            onCopyMeta={vi.fn()}
+            onPasteMeta={vi.fn()}
+            copiedMetaTitle={null}
+          />
+        )
+        const { rerenderUi } = renderWithQuery(ui(tracks), {
+          outputFormat: 'wav',
+          addToAppleMusic: true,
+          visibleFields: ['genre'],
+          requiredFields: [],
+          normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+          ...settings,
+        })
+        return { onConvertSelection, rerender: (next: TrackItem[]) => rerenderUi(ui(next)) }
+      }
+
+      it('goes quiet when no selected track is edited, and the quiet face updates them all', () => {
+        const { onConvertSelection } = renderSelection([
+          untouched('a'),
+          untouched('b'),
+          untouched('c'),
+        ])
+        expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
+        expect(screen.queryByTestId('process-btn')).toBeNull()
+        fireEvent.click(screen.getByTestId('convert-update-anyway'))
+        expect(onConvertSelection).toHaveBeenCalledTimes(1)
+      })
+
+      it('brings the update back while one selected track is edited, and quiets on undo', () => {
+        const edited = { ...untouched('b'), meta: { ...untouched('b').meta, genre: 'House' } }
+        const { rerender, onConvertSelection } = renderSelection([
+          untouched('a'),
+          edited,
+          untouched('c'),
+        ])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        fireEvent.click(screen.getByTestId('process-btn'))
+        expect(onConvertSelection).toHaveBeenCalledTimes(1)
+        rerender([untouched('a'), untouched('b'), untouched('c')])
+        expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        expect(screen.queryByTestId('process-btn')).toBeNull()
+      })
+
+      it('keeps the update while one selected track would be renamed', () => {
+        renderSelection([untouched('a'), { ...untouched('b'), outputName: 'renamed' }])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+      })
+
+      // The batch would add the tracks Music lacks, which is something it writes.
+      it('keeps the update while the selection would be added to Music', () => {
+        ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+        const titled = (id: string, title: string): TrackItem => {
+          const meta = { ...read, title, artist: 'deadmau5' }
+          return item({ id, meta, diskSignature: trackSignature(item({ id, meta })) })
+        }
+        renderSelection(
+          [titled('a', 'Strobe'), titled('b', 'Ghosts n Stuff')],
+          buildLibraryIndex([
+            { title: 'Raise Your Weapon', artist: 'deadmau5', persistentId: 'A1' },
+          ]),
+        )
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+      })
+
+      // The run names the file with the quality its spectrum gives, so before that is known a
+      // {quality} pattern may still rename it.
+      describe('with the quality in the name pattern', () => {
+        const named = (id: string): TrackItem => {
+          const meta = { ...read, title: `${id}.wav` }
+          return item({ id, meta, diskSignature: trackSignature(item({ id, meta })) })
+        }
+        const naming = (filenameFormat: string): Partial<Settings> => ({
+          autoApplyFilename: true,
+          filenameFormat,
+          importFields: ['quality'],
+        })
+
+        it('keeps the update while a track has no quality yet', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}{quality}'))
+          expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+          expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+        })
+
+        it('goes quiet when the pattern does not name the quality', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}'))
+          expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        })
+      })
+
+      it('keeps the update while one selected track shows values the file lacks', () => {
+        const b = untouched('b')
+        renderSelection([untouched('a'), { ...b, fillSignature: b.diskSignature }])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+      })
+    })
   })
 
   // The original bug: once a track was done its export button vanished, so a user

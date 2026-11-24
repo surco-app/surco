@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Braces,
   ClipboardCopy,
@@ -23,12 +24,7 @@ import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import {
-  editsInPlace,
-  fileNamePart,
-  formatMatchesInput,
-  resolveJobFormat,
-} from '../../../shared/format'
+import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
@@ -68,7 +64,7 @@ import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
-import { useCachedSpectrum } from '../hooks/useSpectrogram'
+import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
@@ -99,7 +95,7 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
-import { librarySourceOf } from '../lib/librarySource'
+import { libraryMembership, librarySourceOf } from '../lib/librarySource'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -130,12 +126,12 @@ import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { selectionStatus } from '../lib/selectionStatus'
-import { hasStagedEdits } from '../lib/sessionEdits'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
 import type { AutoMarkKind } from '../lib/triage'
+import { fileHoldsTrack } from '../lib/upToDate'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { CopyComparison } from './CopyComparison'
@@ -326,6 +322,17 @@ const fieldEdit = (focus: number, key: string) => ({
   group: `field-${focus || ++fieldFocuses}-${key}`,
 })
 
+// The name an export saves the track under when nobody typed one, the same rule the run
+// follows, so one track and a selection read it alike.
+const patternName = (
+  track: TrackItem,
+  meta: TrackMetadata,
+  autoApplyFilename: boolean,
+  filenameFormat: string,
+): string =>
+  (autoNamesFile(autoApplyFilename, track) && renderOutputName(filenameFormat, meta)) ||
+  track.fileName
+
 // What a release writes about where it came from rather than about the music.
 const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
 
@@ -466,6 +473,7 @@ export const Editor = memo(function Editor({
   } = appSettings
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  const queryClient = useQueryClient()
   // A bulk field writes to every selected track, so all of them are under edit, not just
   // the anchor the form is keyed on.
   const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
@@ -1216,9 +1224,7 @@ export const Editor = memo(function Editor({
   // Default to the file's own name so converting keeps it; the metadata-derived name is
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
-  const defaultOutputName =
-    (autoNamesFile(autoApplyFilename, item) && renderOutputName(filenameFormat, resolvedMeta)) ||
-    item.fileName
+  const defaultOutputName = patternName(item, resolvedMeta, autoApplyFilename, filenameFormat)
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
@@ -1310,18 +1316,61 @@ export const Editor = memo(function Editor({
     formatMatchesInput(format, item.inputPath) &&
     inLibrary === 'no' &&
     !item.fromAppleMusic
-  const upToDate =
-    !isMulti &&
-    !addsToMusic &&
-    !incomplete &&
-    item.status === 'idle' &&
-    willEditInPlace &&
-    tagsOnlyExport &&
-    item.diskSignature !== undefined &&
-    !hasStagedEdits(item) &&
-    item.fillSignature !== item.diskSignature &&
-    !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
-    fileNamePart(item.outputName?.trim() || defaultOutputName) === item.fileName
+  // A selection adds to Music whenever the batch lands there and any of its tracks is
+  // missing from the library. It reads each track as the open track's badge does except for
+  // the Discogs-proven step, which needs that track's open release; a track only Discogs
+  // would prove owned reads as an add, so the normal button stays rather than claiming
+  // there is nothing to write.
+  const batchAddsToMusic = useMemo(
+    () =>
+      isMulti &&
+      fromDestination(batchDestination).addToAppleMusic &&
+      multiTracks.some(
+        (t) => !t.fromAppleMusic && libraryMembership(t, 'appleMusic', libraryIndex) === 'no',
+      ),
+    [isMulti, batchDestination, multiTracks, libraryIndex],
+  )
+  // A selection goes quiet on the rule one track does, asked of every track it holds: an
+  // edit, a fill or a rename on any one of them is something the batch would write. Each
+  // track's quality comes from the spectrum cache, where the open track and the run read
+  // it. The cache does not rerender this memo, so a quality still unknown under a
+  // {quality} pattern counts as a rename: once it lands the run may name the file anew.
+  const selectionHeld = useMemo(
+    () =>
+      isMulti &&
+      multiTracks.every((t) => {
+        const spectrum = cachedSpectrumOf(queryClient, t.inputPath)
+        if (
+          qualityAuto &&
+          !spectrum &&
+          autoNamesFile(autoApplyFilename, t) &&
+          filenameFormat.includes('{quality}')
+        )
+          return false
+        const meta = withQualityTag(
+          effectiveMeta(t, customFields),
+          { inputPath: t.inputPath, spectrum },
+          qualityAuto,
+        )
+        return fileHoldsTrack(t, patternName(t, meta, autoApplyFilename, filenameFormat))
+      }),
+    [
+      isMulti,
+      multiTracks,
+      queryClient,
+      customFields,
+      qualityAuto,
+      autoApplyFilename,
+      filenameFormat,
+    ],
+  )
+  const upToDate = isMulti
+    ? !batchAddsToMusic && !incomplete && batchTagsOnly && selectionHeld
+    : !addsToMusic &&
+      !incomplete &&
+      willEditInPlace &&
+      tagsOnlyExport &&
+      fileHoldsTrack(item, defaultOutputName)
 
   // Everything typed into one field while it holds the focus is one ⌘Z step, the same step
   // whether the field writes one track or the whole selection: the Field commits on every
