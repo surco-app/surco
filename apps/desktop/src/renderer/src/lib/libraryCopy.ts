@@ -104,14 +104,19 @@ export interface LibraryCopyRef {
 }
 
 // The same rule as copyPathIn, for every candidate: a verdict alone cannot rule out another
-// edit, so the lengths must match too.
+// edit, so the lengths must match too. A copy still measured or looked up has no length yet
+// and is taken held: dropping it meanwhile let the body say Convert, and a press add a
+// duplicate beside the copy Surco had just found. Once measured, the lengths decide.
 export function pickLibraryCopy(
   candidates: readonly CopyCandidate[],
   fileDurationSec: number | undefined,
 ): LibraryCopyTarget | null {
   const copy = candidates.find(
     (candidate) =>
-      countsAsCopy(candidate.verdict) && lengthsMatch(candidate.durationSec, fileDurationSec),
+      countsAsCopy(candidate.verdict) &&
+      (lengthsMatch(candidate.durationSec, fileDurationSec) ||
+        (candidate.durationSec === undefined &&
+          (candidate.verdict === 'measuring' || candidate.path === ''))),
   )
   if (!copy) return null
   const { verdict, ...target } = copy

@@ -280,6 +280,28 @@ describe('pickLibraryCopy', () => {
       held: true,
     })
   })
+
+  // A copy Surco just added to Traktor is measured for about a second before its length is
+  // known: dropping it meanwhile made the body say Convert, and a press added a duplicate.
+  it('holds a copy still being measured whose length is not known yet', () => {
+    expect(
+      pickLibraryCopy([{ ...traktor, verdict: 'measuring', durationSec: undefined }], 210),
+    ).toMatchObject({ program: 'traktor', path: '/t/a.aiff', held: true })
+  })
+
+  it('holds the Apple Music copy whose path and length are both still unknown', () => {
+    expect(pickLibraryCopy([{ ...music, path: '', durationSec: undefined }], 210)).toMatchObject({
+      program: 'appleMusic',
+      held: true,
+    })
+  })
+
+  // Once measured, the length rule decides again: another edit is not this file's copy.
+  it('offers nothing for a measuring copy whose length turned out to be another edit', () => {
+    expect(
+      pickLibraryCopy([{ ...traktor, verdict: 'measuring', durationSec: 400 }], 210),
+    ).toBeNull()
+  })
 })
 
 describe('replaceCopyPatch', () => {

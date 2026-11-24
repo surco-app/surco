@@ -7485,6 +7485,24 @@ describe('Editor Apple Music library section', () => {
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
     })
 
+    // A copy Surco just added to a program is still measured, with no length yet, for about
+    // a second: saying Convert meanwhile let a press add a duplicate beside it.
+    it('names the action and waits while a copy with no length yet is still measured', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
+        hereDuration: 95,
+        pairPending: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'measuring'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
     it('fills from the next program when the first holds another version', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
