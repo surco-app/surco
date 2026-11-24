@@ -18,6 +18,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
+import { baseName } from '../lib/baseName'
 import {
   type BatchOutcome,
   type BatchSummary,
@@ -31,6 +32,7 @@ import { exportedPatch } from '../lib/export'
 import { missingRequiredOf, requiredFieldsOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
+import { keptFormatOf, type LibraryCopyRef } from '../lib/libraryCopy'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { withCachedQualityTag } from '../lib/qualityTag'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
@@ -123,6 +125,7 @@ interface Params {
   // The destination the user picked for a track in the editor, which the row itself does
   // not store; a retry that converts again must not fall back to the Settings default.
   rememberedPick?: (id: string) => RememberedPick | undefined
+  onLibraryCopyUpdated?: (name: string) => void
 }
 
 interface TrackProcessing {
@@ -135,6 +138,7 @@ interface TrackProcessing {
     declickOverride?: DeclickConfig,
     keepMp3?: boolean,
   ) => Promise<BatchOutcome>
+  updateLibraryCopy: (id: string, copy: LibraryCopyRef) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
     formatOverride?: FormatSetting,
@@ -184,6 +188,7 @@ export function useTrackProcessing({
   releaseFile,
   reclaimFile,
   rememberedPick,
+  onLibraryCopyUpdated,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -661,6 +666,85 @@ export function useTrackProcessing({
     },
   )
 
+  // Update rewrites the tags and cover of the copy the library already plays, at its exact path
+  // and in its own format, and leaves its audio and the open file alone: the DJ programs and
+  // Apple Music hold that copy by its path, with cues set against its samples. The open row
+  // only shows the job running and then gets its own state back, since its file is untouched.
+  const updateLibraryCopy = useStableCallback(
+    async (id: string, copy: LibraryCopyRef): Promise<BatchOutcome> => {
+      const format = keptFormatOf(copy.path)
+      if (!format) return 'skipped'
+      const ready = await readyTrack(id)
+      if (typeof ready === 'string') return ready
+      const track = ready
+      const programs = await window.api.conversionPrograms([copy.path]).catch(() => [])
+      if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
+      window.api.beginConversionBatch()
+      const { status, stage } = track
+      const restore = (): void => updateTrack(id, { status, stage })
+      updateTrack(id, { status: 'processing', stage: undefined })
+      try {
+        await releaseFile?.(copy.path)
+        const withCover = await withMusicCover(track, updateTrack)
+        const result = await window.api.processTrack({
+          id: track.id,
+          inputPath: copy.path,
+          outputName: baseName(copy.path).replace(/\.[^.]+$/, ''),
+          meta: jobMetaOf(track),
+          ...coverSourceOf(withCover),
+          removeCover: track.coverRemoved,
+          format,
+          tagsInPlace: true,
+          // The settings' own fallback (main/settings.ts) keeps the shape main expects; only
+          // the mode matters, and it never measures or changes the copy's level.
+          normalize: {
+            ...(settings?.normalize ?? {
+              mode: 'none',
+              targetLufs: -14,
+              truePeakDb: -1,
+              peakDb: -1,
+            }),
+            mode: 'none',
+          },
+          declick: { mode: 'off', noise: 'off' },
+          overwriteOriginal: false,
+          convertBesideOriginal: false,
+          keepOutputCopy: true,
+          addToAppleMusic: !!copy.musicPersistentId,
+          musicPersistentId: copy.musicPersistentId,
+        })
+        wroteRef.current = true
+        restore()
+        if (result.appleMusicFailed) onAppleMusicFailed?.(track.listLabel)
+        if (result.engineDjError) {
+          const message = mainErrorMessage(
+            new Error(result.engineDjError),
+            tr,
+            tr('editor.processError'),
+          )
+          onProcessError?.(message, track.listLabel, result.engineDjError)
+          return 'failed'
+        }
+        onLibraryCopyUpdated?.(track.listLabel)
+        return 'converted'
+      } catch (e) {
+        restore()
+        const raw = e instanceof Error ? cleanIpcError(e.message) : ''
+        if (errorKeyOf(raw) === 'conversionCancelled') return 'skipped'
+        const message = isFileInUseMessage(raw)
+          ? tr('editor.fileInUseError')
+          : mainErrorMessage(e, tr, tr('editor.processError'))
+        onProcessError?.(message, track.listLabel, raw)
+        return 'failed'
+      } finally {
+        reclaimFile?.(copy.path)
+        const flushed = window.api.endConversionBatch()
+        rereadMovedSources()
+        rereadReachedCollections(flushed)
+      }
+    },
+  )
+
   // Pushes an already-converted track into Apple Music by hand, the escape hatch
   // for when the automatic add is off. A track whose previous add stored a
   // persistent ID is synced onto that library copy instead of imported again —
@@ -900,6 +984,7 @@ export function useTrackProcessing({
 
   return {
     processOne,
+    updateLibraryCopy,
     processAll,
     retryVerification,
     addTrackToAppleMusic,

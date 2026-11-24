@@ -3650,3 +3650,222 @@ describe('useTrackProcessing retryVerification', () => {
     expect(rows.current[0].verification).toEqual(late)
   })
 })
+
+describe('useTrackProcessing updateLibraryCopy', () => {
+  const copy = { path: '/r/Song.aif', program: 'rekordbox' as const }
+
+  function renderUpdate(
+    rows: TrackItem[],
+    over: Partial<Parameters<typeof useTrackProcessing>[0]> = {},
+  ) {
+    return renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: rows,
+          settings: null,
+          updateTrack: vi.fn(),
+          ...over,
+        }),
+      { wrapper: withClient() },
+    )
+  }
+
+  // DJ programs and Apple Music hold the copy by its path and play its audio, so Update may
+  // only rewrite its tags there: a renamed or re-encoded copy would lose its cues and plays.
+  it('retags the library copy where it is, in its own format, and never the open file', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate([track({ id: 'a', meta: meta({ genre: 'House' }) })])
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'a',
+        inputPath: '/r/Song.aif',
+        format: 'aiff',
+        tagsInPlace: true,
+        outputName: 'Song',
+        meta: expect.objectContaining({ title: 'Title', artist: 'Artist', genre: 'House' }),
+      }),
+    )
+  })
+
+  // The trim, the stripped tags and the playlists are edits of the open file; carried onto
+  // the copy they would cut its audio or file it into playlists it was never placed in.
+  it('sends the copy nothing that belongs to the open file or changes audio', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate(
+      [
+        track({
+          id: 'a',
+          foreignRemoved: ['TXXX:Old'],
+          metaCleared: true,
+          trim: { startSec: 1 },
+          playlists: { traktor: { targets: [], base: ['Set'] } },
+          programs: ['traktor'],
+        }),
+      ],
+      {
+        settings: {
+          normalize: { mode: 'lufs', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+          declick: { mode: 'auto', noise: 'auto' },
+        } as unknown as Settings,
+      },
+    )
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    const job = processTrack.mock.lastCall?.[0]
+    expect(job).toBeDefined()
+    for (const key of ['trim', 'foreignRemoved', 'clearExtras', 'playlists', 'programs'])
+      expect(job).not.toHaveProperty(key)
+    expect(job?.normalize?.mode).toBe('none')
+    expect(job?.declick).toEqual({ mode: 'off', noise: 'off' })
+  })
+
+  // Music keeps its own copy of the tags: the entry that plays this file is updated along with
+  // it, and a copy Music does not play must never be added to Music by an update.
+  it('retags the Apple Music entry when the copy is the one Music plays', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate([track({ id: 'a' })])
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', { ...copy, musicPersistentId: 'P1' })
+    })
+    expect(processTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, musicPersistentId: 'P1' }),
+    )
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(processTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ addToAppleMusic: false }),
+    )
+  })
+
+  // The row describes the file open in the editor, which Update never touched: following the
+  // copy or showing it done would make the open file look converted when it is not.
+  it('leaves the open row on its own file and state after updating the copy', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true }),
+    })
+    const updateTrack = vi.fn()
+    const refreshTrackFromDisk = vi.fn(async () => {})
+    const onLibraryCopyUpdated = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a', outputPath: '/out/a.aiff' })], {
+      updateTrack,
+      refreshTrackFromDisk,
+      onLibraryCopyUpdated,
+    })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('converted')
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+    for (const [, patch] of updateTrack.mock.calls) {
+      expect(patch).not.toHaveProperty('outputPath')
+      expect(patch).not.toHaveProperty('inputPath')
+    }
+    expect(refreshTrackFromDisk).not.toHaveBeenCalled()
+    expect(onLibraryCopyUpdated).toHaveBeenCalledWith('a.wav')
+  })
+
+  it('puts the state back on the row that ran it even when another track is open by then', async () => {
+    let release: (r: ProcessResult) => void = () => {}
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>(
+        () =>
+          new Promise<ProcessResult>((resolve) => {
+            release = resolve
+          }),
+      ),
+    })
+    const updateTrack = vi.fn()
+    let rows = [track({ id: 'a', status: 'done' }), track({ id: 'b' })]
+    const { result, rerender } = renderHook(
+      () => useTrackProcessing({ tracks: rows, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+    let done: Promise<unknown> = Promise.resolve()
+    act(() => {
+      done = result.current.updateLibraryCopy('a', copy)
+    })
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ status: 'processing' }),
+      ),
+    )
+    rows = [rows[1], rows[0]]
+    rerender()
+    await act(async () => {
+      release({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+      await done
+    })
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'done', stage: undefined })
+    expect(updateTrack.mock.calls.some(([id]) => id === 'b')).toBe(false)
+  })
+
+  // main refuses a copy whose audio a retag would change; that has to reach the DJ like any
+  // failed conversion, and the open row, whose file was never in play, keeps its state.
+  it('says a failed copy update like a failed conversion and leaves the row as it was', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(
+          new Error(
+            "Error invoking remote method 'process:track': Error: SURCO_ERR:libraryCopyAudioWouldChange: /r/Song.aif",
+          ),
+        ),
+    })
+    const updateTrack = vi.fn()
+    const onProcessError = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a' })], { updateTrack, onProcessError })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('failed')
+    expect(onProcessError).toHaveBeenCalledWith(
+      i18n.t('errors.libraryCopyAudioWouldChange'),
+      'a.wav',
+      'SURCO_ERR:libraryCopyAudioWouldChange: /r/Song.aif',
+    )
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+  })
+
+  it('refuses a copy update with required fields empty, as a conversion would', async () => {
+    const processTrack = vi.fn<Api['processTrack']>()
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a', meta: meta({ genre: '' }) })], {
+      updateTrack,
+      settings: { requiredFields: ['genre'] } as unknown as Settings,
+    })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('failed')
+    expect(processTrack).not.toHaveBeenCalled()
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({
+        status: 'error',
+        error: i18n.t('editor.missingRequired', { fields: i18n.t('fields.genre') }),
+      }),
+    )
+  })
+})
