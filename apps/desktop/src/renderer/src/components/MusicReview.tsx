@@ -1494,6 +1494,11 @@ export function MusicReviewAction({
         className="contents"
         style={{ visibility: changes === 0 && !running ? 'hidden' : 'visible' }}
       >
+        <div
+          aria-hidden="true"
+          data-testid="music-review-apply-divider"
+          className="mx-1 h-5 w-px self-center bg-[var(--color-line)]"
+        />
         <PrimaryAction
           testid="music-review-apply"
           Icon={ListChecks}

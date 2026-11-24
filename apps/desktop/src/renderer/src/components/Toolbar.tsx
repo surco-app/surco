@@ -380,12 +380,7 @@ export const Toolbar = memo(function Toolbar({
           <MessageSquare className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.feedback')} align="end" />
         </button>
-        {primary && (
-          <>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            {primary}
-          </>
-        )}
+        {primary}
       </div>
     </header>
   )

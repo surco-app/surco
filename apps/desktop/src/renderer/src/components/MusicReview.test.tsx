@@ -450,6 +450,24 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
   })
 
+  // The divider separates Apply from the buttons before it; beside an empty slot it would be
+  // a stray line.
+  it('hides the divider before Apply together with Apply', () => {
+    render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-apply-divider')).toBeInTheDocument()
+    expect(screen.getByTestId('music-review-apply-divider')).not.toBeVisible()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply-divider')).toBeVisible()
+  })
+
   // Warnings the search or the filter hide are still there to review.
   it('keeps the controls when the filter hides every warning', () => {
     render(<Panes review={review({ filter: 'duplicates' })} />)
