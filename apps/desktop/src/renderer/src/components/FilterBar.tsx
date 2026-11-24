@@ -609,7 +609,6 @@ export function FilterBar({
                     }
                   : {})}
                 data-menu
-                data-origin={pos.bottom !== undefined ? 'bottom-left' : 'top-left'}
                 data-testid={focusTestId ? `${testid}-listbox` : `${testid}-menu`}
                 onKeyDown={onListKeyDown}
                 style={{
