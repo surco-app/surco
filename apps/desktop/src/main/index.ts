@@ -215,7 +215,7 @@ import {
 import { runProcessTrack } from './processTrack'
 import { createProgramQueue, type ProgramQueueDeps } from './programQueue'
 import { getProvider } from './providers'
-import { createQuitGuard } from './quitGuard'
+import { createQuitGuard, quitDialog } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   attachPlaylists,
@@ -1104,29 +1104,10 @@ function createWindow(): BrowserWindow {
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
-      const details = [
-        running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
-        exporting ? t('quitUsbDetail') : null,
-        unsavedCues > 0 ? t('quitCuesDetail') : null,
-      ]
-      const { response } = await dialog.showMessageBox(win, {
-        type: 'warning',
-        message:
-          running > 0
-            ? t('quitBusyMessage')
-            : exporting
-              ? t('quitUsbMessage')
-              : t('quitCuesMessage'),
-        detail: details.filter(Boolean).join('\n\n'),
-        buttons: [
-          t('quitBusyConfirm'),
-          running > 0 ? t('quitBusyCancel') : exporting ? t('quitUsbCancel') : t('quitCuesCancel'),
-        ],
-        // Keep converting is the default: an absent-minded Return on this dialog must
-        // not be what throws away a batch that has been running for minutes.
-        defaultId: 1,
-        cancelId: 1,
-      })
+      const { response } = await dialog.showMessageBox(
+        win,
+        quitDialog(t, running, exporting, unsavedCues),
+      )
       return response === 0
     },
   })
