@@ -148,6 +148,13 @@ describe('buildLibraryPlaylistScript', () => {
   it('marks each rating as given or computed, as Music does', () => {
     expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).toContain("'ratingComputed'")
   })
+
+  // A file location costs a NAS round trip per track; the rows come back without one, and
+  // only the tracks Surco has not resolved yet are asked for theirs.
+  it('reads the rows without resolving a single file', () => {
+    expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).not.toContain('location')
+    expect(buildLibraryPlaylistScript(RECENTLY_ADDED_ID, 1761346800000)).not.toContain('location')
+  })
 })
 
 // Music offers no Recently added among the user's playlists, so Surco builds it from the
