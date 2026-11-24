@@ -152,11 +152,16 @@ export function bulkPlaylistState(
   membership: Membership | undefined,
   options: readonly PlaylistOption[] | undefined,
   library: PlaylistLibrary = 'rekordbox',
+  copyPathOf?: (t: TrackItem) => string | undefined,
 ): { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[] | undefined {
   if (!membership || !options) return undefined
   const seen = new Map<string, { target: RekordboxPlaylistTarget; n: number }>()
   for (const t of tracks) {
-    for (const target of effectivePlaylists(t, membership, options, library) ?? []) {
+    const copy = copyPathOf?.(t)
+    const lists = copy
+      ? playlistsOfPath(copy, membership, options)
+      : (effectivePlaylists(t, membership, options, library) ?? [])
+    for (const target of lists) {
       const entry = seen.get(targetKey(target)) ?? { target, n: 0 }
       entry.n += 1
       seen.set(targetKey(target), entry)
@@ -193,9 +198,12 @@ export function withTarget(
   target: RekordboxPlaylistTarget,
   on: boolean,
   library: PlaylistLibrary = 'rekordbox',
+  copyPathOf?: (t: TrackItem) => string | undefined,
 ): ({ id: string } & PlaylistsEdit)[] | undefined {
   if (!membership || !options) return undefined
+  // A track on its copy is written to the program at once, so nothing is staged for it.
   return tracks
+    .filter((t) => !copyPathOf?.(t))
     .filter((t) => SOURCE_PROGRAMS[library].addsUncollected || rekordboxPathOf(t) in membership)
     .map((t) => {
       const rest = (effectivePlaylists(t, membership, options, library) ?? []).filter(

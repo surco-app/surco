@@ -367,6 +367,7 @@ describe('usePlaylistsSpec on a library copy', () => {
   function onCopy({
     library = 'rekordbox',
     item = open,
+    tracks = [item],
     copyPathOf = () => COPY,
     membership = { [COPY]: ['p1'] },
     canSave = true,
@@ -374,6 +375,7 @@ describe('usePlaylistsSpec on a library copy', () => {
   }: {
     library?: PlaylistLibrary
     item?: TrackItem
+    tracks?: TrackItem[]
     copyPathOf?: ((t: TrackItem) => string | undefined) | null
     membership?: Membership
     canSave?: boolean | 'pending' | 'fails'
@@ -413,18 +415,20 @@ describe('usePlaylistsSpec on a library copy', () => {
       </QueryClientProvider>
     )
     const onChange = vi.fn()
+    const onChangeTracks = vi.fn()
     const hook = renderHook(
       () =>
         usePlaylistsSpec(library, {
           shown: true,
           item,
-          tracks: [item],
+          tracks,
           onChange,
+          onChangeTracks,
           ...(copyPathOf && { copyPathOf }),
         }),
       { wrapper },
     )
-    return { hook, onChange, readMembership, editPlaylist, reportError }
+    return { hook, onChange, onChangeTracks, readMembership, editPlaylist, reportError }
   }
 
   it('shows the playlists of the copy, not of the open file, when the program has a copy', async () => {
@@ -546,5 +550,102 @@ describe('usePlaylistsSpec on a library copy', () => {
       ),
     )
     expect(editPlaylist).not.toHaveBeenCalled()
+  })
+
+  describe('with several tracks selected', () => {
+    const withCopy = { id: 'a', inputPath: '/m/a.flac', meta: {} } as TrackItem
+    const without = { id: 'b', inputPath: '/m/b.flac', meta: {} } as TrackItem
+    const copyOfA = (t: TrackItem) => (t.id === 'a' ? COPY : undefined)
+    const verano = { id: 'p1', name: 'Verano' }
+
+    // One edit for every copy, so the DJ gets one notice and one Undo for the whole tick.
+    it('adds the copies of a selection at once and stages the tracks without a copy', async () => {
+      const { hook, editPlaylist, onChangeTracks } = onCopy({
+        item: withCopy,
+        tracks: [withCopy, without],
+        copyPathOf: copyOfA,
+        membership: { [COPY]: [], '/m/b.flac': [] },
+      })
+      await waitFor(() => expect(hook.result.current).toBeDefined())
+      await act(async () => {
+        hook.result.current?.bulk.onToggle(verano, true)
+      })
+      await waitFor(() => expect(editPlaylist).toHaveBeenCalledTimes(1))
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: 'p1', tracks: [{ paths: [COPY] }] },
+        'Verano',
+      )
+      expect(onChangeTracks).toHaveBeenCalledWith([
+        { id: 'b', playlists: { rekordbox: { targets: [verano], base: [] } } },
+      ])
+    })
+
+    it('counts a selected track as in a playlist when its copy is there', async () => {
+      const staged = {
+        ...without,
+        playlists: { rekordbox: { targets: [verano], base: [] } },
+      } as TrackItem
+      const { hook } = onCopy({
+        item: withCopy,
+        tracks: [withCopy, staged],
+        copyPathOf: copyOfA,
+        membership: { [COPY]: ['p1'], '/m/b.flac': [] },
+      })
+      await waitFor(() =>
+        expect(hook.result.current?.bulk.states).toEqual([{ target: verano, state: 'all' }]),
+      )
+    })
+
+    it('locks in Engine DJ the playlists every selected track is in through its copy', async () => {
+      const other = '/r/b.aiff'
+      const { hook } = onCopy({
+        library: 'engine',
+        item: withCopy,
+        tracks: [withCopy, without],
+        copyPathOf: (t) => (t.id === 'a' ? COPY : other),
+        membership: { [COPY]: ['p1', 'p2'], [other]: ['p1'] },
+      })
+      await waitFor(() => expect(hook.result.current?.bulk.states).toHaveLength(2))
+      expect(hook.result.current?.locked).toEqual(['p1'])
+    })
+
+    it('writes nothing to Traktor’s collection on the copies until it is confirmed', async () => {
+      const { hook, editPlaylist } = onCopy({
+        library: 'traktor',
+        canSave: false,
+        item: withCopy,
+        tracks: [withCopy, without],
+        copyPathOf: copyOfA,
+        membership: { [COPY]: [], '/m/b.flac': [] },
+      })
+      await waitFor(() => expect(hook.result.current?.disabled).toBe('unconfirmed'))
+      await act(async () => {
+        hook.result.current?.bulk.onToggle(verano, true)
+      })
+      await act(async () => {})
+      expect(editPlaylist).not.toHaveBeenCalled()
+    })
+
+    it('says so when the program cannot be read before untagging the copies', async () => {
+      const { hook, reportError, editPlaylist } = onCopy({
+        item: withCopy,
+        tracks: [withCopy, without],
+        copyPathOf: copyOfA,
+        membership: { [COPY]: ['p1'], '/m/b.flac': [] },
+        playlist: vi.fn<ProgramReads['playlist']>(async () => {
+          throw new Error('locked')
+        }),
+      })
+      await waitFor(() => expect(hook.result.current?.bulk.states).toHaveLength(1))
+      await act(async () => {
+        hook.result.current?.bulk.onToggle(verano, false)
+      })
+      await waitFor(() =>
+        expect(reportError).toHaveBeenCalledWith(
+          "Surco can't change the rekordbox collection files right now, so nothing changed",
+        ),
+      )
+      expect(editPlaylist).not.toHaveBeenCalled()
+    })
   })
 })

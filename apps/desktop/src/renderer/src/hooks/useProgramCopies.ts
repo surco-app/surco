@@ -2,12 +2,18 @@ import { useQueries } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import type { CollectionTrack } from '../../../shared/types'
-import { type AppleMusicIndex, buildLibraryIndex, findLibraryEntry } from '../lib/appleMusicLibrary'
+import {
+  type AppleMusicIndex,
+  buildLibraryIndex,
+  findLibraryEntry,
+  SAME_RECORDING_SEC,
+} from '../lib/appleMusicLibrary'
 import { collectionCandidates } from '../lib/collectionCandidates'
 import { DJ_REACH_SETTINGS } from '../lib/djReach'
 import { pathKey } from '../lib/pathKey'
 import { useAppSettings } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
+import type { TrackItem } from '../types'
 
 export interface ProgramCopy {
   program: DjProgram
@@ -41,13 +47,9 @@ function lookupFor(tracks: CollectionTrack[]): CollectionLookup {
   return lookup
 }
 
-export function useProgramCopies({
-  inputPath,
-  meta,
-  durationSec,
-  suggestedMeta,
-  enabled,
-}: Args): ProgramCopy[] {
+// The collections of the programs Surco sends to, read only while enabled. A switched-off
+// program shows no copy even when its collection is cached by its tab.
+function useActiveCollections(enabled: boolean): (CollectionTrack[] | undefined)[] {
   const settings = useAppSettings()
   const active = useMemo(
     () =>
@@ -64,6 +66,62 @@ export function useProgramCopies({
     })),
     combine: (results) => results.map((result) => result.data),
   })
+  return useMemo(
+    () => collections.map((tracks, i) => (enabled && active[i] ? tracks : undefined)),
+    [collections, enabled, active],
+  )
+}
+
+// A selected track has no audio comparison behind it, so only an entry of the same title,
+// artist and length is taken as its copy. The match score alone lets an exact title and artist
+// through at any length, and another edit of the track must not be filed in the DJ's set.
+export function sameLengthCopyIn(
+  tracks: CollectionTrack[],
+  track: { inputPath: string; meta: { title: string; artist: string }; durationSec?: number },
+): string | undefined {
+  if (track.durationSec === undefined) return undefined
+  const entry = findLibraryEntry(lookupFor(tracks).index, track.meta, track.durationSec)
+  if (!entry?.path || entry.durationSec === undefined) return undefined
+  if (Math.abs(entry.durationSec - track.durationSec) > SAME_RECORDING_SEC) return undefined
+  return pathKey(entry.path) === pathKey(track.inputPath) ? undefined : entry.path
+}
+
+export function useSelectionCopies(
+  tracks: TrackItem[],
+  enabled: boolean,
+): Partial<Record<DjProgram, Record<string, string>>> {
+  const collections = useActiveCollections(enabled)
+  return useMemo(
+    () =>
+      Object.fromEntries(
+        DJ_PROGRAMS.flatMap((program, i) => {
+          const collection = collections[i]
+          if (!collection) return []
+          const copies = Object.fromEntries(
+            tracks.flatMap((t) => {
+              const path = sameLengthCopyIn(collection, {
+                inputPath: t.inputPath,
+                meta: t.meta,
+                durationSec: t.duration,
+              })
+              return path ? [[t.id, path]] : []
+            }),
+          )
+          return Object.keys(copies).length > 0 ? [[program, copies]] : []
+        }),
+      ),
+    [collections, tracks],
+  )
+}
+
+export function useProgramCopies({
+  inputPath,
+  meta,
+  durationSec,
+  suggestedMeta,
+  enabled,
+}: Args): ProgramCopy[] {
+  const collections = useActiveCollections(enabled)
   const { title, artist } = meta
   const suggestedTitle = suggestedMeta?.title
   const suggestedArtist = suggestedMeta?.artist
@@ -72,7 +130,7 @@ export function useProgramCopies({
     () =>
       DJ_PROGRAMS.flatMap((program, i) => {
         const tracks = collections[i]
-        if (!enabled || !active[i] || !tracks) return []
+        if (!tracks) return []
         const { index, pathKeys } = lookupFor(tracks)
         if (pathKeys.has(thisKey)) return [{ program, path: inputPath, isThisFile: true }]
         // Without the length as a last resort: a copy of another edit is still that title
@@ -90,17 +148,6 @@ export function useProgramCopies({
         if (!entry?.path) return []
         return [{ program, path: entry.path, isThisFile: pathKey(entry.path) === thisKey }]
       }),
-    [
-      enabled,
-      collections,
-      active,
-      title,
-      artist,
-      durationSec,
-      suggestedTitle,
-      suggestedArtist,
-      inputPath,
-      thisKey,
-    ],
+    [collections, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath, thisKey],
   )
 }

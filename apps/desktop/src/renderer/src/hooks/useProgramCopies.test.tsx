@@ -9,7 +9,8 @@ import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
 import { djReads, installApi } from '../test/api'
-import { useProgramCopies } from './useProgramCopies'
+import type { TrackItem } from '../types'
+import { sameLengthCopyIn, useProgramCopies, useSelectionCopies } from './useProgramCopies'
 
 const meta = { title: 'Weekend', artist: 'Tantra' }
 
@@ -327,5 +328,73 @@ describe('useProgramCopies', () => {
         { program: 'rekordbox', path: '/R/weekend.mp3', isThisFile: true },
       ]),
     )
+  })
+})
+
+// A selection has no section to compare audio, so only an entry of the same title, artist
+// and length counts as the track's copy; filing another edit of it in a set would be wrong.
+describe('sameLengthCopyIn', () => {
+  const selected = { inputPath: '/m/weekend.flac', meta, durationSec: 361 }
+
+  it('finds a copy of the same length for a selected track', () => {
+    expect(sameLengthCopyIn([row('/r/weekend.aiff', { durationSec: 361 })], selected)).toBe(
+      '/r/weekend.aiff',
+    )
+  })
+
+  it('takes no copy of another length in a selection, since there is no comparison to tell another version apart', () => {
+    expect(
+      sameLengthCopyIn([row('/r/weekend.aiff', { durationSec: 300 })], selected),
+    ).toBeUndefined()
+  })
+
+  it('takes no copy without a known length', () => {
+    expect(
+      sameLengthCopyIn([row('/r/weekend.aiff', { durationSec: 361 })], {
+        ...selected,
+        durationSec: undefined,
+      }),
+    ).toBeUndefined()
+  })
+
+  it('takes the track itself as no copy, since there is nothing else to file', () => {
+    expect(
+      sameLengthCopyIn([row('/m/weekend.flac', { durationSec: 361 })], selected),
+    ).toBeUndefined()
+  })
+})
+
+describe('useSelectionCopies', () => {
+  const selected = (id: string, title: string): TrackItem =>
+    ({
+      id,
+      inputPath: `/m/${id}.flac`,
+      duration: 361,
+      meta: { title, artist: 'Tantra' },
+    }) as TrackItem
+
+  it('maps each selected track to its copy in each enabled program', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: { collection: async () => [row('/r/weekend.aiff', { durationSec: 361 })] },
+        traktor: { collection: async () => [row('/t/weekend.aiff', { durationSec: 361 })] },
+      }),
+    })
+    const tracks = [selected('a', 'Weekend'), selected('b', 'Hills')]
+    const { result } = renderHook(() => useSelectionCopies(tracks, true), {
+      wrapper: wrapperFor({ syncRekordbox: true }),
+    })
+    await waitFor(() => expect(result.current).toEqual({ rekordbox: { a: '/r/weekend.aiff' } }))
+  })
+
+  it('reads nothing while disabled', async () => {
+    const rekordbox = vi.fn(async () => [row('/r/weekend.aiff', { durationSec: 361 })])
+    installApi({ dj: djReads({ rekordbox: { collection: rekordbox } }) })
+    const { result } = renderHook(() => useSelectionCopies([selected('a', 'Weekend')], false), {
+      wrapper: wrapperFor({ syncRekordbox: true }),
+    })
+    await Promise.resolve()
+    expect(result.current).toEqual({})
+    expect(rekordbox).not.toHaveBeenCalled()
   })
 })

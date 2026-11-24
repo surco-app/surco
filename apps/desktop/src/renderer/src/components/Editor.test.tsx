@@ -2023,6 +2023,7 @@ describe('Editor multi-select', () => {
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       replacesA?: string
+      durationA?: number
       libraryIndex?: AppleMusicIndex | null
       fileA?: string
       fileB?: string
@@ -2057,6 +2058,7 @@ describe('Editor multi-select', () => {
         spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
         ...(o.fromSeratoA && { programs: ['serato'] }),
         ...(o.replacesA && { replacesPath: o.replacesA }),
+        ...(o.durationA && { duration: o.durationA }),
       })
       const b = item({
         id: 'b',
@@ -2256,6 +2258,53 @@ describe('Editor multi-select', () => {
         id: 'a',
         playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: ['3000'] } },
       },
+      {
+        id: 'b',
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+      },
+    ])
+  })
+
+  // A selected track whose rekordbox collection holds an entry of the same title, artist and
+  // length is filed there at once; the other one is staged for its conversion as before.
+  it('adds the rekordbox copy of a selected track to a playlist at once and stages the other', async () => {
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    Object.assign(window.api, {
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(rekordboxTree),
+          membership: vi
+            .fn<ProgramReads['membership']>()
+            .mockResolvedValue({ '/r/a.aiff': [], '/music/b.wav': [] }),
+          collection: async () => [
+            { contentId: 'r1', path: '/r/a.aiff', title: 'A', artist: 'Kumara', durationSec: 361 },
+          ],
+          editPlaylist,
+        },
+      }),
+    })
+    const { onChangeTracksPlaylists } = renderMulti({
+      visibleFields: ['rekordboxPlaylists'],
+      metaA: { artist: 'Kumara' },
+      durationA: 361,
+      settings: { syncRekordbox: true },
+    })
+    await waitFor(() =>
+      expect(window.api.dj.membership).toHaveBeenCalledWith('rekordbox', [
+        '/music/b.wav',
+        '/r/a.aiff',
+      ]),
+    )
+    fireEvent.click(await screen.findByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-3000'))
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: '3000', tracks: [{ paths: ['/r/a.aiff'] }] },
+        'Makina',
+      ),
+    )
+    expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
       {
         id: 'b',
         playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },

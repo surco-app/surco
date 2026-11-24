@@ -59,7 +59,7 @@ import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
-import { useProgramCopies } from '../hooks/useProgramCopies'
+import { useProgramCopies, useSelectionCopies } from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
@@ -909,8 +909,30 @@ export const Editor = memo(function Editor({
   // every render, so a new copyPathOf would read the membership again each time) nor on the
   // raw paths: a copy that turns out to be another version must stop being the target.
   const copyTargets = JSON.stringify(DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows)))
+  // A selection has no section rows, so its copies come from the collections by title, artist
+  // and length. Only the playlists fields use them, so no collection is read without one.
+  // Keyed like copyTargets: the selection is a new array on every progress tick.
+  const selectionCopies = JSON.stringify(
+    useSelectionCopies(
+      selectedTracks ?? [],
+      isMulti &&
+        filesOpen &&
+        !libraryHidden &&
+        Object.values(PLAYLIST_FIELDS).some((field) => visibleFields.includes(field)),
+    ),
+  )
   const itemId = item.id
   const copyPathOf = useMemo(() => {
+    if (isMulti) {
+      const byProgram: Partial<Record<DjProgram, Record<string, string>>> =
+        JSON.parse(selectionCopies)
+      return Object.fromEntries(
+        DJ_PROGRAMS.map((program) => {
+          const copies = byProgram[program]
+          return [program, copies ? (track: TrackItem) => copies[track.id] : undefined]
+        }),
+      ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
+    }
     const paths: (string | null)[] = JSON.parse(copyTargets)
     return Object.fromEntries(
       DJ_PROGRAMS.map((program, i) => {
@@ -921,7 +943,7 @@ export const Editor = memo(function Editor({
         ]
       }),
     ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
-  }, [copyTargets, itemId])
+  }, [isMulti, selectionCopies, copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.

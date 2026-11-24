@@ -145,39 +145,54 @@ export function usePlaylistsSpec(
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
     const disabled = gated && canSave === false ? 'unconfirmed' : undefined
+    const copyIn = copyPathOf && ((t: TrackItem) => copyOf(t, library, copyPathOf))
+    const toggleCopies = (paths: string[], target: RekordboxPlaylistTarget, on: boolean) => {
+      if (gated && canSave !== true) return
+      toggle(paths, target, on).catch((error) => {
+        window.api.logError(String(error))
+        reportError(
+          tr(
+            `${SOURCE_PROGRAMS[library].edit?.messagePrefix ?? 'sources.edit.'}refused.unreadable`,
+          ),
+        )
+      })
+    }
     const single: PlaylistsSpec['single'] = copy
-      ? copySingle(copy, membership, options, queued, (target, on) => {
-          if (gated && canSave !== true) return
-          toggle([copy], target, on).catch((error) => {
-            window.api.logError(String(error))
-            reportError(
-              tr(
-                `${SOURCE_PROGRAMS[library].edit?.messagePrefix ?? 'sources.edit.'}refused.unreadable`,
-              ),
-            )
-          })
-        })
+      ? copySingle(copy, membership, options, queued, (target, on) =>
+          toggleCopies([copy], target, on),
+        )
       : {
           value: effectivePlaylists(item, membership, options, library) ?? [],
           onChange: (next) => onChange(playlistsEdit(item, membership, next, library)),
         }
+    const copies = tracks.map((t) => copyIn?.(t))
+    const isBulk = tracks.length > 1
     return {
       library,
       disabled,
-      locked: copy && !canRemove ? single.value.flatMap((t) => (t.id ? [t.id] : [])) : undefined,
+      locked: canRemove
+        ? undefined
+        : isBulk
+          ? lockedOnCopies(copies, membership)
+          : copy
+            ? single.value.flatMap((t) => (t.id ? [t.id] : []))
+            : undefined,
       tree,
       options,
       single,
       bulk: {
-        states: bulkPlaylistState(tracks, membership, options, library) ?? [],
+        states: bulkPlaylistState(tracks, membership, options, library, copyIn) ?? [],
         onToggle: (target, on) => {
-          const patches = withTarget(tracks, membership, options, target, on, library)
+          const paths = [...new Set(copies.filter((path) => path !== undefined))]
+          if (paths.length > 0) toggleCopies(paths, target, on)
+          const patches = withTarget(tracks, membership, options, target, on, library, copyIn)
           if (patches) onChangeTracks?.(patches)
         },
       },
     }
   }, [
     library,
+    copyPathOf,
     gated,
     shown,
     tree,
@@ -195,6 +210,18 @@ export function usePlaylistsSpec(
     reportError,
     tr,
   ])
+}
+
+// A program that cannot take a track out keeps ticked the playlists every selected track is in
+// through its copy; a track without a copy is only staged, so none of its playlists is locked.
+function lockedOnCopies(
+  copies: readonly (string | undefined)[],
+  membership: Membership,
+): string[] | undefined {
+  if (copies.some((path) => path === undefined)) return undefined
+  const [first, ...rest] = copies.map((path) => membership[path as string] ?? [])
+  const locked = first.filter((id) => rest.every((ids) => ids.includes(id)))
+  return locked.length > 0 ? locked : undefined
 }
 
 function copyOf(

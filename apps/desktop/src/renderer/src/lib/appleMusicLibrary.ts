@@ -39,7 +39,7 @@ const LIBRARY_WEIGHTS = { title: 0.45, artist: 0.4, duration: 0.15 }
 
 // Two rips of one recording measured up to a second apart (a gap, a fade, an encoder's
 // padding), while the closest same-titled different song in a real library sat 1.3 s off.
-const SAME_RECORDING_SEC = 1
+export const SAME_RECORDING_SEC = 1
 
 // Collaborator separators, matched on the raw artist string (the split happens before
 // folding, which would turn a comma/ampersand into a space and lose the boundary): a comma
