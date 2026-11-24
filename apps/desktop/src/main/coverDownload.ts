@@ -88,3 +88,33 @@ export async function downloadCover(url: string): Promise<string> {
     { detail: url },
   )
 }
+
+export type DraggedCover = { coverUrl: string; coverPath?: string }
+
+// The candidates of one drop are tried in turn and the first that is a real image wins.
+// Null when nothing resolves, so the drop is a clean no-op instead of a red ffmpeg error
+// on undecodable bytes.
+export async function resolveDraggedCover(
+  urls: string[],
+  fetchCover: (url: string) => Promise<{ path: string; bytes: Buffer }>,
+): Promise<DraggedCover | null> {
+  for (const url of urls) {
+    // A real inline image dragged from the page is usable as-is; skip the ~1px data-URL
+    // placeholders lazy-loading leaves behind in an <img src>.
+    if (url.startsWith('data:image/')) {
+      const data = url.slice(url.indexOf(',') + 1)
+      if (Buffer.from(data, 'base64').length > 1024) return { coverUrl: url }
+      continue
+    }
+    if (!url.startsWith('http')) continue
+    try {
+      const { path, bytes } = await fetchCover(url)
+      const ext = imageExt(bytes) ?? 'jpg'
+      const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
+      return { coverPath: path, coverUrl: `data:${mime};base64,${bytes.toString('base64')}` }
+    } catch {
+      // Not an image, or unreachable from the main process — try the next candidate.
+    }
+  }
+  return null
+}
