@@ -10113,13 +10113,15 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     runMenu('process-all')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(
-      screen
-        .getAllByTestId('app-notice')
-        .some((card) =>
-          card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
-        ),
-    ).toBe(true)
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .some((card) =>
+            card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
+          ),
+      ).toBe(true),
+    )
   })
 
   // A check still running has not said anything yet: the track waits in the list for its
