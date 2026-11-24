@@ -1091,7 +1091,8 @@
       "options": "Playlists de {{app}}",
       "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor",
       "copyRemoved_one": "{{count}} pista treta de «{{name}}»",
-      "copyRemoved_other": "{{count}} pistes tretes de «{{name}}»"
+      "copyRemoved_other": "{{count}} pistes tretes de «{{name}}»",
+      "removeIn": "Treu-la a {{app}}"
     },
     "cues": {
       "title": "Cues",

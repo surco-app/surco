@@ -1091,7 +1091,8 @@
       "options": "Playlists do {{app}}",
       "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor",
       "copyRemoved_one": "{{count}} faixa removida de “{{name}}”",
-      "copyRemoved_other": "{{count}} faixas removidas de “{{name}}”"
+      "copyRemoved_other": "{{count}} faixas removidas de “{{name}}”",
+      "removeIn": "Remova-a no {{app}}"
     },
     "cues": {
       "title": "Cues",

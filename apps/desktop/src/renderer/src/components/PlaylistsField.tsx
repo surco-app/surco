@@ -50,6 +50,7 @@ function TreePopover({
   tree,
   options,
   tokens,
+  locked,
   onToggle,
   onClose,
 }: {
@@ -57,6 +58,7 @@ function TreePopover({
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
+  locked?: readonly string[]
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
   onClose: () => void
 }): React.JSX.Element {
@@ -93,6 +95,8 @@ function TreePopover({
         tree={tree}
         options={options}
         tokens={tokens}
+        locked={locked}
+        app={app}
         onToggle={onToggle}
         onEscape={onClose}
       />
@@ -108,6 +112,7 @@ function TreeField({
   tree,
   options,
   tokens,
+  locked,
   onToggle,
 }: {
   library: PlaylistLibrary
@@ -117,6 +122,7 @@ function TreeField({
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
+  locked?: readonly string[]
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -215,6 +221,7 @@ function TreeField({
             tree={tree}
             options={options}
             tokens={tokens}
+            locked={locked}
             onToggle={onToggle}
             onClose={() => {
               setOpen(false)
@@ -234,6 +241,7 @@ export function PlaylistsField({
   tree,
   options,
   value,
+  locked,
   onChange,
 }: {
   library?: PlaylistLibrary
@@ -242,6 +250,7 @@ export function PlaylistsField({
   tree: SourceNode[]
   options: PlaylistOption[]
   value: RekordboxPlaylistTarget[]
+  locked?: readonly string[]
   onChange: (next: RekordboxPlaylistTarget[]) => void
 }): React.JSX.Element {
   return (
@@ -253,6 +262,7 @@ export function PlaylistsField({
       tree={tree}
       options={options}
       tokens={value.map((target) => ({ target, state: 'all' }))}
+      locked={locked}
       onToggle={(target, on) =>
         onChange(on ? [...value, target] : value.filter((t) => targetKey(t) !== targetKey(target)))
       }
@@ -267,6 +277,7 @@ export function PlaylistsBulkField({
   tree,
   options,
   states,
+  locked,
   onToggle,
 }: {
   library?: PlaylistLibrary
@@ -275,6 +286,7 @@ export function PlaylistsBulkField({
   tree: SourceNode[]
   options: PlaylistOption[]
   states: Token[]
+  locked?: readonly string[]
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
 }): React.JSX.Element {
   return (
@@ -286,6 +298,7 @@ export function PlaylistsBulkField({
       tree={tree}
       options={options}
       tokens={states}
+      locked={locked}
       onToggle={onToggle}
     />
   )

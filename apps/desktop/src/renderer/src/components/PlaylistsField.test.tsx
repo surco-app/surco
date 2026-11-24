@@ -572,3 +572,49 @@ describe('the program mark', () => {
     },
   )
 })
+
+describe('PlaylistsField with locked playlists', () => {
+  const renderLocked = (onChange = vi.fn()) => {
+    render(
+      <PlaylistsField
+        library="engine"
+        label="Engine DJ playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[target('house')]}
+        locked={['house']}
+        onChange={onChange}
+      />,
+    )
+    open()
+    return onChange
+  }
+
+  it('will not untick a locked playlist, since that program cannot take the track out', () => {
+    const onChange = renderLocked()
+    const check = screen.getByTestId('playlists-check-house')
+    fireEvent.click(check)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(check).toBeDisabled()
+  })
+
+  it('will not untick a locked playlist with the space bar either', () => {
+    const onChange = renderLocked()
+    const check = screen.getByTestId('playlists-check-house')
+    check.focus()
+    fireEvent.keyDown(check, { key: ' ' })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('still ticks other playlists when some are locked', () => {
+    const onChange = renderLocked()
+    fireEvent.click(screen.getByTestId('playlists-check-mash'))
+    expect(onChange).toHaveBeenCalledWith([target('house'), target('mash')])
+  })
+
+  it('says where to remove a locked playlist', () => {
+    renderLocked()
+    fireEvent.focusIn(screen.getByTestId('playlists-row-house'))
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Remove it in Engine DJ')
+  })
+})
