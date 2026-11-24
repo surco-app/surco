@@ -2448,6 +2448,72 @@ describe('CuesSection maximized grid', () => {
     expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
   })
 
+  // The full-screen body names the program in both ways, since that is where the cues land,
+  // and only the arrow tells "next" apart, so switching the way never resizes the button. Its
+  // name still says both where it saves and that it moves on.
+  it('keeps the program on the full-screen Save in both ways and marks next with the arrow', async () => {
+    setup(null, READ, undefined, undefined, { saveThen: 'next' })
+    await maximize()
+    const body = screen.getByTestId('cues-save')
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
+    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
+    cleanup()
+    resetEditorSections()
+    setup(null, READ)
+    await maximize()
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
+    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
+  })
+
+  // The body already says where the cues go, so the menu lines only say how, the same short
+  // words in full screen as folded.
+  it('reads the ways to save as short words in full screen, as folded', async () => {
+    setup(null, READ)
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
+    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
+  })
+
+  // Only when every pending track lands in the program the body names can the line drop the
+  // program; with tracks in another program it must still say where each one goes.
+  it('shortens saving every track only when they all go to the program on the body', async () => {
+    const save = { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } }
+    const target = { path: '/m/h.wav', label: 'Other', fingerprint: 'f0' }
+    keepDraft(
+      '104',
+      '104|f0|null',
+      startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+      target,
+    )
+    setup(null, READ, save)
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-all').textContent).toBe('Save 2 tracks')
+    cleanup()
+    resetEditorSections()
+    resetCueSession()
+    keepDraft(
+      'engine:9',
+      'engine:9|f0|null',
+      startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+      target,
+    )
+    setup(null, READ, save)
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-all').textContent).toBe(
+      'Save 2 tracks to rekordbox and Engine DJ',
+    )
+  })
+
   it('stays full screen after saving and moving to the next track', async () => {
     const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
     const onStepTrack = vi.fn()

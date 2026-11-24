@@ -182,7 +182,6 @@ const ignore = () => {}
 
 const REKORDBOX_COPY = {
   save: 'editor.cues.save',
-  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.unanalysed',
   unreadable: 'editor.cues.unreadable',
   queuedStale: 'editor.cues.queuedStale',
@@ -192,7 +191,6 @@ const REKORDBOX_COPY = {
 
 const ENGINE_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.engine.save',
-  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.engine.unanalysed',
   unreadable: 'editor.cues.engine.unreadable',
   queuedStale: 'editor.cues.engine.queuedStale',
@@ -214,7 +212,6 @@ function ProvisionalMark({ bpm }: { bpm: number }): React.JSX.Element {
 
 const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.traktor.save',
-  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.traktor.unanalysed',
   unreadable: 'editor.cues.traktor.unreadable',
   queuedStale: 'editor.cues.traktor.queuedStale',
@@ -224,7 +221,6 @@ const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
 
 const SERATO_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.serato.save',
-  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.serato.unanalysed',
   unreadable: 'editor.cues.serato.unreadable',
   queuedStale: 'editor.cues.serato.queuedStale',
@@ -234,7 +230,6 @@ const SERATO_COPY: typeof REKORDBOX_COPY = {
 
 const VIRTUALDJ_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.virtualdj.save',
-  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.virtualdj.unanalysed',
   unreadable: 'editor.cues.virtualdj.unreadable',
   queuedStale: 'editor.cues.virtualdj.queuedStale',
@@ -1282,9 +1277,15 @@ function Editing({
       setSavingAll(false)
     }
   }
-  const saveAllLabel = tr(saveAllKey(new Set([...unsavedSet].filter(savable))), {
-    count: unsavedTracks,
-  })
+  const savableUnsaved = new Set([...unsavedSet].filter(savable))
+  const saveAllLabel = tr(saveAllKey(savableUnsaved), { count: unsavedTracks })
+  // The body names only this track's program, so the menu line may drop the program only
+  // when every pending track lands there too.
+  const saveAllMenuLabel = [...savableUnsaved].every(
+    (id) => programOf(id) === programOf(cue.contentId),
+  )
+    ? tr('editor.cues.saveAllShort', { count: unsavedTracks })
+    : saveAllLabel
   const clearAll = () => {
     dispatch({ type: 'clear' })
     focusEditor()
@@ -1331,7 +1332,8 @@ function Editing({
         <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     ))
-  const saveLabel = tr(saveThen === 'next' ? copy.saveNext : copy.save)
+  const saveLabel =
+    saveThen === 'next' ? tr('editor.cues.saveAndNext', { save: tr(copy.save) }) : tr(copy.save)
   const saveSplit = (
     <div ref={saveMenu.ref} className={`relative flex shrink-0 ${maximized ? 'ml-1' : ''}`}>
       <button
@@ -1352,31 +1354,19 @@ function Editing({
         }`}
       >
         {!maximized && <Tooltip label={saveLabel} />}
-        {maximized ? (
-          // Both labels share one cell, so switching the mode never resizes the button.
-          SAVE_MODES.map((mode) => (
-            <span
-              key={mode}
-              data-testid={mode === saveThen ? 'cues-save-label' : undefined}
-              aria-hidden={mode !== saveThen || undefined}
-              className={`[grid-area:1/1] self-center ${mode === saveThen ? '' : 'invisible'}`}
-            >
-              {tr(mode === 'next' ? copy.saveNext : copy.save)}
-            </span>
-          ))
-        ) : (
-          // The folded row has no room for a second label, so the arrow alone marks the
-          // way that moves on, and its slot stays reserved so the body keeps one width.
-          <span className="flex items-center gap-[3px] self-center">
-            <span data-testid="cues-save-label">{tr('editor.cues.saveShort')}</span>
-            <ArrowDown
-              data-testid="cues-save-next-mark"
-              className="h-[11px] w-[11px]"
-              aria-hidden="true"
-              style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
-            />
+        {/* The arrow alone marks the way that moves on, and its slot stays reserved so
+            switching the way never resizes the body. The folded row has no room for the program. */}
+        <span className="flex items-center gap-[3px] self-center">
+          <span data-testid="cues-save-label">
+            {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
           </span>
-        )}
+          <ArrowDown
+            data-testid="cues-save-next-mark"
+            className="h-[11px] w-[11px]"
+            aria-hidden="true"
+            style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
+          />
+        </span>
       </button>
       <button
         type="button"
@@ -1431,7 +1421,18 @@ function Editing({
                 mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
-              {tr(mode === 'next' ? copy.saveNext : copy.save)}
+              {mode === 'next' ? (
+                <span className="flex items-center gap-[3px]">
+                  {tr('editor.cues.saveNextShort')}
+                  <ArrowDown
+                    data-testid="cues-save-mode-next-mark"
+                    className="h-[11px] w-[11px]"
+                    aria-hidden="true"
+                  />
+                </span>
+              ) : (
+                tr('editor.cues.saveShort')
+              )}
               <Check
                 data-testid={`cues-save-mode-${mode}-check`}
                 className="h-3.5 w-3.5"
@@ -1455,7 +1456,7 @@ function Editing({
                 }}
                 className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
               >
-                {saveAllLabel}
+                {saveAllMenuLabel}
               </button>
             </>
           )}
