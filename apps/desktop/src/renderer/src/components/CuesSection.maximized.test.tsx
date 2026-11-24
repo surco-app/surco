@@ -2463,6 +2463,24 @@ describe('CuesSection maximized grid', () => {
     expect(result.current.maximized).toBe('cues')
   })
 
+  // On the last row the list has nowhere to go, yet stepping still focuses its row behind the
+  // full editor, which would leave m, ⌘Z and Enter acting on a list the DJ cannot see.
+  it('gives the keys back to the full editor after saving and moving on', async () => {
+    const listRow = document.createElement('button')
+    document.body.append(listRow)
+    const onStepTrack = vi.fn(() => listRow.focus())
+    setup(null, READ, { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } }, undefined, {
+      saveThen: 'next',
+      onStepTrack,
+    })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId('cues-editor')))
+    listRow.remove()
+  })
+
   const LANDED = { tracks: 1, changes: 0, cues: ['/m/g.wav'] }
   const saveOneMark = async (refused = false) => {
     let waiting: Awaited<ReturnType<Api['cues']['queued']>> = null

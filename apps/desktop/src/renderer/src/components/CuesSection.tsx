@@ -156,13 +156,9 @@ import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
-import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
+import { SPLIT_ITEM, SPLIT_MENU, SPLIT_MENU_DOWN, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
-// The full editor's save sits in its top bar, so its menu opens down under the chevron.
-const SPLIT_MENU_DOWN = SPLIT_MENU.replace('bottom-full', 'top-full')
-  .replace('mb-2', 'mt-2')
-  .replace('origin-bottom-right', 'origin-top-right')
 const SAVE_MODES: CueSaveThen[] = ['stay', 'next']
 
 // programPath is the file the program's row names: a Tracks item that converted into it
@@ -1248,9 +1244,22 @@ function Editing({
   // A failed save keeps the track in view, so its unsaved cues and the warning stay with it.
   // A save that lands after the DJ already moved to another track must not step again, or
   // the list would skip a track they never saw.
+  // In "next" a second save of the same track would also step a second time.
+  const savingRef = useRef(false)
+  const [saving, setSaving] = useState(false)
   const saveWith = async (mode: CueSaveThen) => {
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
     const savedOn = cue.contentId
-    if ((await save()) && mode === 'next' && shownTrack.current === savedOn) onStepTrack?.()
+    const saved = await save()
+    savingRef.current = false
+    setSaving(false)
+    if (!saved || mode !== 'next' || shownTrack.current !== savedOn) return
+    onStepTrack?.()
+    // Stepping focuses the list row, which on the last row stays put behind the full editor,
+    // so the keys would act on a list the DJ cannot see.
+    if (maximized) requestAnimationFrame(() => focusEditor())
   }
   useEffect(() => {
     if (!saveAccepted.current) return
@@ -1328,7 +1337,7 @@ function Editing({
       <button
         type="button"
         data-testid="cues-save"
-        disabled={unchanged || blocked}
+        disabled={unchanged || blocked || saving}
         data-filled={!unchanged}
         aria-label={saveLabel}
         onClick={() => void saveWith(saveThen)}
@@ -1416,20 +1425,25 @@ function Editing({
               onClick={() => {
                 saveMenu.setOpen(false)
                 onSaveThen?.(mode)
-                if (!unchanged && !blocked) void saveWith(mode)
+                if (!unchanged && !blocked && !saving) void saveWith(mode)
               }}
               className={`${SPLIT_ITEM} gap-3 whitespace-nowrap ${
                 mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
               {tr(mode === 'next' ? copy.saveNext : copy.save)}
-              {mode === saveThen && (
-                <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
-              )}
+              <Check
+                data-testid={`cues-save-mode-${mode}-check`}
+                className="h-3.5 w-3.5"
+                strokeWidth={2.5}
+                aria-hidden="true"
+                style={mode === saveThen ? undefined : { visibility: 'hidden' }}
+              />
             </button>
           ))}
           {severalUnsaved && (
-            <div className="mt-1 border-t border-[var(--color-line)] pt-1">
+            <>
+              <hr className="my-1 border-0 border-t border-[var(--color-line)]" />
               <button
                 type="button"
                 data-testid="cues-save-all"
@@ -1443,7 +1457,7 @@ function Editing({
               >
                 {saveAllLabel}
               </button>
-            </div>
+            </>
           )}
         </div>
       )}

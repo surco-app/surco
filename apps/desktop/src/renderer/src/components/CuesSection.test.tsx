@@ -328,6 +328,39 @@ describe('CuesSection', () => {
     expect(onStepTrack).not.toHaveBeenCalled()
   })
 
+  // In "next" a held Enter or a double click would otherwise send a second save of the same
+  // track, and step twice once both land.
+  it('takes no second save while one is still running', async () => {
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    saveRekordboxCues.mockImplementation(() => new Promise(() => {}))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
+  // A check that only the picked line draws would widen the menu or shift its text when the
+  // way changes, so every line keeps the check's room.
+  it('keeps the room of the check on both ways, showing it only on the remembered one', async () => {
+    setup(READ, null, undefined, {}, { saveThen: 'next' })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-next-check')).toBeVisible()
+    expect(screen.getByTestId('cues-save-mode-stay-check')).not.toBeVisible()
+  })
+
   it('remembers the way picked from the menu and saves with it', async () => {
     const onStepTrack = vi.fn()
     const onSaveThen = vi.fn()
@@ -385,6 +418,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByRole('separator'))
   })
 
   it('takes a track out of To review in the program its cues were saved to, since the DJ has now fixed them there', async () => {
