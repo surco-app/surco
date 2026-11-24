@@ -1491,6 +1491,9 @@ export default function App(): React.JSX.Element {
   // The gaps of rows already loaded are filled from the playlist once per opening, the
   // same moment fresh rows get theirs; an edit's re-read is not an opening.
   const filledPlaylist = useRef<string | null>(null)
+  // The playlist on screen already read once since it was opened: a refetch of it is a
+  // re-read, and leaves out the files its opening found missing instead of checking again.
+  const rereadable = useRef<string | null>(null)
   const {
     entries: sourceEntries,
     source: sourceKind,
@@ -1514,11 +1517,15 @@ export default function App(): React.JSX.Element {
   const showingOpening = useRef<string | null>(null)
   useEffect(() => {
     showingOpening.current = showingPlaylist
+    if (rereadable.current !== showingPlaylist) rereadable.current = null
     if (!sourceEntries || !sourceKind) return
     const opening = sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
     const fillLoaded = opening !== null && filledPlaylist.current !== opening
     if (fillLoaded) filledPlaylist.current = opening
-    void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
+    const reread = opening !== null && rereadable.current === opening
+    rereadable.current = opening
+    const read = { fillLoaded, reread }
+    void openSourcePlaylistStable(sourceEntries, sourceKind, read).then((notOnDisk) => {
       if (!sourcePlaylist || entriesFetching) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
       if (opened !== showingOpening.current) return

@@ -2450,33 +2450,33 @@ describe('CuesSection maximized grid', () => {
   })
 
   // The full-screen body names the program in both ways, since that is where the cues land,
-  // and only the arrow tells "next" apart, so switching the way never resizes the button. Its
-  // name still says both where it saves and that it moves on.
-  it('keeps the program on the full-screen Save in both ways and marks next with the arrow', async () => {
+  // and reads the same in both ways, so switching the way never resizes the button. Its name
+  // still says both where it saves and that it moves on.
+  it('keeps the program on the full-screen Save in both ways with no arrow', async () => {
     setup(null, READ, undefined, undefined, { saveThen: 'next' })
     await maximize()
     const body = screen.getByTestId('cues-save')
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
-    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
     cleanup()
     resetEditorSections()
     setup(null, READ)
     await maximize()
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
-    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
   })
 
   // The body already says where the cues go, so the menu lines only say how, the same short
-  // words in full screen as folded.
+  // words in full screen as folded, with no arrow: the words already say it moves on.
   it('reads the ways to save as short words in full screen, as folded', async () => {
     setup(null, READ)
     await maximize()
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
-    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-save-mode-next-mark')).toBeNull()
   })
 
   // Only when every pending track lands in the program the body names can the line drop the
@@ -2823,7 +2823,10 @@ describe('CuesSection while the track loads', () => {
 })
 
 describe('CuesSection maximized replaced track', () => {
-  it('shows the pill and the reason in the maximized editor too, where the DJ actually checks cues', async () => {
+  // The why of an unmoved track is a warning the DJ acts on, so it reads as one: the same
+  // amber notice as off-grid cues, above the wave, and not a grey line that passes for help.
+  // The header's pill would only repeat it.
+  it('warns of an unmoved track in the notices above the wave, not in the header', async () => {
     setup(null, READ, {
       replacedTracks: async () => [
         {
@@ -2836,14 +2839,35 @@ describe('CuesSection maximized replaced track', () => {
       ],
     })
     await maximize()
-    await waitFor(() =>
-      expect(
-        within(screen.getByTestId('cues-header')).getByTestId('cues-replaced-pill'),
-      ).toHaveTextContent('not moved'),
+    const notice = await waitFor(() =>
+      within(screen.getByTestId('cues-notices')).getByTestId('cues-replaced-notice'),
     )
-    expect(
-      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-replaced-reason'),
-    ).toBeInTheDocument()
+    expect(notice).toHaveAttribute('data-state', 'unmoved')
+    expect(notice).toHaveTextContent("Surco couldn't line up the new file with the old one.")
+    expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
+  })
+
+  // A moved track still waits for the DJ's ear, so it gets the same notice with what Surco
+  // measured, and Reviewed is always found in the same place.
+  it('tells a moved track by how far its cues went, in the same notice', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 12 },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    const notice = await waitFor(() =>
+      within(screen.getByTestId('cues-notices')).getByTestId('cues-replaced-notice'),
+    )
+    expect(notice).toHaveAttribute('data-state', 'moved')
+    expect(notice).toHaveTextContent('+12 ms')
+    expect(notice).toHaveTextContent('Cues moved to the new file.')
   })
 
   // The maximized editor is where the DJ checks the cues by ear; making them fold it back
@@ -2864,10 +2888,29 @@ describe('CuesSection maximized replaced track', () => {
     })
     await maximize()
     const button = await waitFor(() =>
-      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-reviewed'),
+      within(screen.getByTestId('cues-replaced-notice')).getByTestId('cues-reviewed'),
     )
     fireEvent.click(button)
     await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', undefined))
+  })
+
+  // A row of its own made the wave jump up the moment Reviewed was pressed. The notices
+  // keep their height when the notice goes, so the editor below stays still.
+  it('gives a replaced track no row above the toolbar, so Reviewed leaves the wave where it is', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 0 },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    await waitFor(() => screen.getByTestId('cues-reviewed'))
+    expect(screen.queryByTestId('cues-replaced-row')).toBeNull()
   })
 
   // Reviewed removes its own row, and with it the focused button. The keys must stay with the
@@ -2907,7 +2950,7 @@ describe('CuesSection maximized replaced track', () => {
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     reviewed.focus()
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     expect(document.activeElement).toBe(editor())
 
     key('z', { metaKey: true })
@@ -2952,7 +2995,7 @@ describe('CuesSection maximized replaced track', () => {
     await maximize()
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     fireEvent.click(screen.getByTestId('cues-clear-all'))
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
 

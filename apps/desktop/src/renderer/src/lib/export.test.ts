@@ -342,6 +342,32 @@ describe('exportedPatch', () => {
 // A row left on a source that went to the Trash keeps the editor, the player and every probe
 // asking for a file that is gone. With a converted copy it follows that copy; without one
 // there is nothing to follow and it only learns its source is gone.
+// The next job must know whether the replacement it was stamped for has happened: Music
+// holding the new copy is the proof, so a replacement whose Music step failed is tried again.
+describe('exportedPatch and a replacement', () => {
+  it('marks the replacement carried out once Music holds the new copy', () => {
+    const t = track({ replacesPath: '/m/old.aiff', musicPersistentId: 'PID1' })
+    expect(
+      exportedPatch(t, {
+        outputPath: '',
+        inPlace: false,
+        addedToMusicOnly: true,
+        musicPersistentId: 'PID2',
+      }),
+    ).toMatchObject({ replaceDone: true, musicPersistentId: 'PID2' })
+  })
+
+  it('leaves the replacement to do again when the Music step failed', () => {
+    const t = track({ replacesPath: '/m/old.aiff', musicPersistentId: 'PID1' })
+    const patch = exportedPatch(t, {
+      outputPath: '/out/a.aiff',
+      inPlace: false,
+      appleMusicFailed: true,
+    })
+    expect(patch.replaceDone).toBeUndefined()
+  })
+})
+
 describe('sourceTrashedPatch', () => {
   it('moves the row to its converted copy', () => {
     expect(

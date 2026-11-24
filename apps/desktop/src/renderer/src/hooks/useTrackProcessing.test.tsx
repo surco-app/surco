@@ -8,6 +8,7 @@ import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { ProcessResult, Settings, TrackMetadata } from '../../../shared/types'
 import type { PlaceCheck, Verification } from '../../../shared/verification'
 import i18n from '../i18n'
+import { replacePatch } from '../lib/replaceBeforeConvert'
 import type { TrackItem } from '../types'
 import { useTrackProcessing } from './useTrackProcessing'
 import { useVerificationUpdates } from './useVerificationUpdates'
@@ -3108,6 +3109,73 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
 
     expect(processTrack).toHaveBeenCalledWith(
       expect.objectContaining({ musicPersistentId: 'PID1', replacesPath: '/m/old.mp3' }),
+    )
+  })
+
+  // Reported 24/11: a replacement, then a cover picked and saved again. The second job sent
+  // the first one's replacesPath, a file already retired that rekordbox no longer indexed,
+  // so Music took a third copy and rekordbox stayed on the second, without its cover. Once
+  // the replacement is done the track's own library copy is what the next save updates.
+  it('does not send a replacement already carried out with the next job', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      musicPersistentId: 'PID2',
+    })
+    setApi({ processTrack })
+    const live = {
+      current: [track({ id: 'a', musicPersistentId: 'PID1', replacesPath: '/m/old.aiff' })],
+    }
+    const updateTrack = (id: string, patch: Partial<TrackItem>) => {
+      live.current = live.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: live.current, tracksRef: live, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+
+    await act(() => result.current.processOne('a'))
+    await act(() => result.current.processOne('a'))
+
+    expect(processTrack.mock.calls[0][0]).toMatchObject({
+      musicPersistentId: 'PID1',
+      replacesPath: '/m/old.aiff',
+    })
+    expect(processTrack.mock.calls[1][0]).toMatchObject({ musicPersistentId: 'PID2' })
+    expect(processTrack.mock.calls[1][0].replacesPath).toBeUndefined()
+  })
+
+  // A track that finished one replacement can still be offered another copy to replace:
+  // the editor's new stamp is a fresh replacement and goes with the job.
+  it('sends a replacement stamped after an earlier one was carried out', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const live = {
+      current: [track({ id: 'a', replacesPath: '/m/old.aiff', replaceDone: true })],
+    }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: live.current,
+          tracksRef: live,
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+
+    await act(async () => {
+      const stamp = replacePatch({ persistentId: 'PID3', label: 'X', path: '/m/other.aiff' })
+      live.current = live.current.map((t) => (t.id === 'a' ? { ...t, ...stamp } : t))
+      await result.current.processOne('a')
+    })
+
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: 'PID3', replacesPath: '/m/other.aiff' }),
     )
   })
 

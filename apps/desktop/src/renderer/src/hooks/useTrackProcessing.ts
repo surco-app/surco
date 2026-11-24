@@ -498,7 +498,7 @@ export function useTrackProcessing({
           musicPersistentId: track.musicPersistentId,
           // Where the copy being replaced lives, so rekordbox repoints from the path it
           // has indexed rather than from a download folder it has never seen.
-          replacesPath: track.replacesPath,
+          replacesPath: track.replaceDone ? undefined : track.replacesPath,
           replacesLabel: track.replacesLabel,
           ...jobPlaylists(track),
           programs: track.programs,

@@ -1080,6 +1080,8 @@
     "lastApplied": "Últim àlbum aplicat",
     "heldResults": "{{count}} més de {{providers}} · Mostrar",
     "stillSearching": "Encara cercant a {{providers}}…",
+    "discogsWait": "Discogs està limitant les cerques. Nou intent d'aquí a {{seconds}} s. Prem per cercar ara.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} resultat",
     "resultsCount_other": "{{count}} resultats",
     "suggestedStatus": "Suggerit: {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Treure les propostes",
         "ask": "Trenca aquí? {{time}}",
         "acceptOne": "Acceptar",
-        "acceptSave": "Acceptar i desar",
         "drop": "Treure",
         "unanalysed": "Sense anàlisi de rekordbox",
         "none": "Surco no troba on trenca aquesta pista",
@@ -1207,9 +1208,7 @@
         "sure": "Trenca aquí {{time}}",
         "why_one": "després de {{count}} compàs amb pocs greus",
         "why_other": "després de {{count}} compassos amb pocs greus",
-        "whyNone": "sense cap aturada de greus abans",
-        "acceptSave_one": "Acceptar la proposta i desar",
-        "acceptSave_other": "Acceptar les {{count}} propostes i desar"
+        "whyNone": "sense cap aturada de greus abans"
       },
       "batch": {
         "mark_one": "Marcar automàticament {{count}} pista",
@@ -1332,6 +1331,7 @@
         "measuring": "Calculant la graella…"
       },
       "replaced": {
+        "moved": "Els cues s'han mogut al fitxer nou.",
         "notMoved": "sense moure",
         "noMatch": "Surco no ha pogut alinear el fitxer nou amb el vell. Els cues continuen com estaven.",
         "drift": "El principi i el final s'han mogut de manera diferent. Els cues continuen com estaven.",

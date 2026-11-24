@@ -417,6 +417,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     loadAppleMusicLibraryPlaylistTracks: async () => null,
     loadAppleMusicPlaylistsCached: async () => null,
     loadAppleMusicPlaylistCached: async () => null,
+    loadAppleMusicRecentCount: async () => 0,
     loadEngineLibrary: async () => [],
     addToAppleMusic: async () => undefined,
     updateAppleMusic: async () => undefined,

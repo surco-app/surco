@@ -387,6 +387,20 @@ describe('CuesSection folded', () => {
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
   })
 
+  it('puts + CALL beside the bars to the CALL and out of the Save actions, so Save keeps its room at the narrowest window', async () => {
+    setup({ activeCueFlow: 'manual' })
+    await ready()
+    seekStrip(128)
+    const add = screen.getByTestId('cues-add-call')
+    fireEvent.click(add)
+    seekStrip(64)
+    expect(screen.getByTestId('cues-folded-actions')).not.toContainElement(add)
+    expect(
+      screen.getByTestId('cue-detail-to-call').compareDocumentPosition(add) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('plays from the folded section and stops when the track changes', async () => {
     stubSound()
     const { changeTrack } = setup()

@@ -4217,6 +4217,51 @@ describe('App source rail', () => {
       await act(async () => answerDisk([]))
       expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
     })
+
+    // A cue save, an edit or a refocus reads the playlist again. A file its opening found
+    // missing came back each time as a new row, was analysed (ENOENT in the log) and removed.
+    it('leaves a file its opening found missing alone when the playlist is read again', async () => {
+      const focusListeners: ((focused: boolean) => void)[] = []
+      const playlist = vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {} },
+        { path: '/nas/gone.wav', separator: false, meta: {} },
+      ])
+      const expandPaths = vi.fn(async (paths: string[]) =>
+        paths.filter((p) => !p.startsWith('/nas/')),
+      )
+      const readTags = vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' })
+      rekordboxWithFactory({
+        onWindowFocus: (cb: (focused: boolean) => void) => {
+          focusListeners.push(cb)
+          return () => {}
+        },
+        expandPaths,
+        readTags,
+        dj: djReads({ rekordbox: { playlist } }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await act(async () => {})
+      const touchedGone = () =>
+        [...expandPaths.mock.calls, ...readTags.mock.calls].filter(([arg]) =>
+          [arg].flat().includes('/nas/gone.wav'),
+        ).length
+      const before = touchedGone()
+
+      const readsBefore = playlist.mock.calls.length
+      act(() => {
+        for (const cb of focusListeners) cb(true)
+      })
+      await waitFor(() => expect(playlist).toHaveBeenCalledTimes(readsBefore + 1))
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(touchedGone()).toBe(before)
+      expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    })
   })
 })
 
@@ -6676,7 +6721,7 @@ describe('App source playlists', () => {
       fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
       await screen.findByTestId('section-maximized-overlay')
       fireEvent.click(await screen.findByTestId('cues-reviewed'))
-      await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+      await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
       expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
       expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
     })
@@ -10077,13 +10122,15 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     runMenu('process-all')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(
-      screen
-        .getAllByTestId('app-notice')
-        .some((card) =>
-          card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
-        ),
-    ).toBe(true)
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .some((card) =>
+            card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
+          ),
+      ).toBe(true),
+    )
   })
 
   // A check still running has not said anything yet: the track waits in the list for its

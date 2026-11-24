@@ -94,6 +94,27 @@ describe('files found gone after a playlist opened', () => {
     expect(onSourceFilesGone).toHaveBeenCalledExactlyOnceWith(1)
   })
 
+  it('leaves a file found gone out of the next re-read, so it is not read again for a row that would only be removed', async () => {
+    const readMeta = vi
+      .fn()
+      .mockResolvedValue({ tags: {}, duration: null, cover: null, foreignTags: [] })
+    const { result, fireChanged } = setup({ readMeta })
+    const playlist = entries(['/m/a.aiff', '/m/b.aiff'])
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'appleMusic')
+    })
+    act(() => fireChanged({ changed: [], gone: ['/m/b.aiff'] }))
+    readMeta.mockClear()
+
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'appleMusic', { reread: true })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(readMeta).not.toHaveBeenCalled()
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff'])
+  })
+
   it('keeps a Files row whose file went, read again so it shows it could not be read', async () => {
     const readMeta = vi.fn().mockResolvedValue({
       tags: tags({ title: 'A' }),
@@ -662,6 +683,64 @@ describe('opening a rekordbox playlist with previews', () => {
       await new Promise((r) => setTimeout(r, 40))
     })
     expect(onMetaReadFailed).not.toHaveBeenCalled()
+  })
+
+  // Every cue save, playlist edit and refocus reads the playlist again. A file the disk was
+  // found to lack is never a row, so without remembering it each read made a row for it,
+  // ran the analysis on a file that is not there (ENOENT in the log) and removed it again.
+  it('leaves a file the disk lacks alone on a re-read of the same opening, so it is not added, analysed and removed each time', async () => {
+    const readMeta = vi.fn().mockResolvedValue({
+      tags: tags({ title: 'A' }),
+      duration: 1,
+      cover: null,
+      foreignTags: [],
+    })
+    const expandPaths = vi.fn<Api['expandPaths']>(async (paths) =>
+      paths.filter((p) => p !== '/m/gone.aiff'),
+    )
+    const onMetaLoaded = vi.fn()
+    const { result } = setup({ expandPaths, readMeta }, { onMetaLoaded })
+    const playlist = [entry('/m/a.aiff', 'A'), entry('/m/gone.aiff', 'Gone')]
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'rekordbox')
+    })
+    const rows = result.current.tracks
+    const readsOfGone = () => readMeta.mock.calls.filter(([p]) => p === '/m/gone.aiff').length
+    const readsBefore = readsOfGone()
+    expandPaths.mockClear()
+    onMetaLoaded.mockClear()
+
+    let missing = -1
+    await act(async () => {
+      missing = await result.current.openSourcePlaylist(playlist, 'rekordbox', { reread: true })
+      await new Promise((r) => setTimeout(r, 0))
+    })
+
+    expect(result.current.tracks).toBe(rows)
+    expect(readsOfGone()).toBe(readsBefore)
+    expect(expandPaths).not.toHaveBeenCalled()
+    expect(onMetaLoaded).not.toHaveBeenCalled()
+    expect(missing).toBe(1)
+  })
+
+  it('checks the disk again for a missing file when the playlist is opened again, so a file put back shows up', async () => {
+    const expandPaths = vi.fn<Api['expandPaths']>(async (paths) =>
+      paths.filter((p) => p !== '/m/back.aiff'),
+    )
+    const { result } = setup({ expandPaths })
+    const playlist = [entry('/m/a.aiff', 'A'), entry('/m/back.aiff', 'Back')]
+    await act(async () => {
+      await result.current.openSourcePlaylist(playlist, 'rekordbox', { reread: true })
+    })
+    expandPaths.mockImplementation(async (paths) => paths)
+
+    let missing = -1
+    await act(async () => {
+      missing = await result.current.openSourcePlaylist(playlist, 'rekordbox')
+    })
+
+    expect(missing).toBe(0)
+    expect(result.current.tracks.map((t) => t.inputPath)).toEqual(['/m/a.aiff', '/m/back.aiff'])
   })
 
   it('leaves the first track that exists selected when the first one listed is missing', async () => {
@@ -1345,6 +1424,24 @@ describe('Files and the source playlists keep their own tracks', () => {
     ])
   })
 
+  // The same restore for a row a playlist loaded first: its Discogs cover must reach the
+  // conversion as the URL, or a file with no art of its own is converted with none.
+  it('sends the Discogs cover of a session row a playlist had loaded to the conversion as the URL', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'], {
+        '/m/a.aiff': { meta: tags({ title: 'Saved' }), coverUrl: 'https://i.discogs.com/primary.jpeg' },
+      })
+    })
+    const track = result.current.tracks[0]
+    expect(track.coverUrl).toBe('https://i.discogs.com/primary.jpeg')
+    expect(coverSourceOf(track)).toEqual({ coverUrl: 'https://i.discogs.com/primary.jpeg', coverPath: undefined })
+  })
+
   it('keeps what the user typed on a playlist row over the saved session it joins', async () => {
     const { result } = setup()
     await act(async () => {
@@ -1648,8 +1745,8 @@ describe('a playlist whose disk check streams its files back', () => {
   })
 })
 
-// Saving cues re-reads the playlist, and an entry whose file is gone is never a row, so every
-// re-read offers it again as new. Only an import is a change of crate that should leave the
+// Saving cues re-reads the playlist, and an entry whose file is gone is never a row, so a
+// re-read once offered it again as new. Only an import is a change of crate that should leave the
 // full-screen editor; a playlist read again under it must leave the DJ where they were.
 describe('the full-screen section across playlist reads', () => {
   const entries = (paths: string[]) => paths.map((path) => ({ path, separator: false, meta: {} }))

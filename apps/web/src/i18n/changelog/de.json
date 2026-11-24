@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Cues speichern und weiter",
+    "items": [
+      {
+        "text": "Wähle beim Speichern der Cues „Speichern und weiter“ im Menü des Buttons, und Surco öffnet den nächsten Track der Liste. Surco merkt sich deine Wahl fürs nächste Mal, und Speichern schließt den Cue-Editor nicht mehr.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "„Vorschlag übernehmen“ setzt die vorgeschlagenen Cues, ohne sie zu speichern. Verschieb sie, wenn du willst, und speichere, wenn du bereit bist.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Egal in welcher Reihenfolge du die Drops markierst, der Start-Cue landet nicht mehr in der Stille vor der Musik.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Der Track, der in Surco läuft, erscheint in macOS mit seinem Cover. Medientasten, AirPods und Apple Watch pausieren ihn oder springen zum nächsten.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Wenn die Dateien einer Playlist nicht mehr auf der Platte sind, sagt die Liste das und zählt, wie viele fehlen. Eine verschobene oder umbenannte Datei erscheint nicht mehr als unlesbar.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "November 23, 2026",
     "title": "Ersetze einen Track und behalte seine Cues",

@@ -190,6 +190,7 @@ export interface Api {
     provider?: SearchProviderId,
     priority?: SearchPriority,
     hints?: SearchHints,
+    retryOnLimit?: boolean,
   ) => Promise<SearchResult[]>
   getRelease: (
     ref: number | string,
@@ -267,6 +268,7 @@ export interface Api {
   // The last list of playlists Music gave, shown while Music lists them again.
   loadAppleMusicPlaylistsCached: () => Promise<AppleMusicPlaylist[] | null>
   loadAppleMusicPlaylistCached: (persistentId: string) => Promise<AppleMusicPlaylistTracks | null>
+  loadAppleMusicRecentCount: () => Promise<number>
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>

@@ -1080,6 +1080,8 @@
     "lastApplied": "最後に適用されたアルバム",
     "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "{{providers}} を検索中…",
+    "discogsWait": "Discogs が検索を制限しています。{{seconds}} 秒後に再試行します。クリックすると今すぐ検索します。",
+    "waitSeconds": "{{seconds}} 秒",
     "resultsCount_one": "{{count}} 件の結果",
     "resultsCount_other": "{{count}} 件の結果",
     "suggestedStatus": "提案：{{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "提案を取り消す",
         "ask": "ここでブレイクしますか？ {{time}}",
         "acceptOne": "採用",
-        "acceptSave": "採用して保存",
         "drop": "削除",
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
@@ -1207,9 +1208,7 @@
         "sure": "ここでブレイク {{time}}",
         "why_one": "低音の弱い {{count}} 小節のあと",
         "why_other": "低音の弱い {{count}} 小節のあと",
-        "whyNone": "直前に低音の途切れなし",
-        "acceptSave_one": "提案を採用して保存",
-        "acceptSave_other": "{{count}} 件の提案を採用して保存"
+        "whyNone": "直前に低音の途切れなし"
       },
       "batch": {
         "mark_one": "{{count}} トラックを自動マーク",
@@ -1332,6 +1331,7 @@
         "measuring": "ビートグリッドを計測中…"
       },
       "replaced": {
+        "moved": "キューを新しいファイルに合わせて移動しました。",
         "notMoved": "移動なし",
         "noMatch": "Surco は新しいファイルを古いファイルに合わせられませんでした。キューは元のままです。",
         "drift": "曲の始まりと終わりでずれ方が違いました。キューは元のままです。",

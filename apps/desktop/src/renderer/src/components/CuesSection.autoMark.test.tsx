@@ -254,6 +254,23 @@ describe('Auto marcar', () => {
     expect(screen.getByTestId('cues-step-back')).toBeDisabled()
   })
 
+  // Reviewing the suggestions means looking at the waves: the pointer crossing the zoomed wave
+  // swapped them for the preview of placing a drop by hand there, so they seemed to show only
+  // once the pointer left. While suggestions wait for an answer they stay what is drawn.
+  it.each([
+    ['folded', async () => {}],
+    ['full screen', async () => openFull()],
+  ])('keeps the suggestions drawn while the pointer crosses the zoomed wave, %s', async (_, layout) => {
+    setup()
+    await ready()
+    await layout()
+    await autoMark()
+    const shown = ghostCalls()
+    expect(shown.length).toBeGreaterThan(0)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(ghostCalls()).toEqual(shown)
+  })
+
   it('ghosts the proposals with the flow the DJ switches to, so the preview matches what accepting does', async () => {
     setup()
     await ready()
@@ -265,11 +282,15 @@ describe('Auto marcar', () => {
     expect(proposals()).toHaveLength(2)
   })
 
-  it('names Enter on the accept button where the host has no Return glyph', async () => {
+  // A key drawn in a box inside the button read as an emoji; the shortcut lives in the
+  // tooltip, the way every other Surco button shows its keys.
+  it('keeps Enter out of the accept button and names it in its tooltip where the host has no Return glyph', async () => {
     setup({ platform: 'win32' })
     await ready()
     await autoMark()
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and saveEnter$/)
+    const accept = screen.getByTestId('cues-auto-accept')
+    expect(accept.textContent).toBe('Accept')
+    expect(hoverTooltip(accept)).toContain('Enter')
   })
 
   // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark
@@ -285,9 +306,10 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↩$/)
+    expect(screen.getByTestId('cues-auto-accept').textContent).toBe('Accept')
+    expect(hoverTooltip(screen.getByTestId('cues-auto-accept'))).toContain('↩')
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
-    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
+    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions' })).toBe(
       screen.getByTestId('cues-auto-accept'),
     )
     expect(screen.getByRole('button', { name: 'Remove suggestions' })).toBe(
@@ -313,7 +335,7 @@ describe('Auto marcar', () => {
     expect(accept.parentElement).toBe(remove.parentElement)
     expect(accept.parentElement).not.toBe(review)
     expect(remove).toHaveAccessibleName('Remove the suggestion')
-    expect(accept).toHaveAccessibleName('Accept the suggestion and save')
+    expect(accept).toHaveAccessibleName('Accept the suggestion')
   })
 
   it('removes one suggestion from the overview without moving the playhead to it', async () => {
@@ -368,9 +390,7 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName(
-      'Accept the suggestion and save',
-    )
+    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
     expect(realMarks()).toHaveLength(0)
   })
 
@@ -501,17 +521,20 @@ describe('accepting Auto marcar', () => {
     expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
   })
 
-  it('saves to the program as soon as the suggestions are accepted, folded or in full screen, so accepting never needs a second click on Save', async () => {
+  // Accepting answers the suggestions; saving is the Save button's, with the way it remembers
+  // (stay or move on). Accepting used to save too, a second Save that skipped that choice.
+  it('places the suggestions on Accept, folded or in full screen, and leaves saving to Save', async () => {
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
-    expect(saveRekordboxCues.mock.calls[0][0][0].wanted.length).toBeGreaterThan(0)
+    await waitFor(() => expect(realMarks().length).toBeGreaterThan(0))
     await openFull()
     await autoMark()
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(saveRekordboxCues).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cues-save')).toBeEnabled()
   })
 
   it('leaves Save to the DJ after accepting one suggestion on its own, since the rest are still being weighed', async () => {

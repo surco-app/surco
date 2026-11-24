@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowDown,
   Check,
   ChevronDown,
   CircleAlert,
@@ -151,7 +150,7 @@ import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
-import { ReplacedPill, ReplacedReason } from './ReplacedPill'
+import { ReplacedNotice, ReplacedPill, ReplacedReason } from './ReplacedPill'
 import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
@@ -729,13 +728,6 @@ function Editing({
   useEffect(() => {
     if (menu === null) setHoverMs(null)
   }, [menu])
-  const hoverGhost = useMemo<DraftGhost | null>(
-    () =>
-      placing && hoverMs !== null
-        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
-        : null,
-    [placing, hoverMs, state, ctx],
-  )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
   const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
@@ -782,6 +774,15 @@ function Editing({
   const proposals = useMemo(
     () => withoutCallInBar(proposed ?? [], state.cues, barGrid),
     [proposed, state.cues, barGrid],
+  )
+  // While suggestions wait for an answer they are what the waves show: reviewing them moves the
+  // pointer over the zoomed wave, and the preview of placing by hand there used to replace them.
+  const hoverGhost = useMemo<DraftGhost | null>(
+    () =>
+      placing && hoverMs !== null && proposals.length === 0
+        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
+        : null,
+    [placing, hoverMs, proposals.length, state, ctx],
   )
   useEffect(() => {
     if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
@@ -831,11 +832,9 @@ function Editing({
         setAutoNote('unanalysed')
       })
   }
-  const saveAccepted = useRef(false)
   const acceptProposals = () => {
     dispatch(acceptAll)
     setProposed(null)
-    saveAccepted.current = true
   }
   const dropProposal = (ms: number) => {
     setProposed((all) => (all ?? []).filter((p) => p.ms !== ms))
@@ -1256,11 +1255,6 @@ function Editing({
     // so the keys would act on a list the DJ cannot see.
     if (maximized) requestAnimationFrame(() => focusEditor())
   }
-  useEffect(() => {
-    if (!saveAccepted.current) return
-    saveAccepted.current = false
-    if (!unchanged && !blocked) void save()
-  })
   const copy = copyOf(cue.contentId)
   const unsavedTracks = [...unsavedSet].filter(savable).length
   const [savingAll, setSavingAll] = useState(false)
@@ -1344,7 +1338,7 @@ function Editing({
         aria-label={saveLabel}
         onClick={() => void saveWith(saveThen)}
         className={`press grid shrink-0 whitespace-nowrap text-xs font-semibold ${
-          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md pr-1 pl-2.5'
+          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md px-2.5'
         } ${
           unchanged
             ? maximized
@@ -1354,18 +1348,10 @@ function Editing({
         }`}
       >
         {!maximized && <Tooltip label={saveLabel} />}
-        {/* The arrow alone marks the way that moves on, and its slot stays reserved so
-            switching the way never resizes the body. The folded row has no room for the program. */}
-        <span className="flex items-center gap-[3px] self-center">
-          <span data-testid="cues-save-label">
-            {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
-          </span>
-          <ArrowDown
-            data-testid="cues-save-next-mark"
-            className="h-[11px] w-[11px]"
-            aria-hidden="true"
-            style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
-          />
+        {/* The same words in both ways, so switching the way never resizes the body; the menu's
+            check and the body's name say which. The folded row has no room for the program. */}
+        <span data-testid="cues-save-label" className="self-center">
+          {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
         </span>
       </button>
       <button
@@ -1419,18 +1405,7 @@ function Editing({
                 mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
-              {mode === 'next' ? (
-                <span className="flex items-center gap-[3px]">
-                  {tr('editor.cues.saveNextShort')}
-                  <ArrowDown
-                    data-testid="cues-save-mode-next-mark"
-                    className="h-[11px] w-[11px]"
-                    aria-hidden="true"
-                  />
-                </span>
-              ) : (
-                tr('editor.cues.saveShort')
-              )}
+              {mode === 'next' ? tr('editor.cues.saveNextShort') : tr('editor.cues.saveShort')}
               <Check
                 data-testid={`cues-save-mode-${mode}-check`}
                 className="h-3.5 w-3.5"
@@ -1481,7 +1456,7 @@ function Editing({
     </button>
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
-  const acceptLabel = tr('editor.cues.auto.acceptSave', { count: proposals.length })
+  const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
   const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
   const offGrid = provisional
@@ -1547,11 +1522,8 @@ function Editing({
           }}
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
-          <Tooltip label={acceptLabel} />
-          {tr('editor.cues.auto.acceptSave')}
-          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
-            {formatShortcut(['enter'], isMacOS())}
-          </kbd>
+          <Tooltip label={acceptLabel} hint={formatShortcut(['enter'], isMacOS())} />
+          {tr('editor.cues.auto.acceptOne')}
         </button>
         <button
           type="button"
@@ -1810,12 +1782,14 @@ function Editing({
           )
         }}
       </AtHead>
+      {/* Beside the bars to the CALL it speaks of: in the actions it pushed Save off the
+          panel at the narrowest window. */}
+      {addCallButton}
       <div
         data-testid="cues-folded-actions"
         data-wrap="true"
         className="ml-auto flex shrink-0 items-center gap-1"
       >
-        {addCallButton}
         <button
           type="button"
           data-testid="cues-clear-all"
@@ -1836,7 +1810,7 @@ function Editing({
   const header = (
     <div
       data-testid="cues-header"
-      className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
+      className="flex shrink-0 items-center gap-3 pb-1"
     >
       {track?.cover ? (
         <img
@@ -1875,7 +1849,6 @@ function Editing({
             )}
           </div>
           {provisional && <ProvisionalMark bpm={provisional.bpm} />}
-          {replaced && <ReplacedPill shift={replaced.shift} />}
         </div>
       </div>
       <span className="flex-1" />
@@ -1990,20 +1963,6 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
-      {/* The full editor has no section header, so the why of a replaced track and its
-      Reviewed get a row of their own under the track's header. Only a replaced track has it,
-      and Reviewed removes it with the track still open: the row only takes height, so nothing
-      above the wave changes width. */}
-      {maximized && replaced && (
-        <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
-          <ReplacedReason shift={replaced.shift} />
-          <ReviewedButton
-            path={replaced.newPath}
-            name={track?.title || cue.label}
-            onPress={focusEditor}
-          />
-        </div>
-      )}
       {maximized ? (
         <>
           {toolbar}
@@ -2012,6 +1971,18 @@ function Editing({
             style={{ minHeight: '36px' }}
             className="flex shrink-0 flex-col justify-center gap-1"
           >
+            {/* The full editor has no section header, so a replaced track's state and its
+            Reviewed live here. The notices keep their height when it goes: the wave stays. */}
+            {replaced && (
+              <ReplacedNotice shift={replaced.shift}>
+                <ReviewedButton
+                  path={replaced.newPath}
+                  name={track?.title || cue.label}
+                  onPress={focusEditor}
+                  inNotice
+                />
+              </ReplacedNotice>
+            )}
             {reviewBar}
             {offGridBar}
           </div>

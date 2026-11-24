@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Desa els cues i passa a la següent",
+    "items": [
+      {
+        "text": "En desar els cues, tria «Desar i següent» al menú del botó i Surco obre la pista següent de la llista. Recorda la teva elecció per a la propera vegada, i desar ja no tanca l’editor de cues.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "«Acceptar la proposta» col·loca els cues suggerits sense desar-los. Mou-los si vols i desa quan estiguis a punt.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Marquis els drops en l’ordre que els marquis, el cue d’inici ja no cau al silenci abans de la música.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "La pista que sona a Surco apareix a macOS amb la seva caràtula. Les tecles multimèdia, els AirPods i l’Apple Watch la posen en pausa o passen a la següent.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Si els fitxers d’una playlist ja no són al disc, la llista ho diu i compta quants en falten. Un fitxer mogut o reanomenat ja no surt com un que no s’ha pogut llegir.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "November 23, 2026",
     "title": "Substitueix una pista sense perdre els cues",

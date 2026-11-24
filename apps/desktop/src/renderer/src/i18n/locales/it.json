@@ -1080,6 +1080,8 @@
     "lastApplied": "Ultimo album applicato",
     "heldResults": "Altri {{count}} da {{providers}} · Mostra",
     "stillSearching": "Ricerca ancora in corso su {{providers}}…",
+    "discogsWait": "Discogs sta limitando le ricerche. Nuovo tentativo tra {{seconds}} s. Clicca per cercare ora.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} risultato",
     "resultsCount_other": "{{count}} risultati",
     "suggestedStatus": "Suggerito: {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Togli le proposte",
         "ask": "Parte qui? {{time}}",
         "acceptOne": "Accetta",
-        "acceptSave": "Accetta e salva",
         "drop": "Togli",
         "unanalysed": "Nessuna analisi di rekordbox",
         "none": "Surco non trova dove parte questo brano",
@@ -1207,9 +1208,7 @@
         "sure": "Parte qui {{time}}",
         "why_one": "dopo {{count}} battuta con pochi bassi",
         "why_other": "dopo {{count}} battute con pochi bassi",
-        "whyNone": "senza uno stacco dei bassi prima",
-        "acceptSave_one": "Accetta la proposta e salva",
-        "acceptSave_other": "Accetta le {{count}} proposte e salva"
+        "whyNone": "senza uno stacco dei bassi prima"
       },
       "batch": {
         "mark_one": "Auto marca {{count}} brano",
@@ -1332,6 +1331,7 @@
         "measuring": "Calcolo della griglia…"
       },
       "replaced": {
+        "moved": "I cue sono stati spostati sul nuovo file.",
         "notMoved": "non spostati",
         "noMatch": "Surco non è riuscito ad allineare il nuovo file con quello vecchio. I cue restano com'erano.",
         "drift": "L'inizio e la fine si sono spostati in modo diverso. I cue restano com'erano.",

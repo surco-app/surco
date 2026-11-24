@@ -41,3 +41,41 @@ export function ReplacedReason({ shift }: { shift: ReplaceShift }): React.JSX.El
     </p>
   )
 }
+
+// The maximized editor has no section header for the pill, so the state goes in its notices,
+// shaped like the off-grid one: a warning reads as a warning, and Reviewed is its action. A
+// moved track gets the same notice, so Reviewed is always in the same place.
+export function ReplacedNotice({
+  shift,
+  children,
+}: {
+  shift: ReplaceShift
+  children: React.ReactNode
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const moved = 'moved' in shift
+  return (
+    <div
+      data-testid="cues-replaced-notice"
+      data-state={moved ? 'moved' : 'unmoved'}
+      className={`flex h-7 shrink-0 items-center gap-1 whitespace-nowrap rounded-md pr-1 pl-2.5 text-xs ${
+        moved ? 'bg-[var(--color-good)]/10' : 'bg-[var(--color-warn)]/10'
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`mr-1 h-1.5 w-1.5 shrink-0 rounded-full ${moved ? 'bg-good' : 'bg-warn'}`}
+      />
+      {moved && (
+        <span className="mr-1 shrink-0 font-semibold tabular-nums text-fg">
+          {shiftLabel(shift.moved)}
+        </span>
+      )}
+      <span className="min-w-0 truncate text-fg">
+        {moved ? tr('editor.cues.replaced.moved') : tr(`editor.cues.replaced.${shift.unmoved}`)}
+      </span>
+      <span className="flex-1" />
+      {children}
+    </div>
+  )
+}

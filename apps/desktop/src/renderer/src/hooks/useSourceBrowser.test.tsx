@@ -1371,3 +1371,52 @@ describe('useSourceBrowser default playlist', () => {
     expect(result.current.playlist).toBeNull()
   })
 })
+
+// Music lists only the playlists the user made, so the tracks added last, the ones a DJ opens
+// the library for, had no list of their own there while every DJ program's tab had one.
+describe('useSourceBrowser Music Recently added', () => {
+  const recentRead = (paths: string[]) => ({
+    paths,
+    persistentIds: {},
+    meta: {},
+    missing: 0,
+    total: paths.length,
+  })
+
+  it('puts Recently added first in Music, above All tracks, with its count', async () => {
+    const { result } = setup({
+      loadAppleMusicPlaylists: vi
+        .fn()
+        .mockResolvedValue([{ persistentId: 'LIB', name: 'Music', count: 9, library: true }]),
+      loadAppleMusicRecentCount: vi.fn().mockResolvedValue(5),
+    })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() =>
+      expect(result.current.tree?.map((n) => [n.id, n.count])).toEqual([
+        [RECENTLY_ADDED_ID, 5],
+        ['LIB', 9],
+      ]),
+    )
+  })
+
+  it('opens Recently added when Music is entered with nothing picked, read from the library database', async () => {
+    const library = vi.fn().mockResolvedValue(recentRead(['/m/new.aiff', '/m/older.aiff']))
+    const { result } = setup({
+      loadAppleMusicRecentCount: vi.fn().mockResolvedValue(2),
+      loadAppleMusicLibraryPlaylistTracks: library,
+    })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.playlist?.id).toBe(RECENTLY_ADDED_ID))
+    await waitFor(() =>
+      expect(result.current.entries?.map((e) => e.path)).toEqual(['/m/new.aiff', '/m/older.aiff']),
+    )
+    expect(library).toHaveBeenCalledWith(RECENTLY_ADDED_ID)
+  })
+
+  it('opens nothing in Music when nothing was added lately, as before', async () => {
+    const { result } = setup({ loadAppleMusicRecentCount: vi.fn().mockResolvedValue(0) })
+    act(() => result.current.selectSource('appleMusic'))
+    await waitFor(() => expect(result.current.tree?.[0]).toMatchObject({ count: 0 }))
+    expect(result.current.playlist).toBeNull()
+  })
+})

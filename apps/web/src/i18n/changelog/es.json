@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "24 de noviembre de 2026",
+    "title": "Guarda los cues y pasa a la siguiente",
+    "items": [
+      {
+        "text": "Al guardar los cues, elige «Guardar y siguiente» en el menú del botón y Surco abre la siguiente pista de la lista. Recuerda tu elección para la próxima vez, y guardar ya no cierra el editor de cues.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "«Aceptar la propuesta» coloca los cues sugeridos sin guardarlos. Muévelos si quieres y guarda cuando estés listo.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Marques los drops en el orden que los marques, el cue de inicio ya no cae en el silencio antes de la música.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "La pista que suena en Surco aparece en macOS con su carátula. Las teclas multimedia, los AirPods y el Apple Watch la pausan o pasan a la siguiente.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Si los archivos de una playlist ya no están en el disco, la lista lo dice y cuenta cuántos faltan. Un archivo movido o renombrado ya no sale como uno que no se pudo leer.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "23 de noviembre de 2026",
     "title": "Sustituye una pista sin perder sus cues",

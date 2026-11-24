@@ -1080,6 +1080,8 @@
     "lastApplied": "Último álbum aplicado",
     "heldResults": "Mais {{count}} de {{providers}} · Mostrar",
     "stillSearching": "Ainda buscando em {{providers}}…",
+    "discogsWait": "O Discogs está limitando as buscas. Nova tentativa em {{seconds}} s. Clique para buscar agora.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
     "suggestedStatus": "Sugerido: {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Remover sugestões",
         "ask": "Explode aqui? {{time}}",
         "acceptOne": "Aceitar",
-        "acceptSave": "Aceitar e salvar",
         "drop": "Remover",
         "unanalysed": "Sem análise do rekordbox",
         "none": "O Surco não encontra onde esta faixa explode",
@@ -1207,9 +1208,7 @@
         "sure": "Explode aqui {{time}}",
         "why_one": "depois de {{count}} compasso com pouco grave",
         "why_other": "depois de {{count}} compassos com pouco grave",
-        "whyNone": "sem pausa de grave antes",
-        "acceptSave_one": "Aceitar a sugestão e salvar",
-        "acceptSave_other": "Aceitar as {{count}} sugestões e salvar"
+        "whyNone": "sem pausa de grave antes"
       },
       "batch": {
         "mark_one": "Marcar automático em {{count}} faixa",
@@ -1332,6 +1331,7 @@
         "measuring": "Medindo a grade…"
       },
       "replaced": {
+        "moved": "Os cues foram movidos para o arquivo novo.",
         "notMoved": "não movidos",
         "noMatch": "O Surco não conseguiu alinhar o arquivo novo com o antigo. Os cues continuam como estavam.",
         "drift": "O início e o fim se moveram de forma diferente. Os cues continuam como estavam.",

@@ -242,20 +242,20 @@ describe('CuesSection', () => {
   })
 
   // The folded row has about 200 px at the narrowest window, so the body keeps the one short
-  // word in both ways and only an arrow tells them apart; the full action is in its name.
+  // word in both ways with no arrow beside it; the menu's check and the body's name say which.
   it('keeps the folded Save one word wide in both ways and names the full action', async () => {
     setup(READ, null, undefined, {}, { saveThen: 'next' })
     await ready()
     const body = screen.getByTestId('cues-save')
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
-    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
     expect(hoverTooltip(body)).toEqual('Save to rekordbox and go to next track')
     cleanup()
     setup()
     await ready()
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
-    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
     expect(hoverTooltip(screen.getByTestId('cues-save'))).toEqual('Save to rekordbox')
   })
@@ -362,14 +362,14 @@ describe('CuesSection', () => {
   })
 
   // The full program name sits in the body's name and tooltip, so the folded menu only says
-  // how to save, in the same short words as in full screen.
+  // how to save, in the same short words as in full screen and with no arrow beside them.
   it('reads the ways to save as short words in the folded menu', async () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
-    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-save-mode-next-mark')).toBeNull()
   })
 
   it('remembers the way picked from the menu and saves with it', async () => {

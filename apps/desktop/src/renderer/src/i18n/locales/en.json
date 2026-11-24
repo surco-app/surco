@@ -1080,6 +1080,8 @@
     "lastApplied": "Last applied album",
     "heldResults": "{{count}} more from {{providers}} · Show",
     "stillSearching": "Still searching {{providers}}…",
+    "discogsWait": "Discogs is rate-limiting searches. Trying again in {{seconds}} s. Click to search now.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} result",
     "resultsCount_other": "{{count}} results",
     "suggestedStatus": "Suggested: {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Remove suggestions",
         "ask": "Does it break here? {{time}}",
         "acceptOne": "Accept",
-        "acceptSave": "Accept and save",
         "drop": "Remove",
         "unanalysed": "No rekordbox analysis",
         "none": "Surco can’t find where this track breaks",
@@ -1207,9 +1208,7 @@
         "sure": "Breaks here {{time}}",
         "why_one": "after {{count}} bar of weak bass",
         "why_other": "after {{count}} bars of weak bass",
-        "whyNone": "no bass break before",
-        "acceptSave_one": "Accept the suggestion and save",
-        "acceptSave_other": "Accept the {{count}} suggestions and save"
+        "whyNone": "no bass break before"
       },
       "batch": {
         "mark_one": "Auto mark {{count}} track",
@@ -1332,6 +1331,7 @@
         "measuring": "Measuring the beat grid…"
       },
       "replaced": {
+        "moved": "Cues moved to the new file.",
         "notMoved": "not moved",
         "noMatch": "Surco couldn't line up the new file with the old one. Cues left as they were.",
         "drift": "The start and the end moved by different amounts. Cues left as they were.",

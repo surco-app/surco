@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Salva i cue e passa al successivo",
+    "items": [
+      {
+        "text": "Quando salvi i cue, scegli «Salva e successivo» nel menu del pulsante e Surco apre il brano successivo della lista. Ricorda la tua scelta per la prossima volta, e salvare non chiude più l’editor dei cue.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "«Accetta la proposta» posiziona i cue suggeriti senza salvarli. Spostali se vuoi e salva quando sei pronto.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "In qualunque ordine segni i drop, il cue di inizio non cade più nel silenzio prima della musica.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Il brano che suona in Surco appare in macOS con la sua copertina. I tasti multimediali, gli AirPods e l’Apple Watch lo mettono in pausa o passano al successivo.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Se i file di una playlist non sono più sul disco, la lista lo dice e conta quanti ne mancano. Un file spostato o rinominato non appare più come illeggibile.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "November 23, 2026",
     "title": "Sostituisci un brano senza perdere i cue",

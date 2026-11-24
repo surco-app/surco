@@ -1080,6 +1080,8 @@
     "lastApplied": "Zuletzt übernommenes Album",
     "heldResults": "{{count}} weitere von {{providers}} · Anzeigen",
     "stillSearching": "Sucht noch in {{providers}}…",
+    "discogsWait": "Discogs drosselt die Suche. Neuer Versuch in {{seconds}} s. Klicke, um jetzt zu suchen.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} Ergebnis",
     "resultsCount_other": "{{count}} Ergebnisse",
     "suggestedStatus": "Vorgeschlagen: {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Vorschläge entfernen",
         "ask": "Drop hier? {{time}}",
         "acceptOne": "Übernehmen",
-        "acceptSave": "Übernehmen und speichern",
         "drop": "Entfernen",
         "unanalysed": "Keine rekordbox-Analyse",
         "none": "Surco findet den Drop in diesem Track nicht",
@@ -1207,9 +1208,7 @@
         "sure": "Drop hier {{time}}",
         "why_one": "nach {{count}} Takt mit wenig Bass",
         "why_other": "nach {{count}} Takten mit wenig Bass",
-        "whyNone": "ohne Basspause davor",
-        "acceptSave_one": "Vorschlag übernehmen und speichern",
-        "acceptSave_other": "{{count}} Vorschläge übernehmen und speichern"
+        "whyNone": "ohne Basspause davor"
       },
       "batch": {
         "mark_one": "{{count}} Track auto-markieren",
@@ -1332,6 +1331,7 @@
         "measuring": "Raster wird gemessen…"
       },
       "replaced": {
+        "moved": "Die Cues wurden an die neue Datei angepasst.",
         "notMoved": "nicht verschoben",
         "noMatch": "Surco konnte die neue Datei nicht an der alten ausrichten. Die Cues bleiben, wie sie waren.",
         "drift": "Anfang und Ende haben sich unterschiedlich verschoben. Die Cues bleiben, wie sie waren.",

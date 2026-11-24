@@ -1080,6 +1080,8 @@
     "lastApplied": "Dernier album appliqué",
     "heldResults": "{{count}} autres de {{providers}} · Afficher",
     "stillSearching": "Recherche encore dans {{providers}}…",
+    "discogsWait": "Discogs limite les recherches. Nouvel essai dans {{seconds}} s. Clique pour chercher maintenant.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} résultat",
     "resultsCount_other": "{{count}} résultats",
     "suggestedStatus": "Suggéré : {{title}}",
@@ -1198,7 +1200,6 @@
         "discard_other": "Retirer les propositions",
         "ask": "Ça décolle ici ? {{time}}",
         "acceptOne": "Accepter",
-        "acceptSave": "Accepter et enregistrer",
         "drop": "Retirer",
         "unanalysed": "Pas d’analyse rekordbox",
         "none": "Surco ne trouve pas où ce morceau décolle",
@@ -1207,9 +1208,7 @@
         "sure": "Ça décolle ici {{time}}",
         "why_one": "après {{count}} mesure avec peu de basses",
         "why_other": "après {{count}} mesures avec peu de basses",
-        "whyNone": "sans pause de basses avant",
-        "acceptSave_one": "Accepter la proposition et enregistrer",
-        "acceptSave_other": "Accepter les {{count}} propositions et enregistrer"
+        "whyNone": "sans pause de basses avant"
       },
       "batch": {
         "mark_one": "Marquage auto de {{count}} morceau",
@@ -1332,6 +1331,7 @@
         "measuring": "Mesure de la grille…"
       },
       "replaced": {
+        "moved": "Les cues ont été déplacés vers le nouveau fichier.",
         "notMoved": "non déplacés",
         "noMatch": "Surco n’a pas pu aligner le nouveau fichier sur l’ancien. Les cues restent comme ils étaient.",
         "drift": "Le début et la fin se sont décalés différemment. Les cues restent comme ils étaient.",
