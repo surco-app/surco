@@ -817,7 +817,7 @@ const TrackRow = memo(function TrackRow({
             {!converting && position !== undefined && (
               <span
                 data-testid="track-number"
-                className="pointer-events-none absolute bottom-0.5 left-0.5 min-w-3.5 rounded bg-scrim/65 px-0.5 text-center text-label font-semibold leading-3.5 tabular-nums text-on-scrim"
+                className="pointer-events-none absolute bottom-0.5 left-0.5 min-w-3.5 rounded bg-scrim/80 px-0.5 text-center text-label font-semibold leading-3.5 tabular-nums text-on-scrim"
               >
                 {position}
               </span>

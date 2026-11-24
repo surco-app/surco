@@ -22,7 +22,7 @@ export const FORMAT_TOGGLE_BOX_NAME = 'format-toggle'
 export const SPLIT_TOGGLE_FORMAT = `press relative flex items-center justify-center ${FORMAT_TOGGLE_BOX} overflow-hidden rounded-r-lg before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none`
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET =
-  'bg-[var(--color-panel-2)] text-fg-faint before:bg-[var(--color-line-strong)]'
+  'bg-[var(--color-panel-2)] text-fg-muted before:bg-[var(--color-line-strong)]'
 export const SPLIT_TOGGLE_DIMMED =
   'bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 hover:bg-[color-mix(in_srgb,var(--color-accent)_55%,var(--color-ink))]'
 export const SPLIT_TOGGLE_READY =
