@@ -177,6 +177,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,
+    cueSaveThen: 'stay',
     cueQuantize: 'bar',
     cueGridTolerance: 10,
     cueLettersByTime: true,
@@ -667,6 +668,66 @@ describe('App Engine DJ cues', () => {
     fireEvent.click(await screen.findByTestId('source-node-7'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
+
+  const cueRead = (contentId: string) => ({
+    contentId,
+    analysed: true,
+    grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+    strong: [],
+    phrases: [],
+    cues: [],
+    wave: null,
+    durationMs: 400000,
+    fingerprint: 'f0',
+    gridFingerprint: '',
+  })
+  const openWithUnsavedCues = async (over: ApiOverrides = {}) => {
+    openEngine({
+      ...over,
+      onCueProfileChanged: () => () => {},
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => cueRead(id)),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        save: vi.fn<Api['cues']['save']>(async () => {}),
+      },
+    })
+    await openFriday()
+    act(() =>
+      keepDraft(
+        'engine:11',
+        'engine:11|f0|null',
+        startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+        { path: '/m/a.wav', label: 'a', fingerprint: 'f0' },
+      ),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('cue-wave')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+  }
+
+  // The remembered way lives in Settings and the step is the list's own arrow-down, so the
+  // DJ who saves and moves on lands on the row under the one they just finished.
+  it('saves the cues and opens the next row when Settings remember saving and moving on', async () => {
+    await openWithUnsavedCues({
+      getSettings: vi.fn().mockResolvedValue(settings({ cueSaveThen: 'next' })),
+    })
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(window.api.cues.save).toHaveBeenCalledOnce())
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+
+  it('keeps the way picked from the save menu in Settings, so the next track and the next session use it', async () => {
+    await openWithUnsavedCues()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    await waitFor(() =>
+      expect(window.api.saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ cueSaveThen: 'next' }),
+      ),
+    )
+  })
 
   // Tracks takes the same numbers as a playlist, in the order the files came in, so the
   // one View switch reads the same on every tab.

@@ -171,6 +171,8 @@ export interface ColumnShares {
   results?: number
 }
 
+export type CueSaveThen = 'stay' | 'next'
+
 export interface Settings {
   theme: ThemePref
   density: Density
@@ -255,6 +257,7 @@ export interface Settings {
   cueFlows: CueFlow[]
   activeCueFlow: string
   cueJumpBars: CueJumpBars
+  cueSaveThen: CueSaveThen
   cueQuantize: CueQuantize
   cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean

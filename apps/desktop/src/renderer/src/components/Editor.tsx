@@ -33,6 +33,7 @@ import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
+  CueSaveThen,
   DeclickConfig,
   FormatSetting,
   MetaTextKey,
@@ -257,6 +258,9 @@ interface Props {
   rekordboxCue?: { contentId: string; path: string; label: string; programPath?: string }
   matching?: Omit<React.ComponentProps<typeof MatchingSection>, 'open' | 'onToggle'>
   onCueJumpBars?: (bars: CueJumpBars) => void
+  cueSaveThen?: CueSaveThen
+  onCueSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
@@ -376,6 +380,9 @@ export const Editor = memo(function Editor({
   rekordboxCue,
   matching,
   onCueJumpBars,
+  cueSaveThen,
+  onCueSaveThen,
+  onStepTrack,
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
@@ -2069,6 +2076,9 @@ export const Editor = memo(function Editor({
                           onQuantize={onCueQuantize}
                           onFlow={onCueFlow}
                           actionsRef={cueActionsRef}
+                          saveThen={cueSaveThen}
+                          onSaveThen={onCueSaveThen}
+                          onStepTrack={onStepTrack}
                           footer={
                             <PhraseCountRow
                               contentId={rekordboxCue.contentId}

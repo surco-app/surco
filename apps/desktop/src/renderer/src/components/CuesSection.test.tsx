@@ -8,14 +8,16 @@ import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cu
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
 
+import type React from 'react'
 import { cueChanges, validWantedSet, type WantedCue } from '../../../shared/cueRules'
 import type { DjProgram } from '../../../shared/djProgram'
 import type { ReplacedEntry } from '../../../shared/toReview'
 import type { QueuedCues, Settings, SurcoGrid, TrackCues } from '../../../shared/types'
 import '../i18n'
 import { resetEditorSections } from '../hooks/useEditorSections'
+import { startDraft } from '../lib/cueDraft'
 import { claimCueSave } from '../lib/cueSaveEcho'
-import { focusCue, resetCueSession } from '../lib/cueSession'
+import { focusCue, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { offerShortcutUndo, takeShortcutUndo } from '../lib/shortcutUndo'
 import { type ApiOverrides, installApi } from '../test/api'
@@ -63,6 +65,7 @@ function setup(
   queued: QueuedCues | null | Error = null,
   settings?: Partial<Settings>,
   api: ApiOverrides = {},
+  props: Partial<React.ComponentProps<typeof CuesSection>> = {},
 ) {
   const logError = vi.fn<Api['logError']>()
   const onFlow = vi.fn<(id: string) => void>()
@@ -98,7 +101,7 @@ function setup(
   ) => (
     <QueryClientProvider client={client}>
       <SettingsProvider settings={{ cueFlows: KEPT, activeCueFlow: 'mine', ...current }}>
-        <CuesSection cue={cue} open onToggle={vi.fn()} onFlow={onFlow} />
+        <CuesSection cue={cue} open onToggle={vi.fn()} onFlow={onFlow} {...props} />
       </SettingsProvider>
     </QueryClientProvider>
   )
@@ -125,21 +128,10 @@ const markAt = (ms: number) => {
   playheadAt(ms)
   fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
 }
-const discard = () => {
-  const button = screen.queryByTestId('cues-undo')
-  if (button) return fireEvent.click(button)
-  fireEvent.click(screen.getByTestId('cues-save-more'))
-  fireEvent.click(screen.getByTestId('cues-discard'))
-}
-const discardOffered = () => {
-  if (screen.queryByTestId('cues-undo')) return true
-  const more = screen.queryByTestId('cues-save-more')
-  if (!more) return false
-  if (!screen.queryByTestId('cues-discard')) fireEvent.click(more)
-  const offered = !(screen.getByTestId('cues-discard') as HTMLButtonElement).disabled
-  fireEvent.keyDown(screen.getByTestId('cues-discard'), { key: 'Escape' })
-  return offered
-}
+const discardButton = () =>
+  screen.queryByTestId('cues-undo') ?? screen.queryByTestId('cues-discard')
+const discard = () => fireEvent.click(discardButton() as HTMLElement)
+const discardOffered = () => discardButton() !== null
 const openFull = async () => {
   fireEvent.click(screen.getByTestId('section-maximize'))
   await waitFor(() =>
@@ -236,6 +228,197 @@ describe('CuesSection', () => {
       [bar(32), 2, 22],
       [bar(48), 3, 1],
     ])
+  })
+
+  it('saves and stays on the track by default, so editing cue by cue never jumps away', async () => {
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(READ, null, undefined, {}, { onStepTrack })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(onStepTrack).not.toHaveBeenCalled()
+  })
+
+  // The folded row has about 200 px at the narrowest window, so the body keeps the one short
+  // word in both ways and only an arrow tells them apart; the full action is in its name.
+  it('keeps the folded Save one word wide in both ways and names the full action', async () => {
+    setup(READ, null, undefined, {}, { saveThen: 'next' })
+    await ready()
+    const body = screen.getByTestId('cues-save')
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(body).toHaveAccessibleName('Save and go to next track')
+    expect(hoverTooltip(body)).toEqual('Save and go to next track')
+    cleanup()
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
+    expect(hoverTooltip(screen.getByTestId('cues-save'))).toEqual('Save to rekordbox')
+  })
+
+  it('folds Discard into an icon between undo and Save, so the whole row fits on one line', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const discardIcon = screen.getByRole('button', { name: 'Discard changes' })
+    expect(discardIcon).toHaveAttribute('data-testid', 'cues-discard')
+    expect(discardIcon).toHaveTextContent('')
+    expect(hoverTooltip(discardIcon)).toEqual('Discard changes')
+    expect(screen.getByTestId('cues-step-back').nextElementSibling).toBe(discardIcon)
+    expect(discardIcon.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
+  })
+
+  it('saves and moves to the next track when that is the remembered way', async () => {
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not move on when the save fails, so the unsaved cues stay in sight', async () => {
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    saveRekordboxCues.mockRejectedValue(new Error('locked'))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    expect(await screen.findByTestId('cues-save-failed')).toBeInTheDocument()
+    expect(onStepTrack).not.toHaveBeenCalled()
+  })
+
+  // The DJ may move on by hand while the program writes. Stepping again from wherever the list
+  // now sits would skip a track they never saw.
+  it('does not move on when another track is open by the time the save lands', async () => {
+    const onStepTrack = vi.fn()
+    let land: () => void = () => {}
+    const { saveRekordboxCues, changeTrack } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    saveRekordboxCues.mockImplementation(() => new Promise<void>((r) => (land = r)))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
+    changeTrack({ contentId: '104', path: '/m/h.wav', label: 'Other' })
+    await act(async () => land())
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(onStepTrack).not.toHaveBeenCalled()
+  })
+
+  // In "next" a held Enter or a double click would otherwise send a second save of the same
+  // track, and step twice once both land.
+  it('takes no second save while one is still running', async () => {
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(
+      READ,
+      null,
+      undefined,
+      {},
+      { saveThen: 'next', onStepTrack },
+    )
+    saveRekordboxCues.mockImplementation(() => new Promise(() => {}))
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeDisabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
+  // A check that only the picked line draws would widen the menu or shift its text when the
+  // way changes, so every line keeps the check's room.
+  it('keeps the room of the check on both ways, showing it only on the remembered one', async () => {
+    setup(READ, null, undefined, {}, { saveThen: 'next' })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-next-check')).toBeVisible()
+    expect(screen.getByTestId('cues-save-mode-stay-check')).not.toBeVisible()
+  })
+
+  it('remembers the way picked from the menu and saves with it', async () => {
+    const onStepTrack = vi.fn()
+    const onSaveThen = vi.fn()
+    const { saveRekordboxCues } = setup(READ, null, undefined, {}, { onStepTrack, onSaveThen })
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    expect(onSaveThen).toHaveBeenCalledWith('next')
+    expect(screen.queryByRole('menu')).toBeNull()
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    expect(saveRekordboxCues).toHaveBeenCalledTimes(1)
+  })
+
+  it('changes the way without saving when nothing changed', async () => {
+    const onSaveThen = vi.fn()
+    const onStepTrack = vi.fn()
+    const { saveRekordboxCues } = setup(READ, null, undefined, {}, { onSaveThen, onStepTrack })
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-stay')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('cues-save-mode-next')).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    expect(onSaveThen).toHaveBeenCalledWith('next')
+    await act(() => new Promise((r) => setTimeout(r, 20)))
+    expect(saveRekordboxCues).not.toHaveBeenCalled()
+    expect(onStepTrack).not.toHaveBeenCalled()
+  })
+
+  it('keeps Discard out of the save menu, since throwing changes away is not a way to save', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const discardButton = screen.getByTestId('cues-discard')
+    expect(screen.getByTestId('cues-section')).toContainElement(discardButton)
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByRole('menu')).not.toContainElement(screen.getByTestId('cues-discard'))
+  })
+
+  it('offers saving every unsaved track in the save menu only when more than one is unsaved', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    cleanup()
+    resetCueSession()
+    keepDraft('104', '104|f0|null', startDraft([{ ms: bar(32), kind: 0, color: null }], 'mine'), {
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f0',
+    })
+    setup()
+    await ready()
+    markAt(bar(64))
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByRole('separator'))
   })
 
   it('takes a track out of To review in the program its cues were saved to, since the DJ has now fixed them there', async () => {
@@ -502,7 +685,7 @@ describe('CuesSection', () => {
       screen.getByTestId('cues-flow'),
     )
     expect(screen.getByTestId('cues-folded-row')).toContainElement(screen.getByTestId('cues-save'))
-    expect(screen.getByTestId('cues-save').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
   })
 

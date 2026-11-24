@@ -1156,7 +1156,7 @@
       },
       "resetColour": "Réinitialiser",
       "saveShort": "Enregistrer",
-      "saveThis": "Enregistrer ce morceau",
+      "saveNext": "Enregistrer et passer au morceau suivant",
       "saveMore": "Autres façons d’enregistrer",
       "saveFailed": "Impossible d’enregistrer dans rekordbox. Les cues ne sont toujours pas enregistrés",
       "saveAll_one": "Enregistrer {{count}} morceau dans rekordbox",

@@ -28,6 +28,9 @@ export const SPLIT_TOGGLE_READY =
   'bg-[var(--color-accent)] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 disabled:opacity-40'
 export const SPLIT_MENU =
   'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+// The same menu hung under its chevron, for a split button that sits in a top bar.
+export const SPLIT_MENU_DOWN =
+  'animate-pop-flat absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =
   'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:shadow-none'
 

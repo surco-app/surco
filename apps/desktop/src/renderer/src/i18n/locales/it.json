@@ -1156,7 +1156,7 @@
       },
       "resetColour": "Ripristina",
       "saveShort": "Salva",
-      "saveThis": "Salva questo brano",
+      "saveNext": "Salva e vai al brano successivo",
       "saveMore": "Altri modi di salvare",
       "saveFailed": "Impossibile salvare in rekordbox. I cue restano non salvati",
       "saveAll_one": "Salva {{count}} brano in rekordbox",

@@ -1156,7 +1156,7 @@
       },
       "resetColour": "リセット",
       "saveShort": "保存",
-      "saveThis": "このトラックを保存",
+      "saveNext": "保存して次のトラックへ",
       "saveMore": "ほかの保存方法",
       "saveFailed": "rekordbox に保存できませんでした。キューはまだ保存されていません",
       "saveAll_one": "{{count}} トラックを rekordbox に保存",
