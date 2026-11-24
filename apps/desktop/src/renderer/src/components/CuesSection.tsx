@@ -832,11 +832,9 @@ function Editing({
         setAutoNote('unanalysed')
       })
   }
-  const saveAccepted = useRef(false)
   const acceptProposals = () => {
     dispatch(acceptAll)
     setProposed(null)
-    saveAccepted.current = true
   }
   const dropProposal = (ms: number) => {
     setProposed((all) => (all ?? []).filter((p) => p.ms !== ms))
@@ -1257,11 +1255,6 @@ function Editing({
     // so the keys would act on a list the DJ cannot see.
     if (maximized) requestAnimationFrame(() => focusEditor())
   }
-  useEffect(() => {
-    if (!saveAccepted.current) return
-    saveAccepted.current = false
-    if (!unchanged && !blocked) void save()
-  })
   const copy = copyOf(cue.contentId)
   const unsavedTracks = [...unsavedSet].filter(savable).length
   const [savingAll, setSavingAll] = useState(false)
@@ -1463,7 +1456,7 @@ function Editing({
     </button>
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
-  const acceptLabel = tr('editor.cues.auto.acceptSave', { count: proposals.length })
+  const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
   const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
   const offGrid = provisional
@@ -1530,7 +1523,7 @@ function Editing({
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
           <Tooltip label={acceptLabel} hint={formatShortcut(['enter'], isMacOS())} />
-          {tr('editor.cues.auto.acceptSave')}
+          {tr('editor.cues.auto.acceptOne')}
         </button>
         <button
           type="button"
