@@ -324,12 +324,13 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  // Discard sat in the row first, where it read as undo, then in the flow menu among the
-  // modes. It sits in the Save menu now, as the other answer to unsaved changes.
-  it('offers Descartar cambios in the Save menu once there are changes, and keeps it out of the row and the flow menu', async () => {
+  // Discard sat in the row first, then in the flow menu among the modes, then in the Save
+  // menu. The Save menu holds only ways to save, so Discard is back in the row as its own
+  // button, as in the full editor.
+  it('offers Descartar cambios in the row once there are changes, and keeps it out of the Save menu and the flow menu', async () => {
     setup()
     await ready()
-    expect(screen.queryByTestId('cues-save-more')).toBeNull()
+    expect(screen.queryByTestId('cues-discard')).toBeNull()
     fireEvent.click(screen.getByTestId('cues-flow'))
     expect(screen.queryByTestId('cues-flow-option-discard-cues')).toBeNull()
     expect(screen.queryByTestId('cues-flow-option-clear-cues')).toBeNull()
@@ -343,6 +344,8 @@ describe('CuesSection folded', () => {
     expect(more).toHaveTextContent('')
     fireEvent.click(more)
     const discard = screen.getByTestId('cues-discard')
+    expect(screen.getByTestId('cues-folded-row')).toContainElement(discard)
+    expect(screen.getByRole('menu')).not.toContainElement(discard)
     expect(discard).toHaveTextContent('Discard changes')
     fireEvent.click(discard)
     expect(marks()).toHaveLength(0)

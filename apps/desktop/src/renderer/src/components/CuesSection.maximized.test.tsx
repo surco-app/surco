@@ -11,6 +11,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import type React from 'react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -24,9 +25,9 @@ import '../i18n'
 import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
-import { reduceDraft } from '../lib/cueDraft'
+import { reduceDraft, startDraft } from '../lib/cueDraft'
 import { claimCueSave } from '../lib/cueSaveEcho'
-import { autoMarkOf, resetCueSession } from '../lib/cueSession'
+import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
@@ -84,6 +85,7 @@ function setup(
   read: TrackCues = READ,
   api: ApiOverrides = {},
   actionsRef?: { current: CueActions | null },
+  props: Partial<React.ComponentProps<typeof CuesSection>> = {},
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['cues']['waveDetail']>(async () => null)
   const gridFit = api.cues?.gridFit
@@ -114,6 +116,7 @@ function setup(
           onJumpBars={onJumpBars}
           onQuantize={onQuantize}
           actionsRef={actionsRef}
+          {...props}
         />
       </SettingsProvider>
     </QueryClientProvider>,
@@ -1854,7 +1857,7 @@ describe('CuesSection maximized undo', () => {
     await maximize()
     const undo = screen.getByTestId('cues-step-back')
     expect(screen.getByTestId('cues-actions')).toContainElement(undo)
-    expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
+    expect(undo.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
     expect(hoverTooltip(undo)).toEqual('Undo⌘Z')
     expect(undo).toBeDisabled()
     seek(128000)
@@ -2427,6 +2430,36 @@ describe('CuesSection maximized grid', () => {
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
+  })
+
+  it('keeps saving every unsaved track inside the save menu in full screen, not as a loose button', async () => {
+    keepDraft('104', '104|f0|null', startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'), {
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f0',
+    })
+    setup(null, READ, { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } })
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
+  })
+
+  it('stays full screen after saving and moving to the next track', async () => {
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+    const onStepTrack = vi.fn()
+    setup(null, READ, { cues: { save: saveRekordboxCues } }, undefined, {
+      saveThen: 'next',
+      onStepTrack,
+    })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    const { result } = renderHook(() => useMaximizedSection())
+    expect(result.current.maximized).toBe('cues')
   })
 
   const LANDED = { tracks: 1, changes: 0, cues: ['/m/g.wav'] }

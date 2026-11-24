@@ -47,7 +47,13 @@ import {
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { ReplacedEntry } from '../../../shared/toReview'
-import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
+import type {
+  CueSaveThen,
+  QueuedCues,
+  SaveCuesRequest,
+  SurcoGrid,
+  TrackCues,
+} from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useReplacedTracks, useReviewReplaced } from '../hooks/useReplacedTracks'
@@ -151,6 +157,12 @@ import { Select } from './Select'
 import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
+// The full editor's save sits in its top bar, so its menu opens down under the chevron.
+const SPLIT_MENU_DOWN = SPLIT_MENU.replace('bottom-full', 'top-full')
+  .replace('mb-2', 'mt-2')
+  .replace('origin-bottom-right', 'origin-top-right')
+const SAVE_MODES: CueSaveThen[] = ['stay', 'next']
+
 // programPath is the file the program's row names: a Tracks item that converted into it
 // still has its own path, and To review only knows the program's file.
 interface CueTarget {
@@ -172,6 +184,7 @@ const ignore = () => {}
 
 const REKORDBOX_COPY = {
   save: 'editor.cues.save',
+  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.unanalysed',
   unreadable: 'editor.cues.unreadable',
   queuedStale: 'editor.cues.queuedStale',
@@ -181,6 +194,7 @@ const REKORDBOX_COPY = {
 
 const ENGINE_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.engine.save',
+  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.engine.unanalysed',
   unreadable: 'editor.cues.engine.unreadable',
   queuedStale: 'editor.cues.engine.queuedStale',
@@ -202,6 +216,7 @@ function ProvisionalMark({ bpm }: { bpm: number }): React.JSX.Element {
 
 const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.traktor.save',
+  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.traktor.unanalysed',
   unreadable: 'editor.cues.traktor.unreadable',
   queuedStale: 'editor.cues.traktor.queuedStale',
@@ -211,6 +226,7 @@ const TRAKTOR_COPY: typeof REKORDBOX_COPY = {
 
 const SERATO_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.serato.save',
+  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.serato.unanalysed',
   unreadable: 'editor.cues.serato.unreadable',
   queuedStale: 'editor.cues.serato.queuedStale',
@@ -220,6 +236,7 @@ const SERATO_COPY: typeof REKORDBOX_COPY = {
 
 const VIRTUALDJ_COPY: typeof REKORDBOX_COPY = {
   save: 'editor.cues.virtualdj.save',
+  saveNext: 'editor.cues.saveNext',
   unanalysed: 'editor.cues.virtualdj.unanalysed',
   unreadable: 'editor.cues.virtualdj.unreadable',
   queuedStale: 'editor.cues.virtualdj.queuedStale',
@@ -543,6 +560,9 @@ function Editing({
   provisional,
   replaced,
   actionsRef,
+  saveThen,
+  onSaveThen,
+  onStepTrack,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -563,6 +583,9 @@ function Editing({
   provisional?: SurcoGrid
   replaced?: ReplacedEntry
   actionsRef?: { current: CueActions | null }
+  saveThen: CueSaveThen
+  onSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -1210,6 +1233,11 @@ function Editing({
       ...(flowMarked ? await twinRequests([own]) : []),
     ])
     if (saved) setProposed(null)
+    return saved
+  }
+  // A failed save keeps the track in view, so its unsaved cues and the warning stay with it.
+  const saveWith = async (mode: CueSaveThen) => {
+    if ((await save()) && mode === 'next') onStepTrack?.()
   }
   useEffect(() => {
     if (!saveAccepted.current) return
@@ -1253,28 +1281,15 @@ function Editing({
   })
   const saveMenu = useSplitMenu()
   const discardable = !unchanged || queued !== null
-  const saveAllButton = unsavedTracks > 1 && (
-    <button
-      type="button"
-      data-testid="cues-save-all"
-      disabled={savingAll}
-      onClick={() => void saveAll()}
-      className={`press shrink-0 disabled:opacity-40 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
-        maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
-      }`}
-    >
-      {saveAllLabel}
-    </button>
-  )
+  const severalUnsaved = unsavedTracks > 1
   const flowOptions = [
     ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
   ]
-  const saveMenuShown = !!saveAllButton || discardable
   const discardButton = discardable && (
     <button
       type="button"
-      data-testid="cues-undo"
+      data-testid={maximized ? 'cues-undo' : 'cues-discard'}
       onClick={onDiscard}
       className={`press shrink-0 whitespace-nowrap text-xs text-fg-dim hover:text-fg ${
         maximized ? 'h-8 rounded-lg px-3 hover:bg-[var(--color-hover)]' : 'px-2 py-1.5'
@@ -1282,6 +1297,117 @@ function Editing({
     >
       {tr('editor.cues.discard')}
     </button>
+  )
+  const bodyLabels = maximized
+    ? { stay: copy.save, next: copy.saveNext }
+    : { stay: 'editor.cues.saveShort', next: 'editor.cues.saveNextShort' }
+  const saveSplit = (
+    <div ref={saveMenu.ref} className={`relative flex shrink-0 ${maximized ? 'ml-1' : ''}`}>
+      <button
+        type="button"
+        data-testid="cues-save"
+        disabled={unchanged || blocked}
+        data-filled={!unchanged}
+        aria-label={tr(saveThen === 'next' ? copy.saveNext : copy.save)}
+        onClick={() => void saveWith(saveThen)}
+        className={`press grid shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
+          maximized ? 'h-8 rounded-l-lg border' : 'h-6 rounded-l-md'
+        } ${
+          unchanged
+            ? maximized
+              ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
+              : 'text-fg-dim'
+            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
+        }`}
+      >
+        {/* Both labels share one cell, so switching the mode never resizes the button. */}
+        {SAVE_MODES.map((mode) => (
+          <span
+            key={mode}
+            data-testid={mode === saveThen ? 'cues-save-label' : undefined}
+            aria-hidden={mode !== saveThen || undefined}
+            className={`[grid-area:1/1] self-center ${mode === saveThen ? '' : 'invisible'}`}
+          >
+            {tr(bodyLabels[mode])}
+          </span>
+        ))}
+      </button>
+      <button
+        type="button"
+        data-testid="cues-save-more"
+        ref={saveMenu.toggleRef}
+        disabled={savingAll}
+        aria-label={tr('editor.cues.saveMore')}
+        aria-haspopup="menu"
+        aria-expanded={saveMenu.open}
+        onClick={() => saveMenu.setOpen((v) => !v)}
+        className={`press flex shrink-0 items-center gap-0.5 pr-2 pl-1.5 text-xs font-semibold tabular-nums disabled:opacity-40 ${
+          maximized ? 'h-8 rounded-r-lg border' : 'h-6 rounded-r-md border-l'
+        } ${
+          unchanged
+            ? `border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg ${
+                maximized ? 'border-l-0 bg-[var(--color-panel-2)]' : ''
+              }`
+            : `bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] ${
+                maximized
+                  ? 'border-transparent border-l-[var(--color-on-accent)]/30'
+                  : 'border-[var(--color-on-accent)]/30'
+              }`
+        }`}
+      >
+        {severalUnsaved && unsavedTracks}
+        <ChevronDown className="h-3 w-3" aria-hidden="true" />
+      </button>
+      {saveMenu.open && (
+        <div
+          ref={saveMenu.menuRef}
+          role="menu"
+          aria-label={tr('editor.cues.saveMore')}
+          onKeyDown={saveMenu.onMenuKeyDown}
+          className={`${maximized ? SPLIT_MENU_DOWN : SPLIT_MENU} w-auto min-w-56`}
+        >
+          {SAVE_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              data-testid={`cues-save-mode-${mode}`}
+              role="menuitemradio"
+              aria-checked={mode === saveThen}
+              onClick={() => {
+                saveMenu.setOpen(false)
+                onSaveThen?.(mode)
+                if (!unchanged && !blocked) void saveWith(mode)
+              }}
+              className={`${SPLIT_ITEM} gap-3 whitespace-nowrap ${
+                mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
+            >
+              {tr(mode === 'next' ? copy.saveNext : copy.save)}
+              {mode === saveThen && (
+                <Check className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+              )}
+            </button>
+          ))}
+          {severalUnsaved && (
+            <div className="mt-1 border-t border-[var(--color-line)] pt-1">
+              <button
+                type="button"
+                data-testid="cues-save-all"
+                role="menuitem"
+                disabled={savingAll}
+                onClick={() => {
+                  saveMenu.setOpen(false)
+                  void saveAll()
+                }}
+                className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+              >
+                {saveAllLabel}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
   const undoButton = (
     <button
@@ -1458,22 +1584,7 @@ function Editing({
       {!unchanged ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
       {undoButton}
       {discardButton}
-      {saveAllButton}
-      <button
-        type="button"
-        data-testid="cues-save"
-        disabled={unchanged || blocked}
-        data-filled={!unchanged}
-        aria-label={maximized ? undefined : tr(copy.save)}
-        onClick={() => void save()}
-        className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
-          unchanged
-            ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
-            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
-        }`}
-      >
-        {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
-      </button>
+      {saveSplit}
     </div>
   )
   const stripGhostIn = (stripView: { fromMs: number; toMs: number }) => {
@@ -1663,97 +1774,9 @@ function Editing({
           <Tooltip label={tr('editor.cues.clearAll')} />
           <Trash2 className="h-3 w-3" aria-hidden="true" />
         </button>
+        {discardButton}
         {undoButton}
-        <div ref={saveMenu.ref} className="relative flex shrink-0">
-          <button
-            type="button"
-            data-testid="cues-save"
-            disabled={unchanged || blocked}
-            data-filled={!unchanged}
-            aria-label={tr(copy.save)}
-            onClick={() => void save()}
-            className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-              saveMenuShown ? 'rounded-l-md' : 'rounded-md'
-            } ${
-              unchanged
-                ? 'text-fg-dim'
-                : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
-            }`}
-          >
-            {tr('editor.cues.saveShort')}
-          </button>
-          {saveMenuShown && (
-            <button
-              type="button"
-              data-testid="cues-save-more"
-              ref={saveMenu.toggleRef}
-              disabled={savingAll}
-              aria-label={tr('editor.cues.saveMore')}
-              aria-haspopup="menu"
-              aria-expanded={saveMenu.open}
-              onClick={() => saveMenu.setOpen((v) => !v)}
-              className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-md border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-            >
-              {saveAllButton && unsavedTracks}
-              <ChevronDown className="h-3 w-3" aria-hidden="true" />
-            </button>
-          )}
-          {saveMenuShown && saveMenu.open && (
-            <div
-              ref={saveMenu.menuRef}
-              role="menu"
-              aria-label={tr('editor.cues.saveMore')}
-              onKeyDown={saveMenu.onMenuKeyDown}
-              className={`${SPLIT_MENU} w-auto min-w-56`}
-            >
-              {saveAllButton && (
-                <>
-                  <button
-                    type="button"
-                    data-testid="cues-save-this"
-                    role="menuitem"
-                    disabled={unchanged || blocked}
-                    onClick={() => {
-                      saveMenu.setOpen(false)
-                      void save()
-                    }}
-                    className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                  >
-                    {tr('editor.cues.saveThis')}
-                  </button>
-                  <button
-                    type="button"
-                    data-testid="cues-save-all"
-                    role="menuitem"
-                    disabled={savingAll}
-                    onClick={() => {
-                      saveMenu.setOpen(false)
-                      void saveAll()
-                    }}
-                    className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                  >
-                    {saveAllLabel}
-                  </button>
-                </>
-              )}
-              <button
-                type="button"
-                data-testid="cues-discard"
-                role="menuitem"
-                disabled={!discardable}
-                onClick={() => {
-                  saveMenu.setOpen(false)
-                  onDiscard()
-                }}
-                className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40 ${
-                  saveAllButton ? 'mt-1 border-t border-[var(--color-line)]' : ''
-                }`}
-              >
-                {tr('editor.cues.discard')}
-              </button>
-            </div>
-          )}
-        </div>
+        {saveSplit}
       </div>
     </div>
   )
@@ -2339,6 +2362,9 @@ export function CuesSection({
   onFlow,
   actionsRef,
   footer,
+  saveThen = 'stay',
+  onSaveThen,
+  onStepTrack,
 }: {
   cue: CueTarget
   open: boolean
@@ -2349,6 +2375,9 @@ export function CuesSection({
   onFlow?: (id: string) => void
   actionsRef?: { current: CueActions | null }
   footer?: React.ReactNode
+  saveThen?: CueSaveThen
+  onSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -2476,6 +2505,9 @@ export function CuesSection({
         onQuantize={onQuantize}
         onFlow={onFlow}
         actionsRef={actionsRef}
+        saveThen={saveThen}
+        onSaveThen={onSaveThen}
+        onStepTrack={onStepTrack}
         onRestore={() => setMaximized(null)}
         headerSlot={headerSlot}
         saveEcho={saveEcho}

@@ -683,7 +683,7 @@ describe('saving several tracks', () => {
 
   // Two buttons that both said Save, one on a line of its own, left the user guessing which
   // one saved what. The folded row keeps one Save for this track; saving every pending track
-  // sits in its menu, beside "this track", each saying what it saves.
+  // sits in its menu, under the ways to save this one, each saying what it saves.
   it('keeps one Save in the folded row and offers every pending track from its menu', async () => {
     other()
     setup()
@@ -694,12 +694,12 @@ describe('saving several tracks', () => {
     expect(more).toHaveTextContent('2')
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
     fireEvent.click(more)
-    expect(screen.getByTestId('cues-save-this')).toHaveTextContent('Save this track')
+    expect(screen.getByTestId('cues-save-mode-stay')).toHaveTextContent('Save to rekordbox')
     expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox')
     expect((await saveAllItem()).closest('[data-testid="cues-folded-row"]')).not.toBeNull()
   })
 
-  it('offers only Discard, with no track count, when this is the only track with unsaved cues', async () => {
+  it('offers only the ways to save this track, with no track count, when this is the only track with unsaved cues', async () => {
     setup()
     await ready()
     await autoMark()
@@ -710,8 +710,9 @@ describe('saving several tracks', () => {
     expect(more).toHaveTextContent('')
     fireEvent.click(more)
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
-    expect(screen.queryByTestId('cues-save-this')).toBeNull()
-    expect(screen.getByTestId('cues-discard')).toBeEnabled()
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-mode-stay'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-mode-next'))
+    expect(screen.getByRole('menu')).not.toContainElement(screen.getByTestId('cues-discard'))
   })
 
   it('saves every reviewed track to rekordbox in one go, so the collection is written once', async () => {
