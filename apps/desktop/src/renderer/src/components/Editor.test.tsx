@@ -6799,6 +6799,7 @@ describe('Editor Apple Music library section', () => {
       filesOpen,
       tags = {},
       pairPending = false,
+      identicalPair = false,
       music,
       copyFilled,
       libraryFailed,
@@ -6813,6 +6814,7 @@ describe('Editor Apple Music library section', () => {
       filesOpen?: boolean
       tags?: Record<string, Partial<TrackMetadata>>
       pairPending?: boolean
+      identicalPair?: boolean
       music?: string
       copyFilled?: boolean
       libraryFailed?: boolean
@@ -6868,11 +6870,11 @@ describe('Editor Apple Music library section', () => {
       api.fingerprint = vi.fn(async (path: string) => path)
       api.comparePair = pairPending
         ? vi.fn(() => new Promise(() => {}))
-        : vi.fn(async () => ({
-            correlation: 0.9956,
-            residualDb: -20.5,
-            gainDb: -2.2,
-          }))
+        : vi.fn(async () =>
+            identicalPair
+              ? { correlation: 1, residualDb: -90, gainDb: 0 }
+              : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 },
+          )
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
         (copyAt(path) && !copyAt(path)?.gone) || path === herePath
@@ -7116,6 +7118,23 @@ describe('Editor Apple Music library section', () => {
       })
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()).toEqual([])
+    })
+
+    // The pair probe lines up only the first 91 s, so an extended edit cut from the same master
+    // reads «same»: 400 s in rekordbox against 210 s here carries another mix name and ISRC.
+    it('never fills from a copy called the same recording when its length is another edit', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 400 },
+        hereDuration: 210,
+        identicalPair: true,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
       )
       await new Promise((r) => setTimeout(r, 50))
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')

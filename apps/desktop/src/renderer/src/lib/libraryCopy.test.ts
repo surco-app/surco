@@ -29,35 +29,44 @@ describe('countsAsCopy', () => {
 
 describe('copyPathIn', () => {
   it('finds the copy of one program and ignores the others', () => {
-    const rows: { program: 'rekordbox' | 'engine'; path: string; verdict: LibraryVerdict }[] = [
-      { program: 'rekordbox', path: '/r/a.aiff', verdict: 'same' },
-      { program: 'engine', path: '/e/a.mp3', verdict: 'different' },
+    const rows: {
+      program: 'rekordbox' | 'engine'
+      path: string
+      verdict: LibraryVerdict
+      durationSec: number
+    }[] = [
+      { program: 'rekordbox', path: '/r/a.aiff', verdict: 'same', durationSec: 200 },
+      { program: 'engine', path: '/e/a.mp3', verdict: 'different', durationSec: 200 },
     ]
-    expect(copyPathIn('rekordbox', rows)).toBe('/r/a.aiff')
-    expect(copyPathIn('engine', rows)).toBeUndefined()
+    expect(copyPathIn('rekordbox', rows, 200)).toBe('/r/a.aiff')
+    expect(copyPathIn('engine', rows, 200)).toBeUndefined()
   })
 })
 
-describe('copyPathIn while the verdict cannot tell the length apart', () => {
+// «same» can come from the pair probe over the first 91 s alone, which a longer or shorter
+// edit cut from the same master passes too, so no verdict is trusted without the lengths.
+describe('copyPathIn and the length of the copy', () => {
   const rowOf = (verdict: LibraryVerdict, durationSec?: number) => [
     { program: 'rekordbox' as const, path: '/r/a.aiff', verdict, durationSec },
   ]
 
-  it.each(['measuring', 'unmeasurable'] as const)(
-    'does not file another edit in the set before the verdict can say so (%s)',
+  const counted = ['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const
+
+  it.each(counted)(
+    'does not file another edit in the set, whatever the verdict says (%s)',
     (verdict) => {
       expect(copyPathIn('rekordbox', rowOf(verdict, 45), 30)).toBeUndefined()
     },
   )
 
-  it.each(['measuring', 'unmeasurable'] as const)(
-    'counts a copy of the same length at once, so the DJ does not wait for the comparison (%s)',
+  it.each(counted)(
+    'counts a copy of the same length, so the DJ does not wait for the comparison (%s)',
     (verdict) => {
       expect(copyPathIn('rekordbox', rowOf(verdict, 31.5), 30)).toBe('/r/a.aiff')
     },
   )
 
-  it.each(['measuring', 'unmeasurable'] as const)(
+  it.each(counted)(
     'does not count a copy whose length is unknown on either side, since it may be another edit (%s)',
     (verdict) => {
       expect(copyPathIn('rekordbox', rowOf(verdict), 30)).toBeUndefined()
@@ -66,8 +75,8 @@ describe('copyPathIn while the verdict cannot tell the length apart', () => {
     },
   )
 
-  it('keeps counting a measured copy of the same recording whatever the lengths say', () => {
-    expect(copyPathIn('rekordbox', rowOf('same', 45), 30)).toBe('/r/a.aiff')
+  it('does not count an extended edit the probe called the same recording', () => {
+    expect(copyPathIn('rekordbox', rowOf('same', 400), 210)).toBeUndefined()
   })
 })
 
@@ -77,7 +86,11 @@ describe('fillCopyPath', () => {
     verdict,
     durationSec,
   })
-  const traktor = (verdict: LibraryVerdict | null) => ({ path: '/t/a.wav', verdict })
+  const traktor = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/t/a.wav',
+    verdict,
+    durationSec,
+  })
   const fill = (args: {
     musicCopyPath?: string
     musicCopyPending?: boolean
@@ -109,7 +122,7 @@ describe('fillCopyPath', () => {
     'skips copies whose tags belong to another file (%s)',
     (verdict) => {
       expect(
-        fill({ programs: [rekordbox(verdict, 200), traktor('same')], fileDurationSec: 200 }),
+        fill({ programs: [rekordbox(verdict, 200), traktor('same', 200)], fileDurationSec: 200 }),
       ).toBe('/t/a.wav')
     },
   )
@@ -139,7 +152,7 @@ describe('fillCopyPath', () => {
   it('considers the next program when the first copy does not count for its length', () => {
     expect(
       fill({
-        programs: [rekordbox('unmeasurable', 400), traktor('same')],
+        programs: [rekordbox('unmeasurable', 400), traktor('same', 200)],
         fileDurationSec: 200,
       }),
     ).toBe('/t/a.wav')
@@ -148,9 +161,9 @@ describe('fillCopyPath', () => {
   // A decided verdict other than «same» can still be another edit: the comparison only calls
   // another version when both lengths are known, and a probe that could not line up says nothing.
   it('does not fill from a copy the open file beats when its length is another edit, and looks at the next program', () => {
-    expect(fill({ programs: [rekordbox('here', 45), traktor('same')], fileDurationSec: 30 })).toBe(
-      '/t/a.wav',
-    )
+    expect(
+      fill({ programs: [rekordbox('here', 45), traktor('same', 30)], fileDurationSec: 30 }),
+    ).toBe('/t/a.wav')
   })
 
   it('does not fill from a copy the open file beats when its length is unknown', () => {
@@ -158,7 +171,18 @@ describe('fillCopyPath', () => {
     expect(fill({ programs: [rekordbox('here', 200)] })).toBe('')
   })
 
-  it('fills from a copy proven the same master even with its length unknown', () => {
-    expect(fill({ programs: [rekordbox('same')] })).toBe('/r/a.aiff')
+  // The probe only lines up the first 91 s, so an extended edit cut from the same master reads
+  // «same» too, and its mix name, ISRC or track number are not this file's.
+  it('does not fill from an extended edit the probe called the same recording', () => {
+    expect(fill({ programs: [rekordbox('same', 400)], fileDurationSec: 210 })).toBe('')
+  })
+
+  it('does not fill from a copy called the same recording when either length is unknown', () => {
+    expect(fill({ programs: [rekordbox('same')], fileDurationSec: 210 })).toBe('')
+    expect(fill({ programs: [rekordbox('same', 210)] })).toBe('')
+  })
+
+  it('fills from a copy called the same recording when its length matches the file', () => {
+    expect(fill({ programs: [rekordbox('same', 211.5)], fileDurationSec: 210 })).toBe('/r/a.aiff')
   })
 })

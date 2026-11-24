@@ -908,7 +908,8 @@ export const Editor = memo(function Editor({
     program: copy.program,
     path: copy.path,
     verdict: rowVerdict(programVerdicts[i]),
-    durationSec: copy.durationSec,
+    // A collection may not store the length; the measured one then stands in for it.
+    durationSec: copy.durationSec ?? programVerdicts[i]?.copy?.durationSec,
   }))
   // Keyed on each program's copy target after the verdict filter, not on the rows (new on
   // every render, so a new copyPathOf would read the membership again each time) nor on the

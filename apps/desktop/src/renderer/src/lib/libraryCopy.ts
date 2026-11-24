@@ -25,22 +25,13 @@ interface CopyRow {
   durationSec?: number
 }
 
-const UNDECIDED: ReadonlySet<LibraryVerdict> = new Set(['measuring', 'unmeasurable'])
-
-// While the comparison runs, or when it cannot run, nothing has ruled out that the copy is
-// another edit, which only the verdict would call another version. Until then only a copy of
-// the open file's length is filed in the DJ's set.
+// No verdict rules out another edit on its own: «same» can come from the pair probe over the
+// first 91 s, which a longer or shorter edit cut from the same master passes too, and the
+// comparison calls another version only with both lengths known. So a copy counts only when
+// both lengths are known and no further apart than a drift or a rounding leaves.
 function lengthsMatch(copyDurationSec: number | undefined, fileDurationSec: number | undefined) {
   if (copyDurationSec === undefined || fileDurationSec === undefined) return false
   return Math.abs(copyDurationSec - fileDurationSec) <= VERSION_GAP_SEC
-}
-
-function sameLength(
-  row: Pick<CopyRow, 'verdict' | 'durationSec'>,
-  fileDurationSec: number | undefined,
-): boolean {
-  if (row.verdict === null || !UNDECIDED.has(row.verdict)) return true
-  return lengthsMatch(row.durationSec, fileDurationSec)
 }
 
 export function copyPathIn(
@@ -50,7 +41,9 @@ export function copyPathIn(
 ): string | undefined {
   return rows.find(
     (row) =>
-      row.program === program && countsAsCopy(row.verdict) && sameLength(row, fileDurationSec),
+      row.program === program &&
+      countsAsCopy(row.verdict) &&
+      lengthsMatch(row.durationSec, fileDurationSec),
   )?.path
 }
 
@@ -62,9 +55,6 @@ export interface FillCandidate {
 
 // The first copy decides even when a later one is ready: while it is still being compared it
 // may turn out to be another version, whose tags are not this file's, so nothing is read yet.
-// Only «same» proves one master. Any other verdict can come from another edit, since the
-// comparison calls another version only with both lengths known and a probe that lined up, so
-// those copies lend their tags only when their length matches the file's.
 export function fillCopyPath(args: {
   musicCopyPath: string
   musicCopyPending: boolean
@@ -74,9 +64,7 @@ export function fillCopyPath(args: {
   if (args.musicCopyPath) return args.musicCopyPath
   if (args.musicCopyPending) return ''
   const first = args.programs.find(
-    (copy) =>
-      countsAsCopy(copy.verdict) &&
-      (copy.verdict === 'same' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
+    (copy) => countsAsCopy(copy.verdict) && lengthsMatch(copy.durationSec, args.fileDurationSec),
   )
   if (!first || first.verdict === 'measuring') return ''
   return first.path
