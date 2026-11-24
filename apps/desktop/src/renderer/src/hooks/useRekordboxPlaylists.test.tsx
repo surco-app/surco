@@ -376,7 +376,7 @@ describe('usePlaylistsSpec on a library copy', () => {
     item?: TrackItem
     copyPathOf?: ((t: TrackItem) => string | undefined) | null
     membership?: Membership
-    canSave?: boolean
+    canSave?: boolean | 'pending' | 'fails'
     playlist?: ProgramReads['playlist']
   } = {}) {
     const readMembership = vi.fn<ProgramReads['membership']>(async () => membership)
@@ -393,7 +393,13 @@ describe('usePlaylistsSpec on a library copy', () => {
           playlist,
         },
       }),
-      traktorCanSave: vi.fn<Api['traktorCanSave']>(async () => canSave),
+      traktorCanSave: vi.fn<Api['traktorCanSave']>(() =>
+        canSave === 'pending'
+          ? new Promise(() => {})
+          : canSave === 'fails'
+            ? Promise.reject(new Error('unreadable'))
+            : Promise.resolve(canSave),
+      ),
     })
     const reportError = vi.fn()
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -500,6 +506,28 @@ describe('usePlaylistsSpec on a library copy', () => {
     expect(editPlaylist).not.toHaveBeenCalled()
     expect(onChange).not.toHaveBeenCalled()
   })
+
+  // Main has no check of its own, so a collection not yet known to be confirmed is treated
+  // as unconfirmed, as the sidebar does.
+  it.each([
+    ['is still running', 'pending'],
+    ['failed', 'fails'],
+  ] as const)(
+    'writes nothing to Traktor’s collection on the copy while its collection check %s',
+    async (_, canSave) => {
+      const { hook, editPlaylist } = onCopy({ library: 'traktor', canSave })
+      await waitFor(() => expect(hook.result.current?.single.value).toHaveLength(1))
+      if (canSave === 'fails')
+        await waitFor(() => expect(window.api.traktorCanSave).toHaveBeenCalled())
+      await act(async () => {})
+      const spec = hook.result.current
+      await act(async () => {
+        spec?.single.onChange([...(spec?.single.value ?? []), { id: 'p2', name: 'Invierno' }])
+      })
+      await act(async () => {})
+      expect(editPlaylist).not.toHaveBeenCalled()
+    },
+  )
 
   // The suite exits 1 on an unhandled rejection, and the DJ would be told nothing.
   it('says so when the program cannot be read before untagging the copy', async () => {

@@ -147,7 +147,7 @@ export function usePlaylistsSpec(
     const disabled = gated && canSave === false ? 'unconfirmed' : undefined
     const single: PlaylistsSpec['single'] = copy
       ? copySingle(copy, membership, options, queued, (target, on) => {
-          if (disabled) return
+          if (gated && canSave !== true) return
           toggle([copy], target, on).catch((error) => {
             window.api.logError(String(error))
             reportError(
