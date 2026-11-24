@@ -915,11 +915,11 @@
     "outputNameFolder": "Verrà salvato nella cartella «{{folder}}», perché la barra separa le cartelle.",
     "overwriteTitle": "Sovrascrive l'originale",
     "overwriteAlacHint": "ALAC non sostituisce l'originale. Viene creato un nuovo file nella cartella di uscita e l'originale resta.",
-    "overwriteLossyHint": "Sostituisce l'originale lossless con un MP3 a 320 kbps al suo posto. Il master va perso e non si può recuperare. Disattivalo in Impostazioni → Destinazione.",
+    "overwriteLossyHint": "Sostituisce l'originale lossless con un MP3 a 320 kbps al suo posto. Il master va perso e non si può recuperare. Disattivalo in Impostazioni → File → Destinazione.",
     "overwriteLossyHintBackup": "Sostituisce l'originale lossless con un MP3 a 320 kbps al suo posto. Prima Surco salva una copia di sicurezza dell'originale, che puoi ripristinare dal brano.",
     "regenerate": "Rigenera il nome del file dai metadati",
     "regenerateAll": "Rigenera i nomi dei file dai metadati",
-    "regenerateHint": "Ricostruisci il nome del file dai metadati qui sopra con il tuo schema di Impostazioni → Nomi",
+    "regenerateHint": "Ricostruisci il nome del file dai metadati qui sopra con il tuo schema di Impostazioni → File → Nomi",
     "regenerateCustom": "Personalizza lo schema del nome per questo brano…",
     "lossyToLossless": "La sorgente è lossy. Convertire in {{format}} non ne recupera la qualità.",
     "seratoLosesStars": "Serato perderà le stelle di questo brano.",
@@ -2439,7 +2439,7 @@
     "items": {
       "token": {
         "q": "Mi serve un token di Discogs?",
-        "a": "No. Surco cerca su Discogs senza configurare niente, usando le sue credenziali dell'app, quindi puoi iniziare a taggare subito.\n\nQueste credenziali condivise hanno un limite comune (60 richieste al minuto per tutti gli utenti di Surco), perciò nei momenti di traffico intenso una ricerca può fallire con l'avviso «limite raggiunto». Aspetta qualche secondo e riprova.\n\nSe tagghi molto, genera gratis il tuo token personale su discogs.com/settings/developers e incollalo in Impostazioni → Sorgenti. Il tuo token ha un suo limite privato, così le ricerche restano veloci a prescindere da quante persone stiano usando Surco."
+        "a": "No. Surco cerca su Discogs senza configurare niente, usando le sue credenziali dell'app, quindi puoi iniziare a taggare subito.\n\nQueste credenziali condivise hanno un limite comune (60 richieste al minuto per tutti gli utenti di Surco), perciò nei momenti di traffico intenso una ricerca può fallire con l'avviso «limite raggiunto». Aspetta qualche secondo e riprova.\n\nSe tagghi molto, genera gratis il tuo token personale su discogs.com/settings/developers e incollalo in Impostazioni → Sorgenti. Il tuo token ha un suo limite privato, così le ricerche restano veloci a prescindere da quante persone stiano usando Surco. L'abbinamento automatico dell'intera lista, invece, richiede il tuo token personale."
       },
       "quality": {
         "q": "Perché un brano risulta segnato come «Dubbia»?",
@@ -2451,7 +2451,7 @@
       },
       "appleMusic": {
         "q": "Cosa fa «Aggiungi ad Apple Music»?",
-        "a": "Quando è attivo (solo su macOS), Surco importa automaticamente ogni brano convertito nella tua libreria di Apple Music subito dopo la conversione, così i file appena taggati arrivano lì senza trascinarli a mano.\n\nMentre modifichi, Surco controlla anche se un brano è già nella tua libreria e mostra un piccolo badge, così non ti ritrovi con dei duplicati. Puoi disattivarlo quando vuoi in Impostazioni → Destinazione."
+        "a": "Quando è attivo (solo su macOS), Surco importa automaticamente ogni brano convertito nella tua libreria di Apple Music subito dopo la conversione, così i file appena taggati arrivano lì senza trascinarli a mano.\n\nMentre modifichi, Surco controlla anche se un brano è già nella tua libreria e mostra un piccolo badge, così non ti ritrovi con dei duplicati. Puoi disattivarlo quando vuoi in Impostazioni → File → Destinazione."
       },
       "windows": {
         "q": "C'è qualcosa di diverso su Windows?",

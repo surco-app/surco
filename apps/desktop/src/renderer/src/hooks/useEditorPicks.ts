@@ -23,10 +23,12 @@ interface EditorPicks {
   destinationPickRef: React.RefObject<Destination | null>
   normalizeRef: React.RefObject<NormalizeConfig | null>
   declickRef: React.RefObject<DeclickConfig | null>
+  convertLabelRef: React.RefObject<string>
   onFormatChange: (format: FormatSetting | null) => void
   onDestinationChange: (destination: Destination, byHand?: boolean) => void
   onNormalizeChange: (n: NormalizeConfig) => void
   onDeclickChange: (d: DeclickConfig) => void
+  onConvertLabelChange: (label: string) => void
   rememberedPick: (trackId: string) => RememberedPick | undefined
   // Called when the selection empties: the picks belong to the track that was open, and a
   // stale one would silently apply to whatever is opened next.
@@ -69,6 +71,7 @@ export function useEditorPicks(
   const destinationPickRef = useRef<Destination | null>(null)
   const normalizeRef = useRef<NormalizeConfig | null>(null)
   const declickRef = useRef<DeclickConfig | null>(null)
+  const convertLabelRef = useRef('')
 
   const onFormatChange = useStableCallback((format: FormatSetting | null) => {
     formatRef.current = format
@@ -114,6 +117,10 @@ export function useEditorPicks(
     declickRef.current = d
   })
 
+  const onConvertLabelChange = useStableCallback((label: string) => {
+    convertLabelRef.current = label
+  })
+
   const reset = useStableCallback(() => {
     formatRef.current = null
     destinationRef.current = null
@@ -128,10 +135,12 @@ export function useEditorPicks(
     destinationPickRef,
     normalizeRef,
     declickRef,
+    convertLabelRef,
     onFormatChange,
     onDestinationChange,
     onNormalizeChange,
     onDeclickChange,
+    onConvertLabelChange,
     rememberedPick,
     reset,
   }

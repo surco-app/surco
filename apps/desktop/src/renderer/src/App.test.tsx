@@ -11109,6 +11109,44 @@ describe('App landmarks', () => {
 })
 
 describe('App command palette list-wide actions', () => {
+  // The palette named the main action "Convert current track" while the footer button said
+  // what the click really does ("Update" for a tags-only save), so the same job had two
+  // names and the palette overpromised a conversion.
+  async function paletteTitleOf(id: string): Promise<string | null> {
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    const option = document.getElementById(`palette-option-${id}`)
+    const title = option?.querySelector('[data-testid="palette-item-title"]')?.textContent ?? null
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    return title
+  }
+
+  it('names the current-track action like the footer button when it only updates tags', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ overwriteOriginal: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.aiff']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.change(await screen.findByTestId('field-title'), { target: { value: 'Edited' } })
+    const button = await screen.findByTestId('process-btn')
+    expect(button).toHaveTextContent(i18n.t('editor.update'))
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent)
+  })
+
+  it('names the current-track action like the footer button when it converts', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    await addOneTrack()
+    const button = await screen.findByTestId('process-btn')
+    expect(button).toHaveTextContent(i18n.t('editor.convertAction'))
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent)
+  })
+
   // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
   // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
   // proves the run wiring on its own.

@@ -242,6 +242,8 @@ interface Props {
   onNormalizeChange?: (normalize: NormalizeConfig) => void
   // Reports the per-track click-repair override, mirroring onNormalizeChange.
   onDeclickChange?: (declick: DeclickConfig) => void
+  // Reports the convert button's label, so the palette names the same action.
+  onConvertLabelChange?: (label: string) => void
   onAddToAppleMusic: () => void
   // Offers the files a conversion left behind (the original, the files a replacement
   // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation
@@ -370,6 +372,7 @@ export const Editor = memo(function Editor({
   rememberedPick,
   onNormalizeChange,
   onDeclickChange,
+  onConvertLabelChange,
   onAddToAppleMusic,
   onCleanUp,
   resultsFolded,
@@ -2337,6 +2340,7 @@ export const Editor = memo(function Editor({
         />
 
         <ConvertFooter
+          onLabelChange={onConvertLabelChange}
           narrow={narrow}
           item={item}
           spectrum={spectrumInHand}

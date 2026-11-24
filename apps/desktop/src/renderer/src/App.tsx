@@ -751,10 +751,12 @@ export default function App(): React.JSX.Element {
     destinationPickRef: editorDestinationPickRef,
     normalizeRef: editorNormalizeRef,
     declickRef: editorDeclickRef,
+    convertLabelRef: editorConvertLabelRef,
     onFormatChange,
     onDestinationChange,
     onNormalizeChange,
     onDeclickChange,
+    onConvertLabelChange,
     rememberedPick,
     reset: resetEditorPicks,
   } = useEditorPicks(settings, saveSettings, selection.ids.length === 1 ? selection.anchor : null)
@@ -4419,6 +4421,7 @@ export default function App(): React.JSX.Element {
       editorDestinationPickRef,
       editorNormalizeRef,
       editorDeclickRef,
+      editorConvertLabelRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
       openApplePlaylist: isMacOS() ? () => selectSource('appleMusic') : undefined,
@@ -5370,6 +5373,7 @@ export default function App(): React.JSX.Element {
                               }
                               onNormalizeChange={onNormalizeChange}
                               onDeclickChange={onDeclickChange}
+                              onConvertLabelChange={onConvertLabelChange}
                               onAddToAppleMusic={onAddSelectedToAppleMusic}
                               onCleanUp={onCleanUp}
                               resultsFolded={resultsFolded}

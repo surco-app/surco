@@ -120,6 +120,7 @@ interface ConvertFooterProps {
   // it runs.
   onCancel?: () => void
   onConvertSelection?: () => void
+  onLabelChange?: (label: string) => void
   convertHint?: string
   processHint?: string
   batchRun?: { done: number; total: number } | null
@@ -191,6 +192,7 @@ export function ConvertFooter({
   onProcess,
   onCancel,
   onConvertSelection,
+  onLabelChange,
   convertHint,
   processHint,
   batchRun,
@@ -804,6 +806,7 @@ export function ConvertFooter({
               destinations={destinations}
               label={batchLabel}
               hint={isMulti ? convertHint : processHint}
+              onLabelChange={onLabelChange}
               tip={batchTip}
               offerSource={isMulti && !!offerSource}
               clearAfter={clearAfterBatch}

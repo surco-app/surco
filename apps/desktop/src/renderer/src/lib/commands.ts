@@ -229,6 +229,8 @@ export interface CommandDeps {
   editorDestinationPickRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   editorDeclickRef: { readonly current: DeclickConfig | null }
+  // The label the editor's convert button wears now, empty while no editor shows one.
+  editorConvertLabelRef: { readonly current: string }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
@@ -411,6 +413,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     editorDestinationPickRef,
     editorNormalizeRef,
     editorDeclickRef,
+    editorConvertLabelRef,
     trackSearchRef,
     pickFiles,
     openApplePlaylist,
@@ -895,7 +898,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       id: 'process-current',
       group: 'convert',
-      title: tr('commands.processCurrent'),
+      title: editorConvertLabelRef.current || tr('commands.processCurrent'),
       hint: hintFor('process-current'),
       // Over several picked tracks ⌘⏎ converts the selection, the same batch the footer
       // button names, rather than the one open track (the user's call, 06/11).

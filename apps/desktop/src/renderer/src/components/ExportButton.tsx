@@ -1,6 +1,6 @@
 import { ChevronDown, RotateCw } from 'lucide-react'
 import type React from 'react'
-import { useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import type { FormatSetting, OutputFormat, ProcessStage } from '../../../shared/types'
@@ -66,6 +66,8 @@ interface ExportButtonProps {
   label?: string
   // The keyboard chord shown on hover beside the label.
   hint?: string
+  // Reports the label the button wears, so the palette's convert entry can name the same action.
+  onLabelChange?: (label: string) => void
   // What the hover says in place of the label, when the label alone does not tell it all.
   tip?: string
   // "Same as source", offered only where it differs from a real format.
@@ -123,6 +125,7 @@ export function ExportButton({
   narrow = false,
   label: batchLabel,
   hint,
+  onLabelChange,
   tip,
   offerSource = false,
   clearAfter,
@@ -196,9 +199,12 @@ export function ExportButton({
   // to a library runs to the end, so offering Cancel there promised a stop that never came.
   const cancellable =
     !quiet && processing && !!onCancel && (stage === 'converting' || stage === 'tags')
-  const label = liveStage
-    ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
-    : (batchLabel ?? tr(labelSpec.key, labelSpec.options))
+  const idleLabel = batchLabel ?? tr(labelSpec.key, labelSpec.options)
+  const label = liveStage ? tr(`trackList.stage.${liveStage}`, { format: formatLabel }) : idleLabel
+  useEffect(() => {
+    onLabelChange?.(idleLabel)
+    return () => onLabelChange?.('')
+  }, [idleLabel, onLabelChange])
   const shownBlocked = softBlocked && blockedLabel ? blockedLabel : undefined
   // The face keeps the last blocking text after it clears, so it can roll out of view
   // instead of vanishing the instant the field is filled.
