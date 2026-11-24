@@ -132,7 +132,7 @@ function swapScenario(
       const trashedBefore = osTrash.length
       const trashedNow = () => osTrash.slice(trashedBefore).map((p) => basename(p))
       await surco.drop(join(root, 'Downloads'))
-      await surco.convertInEditor('Robin S - Show Me Love.flac')
+      await surco.convertInEditor('Robin S - Show Me Love.flac', 'replace')
       if (options.outputTaken) {
         await waitFor(
           () =>

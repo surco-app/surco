@@ -193,6 +193,18 @@ function titleScore(
   return 1
 }
 
+export function entryDurationSec(
+  index: AppleMusicIndex | null,
+  persistentId: string,
+): number | undefined {
+  if (!index || !persistentId) return undefined
+  for (const entries of index.values()) {
+    const entry = entries.find((e) => e.persistentId === persistentId)
+    if (entry) return entry.durationSec
+  }
+  return undefined
+}
+
 export function buildLibraryIndex(tracks: AppleMusicLookupCandidate[]): AppleMusicIndex {
   const index: AppleMusicIndex = new Map()
   for (const { title, artist, durationSec, persistentId, path } of tracks) {

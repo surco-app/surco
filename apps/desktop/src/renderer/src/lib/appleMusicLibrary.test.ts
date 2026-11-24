@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { AppleMusicIndex } from './appleMusicLibrary'
 import {
   buildLibraryIndex,
+  entryDurationSec,
   findLibraryEntry,
   isInLibrary,
   replaceCandidate,
@@ -579,5 +580,24 @@ describe('topLibraryEntries', () => {
     const candidate = { title: 'Possession', artist: 'Transfer', durationSec: 372 }
     expect(replaceCandidate(idx, candidate)).toEqual({ ambiguous: ['PID1', 'PID2'] })
     expect(topLibraryEntries(idx, candidate).map((entry) => entry.persistentId)).toEqual(['PID1'])
+  })
+})
+
+// Music's own length stands in for the measured one while its copy is still found or read, so
+// a copy is not dropped for a length Music already knows.
+describe('entryDurationSec', () => {
+  const index = buildLibraryIndex([
+    { title: 'Strobe', artist: 'deadmau5', persistentId: 'A1', durationSec: 95 },
+    { title: 'Ghosts', artist: 'deadmau5', persistentId: 'B2' },
+  ])
+
+  it("gives the entry's length by its persistent ID", () => {
+    expect(entryDurationSec(index, 'A1')).toBe(95)
+  })
+
+  it('gives nothing for an entry without a length or not in the library', () => {
+    expect(entryDurationSec(index, 'B2')).toBeUndefined()
+    expect(entryDurationSec(index, 'ZZ')).toBeUndefined()
+    expect(entryDurationSec(null, 'A1')).toBeUndefined()
   })
 })

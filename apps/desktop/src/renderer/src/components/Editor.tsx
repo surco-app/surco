@@ -70,7 +70,7 @@ import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
-import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
+import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import {
@@ -1949,14 +1949,10 @@ export const Editor = memo(function Editor({
   // Music's own length for its copy, like a DJ collection's: while Music still says where the
   // file lives or its length is being read, the measured one is missing, and without a length
   // the Music copy would drop out and let a DJ copy act in its place.
-  const musicEntryDurationSec = useMemo(() => {
-    if (!musicEntryId || !libraryIndex) return undefined
-    for (const entries of libraryIndex.values()) {
-      const entry = entries.find((e) => e.persistentId === musicEntryId)
-      if (entry) return entry.durationSec
-    }
-    return undefined
-  }, [libraryIndex, musicEntryId])
+  const musicEntryDurationSec = useMemo(
+    () => entryDurationSec(libraryIndex, musicEntryId),
+    [libraryIndex, musicEntryId],
+  )
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.
   const copyCandidates: CopyCandidate[] = isMulti
