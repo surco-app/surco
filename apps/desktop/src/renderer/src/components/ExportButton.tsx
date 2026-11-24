@@ -157,6 +157,7 @@ export function ExportButton({
   const softBlocked = incomplete && !processing
   const reasonId = useId()
   const upToDateId = useId()
+  const heldId = useId()
 
   // 'source' names no real format, so its display text is the translated setting label
   // ("Same as source") rather than the uppercased extension every real format shows.
@@ -276,11 +277,14 @@ export function ExportButton({
     if (!libraryCopy?.held && !softBlocked) onLibraryAction?.(action)
   }
 
-  const libraryMenu = libraryCopy && {
-    heading: `${libraryCopy.name} · ${libraryCopy.format}`,
-    action: libraryCopy.action,
-    onPick: pickLibraryAction,
-  }
+  // Only while the body acts on the copy: an in-place update or a re-export outranks it there,
+  // and the menu must not run an action the button never shows.
+  const libraryMenu = libraryCopy &&
+    libraryAction && {
+      heading: `${libraryCopy.name} · ${libraryCopy.format}`,
+      action: libraryCopy.action,
+      onPick: pickLibraryAction,
+    }
 
   if (prevUpToDate.current !== upToDate) {
     upToDateSwapped.current = true
@@ -342,7 +346,7 @@ export function ExportButton({
               menuRef={menuRef}
               onMenuKeyDown={onMenuKeyDown}
               offerSource={offerSource}
-              outputFormat={shownFormat}
+              outputFormat={pickedShownFormat}
               exportedFormat={exportedFormat}
               destination={destination}
               destinations={destinations}
@@ -398,7 +402,9 @@ export function ExportButton({
           // state still disables it outright, and missing tags only mark it aria-disabled.
           disabled={processing && !cancellable}
           aria-disabled={softBlocked || libraryHeld || undefined}
-          aria-describedby={softBlocked && incompleteReason ? reasonId : undefined}
+          aria-describedby={
+            softBlocked && incompleteReason ? reasonId : libraryHeld ? heldId : undefined
+          }
           // The visible text is the stage, but pressing cancels: the name says both, keeping
           // the visible words first so voice control still finds it by what it shows.
           aria-label={
@@ -467,7 +473,9 @@ export function ExportButton({
             </span>
           )}
           {progressText && <span className="sr-only">{progressText}</span>}
-          {(hint || tip) && !softBlocked && <Tooltip label={tip ?? label} hint={hint} />}
+          {(hint || tip) && !softBlocked && !libraryHeld && (
+            <Tooltip label={tip ?? label} hint={hint} />
+          )}
           {cancellable && (
             <span className="relative hidden group-hover:inline group-focus-within:inline">
               {tr('common.cancel')}
@@ -518,12 +526,20 @@ export function ExportButton({
             {incompleteReason}
           </span>
         )}
+        {libraryHeld && !softBlocked && (
+          <>
+            <Tooltip label={tr('editor.libraryStateMeasuring')} />
+            <span id={heldId} className="sr-only">
+              {tr('editor.libraryStateMeasuring')}
+            </span>
+          </>
+        )}
         {open && (
           <FormatDestinationMenu
             menuRef={menuRef}
             onMenuKeyDown={onMenuKeyDown}
             offerSource={offerSource}
-            outputFormat={shownFormat}
+            outputFormat={pickedShownFormat}
             exportedFormat={exportedFormat}
             destination={destination}
             destinations={destinations}

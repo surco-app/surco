@@ -851,6 +851,71 @@ describe('ExportButton library copy', () => {
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('FLAC')
   })
 
+  // In-place tag updates outrank the copy on the body, so offering Update or Replace in the
+  // menu would run an action the button itself never shows.
+  it('leaves the copy out of the menu while the body updates the file itself', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly libraryCopy={offer} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+  })
+
+  // The kept format only describes what Update writes. The menu's Format radios stay on the
+  // user's pick, or picking Replace would write a format the screen never showed.
+  it('keeps the format pick checked in the menu while the dropdown half shows the copy format', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} outputFormat="flac" libraryCopy={offer} />,
+    )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  // A body that ignores its press has to say why, as the missing-tags case does.
+  it('says the copy is still being compared on the held body', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} libraryCopy={{ ...offer, held: true }} />,
+    )
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveAccessibleDescription(i18n.t('editor.libraryStateMeasuring'))
+    expect(hoverTooltip(screen.getByTestId('process-btn-wrap'))).toBe(
+      i18n.t('editor.libraryStateMeasuring'),
+    )
+  })
+
+  // Empty required fields block the action, not the choice: the pick is kept for when the
+  // fields are filled, and choosing is no press on the blocked body.
+  it('only remembers a pick while required fields are empty, without the blocked press', () => {
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    const onBlockedPress = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        blockedLabel="Missing Artist"
+        libraryCopy={offer}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+        onBlockedPress={onBlockedPress}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
+    expect(onBlockedPress).not.toHaveBeenCalled()
+  })
+
+  it('reaches Replace with the arrow keys from the first item of the menu', () => {
+    render(<ExportButton {...baseProps} incomplete={false} libraryCopy={offer} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    const update = screen.getByTestId('library-copy-update')
+    update.focus()
+    fireEvent.keyDown(update, { key: 'ArrowDown' })
+    expect(screen.getByTestId('library-copy-replace')).toHaveFocus()
+  })
+
   it('converts as today with no library copy', () => {
     const onProcess = vi.fn()
     render(<ExportButton {...baseProps} incomplete={false} onProcess={onProcess} />)
