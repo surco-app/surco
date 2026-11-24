@@ -612,7 +612,12 @@ describe('TrackListHeader location', () => {
 })
 
 describe('TrackListHeader menu placement', () => {
-  afterEach(() => vi.restoreAllMocks())
+  const { innerWidth, innerHeight } = window
+  afterEach(() => {
+    vi.restoreAllMocks()
+    window.innerWidth = innerWidth
+    window.innerHeight = innerHeight
+  })
 
   // The track column sits right of the source rail, so the ⋯ trigger is far closer to the
   // window's left edge than the menu is wide, and a menu lined up with it ran off the edge.
