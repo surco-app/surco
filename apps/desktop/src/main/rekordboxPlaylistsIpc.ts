@@ -54,7 +54,13 @@ export function rekordboxRead(
     tree: () => read(collection(), 'tree', undefined),
     recentCount: () => read(collection(), 'recentCount', undefined),
     trackCount: () => read(collection(), 'trackCount', undefined),
-    collection: () => read(collection(), 'collection', undefined),
+    // Update retags the copy the editor found in this collection, and main writes only
+    // files it granted.
+    collection: async () => {
+      const rows = await read(collection(), 'collection', undefined)
+      host.allowMedia?.(rows.flatMap((r) => (r.path ? [r.path] : [])))
+      return rows
+    },
     matching: () => read(collection(), 'matching', undefined),
     playedTogether: (playlistIds: string[]) => read(collection(), 'playedTogether', playlistIds),
     playlist: async (id: string) => {

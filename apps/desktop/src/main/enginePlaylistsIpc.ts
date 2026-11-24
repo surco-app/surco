@@ -36,7 +36,13 @@ export function engineRead(libraryDir: () => string, host: EnginePlaylistsHost):
     tree: () => readEngine(libraryDir(), 'tree', undefined),
     recentCount: () => readEngine(libraryDir(), 'recentCount', undefined),
     trackCount: () => readEngine(libraryDir(), 'trackCount', undefined),
-    collection: () => readEngine(libraryDir(), 'collection', undefined),
+    // Update retags the copy the editor found in this collection, and main writes only
+    // files it granted.
+    collection: async () => {
+      const rows = await readEngine(libraryDir(), 'collection', undefined)
+      host.allowMedia?.(rows.flatMap((r) => (r.path ? [r.path] : [])))
+      return rows
+    },
     playlist: async (id: string) => {
       const entries = await readEngine(libraryDir(), 'playlist', { id, artDir: host.artDir() })
       host.allowMedia?.(

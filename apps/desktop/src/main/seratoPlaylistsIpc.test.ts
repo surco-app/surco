@@ -76,4 +76,14 @@ describe('seratoRead', () => {
     const rows = (await read.collection?.()) as CollectionTrack[]
     expect(rows.map((r) => r.path).sort()).toEqual(['/Music/a.mp3', '/Music/b.mp3'])
   })
+
+  it('grants the files of the collection it read, so Update can retag the library copy the editor found in it', async () => {
+    const roots = [library()]
+    const allowMedia = vi.fn()
+    const read = seratoRead({ roots: () => roots, allowMedia })
+    await read.collection?.()
+    expect(allowMedia).toHaveBeenCalledWith(
+      expect.arrayContaining(['/Music/a.mp3', '/Music/b.mp3']),
+    )
+  })
 })
