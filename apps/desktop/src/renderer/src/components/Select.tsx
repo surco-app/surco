@@ -4,6 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LAYER } from '../lib/layers'
+import { menuStep } from '../lib/menuStep'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
@@ -160,15 +161,11 @@ export function Select({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
+    const next = menuStep(e.key, idx, items.length)
     // Every other key stays in the menu too: j/k and friends would otherwise reach the
     // global shortcuts and move the track list behind it.
     e.stopPropagation()
-    if (next === -1) return
+    if (next === null) return
     e.preventDefault()
     showOption(listRef.current, items[next])
   }
