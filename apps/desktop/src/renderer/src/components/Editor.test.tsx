@@ -4450,7 +4450,8 @@ describe('Editor Discogs apply', () => {
       appliedRelease: { before: { publisher: 'Own Label' }, wrote: { publisher: 'Wrong Records' } },
     })
     await search()
-    fireEvent.click(screen.getByTestId('discogs-result'))
+    // The title matches the release, so the search opens it on its own; a click on the row
+    // before that lands would collapse it instead, which is what happened under load.
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith(
