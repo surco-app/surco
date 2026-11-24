@@ -249,8 +249,8 @@ describe('CuesSection', () => {
     const body = screen.getByTestId('cues-save')
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
-    expect(body).toHaveAccessibleName('Save and go to next track')
-    expect(hoverTooltip(body)).toEqual('Save and go to next track')
+    expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
+    expect(hoverTooltip(body)).toEqual('Save to rekordbox and go to next track')
     cleanup()
     setup()
     await ready()
@@ -266,7 +266,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     const discardIcon = screen.getByRole('button', { name: 'Discard changes' })
     expect(discardIcon).toHaveAttribute('data-testid', 'cues-discard')
-    expect(discardIcon).toHaveTextContent('')
+    expect(discardIcon.textContent).toBe('')
     expect(hoverTooltip(discardIcon)).toEqual('Discard changes')
     expect(screen.getByTestId('cues-step-back').nextElementSibling).toBe(discardIcon)
     expect(discardIcon.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
@@ -359,6 +359,17 @@ describe('CuesSection', () => {
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByTestId('cues-save-mode-next-check')).toBeVisible()
     expect(screen.getByTestId('cues-save-mode-stay-check')).not.toBeVisible()
+  })
+
+  // The full program name sits in the body's name and tooltip, so the folded menu only says
+  // how to save, in the same short words as in full screen.
+  it('reads the ways to save as short words in the folded menu', async () => {
+    setup()
+    await ready()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
+    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
   })
 
   it('remembers the way picked from the menu and saves with it', async () => {

@@ -692,11 +692,11 @@ describe('saving several tracks', () => {
     await autoMark()
     acceptOne()
     const more = await screen.findByTestId('cues-save-more')
-    expect(more).toHaveTextContent('')
+    expect(more.textContent).toBe('')
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
     fireEvent.click(more)
-    expect(screen.getByTestId('cues-save-mode-stay')).toHaveTextContent('Save to rekordbox')
-    expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox')
+    expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
+    expect((await saveAllItem()).textContent).toBe('Save 2 tracks')
     expect((await saveAllItem()).closest('[data-testid="cues-folded-row"]')).not.toBeNull()
   })
 
@@ -708,7 +708,7 @@ describe('saving several tracks', () => {
     await screen.findByTestId('cues-unsaved')
     expect(screen.getByTestId('cues-save')).toBeEnabled()
     const more = screen.getByTestId('cues-save-more')
-    expect(more).toHaveTextContent('')
+    expect(more.textContent).toBe('')
     fireEvent.click(more)
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
     expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-mode-stay'))
@@ -723,7 +723,7 @@ describe('saving several tracks', () => {
     await autoMark()
     acceptOne()
     const all = await saveAllItem()
-    expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
+    expect(all.textContent).toBe('Save 2 tracks')
     fireEvent.click(all)
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0]).toEqual(
@@ -804,7 +804,9 @@ describe('saving several tracks', () => {
     expect([...unsavedCueTracks()]).toEqual(['103'])
   })
 
-  it('hands the command palette this same save, named as the button names it', async () => {
+  // The palette has no Save body beside it to say the program, so it keeps the long name
+  // while the menu line, under a body that already names rekordbox, can stay short.
+  it('hands the command palette this same save, naming the program the menu line leaves out', async () => {
     other()
     const actionsRef: { current: CueActions | null } = { current: null }
     const { saveRekordboxCues } = setup({ actionsRef })
@@ -813,7 +815,11 @@ describe('saving several tracks', () => {
     expect(actionsRef.current?.saveAll).toBeUndefined()
     acceptOne()
     const all = await saveAllItem()
-    expect(actionsRef.current?.saveAll).toMatchObject({ label: all.textContent, saving: false })
+    expect(all.textContent).toBe('Save 2 tracks')
+    expect(actionsRef.current?.saveAll).toMatchObject({
+      label: 'Save 2 tracks to rekordbox',
+      saving: false,
+    })
     actionsRef.current?.saveAll?.run()
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0]).toHaveLength(2)
