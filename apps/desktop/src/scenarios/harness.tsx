@@ -1031,6 +1031,7 @@ function scenarioApi(
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
     trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
+    sameFile: (a, b) => invokeMain('files:sameFile', a, b),
     retireSuperseded: (path, titles) => invokeMain('shell:retireSuperseded', path, titles),
     // Only the log line saying why an old file was kept; there is no main log to write to.
     logInfo: () => {},

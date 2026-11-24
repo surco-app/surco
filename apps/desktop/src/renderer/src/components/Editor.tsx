@@ -63,6 +63,7 @@ import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
 import { useProgramCopies, useSelectionCopies } from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
+import { useSameFile } from '../hooks/useSameFile'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
@@ -1983,7 +1984,14 @@ export const Editor = memo(function Editor({
           }
         }),
       ]
-  const libraryTarget = pickLibraryCopy(copyCandidates, item.duration)
+  const pickedCopy = pickLibraryCopy(copyCandidates, item.duration)
+  // The copy may be the open file under another path, as through a symlinked folder: acting
+  // on it would update or replace the very file. Until main answers, the press waits.
+  const pickedIsThisFile = useSameFile(item.inputPath, pickedCopy?.path ?? '')
+  const libraryTarget =
+    pickedCopy && !pickedIsThisFile
+      ? { ...pickedCopy, held: pickedCopy.held || pickedIsThisFile === undefined }
+      : null
   const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
   // A copy in no format Surco writes can't be updated in place nor named on the button. A held
   // copy is offered still, so the body names the action it waits for instead of saying
@@ -2684,7 +2692,8 @@ export const Editor = memo(function Editor({
                     replaceTarget &&
                     !isAmbiguousCandidate(replaceTarget) &&
                     replaceTarget.path &&
-                    pathKey(replaceTarget.path) === pathKey(item.inputPath)
+                    (pathKey(replaceTarget.path) === pathKey(item.inputPath) ||
+                      (pickedCopy?.program === 'appleMusic' && pickedIsThisFile === true))
                   )
                     onChange({ musicPersistentId: replaceTarget.persistentId })
                   onProcess(f as OutputFormat)

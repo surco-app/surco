@@ -380,6 +380,9 @@ export interface Api {
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.
   keepsTrash: (path: string) => Promise<boolean>
+  // Whether two paths are one file on disk, as a file opened through a symlinked folder and
+  // the path a library indexed for it.
+  sameFile: (a: string, b: string) => Promise<boolean>
   // The file a format change superseded, once its check came back ok: 'used' leaves it where
   // it is because a library still uses it, or one could not be read. `titles` are the names
   // an Apple Music entry on it may carry.

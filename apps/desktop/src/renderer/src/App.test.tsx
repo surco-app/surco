@@ -365,6 +365,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
+    sameFile: vi.fn(async (a: string, b: string) => a === b),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
     rekordboxCollection: vi.fn<Api['rekordboxCollection']>().mockResolvedValue(''),

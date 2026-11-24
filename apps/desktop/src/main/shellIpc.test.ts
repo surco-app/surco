@@ -21,7 +21,7 @@ vi.mock('electron-log/main', () => ({
 let keepsTrash = true
 vi.mock('./trashSupport', () => ({ volumeKeepsTrash: () => keepsTrash }))
 
-import { existsSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
@@ -209,5 +209,40 @@ describe('backups:reveal', () => {
     await handlerFor('backups:reveal')({})
     expect(existsSync(root)).toBe(true)
     expect(openPath).toHaveBeenCalledWith(root)
+  })
+})
+
+describe('files:sameFile', () => {
+  // A file opened through a symlinked folder has another path than the one Music or a DJ
+  // program indexed for it: by the path text it looked like a separate copy, and Replace
+  // put the file in place of itself.
+  it('tells a file opened through a symlinked folder is the library copy', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-same-'))
+    mkdirSync(join(dir, 'Music'))
+    const real = join(dir, 'Music', 'Strobe.wav')
+    writeFileSync(real, 'x')
+    symlinkSync(join(dir, 'Music'), join(dir, 'Linked'))
+    const opened = join(dir, 'Linked', 'Strobe.wav')
+    registerShellIpc(fakeMediaAccess([opened]), unused)
+    expect(await handlerFor('files:sameFile')({}, opened, real)).toBe(true)
+  })
+
+  it('tells two different files apart', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-same-'))
+    const a = join(dir, 'a.wav')
+    const b = join(dir, 'b.wav')
+    writeFileSync(a, 'x')
+    writeFileSync(b, 'x')
+    registerShellIpc(fakeMediaAccess([a]), unused)
+    expect(await handlerFor('files:sameFile')({}, a, b)).toBe(false)
+  })
+
+  // Stat answers about any file on disk: only a path the app handed out may be asked about.
+  it('answers nothing about a file the app never handed out', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-same-'))
+    const a = join(dir, 'a.wav')
+    writeFileSync(a, 'x')
+    registerShellIpc(fakeMediaAccess([]), unused)
+    expect(await handlerFor('files:sameFile')({}, a, a)).toBe(false)
   })
 })

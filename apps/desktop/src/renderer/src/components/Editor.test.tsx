@@ -119,6 +119,8 @@ beforeEach(() => {
     // copy is offered, so this effect mounts wherever a library index is handed in.
     appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+    // The editor asks main whether a library copy is the open file under another path.
+    sameFile: vi.fn(async (a: string, b: string) => a === b),
     readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
     readCoverFull: vi.fn().mockResolvedValue(null),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
@@ -5574,6 +5576,7 @@ describe('Editor Apple Music library section', () => {
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+      sameFile: vi.fn(async (a: string, b: string) => a === b),
       readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
       readCoverFull: vi.fn().mockResolvedValue(null),
       cancelAnalysis: vi.fn().mockResolvedValue(undefined),
@@ -6946,6 +6949,7 @@ describe('Editor Apple Music library section', () => {
       musicLocation,
       musicReadable = false,
       musicDurationPending = false,
+      sameFile,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6967,6 +6971,8 @@ describe('Editor Apple Music library section', () => {
       // Music's copy at the `music` path reads as a WAV, like the DJ copies.
       musicReadable?: boolean
       musicDurationPending?: boolean
+      // Main's answer to whether the open file and a copy are one file on disk.
+      sameFile?: (a: string, b: string) => Promise<boolean>
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6982,6 +6988,7 @@ describe('Editor Apple Music library section', () => {
         },
       ]
       if (music) api.appleMusicEntryLocation = vi.fn(() => musicLocation ?? Promise.resolve(music))
+      if (sameFile) api.sameFile = vi.fn(sameFile)
       api.readDuration = vi.fn((path: string) =>
         musicDurationPending && path === music
           ? new Promise<number | null>(() => {})
@@ -7455,6 +7462,68 @@ describe('Editor Apple Music library section', () => {
       expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(/^Apple Music · /)
+    })
+
+    // A file opened through a symlinked folder is the copy the program indexed under another
+    // path: offering to update or replace it would act on the very file, and Replace of
+    // itself would offer to trash the source.
+    it('offers no library action when the copy is the open file under another path', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+        sameFile: async (a, b) => a === '/music/Strobe.aif' && b === '/r/Strobe.wav',
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
+      )
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/))
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ replacesPath: expect.anything() }),
+      )
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    it('waits for main to say whether the copy is the open file before acting on it', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        sameFile: () => new Promise<boolean>(() => {}),
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
+    // The Music entry that is the open file under another path is retagged by the convert, as
+    // when the paths match, instead of a second entry being imported beside it.
+    it('names the Music entry that is the open file under another path on a plain convert', async () => {
+      renderWithPrograms({
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        index: musicIndex,
+        sameFile: async (a, b) => a === '/music/Strobe.aif' && b === '/Music/Strobe.wav',
+      })
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/))
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ musicPersistentId: '0123456789ABCDEF' })
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
     })
 
     // Another version is another track: updating its tags or replacing it would lose it.
