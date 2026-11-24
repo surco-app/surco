@@ -177,6 +177,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,
+    cueSaveThen: 'stay',
     cueQuantize: 'bar',
     cueGridTolerance: 10,
     cueLettersByTime: true,
