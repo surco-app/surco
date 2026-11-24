@@ -1449,7 +1449,7 @@ function phaseLabel(t: TFunction, phase: ReviewPhase | null, kind: Review['kind'
 
 // The review has nothing to show only once it is ready and no warning of any kind is left,
 // whatever the search or the filter hide. The detail pane says so on its own.
-function hasNothingToReview(review: Review): boolean {
+export function hasNothingToReview(review: Review): boolean {
   return (
     review.status === 'ready' &&
     review.spelling.length +

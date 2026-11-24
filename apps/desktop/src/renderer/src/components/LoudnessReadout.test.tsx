@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LoudnessResult, NormalizeConfig } from '../../../shared/types'
 import '../i18n'
-import { GRADE_MARK, LoudnessReadout } from './LoudnessReadout'
+import { LoudnessReadout } from './LoudnessReadout'
 
 afterEach(cleanup)
 
@@ -200,23 +200,14 @@ describe('LoudnessReadout verdict without colour', () => {
     expect(new Set(shapes).size).toBe(3)
   })
 
-  it('keeps colour for the figures that need a look, so a red peak is not lost among greens', () => {
+  it('grades each figure on its own pill, so a warning peak is not lost among good ones', () => {
     render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
     expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
     expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'warn')
     expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
-    expect(GRADE_MARK.good).toEqual(
-      expect.objectContaining({ className: expect.not.stringMatching(/bg-good/) }),
-    )
-    expect(GRADE_MARK.warn).toEqual(
-      expect.objectContaining({ className: expect.stringMatching(/bg-warn/) }),
-    )
-    expect(GRADE_MARK.bad).toEqual(
-      expect.objectContaining({ className: expect.stringMatching(/bg-danger/) }),
-    )
   })
 
-  it('tells a bad verdict by its square mark and its name in text, not by the figure', () => {
+  it('tells a bad verdict by its square mark and its name in text', () => {
     render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
     expect(screen.getByTestId('loudness-grade-mark-range')).toHaveAttribute('data-shape', 'square')
     expect(

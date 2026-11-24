@@ -420,7 +420,7 @@ describe('MusicReview', () => {
   // Two equal messages and controls with nothing to act on are noise.
   it('says once that there is nothing to review and drops the controls and the idle Apply', () => {
     render(<Panes review={review({ spelling: [] })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
+    expect(screen.getAllByTestId('music-review-all-clear')).toHaveLength(1)
     expect(screen.getByTestId('music-review-all-clear')).toBeVisible()
     expect(screen.getByTestId('music-review-close')).toBeVisible()
     expect(screen.queryByTestId('music-review-search')).toBeNull()
@@ -3145,7 +3145,6 @@ describe('damage findings in the list review', () => {
   // Clean spellings and duplicates say nothing about damage still being looked for.
   it('does not call the list clean while the damage scan runs', () => {
     render(<Panes review={listReview({ damage: [], damageLoading: true })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 
@@ -3396,7 +3395,6 @@ describe('incomplete tracks', () => {
 
   it('does not call the review clean while tracks still lack a field', () => {
     render(<Panes review={incompleteReview({ filter: 'all' })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 })

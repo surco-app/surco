@@ -2935,8 +2935,9 @@ describe('Editor multi-select', () => {
     const year = screen.getByTestId('field-year')
     const number = screen.getByTestId('field-trackNumber')
     expect(number).toHaveAttribute('placeholder', year.getAttribute('placeholder'))
-    expect(number).not.toHaveAttribute('data-plain')
-    expect(year).not.toHaveAttribute('data-plain')
+    expect(number).toHaveAttribute('readonly')
+    expect(number).toHaveAccessibleDescription(i18n.t('editor.perTrackOnly'))
+    expect(year).not.toHaveAttribute('readonly')
     expect(screen.getByTestId('number-tracks-btn')).toBeInTheDocument()
   })
 
@@ -2948,9 +2949,10 @@ describe('Editor multi-select', () => {
       metaA: { title: 'One', bpm: '120', trackNumber: '1' },
       metaB: { title: 'Two', bpm: '128', trackNumber: '5' },
     })
-    expect(screen.getByTestId('field-title')).not.toHaveAttribute('data-plain')
-    expect(screen.getByTestId('field-bpm')).not.toHaveAttribute('data-plain')
-    expect(screen.getByTestId('field-trackNumber')).not.toHaveAttribute('data-plain')
+    for (const id of ['field-title', 'field-bpm', 'field-trackNumber']) {
+      expect(screen.getByTestId(id)).toHaveAttribute('readonly')
+      expect(screen.getByTestId(id)).toHaveAccessibleDescription(i18n.t('editor.perTrackOnly'))
+    }
   })
 
   it('derives tags for every selected track from its own file name in one click', () => {
