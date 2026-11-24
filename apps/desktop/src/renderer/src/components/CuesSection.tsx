@@ -1810,7 +1810,7 @@ function Editing({
   const header = (
     <div
       data-testid="cues-header"
-      className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
+      className="flex shrink-0 items-center gap-3 pb-1"
     >
       {track?.cover ? (
         <img
