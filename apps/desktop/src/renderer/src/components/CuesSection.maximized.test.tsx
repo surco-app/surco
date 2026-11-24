@@ -2450,21 +2450,21 @@ describe('CuesSection maximized grid', () => {
   })
 
   // The full-screen body names the program in both ways, since that is where the cues land,
-  // and only the arrow tells "next" apart, so switching the way never resizes the button. Its
-  // name still says both where it saves and that it moves on.
-  it('keeps the program on the full-screen Save in both ways and marks next with the arrow', async () => {
+  // and reads the same in both ways, so switching the way never resizes the button. Its name
+  // still says both where it saves and that it moves on.
+  it('keeps the program on the full-screen Save in both ways with no arrow', async () => {
     setup(null, READ, undefined, undefined, { saveThen: 'next' })
     await maximize()
     const body = screen.getByTestId('cues-save')
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
-    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
     cleanup()
     resetEditorSections()
     setup(null, READ)
     await maximize()
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
-    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
   })
 

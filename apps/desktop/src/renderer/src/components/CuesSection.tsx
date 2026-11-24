@@ -1,6 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  ArrowDown,
   Check,
   ChevronDown,
   CircleAlert,
@@ -1344,7 +1343,7 @@ function Editing({
         aria-label={saveLabel}
         onClick={() => void saveWith(saveThen)}
         className={`press grid shrink-0 whitespace-nowrap text-xs font-semibold ${
-          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md pr-1 pl-2.5'
+          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md px-2.5'
         } ${
           unchanged
             ? maximized
@@ -1354,18 +1353,10 @@ function Editing({
         }`}
       >
         {!maximized && <Tooltip label={saveLabel} />}
-        {/* The arrow alone marks the way that moves on, and its slot stays reserved so
-            switching the way never resizes the body. The folded row has no room for the program. */}
-        <span className="flex items-center gap-[3px] self-center">
-          <span data-testid="cues-save-label">
-            {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
-          </span>
-          <ArrowDown
-            data-testid="cues-save-next-mark"
-            className="h-[11px] w-[11px]"
-            aria-hidden="true"
-            style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
-          />
+        {/* The same words in both ways, so switching the way never resizes the body; the menu's
+            check and the body's name say which. The folded row has no room for the program. */}
+        <span data-testid="cues-save-label" className="self-center">
+          {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
         </span>
       </button>
       <button

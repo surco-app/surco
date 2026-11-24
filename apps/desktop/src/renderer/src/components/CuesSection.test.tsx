@@ -242,20 +242,20 @@ describe('CuesSection', () => {
   })
 
   // The folded row has about 200 px at the narrowest window, so the body keeps the one short
-  // word in both ways and only an arrow tells them apart; the full action is in its name.
+  // word in both ways with no arrow beside it; the menu's check and the body's name say which.
   it('keeps the folded Save one word wide in both ways and names the full action', async () => {
     setup(READ, null, undefined, {}, { saveThen: 'next' })
     await ready()
     const body = screen.getByTestId('cues-save')
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
-    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
     expect(hoverTooltip(body)).toEqual('Save to rekordbox and go to next track')
     cleanup()
     setup()
     await ready()
     expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
-    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
     expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
     expect(hoverTooltip(screen.getByTestId('cues-save'))).toEqual('Save to rekordbox')
   })
