@@ -3707,6 +3707,9 @@ describe('useTrackProcessing updateLibraryCopy', () => {
           id: 'a',
           foreignRemoved: ['TXXX:Old'],
           metaCleared: true,
+          metaReadFailed: true,
+          replacesPath: '/old/a.mp3',
+          outputPath: '/out/a.aiff',
           trim: { startSec: 1 },
           playlists: { traktor: { targets: [], base: ['Set'] } },
           programs: ['traktor'],
@@ -3724,7 +3727,16 @@ describe('useTrackProcessing updateLibraryCopy', () => {
     })
     const job = processTrack.mock.lastCall?.[0]
     expect(job).toBeDefined()
-    for (const key of ['trim', 'foreignRemoved', 'clearExtras', 'playlists', 'programs'])
+    for (const key of [
+      'trim',
+      'foreignRemoved',
+      'clearExtras',
+      'metaUnread',
+      'replacesPath',
+      'previousOutputPath',
+      'playlists',
+      'programs',
+    ])
       expect(job).not.toHaveProperty(key)
     expect(job?.normalize?.mode).toBe('none')
     expect(job?.declick).toEqual({ mode: 'off', noise: 'off' })
@@ -3844,6 +3856,82 @@ describe('useTrackProcessing updateLibraryCopy', () => {
       'SURCO_ERR:libraryCopyAudioWouldChange: /r/Song.aif',
     )
     expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+  })
+
+  // Closing a DJ program can wait on the DJ for as long as they like, and the row stays
+  // convertible meanwhile: a conversion run then must not have its result painted over by
+  // the state the update read before the dialog.
+  it('leaves a conversion run during the close dialog with its own result', async () => {
+    let closed: () => void = () => {}
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({
+      processTrack,
+      conversionPrograms: vi.fn<Api['conversionPrograms']>(async (paths) =>
+        paths.includes('/r/Song.aif') ? ['traktor'] : [],
+      ),
+      dj: {
+        askToApply: vi.fn(
+          () =>
+            new Promise<void>((resolve) => {
+              closed = resolve
+            }),
+        ),
+      },
+    })
+    const rows = { current: [track({ id: 'a' })] }
+    const updateTrack = vi.fn((id: string, patch: Partial<TrackItem>) => {
+      rows.current = rows.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: rows.current,
+          tracksRef: rows,
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    let update: Promise<unknown> = Promise.resolve()
+    act(() => {
+      update = result.current.updateLibraryCopy('a', copy)
+    })
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const converted = rows.current[0].status
+    expect(converted).not.toBe('idle')
+    await act(async () => {
+      closed()
+      await update
+    })
+    expect(rows.current[0].status).toBe(converted)
+  })
+
+  // The replaced Music entry's marker rides the end of any failure; a cancel carrying it is
+  // still a cancel, not an error to toast.
+  it('takes a cancelled copy update for a skip even with the name marker on it', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(
+          new Error(
+            `Error invoking remote method 'process:track': Error: SURCO_ERR:conversionCancelled${NAME_LEFT_MARKED}`,
+          ),
+        ),
+    })
+    const onProcessError = vi.fn()
+    const onMusicNameLeftMarked = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a' })], { onProcessError, onMusicNameLeftMarked })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('skipped')
+    expect(onProcessError).not.toHaveBeenCalled()
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
   })
 
   it('refuses a copy update with required fields empty, as a conversion would', async () => {

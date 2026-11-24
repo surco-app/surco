@@ -674,70 +674,78 @@ export function useTrackProcessing({
     async (id: string, copy: LibraryCopyRef): Promise<BatchOutcome> => {
       const format = keptFormatOf(copy.path)
       if (!format) return 'skipped'
-      const ready = await readyTrack(id)
-      if (typeof ready === 'string') return ready
-      const track = ready
+      // Asked before the row is read, as processOne does: the dialog can stay open as long as
+      // the DJ likes, and a conversion run on the row meanwhile must find it processing, and
+      // its result must not be painted over by a state read before it.
       const programs = await window.api.conversionPrograms([copy.path]).catch(() => [])
       if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
       window.api.beginConversionBatch()
-      const { status, stage } = track
-      const restore = (): void => updateTrack(id, { status, stage })
-      updateTrack(id, { status: 'processing', stage: undefined })
       try {
-        await releaseFile?.(copy.path)
-        const withCover = await withMusicCover(track, updateTrack)
-        const result = await window.api.processTrack({
-          id: track.id,
-          inputPath: copy.path,
-          outputName: baseName(copy.path).replace(/\.[^.]+$/, ''),
-          meta: jobMetaOf(track),
-          ...coverSourceOf(withCover),
-          removeCover: track.coverRemoved,
-          format,
-          tagsInPlace: true,
-          // The settings' own fallback (main/settings.ts) keeps the shape main expects; only
-          // the mode matters, and it never measures or changes the copy's level.
-          normalize: {
-            ...(settings?.normalize ?? {
+        const ready = await readyTrack(id)
+        if (typeof ready === 'string') return ready
+        const track = ready
+        const { status, stage } = track
+        const restore = (): void => updateTrack(id, { status, stage })
+        updateTrack(id, { status: 'processing', stage: undefined })
+        try {
+          await releaseFile?.(copy.path)
+          const withCover = await withMusicCover(track, updateTrack)
+          const result = await window.api.processTrack({
+            id: track.id,
+            inputPath: copy.path,
+            outputName: baseName(copy.path).replace(/\.[^.]+$/, ''),
+            meta: jobMetaOf(track),
+            ...coverSourceOf(withCover),
+            removeCover: track.coverRemoved,
+            format,
+            tagsInPlace: true,
+            // The settings' own fallback (main/settings.ts) keeps the shape main expects; only
+            // the mode matters, and it never measures or changes the copy's level.
+            normalize: {
+              ...(settings?.normalize ?? {
+                mode: 'none',
+                targetLufs: -14,
+                truePeakDb: -1,
+                peakDb: -1,
+              }),
               mode: 'none',
-              targetLufs: -14,
-              truePeakDb: -1,
-              peakDb: -1,
-            }),
-            mode: 'none',
-          },
-          declick: { mode: 'off', noise: 'off' },
-          overwriteOriginal: false,
-          convertBesideOriginal: false,
-          keepOutputCopy: true,
-          addToAppleMusic: !!copy.musicPersistentId,
-          musicPersistentId: copy.musicPersistentId,
-        })
-        wroteRef.current = true
-        restore()
-        if (result.appleMusicFailed) onAppleMusicFailed?.(track.listLabel)
-        if (result.engineDjError) {
-          const message = mainErrorMessage(
-            new Error(result.engineDjError),
-            tr,
-            tr('editor.processError'),
-          )
-          onProcessError?.(message, track.listLabel, result.engineDjError)
+            },
+            declick: { mode: 'off', noise: 'off' },
+            overwriteOriginal: false,
+            convertBesideOriginal: false,
+            keepOutputCopy: true,
+            addToAppleMusic: !!copy.musicPersistentId,
+            musicPersistentId: copy.musicPersistentId,
+          })
+          wroteRef.current = true
+          restore()
+          if (result.appleMusicFailed) onAppleMusicFailed?.(track.listLabel)
+          if (result.engineDjError) {
+            const message = mainErrorMessage(
+              new Error(result.engineDjError),
+              tr,
+              tr('editor.processError'),
+            )
+            onProcessError?.(message, track.listLabel, result.engineDjError)
+            return 'failed'
+          }
+          onLibraryCopyUpdated?.(track.listLabel)
+          return 'converted'
+        } catch (e) {
+          restore()
+          const marked = splitNameLeftMarked(e instanceof Error ? cleanIpcError(e.message) : '')
+          if (marked.left) onMusicNameLeftMarked?.(track.listLabel)
+          const raw = marked.message
+          if (errorKeyOf(raw) === 'conversionCancelled') return 'skipped'
+          const message = isFileInUseMessage(raw)
+            ? tr('editor.fileInUseError')
+            : mainErrorMessage(marked.left ? new Error(raw) : e, tr, tr('editor.processError'))
+          onProcessError?.(message, track.listLabel, raw)
           return 'failed'
+        } finally {
+          reclaimFile?.(copy.path)
         }
-        onLibraryCopyUpdated?.(track.listLabel)
-        return 'converted'
-      } catch (e) {
-        restore()
-        const raw = e instanceof Error ? cleanIpcError(e.message) : ''
-        if (errorKeyOf(raw) === 'conversionCancelled') return 'skipped'
-        const message = isFileInUseMessage(raw)
-          ? tr('editor.fileInUseError')
-          : mainErrorMessage(e, tr, tr('editor.processError'))
-        onProcessError?.(message, track.listLabel, raw)
-        return 'failed'
       } finally {
-        reclaimFile?.(copy.path)
         const flushed = window.api.endConversionBatch()
         rereadMovedSources()
         rereadReachedCollections(flushed)
