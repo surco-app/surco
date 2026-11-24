@@ -1620,7 +1620,7 @@
       "limitedSubLight": "Seules les pointes des transitoires les plus vifs sont écrêtées ; une retouche aussi légère est inaudible.",
       "gain": "Il bougera de {{gain}} dB jusqu’à {{lufs}} LUFS avec un gain constant. Ses crêtes resteront à {{peak}} dBTP. Le plafond n’agit pas.",
       "gainSub": "Rien n’est limité ni compressé ; la dynamique reste intacte.",
-      "peak": "Il bougera de {{gain}} dB : son échantillon le plus fort sera exactement à {{peak}} dBFS.",
+      "peak": "Il bougera de {{gain}} dB. Son échantillon le plus fort sera exactement à {{peak}} dBFS.",
       "peakSub": "Gain constant, sans limiteur. Il jouera à environ {{lufs}} LUFS.",
       "mp3Ceiling": "L’encodage MP3 fait un peu monter les crêtes : Surco mesure donc le MP3 et, s’il dépasse {{ceiling}} dBTP, le réencode avec les crêtes tenues plus bas, ce qui peut le laisser un peu sous {{lufs}} LUFS.",
       "limiterCeiling": "Le limiteur tient les crêtes échantillon par échantillon et elles peuvent encore monter un peu entre deux échantillons : Surco mesure donc le fichier et, s’il dépasse {{ceiling}} dBTP, le refait avec les crêtes tenues plus bas, ce qui peut le laisser un peu sous {{lufs}} LUFS.",
@@ -2077,7 +2077,7 @@
       "update": "Mettre à jour",
       "add": "Mettre à jour et ajouter"
     },
-    "djReachAddHint": "Ajoute aussi les morceaux qu’il n’avait pas, sans analyse : le logiciel les analyse à leur ouverture.",
+    "djReachAddHint": "Ajoute aussi les morceaux qu’il n’avait pas, sans analyse. Le logiciel les analyse à leur ouverture.",
     "completeCues": "À la fermeture de rekordbox, appliquer ton flux actif aux morceaux avec des CALL et sans hot cues",
     "completeCuesHint": "Écrit dans ta collection, y compris sur des morceaux que tu n’as pas regardés dans Surco. Désactivé, tes cues ne s’enregistrent que depuis la section Cues.",
     "completeCuesCount_one": "{{count}} morceau sera complété à la fermeture de rekordbox.",

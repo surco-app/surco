@@ -1601,7 +1601,7 @@
     "cueWarningShort": "Recodifica el audio · en ALAC se pierden los cues",
     "predictionEstimate": "(estimado)",
     "presetHint": {
-      "streaming": "Como nivelan Spotify y Apple Music. El valor seguro para una biblioteca de escucha.",
+      "streaming": "Nivela como Spotify y Apple Music. Es el valor seguro para una biblioteca de escucha.",
       "club": "Caliente, para cabina. La mayoría de pistas necesitan limitar picos para llegar, a costa de algo de pegada.",
       "broadcast": "El nivel de TV y radio. Más bajo que streaming, con mucho margen.",
       "custom": "Tu propio objetivo. La previsualización bajo la onda dice dónde quedará la pista."
@@ -1620,7 +1620,7 @@
       "limitedSubLight": "Solo se recortan las puntas de los transitorios más afilados; un toque tan ligero no se oye.",
       "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP. El techo no llega a actuar.",
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
-      "peak": "Cambiará {{gain}} dB: su muestra más alta quedará exactamente en {{peak}} dBFS.",
+      "peak": "Cambiará {{gain}} dB. Su muestra más alta quedará exactamente en {{peak}} dBFS.",
       "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS.",
       "mp3Ceiling": "Codificar en MP3 sube un poco los picos, así que Surco mide el MP3 y, si pasa de {{ceiling}} dBTP, lo vuelve a codificar con los picos más abajo, y puede quedar un poco por debajo de {{lufs}} LUFS.",
       "limiterCeiling": "El limitador contiene los picos muestra a muestra y entre muestras pueden quedar un poco por encima, así que Surco mide el archivo y, si pasa de {{ceiling}} dBTP, lo vuelve a generar con los picos más abajo, y puede quedar un poco por debajo de {{lufs}} LUFS.",
@@ -2077,7 +2077,7 @@
       "update": "Actualizar",
       "add": "Actualizar y añadir"
     },
-    "djReachAddHint": "Además da de alta las pistas que no tenía, sin análisis: el programa las analiza al abrirlas.",
+    "djReachAddHint": "Además da de alta las pistas que no tenía, sin análisis. El programa las analiza al abrirlas.",
     "completeCues": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con CALL y sin hot cues",
     "completeCuesHint": "Escribe en tu colección, también en pistas que no has mirado en Surco. Apagado, tus cues solo se guardan desde la sección Cues.",
     "completeCuesCount_one": "Se completará {{count}} pista al cerrar rekordbox.",
@@ -2380,7 +2380,7 @@
     "audioBody": "Surco muestra solo las secciones del editor que tu flujo necesita. Elige lo que encaje. Puedes cambiarlo cuando quieras en Ajustes.",
     "intent": {
       "metadata": "Corregir los metadatos",
-      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music. Siempre activo. Es para lo que sirve Surco.",
+      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music. Siempre activo. Para eso sirve Surco.",
       "restore": "Restaurar rips de vinilo",
       "restoreBody": "Recorta el silencio y repara clics y pops en grabaciones de vinilo.",
       "level": "Nivelar el volumen",

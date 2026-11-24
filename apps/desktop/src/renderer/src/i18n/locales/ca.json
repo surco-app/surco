@@ -1601,7 +1601,7 @@
     "cueWarningShort": "Recodifica l'àudio · en ALAC es perden els cues",
     "predictionEstimate": "(estimat)",
     "presetHint": {
-      "streaming": "Com anivellen Spotify i Apple Music. El valor segur per a una biblioteca d'escolta.",
+      "streaming": "Anivella com Spotify i Apple Music. És el valor segur per a una biblioteca d'escolta.",
       "club": "Calent, per a la cabina. La majoria de pistes necessiten limitar pics per arribar-hi, a costa d'una mica de pegada.",
       "broadcast": "El nivell de la tele i la ràdio. Més baix que streaming, amb molt de marge.",
       "custom": "El teu propi objectiu. La previsualització sota l'ona diu on quedarà la pista."

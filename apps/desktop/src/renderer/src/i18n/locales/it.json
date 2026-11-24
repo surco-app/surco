@@ -1022,9 +1022,9 @@
     "otherTagsRemove": "Elimina {{name}}",
     "otherTagsRestore": "Ripristina {{name}}",
     "loudnessRangeLufs": "Buono tra -16 e -8 LUFS.",
-    "loudnessFixLufs": "Si può correggere. La Uniforma il volume lo porta al tuo obiettivo.",
+    "loudnessFixLufs": "Si può correggere. Uniforma il volume lo porta al tuo obiettivo.",
     "loudnessRangePeak": "Buono a -1 dBTP o meno.",
-    "loudnessFixPeak": "Si può correggere. Il tetto dei picchi della Uniforma il volume lo limita.",
+    "loudnessFixPeak": "Si può correggere. Il tetto dei picchi di Uniforma il volume lo limita.",
     "loudnessRangeRange": "Buono da 6 LU in su.",
     "loudnessFixRange": "Non si può correggere qui, viene dal master. Normalizzare cambia il livello, non il margine.",
     "loudnessRangeCrest": "Buono da 12 dB in su.",
@@ -1601,7 +1601,7 @@
     "cueWarningShort": "Ricodifica l'audio · in ALAC i cue vanno persi",
     "predictionEstimate": "(stimato)",
     "presetHint": {
-      "streaming": "Come livellano Spotify e Apple Music. Il valore sicuro per una libreria da ascolto.",
+      "streaming": "Livella come Spotify e Apple Music. È il valore sicuro per una libreria da ascolto.",
       "club": "Caldo, per la consolle. Per arrivarci la maggior parte dei brani deve limitare i picchi, a scapito di un po' di impatto.",
       "broadcast": "Il livello di TV e radio. Più basso dello streaming, con molto margine.",
       "custom": "Il tuo obiettivo. L'anteprima sotto la forma d'onda dice dove finirà il brano."

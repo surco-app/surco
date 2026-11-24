@@ -970,7 +970,7 @@
     "releaseError": "Could not load the release",
     "analyzeError": "Could not analyze the audio",
     "processError": "Conversion failed",
-    "fileInUseError": "Another program is using this file (antivirus, player…). Your conversion is safe. It was saved next to it, with ~ at the end of the name.",
+    "fileInUseError": "Another program is using this file (antivirus, player…). Your conversion is safe. It was saved next to the original, with ~ at the end of the name.",
     "missingRequired": "Missing required fields: {{fields}}",
     "missingOne": "Missing {{field}}",
     "missingTwo": "Missing {{first}} and {{second}}",
@@ -1601,7 +1601,7 @@
     "cueWarningShort": "Re-encodes the audio · ALAC loses the cues",
     "predictionEstimate": "(estimated)",
     "presetHint": {
-      "streaming": "How Spotify and Apple Music level tracks. The safe default for a listening library.",
+      "streaming": "Levels like Spotify and Apple Music. The safe default for a listening library.",
       "club": "Hot, for the booth. Most tracks need peak limiting to get there, trading a little punch.",
       "broadcast": "The TV and radio level. Quieter than streaming, with plenty of headroom.",
       "custom": "Your own target. The preview under the wave shows where the track will land."
@@ -1620,7 +1620,7 @@
       "limitedSubLight": "Only the sharpest transient tips get trimmed; a touch this light is not audible.",
       "gain": "It will move {{gain}} dB to {{lufs}} LUFS with one constant gain. Its peaks will sit at {{peak}} dBTP. The ceiling never engages.",
       "gainSub": "Nothing is limited or compressed; the dynamics stay intact.",
-      "peak": "It will move {{gain}} dB: its loudest sample will sit exactly at {{peak}} dBFS.",
+      "peak": "It will move {{gain}} dB. Its loudest sample will sit exactly at {{peak}} dBFS.",
       "peakSub": "One constant gain, no limiter. It will play at about {{lufs}} LUFS.",
       "mp3Ceiling": "MP3 encoding pushes peaks up a little, so Surco measures the MP3 and, if it crosses {{ceiling}} dBTP, encodes it again with the peaks held lower, which can leave it a little under {{lufs}} LUFS.",
       "limiterCeiling": "The limiter holds the peaks sample by sample and they can still land a little higher between samples, so Surco measures the file and, if it crosses {{ceiling}} dBTP, renders it again with the peaks held lower, which can leave it a little under {{lufs}} LUFS.",
@@ -2077,7 +2077,7 @@
       "update": "Update",
       "add": "Update and add"
     },
-    "djReachAddHint": "Also registers the tracks it didn't have, without analysis: the program analyses them when it opens them.",
+    "djReachAddHint": "Also registers the tracks it didn't have, without analysis. The program analyses them when it opens them.",
     "completeCues": "When rekordbox closes, apply your active flow to tracks with CALLs and no hot cues",
     "completeCuesHint": "It writes to your collection on tracks you have not looked at in Surco. Off, your cues are only saved from the Cues section.",
     "completeCuesCount_one": "{{count}} track will be completed when rekordbox closes.",

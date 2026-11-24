@@ -10,7 +10,7 @@ import ptBR from './locales/pt-BR.json'
 
 const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR, ca, it: itIT }
 
-// El tono de Surco no usa dos puntos para introducir una explicación: se parte en dos frases o se pone una coma.
+// El tono de Surco no introduce una explicación con dos puntos. Se parte en dos frases o se pone una coma.
 // Los dos puntos de etiqueta y valor («Saltada: …», «Omitido: …») se quedan y no están en esta lista.
 const WITHOUT_EXPLANATORY_COLON = [
   'header.cancelConvert',
@@ -60,9 +60,11 @@ const WITHOUT_EXPLANATORY_COLON = [
   'normalize.truePeakCaption',
   'normalize.modeLine.loudness',
   'normalize.plan.gain',
+  'normalize.plan.peak',
   'settings.beatportHint',
   'settings.autoMatchNeedsToken',
   'settings.keepMp3SourcesOff',
+  'settings.djReachAddHint',
   'settings.customFieldKeyHint',
   'onboarding.intent.metadataBody',
   'copies.state.halted',
