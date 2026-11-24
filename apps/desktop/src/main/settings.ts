@@ -746,3 +746,30 @@ export function migrateBackupLimits(): void {
     backupLimitsMigrated: true,
   })
 }
+
+const MENU_SETTINGS = [
+  'shortcutOverrides',
+  'language',
+  'showListWaves',
+  'showListPositions',
+  'showRailNames',
+  'showSidebar',
+] as const satisfies readonly (keyof Settings)[]
+
+const QUEUE_LIBRARY_PATHS = [
+  ['rekordbox', 'rekordboxDbPath'],
+  ['engine', 'engineLibraryDir'],
+  ['traktor', 'traktorNmlPath'],
+] as const satisfies readonly (readonly [string, keyof Settings])[]
+
+// Rebinding a shortcut changes the menu accelerators, and pinning a language changes every
+// menu label, so both need the menu rebuilt from the freshly saved settings.
+export function settingsPatchEffects(patch: Partial<Settings>) {
+  return {
+    rebuildMenu: MENU_SETTINGS.some((key) => patch[key] !== undefined),
+    pokeRekordboxWatch: patch.completeCuesOnClose !== undefined,
+    announce: QUEUE_LIBRARY_PATHS.filter(([, key]) => patch[key] !== undefined).map(
+      ([program]) => program,
+    ),
+  }
+}

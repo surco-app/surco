@@ -278,6 +278,7 @@ import {
   saveSettings,
   setConfigDir,
   settingsForRenderer,
+  settingsPatchEffects,
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { sourceStat } from './sourceStat'
@@ -1298,24 +1299,14 @@ function registerIpc(): void {
   ipcMain.handle('settings:get', () => settingsForRenderer(getSettings()))
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
     const next = saveSettings(sanitizeSettingsPatch(patch))
-    // Rebinding a shortcut changes the menu accelerators, and pinning a language
-    // changes every menu label — both need the menu rebuilt from the freshly-saved
-    // settings (buildAppMenu re-reads shortcuts and menuLocale re-reads language).
-    if (
-      patch.shortcutOverrides !== undefined ||
-      patch.language !== undefined ||
-      patch.showListWaves !== undefined ||
-      patch.showListPositions !== undefined ||
-      patch.showRailNames !== undefined ||
-      patch.showSidebar !== undefined
-    ) {
+    const effects = settingsPatchEffects(patch)
+    if (effects.rebuildMenu) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
-    if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()
-    if (patch.rekordboxDbPath !== undefined) rekordboxQueue.announce()
-    if (patch.engineLibraryDir !== undefined) engineCueQueue.announce()
-    if (patch.traktorNmlPath !== undefined) traktorCueQueue.announce()
+    if (effects.pokeRekordboxWatch) rekordboxQueueWatch.poke()
+    const queues = { rekordbox: rekordboxQueue, engine: engineCueQueue, traktor: traktorCueQueue }
+    for (const program of effects.announce) queues[program].announce()
     return settingsForRenderer(next)
   })
 
