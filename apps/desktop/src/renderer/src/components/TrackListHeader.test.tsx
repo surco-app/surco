@@ -610,3 +610,33 @@ describe('TrackListHeader location', () => {
     expect(onToggleSidebar).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('TrackListHeader menu placement', () => {
+  const { innerWidth, innerHeight } = window
+  afterEach(() => {
+    vi.restoreAllMocks()
+    window.innerWidth = innerWidth
+    window.innerHeight = innerHeight
+  })
+
+  // The track column sits right of the source rail, so the ⋯ trigger is far closer to the
+  // window's left edge than the menu is wide, and a menu lined up with it ran off the edge.
+  it('keeps the ⋯ menu fully inside the window when it is wider than the room left of its trigger', () => {
+    window.innerWidth = 1280
+    window.innerHeight = 800
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(420)
+    renderHeader()
+    const more = screen.getByTestId('list-actions-more')
+    vi.spyOn(more, 'getBoundingClientRect').mockReturnValue({
+      top: 96,
+      bottom: 128,
+      left: 377,
+      right: 409,
+      width: 32,
+      height: 32,
+    } as DOMRect)
+    fireEvent.click(more)
+    const right = Number.parseFloat(screen.getByRole('menu').style.right)
+    expect(1280 - right - 420).toBeGreaterThanOrEqual(8)
+  })
+})

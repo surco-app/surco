@@ -591,7 +591,7 @@
     "numberTracks": "Numera i brani nell'ordine dell'elenco",
     "stripNumbering": "Togli la numerazione dal titolo",
     "applyTitleFormat": "Applica il formato del titolo alla selezione",
-    "regenerateNames": "Rigenera i nomi dei file della selezione con i metadati",
+    "regenerateNames": "Rinomina i file dai metadati",
     "renameKeywords": "rinomina cambia nome",
     "trimDetected": "Taglia il silenzio rilevato nella selezione",
     "clearMeta": "Cancella i metadati",
