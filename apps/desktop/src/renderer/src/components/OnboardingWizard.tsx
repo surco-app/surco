@@ -255,7 +255,7 @@ export function OnboardingWizard({
         role="dialog"
         aria-modal="true"
         aria-labelledby="onboarding-step-title"
-        className="animate-pop shadow-modal w-[560px] rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
+        className="animate-pop shadow-modal flex max-h-[calc(100vh-2rem)] w-[560px] flex-col rounded-2xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-6"
       >
         <form
           className="contents"
@@ -272,7 +272,7 @@ export function OnboardingWizard({
             key={step}
             data-testid="onboarding-step-body"
             data-dir={dir ?? undefined}
-            className={`min-h-[min(70vh,592px)] ${dir ? 'animate-step-in' : ''}`}
+            className={`min-h-[min(70vh,592px)] overflow-y-auto ${dir ? 'animate-step-in' : ''}`}
           >
             {STEPS[step] === 'mac' && (
               <>
@@ -437,6 +437,7 @@ export function OnboardingWizard({
                   testid="onboarding-search-providers"
                   testidPrefix="onboarding-provider"
                   details={{}}
+                  compact
                 />
 
                 {discogsOn && (
@@ -666,7 +667,7 @@ export function OnboardingWizard({
             )}
           </div>
 
-          <div className="mt-6 flex items-center justify-between border-t border-[var(--color-line)] pt-4">
+          <div className="mt-6 flex shrink-0 items-center justify-between border-t border-[var(--color-line)] pt-4">
             <button
               type="button"
               data-testid="onboarding-skip"
