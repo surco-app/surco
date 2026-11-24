@@ -924,6 +924,42 @@ describe('a cue the DJ deleted', () => {
   })
 })
 
+describe('a start cue the flow no longer wants', () => {
+  const roomy: CueFlow = {
+    id: 'roomy',
+    name: 'Subidón',
+    markPoint: true,
+    rules: [
+      { ...MY_FLOW.rules[0], when: 'previous' },
+      {
+        from: 'first-beat',
+        direction: 'back',
+        bars: 0,
+        repeat: 1,
+        when: 'room',
+        gap: 32,
+        place: 'hot',
+        color: { fixed: 32 },
+      },
+    ],
+  }
+  const own = { ...ctx, flows: [...KEPT, roomy] }
+  const mark = (...drops: number[]) =>
+    reduceDraft(
+      startDraft([], 'roomy'),
+      { type: 'batch', actions: drops.map((ms) => ({ type: 'mark-drop' as const, ms })) },
+      own,
+    )
+
+  it('goes away when a later point brings a countdown to the start, so the order the breaks are marked in never leaves a cue on the silence before the music', () => {
+    const lateFirst = mark(bar(160), bar(17))
+    expect(hotOf(lateFirst).map(([ms]) => ms)).toEqual(
+      hotOf(mark(bar(17), bar(160))).map(([ms]) => ms),
+    )
+    expect(at(lateFirst, 0, true)).toBeUndefined()
+  })
+})
+
 describe('correcting a point', () => {
   const shape = (s: CueDraft) =>
     s.cues
