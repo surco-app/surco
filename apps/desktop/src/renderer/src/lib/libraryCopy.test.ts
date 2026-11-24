@@ -100,7 +100,9 @@ describe('fillCopyPath', () => {
   })
 
   it('takes the first DJ copy of the same recording', () => {
-    expect(fill({ programs: [rekordbox('here'), traktor('same')] })).toBe('/r/a.aiff')
+    expect(
+      fill({ programs: [rekordbox('here', 200), traktor('same')], fileDurationSec: 200 }),
+    ).toBe('/r/a.aiff')
   })
 
   it.each(['different', 'unreadable', 'missing', 'thisFile', null] as const)(
@@ -139,5 +141,22 @@ describe('fillCopyPath', () => {
         fileDurationSec: 200,
       }),
     ).toBe('/t/a.wav')
+  })
+
+  // A decided verdict other than «same» can still be another edit: the comparison only calls
+  // another version when both lengths are known, and a probe that could not line up says nothing.
+  it('does not fill from a copy the open file beats when its length is another edit, and looks at the next program', () => {
+    expect(fill({ programs: [rekordbox('here', 45), traktor('same')], fileDurationSec: 30 })).toBe(
+      '/t/a.wav',
+    )
+  })
+
+  it('does not fill from a copy the open file beats when its length is unknown', () => {
+    expect(fill({ programs: [rekordbox('here')], fileDurationSec: 200 })).toBe('')
+    expect(fill({ programs: [rekordbox('here', 200)] })).toBe('')
+  })
+
+  it('fills from a copy proven the same master even with its length unknown', () => {
+    expect(fill({ programs: [rekordbox('same')] })).toBe('/r/a.aiff')
   })
 })
