@@ -19,6 +19,7 @@ import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, SourceNode } from '../../../shared/types'
 import type { NewPlaylist } from '../lib/commands'
+import { menuStep } from '../lib/menuStep'
 import { isPendingNode, subtreeCounts, subtreeIds } from '../lib/playlistEdits'
 import { carriesOnlyFiles, draggedRows, isTreeNodeDrag, TREE_NODE_TYPE } from '../lib/reorderDrag'
 import { formatCount } from '../lib/stats'
@@ -255,12 +256,8 @@ export const SourceTree = memo(function SourceTree({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     items[next].focus()
