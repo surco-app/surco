@@ -7183,6 +7183,18 @@ describe('Editor Apple Music library section', () => {
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
     })
 
+    it('fills from the DJ copy once the Apple Music library loaded without the track', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: buildLibraryIndex([{ title: 'Other', artist: 'Someone' }]),
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
     it('fills from the DJ copy when the Apple Music library could not be read', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
