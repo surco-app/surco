@@ -1810,12 +1810,14 @@ function Editing({
           )
         }}
       </AtHead>
+      {/* Beside the bars to the CALL it speaks of: in the actions it pushed Save off the
+          panel at the narrowest window. */}
+      {addCallButton}
       <div
         data-testid="cues-folded-actions"
         data-wrap="true"
         className="ml-auto flex shrink-0 items-center gap-1"
       >
-        {addCallButton}
         <button
           type="button"
           data-testid="cues-clear-all"
