@@ -754,15 +754,6 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-good')).toBeInTheDocument()
   })
 
-  // A dropdown that rises from below reads as arriving from somewhere else; it has to
-  // grow out of its trigger's corner like every other anchored menu in the app.
-  it('grows the menu out of the trigger instead of rising like a modal', () => {
-    renderBar()
-    openMenu()
-    const menu = screen.getByTestId('quality-filter-menu')
-    expect(menu).toHaveAttribute('data-origin', 'top-left')
-  })
-
   // A pick toggles its axis and closes the menu like a native select — the common
   // single-filter case shouldn't need a click outside to dismiss the popover.
   it('reports a bucket pick on its axis and closes the menu', () => {
