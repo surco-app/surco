@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { PAIR_RATE } from './pairLag'
 import {
+  MASTER_RATE,
+  masterShiftOf,
   REPLACE_HEAD_AT_SECONDS,
   REPLACE_REACH_SECONDS,
   REPLACE_TAIL_BEFORE_END_SECONDS,
@@ -179,5 +181,137 @@ describe('replaceShiftOf', () => {
     const remaster = master.map((x, i) => x + 0.256 * layer[i])
     const { head, tail } = windowsFor(master, concat(zeros(1.5), remaster))
     expect(replaceShiftOf(head, tail)).toEqual({ unmoved: 'noMatch' })
+  })
+})
+
+// Another master of the same track cannot line up sample by sample: other EQ, other lead-in, a
+// clock a little off. Its loudness contour still follows the same sections and hits, so these
+// signals are noise shaped by sections of uneven length and level plus a hit every 0.42 s, which
+// keeps the structure from repeating the way a pure loop would.
+function random(seed: number) {
+  let s = seed >>> 0
+  return () => {
+    s = (Math.imul(s, 1664525) + 1013904223) >>> 0
+    return s / 2 ** 32
+  }
+}
+
+function music(seed: number, seconds: number): Float32Array {
+  const rnd = random(seed)
+  const out = new Float32Array(Math.round(seconds * MASTER_RATE))
+  const hitEvery = Math.round(0.42 * MASTER_RATE)
+  let sectionEnd = 0
+  let level = 0
+  for (let i = 0; i < out.length; i++) {
+    if (i >= sectionEnd) {
+      sectionEnd = i + Math.round((2 + 10 * rnd()) * MASTER_RATE)
+      level = 0.1 + 0.9 * rnd()
+    }
+    const hit = Math.exp(-(i % hitEvery) / (0.03 * MASTER_RATE))
+    out[i] = (2 * rnd() - 1) * level * (0.3 + hit)
+  }
+  return out
+}
+
+function lowPass(x: Float32Array): Float32Array {
+  const out = new Float32Array(x.length)
+  let y = 0
+  for (let i = 0; i < x.length; i++) {
+    y += 0.3 * (x[i] - y)
+    out[i] = y
+  }
+  return out
+}
+
+function slower(x: Float32Array, ppm: number): Float32Array {
+  const ratio = 1 + ppm / 1e6
+  const out = new Float32Array(Math.floor(x.length * ratio))
+  for (let i = 0; i < out.length; i++) {
+    const at = i / ratio
+    const k = Math.floor(at)
+    const f = at - k
+    out[i] = x[k] * (1 - f) + (k + 1 < x.length ? x[k + 1] : 0) * f
+  }
+  return out
+}
+
+const masterSamples = (seconds: number) => Math.round(seconds * MASTER_RATE)
+
+describe('masterShiftOf', () => {
+  const TRACK_SECONDS = 240
+  const old = music(11, TRACK_SECONDS)
+
+  // World of Dreams: the new master starts about 290 ms earlier and is EQ'd differently, so the
+  // exact measure finds nothing. Left where they were, its cues sit one hit off the beat.
+  it('finds another master that sounds 290 ms earlier', () => {
+    const shift = masterShiftOf(old, lowPass(old.slice(masterSamples(0.29))))
+    expect(shift).not.toBeNull()
+    expect(Math.abs((shift ?? 0) + 290)).toBeLessThanOrEqual(2)
+  })
+
+  // Positive means the new file sounds later, as in the exact measure; the DJ programs translate
+  // that sign, so a flip throws every cue off by twice the shift.
+  it('gives a positive shift when the new master starts 750 ms later', () => {
+    const shift = masterShiftOf(old, concat(new Float32Array(masterSamples(0.75)), old))
+    expect(shift).not.toBeNull()
+    expect(Math.abs((shift ?? 0) - 750)).toBeLessThanOrEqual(2)
+  })
+
+  // Two real masters run at slightly different speeds (World of Dreams drifts 30 ms over the
+  // track). That drift is far below a beat, so the cues still have to move, by a value between
+  // the offsets at head and tail.
+  it('still moves a master whose clock runs 100 ppm slow', () => {
+    const shift = masterShiftOf(old, slower(old, 100))
+    expect(shift).not.toBeNull()
+    expect(shift ?? 0).toBeGreaterThanOrEqual(Math.floor(30 * 0.1))
+    expect(shift ?? 0).toBeLessThanOrEqual(Math.ceil(TRACK_SECONDS * 0.1))
+  })
+
+  // An edit with 4 s cut in the middle lines up before the cut and not after it: any single shift
+  // would leave the cues after the cut 4 s off their beat.
+  it('refuses an edit with 4 s cut from the middle', () => {
+    const mid = masterSamples(TRACK_SECONDS / 2)
+    const edit = concat(old.slice(0, mid), old.slice(mid + masterSamples(4)))
+    expect(masterShiftOf(old, edit)).toBeNull()
+  })
+
+  // A version whose breakdown near the end is other material agrees in five windows and not in
+  // the sixth. Five out of six is what a hair-thin wrong peak can also give, and the cues in that
+  // breakdown would land on audio that is not there, so one window that finds nothing refuses.
+  it('refuses when one window is other material', () => {
+    const from = masterSamples(TRACK_SECONDS - 91)
+    const to = masterSamples(TRACK_SECONDS - 59)
+    const version = old.slice()
+    version.set(music(14, TRACK_SECONDS).subarray(from, to), from)
+    expect(masterShiftOf(old, version)).toBeNull()
+  })
+
+  // A version where one section sits a second late (a bar re-cut there) lines up well in every
+  // window, but one of them disagrees by far more than a beat. Averaging it away or ignoring it
+  // would leave the cues in that section a second off.
+  it('refuses when one window lines up a second off the others', () => {
+    const from = masterSamples(TRACK_SECONDS - 91)
+    const to = masterSamples(TRACK_SECONDS - 59)
+    const version = old.slice()
+    version.set(old.subarray(from - masterSamples(1), to - masterSamples(1)), from)
+    expect(masterShiftOf(old, version)).toBeNull()
+  })
+
+  // Another track shares the tempo but not the sections; whatever lag fits best there is noise,
+  // and moving cues to it would wreck them.
+  it('refuses another track', () => {
+    expect(masterShiftOf(old, music(12, TRACK_SECONDS))).toBeNull()
+  })
+
+  // Six windows are what make the measure safe; a track too short to hold them is left unmoved
+  // rather than measured on fewer.
+  it('refuses a track too short for six windows', () => {
+    const short = music(13, 100)
+    expect(masterShiftOf(short, short)).toBeNull()
+  })
+
+  // Silence lines up with anything, so it cannot say where the new audio sits.
+  it('refuses a silent new file', () => {
+    expect(masterShiftOf(old, new Float32Array(old.length))).toBeNull()
   })
 })
