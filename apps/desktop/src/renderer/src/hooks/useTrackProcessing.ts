@@ -15,6 +15,7 @@ import type {
   MusicOp,
   NormalizeConfig,
   Settings,
+  TrackMetadata,
 } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
 import {
@@ -257,6 +258,96 @@ export function useTrackProcessing({
     return () => clearTimeout(id)
   }, [batchSummary])
 
+  // The checks a track passes before anything is written from its form: the row must still be
+  // there, idle and writable, and hold the file's own tags with every required field filled.
+  // Gives the track as it stands after any re-read, or the outcome to report instead.
+  const readyTrack = async (id: string): Promise<TrackItem | 'skipped' | 'failed'> => {
+    let track = tracksRef.current.find((t) => t.id === id)
+    // A track removed after being queued was a user decision, not a failure — count
+    // it as skipped so the summary never reports an error with no visible row.
+    if (!track) return 'skipped'
+    // Already mid-conversion: the user hand-converted (or ⌘⏎'d) a still-idle track a
+    // running batch had queued, or vice versa. A second job would write the same
+    // output path at the same time — whoever started first owns the conversion.
+    if (track.status === 'processing') return 'skipped'
+    if (fromReadOnlyProgram(track)) return 'skipped'
+    // A read that failed must never become a write (see Params.rereadTrackMeta). The row
+    // is re-resolved after the read because the library patches it in place; a row still
+    // flagged afterwards, or with no re-read available, is refused rather than written.
+    if (refreshChangedTrack && (await window.api.sourceChanged(track.inputPath))) {
+      const ok = await refreshChangedTrack(id)
+      const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+      if (!fresh || fresh.metaReadFailed) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    if (track.metaPartial && completeTrackMeta) {
+      await completeTrackMeta(id)
+      const fresh = tracksRef.current.find((t) => t.id === id)
+      if (!fresh || fresh.metaPartial) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    if (track.metaReadFailed && rereadTrackMeta) {
+      const ok = await rereadTrackMeta(id)
+      const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+      if (!fresh || fresh.metaReadFailed) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    const missing = missingRequiredOf(
+      track,
+      requiredFieldsOf(settings),
+      settings?.customFields ?? [],
+    )
+    if (missing.length) {
+      const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
+      updateTrack(id, {
+        status: 'error',
+        error: tr('editor.missingRequired', { fields: names }),
+        skipReason: undefined,
+        stage: undefined,
+      })
+      return 'failed'
+    }
+    return track
+  }
+
+  const jobMetaOf = (track: TrackItem): TrackMetadata =>
+    withCachedQualityTag(
+      clearHiddenProvenance(
+        sanitizeMeta(effectiveMeta(track, settings?.customFields ?? []), {
+          trim: settings?.trimWhitespace ?? true,
+          zeroPad: settings?.zeroPadTrack ?? true,
+        }),
+        settings?.visibleFields ?? DEFAULT_FIELDS,
+      ),
+      track,
+      queryClient,
+      settings?.importFields,
+    )
+
   // The conversion itself, with no batch bracketing — processAll's loop calls this
   // directly (never the exported processOne below) so a run of any size still produces
   // exactly one begin/end pair, not one per track.
@@ -271,75 +362,9 @@ export function useTrackProcessing({
       keepMp3?: boolean,
       formatChosen?: boolean,
     ): Promise<BatchOutcome> => {
-      let track = tracksRef.current.find((t) => t.id === id)
-      // A track removed after being queued was a user decision, not a failure — count
-      // it as skipped so the summary never reports an error with no visible row.
-      if (!track) return 'skipped'
-      // Already mid-conversion: the user hand-converted (or ⌘⏎'d) a still-idle track a
-      // running batch had queued, or vice versa. A second job would write the same
-      // output path at the same time — whoever started first owns the conversion.
-      if (track.status === 'processing') return 'skipped'
-      if (fromReadOnlyProgram(track)) return 'skipped'
-      // A read that failed must never become a write (see Params.rereadTrackMeta). The row
-      // is re-resolved after the read because the library patches it in place; a row still
-      // flagged afterwards, or with no re-read available, is refused rather than written.
-      if (refreshChangedTrack && (await window.api.sourceChanged(track.inputPath))) {
-        const ok = await refreshChangedTrack(id)
-        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
-        if (!fresh || fresh.metaReadFailed) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      if (track.metaPartial && completeTrackMeta) {
-        await completeTrackMeta(id)
-        const fresh = tracksRef.current.find((t) => t.id === id)
-        if (!fresh || fresh.metaPartial) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      if (track.metaReadFailed && rereadTrackMeta) {
-        const ok = await rereadTrackMeta(id)
-        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
-        if (!fresh || fresh.metaReadFailed) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      const missing = missingRequiredOf(
-        track,
-        requiredFieldsOf(settings),
-        settings?.customFields ?? [],
-      )
-      if (missing.length) {
-        const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
-        updateTrack(id, {
-          status: 'error',
-          error: tr('editor.missingRequired', { fields: names }),
-          skipReason: undefined,
-          stage: undefined,
-        })
-        return 'failed'
-      }
+      const ready = await readyTrack(id)
+      if (typeof ready === 'string') return ready
+      const track = ready
       const pickedFormat = formatOverride ?? settings?.outputFormat ?? 'aiff'
       // 'source' promises to keep each file in its own format; a file whose format
       // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.mp4,
@@ -412,20 +437,8 @@ export function useTrackProcessing({
         musicStatus: undefined,
         musicError: undefined,
       })
-      const customFields = settings?.customFields ?? []
-      const stray = strayTags(track, customFields)
-      const meta = withCachedQualityTag(
-        clearHiddenProvenance(
-          sanitizeMeta(effectiveMeta(track, customFields), {
-            trim: settings?.trimWhitespace ?? true,
-            zeroPad: settings?.zeroPadTrack ?? true,
-          }),
-          settings?.visibleFields ?? DEFAULT_FIELDS,
-        ),
-        track,
-        queryClient,
-        settings?.importFields,
-      )
+      const stray = strayTags(track, settings?.customFields ?? [])
+      const meta = jobMetaOf(track)
       // Default to the source file's own name: users expect "load and convert" to keep
       // their filename. A metadata-derived name is used when the editor's "Regenerate from
       // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
