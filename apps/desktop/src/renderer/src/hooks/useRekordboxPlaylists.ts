@@ -182,6 +182,7 @@ export function usePlaylistsSpec(
       single,
       bulk: {
         states: bulkPlaylistState(tracks, membership, options, library, copyIn) ?? [],
+        count: tracks.length,
         onToggle: (target, on) => {
           const paths = [...new Set(copies.filter((path) => path !== undefined))]
           if (paths.length > 0) toggleCopies(paths, target, on)

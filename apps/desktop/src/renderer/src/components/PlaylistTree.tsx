@@ -84,6 +84,7 @@ export function PlaylistTree({
   folderControl,
   onRowKey,
   locked,
+  count = 1,
   app,
 }: {
   tree: readonly SourceNode[]
@@ -103,6 +104,7 @@ export function PlaylistTree({
     row: { target: RekordboxPlaylistTarget } | { node: SourceNode },
   ) => boolean
   locked?: readonly string[]
+  count?: number
   app?: string
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
@@ -284,7 +286,7 @@ export function PlaylistTree({
         {(pending || state === 'some') && (
           <Tooltip label={pending ? tr('editor.playlists.pending') : tr('editor.playlists.some')} />
         )}
-        {rowLocked && <Tooltip label={tr('editor.playlists.removeIn', { app })} />}
+        {rowLocked && <Tooltip label={tr('editor.playlists.removeIn', { app, count })} />}
         <span className="w-3 shrink-0" />
         <input
           ref={(el) => {

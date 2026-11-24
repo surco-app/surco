@@ -598,7 +598,8 @@ describe('PlaylistsField with locked playlists', () => {
     expect(check).toHaveAttribute('aria-disabled', 'true')
   })
 
-  const arrowDown = () => fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowDown' })
+  const arrowDown = () =>
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowDown' })
 
   it('lets the arrow keys land on a locked row and move past it', () => {
     renderLocked()
@@ -628,5 +629,24 @@ describe('PlaylistsField with locked playlists', () => {
     const house = screen.getByTestId('playlists-check-house')
     for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
     expect(screen.getByRole('tooltip')).toHaveTextContent('Remove it in Engine DJ')
+  })
+
+  it('says where to remove a locked playlist in the plural when several tracks are selected', () => {
+    render(
+      <PlaylistsBulkField
+        library="engine"
+        label="Engine DJ playlists"
+        tree={TREE}
+        options={OPTIONS}
+        states={[{ target: target('house'), state: 'all' }]}
+        locked={['house']}
+        count={3}
+        onToggle={vi.fn()}
+      />,
+    )
+    open()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Remove them in Engine DJ')
   })
 })

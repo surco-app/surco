@@ -33,6 +33,7 @@ function renderField(
         tree={f.playlists.tree}
         options={f.playlists.options}
         states={f.playlists.bulk.states}
+        count={f.playlists.bulk.count}
         locked={f.playlists.locked}
         onToggle={f.playlists.bulk.onToggle}
       />

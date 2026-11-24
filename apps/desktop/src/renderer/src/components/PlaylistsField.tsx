@@ -51,6 +51,7 @@ function TreePopover({
   options,
   tokens,
   locked,
+  count,
   onToggle,
   onClose,
 }: {
@@ -59,6 +60,7 @@ function TreePopover({
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
   locked?: readonly string[]
+  count?: number
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
   onClose: () => void
 }): React.JSX.Element {
@@ -96,6 +98,7 @@ function TreePopover({
         options={options}
         tokens={tokens}
         locked={locked}
+        count={count}
         app={app}
         onToggle={onToggle}
         onEscape={onClose}
@@ -113,6 +116,7 @@ function TreeField({
   options,
   tokens,
   locked,
+  count,
   onToggle,
 }: {
   library: PlaylistLibrary
@@ -123,6 +127,7 @@ function TreeField({
   options: readonly PlaylistOption[]
   tokens: readonly Token[]
   locked?: readonly string[]
+  count?: number
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
@@ -222,6 +227,7 @@ function TreeField({
             options={options}
             tokens={tokens}
             locked={locked}
+            count={count}
             onToggle={onToggle}
             onClose={() => {
               setOpen(false)
@@ -278,6 +284,7 @@ export function PlaylistsBulkField({
   options,
   states,
   locked,
+  count,
   onToggle,
 }: {
   library?: PlaylistLibrary
@@ -287,6 +294,7 @@ export function PlaylistsBulkField({
   options: PlaylistOption[]
   states: Token[]
   locked?: readonly string[]
+  count?: number
   onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
 }): React.JSX.Element {
   return (
@@ -299,6 +307,7 @@ export function PlaylistsBulkField({
       options={options}
       tokens={states}
       locked={locked}
+      count={count}
       onToggle={onToggle}
     />
   )

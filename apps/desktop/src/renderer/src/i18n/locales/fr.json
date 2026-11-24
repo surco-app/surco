@@ -1092,7 +1092,8 @@
       "unconfirmed": "Choisis la collection dans Réglages → Logiciels DJ → Traktor",
       "copyRemoved_one": "{{count}} morceau retiré de « {{name}} »",
       "copyRemoved_other": "{{count}} morceaux retirés de « {{name}} »",
-      "removeIn": "Retire-la dans {{app}}"
+      "removeIn_one": "Retire-la dans {{app}}",
+      "removeIn_other": "Retire-les dans {{app}}"
     },
     "cues": {
       "title": "Cues",

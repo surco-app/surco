@@ -1092,7 +1092,8 @@
       "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor",
       "copyRemoved_one": "{{count}} Track aus „{{name}}“ entfernt",
       "copyRemoved_other": "{{count}} Tracks aus „{{name}}“ entfernt",
-      "removeIn": "Entferne sie in {{app}}"
+      "removeIn_one": "Entferne sie in {{app}}",
+      "removeIn_other": "Entferne sie in {{app}}"
     },
     "cues": {
       "title": "Cues",

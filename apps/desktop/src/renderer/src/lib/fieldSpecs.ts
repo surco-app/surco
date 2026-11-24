@@ -37,6 +37,7 @@ export interface PlaylistsSpec {
   }
   bulk: {
     states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]
+    count?: number
     onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
   }
 }

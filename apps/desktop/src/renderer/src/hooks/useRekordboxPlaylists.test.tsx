@@ -609,6 +609,18 @@ describe('usePlaylistsSpec on a library copy', () => {
       expect(hook.result.current?.locked).toEqual(['p1'])
     })
 
+    it('tells the bulk field how many tracks are selected, so a locked row speaks of all of them', async () => {
+      const other = '/r/b.aiff'
+      const { hook } = onCopy({
+        library: 'engine',
+        item: withCopy,
+        tracks: [withCopy, without],
+        copyPathOf: (t) => (t.id === 'a' ? COPY : other),
+        membership: { [COPY]: ['p1'], [other]: ['p1'] },
+      })
+      await waitFor(() => expect(hook.result.current?.bulk.count).toBe(2))
+    })
+
     it('writes nothing to Traktor’s collection on the copies until it is confirmed', async () => {
       const { hook, editPlaylist } = onCopy({
         library: 'traktor',
