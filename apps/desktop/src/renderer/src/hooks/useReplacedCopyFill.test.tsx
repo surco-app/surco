@@ -272,7 +272,7 @@ describe('useReplacedCopyFill', () => {
     )
     const order: string[] = []
     const onRecordUndo = vi.fn(() => order.push('undo'))
-    const onChange = vi.fn(() => order.push('change'))
+    const onChange = vi.fn((_patch: Partial<TrackItem>) => order.push('change'))
     const { rerender } = renderHook(
       ({ item, copyPath }) => useReplacedCopyFill({ item, copyPath, onChange, onRecordUndo }),
       { initialProps: { item: track(), copyPath: '' } },
