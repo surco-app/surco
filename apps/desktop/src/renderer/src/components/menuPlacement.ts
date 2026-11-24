@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 
 // Breathing room between the trigger and its menu, and the height below which dropping
 // down is not worth it and the menu flips above instead.
@@ -36,6 +36,32 @@ export function placeMenu(r: DOMRect, align: 'start' | 'end' = 'start'): MenuPla
     minWidth: r.width,
     maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
   }
+}
+
+// The menu's width is only known once it is mounted, so placeMenu cannot keep it inside
+// the window by itself: an 'end' menu wider than the room left of its trigger would start
+// below x=0 and lose its icons to the edge. This slides it sideways by just what it
+// overflows, keeping the same breathing room as the vertical edges, and never cuts it.
+export function keepInWindow(p: MenuPlacement, width: number): MenuPlacement {
+  const room = window.innerWidth - width - EDGE
+  const clampSide = (side: number | undefined): number | undefined =>
+    side === undefined ? undefined : Math.max(EDGE, Math.min(side, room))
+  const left = clampSide(p.left)
+  const right = clampSide(p.right)
+  return left === p.left && right === p.right ? p : { ...p, left, right }
+}
+
+export function useKeepInWindow(
+  open: boolean,
+  pos: MenuPlacement | null,
+  menuRef: React.RefObject<HTMLElement | null>,
+  setPos: (pos: MenuPlacement) => void,
+): void {
+  useLayoutEffect(() => {
+    if (!open || !pos || !menuRef.current) return
+    const fitted = keepInWindow(pos, menuRef.current.offsetWidth)
+    if (fitted !== pos) setPos(fitted)
+  }, [open, pos, menuRef, setPos])
 }
 
 // A placed menu is measured once, at open. Anything that moves the trigger afterwards

@@ -7,7 +7,7 @@ import type { InsertSource } from '../lib/fieldSpecs'
 import { stripTitleNumberingLoose } from '../lib/hygiene'
 import { LAYER } from '../lib/layers'
 import { titleCase } from '../lib/textCase'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { Tooltip } from './Tooltip'
 
 // Re-exported so Field.tsx keeps importing the shape from here while the definition
@@ -59,6 +59,7 @@ export function FieldInsertMenu({
   // Naming lists 35 fields), and placed in the window under the field, right-aligned to it.
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  useKeepInWindow(open, pos, menuRef, setPos)
   const caretRef = useRef<{ start: number; end: number } | null>(null)
   const fromMouseRef = useRef(false)
 

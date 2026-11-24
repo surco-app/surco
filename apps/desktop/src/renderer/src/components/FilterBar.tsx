@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { foldText } from '../lib/normalizeText'
 import { formatCount } from '../lib/stats'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
@@ -499,6 +499,7 @@ export function FilterBar({
   // above the player. Focus never scrolls anything but the menu itself.
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, listRef, setOpen)
+  useKeepInWindow(open, pos, listRef, setPos)
   useLayoutEffect(() => {
     if (!open || !focusTestId) return
     const list = listRef.current
