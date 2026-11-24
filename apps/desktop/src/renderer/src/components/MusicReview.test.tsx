@@ -429,6 +429,27 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-apply')).not.toBeVisible()
   })
 
+  // An Apply with nothing to apply is a control with nothing to do, but its slot stays so the
+  // bar does not move when a change appears.
+  it('shows Apply only once something is staged, keeping its slot and out of the tab order', () => {
+    render(<Panes review={review()} />)
+    const apply = screen.getByTestId('music-review-apply')
+    expect(apply).not.toBeVisible()
+    expect(apply).toBeInTheDocument()
+    expect(apply.closest('[style*="visibility: hidden"]')).not.toBeNull()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply')).toBeVisible()
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
+  })
+
   // Warnings the search or the filter hide are still there to review.
   it('keeps the controls when the filter hides every warning', () => {
     render(<Panes review={review({ filter: 'duplicates' })} />)
@@ -437,7 +458,6 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-search')).toBeVisible()
     expect(screen.getByTestId('music-review-filter')).toBeVisible()
     expect(screen.getByTestId('music-review-sort')).toBeVisible()
-    expect(screen.getByTestId('music-review-apply')).toBeVisible()
   })
 
   it('finds a duplicate by its title', () => {

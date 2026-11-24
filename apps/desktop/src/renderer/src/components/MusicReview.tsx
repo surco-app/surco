@@ -1475,6 +1475,10 @@ export function MusicReviewAction({
   const { t } = useTranslation()
   const running = review.status === 'applying'
   const label = phaseLabel(t, review.phase, review.kind)
+  const changes =
+    review.summary.tracks +
+    review.summary.duplicates +
+    Object.values(review.summary.damage).reduce((a, b) => a + (b ?? 0), 0)
   // Main's read of every Music location before trashing cannot be interrupted, and the list
   // removes all its copies, Music deletions included, in that same single call.
   const stoppable =
@@ -1488,17 +1492,12 @@ export function MusicReviewAction({
       </span>
       <span
         className="contents"
-        style={{ visibility: hasNothingToReview(review) ? 'hidden' : 'visible' }}
+        style={{ visibility: changes === 0 && !running ? 'hidden' : 'visible' }}
       >
         <PrimaryAction
           testid="music-review-apply"
           Icon={ListChecks}
-          label={t('musicReview.applyCount', {
-            count:
-              review.summary.tracks +
-              review.summary.duplicates +
-              Object.values(review.summary.damage).reduce((a, b) => a + (b ?? 0), 0),
-          })}
+          label={t('musicReview.applyCount', { count: changes })}
           running={running}
           runningLabel={
             <span key={review.phase?.name} className="animate-footer-swap inline-block">
