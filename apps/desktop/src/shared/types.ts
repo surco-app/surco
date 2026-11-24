@@ -172,6 +172,7 @@ export interface ColumnShares {
 }
 
 export type CueSaveThen = 'stay' | 'next'
+export type LibraryCopyAction = 'update' | 'replace'
 
 export interface Settings {
   theme: ThemePref
@@ -258,6 +259,7 @@ export interface Settings {
   activeCueFlow: string
   cueJumpBars: CueJumpBars
   cueSaveThen: CueSaveThen
+  libraryCopyAction: LibraryCopyAction
   cueQuantize: CueQuantize
   cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean

@@ -104,6 +104,7 @@ const settings: Settings = {
   activeCueFlow: 'mine',
   cueJumpBars: 16,
   cueSaveThen: 'stay',
+  libraryCopyAction: 'update',
   cueQuantize: 'bar',
   cueGridTolerance: 10,
   cueLettersByTime: true,

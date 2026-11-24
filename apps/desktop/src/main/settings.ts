@@ -103,6 +103,7 @@ export const defaults: Settings = {
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
   cueSaveThen: 'stay',
+  libraryCopyAction: 'update',
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   cueGridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   cueLettersByTime: true,
@@ -416,6 +417,8 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
     cueSaveThen: (patch.cueSaveThen ?? base.cueSaveThen) === 'next' ? 'next' : 'stay',
+    libraryCopyAction:
+      (patch.libraryCopyAction ?? base.libraryCopyAction) === 'replace' ? 'replace' : 'update',
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
     cueGridTolerance: normalizeCueGridTolerance(patch.cueGridTolerance ?? base.cueGridTolerance),
     cueLettersByTime: (patch.cueLettersByTime ?? base.cueLettersByTime) !== false,
