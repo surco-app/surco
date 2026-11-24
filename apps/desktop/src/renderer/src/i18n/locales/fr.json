@@ -1322,6 +1322,7 @@
         "measuring": "Mesure de la grille…"
       },
       "replaced": {
+        "moved": "Les cues ont été déplacés vers le nouveau fichier.",
         "notMoved": "non déplacés",
         "noMatch": "Surco n’a pas pu aligner le nouveau fichier sur l’ancien. Les cues restent comme ils étaient.",
         "drift": "Le début et la fin se sont décalés différemment. Les cues restent comme ils étaient.",

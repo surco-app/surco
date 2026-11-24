@@ -150,7 +150,7 @@ import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
-import { ReplacedPill, ReplacedReason } from './ReplacedPill'
+import { ReplacedNotice, ReplacedPill, ReplacedReason } from './ReplacedPill'
 import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
@@ -1810,7 +1810,7 @@ function Editing({
   const header = (
     <div
       data-testid="cues-header"
-      className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
+      className="flex shrink-0 items-center gap-3 pb-1"
     >
       {track?.cover ? (
         <img
@@ -1849,7 +1849,6 @@ function Editing({
             )}
           </div>
           {provisional && <ProvisionalMark bpm={provisional.bpm} />}
-          {replaced && <ReplacedPill shift={replaced.shift} />}
         </div>
       </div>
       <span className="flex-1" />
@@ -1881,15 +1880,6 @@ function Editing({
         options={flowOptions}
       />
       {autoControl}
-      {/* Reviewed sits after the left-aligned controls: when it goes, the spacer takes its
-      place, so nothing else on the line moves and the editor below keeps its height. */}
-      {maximized && replaced && (
-        <ReviewedButton
-          path={replaced.newPath}
-          name={track?.title || cue.label}
-          onPress={focusEditor}
-        />
-      )}
       <span className="flex-1" />
       <AtHead head={head} of={atMs}>
         {(playheadMs) => {
@@ -1973,13 +1963,6 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
-      {/* The full editor has no section header, so the why of a replaced track gets a row of
-      its own under the track's header. A moved track has no why to give, and no row. */}
-      {maximized && replaced && !('moved' in replaced.shift) && (
-        <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
-          <ReplacedReason shift={replaced.shift} />
-        </div>
-      )}
       {maximized ? (
         <>
           {toolbar}
@@ -1988,6 +1971,18 @@ function Editing({
             style={{ minHeight: '36px' }}
             className="flex shrink-0 flex-col justify-center gap-1"
           >
+            {/* The full editor has no section header, so a replaced track's state and its
+            Reviewed live here. The notices keep their height when it goes: the wave stays. */}
+            {replaced && (
+              <ReplacedNotice shift={replaced.shift}>
+                <ReviewedButton
+                  path={replaced.newPath}
+                  name={track?.title || cue.label}
+                  onPress={focusEditor}
+                  inNotice
+                />
+              </ReplacedNotice>
+            )}
             {reviewBar}
             {offGridBar}
           </div>

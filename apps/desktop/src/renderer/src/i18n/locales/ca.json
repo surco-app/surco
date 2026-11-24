@@ -1322,6 +1322,7 @@
         "measuring": "Calculant la graella…"
       },
       "replaced": {
+        "moved": "Els cues s'han mogut al fitxer nou.",
         "notMoved": "sense moure",
         "noMatch": "Surco no ha pogut alinear el fitxer nou amb el vell. Els cues continuen com estaven.",
         "drift": "El principi i el final s'han mogut de manera diferent. Els cues continuen com estaven.",

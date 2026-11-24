@@ -1322,6 +1322,7 @@
         "measuring": "Medindo a grade…"
       },
       "replaced": {
+        "moved": "Os cues foram movidos para o arquivo novo.",
         "notMoved": "não movidos",
         "noMatch": "O Surco não conseguiu alinhar o arquivo novo com o antigo. Os cues continuam como estavam.",
         "drift": "O início e o fim se moveram de forma diferente. Os cues continuam como estavam.",
