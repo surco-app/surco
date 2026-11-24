@@ -6933,6 +6933,7 @@ describe('Editor Apple Music library section', () => {
     function renderWithPrograms({
       rekordbox,
       traktor,
+      serato,
       here = aifLoudness,
       herePath = '/music/Strobe.aif',
       hereDuration,
@@ -6953,6 +6954,7 @@ describe('Editor Apple Music library section', () => {
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
+      serato?: Copy
       here?: LoudnessResult
       herePath?: string
       hereDuration?: number
@@ -6976,7 +6978,7 @@ describe('Editor Apple Music library section', () => {
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
-      const copies = [rekordbox, traktor].filter((c): c is Copy => !!c && c !== 'other')
+      const copies = [rekordbox, traktor, serato].filter((c): c is Copy => !!c && c !== 'other')
       const copyAt = (path: string) => copies.find((c) => c.path === path)
       const entry = (path: string, title = 'Strobe') => [
         {
@@ -7011,6 +7013,7 @@ describe('Editor Apple Music library section', () => {
                 : [],
         },
         traktor: { collection: async () => (traktor ? entry(traktor.path) : []) },
+        serato: { collection: async () => (serato ? entry(serato.path) : []) },
       })
       api.peekAnalysis = vi.fn().mockResolvedValue(null)
       api.spectrogram = vi.fn(async (path: string) => {
@@ -7059,6 +7062,7 @@ describe('Editor Apple Music library section', () => {
           addToAppleMusic: !!music,
           syncRekordbox: true,
           syncTraktor,
+          syncSerato: !!serato,
           filesOpen,
           libraryCopyAction,
         },
@@ -7393,6 +7397,29 @@ describe('Editor Apple Music library section', () => {
       fireEvent.click(screen.getByTestId('process-btn'))
       expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
       expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    // Replace puts a new file in place of the Serato copy, and Serato keeps its stars only on
+    // the file it had: the DJ must read that before pressing. Update keeps that file.
+    const sameSeratoCopy: Copy = { path: '/s/Strobe.wav', loudness: wavLoudness, durationSec: 95 }
+
+    it('warns that Serato loses the stars when the body replaces the Serato copy', async () => {
+      renderWithPrograms({
+        serato: sameSeratoCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+      })
+      await readyBody()
+      expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
+    })
+
+    it('says nothing about Serato stars when the body updates the Serato copy', async () => {
+      renderWithPrograms({ serato: sameSeratoCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
     })
 
     // Music goes first. While it still says where its copy lives, or its copy's length is
