@@ -362,14 +362,14 @@ describe('CuesSection', () => {
   })
 
   // The full program name sits in the body's name and tooltip, so the folded menu only says
-  // how to save, in the same short words as in full screen.
+  // how to save, in the same short words as in full screen and with no arrow beside them.
   it('reads the ways to save as short words in the folded menu', async () => {
     setup()
     await ready()
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
-    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-save-mode-next-mark')).toBeNull()
   })
 
   it('remembers the way picked from the menu and saves with it', async () => {

@@ -265,11 +265,15 @@ describe('Auto marcar', () => {
     expect(proposals()).toHaveLength(2)
   })
 
-  it('names Enter on the accept button where the host has no Return glyph', async () => {
+  // A key drawn in a box inside the button read as an emoji; the shortcut lives in the
+  // tooltip, the way every other Surco button shows its keys.
+  it('keeps Enter out of the accept button and names it in its tooltip where the host has no Return glyph', async () => {
     setup({ platform: 'win32' })
     await ready()
     await autoMark()
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and saveEnter$/)
+    const accept = screen.getByTestId('cues-auto-accept')
+    expect(accept.textContent).toBe('Accept and save')
+    expect(hoverTooltip(accept)).toContain('Enter')
   })
 
   // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark
@@ -285,7 +289,8 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↩$/)
+    expect(screen.getByTestId('cues-auto-accept').textContent).toBe('Accept and save')
+    expect(hoverTooltip(screen.getByTestId('cues-auto-accept'))).toContain('↩')
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
     expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
       screen.getByTestId('cues-auto-accept'),

@@ -2469,14 +2469,14 @@ describe('CuesSection maximized grid', () => {
   })
 
   // The body already says where the cues go, so the menu lines only say how, the same short
-  // words in full screen as folded.
+  // words in full screen as folded, with no arrow: the words already say it moves on.
   it('reads the ways to save as short words in full screen, as folded', async () => {
     setup(null, READ)
     await maximize()
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
     expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
-    expect(screen.getByTestId('cues-save-mode-next-mark')).toBeInTheDocument()
+    expect(screen.queryByTestId('cues-save-mode-next-mark')).toBeNull()
   })
 
   // Only when every pending track lands in the program the body names can the line drop the

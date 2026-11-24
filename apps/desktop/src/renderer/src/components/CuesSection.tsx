@@ -1419,18 +1419,7 @@ function Editing({
                 mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
               }`}
             >
-              {mode === 'next' ? (
-                <span className="flex items-center gap-[3px]">
-                  {tr('editor.cues.saveNextShort')}
-                  <ArrowDown
-                    data-testid="cues-save-mode-next-mark"
-                    className="h-[11px] w-[11px]"
-                    aria-hidden="true"
-                  />
-                </span>
-              ) : (
-                tr('editor.cues.saveShort')
-              )}
+              {mode === 'next' ? tr('editor.cues.saveNextShort') : tr('editor.cues.saveShort')}
               <Check
                 data-testid={`cues-save-mode-${mode}-check`}
                 className="h-3.5 w-3.5"
@@ -1547,11 +1536,8 @@ function Editing({
           }}
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
-          <Tooltip label={acceptLabel} />
+          <Tooltip label={acceptLabel} hint={formatShortcut(['enter'], isMacOS())} />
           {tr('editor.cues.auto.acceptSave')}
-          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
-            {formatShortcut(['enter'], isMacOS())}
-          </kbd>
         </button>
         <button
           type="button"
