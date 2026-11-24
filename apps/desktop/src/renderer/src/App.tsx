@@ -54,6 +54,7 @@ import { TRASH_MAX_BYTES, TRASH_RETENTION_DAYS } from '../../shared/trash'
 import type {
   BpmResult,
   CollectionTrack,
+  CueSaveThen,
   DeclickConfig,
   FormatSetting,
   KeyResult,
@@ -3158,6 +3159,10 @@ export default function App(): React.JSX.Element {
   const onCueJumpBars = useStableCallback((cueJumpBars: CueJumpBars) =>
     saveSettings({ cueJumpBars }),
   )
+  const onCueSaveThen = useStableCallback((cueSaveThen: CueSaveThen) =>
+    saveSettings({ cueSaveThen }),
+  )
+  const onCueStepTrack = useStableCallback(() => moveSelection(1))
   const onCueQuantize = useStableCallback((cueQuantize: CueQuantize) =>
     saveSettings({ cueQuantize }),
   )
@@ -5315,6 +5320,9 @@ export default function App(): React.JSX.Element {
                               rekordboxCue={rekordboxCue}
                               matching={editorMatching}
                               onCueJumpBars={onCueJumpBars}
+                              cueSaveThen={settings?.cueSaveThen}
+                              onCueSaveThen={onCueSaveThen}
+                              onStepTrack={onCueStepTrack}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}
                               onCueAutoMarkAll={cuesMarkable ? autoMarkSelected : undefined}

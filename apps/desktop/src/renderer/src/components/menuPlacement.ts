@@ -16,6 +16,7 @@ export interface MenuPlacement {
   right?: number
   minWidth: number
   maxHeight: number
+  anchorX?: number
 }
 
 // Where a fixed, body-portaled menu sits, measured from its trigger when it opens. It
@@ -35,6 +36,7 @@ export function placeMenu(r: DOMRect, align: 'start' | 'end' = 'start'): MenuPla
     right: align === 'end' ? window.innerWidth - r.right : undefined,
     minWidth: r.width,
     maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
+    anchorX: r.left + r.width / 2,
   }
 }
 
@@ -51,6 +53,15 @@ export function keepInWindow(p: MenuPlacement, width: number): MenuPlacement {
   return left === p.left && right === p.right ? p : { ...p, left, right }
 }
 
+// Where a menu's entrance should grow from: the trigger's horizontal centre, in the menu's
+// own coordinates, on the edge facing the trigger. A class origin pins to the menu's corner,
+// which is no longer where the trigger is once keepInWindow slid the menu sideways.
+export function menuOrigin(p: MenuPlacement, width: number): string | undefined {
+  if (p.anchorX === undefined) return undefined
+  const left = p.left ?? window.innerWidth - (p.right ?? 0) - width
+  return `${p.anchorX - left}px ${p.bottom !== undefined ? '100%' : '0'}`
+}
+
 export function useKeepInWindow(
   open: boolean,
   pos: MenuPlacement | null,
@@ -59,8 +70,14 @@ export function useKeepInWindow(
 ): void {
   useLayoutEffect(() => {
     if (!open || !pos || !menuRef.current) return
-    const fitted = keepInWindow(pos, menuRef.current.offsetWidth)
-    if (fitted !== pos) setPos(fitted)
+    const width = menuRef.current.offsetWidth
+    const fitted = keepInWindow(pos, width)
+    if (fitted !== pos) {
+      setPos(fitted)
+      return
+    }
+    const origin = menuOrigin(pos, width)
+    if (origin) menuRef.current.style.transformOrigin = origin
   }, [open, pos, menuRef, setPos])
 }
 

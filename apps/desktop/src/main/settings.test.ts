@@ -1228,6 +1228,24 @@ describe('cue flows', () => {
     expect(getSettings().cueJumpBars).toBe(16)
   })
 
+  it('starts cue saves staying on the track', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().cueSaveThen).toBe('stay')
+  })
+
+  it('keeps the chosen way to save cues', () => {
+    saveSettings({ cueSaveThen: 'next' })
+    expect(getSettings().cueSaveThen).toBe('next')
+  })
+
+  it('reads an unknown way to save cues as staying', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ cueSaveThen: 'close' }),
+    )
+    expect(getSettings().cueSaveThen).toBe('stay')
+  })
+
   it('carries the arrow jump to another Mac with the flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))

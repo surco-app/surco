@@ -220,7 +220,7 @@ describe('ShortcutsTab recording state', () => {
     fireEvent.click(idle)
     const recording = screen.getByTestId('shortcut-record-play')
     expect(recording).toBe(idle)
-    expect(recording).toHaveTextContent('…')
+    expect(recording).toHaveTextContent(/^…$/)
     expect(recording).toHaveAccessibleName(i18n.t('settings.shortcuts.recording'))
   })
 })

@@ -141,7 +141,6 @@ import {
 } from './djProcesses'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
-import { engineCueQueueSection } from './engineCueQueueIpc'
 import { engineCueSource } from './engineCueSource'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
@@ -288,7 +287,6 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
-import { traktorCueQueueSection } from './traktorCueQueueIpc'
 import { traktorCueSource } from './traktorCueSource'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
@@ -1685,7 +1683,7 @@ function registerIpc(): void {
       pickLibraryPath: pickLibraryPath('dialogEngineLibrary', {
         properties: ['openDirectory', 'createDirectory'],
       }),
-      cueQueue: engineCueQueueSection(engineCueQueue, {
+      cueQueue: rekordboxQueueSection(engineCueQueue, {
         isClosed: async () => !(await DJ_PROCESSES.engine.isRunning()),
         onWaiting: engineCueQueueWatch.poke,
         onReady: engineCueQueueWatch.poke,
@@ -1709,7 +1707,7 @@ function registerIpc(): void {
         properties: ['openFile'],
         filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
       }),
-      cueQueue: traktorCueQueueSection(traktorCueQueue, {
+      cueQueue: rekordboxQueueSection(traktorCueQueue, {
         isClosed: async () => !(await DJ_PROCESSES.traktor.isRunning()),
         onWaiting: traktorCueQueueWatch.poke,
         onReady: traktorCueQueueWatch.poke,
