@@ -317,6 +317,7 @@
       "placeholder": "Rechercher des morceaux",
       "clear": "Effacer la recherche",
       "empty": "Aucun morceau ne correspond.",
+      "away": "Ses fichiers ne sont pas sur le disque.",
       "reset": "Effacer la recherche et les filtres"
     },
     "sort": {

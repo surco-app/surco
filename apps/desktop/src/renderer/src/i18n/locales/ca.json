@@ -317,6 +317,7 @@
       "placeholder": "Cercar pistes",
       "clear": "Esborrar la cerca",
       "empty": "Cap pista no coincideix.",
+      "away": "Els seus fitxers no són al disc.",
       "reset": "Esborrar la cerca i els filtres"
     },
     "sort": {

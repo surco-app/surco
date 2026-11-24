@@ -317,6 +317,7 @@
       "placeholder": "Buscar faixas",
       "clear": "Limpar busca",
       "empty": "Nenhuma faixa corresponde.",
+      "away": "Os arquivos não estão no disco.",
       "reset": "Limpar busca e filtros"
     },
     "sort": {

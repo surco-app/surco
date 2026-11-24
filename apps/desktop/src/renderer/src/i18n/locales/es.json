@@ -317,6 +317,7 @@
       "placeholder": "Buscar pistas",
       "clear": "Borrar búsqueda",
       "empty": "Ninguna pista coincide.",
+      "away": "Sus archivos no están en el disco.",
       "reset": "Borrar búsqueda y filtros"
     },
     "sort": {

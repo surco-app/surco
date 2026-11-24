@@ -231,6 +231,7 @@ export function useTrackLibrary({
   const filesOpenRef = useRef(filesOpen)
   filesOpenRef.current = filesOpen
   const listedBySource = useRef(new Set<string>())
+  const checkingDisk = useRef(new Map<string, Promise<Set<string>>>())
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
@@ -1049,7 +1050,10 @@ export function useTrackLibrary({
   // The rows go in at once, without waiting for the disk; expandPaths then stats them in
   // the background and the rows whose file is not there are removed. Resolves how many of
   // the playlist's files are not on disk: the paths expandPaths drops are that set, without
-  // a second stat per row (a network crate pays ~340 ms per 100 files for it).
+  // a second stat per row (a network crate pays ~340 ms per 100 files for it). A re-read
+  // landing while an earlier opening is still checking the disk finds those rows loaded and
+  // nothing fresh, so it waits for that check and counts what it found: a 0 there spent the
+  // playlist's one missing-file notice before the real count arrived.
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
@@ -1141,7 +1145,13 @@ export function useTrackLibrary({
           }
         })
     }
-    if (fresh.length === 0) return 0
+    const named = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
+    const checks = new Set([...named].flatMap((p) => checkingDisk.current.get(p) ?? []))
+    const goneElsewhere = async (): Promise<number> => {
+      const found = await Promise.all(checks)
+      return new Set(found.flatMap((g) => [...g].filter((p) => named.has(p)))).size
+    }
+    if (fresh.length === 0) return goneElsewhere()
     // Staged BEFORE adding: the rows created below must find the stamp waiting.
     for (const e of fresh) {
       appleMusicMeta.current.set(e.path, e.meta)
@@ -1158,9 +1168,21 @@ export function useTrackLibrary({
         })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
-    await addPaths(freshPaths, undefined, false, false)
-    const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
-    const gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+    let answer: (gone: Set<string>) => void = () => {}
+    const check = new Promise<Set<string>>((resolve) => {
+      answer = resolve
+    })
+    for (const p of freshPaths) checkingDisk.current.set(same(p), check)
+    let gone = new Set<string>()
+    try {
+      await addPaths(freshPaths, undefined, false, false)
+      const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
+      gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+    } finally {
+      for (const p of freshPaths)
+        if (checkingDisk.current.get(same(p)) === check) checkingDisk.current.delete(same(p))
+      answer(gone)
+    }
     // A staged path the disk lacks may never have been consumed by a row, and would leak
     // into a later unrelated load of that same file.
     for (const e of fresh) {
@@ -1179,7 +1201,7 @@ export function useTrackLibrary({
       if (firstKept)
         setSelection((s) => (s.anchor ? s : { ids: [firstKept.id], anchor: firstKept.id }))
     }
-    return gone.size
+    return gone.size + (await goneElsewhere())
   }
 
   // Publishes to the live crate as well as to state, for the same reason the import

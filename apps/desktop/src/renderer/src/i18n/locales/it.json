@@ -317,6 +317,7 @@
       "placeholder": "Cerca brani",
       "clear": "Cancella la ricerca",
       "empty": "Nessun brano corrisponde.",
+      "away": "I suoi file non sono sul disco.",
       "reset": "Cancella ricerca e filtri"
     },
     "sort": {

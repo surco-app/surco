@@ -1475,6 +1475,9 @@ export default function App(): React.JSX.Element {
   // The gaps of rows already loaded are filled from the playlist once per opening, the
   // same moment fresh rows get theirs; an edit's re-read is not an opening.
   const filledPlaylist = useRef<string | null>(null)
+  // The opening whose disk check has come back: until then an empty playlist is rows still
+  // arriving, not files that are missing.
+  const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
   const {
     entries: sourceEntries,
     source: sourceKind,
@@ -1489,6 +1492,7 @@ export default function App(): React.JSX.Element {
     void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
       if (!sourcePlaylist || entriesFetching) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
+      setCheckedPlaylist(opened)
       if (noticedPlaylist.current === opened) return
       noticedPlaylist.current = opened
       const noFile = sourceEntries.filter((e) => !e.separator && e.path === null).length
@@ -2349,6 +2353,12 @@ export default function App(): React.JSX.Element {
   )
   const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
   const listedCount = browser.source ? tracks.length : filesView.length
+  const filesAway =
+    browser.source !== null &&
+    browser.playlist !== null &&
+    checkedPlaylist === `${browser.source}:${browser.playlist.id}` &&
+    scopeRows.length === 0 &&
+    (browser.entries?.some((e) => !e.separator) ?? false)
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
   // the others stay in the collection, and selected they would reach the row menu and
@@ -4965,10 +4975,12 @@ export default function App(): React.JSX.Element {
                         >
                           {tr(`sources.failed.${browser.source}`)}
                         </p>
-                      ) : listedCount ===
-                        0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
+                      ) : !(browser.source && browser.playlist) &&
+                        listedCount ===
+                          0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the
-                      // column that has nothing in it yet.
+                      // column that has nothing in it yet. A picked playlist keeps its column even
+                      // with no rows, so its search and header stay where the DJ expects them.
                       null : (
                         <>
                           <TrackListHeader
@@ -5116,9 +5128,24 @@ export default function App(): React.JSX.Element {
                               />
                             )}
                           {visibleTracks.length === 0 ? (
-                            <div className="flex flex-col items-center gap-3 p-6 text-center">
-                              <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                              {(search || filterActive) && (
+                            filesAway ? (
+                              // Every track of the playlist is gone, as when its NAS or drive
+                              // is unplugged: there is no search or filter to clear here.
+                              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                                <p
+                                  data-testid="source-playlist-away"
+                                  className="text-xs text-fg-faint"
+                                >
+                                  {tr('sidebar.search.away')}
+                                </p>
+                              </div>
+                            ) : search || filterActive ? (
+                              // Only a search or filter hiding every row is "no match": an
+                              // empty playlist, or one whose rows are still arriving, is not.
+                              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                                <p className="text-xs text-fg-faint">
+                                  {tr('sidebar.search.empty')}
+                                </p>
                                 <button
                                   type="button"
                                   data-testid="reset-view"
@@ -5130,8 +5157,8 @@ export default function App(): React.JSX.Element {
                                 >
                                   {tr('sidebar.search.reset')}
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            ) : null
                           ) : (
                             <TrackList
                               showWaves={showListWaves}

@@ -317,6 +317,7 @@
       "placeholder": "Search tracks",
       "clear": "Clear search",
       "empty": "No tracks match.",
+      "away": "Its files aren't on the disk.",
       "reset": "Clear search and filters"
     },
     "sort": {

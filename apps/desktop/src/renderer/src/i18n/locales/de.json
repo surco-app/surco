@@ -317,6 +317,7 @@
       "placeholder": "Tracks suchen",
       "clear": "Suche leeren",
       "empty": "Kein Track passt.",
+      "away": "Ihre Dateien sind nicht auf der Festplatte.",
       "reset": "Suche und Filter zurücksetzen"
     },
     "sort": {
