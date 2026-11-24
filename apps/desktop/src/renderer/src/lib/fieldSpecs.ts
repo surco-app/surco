@@ -28,6 +28,7 @@ export type PlaylistsDisabled = 'unconfirmed'
 export interface PlaylistsSpec {
   library: PlaylistLibrary
   disabled?: PlaylistsDisabled
+  locked?: string[]
   tree: SourceNode[]
   options: PlaylistOption[]
   single: {
