@@ -117,6 +117,7 @@ import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { traktorReplaceShift } from './replaceCueShift'
 import {
+  MASTER_RATE,
   REPLACE_HEAD_AT_SECONDS,
   REPLACE_REACH_SECONDS,
   REPLACE_TAIL_BEFORE_END_SECONDS,
@@ -3894,10 +3895,45 @@ export async function measureReplaceShift(
   const transfer = [headWindow, tailWindow].flatMap((w) =>
     w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
   )
-  return await runInWorker<ReplaceShift>(
+  const exact = await runInWorker<ReplaceShift>(
     { type: 'replaceShift', head: headWindow, tail: tailWindow },
     transfer,
   )
+  // The exact measure needs the same master; another one (other lead-in, EQ or clock) never lines
+  // up sample by sample, and leaving it unmoved puts the cues hundreds of ms off. Its loudness
+  // contour still lines up, so that is measured instead, but never on a drift (a step between
+  // head and tail is an edit) nor without both windows read (a short track or an unreadable new
+  // file has nothing for six windows either).
+  if (!('unmoved' in exact) || exact.unmoved !== 'noMatch' || !headWindow || !tailWindow) {
+    return exact
+  }
+  return (await measureMasterShift(old, current, duration, signal)) ?? exact
+}
+
+// Null when the envelope does not line up or the measure fails: only a cancel throws.
+async function measureMasterShift(
+  old: string,
+  current: string,
+  duration: number,
+  signal?: AbortSignal,
+): Promise<ReplaceShift | null> {
+  // The new file's length is not probed: a minute over the old one covers another lead-in, and a
+  // file longer than that overruns the buffer and stays unmoved, as a different edit should.
+  const maxBufferMb = Math.ceil(((duration + 60) * MASTER_RATE * 4) / 1e6) + 1
+  try {
+    const [pcmOld, pcmNew] = await Promise.all([
+      decodePcm(old, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+      decodePcm(current, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+    ])
+    const moved = await runInWorker<number | null>(
+      { type: 'masterShift', old: pcmOld, current: pcmNew },
+      [pcmOld.buffer as ArrayBuffer, pcmNew.buffer as ArrayBuffer],
+    )
+    return moved === null ? null : { moved, master: 'other' }
+  } catch {
+    signal?.throwIfAborted()
+    return null
+  }
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from
