@@ -329,7 +329,7 @@ export function PlaylistTree({
 
   return (
     <fieldset onKeyDown={onKeyDown} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <label className="m-2 flex h-[30px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs focus-within:border-[var(--color-accent)]">
+      <label className="m-2 flex h-[30px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
         <Search size={13} className="shrink-0 text-fg-faint" aria-hidden="true" />
         <input
           ref={(el) => {

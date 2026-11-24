@@ -47,7 +47,7 @@ export function SearchInput({
     <Frame
       className={
         scope
-          ? `relative flex items-center rounded-lg bg-[var(--color-panel-2)]/60 focus-within:outline-2 focus-within:outline-[var(--color-accent)] ${className}`
+          ? `relative flex items-center rounded-lg bg-[var(--color-panel-2)]/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)] ${className}`
           : `relative ${className}`
       }
     >
