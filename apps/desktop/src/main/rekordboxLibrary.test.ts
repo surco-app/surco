@@ -1,4 +1,4 @@
-import { mkdirSync, realpathSync } from 'node:fs'
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs'
 import {
   chmod,
   copyFile,
@@ -17,6 +17,7 @@ import log from 'electron-log/main'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeRekordbox } from '../scenarios/rekordboxFixture'
 import { emptyMetadata } from '../shared/metadata'
+import { anlzFile, pqtzSection } from './anlzFixture'
 import * as rekordboxDb from './rekordboxDb'
 import { openRekordboxDb, REKORDBOX_KEY } from './rekordboxDb'
 import { repointTrack, repointTracks } from './rekordboxLibrary'
@@ -1031,8 +1032,25 @@ describe('a repoint whose audio was rewritten', () => {
       if (!db) throw new Error('could not reopen the collection')
       db.exec('ALTER TABLE djmdCue ADD COLUMN Kind INTEGER')
       db.exec('ALTER TABLE djmdCue ADD COLUMN ColorTableIndex INTEGER')
+      db.exec('ALTER TABLE djmdContent ADD COLUMN Length INTEGER')
       db.prepare(`UPDATE djmdCue SET InMsec = ?, Kind = 1 WHERE ID = 'c1'`).run(ms)
       db.close()
+    }
+
+    // The old master's analysis, a beat every 500 ms, where addCueAndAnalysisColumns points.
+    function oldGrid(path: string): void {
+      const dat = join(dirname(path), 'share/PIONEER/USBANLZ/167/710bc/ANLZ0000.DAT')
+      mkdirSync(dirname(dat), { recursive: true })
+      writeFileSync(dat, anlzFile(pqtzSection(Array.from({ length: 800 }, (_, i) => i * 500))))
+    }
+
+    async function replaced(snapToGrid?: true) {
+      const output = join(audioDir, '02 Everybody.aiff')
+      await writeFile(output, Buffer.alloc(5000))
+      const [result] = await repointTracks(dbPath, [
+        { from: MP3, to: output, audio: { cueShiftMs: -290 }, snapToGrid },
+      ])
+      return result
     }
 
     // The provisional list compares these against what rekordbox holds once it has analysed
@@ -1040,31 +1058,38 @@ describe('a repoint whose audio was rewritten', () => {
     // where the new master's kick sounds.
     it('hands back the cues as the shift left them', async () => {
       hotCueAt(dbPath, 10_000)
-      const output = join(audioDir, '02 Everybody.aiff')
-      await writeFile(output, Buffer.alloc(5000))
+      oldGrid(dbPath)
 
-      const [result] = await repointTracks(dbPath, [
-        { from: MP3, to: output, audio: { cueShiftMs: -290 }, snapToGrid: true },
-      ])
-
-      expect(result).toEqual({
+      expect(await replaced(true)).toEqual({
         written: true,
         id: '900001',
-        settleOnGrid: { '900001': [{ id: 'c1', ms: 9710, kind: 1, color: null }] },
+        settleOnGrid: { '900001': { wanted: [{ id: 'c1', ms: 9710, kind: 1, color: null }] } },
       })
+    })
+
+    // A cue the DJ set 60 ms after the kick was never the grid's: settling it on the new grid
+    // would pull it onto the beat they chose not to use, so it stays at the constant shift.
+    it('hands back nothing for a row with no cue on the old grid', async () => {
+      hotCueAt(dbPath, 10_060)
+      oldGrid(dbPath)
+
+      expect(await replaced(true)).toEqual({ written: true, id: '900001' })
+    })
+
+    // Without the old grid nothing says which cues were on the beat, and a guess would snap
+    // the DJ's offbeat cues: every cue keeps the constant shift.
+    it('hands back nothing when the old grid does not read', async () => {
+      hotCueAt(dbPath, 10_000)
+
+      expect(await replaced(true)).toEqual({ written: true, id: '900001' })
     })
 
     // The same master keeps the grid the cues were set on: nothing waits for rekordbox.
     it('hands back nothing for a row that does not settle on the grid', async () => {
       hotCueAt(dbPath, 10_000)
-      const output = join(audioDir, '02 Everybody.aiff')
-      await writeFile(output, Buffer.alloc(5000))
+      oldGrid(dbPath)
 
-      const [result] = await repointTracks(dbPath, [
-        { from: MP3, to: output, audio: { cueShiftMs: -290 } },
-      ])
-
-      expect(result).toEqual({ written: true, id: '900001' })
+      expect(await replaced()).toEqual({ written: true, id: '900001' })
     })
   })
 

@@ -364,8 +364,8 @@ export async function repointRekordbox(
   for (const [i, result] of results.entries()) {
     if (!result.written || !result.settleOnGrid) continue
     const label = basename(list[i].to, extname(list[i].to))
-    for (const [contentId, wanted] of Object.entries(result.settleOnGrid))
-      provisional.add({ contentId, label, wanted })
+    for (const [contentId, waiting] of Object.entries(result.settleOnGrid))
+      provisional.add({ contentId, label, ...waiting })
   }
   return results
 }

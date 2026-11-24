@@ -269,7 +269,11 @@ describe('adjustProvisional', () => {
 // 9 700 ms when it analyses the new file. Only the whole chain, from the conversion's repoint
 // to the adjustment after rekordbox's analysis, puts it on that beat.
 describe('another master, from the replacement to the grid rekordbox draws for it', () => {
-  it('settles the moved hot cue on the beat of the new grid, leaving the loop alone', async () => {
+  // The old master's grid (BEATS) is on disk when the replacement is written; rekordbox's
+  // analysis of the new one draws its beats 200 ms into each old one.
+  async function replacedByAnotherMaster(
+    cueRows: NonNullable<Parameters<typeof writeRekordboxPlaylistFixture>[1]['cueRows']>,
+  ) {
     const dir = await mkdtemp(join(tmpdir(), 'surco-other-master-'))
     const path = join(dir, 'master.db')
     writeRekordboxPlaylistFixture(path, {
@@ -277,18 +281,10 @@ describe('another master, from the replacement to the grid rekordbox draws for i
       content: ORGANISE_FIXTURE.content.map((c) =>
         c.ID === '103' ? { ...c, AnalysisDataPath: ANLZ, Analysed: 105 } : c,
       ),
-      cueRows: [
-        { ID: 'hot', ContentID: '103', InMsec: 10_000, Kind: 1, ColorTableIndex: 42 },
-        {
-          ID: 'loop',
-          ContentID: '103',
-          InMsec: 20_000,
-          Kind: 0,
-          ColorTableIndex: null,
-          OutMsec: 24_000,
-        },
-      ],
+      cueRows,
     })
+    mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+    writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
     const output = join(dir, 'Gowan.aiff')
     await writeFile(output, Buffer.alloc(5000))
     const repoint = rekordboxRepointFor('/downloads/Gowan.flac', output, {
@@ -299,8 +295,8 @@ describe('another master, from the replacement to the grid rekordbox draws for i
     if (!repoint) throw new Error('no repoint')
 
     const [result] = await repointTracks(path, [repoint])
-    const wanted = result.written ? result.settleOnGrid?.['103'] : undefined
-    if (!wanted) throw new Error('nothing left waiting for the grid')
+    const waiting = result.written ? result.settleOnGrid?.['103'] : undefined
+    if (!waiting) throw new Error('nothing left waiting for the grid')
 
     const db = openRekordboxDb(path)
     if (!db) throw new Error('did not open')
@@ -308,16 +304,47 @@ describe('another master, from the replacement to the grid rekordbox draws for i
       ANLZ,
     )
     db.close()
-    mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
     writeFileSync(
       join(dir, 'share', ANLZ),
       anlzFile(pqtzSection(Array.from({ length: 800 }, (_, i) => 200 + i * 500))),
     )
+    return opsFor(path, [{ contentId: '103', label: 'Gowan', ...waiting }])
+  }
 
-    const { ops } = opsFor(path, [{ contentId: '103', label: 'Gowan', wanted }])
+  it('settles the moved hot cue on the beat of the new grid, leaving the loop alone', async () => {
+    const { ops } = await replacedByAnotherMaster([
+      { ID: 'hot', ContentID: '103', InMsec: 10_000, Kind: 1, ColorTableIndex: 42 },
+      {
+        ID: 'loop',
+        ContentID: '103',
+        InMsec: 20_000,
+        Kind: 0,
+        ColorTableIndex: null,
+        OutMsec: 24_000,
+      },
+    ])
     expect(ops[0]?.wanted).toEqual([
       { id: 'hot', ms: 9700, kind: 1, color: 42 },
       { id: 'loop', ms: 19_710, kind: 0, color: null },
+    ])
+  })
+
+  // A DJ who set a cue 60 ms after the kick, or on the offbeat, meant it there: snapping it to
+  // the new grid would pull it onto a beat they chose not to use, and an offbeat cue would raise
+  // a warning about a cue that moved exactly as it should.
+  it('leaves the cues the DJ set off the old grid where the shift put them', async () => {
+    const { ops } = await replacedByAnotherMaster([
+      { ID: 'hot', ContentID: '103', InMsec: 10_000, Kind: 1, ColorTableIndex: 42 },
+      { ID: 'late', ContentID: '103', InMsec: 15_060, Kind: 2, ColorTableIndex: null },
+      { ID: 'offbeat', ContentID: '103', InMsec: 12_250, Kind: 3, ColorTableIndex: null },
+    ])
+    expect(ops[0]?.wanted).toEqual([
+      { id: 'hot', ms: 9700, kind: 1, color: 42 },
+      { id: 'late', ms: 14_770, kind: 2, color: null },
+      { id: 'offbeat', ms: 11_960, kind: 3, color: null },
+    ])
+    expect(ops[0]?.notices).toEqual([
+      { code: 'cues-adjusted', track: 'Gowan', moved: 1, maxMs: 10 },
     ])
   })
 })

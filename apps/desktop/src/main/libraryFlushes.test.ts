@@ -2465,14 +2465,18 @@ describe('repointRekordbox', () => {
 
   // rekordbox analyses another master on its next launch and draws a grid of its own. Each
   // row has to wait in the provisional list with the cues this write left, or nothing
-  // settles them on that grid and they stay a few ms off the beat the DJ set them on.
+  // settles them on that grid and they stay a few ms off the beat the DJ set them on. The
+  // cues the DJ set off the old grid go with it, or the new grid would snap them too.
   it('leaves each row of another master waiting for rekordbox to draw its grid', async () => {
     WRITERS.repointTracks.mockResolvedValueOnce([
       {
         written: true,
         id: '7',
         ids: ['7', '8'],
-        settleOnGrid: { '7': [cue], '8': [{ ...cue, id: 'c2' }] },
+        settleOnGrid: {
+          '7': { wanted: [cue] },
+          '8': { wanted: [{ ...cue, id: 'c2' }], free: ['c3'] },
+        },
       },
     ] as never)
     const provisional = { add: vi.fn() }
@@ -2485,7 +2489,7 @@ describe('repointRekordbox', () => {
 
     expect(provisional.add.mock.calls).toEqual([
       [{ contentId: '7', label: 'World of Dreams', wanted: [cue] }],
-      [{ contentId: '8', label: 'World of Dreams', wanted: [{ ...cue, id: 'c2' }] }],
+      [{ contentId: '8', label: 'World of Dreams', wanted: [{ ...cue, id: 'c2' }], free: ['c3'] }],
     ])
   })
 
@@ -2509,7 +2513,7 @@ describe('repointRekordbox', () => {
   it('leaves another master waiting when a conversion run writes rekordbox itself', async () => {
     REKORDBOX_PROCESS.isRekordboxRunning.mockResolvedValueOnce(false)
     WRITERS.repointTracks.mockResolvedValueOnce([
-      { written: true, id: '7', settleOnGrid: { '7': [cue] } },
+      { written: true, id: '7', settleOnGrid: { '7': { wanted: [cue] } } },
     ] as never)
     const provisional = { add: vi.fn() }
     await flushConversionBatch(host({ provisional }), sessions, {
