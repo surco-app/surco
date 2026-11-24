@@ -5565,6 +5565,97 @@ describe('Editor Apple Music library section', () => {
     expect(await screen.findByTestId('library-row')).toHaveTextContent('Engine DJ')
   })
 
+  function rekordboxWithCopy(copyPath: string): ReturnType<typeof vi.fn> {
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    const api = window.api as unknown as Record<string, unknown>
+    api.properties = vi.fn(async (path: string) => (path === copyPath ? mp3Copy : null))
+    // Loudness never answers, so the row stays on Comparing while the DJ ticks.
+    api.loudness = vi.fn(() => new Promise(() => {}))
+    api.cancelAnalysis = vi.fn().mockResolvedValue(undefined)
+    api.dj = djReads({
+      rekordbox: {
+        available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+        tree: vi
+          .fn<ProgramReads['tree']>()
+          .mockResolvedValue([{ id: 'p1', name: 'Friday', kind: 'playlist', count: 0 }]),
+        membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+        collection: async () => [
+          { contentId: 'r1', path: copyPath, title: 'Strobe', artist: 'deadmau5' },
+        ],
+        editPlaylist,
+      },
+    })
+    return editPlaylist
+  }
+
+  async function tickFriday(): Promise<void> {
+    const field = await screen.findByTestId('playlists-field')
+    await waitFor(() => expect(within(field).getByTestId('playlists-summary')).not.toBeDisabled())
+    fireEvent.click(within(field).getByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-p1'))
+  }
+
+  // The DJ ticks a playlist to have the track there in rekordbox now. The copy the section
+  // found is the track in rekordbox, so it goes in at once even before the comparison settles.
+  it('adds the rekordbox copy to a playlist from the field while the copy is still being compared', async () => {
+    const editPlaylist = rekordboxWithCopy('/r/Strobe.aiff')
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      { addToAppleMusic: false, syncRekordbox: true, visibleFields: ['rekordboxPlaylists'] },
+    )
+    expect(await screen.findByTestId('library-verdict')).toHaveTextContent('Comparing')
+    await tickFriday()
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: 'p1', tracks: [{ paths: ['/r/Strobe.aiff'] }] },
+        expect.anything(),
+      ),
+    )
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ playlists: expect.anything() }),
+    )
+  })
+
+  // The open file is itself the rekordbox entry: there is no other copy to write, so the pick
+  // is staged for the conversion as before.
+  it('stages the playlist as today when the only match is the open file itself', async () => {
+    const editPlaylist = rekordboxWithCopy('/music/a.wav')
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      { addToAppleMusic: false, syncRekordbox: true, visibleFields: ['rekordboxPlaylists'] },
+    )
+    expect(await screen.findByTestId('library-row')).toHaveTextContent('rekordbox')
+    await tickFriday()
+    expect(onChange).toHaveBeenCalledWith({
+      playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Friday' }], base: [] } },
+    })
+    expect(editPlaylist).not.toHaveBeenCalled()
+  })
+
+  // Surco only knows the copy through the section; with it hidden the field stages as before.
+  it('stages the playlist as today when the library section is hidden', async () => {
+    const editPlaylist = rekordboxWithCopy('/r/Strobe.aiff')
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      {
+        addToAppleMusic: false,
+        syncRekordbox: true,
+        visibleFields: ['rekordboxPlaylists'],
+        editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+          s.id === 'library' ? { ...s, hidden: true } : s,
+        ),
+      },
+    )
+    await tickFriday()
+    expect(onChange).toHaveBeenCalledWith({
+      playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Friday' }], base: [] } },
+    })
+    expect(editPlaylist).not.toHaveBeenCalled()
+  })
+
   // The complement: a song not found in the snapshot shows nothing, because the editor
   // only speaks about what the track has, never about what it lacks.
   it('shows no section for a track that is not in the library', () => {

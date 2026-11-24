@@ -23,6 +23,7 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
+import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
@@ -96,6 +97,7 @@ import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
 import { libraryMembership, librarySourceOf } from '../lib/librarySource'
+import { copyPathIn } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -898,6 +900,24 @@ export const Editor = memo(function Editor({
     item.inputPath,
     comparedProgramCopies.map((copy) => copy.path),
   )
+  const copyRows = comparedProgramCopies.map((copy, i) => ({
+    program: copy.program,
+    path: copy.path,
+    verdict: rowVerdict(programVerdicts[i]),
+  }))
+  // Keyed on the paths, not on the rows, which are new on every render: a new copyPathOf
+  // would have the playlists field read the membership again each time.
+  const copyTargets = DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows) ?? '').join('\n')
+  const itemId = item.id
+  const copyPathOf = useMemo(() => {
+    const paths = copyTargets.split('\n')
+    return Object.fromEntries(
+      DJ_PROGRAMS.map((program, i) => [
+        program,
+        paths[i] ? (track: TrackItem) => (track.id === itemId ? paths[i] : undefined) : undefined,
+      ]),
+    ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
+  }, [copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
@@ -1490,6 +1510,7 @@ export const Editor = memo(function Editor({
     tracks: playlistTracks,
     onChange,
     onChangeTracks: onChangeTracksPlaylists,
+    copyPathOf: copyPathOf[library],
   })
   const rekordboxPlaylists = usePlaylistsSpec('rekordbox', playlistsOf('rekordbox'))
   const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
