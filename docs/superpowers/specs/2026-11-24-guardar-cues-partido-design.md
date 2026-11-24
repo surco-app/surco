@@ -43,3 +43,15 @@ El menú tiene todo lo que guarda y nada más.
 - De dónde sale «siguiente pista». La propuesta es una función `onStepTrack` que App pase hasta `CuesSection`, la misma `moveSelection(1)` que usan las flechas.
 - Las etiquetas cortas de la vista plegada.
 - Antes de cerrar, medir la fila plegada en los idiomas al ancho real (norma «errores visuales: no»).
+
+## Cambio tras medir (24/11, variante C del boceto, versión 5)
+
+La sección plegada desbordaba: 197 px disponibles frente a 325 a 419 px necesarios. Vicent quiere una sola línea y un botón con menos protagonismo.
+
+- **Tono suave en las dos vistas.** El botón partido usa fondo `--color-accent-soft` con texto `--color-accent`, sin bloque de acento relleno. Sin cambios, sale atenuado como hoy.
+- **Vista plegada:**
+  - El cuerpo dice siempre «Save» (`editor.cues.saveShort`). En modo «next» añade un icono de flecha abajo dentro del cuerpo. La acción completa va en el `aria-label` y en el tooltip.
+  - El cuerpo ya no reserva el ancho de «Save and next». La flecha es lo único que añade el modo «next», y ese hueco sí se reserva.
+  - Descartar pasa a ser un botón icono, un círculo con ✕, con tooltip y `aria-label` «Discard changes». Es distinto del icono de deshacer.
+  - La fila queda en una línea: borrar todo, deshacer, descartar y luego guardar.
+- **Pantalla completa:** mantiene el texto completo y toma el mismo tono suave.
