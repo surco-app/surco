@@ -266,7 +266,7 @@ describe('CuesSection', () => {
     markAt(bar(64))
     const discardIcon = screen.getByRole('button', { name: 'Discard changes' })
     expect(discardIcon).toHaveAttribute('data-testid', 'cues-discard')
-    expect(discardIcon).toHaveTextContent('')
+    expect(discardIcon.textContent).toBe('')
     expect(hoverTooltip(discardIcon)).toEqual('Discard changes')
     expect(screen.getByTestId('cues-step-back').nextElementSibling).toBe(discardIcon)
     expect(discardIcon.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))

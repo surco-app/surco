@@ -341,7 +341,7 @@ describe('CuesSection folded', () => {
       screen.queryByTestId('cues-undo'),
     )
     const more = screen.getByTestId('cues-save-more')
-    expect(more).toHaveTextContent('')
+    expect(more.textContent).toBe('')
     fireEvent.click(more)
     const discard = screen.getByTestId('cues-discard')
     expect(screen.getByTestId('cues-folded-row')).toContainElement(discard)

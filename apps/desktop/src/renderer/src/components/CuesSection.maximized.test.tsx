@@ -2432,7 +2432,7 @@ describe('CuesSection maximized grid', () => {
     expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
   })
 
-  it('keeps saving every unsaved track inside the save menu in full screen, not as a loose button', async () => {
+  it('keeps saving every unsaved track inside the save menu in full screen, the count said once in its line and not on the chevron', async () => {
     keepDraft('104', '104|f0|null', startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'), {
       path: '/m/h.wav',
       label: 'Other',
@@ -2443,9 +2443,10 @@ describe('CuesSection maximized grid', () => {
     key('m')
     await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
-    expect(screen.getByTestId('cues-save-more')).toHaveTextContent('2')
+    expect(screen.getByTestId('cues-save-more').textContent).toBe('')
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
+    expect(screen.getByTestId('cues-save-all')).toHaveTextContent('2')
   })
 
   // The full-screen body names the program in both ways, since that is where the cues land,
