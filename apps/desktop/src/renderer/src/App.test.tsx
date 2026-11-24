@@ -11148,6 +11148,38 @@ describe('App command palette list-wide actions', () => {
     expect(await paletteTitleOf('process-current')).toBe(button.textContent)
   })
 
+  // An untouched track already in its target format swaps the footer to the up-to-date row,
+  // whose button says "Update anyway". The palette kept the normal button's name, so the
+  // same job was named twice and the palette hid that nothing would change.
+  it('names the current-track action like the up-to-date button on an untouched track', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    const rows = await addOneTrack()
+    fireEvent.click(rows[0])
+    const button = await screen.findByTestId('convert-update-anyway')
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent?.replace('✓', ''))
+  })
+
+  it('names the current-track action like the up-to-date button on an untouched selection', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.aiff']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { shiftKey: true })
+    const button = await screen.findByTestId('convert-update-anyway')
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent?.replace('✓', ''))
+  })
+
   // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
   // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
   // proves the run wiring on its own.

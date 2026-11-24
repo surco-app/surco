@@ -201,10 +201,13 @@ export function ExportButton({
     !quiet && processing && !!onCancel && (stage === 'converting' || stage === 'tags')
   const idleLabel = batchLabel ?? tr(labelSpec.key, labelSpec.options)
   const label = liveStage ? tr(`trackList.stage.${liveStage}`, { format: formatLabel }) : idleLabel
+  // The palette names the action after the face the footer shows, and the up-to-date row
+  // replaces the normal button with "Update anyway".
+  const reportedLabel = upToDate && !quiet ? tr('editor.updateAnyway') : idleLabel
   useEffect(() => {
-    onLabelChange?.(idleLabel)
+    onLabelChange?.(reportedLabel)
     return () => onLabelChange?.('')
-  }, [idleLabel, onLabelChange])
+  }, [reportedLabel, onLabelChange])
   const shownBlocked = softBlocked && blockedLabel ? blockedLabel : undefined
   // The face keeps the last blocking text after it clears, so it can roll out of view
   // instead of vanishing the instant the field is filled.
