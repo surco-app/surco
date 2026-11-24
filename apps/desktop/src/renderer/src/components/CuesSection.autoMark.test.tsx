@@ -254,6 +254,23 @@ describe('Auto marcar', () => {
     expect(screen.getByTestId('cues-step-back')).toBeDisabled()
   })
 
+  // Reviewing the suggestions means looking at the waves: the pointer crossing the zoomed wave
+  // swapped them for the preview of placing a drop by hand there, so they seemed to show only
+  // once the pointer left. While suggestions wait for an answer they stay what is drawn.
+  it.each([
+    ['folded', async () => {}],
+    ['full screen', async () => openFull()],
+  ])('keeps the suggestions drawn while the pointer crosses the zoomed wave, %s', async (_, layout) => {
+    setup()
+    await ready()
+    await layout()
+    await autoMark()
+    const shown = ghostCalls()
+    expect(shown.length).toBeGreaterThan(0)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(ghostCalls()).toEqual(shown)
+  })
+
   it('ghosts the proposals with the flow the DJ switches to, so the preview matches what accepting does', async () => {
     setup()
     await ready()
