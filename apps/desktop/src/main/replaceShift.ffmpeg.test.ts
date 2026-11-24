@@ -196,6 +196,17 @@ describe('measureReplaceShift', () => {
     expect(await measureReplaceShift(short, short)).toEqual({ unmoved: 'noMatch' })
   })
 
+  // A track too short for the envelope's six windows can only come out unmoved there, so the two
+  // whole-file decodes it needs would be time the batch spends for nothing.
+  it('does not decode a track too short for six windows for the envelope measure', async () => {
+    vi.mocked(runInWorker).mockClear()
+    await measureReplaceShift(short, short)
+    expect(runInWorker).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'masterShift' }),
+      expect.anything(),
+    )
+  })
+
   // Surco instantaneo: a 2^21-point FFT on the main process takes over 100 ms and freezes IPC and
   // the audition stream, so the correlation must be handed to the worker.
   it('hands the correlation to the worker, not the main process', async () => {
