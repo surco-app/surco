@@ -9,7 +9,7 @@ import {
   staleLibraryCopy,
   topLibraryEntries,
 } from '../lib/appleMusicLibrary'
-import type { LibrarySource } from '../lib/librarySource'
+import { type LibrarySource, libraryMembership } from '../lib/librarySource'
 import type { TrackItem } from '../types'
 
 interface Params {
@@ -105,18 +105,10 @@ export function useLibraryVerdict({
   // chosen and until the snapshot arrives. The answer never waits on Discogs: the index is
   // local and instant, while the search cascade can take tens of seconds, so an unmatched
   // track reads 'no' at once and a later Discogs match flips it to 'yes'.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ownTags is a fresh literal each render; its read surface (item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: libraryMembership reads the whole item; its read surface (the owned flags, item.meta.title/artist, item.duration) is listed instead so an unrelated keystroke doesn't re-scan the library index.
   const inLibrary: 'idle' | 'yes' | 'no' = useMemo((): 'idle' | 'yes' | 'no' => {
-    if (!librarySource) return 'idle'
-    const owned =
-      librarySource === 'appleMusic'
-        ? item.musicPersistentId || item.inLibraryResolved
-        : item.engineDjAdded || item.inLibraryResolved
-    if (owned) return 'yes'
-    if (!libraryIndex) return 'idle'
-    if (isInLibrary(libraryIndex, ownTags)) return 'yes'
-    if (resolvedViaDiscogs) return 'yes'
-    return 'no'
+    const membership = libraryMembership(item, librarySource, libraryIndex)
+    return membership === 'no' && resolvedViaDiscogs ? 'yes' : membership
   }, [
     librarySource,
     item.musicPersistentId,
