@@ -1393,8 +1393,6 @@ function Editing({
               }`
         }`}
       >
-        {/* The folded row has no room for the count; the menu line says how many. */}
-        {maximized && severalUnsaved && unsavedTracks}
         <ChevronDown className="h-3 w-3" aria-hidden="true" />
       </button>
       {saveMenu.open && (
