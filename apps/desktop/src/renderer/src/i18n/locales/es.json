@@ -1322,6 +1322,7 @@
         "measuring": "Calculando la rejilla…"
       },
       "replaced": {
+        "moved": "Los cues se movieron al fichero nuevo.",
         "notMoved": "sin mover",
         "noMatch": "Surco no pudo alinear el fichero nuevo con el viejo. Los cues siguen como estaban.",
         "drift": "El principio y el final se movieron distinto. Los cues siguen como estaban.",

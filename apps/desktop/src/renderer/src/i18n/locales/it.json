@@ -1322,6 +1322,7 @@
         "measuring": "Calcolo della griglia…"
       },
       "replaced": {
+        "moved": "I cue sono stati spostati sul nuovo file.",
         "notMoved": "non spostati",
         "noMatch": "Surco non è riuscito ad allineare il nuovo file con quello vecchio. I cue restano com'erano.",
         "drift": "L'inizio e la fine si sono spostati in modo diverso. I cue restano com'erano.",

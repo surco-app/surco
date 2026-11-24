@@ -1322,6 +1322,7 @@
         "measuring": "Measuring the beat grid…"
       },
       "replaced": {
+        "moved": "Cues moved to the new file.",
         "notMoved": "not moved",
         "noMatch": "Surco couldn't line up the new file with the old one. Cues left as they were.",
         "drift": "The start and the end moved by different amounts. Cues left as they were.",

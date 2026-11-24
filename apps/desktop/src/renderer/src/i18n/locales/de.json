@@ -1322,6 +1322,7 @@
         "measuring": "Raster wird gemessen…"
       },
       "replaced": {
+        "moved": "Die Cues wurden an die neue Datei angepasst.",
         "notMoved": "nicht verschoben",
         "noMatch": "Surco konnte die neue Datei nicht an der alten ausrichten. Die Cues bleiben, wie sie waren.",
         "drift": "Anfang und Ende haben sich unterschiedlich verschoben. Die Cues bleiben, wie sie waren.",
