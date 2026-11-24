@@ -1,6 +1,12 @@
 import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
 import type { DjProgram } from '../../../shared/djProgram'
+import { formatMatchesInput } from '../../../shared/format'
+import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
+import type { OutputFormat, PlaylistSource } from '../../../shared/types'
 import type { LibraryVerdict } from '../components/LibrarySection'
+import type { TrackItem } from '../types'
+import { isAmbiguousCandidate, type ReplaceCandidate } from './appleMusicLibrary'
+import { replacePatch } from './replaceBeforeConvert'
 
 const COPY_VERDICTS: ReadonlySet<LibraryVerdict> = new Set([
   'same',
@@ -72,4 +78,62 @@ export function fillCopyPath(args: {
   )
   if (!first || first.verdict === 'measuring') return ''
   return first.path
+}
+
+export interface CopyCandidate {
+  program: PlaylistSource
+  // '' while Apple Music still looks the file up.
+  path: string
+  // As the section's row shows it, e.g. "AIFF 16/44.1".
+  format: string
+  verdict: LibraryVerdict | null
+  better: boolean
+  durationSec?: number
+  // Only on the Apple Music candidate, and never an ambiguous match.
+  music?: ReplaceCandidate
+}
+
+export interface LibraryCopyTarget extends Omit<CopyCandidate, 'verdict'> {
+  held: boolean
+}
+
+export interface LibraryCopyRef {
+  path: string
+  program: PlaylistSource
+  musicPersistentId?: string
+}
+
+// The same rule as copyPathIn, for every candidate: a verdict alone cannot rule out another
+// edit, so the lengths must match too.
+export function pickLibraryCopy(
+  candidates: readonly CopyCandidate[],
+  fileDurationSec: number | undefined,
+): LibraryCopyTarget | null {
+  const copy = candidates.find(
+    (candidate) =>
+      countsAsCopy(candidate.verdict) && lengthsMatch(candidate.durationSec, fileDurationSec),
+  )
+  if (!copy) return null
+  const { verdict, ...target } = copy
+  // A copy still being compared may yet turn out to be another version, and Apple Music's
+  // copy without a path gives nothing to update or replace: the press waits for both.
+  return { ...target, held: verdict === 'measuring' || copy.path === '' }
+}
+
+export function replaceCopyPatch(target: LibraryCopyTarget, openPath: string): Partial<TrackItem> {
+  if (target.music) return replacePatch(target.music, openPath) ?? {}
+  // A DJ copy is replaced by its file alone: stamping a musicPersistentId would make the
+  // convert write over an Apple Music entry the user was never offered.
+  return { replacesPath: target.path }
+}
+
+export function copyRefOf(target: LibraryCopyTarget): LibraryCopyRef {
+  const ref: LibraryCopyRef = { path: target.path, program: target.program }
+  if (target.music && !isAmbiguousCandidate(target.music))
+    ref.musicPersistentId = target.music.persistentId
+  return ref
+}
+
+export function keptFormatOf(path: string): OutputFormat | undefined {
+  return OUTPUT_FORMATS.find((format) => formatMatchesInput(format, path))
 }

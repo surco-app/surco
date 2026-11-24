@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { LibraryVerdict } from '../components/LibrarySection'
-import { copyPathIn, countsAsCopy, fillCopyPath } from './libraryCopy'
+import {
+  type CopyCandidate,
+  copyPathIn,
+  countsAsCopy,
+  fillCopyPath,
+  keptFormatOf,
+  pickLibraryCopy,
+  replaceCopyPatch,
+} from './libraryCopy'
+import { replacePatch } from './replaceBeforeConvert'
 
 describe('countsAsCopy', () => {
   it.each(['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
@@ -200,5 +209,99 @@ describe('fillCopyPath', () => {
 
   it('fills from a copy called the same recording when its length matches the file', () => {
     expect(fill({ programs: [rekordbox('same', 211.5)], fileDurationSec: 210 })).toBe('/r/a.aiff')
+  })
+})
+
+const music: CopyCandidate = {
+  program: 'appleMusic',
+  path: '/m/a.mp3',
+  format: 'MP3 320',
+  verdict: 'same',
+  better: true,
+  durationSec: 210,
+  music: { persistentId: 'PID1', label: 'Artist - Title', path: '/m/a.mp3' },
+}
+const rekordbox: CopyCandidate = {
+  program: 'rekordbox',
+  path: '/r/a.aiff',
+  format: 'AIFF 16/44.1',
+  verdict: 'same',
+  better: false,
+  durationSec: 210,
+}
+const traktor: CopyCandidate = { ...rekordbox, program: 'traktor', path: '/t/a.aiff' }
+
+describe('pickLibraryCopy', () => {
+  // Apple Music leads the section, and its copy is the one the convert can update in place.
+  it('takes the Apple Music copy before any DJ copy', () => {
+    expect(pickLibraryCopy([music, rekordbox], 210)).toMatchObject({
+      program: 'appleMusic',
+      path: '/m/a.mp3',
+      held: false,
+    })
+  })
+
+  it('takes the first DJ copy that counts, in the order of the section', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, verdict: 'different' }, traktor], 210)).toMatchObject({
+      program: 'traktor',
+      path: '/t/a.aiff',
+      held: false,
+    })
+  })
+
+  it.each(['different', 'unreadable', 'missing', 'thisFile', 'several', null] as const)(
+    'offers nothing for a lone copy that is %s',
+    (verdict) => {
+      expect(pickLibraryCopy([{ ...rekordbox, verdict }], 210)).toBeNull()
+    },
+  )
+
+  // «same» can come from the 91 s pair probe, which a longer edit of the same master passes
+  // too: updating that copy would overwrite another version of the track.
+  it('offers nothing for a copy whose length is another edit, whatever its verdict', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, durationSec: 400 }], 210)).toBeNull()
+  })
+
+  it('offers nothing while either length is unknown', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, durationSec: undefined }], 210)).toBeNull()
+    expect(pickLibraryCopy([rekordbox], undefined)).toBeNull()
+  })
+
+  it('holds the press while the copy is still being compared, it may be another version', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, verdict: 'measuring' }], 210)).toMatchObject({
+      program: 'rekordbox',
+      held: true,
+    })
+  })
+
+  it('holds the press while Apple Music has not said where its copy lives', () => {
+    expect(pickLibraryCopy([{ ...music, path: '' }], 210)).toMatchObject({
+      program: 'appleMusic',
+      held: true,
+    })
+  })
+})
+
+describe('replaceCopyPatch', () => {
+  it('replaces a DJ copy by its path alone, Apple Music is not involved', () => {
+    const target = pickLibraryCopy([rekordbox], 210)
+    if (!target) throw new Error('expected a copy')
+    expect(replaceCopyPatch(target, '/open/a.wav')).toEqual({ replacesPath: '/r/a.aiff' })
+  })
+
+  it('replaces the Apple Music copy with the stamp it has today', () => {
+    const target = pickLibraryCopy([music], 210)
+    if (!target) throw new Error('expected a copy')
+    expect(replaceCopyPatch(target, '/open/a.wav')).toEqual(
+      replacePatch(music.music ?? null, '/open/a.wav'),
+    )
+  })
+})
+
+describe('keptFormatOf', () => {
+  it('keeps an .aif copy as AIFF and an .m4a copy as its own container', () => {
+    expect(keptFormatOf('/r/a.aif')).toBe('aiff')
+    expect(keptFormatOf('/m/a.m4a')).toBe('alac')
+    expect(keptFormatOf('/x/a.ogg')).toBeUndefined()
   })
 })
