@@ -815,6 +815,18 @@ describe('OnboardingWizard search providers', () => {
       expect(screen.getByTestId(`onboarding-provider-${p}`)).toBeInTheDocument()
     }
   })
+
+  // Same information Settings gives, each next to its own checkbox: a new user picking
+  // catalogs shouldn't have to decode one long paragraph to learn what each brings.
+  it('says what each catalog brings in its own row, under one short intro', () => {
+    openTokenStep()
+    for (const p of SEARCH_PROVIDERS) {
+      expect(screen.getByTestId(`onboarding-provider-row-${p}`)).toHaveTextContent(
+        i18n.t(`settings.providerDescription.${p}`),
+      )
+    }
+    expect(screen.getByText(i18n.t('onboarding.searchProvidersIntro'))).toBeInTheDocument()
+  })
 })
 
 describe('OnboardingWizard token field', () => {

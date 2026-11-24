@@ -1823,7 +1823,6 @@
     "searchByAlbumFirst": "Buscar primero por álbum",
     "searchByAlbumFirstHint": "Si las etiquetas tienen álbum, se busca con el artista antes que la pista. Si no sale nada, se busca la pista.",
     "searchProviders": "Fuentes de búsqueda",
-    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado, Deezer cubre los lanzamientos digitales comerciales, Beatport aporta BPM, tonalidad y mix, MusicBrainz es un catálogo abierto que mantiene su comunidad y Apple Music trae el catálogo de Apple con carátula grande.",
     "searchResultsSection": "Resultados",
     "searchMatchingSection": "Coincidencias",
     "providerDescription": {
@@ -2413,6 +2412,7 @@
     },
     "djLibraryNone": "Ninguno, solo etiqueto archivos",
     "destinationKeepsCollection": "Las pistas que ya están en tu programa de DJ o en Apple Music se actualizan donde están, así conservan su sitio en tu colección.",
+    "searchProvidersIntro": "Catálogos donde busca el editor.",
     "tokenOffer": "La búsqueda funciona tal cual. Un token de Discogs activa «Auto-emparejar al importar» y mantiene las búsquedas estables en horas punta.",
     "tokenAdd": "Añadir un token de Discogs",
     "macTitle": "¿Es tu primer Mac con Surco?",

@@ -430,12 +430,13 @@ export function OnboardingWizard({
                 >
                   {tr('settings.searchProviders')}
                 </h2>
-                <p className="mb-4 text-sm text-fg-dim">{tr('settings.searchProvidersHint')}</p>
+                <p className="mb-4 text-sm text-fg-dim">{tr('onboarding.searchProvidersIntro')}</p>
                 <SearchProvidersControl
                   value={synced.searchProviders}
                   onChange={(value) => patch('searchProviders', value)}
                   testid="onboarding-search-providers"
                   testidPrefix="onboarding-provider"
+                  details={{}}
                 />
 
                 {discogsOn && (

@@ -1823,7 +1823,6 @@
     "searchByAlbumFirst": "Cercar primer per àlbum",
     "searchByAlbumFirstHint": "Si les etiquetes tenen àlbum, es cerca amb l'artista abans que la pista. Si no surt res, es cerca la pista.",
     "searchProviders": "Fonts de cerca",
-    "searchProvidersHint": "Catàlegs on cerca l'editor. Discogs està revisat a mà, Bandcamp hi afegeix material autoeditat, Deezer cobreix els llançaments digitals comercials, Beatport aporta BPM, tonalitat i mix, MusicBrainz és un catàleg obert que manté la seva comunitat i Apple Music hi porta el catàleg d'Apple amb caràtula gran.",
     "searchResultsSection": "Resultats",
     "searchMatchingSection": "Coincidències",
     "providerDescription": {
@@ -2413,6 +2412,7 @@
     },
     "djLibraryNone": "Cap, només etiqueto fitxers",
     "destinationKeepsCollection": "Les pistes que ja són al teu programa de DJ o a Apple Music s'actualitzen on són, i així conserven el seu lloc a la teva col·lecció.",
+    "searchProvidersIntro": "Catàlegs on cerca l'editor.",
     "tokenOffer": "La cerca funciona tal com està. Un token de Discogs activa «Aparellar automàticament en importar» i manté les cerques estables a les hores punta.",
     "tokenAdd": "Afegir un token de Discogs",
     "macTitle": "És el teu primer Mac amb Surco?",

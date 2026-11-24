@@ -9,6 +9,7 @@ import type { SearchProviderId, Settings } from '../../../shared/types'
 //
 // With `details`, the sources become a list: one row per source with what it brings, and
 // its setup (a token, an account) under its own checkbox, dimmed while the source is off.
+// The wizard passes it empty: the same rows, with nothing to set up under them.
 export function SearchProvidersControl({
   value,
   onChange,
