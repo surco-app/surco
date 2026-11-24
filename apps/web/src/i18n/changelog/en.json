@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Save your cues and move on",
+    "items": [
+      {
+        "text": "When you save cues, pick “Save and next” in the button’s menu and Surco opens the next track in the list. It remembers your choice for next time, and saving no longer closes the cue editor.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "“Accept the suggestion” places the suggested cues without saving them. Move them if you like and save when you are ready.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Whatever order you mark the drops in, the start cue no longer lands on the silence before the music.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "The track playing in Surco shows up in macOS with its cover. The media keys, AirPods and Apple Watch pause it or skip to the next one.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "When a playlist’s files are no longer on the disk, the list says so and counts how many are missing. A moved or renamed file no longer shows up as one that could not be read.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "November 23, 2026",
     "title": "Replace a track and keep its cues",

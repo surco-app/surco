@@ -1,5 +1,32 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Enregistre tes cues et passe au suivant",
+    "items": [
+      {
+        "text": "En enregistrant tes cues, choisis « Enregistrer et suivant » dans le menu du bouton et Surco ouvre le morceau suivant de la liste. Il retient ton choix pour la prochaine fois, et enregistrer ne ferme plus l’éditeur de cues.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "« Accepter la proposition » place les cues suggérés sans les enregistrer. Déplace-les si tu veux et enregistre quand tu es prêt.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Quel que soit l’ordre dans lequel tu marques les drops, le cue de départ ne tombe plus dans le silence avant la musique.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Le morceau qui joue dans Surco apparaît dans macOS avec sa pochette. Les touches multimédia, les AirPods et l’Apple Watch le mettent en pause ou passent au suivant.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Quand les fichiers d’une playlist ne sont plus sur le disque, la liste le dit et compte combien il en manque. Un fichier déplacé ou renommé n’apparaît plus comme illisible.",
+        "in": "1.44.0"
+      }
+    ]
+  },
+  {
     "version": "1.43",
     "date": "November 23, 2026",
     "title": "Remplace un morceau sans perdre ses cues",
