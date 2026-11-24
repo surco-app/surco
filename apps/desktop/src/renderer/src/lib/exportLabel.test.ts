@@ -18,8 +18,13 @@ const rows: [ExportLabelState, string][] = [
   [{ ...base, stale: true, tagsOnly: false, sameFormat: true }, 'editor.updateAudio'],
   [{ ...base, inPlace: true, tagsOnly: false, sameFormat: false }, 'editor.convertAction'],
   [{ ...base, done: true }, 'editor.exportAgain'],
-  [{ ...base, tagsOnly: false, replaces: true }, 'editor.replaceAction'],
-  [{ ...base, tagsOnly: false, replaces: true, libraryBetter: true }, 'editor.libraryHasBetter'],
+  [{ ...base, tagsOnly: false, libraryAction: 'replace' }, 'editor.replaceAction'],
+  [
+    { ...base, tagsOnly: false, libraryAction: 'replace', libraryBetter: true },
+    'editor.libraryHasBetter',
+  ],
+  [{ ...base, tagsOnly: false, libraryAction: 'update' }, 'editor.update'],
+  [{ ...base, tagsOnly: false, libraryAction: 'update', libraryBetter: true }, 'editor.update'],
   [{ ...base, tagsOnly: false }, 'editor.convertAction'],
   [{ ...base, inPlace: true, addsToMusic: true }, 'editor.add'],
   [{ ...base, inPlace: true, tagsOnly: false, sameFormat: true, addsToMusic: true }, 'editor.add'],
@@ -42,10 +47,34 @@ describe('exportButtonLabel', () => {
   // verb: "Convert | AIFF" instead of "Convert to AIFF | ⌄".
   it('leaves the format out of the convert, replace and replace anyway labels', () => {
     expect(exportButtonLabel({ ...base, tagsOnly: false }).options).toBeUndefined()
-    expect(exportButtonLabel({ ...base, tagsOnly: false, replaces: true }).options).toBeUndefined()
     expect(
-      exportButtonLabel({ ...base, tagsOnly: false, replaces: true, libraryBetter: true }).options,
+      exportButtonLabel({ ...base, tagsOnly: false, libraryAction: 'replace' }).options,
     ).toBeUndefined()
+    expect(
+      exportButtonLabel({
+        ...base,
+        tagsOnly: false,
+        libraryAction: 'replace',
+        libraryBetter: true,
+      }).options,
+    ).toBeUndefined()
+  })
+
+  // A press must know whether it runs the library copy action or the usual conversion.
+  it('names the library copy action only when the label comes from it, so a press knows what to run', () => {
+    const library = (over: Partial<ExportLabelState>) =>
+      exportButtonLabel({ ...base, tagsOnly: false, ...over }).library
+    expect(library({ libraryAction: 'update' })).toBe('update')
+    expect(library({ libraryAction: 'replace' })).toBe('replace')
+    expect(library({ inPlace: true, tagsOnly: true, libraryAction: 'update' })).toBeUndefined()
+    expect(library({ done: true, libraryAction: 'replace' })).toBeUndefined()
+  })
+
+  it('says anyway only when replacing a better copy, since Update leaves its audio alone', () => {
+    const key = (libraryAction: 'update' | 'replace') =>
+      exportButtonLabel({ ...base, tagsOnly: false, libraryAction, libraryBetter: true }).key
+    expect(key('update')).toBe('editor.update')
+    expect(key('replace')).toBe('editor.libraryHasBetter')
   })
 
   // After an export, picking a different format from the menu only relabels the button —
