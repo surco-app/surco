@@ -1090,8 +1090,8 @@
       "some": "Seulement sur certains morceaux. Clique pour l’ajouter à tous",
       "options": "Playlists {{app}}",
       "unconfirmed": "Choisis la collection dans Réglages → Logiciels DJ → Traktor",
-      "copyRemoved_one": "{{count}} morceau retiré de « {{name}} »",
-      "copyRemoved_other": "{{count}} morceaux retirés de « {{name}} »"
+      "copyRemoved_one": "{{count}} morceau retiré de « {{name}} »",
+      "copyRemoved_other": "{{count}} morceaux retirés de « {{name}} »"
     },
     "cues": {
       "title": "Cues",
