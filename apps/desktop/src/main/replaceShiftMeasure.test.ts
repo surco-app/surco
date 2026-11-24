@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import { PAIR_RATE } from './pairLag'
 import {
+  MASTER_EDGES_SECONDS,
   MASTER_RATE,
   masterShiftOf,
   REPLACE_HEAD_AT_SECONDS,
@@ -313,5 +314,11 @@ describe('masterShiftOf', () => {
   // Silence lines up with anything, so it cannot say where the new audio sits.
   it('refuses a silent new file', () => {
     expect(masterShiftOf(old, new Float32Array(old.length))).toBeNull()
+  })
+
+  // The window edges are what the sweep proved safe on real pairs: a caller that pushed or sorted
+  // them in place would change the rule for every later measure without anyone re-running it.
+  it('exposes the window edges read-only', () => {
+    expectTypeOf(MASTER_EDGES_SECONDS).not.toHaveProperty('push')
   })
 })

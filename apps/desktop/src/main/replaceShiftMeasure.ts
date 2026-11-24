@@ -87,7 +87,7 @@ export function replaceShiftOf(
 export const MASTER_RATE = 4000
 export const MASTER_WINDOW_SECONDS = 30
 export const MASTER_REACH_SECONDS = 5
-export const MASTER_EDGES_SECONDS = [30, 60, 90]
+export const MASTER_EDGES_SECONDS = [30, 60, 90] as const
 export const MASTER_MIN_CORRELATION = 0.5
 export const MASTER_TOLERANCE_MS = 50
 export const MASTER_FINE_REACH_MS = 60
