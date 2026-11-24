@@ -9,7 +9,7 @@ import type { Api } from '../../../preload/api'
 import type { SearchResult, TrackMetadata } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import type { TrackItem } from '../types'
-import { SEARCH_HOLD_MS, useDiscogsBrowser } from './useDiscogsBrowser'
+import { RATE_LIMIT_WAITS_MS, SEARCH_HOLD_MS, useDiscogsBrowser } from './useDiscogsBrowser'
 
 const searchResult = {
   provider: 'discogs' as const,
@@ -289,6 +289,7 @@ describe('useDiscogsBrowser', () => {
       'discogs',
       'high',
       expect.anything(),
+      false,
     )
   })
 
@@ -615,7 +616,7 @@ describe('useDiscogsBrowser', () => {
     )
     await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
     expect(result.current.openKey).toBe('discogs:55')
-    expect(search).toHaveBeenCalledWith('refined term', 'discogs', 'high', expect.anything())
+    expect(search).toHaveBeenCalledWith('refined term', 'discogs', 'high', expect.anything(), false)
   })
 
   // Applying a match stamps its id on the track, so flipping away and back reopened the panel
@@ -631,7 +632,7 @@ describe('useDiscogsBrowser', () => {
     )
     await waitFor(() => expect(result.current.results.map((r) => r.id)).toEqual([55, 1, 2]))
     expect(result.current.openKey).toBe('discogs:55')
-    expect(search).toHaveBeenCalledWith('artist title', 'discogs', 'high', expect.anything())
+    expect(search).toHaveBeenCalledWith('artist title', 'discogs', 'high', expect.anything(), false)
   })
 
   // The probe would otherwise pin whichever result it finds holding the title, pushing the
@@ -1430,8 +1431,12 @@ describe('stable search', () => {
       )
     }
 
+    const unavailable = new Error(
+      "Error invoking remote method 'search': Error: SURCO_ERR:discogsUnavailable: 502",
+    )
+
     it('names the failed source and keeps the results of the others', async () => {
-      setApi({ search: searchWhere(() => Promise.reject(rateLimited)) })
+      setApi({ search: searchWhere(() => Promise.reject(unavailable)) })
       const { result } = renderHook(
         () =>
           useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs', 'bandcamp']),
@@ -1447,7 +1452,7 @@ describe('stable search', () => {
     it('retries only the failed source, and the notice goes once it answers', async () => {
       let attempts = 0
       const search = searchWhere(() =>
-        ++attempts === 1 ? Promise.reject(rateLimited) : Promise.resolve([searchResult]),
+        ++attempts === 1 ? Promise.reject(unavailable) : Promise.resolve([searchResult]),
       )
       setApi({ search })
       const { result } = renderHook(
@@ -1471,8 +1476,7 @@ describe('stable search', () => {
         { wrapper: wrapper() },
       )
       act(() => result.current.doSearch())
-      await waitFor(() => expect(result.current.failedSources).toEqual(['discogs']))
-      expect(result.current.discogsRateLimited).toBe(true)
+      await waitFor(() => expect(result.current.discogsRateLimited).toBe(true))
     })
 
     it('flags a Discogs rate limit when it was the only source', async () => {
@@ -1482,8 +1486,100 @@ describe('stable search', () => {
         { wrapper: wrapper() },
       )
       act(() => result.current.doSearch())
-      await waitFor(() => expect(result.current.error).not.toBe(''))
-      expect(result.current.discogsRateLimited).toBe(true)
+      await waitFor(() => expect(result.current.discogsRateLimited).toBe(true))
+    })
+
+    describe('waits out a Discogs rate limit instead of failing', () => {
+      afterEach(() => vi.useRealTimers())
+
+      // The other catalogs already answered: holding them back behind a source that only
+      // needs a moment made the panel look frozen, and calling it failed or empty was a lie.
+      it('shows what the others found and counts down to an automatic retry', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        setApi({ search: searchWhere(() => Promise.reject(rateLimited)) })
+        const { result } = renderHook(
+          () =>
+            useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, [
+              'discogs',
+              'bandcamp',
+            ]),
+          { wrapper: wrapper() },
+        )
+        act(() => result.current.doSearch())
+        await waitFor(() => expect(result.current.discogsRetryAt).not.toBeNull())
+        expect(result.current.results.map((r) => r.provider)).toEqual(['bandcamp'])
+        expect(result.current.failedSources).toEqual([])
+        const left = (result.current.discogsRetryAt ?? 0) - Date.now()
+        expect(left).toBeGreaterThan(RATE_LIMIT_WAITS_MS[0] - 1000)
+        expect(left).toBeLessThanOrEqual(RATE_LIMIT_WAITS_MS[0])
+      })
+
+      // With nothing from the others, "no matches" would claim Discogs had nothing either.
+      it('does not call the search empty or failed while Discogs is still to retry', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        setApi({
+          search: vi.fn((_t: string, source: string) =>
+            source === 'discogs' ? Promise.reject(rateLimited) : Promise.resolve([]),
+          ),
+        })
+        const { result } = renderHook(
+          () =>
+            useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, [
+              'discogs',
+              'bandcamp',
+            ]),
+          { wrapper: wrapper() },
+        )
+        act(() => result.current.doSearch())
+        await waitFor(() => expect(result.current.discogsRetryAt).not.toBeNull())
+        expect(result.current.noResults).toBe(false)
+        expect(result.current.error).toBe('')
+      })
+
+      it('retries on its own when the wait is over and lists what Discogs then finds', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        let attempts = 0
+        const search = searchWhere(() =>
+          ++attempts === 1 ? Promise.reject(rateLimited) : Promise.resolve([searchResult]),
+        )
+        setApi({ search })
+        const { result } = renderHook(
+          () => useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, ['discogs']),
+          { wrapper: wrapper() },
+        )
+        act(() => result.current.doSearch())
+        await waitFor(() => expect(result.current.discogsRetryAt).not.toBeNull())
+        expect(result.current.error).toBe('')
+        await act(async () => vi.advanceTimersByTime(RATE_LIMIT_WAITS_MS[0]))
+        await waitFor(() => expect(result.current.results).toHaveLength(1))
+        expect(result.current.discogsRetryAt).toBeNull()
+      })
+
+      // An endless loop of retries would hide a limit that is not lifting: after the last
+      // wait it is a failure again, with the manual Retry.
+      it('gives up after the last automatic retry and names Discogs as failed', async () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true })
+        const search = searchWhere(() => Promise.reject(rateLimited))
+        setApi({ search })
+        const { result } = renderHook(
+          () =>
+            useDiscogsBrowser(item({ query: 'some album' }), tr, undefined, [
+              'discogs',
+              'bandcamp',
+            ]),
+          { wrapper: wrapper() },
+        )
+        act(() => result.current.doSearch())
+        for (const wait of RATE_LIMIT_WAITS_MS) {
+          await waitFor(() => expect(result.current.discogsRetryAt).not.toBeNull())
+          await act(async () => vi.advanceTimersByTime(wait))
+        }
+        await waitFor(() => expect(result.current.failedSources).toEqual(['discogs']))
+        expect(result.current.discogsRetryAt).toBeNull()
+        expect(search.mock.calls.filter(([, source]) => source === 'discogs')).toHaveLength(
+          RATE_LIMIT_WAITS_MS.length + 1,
+        )
+      })
     })
 
     it('does not blame the rate limit for a Discogs failure a token would not fix', async () => {

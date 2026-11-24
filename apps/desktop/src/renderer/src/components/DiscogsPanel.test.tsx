@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -38,6 +38,7 @@ function browser(overrides: Partial<DiscogsBrowser>): DiscogsBrowser {
     error: '',
     failedSources: [],
     discogsRateLimited: false,
+    discogsRetryAt: null,
     retrySearch: vi.fn(),
     previewRelease: vi.fn(),
     ...overrides,
@@ -314,6 +315,42 @@ describe('DiscogsPanel search announcements', () => {
   it('shows no failure line when every source answered', () => {
     renderPanel(browser({ query: 'uno', results }))
     expect(screen.queryByTestId('discogs-failed-sources')).toBeNull()
+  })
+
+  describe('while Discogs waits out its rate limit', () => {
+    afterEach(() => vi.useRealTimers())
+
+    // The other catalogs' rows are already up; the line under them says Discogs is coming,
+    // and when, so the panel never reads as frozen.
+    it('counts down under the results to the automatic retry', () => {
+      vi.useFakeTimers()
+      renderPanel(browser({ query: 'uno', results, discogsRetryAt: Date.now() + 12_000 }))
+      const wait = screen.getByTestId('discogs-wait')
+      expect(wait).toHaveTextContent(/Discogs/)
+      expect(wait).toHaveTextContent(/12/)
+      act(() => vi.advanceTimersByTime(3000))
+      expect(wait).toHaveTextContent(/9/)
+      expect(wait).toHaveAccessibleName(/9/)
+    })
+
+    it('retries at once when clicked', () => {
+      const retrySearch = vi.fn()
+      renderPanel(
+        browser({ query: 'uno', results, discogsRetryAt: Date.now() + 12_000, retrySearch }),
+      )
+      fireEvent.click(screen.getByTestId('discogs-wait'))
+      expect(retrySearch).toHaveBeenCalledTimes(1)
+    })
+
+    // Nothing from the others: the hint to choose an album or a "no matches" would both
+    // be wrong while Discogs has not answered yet.
+    it('takes the empty list with the countdown when the others found nothing', () => {
+      renderPanel(browser({ query: 'uno', discogsRetryAt: Date.now() + 12_000 }))
+      expect(
+        within(screen.getByTestId('discogs-results')).getByTestId('discogs-wait'),
+      ).toBeVisible()
+      expect(screen.queryByText(/album/i)).toBeNull()
+    })
   })
 })
 

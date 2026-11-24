@@ -1077,6 +1077,8 @@
     "lastApplied": "Zuletzt übernommenes Album",
     "heldResults": "{{count}} weitere von {{providers}} · Anzeigen",
     "stillSearching": "Sucht noch in {{providers}}…",
+    "discogsWait": "Discogs drosselt die Suche. Neuer Versuch in {{seconds}} s. Klicke, um jetzt zu suchen.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} Ergebnis",
     "resultsCount_other": "{{count}} Ergebnisse",
     "suggestedStatus": "Vorgeschlagen: {{title}}",

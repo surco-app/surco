@@ -22,6 +22,10 @@ const DEBOUNCE_MS = 500
 // source answers well inside it and the list appears once, whole; cold, Discogs can take
 // seven seconds, and the faster sources should not wait on it that long.
 export const SEARCH_HOLD_MS = 3000
+// How long the panel waits before asking Discogs again after a 429, one entry per automatic
+// retry. Discogs counts its limit over a moving minute, so a retry a second later only earns
+// another 429; past the last one the limit is not lifting and it reads as a failure again.
+export const RATE_LIMIT_WAITS_MS = [10_000, 20_000, 40_000]
 
 // A stable empty array for when no search has answered yet (no search run yet, or
 // the query key changed and React Query hasn't refetched). `?? []` would allocate a
@@ -61,7 +65,8 @@ function searchFn(
     // built always carries them.
     const typed = userDroveSearch.current || item.queryTyped === true
     const hints = searchHintsFor(item, cleanup, typed ? searchTerm : undefined)
-    return window.api.search(searchTerm, source, 'high', hints)
+    // The panel waits out a Discogs rate limit itself, in sight, so the 429 comes back at once.
+    return window.api.search(searchTerm, source, 'high', hints, false)
   }
 }
 
@@ -134,6 +139,9 @@ export interface DiscogsBrowser {
   error: string
   failedSources: SearchProviderId[]
   discogsRateLimited: boolean
+  // When the panel asks Discogs again on its own after a rate limit, or null when it is not
+  // waiting. While set, Discogs is neither failed nor empty: its answer is still to come.
+  discogsRetryAt: number | null
   retrySearch: () => void
   previewRelease: (result: SearchResult) => void
 }
@@ -563,11 +571,43 @@ export function useDiscogsBrowser(
     )
   }, [])
 
+  // A 429 from Discogs is a wait, not a failure: the list shows what the others found and the
+  // panel asks Discogs again on its own, a little later each time, before giving up. The
+  // count is per run, so a new search starts with every retry again.
+  const discogsFailure = errors[sources.indexOf('discogs')]
+  const discogsRateLimited =
+    settled &&
+    discogsFailure instanceof Error &&
+    errorKeyOf(cleanIpcError(discogsFailure.message)) === 'discogsRateLimit'
+  const [limitRetries, setLimitRetries] = useState({ run: '', used: 0 })
+  const retriesUsed = limitRetries.run === runKey ? limitRetries.used : 0
+  const discogsWait =
+    discogsRateLimited && retriesUsed < RATE_LIMIT_WAITS_MS.length
+      ? RATE_LIMIT_WAITS_MS[retriesUsed]
+      : null
+  const [discogsRetryAt, setDiscogsRetryAt] = useState<number | null>(null)
+  const { retryFailed } = searchQueries
+  const retryFailedRef = useRef(retryFailed)
+  retryFailedRef.current = retryFailed
+  useEffect(() => {
+    if (discogsWait === null) {
+      setDiscogsRetryAt(null)
+      return
+    }
+    setDiscogsRetryAt(Date.now() + discogsWait)
+    const id = setTimeout(() => {
+      setLimitRetries({ run: runKey, used: retriesUsed + 1 })
+      retryFailedRef.current()
+    }, discogsWait)
+    return () => clearTimeout(id)
+  }, [discogsWait, runKey, retriesUsed])
+  const failed = allFailed && discogsWait === null
+
   const openKey = openResult ? `${openResult.provider}:${openResult.id}` : null
   const suggestedKey = suggestedKeyOf
   const choosingBest =
     revealed &&
-    !allFailed &&
+    !failed &&
     directId === null &&
     suggested === null &&
     probedFor !== runKey &&
@@ -579,16 +619,16 @@ export function useDiscogsBrowser(
   // distinct from the never-searched-yet idle state so the panel can say "no matches" instead
   // of the "choose an album" hint. Also true when a provider filter empties an otherwise
   // non-empty result set.
-  const noResults = settled && !allFailed && results.length === 0 && held.count === 0
+  const noResults =
+    settled && !failed && discogsWait === null && results.length === 0 && held.count === 0
   // A refused token or a rate limit is thrown by the main process, which has no
   // i18next instance to phrase it — those arrive stamped with a key and are resolved
   // here; anything else keeps the provider's own wording.
-  const error = allFailed
+  const error = failed
     ? mainErrorMessage(firstError, tr, tr('editor.searchError'))
     : releaseQuery.isError
       ? mainErrorMessage(releaseQuery.error, tr, tr('editor.releaseError'))
       : ''
-  const { retryFailed } = searchQueries
   const refetchRelease = releaseQuery.refetch
   const releaseFailed = releaseQuery.isError
   const retrySearch = useCallback(() => {
@@ -598,22 +638,17 @@ export function useDiscogsBrowser(
 
   const failedSources = useMemo(
     () =>
-      settled && !allFailed
+      settled && !failed
         ? sources.filter((source, i): source is SearchProviderId => {
             const failure = errors[i]
             if (source === 'direct' || !failure) return false
+            if (source === 'discogs' && discogsWait !== null) return false
             const raw = failure instanceof Error ? cleanIpcError(failure.message) : ''
             return errorKeyOf(raw) !== 'beatportNotConnected'
           })
         : EMPTY_PROVIDERS,
-    [settled, allFailed, sources, errors],
+    [settled, failed, sources, errors, discogsWait],
   )
-
-  const discogsFailure = errors[sources.indexOf('discogs')]
-  const discogsRateLimited =
-    settled &&
-    discogsFailure instanceof Error &&
-    errorKeyOf(cleanIpcError(discogsFailure.message)) === 'discogsRateLimit'
 
   // Memoized so the hook's own consumers (DiscogsPanel, wrapped in memo — see
   // DiscogsPanel.tsx) don't reconcile on every Editor render: without this the
@@ -643,6 +678,7 @@ export function useDiscogsBrowser(
       error,
       failedSources,
       discogsRateLimited,
+      discogsRetryAt,
       retrySearch,
       previewRelease,
     }),
@@ -668,6 +704,7 @@ export function useDiscogsBrowser(
       error,
       failedSources,
       discogsRateLimited,
+      discogsRetryAt,
       retrySearch,
       previewRelease,
     ],
