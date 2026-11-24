@@ -11,6 +11,7 @@ import {
   ExternalLink,
   FileOutput,
   FolderDown,
+  Gauge,
   Image as ImageIcon,
   Library,
   ListChecks,
@@ -66,7 +67,7 @@ const KIND_ICON: Record<ActivityKind, typeof Disc3> = {
   itunes: Music,
   cover: ImageIcon,
   convert: Disc3,
-  analyze: ActivityIcon,
+  analyze: Gauge,
   applemusic: Library,
   // The icon the review's own Apply button wears.
   review: ListChecks,
@@ -477,7 +478,7 @@ export function ActivityPanel({
         onPointerUp={onPointerUp}
         className="flex shrink-0 cursor-grab items-center gap-2 border-b border-[var(--color-line)] px-3 py-2 active:cursor-grabbing"
       >
-        <Radio className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
+        <ActivityIcon className="h-4 w-4 shrink-0 text-fg-muted" aria-hidden="true" />
         <span className="flex-1 select-none text-xs font-medium text-fg">
           {tr('activity.title')}
         </span>
