@@ -71,6 +71,7 @@ export function registerAppleMusicIpc(
     trackTmp?: (path: string) => void
     untrackTmp?: (path: string) => void
     followLibrarySize?: Rewritten
+    allowMedia?: (path: string) => void
   } = {},
 ): void {
   // The whole-library snapshot the renderer matches the crate against to flag which
@@ -228,10 +229,14 @@ export function registerAppleMusicIpc(
   // gap by counting.
   // Where a library copy's file lives. The renderer needs it to tell rekordbox which path
   // a replacement supersedes: the collection indexes that file, not the one being
-  // converted, which may sit in any download folder.
-  ipcMain.handle('applemusic:entryLocation', (_e, persistentId: string) =>
-    process.platform === 'darwin' ? appleMusicEntryLocation(persistentId) : '',
-  )
+  // converted, which may sit in any download folder. Update retags the file found here,
+  // and main processes only files it granted, so the location is granted as it leaves.
+  ipcMain.handle('applemusic:entryLocation', async (_e, persistentId: string) => {
+    if (process.platform !== 'darwin') return ''
+    const location = await appleMusicEntryLocation(persistentId)
+    deps.allowMedia?.(location)
+    return location
+  })
 
   ipcMain.handle(
     'applemusic:playlistTracks',

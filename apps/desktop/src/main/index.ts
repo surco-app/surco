@@ -1565,6 +1565,7 @@ function registerIpc(): void {
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
     followLibrarySize,
+    allowMedia: (path) => mediaAccess.allow(path),
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
