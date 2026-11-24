@@ -595,14 +595,25 @@ describe('PlaylistsField with locked playlists', () => {
     const check = screen.getByTestId('playlists-check-house')
     fireEvent.click(check)
     expect(onChange).not.toHaveBeenCalled()
-    expect(check).toBeDisabled()
+    expect(check).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('will not untick a locked playlist with the space bar either', () => {
+  const arrowDown = () => fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowDown' })
+
+  it('lets the arrow keys land on a locked row and move past it', () => {
+    renderLocked()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    expect(document.activeElement).toBe(house)
+    arrowDown()
+    expect(document.activeElement).toBe(screen.getByTestId('playlists-check-mash'))
+  })
+
+  it('will not untick a focused locked playlist with the space bar', () => {
     const onChange = renderLocked()
-    const check = screen.getByTestId('playlists-check-house')
-    check.focus()
-    fireEvent.keyDown(check, { key: ' ' })
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    fireEvent.keyDown(house, { key: ' ' })
     expect(onChange).not.toHaveBeenCalled()
   })
 
@@ -614,7 +625,8 @@ describe('PlaylistsField with locked playlists', () => {
 
   it('says where to remove a locked playlist', () => {
     renderLocked()
-    fireEvent.focusIn(screen.getByTestId('playlists-row-house'))
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
     expect(screen.getByRole('tooltip')).toHaveTextContent('Remove it in Engine DJ')
   })
 })

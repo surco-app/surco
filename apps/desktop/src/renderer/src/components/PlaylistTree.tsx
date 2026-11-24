@@ -295,7 +295,7 @@ export function PlaylistTree({
           tabIndex={-1}
           data-testid={`playlists-check-${targetKey(row.target)}`}
           checked={state === 'all'}
-          disabled={rowLocked}
+          aria-disabled={rowLocked || undefined}
           onChange={() => toggle(row.target)}
           className="h-3.5 w-3.5 shrink-0 accent-[var(--color-accent)] outline-none"
         />
