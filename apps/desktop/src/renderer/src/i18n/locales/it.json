@@ -380,6 +380,7 @@
     "conversionCancelled": "Conversione annullata.",
     "verifyUnknownTrack": "Questa verifica non è più disponibile. Converti di nuovo il brano per ripeterla.",
     "seratoBlocked": "Serato perderebbe il brano e i suoi cue",
+    "libraryCopyAudioWouldChange": "Questa copia è rimasta com'era. Aggiornarne i tag ne avrebbe cambiato l'audio.",
     "audioDamaged": "L'audio del file è danneggiato",
     "diskFull": "Il disco è pieno",
     "noPermission": "Non hai il permesso di scrivere in quella cartella",

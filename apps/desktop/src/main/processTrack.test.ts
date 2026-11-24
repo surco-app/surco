@@ -1282,6 +1282,48 @@ describe('runProcessTrack — retagging a library copy where it is', () => {
     expect(result.tagsOnly).toBe(true)
     expect(deps.sendProgress).toHaveBeenCalledWith('tags')
   })
+
+  // Update promises the copy keeps its audio: the programs' cues, grids and analysis
+  // were made on those samples, so no setting or job field may reprocess them.
+  it('keeps the audio of the copy whatever processing the job and settings ask for', async () => {
+    const deps = makeDeps({
+      settings: settings({
+        normalize: { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+        declick: { mode: 'strong', noise: 'medium' },
+      }),
+    })
+    const result = await runProcessTrack(
+      copy({
+        normalize: { mode: 'peak', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+        declick: { mode: 'standard', noise: 'soft' },
+        trim: { startSec: 1, endSec: 2 },
+      }),
+      deps,
+    )
+
+    const call = vi.mocked(deps.convertAudio).mock.calls[0]
+    expect(call[5]).toBeUndefined()
+    expect(call[9]).toBeUndefined()
+    expect(call[10]).toBeUndefined()
+    expect(call[15]).toBe(true)
+    expect(result.tagsOnly).toBe(true)
+  })
+
+  it('asks the conversion to keep the audio only for a library copy', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job({ inputPath: '/in/song.aiff', format: 'aiff' }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][15]).toBeUndefined()
+  })
+
+  it('refuses to retag a copy in another format instead of converting it', async () => {
+    const deps = makeDeps()
+    await expect(runProcessTrack(copy({ format: 'wav' }), deps)).rejects.toThrow(
+      'libraryCopyAudioWouldChange',
+    )
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.reservePath).not.toHaveBeenCalled()
+  })
 })
 
 describe('runProcessTrack — in-place rewrite', () => {

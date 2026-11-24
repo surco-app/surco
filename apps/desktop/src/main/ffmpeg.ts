@@ -2394,6 +2394,10 @@ export async function convertAudio(
   isCancelled?: () => boolean,
   // The user answered "Overwrite" for a different file already at the destination.
   keepOverwritten?: boolean,
+  // Update on a library copy: the DJ programs' cues, grids and analysis were made on its
+  // samples, so only the tags may change. The quality pins are set aside and anything
+  // short of a stream copy fails instead of being written.
+  keepAudio?: boolean,
 ): Promise<{
   normalizeSkipped: boolean
   declickedSamples?: number
@@ -2450,10 +2454,13 @@ export async function convertAudio(
   // 'source' (no resample) for anything genuine, unverifiable or already 44.1.
   // Downstream (the normalize filter and the planner) only ever sees concrete
   // values, so the policy string can never reach a Number() as NaN.
+  const pins: Partial<ConversionQuality> | undefined = keepAudio
+    ? { ...quality, bitDepth: 'source', sampleRate: 'source' }
+    : quality
   const resolvedQuality =
-    quality?.sampleRate === 'corrected'
+    pins?.sampleRate === 'corrected'
       ? {
-          ...quality,
+          ...pins,
           sampleRate: ((await measureResolution(
             input,
             Number((await probeOnce(input)).sampleRate) || 0,
@@ -2461,7 +2468,7 @@ export async function convertAudio(
             ? '44100'
             : 'source') as ConversionQuality['sampleRate'],
         }
-      : quality
+      : pins
   const pinnedRateHz =
     resolvedQuality?.sampleRate && resolvedQuality.sampleRate !== 'source'
       ? Number(resolvedQuality.sampleRate)
@@ -2487,6 +2494,7 @@ export async function convertAudio(
     resolvedQuality,
   )
   const { codec, dither, ext } = plan
+  if (keepAudio && codec !== 'copy') throw errorWithKey('libraryCopyAudioWouldChange', input)
   const copiedVerbatim = codec === 'copy' && preservesCuesInPlace(ext)
   // The trim runs first (every later stage works on the kept audio only), click
   // repair next — the gains below were measured through both — then a pinned rate

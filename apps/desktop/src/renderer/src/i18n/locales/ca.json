@@ -380,6 +380,7 @@
     "conversionCancelled": "Conversió cancel·lada.",
     "verifyUnknownTrack": "Aquesta comprovació ja no està disponible. Torna a convertir la pista per repetir-la.",
     "seratoBlocked": "Serato perdria la pista i els seus cues",
+    "libraryCopyAudioWouldChange": "Aquesta còpia s'ha quedat com estava. Actualitzar-ne les etiquetes n'hauria canviat l'àudio.",
     "audioDamaged": "L'àudio del fitxer està malmès",
     "diskFull": "El disc és ple",
     "noPermission": "No tens permís per escriure en aquesta carpeta",

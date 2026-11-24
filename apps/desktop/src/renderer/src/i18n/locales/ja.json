@@ -380,6 +380,7 @@
     "conversionCancelled": "変換をキャンセルしました。",
     "verifyUnknownTrack": "この確認はもう行えません。もう一度確認するには、トラックを再変換してください。",
     "seratoBlocked": "Serato でトラックとそのキューが失われます",
+    "libraryCopyAudioWouldChange": "このコピーはそのままにしました。タグを更新すると音声が変わってしまいます。",
     "audioDamaged": "ファイルのオーディオが破損しています",
     "diskFull": "ディスクがいっぱいです",
     "noPermission": "そのフォルダに書き込む権限がありません",

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
+import { type AudioProcessing, tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
 import {
   type DjProgram,
   REACH_PROGRAMS,
@@ -96,6 +96,7 @@ export interface ProcessTrackDeps {
     foreignRemoved?: string[],
     replacesPath?: string,
     keepOverwritten?: boolean,
+    keepAudio?: boolean,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number; written: ConversionWritten }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -591,6 +592,18 @@ export async function runProcessTrack(
     const format =
       job.format ??
       resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff', settings.keepMp3Sources)
+    // Another format means another file: the copy the programs hold would be re-encoded.
+    if (job.tagsInPlace && !formatMatchesInput(format, job.inputPath))
+      throw errorWithKey('libraryCopyAudioWouldChange', job.inputPath)
+    // Update promises the copy keeps its audio, so no processing reaches it whatever the
+    // job or the settings ask for.
+    const processing: AudioProcessing = job.tagsInPlace
+      ? {}
+      : {
+          normalize: job.normalize ?? settings.normalize,
+          declick: job.declick ?? settings.declick,
+          trim: job.trim,
+        }
     // Every destination facet prefers the job's pin over the live setting (see the
     // ProcessJob comments): the editor's one-shot destination pick and the batch pin
     // both ride the job, so a Settings change can't redirect a conversion in flight.
@@ -615,12 +628,7 @@ export async function runProcessTrack(
     const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
     const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
     const tagsOnly =
-      inPlaceWrite &&
-      tagsOnlyExport(formatMatchesInput(format, job.inputPath), {
-        normalize: job.normalize ?? settings.normalize,
-        declick: job.declick ?? settings.declick,
-        trim: job.trim,
-      })
+      inPlaceWrite && tagsOnlyExport(formatMatchesInput(format, job.inputPath), processing)
     stage(tagsOnly ? 'tags' : 'converting')
     const currentName =
       besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
@@ -786,19 +794,21 @@ export async function runProcessTrack(
         format,
         job.meta,
         coverPath,
-        job.normalize ?? settings.normalize,
+        processing.normalize,
         job.removeCover,
         (child) => deps.registerActiveConversion(job.id, (signal) => child.kill(signal)),
         (path) => {
           tmpPath = path
           deps.trackTmp(path)
         },
-        job.declick ?? settings.declick,
-        job.trim,
+        processing.declick,
+        processing.trim,
         job.clearExtras,
         job.foreignRemoved,
         job.replacesPath,
         keepOverwritten,
+        // Left out unless set: the call every other conversion makes stays exactly as it was.
+        ...(job.tagsInPlace ? ([true] as const) : ([] as const)),
       ))
     } catch (e) {
       // convertAudio deletes the temp on failure and says so when it couldn't: that is

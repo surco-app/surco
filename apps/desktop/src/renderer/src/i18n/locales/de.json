@@ -380,6 +380,7 @@
     "conversionCancelled": "Konvertierung abgebrochen.",
     "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "seratoBlocked": "Serato würde den Track und seine Cues verlieren",
+    "libraryCopyAudioWouldChange": "Diese Kopie wurde nicht verändert. Ihre Tags zu aktualisieren hätte ihr Audio verändert.",
     "audioDamaged": "Das Audio der Datei ist beschädigt",
     "diskFull": "Das Laufwerk ist voll",
     "noPermission": "Du hast keine Berechtigung, in diesen Ordner zu schreiben",
