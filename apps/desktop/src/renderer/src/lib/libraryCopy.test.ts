@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { LibraryVerdict } from '../components/LibrarySection'
-import { copyPathIn, countsAsCopy } from './libraryCopy'
+import { copyPathIn, countsAsCopy, fillCopyPath } from './libraryCopy'
 
 describe('countsAsCopy', () => {
   it.each(['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
@@ -68,5 +68,76 @@ describe('copyPathIn while the verdict cannot tell the length apart', () => {
 
   it('keeps counting a measured copy of the same recording whatever the lengths say', () => {
     expect(copyPathIn('rekordbox', rowOf('same', 45), 30)).toBe('/r/a.aiff')
+  })
+})
+
+describe('fillCopyPath', () => {
+  const rekordbox = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/r/a.aiff',
+    verdict,
+    durationSec,
+  })
+  const traktor = (verdict: LibraryVerdict | null) => ({ path: '/t/a.wav', verdict })
+  const fill = (args: {
+    musicCopyPath?: string
+    musicCopyPending?: boolean
+    programs: Parameters<typeof fillCopyPath>[0]['programs']
+    fileDurationSec?: number
+  }) =>
+    fillCopyPath({
+      musicCopyPath: args.musicCopyPath ?? '',
+      musicCopyPending: args.musicCopyPending ?? false,
+      programs: args.programs,
+      fileDurationSec: args.fileDurationSec,
+    })
+
+  it('takes the Apple Music copy a replacement supersedes before any DJ copy', () => {
+    expect(fill({ musicCopyPath: '/m/old.mp3', programs: [rekordbox('same')] })).toBe('/m/old.mp3')
+  })
+
+  it('waits while the Apple Music copy is still being located, since it has the say', () => {
+    expect(fill({ musicCopyPending: true, programs: [rekordbox('same')] })).toBe('')
+  })
+
+  it('takes the first DJ copy of the same recording', () => {
+    expect(fill({ programs: [rekordbox('here'), traktor('same')] })).toBe('/r/a.aiff')
+  })
+
+  it.each(['different', 'unreadable', 'missing', 'thisFile', null] as const)(
+    'skips copies whose tags belong to another file (%s)',
+    (verdict) => {
+      expect(fill({ programs: [rekordbox(verdict), traktor('same')] })).toBe('/t/a.wav')
+    },
+  )
+
+  it('never reads a copy still being compared, it may be another version', () => {
+    expect(fill({ programs: [rekordbox('measuring', 200)], fileDurationSec: 200 })).toBe('')
+  })
+
+  it('waits for the first copy instead of the one that finished comparing first', () => {
+    expect(
+      fill({ programs: [rekordbox('measuring', 200), traktor('same')], fileDurationSec: 200 }),
+    ).toBe('')
+  })
+
+  it('fills from a copy that could not be measured, the spec counts it as a copy', () => {
+    expect(fill({ programs: [rekordbox('unmeasurable', 200)], fileDurationSec: 200 })).toBe(
+      '/r/a.aiff',
+    )
+  })
+
+  it('does not fill from a copy that could not be measured when its length differs or is unknown', () => {
+    expect(fill({ programs: [rekordbox('unmeasurable', 400)], fileDurationSec: 200 })).toBe('')
+    expect(fill({ programs: [rekordbox('unmeasurable')], fileDurationSec: 200 })).toBe('')
+    expect(fill({ programs: [rekordbox('unmeasurable', 200)] })).toBe('')
+  })
+
+  it('considers the next program when the first copy does not count for its length', () => {
+    expect(
+      fill({
+        programs: [rekordbox('unmeasurable', 400), traktor('same')],
+        fileDurationSec: 200,
+      }),
+    ).toBe('/t/a.wav')
   })
 })

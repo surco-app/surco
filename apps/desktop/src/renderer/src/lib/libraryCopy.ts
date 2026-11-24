@@ -30,7 +30,10 @@ const UNDECIDED: ReadonlySet<LibraryVerdict> = new Set(['measuring', 'unmeasurab
 // While the comparison runs, or when it cannot run, nothing has ruled out that the copy is
 // another edit, which only the verdict would call another version. Until then only a copy of
 // the open file's length is filed in the DJ's set.
-function sameLength(row: CopyRow, fileDurationSec: number | undefined): boolean {
+function sameLength(
+  row: Pick<CopyRow, 'verdict' | 'durationSec'>,
+  fileDurationSec: number | undefined,
+): boolean {
   if (row.verdict === null || !UNDECIDED.has(row.verdict)) return true
   if (row.durationSec === undefined || fileDurationSec === undefined) return false
   return Math.abs(row.durationSec - fileDurationSec) <= VERSION_GAP_SEC
@@ -45,4 +48,27 @@ export function copyPathIn(
     (row) =>
       row.program === program && countsAsCopy(row.verdict) && sameLength(row, fileDurationSec),
   )?.path
+}
+
+export interface FillCandidate {
+  path: string
+  verdict: LibraryVerdict | null
+  durationSec?: number
+}
+
+// The first copy decides even when a later one is ready: while it is still being compared it
+// may turn out to be another version, whose tags are not this file's, so nothing is read yet.
+export function fillCopyPath(args: {
+  musicCopyPath: string
+  musicCopyPending: boolean
+  programs: readonly FillCandidate[]
+  fileDurationSec: number | undefined
+}): string {
+  if (args.musicCopyPath) return args.musicCopyPath
+  if (args.musicCopyPending) return ''
+  const first = args.programs.find(
+    (copy) => countsAsCopy(copy.verdict) && sameLength(copy, args.fileDurationSec),
+  )
+  if (!first || first.verdict === 'measuring') return ''
+  return first.path
 }
