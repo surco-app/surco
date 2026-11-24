@@ -580,6 +580,13 @@ export function useTrackLibrary({
     })
   }
 
+  // embeddedCover is read as the file's own art: a write sends that file as the source, and
+  // the cover picker lists it as the original. A web URL (a Discogs match) is never that, so
+  // it stays on coverUrl only, or a file with no art is converted with none.
+  function libraryArt(url: string | undefined): url is string {
+    return !!url && !/^https?:/i.test(url)
+  }
+
   function joinFiles(t: TrackItem, saved: SessionEdit | undefined): Partial<TrackItem> {
     if (!saved) return { inFiles: true }
     if (t.loadingMeta) {
@@ -592,7 +599,7 @@ export function useTrackLibrary({
     return {
       ...restoredPatch(saved),
       ...mergedOrigin(t, fromLegacy(saved)),
-      ...(!t.embeddedCover && saved.coverUrl && { embeddedCover: saved.coverUrl }),
+      ...(!t.embeddedCover && libraryArt(saved.coverUrl) && { embeddedCover: saved.coverUrl }),
       meta: saved.meta,
       inFiles: true,
     }
@@ -743,7 +750,7 @@ export function useTrackLibrary({
     // editor showed the art, for every track whose cover came from the library rather
     // than the file. The file's own art still wins: the row is a view of the file on
     // disk, and this only fills the gap when the file carries none.
-    if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
+    if (!cover?.thumbUrl && libraryArt(saved?.coverUrl)) patch.embeddedCover = saved?.coverUrl
     // A restored edit replaces the read wholesale (it was itself built on a read of
     // this same file, plus everything the user staged since); the matched flag rides
     // in the patch so the auto-match sweep skips the row instead of overwriting it.

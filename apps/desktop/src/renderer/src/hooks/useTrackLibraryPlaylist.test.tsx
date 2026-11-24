@@ -1424,6 +1424,24 @@ describe('Files and the source playlists keep their own tracks', () => {
     ])
   })
 
+  // The same restore for a row a playlist loaded first: its Discogs cover must reach the
+  // conversion as the URL, or a file with no art of its own is converted with none.
+  it('sends the Discogs cover of a session row a playlist had loaded to the conversion as the URL', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.openSourcePlaylist(entries(['/m/a.aiff']), 'rekordbox')
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.addPaths(['/m/a.aiff'], {
+        '/m/a.aiff': { meta: tags({ title: 'Saved' }), coverUrl: 'https://i.discogs.com/primary.jpeg' },
+      })
+    })
+    const track = result.current.tracks[0]
+    expect(track.coverUrl).toBe('https://i.discogs.com/primary.jpeg')
+    expect(coverSourceOf(track)).toEqual({ coverUrl: 'https://i.discogs.com/primary.jpeg', coverPath: undefined })
+  })
+
   it('keeps what the user typed on a playlist row over the saved session it joins', async () => {
     const { result } = setup()
     await act(async () => {
