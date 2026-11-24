@@ -13,6 +13,7 @@ import {
   type RejectedCue,
   rejectedCues,
   SAME_POSITION_MS,
+  START_MS,
   type StrongPart,
   type WantedCue,
 } from '../../../shared/cueRules'
@@ -271,13 +272,21 @@ function regenerate(
   point: number,
   byHand: number[],
 ): CueDraft {
-  const existing: ExistingCue[] = state.cues.map((c) => ({
-    id: c.key,
-    ms: c.ms,
-    kind: c.kind,
-    color: c.color,
-    loop: state.locked.includes(c.key),
-  }))
+  // flowOutcome keeps any hot cue in the first seconds as the DJ's own start cue. One the
+  // flow drew itself while fewer points were marked must instead face the new plan, or
+  // marking the last break first leaves a start cue the full plan has no room for.
+  const mine = new Set([...state.edited, ...state.placed, ...state.locked])
+  const stale = (c: DraftCue): boolean =>
+    isHot(c) && c.ms < START_MS && !!state.origin[c.key] && !mine.has(c.key)
+  const existing: ExistingCue[] = state.cues
+    .filter((c) => !stale(c))
+    .map((c) => ({
+      id: c.key,
+      ms: c.ms,
+      kind: c.kind,
+      color: c.color,
+      loop: state.locked.includes(c.key),
+    }))
   const out = flowOutcome({
     existing,
     drops,

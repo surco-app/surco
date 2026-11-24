@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
 import { stripTitleNumberingLoose } from '../lib/hygiene'
 import { LAYER } from '../lib/layers'
+import { menuStep } from '../lib/menuStep'
 import { titleCase } from '../lib/textCase'
 import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { Tooltip } from './Tooltip'
@@ -171,12 +172,8 @@ export function FieldInsertMenu({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     items[next].focus()

@@ -1,3 +1,5 @@
+import type { createMenuT } from './i18n'
+
 interface QuitGuardDeps {
   // How many conversions are running right now.
   count: () => number
@@ -73,5 +75,32 @@ export function createQuitGuard(deps: QuitGuardDeps): QuitGuard {
       if (quit) confirmed = true
       return quit
     },
+  }
+}
+
+export function quitDialog(
+  t: ReturnType<typeof createMenuT>,
+  running: number,
+  exporting: boolean,
+  unsavedCues: number,
+) {
+  const details = [
+    running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
+    exporting ? t('quitUsbDetail') : null,
+    unsavedCues > 0 ? t('quitCuesDetail') : null,
+  ]
+  return {
+    type: 'warning' as const,
+    message:
+      running > 0 ? t('quitBusyMessage') : exporting ? t('quitUsbMessage') : t('quitCuesMessage'),
+    detail: details.filter(Boolean).join('\n\n'),
+    buttons: [
+      t('quitBusyConfirm'),
+      running > 0 ? t('quitBusyCancel') : exporting ? t('quitUsbCancel') : t('quitCuesCancel'),
+    ],
+    // Keep converting is the default: an absent-minded Return on this dialog must
+    // not be what throws away a batch that has been running for minutes.
+    defaultId: 1,
+    cancelId: 1,
   }
 }

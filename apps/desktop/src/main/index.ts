@@ -111,7 +111,7 @@ import { writeCommentToFile } from './commentFileWrite'
 import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
-import { downloadCover, imageExt } from './coverDownload'
+import { downloadCover, resolveDraggedCover } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import {
   installCrashGuards,
@@ -215,7 +215,7 @@ import {
 import { runProcessTrack } from './processTrack'
 import { createProgramQueue, type ProgramQueueDeps } from './programQueue'
 import { getProvider } from './providers'
-import { createQuitGuard } from './quitGuard'
+import { createQuitGuard, quitDialog } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   attachPlaylists,
@@ -241,6 +241,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { statBumpOf, windowSnapshotOf } from './rendererInput'
 import { registerReplacedIpc } from './replacedIpc'
 import {
   createReplacedStore,
@@ -278,6 +279,7 @@ import {
   saveSettings,
   setConfigDir,
   settingsForRenderer,
+  settingsPatchEffects,
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { sourceStat } from './sourceStat'
@@ -1104,29 +1106,10 @@ function createWindow(): BrowserWindow {
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
-      const details = [
-        running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
-        exporting ? t('quitUsbDetail') : null,
-        unsavedCues > 0 ? t('quitCuesDetail') : null,
-      ]
-      const { response } = await dialog.showMessageBox(win, {
-        type: 'warning',
-        message:
-          running > 0
-            ? t('quitBusyMessage')
-            : exporting
-              ? t('quitUsbMessage')
-              : t('quitCuesMessage'),
-        detail: details.filter(Boolean).join('\n\n'),
-        buttons: [
-          t('quitBusyConfirm'),
-          running > 0 ? t('quitBusyCancel') : exporting ? t('quitUsbCancel') : t('quitCuesCancel'),
-        ],
-        // Keep converting is the default: an absent-minded Return on this dialog must
-        // not be what throws away a batch that has been running for minutes.
-        defaultId: 1,
-        cancelId: 1,
-      })
+      const { response } = await dialog.showMessageBox(
+        win,
+        quitDialog(t, running, exporting, unsavedCues),
+      )
       return response === 0
     },
   })
@@ -1317,24 +1300,14 @@ function registerIpc(): void {
   ipcMain.handle('settings:get', () => settingsForRenderer(getSettings()))
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
     const next = saveSettings(sanitizeSettingsPatch(patch))
-    // Rebinding a shortcut changes the menu accelerators, and pinning a language
-    // changes every menu label — both need the menu rebuilt from the freshly-saved
-    // settings (buildAppMenu re-reads shortcuts and menuLocale re-reads language).
-    if (
-      patch.shortcutOverrides !== undefined ||
-      patch.language !== undefined ||
-      patch.showListWaves !== undefined ||
-      patch.showListPositions !== undefined ||
-      patch.showRailNames !== undefined ||
-      patch.showSidebar !== undefined
-    ) {
+    const effects = settingsPatchEffects(patch)
+    if (effects.rebuildMenu) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
-    if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()
-    if (patch.rekordboxDbPath !== undefined) rekordboxQueue.announce()
-    if (patch.engineLibraryDir !== undefined) engineCueQueue.announce()
-    if (patch.traktorNmlPath !== undefined) traktorCueQueue.announce()
+    if (effects.pokeRekordboxWatch) rekordboxQueueWatch.poke()
+    const queues = { rekordbox: rekordboxQueue, engine: engineCueQueue, traktor: traktorCueQueue }
+    for (const program of effects.announce) queues[program].announce()
     return settingsForRenderer(next)
   })
 
@@ -1348,20 +1321,8 @@ function registerIpc(): void {
   // applies). The key is allowlisted here — this channel takes renderer input, so an
   // arbitrary string must not reach the settings file as a new property.
   ipcMain.on('stats:record', (_e, key: unknown, by?: unknown) => {
-    const keys: readonly string[] = [
-      'imported',
-      'listened',
-      'analyzed',
-      'discogsMatches',
-      'bandcampMatches',
-      'deezerMatches',
-      'beatportMatches',
-      'musicbrainzMatches',
-      'itunesMatches',
-    ] satisfies (keyof Settings['stats'])[]
-    if (typeof key === 'string' && keys.includes(key)) {
-      recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
-    }
+    const bump = statBumpOf(key, by)
+    if (bump) recordStat(bump.key, bump.by)
   })
 
   // Renderer crashes forwarded into the shared log file, so a "the app went blank"
@@ -1373,21 +1334,8 @@ function registerIpc(): void {
   })
   // A decision the renderer takes that the log should keep (why an original stayed).
   ipcMain.on('diag:snapshot', (_e, snapshot: unknown) => {
-    const s = snapshot as Record<string, unknown> | null
-    if (typeof s !== 'object' || s === null) return
-    if (
-      typeof s.heapUsedMb !== 'number' ||
-      typeof s.heapLimitMb !== 'number' ||
-      typeof s.listTracks !== 'number'
-    )
-      return
-    crashState.watch.window({
-      heapUsedMb: s.heapUsedMb,
-      heapLimitMb: s.heapLimitMb,
-      listTracks: s.listTracks,
-      source: typeof s.source === 'string' ? s.source : null,
-      sourceTracks: typeof s.sourceTracks === 'number' ? s.sourceTracks : null,
-    })
+    const window = windowSnapshotOf(snapshot)
+    if (window) crashState.watch.window(window)
   })
   ipcMain.on('log:info', (_e, message: unknown) => {
     if (typeof message === 'string') log.info('[renderer]', message)
@@ -2458,28 +2406,12 @@ function registerIpc(): void {
   // renderer CSP only allows img-src from self/data/blob/Discogs — a raw remote URL would
   // render as a broken thumbnail. Null when nothing resolves to an image, so the drop is
   // a clean no-op instead of a red ffmpeg error on undecodable bytes.
-  ipcMain.handle('cover:resolveDragged', async (_e, urls: string[]) => {
-    for (const url of urls) {
-      // A real inline image dragged from the page is usable as-is; skip the ~1px data-URL
-      // placeholders lazy-loading leaves behind in an <img src>.
-      if (url.startsWith('data:image/')) {
-        const data = url.slice(url.indexOf(',') + 1)
-        if (Buffer.from(data, 'base64').length > 1024) return { coverUrl: url }
-        continue
-      }
-      if (!url.startsWith('http')) continue
-      try {
-        const path = await downloadCover(url)
-        const buf = await readFile(path)
-        const ext = imageExt(buf) ?? 'jpg'
-        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
-        return { coverPath: path, coverUrl: `data:${mime};base64,${buf.toString('base64')}` }
-      } catch {
-        // Not an image, or unreachable from the main process — try the next candidate.
-      }
-    }
-    return null
-  })
+  ipcMain.handle('cover:resolveDragged', (_e, urls: string[]) =>
+    resolveDraggedCover(urls, async (url) => {
+      const path = await downloadCover(url)
+      return { path, bytes: await readFile(path) }
+    }),
+  )
 
   // Same allowlist the shell:* channels apply: a drag hands the OS a file path, so
   // only paths this app itself produced (prepareDrag's covers) may ride it.

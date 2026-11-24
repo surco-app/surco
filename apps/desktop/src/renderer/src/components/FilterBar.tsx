@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { menuStep } from '../lib/menuStep'
 import { foldText } from '../lib/normalizeText'
 import { formatCount } from '../lib/stats'
 import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
@@ -543,12 +544,8 @@ export function FilterBar({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     showOption(listRef.current, items[next])
@@ -609,7 +606,6 @@ export function FilterBar({
                     }
                   : {})}
                 data-menu
-                data-origin={pos.bottom !== undefined ? 'bottom-left' : 'top-left'}
                 data-testid={focusTestId ? `${testid}-listbox` : `${testid}-menu`}
                 onKeyDown={onListKeyDown}
                 style={{

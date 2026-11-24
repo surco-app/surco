@@ -207,14 +207,6 @@ button:not(:disabled) {
   animation: offerIn 0.2s var(--ease-strong);
 }
 
-/* blue→cyan gradient text accent */
-.text-grad {
-  background: linear-gradient(100deg, var(--color-blue), var(--color-cyan));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* Stage light behind the hero window: one soft blue pool at the centre, so the product is
    what glows and the headline above stays on flat ground. */
 .hero-light {

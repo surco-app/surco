@@ -73,6 +73,7 @@ import {
   saveSettings,
   setConfigDir,
   settingsForRenderer,
+  settingsPatchEffects,
 } from './settings'
 
 afterAll(() => rmSync(app.getPath('userData'), { recursive: true, force: true }))
@@ -1702,5 +1703,39 @@ describe('the analysis cache size', () => {
       JSON.stringify({ analysisCacheGb: 'lots' }),
     )
     expect(getSettings().analysisCacheGb).toBe(10)
+  })
+})
+
+describe('settingsPatchEffects', () => {
+  // The menu carries the shortcuts, the language and the View toggles, so a change to any
+  // of them must rebuild it or the menu keeps showing the old state.
+  it('rebuilds the menu for what the menu shows', () => {
+    for (const patch of [
+      { shortcutOverrides: {} },
+      { language: 'de' },
+      { showListWaves: false },
+      { showListPositions: true },
+      { showRailNames: false },
+      { showSidebar: true },
+    ] as Partial<Settings>[])
+      expect(settingsPatchEffects(patch).rebuildMenu).toBe(true)
+  })
+
+  it('leaves the menu alone for a setting it does not show', () => {
+    expect(settingsPatchEffects({ completeCuesOnClose: true })).toEqual({
+      rebuildMenu: false,
+      pokeRekordboxWatch: true,
+      announce: [],
+    })
+  })
+
+  // A new library path means a different collection, so its queue announces again what
+  // waits for it instead of what waited for the old one.
+  it('announces the queue of each library whose path changed', () => {
+    expect(
+      settingsPatchEffects({ rekordboxDbPath: '/a', engineLibraryDir: '/b', traktorNmlPath: '/c' })
+        .announce,
+    ).toEqual(['rekordbox', 'engine', 'traktor'])
+    expect(settingsPatchEffects({ traktorNmlPath: '' }).announce).toEqual(['traktor'])
   })
 })
