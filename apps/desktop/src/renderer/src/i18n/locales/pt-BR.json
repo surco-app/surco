@@ -3125,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} ainda tem a alteração porque não pôde ser atualizado. Clique em Desfazer de novo ou veja Atividade."
     },
     "empty": "Sua biblioteca do Apple Music está vazia.",
-    "clean": "Nada para revisar.",
     "allClear": "Está tudo certo",
     "allClearHint": "Sem erros de digitação, maiúsculas, caracteres invisíveis ou duplicadas.",
     "back": "Voltar às faixas",

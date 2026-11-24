@@ -3125,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} encara té el canvi perquè no s'ha pogut actualitzar. Prem Desfer una altra vegada o mira Activitat."
     },
     "empty": "La teva biblioteca d'Apple Music és buida.",
-    "clean": "No hi ha res per revisar.",
     "allClear": "Tot és correcte",
     "allClearHint": "Sense errates, majúscules, caràcters invisibles ni duplicats.",
     "back": "Tornar a les pistes",

@@ -3125,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} still has the change because it couldn't be updated. Press Undo again or check Activity."
     },
     "empty": "Your Apple Music library is empty.",
-    "clean": "Nothing to review.",
     "allClear": "Everything looks right",
     "allClearHint": "No typos, capitals, invisible characters or duplicates.",
     "back": "Back to the tracks",

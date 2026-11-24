@@ -417,6 +417,29 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-no-match')).toBeVisible()
   })
 
+  // Two equal messages and controls with nothing to act on are noise.
+  it('says once that there is nothing to review and drops the controls and the idle Apply', () => {
+    render(<Panes review={review({ spelling: [] })} />)
+    expect(screen.queryByTestId('music-review-clean')).toBeNull()
+    expect(screen.getByTestId('music-review-all-clear')).toBeVisible()
+    expect(screen.getByTestId('music-review-close')).toBeVisible()
+    expect(screen.queryByTestId('music-review-search')).toBeNull()
+    expect(screen.queryByTestId('music-review-filter')).toBeNull()
+    expect(screen.queryByTestId('music-review-sort')).toBeNull()
+    expect(screen.getByTestId('music-review-apply')).not.toBeVisible()
+  })
+
+  // Warnings the search or the filter hide are still there to review.
+  it('keeps the controls when the filter hides every warning', () => {
+    render(<Panes review={review({ filter: 'duplicates' })} />)
+    expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
+    expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
+    expect(screen.getByTestId('music-review-search')).toBeVisible()
+    expect(screen.getByTestId('music-review-filter')).toBeVisible()
+    expect(screen.getByTestId('music-review-sort')).toBeVisible()
+    expect(screen.getByTestId('music-review-apply')).toBeVisible()
+  })
+
   it('finds a duplicate by its title', () => {
     const dup = {
       group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },

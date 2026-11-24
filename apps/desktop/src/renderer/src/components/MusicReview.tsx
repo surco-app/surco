@@ -1166,7 +1166,7 @@ export function MusicReview({
   )
   const keys = visibleKeys(visible)
   const at = selectedKey === null ? -1 : keys.indexOf(selectedKey)
-  const nothing = review.status === 'ready' && counts.all === 0 && !review.damageLoading
+  const nothing = hasNothingToReview(review)
   const filled = useMemo(
     () =>
       new Set(
@@ -1208,77 +1208,84 @@ export function MusicReview({
             esc
           </kbd>
         </button>
-        <div className="flex items-center gap-1.5 px-1.5 pt-2">
-          <SearchInput
-            className="flex-1"
-            testid="music-review-search"
-            value={search}
-            onChange={onSearch}
-            onClear={() => onSearch('')}
-            onKeyDown={(e) => {
-              if (e.key !== 'Escape') return
-              if (search) {
-                e.stopPropagation()
-                onSearch('')
-              } else {
-                e.currentTarget.blur()
-              }
+        {!nothing && (
+          <div className="flex items-center gap-1.5 px-1.5 pt-2">
+            <SearchInput
+              className="flex-1"
+              testid="music-review-search"
+              value={search}
+              onChange={onSearch}
+              onClear={() => onSearch('')}
+              onKeyDown={(e) => {
+                if (e.key !== 'Escape') return
+                if (search) {
+                  e.stopPropagation()
+                  onSearch('')
+                } else {
+                  e.currentTarget.blur()
+                }
+              }}
+              ariaLabel={t('musicReview.search')}
+              placeholder={t('musicReview.search')}
+              clearLabel={t('sidebar.search.clear')}
+            />
+          </div>
+        )}
+        {!nothing && (
+          <FilterBar
+            testid="music-review-filter"
+            trigger={{
+              Icon: FILTER_ICONS[review.filter],
+              label: t(`musicReview.filter.${review.filter}`),
+              count: counts[review.filter],
             }}
-            ariaLabel={t('musicReview.search')}
-            placeholder={t('musicReview.search')}
-            clearLabel={t('sidebar.search.clear')}
-          />
-        </div>
-        <FilterBar
-          testid="music-review-filter"
-          trigger={{
-            Icon: FILTER_ICONS[review.filter],
-            label: t(`musicReview.filter.${review.filter}`),
-            count: counts[review.filter],
-          }}
-          listLabel={t('musicReview.title')}
-          focusTestId={`music-review-filter-${review.filter}`}
-          options={(close) =>
-            FILTERS[review.kind].map((f) => (
-              <FilterOption
-                key={f}
-                testid={`music-review-filter-${f}`}
-                Icon={FILTER_ICONS[f]}
-                label={t(`musicReview.filter.${f}`)}
-                count={counts[f]}
-                selected={review.filter === f}
-                onClick={() => {
-                  review.setFilter(f)
-                  close()
-                }}
-              />
-            ))
-          }
-          counterTestId="music-review"
-          visibleCount={keys.length}
-          selectedPosition={at < 0 ? null : at + 1}
-          selectedCount={1}
-          onRevealSelected={() =>
-            listRef.current
-              ?.querySelector('[aria-selected="true"]')
-              ?.scrollIntoView({ block: 'nearest' })
-          }
-        >
-          <Select
-            testid="music-review-sort"
-            bare
-            value={sort}
-            onChange={(v) => onSort(v as ReviewSort)}
-            label={t('musicReview.sort.label')}
-            options={[
-              { value: 'default', label: t('musicReview.sort.default'), icon: ArrowDownUp },
-              { value: 'name', label: t('sidebar.sort.name'), icon: CaseSensitive },
-              { value: 'tracks', label: t('musicReview.sort.tracks'), icon: ListMusic },
-            ]}
-          />
-        </FilterBar>
+            listLabel={t('musicReview.title')}
+            focusTestId={`music-review-filter-${review.filter}`}
+            options={(close) =>
+              FILTERS[review.kind].map((f) => (
+                <FilterOption
+                  key={f}
+                  testid={`music-review-filter-${f}`}
+                  Icon={FILTER_ICONS[f]}
+                  label={t(`musicReview.filter.${f}`)}
+                  count={counts[f]}
+                  selected={review.filter === f}
+                  onClick={() => {
+                    review.setFilter(f)
+                    close()
+                  }}
+                />
+              ))
+            }
+            counterTestId="music-review"
+            visibleCount={keys.length}
+            selectedPosition={at < 0 ? null : at + 1}
+            selectedCount={1}
+            onRevealSelected={() =>
+              listRef.current
+                ?.querySelector('[aria-selected="true"]')
+                ?.scrollIntoView({ block: 'nearest' })
+            }
+          >
+            <Select
+              testid="music-review-sort"
+              bare
+              value={sort}
+              onChange={(v) => onSort(v as ReviewSort)}
+              label={t('musicReview.sort.label')}
+              options={[
+                { value: 'default', label: t('musicReview.sort.default'), icon: ArrowDownUp },
+                { value: 'name', label: t('sidebar.sort.name'), icon: CaseSensitive },
+                { value: 'tracks', label: t('musicReview.sort.tracks'), icon: ListMusic },
+              ]}
+            />
+          </FilterBar>
+        )}
         {review.kind === 'list' && review.status !== 'loading' && (
-          <p data-testid="list-review-scope" className="px-2 pb-2 text-xs text-fg-faint">
+          <p
+            data-testid="list-review-scope"
+            className={`px-2 pb-2 text-xs text-fg-faint ${nothing ? 'pt-2' : ''}`}
+          >
             {[
               scopeName === undefined
                 ? t('listReview.scope', { count: review.reviewed })
@@ -1325,11 +1332,6 @@ export function MusicReview({
         {review.status === 'error' && (
           <p data-testid="music-review-error" className="p-1.5 text-xs text-fg-faint">
             {t(copy.error)}
-          </p>
-        )}
-        {nothing && (
-          <p data-testid="music-review-clean" className="p-1.5 text-xs text-fg-faint">
-            {t('musicReview.clean')}
           </p>
         )}
         {!nothing && search.trim() !== '' && keys.length === 0 && (
@@ -1445,6 +1447,20 @@ function phaseLabel(t: TFunction, phase: ReviewPhase | null, kind: Review['kind'
   return t(`musicReview.phase.${phase.name}`)
 }
 
+// The review has nothing to show only once it is ready and no warning of any kind is left,
+// whatever the search or the filter hide. The detail pane says so on its own.
+function hasNothingToReview(review: Review): boolean {
+  return (
+    review.status === 'ready' &&
+    review.spelling.length +
+      review.duplicates.length +
+      review.damage.length +
+      review.incomplete.length ===
+      0 &&
+    !review.damageLoading
+  )
+}
+
 // The review's batch takes the toolbar's main button while the review is open: Apply with
 // the count, and while it runs, the step it is on, pressed to stop.
 export function MusicReviewAction({
@@ -1470,26 +1486,31 @@ export function MusicReviewAction({
       <span role="status" className="sr-only">
         {running ? label : ''}
       </span>
-      <PrimaryAction
-        testid="music-review-apply"
-        Icon={ListChecks}
-        label={t('musicReview.applyCount', {
-          count:
-            review.summary.tracks +
-            review.summary.duplicates +
-            Object.values(review.summary.damage).reduce((a, b) => a + (b ?? 0), 0),
-        })}
-        running={running}
-        runningLabel={
-          <span key={review.phase?.name} className="animate-footer-swap inline-block">
-            {label}
-          </span>
-        }
-        cancelLabel={t('musicReview.stop')}
-        ready={!busy && review.staged.size > 0}
-        onRun={onConfirm}
-        onCancel={stoppable ? review.cancel : undefined}
-      />
+      <span
+        className="contents"
+        style={{ visibility: hasNothingToReview(review) ? 'hidden' : 'visible' }}
+      >
+        <PrimaryAction
+          testid="music-review-apply"
+          Icon={ListChecks}
+          label={t('musicReview.applyCount', {
+            count:
+              review.summary.tracks +
+              review.summary.duplicates +
+              Object.values(review.summary.damage).reduce((a, b) => a + (b ?? 0), 0),
+          })}
+          running={running}
+          runningLabel={
+            <span key={review.phase?.name} className="animate-footer-swap inline-block">
+              {label}
+            </span>
+          }
+          cancelLabel={t('musicReview.stop')}
+          ready={!busy && review.staged.size > 0}
+          onRun={onConfirm}
+          onCancel={stoppable ? review.cancel : undefined}
+        />
+      </span>
     </>
   )
 }

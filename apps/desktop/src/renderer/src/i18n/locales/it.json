@@ -3125,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} ha ancora la modifica perché non è stato possibile aggiornarlo. Premi di nuovo Annulla o guarda in Attività."
     },
     "empty": "La tua libreria di Apple Music è vuota.",
-    "clean": "Non c'è niente da revisionare.",
     "allClear": "È tutto a posto",
     "allClearHint": "Niente refusi, maiuscole, caratteri invisibili o duplicati.",
     "back": "Torna ai brani",
