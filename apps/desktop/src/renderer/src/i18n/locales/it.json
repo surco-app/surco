@@ -1191,7 +1191,6 @@
         "discard_other": "Togli le proposte",
         "ask": "Parte qui? {{time}}",
         "acceptOne": "Accetta",
-        "acceptSave": "Accetta e salva",
         "drop": "Togli",
         "unanalysed": "Nessuna analisi di rekordbox",
         "none": "Surco non trova dove parte questo brano",
@@ -1200,9 +1199,7 @@
         "sure": "Parte qui {{time}}",
         "why_one": "dopo {{count}} battuta con pochi bassi",
         "why_other": "dopo {{count}} battute con pochi bassi",
-        "whyNone": "senza uno stacco dei bassi prima",
-        "acceptSave_one": "Accetta la proposta e salva",
-        "acceptSave_other": "Accetta le {{count}} proposte e salva"
+        "whyNone": "senza uno stacco dei bassi prima"
       },
       "batch": {
         "mark_one": "Auto marca {{count}} brano",
