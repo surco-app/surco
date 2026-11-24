@@ -206,7 +206,7 @@ describe('ShortcutsTab reset all', () => {
     expect(screen.getByTestId('shortcuts-reset-all')).toHaveTextContent(/^Reset all$/)
     fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
     expect(screen.getByTestId('shortcuts-reset-all-confirm')).toHaveTextContent(
-      'Reset 2 shortcuts?',
+      /^Reset 2 shortcuts\?$/,
     )
   })
 })

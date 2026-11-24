@@ -272,7 +272,7 @@ export function OnboardingWizard({
             key={step}
             data-testid="onboarding-step-body"
             data-dir={dir ?? undefined}
-            className={`min-h-[min(70vh,592px)] overflow-y-auto ${dir ? 'animate-step-in' : ''}`}
+            className={`-mx-1 min-h-[min(70vh,592px)] overflow-y-auto px-1 ${dir ? 'animate-step-in' : ''}`}
           >
             {STEPS[step] === 'mac' && (
               <>

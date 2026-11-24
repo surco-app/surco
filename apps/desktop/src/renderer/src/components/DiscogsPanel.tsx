@@ -382,9 +382,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           lines said nothing. The facts truncate so one long Discogs row can't
                           blow up the card. */}
               <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                {/* The provider is an origin label, so it reads as the same plain
-                            secondary text the track list gives the WAV/FLAC format tag —
-                            same vocabulary across both columns. */}
+                {/* The provider is an origin label, so it stays quiet in the muted text
+                            colour, a step below the facts beside it; the track list's format
+                            tag is a little stronger (dim, medium weight) because it is data
+                            about the file, not where a result came from. */}
                 <span
                   data-testid="result-provider"
                   data-provider={r.provider}
