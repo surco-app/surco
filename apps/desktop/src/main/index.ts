@@ -241,6 +241,7 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { statBumpOf, windowSnapshotOf } from './rendererInput'
 import { registerReplacedIpc } from './replacedIpc'
 import {
   createReplacedStore,
@@ -1320,20 +1321,8 @@ function registerIpc(): void {
   // applies). The key is allowlisted here — this channel takes renderer input, so an
   // arbitrary string must not reach the settings file as a new property.
   ipcMain.on('stats:record', (_e, key: unknown, by?: unknown) => {
-    const keys: readonly string[] = [
-      'imported',
-      'listened',
-      'analyzed',
-      'discogsMatches',
-      'bandcampMatches',
-      'deezerMatches',
-      'beatportMatches',
-      'musicbrainzMatches',
-      'itunesMatches',
-    ] satisfies (keyof Settings['stats'])[]
-    if (typeof key === 'string' && keys.includes(key)) {
-      recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
-    }
+    const bump = statBumpOf(key, by)
+    if (bump) recordStat(bump.key, bump.by)
   })
 
   // Renderer crashes forwarded into the shared log file, so a "the app went blank"
@@ -1345,21 +1334,8 @@ function registerIpc(): void {
   })
   // A decision the renderer takes that the log should keep (why an original stayed).
   ipcMain.on('diag:snapshot', (_e, snapshot: unknown) => {
-    const s = snapshot as Record<string, unknown> | null
-    if (typeof s !== 'object' || s === null) return
-    if (
-      typeof s.heapUsedMb !== 'number' ||
-      typeof s.heapLimitMb !== 'number' ||
-      typeof s.listTracks !== 'number'
-    )
-      return
-    crashState.watch.window({
-      heapUsedMb: s.heapUsedMb,
-      heapLimitMb: s.heapLimitMb,
-      listTracks: s.listTracks,
-      source: typeof s.source === 'string' ? s.source : null,
-      sourceTracks: typeof s.sourceTracks === 'number' ? s.sourceTracks : null,
-    })
+    const window = windowSnapshotOf(snapshot)
+    if (window) crashState.watch.window(window)
   })
   ipcMain.on('log:info', (_e, message: unknown) => {
     if (typeof message === 'string') log.info('[renderer]', message)
