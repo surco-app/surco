@@ -111,7 +111,7 @@ import { writeCommentToFile } from './commentFileWrite'
 import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
-import { downloadCover, imageExt } from './coverDownload'
+import { downloadCover, resolveDraggedCover } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import {
   installCrashGuards,
@@ -2406,28 +2406,12 @@ function registerIpc(): void {
   // renderer CSP only allows img-src from self/data/blob/Discogs — a raw remote URL would
   // render as a broken thumbnail. Null when nothing resolves to an image, so the drop is
   // a clean no-op instead of a red ffmpeg error on undecodable bytes.
-  ipcMain.handle('cover:resolveDragged', async (_e, urls: string[]) => {
-    for (const url of urls) {
-      // A real inline image dragged from the page is usable as-is; skip the ~1px data-URL
-      // placeholders lazy-loading leaves behind in an <img src>.
-      if (url.startsWith('data:image/')) {
-        const data = url.slice(url.indexOf(',') + 1)
-        if (Buffer.from(data, 'base64').length > 1024) return { coverUrl: url }
-        continue
-      }
-      if (!url.startsWith('http')) continue
-      try {
-        const path = await downloadCover(url)
-        const buf = await readFile(path)
-        const ext = imageExt(buf) ?? 'jpg'
-        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
-        return { coverPath: path, coverUrl: `data:${mime};base64,${buf.toString('base64')}` }
-      } catch {
-        // Not an image, or unreachable from the main process — try the next candidate.
-      }
-    }
-    return null
-  })
+  ipcMain.handle('cover:resolveDragged', (_e, urls: string[]) =>
+    resolveDraggedCover(urls, async (url) => {
+      const path = await downloadCover(url)
+      return { path, bytes: await readFile(path) }
+    }),
+  )
 
   // Same allowlist the shell:* channels apply: a drag hands the OS a file path, so
   // only paths this app itself produced (prepareDrag's covers) may ride it.
