@@ -871,6 +871,21 @@ describe('ExportButton library copy', () => {
     expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
   })
 
+  it('keeps the format pick checked in the menu of the up-to-date row too', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        outputFormat="flac"
+        libraryCopy={offer}
+        upToDate
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
   // A body that ignores its press has to say why, as the missing-tags case does.
   it('says the copy is still being compared on the held body', () => {
     render(
