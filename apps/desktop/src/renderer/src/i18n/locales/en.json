@@ -1077,6 +1077,8 @@
     "lastApplied": "Last applied album",
     "heldResults": "{{count}} more from {{providers}} · Show",
     "stillSearching": "Still searching {{providers}}…",
+    "discogsWait": "Discogs is rate-limiting searches. Trying again in {{seconds}} s. Click to search now.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} result",
     "resultsCount_other": "{{count}} results",
     "suggestedStatus": "Suggested: {{title}}",

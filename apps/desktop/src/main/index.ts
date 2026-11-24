@@ -1554,8 +1554,8 @@ function registerIpc(): void {
     ),
   )
 
-  ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
-    getProvider(provider).search(query, priority, hints),
+  ipcMain.handle('search:query', (_e, query: string, provider, priority, hints, retryOnLimit) =>
+    getProvider(provider).search(query, priority, hints, retryOnLimit),
   )
   ipcMain.handle('search:release', (_e, ref: number | string, provider, priority) =>
     getProvider(provider).getRelease(ref, priority),

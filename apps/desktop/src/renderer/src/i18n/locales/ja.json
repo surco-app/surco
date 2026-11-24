@@ -1077,6 +1077,8 @@
     "lastApplied": "最後に適用されたアルバム",
     "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "{{providers}} を検索中…",
+    "discogsWait": "Discogs が検索を制限しています。{{seconds}} 秒後に再試行します。クリックすると今すぐ検索します。",
+    "waitSeconds": "{{seconds}} 秒",
     "resultsCount_one": "{{count}} 件の結果",
     "resultsCount_other": "{{count}} 件の結果",
     "suggestedStatus": "提案：{{title}}",

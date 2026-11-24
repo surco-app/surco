@@ -190,6 +190,7 @@ export interface Api {
     provider?: SearchProviderId,
     priority?: SearchPriority,
     hints?: SearchHints,
+    retryOnLimit?: boolean,
   ) => Promise<SearchResult[]>
   getRelease: (
     ref: number | string,
