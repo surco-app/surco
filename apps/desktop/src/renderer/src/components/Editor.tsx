@@ -1335,18 +1335,16 @@ export const Editor = memo(function Editor({
   // track's quality comes from the spectrum cache, where the open track and the run read
   // it. The cache does not rerender this memo, so a quality still unknown under a
   // {quality} pattern counts as a rename: once it lands the run may name the file anew.
+  // A track the pattern does not name keeps its own file name, so the cache and the meta
+  // are only read for one it does. This memo reruns on every track change, and a selection
+  // of thousands during a background analysis paid for both on each one.
   const selectionHeld = useMemo(
     () =>
       isMulti &&
       multiTracks.every((t) => {
+        if (!autoNamesFile(autoApplyFilename, t)) return fileHoldsTrack(t, t.fileName)
         const spectrum = cachedSpectrumOf(queryClient, t.inputPath)
-        if (
-          qualityAuto &&
-          !spectrum &&
-          autoNamesFile(autoApplyFilename, t) &&
-          filenameFormat.includes('{quality}')
-        )
-          return false
+        if (qualityAuto && !spectrum && filenameFormat.includes('{quality}')) return false
         const meta = withQualityTag(
           effectiveMeta(t, customFields),
           { inputPath: t.inputPath, spectrum },

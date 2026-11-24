@@ -10,8 +10,8 @@ import ptBR from './locales/pt-BR.json'
 
 const LOCALES = { de, en, es, fr, ja, 'pt-BR': ptBR, ca, it: itIT }
 
-// El tono de Surco no introduce una explicación con dos puntos. Se parte en dos frases o se pone una coma.
-// Los dos puntos de etiqueta y valor («Saltada: …», «Omitido: …») se quedan y no están en esta lista.
+// Surco's voice never introduces an explanation with a colon. It splits into two sentences or uses a comma.
+// The label and value colons («Saltada: …», «Omitido: …») stay and are not in this list.
 const WITHOUT_EXPLANATORY_COLON = [
   'header.cancelConvert',
   'header.cancelImport',

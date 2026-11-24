@@ -54,6 +54,9 @@ describe('the Discogs token answer', () => {
         AUTO_MATCH_SENTENCE[lang as keyof typeof AUTO_MATCH_SENTENCE],
       )
     })
+    it(`sends you to the ${strings.settings.tabs.search} tab in ${lang}`, () => {
+      expect(strings.help.items.token.a).toContain(`→ ${strings.settings.tabs.search}`)
+    })
     it(`has no explanatory colon or em dash in ${lang}`, () => {
       expect(strings.help.items.token.a).not.toMatch(/[:：—]/)
     })
