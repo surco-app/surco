@@ -222,9 +222,13 @@ function renderEditor(
     resultsFolded?: boolean
     copiedMetaTitle?: string | null
     filesOpen?: boolean
+    libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
+  onUpdateLibraryCopy: ReturnType<typeof vi.fn>
+  onLibraryCopyAction: ReturnType<typeof vi.fn>
+  onLibraryRunChange: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
   onApplyTitleFormat: ReturnType<typeof vi.fn>
@@ -248,6 +252,9 @@ function renderEditor(
   unmount: () => void
 } {
   const onProcess = vi.fn()
+  const onUpdateLibraryCopy = vi.fn()
+  const onLibraryCopyAction = vi.fn()
+  const onLibraryRunChange = vi.fn()
   const onFoldResults = vi.fn()
   const onRecordUndo = vi.fn()
   const onChange = vi.fn()
@@ -278,6 +285,10 @@ function renderEditor(
         searchInputRef={createRef<HTMLInputElement>()}
         onChange={onChange}
         onProcess={onProcess}
+        libraryCopyAction={props.libraryCopyAction}
+        onUpdateLibraryCopy={onUpdateLibraryCopy}
+        onLibraryCopyAction={onLibraryCopyAction}
+        onLibraryRunChange={onLibraryRunChange}
         onFormatChange={onFormatChange}
         onDestinationChange={onDestinationChange}
         rememberedPick={props.rememberedPick}
@@ -350,6 +361,9 @@ function renderEditor(
   })
   return {
     onProcess,
+    onUpdateLibraryCopy,
+    onLibraryCopyAction,
+    onLibraryRunChange,
     onChange,
     onExportCollection,
     onDeriveTags,
@@ -5999,6 +6013,7 @@ describe('Editor Apple Music library section', () => {
     libraryGone,
     filesOpen,
     editorSections,
+    libraryCopyAction,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -6019,9 +6034,12 @@ describe('Editor Apple Music library section', () => {
     libraryGone?: 'missing' | 'unreadable' | 'checking'
     filesOpen?: boolean
     editorSections?: Settings['editorSections']
+    libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
   }): {
     api: Record<string, unknown>
     onProcess: ReturnType<typeof vi.fn>
+    onChange: ReturnType<typeof vi.fn>
+    onUpdateLibraryCopy: ReturnType<typeof vi.fn>
     setFilesOpen: (filesOpen: boolean) => void
   } {
     setApi(platform)
@@ -6062,7 +6080,7 @@ describe('Editor Apple Music library section', () => {
     api.readDuration = vi.fn(async (path: string) =>
       path === '/Music/Strobe.wav' ? libraryDuration : (hereDuration ?? null),
     )
-    const { onProcess, setFilesOpen } = renderEditor(
+    const { onProcess, onChange, onUpdateLibraryCopy, setFilesOpen } = renderEditor(
       {
         id: 'a',
         inputPath: herePath,
@@ -6079,9 +6097,10 @@ describe('Editor Apple Music library section', () => {
         addToAppleMusic: music,
         filesOpen,
         editorSections,
+        libraryCopyAction,
       },
     )
-    return { api, onProcess, setFilesOpen }
+    return { api, onProcess, onChange, onUpdateLibraryCopy, setFilesOpen }
   }
 
   // An exact match beside a weaker «(Radio Edit)» is no tie: the exact entry is the copy, so
@@ -6474,21 +6493,62 @@ describe('Editor Apple Music library section', () => {
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
   // so the button says the replace goes against the verdict; it still names the action
-  // and the press still replaces.
+  // and the press still replaces. Replace is a pick the user remembers; it stamps the Music
+  // copy before the convert so the convert writes over it instead of adding a second one.
+  // Both lengths are known: a copy whose length is unknown could be another edit.
   it('offers the replace as a deliberate one when Apple Music has the better copy', async () => {
-    const { onProcess } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    const { onProcess, onChange } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      libraryCopyAction: 'replace',
+    })
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ replacesPath: '/Music/Strobe.wav' }),
+    )
     expect(onProcess).toHaveBeenCalled()
   })
 
+  // Update is the default: it leaves the better copy's audio alone, so nothing warns.
+  it('offers to update a better Apple Music copy by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+  })
+
   it('warns before replacing a better Apple Music copy from a program tab', async () => {
-    renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness, filesOpen: false })
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      filesOpen: false,
+      libraryCopyAction: 'replace',
+    })
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
     )
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('offers to update a better Apple Music copy from a program tab by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      filesOpen: false,
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
     expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
@@ -6496,6 +6556,9 @@ describe('Editor Apple Music library section', () => {
     renderWithLibraryCopy({
       here: wavLoudness,
       library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      libraryCopyAction: 'replace',
       editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
         s.id === 'library' ? { ...s, hidden: true } : s,
       ),
@@ -6504,6 +6567,58 @@ describe('Editor Apple Music library section', () => {
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
     )
     expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('offers to update a better Apple Music copy with the library section hidden by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'library' ? { ...s, hidden: true } : s,
+      ),
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  // Update rewrites the Music copy's tags; converting the open file instead would leave the
+  // library's copy as it was and add nothing the user asked for.
+  it('updates the Apple Music copy from the body by default, leaving the open file alone', async () => {
+    const { onProcess, onUpdateLibraryCopy } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onUpdateLibraryCopy).toHaveBeenCalledWith({
+      path: '/Music/Strobe.wav',
+      program: 'appleMusic',
+      musicPersistentId: '0123456789ABCDEF',
+    })
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // Until the comparison is done the copy may yet be another version, so the press waits.
+  it('waits for the comparison before a press updates or replaces', async () => {
+    const { onProcess, onUpdateLibraryCopy } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      pair: new Promise(() => {}),
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onUpdateLibraryCopy).not.toHaveBeenCalled()
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
   it('says it is still comparing while the copies are being measured', async () => {
@@ -6641,6 +6756,7 @@ describe('Editor Apple Music library section', () => {
     )
     expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF')
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Replace/)
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Update/)
   })
 
   // Two Music entries match equally: picking one would describe a copy that may not be the
@@ -6803,6 +6919,7 @@ describe('Editor Apple Music library section', () => {
       music,
       copyFilled,
       libraryLoading,
+      libraryCopyAction,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6818,6 +6935,7 @@ describe('Editor Apple Music library section', () => {
       music?: string
       copyFilled?: boolean
       libraryLoading?: boolean
+      libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6898,6 +7016,7 @@ describe('Editor Apple Music library section', () => {
           syncRekordbox: true,
           syncTraktor,
           filesOpen,
+          libraryCopyAction,
         },
       )
       return api
@@ -7139,6 +7258,111 @@ describe('Editor Apple Music library section', () => {
       await new Promise((r) => setTimeout(r, 50))
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()).toEqual([])
+    })
+
+    const sameRekordboxCopy: Copy = {
+      path: '/r/Strobe.wav',
+      loudness: wavLoudness,
+      durationSec: 95,
+    }
+    const readyBody = () =>
+      waitFor(() => {
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same')
+        expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+      })
+
+    // A DJ copy is replaced by its file alone: a musicPersistentId would make the convert
+    // write over an Apple Music entry the user was never offered.
+    it('replaces a copy only rekordbox holds by its path', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+      })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ musicPersistentId: expect.anything() }),
+      )
+      expect(rendered.onProcess).toHaveBeenCalled()
+      expect(rendered.onChange.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        rendered.onProcess.mock.invocationCallOrder[0],
+      )
+    })
+
+    it('updates a copy only rekordbox holds', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
+    // Update and Replace act on a file the user does not have open, so the menu names it.
+    it('names the copy and its format above the two actions', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(
+        'rekordbox · WAV 16/44.1',
+      )
+    })
+
+    it('remembers the action picked from the menu', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+    })
+
+    // ⌘⏎ must do what the body says, or the shortcut converts while the button updates.
+    it('hands ⌘⏎ the same update the body runs', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      const run = rendered.onLibraryRunChange.mock.calls.at(-1)?.[0]
+      const onStarted = vi.fn()
+      run(onStarted)
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(onStarted).toHaveBeenCalled()
+    })
+
+    // A WAV exported as WAV is edited where it sits, and that update outranks the copy's on the
+    // body, so ⌘⏎ keeps converting like the body does.
+    it('leaves ⌘⏎ converting when an in-place update outranks the copy on the body', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        herePath: '/music/Strobe.wav',
+        hereDuration: 95,
+        identicalPair: true,
+      })
+      await readyBody()
+      expect(rendered.onLibraryRunChange.mock.calls.at(-1)?.[0]).toBeNull()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    // Another version is another track: updating its tags or replacing it would lose it.
+    it('converts as today when the only copy is another version', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
     })
 
     it('waits for the comparison before reading a DJ copy', async () => {

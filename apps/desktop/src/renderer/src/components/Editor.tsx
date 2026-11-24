@@ -33,6 +33,7 @@ import type {
   CueSaveThen,
   DeclickConfig,
   FormatSetting,
+  LibraryCopyAction,
   MetaTextKey,
   NormalizeConfig,
   OutputFormat,
@@ -91,13 +92,24 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
+import { exportButtonLabel } from '../lib/exportLabel'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { isTypingTarget } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
 import { libraryMembership, librarySourceOf } from '../lib/librarySource'
-import { copyPathIn, fillCopyPath } from '../lib/libraryCopy'
+import {
+  type CopyCandidate,
+  copyPathIn,
+  copyRefOf,
+  fillCopyPath,
+  keptFormatOf,
+  type LibraryCopyOffer,
+  type LibraryCopyRef,
+  pickLibraryCopy,
+  replaceCopyPatch,
+} from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -216,7 +228,17 @@ interface Props {
   // the rows being typed into alone (see App's editingRef). Empty on blur.
   onFieldFocusChange?: (ids: readonly string[]) => void
   onChange: (patch: Partial<TrackItem>) => void
-  onProcess: (format: OutputFormat) => void
+  // onStarted fires once the run commits (after any overwrite confirm), so ⌘⏎ advances only
+  // past a track whose run actually started.
+  onProcess: (format: OutputFormat, onStarted?: () => void) => void
+  // What the body does to a library copy of this track: Update its tags or Replace it with
+  // this file. The user picks it and App remembers it; the copy's verdict can't tell which.
+  libraryCopyAction?: LibraryCopyAction
+  onLibraryCopyAction?: (action: LibraryCopyAction) => void
+  onUpdateLibraryCopy?: (copy: LibraryCopyRef) => void
+  // Hands App the body's library action so ⌘⏎ runs what the body says; null while the body
+  // only converts.
+  onLibraryRunChange?: (run: ((onStarted?: () => void) => void) | null) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
   // runs, so a long convert has the escape a batch always had. Single-only.
   onCancel?: () => void
@@ -374,6 +396,10 @@ export const Editor = memo(function Editor({
   onFieldFocusChange,
   onChange,
   onProcess,
+  libraryCopyAction = 'update',
+  onLibraryCopyAction,
+  onUpdateLibraryCopy,
+  onLibraryRunChange,
   onCancel,
   onConvertSelection,
   convertHint,
@@ -984,15 +1010,6 @@ export const Editor = memo(function Editor({
     onChange,
     onRecordUndo,
   })
-  // The file each convert replaces: a selection's, what each track was stamped to replace by
-  // an earlier convert; one track's, the stamp the convert button puts first, else the one it
-  // already has, as onProcess below sends it.
-  const seratoLosesStars = useSeratoLosesStars(
-    ...(isMulti
-      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
-      : [replacePatch(replaceTarget, item.inputPath)?.replacesPath ?? item.replacesPath ?? '']),
-  )
-
   // The editor remounts per track and App applies its patch to whichever row is selected,
   // so a full read that returns after the user moved on must apply nothing.
   const mounted = useRef(true)
@@ -1928,6 +1945,102 @@ export const Editor = memo(function Editor({
   })
   const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
   const showLibrary = libraryShown && libraryRows.length > 0
+  // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
+  // this file in its place, so its copy is the one the user sees as the track.
+  const copyCandidates: CopyCandidate[] = isMulti
+    ? []
+    : [
+        ...(replaceTarget && !isAmbiguousCandidate(replaceTarget) && !musicHoldsFile && musicRow
+          ? [
+              {
+                program: 'appleMusic' as const,
+                path: replaceTarget.path ?? '',
+                format: replacedCopyFormat,
+                verdict: musicRow.verdict,
+                better: libraryCopyBetter,
+                durationSec: musicRow.durationSec,
+                music: replaceTarget,
+              },
+            ]
+          : []),
+        ...comparedProgramCopies.map((copy, i) => {
+          const state = programVerdicts[i]
+          return {
+            program: copy.program,
+            path: copy.path,
+            format: state?.format ?? '',
+            verdict: rowVerdict(state),
+            better: rowVerdict(state) === 'library',
+            durationSec: copyRows[i].durationSec,
+          }
+        }),
+      ]
+  const libraryTarget = pickLibraryCopy(copyCandidates, item.duration)
+  const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
+  // A copy in no format Surco writes can't be updated in place nor named on the button.
+  const libraryCopy: LibraryCopyOffer | undefined =
+    libraryTarget && keptFormat
+      ? {
+          name:
+            libraryTarget.program === 'appleMusic'
+              ? 'Apple Music'
+              : LIBRARY_NAME[libraryTarget.program],
+          format: libraryTarget.format,
+          action: libraryCopyAction,
+          better: libraryTarget.better,
+          held: libraryTarget.held,
+          keptFormat,
+        }
+      : undefined
+  const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {
+    if (!libraryTarget || libraryTarget.held) return
+    if (action === 'update') {
+      onUpdateLibraryCopy?.(copyRefOf(libraryTarget))
+      onStarted?.()
+      return
+    }
+    // Stamped before the convert runs, so the convert writes over that copy instead of adding
+    // a second one beside it.
+    onChange(replaceCopyPatch(libraryTarget, item.inputPath))
+    onProcess(format, onStarted)
+  }
+  // An in-place update or a re-export outranks the library action on the body, and ⌘⏎ must
+  // do what the body says, so the run is handed over only when the body acts on the copy.
+  const bodyActsOnCopy =
+    !!libraryCopy &&
+    !!exportButtonLabel({
+      processing: false,
+      inPlace: willEditInPlace,
+      stale,
+      done,
+      format: '',
+      tagsOnly: tagsOnlyExport,
+      sameFormat: formatMatchesInput(format, item.inputPath),
+      addsToMusic,
+      libraryAction: libraryCopyAction,
+    }).library
+  const runLibraryRef = useRef(runLibraryAction)
+  runLibraryRef.current = runLibraryAction
+  useEffect(() => {
+    if (!bodyActsOnCopy) {
+      onLibraryRunChange?.(null)
+      return
+    }
+    onLibraryRunChange?.((onStarted) => runLibraryRef.current(libraryCopyAction, onStarted))
+    return () => onLibraryRunChange?.(null)
+  }, [bodyActsOnCopy, libraryCopyAction, onLibraryRunChange])
+  // The file each convert replaces: a selection's, what each track was stamped to replace by
+  // an earlier convert; one track's, the library copy when the body replaces it, else the one
+  // it already has.
+  const seratoLosesStars = useSeratoLosesStars(
+    ...(isMulti
+      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
+      : [
+          libraryTarget && libraryCopyAction === 'replace'
+            ? libraryTarget.path
+            : (item.replacesPath ?? ''),
+        ]),
+  )
 
   return (
     <div className="flex h-full min-h-0">
@@ -2464,14 +2577,10 @@ export const Editor = memo(function Editor({
           readyCount={isMulti ? batchReady.length : undefined}
           status={footerStatus}
           stale={stale}
-          replaces={
-            !!replaceTarget &&
-            !isAmbiguousCandidate(replaceTarget) &&
-            !musicHoldsFile &&
-            !replaceTargetPending
-          }
+          libraryCopy={libraryCopy}
+          onLibraryAction={runLibraryAction}
+          onLibraryActionChange={onLibraryCopyAction}
           seratoLosesStars={seratoLosesStars}
-          libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}
           incompleteReason={incompleteReason}

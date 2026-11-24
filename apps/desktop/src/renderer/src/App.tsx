@@ -58,8 +58,10 @@ import type {
   DeclickConfig,
   FormatSetting,
   KeyResult,
+  LibraryCopyAction,
   MetaTextKey,
   NormalizeConfig,
+  OutputFormat,
   PlaylistSource,
   PlaylistTrackRef,
   QueuedCreate,
@@ -223,6 +225,7 @@ import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
 import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './lib/keymap'
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
+import type { LibraryCopyRef } from './lib/libraryCopy'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
@@ -1880,6 +1883,7 @@ export default function App(): React.JSX.Element {
     batchSummary,
     cancelBatch,
     cancelOne,
+    updateLibraryCopy,
   } = useTrackProcessing({
     tracks,
     tracksRef,
@@ -1943,6 +1947,13 @@ export default function App(): React.JSX.Element {
         }),
       ),
     onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
+    onLibraryCopyUpdated: () =>
+      pushToast(store, {
+        tone: 'neutral',
+        message: tr('verify.plainLine.tagsUpdated'),
+        duration: 4000,
+        testid: 'library-copy-updated',
+      }),
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
@@ -3147,7 +3158,7 @@ export default function App(): React.JSX.Element {
   const onCancelSelected = useStableCallback(() => {
     if (selected) cancelOne(selected.id)
   })
-  const onProcessSelected = useStableCallback(() => {
+  const onProcessSelected = useStableCallback((_format?: OutputFormat, onStarted?: () => void) => {
     if (selected)
       void convertSelected(
         selected.id,
@@ -3155,6 +3166,7 @@ export default function App(): React.JSX.Element {
         editorNormalizeRef.current ?? undefined,
         editorDestinationRef.current ?? undefined,
         editorDeclickRef.current ?? undefined,
+        onStarted,
       )
   })
   const onAddSelectedToAppleMusic = useStableCallback(() => {
@@ -3176,6 +3188,17 @@ export default function App(): React.JSX.Element {
   const onCueSaveThen = useStableCallback((cueSaveThen: CueSaveThen) =>
     saveSettings({ cueSaveThen }),
   )
+  const onLibraryCopyAction = useStableCallback((libraryCopyAction: LibraryCopyAction) =>
+    saveSettings({ libraryCopyAction }),
+  )
+  const onUpdateLibraryCopy = useStableCallback((copy: LibraryCopyRef) => {
+    if (selected) void updateLibraryCopy(selected.id, copy)
+  })
+  // ⌘⏎ reads the editor's library action at run time, like the split-button picks.
+  const editorLibraryRunRef = useRef<((onStarted?: () => void) => void) | null>(null)
+  const onLibraryRunChange = useStableCallback((run: ((onStarted?: () => void) => void) | null) => {
+    editorLibraryRunRef.current = run
+  })
   const onCueStepTrack = useStableCallback(() => moveSelection(1))
   const onCueQuantize = useStableCallback((cueQuantize: CueQuantize) =>
     saveSettings({ cueQuantize }),
@@ -4434,6 +4457,7 @@ export default function App(): React.JSX.Element {
       editorNormalizeRef,
       editorDeclickRef,
       editorConvertLabelRef,
+      editorLibraryRunRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
       openApplePlaylist: isMacOS() ? () => selectSource('appleMusic') : undefined,
@@ -5337,6 +5361,10 @@ export default function App(): React.JSX.Element {
                               onCueJumpBars={onCueJumpBars}
                               cueSaveThen={settings?.cueSaveThen}
                               onCueSaveThen={onCueSaveThen}
+                              libraryCopyAction={settings?.libraryCopyAction}
+                              onLibraryCopyAction={onLibraryCopyAction}
+                              onUpdateLibraryCopy={onUpdateLibraryCopy}
+                              onLibraryRunChange={onLibraryRunChange}
                               onStepTrack={onCueStepTrack}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}
