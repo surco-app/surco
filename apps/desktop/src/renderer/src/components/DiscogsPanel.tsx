@@ -873,7 +873,7 @@ function DiscogsWait({
         />
       </svg>
       <span>{tr('settings.provider.discogs')}</span>
-      <span className="min-w-[3ch] font-medium text-warn tabular-nums">
+      <span className="min-w-[5ch] font-medium text-warn tabular-nums">
         {tr('editor.waitSeconds', { seconds })}
       </span>
       <Tooltip label={label} />
