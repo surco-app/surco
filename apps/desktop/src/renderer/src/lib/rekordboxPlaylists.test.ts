@@ -469,4 +469,13 @@ describe('linkAfter', () => {
   it('says nothing when the removed rows were the last, so Undo leaves the track at the end', () => {
     expect(linkAfter([entry('a', '/r/a'), entry('c1', '/r/c')], ['c1'])).toBeNull()
   })
+
+  it('skips a following row without a handle, since Undo can only move before a row it can name', () => {
+    const unnamed = entry(undefined, '/r/x')
+    expect(linkAfter([entry('c1', '/r/c'), unnamed, entry('b', '/r/b')], ['c1'])).toBe('b')
+  })
+
+  it('says nothing when none of the removed rows is in the playlist, so Undo moves nothing', () => {
+    expect(linkAfter(entries, ['gone'])).toBeNull()
+  })
 })

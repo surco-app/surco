@@ -222,6 +222,104 @@ describe('useCopyPlaylistEdits', () => {
     )
   })
 
+  it('puts several copies removed at once back each in its own place, so the set keeps its order', async () => {
+    const B = '/r/b.aiff'
+    const others = (n: number) => Array.from({ length: n }, (_, i) => row(`/r/o${i}.aiff`, `o${i}`))
+    const [o0, o1, o2, o3, o4, o5, o6, o7] = others(8)
+    const { hook, dj, undo } = setup({
+      edits: [{ applied: true }, { applied: true }, { applied: true }],
+      playlists: [
+        [o0, row(COPY, 'La'), o1, o2, o3, o4, o5, o6, row(B, 'Lb'), o7],
+        [o0, o1, o2, o3, o4, o5, o6, o7, row(COPY, 'Na'), row(B, 'Nb')],
+        [o0, row(COPY, 'Na'), o1, o2, o3, o4, o5, o6, o7, row(B, 'Nb')],
+      ],
+      membership: { [COPY]: ['p1'], [B]: ['p1'] },
+    })
+    await act(() => hook.result.current.toggle([B, COPY], { id: 'p1', name: 'Verano' }, false))
+    await undo()
+    await waitFor(() => expect(dj.editPlaylist).toHaveBeenCalledTimes(4))
+    expect(dj.editPlaylist).toHaveBeenNthCalledWith(
+      3,
+      'rekordbox',
+      { kind: 'move', playlistId: 'p1', linkIds: ['Na'], beforeLinkId: 'o1' },
+      'Verano',
+    )
+    expect(dj.editPlaylist).toHaveBeenNthCalledWith(
+      4,
+      'rekordbox',
+      { kind: 'move', playlistId: 'p1', linkIds: ['Nb'], beforeLinkId: 'o7' },
+      'Verano',
+    )
+  })
+
+  it('puts several copies back each in its own place in Traktor, reading the new positions after each move', async () => {
+    const B = '/r/b.aiff'
+    const { hook, dj, undo } = setup({
+      library: 'traktor',
+      edits: [{ applied: true }, { applied: true }, { applied: true }],
+      playlists: [
+        [row(COPY, 'u:0:a'), row('/r/x.aiff', 'u:1:x'), row(B, 'u:2:b'), row('/r/y.aiff', 'u:3:y')],
+        [row('/r/x.aiff', 'u:0:x'), row('/r/y.aiff', 'u:1:y'), row(COPY, 'u:2:a'), row(B, 'u:3:b')],
+        [row(COPY, 'u:0:a'), row('/r/x.aiff', 'u:1:x'), row('/r/y.aiff', 'u:2:y'), row(B, 'u:3:b')],
+      ],
+      membership: { [COPY]: ['p1'], [B]: ['p1'] },
+    })
+    await act(() => hook.result.current.toggle([COPY, B], { id: 'p1', name: 'Verano' }, false))
+    await undo()
+    await waitFor(() => expect(dj.editPlaylist).toHaveBeenCalledTimes(4))
+    expect(dj.editPlaylist).toHaveBeenNthCalledWith(
+      3,
+      'traktor',
+      { kind: 'move', playlistId: 'p1', linkIds: ['u:2:a'], beforeLinkId: 'u:0:x' },
+      'Verano',
+    )
+    expect(dj.editPlaylist).toHaveBeenNthCalledWith(
+      4,
+      'traktor',
+      { kind: 'move', playlistId: 'p1', linkIds: ['u:3:b'], beforeLinkId: 'u:2:y' },
+      'Verano',
+    )
+  })
+
+  it('puts back on Undo only the copies it removed, so a selected track that was never there stays out', async () => {
+    const { hook, dj, undo } = setup({
+      edits: [{ applied: true }],
+      playlists: [[row(COPY, 'L1'), row('/r/x.aiff', 'x')]],
+      membership: { [COPY]: ['p1'] },
+    })
+    await act(() =>
+      hook.result.current.toggle([COPY, '/r/never.aiff'], { id: 'p1', name: 'Verano' }, false),
+    )
+    await undo()
+    expect(dj.editPlaylist).toHaveBeenNthCalledWith(
+      2,
+      'rekordbox',
+      { kind: 'add', playlistId: 'p1', tracks: [{ paths: [COPY] }] },
+      'Verano',
+    )
+  })
+
+  it('leaves the copy at the end on Undo in Traktor when it was the last row', async () => {
+    const { hook, dj, undo } = setup({
+      library: 'traktor',
+      edits: [{ applied: true }],
+      playlists: [
+        [row('/r/x.aiff', 'u:0:x'), row('/r/y.aiff', 'u:1:y'), row(COPY, 'u:2:c')],
+        [row('/r/x.aiff', 'u:0:x'), row('/r/y.aiff', 'u:1:y'), row(COPY, 'u:2:c')],
+      ],
+      membership: { [COPY]: ['p1'] },
+    })
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, false))
+    await undo()
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(dj.editPlaylist).toHaveBeenCalledTimes(2)
+    expect(dj.editPlaylist).toHaveBeenLastCalledWith(
+      'traktor',
+      { kind: 'add', playlistId: 'p1', tracks: [{ paths: [COPY] }] },
+      'Verano',
+    )
+  })
+
   it('creates the playlist with the copy inside and deletes it on Undo', async () => {
     const { hook, dj, undo } = setup({
       edits: [{ ...ADDED_ONE, createdId: 'n1' }],

@@ -28,6 +28,35 @@ function rowsLeft(entries: readonly SourcePlaylistEntry[], linkIds: readonly str
   return entries.flatMap((e) => (e.linkId !== undefined && !gone.has(e.linkId) ? [e.linkId] : []))
 }
 
+interface Place {
+  path: string
+  slot: number | null
+}
+
+// Where each removed copy sat, kept as the index among the rows that stay of the row that
+// followed it, not as that row's handle: Traktor names a row by its position, which shifts once
+// the copies leave. Each copy keeps its own place, so copies removed together from different
+// spots of the set do not come back side by side. Sorted as they sat, so copies that shared a
+// place go back in their order. A copy that sat twice keeps the place of its last row.
+function placesOf(entries: readonly SourcePlaylistEntry[], paths: readonly string[]): Place[] {
+  const linkIds = linkIdsOf(entries, paths)
+  const left = rowsLeft(entries, linkIds)
+  return paths
+    .flatMap((path) => {
+      const own = linkIdsOf(entries, [path])
+      if (own.length === 0) return []
+      const others = new Set(linkIds.filter((id) => !own.includes(id)))
+      const after = linkAfter(
+        entries.filter((e) => e.linkId === undefined || !others.has(e.linkId)),
+        own,
+      )
+      const at = entries.findIndex((e) => e.linkId === own[own.length - 1])
+      return [{ path, at, slot: after === null ? null : left.indexOf(after) }]
+    })
+    .sort((a, b) => a.at - b.at)
+    .map(({ path, slot }) => ({ path, slot }))
+}
+
 // Ticks and unticks the playlists of a library copy in the program itself, through the same
 // write path as the sidebar tree, so the copy is filed at once instead of at the next
 // conversion. The notice is decided here rather than by useRekordboxEdits: an applied edit
@@ -126,21 +155,28 @@ export function useCopyPlaylistEdits(
     [library, sendQuietly],
   )
 
-  // The order of a playlist is the DJ's set, so the copy goes back in front of the row that
+  // The order of a playlist is the DJ's set, so each copy goes back in front of the row that
   // followed it, not at the end. Programs skip a track already present on add, so a copy that
-  // sat twice in the playlist comes back as one row. Traktor names a row by its position, so
-  // once the copy left, the row that followed it is kept by its place among the rows that
-  // stayed, not by its handle.
+  // sat twice in the playlist comes back as one row. The playlist is read again before each
+  // move because in Traktor the previous move renumbered the rows.
   const putBack = useCallback(
-    async (paths: string[], playlistId: string, name: string, next: number | null) => {
+    async (places: Place[], playlistId: string, name: string) => {
+      const paths = places.map((place) => place.path)
       const tracks = paths.map((p) => ({ paths: [p] }))
       const result = await sendQuietly({ kind: 'add', playlistId, tracks }, name)
-      if (!result.applied || next === null || !canMove) return
-      const entries = await window.api.dj.playlist(library, playlistId)
-      const linkIds = linkIdsOf(entries, paths)
-      const before = rowsLeft(entries, linkIds)[next]
-      if (linkIds.length > 0 && before !== undefined)
-        await sendQuietly({ kind: 'move', playlistId, linkIds, beforeLinkId: before }, name)
+      if (!result.applied || !canMove) return
+      for (const { path, slot } of places) {
+        if (slot === null) continue
+        const entries = await window.api.dj.playlist(library, playlistId)
+        const linkIds = linkIdsOf(entries, [path])
+        const before = rowsLeft(entries, linkIdsOf(entries, paths))[slot]
+        if (linkIds.length === 0 || before === undefined) continue
+        const moved = await sendQuietly(
+          { kind: 'move', playlistId, linkIds, beforeLinkId: before },
+          name,
+        )
+        if (!moved.applied) return
+      }
     },
     [library, sendQuietly, canMove],
   )
@@ -149,7 +185,7 @@ export function useCopyPlaylistEdits(
     async (paths: string[], target: RekordboxPlaylistTarget, on: boolean) => {
       const tracks = paths.map((p) => ({ paths: [p] }))
       let change: RekordboxPlaylistEdit
-      let next: number | null = null
+      let places: Place[] = []
       let removed = 0
       let before: ReadonlySet<string> = new Set()
       if (on) {
@@ -163,8 +199,7 @@ export function useCopyPlaylistEdits(
         const entries = await window.api.dj.playlist(library, target.id)
         const linkIds = linkIdsOf(entries, paths)
         if (linkIds.length === 0) return
-        const after = linkAfter(entries, linkIds)
-        if (after !== null) next = rowsLeft(entries, linkIds).indexOf(after)
+        places = placesOf(entries, paths)
         removed = linkIds.length
         change = { kind: 'remove', playlistId: target.id, linkIds }
       }
@@ -202,7 +237,7 @@ export function useCopyPlaylistEdits(
         else offerUndo(text, () => takeOut(paths, playlistId, name, before))
       } else if (change.kind === 'remove') {
         const { playlistId } = change
-        offerUndo(text, () => putBack(paths, playlistId, name, next))
+        offerUndo(text, () => putBack(places, playlistId, name))
       }
     },
     [
