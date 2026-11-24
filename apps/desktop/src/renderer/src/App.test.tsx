@@ -71,7 +71,13 @@ const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
 
 // Pass-through Editor wrapped in its own memo, so the counter only ticks when App
 // hands it a changed prop identity — the contract the editor-stability test pins.
-const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0, crash: false } }))
+const { editorRenders } = vi.hoisted(() => ({
+  editorRenders: {
+    count: 0,
+    crash: false,
+    lastProps: null as { libraryLoading?: boolean } | null,
+  },
+}))
 vi.mock('./components/Editor', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/Editor')>()
   const { memo } = await import('react')
@@ -80,6 +86,7 @@ vi.mock('./components/Editor', async (importOriginal) => {
   ): React.JSX.Element {
     if (editorRenders.crash) throw new Error('boom')
     editorRenders.count++
+    editorRenders.lastProps = props
     return <real.Editor {...props} />
   })
   return { ...real, Editor: CountingEditor }
@@ -11549,6 +11556,39 @@ describe('App continuous playback', () => {
 
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
     expect(rows[1]).toHaveAttribute('aria-selected', 'false')
+  })
+})
+
+// The editor's own destination can be Apple Music while Settings send to a folder; App then
+// reads no Music library at all, so a DJ copy waiting for that library would wait forever.
+describe('App Apple Music library wait handed to the editor', () => {
+  function musicApi(over: Partial<Settings>): void {
+    Object.assign(window.api, {
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getSettings: vi.fn().mockResolvedValue(settings(over)),
+      loadAppleMusicLibrary: vi.fn(() => new Promise(() => {})),
+    })
+  }
+
+  async function openTrack(): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+  }
+
+  it('tells the editor the library is loading while the Settings destination reads it', async () => {
+    musicApi({ addToAppleMusic: true })
+    await openTrack()
+    await waitFor(() => expect(editorRenders.lastProps?.libraryLoading).toBe(true))
+  })
+
+  it('tells the editor nothing is loading when the Settings destination reads no Music library', async () => {
+    musicApi({ addToAppleMusic: false })
+    await openTrack()
+    expect(window.api.loadAppleMusicLibrary).not.toHaveBeenCalled()
+    expect(editorRenders.lastProps?.libraryLoading).toBe(false)
   })
 })
 

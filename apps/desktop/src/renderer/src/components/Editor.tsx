@@ -168,9 +168,9 @@ interface Props {
   // the same one the list and quality filter read, so the "already owned" section can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
-  // A Music that refused the dump also leaves the index null; only a dump still on its way
-  // is worth waiting for.
-  libraryFailed?: boolean
+  // Whether App is still reading the Music library. It decides by the Settings destination,
+  // not this track's: a library App never asked for would leave the index null for good.
+  libraryLoading?: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
   // The whole multi-selection, when more than one track is picked. Its presence flips the
   // Discogs column to album-match mode (map every file to a tracklist entry at once) and
@@ -354,7 +354,7 @@ const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
 export const Editor = memo(function Editor({
   item,
   libraryIndex,
-  libraryFailed = false,
+  libraryLoading = false,
   searchInputRef,
   selectedTracks,
   onApplyMatches,
@@ -977,8 +977,7 @@ export const Editor = memo(function Editor({
     item,
     copyPath: fillCopyPath({
       musicCopyPath: replacedCopyPath,
-      musicCopyPending:
-        replaceTargetPending || (librarySource === 'appleMusic' && !libraryIndex && !libraryFailed),
+      musicCopyPending: replaceTargetPending || libraryLoading,
       programs: copyRows,
       fileDurationSec: item.duration,
     }),

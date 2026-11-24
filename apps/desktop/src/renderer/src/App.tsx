@@ -2302,6 +2302,9 @@ export default function App(): React.JSX.Element {
     viewCache,
     librarySource,
   )
+  // A Music that refused the dump also leaves the index null; only a dump still on its way
+  // is worth the editor's wait.
+  const libraryLoading = librarySource === 'appleMusic' && !libraryIndex && !libraryFailed
   // Ranked over the whole list, not the filtered view, so hiding a copy behind a filter
   // never turns the one left on screen into the best.
   const { ranks: duplicateRankById, onRowVisible: onDuplicateRowVisible } =
@@ -5350,7 +5353,7 @@ export default function App(): React.JSX.Element {
                               onOpenCueTrack={openCueTrack}
                               cueActionsRef={cueActionsRef}
                               libraryIndex={libraryIndex}
-                              libraryFailed={libraryFailed}
+                              libraryLoading={libraryLoading}
                               searchInputRef={searchInputRef}
                               selectedTracks={selectedTracks}
                               onApplyMatches={onApplyMatches}

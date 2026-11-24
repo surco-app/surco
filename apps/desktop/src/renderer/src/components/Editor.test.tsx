@@ -205,7 +205,7 @@ function renderEditor(
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
-    libraryFailed?: boolean
+    libraryLoading?: boolean
     replaceLowResCover?: boolean
     autoApplyFilename?: boolean
     filenameFormat?: string
@@ -273,7 +273,7 @@ function renderEditor(
       <Editor
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
-        libraryFailed={props.libraryFailed}
+        libraryLoading={props.libraryLoading}
         rekordboxCue={props.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onChange={onChange}
@@ -6802,7 +6802,7 @@ describe('Editor Apple Music library section', () => {
       identicalPair = false,
       music,
       copyFilled,
-      libraryFailed,
+      libraryLoading,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6817,7 +6817,7 @@ describe('Editor Apple Music library section', () => {
       identicalPair?: boolean
       music?: string
       copyFilled?: boolean
-      libraryFailed?: boolean
+      libraryLoading?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -6892,7 +6892,7 @@ describe('Editor Apple Music library section', () => {
         'wav',
         {
           libraryIndex: index === undefined ? (music ? ownedWithId : owned) : index,
-          libraryFailed,
+          libraryLoading,
           showLoudness: true,
           addToAppleMusic: !!music,
           syncRekordbox: true,
@@ -7190,6 +7190,7 @@ describe('Editor Apple Music library section', () => {
         hereDuration: 95,
         music: '/m/old/Strobe.mp3',
         index: null,
+        libraryLoading: true,
         tags: { '/r/Strobe.wav': copyTags },
       })
       await waitFor(() =>
@@ -7214,13 +7215,15 @@ describe('Editor Apple Music library section', () => {
       expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
     })
 
-    it('fills from the DJ copy when the Apple Music library could not be read', async () => {
+    // A Music that refused the dump leaves the index null, and so does Settings sending to a
+    // folder while this track is sent to Music: App reads no library then, nothing will land.
+    it('fills from the DJ copy whenever App is not loading the Apple Music library', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
         hereDuration: 95,
         music: '/m/old/Strobe.mp3',
         index: null,
-        libraryFailed: true,
+        libraryLoading: false,
         tags: { '/r/Strobe.wav': copyTags },
       })
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
