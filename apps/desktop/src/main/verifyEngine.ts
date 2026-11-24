@@ -24,6 +24,9 @@ export interface EngineSnapshot {
   beatData: string
   loops: string
   positions?: Positions
+  // The rate the row counted its samples in, for a write that empties it and keeps that rate
+  // because the new file's was not probed.
+  sampleRate?: number
 }
 
 // What the library said about the source before the conversion: its row, no row at all
@@ -84,18 +87,19 @@ function decoded<T>(read: () => T | null | undefined): T | null {
   }
 }
 
+type PerformanceRow = Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null>
+
+function ownRateOf(row: PerformanceRow | undefined): number | undefined {
+  const track = decoded(() => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)))
+  const grid = decoded(() => row?.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
+  return track?.sampleRate || grid?.sampleRate || undefined
+}
+
 // A row emptied for Engine to analyse again has no rate of its own until Engine does: its cues
 // are read at the rate the write counted them in.
-function positionsOf(
-  row: Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined,
-  fallbackRate?: number,
-): Positions {
+function positionsOf(row: PerformanceRow | undefined, fallbackRate?: number): Positions {
   const grid = decoded(() => row?.beatData && decodeBeatGrid(inflateEngineBlob(row.beatData)))
-  const rate =
-    decoded(() => row?.trackData && decodeTrackData(inflateEngineBlob(row.trackData)))
-      ?.sampleRate ||
-    grid?.sampleRate ||
-    fallbackRate
+  const rate = ownRateOf(row) || fallbackRate
   if (!row || !rate) return { quickCues: null, beatData: null, loops: null }
   const sec = (sample: number) => (sample < 0 ? null : sample / rate)
   const cues = decoded(() => row.quickCues && decodeQuickCues(inflateEngineBlob(row.quickCues)))
@@ -125,12 +129,14 @@ function performanceOf(
 ): Omit<EngineSnapshot, 'id'> {
   const row = db
     .prepare('SELECT trackData, quickCues, beatData, loops FROM PerformanceData WHERE trackId = ?')
-    .get(id) as Record<(typeof PERFORMANCE)[number] | 'trackData', Uint8Array | null> | undefined
+    .get(id) as PerformanceRow | undefined
+  const sampleRate = ownRateOf(row)
   return {
     quickCues: digest(row?.quickCues ?? null),
     beatData: digest(row?.beatData ?? null),
     loops: digest(row?.loops ?? null),
     positions: positionsOf(row, fallbackRate),
+    ...(sampleRate ? { sampleRate } : {}),
   }
 }
 
@@ -250,7 +256,10 @@ function judge(
   // Engine's grid of the old file goes when it is to analyse the new one: only the cues and
   // loops must have come through.
   const kept = e.reanalysed ? (['quickCues', 'loops'] as const) : PERFORMANCE
-  const now = () => performanceOf(db, row.id, e.reanalysed ? e.shift?.sampleRateHz : undefined)
+  // Without the new file's rate the write moved the cues at the old row's (engineRepoint.ts).
+  const writtenRate =
+    e.shift?.sampleRateHz ?? (typeof before === 'object' ? before.sampleRate : undefined)
+  const now = () => performanceOf(db, row.id, e.reanalysed ? writtenRate : undefined)
   if (!e.added && typeof before !== 'object') return noPhoto()
   if (typeof before === 'object' && row.id !== before.id) return check('mismatch', 'engineOtherRow')
   const fileType = (row.fileType ?? '').toLowerCase()
