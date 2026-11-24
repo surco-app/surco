@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs'
 import type { DjEditMain } from '../shared/djApi'
 import type { RekordboxEditResult, RekordboxPlaylistEdit } from '../shared/types'
 import { serialLibraryFlush } from './libraryTagSync'
-import { type QueueApply, type RekordboxQueue, withoutOp } from './rekordboxQueue'
-import { type EditOp, editResultOfOutcome } from './rekordboxQueueOps'
-import { stillWaiting } from './rekordboxQueueWatch'
+import { applyEditOps } from './playlistEditApply'
+import type { QueueApply, RekordboxQueue } from './rekordboxQueue'
+import type { EditOp } from './rekordboxQueueOps'
 import { traktorStamps, traktorSubtreeStamps } from './traktorPlaylistModel'
 import { readTraktor } from './worker'
 
@@ -44,22 +44,7 @@ export function traktorEdit(host: {
           stamps,
           ...(label ? { label } : {}),
         }
-        host.beginLoose?.(path)
-        const result = await host.queue.applyNew([op], async () => !(await host.isRunning()))
-        if (result.status === 'applied') {
-          const others = withoutOp(result, op.id)
-          if (others.tracks > 0 || others.changes > 0 || others.notices.length > 0)
-            host.onApplied?.(others)
-        }
-        if (stillWaiting(result)) {
-          host.onWaiting?.()
-          return { applied: false, queued: true, opId: op.id }
-        } else if (result.status === 'refused') host.queue.drop(op.id)
-        if (result.status === 'refused') return { applied: false, reason: result.reason }
-        const written = host.queue.outcomeOf(op.id)
-        const outcome =
-          result.status === 'applied' ? result.outcomes.find((o) => o.id === op.id) : undefined
-        return editResultOfOutcome(outcome ?? written)
+        return (await applyEditOps(host, [op], path))[0]
       }),
   }
 }
