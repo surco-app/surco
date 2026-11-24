@@ -180,7 +180,7 @@ interface TrackLibrary {
   openSourcePlaylist: (
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
-    options?: { fillLoaded?: boolean },
+    options?: { fillLoaded?: boolean; reread?: boolean },
   ) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   stageTrack: (progress: ProcessProgress) => void
@@ -232,6 +232,8 @@ export function useTrackLibrary({
   filesOpenRef.current = filesOpen
   const listedBySource = useRef(new Set<string>())
   const checkingDisk = useRef(new Map<string, Promise<Set<string>>>())
+  // The playlist files the disk was found to lack, until the playlist is opened again.
+  const goneFromDisk = useRef(new Set<string>())
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
@@ -1059,7 +1061,7 @@ export function useTrackLibrary({
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
-    { fillLoaded = false }: { fillLoaded?: boolean } = {},
+    { fillLoaded = false, reread = false }: { fillLoaded?: boolean; reread?: boolean } = {},
   ): Promise<number> {
     // Compared composed: the NAS stores names decomposed while a drop is composed, and one
     // file under both spellings must stay the one row that holds the user's edits. Outputs
@@ -1106,9 +1108,18 @@ export function useTrackLibrary({
       if (unmarked.size > 0)
         mapTracks((t) => (unmarked.has(t.id) ? { ...t, programs: withPrograms(t, [source]) } : t))
     }
+    // Every cue save, edit and refocus reads the playlist again, and a file the disk lacks is
+    // never a row: offered as new each time, it was added, analysed and removed on every read.
+    // A re-read leaves it out; an opening asks the disk again, so a file put back shows up.
+    const named = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
+    if (!reread) for (const p of named) goneFromDisk.current.delete(p)
+    const knownGone = new Set([...named].filter((p) => goneFromDisk.current.has(p)))
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
-        !e.separator && e.path !== null && !loaded.has(same(e.path)),
+        !e.separator &&
+        e.path !== null &&
+        !loaded.has(same(e.path)) &&
+        !knownGone.has(same(e.path)),
     )
     // A row loaded before its rekordbox playlist was opened gets the BPM, key and stars the
     // entry holds, as a fresh one does: only its empty fields, so what it holds wins, and as
@@ -1147,13 +1158,12 @@ export function useTrackLibrary({
           }
         })
     }
-    const named = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
     const checks = new Set([...named].flatMap((p) => checkingDisk.current.get(p) ?? []))
     const goneElsewhere = async (): Promise<number> => {
       const found = await Promise.all(checks)
       return new Set(found.flatMap((g) => [...g].filter((p) => named.has(p)))).size
     }
-    if (fresh.length === 0) return goneElsewhere()
+    if (fresh.length === 0) return knownGone.size + (await goneElsewhere())
     // Staged BEFORE adding: the rows created below must find the stamp waiting.
     for (const e of fresh) {
       appleMusicMeta.current.set(e.path, e.meta)
@@ -1180,6 +1190,7 @@ export function useTrackLibrary({
       await addPaths(freshPaths, undefined, false, false)
       const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
       gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+      for (const p of gone) goneFromDisk.current.add(p)
     } finally {
       for (const p of freshPaths)
         if (checkingDisk.current.get(same(p)) === check) checkingDisk.current.delete(same(p))
@@ -1203,7 +1214,7 @@ export function useTrackLibrary({
       if (firstKept)
         setSelection((s) => (s.anchor ? s : { ids: [firstKept.id], anchor: firstKept.id }))
     }
-    return gone.size + (await goneElsewhere())
+    return gone.size + knownGone.size + (await goneElsewhere())
   }
 
   // Publishes to the live crate as well as to state, for the same reason the import
@@ -1361,8 +1372,10 @@ export function useTrackLibrary({
         const dropped: string[] = []
         for (const t of tracksRef.current) {
           if (t.status === 'processing' || !touched.has(same(t.inputPath))) continue
-          if (went.has(same(t.inputPath)) && !t.inFiles) dropped.push(t.id)
-          else void readSlot.current.run(t.id, () => refreshChangedTrack(t.id))
+          if (went.has(same(t.inputPath)) && !t.inFiles) {
+            dropped.push(t.id)
+            goneFromDisk.current.add(same(t.inputPath))
+          } else void readSlot.current.run(t.id, () => refreshChangedTrack(t.id))
         }
         if (dropped.length === 0) return
         for (const p of went) listedBySource.current.delete(p)
