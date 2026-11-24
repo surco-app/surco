@@ -337,6 +337,11 @@ class MockIntersectionObserver {
 
 let menuListener: ((id: string) => void) | undefined
 
+const selectedRowIndexes = (): number[] =>
+  screen
+    .getAllByTestId('track-row')
+    .flatMap((row, i) => (row.getAttribute('aria-selected') === 'true' ? [i] : []))
+
 function runMenu(id: string): void {
   act(() => menuListener?.(id))
 }
@@ -3772,7 +3777,7 @@ describe('App source rail', () => {
   // Tracks comes forward with what was added, and what was added is what the next edit is
   // for, as when adding from Tracks itself: the row picked there before leaving came back
   // as the selection instead, and the new files had to be picked by hand.
-  it('selects the files added while a source is on screen, not the row picked in Tracks before', async () => {
+  it('selects the first file added while a source is on screen, not the row picked in Tracks before', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3788,12 +3793,10 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
-  it('selects the files added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
+  it('selects the first file added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3821,9 +3824,7 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // The list's count is the size of the list on screen: inside a playlist that is its rows,
@@ -9878,9 +9879,10 @@ describe('App multi-select convert', () => {
     expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
   })
 
-  // Tagging an album starts by dropping it: the files that just arrived are the ones the
-  // next edit is for, and selecting them by hand was a step before every single album.
-  it('selects the files that were just added, leaving the earlier ones out', async () => {
+  // A dropped folder opens on its first track, as a click on it would: selecting every
+  // file put the editor on a mixed batch of hundreds the DJ never asked for, and the
+  // whole drop is one ⌘A away when the batch is what they want.
+  it('selects only the first file just added, leaving the earlier ones and the rest out', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings()),
       pickFiles: vi
@@ -9894,35 +9896,7 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
-  })
-
-  // A folder walk hands its files over while it is still walking, before the add itself
-  // returns: those rows arrived with this drop too, and one of three stayed unselected.
-  it('selects the files a walk delivered before it finished', async () => {
-    let deliver: (paths: string[]) => void = () => {}
-    setApi({
-      getSettings: vi.fn().mockResolvedValue(settings()),
-      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
-      onExpandedBatch: (listener: (paths: string[]) => void) => {
-        deliver = listener
-        return () => {}
-      },
-      expandPaths: vi.fn(async (paths: string[]) => {
-        deliver(paths.slice(0, 1))
-        await new Promise((r) => setTimeout(r, 0))
-        return paths
-      }),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-    })
-    await renderApp()
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 3 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // A folder on a NAS can take many seconds to walk. A track picked meanwhile is what the
@@ -10272,6 +10246,8 @@ describe('App multi-select convert', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     fireEvent.click(await screen.findByTestId('process-format-toggle'))
     const option = (): HTMLElement => screen.getByTestId('process-clear-after')
     expect(option()).toHaveAttribute('aria-checked', 'false')
