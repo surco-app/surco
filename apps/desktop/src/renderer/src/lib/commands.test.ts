@@ -59,6 +59,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     editorDestinationPickRef: { current: null },
     editorNormalizeRef: { current: null },
     editorDeclickRef: { current: null },
+    editorConvertLabelRef: { current: '' },
     trackSearchRef: { current: null },
     pickFiles: () => {},
     openListReview: vi.fn(),

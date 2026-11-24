@@ -61,6 +61,7 @@ const ICON_BUTTON =
   'press relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg-dim hover:bg-[var(--color-hover)]'
 
 interface ConvertFooterProps {
+  onLabelChange?: (label: string) => void
   item: TrackItem
   spectrum: SpectrumVerdict | undefined
   isMulti: boolean
@@ -152,6 +153,7 @@ interface ConvertFooterProps {
 // convert split-button or — once everything selected is done — the outcome with its
 // inline links (reveal/clean up) beside the next steps (Apple Music, DJ app, re-export).
 export function ConvertFooter({
+  onLabelChange,
   item,
   spectrum,
   isMulti,
@@ -804,6 +806,7 @@ export function ConvertFooter({
               destinations={destinations}
               label={batchLabel}
               hint={isMulti ? convertHint : processHint}
+              onLabelChange={onLabelChange}
               tip={batchTip}
               offerSource={isMulti && !!offerSource}
               clearAfter={clearAfterBatch}
