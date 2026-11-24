@@ -343,7 +343,7 @@
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
     "selectedCount_other": "{{count}} seleccionades",
-    "positionReveal": "Pista {{current}} de {{total}}: desplaçar-s'hi"
+    "positionReveal": "Pista {{current}} de {{total}}. Desplaçar-s'hi"
   },
   "empty": {
     "title": "Deixa anar les pistes aquí",
