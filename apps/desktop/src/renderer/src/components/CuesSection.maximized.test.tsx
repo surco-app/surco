@@ -2864,10 +2864,29 @@ describe('CuesSection maximized replaced track', () => {
     })
     await maximize()
     const button = await waitFor(() =>
-      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-reviewed'),
+      within(screen.getByTestId('cues-toolbar')).getByTestId('cues-reviewed'),
     )
     fireEvent.click(button)
     await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', undefined))
+  })
+
+  // A row of its own made the wave jump up the moment Reviewed was pressed. In the toolbar,
+  // closing the review takes nothing but the button, and the editor below stays still.
+  it('gives a moved track no row above the toolbar, so Reviewed leaves the wave where it is', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 0 },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    await waitFor(() => screen.getByTestId('cues-reviewed'))
+    expect(screen.queryByTestId('cues-replaced-row')).toBeNull()
   })
 
   // Reviewed removes its own row, and with it the focused button. The keys must stay with the
@@ -2907,7 +2926,7 @@ describe('CuesSection maximized replaced track', () => {
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     reviewed.focus()
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     expect(document.activeElement).toBe(editor())
 
     key('z', { metaKey: true })
@@ -2952,7 +2971,7 @@ describe('CuesSection maximized replaced track', () => {
     await maximize()
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     fireEvent.click(screen.getByTestId('cues-clear-all'))
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
 

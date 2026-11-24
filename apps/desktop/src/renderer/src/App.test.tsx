@@ -6712,7 +6712,7 @@ describe('App source playlists', () => {
       fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
       await screen.findByTestId('section-maximized-overlay')
       fireEvent.click(await screen.findByTestId('cues-reviewed'))
-      await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+      await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
       expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
       expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
     })

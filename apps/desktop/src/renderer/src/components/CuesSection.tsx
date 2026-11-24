@@ -1881,6 +1881,15 @@ function Editing({
         options={flowOptions}
       />
       {autoControl}
+      {/* Reviewed sits after the left-aligned controls: when it goes, the spacer takes its
+      place, so nothing else on the line moves and the editor below keeps its height. */}
+      {maximized && replaced && (
+        <ReviewedButton
+          path={replaced.newPath}
+          name={track?.title || cue.label}
+          onPress={focusEditor}
+        />
+      )}
       <span className="flex-1" />
       <AtHead head={head} of={atMs}>
         {(playheadMs) => {
@@ -1964,18 +1973,11 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
-      {/* The full editor has no section header, so the why of a replaced track and its
-      Reviewed get a row of their own under the track's header. Only a replaced track has it,
-      and Reviewed removes it with the track still open: the row only takes height, so nothing
-      above the wave changes width. */}
-      {maximized && replaced && (
+      {/* The full editor has no section header, so the why of a replaced track gets a row of
+      its own under the track's header. A moved track has no why to give, and no row. */}
+      {maximized && replaced && !('moved' in replaced.shift) && (
         <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
           <ReplacedReason shift={replaced.shift} />
-          <ReviewedButton
-            path={replaced.newPath}
-            name={track?.title || cue.label}
-            onPress={focusEditor}
-          />
         </div>
       )}
       {maximized ? (
