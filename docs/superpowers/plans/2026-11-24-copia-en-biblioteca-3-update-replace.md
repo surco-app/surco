@@ -362,32 +362,6 @@ Tests que cambian (aprobado por Vicent el 24/11; la app deja de proponer Replace
 - [ ] **Medidas.** En los 8 idiomas, con la ventana al ancho mínimo y en la vista normal, medir el ancho del cuerpo y de la mitad del formato con Update, Replace y Replace anyway (`getBoundingClientRect` desde DevTools, o captura sin activar la ventana). No pueden cambiar entre acciones, el texto no se corta y el menú (`w-56`) muestra entero `VirtualDJ · AIFF 24/192` y las líneas grises. Si algo se corta en un idioma, se acorta ese texto y se vuelve a medir. Las medidas van al informe.
 - [ ] Al acabar, el `shasum` del `master.db` original es el mismo. En el informe, lo probado y lo que no se pudo probar.
 
-### Task 11: Varias pistas (separable, se puede dejar para otra rama)
+### Fuera de esta tanda: varias pistas
 
-**Antes de empezar, preguntar a Vicent.** Hoy una selección que mezcla pistas que sustituyen con pistas que se añaden se bloquea entera (`lib/batch.ts:96-127`, `selectionReplaceMode`, regla suya del 15/09, texto `editor.mixedReplaceSelection`). El spec pide lo contrario: la acción elegida para las que tienen copia y el resto convertido como hoy. Hay que confirmar que esa regla cae y avisar de que cambian sus tests. Sin su sí, esta tarea no se hace.
-
-**Files:**
-- Modify: `apps/desktop/src/renderer/src/hooks/useProgramCopies.ts`: sacar la búsqueda por programa (~70-90) a una función pura exportada
-- Create: `apps/desktop/src/renderer/src/hooks/useSelectionCopies.ts`
-- Modify: `apps/desktop/src/renderer/src/lib/libraryCopy.ts`, `lib/batch.ts` (`convertGate`), `hooks/useTrackProcessing.ts` (`processAll`), `components/ConvertFooter.tsx` (~788), `components/Editor.tsx`, `App.tsx` (`convertTracks`, `onProcessAllSelected`)
-- Test: `useProgramCopies.test.tsx`, `useSelectionCopies.test.tsx`, `lib/batch.test.ts`, `useTrackProcessing.test.tsx`, `Editor.test.tsx`
-
-**Interfaces:**
-- Produces:
-  - `export function programCopyOf(tracks: CollectionTrack[], track: { inputPath: string; meta: { title: string; artist: string }; durationSec?: number }, withLength: boolean): ProgramCopy | null`. `useProgramCopies` la usa con la cascada de hoy.
-  - `useSelectionCopies(tracks: TrackItem[], enabled: boolean): ReadonlyMap<string, { ref: LibraryCopyRef; patch: Partial<TrackItem> }>`. Por pista: Music si `replaceCandidate` no es ambiguo y `appleMusicEntryLocation` dio ruta (una consulta por `persistentId`); si no, el primer programa DJ con `programCopyOf(..., true)`. Solo cuenta la coincidencia por longitud, porque con varias pistas no se mide y la longitud es lo que deja fuera otra versión. Sin «Another version» medido, una copia que no se lee falla en su pista con el error de siempre.
-  - `processAll(..., copies?: ReadonlyMap<...>, libraryAction?: LibraryCopyAction)`. Por cada id con copia: con `'update'`, el cuerpo de `updateLibraryCopy` sin su propio `begin/endConversionBatch` (va dentro del lote); con `'replace'`, `updateTrack(id, patch)` antes de `runOne`. El resto, `runOne` como hoy.
-  - `ConvertFooter` pasa la oferta también con varias. `name` es el programa si todas las copias están en uno; si no, `tr('editor.librarySectionTitle')`. `format` va vacío y el encabezado muestra solo el nombre. `held` es `false` y `better` es `false`.
-
-- [ ] **Step 1: Escribir los tests que fallan**:
-  - `it('finds the same copy for one track as the editor does')` en `programCopyOf`.
-  - `it('keeps a copy of another length out of a selection, where nothing is measured')`.
-  - `it('updates the tracks that have a copy and converts the rest')` en `processAll`: dos pistas, una con copia. Hay un trabajo con `tagsInPlace` y otro de conversión normal.
-  - `it('stamps each replaced track with its own copy before converting it')`.
-  - `it('no longer holds back a selection that mixes copies and new tracks')` en `convertGate`, que sustituye al test del bloqueo mixto. Se avisa antes, como dice la nota de arriba.
-  - En `Editor.test.tsx`, `it('offers the same two actions over several tracks')`: con dos pistas con copia en rekordbox, el menú tiene `library-copy-update` y `library-copy-replace`.
-- [ ] **Step 2:** lanzar esos ficheros con `node /Users/vicent/code/surco/node_modules/vitest/vitest.mjs run <rutas>`. Fallan.
-- [ ] **Step 3: Implementar**, empezando por la extracción de `programCopyOf` en un commit propio sin cambio de conducta (`Share the library lookup of one track's DJ copies`).
-- [ ] **Step 4:** pasan. Repetir las Tasks 8 y 9 sobre lo nuevo: mutar `withLength` a `false` y ver caer «keeps a copy of another length…».
-- [ ] **Step 5:** commit `Apply Update or Replace to every selected track that has a library copy`.
-- [ ] **Step 6: Prueba a mano**, con la copia de `master.db`: una selección de tres pistas, dos con copia en rekordbox y una sin. Con Update, las dos copias cambian de etiquetas sin renombrarse y la tercera se convierte. Con Replace, las dos sustituyen y la tercera se añade. El `shasum` del `master.db` original sigue igual.
+Vicent (24/11) decidió dejar Replace/Update con varias pistas para otra rama, después de probarlo con una sola. Su regla del 15/09 (`lib/batch.ts`, `selectionReplaceMode`, `editor.mixedReplaceSelection`) se queda como está. Con varias pistas el botón funciona como hoy.
