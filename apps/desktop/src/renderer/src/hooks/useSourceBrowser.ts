@@ -164,17 +164,21 @@ export function useSourceBrowser({
   }
   const tree = useQuery({ ...treeQuery(source), enabled: source !== null })
   const program = source === 'appleMusic' ? null : source
-  const hasRecent = program !== null
+  const hasRecent = source !== null
   const recent = useQuery({
     queryKey: ['source-tree', source, 'recent'],
-    queryFn: () => SOURCE_READ[program as DjProgram].recentCount(),
+    queryFn: () =>
+      source === 'appleMusic'
+        ? window.api.loadAppleMusicRecentCount()
+        : SOURCE_READ[program as DjProgram].recentCount(),
     enabled: hasRecent,
     staleTime: Number.POSITIVE_INFINITY,
   })
+  // Music's tree carries its own All tracks: the library playlist, under Music's own ID.
   const all = useQuery({
     queryKey: ['source-tree', source, 'all'],
     queryFn: () => SOURCE_READ[program as DjProgram].trackCount(),
-    enabled: hasRecent,
+    enabled: program !== null,
     staleTime: Number.POSITIVE_INFINITY,
   })
   const matching = useRekordboxMatching(program === 'rekordbox')
@@ -382,8 +386,8 @@ export function useSourceBrowser({
     source,
     playlist,
     tree:
-      source === 'appleMusic' && tree.data
-        ? withReadCounts(tree.data, (id) => {
+      source === 'appleMusic' && shownTree
+        ? withReadCounts(shownTree, (id) => {
             const key = ['source-playlist', 'appleMusic', id]
             if (queryClient.getQueryState(key)?.fetchStatus === 'fetching') return undefined
             const read = queryClient.getQueryData<SourcePlaylistEntry[]>(key)

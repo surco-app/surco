@@ -29,6 +29,7 @@ import {
   readAppleMusicEntry,
   readAppleMusicPlaylist,
   readLibraryPlaylist,
+  readMusicRecentCount,
   readPlaylistMembers,
 } from './appleMusicPlaylists'
 import {
@@ -279,6 +280,17 @@ export function registerAppleMusicIpc(
             return null
           })
       : null,
+  )
+
+  // Recently added's count for the tree. None when the database cannot be read, so the tab
+  // still opens.
+  ipcMain.handle('applemusic:recentCount', () =>
+    process.platform === 'darwin'
+      ? readMusicRecentCount().catch((err: unknown) => {
+          log.warn('library database read failed, Recently added left uncounted', err)
+          return 0
+        })
+      : 0,
   )
 
   // The list of playlists as Music last gave it, to show while Music lists them again.

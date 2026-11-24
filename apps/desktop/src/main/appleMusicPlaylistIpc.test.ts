@@ -21,9 +21,11 @@ const readAppleMusicPlaylist = vi.fn()
 const readAppleMusicEntry = vi.fn()
 const readLibraryPlaylist = vi.fn()
 const readPlaylistMembers = vi.fn()
+const readMusicRecentCount = vi.fn()
 vi.mock('./appleMusicPlaylists', () => ({
   readLibraryPlaylist: (...a: unknown[]) => readLibraryPlaylist(...a),
   readPlaylistMembers: (...a: unknown[]) => readPlaylistMembers(...a),
+  readMusicRecentCount: (...a: unknown[]) => readMusicRecentCount(...a),
   dumpAppleMusicPlaylists: (...a: unknown[]) => dumpAppleMusicPlaylists(...a),
   readAppleMusicPlaylist: (...a: unknown[]) => readAppleMusicPlaylist(...a),
   readAppleMusicEntry: (...a: unknown[]) => readAppleMusicEntry(...a),
@@ -189,6 +191,29 @@ describe('applemusic:libraryPlaylistTracks', () => {
       await handlers.get('applemusic:libraryPlaylistTracks')?.({}, 'A1B2C3D4E5F60718'),
     ).toBeNull()
     expect(readLibraryPlaylist).not.toHaveBeenCalled()
+  })
+})
+
+// The tree shows Recently added with its count before it is opened, counted the way the list
+// will show it: each file once, and each file-less row.
+describe('applemusic:recentCount', () => {
+  it('counts the tracks added lately, from the library database', async () => {
+    readMusicRecentCount.mockResolvedValue(164)
+    await register()
+    expect(await handlers.get('applemusic:recentCount')?.({})).toBe(164)
+  })
+
+  it('counts none when the database cannot be read, so the tab still opens', async () => {
+    readMusicRecentCount.mockRejectedValue(new Error('library database closed'))
+    await register()
+    expect(await handlers.get('applemusic:recentCount')?.({})).toBe(0)
+  })
+
+  it('counts none off macOS without spawning osascript', async () => {
+    setPlatform('win32')
+    await register()
+    expect(await handlers.get('applemusic:recentCount')?.({})).toBe(0)
+    expect(readMusicRecentCount).not.toHaveBeenCalled()
   })
 })
 
