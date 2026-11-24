@@ -3,9 +3,11 @@ import type {
   RekordboxPlaylistTarget,
   RekordboxQueueWritten,
   SourceNode,
+  SourcePlaylistEntry,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
+import { pathKey } from './pathKey'
 import { SOURCE_PROGRAMS } from './sourcePrograms'
 
 export interface PlaylistOption {
@@ -107,11 +109,40 @@ export function effectivePlaylists(
   if (!membership || !options) return undefined
   const wanted = wantedOf(track, library)
   if (wanted) return wanted.map((t) => resolveTarget(t, options))
+  return playlistsOfPath(rekordboxPathOf(track), membership, options)
+}
+
+export function playlistsOfPath(
+  path: string,
+  membership: Membership,
+  options: readonly PlaylistOption[],
+): RekordboxPlaylistTarget[] {
   const byId = namesOf(options)
-  return (membership[rekordboxPathOf(track)] ?? []).flatMap((id) => {
+  return (membership[path] ?? []).flatMap((id) => {
     const name = byId.get(id)
     return name === undefined ? [] : [{ id, name }]
   })
+}
+
+export function linkIdsOf(
+  entries: readonly SourcePlaylistEntry[],
+  paths: readonly string[],
+): string[] {
+  const keys = new Set(paths.map(pathKey))
+  return entries.flatMap((e) =>
+    e.linkId !== undefined && e.path !== null && keys.has(pathKey(e.path)) ? [e.linkId] : [],
+  )
+}
+
+export function linkAfter(
+  entries: readonly SourcePlaylistEntry[],
+  linkIds: readonly string[],
+): string | null {
+  const removed = new Set(linkIds)
+  const last = entries.findLastIndex((e) => e.linkId !== undefined && removed.has(e.linkId))
+  if (last < 0) return null
+  const next = entries.slice(last + 1).find((e) => e.linkId !== undefined && !removed.has(e.linkId))
+  return next?.linkId ?? null
 }
 
 export function bulkPlaylistState(
