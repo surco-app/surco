@@ -162,7 +162,7 @@ export function FindReplaceModal({
             className={`flex items-center rounded-lg border bg-[var(--color-field)] ${
               badRegex
                 ? 'border-danger has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-danger'
-                : 'border-[var(--color-input-border)] focus-within:border-[var(--color-accent)]'
+                : 'border-[var(--color-input-border)] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]'
             }`}
           >
             {regex && (

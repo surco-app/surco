@@ -141,7 +141,7 @@ export function MatchingSection({
           </div>
         )}
         <div ref={searchRef} className="mt-3 flex flex-col gap-1.5">
-          <label className="flex items-center gap-2 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 focus-within:border-[var(--color-accent)]">
+          <label className="flex items-center gap-2 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2.5 py-1.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
             <Search size={14} className="shrink-0 text-fg-faint" aria-hidden="true" />
             <input
               data-testid="matching-search"
