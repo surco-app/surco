@@ -480,6 +480,15 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
+      // Same keyed card as notifyEdit, so a burst of edits leaves the latest line.
+      reportNotice: (message: string) =>
+        void pushToast(store, {
+          key: 'rekordbox-edit',
+          tone: 'neutral',
+          message,
+          duration: 5000,
+          testid: 'rekordbox-edit-notice',
+        }),
       reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
         // ⌘Z means the newest notice: a newer one takes the shortcut away from an older
         // Reviewed, whose card keeps its own Undo button.
