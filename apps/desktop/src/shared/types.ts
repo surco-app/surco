@@ -890,6 +890,10 @@ export interface ProcessJob extends TrackOrigin {
   // checked against this name, never against the new tags: the copy was matched by score,
   // so the two rarely spell the same.
   replacesLabel?: string
+  // Set by Update on a library copy: its tags are written onto that exact file, which is
+  // never renamed (not even .aif to .aiff), since the DJ programs and Apple Music hold it
+  // by that path.
+  tagsInPlace?: true
 }
 
 export interface CoverExportJob {

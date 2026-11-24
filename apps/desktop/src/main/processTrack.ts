@@ -597,7 +597,9 @@ export async function runProcessTrack(
     const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
     const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
     const addToEngineDj = settings.addToEngineDj
+    // A library copy retagged where it is never gets a sibling: Update leaves one file.
     const besideOriginal =
+      !job.tagsInPlace &&
       (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
     // macOS writes file names decomposed (NFD): Finder does, and an SMB NAS hands them
@@ -629,14 +631,16 @@ export async function runProcessTrack(
       settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
       currentName,
     )
-    const resolved = resolveOutputTarget(
-      job.inputPath,
-      deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
-      format,
-      settings.outputDir,
-      overwriteOriginal,
-      besideOriginal,
-    )
+    const resolved = job.tagsInPlace
+      ? { outputPath: job.inputPath, inPlace: true }
+      : resolveOutputTarget(
+          job.inputPath,
+          deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
+          format,
+          settings.outputDir,
+          overwriteOriginal,
+          besideOriginal,
+        )
     const outputPath = resolved.outputPath
     let inPlace = resolved.inPlace
     // "Apple Music only": the user wants the track in Apple Music and no copy left in
@@ -679,7 +683,10 @@ export async function runProcessTrack(
         : undefined
     let keepOverwritten = false
     const outputIsInput =
-      !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
+      !musicOnly &&
+      !besideOriginal &&
+      inPlace &&
+      (job.tagsInPlace || (await deps.isSameFile(job.inputPath, outputPath)))
     // Music reads no tags from a WAV at import, so its own copy of a temp file landed in
     // "Unknown Artist/Unknown Album" and tagging the entry never moved it (measured 30/10).
     // A file already inside the Media folder is added where it is, so the conversion goes
@@ -878,7 +885,8 @@ export async function runProcessTrack(
         })
     }
     if (renameFollowFailed) originalKept = true
-    else if (inPlace && !retireAfterMusic) await retireOriginal()
+    // The copy retagged where it is is the output itself: there is no original to retire.
+    else if (inPlace && !retireAfterMusic && !job.tagsInPlace) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {

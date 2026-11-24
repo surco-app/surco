@@ -1198,6 +1198,92 @@ describe('runProcessTrack — a track already in the output format', () => {
   })
 })
 
+// Update retags the copy a DJ program or Apple Music already holds. They hold it by its
+// path, so any rename (even .aif to .aiff, or the safe file name) leaves them pointing at
+// a file that is gone.
+describe('runProcessTrack — retagging a library copy where it is', () => {
+  const copy = (overrides: Partial<ProcessJob> = {}) =>
+    job({
+      inputPath: '/r/Song.aif',
+      outputName: 'Song',
+      format: 'aiff',
+      tagsInPlace: true,
+      ...overrides,
+    })
+
+  it('writes the tags onto an .aif copy without renaming it to .aiff', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('keeps a copy name the safe file name would change', async () => {
+    const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
+    const result = await runProcessTrack(
+      copy({ inputPath: '/r/A: B.wav', outputName: 'A: B', format: 'wav' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/A: B.wav')
+    expect(result.outputPath).toBe('/r/A: B.wav')
+  })
+
+  it('keeps the copy name when the tags would name the file differently', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy({ outputName: 'Artist - Song' }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('stays on the copy when the beside-the-original setting is on', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('lets the libraries follow the copy it retags', async () => {
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(
+        async () => ({}),
+      ),
+    })
+    await runProcessTrack(copy(), deps)
+
+    expect(deps.snapshotLibraries).toHaveBeenCalledWith('/r/Song.aif')
+  })
+
+  it('retags the Apple Music entry of the copy instead of adding the file again', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: true }),
+      appleMusicEntry: vi.fn(async () => ({ path: '/r/Song.aif', label: 'Artist - Song' })),
+    })
+    await runProcessTrack(copy({ musicPersistentId: 'P1' }), deps)
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalledWith('P1', {}, undefined)
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  it('reports a tags-only write for a library copy update', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(result.tagsOnly).toBe(true)
+    expect(deps.sendProgress).toHaveBeenCalledWith('tags')
+  })
+})
+
 describe('runProcessTrack — in-place rewrite', () => {
   // Retiring the old-format original is the last, cheapest step, and on Windows it can
   // fail after the new file has landed (an EBUSY on the unlink that ends a copy into the
