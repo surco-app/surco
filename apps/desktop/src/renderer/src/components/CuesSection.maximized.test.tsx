@@ -2443,6 +2443,7 @@ describe('CuesSection maximized grid', () => {
     key('m')
     await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    expect(screen.getByTestId('cues-save-more')).toHaveTextContent('2')
     fireEvent.click(screen.getByTestId('cues-save-more'))
     expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
   })

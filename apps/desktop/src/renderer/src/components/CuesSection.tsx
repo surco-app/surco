@@ -1332,8 +1332,8 @@ function Editing({
         data-filled={!unchanged}
         aria-label={saveLabel}
         onClick={() => void saveWith(saveThen)}
-        className={`press grid shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-          maximized ? 'h-8 rounded-l-lg border' : 'h-6 rounded-l-md'
+        className={`press grid shrink-0 whitespace-nowrap text-xs font-semibold ${
+          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md pr-1 pl-2.5'
         } ${
           unchanged
             ? maximized
@@ -1358,11 +1358,11 @@ function Editing({
         ) : (
           // The folded row has no room for a second label, so the arrow alone marks the
           // way that moves on, and its slot stays reserved so the body keeps one width.
-          <span className="flex items-center gap-1 self-center">
+          <span className="flex items-center gap-[3px] self-center">
             <span data-testid="cues-save-label">{tr('editor.cues.saveShort')}</span>
             <ArrowDown
               data-testid="cues-save-next-mark"
-              className="h-3 w-3"
+              className="h-[11px] w-[11px]"
               aria-hidden="true"
               style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
             />
@@ -1378,8 +1378,10 @@ function Editing({
         aria-haspopup="menu"
         aria-expanded={saveMenu.open}
         onClick={() => saveMenu.setOpen((v) => !v)}
-        className={`press flex shrink-0 items-center gap-0.5 pr-2 pl-1.5 text-xs font-semibold tabular-nums disabled:opacity-40 ${
-          maximized ? 'h-8 rounded-r-lg border' : 'h-6 rounded-r-md border-l'
+        className={`press flex shrink-0 items-center text-xs font-semibold tabular-nums disabled:opacity-40 ${
+          maximized
+            ? 'h-8 gap-0.5 rounded-r-lg border pr-2 pl-1.5'
+            : 'h-6 w-[18px] justify-center rounded-r-md border-l'
         } ${
           unchanged
             ? `border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg ${
@@ -1392,7 +1394,8 @@ function Editing({
               }`
         }`}
       >
-        {severalUnsaved && unsavedTracks}
+        {/* The folded row has no room for the count; the menu line says how many. */}
+        {maximized && severalUnsaved && unsavedTracks}
         <ChevronDown className="h-3 w-3" aria-hidden="true" />
       </button>
       {saveMenu.open && (
@@ -1797,7 +1800,7 @@ function Editing({
       <div
         data-testid="cues-folded-actions"
         data-wrap="true"
-        className="ml-auto flex shrink-0 items-center gap-2"
+        className="ml-auto flex shrink-0 items-center gap-1"
       >
         {addCallButton}
         <button

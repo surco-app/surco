@@ -683,7 +683,8 @@ describe('saving several tracks', () => {
 
   // Two buttons that both said Save, one on a line of its own, left the user guessing which
   // one saved what. The folded row keeps one Save for this track; saving every pending track
-  // sits in its menu, under the ways to save this one, each saying what it saves.
+  // sits in its menu, under the ways to save this one, each saying what it saves. The folded
+  // chevron carries no count, since the row has no room for it and the menu line says it.
   it('keeps one Save in the folded row and offers every pending track from its menu', async () => {
     other()
     setup()
@@ -691,7 +692,7 @@ describe('saving several tracks', () => {
     await autoMark()
     acceptOne()
     const more = await screen.findByTestId('cues-save-more')
-    expect(more).toHaveTextContent('2')
+    expect(more).toHaveTextContent('')
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
     fireEvent.click(more)
     expect(screen.getByTestId('cues-save-mode-stay')).toHaveTextContent('Save to rekordbox')
