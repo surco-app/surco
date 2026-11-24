@@ -130,7 +130,9 @@ export function linkIdsOf(
 ): string[] {
   const keys = new Set(paths.map(pathKey))
   return entries.flatMap((e) =>
-    e.linkId !== undefined && e.path !== null && keys.has(pathKey(e.path)) ? [e.linkId] : [],
+    !e.separator && e.linkId !== undefined && e.path !== null && keys.has(pathKey(e.path))
+      ? [e.linkId]
+      : [],
   )
 }
 

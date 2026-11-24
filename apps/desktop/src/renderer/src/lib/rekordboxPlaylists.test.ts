@@ -424,9 +424,13 @@ describe('each library keeps its own playlist edit', () => {
   })
 })
 
-const entry = (linkId: string | undefined, path: string | null): SourcePlaylistEntry => ({
+const entry = (
+  linkId: string | undefined,
+  path: string | null,
+  separator = path === null,
+): SourcePlaylistEntry => ({
   path,
-  separator: path === null,
+  separator,
   meta: {},
   linkId,
 })
@@ -449,6 +453,7 @@ describe('linkIdsOf', () => {
       entry('l4', '/r/copia.aiff'),
       entry(undefined, '/r/copia.aiff'),
       entry('l6', null),
+      entry('l7', '/r/copia.aiff', true),
     ]
     expect(linkIdsOf(entries, ['/r/copia.aiff'])).toEqual(['l2', 'l4'])
   })
