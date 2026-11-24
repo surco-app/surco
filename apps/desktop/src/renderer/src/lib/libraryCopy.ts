@@ -129,7 +129,7 @@ export function replaceCopyPatch(target: LibraryCopyTarget, openPath: string): P
   if (target.music) return replacePatch(target.music, openPath) ?? {}
   // A DJ copy is replaced by its file alone: stamping a musicPersistentId would make the
   // convert write over an Apple Music entry the user was never offered.
-  return { replacesPath: target.path }
+  return { replacesPath: target.path, replaceDone: undefined }
 }
 
 export function copyRefOf(target: LibraryCopyTarget): LibraryCopyRef {

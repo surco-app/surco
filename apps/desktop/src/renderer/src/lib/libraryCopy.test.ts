@@ -311,6 +311,15 @@ describe('replaceCopyPatch', () => {
     expect(replaceCopyPatch(target, '/open/a.wav')).toEqual({ replacesPath: '/r/a.aiff' })
   })
 
+  it('clears a replacement already carried out so a new Replace on a DJ copy is sent', () => {
+    const target = pickLibraryCopy([rekordbox], 210)
+    if (!target) throw new Error('expected a copy')
+    const replacedBefore = { replacesPath: '/r/old.aiff', replaceDone: true as const }
+    const stamped = { ...replacedBefore, ...replaceCopyPatch(target, '/open/a.wav') }
+    expect(stamped.replacesPath).toBe('/r/a.aiff')
+    expect(stamped.replaceDone).toBeUndefined()
+  })
+
   it('replaces the Apple Music copy with the stamp it has today', () => {
     const target = pickLibraryCopy([music], 210)
     if (!target) throw new Error('expected a copy')
