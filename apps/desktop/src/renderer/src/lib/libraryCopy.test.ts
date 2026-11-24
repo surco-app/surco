@@ -137,6 +137,22 @@ describe('fillCopyPath', () => {
     ).toBe('')
   })
 
+  // Its length cannot rule it out yet: the collection may not store it and the measured one
+  // may not have landed, and the verdict still to come is what calls it another version.
+  it('waits for a first copy still being compared even with its length unknown', () => {
+    expect(
+      fill({ programs: [rekordbox('measuring'), traktor('same', 200)], fileDurationSec: 200 }),
+    ).toBe('')
+  })
+
+  // The position decides, not the length: the first copy being compared holds the fill back
+  // even when its length already says another edit, until its verdict lands.
+  it('waits for a first copy still being compared even when its length is outside the gap', () => {
+    expect(
+      fill({ programs: [rekordbox('measuring', 400), traktor('same', 200)], fileDurationSec: 200 }),
+    ).toBe('')
+  })
+
   it('fills from a copy that could not be measured, the spec counts it as a copy', () => {
     expect(fill({ programs: [rekordbox('unmeasurable', 200)], fileDurationSec: 200 })).toBe(
       '/r/a.aiff',

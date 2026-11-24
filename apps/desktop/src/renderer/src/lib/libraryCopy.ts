@@ -53,8 +53,10 @@ export interface FillCandidate {
   durationSec?: number
 }
 
-// The first copy decides even when a later one is ready: while it is still being compared it
-// may turn out to be another version, whose tags are not this file's, so nothing is read yet.
+// The DJ copy that fills is the first, in program order, that counts as a copy with a matching
+// length. A copy still being compared stops the search where it stands, whatever its length
+// says so far: nothing is read while it comes first, even when a later copy is ready, since
+// only its verdict tells whether its tags are this file's.
 export function fillCopyPath(args: {
   musicCopyPath: string
   musicCopyPending: boolean
@@ -64,7 +66,9 @@ export function fillCopyPath(args: {
   if (args.musicCopyPath) return args.musicCopyPath
   if (args.musicCopyPending) return ''
   const first = args.programs.find(
-    (copy) => countsAsCopy(copy.verdict) && lengthsMatch(copy.durationSec, args.fileDurationSec),
+    (copy) =>
+      countsAsCopy(copy.verdict) &&
+      (copy.verdict === 'measuring' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
   )
   if (!first || first.verdict === 'measuring') return ''
   return first.path

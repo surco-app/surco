@@ -969,8 +969,8 @@ export const Editor = memo(function Editor({
   // Only a copy of the same recording lends its fields: another version of the track has other
   // tags. In Music that is the copy a replacement would supersede, and it goes first because
   // the convert puts this file in its place, so a DJ copy waits while the Music library is still
-  // loading; otherwise the first DJ copy, once its comparison (or, when it cannot be compared,
-  // its length) rules out another version.
+  // loading; otherwise the first DJ copy whose length matches this file's, once its comparison
+  // is done.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
   useReplacedCopyFill({
