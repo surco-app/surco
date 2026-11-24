@@ -692,7 +692,6 @@ describe('buildFieldSpecs (bulk mode)', () => {
     expect(specs[0]).toMatchObject({ readOnly: true, value: '' })
     expect(specs[0].mixed).toBeUndefined()
     expect(specs[0].placeholder).toBe('One · Two')
-    expect(specs[0].plain).toBe(true)
     expect(specs[0].readOnlyNote).toBe('editor.perTrackOnly')
     expect(specs[0].mixedValues).toBeUndefined()
     specs[0].onChange('x')

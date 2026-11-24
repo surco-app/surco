@@ -206,7 +206,21 @@ describe('ShortcutsTab reset all', () => {
     expect(screen.getByTestId('shortcuts-reset-all')).toHaveTextContent(/^Reset all$/)
     fireEvent.click(screen.getByTestId('shortcuts-reset-all'))
     expect(screen.getByTestId('shortcuts-reset-all-confirm')).toHaveTextContent(
-      'Reset 2 shortcuts?',
+      /^Reset 2 shortcuts\?$/,
     )
+  })
+})
+
+// Recording shows a wordless "…" (the tab intro already explains the gesture) in the same
+// button, so the box does not change; screen readers still hear the recording label.
+describe('ShortcutsTab recording state', () => {
+  it('keeps the same button, shows an ellipsis and names itself with the recording label', () => {
+    renderTab()
+    const idle = screen.getByTestId('shortcut-record-play')
+    fireEvent.click(idle)
+    const recording = screen.getByTestId('shortcut-record-play')
+    expect(recording).toBe(idle)
+    expect(recording).toHaveTextContent('…')
+    expect(recording).toHaveAccessibleName(i18n.t('settings.shortcuts.recording'))
   })
 })

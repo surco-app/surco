@@ -18,9 +18,10 @@ import {
 import { SectionSubhead } from './SectionSubhead'
 import { Tooltip } from './Tooltip'
 
-// Per-grade colour for the analysis rows, reusing the good/warn/danger tokens
+// Per-grade mark for the analysis rows, reusing the good/warn/danger tokens
 // (Tokyo Night) only where a figure needs a look: a good figure keeps its mark, faint and
-// neutral, so a red peak is not lost among greens. Colour is never the only carrier: each grade
+// neutral, so a red peak is not lost among greens. The figure itself stays in the normal
+// ink: the verdict is told once, by the mark. Colour is never the only carrier: each grade
 // also has its own shape (round, a warning triangle, a square), so the verdict survives
 // colour blindness, and its name rides along in text for screen readers.
 export const GRADE_MARK: Record<Grade, { shape: string; className: string }> = {
@@ -35,11 +36,6 @@ export const GRADE_NAME: Record<Grade, string> = {
   good: 'editor.loudnessGradeGood',
   warn: 'editor.loudnessGradeWarn',
   bad: 'editor.loudnessGradeBad',
-}
-export const GRADE_TEXT: Record<Grade, string> = {
-  good: 'text-fg',
-  warn: 'text-warn',
-  bad: 'text-danger',
 }
 
 interface Props {
@@ -242,9 +238,7 @@ export function LoudnessReadout({
                 <span className="truncate text-xs text-fg-dim">{c.label}</span>
               </span>
               <span className="flex shrink-0 items-baseline gap-1.5">
-                <span className={`text-sm font-medium tabular-nums ${GRADE_TEXT[c.grade]}`}>
-                  {c.value}
-                </span>
+                <span className="text-sm font-medium tabular-nums text-fg">{c.value}</span>
                 <span className="sr-only">{tr(GRADE_NAME[c.grade])}</span>
                 {/* The pending conversion's figure: an arrow marks only what the
                     conversion moves, and the figures a constant gain cannot move say

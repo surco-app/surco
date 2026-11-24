@@ -371,7 +371,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             <span className="min-w-0 flex-1">
               <span
                 data-fit
-                className="block truncate text-sm font-semibold leading-snug tracking-[-0.01em]"
+                className="block truncate text-sm font-medium leading-snug tracking-[-0.01em]"
               >
                 {r.title}
               </span>
@@ -382,13 +382,14 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           lines said nothing. The facts truncate so one long Discogs row can't
                           blow up the card. */}
               <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                {/* The provider is an origin label, so it reads as the same plain
-                            secondary text the track list gives the WAV/FLAC format tag —
-                            same vocabulary across both columns. */}
+                {/* The provider is an origin label, so it stays quiet in the muted text
+                            colour, a step below the facts beside it; the track list's format
+                            tag is a little stronger (dim, medium weight) because it is data
+                            about the file, not where a result came from. */}
                 <span
                   data-testid="result-provider"
                   data-provider={r.provider}
-                  className="shrink-0 text-label font-medium leading-4 text-fg-dim"
+                  className="shrink-0 text-label leading-4 text-fg-muted"
                 >
                   {tr(`settings.provider.${r.provider}`)}
                 </span>
@@ -415,7 +416,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                             base format (medium + size, e.g. "Vinyl, 12\"") dropping RPM/Single/
                             Stereo. */}
                 {identity && (
-                  <span className="min-w-0 truncate text-label text-fg-dim leading-4">
+                  <span className="min-w-0 truncate text-label text-fg-muted leading-4">
                     {identity}
                   </span>
                 )}
@@ -427,7 +428,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
                           Deezer row stays the same height it was. */}
               {pressing && (
                 <span className="mt-px flex min-w-0 items-center">
-                  <span className="min-w-0 truncate text-label text-fg-dim leading-4">
+                  <span className="min-w-0 truncate text-label text-fg-muted leading-4">
                     {pressing}
                   </span>
                 </span>

@@ -317,6 +317,7 @@
       "placeholder": "Search tracks",
       "clear": "Clear search",
       "empty": "No tracks match.",
+      "away": "Its files aren't on the disk.",
       "reset": "Clear search and filters"
     },
     "sort": {
@@ -1822,7 +1823,6 @@
     "searchByAlbumFirst": "Search by album first",
     "searchByAlbumFirstHint": "When the tags have an album, it is searched with the artist before the track. If nothing turns up, the track is searched.",
     "searchProviders": "Search sources",
-    "searchProvidersHint": "Catalogs the editor searches. Discogs is curated, Bandcamp adds self-released material, Deezer covers commercial digital releases, Beatport brings BPM, key and mix, MusicBrainz is an open catalog kept by its community, and Apple Music brings Apple's catalog with large artwork.",
     "searchResultsSection": "Results",
     "searchMatchingSection": "Matching",
     "providerDescription": {
@@ -2412,6 +2412,7 @@
     },
     "djLibraryNone": "None, I only tag files",
     "destinationKeepsCollection": "Tracks already in your DJ software or in Apple Music are updated where they are, so they keep their place in your collection.",
+    "searchProvidersIntro": "Catalogs the editor searches.",
     "tokenOffer": "Search works as it is. A Discogs token turns on auto-match on import and keeps searches steady at busy times.",
     "tokenAdd": "Add a Discogs token",
     "macTitle": "Is this your first Mac with Surco?",
@@ -3124,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} still has the change because it couldn't be updated. Press Undo again or check Activity."
     },
     "empty": "Your Apple Music library is empty.",
-    "clean": "Nothing to review.",
     "allClear": "Everything looks right",
     "allClearHint": "No typos, capitals, invisible characters or duplicates.",
     "back": "Back to the tracks",

@@ -40,7 +40,7 @@ import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, FilterTab, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
@@ -236,6 +236,7 @@ export function TrackListHeader({
   // and anything else layered over the list, and placed from its toggle in the window.
   const [menuPos, setMenuPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  useKeepInWindow(open, menuPos, menuRef, setMenuPos)
   const [scrolled, setScrolled] = useState(false)
   const [viewMenu, setViewMenu] = useState<{ x: number; y: number } | null>(null)
 

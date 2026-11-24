@@ -760,7 +760,7 @@ export const SourceTree = memo(function SourceTree({
           {notice}
         </p>
       )}
-      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-section">
+      <label className="mx-2.5 mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-section has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input
           data-testid="source-tree-search"
@@ -768,7 +768,7 @@ export const SourceTree = memo(function SourceTree({
           placeholder={tr('sources.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-fg-faint"
+          className="min-w-0 flex-1 bg-transparent outline-none focus-visible:shadow-none placeholder:text-fg-faint"
         />
       </label>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-1.5 pt-0.5 pb-2">

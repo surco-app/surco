@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { type CheckDetail, PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { formatUpTo } from '../lib/numberFormat'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
@@ -68,6 +68,7 @@ export function VerifiedPopover({ checks }: { checks: PlaceCheck[] }): React.JSX
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  useKeepInWindow(open, pos, menuRef, setPos)
   useEffect(() => {
     if (open) menuRef.current?.focus()
   }, [open, menuRef])

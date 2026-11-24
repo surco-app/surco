@@ -317,6 +317,7 @@
       "placeholder": "Cerca brani",
       "clear": "Cancella la ricerca",
       "empty": "Nessun brano corrisponde.",
+      "away": "I suoi file non sono sul disco.",
       "reset": "Cancella ricerca e filtri"
     },
     "sort": {
@@ -1822,7 +1823,6 @@
     "searchByAlbumFirst": "Cerca prima per album",
     "searchByAlbumFirstHint": "Se i tag hanno l'album, si cerca con l'artista prima del brano. Se non esce niente, si cerca il brano.",
     "searchProviders": "Sorgenti di ricerca",
-    "searchProvidersHint": "Cataloghi in cui cerca l'editor. Discogs è curato, Bandcamp aggiunge materiale autoprodotto, Deezer copre le uscite digitali commerciali, Beatport porta BPM, tonalità e mix, MusicBrainz è un catalogo aperto curato dalla sua comunità e Apple Music offre il catalogo di Apple con copertina grande.",
     "searchResultsSection": "Risultati",
     "searchMatchingSection": "Abbinamenti",
     "providerDescription": {
@@ -2412,6 +2412,7 @@
     },
     "djLibraryNone": "Nessuno, taggo solo file",
     "destinationKeepsCollection": "I brani che sono già nel tuo programma DJ o in Apple Music vengono aggiornati dove sono, così mantengono il loro posto nella collezione.",
+    "searchProvidersIntro": "Cataloghi in cui cerca l'editor.",
     "tokenOffer": "La ricerca funziona già così. Un token di Discogs attiva «Abbina automaticamente all'importazione» e mantiene stabili le ricerche nelle ore di punta.",
     "tokenAdd": "Aggiungi un token di Discogs",
     "macTitle": "È il tuo primo Mac con Surco?",
@@ -3124,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} ha ancora la modifica perché non è stato possibile aggiornarlo. Premi di nuovo Annulla o guarda in Attività."
     },
     "empty": "La tua libreria di Apple Music è vuota.",
-    "clean": "Non c'è niente da revisionare.",
     "allClear": "È tutto a posto",
     "allClearHint": "Niente refusi, maiuscole, caratteri invisibili o duplicati.",
     "back": "Torna ai brani",

@@ -417,6 +417,67 @@ describe('MusicReview', () => {
     expect(screen.getByTestId('music-review-no-match')).toBeVisible()
   })
 
+  // Two equal messages and controls with nothing to act on are noise.
+  it('says once that there is nothing to review and drops the controls and the idle Apply', () => {
+    render(<Panes review={review({ spelling: [] })} />)
+    expect(screen.getAllByTestId('music-review-all-clear')).toHaveLength(1)
+    expect(screen.getByTestId('music-review-all-clear')).toBeVisible()
+    expect(screen.getByTestId('music-review-close')).toBeVisible()
+    expect(screen.queryByTestId('music-review-search')).toBeNull()
+    expect(screen.queryByTestId('music-review-filter')).toBeNull()
+    expect(screen.queryByTestId('music-review-sort')).toBeNull()
+    expect(screen.getByTestId('music-review-apply')).not.toBeVisible()
+  })
+
+  // An Apply with nothing to apply is a control with nothing to do, but its slot stays so the
+  // bar does not move when a change appears.
+  it('shows Apply only once something is staged, keeping its slot and out of the tab order', () => {
+    render(<Panes review={review()} />)
+    const apply = screen.getByTestId('music-review-apply')
+    expect(apply).not.toBeVisible()
+    expect(apply).toBeInTheDocument()
+    expect(apply.closest('[style*="visibility: hidden"]')).not.toBeNull()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply')).toBeVisible()
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
+  })
+
+  // The divider separates Apply from the buttons before it; beside an empty slot it would be
+  // a stray line.
+  it('hides the divider before Apply together with Apply', () => {
+    render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-apply-divider')).toBeInTheDocument()
+    expect(screen.getByTestId('music-review-apply-divider')).not.toBeVisible()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply-divider')).toBeVisible()
+  })
+
+  // Warnings the search or the filter hide are still there to review.
+  it('keeps the controls when the filter hides every warning', () => {
+    render(<Panes review={review({ filter: 'duplicates' })} />)
+    expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
+    expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
+    expect(screen.getByTestId('music-review-search')).toBeVisible()
+    expect(screen.getByTestId('music-review-filter')).toBeVisible()
+    expect(screen.getByTestId('music-review-sort')).toBeVisible()
+  })
+
   it('finds a duplicate by its title', () => {
     const dup = {
       group: { key: 'k#1', kind: 'duplicate' as const, ids: ['1', '2'] },
@@ -3084,7 +3145,6 @@ describe('damage findings in the list review', () => {
   // Clean spellings and duplicates say nothing about damage still being looked for.
   it('does not call the list clean while the damage scan runs', () => {
     render(<Panes review={listReview({ damage: [], damageLoading: true })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 
@@ -3335,7 +3395,6 @@ describe('incomplete tracks', () => {
 
   it('does not call the review clean while tracks still lack a field', () => {
     render(<Panes review={incompleteReview({ filter: 'all' })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 })

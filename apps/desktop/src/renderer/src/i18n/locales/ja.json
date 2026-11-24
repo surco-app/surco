@@ -317,6 +317,7 @@
       "placeholder": "トラックを検索",
       "clear": "検索をクリア",
       "empty": "トラックが一致しません。",
+      "away": "ファイルがディスクにありません。",
       "reset": "検索とフィルターをクリア"
     },
     "sort": {
@@ -1822,7 +1823,6 @@
     "searchByAlbumFirst": "アルバム優先で検索",
     "searchByAlbumFirstHint": "タグにアルバムがあれば、まずアルバム名とアーティスト名で検索し、見つからなければトラック名で検索します。",
     "searchProviders": "検索ソース",
-    "searchProvidersHint": "エディタが検索するカタログ。Discogsはキュレーション、Bandcampはセルフリリース素材、Deezerは商業デジタルリリース、BeatportはBPM・キー・ミックス、MusicBrainzはコミュニティが管理するオープンカタログ、Apple Musicは大きなアートワーク付きのAppleのカタログです。",
     "searchResultsSection": "結果",
     "searchMatchingSection": "マッチング",
     "providerDescription": {
@@ -2412,6 +2412,7 @@
     },
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
+    "searchProvidersIntro": "エディタが検索するカタログ。",
     "tokenOffer": "検索はそのまま使えます。Discogsトークンがあると「インポート時の自動マッチング」が使え、混雑時も検索が安定します。",
     "tokenAdd": "Discogsトークンを追加",
     "macTitle": "このMacでSurcoを使うのは初めてですか？",
@@ -3124,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} は更新できなかったため変更が残っています。再度「元に戻す」を押すかアクティビティを確認してください"
     },
     "empty": "Apple Music ライブラリが空です",
-    "clean": "確認するものがありません",
     "allClear": "問題は見つかりませんでした",
     "allClearHint": "誤字、大文字、不可視文字、重複はありません",
     "back": "トラックに戻る",

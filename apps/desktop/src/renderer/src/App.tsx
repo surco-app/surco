@@ -228,7 +228,7 @@ import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
-import { clampPanelGeometry } from './lib/panelGeometry'
+import { clampPanelGeometry, type PanelAnchor } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { type PhrasedComment, phraseCountsOf } from './lib/phraseCountBatch'
 import { isMacOS } from './lib/platform'
@@ -513,6 +513,7 @@ export default function App(): React.JSX.Element {
     report: reportActivity,
   } = useActivityLog()
   const [activityOpen, setActivityOpen] = useState(false)
+  const [activityAnchor, setActivityAnchor] = useState<PanelAnchor | undefined>()
   // Surco's own trash (main/surcoTrash.ts): the list is read when Copias opens and
   // after every run that could have added to it.
   const [sidebarPeek, setSidebarPeek] = useState(false)
@@ -1481,7 +1482,23 @@ export default function App(): React.JSX.Element {
     playlist: sourcePlaylist,
     entriesFetching,
   } = browser
+  const showingPlaylist = sourceKind && sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
+  // The opening whose disk check has come back: until then an empty playlist is rows still
+  // arriving, not files that are missing. Dropped as the render switches playlists (or comes
+  // back to one), so what an earlier visit found never shows for a frame before the new
+  // check answers.
+  const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
+  const [checkedShowing, setCheckedShowing] = useState(showingPlaylist)
+  if (checkedShowing !== showingPlaylist) {
+    setCheckedShowing(showingPlaylist)
+    setCheckedPlaylist(null)
+  }
+  // A pass resolving after the DJ moved to another playlist speaks for one no longer on
+  // screen: it must neither mark the new one checked nor spend a notice. Not a cleanup
+  // flag, since the entriesFetching re-runs would cancel the very pass that has to notify.
+  const showingOpening = useRef<string | null>(null)
   useEffect(() => {
+    showingOpening.current = showingPlaylist
     if (!sourceEntries || !sourceKind) return
     const opening = sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
     const fillLoaded = opening !== null && filledPlaylist.current !== opening
@@ -1489,6 +1506,8 @@ export default function App(): React.JSX.Element {
     void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
       if (!sourcePlaylist || entriesFetching) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
+      if (opened !== showingOpening.current) return
+      setCheckedPlaylist(opened)
       if (noticedPlaylist.current === opened) return
       noticedPlaylist.current = opened
       const noFile = sourceEntries.filter((e) => !e.separator && e.path === null).length
@@ -1503,6 +1522,7 @@ export default function App(): React.JSX.Element {
       })
     })
   }, [
+    showingPlaylist,
     sourceEntries,
     sourceKind,
     sourcePlaylist,
@@ -2349,6 +2369,12 @@ export default function App(): React.JSX.Element {
   )
   const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
   const listedCount = browser.source ? tracks.length : filesView.length
+  const filesAway =
+    browser.source !== null &&
+    browser.playlist !== null &&
+    checkedPlaylist === `${browser.source}:${browser.playlist.id}` &&
+    scopeRows.length === 0 &&
+    (browser.entries?.some((e) => !e.separator) ?? false)
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
   // the others stay in the collection, and selected they would reach the row menu and
@@ -2870,7 +2896,14 @@ export default function App(): React.JSX.Element {
   // Toolbar is memoized so a keystroke in a metadata field doesn't re-render it;
   // an inline arrow here would give onActivity a fresh identity every render and
   // defeat that memo just like the other Toolbar handlers above.
-  const onToggleActivity = useStableCallback(() => setActivityOpen((v) => !v))
+  const measureActivityAnchor = useStableCallback(() => {
+    const r = document.querySelector('[data-testid="open-activity"]')?.getBoundingClientRect()
+    setActivityAnchor(r && { right: r.right, bottom: r.bottom })
+  })
+  const onToggleActivity = useStableCallback(() => {
+    measureActivityAnchor()
+    setActivityOpen((v) => !v)
+  })
   const openCopies = (openMusic: boolean, query: string): void => {
     void refreshTrash()
     setCopiesOpen((open) => ({ openMusic, query, key: (open?.key ?? 0) + 1 }))
@@ -4422,7 +4455,10 @@ export default function App(): React.JSX.Element {
       openExport: overlays.openExport,
       openRename: overlays.openRename,
       openInfo: overlays.openInfo,
-      openActivity: () => setActivityOpen(true),
+      openActivity: () => {
+        measureActivityAnchor()
+        setActivityOpen(true)
+      },
       openBackups: onOpenTrash,
       hasBackup: (track) => backupAtByPath.has(track.inputPath),
       openTrackBackup: onOpenBackup,
@@ -4965,10 +5001,12 @@ export default function App(): React.JSX.Element {
                         >
                           {tr(`sources.failed.${browser.source}`)}
                         </p>
-                      ) : listedCount ===
-                        0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
+                      ) : !(browser.source && browser.playlist) &&
+                        listedCount ===
+                          0 ? // Deliberately empty. The way in lives in the centre panel now: a button here
                       // as well meant two doors on one screen, and the smaller of the two sat in the
-                      // column that has nothing in it yet.
+                      // column that has nothing in it yet. A picked playlist keeps its column even
+                      // with no rows, so its search and header stay where the DJ expects them.
                       null : (
                         <>
                           <TrackListHeader
@@ -5116,9 +5154,24 @@ export default function App(): React.JSX.Element {
                               />
                             )}
                           {visibleTracks.length === 0 ? (
-                            <div className="flex flex-col items-center gap-3 p-6 text-center">
-                              <p className="text-xs text-fg-faint">{tr('sidebar.search.empty')}</p>
-                              {(search || filterActive) && (
+                            filesAway ? (
+                              // Every track of the playlist is gone, as when its NAS or drive
+                              // is unplugged: there is no search or filter to clear here.
+                              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                                <p
+                                  data-testid="source-playlist-away"
+                                  className="text-xs text-fg-faint"
+                                >
+                                  {tr('sidebar.search.away')}
+                                </p>
+                              </div>
+                            ) : search || filterActive ? (
+                              // Only a search or filter hiding every row is "no match": an
+                              // empty playlist, or one whose rows are still arriving, is not.
+                              <div className="flex flex-col items-center gap-3 p-6 text-center">
+                                <p className="text-xs text-fg-faint">
+                                  {tr('sidebar.search.empty')}
+                                </p>
                                 <button
                                   type="button"
                                   data-testid="reset-view"
@@ -5130,8 +5183,8 @@ export default function App(): React.JSX.Element {
                                 >
                                   {tr('sidebar.search.reset')}
                                 </button>
-                              )}
-                            </div>
+                              </div>
+                            ) : null
                           ) : (
                             <TrackList
                               showWaves={showListWaves}
@@ -5473,10 +5526,14 @@ export default function App(): React.JSX.Element {
                   void window.api.copyText(text)
                   setNotice(tr('notices.copiedActivity'))
                 }}
-                geometry={clampPanelGeometry(settings?.activityPanel, {
-                  width: window.innerWidth,
-                  height: window.innerHeight,
-                })}
+                geometry={clampPanelGeometry(
+                  settings?.activityPanel,
+                  {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                  },
+                  activityAnchor,
+                )}
                 onGeometryChange={(g) =>
                   saveSettings({
                     activityPanel: {

@@ -462,7 +462,7 @@ export function ActivityPanel({
       data-testid="activity-panel"
       ref={panelRef}
       aria-label={tr('activity.title')}
-      className="fixed flex flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
+      className="animate-pop-flat fixed flex origin-top-right flex-col overflow-hidden rounded-xl border border-[var(--color-line-strong)] bg-[var(--color-panel)] shadow-[var(--shadow-float)]"
       style={{
         left: pos.x,
         top: pos.y,

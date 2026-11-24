@@ -3893,6 +3893,261 @@ describe('App source rail', () => {
     )
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
   })
+
+  // A DJ whose NAS or drive is unplugged opens a playlist and every row goes away. A blank
+  // column, or "No tracks match" with nothing typed, read as Surco losing the playlist.
+  describe('a playlist whose files are not on the disk', () => {
+    const unplugged = (): void =>
+      rekordboxWithFactory({
+        expandPaths: vi.fn(async (paths: string[]) => paths.filter((p) => !p.startsWith('/nas/'))),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/nas/a.wav', separator: false, meta: {} },
+              { path: '/nas/b.wav', separator: false, meta: {} },
+            ]),
+          },
+        }),
+      })
+
+    it.each([
+      ['an empty working list', false],
+      ['tracks in the working list', true],
+    ])(
+      'keeps the column and says the files are not on the disk, with %s',
+      async (_, withTracks) => {
+        unplugged()
+        await renderApp()
+        if (withTracks) await addTwoTracks()
+        fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+        fireEvent.click(await screen.findByTestId('source-node-f'))
+
+        expect(await screen.findByTestId('source-playlist-away')).toHaveTextContent(
+          "Its files aren't on the disk.",
+        )
+        expect(
+          within(screen.getByTestId('sidebar')).getByTestId('track-search'),
+        ).toBeInTheDocument()
+        expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('reset-view')).not.toBeInTheDocument()
+      },
+    )
+
+    it('keeps "No tracks match" and its reset for a search that hides every row', async () => {
+      rekordboxWithFactory({
+        dj: djReads({
+          rekordbox: {
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+          },
+        }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
+
+      expect(await screen.findByText('No tracks match.')).toBeInTheDocument()
+      expect(screen.getByTestId('reset-view')).toBeInTheDocument()
+      expect(screen.queryByTestId('source-playlist-away')).not.toBeInTheDocument()
+    })
+
+    // The rows land a moment after the entries: saying the files are missing in that gap
+    // would be a false alarm on every playlist opened.
+    it('never says the files are missing before the disk has answered', async () => {
+      rekordboxWithFactory({
+        expandPaths: vi.fn((paths: string[]) =>
+          paths.some((p) => p.startsWith('/nas/'))
+            ? new Promise<string[]>(() => {})
+            : Promise.resolve(paths),
+        ),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([{ path: '/nas/a.wav', separator: false, meta: {} }]),
+          },
+        }),
+      })
+      let saidAway = false
+      const watch = new MutationObserver(() => {
+        if (document.querySelector('[data-testid="source-playlist-away"]')) saidAway = true
+      })
+      watch.observe(document.body, { subtree: true, childList: true })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await act(async () => {})
+      watch.disconnect()
+
+      expect(saidAway).toBe(false)
+    })
+
+    // "No tracks match" with nothing typed or filtered read as the playlist being lost.
+    it('says neither line for an empty playlist with tracks in the working list', async () => {
+      rekordboxWithFactory({
+        dj: djReads({
+          rekordbox: { playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([]) },
+        }),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+
+      expect(
+        await within(await screen.findByTestId('sidebar')).findByTestId('track-search'),
+      ).toBeInTheDocument()
+      await act(async () => {})
+      expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('source-playlist-away')).not.toBeInTheDocument()
+    })
+
+    // A re-read landing while the disk is still being checked found no new rows and
+    // counted 0, which spent the playlist's one notice before the real count arrived.
+    it('tells the full count once even when the playlist is re-read while the disk is checked', async () => {
+      const focusListeners: ((focused: boolean) => void)[] = []
+      let answerDisk: (onDisk: string[]) => void = () => {}
+      const entries = () => [
+        { path: '/nas/a.wav', separator: false, meta: {} },
+        { path: '/nas/b.wav', separator: false, meta: {} },
+      ]
+      let answerReread: () => void = () => {}
+      const playlist = vi
+        .fn<ProgramReads['playlist']>()
+        .mockResolvedValueOnce(entries())
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              answerReread = () => resolve(entries())
+            }),
+        )
+      rekordboxWithFactory({
+        onWindowFocus: (cb: (focused: boolean) => void) => {
+          focusListeners.push(cb)
+          return () => {}
+        },
+        expandPaths: vi.fn(
+          (paths: string[]) =>
+            new Promise<string[]>((resolve) => {
+              if (paths.some((p) => p.startsWith('/nas/'))) answerDisk = resolve
+              else resolve(paths)
+            }),
+        ),
+        dj: djReads({ rekordbox: { playlist } }),
+      })
+      const pushed = vi.spyOn(await import('./lib/toastQueue'), 'pushToast')
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+
+      const readsBefore = playlist.mock.calls.length
+      act(() => {
+        for (const cb of focusListeners) cb(true)
+      })
+      await waitFor(() => expect(playlist).toHaveBeenCalledTimes(readsBefore + 1))
+      await act(async () => {})
+      await act(async () => {
+        answerReread()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+      await act(async () => answerDisk([]))
+
+      expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+        '2 tracks from “Factory” have no file on disk',
+      )
+      await act(async () => {})
+      expect(pushed.mock.calls.filter(([, t]) => t.key === 'source-missing-files')).toHaveLength(1)
+      pushed.mockRestore()
+    })
+
+    // A playlist the DJ already left must not decide what the one on screen says: its late
+    // disk answer left the new one's column blank, the case this line exists for.
+    it('keeps the line for the playlist on screen when the one left behind answers later', async () => {
+      const answers = new Map<string, (onDisk: string[]) => void>()
+      rekordboxWithFactory({
+        expandPaths: vi.fn((paths: string[]) =>
+          paths.some((p) => p.startsWith('/nas/'))
+            ? new Promise<string[]>((resolve) => {
+                answers.set(paths[0], resolve)
+              })
+            : Promise.resolve(paths),
+        ),
+        dj: djReads({
+          rekordbox: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'a', name: 'Alpha', kind: 'playlist', count: 1 },
+              { id: 'b', name: 'Beta', kind: 'playlist', count: 1 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>(async (id) => [
+              { path: `/nas/${id}.wav`, separator: false, meta: {} },
+            ]),
+          },
+        }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(answers.has('/nas/a.wav')).toBe(true))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(answers.has('/nas/b.wav')).toBe(true))
+
+      await act(async () => answers.get('/nas/b.wav')?.([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+      await act(async () => answers.get('/nas/a.wav')?.([]))
+      await act(async () => {})
+
+      expect(screen.getByTestId('source-playlist-away')).toBeInTheDocument()
+    })
+
+    // Coming back to a playlist checks its disk again; what the last visit found may no
+    // longer hold, so the line waits for the new answer. The rows land in the same flush
+    // as the reopening, so a line drawn in between only shows up among the removed nodes.
+    it('waits for the new disk answer before saying it again on a reopened playlist', async () => {
+      let answerDisk: (onDisk: string[]) => void = () => {}
+      unplugged()
+      window.api.expandPaths = vi.fn((paths: string[]) =>
+        paths.some((p) => p.startsWith('/nas/'))
+          ? new Promise<string[]>((resolve) => {
+              answerDisk = resolve
+            })
+          : Promise.resolve(paths),
+      )
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await act(async () => answerDisk([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+
+      let saidAway = false
+      const watch = new MutationObserver((records) => {
+        for (const r of records)
+          for (const n of [...r.addedNodes, ...r.removedNodes])
+            if (
+              n instanceof Element &&
+              (n.matches('[data-testid="source-playlist-away"]') ||
+                n.querySelector('[data-testid="source-playlist-away"]'))
+            )
+              saidAway = true
+      })
+      watch.observe(document.body, { subtree: true, childList: true })
+      fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await act(async () => {})
+      watch.disconnect()
+      expect(saidAway).toBe(false)
+
+      await act(async () => answerDisk([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+    })
+  })
 })
 
 describe('App source playlists', () => {

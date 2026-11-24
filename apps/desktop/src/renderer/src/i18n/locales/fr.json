@@ -317,6 +317,7 @@
       "placeholder": "Rechercher des morceaux",
       "clear": "Effacer la recherche",
       "empty": "Aucun morceau ne correspond.",
+      "away": "Ses fichiers ne sont pas sur le disque.",
       "reset": "Effacer la recherche et les filtres"
     },
     "sort": {
@@ -1822,7 +1823,6 @@
     "searchByAlbumFirst": "Chercher d’abord par album",
     "searchByAlbumFirstHint": "Si les tags ont un album, il est cherché avec l’artiste avant le morceau. Si rien ne sort, le morceau est cherché.",
     "searchProviders": "Sources de recherche",
-    "searchProvidersHint": "Les catalogues où l’éditeur cherche. Discogs est un catalogue soigné, Bandcamp ajoute les sorties autoproduites, Deezer couvre les sorties numériques commerciales, Beatport apporte BPM, tonalité et mix, MusicBrainz est un catalogue ouvert tenu par sa communauté et Apple Music offre le catalogue d’Apple avec une grande pochette.",
     "searchResultsSection": "Résultats",
     "searchMatchingSection": "Correspondance",
     "providerDescription": {
@@ -2412,6 +2412,7 @@
     },
     "djLibraryNone": "Aucun, je tague seulement des fichiers",
     "destinationKeepsCollection": "Les morceaux déjà dans ton logiciel DJ ou dans Apple Music sont mis à jour là où ils sont, et gardent ainsi leur place dans ta collection.",
+    "searchProvidersIntro": "Catalogues où l’éditeur cherche.",
     "tokenOffer": "La recherche fonctionne telle quelle. Un token Discogs active « Auto-associer à l’import » et garde les recherches stables aux heures chargées.",
     "tokenAdd": "Ajouter un token Discogs",
     "macTitle": "Est-ce ton premier Mac avec Surco ?",
@@ -3124,7 +3125,6 @@
       "undoLibraryFailed": "{{library}} a encore le changement car il n’a pas pu être mis à jour. Clique de nouveau sur Annuler ou consulte Activité."
     },
     "empty": "Ta bibliothèque Apple Music est vide.",
-    "clean": "Rien à vérifier.",
     "allClear": "Tout est correct",
     "allClearHint": "Ni fautes, ni majuscules, ni caractères invisibles, ni doublons.",
     "back": "Retour aux morceaux",
