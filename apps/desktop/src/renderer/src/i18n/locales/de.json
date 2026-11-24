@@ -591,7 +591,7 @@
     "numberTracks": "Tracks in Listenreihenfolge nummerieren",
     "stripNumbering": "Nummerierung aus dem Titel entfernen",
     "applyTitleFormat": "Titelformat auf die Auswahl anwenden",
-    "regenerateNames": "Dateinamen der Auswahl aus den Metadaten neu erzeugen",
+    "regenerateNames": "Dateien aus den Metadaten umbenennen",
     "renameKeywords": "umbenennen",
     "trimDetected": "Erkannte Stille in der Auswahl abschneiden",
     "clearMeta": "Metadaten löschen",
