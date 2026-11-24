@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Braces,
   ClipboardCopy,
@@ -63,7 +64,7 @@ import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
 import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
-import { useCachedSpectrum } from '../hooks/useSpectrogram'
+import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
@@ -472,6 +473,7 @@ export const Editor = memo(function Editor({
   } = appSettings
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  const queryClient = useQueryClient()
   // A bulk field writes to every selected track, so all of them are under edit, not just
   // the anchor the form is keyed on.
   const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
@@ -1315,7 +1317,10 @@ export const Editor = memo(function Editor({
     inLibrary === 'no' &&
     !item.fromAppleMusic
   // A selection adds to Music whenever the batch lands there and any of its tracks is
-  // missing from the library, the same per-track reading the open track's badge makes.
+  // missing from the library. It reads each track as the open track's badge does except for
+  // the Discogs-proven step, which needs that track's open release; a track only Discogs
+  // would prove owned reads as an add, so the normal button stays rather than claiming
+  // there is nothing to write.
   const batchAddsToMusic = useMemo(
     () =>
       isMulti &&
@@ -1326,22 +1331,38 @@ export const Editor = memo(function Editor({
     [isMulti, batchDestination, multiTracks, libraryIndex],
   )
   // A selection goes quiet on the rule one track does, asked of every track it holds: an
-  // edit, a fill or a rename on any one of them is something the batch would write.
+  // edit, a fill or a rename on any one of them is something the batch would write. Each
+  // track's quality comes from the spectrum cache, where the open track and the run read
+  // it. The cache does not rerender this memo, so a quality still unknown under a
+  // {quality} pattern counts as a rename: once it lands the run may name the file anew.
   const selectionHeld = useMemo(
     () =>
       isMulti &&
-      multiTracks.every((t) =>
-        fileHoldsTrack(
-          t,
-          patternName(
-            t,
-            withQualityTag(effectiveMeta(t, customFields), t, qualityAuto),
-            autoApplyFilename,
-            filenameFormat,
-          ),
-        ),
-      ),
-    [isMulti, multiTracks, customFields, qualityAuto, autoApplyFilename, filenameFormat],
+      multiTracks.every((t) => {
+        const spectrum = cachedSpectrumOf(queryClient, t.inputPath)
+        if (
+          qualityAuto &&
+          !spectrum &&
+          autoNamesFile(autoApplyFilename, t) &&
+          filenameFormat.includes('{quality}')
+        )
+          return false
+        const meta = withQualityTag(
+          effectiveMeta(t, customFields),
+          { inputPath: t.inputPath, spectrum },
+          qualityAuto,
+        )
+        return fileHoldsTrack(t, patternName(t, meta, autoApplyFilename, filenameFormat))
+      }),
+    [
+      isMulti,
+      multiTracks,
+      queryClient,
+      customFields,
+      qualityAuto,
+      autoApplyFilename,
+      filenameFormat,
+    ],
   )
   const upToDate = isMulti
     ? !batchAddsToMusic && !incomplete && batchTagsOnly && selectionHeld

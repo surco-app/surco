@@ -3401,7 +3401,11 @@ describe('Editor export control', () => {
       const untouched = (id: string): TrackItem =>
         item({ id, meta: read, diskSignature: trackSignature(item({ id, meta: read })) })
 
-      function renderSelection(tracks: TrackItem[], libraryIndex: AppleMusicIndex | null = null) {
+      function renderSelection(
+        tracks: TrackItem[],
+        libraryIndex: AppleMusicIndex | null = null,
+        settings: Partial<Settings> = {},
+      ) {
         const onConvertSelection = vi.fn()
         const ui = (selected: TrackItem[]) => (
           <Editor
@@ -3445,6 +3449,7 @@ describe('Editor export control', () => {
           visibleFields: ['genre'],
           requiredFields: [],
           normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+          ...settings,
         })
         return { onConvertSelection, rerender: (next: TrackItem[]) => rerenderUi(ui(next)) }
       }
@@ -3498,6 +3503,31 @@ describe('Editor export control', () => {
         )
         expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
         expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+      })
+
+      // The run names the file with the quality its spectrum gives, so before that is known a
+      // {quality} pattern may still rename it.
+      describe('with the quality in the name pattern', () => {
+        const named = (id: string): TrackItem => {
+          const meta = { ...read, title: `${id}.wav` }
+          return item({ id, meta, diskSignature: trackSignature(item({ id, meta })) })
+        }
+        const naming = (filenameFormat: string): Partial<Settings> => ({
+          autoApplyFilename: true,
+          filenameFormat,
+          importFields: ['quality'],
+        })
+
+        it('keeps the update while a track has no quality yet', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}{quality}'))
+          expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+          expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+        })
+
+        it('goes quiet when the pattern does not name the quality', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}'))
+          expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        })
       })
 
       it('keeps the update while one selected track shows values the file lacks', () => {
