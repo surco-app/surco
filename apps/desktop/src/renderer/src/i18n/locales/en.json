@@ -1156,7 +1156,6 @@
       "resetColour": "Reset",
       "saveShort": "Save",
       "saveNext": "Save and go to next track",
-      "saveNextShort": "Save and next",
       "saveMore": "More ways to save",
       "saveFailed": "Could not save to rekordbox. The cues are still not saved",
       "saveAll_one": "Save {{count}} track to rekordbox",

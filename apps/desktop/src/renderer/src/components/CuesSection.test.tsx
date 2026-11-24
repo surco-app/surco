@@ -241,6 +241,37 @@ describe('CuesSection', () => {
     expect(onStepTrack).not.toHaveBeenCalled()
   })
 
+  // The folded row has about 200 px at the narrowest window, so the body keeps the one short
+  // word in both ways and only an arrow tells them apart; the full action is in its name.
+  it('keeps the folded Save one word wide in both ways and names the full action', async () => {
+    setup(READ, null, undefined, {}, { saveThen: 'next' })
+    await ready()
+    const body = screen.getByTestId('cues-save')
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-next-mark')).toBeVisible()
+    expect(body).toHaveAccessibleName('Save and go to next track')
+    expect(hoverTooltip(body)).toEqual('Save and go to next track')
+    cleanup()
+    setup()
+    await ready()
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-next-mark')).not.toBeVisible()
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
+    expect(hoverTooltip(screen.getByTestId('cues-save'))).toEqual('Save to rekordbox')
+  })
+
+  it('folds Discard into an icon between undo and Save, so the whole row fits on one line', async () => {
+    setup()
+    await ready()
+    markAt(bar(64))
+    const discardIcon = screen.getByRole('button', { name: 'Discard changes' })
+    expect(discardIcon).toHaveAttribute('data-testid', 'cues-discard')
+    expect(discardIcon).toHaveTextContent('')
+    expect(hoverTooltip(discardIcon)).toEqual('Discard changes')
+    expect(screen.getByTestId('cues-step-back').nextElementSibling).toBe(discardIcon)
+    expect(discardIcon.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
+  })
+
   it('saves and moves to the next track when that is the remembered way', async () => {
     const onStepTrack = vi.fn()
     const { saveRekordboxCues } = setup(
@@ -252,8 +283,6 @@ describe('CuesSection', () => {
     )
     await ready()
     markAt(bar(64))
-    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save and next')
-    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save and go to next track')
     fireEvent.click(screen.getByTestId('cues-save'))
     await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues).toHaveBeenCalledTimes(1)

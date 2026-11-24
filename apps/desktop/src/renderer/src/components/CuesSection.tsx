@@ -1,8 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  ArrowDown,
   Check,
   ChevronDown,
   CircleAlert,
+  CircleX,
   Keyboard,
   Loader2,
   Minimize2,
@@ -1297,21 +1299,30 @@ function Editing({
     ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
   ]
-  const discardButton = discardable && (
-    <button
-      type="button"
-      data-testid={maximized ? 'cues-undo' : 'cues-discard'}
-      onClick={onDiscard}
-      className={`press shrink-0 whitespace-nowrap text-xs text-fg-dim hover:text-fg ${
-        maximized ? 'h-8 rounded-lg px-3 hover:bg-[var(--color-hover)]' : 'px-2 py-1.5'
-      }`}
-    >
-      {tr('editor.cues.discard')}
-    </button>
-  )
-  const bodyLabels = maximized
-    ? { stay: copy.save, next: copy.saveNext }
-    : { stay: 'editor.cues.saveShort', next: 'editor.cues.saveNextShort' }
+  const discardButton =
+    discardable &&
+    (maximized ? (
+      <button
+        type="button"
+        data-testid="cues-undo"
+        onClick={onDiscard}
+        className="press h-8 shrink-0 whitespace-nowrap rounded-lg px-3 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        {tr('editor.cues.discard')}
+      </button>
+    ) : (
+      <button
+        type="button"
+        data-testid="cues-discard"
+        aria-label={tr('editor.cues.discard')}
+        onClick={onDiscard}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        <Tooltip label={tr('editor.cues.discard')} />
+        <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    ))
+  const saveLabel = tr(saveThen === 'next' ? copy.saveNext : copy.save)
   const saveSplit = (
     <div ref={saveMenu.ref} className={`relative flex shrink-0 ${maximized ? 'ml-1' : ''}`}>
       <button
@@ -1319,7 +1330,7 @@ function Editing({
         data-testid="cues-save"
         disabled={unchanged || blocked}
         data-filled={!unchanged}
-        aria-label={tr(saveThen === 'next' ? copy.saveNext : copy.save)}
+        aria-label={saveLabel}
         onClick={() => void saveWith(saveThen)}
         className={`press grid shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
           maximized ? 'h-8 rounded-l-lg border' : 'h-6 rounded-l-md'
@@ -1328,20 +1339,35 @@ function Editing({
             ? maximized
               ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
               : 'text-fg-dim'
-            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
+            : 'border-transparent bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25 disabled:opacity-40 disabled:hover:bg-[var(--color-accent-soft)]'
         }`}
       >
-        {/* Both labels share one cell, so switching the mode never resizes the button. */}
-        {SAVE_MODES.map((mode) => (
-          <span
-            key={mode}
-            data-testid={mode === saveThen ? 'cues-save-label' : undefined}
-            aria-hidden={mode !== saveThen || undefined}
-            className={`[grid-area:1/1] self-center ${mode === saveThen ? '' : 'invisible'}`}
-          >
-            {tr(bodyLabels[mode])}
+        {!maximized && <Tooltip label={saveLabel} />}
+        {maximized ? (
+          // Both labels share one cell, so switching the mode never resizes the button.
+          SAVE_MODES.map((mode) => (
+            <span
+              key={mode}
+              data-testid={mode === saveThen ? 'cues-save-label' : undefined}
+              aria-hidden={mode !== saveThen || undefined}
+              className={`[grid-area:1/1] self-center ${mode === saveThen ? '' : 'invisible'}`}
+            >
+              {tr(mode === 'next' ? copy.saveNext : copy.save)}
+            </span>
+          ))
+        ) : (
+          // The folded row has no room for a second label, so the arrow alone marks the
+          // way that moves on, and its slot stays reserved so the body keeps one width.
+          <span className="flex items-center gap-1 self-center">
+            <span data-testid="cues-save-label">{tr('editor.cues.saveShort')}</span>
+            <ArrowDown
+              data-testid="cues-save-next-mark"
+              className="h-3 w-3"
+              aria-hidden="true"
+              style={saveThen === 'next' ? undefined : { visibility: 'hidden' }}
+            />
           </span>
-        ))}
+        )}
       </button>
       <button
         type="button"
@@ -1359,10 +1385,10 @@ function Editing({
             ? `border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg ${
                 maximized ? 'border-l-0 bg-[var(--color-panel-2)]' : ''
               }`
-            : `bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] ${
+            : `bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25 ${
                 maximized
-                  ? 'border-transparent border-l-[var(--color-on-accent)]/30'
-                  : 'border-[var(--color-on-accent)]/30'
+                  ? 'border-transparent border-l-[var(--color-accent)]/25'
+                  : 'border-[var(--color-accent)]/25'
               }`
         }`}
       >
@@ -1785,8 +1811,8 @@ function Editing({
           <Tooltip label={tr('editor.cues.clearAll')} />
           <Trash2 className="h-3 w-3" aria-hidden="true" />
         </button>
-        {discardButton}
         {undoButton}
+        {discardButton}
         {saveSplit}
       </div>
     </div>

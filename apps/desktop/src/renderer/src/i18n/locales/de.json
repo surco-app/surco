@@ -1156,7 +1156,6 @@
       "resetColour": "Zurücksetzen",
       "saveShort": "Speichern",
       "saveNext": "Speichern und zum nächsten Track",
-      "saveNextShort": "Speichern und weiter",
       "saveMore": "Weitere Speicheroptionen",
       "saveFailed": "Speichern in rekordbox fehlgeschlagen. Die Cues sind weiterhin nicht gespeichert",
       "saveAll_one": "{{count}} Track in rekordbox speichern",

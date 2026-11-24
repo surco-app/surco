@@ -326,7 +326,7 @@ describe('CuesSection folded', () => {
 
   // Discard sat in the row first, then in the flow menu among the modes, then in the Save
   // menu. The Save menu holds only ways to save, so Discard is back in the row as its own
-  // button, as in the full editor.
+  // button, as in the full editor, drawn as an icon so the row fits on one line.
   it('offers Descartar cambios in the row once there are changes, and keeps it out of the Save menu and the flow menu', async () => {
     setup()
     await ready()
@@ -346,7 +346,7 @@ describe('CuesSection folded', () => {
     const discard = screen.getByTestId('cues-discard')
     expect(screen.getByTestId('cues-folded-row')).toContainElement(discard)
     expect(screen.getByRole('menu')).not.toContainElement(discard)
-    expect(discard).toHaveTextContent('Discard changes')
+    expect(discard).toHaveAccessibleName('Discard changes')
     fireEvent.click(discard)
     expect(marks()).toHaveLength(0)
     expect(screen.getByTestId('cues-save')).toBeDisabled()
