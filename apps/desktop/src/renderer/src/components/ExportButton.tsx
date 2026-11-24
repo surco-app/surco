@@ -199,10 +199,8 @@ export function ExportButton({
   // to a library runs to the end, so offering Cancel there promised a stop that never came.
   const cancellable =
     !quiet && processing && !!onCancel && (stage === 'converting' || stage === 'tags')
-  const label = liveStage
-    ? tr(`trackList.stage.${liveStage}`, { format: formatLabel })
-    : (batchLabel ?? tr(labelSpec.key, labelSpec.options))
   const idleLabel = batchLabel ?? tr(labelSpec.key, labelSpec.options)
+  const label = liveStage ? tr(`trackList.stage.${liveStage}`, { format: formatLabel }) : idleLabel
   useEffect(() => {
     onLabelChange?.(idleLabel)
     return () => onLabelChange?.('')

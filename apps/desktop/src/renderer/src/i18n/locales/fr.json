@@ -915,7 +915,7 @@
     "outputNameFolder": "Sera enregistré dans le dossier « {{folder}} », car la barre oblique sépare les dossiers.",
     "overwriteTitle": "Écrase l’original",
     "overwriteAlacHint": "ALAC ne remplace pas l’original : un nouveau fichier est écrit dans le dossier de sortie et l’original est conservé.",
-    "overwriteLossyHint": "Remplace l’original sans perte par un MP3 320 kbps sur place. Le master est perdu et irrécupérable. Désactive-le dans Réglages → Sortie.",
+    "overwriteLossyHint": "Remplace l’original sans perte par un MP3 320 kbps sur place. Le master est perdu et irrécupérable. Désactive-le dans Réglages → Fichiers → Sortie.",
     "overwriteLossyHintBackup": "Remplace l’original sans perte par un MP3 320 kbps sur place. Avant, Surco garde une copie de sauvegarde de l’original, que tu peux restaurer depuis le morceau.",
     "regenerate": "Régénérer le nom du fichier depuis les métadonnées",
     "regenerateAll": "Régénérer les noms de fichiers depuis les métadonnées",
@@ -2451,7 +2451,7 @@
       },
       "appleMusic": {
         "q": "Que fait « Ajouter à Apple Music » ?",
-        "a": "Quand c’est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après la conversion, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l’édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l’ajout automatique quand tu veux dans Réglages → Sortie."
+        "a": "Quand c’est activé (macOS uniquement), Surco importe automatiquement chaque morceau converti dans ta bibliothèque Apple Music juste après la conversion, pour que tes fichiers fraîchement tagués y arrivent sans glisser-déposer manuel.\n\nPendant l’édition, Surco vérifie aussi si un morceau est déjà dans ta bibliothèque et affiche un petit badge, pour éviter les doublons. Tu peux désactiver l’ajout automatique quand tu veux dans Réglages → Fichiers → Sortie."
       },
       "windows": {
         "q": "Quelque chose change-t-il sous Windows ?",

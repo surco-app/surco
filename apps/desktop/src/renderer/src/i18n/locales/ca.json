@@ -915,7 +915,7 @@
     "outputNameFolder": "Es desarà dins de la carpeta «{{folder}}», perquè la barra separa carpetes.",
     "overwriteTitle": "Sobreescriu l'original",
     "overwriteAlacHint": "ALAC no substitueix l'original. Es crea un fitxer nou a la carpeta de sortida i l'original es conserva.",
-    "overwriteLossyHint": "Substitueix l'original sense pèrdua per un MP3 de 320 kbps al seu lloc. El màster es perd i no es pot recuperar. Desactiva-ho a Configuració → Destinació.",
+    "overwriteLossyHint": "Substitueix l'original sense pèrdua per un MP3 de 320 kbps al seu lloc. El màster es perd i no es pot recuperar. Desactiva-ho a Configuració → Fitxers → Destinació.",
     "overwriteLossyHintBackup": "Substitueix l'original sense pèrdua per un MP3 de 320 kbps al seu lloc. Abans, Surco desa una còpia de seguretat de l'original, que pots restaurar des de la pista.",
     "regenerate": "Regenerar el nom del fitxer amb les metadades",
     "regenerateAll": "Regenerar els noms dels fitxers amb les metadades",
@@ -2451,7 +2451,7 @@
       },
       "appleMusic": {
         "q": "Què fa «Afegir a Apple Music»?",
-        "a": "Quan està activat (només a macOS), Surco importa automàticament cada pista convertida a la teva biblioteca d'Apple Music just després de convertir-la. Així els fitxers que acabes d'etiquetar hi arriben sense haver-los d'arrossegar a mà.\n\nMentre edites, Surco també comprova si una pista ja és a la teva biblioteca i mostra una petita insígnia, perquè no acabis amb duplicats. Ho pots desactivar quan vulguis a Configuració → Destinació."
+        "a": "Quan està activat (només a macOS), Surco importa automàticament cada pista convertida a la teva biblioteca d'Apple Music just després de convertir-la. Així els fitxers que acabes d'etiquetar hi arriben sense haver-los d'arrossegar a mà.\n\nMentre edites, Surco també comprova si una pista ja és a la teva biblioteca i mostra una petita insígnia, perquè no acabis amb duplicats. Ho pots desactivar quan vulguis a Configuració → Fitxers → Destinació."
       },
       "windows": {
         "q": "Hi ha alguna cosa diferent a Windows?",

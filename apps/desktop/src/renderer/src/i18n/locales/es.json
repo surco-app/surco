@@ -915,7 +915,7 @@
     "outputNameFolder": "Se guardará dentro de la carpeta «{{folder}}», porque la barra separa carpetas.",
     "overwriteTitle": "Sobrescribe el original",
     "overwriteAlacHint": "ALAC no reemplaza el original: se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
-    "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. El máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
+    "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. El máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Archivos → Destino.",
     "overwriteLossyHintBackup": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll": "Regenerar los nombres de archivo con los metadatos",
@@ -2439,7 +2439,7 @@
     "items": {
       "token": {
         "q": "¿Necesito un token de Discogs?",
-        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de «límite alcanzado»: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Fuentes. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco. Emparejar automáticamente toda la lista sí necesita tu propio token."
+        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de «límite alcanzado». Espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Fuentes. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco. Emparejar automáticamente toda la lista sí necesita tu propio token."
       },
       "quality": {
         "q": "¿Por qué una pista sale marcada como «Dudosa»?",
@@ -2451,7 +2451,7 @@
       },
       "appleMusic": {
         "q": "¿Qué hace «Añadir a Apple Music»?",
-        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivarlo cuando quieras en Ajustes → Destino."
+        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivarlo cuando quieras en Ajustes → Archivos → Destino."
       },
       "windows": {
         "q": "¿Hay algo distinto en Windows?",
