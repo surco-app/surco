@@ -1475,16 +1475,29 @@ export default function App(): React.JSX.Element {
   // The gaps of rows already loaded are filled from the playlist once per opening, the
   // same moment fresh rows get theirs; an edit's re-read is not an opening.
   const filledPlaylist = useRef<string | null>(null)
-  // The opening whose disk check has come back: until then an empty playlist is rows still
-  // arriving, not files that are missing.
-  const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
   const {
     entries: sourceEntries,
     source: sourceKind,
     playlist: sourcePlaylist,
     entriesFetching,
   } = browser
+  const showingPlaylist = sourceKind && sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
+  // The opening whose disk check has come back: until then an empty playlist is rows still
+  // arriving, not files that are missing. Dropped as the render switches playlists (or comes
+  // back to one), so what an earlier visit found never shows for a frame before the new
+  // check answers.
+  const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
+  const [checkedShowing, setCheckedShowing] = useState(showingPlaylist)
+  if (checkedShowing !== showingPlaylist) {
+    setCheckedShowing(showingPlaylist)
+    setCheckedPlaylist(null)
+  }
+  // A pass resolving after the DJ moved to another playlist speaks for one no longer on
+  // screen: it must neither mark the new one checked nor spend a notice. Not a cleanup
+  // flag, since the entriesFetching re-runs would cancel the very pass that has to notify.
+  const showingOpening = useRef<string | null>(null)
   useEffect(() => {
+    showingOpening.current = showingPlaylist
     if (!sourceEntries || !sourceKind) return
     const opening = sourcePlaylist ? `${sourceKind}:${sourcePlaylist.id}` : null
     const fillLoaded = opening !== null && filledPlaylist.current !== opening
@@ -1492,6 +1505,7 @@ export default function App(): React.JSX.Element {
     void openSourcePlaylistStable(sourceEntries, sourceKind, { fillLoaded }).then((notOnDisk) => {
       if (!sourcePlaylist || entriesFetching) return
       const opened = `${sourceKind}:${sourcePlaylist.id}`
+      if (opened !== showingOpening.current) return
       setCheckedPlaylist(opened)
       if (noticedPlaylist.current === opened) return
       noticedPlaylist.current = opened
@@ -1507,6 +1521,7 @@ export default function App(): React.JSX.Element {
       })
     })
   }, [
+    showingPlaylist,
     sourceEntries,
     sourceKind,
     sourcePlaylist,
