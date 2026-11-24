@@ -728,13 +728,6 @@ function Editing({
   useEffect(() => {
     if (menu === null) setHoverMs(null)
   }, [menu])
-  const hoverGhost = useMemo<DraftGhost | null>(
-    () =>
-      placing && hoverMs !== null
-        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
-        : null,
-    [placing, hoverMs, state, ctx],
-  )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
   const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
@@ -781,6 +774,15 @@ function Editing({
   const proposals = useMemo(
     () => withoutCallInBar(proposed ?? [], state.cues, barGrid),
     [proposed, state.cues, barGrid],
+  )
+  // While suggestions wait for an answer they are what the waves show: reviewing them moves the
+  // pointer over the zoomed wave, and the preview of placing by hand there used to replace them.
+  const hoverGhost = useMemo<DraftGhost | null>(
+    () =>
+      placing && hoverMs !== null && proposals.length === 0
+        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
+        : null,
+    [placing, hoverMs, proposals.length, state, ctx],
   )
   useEffect(() => {
     if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
