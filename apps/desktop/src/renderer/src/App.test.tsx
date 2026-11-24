@@ -15248,7 +15248,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
       '4 tracks loaded. 1 duplicate and 1 spelling to review',
     )
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     drop(['/music/d.wav'])
     await waitFor(() =>
       expect(
@@ -15366,7 +15371,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await addThree()
     await screen.findByTestId('list-review-notice')
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     await act(async () => openWith?.(['/music/d.wav']))
     await waitFor(() =>
       expect(
@@ -15549,7 +15559,11 @@ describe('App empty screen offers a single way in', () => {
       )
       await screen.findByTestId('app-notice')
       swipeAway('app-notice')
-      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
+      // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+      // runs past waitFor's default second.
+      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument(), {
+        timeout: 3000,
+      })
       fireEvent.click(screen.getByTestId('source-rail-tracks'))
       fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
       await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))
