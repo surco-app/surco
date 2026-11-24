@@ -68,7 +68,7 @@ function setup({
     })
     await waitFor(() => expect(dj.editPlaylist).toHaveBeenCalledTimes(edits.length + 1))
   }
-  return { hook, dj, reportUndo, reportNotice, reportError, undo }
+  return { hook, dj, playlist, reportUndo, reportNotice, reportError, undo }
 }
 
 afterEach(() => {
@@ -102,6 +102,49 @@ describe('useCopyPlaylistEdits', () => {
     expect(reportUndo).not.toHaveBeenCalled()
   })
 
+  it('takes out only the rows it added on Undo, leaving a copy the DJ had filed before', async () => {
+    const OTHER = '/r/b.aiff'
+    const { hook, dj, undo } = setup({
+      edits: [
+        { applied: true, report: { added: 1, already: 1, notInCollection: 0, ambiguous: 0 } },
+      ],
+      playlists: [[row(OTHER, 'L1')], [row(OTHER, 'L1'), row(COPY, 'L5')]],
+    })
+    await act(() => hook.result.current.toggle([COPY, OTHER], { id: 'p1', name: 'Verano' }, true))
+    await undo()
+    expect(dj.editPlaylist).toHaveBeenLastCalledWith(
+      'rekordbox',
+      { kind: 'remove', playlistId: 'p1', linkIds: ['L5'] },
+      'Verano',
+    )
+  })
+
+  it('says in red when Undo cannot read the playlist, so the DJ knows the copy is still there', async () => {
+    const { hook, playlist, reportUndo, reportError } = setup({ edits: [ADDED_ONE] })
+    playlist.mockResolvedValueOnce([]).mockRejectedValueOnce(new Error('locked'))
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))
+    await act(async () => {
+      reportUndo.mock.calls[0][1]()
+    })
+    await waitFor(() => expect(reportError).toHaveBeenCalledWith(expect.stringContaining('Surco')))
+  })
+
+  it('says nothing went in, without Undo, when the program had nothing to add', async () => {
+    const { hook, reportUndo, reportNotice, reportError } = setup({
+      edits: [
+        {
+          applied: false,
+          reason: 'nothing-to-add',
+          report: { added: 0, already: 0, notInCollection: 1, ambiguous: 0 },
+        },
+      ],
+    })
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))
+    expect(reportNotice).toHaveBeenCalledWith(expect.stringContaining('Verano'))
+    expect(reportUndo).not.toHaveBeenCalled()
+    expect(reportError).not.toHaveBeenCalled()
+  })
+
   it('asks to apply now or later first, like the sidebar', async () => {
     const { hook, dj } = setup({ edits: [ADDED_ONE] })
     await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))
@@ -114,7 +157,7 @@ describe('useCopyPlaylistEdits', () => {
   it('takes the added copy back out on Undo', async () => {
     const { hook, dj, undo } = setup({
       edits: [ADDED_ONE],
-      playlists: [[row('/r/other.aiff', 'L1'), row(COPY, 'L7')]],
+      playlists: [[row('/r/other.aiff', 'L1')], [row('/r/other.aiff', 'L1'), row(COPY, 'L7')]],
     })
     await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))
     await undo()
@@ -125,7 +168,7 @@ describe('useCopyPlaylistEdits', () => {
     )
   })
 
-  it('removes every row of the copy and puts them back where they were on Undo', async () => {
+  it('removes every row of the copy and on Undo puts one row back before the row that followed it', async () => {
     const { hook, dj, reportUndo } = setup({
       edits: [{ applied: true }, ADDED_ONE, { applied: true }],
       playlists: [
@@ -226,7 +269,7 @@ describe('useCopyPlaylistEdits', () => {
   it('undoes on the copy it edited even after the DJ moved to another track', async () => {
     const { hook, dj, undo } = setup({
       edits: [ADDED_ONE],
-      playlists: [[row(COPY, 'L7'), row('/r/b.aiff', 'L8')]],
+      playlists: [[row('/r/b.aiff', 'L8')], [row(COPY, 'L7'), row('/r/b.aiff', 'L8')]],
       membership: { [COPY]: [] },
     })
     await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))

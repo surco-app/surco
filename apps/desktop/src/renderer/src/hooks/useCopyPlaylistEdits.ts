@@ -95,7 +95,10 @@ export function useCopyPlaylistEdits(
     (text: string, undo: () => Promise<void>) => {
       const run = () => {
         withdraw()
-        undo().catch((error) => window.api.logError(String(error)))
+        undo().catch((error) => {
+          window.api.logError(String(error))
+          reportError(tr(`${sourceEdit?.messagePrefix ?? 'sources.edit.'}refused.unreadable`))
+        })
       }
       const dismiss = reportUndo(text, run, () => withdraw())
       const withdraw = offerShortcutUndo(() => {
@@ -103,20 +106,23 @@ export function useCopyPlaylistEdits(
         run()
       })
     },
-    [reportUndo],
+    [reportUndo, reportError, sourceEdit, tr],
   )
 
+  // Only the rows the add made go: a path the program skipped because it was already there
+  // keeps the row the DJ filed before.
   const takeOut = useCallback(
-    async (paths: string[], playlistId: string, name: string) => {
+    async (paths: string[], playlistId: string, name: string, before: ReadonlySet<string>) => {
       const entries = await window.api.dj.playlist(library, playlistId)
-      const linkIds = linkIdsOf(entries, paths)
+      const linkIds = linkIdsOf(entries, paths).filter((id) => !before.has(id))
       if (linkIds.length > 0) await sendQuietly({ kind: 'remove', playlistId, linkIds }, name)
     },
     [library, sendQuietly],
   )
 
   // The order of a playlist is the DJ's set, so the copy goes back in front of the row that
-  // followed it, not at the end.
+  // followed it, not at the end. Programs skip a track already present on add, so a copy that
+  // sat twice in the playlist comes back as one row.
   const putBack = useCallback(
     async (paths: string[], playlistId: string, name: string, next: string | null) => {
       const tracks = paths.map((p) => ({ paths: [p] }))
@@ -135,7 +141,10 @@ export function useCopyPlaylistEdits(
       let change: RekordboxPlaylistEdit
       let next: string | null = null
       let removed = 0
+      let before: ReadonlySet<string> = new Set()
       if (on) {
+        if (target.id && canRemove)
+          before = new Set(linkIdsOf(await window.api.dj.playlist(library, target.id), paths))
         change = target.id
           ? { kind: 'add', playlistId: target.id, tracks }
           : { kind: 'create', parentId: 'root', name: target.name, folder: false, tracks }
@@ -178,10 +187,8 @@ export function useCopyPlaylistEdits(
         else reportNotice(text)
       } else if (change.kind === 'add') {
         const { playlistId } = change
-        // Nothing went in when the copy was already there; an Undo would take out a row the
-        // DJ filed before.
         if (!canRemove || result.report?.added === 0) reportNotice(text)
-        else offerUndo(text, () => takeOut(paths, playlistId, name))
+        else offerUndo(text, () => takeOut(paths, playlistId, name, before))
       } else if (change.kind === 'remove') {
         const { playlistId } = change
         offerUndo(text, () => putBack(paths, playlistId, name, next))
