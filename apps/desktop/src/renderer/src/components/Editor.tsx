@@ -905,17 +905,21 @@ export const Editor = memo(function Editor({
     path: copy.path,
     verdict: rowVerdict(programVerdicts[i]),
   }))
-  // Keyed on the paths, not on the rows, which are new on every render: a new copyPathOf
-  // would have the playlists field read the membership again each time.
-  const copyTargets = DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows) ?? '').join('\n')
+  // Keyed on each program's copy target after the verdict filter, not on the rows (new on
+  // every render, so a new copyPathOf would read the membership again each time) nor on the
+  // raw paths: a copy that turns out to be another version must stop being the target.
+  const copyTargets = JSON.stringify(DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows)))
   const itemId = item.id
   const copyPathOf = useMemo(() => {
-    const paths = copyTargets.split('\n')
+    const paths: (string | null)[] = JSON.parse(copyTargets)
     return Object.fromEntries(
-      DJ_PROGRAMS.map((program, i) => [
-        program,
-        paths[i] ? (track: TrackItem) => (track.id === itemId ? paths[i] : undefined) : undefined,
-      ]),
+      DJ_PROGRAMS.map((program, i) => {
+        const path = paths[i]
+        return [
+          program,
+          path ? (track: TrackItem) => (track.id === itemId ? path : undefined) : undefined,
+        ]
+      }),
     ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
   }, [copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
