@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   ListFilter,
+  Loader2,
   PanelLeftClose,
   SearchX,
   Sparkles,
@@ -137,6 +138,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     error,
     failedSources,
     discogsRateLimited,
+    discogsRetryAt,
     retrySearch,
     previewRelease: livePreviewRelease,
   } = browser
@@ -305,6 +307,7 @@ export const DiscogsPanel = memo(function DiscogsPanel({
     },
     [searchInputRef],
   )
+  const pendingNames = pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', ')
   const tierLabel = tr(matchTier === 'high' ? 'editor.matchSuggested' : 'match.toConfirm')
   const lengthMismatchLabel =
     fileDurationSec !== undefined
@@ -753,6 +756,10 @@ export const DiscogsPanel = memo(function DiscogsPanel({
             // The list waits for every catalog before it shows, so nothing appears only to
             // move: skeleton rows mirror the result-row shape.
             <SkeletonRows testid="discogs-skeleton" count={4} />
+          ) : discogsRetryAt !== null && listed.length === 0 ? (
+            <div className="flex justify-center px-6 pt-12">
+              <DiscogsWait key={discogsRetryAt} retryAt={discogsRetryAt} onRetry={retrySearch} />
+            </div>
           ) : noResults ? (
             <div
               data-testid="discogs-no-results"
@@ -792,12 +799,26 @@ export const DiscogsPanel = memo(function DiscogsPanel({
           )}
           {/* A catalog still searching: its rows will wait behind the button, not land here,
               so the panel names it instead of drawing rows that will not come. */}
+          {/* Discogs refused for now and asks again on its own: it takes the place the
+              "still searching" line holds, which a settled search never shows. */}
+          {listed.length > 0 && discogsRetryAt !== null && (
+            <div className="px-1.5 py-1">
+              <DiscogsWait key={discogsRetryAt} retryAt={discogsRetryAt} onRetry={retrySearch} />
+            </div>
+          )}
           {listed.length > 0 && pendingProviders.length > 0 && (
-            <p data-testid="discogs-pending" className="px-3 py-2 text-label text-fg-faint">
-              {tr('editor.stillSearching', {
-                providers: pendingProviders.map((p) => tr(`settings.provider.${p}`)).join(', '),
-              })}
-            </p>
+            <div className="px-1.5 py-1">
+              <p
+                data-testid="discogs-pending"
+                role="note"
+                aria-label={tr('editor.stillSearching', { providers: pendingNames })}
+                className="relative flex w-fit items-center gap-1.5 px-1.5 py-1 text-label text-fg-faint"
+              >
+                <Loader2 className="h-3 w-3 shrink-0 animate-spin" aria-hidden="true" />
+                <span aria-hidden="true">{pendingNames}</span>
+                <Tooltip label={tr('editor.stillSearching', { providers: pendingNames })} />
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -817,6 +838,58 @@ export const DiscogsPanel = memo(function DiscogsPanel({
 // A thumbnail that fails to load (a MusicBrainz release without Cover Art Archive art
 // answers 404, archive.org sometimes 500s) falls back to the empty slot instead of the
 // browser's broken-image glyph, which reads as an app fault.
+// The seconds until the panel asks Discogs again after a rate limit, on a ring that empties
+// with them. Amber reads as a wait, not a failure; a click asks at once. Remounted per wait
+// (keyed on retryAt) so the ring starts full each time.
+function DiscogsWait({
+  retryAt,
+  onRetry,
+}: {
+  retryAt: number
+  onRetry: () => void
+}): React.JSX.Element {
+  const { t: tr } = useTranslation()
+  const left = (): number => Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
+  const [seconds, setSeconds] = useState(left)
+  const [total] = useState(left)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: left reads retryAt, which never changes for a mounted wait.
+  useEffect(() => {
+    const id = setInterval(() => setSeconds(left()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const label = tr('editor.discogsWait', { seconds })
+  const circumference = 2 * Math.PI * 5
+  return (
+    <button
+      type="button"
+      data-testid="discogs-wait"
+      onClick={onRetry}
+      aria-label={label}
+      className="press relative flex items-center gap-1.5 rounded-md px-1.5 py-1 text-label text-fg-faint transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
+    >
+      <svg viewBox="0 0 12 12" className="h-3 w-3 shrink-0 -rotate-90" aria-hidden="true">
+        <circle cx="6" cy="6" r="5" fill="none" stroke="var(--color-line)" strokeWidth="2" />
+        <circle
+          cx="6"
+          cy="6"
+          r="5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeDasharray={circumference}
+          strokeDashoffset={total > 0 ? circumference * (1 - seconds / total) : circumference}
+          className="text-warn"
+        />
+      </svg>
+      <span>{tr('settings.provider.discogs')}</span>
+      <span className="min-w-[5ch] font-medium text-warn tabular-nums">
+        {tr('editor.waitSeconds', { seconds })}
+      </span>
+      <Tooltip label={label} />
+    </button>
+  )
+}
+
 function ResultThumb({ src }: { src: string | undefined }): React.JSX.Element {
   const [failed, setFailed] = useState(false)
   if (!src || failed)

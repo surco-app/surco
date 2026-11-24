@@ -1,4 +1,4 @@
-import { errorWithKey } from '../shared/errorKeys'
+import { errorKeyOf, errorWithKey } from '../shared/errorKeys'
 import {
   bareAlbumTitle,
   dropOriginalMarker,
@@ -45,7 +45,12 @@ export function retryDelayMs(attempt: number, retryAfter: string | null): number
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
 
-async function api<T>(path: string, token: string, priority?: SearchPriority): Promise<T> {
+async function api<T>(
+  path: string,
+  token: string,
+  priority?: SearchPriority,
+  retries = MAX_RETRIES,
+): Promise<T> {
   const url = `${BASE}${path}${path.includes('?') ? '&' : '?'}${authParams(token)}`
   for (let attempt = 0; ; attempt++) {
     const res = await fetch(url, {
@@ -55,7 +60,7 @@ async function api<T>(path: string, token: string, priority?: SearchPriority): P
     if (res.status === 401) throw errorWithKey('discogsToken')
     if (res.status === 429) {
       // Out of retries: surface the limit so the caller can tell the user to wait.
-      if (attempt >= MAX_RETRIES) throw errorWithKey('discogsRateLimit')
+      if (attempt >= retries) throw errorWithKey('discogsRateLimit')
       await sleep(retryDelayMs(attempt, res.headers.get('Retry-After')))
       // The caller spent one token on the first attempt; a retry is another request,
       // so take a fresh token — otherwise a 429 storm bypasses the limiter exactly
@@ -94,6 +99,9 @@ interface SearchOpts {
   format?: string
   perPage?: number
   year?: string
+  // False when the caller shows the wait and retries on its own (the editor's panel): a 429
+  // then fails at once instead of holding the request through silent retries.
+  retryOnLimit?: boolean
 }
 
 // Whether a query/id is already cached, so the rate limiter can let a repeat through without
@@ -108,21 +116,33 @@ export function hasCachedSearch(query: string, opts: SearchOpts = {}): boolean {
 // at once each used to make the same paced request on their own. A later caller joins the
 // one already running, unless it is high priority and that one is not: the editor's own
 // search must never wait in the background queue.
-const inFlight = new Map<string, { promise: Promise<unknown>; priority?: SearchPriority }>()
+// The panel, which fails on a rate limit at once, never joins a request that waits it out:
+// it would sit on a silent skeleton again. A patient caller joining the panel's request runs
+// its own if that one hits the limit, so the sweep never inherits the panel's quick failure.
+const inFlight = new Map<
+  string,
+  { promise: Promise<unknown>; priority?: SearchPriority; retryOnLimit: boolean }
+>()
 
 function shareInFlight<T>(
   key: string,
   priority: SearchPriority | undefined,
   run: () => Promise<T>,
+  retryOnLimit = true,
 ): Promise<T> {
   const current = inFlight.get(key)
-  if (current && (current.priority === 'high' || priority !== 'high')) {
-    return current.promise as Promise<T>
+  const joinable = current && (current.priority === 'high' || priority !== 'high')
+  if (joinable && current.retryOnLimit === retryOnLimit) return current.promise as Promise<T>
+  if (joinable && retryOnLimit) {
+    return (current.promise as Promise<T>).catch((e: unknown) => {
+      if (e instanceof Error && errorKeyOf(e.message) === 'discogsRateLimit') return run()
+      throw e
+    })
   }
   const promise = run().finally(() => {
     if (inFlight.get(key)?.promise === promise) inFlight.delete(key)
   })
-  inFlight.set(key, { promise, priority })
+  inFlight.set(key, { promise, priority, retryOnLimit })
   return promise
 }
 
@@ -141,8 +161,11 @@ async function runSearch(
   const key = searchKey(cacheId, opts.format, perPage)
   const cached = cachedSearch(cacheStore, key)
   if (cached) return cached
-  return shareInFlight(`search ${key}`, priority, () =>
-    fetchSearch(queryParams, key, perPage, token, opts, priority),
+  return shareInFlight(
+    `search ${key}`,
+    priority,
+    () => fetchSearch(queryParams, key, perPage, token, opts, priority),
+    opts.retryOnLimit !== false,
   )
 }
 
@@ -166,6 +189,7 @@ async function fetchSearch(
     `/database/search?type=release&${queryParams}&per_page=${perPage}${formatParam}${yearParam}`,
     token,
     priority,
+    opts.retryOnLimit === false ? 0 : MAX_RETRIES,
   )
   // Discogs' JSON carries no provider tag; stamp it here so the normalized result
   // identifies its source for the pill and release routing downstream.
@@ -267,6 +291,7 @@ export async function search(
   hints?: SearchHints,
   formats: string[] = [],
   shownResults = 0,
+  retryOnLimit = true,
 ): Promise<SearchResult[]> {
   return activity.track(
     'discogs',
@@ -280,7 +305,7 @@ export async function search(
       // and never above the API's own per_page ceiling.
       const wanted = formats.length > 1 ? shownResults * 2 : shownResults
       const perPage = Math.min(DISCOGS_MAX_PER_PAGE, Math.max(formats.length > 1 ? 50 : 20, wanted))
-      const opts: SearchOpts = { format: serverFormat, perPage }
+      const opts: SearchOpts = { format: serverFormat, perPage, retryOnLimit }
       const keep = (raw: SearchResult[]): SearchResult[] =>
         dedupeResults(formats.length ? raw.filter((r) => matchesFormats(r, formats)) : raw)
       // Precise first: when the tag gives both an artist and a title, match on the

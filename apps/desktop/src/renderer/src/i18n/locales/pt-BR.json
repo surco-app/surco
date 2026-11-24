@@ -1077,6 +1077,8 @@
     "lastApplied": "Último álbum aplicado",
     "heldResults": "Mais {{count}} de {{providers}} · Mostrar",
     "stillSearching": "Ainda buscando em {{providers}}…",
+    "discogsWait": "O Discogs está limitando as buscas. Nova tentativa em {{seconds}} s. Clique para buscar agora.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
     "suggestedStatus": "Sugerido: {{title}}",

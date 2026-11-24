@@ -7466,7 +7466,7 @@ describe('Discogs token tip', () => {
       throw new Error("Error invoking remote method 'search': Error: SURCO_ERR:discogsRateLimit")
     })
     renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: 'mine' })
-    await screen.findByRole('alert')
+    await screen.findByTestId('discogs-wait')
     expect(screen.queryByTestId('discogs-token-tip')).not.toBeInTheDocument()
     cleanup()
     renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: '' })

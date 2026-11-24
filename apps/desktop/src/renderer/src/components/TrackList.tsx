@@ -63,12 +63,15 @@ import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
 import {
+  COVER_SIZE,
   CoverPlaceholder,
   listRowClass,
   PILL_TEXT,
   ROW_DETAIL,
   ROW_TITLE,
   ROW_TRAILING,
+  ROW_WAVE_HEIGHT,
+  rowTextHeight,
   ToneBadge,
   TonePill,
 } from './ListRow'
@@ -803,7 +806,7 @@ const TrackRow = memo(function TrackRow({
                 loading="lazy"
                 decoding="async"
                 data-waves={showWaves ? 'true' : 'false'}
-                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10 compact:h-8 compact:w-8'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                className={`${COVER_SIZE[showWaves ? 'large' : 'medium']} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -839,9 +842,7 @@ const TrackRow = memo(function TrackRow({
               nothing. */}
           <span
             data-fit
-            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${
-              showWaves ? 'h-16 compact:h-[52px]' : 'h-10 compact:h-9'
-            }`}
+            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${rowTextHeight(showWaves)}`}
           >
             <span className="flex flex-col gap-px">
               {/* The duration rides the title line, the way Mail puts the time beside the
@@ -1122,7 +1123,7 @@ const TrackRow = memo(function TrackRow({
               </span>
             </span>
             {showWaves ? (
-              <span data-testid="track-wave-line" className="relative block h-5 compact:h-[15px]">
+              <span data-testid="track-wave-line" className={`relative block ${ROW_WAVE_HEIGHT}`}>
                 {shown.waiting ? (
                   <span
                     data-testid="track-loading"

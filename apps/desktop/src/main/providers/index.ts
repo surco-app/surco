@@ -56,13 +56,18 @@ export function cleanHints(
 // whatever reference its provider needs: Discogs by numeric id, Bandcamp by page URL
 // (it has no public id-addressable release), so the ref is `number | string`.
 export interface SearchProvider {
-  search(query: string, priority?: SearchPriority, hints?: SearchHints): Promise<SearchResult[]>
+  search(
+    query: string,
+    priority?: SearchPriority,
+    hints?: SearchHints,
+    retryOnLimit?: boolean,
+  ): Promise<SearchResult[]>
   getRelease(ref: number | string, priority?: SearchPriority): Promise<Release>
 }
 
 const providers: Record<SearchProviderId, SearchProvider> = {
   discogs: {
-    search: (query, priority, hints) => {
+    search: (query, priority, hints, retryOnLimit) => {
       const s = getSettings()
       // Defensive: a hand-edited or older settings.json could carry a non-array here,
       // which would make `formats.length` throw deep in the search.
@@ -78,6 +83,7 @@ const providers: Record<SearchProviderId, SearchProvider> = {
         // has to fill. Defensive like formats above: a hand-edited settings.json must
         // not send NaN into the page size.
         Number(s.discogsMaxResults) || 0,
+        retryOnLimit,
       )
     },
     getRelease: (ref, priority) =>

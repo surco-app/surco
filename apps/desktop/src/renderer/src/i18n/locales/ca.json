@@ -1077,6 +1077,8 @@
     "lastApplied": "Últim àlbum aplicat",
     "heldResults": "{{count}} més de {{providers}} · Mostrar",
     "stillSearching": "Encara cercant a {{providers}}…",
+    "discogsWait": "Discogs està limitant les cerques. Nou intent d'aquí a {{seconds}} s. Prem per cercar ara.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} resultat",
     "resultsCount_other": "{{count}} resultats",
     "suggestedStatus": "Suggerit: {{title}}",

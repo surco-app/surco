@@ -1452,10 +1452,12 @@ export default function App(): React.JSX.Element {
     // like it did nothing. One every new row matches stays: another version of the tune
     // being searched for lands right beside it.
     if (!arrived.every(searchMatcher(store.getState().search))) setSearch('')
-    // What arrived becomes the selection, unless that would pull the editor away from
-    // something: a field being typed in, a filter that may hide the new rows, or a selection
-    // the user made while a slow folder was still being walked. The first row addPaths
-    // opens on an empty list is the add's own doing and does not count as one.
+    // The first file that arrived becomes the selection, as a click on it would: the whole
+    // drop selected put the editor on a batch of hundreds nobody asked for, and ⌘A gets it.
+    // Not when that would pull the editor away from something: a field being typed in, a
+    // filter that may hide the new rows, or a selection the user made while a slow folder
+    // was still being walked. The first row addPaths opens on an empty list is the add's own
+    // doing and does not count as one.
     const typingInEditor =
       isTypingTarget(document.activeElement) && columnOf(document.activeElement) !== 'list'
     if (added.length === 0 || typingInEditor || tracksFilterActive) return
@@ -1465,7 +1467,7 @@ export default function App(): React.JSX.Element {
         current.anchor === selectedBefore.anchor && current.ids.length === selectedBefore.ids.length
       const openedByTheAdd =
         selectedBefore.anchor === null && current.ids.every((id) => fresh.has(id))
-      return untouched || openedByTheAdd ? { ids: added, anchor: added[0] } : current
+      return untouched || openedByTheAdd ? { ids: [added[0]], anchor: added[0] } : current
     })
   })
   const pickFiles = useStableCallback(
@@ -5005,6 +5007,7 @@ export default function App(): React.JSX.Element {
                         <TrackListSkeleton
                           testid="source-playlist-loading"
                           label={tr('sources.loadingPlaylist')}
+                          showWaves={showListWaves}
                         />
                       ) : browser.entriesFailed && browser.source ? (
                         // A failed read is not an empty playlist either. The tree's own failure
