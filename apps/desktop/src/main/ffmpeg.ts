@@ -2505,7 +2505,9 @@ export async function convertAudio(
     [trimAf, declickAf, normalizeAf, rateAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
-  const tmp = convertTmpPath(output, ext)
+  // From the output's own extension, not the plan's: a library copy retagged in place
+  // keeps its .aif, which the plan's '.aiff' would not match.
+  const tmp = convertTmpPath(output, extname(output))
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined
   // when declick is off so "not run" and "ran, found 0" stay distinct upstream.
@@ -2522,6 +2524,11 @@ export async function convertAudio(
   let sampleCount: number | undefined
   let originalKept = false
   let codecCueOffsetMs = 0
+  // A library copy retagged in place moves no audio, so its cues, in the file and in the
+  // libraries, stay where the DJ put them: the DJ's offset applied to the copy's own cues
+  // would shift them again on every Update.
+  const cueShift = (): CueShift | undefined =>
+    keepAudio ? undefined : cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
   let seratoAnalysisKept = false
   let replaceShift: ReplaceShift | undefined
   let seratoCarryFailed = false
@@ -2570,7 +2577,7 @@ export async function convertAudio(
       // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
       // re-encode call sites below and this one was missed. copyCueFrames re-reads the
       // source and writes the shifted frames over the copy's own.
-      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
+      const copyShift = cueShift()
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
       else seratoAnalysisKept = true
@@ -2693,7 +2700,7 @@ export async function convertAudio(
             // its atoms back, but not the ones measured on the old samples.
             foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
             cueSource: input,
-            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            cueShift: cueShift(),
             carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
           })
         } finally {
@@ -2711,7 +2718,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            shift: cueShift(),
           })
         // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
         // riffCarry.ts). Only when the audio is copied through: their positions count
@@ -2746,7 +2753,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+          cueShift: cueShift(),
         })
         // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
         // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
@@ -2757,7 +2764,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            shift: cueShift(),
           })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -2779,13 +2786,13 @@ export async function convertAudio(
                 type: 'copyCuesFromFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               }
             : {
                 type: 'copyCueFrames',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               },
         )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
@@ -2809,12 +2816,12 @@ export async function convertAudio(
                 type: 'copyCuesToFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               }
             : {
                 type: 'shiftFlacCues',
                 file: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               },
         )
       // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
@@ -3066,7 +3073,7 @@ export async function convertAudio(
       meta,
       !removeCover,
       clearExtras ?? false,
-      cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+      cueShift(),
       namesBefore,
       replacesPath ? { path: replacesPath, cueShift: replaceTraktorShift } : undefined,
     )
