@@ -1324,6 +1324,17 @@ describe('runProcessTrack — retagging a library copy where it is', () => {
     expect(deps.convertAudio).not.toHaveBeenCalled()
     expect(deps.reservePath).not.toHaveBeenCalled()
   })
+
+  // The job carries the open row's id, but the checked file is the library copy: its
+  // verification would land on the row of a file Update never touched.
+  it('registers no verification for the copy, while a conversion still does', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    await runProcessTrack(copy(), makeDeps({ registerVerification }))
+    expect(registerVerification).not.toHaveBeenCalled()
+
+    await runProcessTrack(job(), makeDeps({ registerVerification }))
+    expect(registerVerification).toHaveBeenCalledOnce()
+  })
 })
 
 describe('runProcessTrack — in-place rewrite', () => {

@@ -1293,24 +1293,27 @@ export async function runProcessTrack(
       seq: 0,
       ...(originalHeld ? { originalHeld } : {}),
     }
-    deps.registerVerification?.({
-      trackId: job.id,
-      from: libraryFrom,
-      source: job.inputPath,
-      to: finalPath,
-      samplesKept: written.samplesKept,
-      originalKept: written.originalKept,
-      places,
-      file: fileExpect,
-      music: musicExpect,
-      rekordbox: before.rekordbox,
-      engine: before.engine,
-      virtualdj: before.virtualdj,
-      engineStep: addedToEngineDj,
-      ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
-      heldOriginal,
-      verification,
-    })
+    // A library copy retagged in place rides the open row's id, yet the file checked is the
+    // copy: registered, its verification would land on a row whose file was never touched.
+    if (!job.tagsInPlace)
+      deps.registerVerification?.({
+        trackId: job.id,
+        from: libraryFrom,
+        source: job.inputPath,
+        to: finalPath,
+        samplesKept: written.samplesKept,
+        originalKept: written.originalKept,
+        places,
+        file: fileExpect,
+        music: musicExpect,
+        rekordbox: before.rekordbox,
+        engine: before.engine,
+        virtualdj: before.virtualdj,
+        engineStep: addedToEngineDj,
+        ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
+        heldOriginal,
+        verification,
+      })
 
     // The copy this replacement superseded, so the renderer can offer to trash it: the
     // shell guard rejects any path it was never handed, and this one lives in the user's
