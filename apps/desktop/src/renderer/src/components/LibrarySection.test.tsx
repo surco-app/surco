@@ -53,7 +53,7 @@ describe('LibrarySection', () => {
     ['here', 'La nueva es mejor'],
     ['library', 'La nueva es peor'],
     ['tie', 'Parecidas'],
-    ['even', 'Ni mejor ni peor'],
+    ['even', 'Misma calidad'],
     ['measuring', 'Comparando'],
     ['missing', 'No se encuentra'],
     ['unreadable', 'No se puede leer'],
@@ -152,7 +152,7 @@ describe('LibrarySection', () => {
         'La nueva es mejor',
         'La nueva es peor',
         'Parecidas',
-        'Ni mejor ni peor',
+        'Misma calidad',
         'Otra versión · 0:00:00',
         'Es este archivo',
         'No se encuentra',
@@ -466,7 +466,7 @@ describe('LibrarySection', () => {
     })
     const pill = screen.getByTestId('library-verdict')
     expect(pill).toHaveAttribute('data-state', 'even')
-    expect(pill).toHaveTextContent(/^Ni mejor ni peor$/)
+    expect(pill).toHaveTextContent(/^Misma calidad$/)
   })
 
   // The rows lose their pills when the state goes up, so their reasons go up with it.
