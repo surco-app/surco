@@ -35,7 +35,6 @@ function usePileAnchor(watching: boolean): { left: number; bottom: number } | un
   useLayoutEffect(() => {
     if (!watching) return
     const rail = document.querySelector('[data-toast-anchor]')
-    const column = document.querySelector('[data-toast-lift-within]')
     const resized =
       typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
     let lifting: Element | null = null
@@ -61,12 +60,27 @@ function usePileAnchor(watching: boolean): { left: number; bottom: number } | un
     measure()
     window.addEventListener('resize', measure)
     if (rail) resized?.observe(rail)
-    const mounted = column ? new MutationObserver(measure) : null
-    if (column) mounted?.observe(column, { childList: true })
+    // Changing source mounts the list column again, so the parent is watched too and the
+    // watch moves to whichever column is there now, or a player opened in it goes unseen.
+    let watched: Element | null = null
+    const follow = (): void => {
+      const now = document.querySelector('[data-toast-lift-within]')
+      if (now === watched) return
+      mounted.disconnect()
+      watched = now
+      if (!now) return
+      mounted.observe(now, { childList: true })
+      if (now.parentElement) mounted.observe(now.parentElement, { childList: true })
+    }
+    const mounted = new MutationObserver(() => {
+      follow()
+      measure()
+    })
+    follow()
     return () => {
       window.removeEventListener('resize', measure)
       resized?.disconnect()
-      mounted?.disconnect()
+      mounted.disconnect()
     }
   }, [watching])
   return anchor

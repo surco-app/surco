@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
@@ -63,7 +63,9 @@ describe('ToastStack', () => {
     })
     afterEach(() => {
       vi.restoreAllMocks()
-      for (const el of document.body.querySelectorAll('[data-toast-anchor], [data-toast-lift]'))
+      for (const el of document.body.querySelectorAll(
+        '[data-toast-anchor], [data-toast-lift], [data-toast-lift-within]',
+      ))
         el.remove()
     })
     const show = (toasts: Toast[] = three) =>
@@ -86,6 +88,24 @@ describe('ToastStack', () => {
       Object.defineProperty(player, 'offsetTop', { value: 440 })
       show()
       expect(pile().style.bottom).toBe(`${window.innerHeight - 500 + 8}px`)
+    })
+
+    // Changing source mounts the list column again, and the player opens inside the new one:
+    // a pile that only watched the first column stayed down and was drawn over the player.
+    it('climbs above a player that opens in a list column mounted after the notice came up', async () => {
+      marked('data-toast-anchor', { right: 76 })
+      const first = marked('data-toast-lift-within', {})
+      show()
+      expect(pile().style.bottom).toBe('12px')
+      first.remove()
+      const column = marked('data-toast-lift-within', { top: 60 })
+      const player = document.createElement('div')
+      player.setAttribute('data-toast-lift', '')
+      player.getBoundingClientRect = () => ({ left: 84, right: 460, top: 500 }) as DOMRect
+      Object.defineProperty(player, 'offsetParent', { value: column })
+      Object.defineProperty(player, 'offsetTop', { value: 440 })
+      column.append(player)
+      await waitFor(() => expect(pile().style.bottom).toBe(`${window.innerHeight - 500 + 8}px`))
     })
 
     it('stays at the bottom when the mini-player is open somewhere the pile does not reach', () => {
