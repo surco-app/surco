@@ -23,6 +23,7 @@ import {
   catalogNumberMatches,
   confidenceTier,
   corroboratedTier,
+  joinArtists,
   type MatchSignals,
   matchSignals,
   preRankResults,
@@ -595,4 +596,47 @@ export function matchActivityReport(
     ms,
     url: releasePageUrl(m),
   }
+}
+
+export type SuggestionContext = {
+  match: ReturnType<typeof bestMatch>
+  release: Release | null
+  item: TrackItem
+}
+
+export type Suggestion = {
+  matchTier: ReturnType<typeof corroboratedTier> | undefined
+  matchedTrack: ReleaseTrack | undefined
+  suggestedMeta: { title: string; artist: string } | undefined
+}
+
+export function suggestionOf({ match, release, item }: SuggestionContext): Suggestion {
+  // The same guarded tier the sweep acts on (corroboratedTier), so the badge never reads
+  // 'high' on a title-only hit the sweep would have flagged for review.
+  const matchTier =
+    match && release
+      ? corroboratedTier(
+          match.confidence,
+          matchTargetOf(item),
+          release,
+          match.track,
+          catalogNumberMatches(item.meta.catalogNumber, release),
+        )
+      : undefined
+  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
+  // unrelated release still badges whichever mix shares an incidental word.
+  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
+  // The canonical artist/title of the confidently-suggested release. The file's own tag is
+  // often messier than the spelling the user searched for, and the library is keyed by the
+  // canonical name — so this bridges a tag the library can't recognise on its own. Only a
+  // trusted match (matchedTrack already excludes 'low') feeds it, so an unrelated open
+  // release can't manufacture a false "owned".
+  const suggestedMeta =
+    matchedTrack && release
+      ? {
+          title: matchedTrack.title,
+          artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
+        }
+      : undefined
+  return { matchTier, matchedTrack, suggestedMeta }
 }

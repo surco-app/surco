@@ -72,7 +72,12 @@ import { useVersionCopyPlaylists } from '../hooks/useVersionCopyPlaylists'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
-import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
+import {
+  clearedTrackPatch,
+  matchTargetOf,
+  shouldAutoApplyMatch,
+  suggestionOf,
+} from '../lib/autoMatch'
 import {
   type BatchPick,
   batchFormats,
@@ -138,9 +143,6 @@ import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
 import {
   bestMatch,
   buildReleaseMeta,
-  catalogNumberMatches,
-  corroboratedTier,
-  joinArtists,
   type ReleaseMetaPatch,
   titleWithMix,
 } from '../lib/release'
@@ -797,21 +799,7 @@ export const Editor = memo(function Editor({
     () => (release ? bestMatch(release.tracklist, matchTargetOf(item)) : undefined),
     [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
   )
-  // The same guarded tier the sweep acts on (corroboratedTier), so the badge never reads
-  // 'high' on a title-only hit the sweep would have flagged for review.
-  const matchTier =
-    match && release
-      ? corroboratedTier(
-          match.confidence,
-          matchTargetOf(item),
-          release,
-          match.track,
-          catalogNumberMatches(item.meta.catalogNumber, release),
-        )
-      : undefined
-  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
-  // unrelated release still badges whichever mix shares an incidental word.
-  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
+  const { matchTier, matchedTrack, suggestedMeta } = suggestionOf({ match, release, item })
 
   // The tracklist entry the file's tags currently spell out — the row selectTrack applied
   // (or its session-restored equivalent). Derived from the meta rather than stored so it
@@ -831,18 +819,6 @@ export const Editor = memo(function Editor({
     [release, item.meta.title, item.meta.trackNumber],
   )
 
-  // The canonical artist/title of the confidently-suggested release. The file's own tag is
-  // often messier than the spelling the user searched for, and the library is keyed by the
-  // canonical name — so this bridges a tag the library can't recognise on its own. Only a
-  // trusted match (matchedTrack already excludes 'low') feeds it, so an unrelated open
-  // release can't manufacture a false "owned".
-  const suggestedMeta =
-    matchedTrack && release
-      ? {
-          title: matchedTrack.title,
-          artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
-        }
-      : undefined
   const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const libraryShown = filesOpen && !isMulti && !libraryHidden
   // Whether the destination library already owns this track, and whether an older copy of it
