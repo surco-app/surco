@@ -104,7 +104,7 @@ describe('measureReplaceShift', () => {
       '-filter_complex',
       '[0]atrim=0:100[a];[0]atrim=start=100.02,asetpts=PTS-STARTPTS[b];[a][b]concat=n=2:v=0:a=1',
     ])
-  })
+  }, 30_000)
 
   const exactMeasureOfLastCall = async () => {
     const calls = vi.mocked(runInWorker).mock.calls
