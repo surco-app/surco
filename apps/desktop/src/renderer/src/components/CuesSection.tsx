@@ -55,6 +55,7 @@ import type {
   SurcoGrid,
   TrackCues,
 } from '../../../shared/types'
+import { useAnalysisArrival } from '../hooks/useAnalysisArrival'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useReplacedTracks, useReviewReplaced } from '../hooks/useReplacedTracks'
@@ -2417,6 +2418,7 @@ export function CuesSection({
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
   const unsaved = useUnsavedCueTracks().has(cue.contentId)
+  useAnalysisArrival(cue.contentId, wantsSurcoGrid && !unsaved)
   const saveEcho = useCueSaveEcho(cue)
   const [round, setRound] = useState(0)
   const draftKey = cueDraftKey(cue.contentId, read?.fingerprint ?? '', queued)
