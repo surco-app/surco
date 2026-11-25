@@ -617,7 +617,9 @@ interface MusicStepContext {
   handedOver: { tmpDir?: string } | undefined
   tmpDir: string | undefined
   retireAfterMusic: boolean
-  renameFollowFailed: boolean
+  appleMusicFailed: true | undefined
+  entryMayPlaySource: boolean
+  keptBeforeMusic: boolean
 }
 
 interface MusicStepResult {
@@ -652,20 +654,19 @@ async function runMusicStep(ctx: MusicStepContext): Promise<MusicStepResult> {
     handedOver,
     tmpDir,
     retireAfterMusic,
-    renameFollowFailed,
   } = ctx
   let musicPersistentId: string | undefined
   let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
   let supersededPath: string | undefined
   let musicLandedPath: string | undefined
-  let appleMusicFailed: true | undefined = renameFollowFailed || undefined
+  let appleMusicFailed = ctx.appleMusicFailed
   let appleMusicErrorKey: ErrorKey | undefined
   let musicNameLeftMarked: true | undefined
   let musicReplaced: MusicExpect['replaced']
   let landed: MediaCopy | undefined
   let supersededIfKept: string | undefined
-  let entryMayPlaySource = retireAfterMusic
-  let keptBeforeMusic = false
+  let entryMayPlaySource = ctx.entryMayPlaySource
+  let keptBeforeMusic = ctx.keptBeforeMusic
   let musicOp: MusicOp | undefined
   const musicStage = (op: MusicOp): void => {
     musicOp = op
@@ -1249,7 +1250,9 @@ export async function runProcessTrack(
         handedOver,
         tmpDir,
         retireAfterMusic,
-        renameFollowFailed,
+        appleMusicFailed,
+        entryMayPlaySource,
+        keptBeforeMusic,
       }))
     }
 
