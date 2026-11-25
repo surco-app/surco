@@ -89,6 +89,9 @@ export interface TrackItem extends TrackOrigin {
   // Set when the user clears the artwork, so the conversion strips the embedded
   // cover instead of preserving it. Cleared again the moment a new cover is set.
   coverRemoved?: boolean
+  // Set when the DJ chooses the artwork by hand (the picker, a drop, a paste, a release they
+  // picked), so a library copy found later never puts its own picture over that choice.
+  coverPicked?: boolean
   // Set when the user clears ALL metadata, so the conversion also wipes the rating
   // that a normal convert preserves-on-empty (the cover rides coverRemoved above).
   // Cleared the moment any field is edited again, so a retag doesn't keep wiping.

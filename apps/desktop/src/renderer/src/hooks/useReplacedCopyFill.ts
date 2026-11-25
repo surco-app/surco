@@ -59,7 +59,7 @@ export function useReplacedCopyFill({
   )
   const ready =
     !item.loadingMeta && !item.metaPartial && !item.copyFilled && !item.metaCleared && !!copyPath
-  const needsCover = !item.coverRemoved
+  const needsCover = !item.coverRemoved && !item.coverPicked
   const ownCoverPath = needsCover && showsOwnCover(item) ? item.inputPath : ''
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the track, the copy and readiness; apply reads the live row when the tags arrive.
   useEffect(() => {

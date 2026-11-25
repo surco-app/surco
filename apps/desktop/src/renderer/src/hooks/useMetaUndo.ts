@@ -50,8 +50,9 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
     foreignRemoved: t.foreignRemoved,
     // Present only when the operation also overwrites artwork (paste). Recording it
     // unconditionally would make undoing a plain tag sweep revert a cover the user
-    // changed afterwards — the snapshot may only restore what its operation touched.
-    ...(cover ? { coverUrl: t.coverUrl, coverPath: t.coverPath } : {}),
+    // changed afterwards — the snapshot may only restore what its operation touched. The
+    // hand-picked mark rides with the art it describes.
+    ...(cover ? { coverUrl: t.coverUrl, coverPath: t.coverPath, coverPicked: t.coverPicked } : {}),
     // One key per program, so taking back the playlists a step staged for one program keeps
     // what the DJ staged for another since.
     ...Object.fromEntries(

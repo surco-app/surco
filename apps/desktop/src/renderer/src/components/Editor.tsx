@@ -1016,7 +1016,7 @@ export const Editor = memo(function Editor({
       mounted.current = false
     }
   }, [])
-  async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
+  async function selectTrack(track: ReleaseTrack, moveFocus = true, byHand = true): Promise<void> {
     if (!release) return
     const current = item.metaPartial ? await readFullTrack(item.id) : item
     if (!current || current.metaPartial || !mounted.current) return
@@ -1030,23 +1030,27 @@ export const Editor = memo(function Editor({
     const shownDims =
       coverIsOriginal && current.embeddedCoverDims ? current.embeddedCoverDims : coverDims
     onRecordUndo?.([current.id], { cover: true })
+    const applied = buildReleaseMeta(
+      current.meta,
+      release,
+      track,
+      {
+        url: current.coverUrl,
+        path: current.coverPath,
+        keep:
+          coverIsOriginal &&
+          !(replaceLowResCover && shownDims && isLowResCover(shownDims.w, shownDims.h)),
+      },
+      importFields,
+      genrePresets,
+      fullReleaseDate,
+      current.appliedRelease,
+    )
     onChange({
-      ...buildReleaseMeta(
-        current.meta,
-        release,
-        track,
-        {
-          url: current.coverUrl,
-          path: current.coverPath,
-          keep:
-            coverIsOriginal &&
-            !(replaceLowResCover && shownDims && isLowResCover(shownDims.w, shownDims.h)),
-        },
-        importFields,
-        genrePresets,
-        fullReleaseDate,
-        current.appliedRelease,
-      ),
+      ...applied,
+      // A cover that came with a release the DJ clicked is their choice, which a library
+      // copy found later must leave alone; an automatic match's may still give way to it.
+      ...(byHand && applied.coverUrl !== current.coverUrl ? { coverPicked: true } : {}),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
@@ -1086,7 +1090,7 @@ export const Editor = memo(function Editor({
     ) {
       autoAppliedRelease.current = release.id
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
-      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement))
+      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement), false)
     }
   }, [
     autoMatch,
@@ -1115,7 +1119,8 @@ export const Editor = memo(function Editor({
   const onCoverChange = useStableCallback(
     (patch: Partial<TrackItem>, opts?: { group?: string }): void => {
       onRecordUndo?.([item.id], { cover: true, ...opts })
-      onChange(patch)
+      // Removing rides coverRemoved, which already keeps every fill off the artwork.
+      onChange(patch.coverRemoved ? patch : { ...patch, coverPicked: true })
     },
   )
 

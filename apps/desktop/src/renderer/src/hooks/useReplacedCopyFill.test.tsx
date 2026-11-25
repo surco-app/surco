@@ -296,6 +296,46 @@ describe('useReplacedCopyFill', () => {
     expect(onChange.mock.calls[0][0]).toMatchObject({ coverUrl: COPY_COVER })
   })
 
+  // Opening a track must never undo what the DJ chose: a cover picked by hand, even the file's
+  // own picked back in the carousel, is their call, and the copy found later is not.
+  it('keeps a cover the DJ picked by hand over the copy picture', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+    setApi(
+      vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })),
+      readCoverFull,
+    )
+    const onChange = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverUrl: 'blob:dropped', coverPath: '/img/dropped.png', coverPicked: true }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({ meta: { album: 'Your Love' } })
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('coverUrl')
+  })
+
+  it('keeps the file own cover the DJ picked back by hand over the copy picture', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>((path) =>
+      Promise.resolve(path === '/old/your-love.mp3' ? COPY_COVER : 'data:image/jpeg;base64,RklMRQ'),
+    )
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({})), readCoverFull)
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverUrl: 'data:thumb', embeddedCover: 'data:thumb', coverPicked: true }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+        onRecordUndo,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ copyFilled: true }))
+    expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+
   describe('from a copy that is another version', () => {
     // FLAC 6:01 against the MP3 5:57 in Apple Music and rekordbox: the MP3 carries the grouping
     // the DJ filed the track under, but its album and year are that other release's.

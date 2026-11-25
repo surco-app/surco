@@ -563,6 +563,7 @@ describe('Editor cover picker', () => {
       coverUrl: 'blob:cover',
       coverPath: '/img/c.png',
       coverRemoved: false,
+      coverPicked: true,
     })
   })
 
@@ -4909,6 +4910,30 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('discogs-result'))
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
+  })
+
+  // A release the DJ clicked brings the cover they chose with it, so a library copy found
+  // later must not put its own picture over it.
+  it('marks the cover of a release picked by hand as the DJ choice', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'prev-release.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      coverUrl: 'discogs.jpg',
+      coverPicked: true,
+    })
+  })
+
+  it('leaves the mark off a release picked by hand that keeps the file own cover', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg', embeddedCover: 'tiny.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('tiny.jpg')
+    expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty('coverPicked')
   })
 
   // A file with no embedded artwork must not contribute a phantom "file image" slot

@@ -44,14 +44,18 @@ export function showsOwnCover(
 }
 
 // The copy's artwork is the one the DJ sees for this track in their library, so it wins over
-// the file's own and over a match's. The file's art stays in the picker as embeddedCover and
-// ⌘Z takes the change back. Only a cover removed by hand stays removed, and the same picture
-// changes nothing: opening a track must never stage an edit by itself.
+// the file's own and over an automatic match's. The file's art stays in the picker as
+// embeddedCover and ⌘Z takes the change back. A cover the DJ removed or chose by hand stays
+// as they left it, and the same picture changes nothing: opening a track must never stage an
+// edit by itself nor undo a choice.
 export function copyCoverWins(
-  item: Pick<TrackItem, 'coverUrl' | 'coverPath' | 'embeddedCover' | 'coverRemoved'>,
+  item: Pick<
+    TrackItem,
+    'coverUrl' | 'coverPath' | 'embeddedCover' | 'coverRemoved' | 'coverPicked'
+  >,
   cover: string,
   ownFullCover: string | null,
 ): boolean {
-  if (item.coverRemoved || cover === item.coverUrl) return false
+  if (item.coverRemoved || item.coverPicked || cover === item.coverUrl) return false
   return !(showsOwnCover(item) && cover === ownFullCover)
 }

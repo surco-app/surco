@@ -207,6 +207,25 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('A')
   })
 
+  // Taking back a cover picked by hand takes back that it was the DJ's choice too: the file's
+  // own art that returns must give way to a library copy's again, as it did before the pick.
+  it('takes back the hand-picked mark with the cover it came with', () => {
+    const { result } = setup([
+      track('a', { title: 'A' }, { coverUrl: 'data:own', embeddedCover: 'data:own' }),
+    ])
+    act(() => {
+      result.current.record(result.current.tracks, { cover: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, coverUrl: 'blob:dropped', coverPicked: true })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].coverUrl).toBe('data:own')
+    expect(result.current.tracks[0].coverPicked).toBeUndefined()
+  })
+
   // Pasting a copied tag set also stamps the cover, so its undo must bring the old
   // cover back — but ONLY for cover-recording operations: a plain find & replace
   // snapshot must never revert a cover the user changed afterwards.
