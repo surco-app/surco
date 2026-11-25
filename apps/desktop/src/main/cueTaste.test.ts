@@ -143,6 +143,20 @@ describe('createCueTaste', () => {
     }
   })
 
+  it('keeps the taste learned by the official build when the engine cannot learn', async () => {
+    const store = memoryStore()
+    await createCueTaste(store, deps()).learn()
+    engine.canLearn = false
+    try {
+      const open = createCueTaste(store, deps({ tune: vi.fn(async () => null) }))
+      const profile = await open.learn()
+      expect(profile.taste).toEqual(TUNED.taste)
+      expect(createCueTaste(store, deps()).profile()?.taste).toEqual(TUNED.taste)
+    } finally {
+      engine.canLearn = true
+    }
+  })
+
   it('never learns on its own when the DJ turned it off', async () => {
     const tune = vi.fn(async () => TUNED)
     const taste = createCueTaste(memoryStore(), deps({ tune }))

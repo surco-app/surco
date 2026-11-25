@@ -155,7 +155,9 @@ export function createCueTaste(
     saved = { ...saved, othersSeen: others.length }
     for (const edit of others) byKey.set(edit.key, edit)
     for (const edit of saved.edits) byKey.set(edit.key, edit)
-    const tuned = await deps.tune([...byKey.values()])
+    const tuned = autoCue.canLearn
+      ? await deps.tune([...byKey.values()])
+      : { taste: saved.profile?.taste ?? null, check: saved.profile?.check ?? null }
     const profile: CueProfile = {
       learnedAt: now().toISOString(),
       sources: { rekordbox: collection.learn.length, edits: saved.edits.length },
