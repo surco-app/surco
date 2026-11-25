@@ -1417,7 +1417,7 @@
     "libraryStateUnmeasurable": "Non misurabile",
     "libraryStateSeveral_one": "{{count}} copia",
     "libraryStateSeveral_other": "{{count}} copie",
-    "libraryStateEven": "Equivalenti",
+    "libraryStateEven": "Stessa qualità",
     "libraryStateMeasuring": "Confronto",
     "libraryVerdictWithReason": "{{verdict}}. {{reason}}"
   },

@@ -6771,7 +6771,7 @@ describe('Editor Apple Music library section', () => {
     await waitFor(() =>
       expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even'),
     )
-    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Neither is better')
+    expect(screen.getByTestId('library-verdict')).toHaveTextContent('Same quality')
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-comparison')).toBeInTheDocument()
     expect(await screen.findByTestId('spectrum-glimpse')).toBeInTheDocument()
