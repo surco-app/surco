@@ -6972,6 +6972,7 @@ describe('Editor Apple Music library section', () => {
       musicReadable = false,
       musicDurationPending = false,
       sameFile,
+      traktorLoading = false,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6996,6 +6997,8 @@ describe('Editor Apple Music library section', () => {
       musicDurationPending?: boolean
       // Main's answer to whether the open file and a copy are one file on disk.
       sameFile?: (a: string, b: string) => Promise<boolean>
+      // Traktor's collection is still being read and never lands in the test.
+      traktorLoading?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7033,7 +7036,11 @@ describe('Editor Apple Music library section', () => {
                 ? entry(rekordbox.path)
                 : [],
         },
-        traktor: { collection: async () => (traktor ? entry(traktor.path) : []) },
+        traktor: {
+          collection: traktorLoading
+            ? () => new Promise(() => {})
+            : async () => (traktor ? entry(traktor.path) : []),
+        },
         serato: { collection: async () => (serato ? entry(serato.path) : []) },
       })
       api.peekAnalysis = vi.fn().mockResolvedValue(null)
@@ -7311,6 +7318,22 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+    })
+
+    // Traktor's collection may still hold the same recording, whose fill the track gets once.
+    it('lends nothing from another version while a DJ collection is still being read', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        traktorLoading: true,
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()).toEqual([])
     })
 
     // The pair probe lines up only the first 91 s, so an extended edit cut from the same master

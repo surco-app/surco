@@ -106,12 +106,14 @@ describe('fillCopyPath', () => {
   const fill = (args: {
     musicCopy?: FillCandidate
     musicCopyPending?: boolean
+    programsPending?: boolean
     programs: Parameters<typeof fillCopyPath>[0]['programs']
     fileDurationSec?: number
   }) =>
     fillCopyPath({
       musicCopy: args.musicCopy ?? null,
       musicCopyPending: args.musicCopyPending ?? false,
+      programsPending: args.programsPending ?? false,
       programs: args.programs,
       fileDurationSec: args.fileDurationSec,
     })
@@ -149,6 +151,25 @@ describe('fillCopyPath', () => {
         fileDurationSec: 361,
       }),
     ).toBe('/r/a.aiff')
+  })
+
+  // Program order decides which copy fills, and a program whose collection is still being
+  // read may hold one ahead of the copy found so far.
+  it('waits for every DJ collection before filling from a DJ copy', () => {
+    expect(
+      fill({ programs: [rekordbox('same', 200)], programsPending: true, fileDurationSec: 200 }),
+    ).toBe('')
+  })
+
+  it('fills from the Apple Music copy without waiting for the DJ collections, it goes first', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('same', 200),
+        programs: [],
+        programsPending: true,
+        fileDurationSec: 200,
+      }),
+    ).toBe('/m/old.mp3')
   })
 
   it('waits while the Apple Music copy is still being compared, it has the say', () => {
@@ -273,12 +294,14 @@ describe('versionCopyPath', () => {
   const version = (args: {
     musicCopy?: FillCandidate
     musicCopyPending?: boolean
+    programsPending?: boolean
     programs: Parameters<typeof versionCopyPath>[0]['programs']
     fileDurationSec?: number
   }) =>
     versionCopyPath({
       musicCopy: args.musicCopy ?? null,
       musicCopyPending: args.musicCopyPending ?? false,
+      programsPending: args.programsPending ?? false,
       programs: args.programs,
       fileDurationSec: args.fileDurationSec,
     })
@@ -336,6 +359,18 @@ describe('versionCopyPath', () => {
     expect(
       version({
         programs: [rekordbox('different', 357), traktor('measuring', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // On first open a fast collection with another version must not spend the track's one fill
+  // before rekordbox's master.db, still loading, turns up the same recording.
+  it('waits while a DJ collection is still being read, it may hold the same recording', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357)],
+        programsPending: true,
         fileDurationSec: 361,
       }),
     ).toBe('')

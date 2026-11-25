@@ -60,7 +60,11 @@ import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
-import { useProgramCopies, useSelectionCopies } from '../hooks/useProgramCopies'
+import {
+  useProgramCollectionsPending,
+  useProgramCopies,
+  useSelectionCopies,
+} from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useSameFile } from '../hooks/useSameFile'
@@ -920,6 +924,7 @@ export const Editor = memo(function Editor({
     suggestedMeta,
     enabled: libraryShown,
   })
+  const programCollectionsPending = useProgramCollectionsPending(libraryShown)
   const comparedProgramCopies = programCopies.filter((copy) => !copy.isThisFile)
   const { data: thisFileProps } = useTrackProperties(
     item.inputPath,
@@ -1960,6 +1965,7 @@ export const Editor = memo(function Editor({
     musicCopy,
     musicCopyPending: replaceTargetPending || libraryLoading,
     programs: copyRows,
+    programsPending: programCollectionsPending,
     fileDurationSec: item.duration,
   }
   const sameRecordingCopyPath = fillCopyPath(fillCopies)

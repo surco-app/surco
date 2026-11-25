@@ -64,6 +64,8 @@ interface FillCopies {
   musicCopy: FillCandidate | null
   musicCopyPending: boolean
   programs: readonly FillCandidate[]
+  // A DJ collection still being read may hold a copy ahead of the ones listed.
+  programsPending: boolean
   fileDurationSec: number | undefined
 }
 
@@ -79,6 +81,7 @@ export function fillCopyPath(args: FillCopies): string {
       (copy.verdict === 'measuring' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
   )
   if (!first || first.verdict === 'measuring') return ''
+  if (args.programsPending && first !== args.musicCopy) return ''
   return first.path
 }
 
@@ -103,10 +106,11 @@ export function isAnotherVersion(
 }
 
 // The copy that lends only its grouping and cover, when no copy of the same recording fills.
-// It waits for every copy still compared or located: any of them may yet prove to be the same
-// recording, whose fill the track gets once and which must not be spent on another version.
+// It waits for every copy still compared or located and every DJ collection still read: any
+// of them may yet prove to be the same recording, whose fill the track gets once and which
+// must not be spent on another version.
 export function versionCopyPath(args: FillCopies): string {
-  if (fillCopyPath(args) || args.musicCopyPending) return ''
+  if (fillCopyPath(args) || args.musicCopyPending || args.programsPending) return ''
   const copies = copiesOf(args)
   if (copies.some((copy) => copy.verdict === 'measuring')) return ''
   return copies.find((copy) => isAnotherVersion(copy, args.fileDurationSec))?.path ?? ''

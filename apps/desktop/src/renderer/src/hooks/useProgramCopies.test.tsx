@@ -10,7 +10,12 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
 import { djReads, installApi } from '../test/api'
 import type { TrackItem } from '../types'
-import { sameLengthCopyIn, useProgramCopies, useSelectionCopies } from './useProgramCopies'
+import {
+  sameLengthCopyIn,
+  useProgramCollectionsPending,
+  useProgramCopies,
+  useSelectionCopies,
+} from './useProgramCopies'
 
 const meta = { title: 'Weekend', artist: 'Tantra' }
 
@@ -333,6 +338,54 @@ describe('useProgramCopies', () => {
 
 // A selection has no section to compare audio, so only an entry of the same title, artist
 // and length counts as the track's copy; filing another edit of it in a set would be wrong.
+// A program whose collection is still being read may hold the same recording, whose fill must
+// not be spent on another version that a faster program found first.
+describe('useProgramCollectionsPending', () => {
+  it('is pending while an enabled program is still reading its collection', async () => {
+    let land: (tracks: CollectionTrack[]) => void = () => {}
+    installApi({
+      dj: djReads({
+        rekordbox: { collection: () => new Promise((resolve) => (land = resolve)) },
+        traktor: { collection: async () => [row('/t/weekend.aiff')] },
+      }),
+    })
+    const { result } = renderHook(() => useProgramCollectionsPending(true), {
+      wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
+    })
+    expect(result.current).toBe(true)
+    land([row('/r/weekend.aiff')])
+    await waitFor(() => expect(result.current).toBe(false))
+  })
+
+  it('stops waiting for a collection that failed to read, it will not arrive', async () => {
+    installApi({
+      dj: djReads({
+        rekordbox: {
+          collection: async () => {
+            throw new Error('locked')
+          },
+        },
+      }),
+    })
+    const { result } = renderHook(() => useProgramCollectionsPending(true), {
+      wrapper: wrapperFor({ syncRekordbox: true }),
+    })
+    await waitFor(() => expect(result.current).toBe(false))
+  })
+
+  it('waits for nothing while disabled or for a switched-off program', () => {
+    installApi({ dj: djReads({ rekordbox: { collection: () => new Promise(() => {}) } }) })
+    const off = renderHook(() => useProgramCollectionsPending(false), {
+      wrapper: wrapperFor({ syncRekordbox: true }),
+    })
+    expect(off.result.current).toBe(false)
+    const switchedOff = renderHook(() => useProgramCollectionsPending(true), {
+      wrapper: wrapperFor({}),
+    })
+    expect(switchedOff.result.current).toBe(false)
+  })
+})
+
 describe('sameLengthCopyIn', () => {
   const selected = { inputPath: '/m/weekend.flac', meta, durationSec: 361 }
 
