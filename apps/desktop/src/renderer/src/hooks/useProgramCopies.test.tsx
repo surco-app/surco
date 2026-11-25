@@ -336,8 +336,6 @@ describe('useProgramCopies', () => {
   })
 })
 
-// A selection has no section to compare audio, so only an entry of the same title, artist
-// and length counts as the track's copy; filing another edit of it in a set would be wrong.
 // A program whose collection is still being read may hold the same recording, whose fill must
 // not be spent on another version that a faster program found first.
 describe('useProgramCollectionsPending', () => {
@@ -386,6 +384,8 @@ describe('useProgramCollectionsPending', () => {
   })
 })
 
+// A selection has no section to compare audio, so only an entry of the same title, artist
+// and length counts as the track's copy; filing another edit of it in a set would be wrong.
 describe('sameLengthCopyIn', () => {
   const selected = { inputPath: '/m/weekend.flac', meta, durationSec: 361 }
 
