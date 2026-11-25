@@ -22,27 +22,42 @@ vi.mock('./worker', async () => {
   }
 })
 
-import { readMeta } from './ffmpeg'
+import { readMeta, readTags } from './ffmpeg'
+
+function writeMp3(): string {
+  const file = join(mkdtempSync(join(tmpdir(), 'surco-rmworker-')), 'a.mp3')
+  execFileSync(ffmpegStatic as unknown as string, [
+    '-y',
+    '-loglevel',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=1',
+    '-c:a',
+    'libmp3lame',
+    '-metadata',
+    'grouping=Peak Time',
+    file,
+  ])
+  return file
+}
 
 describe('readMeta and TagLib', () => {
   it('asks the worker for the TagLib fields, so a slow NAS file never freezes the app', async () => {
-    const file = join(mkdtempSync(join(tmpdir(), 'surco-rmworker-')), 'a.mp3')
-    execFileSync(ffmpegStatic as unknown as string, [
-      '-y',
-      '-loglevel',
-      'error',
-      '-f',
-      'lavfi',
-      '-i',
-      'sine=frequency=440:duration=1',
-      '-c:a',
-      'libmp3lame',
-      '-metadata',
-      'grouping=Peak Time',
-      file,
-    ])
+    const file = writeMp3()
     const read = await readMeta(file)
     expect(jobs).toContainEqual({ type: 'tagLibRead', file })
     expect(read.tags.grouping).toBe('Peak Time')
+  })
+
+  // readTags runs on every open of a track with a library copy, and that copy often sits on
+  // the same NAS: a synchronous TagLib read there froze the whole app.
+  it('asks the worker for the TagLib fields when reading a library copy too', async () => {
+    const file = writeMp3()
+    jobs.length = 0
+    const tags = await readTags(file)
+    expect(jobs).toContainEqual({ type: 'tagLibRead', file })
+    expect(tags.grouping).toBe('Peak Time')
   })
 })

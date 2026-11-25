@@ -70,6 +70,7 @@ import { useSeratoLosesStars, useSeratoStarsLoss } from '../hooks/useSeratoLoses
 import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
+import { useVersionCopyPlaylists } from '../hooks/useVersionCopyPlaylists'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
@@ -111,6 +112,8 @@ import {
   type LibraryCopyRef,
   pickLibraryCopy,
   replaceCopyPatch,
+  versionCopyIn,
+  versionCopyPath,
 } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
@@ -341,6 +344,10 @@ interface Props {
 }
 
 const NARROW_EDITOR_PX = 400
+
+// What a library copy lends on one opening of a track is one undo step, however many reads
+// it took to land; counted across mounts so the next opening starts a step of its own.
+let lendOpenings = 0
 
 // Counted across every mount, not per editor: the editor remounts per track, and a count
 // that started over could hand a field visited again the undo step of its last visit.
@@ -573,6 +580,7 @@ export const Editor = memo(function Editor({
     return () => window.removeEventListener('keydown', onKey)
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
+  const [lendOpening] = useState(() => ++lendOpenings)
   const formBodyId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
@@ -912,7 +920,7 @@ export const Editor = memo(function Editor({
           hasKnee: spectrumInHand?.hasKnee,
         },
       ) !== null
-  const programCopies = useProgramCopies({
+  const { copies: programCopies, pending: programCollectionsPending } = useProgramCopies({
     inputPath: item.inputPath,
     meta: item.meta,
     durationSec: item.duration,
@@ -981,7 +989,10 @@ export const Editor = memo(function Editor({
   }, [isMulti, selectionCopies, copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
   // What Music holds for this file when it is in the library: grouping and artwork, which
-  // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
+  // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched. A
+  // matched entry whose file is another one is the library copy, which the copy fill below
+  // asks about by its own path: main answers only the entry whose file is the path asked. So
+  // the ask waits for Music to say where that entry's file lives.
   useAppleMusicFill({
     item,
     candidates: item.musicPersistentId
@@ -990,26 +1001,11 @@ export const Editor = memo(function Editor({
         ? []
         : isAmbiguousCandidate(replaceTarget)
           ? replaceTarget.ambiguous
-          : [replaceTarget.persistentId],
+          : replaceTargetPending ||
+              (replaceTarget.path && pathKey(replaceTarget.path) !== pathKey(item.inputPath))
+            ? []
+            : [replaceTarget.persistentId],
     onChange,
-  })
-  // Only a copy of the same recording lends its fields: another version of the track has other
-  // tags. In Music that is the copy a replacement would supersede, and it goes first because
-  // the convert puts this file in its place, so a DJ copy waits while the Music library is still
-  // loading; otherwise the first DJ copy whose length matches this file's, once its comparison
-  // is done.
-  const replacedCopyPath =
-    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  useReplacedCopyFill({
-    item,
-    copyPath: fillCopyPath({
-      musicCopyPath: replacedCopyPath,
-      musicCopyPending: replaceTargetPending || libraryLoading,
-      programs: copyRows,
-      fileDurationSec: item.duration,
-    }),
-    onChange,
-    onRecordUndo,
   })
   // The editor remounts per track and App applies its patch to whichever row is selected,
   // so a full read that returns after the user moved on must apply nothing.
@@ -1020,7 +1016,7 @@ export const Editor = memo(function Editor({
       mounted.current = false
     }
   }, [])
-  async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
+  async function selectTrack(track: ReleaseTrack, moveFocus = true, byHand = true): Promise<void> {
     if (!release) return
     const current = item.metaPartial ? await readFullTrack(item.id) : item
     if (!current || current.metaPartial || !mounted.current) return
@@ -1034,23 +1030,27 @@ export const Editor = memo(function Editor({
     const shownDims =
       coverIsOriginal && current.embeddedCoverDims ? current.embeddedCoverDims : coverDims
     onRecordUndo?.([current.id], { cover: true })
+    const applied = buildReleaseMeta(
+      current.meta,
+      release,
+      track,
+      {
+        url: current.coverUrl,
+        path: current.coverPath,
+        keep:
+          coverIsOriginal &&
+          !(replaceLowResCover && shownDims && isLowResCover(shownDims.w, shownDims.h)),
+      },
+      importFields,
+      genrePresets,
+      fullReleaseDate,
+      current.appliedRelease,
+    )
     onChange({
-      ...buildReleaseMeta(
-        current.meta,
-        release,
-        track,
-        {
-          url: current.coverUrl,
-          path: current.coverPath,
-          keep:
-            coverIsOriginal &&
-            !(replaceLowResCover && shownDims && isLowResCover(shownDims.w, shownDims.h)),
-        },
-        importFields,
-        genrePresets,
-        fullReleaseDate,
-        current.appliedRelease,
-      ),
+      ...applied,
+      // A cover that came with a release the DJ clicked is their choice, which a library
+      // copy found later must leave alone; an automatic match's may still give way to it.
+      ...(byHand && applied.coverUrl !== current.coverUrl ? { coverPicked: true } : {}),
       // Mark the track matched so the sweep leaves this deliberate pick alone, even when
       // the source (Bandcamp) writes no Discogs id to guard it.
       matched: true,
@@ -1090,7 +1090,7 @@ export const Editor = memo(function Editor({
     ) {
       autoAppliedRelease.current = release.id
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
-      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement))
+      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement), false)
     }
   }, [
     autoMatch,
@@ -1119,7 +1119,8 @@ export const Editor = memo(function Editor({
   const onCoverChange = useStableCallback(
     (patch: Partial<TrackItem>, opts?: { group?: string }): void => {
       onRecordUndo?.([item.id], { cover: true, ...opts })
-      onChange(patch)
+      // Removing rides coverRemoved, which already keeps every fill off the artwork.
+      onChange(patch.coverRemoved ? patch : { ...patch, coverPicked: true })
     },
   )
 
@@ -1955,24 +1956,74 @@ export const Editor = memo(function Editor({
     () => entryDurationSec(libraryIndex, musicEntryId),
     [libraryIndex, musicEntryId],
   )
+  const musicCopy =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) && musicRow
+      ? {
+          program: 'appleMusic' as const,
+          path: replaceTarget.path ?? '',
+          format: replacedCopyFormat,
+          verdict: musicRow.verdict,
+          better: libraryCopyBetter,
+          durationSec: musicRow.durationSec ?? musicEntryDurationSec,
+          music: replaceTarget,
+        }
+      : null
+  // Only a copy of the same recording lends all its fields: another version of the track has
+  // other tags, and lends only its grouping and cover when no such copy fills. In Music that is
+  // the copy a replacement would supersede, judged by its row's verdict and length like a DJ
+  // copy, and it goes first because the convert puts this file in its place, so a DJ copy waits
+  // while the Music library is still loading; otherwise the first DJ copy whose length matches
+  // this file's, once its comparison is done.
+  const fillCopies = {
+    musicCopy,
+    musicCopyPending: replaceTargetPending || libraryLoading,
+    programs: copyRows,
+    programsPending: programCollectionsPending,
+    fileDurationSec: item.duration,
+  }
+  const sameRecordingCopyPath = fillCopyPath(fillCopies)
+  const fillPath = sameRecordingCopyPath || versionCopyPath(fillCopies)
+  // A Music copy that is another file is asked about by its own path, together with its file.
+  // The track's own Music entry, when it has one, is the open file's and filled through
+  // useAppleMusicFill instead.
+  const musicCopyEntry =
+    musicCopy && !musicHoldsFile && !item.musicPersistentId && fillPath === musicCopy.path
+      ? musicCopy.music.persistentId
+      : undefined
+  const lendGroup = `library-lend-${lendOpening}`
+  useReplacedCopyFill({
+    item,
+    copyPath: fillPath,
+    anotherVersion: !sameRecordingCopyPath,
+    musicEntry: musicCopyEntry,
+    onChange,
+    onRecordUndo: (ids, opts) => onRecordUndo?.(ids, { ...opts, group: lendGroup }),
+  })
+  // Another version lends its playlists program by program, each judged by its own copies.
+  // Only into a field the DJ can see: with the metadata folded, or a section blown up over the
+  // whole window, the picks wait until it is back in view.
+  useVersionCopyPlaylists({
+    item,
+    copies:
+      isMulti || !formOpen || maximized !== null
+        ? {}
+        : Object.fromEntries(
+            DJ_PROGRAMS.filter((program) => visibleFields.includes(PLAYLIST_FIELDS[program])).map(
+              (program) => [
+                program,
+                versionCopyIn(program, copyRows, item.duration, programCollectionsPending),
+              ],
+            ),
+          ),
+    onChange,
+    onRecordUndo: (ids) => onRecordUndo?.(ids, { group: lendGroup }),
+  })
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.
   const copyCandidates: CopyCandidate[] = isMulti
     ? []
     : [
-        ...(replaceTarget && !isAmbiguousCandidate(replaceTarget) && !musicHoldsFile && musicRow
-          ? [
-              {
-                program: 'appleMusic' as const,
-                path: replaceTarget.path ?? '',
-                format: replacedCopyFormat,
-                verdict: musicRow.verdict,
-                better: libraryCopyBetter,
-                durationSec: musicRow.durationSec ?? musicEntryDurationSec,
-                music: replaceTarget,
-              },
-            ]
-          : []),
+        ...(musicCopy && !musicHoldsFile ? [musicCopy] : []),
         ...comparedProgramCopies.map((copy, i) => {
           const state = programVerdicts[i]
           return {

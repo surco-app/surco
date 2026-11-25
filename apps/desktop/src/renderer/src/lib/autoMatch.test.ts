@@ -941,6 +941,26 @@ describe('acceptReviewPatch', () => {
     )
   })
 
+  // Accepting a suggestion is the DJ's pick, like clicking the release in the editor: its
+  // cover is theirs, and a library copy found later must not put its own picture over it.
+  it('marks the cover an accepted suggestion brings as picked by hand, and only when it changes', () => {
+    const rel = release(1, {
+      images: [{ type: 'primary', uri: 'https://d/c.jpg', resource_url: '' }],
+    })
+    const t = track({
+      coverUrl: 'thumb',
+      embeddedCover: 'thumb',
+      embeddedCoverDims: { w: 300, h: 300 },
+      reviewMatch: {
+        release: rel,
+        track: { position: '1', title: 'One' },
+        result: searchResult(1),
+      },
+    })
+    expect(acceptReviewPatch(t, undefined, undefined, false, true)?.coverPicked).toBe(true)
+    expect(acceptReviewPatch(t)).not.toHaveProperty('coverPicked')
+  })
+
   // Accepting from the list must date the track exactly as picking it in the editor would.
   it('fills the whole release date when the full release date is on', () => {
     const rel = release(1, { year: 2001, released: '2001-03-12' })

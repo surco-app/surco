@@ -115,6 +115,20 @@ describe('sessionEdits', () => {
     expect(sessionEdits([track({ handEdited: true })])['/music/a.wav'].handEdited).toBe(true)
   })
 
+  // Opening a restored track must not fill it again from its library copy: the DJ may have
+  // emptied a field or taken back a cover the copy lent before quitting, and a cover they
+  // chose by hand stays theirs over a copy found later.
+  it('keeps what the library copy already lent and a cover picked by hand', () => {
+    const edit = sessionEdits([
+      track({ copyFilled: true, copyPlaylistsFilled: ['rekordbox'], coverPicked: true }),
+    ])['/music/a.wav']
+    expect(edit).toMatchObject({
+      copyFilled: true,
+      copyPlaylistsFilled: ['rekordbox'],
+      coverPicked: true,
+    })
+  })
+
   // blob: URLs die with the renderer, and the embedded-art data: thumb both re-derives
   // from the file and would balloon the session file if persisted per track — neither
   // belongs on disk. A picked cover keeps its file path; main re-mints its preview.

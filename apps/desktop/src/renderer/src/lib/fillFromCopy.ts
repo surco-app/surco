@@ -1,4 +1,5 @@
 import type { TrackMetadata } from '../../../shared/types'
+import type { TrackItem } from '../types'
 
 const KEPT_FROM_FILE = new Set(['title', 'artist', 'encodedBy', 'custom'])
 
@@ -20,4 +21,41 @@ export function fillFromCopy(meta: TrackMetadata, copy: TrackMetadata): TrackMet
   }
   if (!changed) return null
   return { ...(filled as unknown as TrackMetadata), ...(copy.custom ? { custom } : {}) }
+}
+
+// Another version of the track was filed by the DJ under the same grouping, but its album,
+// year or label belong to that other release, so the grouping is all it lends.
+export function groupingFromCopy(
+  meta: TrackMetadata,
+  copy: { grouping?: string },
+): TrackMetadata | null {
+  const grouping = copy.grouping ?? ''
+  if (isBlank(grouping) || !isBlank(meta.grouping)) return null
+  return { ...meta, grouping }
+}
+
+// What the track shows is the file's own art when it is the embedded picture, as
+// coverSourceOf names it. Only the thumbnail is in hand then, so the full art is read to
+// compare it with the copy's.
+export function showsOwnCover(
+  item: Pick<TrackItem, 'coverUrl' | 'coverPath' | 'embeddedCover'>,
+): boolean {
+  return !!item.coverUrl && item.coverUrl === item.embeddedCover && !item.coverPath
+}
+
+// The copy's artwork is the one the DJ sees for this track in their library, so it wins over
+// the file's own and over an automatic match's. The file's art stays in the picker as
+// embeddedCover and ⌘Z takes the change back. A cover the DJ removed or chose by hand stays
+// as they left it, and the same picture changes nothing: opening a track must never stage an
+// edit by itself nor undo a choice.
+export function copyCoverWins(
+  item: Pick<
+    TrackItem,
+    'coverUrl' | 'coverPath' | 'embeddedCover' | 'coverRemoved' | 'coverPicked'
+  >,
+  cover: string,
+  ownFullCover: string | null,
+): boolean {
+  if (item.coverRemoved || item.coverPicked || cover === item.coverUrl) return false
+  return !(showsOwnCover(item) && cover === ownFullCover)
 }

@@ -7,6 +7,7 @@ import type {
   MusicReviewField,
   NormalizeConfig,
   OutputFormat,
+  PlaylistLibrary,
   ProcessStage,
   Release,
   ReleaseTrack,
@@ -88,6 +89,9 @@ export interface TrackItem extends TrackOrigin {
   // Set when the user clears the artwork, so the conversion strips the embedded
   // cover instead of preserving it. Cleared again the moment a new cover is set.
   coverRemoved?: boolean
+  // Set when the DJ chooses the artwork by hand (the picker, a drop, a paste, a release they
+  // picked), so a library copy found later never puts its own picture over that choice.
+  coverPicked?: boolean
   // Set when the user clears ALL metadata, so the conversion also wipes the rating
   // that a normal convert preserves-on-empty (the cover rides coverRemoved above).
   // Cleared the moment any field is edited again, so a retag doesn't keep wiping.
@@ -237,6 +241,9 @@ export interface TrackItem extends TrackOrigin {
   // track (see useAppleMusicFill). An empty field after that is the DJ's own choice.
   appleMusicFilled?: boolean
   copyFilled?: boolean
+  // The programs whose copy, another version of the track, already staged its playlists
+  // here (see useVersionCopyPlaylists). An empty field after that is the DJ's own choice.
+  copyPlaylistsFilled?: PlaylistLibrary[]
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.

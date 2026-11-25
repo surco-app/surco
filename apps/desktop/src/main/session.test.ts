@@ -196,6 +196,22 @@ describe('session store', () => {
     expect((await loadLastSession()).edits[kept].appliedRelease).toBeUndefined()
   })
 
+  // The restored list is read as an array on every open; a hand-edited session file holding
+  // anything else must read as "nothing staged yet", not break the editor.
+  it('round-trips the programs whose copy already lent its playlists and drops a malformed list', async () => {
+    const dir = app.getPath('userData')
+    const kept = join(dir, 'kept.wav')
+    writeFileSync(kept, 'x')
+    saveLastSession([kept], { [kept]: edit({ copyPlaylistsFilled: ['rekordbox'] }) })
+    expect((await loadLastSession()).edits[kept].copyPlaylistsFilled).toEqual(['rekordbox'])
+    for (const bad of [5, {}, 'rekordbox', [1, 'rekordbox']]) {
+      saveLastSession([kept], { [kept]: edit({ copyPlaylistsFilled: bad as never }) })
+      const read = (await loadLastSession()).edits[kept]
+      expect(read).toBeDefined()
+      expect(read.copyPlaylistsFilled).toBeUndefined()
+    }
+  })
+
   it('round-trips the programs and playlists a track came from and drops malformed ones', async () => {
     const dir = app.getPath('userData')
     const kept = join(dir, 'kept.wav')

@@ -60,13 +60,14 @@ export function useMetadataClipboard({
     setNotice(tr('notices.copiedMeta'))
   })
   // A hand-picked cover is a blob: URL that is freed once no row shows it; if the
-  // source row left the list since the copy, paste the tags but skip the dead image.
+  // source row left the list since the copy, paste the tags but skip the dead image. A
+  // pasted cover is the DJ's choice, which a library copy found later leaves alone.
   const aliveCover = (copied: CopiedTags) => {
     const { coverUrl, coverPath } = copied
     const coverAlive =
       !!coverUrl &&
       (!coverUrl.startsWith('blob:') || tracksRef.current.some((t) => t.coverUrl === coverUrl))
-    return coverAlive ? { coverUrl, coverPath } : null
+    return coverAlive ? { coverUrl, coverPath, coverPicked: true } : null
   }
   const onPasteMeta = useStableCallback((track: TrackItem) => {
     if (!copiedMeta) return
@@ -101,7 +102,7 @@ export function useMetadataClipboard({
   })
   const onApplyCoverAll = useStableCallback((coverUrl: string, coverPath?: string) => {
     recordMetaUndo(selectedIds, { cover: true })
-    patchTracks(selectedIds, { coverUrl, coverPath })
+    patchTracks(selectedIds, { coverUrl, coverPath, coverPicked: true })
   })
   // Copies the Settings-pattern name to the OS clipboard so the user can paste the track
   // into Google or Soulseek. A "/" in the pattern means a subfolder, so drop everything but

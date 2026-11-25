@@ -256,6 +256,26 @@ describe('applemusic:entryMeta', () => {
     expect(out).toMatchObject({ grouping: 'Cantaditas, Rockola' })
   })
 
+  // The library copy is another file, a WAV whose grouping lives only in Music's database:
+  // asked by the copy's path, main hands back that entry, not the one of the open file.
+  it("returns the library copy's entry when asked with the copy's own path", async () => {
+    readAppleMusicEntry.mockImplementation(async (path: string) =>
+      path === '/m/old/a.wav'
+        ? {
+            paths: [path],
+            persistentIds: { [path]: 'A1B2C3D4E5F60718' },
+            meta: { [path]: { grouping: 'Bases' } },
+            missing: 0,
+          }
+        : { paths: [], persistentIds: {}, meta: {}, missing: 0 },
+    )
+    await register()
+    const out = await handlers.get('applemusic:entryMeta')?.({}, '/m/old/a.wav', [
+      'A1B2C3D4E5F60718',
+    ])
+    expect(out).toEqual({ grouping: 'Bases' })
+  })
+
   it('returns null when no candidate entry is this file', async () => {
     readAppleMusicEntry.mockResolvedValue({ paths: [], persistentIds: {}, meta: {}, missing: 0 })
     await register()

@@ -18,7 +18,7 @@ import type {
   TrackMetadata,
   TrackProperties,
 } from '../../../shared/types'
-import { resetEditorSections } from '../hooks/useEditorSections'
+import { resetEditorSections, seedEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import { convertGate } from '../lib/batch'
@@ -563,6 +563,7 @@ describe('Editor cover picker', () => {
       coverUrl: 'blob:cover',
       coverPath: '/img/c.png',
       coverRemoved: false,
+      coverPicked: true,
     })
   })
 
@@ -4911,6 +4912,30 @@ describe('Editor Discogs apply', () => {
     expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('discogs.jpg')
   })
 
+  // A release the DJ clicked brings the cover they chose with it, so a library copy found
+  // later must not put its own picture over it.
+  it('marks the cover of a release picked by hand as the DJ choice', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'prev-release.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0]).toMatchObject({
+      coverUrl: 'discogs.jpg',
+      coverPicked: true,
+    })
+  })
+
+  it('leaves the mark off a release picked by hand that keeps the file own cover', async () => {
+    withImages()
+    const { onChange } = renderEditor({ id: 'a', coverUrl: 'tiny.jpg', embeddedCover: 'tiny.jpg' })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    expect(onChange.mock.calls.at(-1)?.[0].coverUrl).toBe('tiny.jpg')
+    expect(onChange.mock.calls.at(-1)?.[0]).not.toHaveProperty('coverPicked')
+  })
+
   // A file with no embedded artwork must not contribute a phantom "file image" slot
   // to the cover picker. The cover it currently carries can be a leftover from an
   // earlier release match, so the picker has to list only the matched release's
@@ -6972,6 +6997,10 @@ describe('Editor Apple Music library section', () => {
       musicReadable = false,
       musicDurationPending = false,
       sameFile,
+      traktorLoading = false,
+      musicEntryMeta,
+      rekordboxPlaylists,
+      formFolded = false,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6996,6 +7025,14 @@ describe('Editor Apple Music library section', () => {
       musicDurationPending?: boolean
       // Main's answer to whether the open file and a copy are one file on disk.
       sameFile?: (a: string, b: string) => Promise<boolean>
+      // Traktor's collection is still being read and never lands in the test.
+      traktorLoading?: boolean
+      // What Music's database holds for the entry whose file is the path asked with.
+      musicEntryMeta?: Api['appleMusicEntryMeta']
+      // rekordbox's playlist membership by path, with its Playlists field shown.
+      rekordboxPlaylists?: Record<string, string[]>
+      // The metadata section, which holds the Playlists fields, starts folded.
+      formFolded?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7012,6 +7049,7 @@ describe('Editor Apple Music library section', () => {
       ]
       if (music) api.appleMusicEntryLocation = vi.fn(() => musicLocation ?? Promise.resolve(music))
       if (sameFile) api.sameFile = vi.fn(sameFile)
+      if (musicEntryMeta) api.appleMusicEntryMeta = musicEntryMeta
       api.readDuration = vi.fn((path: string) =>
         musicDurationPending && path === music
           ? new Promise<number | null>(() => {})
@@ -7032,8 +7070,17 @@ describe('Editor Apple Music library section', () => {
               : rekordbox
                 ? entry(rekordbox.path)
                 : [],
+          ...(rekordboxPlaylists && {
+            available: async () => true,
+            tree: async () => [{ id: '3000', name: 'Makina', kind: 'playlist', count: 1 }],
+            membership: async () => rekordboxPlaylists,
+          }),
         },
-        traktor: { collection: async () => (traktor ? entry(traktor.path) : []) },
+        traktor: {
+          collection: traktorLoading
+            ? () => new Promise(() => {})
+            : async () => (traktor ? entry(traktor.path) : []),
+        },
         serato: { collection: async () => (serato ? entry(serato.path) : []) },
       })
       api.peekAnalysis = vi.fn().mockResolvedValue(null)
@@ -7086,6 +7133,8 @@ describe('Editor Apple Music library section', () => {
           syncSerato: !!serato,
           filesOpen,
           libraryCopyAction,
+          ...(rekordboxPlaylists && { visibleFields: ['rekordboxPlaylists'] }),
+          ...(formFolded && { editorSections: [{ id: 'form' as const, open: false }] }),
         },
       )
       return api
@@ -7294,20 +7343,136 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()[0].meta).toMatchObject(copyTags)
-      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], {
+        cover: false,
+        group: expect.any(String),
+      })
     })
 
-    // 95 s here and 30 s in rekordbox: another edit, whose album or genre may not be this file's.
-    it('never fills from a DJ copy that is another version, its tags are another edit', async () => {
+    // 95 s here and 30 s in rekordbox: another edit, whose album or genre are not this file's,
+    // but the DJ filed it under the grouping this track belongs to as well.
+    it('takes only the grouping from a DJ copy that is another version, its other tags are another edit', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
         hereDuration: 95,
-        tags: { '/r/Strobe.wav': copyTags },
+        tags: { '/r/Strobe.wav': { ...copyTags, grouping: 'Bases' } },
       })
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
-      await new Promise((r) => setTimeout(r, 50))
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+    })
+
+    // The DJ filed the 30 s edit in Makina: the new file belongs there too, so the field
+    // shows it ticked and the convert files it there, without touching rekordbox meanwhile.
+    it('stages the playlists of a rekordbox copy that is another version on the track', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+      })
+      await waitFor(() =>
+        expect(rendered.onChange).toHaveBeenCalledWith({
+          playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+          copyPlaylistsFilled: ['rekordbox'],
+        }),
+      )
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { group: expect.any(String) })
+      expect(
+        (api.dj as { editPlaylist: ReturnType<typeof vi.fn> }).editPlaylist,
+      ).not.toHaveBeenCalled()
+    })
+
+    // Nothing the DJ cannot see is applied at the convert: with the metadata folded away the
+    // field is out of sight, so its picks wait until the DJ opens it.
+    it('stages the playlists of another version only once the metadata is unfolded', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+        formFolded: true,
+      })
+      const staged = () =>
+        rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(staged()).toEqual([])
+      act(() => seedEditorSections([{ id: 'form', open: true }]))
+      await waitFor(() => expect(staged()).toHaveLength(1))
+    })
+
+    // A section blown up to the whole window hides the metadata just as folding it does, so
+    // the picks wait until the DJ is back in the column.
+    it('stages the playlists of another version only once no section is maximized', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      fireEvent.click(screen.getAllByTestId('section-maximize')[0])
+      expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+      const staged = () =>
+        rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(staged()).toEqual([])
+      fireEvent.keyDown(window, { key: 'Escape' })
+      await waitFor(() => expect(staged()).toHaveLength(1))
+    })
+
+    // Opening the track lent the copy's grouping and staged its playlists: both are what the
+    // opening did, so a single ⌘Z takes them back together.
+    it('records the grouping and the playlists another version lends as one undo step', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      await waitFor(() =>
+        expect(
+          rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled),
+        ).toHaveLength(1),
+      )
+      const groups = rendered.onRecordUndo.mock.calls.map(([, opts]) => opts?.group)
+      expect(groups).toHaveLength(2)
+      expect(groups[0]).toEqual(expect.any(String))
+      expect(groups[1]).toBe(groups[0])
+    })
+
+    // A copy of the same recording is the track: the field acts on it and nothing is staged.
+    it('stages no playlists from a rekordbox copy of the same recording', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await waitFor(() => expect(screen.getByTestId('playlists-where')).toHaveTextContent('Makina'))
+      expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
+        [],
+      )
+    })
+
+    // Traktor's collection may still hold the same recording, whose fill the track gets once.
+    it('lends nothing from another version while a DJ collection is still being read', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        traktorLoading: true,
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()).toEqual([])
     })
@@ -7315,8 +7480,8 @@ describe('Editor Apple Music library section', () => {
     // The pair probe lines up only the first 91 s, so an extended edit cut from the same master
     // matches it to the sample there: 400 s in rekordbox against 210 s here carries another mix
     // name and ISRC, so its length makes it another version.
-    it('never fills from an extended edit whose head matches this file to the sample', async () => {
-      const api = renderWithPrograms({
+    it('never fills the album or genre from an extended edit whose head matches this file to the sample', async () => {
+      renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 400 },
         hereDuration: 210,
         identicalPair: true,
@@ -7325,9 +7490,8 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
-      await new Promise((r) => setTimeout(r, 50))
-      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
-      expect(filledPatches()).toEqual([])
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toBeUndefined()
     })
 
     const sameRekordboxCopy: Copy = {
@@ -7681,6 +7845,8 @@ describe('Editor Apple Music library section', () => {
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
         hereDuration: 95,
         music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        index: musicIndex,
         tags: {
           '/m/old/Strobe.mp3': { album: 'From Music' },
           '/r/Strobe.wav': { album: 'From rekordbox' },
@@ -7689,6 +7855,56 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // FLAC 6:01 against the MP3 5:57 in Music: the section calls it another version, so its
+    // album is another release's, but the DJ filed it under the grouping this track takes too.
+    it('takes only the grouping from an Apple Music copy that is another version', async () => {
+      renderWithPrograms({
+        hereDuration: 361,
+        music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 357,
+          },
+        ]),
+        tags: { '/m/old/Strobe.mp3': { album: 'From Music', grouping: 'Bases, Rockola' } },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases, Rockola', album: '' })
+    })
+
+    // FLAC 7:01 against the WAV 7:06 in Music: Music never writes tags into a WAV, so the
+    // grouping the DJ filed it under lives only in its database. Main answers the entry whose
+    // file is the path it is asked with, so only the copy's path brings it back, and one ask
+    // is all it takes: asking again with the open file's path would get nothing.
+    it("takes the grouping Music's database holds for a WAV copy that is another version", async () => {
+      const entryMeta = vi.fn<Api['appleMusicEntryMeta']>(async (path) =>
+        path === '/m/old/Strobe.wav' ? { grouping: 'Bases', year: '2001' } : null,
+      )
+      renderWithPrograms({
+        hereDuration: 421,
+        music: '/m/old/Strobe.wav',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: { '/m/old/Strobe.wav': { album: 'From the WAV' } },
+        musicEntryMeta: entryMeta,
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', year: '', album: '' })
+      expect(entryMeta).toHaveBeenCalledTimes(1)
+      expect(entryMeta).toHaveBeenCalledWith('/m/old/Strobe.wav', ['0123456789ABCDEF'])
     })
 
     // Until the Music library lands there is no telling whether it holds a copy to replace,
@@ -8362,13 +8578,35 @@ describe('Editor convert notes from the measured spectrum', () => {
 
 describe('Editor replacing a library copy', () => {
   const libraryIndex = buildLibraryIndex([
-    { title: 'Your Love (Power Love Mix)', artist: '2 Shy', persistentId: '0123456789ABCDEF' },
+    {
+      title: 'Your Love (Power Love Mix)',
+      artist: '2 Shy',
+      persistentId: '0123456789ABCDEF',
+      durationSec: 300,
+    },
   ])
 
   beforeEach(() => {
     Object.assign(window.api, {
       platform: 'darwin',
       appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/your-love.mp3'),
+      // Music's copy reads like any file, so its row gives a verdict the fill can trust.
+      properties: vi.fn(async (path: string) =>
+        path === '/music/old/your-love.mp3'
+          ? {
+              container: 'mp3',
+              codec: 'mp3',
+              sampleRateHz: 44100,
+              bitDepth: null,
+              channels: 2,
+              bitrateKbps: 320,
+              sizeBytes: 9_000_000,
+              createdMs: null,
+              modifiedMs: null,
+              tagFormats: [],
+            }
+          : null,
+      ),
       readTags: vi.fn<Api['readTags']>().mockResolvedValue({
         ...emptyMetadata(),
         title: 'Your Love (Power Love Mix)',
@@ -8385,6 +8623,7 @@ describe('Editor replacing a library copy', () => {
         id: 'a',
         inputPath: '/music/new/your-love.aiff',
         fileName: 'your-love.aiff',
+        duration: 300,
         meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
       },
       'aiff',
@@ -8396,7 +8635,7 @@ describe('Editor replacing a library copy', () => {
     expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
     const patch = onChange.mock.calls.find(([p]) => p.copyFilled)?.[0]
     expect(patch.meta).toMatchObject({ album: 'Your Love', genre: 'Euro House' })
-    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false, group: expect.any(String) })
   })
 
   const lengthIndex = buildLibraryIndex([
@@ -8408,22 +8647,27 @@ describe('Editor replacing a library copy', () => {
     },
   ])
 
-  it('fills from the copy when its length confirms it is the same recording', async () => {
+  // As for a DJ copy, a verdict alone cannot rule out another edit: without this file's length
+  // nothing says the copy's album and year are this recording's.
+  it('fills nothing from the copy while this file length is unknown', async () => {
     const { onChange } = renderEditor(
       {
         id: 'a',
         inputPath: '/music/new/your-love.aiff',
         fileName: 'your-love.aiff',
-        duration: 300,
         meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
       },
       'aiff',
       { libraryIndex: lengthIndex, addToAppleMusic: true },
     )
     await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true })),
+      expect(screen.getByTestId('library-row-state')).not.toHaveAttribute(
+        'data-state',
+        'measuring',
+      ),
     )
-    expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
+    expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
   })
 
   // The 35 s gap makes the library entry another version, not a replace target: its tags would not be this file's.

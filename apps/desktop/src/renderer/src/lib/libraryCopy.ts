@@ -59,25 +59,76 @@ export interface FillCandidate {
   durationSec?: number
 }
 
-// The DJ copy that fills is the first, in program order, that counts as a copy with a matching
-// length. A copy still being compared stops the search where it stands, whatever its length
-// says so far: nothing is read while it comes first, even when a later copy is ready, since
-// only its verdict tells whether its tags are this file's.
-export function fillCopyPath(args: {
-  musicCopyPath: string
+interface FillCopies {
+  // The Apple Music copy a replacement would supersede, with its row's verdict and length.
+  musicCopy: FillCandidate | null
   musicCopyPending: boolean
   programs: readonly FillCandidate[]
+  // A DJ collection still being read may hold a copy ahead of the ones listed.
+  programsPending: boolean
   fileDurationSec: number | undefined
-}): string {
-  if (args.musicCopyPath) return args.musicCopyPath
+}
+
+// The copy that fills is the first, Apple Music before the programs, that counts as a copy
+// with a matching length. A copy still being compared stops the search where it stands,
+// whatever its length says so far: nothing is read while it comes first, even when a later
+// copy is ready, since only its verdict tells whether its tags are this file's.
+export function fillCopyPath(args: FillCopies): string {
   if (args.musicCopyPending) return ''
-  const first = args.programs.find(
+  const first = copiesOf(args).find(
     (copy) =>
       countsAsCopy(copy.verdict) &&
       (copy.verdict === 'measuring' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
   )
   if (!first || first.verdict === 'measuring') return ''
+  if (args.programsPending && first !== args.musicCopy) return ''
   return first.path
+}
+
+function copiesOf(args: FillCopies): FillCandidate[] {
+  return [...(args.musicCopy?.path ? [args.musicCopy] : []), ...args.programs]
+}
+
+// «Another version» in the section: the comparison said so, or the verdict counts but both
+// lengths are known and further apart than a drift leaves. An unknown length proves nothing.
+export function isAnotherVersion(
+  copy: FillCandidate,
+  fileDurationSec: number | undefined,
+): boolean {
+  if (copy.verdict === 'different') return true
+  return (
+    countsAsCopy(copy.verdict) &&
+    copy.verdict !== 'measuring' &&
+    copy.durationSec !== undefined &&
+    fileDurationSec !== undefined &&
+    !lengthsMatch(copy.durationSec, fileDurationSec)
+  )
+}
+
+// The copy that lends only its grouping and cover, when no copy of the same recording fills.
+// It waits for every copy still compared or located and every DJ collection still read: any
+// of them may yet prove to be the same recording, whose fill the track gets once and which
+// must not be spent on another version.
+export function versionCopyPath(args: FillCopies): string {
+  if (fillCopyPath(args) || args.musicCopyPending || args.programsPending) return ''
+  const copies = copiesOf(args)
+  if (copies.some((copy) => copy.verdict === 'measuring')) return ''
+  return copies.find((copy) => isAnotherVersion(copy, args.fileDurationSec))?.path ?? ''
+}
+
+// The copy whose playlists the program's field stages on the track, one program at a time.
+// A copy of the same recording in that program takes it, since the field acts on that copy
+// at once; and a copy still compared or a collection still read may yet prove to be one.
+export function versionCopyIn(
+  program: DjProgram,
+  rows: readonly CopyRow[],
+  fileDurationSec: number | undefined,
+  programsPending: boolean,
+): string {
+  const own = rows.filter((row) => row.program === program)
+  if (programsPending || own.some((row) => row.verdict === 'measuring')) return ''
+  if (copyPathIn(program, own, fileDurationSec)) return ''
+  return own.find((row) => isAnotherVersion(row, fileDurationSec))?.path ?? ''
 }
 
 export interface CopyCandidate {
