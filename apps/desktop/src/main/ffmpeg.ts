@@ -2442,6 +2442,88 @@ async function resolveConversionQuality(
   return { resolvedQuality, sampleRate, normalizeAf, normalizeSkipped }
 }
 
+interface CopyVerbatimContext {
+  input: string
+  tmp: string
+  ext: string
+  meta: TrackMetadata
+  coverPath: string | undefined
+  removeCover: boolean | undefined
+  clearExtras: boolean | undefined
+  foreignRemoved: string[] | undefined
+  isCancelled: (() => boolean) | undefined
+  cueShift: () => CueShift | undefined
+  absorbedPcm: PcmDigest | null | undefined
+  seratoAnalysisKept: boolean
+}
+
+interface CopyVerbatimResult {
+  absorbedPcm: PcmDigest | null | undefined
+  seratoAnalysisKept: boolean
+}
+
+async function copyVerbatim(ctx: CopyVerbatimContext): Promise<CopyVerbatimResult> {
+  const {
+    input,
+    tmp,
+    ext,
+    meta,
+    coverPath,
+    removeCover,
+    clearExtras,
+    foreignRemoved,
+    isCancelled,
+    cueShift,
+  } = ctx
+  let { absorbedPcm, seratoAnalysisKept } = ctx
+  // Source already in the target format: copy the bytes verbatim and edit the
+  // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
+  // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
+  // TagLib's save is synchronous and rewrites the whole file when the tag
+  // grows, so every tag pass below runs in the worker thread.
+  // COPYFILE_FICLONE clones instead of copying when source and destination
+  // share a filesystem that supports it (APFS: instant, copy-on-write, any
+  // size) and silently falls back to a byte copy otherwise (other
+  // filesystems, or an output folder on a different volume).
+  await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
+  // The bytes absorbed ahead of the first frame decode as a frame of their own, so the
+  // source read raw starts 1105 samples early: the copy's own audio, digested before any
+  // tag pass (which never touches a frame), is what the check compares against.
+  if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp))) {
+    const absorbing = new AbortController()
+    const watch = setInterval(() => {
+      if (isCancelled?.()) absorbing.abort()
+    }, CANCEL_POLL_MS)
+    absorbedPcm = await pcmDigest(tmp, { signal: absorbing.signal, priority: 'high' })
+      .catch((err) => {
+        log.warn(`source digest failed, the check cannot compare: ${err}`)
+        return null
+      })
+      .finally(() => clearInterval(watch))
+  }
+  await runInWorker({
+    type: 'writeTags',
+    file: tmp,
+    meta,
+    coverPath,
+    removeCover,
+    clearExtras,
+    foreignRemoved,
+  })
+  // The copy carries the source's cues verbatim, which is right for a trim (this
+  // branch never trims) but wrong for the DJ's cue offset: that has to move them on
+  // every route to a new file, and a same-format conversion is still a conversion.
+  // Reported as "the MP3 it converts does not have the -51 ms applied" — the offset
+  // was wired into the re-encode call sites below and this one was missed.
+  // copyCueFrames re-reads the source and writes the shifted frames over the copy's
+  // own.
+  const copyShift = cueShift()
+  if (copyShift && !clearExtras)
+    await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
+  else seratoAnalysisKept = true
+  return { absorbedPcm, seratoAnalysisKept }
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -2606,51 +2688,20 @@ export async function convertAudio(
     // A cancel during the measures and probes above has no child to kill yet.
     if (isCancelled?.()) throw errorWithKey('conversionCancelled')
     if (copiedVerbatim) {
-      // Source already in the target format: copy the bytes verbatim and edit the
-      // tag in place (see tags.ts) instead of re-muxing through ffmpeg, which
-      // would drop Traktor's cue/beatgrid GEOB frame even on a stream copy.
-      // TagLib's save is synchronous and rewrites the whole file when the tag
-      // grows, so every tag pass below runs in the worker thread.
-      // COPYFILE_FICLONE clones instead of copying when source and destination
-      // share a filesystem that supports it (APFS: instant, copy-on-write, any
-      // size) and silently falls back to a byte copy otherwise (other
-      // filesystems, or an output folder on a different volume).
-      await copyFile(input, tmp, fsConstants.COPYFILE_FICLONE)
-      // The bytes absorbed ahead of the first frame decode as a frame of their own, so the
-      // source read raw starts 1105 samples early: the copy's own audio, digested before any
-      // tag pass (which never touches a frame), is what the check compares against.
-      if (ext === '.mp3' && (await absorbMp3HeadJunk(tmp))) {
-        const absorbing = new AbortController()
-        const watch = setInterval(() => {
-          if (isCancelled?.()) absorbing.abort()
-        }, CANCEL_POLL_MS)
-        absorbedPcm = await pcmDigest(tmp, { signal: absorbing.signal, priority: 'high' })
-          .catch((err) => {
-            log.warn(`source digest failed, the check cannot compare: ${err}`)
-            return null
-          })
-          .finally(() => clearInterval(watch))
-      }
-      await runInWorker({
-        type: 'writeTags',
-        file: tmp,
+      ;({ absorbedPcm, seratoAnalysisKept } = await copyVerbatim({
+        input,
+        tmp,
+        ext,
         meta,
         coverPath,
         removeCover,
         clearExtras,
         foreignRemoved,
-      })
-      // The copy carries the source's cues verbatim, which is right for a trim (this
-      // branch never trims) but wrong for the DJ's cue offset: that has to move them on
-      // every route to a new file, and a same-format conversion is still a conversion.
-      // Reported as "the MP3 it converts does not have the -51 ms applied" — the offset
-      // was wired into the re-encode call sites below and this one was missed.
-      // copyCueFrames re-reads the source and writes the shifted frames over the copy's
-      // own.
-      const copyShift = cueShift()
-      if (copyShift && !clearExtras)
-        await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
-      else seratoAnalysisKept = true
+        isCancelled,
+        cueShift,
+        absorbedPcm,
+        seratoAnalysisKept,
+      }))
     } else {
       const encode = (filter: string | undefined) =>
         run(
