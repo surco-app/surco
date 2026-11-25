@@ -161,6 +161,7 @@ export function takeRotatedBackups<R>(
   files: string[],
   deps: { backupDir: string; now?: () => Date; roots: () => R[] },
   backupPath: (file: string, roots: R[]) => string,
+  kept: number,
   spared: string[] = [],
 ): Map<string, string> {
   if (files.length === 0) return new Map()
@@ -177,13 +178,13 @@ export function takeRotatedBackups<R>(
   const older = readdirSync(deps.backupDir)
     .filter((name) => name !== basename(folder) && !spared.includes(name))
     .sort()
-  for (const old of older.slice(0, Math.max(0, older.length + 1 - KEPT_BACKUPS)))
+  for (const old of older.slice(0, Math.max(0, older.length + 1 - kept)))
     rmSync(join(deps.backupDir, old), { recursive: true, force: true })
   return copies
 }
 
 function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, string> {
-  return takeRotatedBackups(files, deps, backupPathOf)
+  return takeRotatedBackups(files, deps, backupPathOf, KEPT_BACKUPS)
 }
 
 function takeSessionCopy(dir: string, roots: SeratoLibraryRoot[]): void {

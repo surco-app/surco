@@ -131,6 +131,7 @@ export type VirtualdjCommit =
 
 export const LIST_BACKUPS = 'lists'
 export const HISTORY_BACKUPS = 'history'
+const KEPT_BACKUPS = 20
 const WRITING = '.surco-write'
 
 function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
@@ -140,7 +141,10 @@ function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
 }
 
 export function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, string> {
-  return takeRotatedBackups(files, deps, backupPathOf, [LIST_BACKUPS, HISTORY_BACKUPS])
+  return takeRotatedBackups(files, deps, backupPathOf, KEPT_BACKUPS, [
+    LIST_BACKUPS,
+    HISTORY_BACKUPS,
+  ])
 }
 
 function clearOrphan(tmp: string): void {
