@@ -80,7 +80,7 @@ import { isSameFile } from './inplace'
 import { landOverTrashed } from './landOverTrashed'
 import { glimpseColumns, pickCeilingWindow } from './limiterGlimpse'
 import { isMissingInputError } from './missingInput'
-import { absorbMp3HeadJunk } from './mp3Head'
+import { absorbMp3HeadJunk, mp3GaplessSeconds } from './mp3Head'
 import { recordNmlPatch } from './nmlBatch'
 import {
   astatsArgs,
@@ -432,6 +432,10 @@ export async function readForeignTags(input: string): Promise<ForeignTag[]> {
 // (which runs this alongside readTags/readCover).
 export async function probeDuration(input: string, signal?: AbortSignal): Promise<number | null> {
   try {
+    if (extname(input).toLowerCase() === '.mp3') {
+      const gapless = await mp3GaplessSeconds(input)
+      if (gapless !== null) return gapless
+    }
     const { stdout } = await run(
       ffprobePath,
       [
