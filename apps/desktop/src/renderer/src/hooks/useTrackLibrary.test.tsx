@@ -1419,13 +1419,19 @@ describe('useTrackLibrary foreign tags', () => {
     )
     await act(() =>
       result.current.addPaths(['/m/a.flac'], {
-        '/m/a.flac': { meta: { title: 'Restored' } as never, coverUrl: 'https://i.discogs.com/primary.jpeg' },
+        '/m/a.flac': {
+          meta: { title: 'Restored' } as never,
+          coverUrl: 'https://i.discogs.com/primary.jpeg',
+        },
       }),
     )
 
     const track = result.current.tracks[0]
     expect(track?.coverUrl).toBe('https://i.discogs.com/primary.jpeg')
-    expect(coverSourceOf(track)).toEqual({ coverUrl: 'https://i.discogs.com/primary.jpeg', coverPath: undefined })
+    expect(coverSourceOf(track)).toEqual({
+      coverUrl: 'https://i.discogs.com/primary.jpeg',
+      coverPath: undefined,
+    })
   })
 
   // A file that carries its own art must keep showing that, not a cover restored from a
@@ -1696,6 +1702,47 @@ describe('useTrackLibrary foreign tags', () => {
     )
 
     expect(result.current.tracks[0]?.handEdited).toBe(true)
+  })
+
+  // A reopened track must not be filled again from its library copy nor have a cover the DJ
+  // chose replaced by the copy's: the fill already ran once before the relaunch.
+  it('restores what the library copy already lent and a cover picked by hand', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.wav'], {
+        '/m/a.wav': {
+          meta: { title: 'Typed' } as never,
+          copyFilled: true,
+          copyPlaylistsFilled: ['rekordbox'],
+          coverPicked: true,
+        },
+      }),
+    )
+
+    expect(result.current.tracks[0]).toMatchObject({
+      copyFilled: true,
+      copyPlaylistsFilled: ['rekordbox'],
+      coverPicked: true,
+    })
   })
 
   it('restores that a track came from rekordbox, Engine DJ or Traktor, so converting it keeps its file name', async () => {

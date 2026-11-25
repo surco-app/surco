@@ -44,6 +44,9 @@ function sessionEdit(track: TrackItem): SessionEdit {
   if (track.fromAppleMusic) edit.fromAppleMusic = true
   Object.assign(edit, mergedOrigin({}, track))
   if (track.coverRemoved) edit.coverRemoved = true
+  if (track.coverPicked) edit.coverPicked = true
+  if (track.copyFilled) edit.copyFilled = true
+  if (track.copyPlaylistsFilled?.length) edit.copyPlaylistsFilled = track.copyPlaylistsFilled
   if (track.metaCleared) edit.metaCleared = true
   if (track.foreignRemoved?.length) edit.foreignRemoved = track.foreignRemoved
   if (track.matched) edit.matched = true

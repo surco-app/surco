@@ -619,6 +619,9 @@ export function useTrackLibrary({
     if (saved.musicPersistentId) patch.musicPersistentId = saved.musicPersistentId
     if (saved.fromAppleMusic) patch.fromAppleMusic = true
     if (saved.coverRemoved) patch.coverRemoved = true
+    if (saved.coverPicked) patch.coverPicked = true
+    if (saved.copyFilled) patch.copyFilled = true
+    if (saved.copyPlaylistsFilled) patch.copyPlaylistsFilled = saved.copyPlaylistsFilled
     if (saved.metaCleared) patch.metaCleared = true
     if (saved.foreignRemoved) patch.foreignRemoved = saved.foreignRemoved
     if (saved.outputName) patch.outputName = saved.outputName
