@@ -18,7 +18,6 @@ import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
-import { normalizeImportFields } from '../../shared/defaults'
 import {
   CUE_PROGRAMS,
   type CueProgram,
@@ -325,13 +324,13 @@ import {
 import { detectTrim } from './lib/trim'
 import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
+import { DEFAULT_SEARCH_PROVIDERS, NO_HIDDEN_SOURCES, viewPrefsOf } from './lib/viewPrefs'
 import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
 const SIDEBAR_PEEK_DELAY_MS = 150
 const PEEK_TREE_WIDTH = 240
-const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const NO_SELECTED_PATHS: ReadonlySet<string> = new Set()
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
@@ -359,10 +358,6 @@ const PasteTracklistModal = lazyChunk(() =>
 const SessionWizard = lazyChunk(() =>
   import('./components/SessionWizard').then((m) => ({ default: m.SessionWizard })),
 )
-
-// Stable fallback while settings load, so the memoized Editor doesn't see a new array
-// each render. Mirrors the persisted default (Discogs only).
-const DEFAULT_SEARCH_PROVIDERS: SearchProviderId[] = ['discogs']
 
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
@@ -657,30 +652,47 @@ export default function App(): React.JSX.Element {
   const revealRowRef = useRef<((id: string) => void) | null>(null)
   // The list's sticky filter header, measured when paging the scroll position.
   const qualityFilterRef = useRef<HTMLDivElement>(null)
+  const {
+    showSpectrum,
+    showWaveform,
+    hasToken,
+    searchProviders,
+    importFields,
+    genrePresets,
+    fullReleaseDate,
+    replaceLowResCover,
+    hiddenSources,
+    showSidebar,
+    showRailNames,
+    showListPositions,
+    continuousPlayback,
+    filenameFormat,
+    customFields,
+    sessionsMade,
+    matchingDismissed,
+    suggestionsOpen,
+    showListWaves,
+  } = viewPrefsOf(settings)
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
   // while still reading the latest spectrum/token settings on each hover.
   const showSpectrumRef = useRef(true)
-  showSpectrumRef.current = settings?.showSpectrum ?? true
+  showSpectrumRef.current = showSpectrum
   const showWaveformRef = useRef(true)
-  showWaveformRef.current = settings?.showWaveform ?? true
+  showWaveformRef.current = showWaveform
   const hasTokenRef = useRef(false)
-  hasTokenRef.current = !!settings?.discogsToken
+  hasTokenRef.current = hasToken
   // Live providers for the background sweep, read at probe time (Settings → Sources).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
-  searchProvidersRef.current = settings ? usableProviders(settings) : DEFAULT_SEARCH_PROVIDERS
+  searchProvidersRef.current = searchProviders
   // Which fields a release may fill (Settings → Sources). A ref for the same reason as the
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
-  const importFields = normalizeImportFields(settings?.importFields)
   const importFieldsRef = useRef<MetaTextKey[]>(importFields)
   importFieldsRef.current = importFields
-  const genrePresets = settings?.genrePresets ?? []
   const genrePresetsRef = useRef<string[]>(genrePresets)
   genrePresetsRef.current = genrePresets
-  const fullReleaseDate = settings?.fullReleaseDate ?? false
   const fullReleaseDateRef = useRef(fullReleaseDate)
   fullReleaseDateRef.current = fullReleaseDate
-  const replaceLowResCover = settings?.replaceLowResCover ?? false
   const replaceLowResCoverRef = useRef(replaceLowResCover)
   replaceLowResCoverRef.current = replaceLowResCover
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
@@ -828,7 +840,7 @@ export default function App(): React.JSX.Element {
     matchingPathPairs,
     replacedEntries,
     selectedPaths,
-    hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
+    hiddenSources,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
       settings.engineLibraryDir,
@@ -2227,9 +2239,8 @@ export default function App(): React.JSX.Element {
     setThemePreview(null)
   }
 
-  const showSidebar = settings?.showSidebar ?? true
   const columns = useColumnLayout({
-    railWidth: showSidebar ? railWidth({ names: settings?.showRailNames ?? true }) : 0,
+    railWidth: showSidebar ? railWidth({ names: showRailNames }) : 0,
     hasTree: showSidebar && !!browser.source,
     saved: settings?.columnShares,
     onCommit: (columnShares) => saveSettings({ columnShares }),
@@ -2719,7 +2730,6 @@ export default function App(): React.JSX.Element {
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
-  const showListPositions = settings?.showListPositions ?? true
   const numberedTracks =
     showListPositions &&
     sortBy === 'import' &&
@@ -2777,7 +2787,7 @@ export default function App(): React.JSX.Element {
     selectedId,
     selectedIds: selectedIdSet,
     setSelection,
-    continuousPlayback: settings?.continuousPlayback ?? false,
+    continuousPlayback,
     playerVisible,
     playerTrack,
     closePlayer,
@@ -3063,8 +3073,8 @@ export default function App(): React.JSX.Element {
       tracksRef,
       selectedIds,
       selected,
-      filenameFormat: settings?.filenameFormat ?? '{artist} - {title}',
-      customFields: settings?.customFields ?? [],
+      filenameFormat,
+      customFields,
       recordMetaUndo,
       updateTracksMeta: editTracksMeta,
       patchTracks,
@@ -3777,12 +3787,11 @@ export default function App(): React.JSX.Element {
   const matchingSuggestions = useMatchingSuggestions({
     program: sourceProgram,
     tree: browser.tree,
-    made: settings?.sessionsMade ?? [],
+    made: sessionsMade,
     matched: inRekordbox ? matchingPairs : matchingPathPairs,
-    dismissed: settings?.matchingDismissed ?? [],
+    dismissed: matchingDismissed,
   })
   const inMatching = sourceProgram !== null && browser.playlist?.id === MATCHING_ID
-  const suggestionsOpen = settings?.matchingSuggestionsOpen ?? true
   const suggestedForSelected = useMemo(
     () =>
       suggestionSelf
@@ -4364,12 +4373,10 @@ export default function App(): React.JSX.Element {
     const current = settings?.theme ?? 'system'
     saveSettings({ theme: order[(order.indexOf(current) + 1) % order.length] })
   })
-  const showListWaves = settings?.showListWaves ?? true
   const toggleListWaves = useStableCallback(() => saveSettings({ showListWaves: !showListWaves }))
   const toggleListPositions = useStableCallback(() =>
     saveSettings({ showListPositions: !showListPositions }),
   )
-  const showRailNames = settings?.showRailNames ?? true
   const toggleRailNames = useStableCallback(() => saveSettings({ showRailNames: !showRailNames }))
   const toggleSidebar = useStableCallback(() => saveSettings({ showSidebar: !showSidebar }))
   // A remount-keyed confetti burst: bumping the key mounts a fresh <Confetti>, so the ⌘K
@@ -5307,13 +5314,13 @@ export default function App(): React.JSX.Element {
                       <LivePlayer
                         track={livePlayerTrack}
                         audioRef={audioRef}
-                        continuous={settings?.continuousPlayback ?? false}
+                        continuous={continuousPlayback}
                         onToggleContinuous={() =>
                           saveSettings({
                             continuousPlayback: !(settings?.continuousPlayback ?? false),
                           })
                         }
-                        showWaveform={settings?.showWaveform ?? true}
+                        showWaveform={showWaveform}
                         onToggleWaveform={() =>
                           saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
                         }
