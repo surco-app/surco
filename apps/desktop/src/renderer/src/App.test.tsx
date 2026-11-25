@@ -10101,10 +10101,14 @@ describe('App multi-select convert', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
-    const selectedBefore = screen
-      .getAllByTestId('track-row')
-      .filter((r) => r.getAttribute('aria-selected') === 'true')
-      .map((r) => r.textContent)
+    // By track, not by the row's whole text: the selected track's quality badge can land
+    // after this snapshot, and that is not the selection moving.
+    const selectedTracks = () =>
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => ['alpha', 'bravo', 'zulu'].find((name) => r.textContent?.includes(name)))
+    const selectedBefore = selectedTracks()
     const box = document.createElement('input')
     box.type = 'checkbox'
     document.body.appendChild(box)
@@ -10116,12 +10120,7 @@ describe('App multi-select convert', () => {
     await act(async () => {})
     const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
     expect(bravo).toHaveAttribute('aria-selected', 'false')
-    expect(
-      screen
-        .getAllByTestId('track-row')
-        .filter((r) => r.getAttribute('aria-selected') === 'true')
-        .map((r) => r.textContent),
-    ).toEqual(selectedBefore)
+    expect(selectedTracks()).toEqual(selectedBefore)
     box.remove()
   })
 
