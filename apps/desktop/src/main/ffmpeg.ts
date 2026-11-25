@@ -2858,6 +2858,94 @@ async function tagEncodedOutput(ctx: TagEncodedOutputContext): Promise<void> {
     await carryFlacBlocks(input, tmp)
 }
 
+interface MeasureConversionContext {
+  input: string
+  tmp: string
+  samplesKept: boolean
+  copiedVerbatim: boolean
+  absorbedPcm: PcmDigest | null | undefined
+  trimAf: string | undefined
+  plan: ConversionPlan
+  replacesPath: string | undefined
+  isCancelled: (() => boolean) | undefined
+  probeOnce: (file: string) => Promise<ProbeResult>
+}
+
+interface MeasureConversionResult {
+  sourcePcm: PcmDigest | undefined
+  sourceDurationSec: number | undefined
+  sourceSamples: number | undefined
+  sampleCount: number | undefined
+  proven: DecodeProof
+}
+
+async function measureConversion(ctx: MeasureConversionContext): Promise<MeasureConversionResult> {
+  const {
+    input,
+    tmp,
+    samplesKept,
+    copiedVerbatim,
+    absorbedPcm,
+    trimAf,
+    plan,
+    replacesPath,
+    isCancelled,
+    probeOnce,
+  } = ctx
+  const measuring = new AbortController()
+  const watchCancel = setInterval(() => {
+    if (isCancelled?.()) measuring.abort()
+  }, CANCEL_POLL_MS)
+  const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
+  // A replacement is counted too: Engine DJ's row still holds the replaced file's length,
+  // and only the new file's own count says how long it is (another master can be seconds
+  // longer or shorter), or Surco's own scan would later read the row as damaged.
+  const countSamples = trimAf !== undefined || !!plan.sampleRateHz || !!replacesPath
+  const measures = [
+    proveDecodable(
+      tmp,
+      copiedVerbatim ? input : undefined,
+      { signal: measuring.signal },
+      digestAs,
+      countSamples,
+    ),
+    samplesKept && absorbedPcm !== undefined
+      ? (absorbedPcm ?? undefined)
+      : samplesKept
+        ? pcmDigest(input, { signal: measuring.signal, priority: 'high' }).catch((err) => {
+            log.warn(`source digest failed, the check cannot compare: ${err}`)
+            return undefined
+          })
+        : undefined,
+    samplesKept ? undefined : decodedSource(input, probeOnce, measuring.signal, countSamples),
+  ] as const
+  let sourcePcm: PcmDigest | undefined
+  let sourceDurationSec: number | undefined
+  let sourceSamples: number | undefined
+  let sampleCount: number | undefined
+  let proven: DecodeProof
+  try {
+    let proof: Awaited<ReturnType<typeof proveDecodable>>
+    let source: Awaited<ReturnType<typeof decodedSource>> | undefined
+    ;[proof, sourcePcm, source] = await Promise.all(measures)
+    sourceDurationSec = source?.durationSec
+    sourceSamples = source?.samples
+    const { size, mtimeMs, ino } = await stat(tmp)
+    const { samples, ...decoded } = proof
+    sampleCount = samples
+    proven = { size, mtimeMs, ino, ...decoded }
+  } catch (err) {
+    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+    throw err
+  } finally {
+    clearInterval(watchCancel)
+    measuring.abort()
+    await Promise.allSettled(measures)
+  }
+  if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+  return { sourcePcm, sourceDurationSec, sourceSamples, sampleCount, proven }
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -3180,52 +3268,19 @@ export async function convertAudio(
     // Every decode here holds the source open, and on Windows an open source is what blocks
     // the rename: a cancel stops them all, and so does the verdict on the temp arriving
     // first, so none outlives this step.
-    const measuring = new AbortController()
-    const watchCancel = setInterval(() => {
-      if (isCancelled?.()) measuring.abort()
-    }, CANCEL_POLL_MS)
-    const digestAs = samplesKept ? await probeAudio(tmp).catch(() => undefined) : undefined
-    // A replacement is counted too: Engine DJ's row still holds the replaced file's length,
-    // and only the new file's own count says how long it is (another master can be seconds
-    // longer or shorter), or Surco's own scan would later read the row as damaged.
-    const countSamples = trimAf !== undefined || !!plan.sampleRateHz || !!replacesPath
-    const measures = [
-      proveDecodable(
+    ;({ sourcePcm, sourceDurationSec, sourceSamples, sampleCount, proven } =
+      await measureConversion({
+        input,
         tmp,
-        copiedVerbatim ? input : undefined,
-        { signal: measuring.signal },
-        digestAs,
-        countSamples,
-      ),
-      samplesKept && absorbedPcm !== undefined
-        ? (absorbedPcm ?? undefined)
-        : samplesKept
-          ? pcmDigest(input, { signal: measuring.signal, priority: 'high' }).catch((err) => {
-              log.warn(`source digest failed, the check cannot compare: ${err}`)
-              return undefined
-            })
-          : undefined,
-      samplesKept ? undefined : decodedSource(input, probeOnce, measuring.signal, countSamples),
-    ] as const
-    try {
-      let proof: Awaited<ReturnType<typeof proveDecodable>>
-      let source: Awaited<ReturnType<typeof decodedSource>> | undefined
-      ;[proof, sourcePcm, source] = await Promise.all(measures)
-      sourceDurationSec = source?.durationSec
-      sourceSamples = source?.samples
-      const { size, mtimeMs, ino } = await stat(tmp)
-      const { samples, ...decoded } = proof
-      sampleCount = samples
-      proven = { size, mtimeMs, ino, ...decoded }
-    } catch (err) {
-      if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-      throw err
-    } finally {
-      clearInterval(watchCancel)
-      measuring.abort()
-      await Promise.allSettled(measures)
-    }
-    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+        samplesKept,
+        copiedVerbatim,
+        absorbedPcm,
+        trimAf,
+        plan,
+        replacesPath,
+        isCancelled,
+        probeOnce,
+      }))
     // rekordbox keeps cues in milliseconds of its own timeline, which starts at a different
     // point on each kind of file (see rekordboxTimeline.ts). Read on both files here, the
     // last moment the source is still on disk when the rename below lands on its path.
