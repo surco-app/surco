@@ -51,7 +51,25 @@ function programs(membership: ProgramReads['membership'], traktor?: ProgramReads
   })
 }
 
-const settle = () => new Promise((r) => setTimeout(r, 30))
+// Renders the track beside a control track the gate lets through, sharing the reads: once the
+// control has staged, every read the track could have waited on has landed too.
+async function renderBesideControl(item: TrackItem): Promise<ReturnType<typeof vi.fn>> {
+  const onChange = vi.fn()
+  const control = vi.fn()
+  renderHook(
+    () => {
+      useVersionCopyPlaylists({ item, copies: { rekordbox: '/r/strobe.mp3' }, onChange })
+      useVersionCopyPlaylists({
+        item: track({ id: 'control', inputPath: '/new/control.flac' }),
+        copies: { rekordbox: '/r/strobe.mp3' },
+        onChange: control,
+      })
+    },
+    { wrapper },
+  )
+  await waitFor(() => expect(control).toHaveBeenCalled())
+  return onChange
+}
 
 describe('useVersionCopyPlaylists', () => {
   // The DJ filed the other edit of this track in its playlists: the new file belongs there too,
@@ -181,51 +199,23 @@ describe('useVersionCopyPlaylists', () => {
       '/r/strobe.mp3': ['3000'],
     }))
     programs(membership)
-    const onChange = vi.fn()
-    renderHook(
-      () =>
-        useVersionCopyPlaylists({
-          item: track({ copyPlaylistsFilled: ['rekordbox'] }),
-          copies: { rekordbox: '/r/strobe.mp3' },
-          onChange,
-        }),
-      { wrapper },
-    )
-    await settle()
+    const onChange = await renderBesideControl(track({ copyPlaylistsFilled: ['rekordbox'] }))
     expect(onChange).not.toHaveBeenCalled()
-    expect(membership).not.toHaveBeenCalled()
+    expect(membership).toHaveBeenCalledTimes(1)
   })
 
   it('keeps what the DJ already staged for that program', async () => {
     programs(vi.fn<ProgramReads['membership']>(async () => ({ '/r/strobe.mp3': ['3000'] })))
-    const onChange = vi.fn()
-    renderHook(
-      () =>
-        useVersionCopyPlaylists({
-          item: track({ playlists: { rekordbox: { targets: [], base: [] } } }),
-          copies: { rekordbox: '/r/strobe.mp3' },
-          onChange,
-        }),
-      { wrapper },
+    const onChange = await renderBesideControl(
+      track({ playlists: { rekordbox: { targets: [], base: [] } } }),
     )
-    await settle()
     expect(onChange).not.toHaveBeenCalled()
   })
 
   // Clear all asks for an empty track: nothing the library holds comes back after it.
   it('stages nothing after Clear all', async () => {
     programs(vi.fn<ProgramReads['membership']>(async () => ({ '/r/strobe.mp3': ['3000'] })))
-    const onChange = vi.fn()
-    renderHook(
-      () =>
-        useVersionCopyPlaylists({
-          item: track({ metaCleared: true }),
-          copies: { rekordbox: '/r/strobe.mp3' },
-          onChange,
-        }),
-      { wrapper },
-    )
-    await settle()
+    const onChange = await renderBesideControl(track({ metaCleared: true }))
     expect(onChange).not.toHaveBeenCalled()
   })
 

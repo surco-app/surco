@@ -7391,7 +7391,7 @@ describe('Editor Apple Music library section', () => {
           'measuring',
         ),
       )
-      await new Promise((r) => setTimeout(r, 50))
+      await waitFor(() => expect(screen.getByTestId('playlists-where')).toHaveTextContent('Makina'))
       expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
         [],
       )
@@ -7408,7 +7408,6 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
-      await new Promise((r) => setTimeout(r, 50))
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()).toEqual([])
     })
@@ -8597,9 +8596,11 @@ describe('Editor replacing a library copy', () => {
       { libraryIndex: lengthIndex, addToAppleMusic: true },
     )
     await waitFor(() =>
-      expect(window.api.properties).toHaveBeenCalledWith('/music/old/your-love.mp3'),
+      expect(screen.getByTestId('library-row-state')).not.toHaveAttribute(
+        'data-state',
+        'measuring',
+      ),
     )
-    await new Promise((resolve) => setTimeout(resolve, 50))
     expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
   })
