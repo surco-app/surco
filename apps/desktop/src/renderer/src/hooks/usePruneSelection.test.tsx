@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { renderHook } from '@testing-library/react'
+import { useLayoutEffect, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import type { PlaylistSource } from '../../../shared/types'
 import type { Selection } from '../lib/selection'
@@ -34,6 +35,32 @@ function setup(initial: Props) {
     { initialProps: initial },
   )
   return { ...hook, setSelectionState }
+}
+
+function setupCommitted(initial: Props) {
+  const committed: Selection[] = []
+  const hook = renderHook(
+    (p: Props) => {
+      const [selection, setSelectionState] = useState(initial.selection)
+      usePruneSelection({
+        filterSelection: p.filterSelection,
+        deferredSearch: p.deferredSearch,
+        source: p.source,
+        playlistIds: p.playlistIds,
+        visibleTracks: rows(p.visible),
+        selection,
+        selectedId: selection.anchor,
+        setSelectionState,
+      })
+      useLayoutEffect(() => {
+        committed.push(selection)
+      })
+      return selection
+    },
+    { initialProps: initial },
+  )
+  committed.length = 0
+  return { ...hook, committed }
 }
 
 const base: Props = {
@@ -84,5 +111,12 @@ describe('usePruneSelection', () => {
     const { rerender, setSelectionState } = setup(base)
     rerender({ ...base, playlistIds: ['a'], visible: ['a'] })
     expect(setSelectionState).toHaveBeenCalledWith({ ids: ['a'], anchor: 'a' })
+  })
+
+  it('prunes in the same render the search narrows the list, so a selection reaching hidden rows is never on screen for a frame', () => {
+    const { result, rerender, committed } = setupCommitted(base)
+    rerender({ ...base, deferredSearch: 'x', visible: ['a', 'c'] })
+    expect(result.current).toEqual({ ids: ['a'], anchor: 'a' })
+    expect(committed).toEqual([{ ids: ['a'], anchor: 'a' }])
   })
 })
