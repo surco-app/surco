@@ -9,6 +9,13 @@ export interface TrackOrigin {
   >
 }
 
+// A track a DJ program or Music lists belongs to a collection the DJ organises: opened to
+// fix its tags, not to convert it. Its own format is the default, while a loose file takes
+// the Settings one.
+export function keepsOwnFormat(t: TrackOrigin & { fromAppleMusic?: boolean }): boolean {
+  return !!t.fromAppleMusic || (t.programs?.length ?? 0) > 0
+}
+
 export function isFrom(t: TrackOrigin, p: DjProgram): boolean {
   return t.programs?.includes(p) ?? false
 }

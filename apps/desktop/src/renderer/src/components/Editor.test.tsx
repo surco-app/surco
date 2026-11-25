@@ -3241,10 +3241,12 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
   })
 
   it('converts its own Music copy to another format without calling it a replacement', async () => {
-    renderEditor({ ...track(read) }, 'mp3', { libraryIndex, addToRekordbox: true })
+    renderEditor({ ...track(read) }, 'aiff', { libraryIndex, addToRekordbox: true })
     await waitFor(() =>
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
     await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert'))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
   })
@@ -4079,6 +4081,18 @@ describe('Editor export control', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
     expect(button).toHaveAccessibleName('Convert')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+  })
+
+  // A track from a DJ library is organised, not imported: the DJ opens it to fix its tags,
+  // and the AIFF default would rewrite a WAV the program already indexes.
+  it('opens a WAV from rekordbox in WAV, not in the Settings format', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav', programs: ['rekordbox'] }, 'aiff')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('WAV')
+  })
+
+  it('opens a loose WAV in the Settings format, since the Tracks tab is where files convert', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff')
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
   })
 

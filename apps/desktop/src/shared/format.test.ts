@@ -189,12 +189,12 @@ describe('reencodesLossyInPlace', () => {
   it('resolves an Apple Music track to its own format, as the conversion does', () => {
     expect(
       reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false, {
-        fromAppleMusic: true,
+        fromLibrary: true,
       }),
     ).toBe(true)
     expect(
       reencodesLossyInPlace('aiff', '/music/song.mp3', false, true, 'aiff', false, {
-        fromAppleMusic: true,
+        fromLibrary: true,
         formatChosen: true,
       }),
     ).toBe(false)

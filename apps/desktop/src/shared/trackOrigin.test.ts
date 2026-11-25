@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { fromReadOnlyProgram, isFrom, type TrackOrigin, withPrograms } from './trackOrigin'
+import {
+  fromReadOnlyProgram,
+  isFrom,
+  keepsOwnFormat,
+  type TrackOrigin,
+  withPrograms,
+} from './trackOrigin'
 
 describe('isFrom', () => {
   it('is true only for the programs the track arrived from, so a Serato row blocks and a loose file does not', () => {
@@ -46,5 +52,17 @@ describe('withPrograms', () => {
     const track = { programs: ['rekordbox' as const] }
     withPrograms(track, ['serato'])
     expect(track.programs).toEqual(['rekordbox'])
+  })
+})
+
+describe('keepsOwnFormat', () => {
+  it('holds for a track a DJ program or Music lists, which the DJ organises rather than converts', () => {
+    expect(keepsOwnFormat({ programs: ['traktor'] })).toBe(true)
+    expect(keepsOwnFormat({ fromAppleMusic: true })).toBe(true)
+  })
+
+  it('does not hold for a loose file, which converts to the Settings format', () => {
+    expect(keepsOwnFormat({})).toBe(false)
+    expect(keepsOwnFormat({ programs: [] })).toBe(false)
   })
 })

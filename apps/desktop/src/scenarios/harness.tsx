@@ -134,6 +134,7 @@ import { normalizeImportFields } from '../shared/defaults'
 import type { ApplyAnswer, DjApi } from '../shared/djApi'
 import type { DjProgram, WritableProgram } from '../shared/djProgram'
 import { resolveJobFormat } from '../shared/format'
+import { keepsOwnFormat } from '../shared/trackOrigin'
 import type {
   FormatSetting,
   ProcessJob,
@@ -1517,7 +1518,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
           track.inputPath,
           'aiff',
           settings.keepMp3Sources,
-          track.fromAppleMusic,
+          keepsOwnFormat(track),
         )
         const normalize = track.normalize ?? settings.normalize
         const declick = track.declick ?? settings.declick

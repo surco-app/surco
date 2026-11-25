@@ -9,7 +9,7 @@ import {
   resolveJobFormat,
 } from '../../../shared/format'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import { fromReadOnlyProgram, isFrom } from '../../../shared/trackOrigin'
+import { fromReadOnlyProgram, isFrom, keepsOwnFormat } from '../../../shared/trackOrigin'
 import type { CustomField, FormatSetting, OutputFormat } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
@@ -228,7 +228,7 @@ function planOf(track: TrackItem, pick: BatchPick, audio: AudioProcessing): Trac
     track.inputPath,
     'aiff',
     keep,
-    track.fromAppleMusic,
+    keepsOwnFormat(track),
     pick.formatByHand,
   )
   const facets = pick.destination ? fromDestination(pick.destination) : settings

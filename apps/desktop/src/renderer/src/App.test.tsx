@@ -6157,6 +6157,8 @@ describe('App source playlists', () => {
     await openFactory({ processTrack })
     fireEvent.click(screen.getAllByTestId('track-row')[0])
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    fireEvent.click(await screen.findByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-aiff'))
     fireEvent.click(screen.getByTestId('process-btn'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     await act(async () => {})
@@ -6174,6 +6176,8 @@ describe('App source playlists', () => {
     await openFactory({ processTrack, dj: djReads({ rekordbox: { playlist: load } }) })
     const reads = load.mock.calls.length
     fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(await screen.findByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-aiff'))
     fireEvent.click(await screen.findByTestId('process-btn'))
     await waitFor(() => expect(load.mock.calls.length).toBeGreaterThan(reads))
   })
@@ -6711,6 +6715,8 @@ describe('App source playlists', () => {
         }),
       })
       fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('process-format-aiff'))
       fireEvent.click(await screen.findByTestId('process-btn'))
       await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
       await act(async () => {})
