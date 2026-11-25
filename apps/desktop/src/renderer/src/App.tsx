@@ -224,7 +224,11 @@ import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import type { LibraryCopyRef } from './lib/libraryCopy'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
-import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
+import {
+  type MatchingPartner,
+  matchingSuggestionSourceOf,
+  partnersOf,
+} from './lib/matchingPartners'
 import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
@@ -3786,16 +3790,26 @@ export default function App(): React.JSX.Element {
     () => new Map(programCollection.map((t) => [t.contentId, t])),
     [programCollection],
   )
-  const suggestionTracks = inRekordbox ? collectionById : programById
-  const suggestionSelf = inRekordbox ? selectedContentId : matchingSelfPath
+  const { suggestionTracks, suggestionSelf, matchedPairs, inMatching } = matchingSuggestionSourceOf(
+    {
+      inRekordbox,
+      collectionById,
+      programById,
+      selectedContentId,
+      matchingSelfPath,
+      matchingPairs,
+      matchingPathPairs,
+      sourceProgram,
+      browser,
+    },
+  )
   const matchingSuggestions = useMatchingSuggestions({
     program: sourceProgram,
     tree: browser.tree,
     made: sessionsMade,
-    matched: inRekordbox ? matchingPairs : matchingPathPairs,
+    matched: matchedPairs,
     dismissed: matchingDismissed,
   })
-  const inMatching = sourceProgram !== null && browser.playlist?.id === MATCHING_ID
   const suggestedForSelected = useMemo(
     () =>
       suggestionSelf
