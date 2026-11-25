@@ -7799,9 +7799,9 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
-    // Another version is the DJ's call one track at a time (25/11): the body converts, the menu
-    // still updates it at once, and the pick neither turns the action remembered for every
-    // real copy nor leaves the body converting once picked.
+    // Another version is the DJ's call one track at a time (25/11): the body converts, a pick
+    // from the menu turns the body for this track alone without touching the action remembered
+    // for every real copy, and only the body's press updates it (26/11).
     it('converts over another version and updates it from the menu for this track alone', async () => {
       renderWithPrograms({
         rekordbox: { ...sameRekordboxCopy, durationSec: 400 },
@@ -7814,12 +7814,16 @@ describe('Editor Apple Music library section', () => {
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId('library-copy-update'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onLibraryCopyAction).not.toHaveBeenCalled()
+      const body = screen.getByTestId('process-btn')
+      expect(body).toHaveTextContent(/^Update$/)
+      fireEvent.click(body)
       expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
         path: '/r/Strobe.wav',
         program: 'rekordbox',
       })
-      expect(rendered.onLibraryCopyAction).not.toHaveBeenCalled()
-      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(rendered.onProcess).not.toHaveBeenCalled()
     })
 
     it('remembers the action picked from the menu', async () => {
@@ -7889,13 +7893,14 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
-    it('replaces at once when Replace is picked over a copy Serato does not hold', async () => {
+    it('leaves the press to the body when Replace is picked over a copy Serato does not hold', async () => {
       renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
       await readyBody()
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId('library-copy-replace'))
-      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
-      expect(rendered.onProcess).toHaveBeenCalled()
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+      expect(rendered.onChange).not.toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onProcess).not.toHaveBeenCalled()
     })
 
     it('says nothing about Serato stars when the body updates the Serato copy', async () => {

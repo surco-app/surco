@@ -251,15 +251,6 @@ export function copyRefOf(target: LibraryCopyTarget): LibraryCopyRef {
   return ref
 }
 
-// A menu Replace runs at once only when it is known to cost no Serato stars. On a Serato copy
-// whose collection is not read yet the answer is surely a loss to come, so it waits too.
-export function replaceWarnsFirst(
-  program: PlaylistSource,
-  losesStars: boolean | undefined,
-): boolean {
-  return losesStars === true || (losesStars === undefined && program === 'serato')
-}
-
 export function keptFormatOf(path: string): OutputFormat | undefined {
   return OUTPUT_FORMATS.find((format) => formatMatchesInput(format, path))
 }
@@ -278,8 +269,6 @@ export interface LibraryCopyOffer {
   keptFormat?: OutputFormat
   // False for a copy in a format Surco can't write, which Update can't retag.
   updatable?: boolean
-  // Replacing this copy repoints Serato to a new file, which loses the copy's stars.
-  replaceLosesStars?: boolean
   // False for a copy whose cues only Update keeps in place.
   replaceable?: boolean
 }
@@ -479,7 +468,6 @@ export function libraryTargetOf({
 export interface LibraryCopyOfferContext {
   libraryTarget: LibraryCopyTarget | null
   keptFormat: OutputFormat | undefined
-  replaceStarsLoss: boolean | undefined
   libraryCopyAction: LibraryCopyAction
   // The action picked from the menu for another version, this track's alone.
   otherVersionAction?: LibraryCopyAction
@@ -493,12 +481,9 @@ export interface LibraryCopyOfferResult {
 export function libraryCopyOfferOf({
   libraryTarget,
   keptFormat,
-  replaceStarsLoss,
   libraryCopyAction,
   otherVersionAction,
 }: LibraryCopyOfferContext): LibraryCopyOfferResult {
-  const replaceLosesStars =
-    !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
   // A copy in no format Surco writes can't be updated in place, but it is still the track, so
   // the body replaces it: offering nothing let the body say Convert and add a second entry
   // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
@@ -525,7 +510,6 @@ export function libraryCopyOfferOf({
         keptFormat,
         updatable,
         replaceable: libraryTarget.replaceable,
-        replaceLosesStars,
       }
     : undefined
   return { copyAction, libraryCopy }
