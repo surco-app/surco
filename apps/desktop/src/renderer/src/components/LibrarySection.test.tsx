@@ -52,7 +52,6 @@ describe('LibrarySection', () => {
     ['same', 'Son el mismo'],
     ['here', 'La nueva es mejor'],
     ['library', 'La nueva es peor'],
-    ['tie', 'Parecidas'],
     ['even', 'Misma calidad'],
     ['measuring', 'Comparando'],
     ['missing', 'No se encuentra'],
@@ -119,14 +118,12 @@ describe('LibrarySection', () => {
   // The two greens and the amber used to be told apart by shape; now the word does it, so
   // the amber is never carried by colour alone.
   it('keeps every settled state in words of its own', () => {
-    const words = (['same', 'here', 'library', 'different', 'tie', 'even'] as const).map(
-      (verdict) => {
-        const text = mountApart({ verdict }).textContent
-        cleanup()
-        return text
-      },
-    )
-    expect(new Set(words).size).toBe(6)
+    const words = (['same', 'here', 'library', 'different', 'even'] as const).map((verdict) => {
+      const text = mountApart({ verdict }).textContent
+      cleanup()
+      return text
+    })
+    expect(new Set(words).size).toBe(5)
   })
 
   // Nothing moves when the measurement lands and the format chips line up from row to row:
@@ -151,7 +148,6 @@ describe('LibrarySection', () => {
         'Son el mismo',
         'La nueva es mejor',
         'La nueva es peor',
-        'Parecidas',
         'Misma calidad',
         'Otra versión · 0:00:00',
         'Es este archivo',

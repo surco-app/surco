@@ -3442,13 +3442,25 @@ en las pestañas de los programas ni con varias pistas, y se puede esconder en A
   Cada fila lleva el icono del programa, el formato de la copia y su estado.
 - **Estados** (`STATE`, `LibrarySection.tsx:31-56`; claves `editor.libraryState*`). «Son el
   mismo» (mismo audio por huella o por diferencia medida, con la misma frecuencia y profundidad
-  real, `isSameAudio`, `lib/bestCopy.ts:133-146`), «La nueva es mejor», «La nueva es peor»,
-  «Parecidas» (el mismo master sin nada que las separe), «Misma calidad» (nada las separa pero
-  no consta que sean el mismo master), «Otra versión · duración» (otra duración y otro audio,
-  `isOtherVersion`, `:68-83`), «Es este archivo», «No se encuentra» (la ruta de la copia no
+  real, `isSameAudio`, `lib/bestCopy.ts`; también el mismo master sin nada que las separe y con
+  la misma duración a ±2 s), «La nueva es mejor», «La nueva es peor», «Misma calidad» (nada las
+  separa pero no consta que sean el mismo master), «Otra versión · duración» (otra duración y
+  otro audio, `acrossLengthGap`), «Es este archivo», «No se encuentra» (la ruta de la copia no
   existe), «No se puede leer», «No se puede medir», «N copias» (Apple Music tiene varias y no sabe
   cuál) y «Comparando» mientras mide. El veredicto sale del análisis completo de las dos copias
-  (`compareCopies`, `:148-170`); mientras falta, responde la comprobación rápida de formato y corte.
+  (`compareCopies`); mientras falta, responde la comprobación rápida de formato y corte.
+- **La misma grabación.** Una copia cuenta como la pista (rellena los campos vacíos, el campo de
+  playlists actúa sobre ella, Actualizar y Sustituir la usan) si su duración está a ±2 s de la del
+  archivo, o si la comparación confirma el mismo master con más o menos silencio. Eso pide que la
+  búsqueda ancha alinee el primer minuto y que, quitado el silencio de cada extremo con la misma
+  detección que el recorte de silencio y con un mismo umbral para las dos (el más alto de los
+  suyos, para que un relleno con dither y un fundido lento se lean igual), la música dure lo mismo
+  a ±2 s (`sameMasterAcrossGap`, `pairOnsets`).
+  Esa detección lee la onda entera de las dos copias, así que solo se pide para los pares que la
+  búsqueda ancha ya alineó. Si la música de la copia empieza más de 5 s antes o después, solo se
+  ofrece Actualizar, porque Sustituir no encontraría el desfase de los cues; y si Surco no puede
+  escribir su formato, se convierte como siempre. Sin esa confirmación decide la duración y la
+  copia es otra versión.
 - **Un estado común se dice una vez.** Si todas las copias están igual, el estado sube a la
   cabecera de la sección y las filas lo callan; plegada, la cabecera dice el que más importa, por
   ejemplo «Mejor copia en rekordbox» (`sharedState`, `LibrarySection.tsx:298-310`;
@@ -3458,7 +3470,8 @@ en las pestañas de los programas ni con varias pistas, y se puede esconder en A
   comparación, que lleva la frase que lo justifica, la tabla de corte, volumen, dinámica y muestras en el
   techo, los dos espectros a la misma escala y, si lo decidió un limitador, las dos ondas
   (`renderComparison`, `Editor.tsx:1645-1704`; `CopyComparison`, `SpectrumGlimpse.tsx`,
-  `LimiterGlimpse.tsx`). «Son el mismo», «No se encuentra» y «No se puede leer» no se abren.
+  `LimiterGlimpse.tsx`). «Son el mismo» con el mismo audio, «No se encuentra» y «No se puede leer» no
+  se abren; el mismo master que no es idéntico sí, y con otra duración la tabla empieza por las dos.
 - **Lo que no dice.** Encontrar la pista es el mismo indicio puntuado por etiquetas y duración que
   arriba, no una huella sobre toda la biblioteca, así que una copia con otras etiquetas puede no salir. Y
   solo mira los programas activos en Ajustes › Programas de DJ.

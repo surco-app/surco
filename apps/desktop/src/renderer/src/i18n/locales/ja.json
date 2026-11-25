@@ -1410,7 +1410,6 @@
     "libraryStateLibraryIn": "{{program}}のコピーの方が良い",
     "libraryStateDifferentBare": "別バージョン",
     "libraryStateDifferent": "別バージョン · {{duration}}",
-    "libraryStateTie": "近い",
     "libraryStateThisFile": "このファイルです",
     "libraryStateMissing": "見つかりません",
     "libraryStateUnreadable": "読み込めません",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectOnsets, detectTrim, refineOnset, trimThresholdDb } from './trim'
+import { detectOnsets, detectTrim, pairOnsets, refineOnset, trimThresholdDb } from './trim'
 
 // 200 buckets over 100 s → 0.5 s per bucket, coarse but plenty for a suggestion
 // the user refines with the handles.
@@ -141,5 +141,37 @@ describe('adaptive gate', () => {
     // Digital zeros carry no floor information: the gate stays put.
     expect(trimThresholdDb(Array.from({ length: 200 }, () => 0))).toBe(-60)
     expect(trimThresholdDb([])).toBe(-60)
+  })
+})
+
+// One master, 7:01 on its own and 7:06 with five seconds of dithered silence at the head, both
+// ending on the same 27 s fade-out to -60 dB. Each file's own gate sits on its own floor, the
+// fade's tail in one and the dither in the other, so each would end the music at another point
+// of the fade, seconds apart. Read at one gate, the two lengths of music agree.
+describe('pairOnsets', () => {
+  const BUCKETS = 4000
+  const level = (t: number) =>
+    t < 394 ? 0.5 : t < 421 ? 10 ** ((-6 - ((t - 394) / 27) * 54) / 20) : 0
+  const wave = (durationSec: number, padSec: number, padDb: number) => ({
+    durationSec,
+    peaks: Array.from({ length: BUCKETS }, (_, i) => {
+      const t = (i * durationSec) / BUCKETS
+      return t < padSec ? 10 ** (padDb / 20) : level(t - padSec)
+    }),
+  })
+  const alone = wave(421, 0, 0)
+  const padded = wave(426, 5, -66)
+  const music = (span: { startSec: number; endSec: number } | undefined) =>
+    span ? span.endSec - span.startSec : Number.NaN
+
+  it('reads two copies of one fade-out at one gate, so the music lasts as long in both', () => {
+    const own = [detectOnsets(alone), detectOnsets(padded)]
+    expect(Math.abs(music(own[0]) - music(own[1]))).toBeGreaterThan(2)
+    const [a, b] = pairOnsets(
+      { wave: alone, gateDb: trimThresholdDb(alone.peaks) },
+      { wave: padded, gateDb: trimThresholdDb(padded.peaks) },
+    )
+    expect(Math.abs(music(a) - music(b))).toBeLessThanOrEqual(2)
+    expect((b?.startSec ?? 0) - (a?.startSec ?? 0)).toBeCloseTo(5, 0)
   })
 })

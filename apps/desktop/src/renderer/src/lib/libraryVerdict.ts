@@ -7,7 +7,9 @@ export function verdictState(verdict: CopyVerdict | null, measuring: boolean): L
   if (!verdict) return 'unmeasurable'
   if (verdict.winner === 'a') return 'here'
   if (verdict.winner === 'b') return 'library'
-  if (verdict.winner === 'tie' && !verdict.sameMaster) return 'even'
+  // One master that nothing measured separates is, for a DJ, the same track at the same
+  // quality, whether or not the files are identical byte for byte.
+  if (verdict.winner === 'tie') return verdict.sameMaster ? 'same' : 'even'
   return verdict.winner
 }
 
@@ -27,7 +29,6 @@ export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): Librar
     'missing',
     'unreadable',
     'unmeasurable',
-    'tie',
     'even',
     'same',
     'thisFile',

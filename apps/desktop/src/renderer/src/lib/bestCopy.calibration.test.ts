@@ -598,14 +598,17 @@ describe('compareCopies on the 26 measured pairs', () => {
     })
   })
 
+  // The CSV holds no lengths. Each pair is two copies of one track at one length, which
+  // «It's the same» needs as the library does, so both get the same one here.
   it.each(MEASURED)('$cls $label', ({ a, b, pair, expected }) => {
-    expect(compareCopies(a, b, pair)).toEqual(expected)
+    const length = { durationSec: 300 }
+    expect(compareCopies({ ...a, ...length }, { ...b, ...length }, pair)).toEqual(expected)
   })
 
   // S-drift (PG2, one master drifting against itself, 0.067), B (Nacho Division, one master
   // at 0.954) and an X pair (Kike Boy, Jumper) with equal lengths: the length gap another version needs is not there, so
   // they are never called another version, and with no same-master evidence they say neither
-  // copy is better rather than «Parecidas». The CSV holds no lengths and no wider search, so
+  // copy is better rather than «It's the same». The CSV holds no lengths and no wider search, so
   // this pins only the equal-length case; the shifted case is pinned in sameMaster.test.ts.
   it.each(
     MEASURED.filter((m) => m.cls === 'S-drift' || m.cls === 'B' || m.label === 'Kike Boy - Jumper'),

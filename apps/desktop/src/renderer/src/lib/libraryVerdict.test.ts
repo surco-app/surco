@@ -16,8 +16,8 @@ describe('aggregateLibraryVerdict', () => {
   })
 
   // A folded header shows one state: the one that asks the most of the reader. Another
-  // version in the library is worth knowing before two copies that are merely alike, and
-  // both before an identical copy, which asks nothing.
+  // version in the library is worth knowing before two copies of equal quality, and both
+  // before a copy that is the same track, which asks nothing.
   it('ranks the states from the most to the least urgent', () => {
     const order = [
       'library',
@@ -27,7 +27,6 @@ describe('aggregateLibraryVerdict', () => {
       'missing',
       'unreadable',
       'unmeasurable',
-      'tie',
       'even',
       'same',
       'thisFile',
@@ -59,7 +58,7 @@ describe('rowVerdict', () => {
   it.each([
     [{ ...facts, measuring: true }, 'measuring'],
     [facts, 'unmeasurable'],
-    [{ ...facts, verdict: { winner: 'tie', sameMaster: true } }, 'tie'],
+    [{ ...facts, verdict: { winner: 'tie', sameMaster: true } }, 'same'],
     [{ ...facts, verdict: { winner: 'tie' } }, 'even'],
     [{ ...facts, verdict: { winner: 'different' } }, 'different'],
     [{ ...facts, verdict: { winner: 'a', reason: 'format' } }, 'here'],

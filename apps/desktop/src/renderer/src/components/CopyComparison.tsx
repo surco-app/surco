@@ -34,7 +34,8 @@ export function CopyComparison({
   library: CopyFacts
   hereLabel: string
   libraryLabel: string
-  // Another version differs in length, so its card leads with both.
+  // Another version differs in length, and so does one master across a gap of silence, so
+  // either card leads with both.
   hereDurationSec?: number
   libraryDurationSec?: number
   // The waves behind the verdict, set above the table.
@@ -51,7 +52,7 @@ export function CopyComparison({
     seconds == null ? '—' : formatTime(seconds)
 
   const rows: { id: RowId; label: string; here: string; library: string }[] = [
-    ...(verdict.winner === 'different'
+    ...(verdict.winner === 'different' || verdict.sameMasterAcrossGap
       ? [
           {
             id: 'duration' as const,

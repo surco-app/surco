@@ -1,4 +1,5 @@
 import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
+import { REPLACE_REACH_SECONDS } from '../../../shared/replaceShift'
 import type { DjProgram } from '../../../shared/djProgram'
 import { formatMatchesInput } from '../../../shared/format'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
@@ -11,7 +12,6 @@ import { replacePatch } from './replaceBeforeConvert'
 const COPY_VERDICTS: ReadonlySet<LibraryVerdict> = new Set([
   'same',
   'even',
-  'tie',
   'here',
   'library',
   'unmeasurable',
@@ -24,20 +24,38 @@ export function countsAsCopy(verdict: LibraryVerdict | null | undefined): boolea
   return verdict != null && COPY_VERDICTS.has(verdict)
 }
 
-interface CopyRow {
+interface CopyLength {
+  durationSec?: number
+  // The comparison's CopyVerdict.sameMasterAcrossGap: one master despite the lengths.
+  sameMasterAcrossGap?: { headShiftSec: number }
+}
+
+interface CopyRow extends CopyLength {
   program: DjProgram
   path: string
   verdict: LibraryVerdict | null
-  durationSec?: number
 }
 
 // No verdict rules out another edit on its own: «same» can come from the pair probe over the
 // first 91 s, which a longer or shorter edit cut from the same master passes too, and the
 // comparison calls another version only with both lengths known. So a copy counts only when
-// both lengths are known and no further apart than a drift or a rounding leaves.
-function lengthsMatch(copyDurationSec: number | undefined, fileDurationSec: number | undefined) {
-  if (copyDurationSec === undefined || fileDurationSec === undefined) return false
-  return Math.abs(copyDurationSec - fileDurationSec) <= VERSION_GAP_SEC
+// both lengths are known and no further apart than a drift or a rounding leaves, or when the
+// comparison confirmed one master whose gap is silence at the ends.
+function lengthsMatch(copy: CopyLength, fileDurationSec: number | undefined) {
+  return !!copy.sameMasterAcrossGap || lengthsWithinDrift(copy, fileDurationSec)
+}
+
+function lengthsWithinDrift(copy: CopyLength, fileDurationSec: number | undefined) {
+  if (copy.durationSec === undefined || fileDurationSec === undefined) return false
+  return Math.abs(copy.durationSec - fileDurationSec) <= VERSION_GAP_SEC
+}
+
+// A Replace carries the copy's cues over by the shift it measures between the two files, which
+// it finds only within REPLACE_REACH_SECONDS. A copy counted for its matching length is in
+// reach; one counted only across a gap of silence is not once its music starts further off.
+function replaceReaches(copy: CopyLength, fileDurationSec: number | undefined) {
+  if (lengthsWithinDrift(copy, fileDurationSec) || !copy.sameMasterAcrossGap) return true
+  return copy.sameMasterAcrossGap.headShiftSec <= REPLACE_REACH_SECONDS
 }
 
 export function copyPathIn(
@@ -47,16 +65,13 @@ export function copyPathIn(
 ): string | undefined {
   return rows.find(
     (row) =>
-      row.program === program &&
-      countsAsCopy(row.verdict) &&
-      lengthsMatch(row.durationSec, fileDurationSec),
+      row.program === program && countsAsCopy(row.verdict) && lengthsMatch(row, fileDurationSec),
   )?.path
 }
 
-export interface FillCandidate {
+export interface FillCandidate extends CopyLength {
   path: string
   verdict: LibraryVerdict | null
-  durationSec?: number
 }
 
 interface FillCopies {
@@ -78,7 +93,7 @@ export function fillCopyPath(args: FillCopies): string {
   const first = copiesOf(args).find(
     (copy) =>
       countsAsCopy(copy.verdict) &&
-      (copy.verdict === 'measuring' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
+      (copy.verdict === 'measuring' || lengthsMatch(copy, args.fileDurationSec)),
   )
   if (!first || first.verdict === 'measuring') return ''
   if (args.programsPending && first !== args.musicCopy) return ''
@@ -90,7 +105,8 @@ function copiesOf(args: FillCopies): FillCandidate[] {
 }
 
 // «Another version» in the section: the comparison said so, or the verdict counts but both
-// lengths are known and further apart than a drift leaves. An unknown length proves nothing.
+// lengths are known and further apart than a drift leaves, and nothing lined them up as one
+// master across that gap. An unknown length proves nothing.
 export function isAnotherVersion(
   copy: FillCandidate,
   fileDurationSec: number | undefined,
@@ -101,7 +117,7 @@ export function isAnotherVersion(
     copy.verdict !== 'measuring' &&
     copy.durationSec !== undefined &&
     fileDurationSec !== undefined &&
-    !lengthsMatch(copy.durationSec, fileDurationSec)
+    !lengthsMatch(copy, fileDurationSec)
   )
 }
 
@@ -131,7 +147,7 @@ export function versionCopyIn(
   return own.find((row) => isAnotherVersion(row, fileDurationSec))?.path ?? ''
 }
 
-export interface CopyCandidate {
+export interface CopyCandidate extends CopyLength {
   program: PlaylistSource
   // '' while Apple Music still looks the file up.
   path: string
@@ -139,13 +155,14 @@ export interface CopyCandidate {
   format: string
   verdict: LibraryVerdict | null
   better: boolean
-  durationSec?: number
   // Only on the Apple Music candidate, and never an ambiguous match.
   music?: ReplaceCandidate
 }
 
 export interface LibraryCopyTarget extends Omit<CopyCandidate, 'verdict'> {
   held: boolean
+  // False when only Update keeps the copy's cues where they are, see replaceReaches.
+  replaceable: boolean
 }
 
 export interface LibraryCopyRef {
@@ -165,15 +182,23 @@ export function pickLibraryCopy(
   const copy = candidates.find(
     (candidate) =>
       countsAsCopy(candidate.verdict) &&
-      (lengthsMatch(candidate.durationSec, fileDurationSec) ||
+      (lengthsMatch(candidate, fileDurationSec) ||
         (candidate.durationSec === undefined &&
-          (candidate.verdict === 'measuring' || candidate.path === ''))),
+          (candidate.verdict === 'measuring' || candidate.path === ''))) &&
+      // A copy neither action can keep the cues of is left out, as before it counted at all.
+      (replaceReaches(candidate, fileDurationSec) ||
+        !candidate.path ||
+        !!keptFormatOf(candidate.path)),
   )
   if (!copy) return null
   const { verdict, ...target } = copy
   // A copy still being compared may yet turn out to be another version, and Apple Music's
   // copy without a path gives nothing to update or replace: the press waits for both.
-  return { ...target, held: verdict === 'measuring' || copy.path === '' }
+  return {
+    ...target,
+    held: verdict === 'measuring' || copy.path === '',
+    replaceable: replaceReaches(copy, fileDurationSec),
+  }
 }
 
 export function replaceCopyPatch(target: LibraryCopyTarget, openPath: string): Partial<TrackItem> {
@@ -217,4 +242,6 @@ export interface LibraryCopyOffer {
   updatable?: boolean
   // Replacing this copy repoints Serato to a new file, which loses the copy's stars.
   replaceLosesStars?: boolean
+  // False for a copy whose cues only Update keeps in place.
+  replaceable?: boolean
 }
