@@ -29,8 +29,8 @@ export function groupingFromCopy(
   meta: TrackMetadata,
   copy: { grouping?: string },
 ): TrackMetadata | null {
-  const grouping = copy.grouping
-  if (grouping === undefined || isBlank(grouping) || !isBlank(meta.grouping)) return null
+  const grouping = copy.grouping ?? ''
+  if (isBlank(grouping) || !isBlank(meta.grouping)) return null
   return { ...meta, grouping }
 }
 
