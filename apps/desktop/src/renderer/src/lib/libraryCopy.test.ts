@@ -8,6 +8,7 @@ import {
   keptFormatOf,
   pickLibraryCopy,
   replaceCopyPatch,
+  replaceWarnsFirst,
 } from './libraryCopy'
 import { replacePatch } from './replaceBeforeConvert'
 
@@ -334,5 +335,23 @@ describe('keptFormatOf', () => {
     expect(keptFormatOf('/r/a.aif')).toBe('aiff')
     expect(keptFormatOf('/m/a.m4a')).toBe('alac')
     expect(keptFormatOf('/x/a.ogg')).toBeUndefined()
+  })
+})
+
+// A menu Replace runs at once only when it is known to cost no stars: on a Serato copy whose
+// collection is not read yet, the first Replace would go through before the warning could show.
+describe('replaceWarnsFirst', () => {
+  it('holds a Replace on a Serato copy while the stars loss is unknown', () => {
+    expect(replaceWarnsFirst('serato', undefined)).toBe(true)
+  })
+
+  it('holds a Replace that is known to cost stars, whatever the program', () => {
+    expect(replaceWarnsFirst('rekordbox', true)).toBe(true)
+    expect(replaceWarnsFirst('serato', true)).toBe(true)
+  })
+
+  it('runs a Replace known to cost nothing, or unknown on a copy Serato did not hand over', () => {
+    expect(replaceWarnsFirst('serato', false)).toBe(false)
+    expect(replaceWarnsFirst('rekordbox', undefined)).toBe(false)
   })
 })

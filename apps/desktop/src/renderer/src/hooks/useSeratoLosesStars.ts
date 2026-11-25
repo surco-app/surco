@@ -9,6 +9,12 @@ import { sourceCollectionOptions } from '../lib/sourcePrograms'
 // the stars that live in master.sqlite. Several tracks replace several files, and one Serato
 // holds is enough to lose stars.
 export function useSeratoLosesStars(...replacedPaths: string[]): boolean {
+  return useSeratoStarsLoss(...replacedPaths) === true
+}
+
+// The same answer, undefined while Serato's collection is still unread: a caller that must not
+// replace blind tells that apart from a known no.
+export function useSeratoStarsLoss(...replacedPaths: string[]): boolean | undefined {
   const settings = useAppSettings()
   const repoints = settings.syncSerato || settings.addToSerato
   const { data } = useQuery({
@@ -19,5 +25,7 @@ export function useSeratoLosesStars(...replacedPaths: string[]): boolean {
     () => new Set((data ?? []).flatMap((track) => (track.path ? [pathKey(track.path)] : []))),
     [data],
   )
-  return repoints && replacedPaths.some((path) => !!path && heldKeys.has(pathKey(path)))
+  if (!repoints || !replacedPaths.some(Boolean)) return false
+  if (data === undefined) return undefined
+  return replacedPaths.some((path) => !!path && heldKeys.has(pathKey(path)))
 }

@@ -139,6 +139,15 @@ export function copyRefOf(target: LibraryCopyTarget): LibraryCopyRef {
   return ref
 }
 
+// A menu Replace runs at once only when it is known to cost no Serato stars. On a Serato copy
+// whose collection is not read yet the answer is surely a loss to come, so it waits too.
+export function replaceWarnsFirst(
+  program: PlaylistSource,
+  losesStars: boolean | undefined,
+): boolean {
+  return losesStars === true || (losesStars === undefined && program === 'serato')
+}
+
 export function keptFormatOf(path: string): OutputFormat | undefined {
   return OUTPUT_FORMATS.find((format) => formatMatchesInput(format, path))
 }

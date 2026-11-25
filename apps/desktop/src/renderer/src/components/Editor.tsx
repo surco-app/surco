@@ -66,7 +66,7 @@ import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useSameFile } from '../hooks/useSameFile'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
-import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
+import { useSeratoLosesStars, useSeratoStarsLoss } from '../hooks/useSeratoLosesStars'
 import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -106,6 +106,7 @@ import {
   copyRefOf,
   fillCopyPath,
   keptFormatOf,
+  replaceWarnsFirst,
   type LibraryCopyOffer,
   type LibraryCopyRef,
   pickLibraryCopy,
@@ -1994,9 +1995,11 @@ export const Editor = memo(function Editor({
       : null
   const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
   // Asked whatever the body says, since it decides whether picking Replace may run at once.
-  const replaceLosesStars = useSeratoLosesStars(
+  const replaceStarsLoss = useSeratoStarsLoss(
     libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
   )
+  const replaceLosesStars =
+    !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
   // A copy in no format Surco writes can't be updated in place, but it is still the track, so
   // the body replaces it: offering nothing let the body say Convert and add a second entry
   // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
