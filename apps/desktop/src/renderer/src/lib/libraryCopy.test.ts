@@ -9,6 +9,7 @@ import {
   pickLibraryCopy,
   replaceCopyPatch,
   replaceWarnsFirst,
+  versionCopyPath,
 } from './libraryCopy'
 import { replacePatch } from './replaceBeforeConvert'
 
@@ -210,6 +211,95 @@ describe('fillCopyPath', () => {
 
   it('fills from a copy called the same recording when its length matches the file', () => {
     expect(fill({ programs: [rekordbox('same', 211.5)], fileDurationSec: 210 })).toBe('/r/a.aiff')
+  })
+})
+
+// The copy the Editor reads only for the grouping and the cover when no copy of the same
+// recording fills: another version of the track was filed by the DJ under the same grouping,
+// but its album, year or label belong to that other release.
+describe('versionCopyPath', () => {
+  const rekordbox = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/r/a.mp3',
+    verdict,
+    durationSec,
+  })
+  const traktor = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/t/a.wav',
+    verdict,
+    durationSec,
+  })
+  const version = (args: {
+    musicCopyPath?: string
+    musicCopyPending?: boolean
+    programs: Parameters<typeof versionCopyPath>[0]['programs']
+    fileDurationSec?: number
+  }) =>
+    versionCopyPath({
+      musicCopyPath: args.musicCopyPath ?? '',
+      musicCopyPending: args.musicCopyPending ?? false,
+      programs: args.programs,
+      fileDurationSec: args.fileDurationSec,
+    })
+
+  it('takes a copy the comparison called another version', () => {
+    expect(version({ programs: [rekordbox('different', 357)], fileDurationSec: 361 })).toBe(
+      '/r/a.mp3',
+    )
+  })
+
+  // FLAC 6:01 against the MP3 5:57 in rekordbox: a verdict about the same audio, but a length
+  // that makes it another edit, which the section shows as «Another version».
+  it('takes a copy that counts but whose length is another edit', () => {
+    expect(version({ programs: [rekordbox('here', 357)], fileDurationSec: 361 })).toBe('/r/a.mp3')
+  })
+
+  it('leaves the fill to a copy of the same recording, whose tags are all this file', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357), traktor('same', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+    expect(
+      version({
+        musicCopyPath: '/m/a.mp3',
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // A copy still compared may yet turn out to be the same recording, which fills everything.
+  it('waits while any copy is still being compared', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357), traktor('measuring', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  it('waits while the Apple Music copy is still being located, it may be the same recording', () => {
+    expect(
+      version({
+        musicCopyPending: true,
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // With tied copies Surco cannot tell which one is the track, nor which grouping is its own.
+  it.each(['several', 'missing', 'unreadable', 'thisFile', null] as const)(
+    'lends nothing from a copy that is not known to be another version (%s)',
+    (verdict) => {
+      expect(version({ programs: [rekordbox(verdict, 357)], fileDurationSec: 361 })).toBe('')
+    },
+  )
+
+  it('lends nothing from a counted copy whose length is unknown, nothing says another edit', () => {
+    expect(version({ programs: [rekordbox('here')], fileDurationSec: 361 })).toBe('')
+    expect(version({ programs: [rekordbox('here', 357)] })).toBe('')
   })
 })
 

@@ -111,6 +111,7 @@ import {
   type LibraryCopyRef,
   pickLibraryCopy,
   replaceCopyPatch,
+  versionCopyPath,
 } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
@@ -993,21 +994,24 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
-  // Only a copy of the same recording lends its fields: another version of the track has other
-  // tags. In Music that is the copy a replacement would supersede, and it goes first because
-  // the convert puts this file in its place, so a DJ copy waits while the Music library is still
-  // loading; otherwise the first DJ copy whose length matches this file's, once its comparison
-  // is done.
+  // Only a copy of the same recording lends all its fields: another version of the track has
+  // other tags, and lends only its grouping and cover when no such copy fills. In Music that is
+  // the copy a replacement would supersede, and it goes first because the convert puts this
+  // file in its place, so a DJ copy waits while the Music library is still loading; otherwise
+  // the first DJ copy whose length matches this file's, once its comparison is done.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
+  const fillCopies = {
+    musicCopyPath: replacedCopyPath,
+    musicCopyPending: replaceTargetPending || libraryLoading,
+    programs: copyRows,
+    fileDurationSec: item.duration,
+  }
+  const sameRecordingCopyPath = fillCopyPath(fillCopies)
   useReplacedCopyFill({
     item,
-    copyPath: fillCopyPath({
-      musicCopyPath: replacedCopyPath,
-      musicCopyPending: replaceTargetPending || libraryLoading,
-      programs: copyRows,
-      fileDurationSec: item.duration,
-    }),
+    copyPath: sameRecordingCopyPath || versionCopyPath(fillCopies),
+    anotherVersion: !sameRecordingCopyPath,
     onChange,
     onRecordUndo,
   })

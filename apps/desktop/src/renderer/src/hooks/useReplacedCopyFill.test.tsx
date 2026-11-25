@@ -197,12 +197,37 @@ describe('useReplacedCopyFill', () => {
     expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
   })
 
-  it('keeps the artwork the new file already shows', async () => {
+  // The copy's artwork is the one the DJ sees in their library for this track, so it wins over
+  // the file's own or a match's. The file's art stays in the picker and ⌘Z takes it back.
+  it('puts the copy artwork over the one the new file shows, with an undo step', async () => {
     const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
     setApi(
       vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })),
       readCoverFull,
     )
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({
+          coverUrl: 'surco://cover/new.jpg',
+          coverPath: '/covers/new.jpg',
+          embeddedCover: 'surco://cover/new.jpg',
+        }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+        onRecordUndo,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(readCoverFull).toHaveBeenCalledWith('/old/your-love.mp3')
+    expect(onChange.mock.calls[0][0]).toMatchObject({ coverUrl: COPY_COVER, coverPath: undefined })
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('embeddedCover')
+    expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
+  })
+
+  it('keeps the artwork the new file shows when the copy has none', async () => {
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })))
     const onChange = vi.fn()
     renderHook(() =>
       useReplacedCopyFill({
@@ -212,8 +237,7 @@ describe('useReplacedCopyFill', () => {
       }),
     )
     await waitFor(() => expect(onChange).toHaveBeenCalled())
-    expect(readCoverFull).not.toHaveBeenCalled()
-    expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('coverUrl')
   })
 
   it('leaves a cover the DJ removed by hand removed', async () => {
@@ -231,7 +255,57 @@ describe('useReplacedCopyFill', () => {
       }),
     )
     await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(readCoverFull).not.toHaveBeenCalled()
     expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
+  })
+
+  describe('from a copy that is another version', () => {
+    // FLAC 6:01 against the MP3 5:57 in Apple Music and rekordbox: the MP3 carries the grouping
+    // the DJ filed the track under, but its album and year are that other release's.
+    it('lends only the grouping and the cover, never the other release album', async () => {
+      const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+      setApi(
+        vi
+          .fn<Api['readTags']>()
+          .mockResolvedValue(
+            copyTags({ grouping: 'Bases, Rockola', album: 'Other Release', year: '1999' }),
+          ),
+        readCoverFull,
+      )
+      const onChange = vi.fn()
+      const onRecordUndo = vi.fn()
+      renderHook(() =>
+        useReplacedCopyFill({
+          item: track({ coverUrl: 'surco://cover/new.jpg' }),
+          copyPath: '/r/rockola.mp3',
+          anotherVersion: true,
+          onChange,
+          onRecordUndo,
+        }),
+      )
+      await waitFor(() => expect(onChange).toHaveBeenCalled())
+      const patch = onChange.mock.calls[0][0]
+      expect(patch).toMatchObject({
+        meta: { grouping: 'Bases, Rockola', album: '', year: '' },
+        coverUrl: COPY_COVER,
+        copyFilled: true,
+      })
+      expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
+    })
+
+    it('keeps the grouping the DJ already gave the track', async () => {
+      setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ grouping: 'Bases' })))
+      const onChange = vi.fn()
+      renderHook(() =>
+        useReplacedCopyFill({
+          item: track({ meta: { ...track().meta, grouping: 'Mine' } }),
+          copyPath: '/r/rockola.mp3',
+          anotherVersion: true,
+          onChange,
+        }),
+      )
+      await waitFor(() => expect(onChange).toHaveBeenCalledWith({ copyFilled: true }))
+    })
   })
 
   it('still fills the tags when the copy artwork cannot be read', async () => {

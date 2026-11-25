@@ -7297,26 +7297,27 @@ describe('Editor Apple Music library section', () => {
       expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
     })
 
-    // 95 s here and 30 s in rekordbox: another edit, whose album or genre may not be this file's.
-    it('never fills from a DJ copy that is another version, its tags are another edit', async () => {
+    // 95 s here and 30 s in rekordbox: another edit, whose album or genre are not this file's,
+    // but the DJ filed it under the grouping this track belongs to as well.
+    it('takes only the grouping from a DJ copy that is another version, its other tags are another edit', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
         hereDuration: 95,
-        tags: { '/r/Strobe.wav': copyTags },
+        tags: { '/r/Strobe.wav': { ...copyTags, grouping: 'Bases' } },
       })
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
-      await new Promise((r) => setTimeout(r, 50))
-      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
-      expect(filledPatches()).toEqual([])
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
     })
 
     // The pair probe lines up only the first 91 s, so an extended edit cut from the same master
     // matches it to the sample there: 400 s in rekordbox against 210 s here carries another mix
     // name and ISRC, so its length makes it another version.
-    it('never fills from an extended edit whose head matches this file to the sample', async () => {
-      const api = renderWithPrograms({
+    it('never fills the album or genre from an extended edit whose head matches this file to the sample', async () => {
+      renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 400 },
         hereDuration: 210,
         identicalPair: true,
@@ -7325,9 +7326,8 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() =>
         expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
-      await new Promise((r) => setTimeout(r, 50))
-      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
-      expect(filledPatches()).toEqual([])
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toBeUndefined()
     })
 
     const sameRekordboxCopy: Copy = {

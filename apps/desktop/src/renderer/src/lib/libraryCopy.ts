@@ -80,6 +80,31 @@ export function fillCopyPath(args: {
   return first.path
 }
 
+// «Another version» in the section: the comparison said so, or the verdict counts but both
+// lengths are known and further apart than a drift leaves. An unknown length proves nothing.
+export function isAnotherVersion(
+  copy: FillCandidate,
+  fileDurationSec: number | undefined,
+): boolean {
+  if (copy.verdict === 'different') return true
+  return (
+    countsAsCopy(copy.verdict) &&
+    copy.verdict !== 'measuring' &&
+    copy.durationSec !== undefined &&
+    fileDurationSec !== undefined &&
+    !lengthsMatch(copy.durationSec, fileDurationSec)
+  )
+}
+
+// The copy that lends only its grouping and cover, when no copy of the same recording fills.
+// It waits for every copy still compared or located: any of them may yet prove to be the same
+// recording, whose fill the track gets once and which must not be spent on another version.
+export function versionCopyPath(args: Parameters<typeof fillCopyPath>[0]): string {
+  if (fillCopyPath(args) || args.musicCopyPending) return ''
+  if (args.programs.some((copy) => copy.verdict === 'measuring')) return ''
+  return args.programs.find((copy) => isAnotherVersion(copy, args.fileDurationSec))?.path ?? ''
+}
+
 export interface CopyCandidate {
   program: PlaylistSource
   // '' while Apple Music still looks the file up.
