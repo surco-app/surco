@@ -28,7 +28,8 @@ export function useReplacedCopyFill({
   // The copy's file and Music's entry for it are read together and applied as one change, so
   // they never race on the same empty grouping nor leave two undo steps for one opening. The
   // file goes first, as for Music's own file: it is what every other program reads. Music
-  // fills what it leaves, and its artwork stands in only when the file carries none.
+  // fills what it leaves, and its artwork, a re-encode kept in its database, stands in only
+  // when neither the copy's file nor the track shows a picture.
   const apply = useStableCallback(
     (
       copy: TrackMetadata,
@@ -41,9 +42,9 @@ export function useReplacedCopyFill({
         : fillFromCopy(item.meta, copy)
       const fromMusic = music ? musicFill(fromFile ?? item.meta, music, anotherVersion) : null
       const meta = fromMusic ?? fromFile
-      const musicCover = !cover && music?.coverUrl ? music.coverUrl : null
       const coverUrl = cover && copyCoverWins(item, cover, ownCover) ? cover : null
-      const musicCoverUrl = musicCover && copyCoverWins(item, musicCover, null) ? musicCover : null
+      const musicCoverUrl =
+        !cover && !item.coverUrl && !item.coverRemoved && music?.coverUrl ? music.coverUrl : null
       if (!meta && !coverUrl && !musicCoverUrl) {
         onChange({ copyFilled: true })
         return

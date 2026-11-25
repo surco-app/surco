@@ -575,20 +575,28 @@ describe('from the Apple Music copy that is another file', () => {
     })
   })
 
-  // The artwork the DJ sees for this track in Music wins over the one the file shows, as the
-  // copy file's does; the file's own stays in the picker and ⌘Z takes it back.
-  it("puts Music's artwork over the file's own when the copy file carries none", async () => {
+  // Music's database art is its own re-encode of a picture, not the copy's file: the WAV case
+  // put it over the open FLAC's own cover. It stands in only where the track shows none.
+  it("keeps the file's own cover over Music's database artwork", async () => {
     setMusicApi({}, { grouping: 'Bases', coverUrl: MUSIC_COVER, coverPath: '/art/PID1.jpg' })
     const { onChange, onRecordUndo } = renderFill(
       { coverUrl: 'data:thumb', embeddedCover: 'data:thumb' },
       true,
     )
     await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({ meta: { grouping: 'Bases' } })
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('coverUrl')
+    expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: false })
+  })
+
+  it("takes Music's database artwork when the track shows no cover, with an undo step", async () => {
+    setMusicApi({}, { grouping: 'Bases', coverUrl: MUSIC_COVER, coverPath: '/art/PID1.jpg' })
+    const { onChange, onRecordUndo } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
     expect(onChange.mock.calls[0][0]).toMatchObject({
       coverUrl: MUSIC_COVER,
       coverPath: '/art/PID1.jpg',
     })
-    expect(onChange.mock.calls[0][0]).not.toHaveProperty('embeddedCover')
     expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
   })
 
