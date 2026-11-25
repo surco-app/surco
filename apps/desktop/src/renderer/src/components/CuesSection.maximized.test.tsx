@@ -3015,3 +3015,102 @@ describe('CuesSection maximized replaced track', () => {
     expect(restoreReplaced).not.toHaveBeenCalled()
   })
 })
+
+describe('CuesSection cue menus from the keyboard', () => {
+  // The focus stayed on the wave while the menu opened, so a keyboard user saw the menu and
+  // could reach none of it. It now takes the focus, the arrows walk it like every other menu
+  // and keep away from the wave's own keys, and a disabled entry is not a stop.
+  it('moves the focus into the mark menu and walks it with the arrows, Home and End', async () => {
+    setup({ cueLettersByTime: true })
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    const mark = screen.getByTestId('cue-wave-hot-A')
+    mark.focus()
+    fireEvent.contextMenu(mark, { clientX: 100, clientY: 5 })
+    const menu = screen.getByTestId('cues-menu')
+    const windowKeys = vi.fn<(e: KeyboardEvent) => void>()
+    window.addEventListener('keydown', windowKeys)
+    expect(screen.getByTestId('cues-menu-delete')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cues-menu-colour')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'End' })
+    expect(screen.getByTestId('cues-menu-to-call')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cues-menu-delete')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowUp' })
+    expect(screen.getByTestId('cues-menu-to-call')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'Home' })
+    expect(screen.getByTestId('cues-menu-delete')).toHaveFocus()
+    window.removeEventListener('keydown', windowKeys)
+    expect(windowKeys).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
+  })
+
+  it('lands on the first entry it can use when the first is disabled', async () => {
+    setup(null, {
+      ...READ,
+      cues: [1, 2, 3, 5, 6, 7, 8, 9].map((kind, i) => ({
+        id: `h${kind}`,
+        ms: 8000 * (i + 1),
+        kind,
+        color: 1,
+      })),
+    })
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
+    expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
+    const menu = screen.getByTestId('cues-menu')
+    fireEvent.keyDown(menu, { key: 'End' })
+    expect(screen.getByTestId('cues-menu-mark-drop')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowUp' })
+    expect(screen.getByTestId('cues-menu-mark-drop')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'Home' })
+    expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
+  })
+
+  // Opened over the wave, the menus have no place in the Tab order: Tab and Shift+Tab close
+  // them without moving on, back on the mark or the wave they were opened from.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes the mark menu on %s back on the mark', async (_name, shiftKey) => {
+    setup({ cueLettersByTime: true })
+    await maximize()
+    seek(64000)
+    fireEvent.click(screen.getByTestId('cues-pad-A'))
+    const mark = screen.getByTestId('cue-wave-hot-A')
+    mark.focus()
+    fireEvent.contextMenu(mark, { clientX: 100, clientY: 5 })
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('cues-menu-delete'), {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(false)
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+    expect(screen.getByTestId('cue-wave-hot-A')).toHaveFocus()
+  })
+
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes the add menu on %s back on the wave', async (_name, shiftKey) => {
+    setup()
+    await maximize()
+    const wave = screen.getByTestId('cue-detail')
+    wave.focus()
+    const opener = document.activeElement
+    fireEvent.contextMenu(wave, { clientX: 203, clientY: 40 })
+    expect(screen.getByTestId('cues-menu-add-hot')).toHaveFocus()
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('cues-menu-add-hot'), {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(false)
+    expect(screen.queryByTestId('cues-menu')).toBeNull()
+    expect(document.activeElement).toBe(opener)
+  })
+})

@@ -132,6 +132,7 @@ import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
 import { ownsKeystroke } from '../lib/keymap'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
@@ -960,6 +961,39 @@ function Editing({
       document.removeEventListener('mousedown', onDown)
     }
   }, [menuOpen, markMenu, maximized, focusEditor])
+  // Both menus open over the wave, from a right-click or the context-menu key on a mark:
+  // the focus moves into them so the keyboard can reach their entries, and goes back to
+  // where they were opened when they close with nothing else taking it.
+  const menuOpener = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    if (!menuOpen) return
+    menuOpener.current = document.activeElement as HTMLElement | null
+    return () => {
+      const at = document.activeElement
+      if (!at || at === document.body) menuOpener.current?.focus()
+    }
+  }, [menuOpen])
+  const menuFace = menu !== null ? 'add' : markMenu && `${markMenu.key}:${markMenu.palette}`
+  useEffect(() => {
+    if (menuFace) menuItems(menuRef.current, 'button')[0]?.focus()
+  }, [menuFace])
+  // The letters and the palette are buttons without a menu role, so every button is a stop.
+  // Tab closes like Escape instead of walking on behind a menu laid over the wave.
+  const onMenuKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      e.stopPropagation()
+      setMenu(null)
+      setMarkMenu(null)
+      return
+    }
+    const items = menuItems(menuRef.current, 'button')
+    const next = menuStep(e.key, items.indexOf(document.activeElement as HTMLElement), items.length)
+    if (next === null || items.length === 0) return
+    e.preventDefault()
+    e.stopPropagation()
+    items[next].focus()
+  }
   const fromMenu = (action: DraftAction) => {
     dispatch(action)
     setMenu(null)
@@ -2026,6 +2060,7 @@ function Editing({
           ref={menuRef}
           data-testid="cues-menu"
           role="menu"
+          onKeyDown={onMenuKeyDown}
           style={{ left: menu.x, top: menu.y }}
           className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
         >
@@ -2066,6 +2101,7 @@ function Editing({
           ref={menuRef}
           data-testid="cues-menu"
           role="menu"
+          onKeyDown={onMenuKeyDown}
           style={{ left: markMenu.x, top: markMenu.y }}
           className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
         >
