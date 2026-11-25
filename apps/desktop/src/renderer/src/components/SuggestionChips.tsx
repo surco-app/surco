@@ -156,7 +156,9 @@ export function SuggestionChips({
             onFocus={(e) => measureCut(e.currentTarget, s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
-            className={`press inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-label transition-colors ${
+            // El anillo de foco va por dentro: el global, de 2 px por fuera, se fundía con el
+            // borde y la fila plegada (overflow-hidden) lo cortaba arriba, abajo y a la izquierda.
+            className={`press inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-label transition-colors focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)] ${
               showAll ? 'shrink-0' : 'min-w-0'
             } ${
               state === 'on'
@@ -192,7 +194,7 @@ export function SuggestionChips({
           aria-label={tr('fields.suggestionsMore', {
             count: chips.length - shownCount,
           })}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)]"
         >
           +{chips.length - shownCount}
         </button>
@@ -207,7 +209,7 @@ export function SuggestionChips({
             setOpen(false)
           }}
           aria-label={tr('fields.suggestionsLess')}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)]"
         >
           −
         </button>
