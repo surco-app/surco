@@ -128,6 +128,50 @@ describe('seratoEdit', () => {
     )
   })
 
+  // Another queued edit can change a crate without touching a track: the window still has
+  // to hear of it, or that crate shows its old state.
+  it('announces another queued edit that only changed a crate', async () => {
+    const { handle, host } = registerWith({
+      running: false,
+      result: (op) => ({
+        status: 'applied',
+        tracks: 0,
+        changes: 2,
+        notices: [],
+        written: [],
+        outcomes: [
+          { id: op.id, applied: true, notices: [] },
+          { id: 'other', applied: true, notices: [] },
+        ],
+      }),
+    })
+    await handle(rename('A', 'X'))
+    expect(host.onApplied).toHaveBeenCalledWith(expect.objectContaining({ tracks: 0, changes: 1 }))
+  })
+
+  // A queued operation that wrote nothing can still leave a notice the DJ must read.
+  it('announces a notice another queued operation left, even with nothing written', async () => {
+    const notice = { code: 'playlist-changed', track: 'Bam Bam', playlist: 'House' } as const
+    const { handle, host } = registerWith({
+      running: false,
+      result: (op) => ({
+        status: 'applied',
+        tracks: 0,
+        changes: 1,
+        notices: [notice],
+        written: [],
+        outcomes: [
+          { id: op.id, applied: true, notices: [] },
+          { id: 'other', applied: false, notices: [notice] },
+        ],
+      }),
+    })
+    await handle(rename('A', 'X'))
+    expect(host.onApplied).toHaveBeenCalledWith(
+      expect.objectContaining({ changes: 0, notices: [notice] }),
+    )
+  })
+
   it('takes a refused edit out of the queue, so it is never written later', async () => {
     const { handle, queue, queued } = registerWith({
       running: false,
