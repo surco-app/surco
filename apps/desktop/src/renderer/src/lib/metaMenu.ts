@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import type { TFunction } from 'i18next'
+import type { MetaTextKey } from '../../../shared/types'
 import type { MetaMenuItem } from '../components/MetaMoreMenu'
 
 export type MoreItemsContext = {
@@ -25,7 +26,7 @@ export type MoreItemsContext = {
   onCopyMeta: () => void
   onPasteMeta: () => void
   copiedMetaTitle: string | null
-  restorableRelease: object
+  restorableRelease: Partial<Record<MetaTextKey, string>>
   restoreRelease: () => void
 }
 

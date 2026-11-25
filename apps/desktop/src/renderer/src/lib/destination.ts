@@ -1,6 +1,13 @@
 import { tagsOnly } from '../../../shared/audioProcessing'
 import { editsInPlace, formatMatchesInput } from '../../../shared/format'
-import type { DeclickConfig, NormalizeConfig, OutputFormat, Settings } from '../../../shared/types'
+import type {
+  DeclickConfig,
+  FormatSetting,
+  NormalizeConfig,
+  OutputFormat,
+  Settings,
+} from '../../../shared/types'
+import type { LibraryVerdict } from '../hooks/useLibraryVerdict'
 import type { TrackItem } from '../types'
 import { jobAudio } from './reapply'
 import { fileHoldsTrack } from './upToDate'
@@ -78,7 +85,7 @@ export type ExportDestinationContext = {
   destinationPicked: boolean
   destination: Destination
   addToAppleMusic: boolean
-  formatPick: string
+  formatPick: FormatSetting
   overwriteOriginal: boolean
   convertBesideOriginal: boolean
   macOS: boolean
@@ -140,7 +147,7 @@ export type ExportReadinessContext = {
   isMulti: boolean
   picked: ReturnType<typeof fromDestination>
   format: OutputFormat
-  inLibrary: 'idle' | 'yes' | 'no'
+  inLibrary: LibraryVerdict['inLibrary']
   willEditInPlace: boolean
   tagsOnlyExport: boolean
   defaultOutputName: string

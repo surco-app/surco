@@ -1,3 +1,5 @@
+import type { TrackMetadata } from '../../../shared/types'
+
 // Strips bracketed mix/label provenance — "(Original Mix)", "[Label 001]" — from a
 // title or album and collapses the leftover whitespace. Used to propose a clean
 // album from a track title that still carries its mix name. Mirrors the main-process
@@ -11,7 +13,7 @@ export function stripParentheticals(text: string): string {
 
 export type AlbumCleanContext = {
   isMulti: boolean
-  meta: { album?: string; title?: string }
+  meta: Pick<TrackMetadata, 'album' | 'title'>
 }
 
 // "Without version" proposal for the album menu: strip the mix/label parenthetical

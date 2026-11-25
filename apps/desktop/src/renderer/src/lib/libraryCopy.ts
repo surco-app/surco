@@ -340,13 +340,15 @@ export interface MusicCopyContext {
   musicEntryDurationSec: number | undefined
 }
 
+export type MusicCopyResult = { musicCopy: MusicCopy | null }
+
 export function musicCopyOf({
   replaceTarget,
   musicRow,
   replacedCopyFormat,
   libraryCopyBetter,
   musicEntryDurationSec,
-}: MusicCopyContext): { musicCopy: MusicCopy | null } {
+}: MusicCopyContext): MusicCopyResult {
   const musicCopy =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) && musicRow
       ? {
@@ -372,6 +374,8 @@ export interface PickedCopyContext {
   fileDurationSec: number | undefined
 }
 
+export type PickedCopyResult = { pickedCopy: LibraryCopyTarget | null }
+
 export function pickedCopyOf({
   isMulti,
   musicCopy,
@@ -380,7 +384,7 @@ export function pickedCopyOf({
   programVerdicts,
   copyRows,
   fileDurationSec,
-}: PickedCopyContext): { pickedCopy: LibraryCopyTarget | null } {
+}: PickedCopyContext): PickedCopyResult {
   const copyCandidates: CopyCandidate[] = isMulti
     ? []
     : [
