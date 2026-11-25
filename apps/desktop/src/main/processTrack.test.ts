@@ -1290,6 +1290,49 @@ describe('runProcessTrack — retagging a library copy where it is', () => {
     expect(result.engineDjQueued).toBeUndefined()
   })
 
+  // Under never, a copy rewritten where it is (a WAV losing foreign cue chunks re-encodes)
+  // is held only until its checks answer. Update registers no verification, so the library
+  // checks never answer, and unless the job settles the hold itself it stays pinned in
+  // Copias with nothing to ever drop it.
+  it('settles the original held under never once the retagged copy checks out', async () => {
+    const entry: TrashEntry = {
+      id: 'held',
+      name: 'x',
+      originalPath: '/r/Song.aif',
+      storedPath: '/nowhere/Song.aif',
+      bytes: 0,
+      trashedAt: 0,
+      reason: 'replaced',
+    }
+    const discarded = vi.fn(async () => {})
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'never',
+        async () => entry,
+      ),
+    )
+    configureBackupDiscarder(discarded)
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (input, output) => {
+        await keepOriginal(input, 'replaced', output, { reencodes: true, untilChecked: true })
+        return { normalizeSkipped: false, written }
+      }),
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: 'ambiguous',
+      })),
+      registerVerification: vi.fn(),
+    })
+    try {
+      await runProcessTrack(copy(), deps)
+    } finally {
+      configureOriginalKeeper(null)
+      configureBackupDiscarder(null)
+    }
+
+    expect(deps.registerVerification).not.toHaveBeenCalled()
+    expect(discarded).toHaveBeenCalledWith(entry)
+  })
+
   it('reports a tags-only write for a library copy update', async () => {
     const deps = makeDeps()
     const result = await runProcessTrack(copy(), deps)

@@ -1288,7 +1288,19 @@ export async function runProcessTrack(
       ...(virtualdjListed ? [library('virtualdj')] : []),
     ])
     const heldOriginal = claimHeldOriginal(finalPath)
-    const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
+    // Update registers no verification below, so the library checks never answer and the hold
+    // would stay pinned for good: the file's and Music's checks, read here, settle it, and
+    // anything short of all clear leaves the original in Copias like any other copy.
+    const copyChecked =
+      job.tagsInPlace &&
+      withChecks({ status: 'checking', checks: [] }, [
+        fileCheck,
+        ...(musicCheck ? [musicCheck] : []),
+      ]).status === 'ok'
+    const originalHeld = settleHeldOriginal(
+      heldOriginal,
+      job.tagsInPlace ? (copyChecked ? 'ok' : 'mismatch') : checked.status,
+    )
     const verification = {
       ...checked,
       job: randomUUID(),
