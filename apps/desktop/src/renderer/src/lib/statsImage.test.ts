@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { fittedFontSize, statsImageCells } from './statsImage'
+// @vitest-environment jsdom
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fittedFontSize, renderStatsImage, statsImageCells } from './statsImage'
 
 describe('statsImageCells', () => {
   // The share card is a brag sheet, not a report: a "0 encontradas en Bandcamp" row
@@ -164,5 +165,152 @@ describe('fittedFontSize', () => {
 
   it('shrinks the size in proportion so a long translation fits at its natural width', () => {
     expect(fittedFontSize(46, 1021, 828)).toBe(37)
+  })
+})
+
+// jsdom draws nothing, so the card's canvas gets a context that only records the text it
+// is asked to paint and where. Shapes are accepted and ignored: what the card says is what
+// someone scrolling past it reads.
+interface DrawnText {
+  text: string
+  x: number
+  y: number
+}
+
+let drawn: DrawnText[] = []
+
+function recordingContext(): CanvasRenderingContext2D {
+  const ignore = (): void => {}
+  const ctx: Partial<CanvasRenderingContext2D> = {
+    fillStyle: '',
+    strokeStyle: '',
+    font: '',
+    textAlign: 'start',
+    textBaseline: 'alphabetic',
+    letterSpacing: '0px',
+    lineWidth: 1,
+    measureText: (text: string) => ({ width: text.length * 10 }) as TextMetrics,
+    fillText: (text: string, x: number, y: number) => {
+      drawn.push({ text, x, y })
+    },
+    fillRect: ignore,
+    beginPath: ignore,
+    arc: ignore,
+    roundRect: ignore,
+    fill: ignore,
+    stroke: ignore,
+  }
+  return ctx as CanvasRenderingContext2D
+}
+
+function at(text: string): DrawnText {
+  const found = drawn.find((d) => d.text === text)
+  if (!found) throw new Error(`"${text}" was not drawn`)
+  return found
+}
+
+const card = {
+  title: 'My year in Surco',
+  language: 'en',
+  conversionCount: 25000,
+  countLabel: 'tracks converted',
+  cells: [
+    { value: 1200, label: 'imported' },
+    { value: 800, label: 'analyzed' },
+    { value: 300, label: 'found on Discogs' },
+  ],
+  timeSaved: 'About 3 days saved',
+  perTrack: '10 s per track',
+  footer: 'surco.app',
+}
+
+beforeEach(() => {
+  drawn = []
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(recordingContext)
+  vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,CARD')
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+describe('renderStatsImage', () => {
+  // The PNG goes to the save dialog and then to an Instagram story, so what comes back
+  // must be the card canvas encoded as PNG.
+  it('returns the card as a PNG data URL', () => {
+    expect(renderStatsImage(card)).toBe('data:image/png;base64,CARD')
+    expect(HTMLCanvasElement.prototype.toDataURL).toHaveBeenCalledWith('image/png')
+  })
+
+  // A story viewer has no app open: the brand and the title are what tell them whose
+  // card this is, so they lead the card from the top.
+  it('opens with the wordmark and then the title', () => {
+    renderStatsImage(card)
+    expect(drawn[0].text).toBe('SURCO')
+    expect(drawn[1].text).toBe('My year in Surco')
+    expect(at('My year in Surco').y).toBeGreaterThan(at('SURCO').y)
+  })
+
+  // The lifetime conversions are the headline, written the way the sender's language
+  // groups digits, so a German card says 25.000 and an English one 25,000.
+  it('shows the conversion hero formatted for the language', () => {
+    renderStatsImage({ ...card, language: 'de' })
+    expect(at('25.000').y).toBeLessThan(at('tracks converted').y)
+    drawn = []
+    renderStatsImage(card)
+    expect(at('25,000').y).toBeLessThan(at('tracks converted').y)
+  })
+
+  // Activity without conversions still deserves a card, but a giant "0 tracks converted"
+  // would turn the brag into an anti-achievement.
+  it('leaves the hero out when nothing was converted', () => {
+    renderStatsImage({ ...card, conversionCount: 0 })
+    expect(drawn.map((d) => d.text)).not.toContain('tracks converted')
+    expect(drawn.map((d) => d.text)).not.toContain('0')
+    expect(at('1,200').y).toBeGreaterThan(at('My year in Surco').y)
+  })
+
+  // Two columns side by side, each value with its label under it; an odd last tally sits
+  // centred on its own row instead of hanging off the left column.
+  it('lays the tallies out in two columns and centres an odd last one', () => {
+    renderStatsImage(card)
+    const first = at('1,200')
+    const second = at('800')
+    const last = at('300')
+    expect([first.x, second.x, last.x]).toEqual([300, 780, 540])
+    expect(second.y).toBe(first.y)
+    expect(last.y).toBeGreaterThan(first.y)
+    expect(at('imported')).toEqual({ text: 'imported', x: 300, y: first.y + 46 })
+    expect(at('found on Discogs').x).toBe(540)
+  })
+
+  it('fills a second row with two columns when there are four tallies', () => {
+    renderStatsImage({ ...card, cells: [...card.cells, { value: 44, label: 'found on Deezer' }] })
+    expect([at('300').x, at('44').x]).toEqual([300, 780])
+    expect(at('44').y).toBe(at('300').y)
+    expect(at('300').y).toBeGreaterThan(at('1,200').y)
+  })
+
+  // Everything on the card is something a stranger can read: no milestone line like
+  // "2583 to go until 25000", which only motivates the sender. Only the wordmark and the
+  // caller's own strings are drawn, and all of them inside the story frame.
+  it('draws only the wordmark and the given stats, inside the card', () => {
+    renderStatsImage(card)
+    expect(drawn.map((d) => d.text)).toEqual([
+      'SURCO',
+      'My year in Surco',
+      '25,000',
+      'tracks converted',
+      '1,200',
+      'imported',
+      '800',
+      'analyzed',
+      '300',
+      'found on Discogs',
+      'About 3 days saved',
+      '10 s per track',
+      'surco.app',
+    ])
+    expect(drawn.every((d) => d.y > 0 && d.y < 1920 && d.x > 0 && d.x < 1080)).toBe(true)
   })
 })
