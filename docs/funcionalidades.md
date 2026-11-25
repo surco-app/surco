@@ -3453,7 +3453,9 @@ en las pestañas de los programas ni con varias pistas, y se puede esconder en A
   playlists actúa sobre ella, Actualizar y Sustituir la usan) si su duración está a ±2 s de la del
   archivo, o si la comparación confirma el mismo master con más o menos silencio. Eso pide que la
   búsqueda ancha alinee el primer minuto y que, quitado el silencio de cada extremo con la misma
-  detección que el recorte de silencio, la música dure lo mismo a ±2 s (`sameMasterAcrossGap`).
+  detección que el recorte de silencio y con un mismo umbral para las dos (el más alto de los
+  suyos, para que un relleno con dither y un fundido lento se lean igual), la música dure lo mismo
+  a ±2 s (`sameMasterAcrossGap`, `pairOnsets`).
   Esa detección lee la onda entera de las dos copias, así que solo se pide para los pares que la
   búsqueda ancha ya alineó. Si la música de la copia empieza más de 5 s antes o después, solo se
   ofrece Actualizar, porque Sustituir no encontraría el desfase de los cues; y si Surco no puede

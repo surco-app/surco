@@ -7073,8 +7073,12 @@ describe('Editor Apple Music library section', () => {
       formFolded?: boolean
       // Main's comparison of the two copies, in place of the one master lined up within 1 s.
       pair?: PairProbe
-      // Each path's waveform as where its music starts and ends, and its length.
-      waves?: Record<string, readonly [startSec: number, endSec: number, durationSec: number]>
+      // Each path's waveform as where its music starts and ends, and its length, or as peaks.
+      waves?: Record<
+        string,
+        | readonly [startSec: number, endSec: number, durationSec: number]
+        | { peaks: number[]; durationSec: number }
+      >
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7133,6 +7137,7 @@ describe('Editor Apple Music library section', () => {
       api.waveform = vi.fn(async (path: string) => {
         const wave = waves[path]
         if (!wave) return null
+        if ('peaks' in wave) return { ...wave, rms: wave.peaks }
         const [startSec, endSec, durationSec] = wave
         const buckets = 4000
         const peaks = Array.from({ length: buckets }, (_, i) => {
@@ -7586,6 +7591,30 @@ describe('Editor Apple Music library section', () => {
             copyPlaylistsFilled: ['rekordbox'],
           }),
         )
+      })
+
+      // Both copies end on the same slow fade-out, and the longer one starts with five seconds
+      // of dither: each file's own gate would end the music seconds apart on that fade.
+      it('counts one master padded with dither at its head though both end on a slow fade', async () => {
+        const fade = (t: number) =>
+          t < 394 ? 0.5 : t < 421 ? 10 ** ((-6 - ((t - 394) / 27) * 54) / 20) : 0
+        const peaks = (durationSec: number, padSec: number) =>
+          Array.from({ length: 4000 }, (_, i) => {
+            const t = (i * durationSec) / 4000
+            return t < padSec ? 10 ** (-66 / 20) : fade(t - padSec)
+          })
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': copyTags },
+          pair: lined,
+          waves: {
+            '/music/Strobe.aif': { peaks: peaks(421, 0), durationSec: 421 },
+            '/r/Strobe.wav': { peaks: peaks(426, 5), durationSec: 426 },
+          },
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject(copyTags)
       })
 
       it.each([

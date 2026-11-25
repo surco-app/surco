@@ -7,7 +7,7 @@ import type {
   TrackProperties,
 } from '../../../shared/types'
 import { type CopyFacts, type CopyVerdict, compareCopies, wantsAudibleSpans } from '../lib/bestCopy'
-import { audibleSpanOptions, settledSpan, withAudible } from './useAudibleSpan'
+import { gatedWaveOptions, settledWave, withAudible } from './useAudibleSpan'
 import { libraryCopyFormat } from '../lib/properties'
 import { copyDurationOptions, withDuration } from './useCopyDuration'
 import { copyFactsQueries, toCopyFacts, versionPairOptions } from './useCopyFacts'
@@ -83,16 +83,21 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
   })
   const spans = useQueries({
     queries: [
-      { ...audibleSpanOptions(herePath), enabled: measured.some((m) => m.wanted) },
-      ...measured.map((m) => ({ ...audibleSpanOptions(m.path), enabled: m.wanted })),
+      { ...gatedWaveOptions(herePath), enabled: measured.some((m) => m.wanted) },
+      ...measured.map((m) => ({ ...gatedWaveOptions(m.path), enabled: m.wanted })),
     ],
   })
 
   if (copyPaths.length === 0) return []
   return measured.map(({ path, pair, wanted, ...m }, i) => {
     const start = HERE_QUERIES + i * QUERIES_PER_COPY
-    const hereFacts = withAudible(here, settledSpan(spans[0]), wanted)
-    const copy = withAudible(m.copy, settledSpan(spans[i + 1]), wanted)
+    const [hereFacts, copy] = withAudible(
+      here,
+      m.copy,
+      settledWave(spans[0]),
+      settledWave(spans[i + 1]),
+      wanted,
+    )
     const props = results[start + FACTS_PER_FILE + 2].data as TrackProperties | null | undefined
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
     const measuring = hereFacts === undefined || copy === undefined || pair === undefined

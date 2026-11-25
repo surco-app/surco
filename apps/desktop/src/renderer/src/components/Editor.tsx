@@ -45,7 +45,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
-import { useAudibleSpan, withAudible } from '../hooks/useAudibleSpan'
+import { useGatedWave, withAudible } from '../hooks/useAudibleSpan'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
@@ -905,14 +905,11 @@ export const Editor = memo(function Editor({
     !!hereMeasured &&
     !!libraryMeasured &&
     wantsAudibleSpans(hereMeasured, libraryMeasured, copyPair)
-  const hereFacts = withAudible(
+  const [hereFacts, libraryFacts] = withAudible(
     hereMeasured,
-    useAudibleSpan(item.inputPath, spansWanted),
-    spansWanted,
-  )
-  const libraryFacts = withAudible(
     libraryMeasured,
-    useAudibleSpan(comparedCopyPath, spansWanted),
+    useGatedWave(item.inputPath, spansWanted),
+    useGatedWave(comparedCopyPath, spansWanted),
     spansWanted,
   )
   const copyVerdict =
