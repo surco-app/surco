@@ -18,6 +18,23 @@ describe('waitForExit', () => {
     expect(wait.mock.calls.map(([ms]) => ms)).toEqual(Array(30).fill(500))
   })
 
+  // Traktor and Engine DJ rely on the built-in wait: the checks must really be half a
+  // second apart, or the thirty of them would give the program no time at all to quit.
+  it('waits half a second of real time between checks when the caller brings no wait', async () => {
+    vi.useFakeTimers()
+    try {
+      const isRunning = vi.fn().mockResolvedValueOnce(true).mockResolvedValue(false)
+      const done = waitForExit(isRunning)
+      await vi.advanceTimersByTimeAsync(499)
+      expect(isRunning).toHaveBeenCalledTimes(1)
+      await vi.advanceTimersByTimeAsync(1)
+      expect(await done).toBe(true)
+      expect(isRunning).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('honours a shorter poll when the caller asks for one', async () => {
     const isRunning = vi.fn(async () => true)
     const wait = vi.fn(async (_ms: number) => {})
