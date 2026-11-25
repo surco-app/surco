@@ -36,6 +36,7 @@ import type {
 import {
   type PlaceCheck,
   type VerifyDetailKey,
+  type Verification,
   type VerifyPlace,
   withChecks,
 } from '../shared/verification'
@@ -894,6 +895,116 @@ async function runEngineDjStep(ctx: EngineDjStepContext): Promise<EngineDjStepRe
   return { addedToEngineDj, engineDjError }
 }
 
+type LibrariesBefore = Awaited<ReturnType<NonNullable<ProcessTrackDeps['snapshotLibraries']>>>
+
+interface VerifyPlacesContext {
+  musicCheck: PlaceCheck | undefined
+  followed: boolean
+  before: LibrariesBefore
+  playlists: NonNullable<VerifyEntry['playlists']>
+  addedToEngineDj: true | undefined
+  traktor: boolean
+  settings: Settings
+}
+
+export function verifyPlaces(ctx: VerifyPlacesContext): Set<VerifyPlace> {
+  const { musicCheck, followed, before, playlists, addedToEngineDj, traktor, settings } = ctx
+  const places = new Set<VerifyPlace>(['file'])
+  if (musicCheck) places.add('appleMusic')
+  if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
+  if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
+  if (followed && traktor) places.add('traktor')
+  if (followed && (before.virtualdj || playlists.virtualdj || settings.addToVirtualdj))
+    places.add('virtualdj')
+  return places
+}
+
+interface VerificationContext {
+  job: ProcessJob
+  settings: Settings
+  before: LibrariesBefore
+  addedToEngineDj: true | undefined
+  musicOnly: boolean
+  finalPath: string
+  fileCheck: PlaceCheck
+  musicCheck: PlaceCheck | undefined
+}
+
+interface VerificationPlan {
+  playlists: NonNullable<VerifyEntry['playlists']>
+  places: Set<VerifyPlace>
+  heldOriginal: string | undefined
+  verification: Verification
+}
+
+function planVerification(ctx: VerificationContext): VerificationPlan {
+  const { job, settings, before, addedToEngineDj, musicOnly, finalPath, fileCheck, musicCheck } =
+    ctx
+  // Add to Traktor alone moves a replace's old entry onto the new file, so the old file
+  // must wait on Traktor too: a refused move leaves that entry on it, and retiring it then
+  // loses the track with its cues and playlists.
+  const traktor =
+    !!settings.traktorNmlPath &&
+    (settings.syncTraktor || (settings.addToTraktor && !!job.replacesPath))
+  const playlists: VerifyEntry['playlists'] = {}
+  for (const program of WRITABLE_PROGRAMS) {
+    const wanted = JOB_PLAYLISTS[program](job)?.wanted
+    if (wanted?.length) playlists[program] = wanted
+  }
+  const engineListed =
+    (before.engine && before.engine !== 'absent') || !!addedToEngineDj || !!playlists.engine
+  // Music only with no location: the repoints still name the deleted temp, so what the
+  // libraries hold cannot be judged against any file.
+  const followed = !musicOnly || finalPath !== ''
+  const library = (place: WritableProgram): PlaceCheck =>
+    followed
+      ? checking(place)
+      : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
+  const rekordboxListed =
+    (before.rekordbox && before.rekordbox !== 'absent') || !!playlists.rekordbox
+  const virtualdjListed =
+    (before.virtualdj && before.virtualdj !== 'absent') || !!playlists.virtualdj
+  const places = verifyPlaces({
+    musicCheck,
+    followed,
+    before,
+    playlists,
+    addedToEngineDj,
+    traktor,
+    settings,
+  })
+  // Named per conversion, not per track: a track converted again starts its own count.
+  const checked = withChecks({ status: 'checking', checks: [] }, [
+    fileCheck,
+    ...(musicCheck ? [musicCheck] : []),
+    ...(rekordboxListed ? [library('rekordbox')] : []),
+    ...(engineListed ? [library('engine')] : []),
+    ...(traktor ? [library('traktor')] : []),
+    ...(virtualdjListed ? [library('virtualdj')] : []),
+  ])
+  const heldOriginal = claimHeldOriginal(finalPath)
+  // Update registers no verification below, so the library checks never answer and the hold
+  // would stay pinned for good: the file's and Music's checks, read here, settle it, and
+  // anything short of all clear leaves the original in Copias like any other copy.
+  const copyChecked =
+    job.tagsInPlace &&
+    withChecks({ status: 'checking', checks: [] }, [
+      fileCheck,
+      ...(musicCheck ? [musicCheck] : []),
+    ]).status === 'ok'
+  const originalHeld = settleHeldOriginal(
+    heldOriginal,
+    job.tagsInPlace ? (copyChecked ? 'ok' : 'mismatch') : checked.status,
+  )
+  const verification = {
+    ...checked,
+    job: randomUUID(),
+    seq: 0,
+    ...(originalHeld ? { originalHeld } : {}),
+  }
+  return { playlists, places, heldOriginal, verification }
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -1416,66 +1527,16 @@ export async function runProcessTrack(
     } finally {
       deps.unregisterActiveConversion(job.id)
     }
-    // Add to Traktor alone moves a replace's old entry onto the new file, so the old file
-    // must wait on Traktor too: a refused move leaves that entry on it, and retiring it then
-    // loses the track with its cues and playlists.
-    const traktor =
-      !!settings.traktorNmlPath &&
-      (settings.syncTraktor || (settings.addToTraktor && !!job.replacesPath))
-    const playlists: VerifyEntry['playlists'] = {}
-    for (const program of WRITABLE_PROGRAMS) {
-      const wanted = JOB_PLAYLISTS[program](job)?.wanted
-      if (wanted?.length) playlists[program] = wanted
-    }
-    const engineListed =
-      (before.engine && before.engine !== 'absent') || !!addedToEngineDj || !!playlists.engine
-    // Music only with no location: the repoints still name the deleted temp, so what the
-    // libraries hold cannot be judged against any file.
-    const followed = !musicOnly || finalPath !== ''
-    const library = (place: WritableProgram): PlaceCheck =>
-      followed
-        ? checking(place)
-        : { place, state: 'unreadable', detail: { key: `${place}Unreadable` } }
-    const rekordboxListed =
-      (before.rekordbox && before.rekordbox !== 'absent') || !!playlists.rekordbox
-    const virtualdjListed =
-      (before.virtualdj && before.virtualdj !== 'absent') || !!playlists.virtualdj
-    const places = new Set<VerifyPlace>(['file'])
-    if (musicCheck) places.add('appleMusic')
-    if (followed && (before.rekordbox || playlists.rekordbox)) places.add('rekordbox')
-    if (followed && (before.engine || addedToEngineDj || playlists.engine)) places.add('engine')
-    if (followed && traktor) places.add('traktor')
-    if (followed && (before.virtualdj || playlists.virtualdj || settings.addToVirtualdj))
-      places.add('virtualdj')
-    // Named per conversion, not per track: a track converted again starts its own count.
-    const checked = withChecks({ status: 'checking', checks: [] }, [
+    const { playlists, places, heldOriginal, verification } = planVerification({
+      job,
+      settings,
+      before,
+      addedToEngineDj,
+      musicOnly,
+      finalPath,
       fileCheck,
-      ...(musicCheck ? [musicCheck] : []),
-      ...(rekordboxListed ? [library('rekordbox')] : []),
-      ...(engineListed ? [library('engine')] : []),
-      ...(traktor ? [library('traktor')] : []),
-      ...(virtualdjListed ? [library('virtualdj')] : []),
-    ])
-    const heldOriginal = claimHeldOriginal(finalPath)
-    // Update registers no verification below, so the library checks never answer and the hold
-    // would stay pinned for good: the file's and Music's checks, read here, settle it, and
-    // anything short of all clear leaves the original in Copias like any other copy.
-    const copyChecked =
-      job.tagsInPlace &&
-      withChecks({ status: 'checking', checks: [] }, [
-        fileCheck,
-        ...(musicCheck ? [musicCheck] : []),
-      ]).status === 'ok'
-    const originalHeld = settleHeldOriginal(
-      heldOriginal,
-      job.tagsInPlace ? (copyChecked ? 'ok' : 'mismatch') : checked.status,
-    )
-    const verification = {
-      ...checked,
-      job: randomUUID(),
-      seq: 0,
-      ...(originalHeld ? { originalHeld } : {}),
-    }
+      musicCheck,
+    })
     // A library copy retagged in place rides the open row's id, yet the file checked is the
     // copy: registered, its verification would land on a row whose file was never touched.
     if (!job.tagsInPlace)

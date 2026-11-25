@@ -21,6 +21,7 @@ import {
   planDestination,
   replaceAppleMusicCopy,
   runProcessTrack,
+  verifyPlaces,
 } from './processTrack'
 import { createReplacedStore, recordReplacement } from './replacedStore'
 
@@ -5163,5 +5164,81 @@ describe('planDestination', () => {
         ascii,
       ).outputName,
     ).toBe('Röyksopp - Fiësta')
+  })
+})
+
+describe('verifyPlaces', () => {
+  const musicCheck: PlaceCheck = {
+    place: 'appleMusic',
+    state: 'checking',
+    detail: { key: 'checking' },
+  }
+  const nothingInPlay = {
+    musicCheck: undefined,
+    followed: true,
+    before: {},
+    playlists: {},
+    addedToEngineDj: undefined,
+    traktor: false,
+    settings: settings(),
+  }
+
+  it('checks only the file when no library and no Music entry is in play, so a verdict never waits on a program the track never reached', () => {
+    expect([...verifyPlaces(nothingInPlay)]).toEqual(['file'])
+  })
+
+  it('checks Apple Music only when its check was read, since the registry has nothing else to settle it with', () => {
+    expect(verifyPlaces({ ...nothingInPlay, musicCheck }).has('appleMusic')).toBe(true)
+    expect(verifyPlaces(nothingInPlay).has('appleMusic')).toBe(false)
+  })
+
+  it('checks a library the snapshot read before converting, even one without the track, because the snapshot keys only the libraries in play', () => {
+    const places = verifyPlaces({
+      ...nothingInPlay,
+      before: { rekordbox: 'absent', engine: 'unreadable', virtualdj: 'absent' },
+    })
+    expect(places.has('rekordbox')).toBe(true)
+    expect(places.has('engine')).toBe(true)
+    expect(places.has('virtualdj')).toBe(true)
+  })
+
+  it('checks a library the job puts the track in a playlist of, since that write lands after the flush and must be read back', () => {
+    const places = verifyPlaces({
+      ...nothingInPlay,
+      playlists: { rekordbox: [{ name: 'Set' }], engine: [{ name: 'Set' }] },
+    })
+    expect(places.has('rekordbox')).toBe(true)
+    expect(places.has('engine')).toBe(true)
+    expect(places.has('virtualdj')).toBe(false)
+  })
+
+  it('checks Engine when this job added the row, even with no row there before', () => {
+    expect(verifyPlaces({ ...nothingInPlay, addedToEngineDj: true }).has('engine')).toBe(true)
+  })
+
+  it('checks Traktor only when the job writes to it', () => {
+    expect(verifyPlaces({ ...nothingInPlay, traktor: true }).has('traktor')).toBe(true)
+    expect(verifyPlaces(nothingInPlay).has('traktor')).toBe(false)
+  })
+
+  it('checks VirtualDJ when the setting adds every conversion to it, with no row or playlist before', () => {
+    const places = verifyPlaces({
+      ...nothingInPlay,
+      settings: settings({ addToVirtualdj: true }),
+    })
+    expect(places.has('virtualdj')).toBe(true)
+  })
+
+  it('checks no library when a Music only copy has no location, since the repoints still name the deleted temp', () => {
+    const places = verifyPlaces({
+      musicCheck,
+      followed: false,
+      before: { rekordbox: 'absent', engine: 'absent', virtualdj: 'absent' },
+      playlists: { rekordbox: [{ name: 'Set' }] },
+      addedToEngineDj: true,
+      traktor: true,
+      settings: settings({ addToVirtualdj: true }),
+    })
+    expect([...places].sort()).toEqual(['appleMusic', 'file'])
   })
 })
