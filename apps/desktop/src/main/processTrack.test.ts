@@ -5229,6 +5229,14 @@ describe('verifyPlaces', () => {
     expect(places.has('virtualdj')).toBe(true)
   })
 
+  it('checks VirtualDJ when the job puts the track in one of its playlists, even with no row there before, since that write lands after the flush', () => {
+    const places = verifyPlaces({
+      ...nothingInPlay,
+      playlists: { virtualdj: [{ name: 'Set' }] },
+    })
+    expect(places.has('virtualdj')).toBe(true)
+  })
+
   it('checks no library when a Music only copy has no location, since the repoints still name the deleted temp', () => {
     const places = verifyPlaces({
       musicCheck,
