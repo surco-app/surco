@@ -183,7 +183,7 @@ describe('useCopyPlaylistEdits', () => {
       { kind: 'remove', playlistId: 'p1', linkIds: ['L2', 'L4'] },
       'Verano',
     )
-    expect(reportUndo.mock.calls[0][0]).toBe('2 tracks removed from “Verano”')
+    expect(reportUndo.mock.calls[0][0]).toBe('1 track removed from “Verano”')
     await act(async () => {
       reportUndo.mock.calls[0][1]()
     })

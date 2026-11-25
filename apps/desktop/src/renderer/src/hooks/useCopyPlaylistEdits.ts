@@ -225,7 +225,8 @@ export function useCopyPlaylistEdits(
         }
         if (linkIds.length === 0) return
         places = placesOf(entries, paths)
-        removed = linkIds.length
+        // A copy filed twice is still one track to the DJ, so the notice counts tracks.
+        removed = places.length
         change = { kind: 'remove', playlistId: target.id, linkIds }
       }
       const { result, said: message } = await send(change, target.name)
