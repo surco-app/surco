@@ -157,24 +157,33 @@ function backupPathOf(file: string, roots: SeratoLibraryRoot[]): string {
   return join(root.root === '/' ? 'Music' : basename(root.root), relative(root.dir, file))
 }
 
-function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, string> {
-  if (files.length === 0) return new Map()
+export function takeRotatedBackups<R>(
+  files: string[],
+  deps: { backupDir: string; now?: () => Date; roots: () => R[] },
+  backupPath: (file: string, roots: R[]) => string,
+  spared: string[] = [],
+): Map<string, string> {
   const folder = freshFolder(deps.backupDir, deps.now?.() ?? new Date())
   mkdirSync(folder, { recursive: true })
   const roots = deps.roots()
   const copies = new Map<string, string>()
   for (const file of files) {
-    const copy = join(folder, backupPathOf(file, roots))
+    const copy = join(folder, backupPath(file, roots))
     mkdirSync(dirname(copy), { recursive: true })
     copyFileSync(file, copy)
     copies.set(file, copy)
   }
   const older = readdirSync(deps.backupDir)
-    .filter((name) => name !== basename(folder))
+    .filter((name) => name !== basename(folder) && !spared.includes(name))
     .sort()
   for (const old of older.slice(0, Math.max(0, older.length + 1 - KEPT_BACKUPS)))
     rmSync(join(deps.backupDir, old), { recursive: true, force: true })
   return copies
+}
+
+function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, string> {
+  if (files.length === 0) return new Map()
+  return takeRotatedBackups(files, deps, backupPathOf)
 }
 
 function takeSessionCopy(dir: string, roots: SeratoLibraryRoot[]): void {
