@@ -2363,6 +2363,85 @@ async function readReplaced(
   }
 }
 
+export function qualityPins(
+  quality: Partial<ConversionQuality> | undefined,
+  keepAudio: boolean | undefined,
+): Partial<ConversionQuality> | undefined {
+  return keepAudio ? { ...quality, bitDepth: 'source', sampleRate: 'source' } : quality
+}
+
+export function settleQuality(
+  pins: Partial<ConversionQuality> | undefined,
+  resolution: Resolution | undefined,
+): { resolvedQuality: Partial<ConversionQuality> | undefined; pinnedRateHz: number | undefined } {
+  const resolvedQuality =
+    pins?.sampleRate === 'corrected'
+      ? {
+          ...pins,
+          sampleRate: (resolution === 'upsampled'
+            ? '44100'
+            : 'source') as ConversionQuality['sampleRate'],
+        }
+      : pins
+  const pinnedRateHz =
+    resolvedQuality?.sampleRate && resolvedQuality.sampleRate !== 'source'
+      ? Number(resolvedQuality.sampleRate)
+      : undefined
+  return { resolvedQuality, pinnedRateHz }
+}
+
+interface ConversionQualityContext {
+  input: string
+  quality: Partial<ConversionQuality> | undefined
+  keepAudio: boolean | undefined
+  normalize: NormalizeConfig | undefined
+  normalizing: boolean
+  declick: DeclickConfig | undefined
+  trim: TrimRange | undefined
+  probeOnce: (file: string) => Promise<ProbeResult>
+}
+
+interface ConversionQualityResult {
+  resolvedQuality: Partial<ConversionQuality> | undefined
+  sampleRate: number | undefined
+  normalizeAf: string | undefined
+  normalizeSkipped: boolean
+}
+
+async function resolveConversionQuality(
+  ctx: ConversionQualityContext,
+): Promise<ConversionQualityResult> {
+  const { input, quality, keepAudio, normalize, normalizing, declick, trim, probeOnce } = ctx
+  // loudnorm emits 192 kHz; pass the rate the filter should resample back to — the
+  // pinned output rate when the settings set one, else the source's own rate.
+  // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
+  // 'corrected' resolves here, once, where the measurement can be afforded: to
+  // 44.1 kHz when this file's own probes prove a 44.1-to-48/96 upsample, and to
+  // 'source' (no resample) for anything genuine, unverifiable or already 44.1.
+  // Downstream (the normalize filter and the planner) only ever sees concrete
+  // values, so the policy string can never reach a Number() as NaN.
+  const pins = qualityPins(quality, keepAudio)
+  const { resolvedQuality, pinnedRateHz } = settleQuality(
+    pins,
+    pins?.sampleRate === 'corrected'
+      ? await measureResolution(input, Number((await probeOnce(input)).sampleRate) || 0)
+      : undefined,
+  )
+  const sampleRate =
+    normalize?.mode === 'loudness'
+      ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
+      : undefined
+  const normalizeAf =
+    normalizing && normalize
+      ? ((await normalizeFilter(input, normalize, sampleRate, declick, trim)) ?? undefined)
+      : undefined
+  // Normalization was asked for but its measurement pass failed (normalizeFilter returned
+  // null), so the conversion proceeds un-normalized rather than failing outright — the
+  // caller surfaces this so the user knows the loudness target wasn't actually applied.
+  const normalizeSkipped = normalizing && normalizeAf === undefined
+  return { resolvedQuality, sampleRate, normalizeAf, normalizeSkipped }
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -2458,44 +2537,17 @@ export async function convertAudio(
   // normalized AIFF/WAV conversion.
   let probed: Promise<ProbeResult> | undefined
   const probeOnce = (file: string): Promise<ProbeResult> => (probed ??= probeAudio(file))
-  // loudnorm emits 192 kHz; pass the rate the filter should resample back to — the
-  // pinned output rate when the settings set one, else the source's own rate.
-  // Only probed for the loudnorm path — peak mode's volume filter keeps the rate.
-  // 'corrected' resolves here, once, where the measurement can be afforded: to
-  // 44.1 kHz when this file's own probes prove a 44.1-to-48/96 upsample, and to
-  // 'source' (no resample) for anything genuine, unverifiable or already 44.1.
-  // Downstream (the normalize filter and the planner) only ever sees concrete
-  // values, so the policy string can never reach a Number() as NaN.
-  const pins: Partial<ConversionQuality> | undefined = keepAudio
-    ? { ...quality, bitDepth: 'source', sampleRate: 'source' }
-    : quality
-  const resolvedQuality =
-    pins?.sampleRate === 'corrected'
-      ? {
-          ...pins,
-          sampleRate: ((await measureResolution(
-            input,
-            Number((await probeOnce(input)).sampleRate) || 0,
-          )) === 'upsampled'
-            ? '44100'
-            : 'source') as ConversionQuality['sampleRate'],
-        }
-      : pins
-  const pinnedRateHz =
-    resolvedQuality?.sampleRate && resolvedQuality.sampleRate !== 'source'
-      ? Number(resolvedQuality.sampleRate)
-      : undefined
-  const sampleRate =
-    normalize?.mode === 'loudness'
-      ? (pinnedRateHz ?? (Number((await probeOnce(input)).sampleRate) || undefined))
-      : undefined
-  const normalizeAf = normalizing
-    ? ((await normalizeFilter(input, normalize, sampleRate, declick, trim)) ?? undefined)
-    : undefined
-  // Normalization was asked for but its measurement pass failed (normalizeFilter returned
-  // null), so the conversion proceeds un-normalized rather than failing outright — the
-  // caller surfaces this so the user knows the loudness target wasn't actually applied.
-  const normalizeSkipped = normalizing && normalizeAf === undefined
+  const { resolvedQuality, sampleRate, normalizeAf, normalizeSkipped } =
+    await resolveConversionQuality({
+      input,
+      quality,
+      keepAudio,
+      normalize,
+      normalizing,
+      declick,
+      trim,
+      probeOnce,
+    })
   // Trim and declick alter the samples exactly like a normalize filter, so they
   // force the same re-encode: a stream copy would emit the untouched source.
   const plan = await planConversion(
