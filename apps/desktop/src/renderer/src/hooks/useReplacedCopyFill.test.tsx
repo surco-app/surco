@@ -624,6 +624,19 @@ describe('from the Apple Music copy that is another file', () => {
     expect(onChange.mock.calls[0][0].meta).toMatchObject({ grouping: 'Bases, Rockola' })
   })
 
+  // The copy's file may sit on a NAS that is asleep while Music still answers from its
+  // database: the grouping Music holds is worth having without the file's.
+  it("still lends Music's grouping when the copy's file cannot be read", async () => {
+    const api = setMusicApi({}, { grouping: 'Bases' })
+    api.readTags.mockRejectedValue(new Error('ENOENT'))
+    const { onChange } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({
+      meta: { grouping: 'Bases' },
+      copyFilled: true,
+    })
+  })
+
   it('asks Music nothing for a copy that is not in Music', async () => {
     const api = setMusicApi({ grouping: 'Bases' }, null)
     const onChange = vi.fn()

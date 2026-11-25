@@ -32,14 +32,16 @@ export function useReplacedCopyFill({
   // when neither the copy's file nor the track shows a picture.
   const apply = useStableCallback(
     (
-      copy: TrackMetadata,
+      copy: TrackMetadata | null,
       cover: string | null,
       ownCover: string | null,
       music: AppleMusicTrackMeta | null,
     ) => {
-      const fromFile = anotherVersion
-        ? groupingFromCopy(item.meta, copy)
-        : fillFromCopy(item.meta, copy)
+      const fromFile = !copy
+        ? null
+        : anotherVersion
+          ? groupingFromCopy(item.meta, copy)
+          : fillFromCopy(item.meta, copy)
       const fromMusic = music ? musicFill(fromFile ?? item.meta, music, anotherVersion) : null
       const meta = fromMusic ?? fromFile
       const coverUrl = cover && copyCoverWins(item, cover, ownCover) ? cover : null
@@ -75,11 +77,12 @@ export function useReplacedCopyFill({
     const music = musicEntry
       ? window.api.appleMusicEntryMeta(copyPath, [musicEntry]).catch(() => null)
       : Promise.resolve(null)
-    Promise.all([window.api.readTags(copyPath), cover, ownCover, music])
-      .then(([copy, art, own, entry]) => {
-        if (!cancelled) apply(copy, art, own, entry)
-      })
-      .catch(() => {})
+    // A copy that cannot be read is left for another opening, unless Music answered for it:
+    // what its database holds is worth having without the file's tags.
+    const tags = window.api.readTags(copyPath).catch(() => null)
+    Promise.all([tags, cover, ownCover, music]).then(([copy, art, own, entry]) => {
+      if (!cancelled && (copy || entry)) apply(copy, art, own, entry)
+    })
     return () => {
       cancelled = true
     }
