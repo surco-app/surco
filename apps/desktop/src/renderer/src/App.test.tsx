@@ -521,6 +521,15 @@ beforeEach(() => {
 
 // App and parts of its tree read window.api.platform at module scope, so it must be
 // imported only after the bridge mock is in place — a dynamic import after beforeEach.
+// The file's first test paid the cold import of App and its lazy chunks on its own: 1.8 s
+// idle, past the 5 s timeout with the whole suite running in parallel. Loaded once here,
+// under a timeout of its own, so no test is measured against it.
+beforeAll(async () => {
+  setApi()
+  await import('./App')
+  await (await import('./lib/lazyChunk')).preloadLazy()
+}, 30_000)
+
 async function renderApp(): Promise<QueryClient> {
   const { default: App } = await import('./App')
   await (await import('./lib/lazyChunk')).preloadLazy()
@@ -13327,7 +13336,9 @@ describe('App metadata undo', () => {
     fireEvent.change(await screen.findByTestId('discogs-query'), { target: { value: 'album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     fireEvent.click(await screen.findByTestId('discogs-result'))
-    fireEvent.click(await screen.findByTestId('match-apply'))
+    // The release opens across both selected tracks before its apply button shows, which on a
+    // loaded machine runs past findBy's default second.
+    fireEvent.click(await screen.findByTestId('match-apply', {}, { timeout: 3000 }))
     fireEvent.click(screen.getAllByTestId('track-row')[0])
     await waitFor(() =>
       expect(screen.getByTestId('cover-preview')).toHaveAttribute('src', 'https://img/release.jpg'),
