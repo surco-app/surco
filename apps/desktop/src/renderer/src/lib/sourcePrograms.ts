@@ -219,8 +219,6 @@ export interface OpenProgram {
 }
 
 export function openProgramOf({ browser, settings }: OpenProgramContext): OpenProgram {
-  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
-  // Settings, the only one Surco writes to.
   const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
   const resultsTab = browser.source ?? 'tracks'
   const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
@@ -263,8 +261,12 @@ export function programEditsOf({
   browser,
   platform,
 }: ProgramEditsContext): ProgramEdits {
+  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
+  // Settings, the only one Surco writes to.
   const editableSource =
     sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
+  // tree.
   const usbPlatform = platform === 'darwin' || platform === 'win32'
   return {
     editableSource,

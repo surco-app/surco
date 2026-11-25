@@ -1254,8 +1254,7 @@ export default function App(): React.JSX.Element {
     applyVirtualdjQueueNow,
     discardVirtualdjQueue,
   ])
-  // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
-  // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
+  // Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
