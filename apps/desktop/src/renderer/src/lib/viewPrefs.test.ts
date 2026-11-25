@@ -46,6 +46,8 @@ describe('viewPrefsOf', () => {
   it('keeps the empty-list fallbacks fresh on every call', () => {
     expect(viewPrefsOf(null).customFields).not.toBe(viewPrefsOf(null).customFields)
     expect(viewPrefsOf(null).sessionsMade).not.toBe(viewPrefsOf(null).sessionsMade)
+    expect(viewPrefsOf(null).genrePresets).not.toBe(viewPrefsOf(null).genrePresets)
+    expect(viewPrefsOf(null).matchingDismissed).not.toBe(viewPrefsOf(null).matchingDismissed)
   })
 
   // What the user turned off or chose wins over every default, and the stored lists reach
