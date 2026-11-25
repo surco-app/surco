@@ -1,6 +1,6 @@
 import { useEffect, useRef, useSyncExternalStore } from 'react'
+import type { DropProposal } from '../../../shared/autoCue'
 import { SAME_POSITION_MS, type WantedCue } from '../../../shared/cueRules'
-import type { DropProposal } from '../../../shared/dropDetect'
 import type { QueuedCues, SaveCuesRequest, TrackCueRow } from '../../../shared/types'
 import { type CueDraft, type DraftCue, gridRequestOf, wantedOfDraft } from './cueDraft'
 import type { GridReview } from './gridAdjust'

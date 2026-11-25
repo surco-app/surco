@@ -15,6 +15,7 @@ import type React from 'react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
+import type { DropInput, DropProposal, DropTaste } from '../../../shared/autoCue'
 import { CALLS_ONLY, type CueFlow, MY_FLOW, ONE_AT_32 } from '../../../shared/cueFlows'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
@@ -39,6 +40,15 @@ import { CuesSection } from './CuesSection'
 vi.mock('../lib/cueDraft', async (importOriginal) => {
   const real = await importOriginal<typeof import('../lib/cueDraft')>()
   return { ...real, reduceDraft: vi.fn(real.reduceDraft) }
+})
+
+const dropProposals = vi.hoisted(() =>
+  vi.fn<(input: DropInput, taste: DropTaste | null) => DropProposal[]>(),
+)
+vi.mock('../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/autoCue')>()
+  dropProposals.mockImplementation(actual.autoCue.dropProposals)
+  return { ...actual, autoCue: { ...actual.autoCue, dropProposals } }
 })
 
 const KEPT: CueFlow[] = [MY_FLOW, ONE_AT_32, CALLS_ONLY]
@@ -2068,13 +2078,10 @@ describe("CuesSection maximized on Surco's grid", () => {
     expect(screen.getByTestId('cues-quantize-option-bar')).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('proposes drops on the bars Surco hears in the bass, so Auto mark works before rekordbox analyses the track', async () => {
+  it("proposes drops on the beats of Surco's grid from what Surco hears, so Auto mark works before rekordbox analyses the track", async () => {
     const beatAt = (i: number) => 37 + i * 500
-    const bassIn = (i: number) => i >= 130
-    const words = Uint16Array.from({ length: 60000 }, (_, k) => {
-      const beat = Math.floor((k / 0.15 - 37) / 500)
-      return ((bassIn(beat) ? 7 : 1) << 13) | (20 << 2)
-    })
+    const words = Uint16Array.from({ length: 60000 }, (_, k) => k % 8)
+    dropProposals.mockReturnValueOnce([{ ms: beatAt(130) + 120, sure: true, quietBars: 8 }])
     setup(
       null,
       { ...READ, analysed: false, grid: [] },
@@ -2085,6 +2092,9 @@ describe("CuesSection maximized on Surco's grid", () => {
     expect(screen.getByTestId('cues-auto-mark')).not.toHaveAttribute('title')
     fireEvent.click(screen.getByTestId('cues-auto-mark'))
     await waitFor(() => expect(autoMarkOf('103')?.kind).toBe('proposed'))
+    const [input] = dropProposals.mock.lastCall ?? []
+    expect(input?.grid.map((b) => b.ms)).toEqual(SURCO.grid.map((b) => b.ms))
+    expect(input?.words).toEqual(words)
     const kept = autoMarkOf('103')
     expect(kept?.kind === 'proposed' && kept.proposals.map((p) => p.ms)).toEqual([beatAt(130)])
   })

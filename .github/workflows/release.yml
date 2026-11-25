@@ -127,8 +127,18 @@ jobs:
         # The macos-15-intel label is the last x86_64 runner, available until Aug 2027.)
         os: [macos-15, macos-15-intel, windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    # The shipped binaries carry the private auto cue engine; the build throws without it.
+    env:
+      SURCO_REQUIRE_BRAIN: '1'
     steps:
       - uses: actions/checkout@v7
+
+      - uses: actions/checkout@v7
+        with:
+          repository: surco-app/surco-brain
+          ssh-key: ${{ secrets.BRAIN_DEPLOY_KEY }}
+          path: apps/desktop/brain
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:

@@ -43,11 +43,11 @@ import {
 import log from 'electron-log/main'
 import electronUpdater from 'electron-updater'
 import { cacheBytesOf, smallCacheBytesFor } from '../shared/analysisCacheSize'
+import type { TunedTaste } from '../shared/autoCue'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
 import { type CueProgram, exportsUsbOn, type WritableProgram } from '../shared/djProgram'
-import type { TunedTaste } from '../shared/dropTaste'
 import { errorWithKey } from '../shared/errorKeys'
 import {
   isRecoveryUrl,
@@ -2601,7 +2601,7 @@ app.whenReady().then(() => {
   if (app.isPackaged) {
     const csp = [
       "default-src 'self'",
-      "script-src 'self'",
+      "script-src 'self' 'wasm-unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com",
       "media-src 'self' blob: surco:",

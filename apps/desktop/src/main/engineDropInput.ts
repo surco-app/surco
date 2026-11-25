@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import log from 'electron-log/main'
-import type { DropInput } from '../shared/dropDetect'
+import type { DropInput } from '../shared/autoCue'
 import { engineTrackId } from '../shared/engineContent'
 import { readEngineTrackCues } from './engineCues'
 import { withEngineLibrary } from './enginePlaylistsIpc'

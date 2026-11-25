@@ -1,6 +1,6 @@
 import type Database from 'better-sqlite3-multiple-ciphers'
+import { autoCue, type TasteTrack } from '../shared/autoCue'
 import { findDrops } from '../shared/cueRules'
-import { type TasteTrack, tasteTrackOf } from '../shared/dropTaste'
 import type { LearnTrack } from '../shared/learnFlow'
 import { rekordboxShareDir } from './rekordboxArtwork'
 import { readCueWaveDetail, readTrackCues } from './rekordboxCues'
@@ -44,7 +44,8 @@ export async function readCollectionMarks(
       read.cues.filter((c) => c.kind !== 0).map((c) => c.ms),
     )
     const words = drops.length > 0 ? readCueWaveDetail(db, shareDir, contentId) : null
-    const track = words && tasteTrackOf({ grid: read.grid, phrases: read.phrases, words }, drops)
+    const track =
+      words && autoCue.tasteTrackOf({ grid: read.grid, phrases: read.phrases, words }, drops)
     if (track) out.taste.push(track)
   }
   return out

@@ -2,13 +2,29 @@
 import { QueryClient } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
-import { type DropInput, detectDrops } from '../../../shared/dropDetect'
-import { fingerprintOf } from '../../../shared/dropTaste'
+import type { DropInput, DropTaste, TasteTrack } from '../../../shared/autoCue'
+import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { TrackCues } from '../../../shared/types'
-import { cueDropInputQuery, cueWaveDetailQuery, trackCuesQuery } from '../hooks/useTrackCues'
+import {
+  cueDropInputQuery,
+  cueProfileQuery,
+  cueWaveDetailQuery,
+  trackCuesQuery,
+} from '../hooks/useTrackCues'
 import { installApi } from '../test/api'
 import { startDraft } from './cueDraft'
 import { recordCueEdits } from './cueTasteEdits'
+
+const tasteTrackOf = vi.hoisted(() =>
+  vi.fn(
+    (_input: DropInput, drops: number[], _proposedWith?: { taste: DropTaste | null }) =>
+      ({ key: 'lesson', candidates: [], drops }) as TasteTrack | null,
+  ),
+)
+vi.mock('../../../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../shared/autoCue')>()
+  return { ...actual, autoCue: { ...actual.autoCue, tasteTrackOf } }
+})
 
 const GRID = Array.from({ length: 400 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 }))
 const bar = (n: number) => n * 2000
@@ -40,11 +56,12 @@ function setup() {
       waveDetail: vi.fn<Api['cues']['waveDetail']>(async () => WORDS),
     },
   })
+  tasteTrackOf.mockClear()
   return { recordCueEdit, client: new QueryClient() }
 }
 
 describe('recordCueEdits', () => {
-  it('turns a saved rekordbox track into a lesson for Auto: its candidate bars and the bars where the DJ marks', async () => {
+  it('hands Auto a saved rekordbox track with its grid, phrases and wave, and only the points the DJ marks', async () => {
     const { client, recordCueEdit } = setup()
     client.setQueryData(trackCuesQuery('103').queryKey, READ)
     client.setQueryData(cueWaveDetailQuery('103').queryKey, WORDS)
@@ -58,11 +75,13 @@ describe('recordCueEdits', () => {
         ]),
       },
     ])
-    expect(recordCueEdit).toHaveBeenCalledTimes(1)
-    const [track] = recordCueEdit.mock.calls[0]
-    expect(track.key).toBe(fingerprintOf(track.candidates))
-    expect(track.drops).toEqual([32])
-    expect(track.candidates.length).toBeGreaterThan(0)
+    expect(tasteTrackOf).toHaveBeenCalledTimes(1)
+    expect(tasteTrackOf).toHaveBeenCalledWith(
+      { grid: GRID, phrases: READ.phrases, words: WORDS },
+      [bar(32)],
+      { taste: null },
+    )
+    expect(recordCueEdit).toHaveBeenCalledWith({ key: 'lesson', candidates: [], drops: [bar(32)] })
   })
 
   it('learns from an Engine or Traktor track on what Auto detected there, keeping the CALL the editor holds as the mark', async () => {
@@ -72,7 +91,8 @@ describe('recordCueEdits', () => {
     await recordCueEdits(client, [
       { contentId: 'engine:4', draft: drafted([{ ms: bar(32), kind: 0 }]) },
     ])
-    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ drops: [32] })
+    expect(tasteTrackOf).toHaveBeenCalledWith(input, [bar(32)], { taste: null })
+    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ drops: [bar(32)] })
   })
 
   it('learns nothing from a save without a marked point, and reads nothing for it', async () => {
@@ -87,7 +107,8 @@ describe('recordCueEdits', () => {
     client.setQueryData(trackCuesQuery('103').queryKey, READ)
     await recordCueEdits(client, [{ contentId: '103', draft: drafted([{ ms: bar(32), kind: 0 }]) }])
     expect(window.api.cues.waveDetail).toHaveBeenCalledWith('103')
-    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ drops: [32] })
+    expect(tasteTrackOf.mock.calls[0][0].words).toEqual(WORDS)
+    expect(recordCueEdit.mock.calls[0][0]).toMatchObject({ drops: [bar(32)] })
   })
 
   it('learns nothing from a track whose wave cannot be read, and the save goes on', async () => {
@@ -98,44 +119,49 @@ describe('recordCueEdits', () => {
     expect(recordCueEdit).not.toHaveBeenCalled()
   })
 
-  describe('what Auto proposed against what the DJ kept', () => {
-    const PER_BAR = 300
-    const sectioned = (): DropInput => {
-      const sections: [number, number][] = [
-        [16, 7],
-        [8, 0],
-        [16, 7],
-      ]
-      const words = new Uint16Array(40 * PER_BAR)
-      let at = 0
-      for (const [bars, low] of sections) {
-        words.fill((low << 13) | (3 << 10) | (2 << 7) | (20 << 2), at, at + bars * PER_BAR)
-        at += bars * PER_BAR
-      }
-      return { grid: GRID, phrases: [], words }
+  it('tells Auto the taste it proposed with, so the lesson can say whether the DJ accepted or corrected it', async () => {
+    const { client } = setup()
+    const taste: DropTaste = {
+      trees: [[[0.5]]],
+      picking: { threshold: 0, spacingBars: 16, maxDrops: 2 },
     }
-    const recorded = async (cues: { ms: number; kind: number }[]) => {
-      const { client, recordCueEdit } = setup()
-      const input = sectioned()
-      expect(detectDrops(input).length).toBeGreaterThan(0)
-      client.setQueryData(cueDropInputQuery('engine:4').queryKey, input)
-      await recordCueEdits(client, [{ contentId: 'engine:4', draft: drafted(cues) }])
-      return recordCueEdit.mock.calls[0][0]
-    }
-
-    it('calls a track accepted when the DJ kept exactly the drops Auto proposed', async () => {
-      const proposed = detectDrops(sectioned())
-      expect((await recorded(proposed.map((ms) => ({ ms, kind: 0 })))).outcome).toBe('accepted')
+    client.setQueryData<CueProfileRead>(cueProfileQuery.queryKey, {
+      profile: {
+        learnedAt: '2026-11-01T00:00:00.000Z',
+        sources: { rekordbox: 40, edits: 0 },
+        taste,
+        check: null,
+        flow: null,
+        coverage: null,
+        paired: null,
+        start: null,
+      },
+      edits: { count: 0, sinceLearn: 0, corrected: 0 },
+      marked: 0,
     })
-
-    it('calls a track corrected when the DJ kept a proposal and changed the rest', async () => {
-      const proposed = detectDrops(sectioned())
-      const cues = [...proposed, bar(2)].map((ms) => ({ ms, kind: 0 }))
-      expect((await recorded(cues)).outcome).toBe('corrected')
+    client.setQueryData(cueDropInputQuery('engine:4').queryKey, {
+      grid: GRID,
+      phrases: [],
+      words: WORDS,
     })
+    await recordCueEdits(client, [
+      { contentId: 'engine:4', draft: drafted([{ ms: bar(32), kind: 0 }]) },
+    ])
+    expect(tasteTrackOf.mock.calls[0][2]).toEqual({ taste })
+  })
 
-    it('calls a track manual when none of the proposed drops survived', async () => {
-      expect((await recorded([{ ms: bar(2), kind: 0 }])).outcome).toBe('manual')
+  it('records nothing when the engine makes no lesson of the track, as the basic engine never does', async () => {
+    const { client, recordCueEdit } = setup()
+    tasteTrackOf.mockReturnValueOnce(null)
+    client.setQueryData(cueDropInputQuery('engine:4').queryKey, {
+      grid: GRID,
+      phrases: [],
+      words: WORDS,
     })
+    await recordCueEdits(client, [
+      { contentId: 'engine:4', draft: drafted([{ ms: bar(32), kind: 0 }]) },
+    ])
+    expect(tasteTrackOf).toHaveBeenCalledTimes(1)
+    expect(recordCueEdit).not.toHaveBeenCalled()
   })
 })

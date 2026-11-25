@@ -2,9 +2,9 @@ import { ChevronRight, Loader2, RefreshCw } from 'lucide-react'
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { autoCue } from '../../../../shared/autoCue'
 import type { CueFlow, CueRule } from '../../../../shared/cueFlows'
 import type { CueProfile, CueProfileRead } from '../../../../shared/cueProfile'
-import { MIN_TASTE_TRACKS } from '../../../../shared/dropTaste'
 import { hotCueColor } from '../../../../shared/rekordboxCueColors'
 import type { SyncedDraft } from '../../lib/settingsDraft'
 import type { PatchSynced } from '../../lib/settingsTabs'
@@ -227,21 +227,23 @@ export function CueProfileCard({ read, onLearned, synced, patch }: Props): React
       )}
       {profile && details && (
         <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-px overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-line)]">
-          <Fact
-            testid="cue-profile-auto"
-            label={tr('editor.cues.auto.button')}
-            sub={
-              !check
-                ? tr('settings.cueProfile.autoFewHint', { count: MIN_TASTE_TRACKS })
-                : profile.taste
-                  ? tr('settings.cueProfile.autoTuned', { before: tenths(check.before.found) })
-                  : tr('settings.cueProfile.autoGeneral')
-            }
-          >
-            {check
-              ? tr('settings.cueProfile.autoFound', { found: tenths(check.after.found) })
-              : tr('settings.cueProfile.autoFew')}
-          </Fact>
+          {autoCue.canLearn && (
+            <Fact
+              testid="cue-profile-auto"
+              label={tr('editor.cues.auto.button')}
+              sub={
+                !check
+                  ? tr('settings.cueProfile.autoFewHint', { count: autoCue.minTasteTracks })
+                  : profile.taste
+                    ? tr('settings.cueProfile.autoTuned', { before: tenths(check.before.found) })
+                    : tr('settings.cueProfile.autoGeneral')
+              }
+            >
+              {check
+                ? tr('settings.cueProfile.autoFound', { found: tenths(check.after.found) })
+                : tr('settings.cueProfile.autoFew')}
+            </Fact>
+          )}
           {read.edits.corrected > 0 && (
             <Fact
               testid="cue-profile-corrections"

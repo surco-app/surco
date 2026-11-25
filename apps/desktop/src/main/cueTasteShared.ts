@@ -1,7 +1,7 @@
 import { mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import log from 'electron-log/main'
-import type { TasteTrack } from '../shared/dropTaste'
+import type { TasteTrack } from '../shared/autoCue'
 import type { SharedEdits } from './cueTaste'
 
 const FOLDER = 'cue-taste'

@@ -1,12 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import log from 'electron-log/main'
+import { autoCue, type TasteTrack, type TunedTaste } from '../shared/autoCue'
+import { fingerprintOf, roundedCandidates } from '../shared/autoCue/tasteTracks'
 import type { CueProfile } from '../shared/cueProfile'
-import {
-  fingerprintOf,
-  roundedCandidates,
-  type TasteTrack,
-  type TunedTaste,
-} from '../shared/dropTaste'
 import { diagnoseLearnFlow, learnFlow } from '../shared/learnFlow'
 import type { CollectionMarks } from './rekordboxLearnFlow'
 import type { QueueStore } from './rekordboxQueue'
@@ -159,7 +155,9 @@ export function createCueTaste(
     saved = { ...saved, othersSeen: others.length }
     for (const edit of others) byKey.set(edit.key, edit)
     for (const edit of saved.edits) byKey.set(edit.key, edit)
-    const tuned = await deps.tune([...byKey.values()])
+    const tuned = autoCue.canLearn
+      ? await deps.tune([...byKey.values()])
+      : { taste: saved.profile?.taste ?? null, check: saved.profile?.check ?? null }
     const profile: CueProfile = {
       learnedAt: now().toISOString(),
       sources: { rekordbox: collection.learn.length, edits: saved.edits.length },
@@ -214,7 +212,7 @@ export function createCueTaste(
       shareSoon()
       const due =
         saved.sinceLearn >= RELEARN_EVERY || (saved.corrections ?? 0) >= RELEARN_AFTER_CORRECTIONS
-      if (learnNow && due && !learning) learnInBackground()
+      if (learnNow && due && !learning && autoCue.canLearn) learnInBackground()
     },
     async refresh(learnNow) {
       if (!learnNow || learning) return

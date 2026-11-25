@@ -182,51 +182,14 @@ Un flujo sin reglas encaja con cualquier pista si se permiten cues de más, así
 
 Tiempo de lectura y aprendizaje sobre la copia: 906 ms la primera vez y unos 257 ms con la caché caliente. Corre en el proceso principal: al pulsar el botón, la app puede tardar en responder alrededor de un segundo. Si se nota, se mueve a un worker.
 
-## Medido: detección de donde rompe (20/10/2026)
+## Detección de donde rompe
 
-Misma copia de pruebas, solo lectura, con la onda en color de rekordbox (PWV5) además de la rejilla y las frases. Se mide con `SURCO_DROP_DETECT_DB=<copia> vitest run --reporter=default src/main/dropDetectMeasure.test.ts`. Con `SURCO_DROP_DETECT_MODEL_OUT=src/shared/dropModel.json` además reentrena el modelo (sale idéntico byte a byte, pasarle después `biome check --write`).
+Auto propone dónde rompe cada pista a partir del análisis de rekordbox y la rejilla, y separa las propuestas seguras de las dudosas. Propone pocas por pista, cada una a su sitio, y acierta mucho más que marcar cada inicio de estribillo. Auto marcar lo usa en el editor de cues desde la v1.10.
 
-Pistas repartidas por un hash del ContentID, 1110 para aprender (70 %) y 466 apartadas para medir (30 %). Todo se ajusta solo con las de aprender. Acierto es caer en el mismo compás que su donde rompe; también se da a un compás de distancia.
+El detalle del motor que lo hace (cómo puntúa, cómo se entrena y cómo se mide) no se documenta aquí. La build oficial de Surco lleva su propio motor de auto cue, y el código abierto trae uno más sencillo que cumple la misma interfaz.
 
-El algoritmo, en palabras llanas. Para cada compás se mira cuánto grave suena (la parte roja de la onda), cuánto suena en total y cuánto agudo, antes y después. Solo se valoran los compases donde empieza una frase de rekordbox o donde el grave vuelve de golpe. Un conjunto de árboles de decisión (150, aprendidos de sus marcas) puntúa cada uno, y se proponen los mejores, como mucho 4 por pista y separados al menos 16 compases. Lo que más pesa es el salto del grave respecto al compás anterior y cuánto sube frente a los 8 compases previos.
+## Tu forma de marcar
 
-| Familia (pistas apartadas) | Recall | Recall ±1 compás | Precisión | Precisión ±1 | Propuestas por pista | Primer donde rompe | Primero ±1 |
-|---|---|---|---|---|---|---|---|
-| Inicio de estribillo de rekordbox (lo de antes) | 0,641 | 0,733 | 0,170 | 0,195 | 10,6 | 0,268 | 0,309 |
-| Regla del parón (grave ≥ 0,8 y al menos 1 compás quieto antes) | 0,596 | 0,626 | 0,480 | 0,504 | 3,5 | 0,397 | 0,438 |
-| Árboles sobre la onda y las frases | **0,681** | 0,695 | **0,676** | 0,690 | 2,8 | **0,498** | 0,511 |
+Auto se puede ajustar a cada DJ con las marcas que ya tiene en su colección y las que guarda en el editor. El ajuste solo se adopta si encuentra mejor las marcas del DJ en pistas que se apartan para comprobarlo, así que a quien ya marca como el motor de serie no le cambia nada y a quien marca distinto le mejora mucho.
 
-En 5 grupos sobre las 1576 pistas los árboles dan recall 0,696, precisión 0,665 y primer donde rompe 0,520, así que el número de las apartadas no es suerte del reparto. En las pistas de aprender dan 0,764 y 0,725, algo de sobreajuste.
-
-Frente a lo de antes acierta parecido pero con 3 propuestas por pista en vez de 10, y de cada 10 propuestas 7 son buenas en vez de 2.
-
-Lejos del 99 %. Por qué, medido sobre las pistas de aprender.
-
-- Su intuición se cumple cuando el parón es largo. Si antes hay 8 compases o más sin grave acierta el 96 % (1198 de 1251), con 4 a 7 compases el 88 %.
-- Pero solo el 41 % de sus donde rompe tiene ese parón. 795 vienen tras un único compás sin grave (acierta el 63 %), porque un compás así también aparece en cada redoble entre frases. 506 no tienen ningún hueco de grave antes (acierta el 30 %) y 91 caen en un compás que todavía está flojo (32 %). Ahí lo que cambia es la melodía o la voz, y la onda resumida no lo ve.
-- El primer donde rompe falla sobre todo por adelantarse. En 370 pistas propone uno antes que el suyo, 151 de ellas en el compás 16, el primer estribillo tras la intro, que unas veces marca y otras no con una onda casi igual. En 146 se queda corto.
-- La rejilla cuenta casi bien, a un compás de distancia solo se ganan 1,5 puntos.
-
-Para ir más allá haría falta mirar el audio y no solo la onda resumida (entrada de voz o del sintetizador principal, el redoble y el silencio justo antes), o pedirle a él que confirme el primer donde rompe en las pistas dudosas. Con lo que da rekordbox, el techo práctico ronda el 70 % de recall con 70 % de precisión.
-
-No está conectado a la interfaz.
-
-## Medido: tu forma de marcar (28/10/2026)
-
-Copia de su colección del 28/10, solo lectura, 1580 pistas con donde rompe marcado y onda en color, 467 apartadas por el mismo hash que la medición de la detección. Comando: `SURCO_AUTO_TASTE_DB=<copia> vitest run --reporter=default --silent=false src/main/autoMarkTasteMeasure.test.ts`.
-
-Segura o dudosa. Lo que separa una propuesta buena de una mala es la puntuación de los árboles, no el parón de grave antes. Con el parón, tras 8 compases o más acierta el 72 % de las propuestas y tras uno solo el 61 %, casi lo mismo. Con la puntuación, 1 o más acierta el 85 % (el 43 % de las propuestas) y por debajo el 55 %. Segura es puntuación 1 o más. El parón se enseña como lo que se oyó antes, no como la razón de la seguridad.
-
-Ajustar Auto a cada DJ. Se siguen entrenando 30 árboles sobre los 150 de serie con las marcas del DJ y se eligen de nuevo el umbral, la separación y el máximo de propuestas. El 30 % de sus pistas queda aparte, y el ajuste solo se adopta si allí acierta más que el modelo de serie (F1). Como la colección de serie es la de Vicent, se simulan otros gustos con sus mismas pistas.
-
-| DJ | Pistas para aprender | F1 de serie | F1 ajustado | Se adopta |
-|---|---|---|---|---|
-| Vicent | 30 a 1113 | 0,680 | 0,678 a 0,680 | casi nunca |
-| Solo el primer donde rompe | 30 | 0,336 | 0,516 | sí |
-| Solo el primer donde rompe | 1113 | 0,336 | 0,563 | sí |
-| Solo el último donde rompe | 30 | 0,379 | 0,625 | sí |
-| Solo el último donde rompe | 300 | 0,379 | 0,694 | sí |
-
-Con 30 pistas ya mejora mucho a quien marca distinto, y a Vicent no le cambia nada. Entrenar tarda de 0,15 s con 30 pistas a 5 s con 1113, en un hilo aparte, con un máximo de 600 pistas. Falta medirlo con la colección de otro DJ de verdad.
-
-De dónde aprende. rekordbox, de las pistas con CALL (el CALL suelto es donde rompe). Traktor y Engine DJ no tienen CALL, así que de ellos aprende solo de lo que el DJ guarda en el editor de Surco, donde el CALL sigue como marca de trabajo. Cada guardado se apunta con las barras candidatas y donde marcó, la misma pista cuenta una vez (gana lo guardado sobre la colección) y, si el DJ lo deja, Surco vuelve a aprender solo cada 10 guardados.
+De dónde aprende. rekordbox, de las pistas con CALL (el CALL suelto es donde rompe). Traktor y Engine DJ no tienen CALL, así que de ellos aprende solo de lo que el DJ guarda en el editor de Surco, donde el CALL sigue como marca de trabajo. Si el DJ lo deja, Surco vuelve a aprender solo cada cierto número de guardados.

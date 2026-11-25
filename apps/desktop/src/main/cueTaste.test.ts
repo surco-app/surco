@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fingerprintOf, type TasteTrack, type TunedTaste } from '../shared/dropTaste'
+import type { TasteTrack, TunedTaste } from '../shared/autoCue'
+import { fingerprintOf } from '../shared/autoCue/tasteTracks'
 import type { LearnTrack } from '../shared/learnFlow'
 import {
   type CueTasteDeps,
@@ -10,6 +11,20 @@ import {
   SHARE_AFTER_MS,
 } from './cueTaste'
 import type { CollectionMarks } from './rekordboxLearnFlow'
+
+const engine = vi.hoisted(() => ({ canLearn: true }))
+vi.mock('../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../shared/autoCue')>()
+  return {
+    ...actual,
+    autoCue: {
+      ...actual.autoCue,
+      get canLearn() {
+        return engine.canLearn
+      },
+    },
+  }
+})
 
 function memoryStore(text: string | null = null) {
   let saved = text
@@ -101,6 +116,45 @@ describe('createCueTaste', () => {
     expect(tune).not.toHaveBeenCalled()
     taste.record(track('last'), true)
     await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
+  })
+
+  it('still learns the rekordbox cue flow the first time when the engine cannot learn, so the open build can offer it', async () => {
+    engine.canLearn = false
+    try {
+      const tune = vi.fn(async () => null)
+      const taste = createCueTaste(memoryStore(), deps({ tune, marked: () => 5 }))
+      await taste.refresh(true)
+      await vi.waitFor(() => expect(taste.profile()).not.toBeNull())
+    } finally {
+      engine.canLearn = true
+    }
+  })
+
+  it('does not queue relearning after edits when the engine cannot learn, since it would find no taste in them', async () => {
+    engine.canLearn = false
+    try {
+      const tune = vi.fn(async () => null)
+      const taste = createCueTaste(memoryStore(), deps({ tune }))
+      for (let i = 0; i < RELEARN_EVERY * 2; i++) taste.record(track(`t${i}`), true)
+      await new Promise((r) => setTimeout(r, 0))
+      expect(tune).not.toHaveBeenCalled()
+    } finally {
+      engine.canLearn = true
+    }
+  })
+
+  it('keeps the taste learned by the official build when the engine cannot learn', async () => {
+    const store = memoryStore()
+    await createCueTaste(store, deps()).learn()
+    engine.canLearn = false
+    try {
+      const open = createCueTaste(store, deps({ tune: vi.fn(async () => null) }))
+      const profile = await open.learn()
+      expect(profile.taste).toEqual(TUNED.taste)
+      expect(createCueTaste(store, deps()).profile()?.taste).toEqual(TUNED.taste)
+    } finally {
+      engine.canLearn = true
+    }
   })
 
   it('never learns on its own when the DJ turned it off', async () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { TasteTrack } from '../shared/autoCue'
 import type { CueProfile } from '../shared/cueProfile'
-import type { TasteTrack } from '../shared/dropTaste'
 import type { CueTaste } from './cueTaste'
 import { registerCueTasteIpc } from './cueTasteIpc'
 
