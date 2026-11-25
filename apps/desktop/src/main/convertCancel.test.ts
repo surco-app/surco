@@ -35,8 +35,8 @@ const meta: TrackMetadata = {
 }
 
 beforeAll(() => {
-  // Long enough that killing the child mid-encode is reliably still in flight —
-  // a stalled network mount is what this simulates, not a slow one.
+  // A stalled network mount is what this simulates, not a slow one. Twenty seconds
+  // still encode in tens of milliseconds, so no length keeps a kill inside the encode.
   execFileSync(FF, [
     '-y',
     '-f',
@@ -58,6 +58,11 @@ beforeAll(() => {
 describe('convertAudio — killed mid-encode', () => {
   it('rejects and leaves no .tmp file behind when the child is killed', async () => {
     const out = join(dir, 'killed.flac')
+    // The cancel flag rides with the kill, as in activeConversions.cancel(): this
+    // 20 s encode takes about 30 ms, so a worker off the CPU for longer under load
+    // sent the SIGTERM to an ffmpeg that had already exited 0, and a kill alone let
+    // the conversion publish.
+    let cancelled = false
     const promise = convertAudio(
       src,
       out,
@@ -67,7 +72,18 @@ describe('convertAudio — killed mid-encode', () => {
       undefined,
       undefined,
       undefined,
-      (child) => child.kill('SIGTERM'),
+      (child) => {
+        cancelled = true
+        child.kill('SIGTERM')
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => cancelled,
     )
 
     await expect(promise).rejects.toThrow()
