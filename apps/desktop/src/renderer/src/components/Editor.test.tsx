@@ -7415,6 +7415,29 @@ describe('Editor Apple Music library section', () => {
       expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
     })
 
+    // The stars warning shows once the body says Replace, so a Replace picked from the menu
+    // over the Serato copy must not run before the DJ could read it.
+    it('only remembers Replace picked over the Serato copy, leaving the press to the body', async () => {
+      renderWithPrograms({ serato: sameSeratoCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ replacesPath: '/s/Strobe.wav' }),
+      )
+    })
+
+    it('replaces at once when Replace is picked over a copy Serato does not hold', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
     it('says nothing about Serato stars when the body updates the Serato copy', async () => {
       renderWithPrograms({ serato: sameSeratoCopy, hereDuration: 95, identicalPair: true })
       await readyBody()

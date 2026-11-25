@@ -273,7 +273,10 @@ export function ExportButton({
   function pickLibraryAction(action: LibraryCopyAction): void {
     setOpen(false)
     onLibraryActionChange?.(action)
-    if (!libraryCopy?.held && !softBlocked) onLibraryAction?.(action)
+    // The stars warning shows only once the body says Replace, so a Replace that costs them
+    // waits for the body's press: run from here, the DJ would read the warning too late.
+    const warnsFirst = action === 'replace' && !!libraryCopy?.replaceLosesStars
+    if (!libraryCopy?.held && !softBlocked && !warnsFirst) onLibraryAction?.(action)
   }
 
   // Only while the body acts on the copy: an in-place update or a re-export outranks it there,

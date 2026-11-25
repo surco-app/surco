@@ -806,6 +806,42 @@ describe('ExportButton library copy', () => {
     expect(screen.queryByTestId('library-copy-heading')).toBeNull()
   })
 
+  // Replacing a copy Serato holds costs its stars, and the footer says so only once the body
+  // says Replace. Run from the menu, the first Replace went through before the DJ could read
+  // it: the pick only turns the body to Replace, and the body's press replaces.
+  it('only remembers Replace from the menu when replacing would cost Serato its stars', () => {
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, replaceLosesStars: true }}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
+  })
+
+  it('still runs Update from the menu at once when replacing would cost Serato its stars', () => {
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: 'replace', replaceLosesStars: true }}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-update'))
+    expect(onLibraryAction).toHaveBeenCalledWith('update')
+  })
+
   // A copy still being compared may yet turn out to be another version, so nothing is
   // written to it until the verdict lands; the pick is kept for when it does.
   it('only remembers a pick while the copy is still being compared', () => {

@@ -1993,6 +1993,10 @@ export const Editor = memo(function Editor({
       ? { ...pickedCopy, held: pickedCopy.held || pickedIsThisFile === undefined }
       : null
   const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
+  // Asked whatever the body says, since it decides whether picking Replace may run at once.
+  const replaceLosesStars = useSeratoLosesStars(
+    libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
+  )
   // A copy in no format Surco writes can't be updated in place nor named on the button. A held
   // copy is offered still, so the body names the action it waits for instead of saying
   // Convert and then flipping; its format half shows the pick until the path is known.
@@ -2008,6 +2012,7 @@ export const Editor = memo(function Editor({
           better: libraryTarget.better,
           held: libraryTarget.held,
           keptFormat,
+          replaceLosesStars,
         }
       : undefined
   const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {

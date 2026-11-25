@@ -153,4 +153,6 @@ export interface LibraryCopyOffer {
   held: boolean
   // The copy's own format, which Update keeps since it never touches the audio.
   keptFormat?: OutputFormat
+  // Replacing this copy repoints Serato to a new file, which loses the copy's stars.
+  replaceLosesStars?: boolean
 }
