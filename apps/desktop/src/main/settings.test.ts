@@ -1747,6 +1747,12 @@ describe('settingsPatchEffects', () => {
     })
   })
 
+  // A poke sets the rekordbox queue watch polling again, so only the setting that decides
+  // whether it watches may trigger one.
+  it('leaves the rekordbox watch alone for a setting it does not read', () => {
+    expect(settingsPatchEffects({ language: 'de' }).pokeRekordboxWatch).toBe(false)
+  })
+
   // A new library path means a different collection, so its queue announces again what
   // waits for it instead of what waited for the old one.
   it('announces the queue of each library whose path changed', () => {
