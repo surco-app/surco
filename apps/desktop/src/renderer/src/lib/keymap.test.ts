@@ -166,6 +166,20 @@ describe('isTypingTarget', () => {
     expect(isTypingTarget({ tagName: 'DIV', isContentEditable: true })).toBe(true)
   })
 
+  // A checkbox takes no typing, so treating it as a field swallowed ⌘Z right after ticking a
+  // playlist in the popover, and the tick could not be undone from the keyboard.
+  it('is not typing for a checkbox, which takes no keys but its own Space', () => {
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'checkbox' })).toBe(false)
+  })
+
+  // A radio group moves its choice with the arrows, which the list would otherwise take.
+  it('still treats a radio and text-like inputs as typing', () => {
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'radio' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'text' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'number' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'search' })).toBe(true)
+  })
+
   it('is not typing for plain elements or nothing focused', () => {
     expect(isTypingTarget({ tagName: 'BUTTON' })).toBe(false)
     expect(isTypingTarget({ tagName: 'DIV' })).toBe(false)
