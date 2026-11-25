@@ -45,6 +45,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
+import { useAudibleSpan, withAudible } from '../hooks/useAudibleSpan'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
@@ -84,7 +85,13 @@ import {
   leftOutNote,
   offersSourceFormat,
 } from '../lib/batch'
-import { type CopyFacts, type CopyReason, type CopyVerdict, compareCopies } from '../lib/bestCopy'
+import {
+  type CopyFacts,
+  type CopyReason,
+  type CopyVerdict,
+  compareCopies,
+  wantsAudibleSpans,
+} from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
@@ -100,22 +107,22 @@ import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { ownsKeystroke } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
-import { libraryMembership, librarySourceOf } from '../lib/librarySource'
 import {
   type CopyCandidate,
   copyPathIn,
   copyRefOf,
   fillCopyPath,
+  isAnotherVersion,
   keptFormatOf,
-  replaceWarnsFirst,
   type LibraryCopyOffer,
   type LibraryCopyRef,
   pickLibraryCopy,
   replaceCopyPatch,
+  replaceWarnsFirst,
   versionCopyIn,
-  isAnotherVersion,
   versionCopyPath,
 } from '../lib/libraryCopy'
+import { libraryMembership, librarySourceOf } from '../lib/librarySource'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -885,15 +892,29 @@ export const Editor = memo(function Editor({
   )
   const musicCopyUnreached =
     !!musicCopyReach && (musicCopyReach.missing || musicCopyReach.unreadable)
-  const hereFacts = withDuration(
+  const hereMeasured = withDuration(
     useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
     useCopyDuration(item.inputPath, !!comparedCopyPath),
   )
-  const libraryFacts = withDuration(
+  const libraryMeasured = withDuration(
     useCopyFacts(comparedCopyPath, !!comparedCopyPath),
     useCopyDuration(comparedCopyPath, !!comparedCopyPath),
   )
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
+  const spansWanted =
+    !!hereMeasured &&
+    !!libraryMeasured &&
+    wantsAudibleSpans(hereMeasured, libraryMeasured, copyPair)
+  const hereFacts = withAudible(
+    hereMeasured,
+    useAudibleSpan(item.inputPath, spansWanted),
+    spansWanted,
+  )
+  const libraryFacts = withAudible(
+    libraryMeasured,
+    useAudibleSpan(comparedCopyPath, spansWanted),
+    spansWanted,
+  )
   const copyVerdict =
     hereFacts && libraryFacts && copyPair !== undefined
       ? compareCopies(hereFacts, libraryFacts, copyPair)
@@ -946,7 +967,7 @@ export const Editor = memo(function Editor({
     verdict: rowVerdict(programVerdicts[i]),
     // A collection may not store the length; the measured one then stands in for it.
     durationSec: copy.durationSec ?? programVerdicts[i]?.copy?.durationSec,
-    sameMasterAcrossGap: !!programVerdicts[i]?.verdict?.sameMasterAcrossGap,
+    sameMasterAcrossGap: programVerdicts[i]?.verdict?.sameMasterAcrossGap,
   }))
   // Keyed on each program's copy target after the verdict filter, not on the rows (new on
   // every render, so a new copyPathOf would read the membership again each time) nor on the
@@ -1967,7 +1988,7 @@ export const Editor = memo(function Editor({
           verdict: musicRow.verdict,
           better: libraryCopyBetter,
           durationSec: musicRow.durationSec ?? musicEntryDurationSec,
-          sameMasterAcrossGap: !!copyVerdict?.sameMasterAcrossGap,
+          sameMasterAcrossGap: copyVerdict?.sameMasterAcrossGap,
           music: replaceTarget,
         }
       : null
@@ -2071,7 +2092,13 @@ export const Editor = memo(function Editor({
   // the body replaces it: offering nothing let the body say Convert and add a second entry
   // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
   const updatable = !!keptFormat || !libraryTarget?.path
-  const copyAction: LibraryCopyAction = updatable ? libraryCopyAction : 'replace'
+  // pickLibraryCopy never targets a copy that is neither updatable nor replaceable.
+  const copyAction: LibraryCopyAction =
+    libraryTarget && !libraryTarget.replaceable
+      ? 'update'
+      : updatable
+        ? libraryCopyAction
+        : 'replace'
   const libraryCopy: LibraryCopyOffer | undefined = libraryTarget
     ? {
         name:
@@ -2084,6 +2111,7 @@ export const Editor = memo(function Editor({
         held: libraryTarget.held,
         keptFormat,
         updatable,
+        replaceable: libraryTarget.replaceable,
         replaceLosesStars,
       }
     : undefined

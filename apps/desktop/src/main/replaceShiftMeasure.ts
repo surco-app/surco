@@ -1,4 +1,4 @@
-import type { ReplaceShift } from '../shared/replaceShift'
+import { REPLACE_REACH_SECONDS, type ReplaceShift } from '../shared/replaceShift'
 import { correlationAt, lagCorrelations, PAIR_RATE } from './pairLag'
 
 // Fixed by replaceShiftSweep.test.ts (22/11) on 234 real same-track pairs (12 kept originals, 75
@@ -15,7 +15,7 @@ import { correlationAt, lagCorrelations, PAIR_RATE } from './pairLag'
 // agrees on), 58 are another master, 17 ambiguous, 2 too short, 1 drift; no negative pair moves.
 // The head window has to start at least one reach into the track so the new file's search span
 // never begins before zero.
-export const REPLACE_REACH_SECONDS = 5
+export { REPLACE_REACH_SECONDS }
 export const REPLACE_HEAD_AT_SECONDS = 90
 export const REPLACE_TAIL_BEFORE_END_SECONDS = 90
 export const REPLACE_TOLERANCE_MS = 2
@@ -86,7 +86,7 @@ export function replaceShiftOf(
 // past 50 ms (another speed) and edits (a step between windows) stay unmoved, as they should.
 export const MASTER_RATE = 4000
 export const MASTER_WINDOW_SECONDS = 30
-export const MASTER_REACH_SECONDS = 5
+export const MASTER_REACH_SECONDS = REPLACE_REACH_SECONDS
 export const MASTER_EDGES_SECONDS = [30, 60, 90] as const
 export const MASTER_MIN_CORRELATION = 0.5
 export const MASTER_TOLERANCE_MS = 50

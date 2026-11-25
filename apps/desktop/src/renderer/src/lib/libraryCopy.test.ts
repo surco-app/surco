@@ -553,15 +553,15 @@ describe('pickLibraryCopy', () => {
 })
 
 // rekordbox holds the track at 7:06 and the open file runs 7:01: the same master with five
-// more seconds of silence, which the comparison confirmed by lining the two up across the gap.
-// For the DJ it is the same track, so it counts as the copy wherever a matching length would.
+// more seconds of silence, which the comparison confirmed across the gap. For the DJ it is the
+// same track, so it counts as the copy wherever a matching length would.
 describe('one master the comparison lined up across a length gap', () => {
   const confirmed = (verdict: LibraryVerdict) => ({
     program: 'rekordbox' as const,
     path: '/r/a.aiff',
     verdict,
     durationSec: 426,
-    sameMasterAcrossGap: true,
+    sameMasterAcrossGap: { headShiftSec: 5 },
   })
   const counted = ['same', 'even', 'here', 'library', 'unmeasurable'] as const
   const fill = (copy: FillCandidate | null, programs: FillCandidate[]) => ({
@@ -589,10 +589,42 @@ describe('one master the comparison lined up across a length gap', () => {
     expect(versionCopyIn('rekordbox', [confirmed('library')], 421, false)).toBe('')
   })
 
+  const candidate = (headShiftSec: number, path = '/r/a.aiff'): CopyCandidate => ({
+    ...rekordbox,
+    ...confirmed('same'),
+    path,
+    sameMasterAcrossGap: { headShiftSec },
+  })
+
   it('offers it to Update or Replace, it is the copy the DJ has of this track', () => {
+    expect(pickLibraryCopy([candidate(5)], 421)).toMatchObject({
+      path: '/r/a.aiff',
+      held: false,
+      replaceable: true,
+    })
+  })
+
+  // A Replace finds the shift between the two files only within 5 s, so music that starts 8 s
+  // later would leave every cue 8 s off: Update, which never touches the audio, is all it gets.
+  it('offers it to Update alone when its music starts further off than a Replace finds the shift', () => {
+    expect(pickLibraryCopy([candidate(8)], 421)).toMatchObject({
+      path: '/r/a.aiff',
+      replaceable: false,
+    })
+  })
+
+  it('leaves a copy Surco can neither update nor replace to a plain Convert, as before', () => {
+    expect(pickLibraryCopy([candidate(8, '/r/a.ogg')], 421)).toBeNull()
     expect(
-      pickLibraryCopy([{ ...rekordbox, ...confirmed('same'), format: 'AIFF 16/44.1' }], 421),
-    ).toMatchObject({ path: '/r/a.aiff', held: false })
+      pickLibraryCopy([candidate(8, '/r/a.ogg'), { ...traktor, durationSec: 421 }], 421),
+    ).toMatchObject({ program: 'traktor' })
+    expect(pickLibraryCopy([candidate(5, '/r/a.ogg')], 421)).toMatchObject({ replaceable: true })
+  })
+
+  it('replaces a copy whose length matches whatever its music start, the cue shift is measured', () => {
+    expect(pickLibraryCopy([{ ...candidate(8), durationSec: 421.5 }], 421)).toMatchObject({
+      replaceable: true,
+    })
   })
 
   it('never counts a copy the comparison called another version', () => {

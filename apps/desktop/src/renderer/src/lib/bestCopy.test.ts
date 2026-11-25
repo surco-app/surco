@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type CopyFacts, compareCopies, isSameAudio } from './bestCopy'
+import { type CopyFacts, compareCopies, isSameAudio, wantsAudibleSpans } from './bestCopy'
 
 const sameMaster = { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }
 const otherMaster = { correlation: 0.8618, residualDb: -5.9, gainDb: 0.4 }
@@ -129,10 +129,7 @@ describe('compareCopies', () => {
     // One master with 3 s of its head trimmed is 3 s shorter and slips past the ±1 s probe;
     // the wider search lines it up again, so it is no other version.
     it('never calls a shifted copy of one master another version', () => {
-      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({
-        winner: 'tie',
-        sameMasterAcrossGap: true,
-      })
+      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({ winner: 'tie' })
     })
 
     // Without the wider search there is no evidence the audio differs.
@@ -150,10 +147,7 @@ describe('compareCopies', () => {
     })
 
     it('never calls a correlation of 0.5 or more another version', () => {
-      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({
-        winner: 'tie',
-        sameMasterAcrossGap: true,
-      })
+      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({ winner: 'tie' })
     })
 
     it('never calls a short or silent copy another version', () => {
@@ -171,9 +165,17 @@ describe('compareCopies', () => {
         expect(compareCopies(edit(210), edit(400), identical)).toEqual({ winner: 'different' })
       })
 
-      it('never calls a copy with a trimmed outro the same audio', () => {
+      // Nor the same track for the library: unconfirmed across the gap, the fill takes it for
+      // another version, so the row must not say «It's the same» beside that.
+      it('never calls a copy with a trimmed outro the same audio, nor one master', () => {
         expect(
           compareCopies(edit(447), edit(450), { correlation: 0.99, residualDb: -80, gainDb: 0 }),
+        ).toEqual({ winner: 'tie' })
+      })
+
+      it('still calls one master within the drift a rounding leaves one master', () => {
+        expect(
+          compareCopies(edit(447), edit(448.5), { correlation: 0.99, residualDb: -30, gainDb: 0 }),
         ).toEqual({ winner: 'tie', sameMaster: true })
       })
 
@@ -190,38 +192,86 @@ describe('compareCopies', () => {
 
     // rekordbox's copy runs 7:06 against 7:01 here, the same master with five more seconds of
     // silence: the library code counts a copy only within the 2 s a drift leaves, unless the
-    // comparison says the wider search lined the two up as one master across the gap.
+    // comparison confirms one master across the gap. The wider search only lines up the first
+    // minute, which a fade-out edit or a mix with another outro passes too, so the gap must
+    // also be silence: once the silence at either end is set aside, the music lasts as long.
     describe('one master across a length gap', () => {
-      it('marks a copy the wider search lined up as one master, whatever decides between them', () => {
-        expect(compareCopies(edit(421), edit(426), searched(0.97))).toEqual({
-          winner: 'tie',
-          sameMasterAcrossGap: true,
-        })
-        const mp3 = { ...edit(426), ext: 'mp3', cutoffHz: 19800, hasKnee: true }
+      const span = (startSec: number, endSec: number) => ({ audible: { startSec, endSec } })
+      const padded = (durationSec: number, startSec: number, endSec: number): CopyFacts => ({
+        ...edit(durationSec),
+        ...span(startSec, endSec),
+      })
+
+      it('marks a copy five seconds longer with silence at its head, and how far its music starts later', () => {
         expect(
-          compareCopies(edit(421), mp3, {
-            correlation: 0.3,
-            residualDb: -1,
-            gainDb: -6,
-            versionCorrelation: 0.97,
-          }),
-        ).toEqual({ winner: 'a', reason: 'lossless', sameMasterAcrossGap: true })
+          compareCopies(padded(421, 0.2, 420.9), padded(426, 5.2, 425.9), searched(0.97)),
+        ).toEqual({ winner: 'tie', sameMasterAcrossGap: { headShiftSec: 5 } })
+      })
+
+      it('marks a copy five seconds longer with silence at its tail, whatever decides between them', () => {
+        const mp3 = { ...padded(426, 0.2, 420.9), ext: 'mp3', cutoffHz: 19800, hasKnee: true }
+        const verdict = compareCopies(padded(421, 0.2, 420.9), mp3, {
+          correlation: 0.3,
+          residualDb: -1,
+          gainDb: -6,
+          versionCorrelation: 0.97,
+        })
+        expect(verdict).toMatchObject({ winner: 'a', reason: 'lossless' })
+        expect(verdict.sameMasterAcrossGap?.headShiftSec).toBeCloseTo(0)
+      })
+
+      // 7:01 against 7:40 with music to the last second in both: the first minute lines up, but
+      // 39 s more music is another outro or another mix, not more silence.
+      it('marks nothing when the gap is music, though the first minute lines up', () => {
+        expect(
+          compareCopies(padded(421, 0.1, 420.9), padded(460, 0.1, 459.9), searched(0.97)),
+        ).toEqual({ winner: 'tie' })
+      })
+
+      it('marks nothing while either copy has no silence measured, the lengths then decide', () => {
+        expect(compareCopies(edit(421), padded(426, 5.2, 425.9), searched(0.97))).toEqual({
+          winner: 'tie',
+        })
+        expect(compareCopies(padded(421, 0.2, 420.9), edit(426), searched(0.97))).toEqual({
+          winner: 'tie',
+        })
       })
 
       it('marks nothing without the wider search, since nothing then confirms one master', () => {
-        expect(compareCopies(edit(421), edit(426), null)).toEqual({ winner: 'tie' })
-        expect(compareCopies(edit(421), edit(426), undefined)).toEqual({ winner: 'tie' })
+        const a = padded(421, 0.2, 420.9)
+        const b = padded(426, 5.2, 425.9)
+        expect(compareCopies(a, b, null)).toEqual({ winner: 'tie' })
+        expect(compareCopies(a, b, undefined)).toEqual({ winner: 'tie' })
+        expect(compareCopies(a, b, searched(0.3))).toEqual({ winner: 'different' })
       })
 
       it('marks nothing when a copy is too short or too silent for the search to say anything', () => {
-        expect(compareCopies(edit(9.9), edit(15), searched(0.97))).toEqual({ winner: 'tie' })
-        expect(compareCopies(edit(421), edit(426, -71), searched(0.97))).toEqual({
+        expect(compareCopies(padded(9.9, 0, 9.9), padded(15, 5.1, 15), searched(0.97))).toEqual({
+          winner: 'tie',
+        })
+        expect(
+          compareCopies(
+            padded(421, 0, 421),
+            { ...padded(426, 5, 426), integratedLufs: -71 },
+            searched(0.97),
+          ),
+        ).toEqual({ winner: 'tie' })
+      })
+
+      it('marks nothing within the drift a rounding leaves, where the lengths already agree', () => {
+        expect(compareCopies(padded(421, 0, 421), padded(422, 1, 422), searched(0.97))).toEqual({
           winner: 'tie',
         })
       })
 
-      it('marks nothing within the drift a rounding leaves, where the lengths already agree', () => {
-        expect(compareCopies(edit(421), edit(422), searched(0.97))).toEqual({ winner: 'tie' })
+      // The silence is read off each copy's whole waveform, a full decode: it is asked only for
+      // the pairs it can still turn into the same recording.
+      it('asks for the silence only of copies the first minute lined up across a gap', () => {
+        expect(wantsAudibleSpans(edit(421), edit(426), searched(0.97))).toBe(true)
+        expect(wantsAudibleSpans(edit(421), edit(426), searched(0.3))).toBe(false)
+        expect(wantsAudibleSpans(edit(421), edit(426), null)).toBe(false)
+        expect(wantsAudibleSpans(edit(421), edit(422), searched(0.97))).toBe(false)
+        expect(wantsAudibleSpans(edit(421), edit(426, -71), searched(0.97))).toBe(false)
       })
     })
 
@@ -232,8 +282,8 @@ describe('compareCopies', () => {
     })
   })
 
-  // «Parecidas» claims one master: only a tie whose pair correlated at or above the
-  // same-master line carries that evidence.
+  // A tie of one master reads «It's the same»: only a tie whose pair correlated at or above
+  // the same-master line carries that evidence.
   describe('same master', () => {
     it('marks a tie of one master that nothing separates', () => {
       expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, sameMaster)).toEqual({

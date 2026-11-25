@@ -15,6 +15,9 @@ export interface CopyFacts {
   crestDb?: number | null
   integratedLufs?: number
   durationSec?: number
+  // Where the music starts and ends past the silence at either end, as the trim section
+  // detects it on the waveform. Only read for a pair that needs it, see wantsAudibleSpans.
+  audible?: { startSec: number; endSec: number }
 }
 
 export type CopyReason =
@@ -27,14 +30,15 @@ export type CopyReason =
   | 'crest'
 
 // sameMasterAcrossGap: the lengths differ by more than VERSION_GAP_SEC, yet the wider search
-// lined the two up as one master (a head or tail of silence more or less), so the copy is
-// still the same recording for the library, which otherwise trusts only matching lengths.
+// lined the two up as one master and the gap is all silence at the ends, so the copy is still
+// the same recording for the library, which otherwise trusts only matching lengths.
+// headShiftSec is how much later the music starts in one than in the other.
 export type CopyVerdict = (
   | { winner: 'a' | 'b'; reason: CopyReason }
   | { winner: 'same' }
   | { winner: 'tie'; sameMaster?: true }
   | { winner: 'different' }
-) & { sameMasterAcrossGap?: true }
+) & { sameMasterAcrossGap?: { headShiftSec: number } }
 
 export interface CopyMargins {
   sameMasterCorrelation: number
@@ -70,12 +74,14 @@ function aligned(pair: PairProbe | null | undefined): PairFacts | null {
 }
 
 // What the lengths and the wider search say of two copies further apart than VERSION_GAP_SEC:
-// another version, the same master lined up across the gap, or nothing either way.
+// another version, a start the wider search lined up as one master, or nothing either way.
+// That search only covers about a minute from the start, so 'lined' alone does not make the
+// same recording: a fade-out edit or a mix with another outro lines up just as well.
 function acrossLengthGap(
   a: CopyFacts,
   b: CopyFacts,
   pair: PairProbe | null,
-): 'other' | 'master' | null {
+): 'other' | 'lined' | null {
   if (a.durationSec == null || b.durationSec == null) return null
   const gapSec = Math.abs(a.durationSec - b.durationSec)
   if (gapSec <= VERSION_GAP_SEC) return null
@@ -89,7 +95,24 @@ function acrossLengthGap(
     f.integratedLufs != null &&
     f.integratedLufs > OTHER_VERSION.silentLufs
   if (!probed(a) || !probed(b)) return null
-  return pair.versionCorrelation < OTHER_VERSION.maxCorrelation ? 'other' : 'master'
+  return pair.versionCorrelation < OTHER_VERSION.maxCorrelation ? 'other' : 'lined'
+}
+
+// A pair whose start lined up across the gap is the same recording only if the gap is
+// silence, which takes both waveforms (a full decode each): the hooks fetch them for it alone.
+export function wantsAudibleSpans(
+  a: CopyFacts,
+  b: CopyFacts,
+  pair: PairProbe | null | undefined,
+): boolean {
+  return pair !== undefined && acrossLengthGap(a, b, pair) === 'lined'
+}
+
+function silenceAcrossGap(a: CopyFacts, b: CopyFacts): { headShiftSec: number } | null {
+  if (!a.audible || !b.audible) return null
+  const music = (span: { startSec: number; endSec: number }) => span.endSec - span.startSec
+  if (Math.abs(music(a.audible) - music(b.audible)) > VERSION_GAP_SEC) return null
+  return { headShiftSec: Math.abs(a.audible.startSec - b.audible.startSec) }
 }
 
 const IDENTICAL_RESIDUAL_DB = -60
@@ -174,7 +197,20 @@ export function compareCopies(
   const gap = probe === undefined ? null : acrossLengthGap(a, b, probe)
   if (gap === 'other') return { winner: 'different' }
   const verdict = weighCopies(a, b, probe, margins)
-  return gap === 'master' ? { ...verdict, sameMasterAcrossGap: true } : verdict
+  const across = gap === 'lined' ? silenceAcrossGap(a, b) : null
+  if (across) return { ...verdict, sameMasterAcrossGap: across }
+  // One master the library still takes for another edit, by its length, is not shown as the
+  // same track beside that: «It's the same» needs what the fill needs.
+  if (verdict.winner === 'tie' && verdict.sameMaster && lengthsApart(a, b)) return { winner: 'tie' }
+  return verdict
+}
+
+function lengthsApart(a: CopyFacts, b: CopyFacts): boolean {
+  return (
+    a.durationSec != null &&
+    b.durationSec != null &&
+    Math.abs(a.durationSec - b.durationSec) > VERSION_GAP_SEC
+  )
 }
 
 function weighCopies(

@@ -6,7 +6,8 @@ import type {
   SpectrumVerdict,
   TrackProperties,
 } from '../../../shared/types'
-import { type CopyFacts, type CopyVerdict, compareCopies } from '../lib/bestCopy'
+import { type CopyFacts, type CopyVerdict, compareCopies, wantsAudibleSpans } from '../lib/bestCopy'
+import { audibleSpanOptions, settledSpan, withAudible } from './useAudibleSpan'
 import { libraryCopyFormat } from '../lib/properties'
 import { copyDurationOptions, withDuration } from './useCopyDuration'
 import { copyFactsQueries, toCopyFacts, versionPairOptions } from './useCopyFacts'
@@ -66,12 +67,11 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
     })),
   )
 
-  if (copyPaths.length === 0) return []
   const here = withDuration(
     factsFrom(herePath, results.slice(0, FACTS_PER_FILE)),
     settledDuration(results[FACTS_PER_FILE]),
   )
-  return copyPaths.map((path, i) => {
+  const measured = copyPaths.map((path, i) => {
     const start = HERE_QUERIES + i * QUERIES_PER_COPY
     const copy = withDuration(
       factsFrom(path, results.slice(start, start + FACTS_PER_FILE)),
@@ -79,16 +79,31 @@ export function useCopyVerdicts(herePath: string, copyPaths: string[]): CopyVerd
     )
     const pairResult = results[start + FACTS_PER_FILE + 1]
     const pair = pairResult.isPending ? undefined : ((pairResult.data as PairProbe | null) ?? null)
+    return { path, copy, pair, wanted: !!here && !!copy && wantsAudibleSpans(here, copy, pair) }
+  })
+  const spans = useQueries({
+    queries: [
+      { ...audibleSpanOptions(herePath), enabled: measured.some((m) => m.wanted) },
+      ...measured.map((m) => ({ ...audibleSpanOptions(m.path), enabled: m.wanted })),
+    ],
+  })
+
+  if (copyPaths.length === 0) return []
+  return measured.map(({ path, pair, wanted, ...m }, i) => {
+    const start = HERE_QUERIES + i * QUERIES_PER_COPY
+    const hereFacts = withAudible(here, settledSpan(spans[0]), wanted)
+    const copy = withAudible(m.copy, settledSpan(spans[i + 1]), wanted)
     const props = results[start + FACTS_PER_FILE + 2].data as TrackProperties | null | undefined
     const format = props ? libraryCopyFormat(props, path, i18n.language) : ''
-    const measuring = here === undefined || copy === undefined || pair === undefined
-    const verdict = here && copy && pair !== undefined ? compareCopies(here, copy, pair) : null
+    const measuring = hereFacts === undefined || copy === undefined || pair === undefined
+    const verdict =
+      hereFacts && copy && pair !== undefined ? compareCopies(hereFacts, copy, pair) : null
     return {
       verdict,
       measuring,
       format,
       ...reach[i],
-      here: here ?? undefined,
+      here: hereFacts ?? undefined,
       copy: copy ?? undefined,
     }
   })
