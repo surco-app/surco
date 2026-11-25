@@ -1097,6 +1097,8 @@
       "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor",
       "copyRemoved_one": "{{count}} pista quitada de «{{name}}»",
       "copyRemoved_other": "{{count}} pistas quitadas de «{{name}}»",
+      "copyQueuedStays_one": "Esta pista entra igualmente en «{{name}}» cuando cierres {{app}}",
+      "copyQueuedStays_other": "Estas {{count}} pistas entran igualmente en «{{name}}» cuando cierres {{app}}",
       "removeIn_one": "Quítala en {{app}}",
       "removeIn_other": "Quítalas en {{app}}"
     },

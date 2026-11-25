@@ -1097,6 +1097,8 @@
       "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください",
       "copyRemoved_one": "「{{name}}」から {{count}} 件のトラックを外しました",
       "copyRemoved_other": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyQueuedStays_one": "{{app}} を閉じると、このトラックは「{{name}}」に入ります",
+      "copyQueuedStays_other": "{{app}} を閉じると、{{count}} 件のトラックは「{{name}}」に入ります",
       "removeIn_one": "{{app}} で外してください",
       "removeIn_other": "{{app}} で外してください"
     },

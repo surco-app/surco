@@ -359,6 +359,24 @@ describe('useCopyPlaylistEdits', () => {
     await waitFor(() => expect(hook.result.current.queued.has(queuedKey(COPY, 'p1'))).toBe(false))
   })
 
+  // The queued add is not on disk yet, so the untick found no row and did nothing: the tick
+  // could not be taken back. The program's queue cannot take one change out, so the add still
+  // lands when the program closes, and the DJ is told so.
+  it('unticks an add queued while the program is open and says it still lands when it closes', async () => {
+    const { hook, dj, reportNotice } = setup({
+      edits: [{ applied: false, queued: true, opId: 'o' }],
+      membership: { [COPY]: [] },
+    })
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, true))
+    reportNotice.mockClear()
+    await act(() => hook.result.current.toggle([COPY], { id: 'p1', name: 'Verano' }, false))
+    expect(hook.result.current.queued.has(queuedKey(COPY, 'p1'))).toBe(false)
+    expect(reportNotice).toHaveBeenCalledWith(
+      'This track still goes into “Verano” when rekordbox closes',
+    )
+    expect(dj.editPlaylist).toHaveBeenCalledTimes(1)
+  })
+
   it('says the refusal in red and changes nothing when the write fails', async () => {
     const { hook, reportUndo, reportError } = setup({
       edits: [{ applied: false, reason: 'write-failed' }],

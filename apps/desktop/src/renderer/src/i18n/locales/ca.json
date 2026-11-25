@@ -1097,6 +1097,8 @@
       "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor",
       "copyRemoved_one": "{{count}} pista treta de «{{name}}»",
       "copyRemoved_other": "{{count}} pistes tretes de «{{name}}»",
+      "copyQueuedStays_one": "Aquesta pista entra igualment a «{{name}}» quan tanquis {{app}}",
+      "copyQueuedStays_other": "Aquestes {{count}} pistes entren igualment a «{{name}}» quan tanquis {{app}}",
       "removeIn_one": "Treu-la a {{app}}",
       "removeIn_other": "Treu-les a {{app}}"
     },

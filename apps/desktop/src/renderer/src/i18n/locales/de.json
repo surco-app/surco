@@ -1097,6 +1097,8 @@
       "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor",
       "copyRemoved_one": "{{count}} Track aus „{{name}}“ entfernt",
       "copyRemoved_other": "{{count}} Tracks aus „{{name}}“ entfernt",
+      "copyQueuedStays_one": "Dieser Track kommt trotzdem in „{{name}}“, sobald du {{app}} schließt",
+      "copyQueuedStays_other": "Diese {{count}} Tracks kommen trotzdem in „{{name}}“, sobald du {{app}} schließt",
       "removeIn_one": "Entferne sie in {{app}}",
       "removeIn_other": "Entferne sie in {{app}}"
     },

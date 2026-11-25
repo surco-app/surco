@@ -80,6 +80,8 @@ export function useCopyPlaylistEdits(
   const canRemove = can('remove')
   const canMove = can('move')
   const [queued, setQueued] = useState<ReadonlyMap<string, boolean>>(new Map())
+  const queuedRef = useRef(queued)
+  queuedRef.current = queued
 
   // An edit queued while the program is open is not in the membership read from disk until
   // the program closes; the field keeps showing it until the read agrees.
@@ -196,8 +198,31 @@ export function useCopyPlaylistEdits(
           : { kind: 'create', parentId: 'root', name: target.name, folder: false, tracks }
       } else {
         if (!target.id || !canRemove) return
-        const entries = await window.api.dj.playlist(library, target.id)
+        const playlistId = target.id
+        const entries = await window.api.dj.playlist(library, playlistId)
         const linkIds = linkIdsOf(entries, paths)
+        // An add queued while the program is open has no row on disk to take out, and the
+        // queue cannot take one change back: the tick goes, and the DJ hears the add still
+        // lands when the program closes.
+        const waiting = paths.filter(
+          (p) =>
+            queuedRef.current.get(queuedKey(p, playlistId)) === true &&
+            linkIdsOf(entries, [p]).length === 0,
+        )
+        if (waiting.length > 0) {
+          setQueued((prev) => {
+            const map = new Map(prev)
+            for (const p of waiting) map.delete(queuedKey(p, playlistId))
+            return map
+          })
+          reportNotice(
+            tr('editor.playlists.copyQueuedStays', {
+              count: waiting.length,
+              name: target.name,
+              app: tr(`sources.${library}`),
+            }),
+          )
+        }
         if (linkIds.length === 0) return
         places = placesOf(entries, paths)
         removed = linkIds.length
