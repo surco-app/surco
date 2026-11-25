@@ -3,7 +3,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import i18n from '../i18n'
 import type { TrackItem } from '../types'
-import { duplicatesDetail, reviewDetail, reviewOpening, reviewTarget } from './reviewTarget'
+import {
+  duplicatesDetail,
+  type ReviewOpening,
+  reviewDetail,
+  reviewOpening,
+  reviewParamsOf,
+  reviewTarget,
+} from './reviewTarget'
 
 const row = (inputPath: string) => ({ inputPath }) as TrackItem
 const music = (path: string | null, musicPersistentId?: string): SourcePlaylistEntry => ({
@@ -160,5 +167,52 @@ describe('reviewDetail', () => {
     expect(reviewDetail(tr, { kind: 'list', count: 71 })).toBe(
       'Las 71 pistas de la lista. Cambia los archivos',
     )
+  })
+})
+
+describe('reviewParamsOf', () => {
+  // Closed: the review source memo has nothing to build.
+  it('reads nothing while no review is open', () => {
+    expect(reviewParamsOf(null)).toEqual({
+      reviewKind: undefined,
+      reviewPaths: undefined,
+      reviewIds: undefined,
+      reviewMode: undefined,
+    })
+  })
+
+  // The review source is memoized on these: the opening's own set must come back, or every
+  // render would build a new source and lose what the open review wrote and trashed.
+  it('hands back the rows a list review opened on, as the same set', () => {
+    const paths = new Set(['/m/A.wav'])
+    const params = reviewParamsOf({ source: 'list', filter: 'all', paths })
+    expect(params.reviewKind).toBe('list')
+    expect(params.reviewPaths).toBe(paths)
+    expect([params.reviewIds, params.reviewMode]).toEqual([undefined, undefined])
+  })
+
+  it('hands back the Music scope a Music review opened on, as the same set', () => {
+    const ids = new Set(['PID1'])
+    const opening: ReviewOpening = {
+      source: 'music',
+      filter: 'duplicates',
+      scope: { ids, mode: 'tracks' },
+    }
+    const params = reviewParamsOf(opening)
+    expect(params.reviewKind).toBe('music')
+    expect(params.reviewIds).toBe(ids)
+    expect(params.reviewMode).toBe('tracks')
+    expect(params.reviewPaths).toBeUndefined()
+  })
+
+  // A whole-library Music review carries no scope, and a whole-list review no paths.
+  it('reads no scope for a review over the whole list or library', () => {
+    expect(reviewParamsOf({ source: 'music', filter: 'all' })).toEqual({
+      reviewKind: 'music',
+      reviewPaths: undefined,
+      reviewIds: undefined,
+      reviewMode: undefined,
+    })
+    expect(reviewParamsOf({ source: 'list', filter: 'all' }).reviewPaths).toBeUndefined()
   })
 })

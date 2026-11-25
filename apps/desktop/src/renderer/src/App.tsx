@@ -231,6 +231,14 @@ import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
 import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
+import {
+  type CopiesOpening,
+  overlayOpenOf,
+  type PasteTracklistOpening,
+  type SessionWizardOpening,
+  showListOf,
+  type UsbOpening,
+} from './lib/overlayLayers'
 import { clampPanelGeometry, type PanelAnchor } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { type PhrasedComment, phraseCountsOf } from './lib/phraseCountBatch'
@@ -276,6 +284,7 @@ import {
   type ReviewOpening,
   reviewDetail,
   reviewOpening,
+  reviewParamsOf,
   reviewTarget,
 } from './lib/reviewTarget'
 import { sameTracks } from './lib/sameTracks'
@@ -528,11 +537,7 @@ export default function App(): React.JSX.Element {
   // after every run that could have added to it.
   const [sidebarPeek, setSidebarPeek] = useState(false)
   const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const [copiesOpen, setCopiesOpen] = useState<{
-    openMusic: boolean
-    query: string
-    key: number
-  } | null>(null)
+  const [copiesOpen, setCopiesOpen] = useState<CopiesOpening | null>(null)
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([])
   const libraryCopies = useCopies()
   const backupAtByPath = useMemo(() => latestBackupByPath(trashEntries), [trashEntries])
@@ -1258,10 +1263,7 @@ export default function App(): React.JSX.Element {
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
   const usbRunning = useUsbExportState(isRunning)
-  const [usbModal, setUsbModal] = useState<{
-    preselect: string | null
-    source: UsbProgram
-  } | null>(null)
+  const [usbModal, setUsbModal] = useState<UsbOpening | null>(null)
   const { list: usbVolumes } = useUsbVolumes(
     usbAvailable || (usbModal !== null && usbModal.source !== 'rekordbox'),
   )
@@ -1366,12 +1368,7 @@ export default function App(): React.JSX.Element {
       return result
     },
   )
-  const [sessionWizard, setSessionWizard] = useState<{
-    parentId: string
-    adjust: boolean
-    fill?: FillTarget
-    start?: { path: string; playlistId: string }
-  } | null>(null)
+  const [sessionWizard, setSessionWizard] = useState<SessionWizardOpening | null>(null)
   const readLibraryRoles = useStableCallback(() => {
     const tree = browser.tree ?? []
     void sessionRows.load([
@@ -3967,10 +3964,7 @@ export default function App(): React.JSX.Element {
     () => (fixedNode ? (node: SourceNode) => fixedNode(node, treeTop.has(node.id)) : undefined),
     [fixedNode, treeTop],
   )
-  const [pasteTracklist, setPasteTracklist] = useState<{
-    node: SourceNode
-    create: boolean
-  } | null>(null)
+  const [pasteTracklist, setPasteTracklist] = useState<PasteTracklistOpening | null>(null)
   const openPasteTracklist = useStableCallback((node: SourceNode, create: boolean) =>
     setPasteTracklist({ node, create }),
   )
@@ -4671,15 +4665,14 @@ export default function App(): React.JSX.Element {
     if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
 
-  // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
-  // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen =
-    activeModal !== null ||
-    copiesOpen !== null ||
-    review !== null ||
-    usbModal !== null ||
-    pasteTracklist !== null ||
-    sessionWizard !== null
+  const { overlayOpen } = overlayOpenOf({
+    activeModal,
+    copiesOpen,
+    review,
+    usbModal,
+    pasteTracklist,
+    sessionWizard,
+  })
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
@@ -4750,10 +4743,7 @@ export default function App(): React.JSX.Element {
   // One source per opening: it remembers what it wrote and trashed until the review closes,
   // and it keeps to the rows it opened on. Picking another playlist while it is open does
   // not move it: what the menu said it would touch is what it touches.
-  const reviewKind = review?.source
-  const reviewPaths = review?.source === 'list' ? review.paths : undefined
-  const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
-  const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
+  const { reviewKind, reviewPaths, reviewIds, reviewMode } = reviewParamsOf(review)
   const reviewSource = useMemo(() => {
     const incomplete = {
       required: () => requiredFieldsOf(settingsRef.current),
@@ -4798,11 +4788,13 @@ export default function App(): React.JSX.Element {
   )
   // Drives the slim top bar: it follows the sweep the toolbar pill leads with,
   // and a fresh drop still reading its tags shows as an indeterminate run.
-  const showList =
-    !copiesOpen &&
-    ((browser.source ? browser.playlist !== null : filesView.length > 0) ||
-      review !== null ||
-      player.mounted)
+  const { showList } = showListOf({
+    copiesOpen,
+    browser,
+    filesView,
+    review,
+    playerMounted: player.mounted,
+  })
   const progress = topBarProgress(
     [...sweepTasks({ importing: importProgress, analysis, matching }), batchProgress],
     anyLoadingMeta,
