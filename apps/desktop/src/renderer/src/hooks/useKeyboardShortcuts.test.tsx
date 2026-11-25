@@ -363,6 +363,36 @@ describe('useKeyboardShortcuts with focus on a checkbox', () => {
     field.remove()
   })
 
+  // The playlists tree moves its focus between row checkboxes. Bare keys there are the tree's
+  // own, and k or End taking the list selection elsewhere remounted the editor and closed
+  // the popover under the user.
+  it('keeps bare list keys away from the list while a checkbox holds the focus', () => {
+    const prev = vi.fn()
+    const bottom = vi.fn()
+    const commands: Command[] = [
+      { id: 'prev', title: '', enabled: true, group: 'navigate', run: prev },
+      { id: 'list-bottom', title: '', enabled: true, group: 'navigate', run: bottom },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        paletteOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    const box = focusInput('checkbox')
+    press({ key: 'k', cancelable: true })
+    press({ key: 'End', cancelable: true })
+    expect(prev).not.toHaveBeenCalled()
+    expect(bottom).not.toHaveBeenCalled()
+    box.remove()
+  })
+
   it('leaves Space to the checkbox so it ticks instead of playing', () => {
     const { play } = setupWithUndo()
     const box = focusInput('checkbox')
