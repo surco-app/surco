@@ -66,8 +66,15 @@ export function useVersionCopyPlaylists({ item, copies, onChange, onRecordUndo }
       const i = due.indexOf(program)
       const membership = memberships[i].data as Membership
       const options = playlistOptions(trees[i].data ?? [])
-      const picks = playlistsOfPath(copies[program] as string, membership, options)
-      if (picks.length > 0) edits.push(playlistsEdit(item, membership, picks, program).playlists)
+      // The open file may sit in the program too: the staged picks replace what the field
+      // showed, so its own playlists stay in them or the convert would take it out of those.
+      const own = playlistsOfPath(rekordboxPathOf(item), membership, options)
+      const known = new Set(own.map((target) => target.id))
+      const lent = playlistsOfPath(copies[program] as string, membership, options).filter(
+        (target) => !known.has(target.id),
+      )
+      if (lent.length > 0)
+        edits.push(playlistsEdit(item, membership, [...own, ...lent], program).playlists)
     }
     const filled = { copyPlaylistsFilled: [...(item.copyPlaylistsFilled ?? []), ...ready] }
     if (edits.length === 0) {

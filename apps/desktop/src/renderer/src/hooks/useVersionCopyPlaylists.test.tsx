@@ -75,6 +75,66 @@ describe('useVersionCopyPlaylists', () => {
     })
   })
 
+  // The open file is in rekordbox too: staging the copy's playlists alone would leave Friday
+  // out of the picks while it stays in the base, and the convert would take the file out.
+  it("keeps the playlists the track's own file is in beside the copy's", async () => {
+    programs(
+      vi.fn<ProgramReads['membership']>(async () => ({
+        '/new/strobe.flac': ['3000'],
+        '/r/strobe.mp3': ['3001'],
+      })),
+    )
+    const onChange = vi.fn()
+    renderHook(
+      () =>
+        useVersionCopyPlaylists({
+          item: track(),
+          copies: { rekordbox: '/r/strobe.mp3' },
+          onChange,
+        }),
+      { wrapper },
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange).toHaveBeenCalledWith({
+      playlists: {
+        rekordbox: {
+          targets: [
+            { id: '3000', name: 'Makina' },
+            { id: '3001', name: 'Bases' },
+          ],
+          base: ['3000'],
+        },
+      },
+      copyPlaylistsFilled: ['rekordbox'],
+    })
+  })
+
+  // Staging what the field already shows is no edit: it would only add an undo step and mark
+  // the track as changed on opening.
+  it("stages nothing when the copy's playlists add none to the track's own", async () => {
+    programs(
+      vi.fn<ProgramReads['membership']>(async () => ({
+        '/new/strobe.flac': ['3000', '3001'],
+        '/r/strobe.mp3': ['3001'],
+      })),
+    )
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(
+      () =>
+        useVersionCopyPlaylists({
+          item: track(),
+          copies: { rekordbox: '/r/strobe.mp3' },
+          onChange,
+          onRecordUndo,
+        }),
+      { wrapper },
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange).toHaveBeenCalledWith({ copyPlaylistsFilled: ['rekordbox'] })
+    expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+
   it('records an undo step first, so ⌘Z takes the staged playlists back', async () => {
     programs(vi.fn<ProgramReads['membership']>(async () => ({ '/r/strobe.mp3': ['3000'] })))
     const order: string[] = []
