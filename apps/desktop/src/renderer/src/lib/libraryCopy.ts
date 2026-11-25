@@ -182,6 +182,9 @@ export interface LibraryCopyTarget extends Omit<CopyCandidate, 'verdict'> {
   held: boolean
   // False when only Update keeps the copy's cues where they are, see replaceReaches.
   replaceable: boolean
+  // No copy of this recording, only another version: the body converts, and Update or
+  // Replace act on it only once picked for it.
+  otherVersion?: true
 }
 
 export interface LibraryCopyRef {
@@ -209,7 +212,7 @@ export function pickLibraryCopy(
         !candidate.path ||
         !!keptFormatOf(candidate.path)),
   )
-  if (!copy) return null
+  if (!copy) return otherVersionOf(candidates, fileDurationSec)
   const { verdict, ...target } = copy
   // A copy still being compared may yet turn out to be another version, and Apple Music's
   // copy without a path gives nothing to update or replace: the press waits for both.
@@ -218,6 +221,20 @@ export function pickLibraryCopy(
     held: verdict === 'measuring' || copy.path === '',
     replaceable: replaceReaches(copy, fileDurationSec),
   }
+}
+
+// Whether another version is the same track for the DJ is the DJ's call (25/11: a vinyl rip
+// against the release of one track read as two edits), so it is still offered, marked.
+function otherVersionOf(
+  candidates: readonly CopyCandidate[],
+  fileDurationSec: number | undefined,
+): LibraryCopyTarget | null {
+  const copy = candidates.find(
+    (candidate) => !!candidate.path && isAnotherVersion(candidate, fileDurationSec),
+  )
+  if (!copy) return null
+  const { verdict, ...target } = copy
+  return { ...target, held: false, replaceable: true, otherVersion: true }
 }
 
 export function replaceCopyPatch(target: LibraryCopyTarget, openPath: string): Partial<TrackItem> {
@@ -252,7 +269,9 @@ export interface LibraryCopyOffer {
   name: string
   // As the section's row shows it, e.g. "AIFF 16/44.1".
   format: string
-  action: LibraryCopyAction
+  // Unset on another version until the DJ picks one for it: the body then converts.
+  action?: LibraryCopyAction
+  otherVersion?: true
   better: boolean
   held: boolean
   // The copy's own format, which Update keeps since it never touches the audio.
@@ -462,10 +481,12 @@ export interface LibraryCopyOfferContext {
   keptFormat: OutputFormat | undefined
   replaceStarsLoss: boolean | undefined
   libraryCopyAction: LibraryCopyAction
+  // The action picked from the menu for another version, this track's alone.
+  otherVersionAction?: LibraryCopyAction
 }
 
 export interface LibraryCopyOfferResult {
-  copyAction: LibraryCopyAction
+  copyAction: LibraryCopyAction | undefined
   libraryCopy: LibraryCopyOffer | undefined
 }
 
@@ -474,6 +495,7 @@ export function libraryCopyOfferOf({
   keptFormat,
   replaceStarsLoss,
   libraryCopyAction,
+  otherVersionAction,
 }: LibraryCopyOfferContext): LibraryCopyOfferResult {
   const replaceLosesStars =
     !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
@@ -482,8 +504,9 @@ export function libraryCopyOfferOf({
   // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
   const updatable = !!keptFormat || !libraryTarget?.path
   // pickLibraryCopy never targets a copy that is neither updatable nor replaceable.
-  const copyAction: LibraryCopyAction =
-    libraryTarget && !libraryTarget.replaceable
+  const copyAction: LibraryCopyAction | undefined = libraryTarget?.otherVersion
+    ? otherVersionAction
+    : libraryTarget && !libraryTarget.replaceable
       ? 'update'
       : updatable
         ? libraryCopyAction
@@ -496,6 +519,7 @@ export function libraryCopyOfferOf({
             : LIBRARY_NAME[libraryTarget.program],
         format: libraryTarget.format,
         action: copyAction,
+        ...(libraryTarget.otherVersion ? { otherVersion: true as const } : {}),
         better: libraryTarget.better,
         held: libraryTarget.held,
         keptFormat,

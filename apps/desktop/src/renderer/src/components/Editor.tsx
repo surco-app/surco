@@ -90,7 +90,12 @@ import {
   leftOutNote,
   offersSourceFormat,
 } from '../lib/batch'
-import { type CopyFacts, type CopyReason, type CopyVerdict, wantsAudibleSpans } from '../lib/bestCopy'
+import {
+  type CopyFacts,
+  type CopyReason,
+  type CopyVerdict,
+  wantsAudibleSpans,
+} from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
@@ -1914,12 +1919,29 @@ export const Editor = memo(function Editor({
   const replaceStarsLoss = useSeratoStarsLoss(
     libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
   )
+  // Kept for this track and that copy alone: another version is the DJ's call one track at a
+  // time, and must not turn the remembered action of every real copy.
+  const [otherVersionPick, setOtherVersionPick] = useState<{
+    key: string
+    action: LibraryCopyAction
+  } | null>(null)
+  const otherVersionKey = libraryTarget?.otherVersion
+    ? `${item.inputPath}\n${libraryTarget.path}`
+    : ''
   const { copyAction, libraryCopy } = libraryCopyOfferOf({
     libraryTarget,
     keptFormat,
     replaceStarsLoss,
     libraryCopyAction,
+    otherVersionAction:
+      otherVersionPick && otherVersionPick.key === otherVersionKey
+        ? otherVersionPick.action
+        : undefined,
   })
+  const pickLibraryCopyAction = (action: LibraryCopyAction) => {
+    if (otherVersionKey) setOtherVersionPick({ key: otherVersionKey, action })
+    else onLibraryCopyAction?.(action)
+  }
   const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {
     if (!libraryTarget || libraryTarget.held) return
     if (action === 'update') {
@@ -1950,7 +1972,7 @@ export const Editor = memo(function Editor({
   const runLibraryRef = useRef(runLibraryAction)
   runLibraryRef.current = runLibraryAction
   useEffect(() => {
-    if (!bodyActsOnCopy) {
+    if (!bodyActsOnCopy || !copyAction) {
       onLibraryRunChange?.(null)
       return
     }
@@ -2507,7 +2529,7 @@ export const Editor = memo(function Editor({
           stale={stale}
           libraryCopy={libraryCopy}
           onLibraryAction={runLibraryAction}
-          onLibraryActionChange={onLibraryCopyAction}
+          onLibraryActionChange={pickLibraryCopyAction}
           seratoLosesStars={seratoLosesStars}
           done={done}
           incomplete={incomplete}

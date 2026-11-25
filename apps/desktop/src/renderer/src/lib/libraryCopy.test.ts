@@ -511,17 +511,39 @@ describe('pickLibraryCopy', () => {
     })
   })
 
-  it.each(['different', 'unreadable', 'missing', 'thisFile', 'several', null] as const)(
+  it.each(['unreadable', 'missing', 'thisFile', 'several', null] as const)(
     'offers nothing for a lone copy that is %s',
     (verdict) => {
       expect(pickLibraryCopy([{ ...rekordbox, verdict }], 210)).toBeNull()
     },
   )
 
+  // Whether to update or replace another version is the DJ's call, not the measure's (25/11):
+  // Surco can take a vinyl rip and the release of one track for two edits. The copy is still
+  // offered, marked, so the body converts and only a pick from the menu acts on it.
+  it('offers a lone copy that is another version, marked as one', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, verdict: 'different' }], 210)).toMatchObject({
+      program: 'rekordbox',
+      path: '/r/a.aiff',
+      held: false,
+      replaceable: true,
+      otherVersion: true,
+    })
+  })
+
   // «same» can come from the 91 s pair probe, which a longer edit of the same master passes
-  // too: updating that copy would overwrite another version of the track.
-  it('offers nothing for a copy whose length is another edit, whatever its verdict', () => {
-    expect(pickLibraryCopy([{ ...rekordbox, durationSec: 400 }], 210)).toBeNull()
+  // too: the body must not update that copy as if it were this track.
+  it('offers a copy whose length is another edit only as another version', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, durationSec: 400 }], 210)).toMatchObject({
+      path: '/r/a.aiff',
+      otherVersion: true,
+    })
+  })
+
+  it('takes a copy of this recording before another version listed ahead of it', () => {
+    const picked = pickLibraryCopy([{ ...rekordbox, durationSec: 400 }, traktor], 210)
+    expect(picked).toMatchObject({ program: 'traktor' })
+    expect(picked?.otherVersion).toBeUndefined()
   })
 
   it('offers nothing while either length is unknown', () => {
@@ -960,8 +982,8 @@ describe('pickedCopyOf', () => {
     expect(pickedCopyOf({ ...base, musicCopy, isMulti: true }).pickedCopy).toBeNull()
   })
 
-  it('picks no copy whose length is another edit', () => {
-    expect(pickedCopyOf({ ...base, fileDurationSec: 400 }).pickedCopy).toBeNull()
+  it('picks a copy whose length is another edit only as another version', () => {
+    expect(pickedCopyOf({ ...base, fileDurationSec: 400 }).pickedCopy?.otherVersion).toBe(true)
   })
 })
 
@@ -1040,6 +1062,18 @@ describe('libraryCopyOfferOf', () => {
         replaceLosesStars: false,
       },
     })
+  })
+
+  // Another version keeps the body on Convert until the DJ picks Update or Replace for it;
+  // the action remembered for real copies would otherwise act on another edit unasked.
+  it('acts on another version only with the action picked for it', () => {
+    const other = { ...base, libraryTarget: target({ otherVersion: true }) }
+    const unpicked = libraryCopyOfferOf(other)
+    expect(unpicked.copyAction).toBeUndefined()
+    expect(unpicked.libraryCopy).toMatchObject({ otherVersion: true, action: undefined })
+    const picked = libraryCopyOfferOf({ ...other, otherVersionAction: 'replace' })
+    expect(picked.copyAction).toBe('replace')
+    expect(picked.libraryCopy?.action).toBe('replace')
   })
 
   it('names the Apple Music copy after Apple Music', () => {

@@ -38,7 +38,7 @@ export function FormatDestinationMenu({
   className?: string
   libraryCopy?: {
     heading: string
-    action: LibraryCopyAction
+    action?: LibraryCopyAction
     updatable: boolean
     replaceable: boolean
     onPick: (action: LibraryCopyAction) => void
