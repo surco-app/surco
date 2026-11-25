@@ -487,6 +487,24 @@ describe('opening a source playlist', () => {
     })
   })
 
+  it('stamps a row loaded before its Music playlist opened, so a Discogs retitle does not offer to add a song Music already holds', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.wav'])
+    })
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [{ path: '/m/a.wav', separator: false, meta: {}, musicPersistentId: 'PID0000000000001' }],
+        'appleMusic',
+      )
+    })
+    expect(result.current.tracks).toHaveLength(1)
+    expect(result.current.tracks[0]).toMatchObject({
+      fromAppleMusic: true,
+      musicPersistentId: 'PID0000000000001',
+    })
+  })
+
   it('expands the Music paths like any other load, so the same filters apply', async () => {
     const { result, expandPaths } = setup()
     await act(async () => {

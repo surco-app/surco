@@ -1118,6 +1118,32 @@ export function useTrackLibrary({
       if (unmarked.size > 0)
         mapTracks((t) => (unmarked.has(t.id) ? { ...t, programs: withPrograms(t, [source]) } : t))
     }
+    // A row loaded before (from rekordbox, or dropped in) is the same file Music lists, so it
+    // takes the identity a fresh row gets. Without it a Discogs retitle broke the tag match
+    // and the button offered to add a song Music already held. By input path only: a row
+    // whose output Music lists already carries the persistent ID its add returned.
+    if (source === 'appleMusic') {
+      const musicId = new Map(
+        entries.flatMap((e) =>
+          e.path && !e.separator ? [[same(e.path), e.musicPersistentId] as const] : [],
+        ),
+      )
+      const unstamped = new Set(
+        tracksRef.current
+          .filter((t) => musicId.has(same(t.inputPath)) && !t.fromAppleMusic)
+          .map((t) => t.id),
+      )
+      if (unstamped.size > 0)
+        mapTracks((t) => {
+          if (!unstamped.has(t.id)) return t
+          const id = musicId.get(same(t.inputPath))
+          return {
+            ...t,
+            fromAppleMusic: true,
+            ...(id && !t.musicPersistentId && { musicPersistentId: id }),
+          }
+        })
+    }
     // Every cue save, edit and refocus reads the playlist again, and a file the disk lacks is
     // never a row: offered as new each time, it was added, analysed and removed on every read.
     // A re-read leaves it out; an opening asks the disk again, so a file put back shows up.
