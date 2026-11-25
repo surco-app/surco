@@ -2102,6 +2102,7 @@ function registerIpc(): void {
         // zero rows.
         replacesPath,
         keepOverwritten,
+        rewritesSource,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -2142,6 +2143,7 @@ function registerIpc(): void {
               replacesPath,
               () => activeConversions.isCancelled(job.id),
               keepOverwritten,
+              rewritesSource,
             ).then(async (result) => {
               tagsAfter = await snapshotTagsInWorker(output)
               return result

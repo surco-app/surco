@@ -688,6 +688,23 @@ describe('the Serato cue carry-over matrix', () => {
       expect(storedTree(out)).not.toBeNull()
     })
 
+  // The offset leaves a file saved over itself untouched, so nothing in it goes stale:
+  // stripping Serato there cost the DJ that analysis on every Save in the editor.
+  it('keeps the Serato analysis of an MP3 saved over itself with a cue offset set', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-serato-inplace-'))
+    const input = makeSeratoSource(dir, '.mp3')
+
+    traktorCueOffsetMs = OFFSET_MS
+    try {
+      await convertAudio(input, input, 'mp3', meta)
+    } finally {
+      traktorCueOffsetMs = 0
+    }
+
+    expect(seratoLeftovers(input)).not.toEqual([])
+    expect(readTraktorCueStart(storedTree(input) as Uint8Array, 1)).toBeCloseTo(DROP_MS, 0)
+  })
+
   it('strips Serato analysis from an MP3 copy the offset touched even with no Traktor cues', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'surco-serato-copyonly-'))
     const input = makeSeratoSource(dir, '.mp3', false)

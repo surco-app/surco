@@ -96,6 +96,7 @@ export interface ProcessTrackDeps {
     foreignRemoved?: string[],
     replacesPath?: string,
     keepOverwritten?: boolean,
+    rewritesSource?: boolean,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number; written: ConversionWritten }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -756,6 +757,11 @@ export async function runProcessTrack(
         inPlace = false
       } else if (choice === 'overwrite') keepOverwritten = true
     }
+    // Read after the conflict step: a keep-both "(n)" copy keeps the source, so it is a
+    // new file. A same-format write that lands in place is the source's audio rewritten,
+    // under a new name too, and convertAudio must not move its Traktor cues by the DJ's
+    // offset again (see cueShiftFor). A format change in place still gets it.
+    const rewritesSource = inPlace && formatMatchesInput(format, job.inputPath)
     // Claimed for the rest of the job — including the convertAudio write, which is
     // exactly the window existsSync can't see yet (temp file + rename). Released in
     // finally so a thrown error still frees it for the next job or retry.
@@ -792,6 +798,7 @@ export async function runProcessTrack(
         job.foreignRemoved,
         job.replacesPath,
         keepOverwritten,
+        rewritesSource,
       ))
     } catch (e) {
       // convertAudio deletes the temp on failure and says so when it couldn't: that is
