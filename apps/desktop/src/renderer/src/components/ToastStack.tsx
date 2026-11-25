@@ -1,11 +1,11 @@
-import { Check, Copy, X } from 'lucide-react'
+import { Check, CircleCheck, Copy, Crosshair, Flag, ListX, Tag, X } from 'lucide-react'
 import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useModalOpen } from '../lib/modalPresence'
 import { coastDistance, releaseVelocity, type TrailPoint } from '../lib/momentum'
 import { prefersReducedMotion } from '../lib/motion'
-import type { Toast, ToastText } from '../lib/toastQueue'
+import type { Toast, ToastRow, ToastText } from '../lib/toastQueue'
 
 // How long the copy button shows its "copied" check before reverting to the copy icon.
 const COPIED_FEEDBACK_MS = 1500
@@ -27,6 +27,9 @@ const PILE_SHRINK = 0.05
 const PILE_SHOWN = 3
 const PILE_GAP_PX = 6
 const PLAYER_CLEARANCE_PX = 8
+const ROWS_SHOWN = 3
+
+const ROW_ICONS = { list: ListX, cue: Flag, tag: Tag } satisfies Record<ToastRow['icon'], unknown>
 
 // Where the pile stands: beside the source rail at the bottom of the window, and above the
 // mini-player when that is open under it, since both live in the same corner.
@@ -35,7 +38,6 @@ function usePileAnchor(watching: boolean): { left: number; bottom: number } | un
   useLayoutEffect(() => {
     if (!watching) return
     const rail = document.querySelector('[data-toast-anchor]')
-    const column = document.querySelector('[data-toast-lift-within]')
     const resized =
       typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => measure())
     let lifting: Element | null = null
@@ -61,12 +63,27 @@ function usePileAnchor(watching: boolean): { left: number; bottom: number } | un
     measure()
     window.addEventListener('resize', measure)
     if (rail) resized?.observe(rail)
-    const mounted = column ? new MutationObserver(measure) : null
-    if (column) mounted?.observe(column, { childList: true })
+    // Changing source mounts the list column again, so the parent is watched too and the
+    // watch moves to whichever column is there now, or a player opened in it goes unseen.
+    let watched: Element | null = null
+    const follow = (): void => {
+      const now = document.querySelector('[data-toast-lift-within]')
+      if (now === watched) return
+      mounted.disconnect()
+      watched = now
+      if (!now) return
+      mounted.observe(now, { childList: true })
+      if (now.parentElement) mounted.observe(now.parentElement, { childList: true })
+    }
+    const mounted = new MutationObserver(() => {
+      follow()
+      measure()
+    })
+    follow()
     return () => {
       window.removeEventListener('resize', measure)
       resized?.disconnect()
-      mounted?.disconnect()
+      mounted.disconnect()
     }
   }, [watching])
   return anchor
@@ -283,6 +300,7 @@ function ToastCard({
     typeof value === 'string' ? value : tr(value.key, value.values)
   const message = text(toast.message)
   const [copied, setCopied] = useState(false)
+  const [unfolded, setUnfolded] = useState(false)
   const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   useEffect(() => () => clearTimeout(copiedTimer.current), [])
 
@@ -340,6 +358,7 @@ function ToastCard({
     setSwipe({ x: 0, opacity: 1 })
     setTracking(false)
     setExitTo(undefined)
+    setUnfolded(false)
   }, [toast.id])
   const moveSwipe = (px: number): void => {
     swipeRef.current = px
@@ -385,6 +404,18 @@ function ToastCard({
   // does; the swipe still takes it away. The ✕ stays where it is an answer of its own, like
   // the session offer, whose ✕ declines for good while its timer only hides it.
   const closable = !toast.duration || toast.onDismiss !== toast.onExpire
+  const closeButton = (
+    <button
+      type="button"
+      data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
+      aria-label={tr('common.close')}
+      onClick={() => onClose(toast.id)}
+      className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+    >
+      <X className="h-3 w-3" aria-hidden="true" />
+    </button>
+  )
+  const rows = toast.rows ?? []
   // Single-line toasts read best vertically centred; only a long, scrollable error message
   // (no action, danger tone) pins to the top so its ✕ stays reachable as the body grows.
   const align = danger && !toast.action ? 'items-start' : 'items-center'
@@ -416,51 +447,103 @@ function ToastCard({
             ? 'transform var(--duration-state) var(--ease-standard), opacity var(--duration-state) var(--ease-standard)'
             : 'transform var(--duration-fast) var(--ease-standard), opacity var(--duration-fast) var(--ease-standard)',
       }}
-      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${align} gap-1.5 rounded-xl bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
+      className={`${leaving ? `${exitTo === undefined ? 'animate-toast-leave ' : ''}pointer-events-none` : 'animate-toast-in'} ${behind ? '[&>*]:opacity-0' : ''} relative flex w-full overflow-hidden ${rows.length > 0 ? 'flex-col' : `${align} gap-1.5`} rounded-xl bg-[var(--color-panel)] py-0.5 pl-2.5 pr-0.5 shadow-[var(--shadow-float)]`}
     >
-      <span
-        data-testid={toast.testid ? `${toast.testid}-message` : undefined}
-        className={`max-h-[40vh] min-w-0 flex-1 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
-          danger ? 'text-danger' : 'text-fg'
-        }`}
-      >
-        {message}
-      </span>
-      {toast.action && (
-        <button
-          type="button"
-          data-testid={toast.testid ? `${toast.testid}-action` : undefined}
-          onClick={toast.action.onAction}
-          className="press shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold text-accent hover:bg-[var(--color-hover)]"
-        >
-          {text(toast.action.label)}
-        </button>
-      )}
-      {danger && (
-        <button
-          type="button"
-          data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
-          aria-label={tr('common.copy')}
-          onClick={onCopy}
-          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          {copied ? (
-            <Check className="h-3 w-3 text-good" aria-hidden="true" />
-          ) : (
-            <Copy className="h-3 w-3" aria-hidden="true" />
+      {rows.length > 0 ? (
+        <>
+          {message && (
+            <div className="flex items-center gap-1.5">
+              <CircleCheck className="h-3.5 w-3.5 shrink-0 text-good" aria-hidden="true" />
+              <span
+                data-testid={toast.testid ? `${toast.testid}-message` : undefined}
+                className="min-w-0 flex-1 break-words py-0.5 text-xs text-fg"
+              >
+                {message}
+              </span>
+              {closable && closeButton}
+            </div>
           )}
-        </button>
-      )}
-      {closable && (
-        <button
-          type="button"
-          data-testid={toast.testid ? `${toast.testid}-dismiss` : undefined}
-          aria-label={tr('common.close')}
-          onClick={() => onClose(toast.id)}
-          className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
-        >
-          <X className="h-3 w-3" aria-hidden="true" />
-        </button>
+          <ul
+            className={`flex flex-col gap-1 py-1 ${message ? 'mr-2 border-t border-[var(--color-line)]' : ''}`}
+          >
+            {rows.slice(0, unfolded ? rows.length : ROWS_SHOWN).map((row, i) => {
+              const Icon = ROW_ICONS[row.icon]
+              return (
+                <li
+                  key={`${row.title}-${row.sub}`}
+                  data-testid={toast.testid ? `${toast.testid}-row` : undefined}
+                  className="flex items-start gap-1.5"
+                >
+                  <Icon
+                    className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${row.tone === 'warn' ? 'text-warn' : 'text-fg-faint'}`}
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="break-words text-xs text-fg">{row.title}</p>
+                    <p className="line-clamp-2 break-words text-label text-fg-faint">{row.sub}</p>
+                  </div>
+                  {row.action && (
+                    <button
+                      type="button"
+                      aria-label={text(row.action.label)}
+                      onClick={row.action.onAction}
+                      className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-accent after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)]"
+                    >
+                      <Crosshair className="h-3.5 w-3.5" aria-hidden="true" />
+                    </button>
+                  )}
+                  {!message && i === 0 && closable && closeButton}
+                </li>
+              )
+            })}
+          </ul>
+          {!unfolded && rows.length > ROWS_SHOWN && (
+            <button
+              type="button"
+              onClick={() => setUnfolded(true)}
+              className="press mb-1 self-start rounded-md px-1.5 py-0.5 text-xs font-semibold text-accent hover:bg-[var(--color-hover)]"
+            >
+              {tr('common.more', { count: rows.length - ROWS_SHOWN })}
+            </button>
+          )}
+        </>
+      ) : (
+        <>
+          <span
+            data-testid={toast.testid ? `${toast.testid}-message` : undefined}
+            className={`max-h-[40vh] min-w-0 flex-1 overflow-y-auto whitespace-pre-line break-words py-0.5 text-xs ${
+              danger ? 'text-danger' : 'text-fg'
+            }`}
+          >
+            {message}
+          </span>
+          {toast.action && (
+            <button
+              type="button"
+              data-testid={toast.testid ? `${toast.testid}-action` : undefined}
+              onClick={toast.action.onAction}
+              className="press shrink-0 rounded-md px-1.5 py-0.5 text-xs font-semibold text-accent hover:bg-[var(--color-hover)]"
+            >
+              {text(toast.action.label)}
+            </button>
+          )}
+          {danger && (
+            <button
+              type="button"
+              data-testid={toast.testid ? `${toast.testid}-copy` : undefined}
+              aria-label={tr('common.copy')}
+              onClick={onCopy}
+              className="press relative flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-fg-muted after:absolute after:-inset-1.5 after:content-[''] hover:bg-[var(--color-hover)] hover:text-fg"
+            >
+              {copied ? (
+                <Check className="h-3 w-3 text-good" aria-hidden="true" />
+              ) : (
+                <Copy className="h-3 w-3" aria-hidden="true" />
+              )}
+            </button>
+          )}
+          {closable && closeButton}
+        </>
       )}
     </div>
   )

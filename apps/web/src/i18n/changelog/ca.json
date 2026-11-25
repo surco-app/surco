@@ -23,6 +23,18 @@
       {
         "text": "Si els fitxers d’una playlist ja no són al disc, la llista ho diu i compta quants en falten. Un fitxer mogut o reanomenat ja no surt com un que no s’ha pogut llegir.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Substitueix una pista per un altre màster del mateix tema i els seus cues ara també es mouen amb l’àudio. Si Surco no està segur del cop, els deixa on eren. A rekordbox s’ajusten a la nova graella quan acaba l’anàlisi.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quan Discogs demana esperar, veus al moment els resultats dels altres catàlegs. Surco torna a buscar a Discogs tot sol, amb un compte enrere que pots saltar amb un clic.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "La pestanya Apple Music s’obre a «Afegides recentment», amb el que has afegit els últims 30 dies. I les seves playlists s’obren molt més de pressa, encara que la teva música sigui en un NAS.",
+        "in": "1.44.1"
       }
     ]
   },

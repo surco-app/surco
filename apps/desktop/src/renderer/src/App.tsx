@@ -252,7 +252,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
-import type { CueSpot } from './lib/rekordboxQueueText'
+import type { CueSpot, QueueRow } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import { followReleaseDate } from './lib/releaseDateSetting'
 import {
@@ -1013,23 +1013,32 @@ export default function App(): React.JSX.Element {
 
   const [revealing, setRevealing] = useState<CueSpot | null>(null)
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
-  // edits leaves the latest answer, not a stack.
+  // edits leaves the latest answer, not a stack. Reasons go in rows under it, and it leaves
+  // on its own like any notice, later when there are rows to read.
   const notifyEdit = useCallback(
-    (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => {
+    (text: string, tone: 'neutral' | 'danger', rows?: QueueRow[]) => {
       const id = pushToast(store, {
         key: 'rekordbox-edit',
         tone,
         message: text,
-        ...(goTo
+        ...(rows
           ? {
-              action: {
-                label: { key: 'rekordboxQueue.notice.goToCue' },
-                onAction: () => {
-                  dismissToast(store, id)
-                  focusCue(goTo)
-                  setRevealing(goTo)
-                },
-              },
+              rows: rows.map(({ goTo, ...row }) =>
+                goTo
+                  ? {
+                      ...row,
+                      action: {
+                        label: { key: 'queueNotice.goToCue' },
+                        onAction: () => {
+                          dismissToast(store, id)
+                          focusCue(goTo)
+                          setRevealing(goTo)
+                        },
+                      },
+                    }
+                  : row,
+              ),
+              duration: 8000,
             }
           : { duration: 5000 }),
         testid: 'rekordbox-edit-notice',

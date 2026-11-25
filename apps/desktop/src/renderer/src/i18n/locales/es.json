@@ -9,7 +9,9 @@
     "scopeVisible_other": "Se aplica a las {{count}} pistas visibles",
     "change": "Cambiar",
     "close": "Cerrar",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "more_one": "{{count}} más",
+    "more_other": "{{count}} más"
   },
   "rename": {
     "moreFields": "Más campos ({{count}})",
@@ -3449,24 +3451,6 @@
     "appliedChanges_one": "Listo en rekordbox · {{count}} cambio",
     "appliedChanges_other": "Listo en rekordbox · {{count}} cambios",
     "backupFailed": "No se pudo hacer la copia de rekordbox. Se volverá a intentar cuando lo cierres",
-    "notice": {
-      "ambiguous": "No se añadió {{track}}. rekordbox la tiene dos veces",
-      "fileMissing": "No se dio de alta {{track}}. El archivo ya no está",
-      "notAdded": "No se dio de alta {{track}}. No se pudo leer el archivo",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en rekordbox",
-      "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
-      "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
-      "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
-      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita una marca",
-      "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues",
-      "cuesWriteFailed": "No se guardaron los cues de {{track}}. Surco no pudo escribir el archivo",
-      "cuesAdjusted_one": "rekordbox ya ha analizado {{track}}. {{count}} cue ajustado a su rejilla, {{maxMs}} ms",
-      "cuesAdjusted_other": "rekordbox ya ha analizado {{track}}. {{count}} cues ajustados a su rejilla, el que más {{maxMs}} ms",
-      "cuesUnfit_one": "Un cue de {{track}} cae lejos de los golpes de rekordbox y se ha dejado donde estaba. Revísalo",
-      "cuesUnfit_other": "{{count}} cues de {{track}} caen lejos de los golpes de rekordbox y se han dejado donde estaban. Revísalos",
-      "goToCue": "Ir al cue",
-      "notInLibrary": "{{track}} ya no está en rekordbox. Sus playlists no se cambiaron"
-    },
     "part": {
       "repoint": "nueva ruta",
       "collection": "alta en la colección",
@@ -3515,14 +3499,6 @@
     "backupFailed": "No se pudo hacer la copia de Engine DJ. Se volverá a intentar cuando lo cierres",
     "unreadable": "Surco no puede leer ahora la biblioteca de Engine DJ y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar los cambios en Engine DJ. La biblioteca sigue como estaba",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Engine DJ. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Engine DJ",
-      "playlistGone": "{{playlist}} ya no está en Engine DJ. {{track}} no se añadió",
-      "notInLibrary": "{{track}} ya no está en Engine DJ. Sus playlists no se cambiaron"
-    },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Engine DJ se quedan como los tiene Engine DJ",
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
@@ -3547,14 +3523,6 @@
     "backupFailed": "No se pudo hacer la copia de Traktor. Se volverá a intentar cuando lo cierres",
     "unreadable": "Surco no puede leer ahora la colección de Traktor y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar los cambios en Traktor. La colección sigue como estaba",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Traktor. Vuelve a marcarlos",
-      "slotDropped": "Traktor tiene 7 botones para los cues de Surco, así que el cue H de {{track}} no se guardó",
-      "editChanged": "{{playlist}} no se cambió. Cambió en Traktor",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Traktor",
-      "playlistGone": "{{playlist}} ya no está en Traktor. {{track}} no se añadió",
-      "notInLibrary": "{{track}} ya no está en Traktor. Sus playlists no se cambiaron"
-    },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como los tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
@@ -3579,20 +3547,6 @@
     "part": {
       "collection": "alta en la biblioteca",
       "noPlaylists": "fuera de sus crates"
-    },
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Serato. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Serato solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Serato solo guarda hot cues",
-      "oldBlock": "Los cues de {{track}} no se guardaron. Serato guarda una copia antigua que no coincide. Mueve cualquier cue de la pista en Serato y vuelve a guardar",
-      "editChanged": "{{playlist}} no se cambió. Cambió en Serato",
-      "otherVolume": "{{track}} está en otro disco y no puede ir al crate «{{playlist}}»",
-      "notAdded": "{{track}} no se añadió a Serato",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Serato",
-      "playlistGone": "{{playlist}} ya no está en Serato. {{track}} no se añadió",
-      "sourceInSerato": "{{track}} sigue en Serato con el archivo original y no entra en el crate «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ya no está en Serato y sus etiquetas no se cambiaron",
-      "tagsChanged": "{{track}} cambió en Serato y sus etiquetas no se cambiaron"
     }
   },
   "virtualdjQueue": {
@@ -3619,23 +3573,7 @@
     "pillElsewhere_one": "{{count}} pendiente de otra biblioteca de VirtualDJ",
     "pillElsewhere_other": "{{count}} pendientes de otra biblioteca de VirtualDJ",
     "elsewhere_one": "{{count}} cambio espera a otra biblioteca de VirtualDJ. Se aplicará cuando vuelvas a ella",
-    "elsewhere_other": "{{count}} cambios esperan a otra biblioteca de VirtualDJ. Se aplicarán cuando vuelvas a ella",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en VirtualDJ. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). VirtualDJ solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). VirtualDJ solo guarda hot cues",
-      "notInLibrary": "{{track}} ya no está en VirtualDJ. Sus cues no se guardaron",
-      "notAdded": "{{track}} no se añadió a VirtualDJ",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en VirtualDJ",
-      "playlistGone": "{{playlist}} ya no está en VirtualDJ. {{track}} no se añadió",
-      "sourceInVirtualdj": "{{track}} sigue en VirtualDJ con el archivo original y no entra en la lista «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ya no está en VirtualDJ y sus etiquetas no se cambiaron",
-      "tagsChanged": "{{track}} cambió en VirtualDJ y sus etiquetas no se cambiaron",
-      "repointOtherVolume": "{{track}} está en otro disco, así que VirtualDJ sigue con el archivo original y Surco también lo guarda",
-      "repointSongTaken": "VirtualDJ ya tiene una canción para {{track}}, así que sigue con el archivo original y Surco también lo guarda",
-      "repointUnwritable": "VirtualDJ no puede guardar la duración de {{track}}, así que sigue con el archivo original y Surco también lo guarda",
-      "repointSongTakenGone": "VirtualDJ ya tenía una canción para {{track}}, así que la antigua sigue en el archivo original, que ya no está en su carpeta"
-    }
+    "elsewhere_other": "{{count}} cambios esperan a otra biblioteca de VirtualDJ. Se aplicarán cuando vuelvas a ella"
   },
   "cueWave": {
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",
@@ -3941,5 +3879,58 @@
     "railNames": "Mostrar nombres",
     "sidebar": "Mostrar barra lateral",
     "hideSidebar": "Ocultar barra lateral"
+  },
+  "queueNotice": {
+    "notAdded_one": "{{count}} pista no se añadió a {{program}}",
+    "notAdded_other": "{{count}} pistas no se añadieron a {{program}}",
+    "notChangedIn_one": "{{count}} pista sin cambiar en {{playlist}}",
+    "notChangedIn_other": "{{count}} pistas sin cambiar en {{playlist}}",
+    "notAddedToList_one": "{{count}} pista no se añadió a {{playlist}}",
+    "notAddedToList_other": "{{count}} pistas no se añadieron a {{playlist}}",
+    "listNotChanged": "{{playlist}} sin cambiar",
+    "cuesNotSaved_one": "Cues de {{count}} pista sin guardar",
+    "cuesNotSaved_other": "Cues de {{count}} pistas sin guardar",
+    "cueHNotSaved_one": "Cue H de {{count}} pista sin guardar",
+    "cueHNotSaved_other": "Cue H de {{count}} pistas sin guardar",
+    "callsNotSaved_one": "{{count}} CALL sin guardar",
+    "callsNotSaved_other": "{{count}} CALL sin guardar",
+    "cuesMoved_one": "{{count}} cue ajustado a la rejilla de {{program}}",
+    "cuesMoved_other": "{{count}} cues ajustados a la rejilla de {{program}}",
+    "cuesOffBeats_one": "{{count}} cue lejos de los golpes de {{program}}",
+    "cuesOffBeats_other": "{{count}} cues lejos de los golpes de {{program}}",
+    "notInLibrary_one": "{{count}} pista ya no está en {{program}}",
+    "notInLibrary_other": "{{count}} pistas ya no están en {{program}}",
+    "tagsNotChanged_one": "Etiquetas de {{count}} pista sin cambiar",
+    "tagsNotChanged_other": "Etiquetas de {{count}} pistas sin cambiar",
+    "keptOriginal_one": "{{count}} pista sigue con el archivo original",
+    "keptOriginal_other": "{{count}} pistas siguen con el archivo original",
+    "oldSongMissing_one": "{{count}} canción antigua apunta a un archivo que ya no está",
+    "oldSongMissing_other": "{{count}} canciones antiguas apuntan a un archivo que ya no está",
+    "goToCue": "Ir al cue",
+    "why": {
+      "twice": "Está dos veces en {{program}}",
+      "fileGone": "El archivo ya no está",
+      "unreadable": "No se pudo leer el archivo",
+      "listChanged": "Cambió en {{program}}",
+      "listGone": "Ya no está en {{program}}",
+      "otherDrive": "En otro disco",
+      "originalKept": "{{program}} se queda el archivo original",
+      "markAgain": "Cambiaron en {{program}}. Vuelve a marcarlos",
+      "tooMany": "Más de 8 hot cues. Quita una marca",
+      "notCues": "Surco no pudo leerlos como cues",
+      "notWritten": "Surco no pudo escribir el archivo",
+      "oldBlock": "{{program}} guarda una copia antigua. Mueve un cue allí y vuelve a guardar",
+      "hotCuesOnly": "{{program}} solo guarda hot cues",
+      "sevenButtons": "{{program}} tiene 7 botones para los cues de Surco",
+      "furthest": "El que más, {{maxMs}} ms",
+      "leftInPlace": "Se han dejado donde estaban. Revísalos",
+      "playlistsKept": "Playlists sin cambiar",
+      "cuesKept": "Cues sin guardar",
+      "tagsKept": "Etiquetas sin cambiar",
+      "tagsChanged": "Cambiaron en {{program}}",
+      "songTaken": "{{program}} ya tiene una canción para ella",
+      "lengthUnfit": "{{program}} no admite su duración",
+      "songTakenGone": "{{program}} ya tenía una canción para ella"
+    }
   }
 }

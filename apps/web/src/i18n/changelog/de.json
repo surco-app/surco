@@ -23,6 +23,18 @@
       {
         "text": "Wenn die Dateien einer Playlist nicht mehr auf der Platte sind, sagt die Liste das und zählt, wie viele fehlen. Eine verschobene oder umbenannte Datei erscheint nicht mehr als unlesbar.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Ersetze einen Track durch ein anderes Master desselben Songs, und seine Cues wandern jetzt auch mit dem Audio. Ist Surco sich beim Beat nicht sicher, bleiben sie, wo sie waren. In rekordbox rasten sie nach der Analyse im neuen Raster ein.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Wenn Discogs dich warten lässt, siehst du sofort die Ergebnisse der anderen Kataloge. Surco sucht von selbst erneut bei Discogs, mit einem Countdown, den du per Klick überspringen kannst.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Der Apple-Music-Tab öffnet mit „Zuletzt hinzugefügt“, also dem, was du in den letzten 30 Tagen hinzugefügt hast. Und seine Playlists öffnen sich viel schneller, auch wenn deine Musik auf einem NAS liegt.",
+        "in": "1.44.1"
       }
     ]
   },

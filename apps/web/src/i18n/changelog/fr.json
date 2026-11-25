@@ -23,6 +23,18 @@
       {
         "text": "Quand les fichiers d’une playlist ne sont plus sur le disque, la liste le dit et compte combien il en manque. Un fichier déplacé ou renommé n’apparaît plus comme illisible.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Remplace un morceau par un autre master du même titre et ses cues suivent maintenant l’audio eux aussi. Si Surco n’est pas sûr du temps, il les laisse où ils étaient. Dans rekordbox, ils se calent sur la nouvelle grille une fois l’analyse terminée.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quand Discogs te demande d’attendre, tu vois tout de suite les résultats des autres catalogues. Surco relance la recherche sur Discogs tout seul, avec un compte à rebours que tu peux sauter d’un clic.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "L’onglet Apple Music s’ouvre sur « Ajoutés récemment », avec ce que tu as ajouté ces 30 derniers jours. Et ses playlists s’ouvrent bien plus vite, même si ta musique est sur un NAS.",
+        "in": "1.44.1"
       }
     ]
   },
