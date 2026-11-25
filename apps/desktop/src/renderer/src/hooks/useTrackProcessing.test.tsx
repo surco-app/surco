@@ -214,6 +214,50 @@ describe('useTrackProcessing', () => {
     expect(conversionPrograms).toHaveBeenCalledWith(['/dl/new.flac', '/m/old.mp3'])
   })
 
+  // Every format change is reviewed (26/11, «siempre es siempre»): Minute 8 converted to a
+  // 5:12 AIFF beside its 4:47 MP3 in rekordbox never reached To review, so the job names the
+  // copy a followed program already held, whatever its length.
+  it('names the copy a followed program already holds, so the conversion is reviewed', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({ processTrack })
+    const client = new QueryClient()
+    client.setQueryData(
+      ['source-collection', 'rekordbox'],
+      [{ contentId: '1', path: '/r/old.mp3', title: 'Title', artist: 'Artist', durationSec: 287 }],
+    )
+    const tracks = [track({ id: 'a', duration: 312 })]
+    const followed = { syncRekordbox: true } as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: followed, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ reviewAgainst: '/r/old.mp3' }),
+    )
+  })
+
+  it('names no copy for a program Surco does not follow', async () => {
+    const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
+    setApi({ processTrack })
+    const client = new QueryClient()
+    client.setQueryData(
+      ['source-collection', 'rekordbox'],
+      [{ contentId: '1', path: '/r/old.mp3', title: 'Title', artist: 'Artist' }],
+    )
+    const tracks = [track({ id: 'a' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    expect(processTrack.mock.calls[0][0].reviewAgainst).toBeUndefined()
+  })
+
   it('converts the same whatever the DJ answers, because the library write itself waits or applies', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
     setApi({

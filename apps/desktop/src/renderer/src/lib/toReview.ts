@@ -32,7 +32,7 @@ function reviewableByPath(all: readonly SourcePlaylistEntry[]): Map<string, Sour
   if (known) return known
   const byPath = new Map<string, SourcePlaylistEntry>()
   for (const row of all) {
-    if (row.separator || row.path === null || row.preview?.cues.length === 0) continue
+    if (row.separator || row.path === null) continue
     const p = nfc(row.path)
     if (!byPath.has(p)) byPath.set(p, row)
   }

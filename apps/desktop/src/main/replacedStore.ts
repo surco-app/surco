@@ -190,7 +190,7 @@ export function followingPrograms(settings: FollowSettings): DjProgram[] {
 
 export function recordReplacement(
   store: ReplacedStore,
-  job: { replacesPath?: string },
+  job: { inputPath?: string; replacesPath?: string; reviewAgainst?: string },
   result: {
     outputPath: string
     replacementLandedPath?: string
@@ -203,12 +203,17 @@ export function recordReplacement(
 ): void {
   const landed = result.outputPath || result.replacementLandedPath
   const repointed = result.seratoCarryFailed ? programs.filter((p) => p !== 'serato') : programs
-  if (!job.replacesPath || result.skipped || !landed || repointed.length === 0) return
+  const oldPath = job.replacesPath ?? job.reviewAgainst
+  if (!oldPath || result.skipped || !landed || repointed.length === 0) return
+  if (!job.replacesPath && (oldPath === landed || landed === job.inputPath)) return
   store.add({
     newPath: landed,
-    oldPath: job.replacesPath,
+    oldPath,
     replacedAt: now,
-    shift: result.replaceShift ?? { unmoved: 'unreadable' },
+    // Beside a copy nothing measures a shift, so its cues read as unmoved.
+    shift:
+      result.replaceShift ??
+      (job.replacesPath ? { unmoved: 'unreadable' } : { unmoved: 'noMatch' }),
     pending: repointed,
   })
 }
@@ -242,7 +247,7 @@ export function followReplaced(
 
 export function keepReplacedForReview(
   store: ReplacedStore,
-  job: { inputPath: string; replacesPath?: string },
+  job: { inputPath: string; replacesPath?: string; reviewAgainst?: string },
   result: Parameters<typeof recordReplacement>[2],
   programs: DjProgram[],
   now: number,

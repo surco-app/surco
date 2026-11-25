@@ -36,12 +36,13 @@ import { keptFormatOf, type LibraryCopyRef } from '../lib/libraryCopy'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { withCachedQualityTag } from '../lib/qualityTag'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
-import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { SOURCE_PROGRAMS, sourceCollectionOptions } from '../lib/sourcePrograms'
 import { jobPlaylists, TRACK_PROGRAMS } from '../lib/trackPrograms'
 import { settleVerification } from '../lib/verificationBuffer'
 import type { TrackItem } from '../types'
 import { withMusicCover } from './useAppleMusicArtwork'
 import type { RememberedPick } from './useEditorPicks'
+import { formerCopyIn } from './useProgramCopies'
 import { REPLACED_QUERY } from './useReplacedTracks'
 import { useStableCallback } from './useStableCallback'
 import { rereadTrackFileQueries } from './useTrackCues'
@@ -220,6 +221,20 @@ export function useTrackProcessing({
   const rewroteAudioRef = useRef(false)
   // Main writes the libraries in the flush the batch's end starts, after the run: read before
   // it lands, Engine DJ's row was still on the old file and stayed so in the editor.
+  // The copy a followed program already holds, for To review: every format change is reviewed
+  // (26/11). A collection that cannot be read names none rather than holding the conversion.
+  const formerCopyOf = async (track: TrackItem): Promise<string | undefined> => {
+    for (const program of DJ_PROGRAMS) {
+      const { sync, add } = DJ_REACH_SETTINGS[program]
+      if (!settings?.[sync] && !settings?.[add]) continue
+      const tracks = await queryClient
+        .ensureQueryData(sourceCollectionOptions(program))
+        .catch(() => undefined)
+      const path = tracks && formerCopyIn(tracks, track)
+      if (path) return path
+    }
+    return undefined
+  }
   const rereadReachedCollections = (flushed: Promise<void>): void => {
     if (!wroteRef.current) return
     wroteRef.current = false
@@ -467,6 +482,8 @@ export function useTrackProcessing({
       // "it works on the third or fourth try", which is what a lost race looks like.
       await releaseFile?.(track.inputPath)
       const withCover = await withMusicCover(track, updateTrack)
+      const replacesPath = track.replaceDone ? undefined : track.replacesPath
+      const reviewAgainst = replacesPath ? undefined : await formerCopyOf(track)
       let moved = false
       try {
         const result = await window.api.processTrack({
@@ -498,7 +515,8 @@ export function useTrackProcessing({
           musicPersistentId: track.musicPersistentId,
           // Where the copy being replaced lives, so rekordbox repoints from the path it
           // has indexed rather than from a download folder it has never seen.
-          replacesPath: track.replaceDone ? undefined : track.replacesPath,
+          replacesPath,
+          reviewAgainst,
           replacesLabel: track.replacesLabel,
           ...jobPlaylists(track),
           programs: track.programs,

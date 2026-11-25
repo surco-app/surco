@@ -892,6 +892,9 @@ export interface ProcessJob extends TrackOrigin {
   // folder has never been in the collection, so without this the entry stayed on the old
   // MP3 while the library got a second copy.
   replacesPath?: string
+  // A copy a DJ program already held, which this conversion lands beside or moves on from
+  // without replacing it. Every format change is reviewed (26/11), so it is listed in To review.
+  reviewAgainst?: string
   // The "artist - title" Music showed for that copy when it was offered. Retiring it is
   // checked against this name, never against the new tags: the copy was matched by score,
   // so the two rarely spell the same.
