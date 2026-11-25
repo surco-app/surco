@@ -76,4 +76,9 @@ describe('script-src', () => {
     for (const scripts of [metaScripts, headerScripts])
       expect(scripts?.split(/\s+/)).toContain("'wasm-unsafe-eval'")
   })
+
+  it('never allows eval beyond WebAssembly', () => {
+    for (const scripts of [metaScripts, headerScripts])
+      expect(scripts?.split(/\s+/)).not.toContain("'unsafe-eval'")
+  })
 })
