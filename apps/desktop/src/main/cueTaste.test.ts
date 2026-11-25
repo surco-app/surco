@@ -118,13 +118,24 @@ describe('createCueTaste', () => {
     await vi.waitFor(() => expect(tune).toHaveBeenCalledTimes(1))
   })
 
-  it('does not queue relearning when the engine cannot learn', async () => {
+  it('still learns the rekordbox cue flow the first time when the engine cannot learn, so the open build can offer it', async () => {
     engine.canLearn = false
     try {
-      const tune = vi.fn(async () => TUNED)
+      const tune = vi.fn(async () => null)
       const taste = createCueTaste(memoryStore(), deps({ tune, marked: () => 5 }))
-      for (let i = 0; i < RELEARN_EVERY * 2; i++) taste.record(track(`t${i}`), true)
       await taste.refresh(true)
+      await vi.waitFor(() => expect(taste.profile()).not.toBeNull())
+    } finally {
+      engine.canLearn = true
+    }
+  })
+
+  it('does not queue relearning after edits when the engine cannot learn, since it would find no taste in them', async () => {
+    engine.canLearn = false
+    try {
+      const tune = vi.fn(async () => null)
+      const taste = createCueTaste(memoryStore(), deps({ tune }))
+      for (let i = 0; i < RELEARN_EVERY * 2; i++) taste.record(track(`t${i}`), true)
       await new Promise((r) => setTimeout(r, 0))
       expect(tune).not.toHaveBeenCalled()
     } finally {

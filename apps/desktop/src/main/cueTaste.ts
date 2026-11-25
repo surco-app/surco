@@ -184,7 +184,6 @@ export function createCueTaste(
   }
 
   const learnInBackground = (): void => {
-    if (!autoCue.canLearn) return
     learnWhenIdle().catch((err) =>
       log.warn(`cue taste: learning from edits failed: ${String(err)}`),
     )
@@ -211,7 +210,7 @@ export function createCueTaste(
       shareSoon()
       const due =
         saved.sinceLearn >= RELEARN_EVERY || (saved.corrections ?? 0) >= RELEARN_AFTER_CORRECTIONS
-      if (learnNow && due && !learning) learnInBackground()
+      if (learnNow && due && !learning && autoCue.canLearn) learnInBackground()
     },
     async refresh(learnNow) {
       if (!learnNow || learning) return
