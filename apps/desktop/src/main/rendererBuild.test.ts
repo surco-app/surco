@@ -14,16 +14,27 @@ it('keeps a source map beside the minified renderer, so a stack in the error log
   expect(renderer).toMatch(/^ {6}sourcemap: 'hidden',$/m)
 })
 
-const fileLists = builder
-  .split(/^ *files:\n/m)
-  .slice(1)
-  .map((rest) => rest.match(/^( +- .*\n)*/)?.[0] ?? '')
+const SHIPPED = ['out/**', 'package.json', 'build/icon.png']
+
+const blockOf = (key: string): string =>
+  key === '' ? builder : (builder.split(new RegExp(`^${key}:\\n`, 'm'))[1] ?? '').split(/^\S/m)[0]
+
+const filesOf = (key: string): string[] =>
+  (blockOf(key).match(/^ *files:\n((?: +(?:- |#).*\n)*)/m)?.[1] ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith('- '))
+    .map((line) => line.slice(2).replace(/^'(.*)'$/, '$1'))
+
+const PLATFORMS = ['', 'mac', 'win', 'linux']
 
 it('packs only the build output on every platform, since a platform list of files replaces the top-level one and would ship the whole source tree, the private auto cue engine included', () => {
-  expect(fileLists.length).toBeGreaterThan(1)
-  for (const list of fileLists) expect(list).toMatch(/^ +- out\/\*\*$/m)
+  for (const key of PLATFORMS) {
+    const included = filesOf(key).filter((entry) => !entry.startsWith('!'))
+    expect(included, key || 'top level').toEqual(SHIPPED)
+  }
 })
 
 it('leaves the source maps out of the packaged app on every platform, since they carry every source line, the private auto cue engine included', () => {
-  for (const list of fileLists) expect(list).toMatch(/^ +- '!out\/\*\*\/\*\.map'$/m)
+  for (const key of PLATFORMS) expect(filesOf(key), key || 'top level').toContain('!out/**/*.map')
 })
