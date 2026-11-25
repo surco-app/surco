@@ -138,7 +138,6 @@ import {
   keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
-  readTagLibFields,
   type ShownList,
   type TagLibRead,
   type UserTextValues,
@@ -508,9 +507,8 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return composeMeta(
-    withTagLibRead(input, tagsFromProbe(JSON.parse(stdout)), readTagLibFields(input)),
-  )
+  const tagLib = await runInWorker<TagLibRead>({ type: 'tagLibRead', file: input })
+  return composeMeta(withTagLibRead(input, tagsFromProbe(JSON.parse(stdout)), tagLib))
 }
 
 // What the probe can't see, filled from TagLib's view of the same file. readMeta and
