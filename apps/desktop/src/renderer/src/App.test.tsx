@@ -3129,6 +3129,14 @@ describe('App auto-match', () => {
 
     it('still matches a track whose empty fields the copy it replaces filled', async () => {
       libraryApi({
+        loadAppleMusicLibrary: vi.fn().mockResolvedValue([
+          {
+            title: 'My Song',
+            artist: 'Artist',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 180,
+          },
+        ]),
         appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/my-song.mp3'),
         readCoverFull: vi.fn<Api['readCoverFull']>().mockResolvedValue(null),
         readTags: vi.fn((path: string) =>
