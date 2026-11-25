@@ -163,6 +163,7 @@ export function takeRotatedBackups<R>(
   backupPath: (file: string, roots: R[]) => string,
   spared: string[] = [],
 ): Map<string, string> {
+  if (files.length === 0) return new Map()
   const folder = freshFolder(deps.backupDir, deps.now?.() ?? new Date())
   mkdirSync(folder, { recursive: true })
   const roots = deps.roots()
@@ -182,7 +183,6 @@ export function takeRotatedBackups<R>(
 }
 
 function takeBackups(files: string[], deps: SeratoCommitDeps): Map<string, string> {
-  if (files.length === 0) return new Map()
   return takeRotatedBackups(files, deps, backupPathOf)
 }
 
