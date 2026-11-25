@@ -259,6 +259,43 @@ describe('useReplacedCopyFill', () => {
     expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
   })
 
+  // Opening a track must never stage an edit by itself: the same picture coming back from the
+  // copy changes nothing the DJ would see, so it leaves the cover and ⌘Z alone.
+  it('leaves the file own cover alone when the copy carries the same picture', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({})), readCoverFull)
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverUrl: 'data:thumb', embeddedCover: 'data:thumb' }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+        onRecordUndo,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ copyFilled: true }))
+    expect(readCoverFull).toHaveBeenCalledWith('/new/your-love.aiff')
+    expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+
+  it('puts the copy picture over the file own cover when the two differ', async () => {
+    const readCoverFull = vi.fn<Api['readCoverFull']>((path) =>
+      Promise.resolve(path === '/old/your-love.mp3' ? COPY_COVER : 'data:image/jpeg;base64,RklMRQ'),
+    )
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({})), readCoverFull)
+    const onChange = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track({ coverUrl: 'data:thumb', embeddedCover: 'data:thumb' }),
+        copyPath: '/old/your-love.mp3',
+        onChange,
+      }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({ coverUrl: COPY_COVER })
+  })
+
   describe('from a copy that is another version', () => {
     // FLAC 6:01 against the MP3 5:57 in Apple Music and rekordbox: the MP3 carries the grouping
     // the DJ filed the track under, but its album and year are that other release's.

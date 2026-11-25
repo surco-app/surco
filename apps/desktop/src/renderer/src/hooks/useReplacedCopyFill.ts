@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import type { TrackMetadata } from '../../../shared/types'
-import { copyCoverWins, fillFromCopy, groupingFromCopy } from '../lib/fillFromCopy'
+import { copyCoverWins, fillFromCopy, groupingFromCopy, showsOwnCover } from '../lib/fillFromCopy'
 import type { TrackItem } from '../types'
 import { useStableCallback } from './useStableCallback'
 
@@ -20,23 +20,28 @@ export function useReplacedCopyFill({
   onChange,
   onRecordUndo,
 }: Params): void {
-  const apply = useStableCallback((copy: TrackMetadata, cover: string | null) => {
-    const meta = anotherVersion ? groupingFromCopy(item.meta, copy) : fillFromCopy(item.meta, copy)
-    const coverUrl = cover && copyCoverWins(item, cover) ? cover : null
-    if (!meta && !coverUrl) {
-      onChange({ copyFilled: true })
-      return
-    }
-    onRecordUndo?.([item.id], { cover: !!coverUrl })
-    onChange({
-      ...(meta ? { meta } : {}),
-      ...(coverUrl ? { coverUrl, coverPath: undefined } : {}),
-      copyFilled: true,
-    })
-  })
+  const apply = useStableCallback(
+    (copy: TrackMetadata, cover: string | null, ownCover: string | null) => {
+      const meta = anotherVersion
+        ? groupingFromCopy(item.meta, copy)
+        : fillFromCopy(item.meta, copy)
+      const coverUrl = cover && copyCoverWins(item, cover, ownCover) ? cover : null
+      if (!meta && !coverUrl) {
+        onChange({ copyFilled: true })
+        return
+      }
+      onRecordUndo?.([item.id], { cover: !!coverUrl })
+      onChange({
+        ...(meta ? { meta } : {}),
+        ...(coverUrl ? { coverUrl, coverPath: undefined } : {}),
+        copyFilled: true,
+      })
+    },
+  )
   const ready =
     !item.loadingMeta && !item.metaPartial && !item.copyFilled && !item.metaCleared && !!copyPath
   const needsCover = !item.coverRemoved
+  const ownCoverPath = needsCover && showsOwnCover(item) ? item.inputPath : ''
   // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on the track, the copy and readiness; apply reads the live row when the tags arrive.
   useEffect(() => {
     if (!ready) return
@@ -44,9 +49,12 @@ export function useReplacedCopyFill({
     const cover = needsCover
       ? window.api.readCoverFull(copyPath).catch(() => null)
       : Promise.resolve(null)
-    Promise.all([window.api.readTags(copyPath), cover])
-      .then(([copy, art]) => {
-        if (!cancelled) apply(copy, art)
+    const ownCover = ownCoverPath
+      ? window.api.readCoverFull(ownCoverPath).catch(() => null)
+      : Promise.resolve(null)
+    Promise.all([window.api.readTags(copyPath), cover, ownCover])
+      .then(([copy, art, own]) => {
+        if (!cancelled) apply(copy, art, own)
       })
       .catch(() => {})
     return () => {
