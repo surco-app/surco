@@ -285,6 +285,46 @@ describe('SourceRail', () => {
       fireEvent.keyDown(button, { key: 'ContextMenu' })
       expect(screen.getByRole('menu')).toBeInTheDocument()
     })
+
+    // Opened from the keyboard, only the first item could be reached: the arrows walk the
+    // menu like every other one, wrapping at the ends, and stay here instead of stepping
+    // the track list behind it.
+    it('walks its items with the arrows, Home and End, wrapping at the ends', () => {
+      setup()
+      fireEvent.contextMenu(screen.getByTestId('source-rail-rekordbox'))
+      const menu = screen.getByRole('menu')
+      const seen = vi.fn()
+      window.addEventListener('keydown', seen)
+      expect(screen.getByTestId('source-rail-hide')).toHaveFocus()
+      fireEvent.keyDown(menu, { key: 'ArrowDown' })
+      expect(screen.getByTestId('source-rail-names')).toHaveFocus()
+      fireEvent.keyDown(menu, { key: 'End' })
+      expect(screen.getByTestId('source-rail-toggle-sidebar')).toHaveFocus()
+      fireEvent.keyDown(menu, { key: 'ArrowDown' })
+      expect(screen.getByTestId('source-rail-hide')).toHaveFocus()
+      fireEvent.keyDown(menu, { key: 'ArrowUp' })
+      expect(screen.getByTestId('source-rail-toggle-sidebar')).toHaveFocus()
+      fireEvent.keyDown(menu, { key: 'Home' })
+      expect(screen.getByTestId('source-rail-hide')).toHaveFocus()
+      window.removeEventListener('keydown', seen)
+      expect(seen).not.toHaveBeenCalled()
+    })
+
+    // Opened over the rail, the menu has no place in the Tab order: Tab and Shift+Tab close
+    // it without moving on, back on the source it was opened from.
+    it.each([
+      ['Tab', false],
+      ['Shift+Tab', true],
+    ])('closes on %s back on the source it was opened from', (_name, shiftKey) => {
+      setup()
+      const button = screen.getByTestId('source-rail-rekordbox')
+      button.focus()
+      fireEvent.keyDown(button, { key: 'F10', shiftKey: true })
+      const carriedOn = fireEvent.keyDown(screen.getByRole('menu'), { key: 'Tab', shiftKey })
+      expect(carriedOn).toBe(false)
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+      expect(button).toHaveFocus()
+    })
   })
 
   it('keeps its right-click menu inside the window when opened at the bottom right corner', () => {
