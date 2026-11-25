@@ -609,7 +609,9 @@ export async function runProcessTrack(
     // both ride the job, so a Settings change can't redirect a conversion in flight.
     const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
     const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
-    const addToEngineDj = settings.addToEngineDj
+    // Update retags a copy another program holds: adding it would import it into Engine as a
+    // new entry. An Engine row already on the copy follows it through the library sync.
+    const addToEngineDj = !job.tagsInPlace && settings.addToEngineDj
     // A library copy retagged where it is never gets a sibling: Update leaves one file.
     const besideOriginal =
       !job.tagsInPlace &&

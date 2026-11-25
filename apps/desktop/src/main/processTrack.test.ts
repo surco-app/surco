@@ -1275,6 +1275,21 @@ describe('runProcessTrack — retagging a library copy where it is', () => {
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
   })
 
+  // The copy Update retags is a rekordbox or Traktor file that Engine may not hold: adding it
+  // would import a second entry into Engine the user never asked for. An Engine row already
+  // on the copy still follows it through the library sync.
+  it('adds no Engine DJ entry for the copy it retags, even with adding to Engine on', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      isEngineDjRunning: vi.fn(async () => false),
+    })
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+    expect(result.addedToEngineDj).toBeUndefined()
+    expect(result.engineDjQueued).toBeUndefined()
+  })
+
   it('reports a tags-only write for a library copy update', async () => {
     const deps = makeDeps()
     const result = await runProcessTrack(copy(), deps)
