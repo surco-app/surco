@@ -14,7 +14,7 @@ import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { versionMatch } from './pairLag'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
-import { type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
+import { masterShiftOf, type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
@@ -178,6 +178,7 @@ export type WorkerJob =
   | { type: 'verifyTagExtras'; file: string }
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
   | { type: 'replaceShift'; head: ReplaceWindow | null; tail: ReplaceWindow | null }
+  | { type: 'masterShift'; old: Float32Array; current: Float32Array }
 
 export type WorkerJobResult =
   | Record<string, TrackCues | null>
@@ -264,6 +265,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'replaceShift':
       return replaceShiftOf(job.head, job.tail)
+    case 'masterShift':
+      return masterShiftOf(job.old, job.current)
     case 'clicks':
       return detectClicks(job.pcm, job.sampleRate)
     case 'waveformPeaks':

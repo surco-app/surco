@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
+import { nearestBeat, type WantedCue } from '../shared/cueRules'
 import { backupOf } from './libraryBackups'
 import {
   discardArtwork,
@@ -11,7 +12,7 @@ import {
   stageArtwork,
 } from './rekordboxArtwork'
 import { type ContentProbe, type FileFacts, readFileFacts } from './rekordboxContentAdd'
-import { shiftCues } from './rekordboxCues'
+import { liveCues, readTrackCues, shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
   type FindOptions,
@@ -44,7 +45,15 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // net. rekordbox keeps its own rotating backups beside it as well.
 
 export type RepointResult =
-  | { written: true; id: string; ids?: string[] }
+  | {
+      written: true
+      id: string
+      ids?: string[]
+      // The cues each row of another master holds after this write, by row: what the
+      // provisional list settles on the grid rekordbox draws once it has analysed the file,
+      // and the ones that were off the old grid, which stay where the shift put them.
+      settleOnGrid?: Record<string, { wanted: WantedCue[]; free?: string[] }>
+    }
   | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
@@ -56,6 +65,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   to: string
   meta?: RekordboxMeta
   audio?: { cueShiftMs: number }
+  snapToGrid?: true
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -91,6 +101,32 @@ export async function repointTrack(
 }
 
 type Repoint = Omit<RepointOptions, keyof RepointBatchOptions>
+
+// rekordbox's quantised cues sit 0 to 2 ms from their beat in real collections; a cue further
+// off than this was set there by the DJ on purpose (a pickup, an offbeat) and is not the grid's.
+const ON_OLD_GRID_MS = 10
+
+// The non-loop cues of a row that sit on its analysed grid, by id; none when it has no grid or
+// the grid does not read, which leaves every cue at the constant shift and the write unharmed.
+function cuesOnGrid(
+  db: NonNullable<ReturnType<typeof openRekordboxDb>>,
+  share: string,
+  id: string,
+): Set<string> {
+  let read: ReturnType<typeof readTrackCues>
+  try {
+    read = readTrackCues(db, share, id, { wave: false })
+  } catch {
+    return new Set()
+  }
+  if (!read?.analysed) return new Set()
+  const beats = read.grid.map((b) => b.ms)
+  return new Set(
+    read.cues
+      .filter((c) => !c.loop && Math.abs(beats[nearestBeat(beats, c.ms)] - c.ms) <= ON_OLD_GRID_MS)
+      .map((c) => c.id),
+  )
+}
 
 function stageCovers(
   db: NonNullable<ReturnType<typeof openRekordboxDb>>,
@@ -274,6 +310,7 @@ export async function repointTracks(
 
   const write = openRekordboxDb(collectionPath)
   if (!write) return settle({ written: false, reason: 'unreadable' })
+  const share = rekordboxShareDir(collectionPath)
   const staged = stageCovers(write, collectionPath, repoints, writes, batch.readCover)
   try {
     // FolderPath, FileNameL, FileType and FileSize are the four columns a format change
@@ -296,7 +333,15 @@ export async function repointTracks(
       : null
     const now = new Date()
     const stamp = rekordboxStamp(now)
+    const onGrid = new Map<number, Record<string, { wanted: WantedCue[]; free?: string[] }>>()
     write.transaction(() => {
+      // Read before the writes below empty the analysis: only a cue that sat on the old
+      // master's grid is one to settle on the new one. Without that grid nothing settles.
+      const onOldGrid = new Map<string, Set<string>>()
+      for (const w of writes) {
+        if (repoints[w.index].snapToGrid && !onOldGrid.has(w.id))
+          onOldGrid.set(w.id, cuesOnGrid(write, share, w.id))
+      }
       for (const w of writes) {
         const { to, meta, audio, onWrite } = repoints[w.index]
         update.run(
@@ -334,11 +379,32 @@ export async function repointTracks(
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()
       }
+      // Read once every write of the run is in, so a row moved twice hands back where its
+      // cues ended. Loops go with them though they never move: the provisional list only
+      // touches a row whose cues in rekordbox are still exactly this set, loops included.
+      for (const w of writes) {
+        const onBeat = onOldGrid.get(w.id)
+        if (!repoints[w.index].snapToGrid || !onBeat) continue
+        const cues = liveCues(write, w.id)
+        if (!cues.some((c) => onBeat.has(c.id))) continue
+        const free = cues.filter((c) => !c.loop && !onBeat.has(c.id)).map((c) => c.id)
+        const byRow = onGrid.get(w.index) ?? {}
+        byRow[w.id] = {
+          wanted: cues.map((c) => ({ id: c.id, ms: c.ms, kind: c.kind, color: c.color })),
+          ...(free.length > 0 ? { free } : {}),
+        }
+        onGrid.set(w.index, byRow)
+      }
     })()
     for (const w of writes) {
       const ids = writes.filter((o) => o.index === w.index).map((o) => o.id)
-      results[w.index] ??=
-        ids.length > 1 ? { written: true, id: w.id, ids } : { written: true, id: w.id }
+      const settleOnGrid = onGrid.get(w.index)
+      results[w.index] ??= {
+        written: true,
+        id: w.id,
+        ...(ids.length > 1 ? { ids } : {}),
+        ...(settleOnGrid ? { settleOnGrid } : {}),
+      }
     }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {

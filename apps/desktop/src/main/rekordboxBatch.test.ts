@@ -532,6 +532,24 @@ describe('stackRepoint on a replacement', () => {
     expect(stacked.reanalyse).toBe(true)
   })
 
+  // Another master's cues still have to settle on the grid rekordbox draws for it: a retag
+  // before rekordbox was closed must not drop that, or the cues stay a few ms off the beat.
+  it('keeps the grid settling another master owes when a second conversion stacks on it', () => {
+    const p = '/m/a.aiff'
+    const stacked = stackRepoint(
+      {
+        from: p,
+        to: p,
+        replaced: true,
+        audio: { cueShiftMs: -290 },
+        reanalyse: true,
+        snapToGrid: true,
+      },
+      { from: p, to: p, meta: rekordboxMetaFrom(emptyMetadata()) },
+    )
+    expect(stacked.snapToGrid).toBe(true)
+  })
+
   // The file on disk is the last one written: Engine must read its cues at that file's
   // rate, so a later same-path conversion's rate wins over the earlier one.
   it("keeps the last file's rate when a same-path replacement is converted again", () => {

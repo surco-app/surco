@@ -117,6 +117,7 @@ import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { traktorReplaceShift } from './replaceCueShift'
 import {
+  MASTER_RATE,
   REPLACE_HEAD_AT_SECONDS,
   REPLACE_REACH_SECONDS,
   REPLACE_TAIL_BEFORE_END_SECONDS,
@@ -1966,6 +1967,13 @@ function traktorCueOffsetMs(): number {
 // rather than replacing it, so the files that genuinely drifted still get fixed. Zero by
 // default; see the Settings copy for what it is and when to touch it.
 //
+// The DJ's offset is skipped when the output rewrites the source's own audio in the same
+// format: written over the source's path, or under a new name the old file gives way to
+// (a tag change renaming it on Save, which processTrack reports as rewritesSource). Its
+// cues already carry the offset, and the editor saves that way on every Save: applying it
+// again walked the cues by the offset each time, in the file and the collection alike.
+// Every other output, a format change over the original included, gets it once.
+//
 // Undefined only when none of the three applies — the carried frames then stay
 // byte-exact, as they always did for plain re-encodes and constant gains.
 function cueShiftFor(
@@ -1973,8 +1981,9 @@ function cueShiftFor(
   active: boolean,
   bpm: string,
   codecCueOffsetMs: number,
+  rewritesSource: boolean,
 ): CueShift | undefined {
-  const userOffsetMs = traktorCueOffsetMs()
+  const userOffsetMs = rewritesSource ? 0 : traktorCueOffsetMs()
   const trimmed = active && trim !== undefined
   if (!trimmed && userOffsetMs === 0 && codecCueOffsetMs === 0) return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
@@ -2394,6 +2403,9 @@ export async function convertAudio(
   isCancelled?: () => boolean,
   // The user answered "Overwrite" for a different file already at the destination.
   keepOverwritten?: boolean,
+  // The output is the source's own audio rewritten in its format under a new name that
+  // replaces it (see cueShiftFor). Only the caller knows: the new path does not exist yet.
+  rewritesSource?: boolean,
   // Update on a library copy: the DJ programs' cues, grids and analysis were made on its
   // samples, so only the tags may change. The quality pins are set aside and anything
   // short of a stream copy fails instead of being written.
@@ -2524,14 +2536,19 @@ export async function convertAudio(
   let sampleCount: number | undefined
   let originalKept = false
   let codecCueOffsetMs = 0
+  let seratoAnalysisKept = false
+  let replaceShift: ReplaceShift | undefined
+  let seratoCarryFailed = false
+  const inPlace = await isSameFile(input, output)
+  // Read before any cue is written: the DJ's offset depends on it (see cueShiftFor).
+  const sameAudio = inPlace || rewritesSource === true
   // A library copy retagged in place moves no audio, so its cues, in the file and in the
   // libraries, stay where the DJ put them: the DJ's offset applied to the copy's own cues
   // would shift them again on every Update.
   const cueShift = (): CueShift | undefined =>
-    keepAudio ? undefined : cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
-  let seratoAnalysisKept = false
-  let replaceShift: ReplaceShift | undefined
-  let seratoCarryFailed = false
+    keepAudio
+      ? undefined
+      : cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs, sameAudio)
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2573,10 +2590,11 @@ export async function convertAudio(
       })
       // The copy carries the source's cues verbatim, which is right for a trim (this
       // branch never trims) but wrong for the DJ's cue offset: that has to move them on
-      // every route, and a same-format conversion is still a conversion. Reported as "the
-      // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
-      // re-encode call sites below and this one was missed. copyCueFrames re-reads the
-      // source and writes the shifted frames over the copy's own.
+      // every route to a new file, and a same-format conversion is still a conversion.
+      // Reported as "the MP3 it converts does not have the -51 ms applied" — the offset
+      // was wired into the re-encode call sites below and this one was missed.
+      // copyCueFrames re-reads the source and writes the shifted frames over the copy's
+      // own.
       const copyShift = cueShift()
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
@@ -3010,7 +3028,6 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    const inPlace = await isSameFile(input, output)
     const fromBytes = inPlace ? (await stat(input)).size : undefined
     let trashReplaced: ((path: string) => Promise<void>) | undefined
     const trashOnceReplaced = (trash: (path: string) => Promise<void>) => {
@@ -3909,10 +3926,45 @@ export async function measureReplaceShift(
   const transfer = [headWindow, tailWindow].flatMap((w) =>
     w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
   )
-  return await runInWorker<ReplaceShift>(
+  const exact = await runInWorker<ReplaceShift>(
     { type: 'replaceShift', head: headWindow, tail: tailWindow },
     transfer,
   )
+  // The exact measure needs the same master; another one (other lead-in, EQ or clock) never lines
+  // up sample by sample, and leaving it unmoved puts the cues hundreds of ms off. Its loudness
+  // contour still lines up, so that is measured instead, but never on a drift (a step between
+  // head and tail is an edit) nor without both windows read (a short track or an unreadable new
+  // file has nothing for six windows either).
+  if (!('unmoved' in exact) || exact.unmoved !== 'noMatch' || !headWindow || !tailWindow) {
+    return exact
+  }
+  return (await measureMasterShift(old, current, duration, signal)) ?? exact
+}
+
+// Null when the envelope does not line up or the measure fails: only a cancel throws.
+async function measureMasterShift(
+  old: string,
+  current: string,
+  duration: number,
+  signal?: AbortSignal,
+): Promise<ReplaceShift | null> {
+  // The new file's length is not probed: a minute over the old one covers another lead-in, and a
+  // file longer than that overruns the buffer and stays unmoved, as a different edit should.
+  const maxBufferMb = Math.ceil(((duration + 60) * MASTER_RATE * 4) / 1e6) + 1
+  try {
+    const [pcmOld, pcmNew] = await Promise.all([
+      decodePcm(old, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+      decodePcm(current, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+    ])
+    const moved = await runInWorker<number | null>(
+      { type: 'masterShift', old: pcmOld, current: pcmNew },
+      [pcmOld.buffer as ArrayBuffer, pcmNew.buffer as ArrayBuffer],
+    )
+    return moved === null ? null : { moved, master: 'other' }
+  } catch {
+    signal?.throwIfAborted()
+    return null
+  }
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from

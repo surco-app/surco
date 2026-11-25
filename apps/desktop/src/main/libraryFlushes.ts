@@ -1,6 +1,6 @@
 import { existsSync, realpathSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { basename, extname, join } from 'node:path'
 import { app } from 'electron'
 import log from 'electron-log/main'
 import {
@@ -47,6 +47,7 @@ import { type FlushResult, flushRekordboxSync, REKORDBOX_KEYS } from './rekordbo
 import { repointTracks } from './rekordboxLibrary'
 import { findRekordboxCollection } from './rekordboxPath'
 import { isRekordboxRunning } from './rekordboxProcess'
+import type { ProvisionalList } from './rekordboxProvisional'
 import { COLLECTION_WIDE, type RekordboxQueue } from './rekordboxQueue'
 import { libraryTrackOps, queueConversionRun, trackOpsFromRun } from './rekordboxQueueFromRun'
 import type { QueueOp } from './rekordboxQueueOps'
@@ -108,6 +109,7 @@ export interface LibraryHost {
   showBlockedDialog: (program: WritableProgram) => void
   reportIssue: (program: WritableProgram, issue: RekordboxSyncIssue) => void
   rekordboxHeld: () => boolean
+  provisional: Pick<ProvisionalList, 'add'>
 }
 
 type SessionBackup = ReturnType<typeof createSessionBackup>
@@ -342,12 +344,15 @@ export async function usedByAnyLibrary(
   return (await deps.musicEntries(path, [...new Set([...titles, tagged])], like)).length > 0
 }
 
-export function repointRekordbox(
+// Another master's rows wait in the provisional list until rekordbox has analysed the new
+// file, when their cues settle on the grid it drew (see adjustmentOps).
+export async function repointRekordbox(
   collectionPath: string,
   list: RekordboxRepoint[],
   sessions: Pick<Sessions, 'rekordbox'>,
+  provisional: Pick<ProvisionalList, 'add'>,
 ) {
-  return repointTracks(
+  const results = await repointTracks(
     collectionPath,
     list.map((repoint) => ({ ...repoint, realPath: (p: string) => realpathSync(p) })),
     {
@@ -356,6 +361,13 @@ export function repointRekordbox(
       probe: { properties: probeProperties, duration: (p) => probeDuration(p) },
     },
   )
+  for (const [i, result] of results.entries()) {
+    if (!result.written || !result.settleOnGrid) continue
+    const label = basename(list[i].to, extname(list[i].to))
+    for (const [contentId, waiting] of Object.entries(result.settleOnGrid))
+      provisional.add({ contentId, label, ...waiting })
+  }
+  return results
 }
 
 // Whether Surco never writes this library, for the Copias screen. Each Add toggle writes on
@@ -769,7 +781,7 @@ function rekordboxConversionFlusher(
             showBlockedDialog: () => {},
             endBatch: () => list,
             repointTracks: async (path, items) => {
-              const results = await repointRekordbox(path, items, sessions)
+              const results = await repointRekordbox(path, items, sessions, host.provisional)
               moved.push(...writtenBy(items, results))
               return results
             },

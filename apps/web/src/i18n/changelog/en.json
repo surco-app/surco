@@ -23,6 +23,18 @@
       {
         "text": "When a playlist’s files are no longer on the disk, the list says so and counts how many are missing. A moved or renamed file no longer shows up as one that could not be read.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Replace a track with another master of the same song and its cues now move with the audio too. If Surco is not sure of the beat, it leaves them where they were. In rekordbox they snap to the new grid once the analysis finishes.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "When Discogs asks you to wait, you see the other catalogs’ results right away. Surco searches Discogs again on its own, with a countdown you can skip with a click.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "The Apple Music tab opens on “Recently added”, with what you added in the last 30 days. Its playlists also open much faster, even when your music lives on a NAS.",
+        "in": "1.44.1"
       }
     ]
   },

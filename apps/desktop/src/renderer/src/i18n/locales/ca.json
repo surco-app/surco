@@ -9,7 +9,9 @@
     "scopeVisible_other": "S'aplica a les {{count}} pistes visibles",
     "change": "Canviar",
     "close": "Tancar",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "more_one": "{{count}} més",
+    "more_other": "{{count}} més"
   },
   "rename": {
     "moreFields": "Més camps ({{count}})",
@@ -3458,24 +3460,6 @@
     "appliedChanges_one": "Fet a rekordbox · {{count}} canvi",
     "appliedChanges_other": "Fet a rekordbox · {{count}} canvis",
     "backupFailed": "No s'ha pogut fer la còpia de rekordbox. Es tornarà a provar quan el tanquis",
-    "notice": {
-      "ambiguous": "No s'ha afegit {{track}}. rekordbox la té dues vegades",
-      "fileMissing": "No s'ha donat d'alta {{track}}. El fitxer ja no hi és",
-      "notAdded": "No s'ha donat d'alta {{track}}. No s'ha pogut llegir el fitxer",
-      "playlistChanged": "No s'ha canviat {{track}} a {{playlist}}. Ha canviat a rekordbox",
-      "playlistGone": "{{playlist}} ja no és a rekordbox. {{track}} no s'ha afegit",
-      "editChanged": "No s'ha canviat {{playlist}}. Ha canviat a rekordbox",
-      "cuesChanged": "Els cues de {{track}} han canviat a rekordbox. Torna a marcar-los",
-      "cuesTooMany": "{{track}} necessitaria més de 8 hot cues. Treu una marca",
-      "cuesInvalid": "No s'han desat els cues de {{track}}. Surco no els ha pogut llegir com a cues",
-      "cuesWriteFailed": "No s'han desat els cues de {{track}}. Surco no ha pogut escriure el fitxer",
-      "cuesAdjusted_one": "rekordbox ja ha analitzat {{track}}. {{count}} cue ajustat a la seva graella, {{maxMs}} ms",
-      "cuesAdjusted_other": "rekordbox ja ha analitzat {{track}}. {{count}} cues ajustats a la seva graella, el que més {{maxMs}} ms",
-      "cuesUnfit_one": "Un cue de {{track}} cau lluny dels cops de rekordbox i s'ha deixat on era. Revisa'l",
-      "cuesUnfit_other": "{{count}} cues de {{track}} cauen lluny dels cops de rekordbox i s'han deixat on eren. Revisa'ls",
-      "goToCue": "Anar al cue",
-      "notInLibrary": "{{track}} ja no és a rekordbox. Les seves playlists no s'han canviat"
-    },
     "part": {
       "repoint": "ruta nova",
       "collection": "alta a la col·lecció",
@@ -3524,14 +3508,6 @@
     "backupFailed": "No s'ha pogut fer la còpia d'Engine DJ. Es tornarà a provar quan el tanquis",
     "unreadable": "Ara Surco no pot llegir la biblioteca d'Engine DJ i no ha canviat res",
     "writeFailed": "No s'han pogut desar els canvis a Engine DJ. La biblioteca continua com estava",
-    "notice": {
-      "cuesChanged": "Els cues de {{track}} han canviat a Engine DJ. Torna'ls a marcar",
-      "callsDropped_one": "No s'ha desat el CALL de {{track}} ({{times}}). Engine DJ només desa hot cues",
-      "callsDropped_other": "No s'han desat els {{count}} CALL de {{track}} ({{times}}). Engine DJ només desa hot cues",
-      "playlistChanged": "No s'ha canviat {{track}} a {{playlist}} perquè ha canviat a Engine DJ",
-      "playlistGone": "{{playlist}} ja no és a Engine DJ. {{track}} no s'hi ha afegit",
-      "notInLibrary": "{{track}} ja no és a Engine DJ. Les seves playlists no s'han canviat"
-    },
     "discardConfirm": "Vols descartar el que espera? Les teves playlists i cues d'Engine DJ es queden com els té Engine DJ",
     "pillHalted": "Canvis d'Engine DJ en pausa",
     "halted": "L'últim canvi no s'ha pogut desar ni desfer. Surco no tocarà la biblioteca fins que triïs Aplicar ara o Descartar. Aplicar ara substitueix la còpia m.db.surco-backup, així que si alguna cosa no quadra, restaura-la abans des d'aquesta còpia. La trobaràs a Configuració → Avançat → Còpies de les col·leccions",
@@ -3556,14 +3532,6 @@
     "backupFailed": "No s'ha pogut fer la còpia de Traktor. Es tornarà a provar quan el tanquis",
     "unreadable": "Ara mateix Surco no pot llegir la col·lecció de Traktor i no ha canviat res",
     "writeFailed": "No s'han pogut desar els canvis a Traktor. La col·lecció continua com estava",
-    "notice": {
-      "cuesChanged": "Els cues de {{track}} han canviat a Traktor. Torna a marcar-los",
-      "slotDropped": "Traktor té 7 botons per als cues de Surco, així que el cue H de {{track}} no s'ha desat",
-      "editChanged": "{{playlist}} no s'ha canviat. Ha canviat a Traktor",
-      "playlistChanged": "No s'ha canviat {{track}} a {{playlist}}. Ha canviat a Traktor",
-      "playlistGone": "{{playlist}} ja no és a Traktor. {{track}} no s'ha afegit",
-      "notInLibrary": "{{track}} ja no és a Traktor. Les seves playlists no s'han canviat"
-    },
     "discardConfirm": "Vols descartar el que està en espera? Les teves playlists i cues de Traktor es queden com els té Traktor",
     "pillHalted": "Canvis de Traktor en pausa",
     "halted": "L'últim canvi no s'ha pogut desar ni desfer. Surco no tocarà la col·lecció fins que triïs Aplicar ara o Descartar. Aplicar ara substitueix la còpia collection.nml.surco-backup, així que si alguna cosa no quadra, restaura-la abans des d'aquesta còpia. La trobaràs a Configuració → Avançat → Còpies de les col·leccions",
@@ -3588,20 +3556,6 @@
     "part": {
       "collection": "alta a la biblioteca",
       "noPlaylists": "fora dels seus crates"
-    },
-    "notice": {
-      "cuesChanged": "Els cues de {{track}} han canviat a Serato. Torna a marcar-los",
-      "callsDropped_one": "No s'ha desat el CALL de {{track}} ({{times}}). Serato només desa hot cues",
-      "callsDropped_other": "No s'han desat els {{count}} CALL de {{track}} ({{times}}). Serato només desa hot cues",
-      "oldBlock": "Els cues de {{track}} no s'han desat. Serato conserva una còpia antiga que no coincideix. Mou qualsevol cue de la pista a Serato i torna a desar",
-      "editChanged": "{{playlist}} no s'ha canviat. Ha canviat a Serato",
-      "otherVolume": "{{track}} és en un altre disc i no pot anar al crate «{{playlist}}»",
-      "notAdded": "{{track}} no s'ha afegit a Serato",
-      "playlistChanged": "No s'ha canviat {{track}} a {{playlist}}. Ha canviat a Serato",
-      "playlistGone": "{{playlist}} ja no és a Serato. {{track}} no s'ha afegit",
-      "sourceInSerato": "{{track}} continua a Serato amb el fitxer original i no entra al crate «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ja no és a Serato i les seves etiquetes no s'han canviat",
-      "tagsChanged": "{{track}} ha canviat a Serato i les seves etiquetes no s'han canviat"
     }
   },
   "virtualdjQueue": {
@@ -3628,23 +3582,7 @@
     "pillElsewhere_one": "{{count}} pendent d'una altra biblioteca de VirtualDJ",
     "pillElsewhere_other": "{{count}} pendents d'una altra biblioteca de VirtualDJ",
     "elsewhere_one": "{{count}} canvi espera una altra biblioteca de VirtualDJ. S'aplicarà quan hi tornis",
-    "elsewhere_other": "{{count}} canvis esperen una altra biblioteca de VirtualDJ. S'aplicaran quan hi tornis",
-    "notice": {
-      "cuesChanged": "Els cues de {{track}} han canviat a VirtualDJ. Torna a marcar-los",
-      "callsDropped_one": "No s'ha desat el CALL de {{track}} ({{times}}). VirtualDJ només desa hot cues",
-      "callsDropped_other": "No s'han desat els {{count}} CALL de {{track}} ({{times}}). VirtualDJ només desa hot cues",
-      "notInLibrary": "{{track}} ja no és a VirtualDJ. Els seus cues no s'han desat",
-      "notAdded": "{{track}} no s'ha afegit a VirtualDJ",
-      "playlistChanged": "No s'ha canviat {{track}} a {{playlist}}. Ha canviat a VirtualDJ",
-      "playlistGone": "{{playlist}} ja no és a VirtualDJ. {{track}} no s'ha afegit",
-      "sourceInVirtualdj": "{{track}} continua a VirtualDJ amb el fitxer original i no entra a la llista «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ja no és a VirtualDJ i les seves etiquetes no s'han canviat",
-      "tagsChanged": "{{track}} ha canviat a VirtualDJ i les seves etiquetes no s'han canviat",
-      "repointOtherVolume": "{{track}} és en un altre disc, així que VirtualDJ continua amb el fitxer original i Surco també el desa",
-      "repointSongTaken": "VirtualDJ ja té una cançó per a {{track}}, així que continua amb el fitxer original i Surco també el desa",
-      "repointUnwritable": "VirtualDJ no pot desar la durada de {{track}}, així que continua amb el fitxer original i Surco també el desa",
-      "repointSongTakenGone": "VirtualDJ ja tenia una cançó per a {{track}}, així que l'antiga continua al fitxer original, que ja no és a la seva carpeta"
-    }
+    "elsewhere_other": "{{count}} canvis esperen una altra biblioteca de VirtualDJ. S'aplicaran quan hi tornis"
   },
   "cueWave": {
     "notAnalysed": "Aquesta pista no està analitzada a rekordbox. Analitza-la allà per posar-hi cues",
@@ -3950,5 +3888,58 @@
     "railNames": "Mostrar els noms",
     "sidebar": "Mostrar la barra lateral",
     "hideSidebar": "Amagar la barra lateral"
+  },
+  "queueNotice": {
+    "notAdded_one": "{{count}} pista no s'ha afegit a {{program}}",
+    "notAdded_other": "{{count}} pistes no s'han afegit a {{program}}",
+    "notChangedIn_one": "{{count}} pista sense canviar a {{playlist}}",
+    "notChangedIn_other": "{{count}} pistes sense canviar a {{playlist}}",
+    "notAddedToList_one": "{{count}} pista no s'ha afegit a {{playlist}}",
+    "notAddedToList_other": "{{count}} pistes no s'han afegit a {{playlist}}",
+    "listNotChanged": "{{playlist}} sense canviar",
+    "cuesNotSaved_one": "Cues de {{count}} pista sense desar",
+    "cuesNotSaved_other": "Cues de {{count}} pistes sense desar",
+    "cueHNotSaved_one": "Cue H de {{count}} pista sense desar",
+    "cueHNotSaved_other": "Cue H de {{count}} pistes sense desar",
+    "callsNotSaved_one": "{{count}} CALL sense desar",
+    "callsNotSaved_other": "{{count}} CALL sense desar",
+    "cuesMoved_one": "{{count}} cue ajustat a la graella de {{program}}",
+    "cuesMoved_other": "{{count}} cues ajustats a la graella de {{program}}",
+    "cuesOffBeats_one": "{{count}} cue lluny dels cops de {{program}}",
+    "cuesOffBeats_other": "{{count}} cues lluny dels cops de {{program}}",
+    "notInLibrary_one": "{{count}} pista ja no és a {{program}}",
+    "notInLibrary_other": "{{count}} pistes ja no són a {{program}}",
+    "tagsNotChanged_one": "Etiquetes de {{count}} pista sense canviar",
+    "tagsNotChanged_other": "Etiquetes de {{count}} pistes sense canviar",
+    "keptOriginal_one": "{{count}} pista continua amb el fitxer original",
+    "keptOriginal_other": "{{count}} pistes continuen amb el fitxer original",
+    "oldSongMissing_one": "{{count}} cançó antiga apunta a un fitxer que ja no hi és",
+    "oldSongMissing_other": "{{count}} cançons antigues apunten a un fitxer que ja no hi és",
+    "goToCue": "Anar al cue",
+    "why": {
+      "twice": "És dues vegades a {{program}}",
+      "fileGone": "El fitxer ja no hi és",
+      "unreadable": "No s'ha pogut llegir el fitxer",
+      "listChanged": "Ha canviat a {{program}}",
+      "listGone": "Ja no és a {{program}}",
+      "otherDrive": "En un altre disc",
+      "originalKept": "{{program}} es queda el fitxer original",
+      "markAgain": "Han canviat a {{program}}. Torna a marcar-los",
+      "tooMany": "Més de 8 hot cues. Treu una marca",
+      "notCues": "Surco no els ha pogut llegir com a cues",
+      "notWritten": "Surco no ha pogut escriure el fitxer",
+      "oldBlock": "{{program}} guarda una còpia antiga. Mou-hi un cue i torna a desar",
+      "hotCuesOnly": "{{program}} només desa hot cues",
+      "sevenButtons": "{{program}} té 7 botons per als cues de Surco",
+      "furthest": "El que més, {{maxMs}} ms",
+      "leftInPlace": "S'han deixat on eren. Revisa'ls",
+      "playlistsKept": "Playlists sense canviar",
+      "cuesKept": "Cues sense desar",
+      "tagsKept": "Etiquetes sense canviar",
+      "tagsChanged": "Han canviat a {{program}}",
+      "songTaken": "{{program}} ja té una cançó per a aquesta pista",
+      "lengthUnfit": "{{program}} no admet la seva durada",
+      "songTakenGone": "{{program}} ja tenia una cançó per a aquesta pista"
+    }
   }
 }

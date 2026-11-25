@@ -39,6 +39,39 @@ function music(path: string, seconds: number): void {
   ])
 }
 
+// Pink noise is the same loudness end to end, so its envelope has nothing to line up: the sections
+// (each seed its own lengths and levels, like a different arrangement) give the contour another
+// master keeps, and the hits give it onsets.
+function structuredMusic(path: string, seconds: number, seed: number): void {
+  let state = seed
+  const next = () => {
+    state = (state * 1103515245 + 12345) % 2147483648
+    return state / 2147483648
+  }
+  const sections: string[] = []
+  for (let t = 0; t < seconds; ) {
+    t += 3 + Math.round(next() * 14)
+    sections.push(`lt(t,${t}),${(0.15 + next() * 0.85).toFixed(2)}`)
+  }
+  const volume = `${sections.map((s) => `if(${s},`).join('')}1${')'.repeat(sections.length)}`
+  execFileSync(FF, [
+    '-y',
+    '-v',
+    'error',
+    '-f',
+    'lavfi',
+    '-i',
+    `anoisesrc=color=pink:seed=${seed}:d=${seconds}:r=44100:a=0.3`,
+    '-f',
+    'lavfi',
+    '-i',
+    `aevalsrc='if(lt(mod(t,0.469),0.002),0.8,0)':s=44100:d=${seconds}`,
+    '-filter_complex',
+    `amix=inputs=2:normalize=0,volume='${volume}':eval=frame`,
+    path,
+  ])
+}
+
 function derive(from: string, to: string, args: string[]): void {
   execFileSync(FF, ['-y', '-v', 'error', '-i', from, ...args, to])
 }
@@ -50,11 +83,69 @@ describe('measureReplaceShift', () => {
   const lead = join(dir, 'lead.flac')
   const mp3 = join(dir, 'new.mp3')
   const short = join(dir, 'short.flac')
+  const structured = join(dir, 'structured.flac')
+  const otherMaster = join(dir, 'other-master.mp3')
+  const otherTrack = join(dir, 'other-track.flac')
+  const edit = join(dir, 'edit.flac')
   beforeAll(() => {
     music(old, 200)
     derive(old, lead, ['-af', 'adelay=1500:all=1'])
     derive(old, mp3, ['-b:a', '320k'])
     music(short, 40)
+    structuredMusic(structured, 200, 7)
+    derive(structured, otherMaster, [
+      '-af',
+      'adelay=300:all=1,lowpass=6000,asetrate=44100*1.0001,aresample=44100',
+      '-b:a',
+      '192k',
+    ])
+    structuredMusic(otherTrack, 200, 23)
+    derive(structured, edit, [
+      '-filter_complex',
+      '[0]atrim=0:100[a];[0]atrim=start=100.02,asetpts=PTS-STARTPTS[b];[a][b]concat=n=2:v=0:a=1',
+    ])
+  })
+
+  const exactMeasureOfLastCall = async () => {
+    const calls = vi.mocked(runInWorker).mock.calls
+    const index = calls.findLastIndex(([job]) => job.type === 'replaceShift')
+    return await vi.mocked(runInWorker).mock.results[index].value
+  }
+
+  // Another master (other lead-in, EQ and a clock a hair off) never lines up sample by sample, so
+  // the exact measure gives up; without the envelope fallback every cue would sit 300 ms early.
+  it('measures another master 300 ms later as moved 300 ms on another master', async () => {
+    vi.mocked(runInWorker).mockClear()
+    const result = await measureReplaceShift(structured, otherMaster)
+    expect(await exactMeasureOfLastCall()).toEqual({ unmoved: 'noMatch' })
+    expect(result).toMatchObject({ master: 'other' })
+    expect(Math.abs((result as { moved: number }).moved - 300)).toBeLessThanOrEqual(10)
+  })
+
+  // A different track that only happens to replace this file must never move the cues: the
+  // envelope of another arrangement fits nothing, and cues moved to noise are worse than unmoved.
+  it('keeps a different track as noMatch', async () => {
+    vi.mocked(runInWorker).mockClear()
+    expect(await measureReplaceShift(structured, otherTrack)).toEqual({ unmoved: 'noMatch' })
+    const calls = vi.mocked(runInWorker).mock.calls
+    const envelope = calls.findIndex(([job]) => job.type === 'masterShift')
+    expect(await vi.mocked(runInWorker).mock.results[envelope].value).toBeNull()
+  })
+
+  // An edit (20 ms cut out between head and tail) is not another master: the envelope would agree
+  // within its 50 ms and move every cue by an average that is right nowhere, so drift stays.
+  it('keeps an edit as drift without trying the envelope', async () => {
+    expect(await measureReplaceShift(structured, edit)).toEqual({ unmoved: 'drift' })
+  })
+
+  // Surco instantaneo: the envelope search over six 30 s windows is too long for the main process.
+  it('hands the envelope measure to the worker too', async () => {
+    vi.mocked(runInWorker).mockClear()
+    await measureReplaceShift(structured, otherMaster)
+    expect(runInWorker).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'masterShift' }),
+      expect.any(Array),
+    )
   })
 
   // A master with 1.5 s more lead-in sounds every beat 1.5 s later: if the measure misses it the
@@ -62,6 +153,7 @@ describe('measureReplaceShift', () => {
   it('measures a master with 1.5 s more lead-in as moved 1500 ms', async () => {
     const result = await measureReplaceShift(old, lead)
     expect(result).toHaveProperty('moved')
+    expect(result).not.toHaveProperty('master')
     expect(Math.abs((result as { moved: number }).moved - 1500)).toBeLessThanOrEqual(1)
   })
 
@@ -102,6 +194,17 @@ describe('measureReplaceShift', () => {
   // rule out an edit further in, so the cues stay put.
   it('says noMatch for a track too short for two windows', async () => {
     expect(await measureReplaceShift(short, short)).toEqual({ unmoved: 'noMatch' })
+  })
+
+  // A track too short for the envelope's six windows can only come out unmoved there, so the two
+  // whole-file decodes it needs would be time the batch spends for nothing.
+  it('does not decode a track too short for six windows for the envelope measure', async () => {
+    vi.mocked(runInWorker).mockClear()
+    await measureReplaceShift(short, short)
+    expect(runInWorker).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'masterShift' }),
+      expect.anything(),
+    )
   })
 
   // Surco instantaneo: a 2^21-point FFT on the main process takes over 100 ms and freezes IPC and

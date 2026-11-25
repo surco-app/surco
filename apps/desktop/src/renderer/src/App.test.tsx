@@ -345,6 +345,11 @@ class MockIntersectionObserver {
 
 let menuListener: ((id: string) => void) | undefined
 
+const selectedRowIndexes = (): number[] =>
+  screen
+    .getAllByTestId('track-row')
+    .flatMap((row, i) => (row.getAttribute('aria-selected') === 'true' ? [i] : []))
+
 function runMenu(id: string): void {
   act(() => menuListener?.(id))
 }
@@ -3796,7 +3801,7 @@ describe('App source rail', () => {
   // Tracks comes forward with what was added, and what was added is what the next edit is
   // for, as when adding from Tracks itself: the row picked there before leaving came back
   // as the selection instead, and the new files had to be picked by hand.
-  it('selects the files added while a source is on screen, not the row picked in Tracks before', async () => {
+  it('selects the first file added while a source is on screen, not the row picked in Tracks before', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3812,12 +3817,10 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
-  it('selects the files added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
+  it('selects the first file added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3845,9 +3848,7 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // The list's count is the size of the list on screen: inside a playlist that is its rows,
@@ -3907,6 +3908,57 @@ describe('App source rail', () => {
     expect(loading).toHaveAttribute('role', 'status')
     expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
     expect(within(loading).queryByTestId('track-row')).toBeNull()
+    expect(within(loading).getAllByTestId('track-row-skeleton-wave')).toHaveLength(8)
+  })
+
+  it('drops the wave bar from the placeholder rows when the list hides waves, so the rows do not shrink when the tracks arrive', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showListWaves: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
+    expect(within(loading).queryByTestId('track-row-skeleton-wave')).toBeNull()
+  })
+
+  it('keeps the place of the search and the toolbar while the playlist is read, so the rows do not drop when the header arrives', async () => {
+    rekordboxWithFactory({
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-header-skeleton')).toBeInTheDocument()
+    expect(within(loading).queryByTestId('track-list-location-skeleton')).toBeNull()
+    expect(screen.queryByTestId('track-search')).toBeNull()
+  })
+
+  it('also keeps the place of the location line when the sidebar is hidden, since the header shows it there', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-location-skeleton')).toBeInTheDocument()
   })
 
   it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {
@@ -9902,9 +9954,10 @@ describe('App multi-select convert', () => {
     expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
   })
 
-  // Tagging an album starts by dropping it: the files that just arrived are the ones the
-  // next edit is for, and selecting them by hand was a step before every single album.
-  it('selects the files that were just added, leaving the earlier ones out', async () => {
+  // A dropped folder opens on its first track, as a click on it would: selecting every
+  // file put the editor on a mixed batch of hundreds the DJ never asked for, and the
+  // whole drop is one ⌘A away when the batch is what they want.
+  it('selects only the first file just added, leaving the earlier ones and the rest out', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings()),
       pickFiles: vi
@@ -9918,35 +9971,7 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
-  })
-
-  // A folder walk hands its files over while it is still walking, before the add itself
-  // returns: those rows arrived with this drop too, and one of three stayed unselected.
-  it('selects the files a walk delivered before it finished', async () => {
-    let deliver: (paths: string[]) => void = () => {}
-    setApi({
-      getSettings: vi.fn().mockResolvedValue(settings()),
-      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
-      onExpandedBatch: (listener: (paths: string[]) => void) => {
-        deliver = listener
-        return () => {}
-      },
-      expandPaths: vi.fn(async (paths: string[]) => {
-        deliver(paths.slice(0, 1))
-        await new Promise((r) => setTimeout(r, 0))
-        return paths
-      }),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-    })
-    await renderApp()
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 3 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // A folder on a NAS can take many seconds to walk. A track picked meanwhile is what the
@@ -10334,6 +10359,8 @@ describe('App multi-select convert', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     fireEvent.click(await screen.findByTestId('process-format-toggle'))
     const option = (): HTMLElement => screen.getByTestId('process-clear-after')
     expect(option()).toHaveAttribute('aria-checked', 'false')
@@ -17104,6 +17131,48 @@ describe('App editor crash', () => {
     } finally {
       editorRenders.crash = false
       silenced.mockRestore()
+    }
+  })
+})
+
+describe('the notice of what a DJ program queue applied', () => {
+  // A batch with reasons used to stay until closed: a DJ who meant to read it later had it
+  // parked over the player for good. It leaves on its own like any notice, a little later
+  // since it has more to read, and the pointer resting on it still holds it.
+  it('gathers the reasons under what landed and leaves on its own, so ignoring it never parks it over the player', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    setApi({
+      dj: djReads({
+        rekordbox: {
+          onCueQueueApplied: (cb) => {
+            applied = cb
+            return () => {}
+          },
+        },
+      }),
+    })
+    await renderApp()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      act(() =>
+        applied({
+          tracks: 6,
+          changes: 0,
+          written: [],
+          notices: [
+            { code: 'playlist-changed', track: 'Madagascar', playlist: 'Warm Up' },
+            { code: 'playlist-changed', track: 'Oxia', playlist: 'Warm Up' },
+            { code: 'cues-unfit', track: 'Rave Allstars', count: 16, contentId: '7', ms: 1000 },
+          ],
+        }),
+      )
+      const notice = await screen.findByTestId('rekordbox-edit-notice')
+      expect(screen.getAllByTestId('rekordbox-edit-notice-row')).toHaveLength(2)
+      expect(within(notice).getByRole('button', { name: 'Go to cue' })).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(10_000))
+      await waitFor(() => expect(screen.queryByTestId('rekordbox-edit-notice')).toBeNull())
+    } finally {
+      vi.useRealTimers()
     }
   })
 })

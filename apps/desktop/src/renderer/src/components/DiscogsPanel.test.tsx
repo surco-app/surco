@@ -670,10 +670,14 @@ describe('DiscogsPanel stable results', () => {
 
   // No placeholder rows below the list: a late catalog's rows no longer land there, so the
   // panel names it instead of promising rows in a spot they will not fill.
+  // Only the catalog's name shows, beside a spinner, like the Discogs countdown in the same
+  // spot: a sentence under the rows was text the spinner already says.
   it('names the catalog still searching below the rows shown', () => {
     renderPanel(browser({ query: 'x', results: rows, busy: true, pendingProviders: ['discogs'] }))
     const pending = screen.getByTestId('discogs-pending')
-    expect(pending).toHaveTextContent('Still searching Discogs…')
+    expect(pending).toHaveAccessibleName('Still searching Discogs…')
+    expect(pending).not.toHaveTextContent(/Still searching/)
+    expect(pending).toHaveTextContent('Discogs')
     expect(within(pending).queryAllByTestId('skeleton-row')).toHaveLength(0)
   })
 

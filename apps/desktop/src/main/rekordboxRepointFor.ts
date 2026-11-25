@@ -66,8 +66,17 @@ export function rekordboxRepointFor(
   // does. Only a measure that matched both ends of the two files at one spot of rekordbox's
   // timeline vouches for the same audio, and keeps a grid the DJ may have corrected by hand.
   // A shift of zero is not enough alone: the lossless master of a LAME MP3 measures 0 on
-  // ffmpeg's clock yet sits 51 ms earlier in rekordbox's.
-  const reanalyse = !!options.replaces && !!options.replaceShift && moved === undefined
+  // ffmpeg's clock yet sits 51 ms earlier in rekordbox's. Another master measured on the
+  // envelope moves its cues all the same, but its grid and waveform are not the old file's,
+  // and its speed can differ a hair from it: rekordbox draws its own grid and the cues then
+  // settle on it.
+  const otherMaster =
+    !!options.replaces &&
+    !!options.replaceShift &&
+    'moved' in options.replaceShift &&
+    options.replaceShift.master === 'other'
+  const reanalyse =
+    !!options.replaces && !!options.replaceShift && (moved === undefined || otherMaster)
   const audio =
     options.replaces && (options.audio || reanalyse || replaceCueShiftMs !== 0)
       ? { cueShiftMs: replaceCueShiftMs }
@@ -99,6 +108,7 @@ export function rekordboxRepointFor(
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
     ...(reanalyse ? { reanalyse: true as const } : {}),
+    ...(otherMaster ? { snapToGrid: true as const } : {}),
     ...(options.fromBytes !== undefined ? { fromBytes: options.fromBytes } : {}),
     ...(options.names ? { names: options.names } : {}),
   }

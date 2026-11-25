@@ -566,6 +566,38 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(Math.abs((sample ?? 0) - 11.5 * RATE)).toBeLessThanOrEqual(1)
     })
 
+    // Another master is analysed again and moved by its envelope shift at once. Emptying the old
+    // analysis must not lose the move: the pad on the kick at 10 s has to fire at 9.7 s of a
+    // master that sounds 300 ms earlier, counted at the old rate when the new file's was not
+    // probed, while the old grid goes so Engine draws the new one.
+    it('moves the cues of another master it empties for analysis, at the old rate unprobed', async () => {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = 1', [
+        quickCuesBlob(
+          [{ label: 'Kick', sample: 10 * RATE, argb: 0xffcc0000 }],
+          mainCueTail(MAIN_SEC[0] * RATE, true, MAIN_SEC[1] * RATE),
+        ),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 300 },
+          reanalyse: true,
+        },
+      ])
+      const after = await openDb(lib.dbPath)
+      const row = one(after, 'SELECT quickCues, beatData FROM PerformanceData WHERE trackId = 1')
+      after.close()
+      const sample = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))?.slots[0].cue
+        ?.sample
+      expect(Math.abs((sample ?? 0) - 9.7 * RATE)).toBeLessThanOrEqual(1)
+      expect(row.beatData).toBeNull()
+    })
+
     // Engine stores cues in samples: a cue at 10 s is sample 441 000 on a 44.1 kHz row. Left
     // like that on a 48 kHz replacement it would sound at 9.19 s, early on the booth.
     it('keeps a cue at 10 s at 10 s when a 44.1 kHz track is replaced by a 48 kHz one', async () => {

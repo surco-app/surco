@@ -50,6 +50,34 @@ export function loadPlaylistCache(persistentId: string): AppleMusicPlaylistTrack
   }
 }
 
+// Each library track's file, by persistent ID, with the modified date it had when it was
+// resolved: resolving a location asks the NAS file by file (64 s for 171 tracks on a cold
+// NAS), and the file stays put until Music modifies the track.
+export type TrackLocations = Record<string, { path: string; modified: string }>
+
+const locationsFile = (): string =>
+  join(app.getPath('userData'), 'apple-music-playlists', 'locations.json')
+
+export function loadTrackLocations(): TrackLocations {
+  try {
+    const raw: unknown = JSON.parse(readFileSync(locationsFile(), 'utf-8'))
+    return isRecord(raw) ? (raw as TrackLocations) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveTrackLocations(locations: TrackLocations): void {
+  try {
+    const file = locationsFile()
+    mkdirSync(join(file, '..'), { recursive: true })
+    writeFileSync(`${file}.tmp`, JSON.stringify(locations))
+    renameSync(`${file}.tmp`, file)
+  } catch {
+    return
+  }
+}
+
 // The last list of playlists Music gave, so the Music tab shows its tree at once while Music
 // lists them again (1.8 s, measured 01/11).
 const listFile = (): string => join(app.getPath('userData'), 'apple-music-playlists', 'list.json')

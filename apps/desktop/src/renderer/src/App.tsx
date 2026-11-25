@@ -255,7 +255,7 @@ import {
   discardPlaylistEdits,
   type PlaylistsEdit,
 } from './lib/rekordboxPlaylists'
-import type { CueSpot } from './lib/rekordboxQueueText'
+import type { CueSpot, QueueRow } from './lib/rekordboxQueueText'
 import type { ReleaseMetaPatch } from './lib/release'
 import { followReleaseDate } from './lib/releaseDateSetting'
 import {
@@ -1025,23 +1025,32 @@ export default function App(): React.JSX.Element {
 
   const [revealing, setRevealing] = useState<CueSpot | null>(null)
   // What an edit to rekordbox did, or why it did nothing: one keyed line, so a burst of
-  // edits leaves the latest answer, not a stack.
+  // edits leaves the latest answer, not a stack. Reasons go in rows under it, and it leaves
+  // on its own like any notice, later when there are rows to read.
   const notifyEdit = useCallback(
-    (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => {
+    (text: string, tone: 'neutral' | 'danger', rows?: QueueRow[]) => {
       const id = pushToast(store, {
         key: 'rekordbox-edit',
         tone,
         message: text,
-        ...(goTo
+        ...(rows
           ? {
-              action: {
-                label: { key: 'rekordboxQueue.notice.goToCue' },
-                onAction: () => {
-                  dismissToast(store, id)
-                  focusCue(goTo)
-                  setRevealing(goTo)
-                },
-              },
+              rows: rows.map(({ goTo, ...row }) =>
+                goTo
+                  ? {
+                      ...row,
+                      action: {
+                        label: { key: 'queueNotice.goToCue' },
+                        onAction: () => {
+                          dismissToast(store, id)
+                          focusCue(goTo)
+                          setRevealing(goTo)
+                        },
+                      },
+                    }
+                  : row,
+              ),
+              duration: 8000,
             }
           : { duration: 5000 }),
         testid: 'rekordbox-edit-notice',
@@ -1464,10 +1473,12 @@ export default function App(): React.JSX.Element {
     // like it did nothing. One every new row matches stays: another version of the tune
     // being searched for lands right beside it.
     if (!arrived.every(searchMatcher(store.getState().search))) setSearch('')
-    // What arrived becomes the selection, unless that would pull the editor away from
-    // something: a field being typed in, a filter that may hide the new rows, or a selection
-    // the user made while a slow folder was still being walked. The first row addPaths
-    // opens on an empty list is the add's own doing and does not count as one.
+    // The first file that arrived becomes the selection, as a click on it would: the whole
+    // drop selected put the editor on a batch of hundreds nobody asked for, and ⌘A gets it.
+    // Not when that would pull the editor away from something: a field being typed in, a
+    // filter that may hide the new rows, or a selection the user made while a slow folder
+    // was still being walked. The first row addPaths opens on an empty list is the add's own
+    // doing and does not count as one.
     const typingInEditor =
       ownsKeystroke(document.activeElement) && columnOf(document.activeElement) !== 'list'
     if (added.length === 0 || typingInEditor || tracksFilterActive) return
@@ -1477,7 +1488,7 @@ export default function App(): React.JSX.Element {
         current.anchor === selectedBefore.anchor && current.ids.length === selectedBefore.ids.length
       const openedByTheAdd =
         selectedBefore.anchor === null && current.ids.every((id) => fresh.has(id))
-      return untouched || openedByTheAdd ? { ids: added, anchor: added[0] } : current
+      return untouched || openedByTheAdd ? { ids: [added[0]], anchor: added[0] } : current
     })
   })
   const pickFiles = useStableCallback(
@@ -5041,6 +5052,8 @@ export default function App(): React.JSX.Element {
                         <TrackListSkeleton
                           testid="source-playlist-loading"
                           label={tr('sources.loadingPlaylist')}
+                          showWaves={showListWaves}
+                          showLocation={!showSidebar}
                         />
                       ) : browser.entriesFailed && browser.source ? (
                         // A failed read is not an empty playlist either. The tree's own failure

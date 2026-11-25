@@ -10,6 +10,7 @@ import type {
   AppleMusicTrackMeta,
 } from '../shared/types'
 import { appleScriptString, runOsascript } from './applemusic'
+import { loadTrackLocations, saveTrackLocations } from './appleMusicPlaylistCache'
 
 export function buildPlaylistDumpScript(): string {
   return [
@@ -283,9 +284,7 @@ export function buildLibraryPlaylistScript(
       : `  if (hex(p.persistentID.description.js) === ${JSON.stringify(persistentId)}) found = p`,
     '}',
     "if (!found) throw new Error('playlist not in the library database')",
-    // Reading location.path resolves every file on the NAS (measured: 41 s for a 2,171-track
-    // library, against 0.1 s for the dates), so Recently added picks its tracks by date first
-    // and reads the rest only for those.
+    // Recently added picks its tracks by date first and reads the rest only for those.
     ...(recent
       ? [
           ...recentPicked(since),
@@ -295,7 +294,6 @@ export function buildLibraryPlaylistScript(
         ]
       : ['const items = found.items']),
     'const col = (key) => ObjC.deepUnwrap(items.valueForKeyPath(key))',
-    "const paths = col('location.path')",
     "const pids = col('persistentID.description')",
     "const groupings = col('grouping')",
     "const years = col('year')",
@@ -305,14 +303,15 @@ export function buildLibraryPlaylistScript(
     "const bpms = col('beatsPerMinute')",
     "const ratings = col('rating')",
     "const computed = col('ratingComputed')",
+    "const modified = col('modifiedDate')",
     "const text = (v) => (v === null || v === undefined ? '' : String(v))",
     recent
       ? 'const order = picked.map((_, k) => k).sort((a, b) => added[picked[b]] - added[picked[a]])'
       : 'const order = pids.map((_, i) => i)',
     'const rows = order.map((i) =>',
-    '  [text(paths[i]), hex(pids[i]), text(groupings[i]), text(years[i]), text(comments[i]),',
+    "  ['', hex(pids[i]), text(groupings[i]), text(years[i]), text(comments[i]),",
     '   text(trackNos[i]), text(discNos[i]), text(bpms[i]), text(ratings[i]),',
-    "   computed[i] ? 'computed' : 'user'].join('\\u001f'))",
+    "   computed[i] ? 'computed' : 'user', modified[i] ? String(modified[i].getTime()) : ''].join('\\u001f'))",
     "order.length + '\\u001d' + rows.join('\\u001e')",
   ].join('\n')
 }
@@ -352,12 +351,65 @@ export function musicRecentSince(now: Date): number {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30).getTime()
 }
 
+// The file of each of the given tracks, looked up in the whole library. This is the read that
+// asks the NAS file by file: 41 s for a 2,171-track library on a warm NAS, almost 4 minutes
+// on a cold one, through a macOS service that serves one read at a time and finishes a read
+// even when Surco gives up on it.
+export function buildLocationsScript(persistentIds: string[]): string {
+  return [
+    "ObjC.import('iTunesLibrary')",
+    "const hex = (n) => BigInt(n).toString(16).toUpperCase().padStart(16, '0')",
+    "const lib = $.ITLibrary.libraryWithAPIVersionError('1.0', null)",
+    'const lists = lib.allPlaylists',
+    'let found = null',
+    'for (let i = 0; i < lists.count && !found; i++) {',
+    '  const p = lists.objectAtIndex(i)',
+    '  if (p.master) found = p',
+    '}',
+    "if (!found) throw new Error('library playlist not in the library database')",
+    `const wanted = new Set(${JSON.stringify(persistentIds)})`,
+    "const all = ObjC.deepUnwrap(found.items.valueForKeyPath('persistentID.description')).map(hex)",
+    'const set = $.NSMutableIndexSet.indexSet',
+    'all.forEach((pid, i) => { if (wanted.has(pid)) set.addIndex(i) })',
+    'const items = found.items.objectsAtIndexes(set)',
+    "const pids = ObjC.deepUnwrap(items.valueForKeyPath('persistentID.description')).map(hex)",
+    "const paths = ObjC.deepUnwrap(items.valueForKeyPath('location.path'))",
+    "pids.map((pid, i) => pid + '\\u001f' + (paths[i] || '')).join('\\u001e')",
+  ].join('\n')
+}
+
+// The playlist's rows come from the database without a file location; each track's file is
+// the one resolved before unless Music modified the track since, and only the rest are
+// resolved now.
 export async function readLibraryPlaylist(persistentId: string): Promise<AppleMusicPlaylistTracks> {
   const stdout = await runOsascript(buildLibraryPlaylistScript(persistentId), {
     maxBuffer: 64 * 1024 * 1024,
     language: 'JavaScript',
   })
-  return parsePlaylistTracks(stdout)
+  const at = stdout.indexOf(GS)
+  const rows = stdout
+    .slice(at + 1)
+    .replace(/\n$/, '')
+    .split(RS)
+    .filter(Boolean)
+    .map((row) => row.split(US))
+  const known = loadTrackLocations()
+  const modifiedOf = new Map(rows.map((f) => [f[1], f[10] ?? '']))
+  const stale = [...modifiedOf].filter(([pid, modified]) => known[pid]?.modified !== modified)
+  if (stale.length > 0) {
+    const resolved = await runOsascript(buildLocationsScript(stale.map(([pid]) => pid)), {
+      maxBuffer: 64 * 1024 * 1024,
+      language: 'JavaScript',
+    })
+    for (const [pid] of stale) delete known[pid]
+    for (const row of resolved.replace(/\n$/, '').split(RS)) {
+      const [pid, path] = row.split(US)
+      if (pid && path) known[pid] = { path, modified: modifiedOf.get(pid) ?? '' }
+    }
+    saveTrackLocations(known)
+  }
+  const body = rows.map((f) => [known[f[1]]?.path ?? '', ...f.slice(1, 10)].join(US))
+  return parsePlaylistTracks(`${stdout.slice(0, at + 1)}${body.join(RS)}`)
 }
 
 // Which tracks every playlist holds, by persistent ID, from the library database: no file is

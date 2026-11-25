@@ -121,6 +121,7 @@ function retag(
     undefined,
     undefined,
     false,
+    undefined,
     keepAudio,
   )
 }

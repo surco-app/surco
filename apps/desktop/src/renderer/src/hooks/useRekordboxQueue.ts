@@ -11,8 +11,8 @@ import type {
 import { claimCueSave } from '../lib/cueSaveEcho'
 import {
   appliedMessage,
-  type CueSpot,
   ENGINE_QUEUE_WORDS,
+  type QueueRow,
   type QueueWords,
   REKORDBOX_QUEUE_WORDS,
   SERATO_QUEUE_WORDS,
@@ -72,7 +72,7 @@ export const PROGRAM_QUEUES = {
 } satisfies Record<CueProgram, { source: QueueSource; testid: string } | null>
 
 export function useRekordboxQueue(
-  notify: (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => void,
+  notify: (text: string, tone: 'neutral' | 'danger', rows?: QueueRow[]) => void,
   onDiscarded: (paths: string[]) => void,
   onWritten: (written: RekordboxQueueWritten[]) => void,
   source: QueueSource = REKORDBOX_QUEUE,
@@ -129,7 +129,7 @@ export function useRekordboxQueue(
         confirmedByEditor ? { ...applied, tracks: 0, changes: 0 } : applied,
         source.words,
       )
-      if (message?.goTo) notify(message.text, message.tone, message.goTo)
+      if (message?.rows?.length) notify(message.text, message.tone, message.rows)
       else if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)
       if ('created' in applied && applied.created) onCreated?.(applied.created)

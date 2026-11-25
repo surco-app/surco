@@ -200,10 +200,12 @@ describe('useRekordboxQueue', () => {
     const { notify, applied } = setup()
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 1, contentId: '7', ms: 1000 }
     act(() => applied({ tracks: 0, changes: 1, notices: [unfit], written: [] }))
-    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Pray'), 'neutral', {
-      contentId: '7',
-      ms: 1000,
-    })
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 change', 'neutral', [
+      expect.objectContaining({
+        sub: expect.stringContaining('Pray'),
+        goTo: { contentId: '7', ms: 1000 },
+      }),
+    ])
   })
 
   it('hands back what landed so the fields the collection now holds are cleared', async () => {
@@ -429,10 +431,12 @@ describe('useRekordboxQueue on the Serato cue queue', () => {
         written: [],
       }),
     )
-    expect(notify).toHaveBeenCalledWith(
-      'Done in Serato · 1 track. The cues of Tengo were not saved. Surco could not write the file',
-      'neutral',
-    )
+    expect(notify).toHaveBeenCalledWith('Done in Serato · 1 track', 'neutral', [
+      expect.objectContaining({
+        title: 'Cues of 1 track not saved',
+        sub: 'Surco could not write the file · Tengo',
+      }),
+    ])
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
   })
 
