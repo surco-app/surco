@@ -128,6 +128,18 @@ describe('TrackContextMenu keyboard', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  // Opened over the list, the menu has no place in the Tab order: Shift+Tab closes it
+  // just like Tab, and neither moves on, so focus goes back to the row it was opened on.
+  it('closes on Shift+Tab too, without letting the move go on', () => {
+    const { onClose } = renderMenu()
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('track-menu'), {
+      key: 'Tab',
+      shiftKey: true,
+    })
+    expect(carriedOn).toBe(false)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
   // VoiceOver announces "menu" with no name and reads the dividers as nothing at all; the
   // name says what the menu acts on and the separators mark where each group starts.
   it('names the menu and exposes its dividers as separators', () => {

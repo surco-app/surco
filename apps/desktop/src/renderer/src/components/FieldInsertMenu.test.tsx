@@ -167,6 +167,18 @@ describe('FieldInsertMenu', () => {
     expect(host()).toHaveFocus()
   })
 
+  it('closes on Shift+Tab too and stays on the field', () => {
+    render(<Harness />)
+    openMenu()
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('field-insert-option-year'), {
+      key: 'Tab',
+      shiftKey: true,
+    })
+    expect(carriedOn).toBe(false)
+    expect(screen.queryByTestId('field-insert-menu')).toBeNull()
+    expect(host()).toHaveFocus()
+  })
+
   it('keeps the backdrop out of the Tab order', () => {
     render(<Harness />)
     openMenu()
