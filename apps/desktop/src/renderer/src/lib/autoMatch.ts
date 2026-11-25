@@ -166,6 +166,9 @@ export function acceptReviewPatch(
     meta: patch.meta,
     coverUrl: patch.coverUrl,
     coverPath: patch.coverPath,
+    // Accepting is the DJ's pick, so a cover it brings is theirs: a library copy found later
+    // leaves it alone, as it does a release clicked in the editor.
+    ...(patch.coverUrl !== track.coverUrl ? { coverPicked: true } : {}),
     appliedRelease: patch.appliedRelease,
     matched: true,
     autoMatched: true,
