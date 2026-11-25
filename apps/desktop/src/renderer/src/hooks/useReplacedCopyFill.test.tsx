@@ -178,6 +178,24 @@ describe('useReplacedCopyFill', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
+  // The fill runs in the background of an opening: a failure in it must not surface as an
+  // unhandled rejection, which also fails the whole test run.
+  it('swallows a failure while applying the fill', async () => {
+    setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })))
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+    const onChange = vi.fn(() => {
+      throw new Error('row gone')
+    })
+    renderHook(() =>
+      useReplacedCopyFill({ item: track(), copyPath: '/old/your-love.mp3', onChange }),
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    await new Promise((resolve) => setImmediate(resolve))
+    process.off('unhandledRejection', unhandled)
+    expect(unhandled).not.toHaveBeenCalled()
+  })
+
   it('takes the copy artwork when the new file has none, so the replacement keeps its cover', async () => {
     const readCoverFull = vi.fn<Api['readCoverFull']>().mockResolvedValue(COPY_COVER)
     setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({})), readCoverFull)

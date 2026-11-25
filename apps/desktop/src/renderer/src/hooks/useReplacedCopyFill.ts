@@ -81,9 +81,11 @@ export function useReplacedCopyFill({
       : Promise.resolve(null)
     // A copy that cannot be read still lends what Music's database holds for it.
     const tags = window.api.readTags(copyPath).catch(() => null)
-    Promise.all([tags, cover, ownCover, music]).then(([copy, art, own, entry]) => {
-      if (!cancelled) apply(copy, art, own, entry)
-    })
+    Promise.all([tags, cover, ownCover, music])
+      .then(([copy, art, own, entry]) => {
+        if (!cancelled) apply(copy, art, own, entry)
+      })
+      .catch(() => {})
     return () => {
       cancelled = true
     }
