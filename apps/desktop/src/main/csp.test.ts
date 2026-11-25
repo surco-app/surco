@@ -63,3 +63,17 @@ describe('img-src cover-CDN allowlists', () => {
     expect(headerCsp.trim().split(/\s+/).sort()).toEqual(metaCsp.trim().split(/\s+/).sort())
   })
 })
+
+describe('script-src', () => {
+  const metaScripts = readFileSync(join(root, 'src/renderer/index.html'), 'utf-8').match(
+    /script-src ([^;]+);/,
+  )?.[1]
+  const headerScripts = readFileSync(join(root, 'src/main/index.ts'), 'utf-8').match(
+    /"script-src ([^"]+)"/,
+  )?.[1]
+
+  it('allows WebAssembly so the auto cue engine compiles', () => {
+    for (const scripts of [metaScripts, headerScripts])
+      expect(scripts?.split(/\s+/)).toContain("'wasm-unsafe-eval'")
+  })
+})

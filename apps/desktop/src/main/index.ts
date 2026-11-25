@@ -2601,7 +2601,7 @@ app.whenReady().then(() => {
   if (app.isPackaged) {
     const csp = [
       "default-src 'self'",
-      "script-src 'self'",
+      "script-src 'self' 'wasm-unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: surco: https://i.discogs.com https://img.discogs.com https://*.bcbits.com https://*.dzcdn.net https://geo-media.beatport.com https://coverartarchive.org https://archive.org https://*.archive.org https://*.mzstatic.com",
       "media-src 'self' blob: surco:",
