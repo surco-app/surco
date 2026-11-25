@@ -270,13 +270,11 @@ export function ExportButton({
     onSelectDestination(d)
   }
 
+  // A pick only sets what the body does (26/11): writing to a library straight from a menu row
+  // came as a surprise, so the DJ presses the body once it says what will happen.
   function pickLibraryAction(action: LibraryCopyAction): void {
     setOpen(false)
     onLibraryActionChange?.(action)
-    // The stars warning shows only once the body says Replace, so a Replace that costs them
-    // waits for the body's press: run from here, the DJ would read the warning too late.
-    const warnsFirst = action === 'replace' && !!libraryCopy?.replaceLosesStars
-    if (!libraryCopy?.held && !softBlocked && !warnsFirst) onLibraryAction?.(action)
   }
 
   // Only while the body acts on the copy: an in-place update or a re-export outranks it there,

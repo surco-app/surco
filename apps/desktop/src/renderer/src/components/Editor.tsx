@@ -66,7 +66,7 @@ import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useSameFile } from '../hooks/useSameFile'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
-import { useSeratoLosesStars, useSeratoStarsLoss } from '../hooks/useSeratoLosesStars'
+import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
 import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
@@ -1915,10 +1915,6 @@ export const Editor = memo(function Editor({
   // on it would update or replace the very file. Until main answers, the press waits.
   const pickedIsThisFile = useSameFile(item.inputPath, pickedCopy?.path ?? '')
   const { libraryTarget, keptFormat } = libraryTargetOf({ pickedCopy, pickedIsThisFile })
-  // Asked whatever the body says, since it decides whether picking Replace may run at once.
-  const replaceStarsLoss = useSeratoStarsLoss(
-    libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
-  )
   // Kept for this track and that copy alone: another version is the DJ's call one track at a
   // time, and must not turn the remembered action of every real copy.
   const [otherVersionPick, setOtherVersionPick] = useState<{
@@ -1931,7 +1927,6 @@ export const Editor = memo(function Editor({
   const { copyAction, libraryCopy } = libraryCopyOfferOf({
     libraryTarget,
     keptFormat,
-    replaceStarsLoss,
     libraryCopyAction,
     otherVersionAction:
       otherVersionPick && otherVersionPick.key === otherVersionKey

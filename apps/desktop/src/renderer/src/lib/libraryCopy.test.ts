@@ -24,7 +24,6 @@ import {
   pickedCopyOf,
   pickLibraryCopy,
   replaceCopyPatch,
-  replaceWarnsFirst,
   versionCopyIn,
   versionCopyPath,
 } from './libraryCopy'
@@ -709,24 +708,6 @@ describe('keptFormatOf', () => {
   })
 })
 
-// A menu Replace runs at once only when it is known to cost no stars: on a Serato copy whose
-// collection is not read yet, the first Replace would go through before the warning could show.
-describe('replaceWarnsFirst', () => {
-  it('holds a Replace on a Serato copy while the stars loss is unknown', () => {
-    expect(replaceWarnsFirst('serato', undefined)).toBe(true)
-  })
-
-  it('holds a Replace that is known to cost stars, whatever the program', () => {
-    expect(replaceWarnsFirst('rekordbox', true)).toBe(true)
-    expect(replaceWarnsFirst('serato', true)).toBe(true)
-  })
-
-  it('runs a Replace known to cost nothing, or unknown on a copy Serato did not hand over', () => {
-    expect(replaceWarnsFirst('serato', false)).toBe(false)
-    expect(replaceWarnsFirst('rekordbox', undefined)).toBe(false)
-  })
-})
-
 describe('comparedCopyOf', () => {
   it('compares the library copy when it is another file than the open one', () => {
     expect(
@@ -1043,7 +1024,6 @@ describe('libraryCopyOfferOf', () => {
   const base: LibraryCopyOfferContext = {
     libraryTarget: target(),
     keptFormat: 'aiff',
-    replaceStarsLoss: false,
     libraryCopyAction: 'update',
   }
 
@@ -1059,7 +1039,6 @@ describe('libraryCopyOfferOf', () => {
         keptFormat: 'aiff',
         updatable: true,
         replaceable: true,
-        replaceLosesStars: false,
       },
     })
   })
@@ -1103,17 +1082,6 @@ describe('libraryCopyOfferOf', () => {
         keptFormat: undefined,
       }).copyAction,
     ).toBe('update')
-  })
-
-  it('warns that replacing loses Serato stars until the collection says otherwise', () => {
-    const serato = { ...base, libraryTarget: target({ program: 'serato' }) }
-    expect(
-      libraryCopyOfferOf({ ...serato, replaceStarsLoss: undefined }).libraryCopy?.replaceLosesStars,
-    ).toBe(true)
-    expect(libraryCopyOfferOf(serato).libraryCopy?.replaceLosesStars).toBe(false)
-    expect(
-      libraryCopyOfferOf({ ...base, replaceStarsLoss: true }).libraryCopy?.replaceLosesStars,
-    ).toBe(true)
   })
 
   it('offers nothing without a copy, and keeps the chosen action', () => {
