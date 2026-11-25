@@ -113,6 +113,7 @@ import {
   pickLibraryCopy,
   replaceCopyPatch,
   versionCopyIn,
+  isAnotherVersion,
   versionCopyPath,
 } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
@@ -1990,12 +1991,24 @@ export const Editor = memo(function Editor({
     musicCopy && !musicHoldsFile && !item.musicPersistentId && fillPath === musicCopy.path
       ? musicCopy.music.persistentId
       : undefined
+  // A DJ copy of this recording fills, but the DJ may have filed the song in Music under
+  // another version: that copy still lends its grouping, like any other version.
+  const versionMusic =
+    musicCopy &&
+    !musicHoldsFile &&
+    !item.musicPersistentId &&
+    musicCopy.path &&
+    fillPath !== musicCopy.path &&
+    isAnotherVersion(musicCopy, item.duration)
+      ? { path: musicCopy.path, entry: musicCopy.music.persistentId }
+      : undefined
   const lendGroup = `library-lend-${lendOpening}`
   useReplacedCopyFill({
     item,
     copyPath: fillPath,
     anotherVersion: !sameRecordingCopyPath,
     musicEntry: musicCopyEntry,
+    versionMusic,
     onChange,
     onRecordUndo: (ids, opts) => onRecordUndo?.(ids, { ...opts, group: lendGroup }),
   })

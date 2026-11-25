@@ -13,6 +13,9 @@ interface Params {
   // The copy's Apple Music entry, when the copy is in Music: Music keeps the grouping and the
   // artwork of a WAV in its database only, since it never writes tags into one.
   musicEntry?: string
+  // A Music copy that is another version while a DJ copy of this recording fills: it lends its
+  // grouping, from Music's database, where the copy's own tags leave it empty.
+  versionMusic?: { path: string; entry: string }
   onChange: (patch: Partial<TrackItem>) => void
   onRecordUndo?: (ids: string[], opts: { cover: boolean }) => void
 }
@@ -22,6 +25,7 @@ export function useReplacedCopyFill({
   copyPath,
   anotherVersion = false,
   musicEntry = '',
+  versionMusic,
   onChange,
   onRecordUndo,
 }: Params): void {
@@ -36,6 +40,7 @@ export function useReplacedCopyFill({
       cover: string | null,
       ownCover: string | null,
       music: AppleMusicTrackMeta | null,
+      versionEntry: AppleMusicTrackMeta | null,
     ) => {
       const fromFile = !copy
         ? null
@@ -43,7 +48,8 @@ export function useReplacedCopyFill({
           ? groupingFromCopy(item.meta, copy)
           : fillFromCopy(item.meta, copy)
       const fromMusic = music ? musicFill(fromFile ?? item.meta, music, anotherVersion) : null
-      const meta = fromMusic ?? fromFile
+      const filled = fromMusic ?? fromFile
+      const meta = (versionEntry && groupingFromCopy(filled ?? item.meta, versionEntry)) || filled
       const coverUrl = cover && copyCoverWins(item, cover, ownCover) ? cover : null
       const musicCoverUrl =
         !cover && !item.coverUrl && !item.coverRemoved && music?.coverUrl ? music.coverUrl : null
@@ -79,17 +85,20 @@ export function useReplacedCopyFill({
     const music = musicEntry
       ? window.api.appleMusicEntryMeta(copyPath, [musicEntry]).catch(() => null)
       : Promise.resolve(null)
+    const version = versionMusic
+      ? window.api.appleMusicEntryMeta(versionMusic.path, [versionMusic.entry]).catch(() => null)
+      : Promise.resolve(null)
     // A copy that cannot be read still lends what Music's database holds for it.
     const tags = window.api.readTags(copyPath).catch(() => null)
-    Promise.all([tags, cover, ownCover, music])
-      .then(([copy, art, own, entry]) => {
-        if (!cancelled) apply(copy, art, own, entry)
+    Promise.all([tags, cover, ownCover, music, version])
+      .then(([copy, art, own, entry, versionEntry]) => {
+        if (!cancelled) apply(copy, art, own, entry, versionEntry)
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
-  }, [item.id, copyPath, musicEntry, ready])
+  }, [item.id, copyPath, musicEntry, versionMusic?.path, versionMusic?.entry, ready])
 }
 
 // Another version lends Music's grouping alone, like its file's: its year or comment belong
