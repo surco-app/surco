@@ -2000,11 +2000,12 @@ export const Editor = memo(function Editor({
     onRecordUndo: (ids, opts) => onRecordUndo?.(ids, { ...opts, group: lendGroup }),
   })
   // Another version lends its playlists program by program, each judged by its own copies.
-  // Only into a field the DJ can see: with the metadata folded the picks wait until it opens.
+  // Only into a field the DJ can see: with the metadata folded, or a section blown up over the
+  // whole window, the picks wait until it is back in view.
   useVersionCopyPlaylists({
     item,
     copies:
-      isMulti || !formOpen
+      isMulti || !formOpen || maximized !== null
         ? {}
         : Object.fromEntries(
             DJ_PROGRAMS.filter((program) => visibleFields.includes(PLAYLIST_FIELDS[program])).map(

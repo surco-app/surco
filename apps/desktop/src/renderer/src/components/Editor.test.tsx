@@ -7403,6 +7403,25 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(staged()).toHaveLength(1))
     })
 
+    // A section blown up to the whole window hides the metadata just as folding it does, so
+    // the picks wait until the DJ is back in the column.
+    it('stages the playlists of another version only once no section is maximized', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      fireEvent.click(screen.getAllByTestId('section-maximize')[0])
+      expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+      const staged = () =>
+        rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(staged()).toEqual([])
+      fireEvent.keyDown(window, { key: 'Escape' })
+      await waitFor(() => expect(staged()).toHaveLength(1))
+    })
+
     // Opening the track lent the copy's grouping and staged its playlists: both are what the
     // opening did, so a single ⌘Z takes them back together.
     it('records the grouping and the playlists another version lends as one undo step', async () => {
