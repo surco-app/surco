@@ -12,6 +12,7 @@ import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
 import {
   fromReadOnlyProgram,
   isFrom,
+  keepsOwnFormat,
   READ_ONLY_BLOCKED,
   readOnlyProgramsOf,
 } from '../../../shared/trackOrigin'
@@ -234,7 +235,7 @@ function planOf(track: TrackItem, pick: BatchPick, audio: AudioProcessing): Trac
     track.inputPath,
     'aiff',
     keep,
-    track.fromAppleMusic,
+    keepsOwnFormat(track),
     pick.formatByHand,
   )
   const facets = pick.destination ? fromDestination(pick.destination) : settings

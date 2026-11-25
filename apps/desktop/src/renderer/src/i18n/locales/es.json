@@ -1410,7 +1410,6 @@
     "libraryStateLibraryIn": "Mejor copia en {{program}}",
     "libraryStateDifferentBare": "Otra versión",
     "libraryStateDifferent": "Otra versión · {{duration}}",
-    "libraryStateTie": "Parecidas",
     "libraryStateThisFile": "Es este archivo",
     "libraryStateMissing": "No se encuentra",
     "libraryStateUnreadable": "No se puede leer",

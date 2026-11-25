@@ -4,6 +4,7 @@ import { Suspense, useMemo } from 'react'
 import { effectiveMeta } from '../../../shared/customFields'
 import type { DjProgram } from '../../../shared/djProgram'
 import { formatExtension, resolveJobFormat } from '../../../shared/format'
+import { keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   FormatSetting,
   PlaylistLibrary,
@@ -226,7 +227,7 @@ export function Overlays({
                 selected.inputPath,
                 'aiff',
                 editorFormatRef.current === null && (settings?.keepMp3Sources ?? false),
-                selected.fromAppleMusic,
+                keepsOwnFormat(selected),
                 editorFormatRef.current !== null,
               ),
             )}

@@ -12,6 +12,7 @@ import {
   countsAsCopy,
   type FillCandidate,
   fillCopyPath,
+  isAnotherVersion,
   keptFormatOf,
   type LibraryCopyOfferContext,
   type LibraryCopyTarget,
@@ -30,7 +31,7 @@ import {
 import { replacePatch } from './replaceBeforeConvert'
 
 describe('countsAsCopy', () => {
-  it.each(['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
+  it.each(['same', 'even', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
     'counts every verdict about the same recording as a copy, since the DJ already has that track there (%s)',
     (verdict) => {
       expect(countsAsCopy(verdict)).toBe(true)
@@ -77,7 +78,7 @@ describe('copyPathIn and the length of the copy', () => {
     { program: 'rekordbox' as const, path: '/r/a.aiff', verdict, durationSec },
   ]
 
-  const counted = ['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const
+  const counted = ['same', 'even', 'here', 'library', 'unmeasurable', 'measuring'] as const
 
   it.each(counted)(
     'does not file another edit in the set, whatever the verdict says (%s)',
@@ -565,6 +566,94 @@ describe('pickLibraryCopy', () => {
   })
 })
 
+// rekordbox holds the track at 7:06 and the open file runs 7:01: the same master with five
+// more seconds of silence, which the comparison confirmed across the gap. For the DJ it is the
+// same track, so it counts as the copy wherever a matching length would.
+describe('one master the comparison lined up across a length gap', () => {
+  const confirmed = (verdict: LibraryVerdict) => ({
+    program: 'rekordbox' as const,
+    path: '/r/a.aiff',
+    verdict,
+    durationSec: 426,
+    sameMasterAcrossGap: { headShiftSec: 5 },
+  })
+  const counted = ['same', 'even', 'here', 'library', 'unmeasurable'] as const
+  const fill = (copy: FillCandidate | null, programs: FillCandidate[]) => ({
+    musicCopy: copy,
+    musicCopyPending: false,
+    programs,
+    programsPending: false,
+    fileDurationSec: 421,
+  })
+
+  it.each(counted)('counts it as the copy of this recording (%s)', (verdict) => {
+    expect(copyPathIn('rekordbox', [confirmed(verdict)], 421)).toBe('/r/a.aiff')
+    expect(isAnotherVersion(confirmed(verdict), 421)).toBe(false)
+  })
+
+  it('fills every empty field from it, in a DJ program or in Apple Music', () => {
+    expect(fillCopyPath(fill(null, [confirmed('here')]))).toBe('/r/a.aiff')
+    const music = { ...confirmed('same'), path: '/m/a.mp3' }
+    expect(fillCopyPath(fill(music, []))).toBe('/m/a.mp3')
+    expect(versionCopyPath(fill(music, []))).toBe('')
+  })
+
+  // The field acts on the copy at once, so nothing of it is staged on the track.
+  it('stages none of its playlists, since it is the track itself', () => {
+    expect(versionCopyIn('rekordbox', [confirmed('library')], 421, false)).toBe('')
+  })
+
+  const candidate = (headShiftSec: number, path = '/r/a.aiff'): CopyCandidate => ({
+    ...rekordbox,
+    ...confirmed('same'),
+    path,
+    sameMasterAcrossGap: { headShiftSec },
+  })
+
+  it('offers it to Update or Replace, it is the copy the DJ has of this track', () => {
+    expect(pickLibraryCopy([candidate(5)], 421)).toMatchObject({
+      path: '/r/a.aiff',
+      held: false,
+      replaceable: true,
+    })
+  })
+
+  // A Replace finds the shift between the two files only within 5 s, so music that starts 8 s
+  // later would leave every cue 8 s off: Update, which never touches the audio, is all it gets.
+  it('offers it to Update alone when its music starts further off than a Replace finds the shift', () => {
+    expect(pickLibraryCopy([candidate(8)], 421)).toMatchObject({
+      path: '/r/a.aiff',
+      replaceable: false,
+    })
+  })
+
+  it('leaves a copy Surco can neither update nor replace to a plain Convert, as before', () => {
+    expect(pickLibraryCopy([candidate(8, '/r/a.ogg')], 421)).toBeNull()
+    expect(
+      pickLibraryCopy([candidate(8, '/r/a.ogg'), { ...traktor, durationSec: 421 }], 421),
+    ).toMatchObject({ program: 'traktor' })
+    expect(pickLibraryCopy([candidate(5, '/r/a.ogg')], 421)).toMatchObject({ replaceable: true })
+  })
+
+  it('replaces a copy whose length matches whatever its music start, the cue shift is measured', () => {
+    expect(pickLibraryCopy([{ ...candidate(8), durationSec: 421.5 }], 421)).toMatchObject({
+      replaceable: true,
+    })
+  })
+
+  it('never counts a copy the comparison called another version', () => {
+    expect(copyPathIn('rekordbox', [confirmed('different')], 421)).toBeUndefined()
+    expect(isAnotherVersion(confirmed('different'), 421)).toBe(true)
+  })
+
+  it('keeps the length rule without the confirmation, the gap then says another edit', () => {
+    const plain = { ...confirmed('here'), sameMasterAcrossGap: undefined }
+    expect(copyPathIn('rekordbox', [plain], 421)).toBeUndefined()
+    expect(isAnotherVersion(plain, 421)).toBe(true)
+    expect(versionCopyIn('rekordbox', [plain], 421, false)).toBe('/r/a.aiff')
+  })
+})
+
 describe('replaceCopyPatch', () => {
   it('replaces a DJ copy by its path alone, Apple Music is not involved', () => {
     const target = pickLibraryCopy([rekordbox], 210)
@@ -772,6 +861,7 @@ describe('musicCopyOf', () => {
     replacedCopyFormat: 'MP3 320',
     libraryCopyBetter: true,
     musicEntryDurationSec: 200,
+    copyVerdict: null,
   }
 
   it('offers the Music copy with its row verdict, its format and its own entry', () => {
@@ -814,6 +904,7 @@ describe('pickedCopyOf', () => {
     replacedCopyFormat: 'MP3 320',
     libraryCopyBetter: false,
     musicEntryDurationSec: undefined,
+    copyVerdict: null,
   }).musicCopy
   const state = (over: Partial<CopyVerdictState> = {}): CopyVerdictState => ({
     verdict: { winner: 'b', reason: 'lossless' },
@@ -842,6 +933,7 @@ describe('pickedCopyOf', () => {
       better: true,
       durationSec: 210,
       held: false,
+      replaceable: true,
     })
   })
 
@@ -923,6 +1015,7 @@ describe('libraryCopyOfferOf', () => {
     better: true,
     durationSec: 210,
     held: false,
+    replaceable: true,
     ...over,
   })
   const base: LibraryCopyOfferContext = {
@@ -943,6 +1036,7 @@ describe('libraryCopyOfferOf', () => {
         held: false,
         keptFormat: 'aiff',
         updatable: true,
+        replaceable: true,
         replaceLosesStars: false,
       },
     })

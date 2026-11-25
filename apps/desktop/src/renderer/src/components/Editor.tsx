@@ -27,6 +27,7 @@ import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
+import { keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   CueSaveThen,
   DeclickConfig,
@@ -43,6 +44,7 @@ import type {
   TrackMetadata,
 } from '../../../shared/types'
 import { useAppleMusicFill } from '../hooks/useAppleMusicFill'
+import { useGatedWave, withAudible } from '../hooks/useAudibleSpan'
 import { useBpm } from '../hooks/useBpm'
 import type { CleanupOffer } from '../hooks/useConfirmFlows'
 import { useCopyDuration, withDuration } from '../hooks/useCopyDuration'
@@ -88,7 +90,7 @@ import {
   leftOutNote,
   offersSourceFormat,
 } from '../lib/batch'
-import type { CopyFacts, CopyReason, CopyVerdict } from '../lib/bestCopy'
+import { type CopyFacts, type CopyReason, type CopyVerdict, wantsAudibleSpans } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
@@ -597,7 +599,7 @@ export const Editor = memo(function Editor({
   const [format, setFormat] = useState(
     () =>
       rememberedPick?.format ??
-      resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic),
+      resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, keepsOwnFormat(item)),
   )
   // The menu's raw pick, offered unresolved only in multi-select: 'source' means
   // nothing against the anchor track alone, so it must reach processAll as the
@@ -685,7 +687,7 @@ export const Editor = memo(function Editor({
       keepMp3Sources,
     }
     const seededFormat = formatSettingChanged
-      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic)
+      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, keepsOwnFormat(item))
       : format
     if (formatSettingChanged) {
       formatByHand.current = false
@@ -857,15 +859,26 @@ export const Editor = memo(function Editor({
   const [musicCopyReach] = useCopyReach(
     comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
   )
-  const hereFacts = withDuration(
+  const hereMeasured = withDuration(
     useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
     useCopyDuration(item.inputPath, !!comparedCopyPath),
   )
-  const libraryFacts = withDuration(
+  const libraryMeasured = withDuration(
     useCopyFacts(comparedCopyPath, !!comparedCopyPath),
     useCopyDuration(comparedCopyPath, !!comparedCopyPath),
   )
   const copyPair = usePairFacts(item.inputPath, comparedCopyPath, !!comparedCopyPath)
+  const spansWanted =
+    !!hereMeasured &&
+    !!libraryMeasured &&
+    wantsAudibleSpans(hereMeasured, libraryMeasured, copyPair)
+  const [hereFacts, libraryFacts] = withAudible(
+    hereMeasured,
+    libraryMeasured,
+    useGatedWave(item.inputPath, spansWanted),
+    useGatedWave(comparedCopyPath, spansWanted),
+    spansWanted,
+  )
   const [copyOpenFor, setCopyOpenFor] = useState('')
   const { musicCopyUnreached, copyVerdict, copyMeasuring, copyOpen, libraryCopyBetter } =
     copyComparisonOf({
@@ -905,6 +918,7 @@ export const Editor = memo(function Editor({
     verdict: rowVerdict(programVerdicts[i]),
     // A collection may not store the length; the measured one then stands in for it.
     durationSec: copy.durationSec ?? programVerdicts[i]?.copy?.durationSec,
+    sameMasterAcrossGap: programVerdicts[i]?.verdict?.sameMasterAcrossGap,
   }))
   // Keyed on each program's copy target after the verdict filter, not on the rows (new on
   // every render, so a new copyPathOf would read the membership again each time) nor on the
@@ -1817,6 +1831,7 @@ export const Editor = memo(function Editor({
     replacedCopyFormat,
     libraryCopyBetter,
     musicEntryDurationSec,
+    copyVerdict,
   })
   // Only a copy of the same recording lends all its fields: another version of the track has
   // other tags, and lends only its grouping and cover when no such copy fills. In Music that is

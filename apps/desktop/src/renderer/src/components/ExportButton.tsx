@@ -286,6 +286,7 @@ export function ExportButton({
       heading: `${libraryCopy.name} · ${libraryCopy.format}`,
       action: libraryCopy.action,
       updatable: libraryCopy.updatable !== false,
+      replaceable: libraryCopy.replaceable !== false,
       onPick: pickLibraryAction,
     }
 

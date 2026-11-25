@@ -479,6 +479,12 @@ describe('batchFormats', () => {
     ])
   })
 
+  it('keeps a DJ library track in its own format under the Settings default, so organising a crate converts nothing', () => {
+    const fromTraktor = { ...flacA, programs: ['traktor' as const] }
+    expect(batchFormats([fromTraktor], pick(), quiet)).toEqual(['flac'])
+    expect(batchFormats([fromTraktor], pick({ formatByHand: true }), quiet)).toEqual(['aiff'])
+  })
+
   it('leaves out a track the run skips, so it does not decide the label', () => {
     expect(batchFormats([flacA, opus], pick({ format: 'source' }), quiet)).toEqual(['flac'])
   })

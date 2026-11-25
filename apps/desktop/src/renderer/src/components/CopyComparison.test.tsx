@@ -207,6 +207,29 @@ describe('CopyComparison', () => {
     expect(winners()).toEqual([])
   })
 
+  // 7:01 here and 7:06 in rekordbox, one master with five more seconds of silence: Surco takes
+  // it for the same track, and the two lengths tell the DJ why before picking Update or Replace.
+  it('puts the two lengths side by side for one master across a gap of silence', () => {
+    render(
+      <CopyComparison
+        libraryName="rekordbox"
+        verdict={{ winner: 'tie', sameMasterAcrossGap: { headShiftSec: 5 } }}
+        here={aif}
+        library={wav}
+        hereLabel="AIF"
+        libraryLabel="WAV"
+        hereDurationSec={421}
+        libraryDurationSec={426}
+      />,
+    )
+    expect(
+      within(screen.getByTestId('copy-row-duration'))
+        .getAllByRole('cell')
+        .map((c) => c.textContent),
+    ).toEqual(['7:01', '7:06'])
+    expect(winners()).toEqual([])
+  })
+
   // Two copies of one master that nothing separates: the reader gets the figures to decide,
   // with no row claiming to have decided.
   it('shows the figures of two alike copies with no deciding row', () => {

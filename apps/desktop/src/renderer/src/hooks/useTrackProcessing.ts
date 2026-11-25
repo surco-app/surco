@@ -8,7 +8,7 @@ import { DJ_PROGRAMS, type DjProgram, WRITABLE_PROGRAMS } from '../../../shared/
 import { DJ_REACH_SETTINGS } from '../../../shared/djSettings'
 import { splitNameLeftMarked } from '../../../shared/errorKeys'
 import { batchKeepMp3, hasFormatEquivalent, resolveJobFormat } from '../../../shared/format'
-import { fromReadOnlyProgram } from '../../../shared/trackOrigin'
+import { fromReadOnlyProgram, keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -403,7 +403,7 @@ export function useTrackProcessing({
         track.inputPath,
         'aiff',
         keep,
-        track.fromAppleMusic,
+        keepsOwnFormat(track),
         formatChosen ?? formatOverride !== undefined,
       )
       // A destination override expands to the full facet set: main falls back to

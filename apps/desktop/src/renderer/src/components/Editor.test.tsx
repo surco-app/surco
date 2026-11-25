@@ -14,6 +14,7 @@ import type {
   KeyNotation,
   LoudnessResult,
   NormalizeConfig,
+  PairProbe,
   Settings,
   TrackMetadata,
   TrackProperties,
@@ -3241,10 +3242,12 @@ describe('Editor convert line for a rekordbox track whose Music entry is this ve
   })
 
   it('converts its own Music copy to another format without calling it a replacement', async () => {
-    renderEditor({ ...track(read) }, 'mp3', { libraryIndex, addToRekordbox: true })
+    renderEditor({ ...track(read) }, 'aiff', { libraryIndex, addToRekordbox: true })
     await waitFor(() =>
       expect(window.api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF'),
     )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('process-format-mp3'))
     await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveAccessibleName('Convert'))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
   })
@@ -4079,6 +4082,18 @@ describe('Editor export control', () => {
     renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff', { overwriteOriginal: true })
     const button = screen.getByTestId('process-btn')
     expect(button).toHaveAccessibleName('Convert')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+  })
+
+  // A track from a DJ library is organised, not imported: the DJ opens it to fix its tags,
+  // and the AIFF default would rewrite a WAV the program already indexes.
+  it('opens a WAV from rekordbox in WAV, not in the Settings format', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav', programs: ['rekordbox'] }, 'aiff')
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('WAV')
+  })
+
+  it('opens a loose WAV in the Settings format, since the Tracks tab is where files convert', () => {
+    renderEditor({ id: 'a', inputPath: '/music/a.wav' }, 'aiff')
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
   })
 
@@ -6848,14 +6863,32 @@ describe('Editor Apple Music library section', () => {
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
-  // One master and nothing measurable between the copies: the row says they are alike and
-  // still opens the figures, so the reader can weigh them.
-  it('says two copies of one master are alike and opens their figures', async () => {
-    renderWithLibraryCopy({ here: aifLoudness, library: aifLoudness })
-    await waitFor(() => expect(screen.getByTestId('library-verdict')).toHaveAccessibleName('Alike'))
+  // One master and nothing measurable between the copies: for a DJ that is the same track at
+  // the same quality, so the row says so as an identical copy does, and still opens the
+  // figures, which are not byte for byte the same, so the reader can weigh them.
+  it('says two copies of one master are the same and opens their figures', async () => {
+    renderWithLibraryCopy({
+      here: aifLoudness,
+      library: aifLoudness,
+      hereDuration: 372,
+      libraryDuration: 372,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAccessibleName("It's the same"),
+    )
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same')
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-row-crest')).toBeInTheDocument()
     expect(screen.queryByTestId('copy-row-duration')).toBeNull()
+  })
+
+  // Without the copy's length Surco neither fills from it nor updates it, so the row does not
+  // call it the same track either.
+  it('says one master is only the same quality while the copy length is unknown', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: aifLoudness, hereDuration: 372 })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even'),
+    )
   })
 
   // The comparison is with the library's own copy of this track, so it only shows when there
@@ -6996,11 +7029,14 @@ describe('Editor Apple Music library section', () => {
       musicLocation,
       musicReadable = false,
       musicDurationPending = false,
+      musicDurationSec,
       sameFile,
       traktorLoading = false,
       musicEntryMeta,
       rekordboxPlaylists,
       formFolded = false,
+      pair,
+      waves = {},
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -7023,6 +7059,8 @@ describe('Editor Apple Music library section', () => {
       // Music's copy at the `music` path reads as a WAV, like the DJ copies.
       musicReadable?: boolean
       musicDurationPending?: boolean
+      // The length read from Music's copy at the `music` path.
+      musicDurationSec?: number
       // Main's answer to whether the open file and a copy are one file on disk.
       sameFile?: (a: string, b: string) => Promise<boolean>
       // Traktor's collection is still being read and never lands in the test.
@@ -7033,6 +7071,14 @@ describe('Editor Apple Music library section', () => {
       rekordboxPlaylists?: Record<string, string[]>
       // The metadata section, which holds the Playlists fields, starts folded.
       formFolded?: boolean
+      // Main's comparison of the two copies, in place of the one master lined up within 1 s.
+      pair?: PairProbe
+      // Each path's waveform as where its music starts and ends, and its length, or as peaks.
+      waves?: Record<
+        string,
+        | readonly [startSec: number, endSec: number, durationSec: number]
+        | { peaks: number[]; durationSec: number }
+      >
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7054,7 +7100,11 @@ describe('Editor Apple Music library section', () => {
         musicDurationPending && path === music
           ? new Promise<number | null>(() => {})
           : Promise.resolve(
-              path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+              path === herePath
+                ? (hereDuration ?? null)
+                : path === music && musicDurationSec !== undefined
+                  ? musicDurationSec
+                  : (copyAt(path)?.durationSec ?? null),
             ),
       )
       api.readTags = vi.fn(async (path: string) => {
@@ -7084,6 +7134,18 @@ describe('Editor Apple Music library section', () => {
         serato: { collection: async () => (serato ? entry(serato.path) : []) },
       })
       api.peekAnalysis = vi.fn().mockResolvedValue(null)
+      api.waveform = vi.fn(async (path: string) => {
+        const wave = waves[path]
+        if (!wave) return null
+        if ('peaks' in wave) return { ...wave, rms: wave.peaks }
+        const [startSec, endSec, durationSec] = wave
+        const buckets = 4000
+        const peaks = Array.from({ length: buckets }, (_, i) => {
+          const at = (i * durationSec) / buckets
+          return at >= startSec && at < endSec ? 0.5 : 0
+        })
+        return { peaks, rms: peaks, durationSec }
+      })
       api.spectrogram = vi.fn(async (path: string) => {
         const lossy = copyAt(path)?.lossy ?? false
         return {
@@ -7101,10 +7163,12 @@ describe('Editor Apple Music library section', () => {
       api.fingerprint = vi.fn(async (path: string) => path)
       api.comparePair = pairPending
         ? vi.fn(() => new Promise(() => {}))
-        : vi.fn(async () =>
-            identicalPair
-              ? { correlation: 1, residualDb: -90, gainDb: 0 }
-              : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 },
+        : vi.fn(
+            async () =>
+              pair ??
+              (identicalPair
+                ? { correlation: 1, residualDb: -90, gainDb: 0 }
+                : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }),
           )
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
@@ -7460,6 +7524,174 @@ describe('Editor Apple Music library section', () => {
       expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
         [],
       )
+    })
+
+    // 7:06 in rekordbox against 7:01 here: the same master with five more seconds of silence,
+    // which the wider search lined up as one and both waveforms show at the head. For the DJ it
+    // is the same track, so its album and genre are this file's and the Playlists field acts on
+    // that copy instead of staging it.
+    describe('one master five seconds longer in rekordbox', () => {
+      const longer: Copy = { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 426 }
+      const lined = { correlation: 0.3, residualDb: -1, gainDb: -6, versionCorrelation: 0.97 }
+      const here: [number, number, number] = [0.2, 420.9, 421]
+      const headPadded = { '/music/Strobe.aif': here, '/r/Strobe.wav': [5.2, 425.9, 426] as const }
+
+      it('fills every empty field and acts on its playlists once the audio confirms one master', async () => {
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': copyTags },
+          rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+          pair: lined,
+          waves: { ...headPadded, '/r/Strobe.wav': [5.2, 425.9, 426] },
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject(copyTags)
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even')
+        await waitFor(() =>
+          expect(screen.getByTestId('playlists-where')).toHaveTextContent('Makina'),
+        )
+        expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
+          [],
+        )
+      })
+
+      // The row opens on both lengths, so the DJ sees why before choosing Update or Replace.
+      it('shows both lengths in the comparison of one master across a gap of silence', async () => {
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          pair: lined,
+          waves: { ...headPadded, '/r/Strobe.wav': [5.2, 425.9, 426] },
+        })
+        await waitFor(() =>
+          expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even'),
+        )
+        fireEvent.click(screen.getByTestId('library-row'))
+        const lengths = within(screen.getByTestId('copy-row-duration')).getAllByRole('cell')
+        expect(lengths.map((cell) => cell.textContent)).toEqual(['7:01', '7:06'])
+      })
+
+      // 7:40 in rekordbox with music to its last second: the first minute lines up, but 39 s
+      // more music is another outro, so its album may be another release's.
+      it('stays another version when the gap is music, though the first minute lines up', async () => {
+        renderWithPrograms({
+          rekordbox: { ...longer, durationSec: 460 },
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': { ...copyTags, grouping: 'Bases' } },
+          rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+          pair: lined,
+          waves: { '/music/Strobe.aif': here, '/r/Strobe.wav': [0.2, 459.9, 460] },
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+        await waitFor(() =>
+          expect(rendered.onChange).toHaveBeenCalledWith({
+            playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+            copyPlaylistsFilled: ['rekordbox'],
+          }),
+        )
+      })
+
+      // Both copies end on the same slow fade-out, and the longer one starts with five seconds
+      // of dither: each file's own gate would end the music seconds apart on that fade.
+      it('counts one master padded with dither at its head though both end on a slow fade', async () => {
+        const fade = (t: number) =>
+          t < 394 ? 0.5 : t < 421 ? 10 ** ((-6 - ((t - 394) / 27) * 54) / 20) : 0
+        const peaks = (durationSec: number, padSec: number) =>
+          Array.from({ length: 4000 }, (_, i) => {
+            const t = (i * durationSec) / 4000
+            return t < padSec ? 10 ** (-66 / 20) : fade(t - padSec)
+          })
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': copyTags },
+          pair: lined,
+          waves: {
+            '/music/Strobe.aif': { peaks: peaks(421, 0), durationSec: 421 },
+            '/r/Strobe.wav': { peaks: peaks(426, 5), durationSec: 426 },
+          },
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject(copyTags)
+      })
+
+      it.each([
+        ['the wider search', { correlation: 0.3, residualDb: -1, gainDb: -6 }, headPadded],
+        ['the waveforms', lined, {}],
+      ] as const)(
+        'stays another version without %s to confirm one master',
+        async (_, pair, waves) => {
+          renderWithPrograms({
+            rekordbox: longer,
+            hereDuration: 421,
+            tags: { '/r/Strobe.wav': { ...copyTags, grouping: 'Bases' } },
+            rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+            pair,
+            waves: { ...waves },
+          })
+          await waitFor(() => expect(filledPatches()).toHaveLength(1))
+          expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+          await waitFor(() =>
+            expect(rendered.onChange).toHaveBeenCalledWith({
+              playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+              copyPlaylistsFilled: ['rekordbox'],
+            }),
+          )
+        },
+      )
+
+      const settled = (state = 'even') =>
+        waitFor(() => {
+          expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', state)
+          expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+        })
+
+      // Music 4.5 s later is within the 5 s a Replace measures the cue shift over.
+      it('replaces the copy when its music starts within the reach of the cue shift', async () => {
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          pair: lined,
+          waves: { ...headPadded, '/r/Strobe.wav': [4.7, 425.4, 426] },
+          libraryCopyAction: 'replace',
+        })
+        await settled()
+        expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace$/)
+        fireEvent.click(screen.getByTestId('process-btn'))
+        expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      })
+
+      // Eight seconds of silence more at the head: a Replace would leave every cue 8 s off, so
+      // the DJ gets Update, which keeps the copy's audio and its cues.
+      const eightLater = {
+        rekordbox: { ...longer, durationSec: 429 },
+        hereDuration: 421,
+        pair: lined,
+        waves: { '/music/Strobe.aif': here, '/r/Strobe.wav': [8.2, 428.9, 429] as const },
+        libraryCopyAction: 'replace' as const,
+      }
+
+      it('only updates the copy when its music starts further off than the cue shift reaches', async () => {
+        renderWithPrograms({ ...eightLater, waves: { ...eightLater.waves } })
+        await settled()
+        expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+        fireEvent.click(screen.getByTestId('process-format-toggle'))
+        expect(screen.getByTestId('library-copy-replace')).toBeDisabled()
+        expect(screen.getByTestId('library-copy-update')).toHaveAttribute('aria-checked', 'true')
+      })
+
+      it('converts as before when that copy is in a format Surco cannot update', async () => {
+        renderWithPrograms({
+          ...eightLater,
+          rekordbox: { ...eightLater.rekordbox, path: '/r/Strobe.ogg' },
+          waves: { '/music/Strobe.aif': here, '/r/Strobe.ogg': [8.2, 428.9, 429] },
+        })
+        // An Ogg is lossy, so this file wins the comparison.
+        await settled('here')
+        expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      })
     })
 
     // Traktor's collection may still hold the same recording, whose fill the track gets once.
@@ -7855,6 +8087,33 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // Music's copy runs 7:06 against 7:01 here, and the wider search lined the two up as one
+    // master: the same track for the DJ, so all its fields are this file's.
+    it('fills every empty field from an Apple Music copy the audio confirms is one master', async () => {
+      renderWithPrograms({
+        hereDuration: 421,
+        music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        musicDurationSec: 426,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: { '/m/old/Strobe.mp3': { album: 'From Music', grouping: 'Bases, Rockola' } },
+        pair: { correlation: 0.3, residualDb: -1, gainDb: -6, versionCorrelation: 0.97 },
+        waves: { '/music/Strobe.aif': [0.2, 420.9, 421], '/m/old/Strobe.mp3': [5.2, 425.9, 426] },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({
+        grouping: 'Bases, Rockola',
+        album: 'From Music',
+      })
     })
 
     // FLAC 6:01 against the MP3 5:57 in Music: the section calls it another version, so its

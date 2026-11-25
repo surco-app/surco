@@ -40,6 +40,7 @@ export function FormatDestinationMenu({
     heading: string
     action: LibraryCopyAction
     updatable: boolean
+    replaceable: boolean
     onPick: (action: LibraryCopyAction) => void
   }
 }): React.JSX.Element {
@@ -78,7 +79,7 @@ export function FormatDestinationMenu({
               data-testid={`library-copy-${action}`}
               role="menuitemradio"
               aria-checked={action === libraryCopy.action}
-              disabled={action === 'update' && !libraryCopy.updatable}
+              disabled={action === 'update' ? !libraryCopy.updatable : !libraryCopy.replaceable}
               onClick={() => libraryCopy.onPick(action)}
               className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
                 action === libraryCopy.action ? 'font-medium text-[var(--color-accent)]' : ''

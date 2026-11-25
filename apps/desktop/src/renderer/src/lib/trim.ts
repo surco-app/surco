@@ -53,6 +53,23 @@ export function detectOnsets(
   return { startSec: first * bucketSec, endSec: (last + 1) * bucketSec }
 }
 
+export interface GatedWave {
+  wave: { peaks: number[]; durationSec: number }
+  gateDb: number
+}
+
+// Where the music starts and ends in two copies of one master, read at one gate: each file's
+// own gate sits on its own floor (the tail of a fade in one, dither padding in the other), and
+// on a slow fade-out two gates a few dB apart end the music seconds apart. The higher of the
+// two is clear of both floors.
+export function pairOnsets(
+  a: GatedWave,
+  b: GatedWave,
+): [ReturnType<typeof detectOnsets>, ReturnType<typeof detectOnsets>] {
+  const gateDb = Math.max(a.gateDb, b.gateDb)
+  return [detectOnsets(a.wave, gateDb), detectOnsets(b.wave, gateDb)]
+}
+
 // Sharpens a coarse onset with a finely-bucketed window decoded around it (the
 // deep zoom's re-decode): the same threshold, but against buckets hundreds of
 // times narrower, so the drag magnet lands ON the wave instead of up to one
