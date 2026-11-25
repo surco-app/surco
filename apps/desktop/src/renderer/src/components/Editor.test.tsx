@@ -7907,6 +7907,69 @@ describe('Editor Apple Music library section', () => {
       expect(entryMeta).toHaveBeenCalledWith('/m/old/Strobe.wav', ['0123456789ABCDEF'])
     })
 
+    // The rekordbox copy is this recording and fills the track, but carries no grouping; the
+    // DJ filed the track in Music, as another version, under «Bases». The grouping is the DJ's
+    // own filing of the song, whatever edit holds it, so Music still lends it.
+    it("takes the grouping from Music's another-version copy when a DJ copy of the same recording has none", async () => {
+      const entryMeta = vi.fn<Api['appleMusicEntryMeta']>(async (path) =>
+        path === '/m/old/Strobe.wav' ? { grouping: 'Bases', year: '2001' } : null,
+      )
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 421 },
+        hereDuration: 421,
+        music: '/m/old/Strobe.wav',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: {
+          '/m/old/Strobe.wav': { album: 'From the WAV' },
+          '/r/Strobe.wav': { album: 'From rekordbox' },
+        },
+        musicEntryMeta: entryMeta,
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({
+        grouping: 'Bases',
+        album: 'From rekordbox',
+        year: '',
+      })
+      expect(entryMeta).toHaveBeenCalledWith('/m/old/Strobe.wav', ['0123456789ABCDEF'])
+    })
+
+    // A grouping the DJ copy of the same recording carries is the one this track takes.
+    it("keeps the same-recording DJ copy's grouping over Music's another-version copy", async () => {
+      const entryMeta = vi.fn<Api['appleMusicEntryMeta']>(async (path) =>
+        path === '/m/old/Strobe.wav' ? { grouping: 'Bases' } : null,
+      )
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 421 },
+        hereDuration: 421,
+        music: '/m/old/Strobe.wav',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: {
+          '/m/old/Strobe.wav': {},
+          '/r/Strobe.wav': { grouping: 'Vocals' },
+        },
+        musicEntryMeta: entryMeta,
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Vocals' })
+    })
+
     // Until the Music library lands there is no telling whether it holds a copy to replace,
     // and that copy has the say over a DJ copy.
     it('waits for the Apple Music library before reading a DJ copy', async () => {
