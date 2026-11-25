@@ -1,5 +1,6 @@
 import { autoMatchAvailable } from '../../../shared/autoMatch'
 import { resolveJobFormat } from '../../../shared/format'
+import { keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -1125,7 +1126,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
                   selected.inputPath,
                   'aiff',
                   settings?.keepMp3Sources ?? false,
-                  selected.fromAppleMusic,
+                  keepsOwnFormat(selected),
                 ),
               ),
             run: () => selected && addTrackToAppleMusic(selected.id),

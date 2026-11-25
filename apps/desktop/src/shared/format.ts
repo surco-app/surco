@@ -69,19 +69,19 @@ export function resolveJobFormat(
   inputPath: string,
   fallback: OutputFormat,
   keepMp3 = false,
-  // True for a track loaded from an Apple Music playlist. Such a track is not a loose
-  // file: it belongs to a collection the user has already organised, so its format is
+  // True for a track Music or a DJ program lists (keepsOwnFormat). Such a track is not a
+  // loose file: it belongs to a collection the user has already organised, so its format is
   // respected the way its tags are. A WAV imported that way used to offer "Convert to
   // AIFF" off the app's default destination, rewriting a file the user's library already
   // indexed without anyone asking for it.
-  fromAppleMusic = false,
+  fromLibrary = false,
   // True once the user picked a format by hand for this job. Their choice wins over the
   // respect for the original: asking for AIFF means AIFF, imported or not.
   formatChosen = false,
 ): OutputFormat {
   if (keepMp3 && formatMatchesInput('mp3', inputPath)) return 'mp3'
   if (keepMp3 && formatMatchesInput('alac', inputPath)) return 'alac'
-  if (fromAppleMusic && !formatChosen) {
+  if (fromLibrary && !formatChosen) {
     const own = (Object.keys(INPUT_EXT) as OutputFormat[]).find((f) =>
       formatMatchesInput(f, inputPath),
     )
@@ -106,7 +106,7 @@ export function reencodesLossyInPlace(
   filtersActive: boolean,
   fallback: OutputFormat,
   keepMp3 = false,
-  source: { fromAppleMusic?: boolean; formatChosen?: boolean; lossyM4a?: boolean } = {},
+  source: { fromLibrary?: boolean; formatChosen?: boolean; lossyM4a?: boolean } = {},
 ): boolean {
   if (!filtersActive) return false
   const resolved = resolveJobFormat(
@@ -114,7 +114,7 @@ export function reencodesLossyInPlace(
     inputPath,
     fallback,
     keepMp3,
-    source.fromAppleMusic,
+    source.fromLibrary,
     source.formatChosen,
   )
   const lossy =

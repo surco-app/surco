@@ -28,7 +28,7 @@ import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
-import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
+import { keepsOwnFormat, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   CueSaveThen,
   DeclickConfig,
@@ -598,7 +598,7 @@ export const Editor = memo(function Editor({
   const [format, setFormat] = useState(
     () =>
       rememberedPick?.format ??
-      resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic),
+      resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, keepsOwnFormat(item)),
   )
   // The menu's raw pick, offered unresolved only in multi-select: 'source' means
   // nothing against the anchor track alone, so it must reach processAll as the
@@ -686,7 +686,7 @@ export const Editor = memo(function Editor({
       keepMp3Sources,
     }
     const seededFormat = formatSettingChanged
-      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, item.fromAppleMusic)
+      ? resolveJobFormat(outputFormat, item.inputPath, 'aiff', keepMp3Sources, keepsOwnFormat(item))
       : format
     if (formatSettingChanged) {
       formatByHand.current = false

@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { processesAudio } from '../../../shared/audioProcessing'
 import { batchKeepMp3, reencodesLossyInPlace } from '../../../shared/format'
+import { keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   DeclickConfig,
   FormatSetting,
@@ -74,7 +75,7 @@ function risksLossyReencode(
     'aiff',
     keepMp3,
     {
-      fromAppleMusic: track.fromAppleMusic,
+      fromLibrary: keepsOwnFormat(track),
       formatChosen: picked !== undefined && picked !== settings?.outputFormat,
       lossyM4a,
     },
