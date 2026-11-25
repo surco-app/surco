@@ -9,6 +9,7 @@ directories:
   output: dist
 files:
   - out/**
+  - '!out/**/*.map'
   - package.json
   # The drag-out icon and the dock icon are loaded at runtime from build/icon.png via
   # app.getAppPath(); buildResources isn't bundled into the app, so without this the
@@ -101,8 +102,13 @@ afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
   # The encrypted-database addon ships prebuilt binaries for every OS; each platform
-  # packages only its own (these lists concatenate with the top-level files).
+  # packages only its own (a platform list replaces the top-level files for the app's own
+  # files, so each one repeats them; node_modules exclusions still come from both).
   files:
+    - out/**
+    - '!out/**/*.map'
+    - package.json
+    - build/icon.png
     - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{linux*,win32*}'
   # Chromium's own strings in the languages Surco ships (plus their regional and
   # grammatical-gender variants); the other ~45 .lproj folders are ~40 MB nothing reads.
@@ -171,6 +177,10 @@ mac:
 win:
   icon: build/icon.ico
   files:
+    - out/**
+    - '!out/**/*.map'
+    - package.json
+    - build/icon.png
     - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{darwin*,linux*}'
   target:
     - nsis
@@ -209,6 +219,10 @@ toolsets:
 linux:
   icon: build/icon.png
   files:
+    - out/**
+    - '!out/**/*.map'
+    - package.json
+    - build/icon.png
     - '!**/node_modules/better-sqlite3-multiple-ciphers/prebuilds/{darwin*,win32*}'
   category: AudioVideo
   # AppImage only. It is the one Linux target electron-updater can update in place,
