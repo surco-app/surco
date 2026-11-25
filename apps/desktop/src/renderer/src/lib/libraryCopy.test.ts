@@ -6,6 +6,7 @@ import {
   copyPathIn,
   countsAsCopy,
   fillCopyPath,
+  isAnotherVersion,
   keptFormatOf,
   pickLibraryCopy,
   replaceCopyPatch,
@@ -548,6 +549,62 @@ describe('pickLibraryCopy', () => {
     expect(
       pickLibraryCopy([{ ...traktor, verdict: 'measuring', durationSec: 400 }], 210),
     ).toBeNull()
+  })
+})
+
+// rekordbox holds the track at 7:06 and the open file runs 7:01: the same master with five
+// more seconds of silence, which the comparison confirmed by lining the two up across the gap.
+// For the DJ it is the same track, so it counts as the copy wherever a matching length would.
+describe('one master the comparison lined up across a length gap', () => {
+  const confirmed = (verdict: LibraryVerdict) => ({
+    program: 'rekordbox' as const,
+    path: '/r/a.aiff',
+    verdict,
+    durationSec: 426,
+    sameMasterAcrossGap: true,
+  })
+  const counted = ['same', 'even', 'tie', 'here', 'library', 'unmeasurable'] as const
+  const fill = (copy: FillCandidate | null, programs: FillCandidate[]) => ({
+    musicCopy: copy,
+    musicCopyPending: false,
+    programs,
+    programsPending: false,
+    fileDurationSec: 421,
+  })
+
+  it.each(counted)('counts it as the copy of this recording (%s)', (verdict) => {
+    expect(copyPathIn('rekordbox', [confirmed(verdict)], 421)).toBe('/r/a.aiff')
+    expect(isAnotherVersion(confirmed(verdict), 421)).toBe(false)
+  })
+
+  it('fills every empty field from it, in a DJ program or in Apple Music', () => {
+    expect(fillCopyPath(fill(null, [confirmed('here')]))).toBe('/r/a.aiff')
+    const music = { ...confirmed('tie'), path: '/m/a.mp3' }
+    expect(fillCopyPath(fill(music, []))).toBe('/m/a.mp3')
+    expect(versionCopyPath(fill(music, []))).toBe('')
+  })
+
+  // The field acts on the copy at once, so nothing of it is staged on the track.
+  it('stages none of its playlists, since it is the track itself', () => {
+    expect(versionCopyIn('rekordbox', [confirmed('library')], 421, false)).toBe('')
+  })
+
+  it('offers it to Update or Replace, it is the copy the DJ has of this track', () => {
+    expect(
+      pickLibraryCopy([{ ...rekordbox, ...confirmed('same'), format: 'AIFF 16/44.1' }], 421),
+    ).toMatchObject({ path: '/r/a.aiff', held: false })
+  })
+
+  it('never counts a copy the comparison called another version', () => {
+    expect(copyPathIn('rekordbox', [confirmed('different')], 421)).toBeUndefined()
+    expect(isAnotherVersion(confirmed('different'), 421)).toBe(true)
+  })
+
+  it('keeps the length rule without the confirmation, the gap then says another edit', () => {
+    const plain = { ...confirmed('here'), sameMasterAcrossGap: undefined }
+    expect(copyPathIn('rekordbox', [plain], 421)).toBeUndefined()
+    expect(isAnotherVersion(plain, 421)).toBe(true)
+    expect(versionCopyIn('rekordbox', [plain], 421, false)).toBe('/r/a.aiff')
   })
 })
 

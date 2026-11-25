@@ -129,7 +129,10 @@ describe('compareCopies', () => {
     // One master with 3 s of its head trimmed is 3 s shorter and slips past the ±1 s probe;
     // the wider search lines it up again, so it is no other version.
     it('never calls a shifted copy of one master another version', () => {
-      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(450), searched(0.97))).toEqual({
+        winner: 'tie',
+        sameMasterAcrossGap: true,
+      })
     })
 
     // Without the wider search there is no evidence the audio differs.
@@ -147,7 +150,10 @@ describe('compareCopies', () => {
     })
 
     it('never calls a correlation of 0.5 or more another version', () => {
-      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({ winner: 'tie' })
+      expect(compareCopies(edit(447), edit(483), searched(0.5))).toEqual({
+        winner: 'tie',
+        sameMasterAcrossGap: true,
+      })
     })
 
     it('never calls a short or silent copy another version', () => {
@@ -179,6 +185,43 @@ describe('compareCopies', () => {
         const unknown = { ...edit(447), durationSec: undefined }
         expect(compareCopies(unknown, edit(210), identical)).toEqual({ winner: 'same' })
         expect(compareCopies(edit(210), unknown, identical)).toEqual({ winner: 'same' })
+      })
+    })
+
+    // rekordbox's copy runs 7:06 against 7:01 here, the same master with five more seconds of
+    // silence: the library code counts a copy only within the 2 s a drift leaves, unless the
+    // comparison says the wider search lined the two up as one master across the gap.
+    describe('one master across a length gap', () => {
+      it('marks a copy the wider search lined up as one master, whatever decides between them', () => {
+        expect(compareCopies(edit(421), edit(426), searched(0.97))).toEqual({
+          winner: 'tie',
+          sameMasterAcrossGap: true,
+        })
+        const mp3 = { ...edit(426), ext: 'mp3', cutoffHz: 19800, hasKnee: true }
+        expect(
+          compareCopies(edit(421), mp3, {
+            correlation: 0.3,
+            residualDb: -1,
+            gainDb: -6,
+            versionCorrelation: 0.97,
+          }),
+        ).toEqual({ winner: 'a', reason: 'lossless', sameMasterAcrossGap: true })
+      })
+
+      it('marks nothing without the wider search, since nothing then confirms one master', () => {
+        expect(compareCopies(edit(421), edit(426), null)).toEqual({ winner: 'tie' })
+        expect(compareCopies(edit(421), edit(426), undefined)).toEqual({ winner: 'tie' })
+      })
+
+      it('marks nothing when a copy is too short or too silent for the search to say anything', () => {
+        expect(compareCopies(edit(9.9), edit(15), searched(0.97))).toEqual({ winner: 'tie' })
+        expect(compareCopies(edit(421), edit(426, -71), searched(0.97))).toEqual({
+          winner: 'tie',
+        })
+      })
+
+      it('marks nothing within the drift a rounding leaves, where the lengths already agree', () => {
+        expect(compareCopies(edit(421), edit(422), searched(0.97))).toEqual({ winner: 'tie' })
       })
     })
 

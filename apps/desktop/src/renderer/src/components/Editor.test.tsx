@@ -14,6 +14,7 @@ import type {
   KeyNotation,
   LoudnessResult,
   NormalizeConfig,
+  PairProbe,
   Settings,
   TrackMetadata,
   TrackProperties,
@@ -7010,11 +7011,13 @@ describe('Editor Apple Music library section', () => {
       musicLocation,
       musicReadable = false,
       musicDurationPending = false,
+      musicDurationSec,
       sameFile,
       traktorLoading = false,
       musicEntryMeta,
       rekordboxPlaylists,
       formFolded = false,
+      pair,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -7037,6 +7040,8 @@ describe('Editor Apple Music library section', () => {
       // Music's copy at the `music` path reads as a WAV, like the DJ copies.
       musicReadable?: boolean
       musicDurationPending?: boolean
+      // The length read from Music's copy at the `music` path.
+      musicDurationSec?: number
       // Main's answer to whether the open file and a copy are one file on disk.
       sameFile?: (a: string, b: string) => Promise<boolean>
       // Traktor's collection is still being read and never lands in the test.
@@ -7047,6 +7052,8 @@ describe('Editor Apple Music library section', () => {
       rekordboxPlaylists?: Record<string, string[]>
       // The metadata section, which holds the Playlists fields, starts folded.
       formFolded?: boolean
+      // Main's comparison of the two copies, in place of the one master lined up within 1 s.
+      pair?: PairProbe
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7068,7 +7075,11 @@ describe('Editor Apple Music library section', () => {
         musicDurationPending && path === music
           ? new Promise<number | null>(() => {})
           : Promise.resolve(
-              path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+              path === herePath
+                ? (hereDuration ?? null)
+                : path === music && musicDurationSec !== undefined
+                  ? musicDurationSec
+                  : (copyAt(path)?.durationSec ?? null),
             ),
       )
       api.readTags = vi.fn(async (path: string) => {
@@ -7115,10 +7126,12 @@ describe('Editor Apple Music library section', () => {
       api.fingerprint = vi.fn(async (path: string) => path)
       api.comparePair = pairPending
         ? vi.fn(() => new Promise(() => {}))
-        : vi.fn(async () =>
-            identicalPair
-              ? { correlation: 1, residualDb: -90, gainDb: 0 }
-              : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 },
+        : vi.fn(
+            async () =>
+              pair ??
+              (identicalPair
+                ? { correlation: 1, residualDb: -90, gainDb: 0 }
+                : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 }),
           )
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
@@ -7474,6 +7487,51 @@ describe('Editor Apple Music library section', () => {
       expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
         [],
       )
+    })
+
+    // 7:06 in rekordbox against 7:01 here: the same master with five more seconds of silence,
+    // which the wider search lined up as one. For the DJ it is the same track, so its album and
+    // genre are this file's and the Playlists field acts on that copy instead of staging it.
+    describe('one master five seconds longer in rekordbox', () => {
+      const longer: Copy = { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 426 }
+      const lined = { correlation: 0.3, residualDb: -1, gainDb: -6 }
+
+      it('fills every empty field and acts on its playlists once the audio confirms one master', async () => {
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': copyTags },
+          rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+          pair: { ...lined, versionCorrelation: 0.97 },
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject(copyTags)
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute('data-state', 'different')
+        await waitFor(() =>
+          expect(screen.getByTestId('playlists-where')).toHaveTextContent('Makina'),
+        )
+        expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
+          [],
+        )
+      })
+
+      it('stays another version when nothing confirms one master across the gap', async () => {
+        renderWithPrograms({
+          rekordbox: longer,
+          hereDuration: 421,
+          tags: { '/r/Strobe.wav': { ...copyTags, grouping: 'Bases' } },
+          rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+          pair: lined,
+        })
+        await waitFor(() => expect(filledPatches()).toHaveLength(1))
+        expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+        await waitFor(() =>
+          expect(rendered.onChange).toHaveBeenCalledWith({
+            playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+            copyPlaylistsFilled: ['rekordbox'],
+          }),
+        )
+      })
     })
 
     // Traktor's collection may still hold the same recording, whose fill the track gets once.
@@ -7869,6 +7927,32 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // Music's copy runs 7:06 against 7:01 here, and the wider search lined the two up as one
+    // master: the same track for the DJ, so all its fields are this file's.
+    it('fills every empty field from an Apple Music copy the audio confirms is one master', async () => {
+      renderWithPrograms({
+        hereDuration: 421,
+        music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        musicDurationSec: 426,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: { '/m/old/Strobe.mp3': { album: 'From Music', grouping: 'Bases, Rockola' } },
+        pair: { correlation: 0.3, residualDb: -1, gainDb: -6, versionCorrelation: 0.97 },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({
+        grouping: 'Bases, Rockola',
+        album: 'From Music',
+      })
     })
 
     // FLAC 6:01 against the MP3 5:57 in Music: the section calls it another version, so its

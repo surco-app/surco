@@ -24,20 +24,27 @@ export function countsAsCopy(verdict: LibraryVerdict | null | undefined): boolea
   return verdict != null && COPY_VERDICTS.has(verdict)
 }
 
-interface CopyRow {
+interface CopyLength {
+  durationSec?: number
+  // The comparison's CopyVerdict.sameMasterAcrossGap: one master despite the lengths.
+  sameMasterAcrossGap?: boolean
+}
+
+interface CopyRow extends CopyLength {
   program: DjProgram
   path: string
   verdict: LibraryVerdict | null
-  durationSec?: number
 }
 
 // No verdict rules out another edit on its own: «same» can come from the pair probe over the
 // first 91 s, which a longer or shorter edit cut from the same master passes too, and the
 // comparison calls another version only with both lengths known. So a copy counts only when
-// both lengths are known and no further apart than a drift or a rounding leaves.
-function lengthsMatch(copyDurationSec: number | undefined, fileDurationSec: number | undefined) {
-  if (copyDurationSec === undefined || fileDurationSec === undefined) return false
-  return Math.abs(copyDurationSec - fileDurationSec) <= VERSION_GAP_SEC
+// both lengths are known and no further apart than a drift or a rounding leaves, or when the
+// comparison's wider search lined the whole of both up as one master across the gap.
+function lengthsMatch(copy: CopyLength, fileDurationSec: number | undefined) {
+  if (copy.sameMasterAcrossGap) return true
+  if (copy.durationSec === undefined || fileDurationSec === undefined) return false
+  return Math.abs(copy.durationSec - fileDurationSec) <= VERSION_GAP_SEC
 }
 
 export function copyPathIn(
@@ -47,16 +54,13 @@ export function copyPathIn(
 ): string | undefined {
   return rows.find(
     (row) =>
-      row.program === program &&
-      countsAsCopy(row.verdict) &&
-      lengthsMatch(row.durationSec, fileDurationSec),
+      row.program === program && countsAsCopy(row.verdict) && lengthsMatch(row, fileDurationSec),
   )?.path
 }
 
-export interface FillCandidate {
+export interface FillCandidate extends CopyLength {
   path: string
   verdict: LibraryVerdict | null
-  durationSec?: number
 }
 
 interface FillCopies {
@@ -78,7 +82,7 @@ export function fillCopyPath(args: FillCopies): string {
   const first = copiesOf(args).find(
     (copy) =>
       countsAsCopy(copy.verdict) &&
-      (copy.verdict === 'measuring' || lengthsMatch(copy.durationSec, args.fileDurationSec)),
+      (copy.verdict === 'measuring' || lengthsMatch(copy, args.fileDurationSec)),
   )
   if (!first || first.verdict === 'measuring') return ''
   if (args.programsPending && first !== args.musicCopy) return ''
@@ -90,7 +94,8 @@ function copiesOf(args: FillCopies): FillCandidate[] {
 }
 
 // «Another version» in the section: the comparison said so, or the verdict counts but both
-// lengths are known and further apart than a drift leaves. An unknown length proves nothing.
+// lengths are known and further apart than a drift leaves, and nothing lined them up as one
+// master across that gap. An unknown length proves nothing.
 export function isAnotherVersion(
   copy: FillCandidate,
   fileDurationSec: number | undefined,
@@ -101,7 +106,7 @@ export function isAnotherVersion(
     copy.verdict !== 'measuring' &&
     copy.durationSec !== undefined &&
     fileDurationSec !== undefined &&
-    !lengthsMatch(copy.durationSec, fileDurationSec)
+    !lengthsMatch(copy, fileDurationSec)
   )
 }
 
@@ -131,7 +136,7 @@ export function versionCopyIn(
   return own.find((row) => isAnotherVersion(row, fileDurationSec))?.path ?? ''
 }
 
-export interface CopyCandidate {
+export interface CopyCandidate extends CopyLength {
   program: PlaylistSource
   // '' while Apple Music still looks the file up.
   path: string
@@ -139,7 +144,6 @@ export interface CopyCandidate {
   format: string
   verdict: LibraryVerdict | null
   better: boolean
-  durationSec?: number
   // Only on the Apple Music candidate, and never an ambiguous match.
   music?: ReplaceCandidate
 }
@@ -165,7 +169,7 @@ export function pickLibraryCopy(
   const copy = candidates.find(
     (candidate) =>
       countsAsCopy(candidate.verdict) &&
-      (lengthsMatch(candidate.durationSec, fileDurationSec) ||
+      (lengthsMatch(candidate, fileDurationSec) ||
         (candidate.durationSec === undefined &&
           (candidate.verdict === 'measuring' || candidate.path === ''))),
   )

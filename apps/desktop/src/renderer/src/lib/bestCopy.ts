@@ -26,11 +26,15 @@ export type CopyReason =
   | 'peakCount'
   | 'crest'
 
-export type CopyVerdict =
+// sameMasterAcrossGap: the lengths differ by more than VERSION_GAP_SEC, yet the wider search
+// lined the two up as one master (a head or tail of silence more or less), so the copy is
+// still the same recording for the library, which otherwise trusts only matching lengths.
+export type CopyVerdict = (
   | { winner: 'a' | 'b'; reason: CopyReason }
   | { winner: 'same' }
   | { winner: 'tie'; sameMaster?: true }
   | { winner: 'different' }
+) & { sameMasterAcrossGap?: true }
 
 export interface CopyMargins {
   sameMasterCorrelation: number
@@ -65,21 +69,27 @@ function aligned(pair: PairProbe | null | undefined): PairFacts | null {
   return pair && 'correlation' in pair ? pair : null
 }
 
-function isOtherVersion(a: CopyFacts, b: CopyFacts, pair: PairProbe | null): boolean {
-  if (a.durationSec == null || b.durationSec == null) return false
+// What the lengths and the wider search say of two copies further apart than VERSION_GAP_SEC:
+// another version, the same master lined up across the gap, or nothing either way.
+function acrossLengthGap(
+  a: CopyFacts,
+  b: CopyFacts,
+  pair: PairProbe | null,
+): 'other' | 'master' | null {
+  if (a.durationSec == null || b.durationSec == null) return null
   const gapSec = Math.abs(a.durationSec - b.durationSec)
-  if (gapSec <= VERSION_GAP_SEC) return false
+  if (gapSec <= VERSION_GAP_SEC) return null
   if (beyondVersionReach(gapSec)) {
-    return Math.min(a.durationSec, b.durationSec) >= OTHER_VERSION.minDurationSec
+    return Math.min(a.durationSec, b.durationSec) >= OTHER_VERSION.minDurationSec ? 'other' : null
   }
-  if (pair?.versionCorrelation == null) return false
-  if (pair.versionCorrelation >= OTHER_VERSION.maxCorrelation) return false
+  if (pair?.versionCorrelation == null) return null
   const probed = (f: CopyFacts): boolean =>
     f.durationSec != null &&
     f.durationSec >= OTHER_VERSION.minDurationSec &&
     f.integratedLufs != null &&
     f.integratedLufs > OTHER_VERSION.silentLufs
-  return probed(a) && probed(b)
+  if (!probed(a) || !probed(b)) return null
+  return pair.versionCorrelation < OTHER_VERSION.maxCorrelation ? 'other' : 'master'
 }
 
 const IDENTICAL_RESIDUAL_DB = -60
@@ -160,9 +170,20 @@ export function compareCopies(
   probe?: PairProbe | null,
   margins: CopyMargins = COPY_MARGINS,
 ): CopyVerdict {
-  const pair = probe === undefined ? undefined : aligned(probe)
   if (isSameAudio(a, b, probe)) return { winner: 'same' }
-  if (probe !== undefined && isOtherVersion(a, b, probe)) return { winner: 'different' }
+  const gap = probe === undefined ? null : acrossLengthGap(a, b, probe)
+  if (gap === 'other') return { winner: 'different' }
+  const verdict = weighCopies(a, b, probe, margins)
+  return gap === 'master' ? { ...verdict, sameMasterAcrossGap: true } : verdict
+}
+
+function weighCopies(
+  a: CopyFacts,
+  b: CopyFacts,
+  probe: PairProbe | null | undefined,
+  margins: CopyMargins,
+): CopyVerdict {
+  const pair = probe === undefined ? undefined : aligned(probe)
   const bWorse = replaceWarning(side(a), side(b))
   const aWorse = replaceWarning(side(b), side(a))
   if (bWorse && !aWorse) return { winner: 'a', reason: REASON[bWorse.reason] }

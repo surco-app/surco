@@ -946,6 +946,7 @@ export const Editor = memo(function Editor({
     verdict: rowVerdict(programVerdicts[i]),
     // A collection may not store the length; the measured one then stands in for it.
     durationSec: copy.durationSec ?? programVerdicts[i]?.copy?.durationSec,
+    sameMasterAcrossGap: !!programVerdicts[i]?.verdict?.sameMasterAcrossGap,
   }))
   // Keyed on each program's copy target after the verdict filter, not on the rows (new on
   // every render, so a new copyPathOf would read the membership again each time) nor on the
@@ -1966,6 +1967,7 @@ export const Editor = memo(function Editor({
           verdict: musicRow.verdict,
           better: libraryCopyBetter,
           durationSec: musicRow.durationSec ?? musicEntryDurationSec,
+          sameMasterAcrossGap: !!copyVerdict?.sameMasterAcrossGap,
           music: replaceTarget,
         }
       : null
@@ -2046,6 +2048,7 @@ export const Editor = memo(function Editor({
             verdict: rowVerdict(state),
             better: rowVerdict(state) === 'library',
             durationSec: copyRows[i].durationSec,
+            sameMasterAcrossGap: copyRows[i].sameMasterAcrossGap,
           }
         }),
       ]
