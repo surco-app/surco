@@ -18,7 +18,14 @@ vi.mock('./settings', () => ({
 import type { TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
 import { beginNmlBatch, endNmlBatch } from './nmlBatch'
-import { buildTraktorTree, traktorCue } from './traktor4Fixture'
+import { encodeBase91 } from './base91'
+import {
+  buildTraktorTree,
+  injectAiffPriv,
+  readTraktorCueStart,
+  storedTree,
+  traktorCue,
+} from './traktor4Fixture'
 import { applyPatches } from './traktorNml'
 
 const FF = ffmpegStatic as unknown as string
@@ -84,7 +91,7 @@ beforeAll(() => {
 // file's. The patch is the only thing that crosses from the conversion to that write: if it
 // does not carry the shift, the collection's own cues stay put while their neighbours move.
 describe('the collection patch a conversion records', () => {
-  it('moves the cues only the collection holds as far as the file ones moved', async () => {
+  it('leaves the cues only the collection holds where the file ones stay when it is saved over itself', async () => {
     beginNmlBatch()
     await convertAudio(src, src, 'mp3', meta)
     const patches = endNmlBatch()
@@ -94,8 +101,8 @@ describe('the collection patch a conversion records', () => {
 
     const out = applyPatches(nml, patches)
 
-    expect(out).toContain('NAME="Intro" DISPL_ORDER="0" TYPE="0" START="9949.000000"')
-    expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="44949.000000"')
+    expect(out).toContain('NAME="Intro" DISPL_ORDER="0" TYPE="0" START="10000.000000"')
+    expect(out).toContain('NAME="Break" DISPL_ORDER="0" TYPE="0" START="45000.000000"')
   })
 
   // A file Traktor never wrote its cues into is the common case: the DJ set them in the
@@ -124,7 +131,69 @@ describe('the collection patch a conversion records', () => {
 </COLLECTION></NML>`
 
     expect(applyPatches(nml, patches)).toContain(
-      'NAME="Drop" DISPL_ORDER="0" TYPE="0" START="7949.000000"',
+      'NAME="Drop" DISPL_ORDER="0" TYPE="0" START="8000.000000"',
     )
+  })
+})
+
+function sourceWithDrop(folder: string, ext: string): string {
+  const tree = buildTraktorTree([traktorCue('Drop', 0, 10000, 1)])
+  const path = join(folder, `track${ext}`)
+  const tone = ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=f=440:d=20']
+  if (ext === '.flac') {
+    execFileSync(FF, [...tone, '-metadata', `TRAKTOR4=${encodeBase91(tree)}`, path])
+    return path
+  }
+  execFileSync(FF, [
+    ...tone,
+    ...(ext === '.mp3' ? ['-c:a', 'libmp3lame', '-b:a', '320k'] : []),
+    path,
+  ])
+  if (ext === '.aiff') injectAiffPriv(path, tree)
+  else writeFileSync(path, Buffer.concat([id3WithCue(tree), readFileSync(path)]))
+  return path
+}
+
+function collectionWithDrop(patch: { dir: string; volume: string } | undefined, file: string) {
+  return `<NML VERSION="20"><COLLECTION ENTRIES="1">
+<ENTRY TITLE="T"><LOCATION DIR="${patch?.dir}" FILE="${file}" VOLUME="${patch?.volume}"></LOCATION><CUE_V2 NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2></ENTRY>
+</COLLECTION></NML>`
+}
+
+// The DJ's offset corrects how a cue placed on this audio feels in Traktor, once. A file
+// saved over itself is the same audio with the correction already in it, and the editor
+// saves that way on every Save, so applying the offset again walked the cues 51 ms earlier
+// each time, in the file and in the collection alike.
+describe('a file saved over itself with a cue offset set', () => {
+  for (const [format, ext] of [
+    ['mp3', '.mp3'],
+    ['aiff', '.aiff'],
+    ['flac', '.flac'],
+  ] as const)
+    it(`keeps the ${ext} cues where they were after three saves`, async () => {
+      const track = sourceWithDrop(mkdtempSync(join(tmpdir(), 'surco-resave-')), ext)
+      let nml: string | undefined
+
+      for (let save = 0; save < 3; save++) {
+        beginNmlBatch()
+        await convertAudio(track, track, format, meta)
+        const patches = endNmlBatch()
+        nml = applyPatches(nml ?? collectionWithDrop(patches[0], `track${ext}`), patches)
+      }
+
+      expect(readTraktorCueStart(storedTree(track) as Uint8Array, 0)).toBeCloseTo(10000, 0)
+      expect(nml).toContain('NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000"')
+    })
+
+  // A copy in another folder is a new file the DJ has not yet played through the
+  // correction, which is what the "the MP3 it converts does not have the -51 ms applied"
+  // report asked for.
+  it('still moves the cues of a same-format copy written to another folder', async () => {
+    const track = sourceWithDrop(mkdtempSync(join(tmpdir(), 'surco-resave-')), '.mp3')
+    const copy = join(mkdtempSync(join(tmpdir(), 'surco-export-')), 'track.mp3')
+
+    await convertAudio(track, copy, 'mp3', meta)
+
+    expect(readTraktorCueStart(storedTree(copy) as Uint8Array, 0)).toBeCloseTo(9949, 0)
   })
 })
