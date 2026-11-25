@@ -138,6 +138,7 @@ jobs:
           repository: surco-app/surco-brain
           ssh-key: ${{ secrets.BRAIN_DEPLOY_KEY }}
           path: apps/desktop/brain
+          persist-credentials: false
 
       - uses: actions/setup-node@v7
         with:

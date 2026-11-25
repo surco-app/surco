@@ -71,6 +71,8 @@ describe('Private auto cue engine in the release', () => {
     expect(release).toContain(`ssh-key: $\{{ secrets.BRAIN_DEPLOY_KEY }}`)
     expect(release).toContain('path: apps/desktop/brain')
     expect(release).toContain("SURCO_REQUIRE_BRAIN: '1'")
+    const checkout = release.slice(release.indexOf('repository: surco-app/surco-brain'))
+    expect(checkout.slice(0, checkout.indexOf('- uses:'))).toContain('persist-credentials: false')
   })
 
   it('does not give the check job a private key it has no use for', () => {
