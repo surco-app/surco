@@ -70,13 +70,8 @@ function id3Markers(f: TagFile): SeratoMarkers | null {
 }
 
 function id3TempoMap(f: TagFile): SeratoTempoMap | null {
-  const tag = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
-  for (const frame of tag?.frames ?? []) {
-    if (frame.frameId.toString() !== 'GEOB') continue
-    const parts = descriptionAndPayload(frame)
-    if (parts?.description === 'Serato Tempo Map') return readSeratoTempoMap(parts.payload)
-  }
-  return null
+  const body = id3Geob(f, 'Serato Tempo Map')
+  return body ? readSeratoTempoMap(body) : null
 }
 
 function flacTempoMap(f: TagFile): SeratoTempoMap | null {
