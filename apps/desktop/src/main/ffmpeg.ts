@@ -3017,7 +3017,7 @@ async function landConversion(ctx: LandConversionContext): Promise<LandConversio
   // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
   // so a cancel can land while it runs. The rename is the first step that cannot be
   // taken back: checked once more right before it, the original stays as it was and
-  // the catch drops the backup.
+  // the caller's catch drops the backup.
   if (isCancelled?.()) throw errorWithKey('conversionCancelled')
   // Logged because this failure only reproduces on Windows machines we cannot
   // attach a debugger to: when a user reports "another program is using the file",
@@ -3034,7 +3034,7 @@ async function landConversion(ctx: LandConversionContext): Promise<LandConversio
         ),
       // The temp is a finished conversion by now — audio, tags and cues all written —
       // so a destination that never frees must not cost the user the whole job. When
-      // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
+      // the rescue lands, the error carries `rescuedTo` and the caller's catch leaves the
       // temp alone; when it cannot land (read-only remount, quota, a scanner holding
       // the whole directory), the temp is still where it was and the catch deletes it
       // as it would any half-written output.
