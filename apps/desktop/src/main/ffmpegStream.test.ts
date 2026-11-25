@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import { constants as osConstants, setPriority } from 'node:os'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -58,6 +59,14 @@ describe('f32Chunks', () => {
 })
 
 describe('spawnBackgroundDecode', () => {
+  it('reads only stdout and gives up after the timeout, so an unread stderr or a hung ffmpeg never stalls a background sweep', () => {
+    spawnBackgroundDecode('/bin/ffmpeg', ['-i', '/in.flac'], 1000)
+    expect(spawn).toHaveBeenLastCalledWith('/bin/ffmpeg', ['-i', '/in.flac'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 1000,
+    })
+  })
+
   it('lowers the decode below normal priority, so a background sweep never stutters the app', () => {
     spawned.pid = 4242
     spawnBackgroundDecode('/bin/ffmpeg', ['-i', '/in.flac'], 1000)
