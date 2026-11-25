@@ -246,6 +246,7 @@ import {
   blocksWith,
   distinctById,
   listScopeFlags,
+  openPlaylistEditsOf,
   type PlaylistScope,
   playlistMembership,
   playlistPositions,
@@ -3323,17 +3324,12 @@ export default function App(): React.JSX.Element {
   const onSearchWeb = useStableCallback(() => {
     if (selected) searchTrackWeb(selected)
   })
-  // Organising the open crate of an editable library. Every action sends one edit; what the
-  // library holds afterwards is re-read and shown (useRekordboxEdits).
-  const editableOpen =
-    editableSource !== null && browser.playlist !== null && playlistScope !== null
   const { data: programRunning = false } = useQuery({
     queryKey: [`${sourceProgram}-running`],
     queryFn: async () => sourceProgram !== null && window.api.dj.running(sourceProgram),
     enabled: runningNote !== null,
     staleTime: 0,
   })
-  const cuesMarkable = cuesOpen && sourceProgram !== null
   const openSmart = useMemo(
     () =>
       flattenPlaylists(browser.tree ?? []).some(
@@ -3341,13 +3337,6 @@ export default function App(): React.JSX.Element {
       ),
     [browser.tree, browser.playlist?.id],
   )
-  const crateOpen =
-    editableOpen &&
-    !openSmart &&
-    browser.playlist?.id !== RECENTLY_ADDED_ID &&
-    browser.playlist?.id !== ALL_TRACKS_ID &&
-    browser.playlist?.id !== MATCHING_ID &&
-    browser.playlist?.id !== TO_REVIEW_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -3498,7 +3487,28 @@ export default function App(): React.JSX.Element {
   const selectedProgramPath = selected ? playlistScope?.rowPathOf.get(selected.id) : undefined
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
-  const inRekordbox = sourceProgram === 'rekordbox'
+  const {
+    editableOpen,
+    cuesMarkable,
+    crateOpen,
+    inRekordbox,
+    otherOpen,
+    readsRekordboxCollection,
+    removablePlaylist,
+    reorderEnabled,
+  } = openPlaylistEditsOf({
+    editableSource,
+    sourceProgram,
+    sourceEdit,
+    browser,
+    playlistScope,
+    cuesOpen,
+    openSmart,
+    selectedContentId,
+    sortBy,
+    search,
+    filterActive,
+  })
   const { data: matchingPairs } = useRekordboxMatching(inRekordbox)
   const { data: matchingEntries } = useQuery({
     queryKey: ['source-playlist', 'rekordbox', MATCHING_ID],
@@ -3513,8 +3523,6 @@ export default function App(): React.JSX.Element {
         : [],
     [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
   )
-  const otherOpen =
-    sourceProgram !== null && !inRekordbox && browser.playlist !== null && playlistScope !== null
   const { data: programAll } = useQuery({
     queryKey: ['source-playlist', sourceProgram, ALL_TRACKS_ID],
     queryFn: () => readPlaylist(sourceProgram as PlaylistSource, ALL_TRACKS_ID),
@@ -3754,9 +3762,7 @@ export default function App(): React.JSX.Element {
   })
   const { data: rekordboxCollection } = useQuery({
     ...sourceCollectionOptions('rekordbox'),
-    enabled:
-      otherOpen ||
-      (inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID)),
+    enabled: readsRekordboxCollection,
   })
   const collectionById = useMemo(
     () => new Map((rekordboxCollection ?? []).map((t) => [t.contentId, t])),
@@ -4055,8 +4061,6 @@ export default function App(): React.JSX.Element {
     )
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
-  const removablePlaylist =
-    editableSource && crateOpen && canEdit(sourceEdit, 'remove') ? browser.playlist : null
   const removeLabel =
     matchingOpen && browser.playlist
       ? tr('sources.menu.removeFrom', { name: browser.playlist.name })
@@ -4093,10 +4097,6 @@ export default function App(): React.JSX.Element {
         ? removeFromPlaylist(targets, onRemoved)
         : dropFromList(targets, onRemoved),
   )
-  // Reordering only means something in the playlist's own order with nothing hidden: under
-  // another sort, a search or a filter, a drop would land among rows the user cannot see.
-  const reorderEnabled =
-    crateOpen && sortBy === 'import' && !search && !filterActive && canEdit(sourceEdit, 'move')
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,

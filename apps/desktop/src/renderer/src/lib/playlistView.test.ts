@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
+import type { DjProgram } from '../../../shared/djProgram'
 import { MATCHING_ID } from '../../../shared/matching'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { Settings, SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
@@ -9,6 +12,8 @@ import {
   distinctById,
   type ListScopeContext,
   listScopeFlags,
+  type OpenPlaylistEditsContext,
+  openPlaylistEditsOf,
   playlistMembership,
   playlistPositions,
   playlistView,
@@ -16,6 +21,7 @@ import {
   type ToolbarScopeContext,
   toolbarScopeFlags,
 } from './playlistView'
+import { SOURCE_PROGRAMS } from './sourcePrograms'
 import { EMPTY_FILTER } from './triage'
 
 function track(id: string, inputPath: string): TrackItem {
@@ -635,5 +641,144 @@ describe('toolbarScopeFlags', () => {
     expect(toolbarScopeFlags(ctx()).canProcessAll).toBe(true)
     expect(toolbarScopeFlags(ctx({ eligibleCount: 0 })).canProcessAll).toBe(false)
     expect(toolbarScopeFlags(ctx({ batching: true })).canProcessAll).toBe(false)
+  })
+})
+
+describe('openPlaylistEditsOf', () => {
+  const crate = { id: 'p1', name: 'Friday', folders: [] }
+  const applied = playlistView([A], [entry('/m/A.wav', false, 'l1')])
+  const ctx = (
+    program: DjProgram | null,
+    over: Partial<OpenPlaylistEditsContext> = {},
+  ): OpenPlaylistEditsContext => ({
+    editableSource: program,
+    sourceProgram: program,
+    sourceEdit: program && SOURCE_PROGRAMS[program].edit,
+    browser: { playlist: crate },
+    playlistScope: applied,
+    cuesOpen: false,
+    openSmart: false,
+    selectedContentId: undefined,
+    sortBy: 'import',
+    search: '',
+    filterActive: false,
+    ...over,
+  })
+
+  // An open playlist of rekordbox, Traktor (once saveable), Serato or VirtualDJ is the DJ's
+  // own crate: its rows may be taken out and dragged into another order, and those edits
+  // land in the program.
+  it.each(['rekordbox', 'traktor', 'serato', 'virtualdj'] as const)(
+    'lets the DJ take rows out of a %s crate and reorder it',
+    (program) => {
+      const edits = openPlaylistEditsOf(ctx(program))
+      expect(edits.editableOpen).toBe(true)
+      expect(edits.crateOpen).toBe(true)
+      expect(edits.removablePlaylist).toBe(crate)
+      expect(edits.reorderEnabled).toBe(true)
+    },
+  )
+
+  // Engine DJ's database keeps no order Surco can write and takes no removal: a drag or a
+  // remove there would show a change that never reaches the decks.
+  it('lets the DJ neither reorder an Engine DJ playlist nor take rows out of it', () => {
+    const edits = openPlaylistEditsOf(ctx('engine'))
+    expect(edits.crateOpen).toBe(true)
+    expect(edits.removablePlaylist).toBeNull()
+    expect(edits.reorderEnabled).toBe(false)
+  })
+
+  // Traktor before its collection is confirmed, Apple Music and the files: nothing open is
+  // a crate Surco writes, so a remove there only drops rows from Surco's list.
+  it('edits no crate in a program Surco cannot write to', () => {
+    for (const edits of [
+      openPlaylistEditsOf({ ...ctx('traktor'), editableSource: null }),
+      openPlaylistEditsOf(ctx(null)),
+    ]) {
+      expect(edits.editableOpen).toBe(false)
+      expect(edits.crateOpen).toBe(false)
+      expect(edits.removablePlaylist).toBeNull()
+      expect(edits.reorderEnabled).toBe(false)
+    }
+  })
+
+  // Until the playlist's rows are applied the list shows none of them: an edit then would
+  // name rows the DJ has not seen.
+  it('edits nothing in a playlist whose rows have not arrived', () => {
+    const edits = openPlaylistEditsOf(ctx('rekordbox', { playlistScope: null }))
+    expect(edits.editableOpen).toBe(false)
+    expect(edits.otherOpen).toBe(false)
+    expect(openPlaylistEditsOf(ctx('rekordbox', { browser: { playlist: null } })).crateOpen).toBe(
+      false,
+    )
+  })
+
+  // Smart playlists are rebuilt by the program from their rules; Recently added, All tracks,
+  // Matching and To review are views Surco draws. Taking a row out or reordering one would
+  // edit no playlist the DJ made.
+  it.each([RECENTLY_ADDED_ID, ALL_TRACKS_ID, MATCHING_ID, TO_REVIEW_ID])(
+    'treats %s as no crate',
+    (id) => {
+      const edits = openPlaylistEditsOf(
+        ctx('rekordbox', { browser: { playlist: { ...crate, id } } }),
+      )
+      expect(edits.editableOpen).toBe(true)
+      expect(edits.crateOpen).toBe(false)
+      expect(edits.removablePlaylist).toBeNull()
+      expect(edits.reorderEnabled).toBe(false)
+    },
+  )
+
+  it('treats a smart playlist as no crate', () => {
+    const edits = openPlaylistEditsOf(ctx('rekordbox', { openSmart: true }))
+    expect(edits.crateOpen).toBe(false)
+    expect(edits.removablePlaylist).toBeNull()
+  })
+
+  // Under another sort, a search or a filter, a drop would land among rows the DJ cannot
+  // see; the crate can still lose rows.
+  it('reorders only in the playlist’s own order with nothing hidden', () => {
+    for (const over of [{ sortBy: 'name' as const }, { search: 'a' }, { filterActive: true }]) {
+      const edits = openPlaylistEditsOf(ctx('rekordbox', over))
+      expect(edits.reorderEnabled).toBe(false)
+      expect(edits.removablePlaylist).toBe(crate)
+    }
+  })
+
+  // rekordbox's Matching partners are read from its database; every other program's are
+  // looked up by path in its whole collection, read only while one of its playlists is open.
+  it('reads partners from rekordbox and by path from the other DJ programs', () => {
+    expect(openPlaylistEditsOf(ctx('rekordbox')).inRekordbox).toBe(true)
+    expect(openPlaylistEditsOf(ctx('rekordbox')).otherOpen).toBe(false)
+    for (const program of ['traktor', 'engine', 'serato', 'virtualdj'] as const) {
+      expect(openPlaylistEditsOf(ctx(program)).inRekordbox).toBe(false)
+      expect(openPlaylistEditsOf(ctx(program)).otherOpen).toBe(true)
+    }
+    expect(openPlaylistEditsOf(ctx(null)).otherOpen).toBe(false)
+    expect(openPlaylistEditsOf(ctx('serato', { browser: { playlist: null } })).otherOpen).toBe(
+      false,
+    )
+  })
+
+  // rekordbox's collection names the tracks Matching pairs: it is read for another program's
+  // open playlist, for a picked rekordbox row and in rekordbox's Matching, and not otherwise.
+  it('reads rekordbox’s collection only where a Matching pair has to be named', () => {
+    expect(openPlaylistEditsOf(ctx('serato')).readsRekordboxCollection).toBe(true)
+    expect(openPlaylistEditsOf(ctx('rekordbox')).readsRekordboxCollection).toBe(false)
+    expect(
+      openPlaylistEditsOf(ctx('rekordbox', { selectedContentId: 'c-l1' })).readsRekordboxCollection,
+    ).toBe(true)
+    const matching = { playlist: { ...crate, id: MATCHING_ID } }
+    expect(
+      openPlaylistEditsOf(ctx('rekordbox', { browser: matching })).readsRekordboxCollection,
+    ).toBe(true)
+    expect(openPlaylistEditsOf(ctx(null)).readsRekordboxCollection).toBe(false)
+  })
+
+  // Automatic cues are written to a DJ program; Apple Music and the files have none.
+  it('marks cues automatically only with the cues open in a DJ program', () => {
+    expect(openPlaylistEditsOf(ctx('engine', { cuesOpen: true })).cuesMarkable).toBe(true)
+    expect(openPlaylistEditsOf(ctx('engine')).cuesMarkable).toBe(false)
+    expect(openPlaylistEditsOf(ctx(null, { cuesOpen: true })).cuesMarkable).toBe(false)
   })
 })

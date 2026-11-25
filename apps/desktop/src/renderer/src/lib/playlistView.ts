@@ -1,11 +1,14 @@
+import { ALL_TRACKS_ID } from '../../../shared/allTracks'
 import { autoMatchAvailable, usableProviders } from '../../../shared/autoMatch'
 import type { DjProgram } from '../../../shared/djProgram'
 import { MATCHING_ID } from '../../../shared/matching'
+import { RECENTLY_ADDED_ID } from '../../../shared/recentlyAdded'
 import { TO_REVIEW_ID } from '../../../shared/toReview'
 import type { PlaylistSource, Settings, SourcePlaylistEntry } from '../../../shared/types'
 import type { SourceBrowser } from '../hooks/useSourceBrowser'
 import type { TrackItem } from '../types'
 import type { LibrarySource } from './librarySource'
+import { canEdit, type SourceEdit } from './sourcePrograms'
 import type { FilterSelection, TrackSort } from './triage'
 
 // The crate narrowed to one playlist and put in the playlist's order. The crate itself is
@@ -356,4 +359,74 @@ export function toolbarScopeFlags({
     !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
   const canProcessAll = eligibleCount > 0 && !batching
   return { autoMatchButtonTracks, needsToken, tokenMissing, canProcessAll }
+}
+
+export interface OpenPlaylistEditsContext {
+  editableSource: DjProgram | null
+  sourceProgram: DjProgram | null
+  sourceEdit: SourceEdit | null
+  browser: Pick<SourceBrowser, 'playlist'>
+  playlistScope: PlaylistScope | null
+  cuesOpen: boolean
+  openSmart: boolean
+  selectedContentId: string | undefined
+  sortBy: TrackSort
+  search: string
+  filterActive: boolean
+}
+
+export interface OpenPlaylistEdits {
+  editableOpen: boolean
+  cuesMarkable: boolean
+  crateOpen: boolean
+  inRekordbox: boolean
+  otherOpen: boolean
+  readsRekordboxCollection: boolean
+  removablePlaylist: SourceBrowser['playlist']
+  reorderEnabled: boolean
+}
+
+export function openPlaylistEditsOf({
+  editableSource,
+  sourceProgram,
+  sourceEdit,
+  browser,
+  playlistScope,
+  cuesOpen,
+  openSmart,
+  selectedContentId,
+  sortBy,
+  search,
+  filterActive,
+}: OpenPlaylistEditsContext): OpenPlaylistEdits {
+  // Organising the open crate of an editable library. Every action sends one edit; what the
+  // library holds afterwards is re-read and shown (useRekordboxEdits).
+  const editableOpen =
+    editableSource !== null && browser.playlist !== null && playlistScope !== null
+  const crateOpen =
+    editableOpen &&
+    !openSmart &&
+    browser.playlist?.id !== RECENTLY_ADDED_ID &&
+    browser.playlist?.id !== ALL_TRACKS_ID &&
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
+  const inRekordbox = sourceProgram === 'rekordbox'
+  const otherOpen =
+    sourceProgram !== null && !inRekordbox && browser.playlist !== null && playlistScope !== null
+  return {
+    editableOpen,
+    cuesMarkable: cuesOpen && sourceProgram !== null,
+    crateOpen,
+    inRekordbox,
+    otherOpen,
+    readsRekordboxCollection:
+      otherOpen ||
+      (inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID)),
+    removablePlaylist:
+      editableSource && crateOpen && canEdit(sourceEdit, 'remove') ? browser.playlist : null,
+    // Reordering only means something in the playlist's own order with nothing hidden: under
+    // another sort, a search or a filter, a drop would land among rows the user cannot see.
+    reorderEnabled:
+      crateOpen && sortBy === 'import' && !search && !filterActive && canEdit(sourceEdit, 'move'),
+  }
 }
