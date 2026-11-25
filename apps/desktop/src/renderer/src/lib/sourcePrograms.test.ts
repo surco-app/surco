@@ -282,8 +282,19 @@ describe('canEdit', () => {
   it.each(['rekordbox', 'traktor', 'serato', 'virtualdj'] as const)(
     'lets %s take every edit',
     (program) => {
-      expect(canEdit(SOURCE_PROGRAMS[program].edit, 'move')).toBe(true)
-      expect(canEdit(SOURCE_PROGRAMS[program].edit, 'rename')).toBe(true)
+      const kinds = [
+        'add',
+        'move',
+        'remove',
+        'insertSeparator',
+        'create',
+        'rename',
+        'delete',
+        'moveNode',
+      ] as const
+      for (const kind of kinds) {
+        expect(canEdit(SOURCE_PROGRAMS[program].edit, kind)).toBe(true)
+      }
     },
   )
 })
