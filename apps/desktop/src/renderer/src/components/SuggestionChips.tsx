@@ -131,12 +131,13 @@ export function SuggestionChips({
       ref={containerRef}
       data-testid={scope ? `field-suggestions-${scope}` : 'field-suggestions'}
       data-expanded={showAll ? 'true' : 'false'}
-      // Colapsada, la fila es UNA línea pase lo que pase: nowrap + overflow-hidden, y el
+      // Colapsada, la fila es UNA línea pase lo que pase: nowrap + overflow-clip, y el
       // corte medido (useChipOverflow) decide cuántos chips entran dejando hueco al "+N" —
       // el corte fijo de antes saltaba a una segunda línea en columnas estrechas y
-      // desperdiciaba hueco en las anchas. Expandida vuelve al wrap multilínea.
+      // desperdiciaba hueco en las anchas. Expandida vuelve al wrap multilínea. El margen de
+      // recorte deja pintar el anillo de foco de los chips sin mover ni un píxel de la fila.
       className={`relative flex items-center gap-1.5 ${dim ? 'mt-1' : 'mt-1.5'} ${
-        showAll ? 'flex-wrap' : 'flex-nowrap overflow-hidden'
+        showAll ? 'flex-wrap' : 'flex-nowrap overflow-clip [overflow-clip-margin:4px]'
       }`}
     >
       {chips.slice(0, shownCount).map((s, i) => {
@@ -156,9 +157,10 @@ export function SuggestionChips({
             onFocus={(e) => measureCut(e.currentTarget, s)}
             // Colapsado, el chip puede encoger y truncar con elipsis — solo pasa en el caso
             // mínimo-1 (ni un chip cabe entero); si el corte dice que cabe, no encoge nada.
-            // El anillo de foco va por dentro: el global, de 2 px por fuera, se fundía con el
-            // borde y la fila plegada (overflow-hidden) lo cortaba arriba, abajo y a la izquierda.
-            className={`press inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-label transition-colors focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)] ${
+            // El anillo de foco va por fuera y separado 2 px, como en macOS: pegado al borde se
+            // fundía con él, y por dentro un chip apagado con foco se leía como «some», que es
+            // justo un borde de acento.
+            className={`press inline-flex max-w-full items-center rounded-full border px-2 py-0.5 text-label transition-colors focus-visible:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)] ${
               showAll ? 'shrink-0' : 'min-w-0'
             } ${
               state === 'on'
@@ -194,7 +196,7 @@ export function SuggestionChips({
           aria-label={tr('fields.suggestionsMore', {
             count: chips.length - shownCount,
           })}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
         >
           +{chips.length - shownCount}
         </button>
@@ -209,7 +211,7 @@ export function SuggestionChips({
             setOpen(false)
           }}
           aria-label={tr('fields.suggestionsLess')}
-          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-[inset_0_0_0_1px_var(--color-accent)] focus-visible:border-[var(--color-accent)]"
+          className="press shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-accent)_40%,transparent)] px-2 py-0.5 text-label text-[var(--color-accent)] transition-colors hover:bg-[var(--color-hover)] focus-visible:shadow-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
         >
           −
         </button>
