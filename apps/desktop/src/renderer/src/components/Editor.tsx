@@ -987,7 +987,10 @@ export const Editor = memo(function Editor({
   }, [isMulti, selectionCopies, copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
   // What Music holds for this file when it is in the library: grouping and artwork, which
-  // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
+  // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched. A
+  // matched entry whose file is another one is the library copy, which the copy fill below
+  // asks about by its own path: main answers only the entry whose file is the path asked. So
+  // the ask waits for Music to say where that entry's file lives.
   useAppleMusicFill({
     item,
     candidates: item.musicPersistentId
@@ -996,7 +999,10 @@ export const Editor = memo(function Editor({
         ? []
         : isAmbiguousCandidate(replaceTarget)
           ? replaceTarget.ambiguous
-          : [replaceTarget.persistentId],
+          : replaceTargetPending ||
+              (replaceTarget.path && pathKey(replaceTarget.path) !== pathKey(item.inputPath))
+            ? []
+            : [replaceTarget.persistentId],
     onChange,
   })
   // The editor remounts per track and App applies its patch to whichever row is selected,
@@ -1969,10 +1975,19 @@ export const Editor = memo(function Editor({
     fileDurationSec: item.duration,
   }
   const sameRecordingCopyPath = fillCopyPath(fillCopies)
+  const fillPath = sameRecordingCopyPath || versionCopyPath(fillCopies)
+  // A Music copy that is another file is asked about by its own path, together with its file.
+  // The track's own Music entry, when it has one, is the open file's and filled through
+  // useAppleMusicFill instead.
+  const musicCopyEntry =
+    musicCopy && !musicHoldsFile && !item.musicPersistentId && fillPath === musicCopy.path
+      ? musicCopy.music.persistentId
+      : undefined
   useReplacedCopyFill({
     item,
-    copyPath: sameRecordingCopyPath || versionCopyPath(fillCopies),
+    copyPath: fillPath,
     anotherVersion: !sameRecordingCopyPath,
+    musicEntry: musicCopyEntry,
     onChange,
     onRecordUndo,
   })

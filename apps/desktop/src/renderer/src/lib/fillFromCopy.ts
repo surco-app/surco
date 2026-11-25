@@ -25,9 +25,13 @@ export function fillFromCopy(meta: TrackMetadata, copy: TrackMetadata): TrackMet
 
 // Another version of the track was filed by the DJ under the same grouping, but its album,
 // year or label belong to that other release, so the grouping is all it lends.
-export function groupingFromCopy(meta: TrackMetadata, copy: TrackMetadata): TrackMetadata | null {
-  if (isBlank(copy.grouping) || !isBlank(meta.grouping)) return null
-  return { ...meta, grouping: copy.grouping }
+export function groupingFromCopy(
+  meta: TrackMetadata,
+  copy: { grouping?: string },
+): TrackMetadata | null {
+  const grouping = copy.grouping
+  if (grouping === undefined || isBlank(grouping) || !isBlank(meta.grouping)) return null
+  return { ...meta, grouping }
 }
 
 // What the track shows is the file's own art when it is the embedded picture, as

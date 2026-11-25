@@ -442,3 +442,145 @@ describe('useReplacedCopyFill', () => {
     expect(onChange.mock.calls[0][0].meta).toMatchObject({ album: 'From M' })
   })
 })
+
+// FLAC 7:01 against the WAV 7:06 in Apple Music: Music never writes tags into a WAV, so the
+// grouping the DJ filed it under («Bases») and its artwork live only in Music's database.
+describe('from the Apple Music copy that is another file', () => {
+  const MUSIC_COVER = 'data:image/jpeg;base64,TVVTSUM'
+
+  function setMusicApi(
+    fileTags: Partial<TrackMetadata>,
+    music: Awaited<ReturnType<Api['appleMusicEntryMeta']>> | Error,
+    fileCover: string | null = null,
+  ) {
+    const api = {
+      readTags: vi.fn<Api['readTags']>().mockResolvedValue(copyTags(fileTags)),
+      readCoverFull: vi.fn<Api['readCoverFull']>((path) =>
+        Promise.resolve(path === '/m/old/your-love.wav' ? fileCover : null),
+      ),
+      appleMusicEntryMeta: vi.fn<Api['appleMusicEntryMeta']>(() =>
+        music instanceof Error ? Promise.reject(music) : Promise.resolve(music),
+      ),
+    }
+    ;(window as unknown as { api: unknown }).api = api
+    return api
+  }
+
+  function renderFill(over: Partial<TrackItem> = {}, anotherVersion = false) {
+    const onChange = vi.fn()
+    const onRecordUndo = vi.fn()
+    renderHook(() =>
+      useReplacedCopyFill({
+        item: track(over),
+        copyPath: '/m/old/your-love.wav',
+        anotherVersion,
+        musicEntry: 'PID1',
+        onChange,
+        onRecordUndo,
+      }),
+    )
+    return { onChange, onRecordUndo }
+  }
+
+  // Main answers only the entry whose file is the path it is given, so asking with the open
+  // file's path got nothing back for a copy that is another file.
+  it("asks Music about the copy by the copy's own path", async () => {
+    const api = setMusicApi({}, { grouping: 'Bases' })
+    const { onChange } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(api.appleMusicEntryMeta).toHaveBeenCalledWith('/m/old/your-love.wav', ['PID1'])
+  })
+
+  it('lends only the grouping Music holds for another version, its year is another edit', async () => {
+    setMusicApi({}, { grouping: 'Bases', year: '1999', comment: 'Otra' })
+    const { onChange } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      grouping: 'Bases',
+      year: '',
+      comment: '',
+    })
+  })
+
+  it('fills every field Music holds for a copy of the same recording, as for its own file', async () => {
+    setMusicApi({ album: 'Your Love' }, { grouping: 'Bases', year: '1999', rating: 80 })
+    const { onChange } = renderFill()
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({
+      album: 'Your Love',
+      grouping: 'Bases',
+      year: '1999',
+      rating: '4',
+    })
+  })
+
+  // Both sources describe the same copy and may both carry the grouping. The copy's file is
+  // what every other program reads, so it goes first and Music only fills what it leaves,
+  // in one change and one undo step: two fills racing on one field would leave ⌘Z taking
+  // back half of what opening the track did.
+  it("lets the copy's file win over Music's database, in a single change and undo step", async () => {
+    setMusicApi(
+      { grouping: 'Bases, Rockola' },
+      { grouping: 'Bases', coverUrl: MUSIC_COVER, coverPath: '/art/PID1.jpg' },
+      COPY_COVER,
+    )
+    const { onChange, onRecordUndo } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onRecordUndo).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0]).toMatchObject({
+      meta: { grouping: 'Bases, Rockola' },
+      coverUrl: COPY_COVER,
+      coverPath: undefined,
+    })
+  })
+
+  // The artwork the DJ sees for this track in Music wins over the one the file shows, as the
+  // copy file's does; the file's own stays in the picker and ⌘Z takes it back.
+  it("puts Music's artwork over the file's own when the copy file carries none", async () => {
+    setMusicApi({}, { grouping: 'Bases', coverUrl: MUSIC_COVER, coverPath: '/art/PID1.jpg' })
+    const { onChange, onRecordUndo } = renderFill(
+      { coverUrl: 'data:thumb', embeddedCover: 'data:thumb' },
+      true,
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0]).toMatchObject({
+      coverUrl: MUSIC_COVER,
+      coverPath: '/art/PID1.jpg',
+    })
+    expect(onChange.mock.calls[0][0]).not.toHaveProperty('embeddedCover')
+    expect(onRecordUndo).toHaveBeenCalledWith(['t1'], { cover: true })
+  })
+
+  it("leaves the cover alone when Music's artwork is the picture the track already shows", async () => {
+    setMusicApi({}, { coverUrl: 'data:thumb', coverPath: '/art/PID1.jpg' })
+    const { onChange, onRecordUndo } = renderFill(
+      { coverUrl: 'data:thumb', embeddedCover: 'data:thumb' },
+      true,
+    )
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ copyFilled: true }))
+    expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+
+  it("never puts Music's artwork back over a cover the DJ removed by hand", async () => {
+    setMusicApi({}, { grouping: 'Bases', coverUrl: MUSIC_COVER, coverPath: '/art/PID1.jpg' })
+    const { onChange } = renderFill({ coverRemoved: true }, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].coverUrl).toBeUndefined()
+  })
+
+  it("still fills from the copy's file when Music does not answer", async () => {
+    setMusicApi({ grouping: 'Bases, Rockola' }, new Error('Music is not running'))
+    const { onChange } = renderFill({}, true)
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({ grouping: 'Bases, Rockola' })
+  })
+
+  it('asks Music nothing for a copy that is not in Music', async () => {
+    const api = setMusicApi({ grouping: 'Bases' }, null)
+    const onChange = vi.fn()
+    renderHook(() => useReplacedCopyFill({ item: track(), copyPath: '/r/your-love.wav', onChange }))
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(api.appleMusicEntryMeta).not.toHaveBeenCalled()
+  })
+})

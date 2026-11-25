@@ -6973,6 +6973,7 @@ describe('Editor Apple Music library section', () => {
       musicDurationPending = false,
       sameFile,
       traktorLoading = false,
+      musicEntryMeta,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -6999,6 +7000,8 @@ describe('Editor Apple Music library section', () => {
       sameFile?: (a: string, b: string) => Promise<boolean>
       // Traktor's collection is still being read and never lands in the test.
       traktorLoading?: boolean
+      // What Music's database holds for the entry whose file is the path asked with.
+      musicEntryMeta?: Api['appleMusicEntryMeta']
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7015,6 +7018,7 @@ describe('Editor Apple Music library section', () => {
       ]
       if (music) api.appleMusicEntryLocation = vi.fn(() => musicLocation ?? Promise.resolve(music))
       if (sameFile) api.sameFile = vi.fn(sameFile)
+      if (musicEntryMeta) api.appleMusicEntryMeta = musicEntryMeta
       api.readDuration = vi.fn((path: string) =>
         musicDurationPending && path === music
           ? new Promise<number | null>(() => {})
@@ -7735,6 +7739,35 @@ describe('Editor Apple Music library section', () => {
       })
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases, Rockola', album: '' })
+    })
+
+    // FLAC 7:01 against the WAV 7:06 in Music: Music never writes tags into a WAV, so the
+    // grouping the DJ filed it under lives only in its database. Main answers the entry whose
+    // file is the path it is asked with, so only the copy's path brings it back, and one ask
+    // is all it takes: asking again with the open file's path would get nothing.
+    it("takes the grouping Music's database holds for a WAV copy that is another version", async () => {
+      const entryMeta = vi.fn<Api['appleMusicEntryMeta']>(async (path) =>
+        path === '/m/old/Strobe.wav' ? { grouping: 'Bases', year: '2001' } : null,
+      )
+      renderWithPrograms({
+        hereDuration: 421,
+        music: '/m/old/Strobe.wav',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 426,
+          },
+        ]),
+        tags: { '/m/old/Strobe.wav': { album: 'From the WAV' } },
+        musicEntryMeta: entryMeta,
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', year: '', album: '' })
+      expect(entryMeta).toHaveBeenCalledTimes(1)
+      expect(entryMeta).toHaveBeenCalledWith('/m/old/Strobe.wav', ['0123456789ABCDEF'])
     })
 
     // Until the Music library lands there is no telling whether it holds a copy to replace,
