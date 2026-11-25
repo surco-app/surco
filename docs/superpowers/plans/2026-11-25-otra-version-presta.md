@@ -45,7 +45,7 @@ Ya arreglado aparte en esta rama: `readTags` (main/ffmpeg.ts) ahora lee GRP1 y P
   la aplica al fichero nuevo. La pertenencia de una ruta a playlists se lee con
   `useRekordboxMembership(paths, shown, library)`.
 
-## Tarea 1. Grouping y carátula desde una copia «Another version» (ficheros)
+### Task 1: Grouping y carátula desde una copia «Another version» (ficheros)
 
 Si no hay copia de la misma grabación (`fillCopyPath` devuelve ''), pero sí una copia encontrada
 que es otra versión (Music `replaceTarget` no ambiguo con `path`, o una fila DJ con veredicto
@@ -59,14 +59,14 @@ Tests (TDD, rojo primero): en `useReplacedCopyFill.test.tsx` / `fillFromCopy.tes
 `libraryCopy.test.ts` y, si hace falta el cableado, `Editor.test.tsx`. Que digan POR QUÉ: «una
 copia de otra versión trae el grouping con el que el DJ la archivó, no su álbum».
 
-## Tarea 2. Grouping y carátula desde la base de Music para una copia que es otro fichero
+### Task 2: Grouping y carátula desde la base de Music para una copia que es otro fichero
 
 `useAppleMusicFill`: cuando el candidato es `replaceTarget` y su `path` no es el fichero abierto,
 preguntar a main con la ruta de la copia. Misma grabación: todo `FILLABLE` + carátula, como hoy.
 Otra versión: solo grouping + carátula. La carátula de Music también manda (regla de arriba).
 Comprobar en `appleMusicIpc.test.ts` que main ya responde por la ruta de la copia; si no, ajustarlo.
 
-## Tarea 3. Playlists desde una copia «Another version»
+### Task 3: Playlists desde una copia «Another version»
 
 Para cada programa DJ (y Apple Music si su campo de playlists usa el mismo mecanismo) cuya copia
 es otra versión, una vez por pista y solo si no hay nada preparado para ese programa
