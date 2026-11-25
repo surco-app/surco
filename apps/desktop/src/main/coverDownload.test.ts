@@ -151,6 +151,18 @@ describe('resolveDraggedCover', () => {
     expect(cover?.coverUrl.startsWith('data:image/jpeg;base64,')).toBe(true)
   })
 
+  // The cut is on the decoded image, not on the length of its data URL: up to 1 KB is
+  // still a lazy-loading placeholder, one byte more is a real cover.
+  it('sizes an inline image by its decoded bytes', async () => {
+    const inline = (bytes: number) =>
+      `data:image/jpeg;base64,${Buffer.alloc(bytes, 1).toString('base64')}`
+    const fetchCover = vi.fn()
+    expect(await resolveDraggedCover([inline(1024)], fetchCover)).toBeNull()
+    expect(await resolveDraggedCover([inline(1025)], fetchCover)).toEqual({
+      coverUrl: inline(1025),
+    })
+  })
+
   // Null makes the drop a clean no-op instead of a red ffmpeg error on undecodable bytes.
   it('answers null when nothing resolves to an image', async () => {
     const fetchCover = vi.fn()
