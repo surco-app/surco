@@ -2524,6 +2524,340 @@ async function copyVerbatim(ctx: CopyVerbatimContext): Promise<CopyVerbatimResul
   return { absorbedPcm, seratoAnalysisKept }
 }
 
+interface EncodeConversionContext {
+  input: string
+  tmp: string
+  plan: ConversionPlan
+  meta: TrackMetadata
+  coverPath: string | undefined
+  removeCover: boolean | undefined
+  clearExtras: boolean | undefined
+  foreignRemoved: string[] | undefined
+  staleMeasurements: string[]
+  onChild: ((child: { kill: (signal: string) => void }) => void) | undefined
+  isCancelled: (() => boolean) | undefined
+  audioFilter: string | undefined
+  normalize: NormalizeConfig | undefined
+  normalizeAf: string | undefined
+  sampleRate: number | undefined
+  declick: DeclickConfig | undefined
+  trim: TrimRange | undefined
+  trimAf: string | undefined
+  declickAf: string | undefined
+  rateAf: string | undefined
+  dither: boolean | undefined
+  declickedSamples: number | undefined
+}
+
+interface EncodeConversionResult {
+  declickedSamples: number | undefined
+  codecCueOffsetMs: number
+}
+
+async function encodeConversion(ctx: EncodeConversionContext): Promise<EncodeConversionResult> {
+  const {
+    input,
+    tmp,
+    plan,
+    meta,
+    coverPath,
+    removeCover,
+    clearExtras,
+    foreignRemoved,
+    staleMeasurements,
+    onChild,
+    isCancelled,
+    audioFilter,
+    normalize,
+    normalizeAf,
+    sampleRate,
+    declick,
+    trim,
+    trimAf,
+    declickAf,
+    rateAf,
+    dither,
+  } = ctx
+  let { declickedSamples } = ctx
+  const encode = (filter: string | undefined) =>
+    run(
+      ffmpegPath,
+      convertArgs(
+        input,
+        tmp,
+        plan,
+        meta,
+        coverPath,
+        filter,
+        clearExtras,
+        [...(foreignRemoved ?? []), ...staleMeasurements],
+        removeCover,
+      ),
+      {
+        maxBuffer: 1024 * 1024 * 32,
+        onChild,
+      },
+    )
+      .catch((e: unknown) => {
+        // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
+        // line before any of ffmpeg's own output. That line carries every -metadata flag
+        // Surco writes — around forty of them — so the message the user was shown ran to
+        // thousands of characters with the one line that says WHY buried at the bottom.
+        // Distilled to the decoder's own diagnosis, the same way assertDecodable already
+        // treats its failures; the raw text still reaches the log through the throw site.
+        // Not stamped with an error key: the cause here is open-ended (permissions, a
+        // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
+        // than any sentence Surco could pick in advance.
+        if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+        const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
+        throw text ? new Error(firstErrorLine(text) || text) : e
+      })
+      .then((result) => {
+        if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+        return result
+      })
+  let { stderr } = await encode(audioFilter)
+  // The MP3 encoder puts peaks back over the ceiling the filter held them under: on the
+  // reference track, 0.3 dB at 320 kbps with a constant gain and up to 1.7 dB at 128
+  // kbps. The limiter does it in any format: it holds sample peaks at four times the
+  // rate, and the return to the file's own rate rebuilds peaks between the samples, up
+  // to 1 dB on sharp bursts (see convertLossyCeiling.test.ts). The overshoot depends on
+  // the material, so every encoded file is measured and the ceiling lowered by it, or the
+  // gain where only a constant gain was applied, until the written file is under it.
+  if (normalize && normalizeAf)
+    stderr = await holdUnderCeiling(String(stderr), normalizeAf, {
+      overshootDb: () => ceilingOvershootDb(tmp, normalize),
+      lowerCeiling: (marginDb) =>
+        normalizeFilter(
+          input,
+          { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
+          sampleRate,
+          declick,
+          trim,
+        ),
+      encode: async (af) =>
+        String(
+          (
+            await encode(
+              [trimAf, declickAf, af, rateAf, dither ? DITHER_FILTER : undefined]
+                .filter(Boolean)
+                .join(','),
+            )
+          ).stderr,
+        ),
+    })
+  if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
+  const codecCueOffsetMs = await automaticCueOffsetOfFiles(input, tmp)
+  return { declickedSamples, codecCueOffsetMs }
+}
+
+interface TagEncodedOutputContext {
+  input: string
+  tmp: string
+  ext: ConversionPlan['ext']
+  codec: ConversionPlan['codec']
+  meta: TrackMetadata
+  coverPath: string | undefined
+  removeCover: boolean | undefined
+  clearExtras: boolean | undefined
+  foreignRemoved: string[] | undefined
+  staleMeasurements: string[]
+  cueShift: () => CueShift | undefined
+}
+
+async function tagEncodedOutput(ctx: TagEncodedOutputContext): Promise<void> {
+  const {
+    input,
+    tmp,
+    ext,
+    codec,
+    meta,
+    coverPath,
+    removeCover,
+    clearExtras,
+    foreignRemoved,
+    staleMeasurements,
+    cueShift,
+  } = ctx
+  // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
+  // it; put it under the name the DJ software reads (see setFlacComment). The source's
+  // multi-valued tags, which ffmpeg joined or cut to one, come back in the same save
+  // unless cleared.
+  if (ext === '.flac')
+    await runInWorker({
+      type: 'setFlacComment',
+      file: tmp,
+      comment: meta.comment,
+      multiFrom:
+        !clearExtras && (FLAC_INPUT.test(input) || keepsCuesInId3(extname(input)))
+          ? input
+          : undefined,
+    })
+  if (ext === '.wav' || ext === '.m4a') {
+    // RIFF rejects an attached-picture stream, so convertArgs can't embed the
+    // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
+    // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
+    // and grouping — and which ffmpeg reads back as a video stream on re-import.
+    // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
+    // that ffmpeg's mp4 muxer has no -metadata names for.
+    //
+    // cueSource rides this same save for the same reason the MP3/AIFF pass folds it
+    // in: a WAV's cues live in the very "id3 " chunk this pass writes, and it is the
+    // only pass a WAV target gets — the cue branches below are an else, so without
+    // this a cued crate converted to WAV came out with no beatgrid at all. Passing
+    // it on M4A is harmless: writeTags returns at the MP4 branch before the ID3
+    // merge, since an ID3 tag forced into an MP4 would corrupt it.
+    //
+    // And the artwork has to be carried the same way. Every other target keeps the
+    // source picture through convertArgs' `-map 0:v?`, but these two containers are
+    // excluded from it (RIFF genuinely refuses a second stream — "WAVE files have
+    // exactly one stream" — and M4A's art belongs in the covr atom), so this pass is
+    // their only route. It only ever wrote a NEW cover, which left a conversion that
+    // merely fixed a title stripping art the file already had: the same "Surco
+    // deleted my cover" the `-map 0:v?` exists to prevent, still live on two formats.
+    const carried = coverPath || removeCover ? null : await extractCoverFile(input)
+    try {
+      await runInWorker({
+        type: 'writeTags',
+        file: tmp,
+        meta,
+        coverPath: coverPath ?? carried ?? undefined,
+        removeCover,
+        clearExtras,
+        // The loudness figures go with the rest of the deleted: an M4A encoded again gets
+        // its atoms back, but not the ones measured on the old samples.
+        foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
+        cueSource: input,
+        cueShift: cueShift(),
+        carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
+      })
+    } finally {
+      // Only the extracted copy is ours to delete; a caller-supplied coverPath is
+      // owned by whoever passed it in.
+      if (carried) await unlink(carried).catch(() => {})
+    }
+    // A WAV's cues live in an ID3 chunk, so a FLAC source hits the same wall the
+    // MP3/AIFF targets did: cueSource clones ID3 frames and a Vorbis comment is not
+    // one, leaving the WAV with no beatgrid at all. Re-armor it here, after the tag
+    // pass that created the chunk. M4A is excluded on purpose — it has no ID3 to
+    // write into, the same reason the ALAC path carries no cues.
+    if (!clearExtras && ext === '.wav' && extname(input).toLowerCase() === '.flac')
+      await runInWorker({
+        type: 'copyCuesFromFlac',
+        source: input,
+        dest: tmp,
+        shift: cueShift(),
+      })
+    // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
+    // riffCarry.ts). Only when the audio is copied through: their positions count
+    // samples, which a trim or a rate change moves, and a re-encode keeps a backup
+    // under every policy but 'never'. A clear empties them like the rest.
+    if (
+      codec === 'copy' &&
+      !clearExtras &&
+      ext === '.wav' &&
+      extname(input).toLowerCase() === '.wav'
+    )
+      await carryRiffChunks(input, tmp)
+  } else if (
+    (meta.rating?.trim() || meta.comment.trim() || meta.grouping.trim() || clearExtras) &&
+    (ext === '.mp3' || ext === '.aiff')
+  ) {
+    // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
+    // pass to write the Traktor rating. Only done when there's something only this
+    // pass can write (or a clear, which must actively wipe the POPM ffmpeg copied
+    // over), to avoid a second tag pass on every conversion. cueSource folds the cue
+    // carry-over (below) into this same save, so the rating never costs a second
+    // whole-file rewrite on top of it.
+    // A comment counts too: ffmpeg writes one as a TXXX described "comment", not the
+    // COMM frame the spec defines and Traktor and mp3tag read, so an unrated track
+    // reached them with no comment at all. And a grouping: ffmpeg writes that as TXXX
+    // "grouping" too, never the TIT1 and GRP1 DJ software and Apple Music read.
+    await runInWorker({
+      type: 'writeTags',
+      file: tmp,
+      meta,
+      coverPath,
+      clearExtras,
+      foreignRemoved,
+      cueSource: input,
+      cueShift: cueShift(),
+    })
+    // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
+    // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
+    // reached through the other branch. Re-armor it here, after the rating is written:
+    // the carry-over rewrites only the cue frames, leaving that POPM in place.
+    if (!clearExtras && extname(input).toLowerCase() === '.flac')
+      await runInWorker({
+        type: 'copyCuesFromFlac',
+        source: input,
+        dest: tmp,
+        shift: cueShift(),
+      })
+  }
+  // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
+  // plain format change just as much as a normalizing gain pass. Neither moves
+  // the cues in time (a constant gain doesn't, and the decoded sample timeline
+  // is preserved across formats), so carry the frames over from the source for
+  // the ID3 containers they round-trip through, restoring cues on every encode
+  // rather than only when normalizing. A trim DOES move the audio under them,
+  // so the shift re-anchors each stored position (see tags.ts). A rated
+  // MP3/AIFF already carried them in its writeTags pass above.
+  // Coming from a FLAC there are no ID3 frames to clone: the tree is armored in a
+  // Vorbis comment, which ffmpeg re-emits as a TXXX text frame Traktor does not read.
+  // That crossing needs the mirror of copyCuesToFlac — re-armor the comment into the
+  // PRIV frame real Traktor files carry (see tags.ts).
+  else if (preservesCuesInPlace(ext))
+    await runInWorker(
+      extname(input).toLowerCase() === '.flac'
+        ? {
+            type: 'copyCuesFromFlac',
+            source: input,
+            dest: tmp,
+            shift: cueShift(),
+          }
+        : {
+            type: 'copyCueFrames',
+            source: input,
+            dest: tmp,
+            shift: cueShift(),
+          },
+    )
+  // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
+  // re-encode by itself, so nothing is carried over and only a trim matters
+  // — the surviving comment is what ends up measuring from the wrong start.
+  // Unless the source was ID3 (an AIFF crate moving to FLAC is the common
+  // one): then no comment rode along, and the cues have to be re-armored out
+  // of the source's PRIV frame instead.
+  // A WAV source needs copyCuesToFlac just as much as an MP3/AIFF one: its cues also
+  // live in an ID3 tag, which ffmpeg does not translate into a Vorbis comment. It is
+  // excluded from preservesCuesInPlace for an unrelated reason (its ID3 rides inside a
+  // RIFF chunk, so it takes the ffmpeg path rather than an in-place edit), and reusing
+  // that predicate here silently routed it to shiftFlacCues — which had no comment to
+  // re-anchor, so the cues were dropped. ID3_SOURCED names the real property this
+  // branch needs: "the source keeps its cues in an ID3 tag".
+  // A clear wins over both, as over every other carry-over: the cues go with the rest.
+  else if (ext === '.flac' && !clearExtras)
+    await runInWorker(
+      keepsCuesInId3(extname(input))
+        ? {
+            type: 'copyCuesToFlac',
+            source: input,
+            dest: tmp,
+            shift: cueShift(),
+          }
+        : {
+            type: 'shiftFlacCues',
+            file: tmp,
+            shift: cueShift(),
+          },
+    )
+  // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
+  // (see flacCarry.ts), on the same terms as a WAV's chunks above.
+  if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
+    await carryFlacBlocks(input, tmp)
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -2703,252 +3037,43 @@ export async function convertAudio(
         seratoAnalysisKept,
       }))
     } else {
-      const encode = (filter: string | undefined) =>
-        run(
-          ffmpegPath,
-          convertArgs(
-            input,
-            tmp,
-            plan,
-            meta,
-            coverPath,
-            filter,
-            clearExtras,
-            [...(foreignRemoved ?? []), ...staleMeasurements],
-            removeCover,
-          ),
-          {
-            maxBuffer: 1024 * 1024 * 32,
-            onChild,
-          },
-        )
-          .catch((e: unknown) => {
-            // execFile prefixes a failed run with "Command failed: " and the ENTIRE command
-            // line before any of ffmpeg's own output. That line carries every -metadata flag
-            // Surco writes — around forty of them — so the message the user was shown ran to
-            // thousands of characters with the one line that says WHY buried at the bottom.
-            // Distilled to the decoder's own diagnosis, the same way assertDecodable already
-            // treats its failures; the raw text still reaches the log through the throw site.
-            // Not stamped with an error key: the cause here is open-ended (permissions, a
-            // full disk, a codec refusing a parameter) and ffmpeg's own line names it better
-            // than any sentence Surco could pick in advance.
-            if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-            const text = String((e as { stderr?: unknown })?.stderr ?? '').trim()
-            throw text ? new Error(firstErrorLine(text) || text) : e
-          })
-          .then((result) => {
-            if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-            return result
-          })
-      let { stderr } = await encode(audioFilter)
-      // The MP3 encoder puts peaks back over the ceiling the filter held them under: on the
-      // reference track, 0.3 dB at 320 kbps with a constant gain and up to 1.7 dB at 128
-      // kbps. The limiter does it in any format: it holds sample peaks at four times the
-      // rate, and the return to the file's own rate rebuilds peaks between the samples, up
-      // to 1 dB on sharp bursts (see convertLossyCeiling.test.ts). The overshoot depends on
-      // the material, so every encoded file is measured and the ceiling lowered by it, or the
-      // gain where only a constant gain was applied, until the written file is under it.
-      if (normalize && normalizeAf)
-        stderr = await holdUnderCeiling(String(stderr), normalizeAf, {
-          overshootDb: () => ceilingOvershootDb(tmp, normalize),
-          lowerCeiling: (marginDb) =>
-            normalizeFilter(
-              input,
-              { ...normalize, truePeakDb: Math.min(0, normalize.truePeakDb) - marginDb },
-              sampleRate,
-              declick,
-              trim,
-            ),
-          encode: async (af) =>
-            String(
-              (
-                await encode(
-                  [trimAf, declickAf, af, rateAf, dither ? DITHER_FILTER : undefined]
-                    .filter(Boolean)
-                    .join(','),
-                )
-              ).stderr,
-            ),
-        })
-      if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
-      codecCueOffsetMs = await automaticCueOffsetOfFiles(input, tmp)
-      // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
-      // it; put it under the name the DJ software reads (see setFlacComment). The source's
-      // multi-valued tags, which ffmpeg joined or cut to one, come back in the same save
-      // unless cleared.
-      if (ext === '.flac')
-        await runInWorker({
-          type: 'setFlacComment',
-          file: tmp,
-          comment: meta.comment,
-          multiFrom:
-            !clearExtras && (FLAC_INPUT.test(input) || keepsCuesInId3(extname(input)))
-              ? input
-              : undefined,
-        })
-      if (ext === '.wav' || ext === '.m4a') {
-        // RIFF rejects an attached-picture stream, so convertArgs can't embed the
-        // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
-        // full ID3v2 tag into a WAV "id3 " chunk instead, which carries the artwork
-        // and grouping — and which ffmpeg reads back as a video stream on re-import.
-        // M4A takes the same pass: TagLib writes the iTunes atoms (bpm, key, cover)
-        // that ffmpeg's mp4 muxer has no -metadata names for.
-        //
-        // cueSource rides this same save for the same reason the MP3/AIFF pass folds it
-        // in: a WAV's cues live in the very "id3 " chunk this pass writes, and it is the
-        // only pass a WAV target gets — the cue branches below are an else, so without
-        // this a cued crate converted to WAV came out with no beatgrid at all. Passing
-        // it on M4A is harmless: writeTags returns at the MP4 branch before the ID3
-        // merge, since an ID3 tag forced into an MP4 would corrupt it.
-        //
-        // And the artwork has to be carried the same way. Every other target keeps the
-        // source picture through convertArgs' `-map 0:v?`, but these two containers are
-        // excluded from it (RIFF genuinely refuses a second stream — "WAVE files have
-        // exactly one stream" — and M4A's art belongs in the covr atom), so this pass is
-        // their only route. It only ever wrote a NEW cover, which left a conversion that
-        // merely fixed a title stripping art the file already had: the same "Surco
-        // deleted my cover" the `-map 0:v?` exists to prevent, still live on two formats.
-        const carried = coverPath || removeCover ? null : await extractCoverFile(input)
-        try {
-          await runInWorker({
-            type: 'writeTags',
-            file: tmp,
-            meta,
-            coverPath: coverPath ?? carried ?? undefined,
-            removeCover,
-            clearExtras,
-            // The loudness figures go with the rest of the deleted: an M4A encoded again gets
-            // its atoms back, but not the ones measured on the old samples.
-            foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
-            cueSource: input,
-            cueShift: cueShift(),
-            carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
-          })
-        } finally {
-          // Only the extracted copy is ours to delete; a caller-supplied coverPath is
-          // owned by whoever passed it in.
-          if (carried) await unlink(carried).catch(() => {})
-        }
-        // A WAV's cues live in an ID3 chunk, so a FLAC source hits the same wall the
-        // MP3/AIFF targets did: cueSource clones ID3 frames and a Vorbis comment is not
-        // one, leaving the WAV with no beatgrid at all. Re-armor it here, after the tag
-        // pass that created the chunk. M4A is excluded on purpose — it has no ID3 to
-        // write into, the same reason the ALAC path carries no cues.
-        if (!clearExtras && ext === '.wav' && extname(input).toLowerCase() === '.flac')
-          await runInWorker({
-            type: 'copyCuesFromFlac',
-            source: input,
-            dest: tmp,
-            shift: cueShift(),
-          })
-        // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
-        // riffCarry.ts). Only when the audio is copied through: their positions count
-        // samples, which a trim or a rate change moves, and a re-encode keeps a backup
-        // under every policy but 'never'. A clear empties them like the rest.
-        if (
-          codec === 'copy' &&
-          !clearExtras &&
-          ext === '.wav' &&
-          extname(input).toLowerCase() === '.wav'
-        )
-          await carryRiffChunks(input, tmp)
-      } else if (
-        (meta.rating?.trim() || meta.comment.trim() || meta.grouping.trim() || clearExtras) &&
-        (ext === '.mp3' || ext === '.aiff')
-      ) {
-        // ffmpeg can't emit a POPM frame, so a re-encoded MP3/AIFF needs a TagLib
-        // pass to write the Traktor rating. Only done when there's something only this
-        // pass can write (or a clear, which must actively wipe the POPM ffmpeg copied
-        // over), to avoid a second tag pass on every conversion. cueSource folds the cue
-        // carry-over (below) into this same save, so the rating never costs a second
-        // whole-file rewrite on top of it.
-        // A comment counts too: ffmpeg writes one as a TXXX described "comment", not the
-        // COMM frame the spec defines and Traktor and mp3tag read, so an unrated track
-        // reached them with no comment at all. And a grouping: ffmpeg writes that as TXXX
-        // "grouping" too, never the TIT1 and GRP1 DJ software and Apple Music read.
-        await runInWorker({
-          type: 'writeTags',
-          file: tmp,
-          meta,
-          coverPath,
-          clearExtras,
-          foreignRemoved,
-          cueSource: input,
-          cueShift: cueShift(),
-        })
-        // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
-        // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
-        // reached through the other branch. Re-armor it here, after the rating is written:
-        // the carry-over rewrites only the cue frames, leaving that POPM in place.
-        if (!clearExtras && extname(input).toLowerCase() === '.flac')
-          await runInWorker({
-            type: 'copyCuesFromFlac',
-            source: input,
-            dest: tmp,
-            shift: cueShift(),
-          })
-      }
-      // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
-      // plain format change just as much as a normalizing gain pass. Neither moves
-      // the cues in time (a constant gain doesn't, and the decoded sample timeline
-      // is preserved across formats), so carry the frames over from the source for
-      // the ID3 containers they round-trip through, restoring cues on every encode
-      // rather than only when normalizing. A trim DOES move the audio under them,
-      // so the shift re-anchors each stored position (see tags.ts). A rated
-      // MP3/AIFF already carried them in its writeTags pass above.
-      // Coming from a FLAC there are no ID3 frames to clone: the tree is armored in a
-      // Vorbis comment, which ffmpeg re-emits as a TXXX text frame Traktor does not read.
-      // That crossing needs the mirror of copyCuesToFlac — re-armor the comment into the
-      // PRIV frame real Traktor files carry (see tags.ts).
-      else if (preservesCuesInPlace(ext))
-        await runInWorker(
-          extname(input).toLowerCase() === '.flac'
-            ? {
-                type: 'copyCuesFromFlac',
-                source: input,
-                dest: tmp,
-                shift: cueShift(),
-              }
-            : {
-                type: 'copyCueFrames',
-                source: input,
-                dest: tmp,
-                shift: cueShift(),
-              },
-        )
-      // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
-      // re-encode by itself, so nothing is carried over and only a trim matters
-      // — the surviving comment is what ends up measuring from the wrong start.
-      // Unless the source was ID3 (an AIFF crate moving to FLAC is the common
-      // one): then no comment rode along, and the cues have to be re-armored out
-      // of the source's PRIV frame instead.
-      // A WAV source needs copyCuesToFlac just as much as an MP3/AIFF one: its cues also
-      // live in an ID3 tag, which ffmpeg does not translate into a Vorbis comment. It is
-      // excluded from preservesCuesInPlace for an unrelated reason (its ID3 rides inside a
-      // RIFF chunk, so it takes the ffmpeg path rather than an in-place edit), and reusing
-      // that predicate here silently routed it to shiftFlacCues — which had no comment to
-      // re-anchor, so the cues were dropped. ID3_SOURCED names the real property this
-      // branch needs: "the source keeps its cues in an ID3 tag".
-      // A clear wins over both, as over every other carry-over: the cues go with the rest.
-      else if (ext === '.flac' && !clearExtras)
-        await runInWorker(
-          keepsCuesInId3(extname(input))
-            ? {
-                type: 'copyCuesToFlac',
-                source: input,
-                dest: tmp,
-                shift: cueShift(),
-              }
-            : {
-                type: 'shiftFlacCues',
-                file: tmp,
-                shift: cueShift(),
-              },
-        )
-      // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
-      // (see flacCarry.ts), on the same terms as a WAV's chunks above.
-      if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
-        await carryFlacBlocks(input, tmp)
+      ;({ declickedSamples, codecCueOffsetMs } = await encodeConversion({
+        input,
+        tmp,
+        plan,
+        meta,
+        coverPath,
+        removeCover,
+        clearExtras,
+        foreignRemoved,
+        staleMeasurements,
+        onChild,
+        isCancelled,
+        audioFilter,
+        normalize,
+        normalizeAf,
+        sampleRate,
+        declick,
+        trim,
+        trimAf,
+        declickAf,
+        rateAf,
+        dither,
+        declickedSamples,
+      }))
+      await tagEncodedOutput({
+        input,
+        tmp,
+        ext,
+        codec,
+        meta,
+        coverPath,
+        removeCover,
+        clearExtras,
+        foreignRemoved,
+        staleMeasurements,
+        cueShift,
+      })
     }
     // The tags Surco does not manage, which ffmpeg cut to one value or left out of every
     // target but a FLAC, and an M4A's into any (see carryUnmanagedTags). The custom fields are Surco's to write, and
