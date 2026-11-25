@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
@@ -511,6 +512,17 @@ describe('applyVirtualdjListOps', () => {
       original('Carpeta.subfolders/Dentro.vdjfolder'),
     )
     expect(readFileSync(join(copy, 'order'))).toEqual(original('order'))
+  })
+
+  // A copy of an empty MyLists holds nothing to restore and would push a real one out of the last 20.
+  it('takes no copy when MyLists held no file before the edit', async () => {
+    const lib = library()
+    rmSync(lib.lists, { recursive: true })
+    mkdirSync(lib.lists)
+    const result = await lib.run({ kind: 'create', parentId: 'root', name: 'Nueva', folder: false })
+    expect(result).toMatchObject({ ok: true })
+    expect(lib.text('Nueva.vdjfolder')).toBe(`${LIST_HEAD}</VirtualFolder>\r\n`)
+    expect(lib.backups()).toEqual([])
   })
 
   it('keeps the MyLists copies in their own 20, so a run of list edits never pushes out the database copies', async () => {
