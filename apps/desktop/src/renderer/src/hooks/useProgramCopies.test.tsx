@@ -10,7 +10,12 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
 import { djReads, installApi } from '../test/api'
 import type { TrackItem } from '../types'
-import { sameLengthCopyIn, useProgramCopies, useSelectionCopies } from './useProgramCopies'
+import {
+  formerCopyIn,
+  sameLengthCopyIn,
+  useProgramCopies,
+  useSelectionCopies,
+} from './useProgramCopies'
 
 const meta = { title: 'Weekend', artist: 'Tantra' }
 
@@ -409,6 +414,30 @@ describe('sameLengthCopyIn', () => {
     expect(
       sameLengthCopyIn([row('/m/weekend.flac', { durationSec: 361 })], selected),
     ).toBeUndefined()
+  })
+})
+
+// Every format change is reviewed (26/11, «siempre es siempre»), so the copy a conversion lands
+// beside is found at any length: Minute 8 came in as a 5:12 AIFF beside its 4:47 MP3.
+describe('formerCopyIn', () => {
+  const converted = { inputPath: '/m/weekend.flac', meta }
+
+  it('finds the copy whatever its length', () => {
+    expect(formerCopyIn([row('/r/weekend.mp3', { durationSec: 287 })], converted)).toBe(
+      '/r/weekend.mp3',
+    )
+  })
+
+  it('takes the converted file itself when the program holds it, since that track changes format', () => {
+    expect(
+      formerCopyIn([row('/r/other.mp3', { title: 'Other' }), row('/m/weekend.flac')], converted),
+    ).toBe('/m/weekend.flac')
+  })
+
+  it('finds nothing for a track the program does not hold', () => {
+    expect(formerCopyIn([row('/r/x.mp3', { title: 'Else', artist: 'Nobody' })], converted)).toBe(
+      undefined,
+    )
   })
 })
 

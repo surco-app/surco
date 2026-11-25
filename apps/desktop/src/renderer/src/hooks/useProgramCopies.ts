@@ -95,6 +95,18 @@ export function sameLengthCopyIn(
   return pathKey(entry.path) === pathKey(track.inputPath) ? undefined : entry.path
 }
 
+// The copy a conversion lands beside, for To review: the converted file itself when the program
+// holds it, else an entry of its title and artist at any length, since every format change is
+// reviewed (26/11) and the new file may not last as long as the copy it follows.
+export function formerCopyIn(
+  tracks: CollectionTrack[],
+  track: { inputPath: string; meta: { title: string; artist: string } },
+): string | undefined {
+  const { index, pathKeys } = lookupFor(tracks)
+  if (pathKeys.has(pathKey(track.inputPath))) return track.inputPath
+  return findLibraryEntry(index, track.meta)?.path ?? undefined
+}
+
 const copiesByCollection = new WeakMap<CollectionTrack[], Map<string, string | undefined>>()
 
 // During a conversion the selection comes back as a new array on every progress tick, and

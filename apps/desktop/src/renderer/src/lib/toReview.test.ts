@@ -56,7 +56,9 @@ describe('toReviewEntriesFor', () => {
     ).toEqual([])
   })
 
-  it('leaves out a track with no cues here, because there is nothing to review', () => {
+  // Every format change is reviewed (26/11, «siempre es siempre»): a new file with no cues
+  // beside the old copy that has them is the one that most needs a look before the booth.
+  it('lists a track with no cues here too', () => {
     const rows = [
       row('/m/a.flac', { preview: preview(0) }),
       row('/m/b.flac'),
@@ -67,7 +69,7 @@ describe('toReviewEntriesFor', () => {
       [replaced('/m/a.flac'), replaced('/m/b.flac'), replaced('/m/c.flac')],
       'rekordbox',
     )
-    expect(list.map((r) => r.path).sort()).toEqual(['/m/b.flac', '/m/c.flac'])
+    expect(list.map((r) => r.path).sort()).toEqual(['/m/a.flac', '/m/b.flac', '/m/c.flac'])
   })
 
   it('shows each replaced track once even if both paths are in the library', () => {
