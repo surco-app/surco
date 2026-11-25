@@ -9,7 +9,6 @@ import { railAlert } from '../lib/copiesView'
 import type { CopiesOpening } from '../lib/overlayLayers'
 import type { Selection } from '../lib/selection'
 import type { ProgramEdits } from '../lib/sourcePrograms'
-import { NO_HIDDEN_SOURCES } from '../lib/viewPrefs'
 import { SourceRail } from './SourceRail'
 import { SourceTree } from './SourceTree'
 
@@ -29,7 +28,7 @@ export function SidebarPanel({
   setCopiesOpen,
   selectSource,
   saveSettings,
-  settings,
+  hiddenSources,
   copiesOpen,
   libraryCopies,
   openCopies,
@@ -57,7 +56,7 @@ export function SidebarPanel({
   setCopiesOpen: React.Dispatch<React.SetStateAction<CopiesOpening | null>>
   selectSource: (next: PlaylistSource | null) => Selection
   saveSettings: (patch: Partial<Settings>) => void
-  settings: Settings | null
+  hiddenSources: PlaylistSource[]
   copiesOpen: CopiesOpening | null
   libraryCopies: ReturnType<typeof useCopies>
   openCopies: (openMusic: boolean, query: string) => void
@@ -125,7 +124,7 @@ export function SidebarPanel({
           }}
           onHide={(hidden) =>
             saveSettings({
-              hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
+              hiddenSources: [...hiddenSources, hidden],
             })
           }
           copies={{

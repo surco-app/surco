@@ -4884,7 +4884,7 @@ export default function App(): React.JSX.Element {
                   setCopiesOpen={setCopiesOpen}
                   selectSource={selectSource}
                   saveSettings={saveSettings}
-                  settings={settings}
+                  hiddenSources={hiddenSources}
                   copiesOpen={copiesOpen}
                   libraryCopies={libraryCopies}
                   openCopies={openCopies}
