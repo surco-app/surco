@@ -8086,7 +8086,8 @@ describe('Editor Apple Music section via the Discogs suggestion', () => {
     queryInput.focus()
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
-    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
+    // The auto-probe opens the only result; a click racing it would toggle the row shut.
+    await waitFor(() => expect(result).toHaveAttribute('aria-expanded', 'true'))
     await screen.findAllByTestId('discogs-track')
     expect(document.activeElement).toBe(queryInput)
     // The release's canonical "The Artist — Track Two (Remix)" is owned, so the section shows
@@ -8109,7 +8110,8 @@ describe('Editor Apple Music section via the Discogs suggestion', () => {
     fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'some album' } })
     fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
     const result = await screen.findByTestId('discogs-result')
-    if (result.getAttribute('aria-expanded') !== 'true') fireEvent.click(result)
+    // The auto-probe opens the only result; a click racing it would toggle the row shut.
+    await waitFor(() => expect(result).toHaveAttribute('aria-expanded', 'true'))
     await screen.findAllByTestId('discogs-track')
     expect(screen.queryByTestId('library-section')).toBeNull()
   })
