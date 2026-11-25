@@ -534,7 +534,7 @@ export const JOB_PLAYLISTS: Record<ReachProgram, (job: ProcessJob) => PlaylistCh
     virtualdj: jobChoice('virtualdj', true),
   }
 
-export function planDestination(job: ProcessJob, settings: Settings, platform: NodeJS.Platform) {
+export function planDestination(job: ProcessJob, settings: Settings) {
   // job.format is always set by the renderer's job builder; this fallback only
   // guards the type, since settings.outputFormat may be 'source' and 'source' must
   // never reach the conversion pipeline.
@@ -588,31 +588,6 @@ export function planDestination(job: ProcessJob, settings: Settings, platform: N
     settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
     currentName,
   )
-  const resolved = job.tagsInPlace
-    ? { outputPath: job.inputPath, inPlace: true }
-    : resolveOutputTarget(
-        job.inputPath,
-        platform === 'darwin' ? outputName.normalize('NFD') : outputName,
-        format,
-        settings.outputDir,
-        overwriteOriginal,
-        besideOriginal,
-      )
-  const outputPath = resolved.outputPath
-  const inPlace = resolved.inPlace
-  // "Apple Music only": the user wants the track in Apple Music and no copy left in
-  // the output folder. Apple Music still imports a real path, so write the conversion
-  // where Music files its own copies, or else to a private temp dir (never the output
-  // folder — it can't collide with or clobber anything there), hand it over, then remove
-  // the temp below.
-  const musicOnly = isAppleMusicOnly(
-    addToAppleMusic,
-    keepOutputCopy,
-    addToEngineDj,
-    platform,
-    format,
-    inPlace,
-  )
   return {
     format,
     processing,
@@ -624,9 +599,6 @@ export function planDestination(job: ProcessJob, settings: Settings, platform: N
     inPlaceWrite,
     tagsOnly,
     outputName,
-    outputPath,
-    inPlace,
-    musicOnly,
   }
 }
 
@@ -683,19 +655,43 @@ export async function runProcessTrack(
     }
     const coverPath = prepared?.path
 
-    const plan = planDestination(job, settings, deps.platform)
     const {
       format,
       processing,
       addToAppleMusic,
+      keepOutputCopy,
       addToEngineDj,
       besideOriginal,
+      overwriteOriginal,
       tagsOnly,
-      outputPath,
-      musicOnly,
-    } = plan
-    let inPlace = plan.inPlace
+      outputName,
+    } = planDestination(job, settings)
     stage(tagsOnly ? 'tags' : 'converting')
+    const resolved = job.tagsInPlace
+      ? { outputPath: job.inputPath, inPlace: true }
+      : resolveOutputTarget(
+          job.inputPath,
+          deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
+          format,
+          settings.outputDir,
+          overwriteOriginal,
+          besideOriginal,
+        )
+    const outputPath = resolved.outputPath
+    let inPlace = resolved.inPlace
+    // "Apple Music only": the user wants the track in Apple Music and no copy left in
+    // the output folder. Apple Music still imports a real path, so write the conversion
+    // where Music files its own copies, or else to a private temp dir (never the output
+    // folder — it can't collide with or clobber anything there), hand it over, then remove
+    // the temp below.
+    const musicOnly = isAppleMusicOnly(
+      addToAppleMusic,
+      keepOutputCopy,
+      addToEngineDj,
+      deps.platform,
+      format,
+      inPlace,
+    )
     let target = outputPath
     const existingMusicEntry =
       inPlace &&

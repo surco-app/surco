@@ -5114,7 +5114,7 @@ describe('runProcessTrack — replacement shift', () => {
 describe('planDestination', () => {
   it('refuses to retag a library copy into another format, since that would re-encode the file the programs hold', () => {
     expect(() =>
-      planDestination(job({ tagsInPlace: true, format: 'mp3' }), settings(), 'linux'),
+      planDestination(job({ tagsInPlace: true, format: 'mp3' }), settings()),
     ).toThrowError(
       expect.objectContaining({ message: expect.stringContaining('libraryCopyAudioWouldChange') }),
     )
@@ -5124,42 +5124,44 @@ describe('planDestination', () => {
     const plan = planDestination(
       job({ tagsInPlace: true, format: 'wav' }),
       settings({ normalize: { mode: 'peak' }, addToEngineDj: true } as Partial<Settings>),
-      'linux',
     )
     expect(plan.processing).toEqual({})
     expect(plan.addToEngineDj).toBe(false)
-    expect(plan.outputPath).toBe('/in/song.wav')
-    expect(plan.inPlace).toBe(true)
+    expect(plan.inPlaceWrite).toBe(true)
   })
 
   it('lets the job pin win over the live setting for the Apple Music destination', () => {
     const plan = planDestination(
       job({ addToAppleMusic: true, keepOutputCopy: false }),
       settings({ addToAppleMusic: false, keepOutputCopy: true }),
-      'darwin',
     )
     expect(plan.addToAppleMusic).toBe(true)
     expect(plan.keepOutputCopy).toBe(false)
-    expect(plan.musicOnly).toBe(true)
   })
 
   it('drops the sibling copy when the original is overwritten', () => {
     const plan = planDestination(
       job({ convertBesideOriginal: true, overwriteOriginal: true }),
       settings(),
-      'linux',
     )
     expect(plan.besideOriginal).toBe(false)
     expect(plan.overwriteOriginal).toBe(true)
   })
 
-  it('names the output in NFD on macOS only', () => {
-    const outputName = 'Röyksopp - Fiësta'.normalize('NFC')
-    expect(planDestination(job({ outputName }), settings(), 'darwin').outputPath).toBe(
-      '/out/Röyksopp - Fiësta.aiff'.normalize('NFD'),
+  it('folds accents out of the name unless the file keeps its own name in place', () => {
+    const ascii = settings({ asciiFileNames: true })
+    expect(planDestination(job({ outputName: 'Röyksopp - Fiësta' }), ascii).outputName).toBe(
+      'Royksopp - Fiesta',
     )
-    expect(planDestination(job({ outputName }), settings(), 'linux').outputPath).toBe(
-      '/out/Röyksopp - Fiësta.aiff'.normalize('NFC'),
-    )
+    expect(
+      planDestination(
+        job({
+          inputPath: '/in/Röyksopp - Fiësta.mp3',
+          format: 'mp3',
+          outputName: 'Röyksopp - Fiësta',
+        }),
+        ascii,
+      ).outputName,
+    ).toBe('Röyksopp - Fiësta')
   })
 })
