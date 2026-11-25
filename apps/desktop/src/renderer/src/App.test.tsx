@@ -17020,3 +17020,45 @@ describe('App editor crash', () => {
     }
   })
 })
+
+describe('the notice of what a DJ program queue applied', () => {
+  // A batch with reasons used to stay until closed: a DJ who meant to read it later had it
+  // parked over the player for good. It leaves on its own like any notice, a little later
+  // since it has more to read, and the pointer resting on it still holds it.
+  it('gathers the reasons under what landed and leaves on its own, so ignoring it never parks it over the player', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    setApi({
+      dj: djReads({
+        rekordbox: {
+          onCueQueueApplied: (cb) => {
+            applied = cb
+            return () => {}
+          },
+        },
+      }),
+    })
+    await renderApp()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      act(() =>
+        applied({
+          tracks: 6,
+          changes: 0,
+          written: [],
+          notices: [
+            { code: 'playlist-changed', track: 'Madagascar', playlist: 'Warm Up' },
+            { code: 'playlist-changed', track: 'Oxia', playlist: 'Warm Up' },
+            { code: 'cues-unfit', track: 'Rave Allstars', count: 16, contentId: '7', ms: 1000 },
+          ],
+        }),
+      )
+      const notice = await screen.findByTestId('rekordbox-edit-notice')
+      expect(screen.getAllByTestId('rekordbox-edit-notice-row')).toHaveLength(2)
+      expect(within(notice).getByRole('button', { name: 'Go to cue' })).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(10_000))
+      await waitFor(() => expect(screen.queryByTestId('rekordbox-edit-notice')).toBeNull())
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+})

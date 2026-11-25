@@ -2,6 +2,16 @@ import type { AppStore } from './appStore'
 
 export type ToastText = string | { key: string; values?: Record<string, unknown> }
 
+// One reason under the line of what happened, with the items it hit and, when there is
+// somewhere to go, the action that takes the user there.
+export interface ToastRow {
+  icon: 'list' | 'cue' | 'tag'
+  tone: 'warn' | 'neutral'
+  title: string
+  sub: string
+  action?: { label: ToastText; onAction: () => void }
+}
+
 // One entry in the unified notification queue. Tone drives the colour (neutral status vs a
 // red failure); an optional action turns the card into a prompt (Restart / Load); duration
 // auto-dismisses transient notices, while a missing duration keeps prompts and failures up
@@ -14,6 +24,7 @@ export interface Toast {
   message: ToastText
   copyText?: ToastText
   action?: { label: ToastText; onAction: () => void }
+  rows?: ToastRow[]
   duration?: number
   testid?: string
   // Extra cleanup to run when this toast is dismissed (by the ✕, its timer, or an action),

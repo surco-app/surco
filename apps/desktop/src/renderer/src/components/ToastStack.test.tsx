@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import type { Toast } from '../lib/toastQueue'
+import type { Toast, ToastRow } from '../lib/toastQueue'
 import { ModalShell } from './ModalShell'
 import { ToastStack } from './ToastStack'
 
@@ -207,6 +207,62 @@ describe('ToastStack', () => {
     expect(screen.getByText('update ready')).toBeInTheDocument()
   })
 
+  describe('a notice with rows', () => {
+    const row = (title: string, over: Partial<ToastRow> = {}): ToastRow => ({
+      icon: 'list',
+      tone: 'warn',
+      title,
+      sub: `${title} tracks`,
+      ...over,
+    })
+
+    // One paragraph per track filled the window. What landed is one line, each reason one
+    // row, and an action sits on the row it acts on, never beside a text that is not its own.
+    it('says what landed on one line and each reason on its own row, with the action on the row it acts on', () => {
+      const go = vi.fn()
+      render(
+        <ToastStack
+          toasts={[
+            toast({
+              testid: 'edit',
+              message: 'Done in rekordbox · 6 tracks',
+              rows: [
+                row('3 tracks not changed in Warm Up', {
+                  sub: 'It changed in rekordbox · A, B, C',
+                }),
+                row('16 cues off', { icon: 'cue', action: { label: 'Go to cue', onAction: go } }),
+              ],
+            }),
+          ]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      expect(screen.getByTestId('edit-message')).toHaveTextContent('Done in rekordbox · 6 tracks')
+      const rows = screen.getAllByTestId('edit-row')
+      expect(rows).toHaveLength(2)
+      expect(rows[0]).toHaveTextContent('3 tracks not changed in Warm Up')
+      expect(rows[0]).toHaveTextContent('It changed in rekordbox · A, B, C')
+      expect(within(rows[0]).queryByRole('button')).toBeNull()
+      fireEvent.click(within(rows[1]).getByRole('button', { name: 'Go to cue' }))
+      expect(go).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows three reasons and folds the rest behind a count, so a long batch keeps the card short', () => {
+      render(
+        <ToastStack
+          toasts={[toast({ testid: 'edit', rows: ['a', 'b', 'c', 'd', 'e'].map((t) => row(t)) })]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      expect(screen.getAllByTestId('edit-row')).toHaveLength(3)
+      fireEvent.click(screen.getByRole('button', { name: '2 more' }))
+      expect(screen.getAllByTestId('edit-row')).toHaveLength(5)
+      expect(screen.queryByRole('button', { name: '2 more' })).toBeNull()
+    })
+  })
+
   it('shows an action button that fires the toast action', () => {
     const onAction = vi.fn()
     render(
@@ -231,7 +287,13 @@ describe('ToastStack', () => {
         toasts={[
           toast({ id: 'a', testid: 'plain', duration: 4000 }),
           toast({ id: 'b', testid: 'undo', duration: 6000, onDismiss: settle, onExpire: settle }),
-          toast({ id: 'c', testid: 'offer', duration: 6000, onDismiss: vi.fn(), onExpire: vi.fn() }),
+          toast({
+            id: 'c',
+            testid: 'offer',
+            duration: 6000,
+            onDismiss: vi.fn(),
+            onExpire: vi.fn(),
+          }),
           toast({ id: 'd', testid: 'stays' }),
           toast({ id: 'e', testid: 'error', tone: 'danger' }),
         ]}
