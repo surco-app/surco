@@ -205,6 +205,11 @@ describe('quitDialog', () => {
     expect(quitDialog(t, 0, false, 3).detail).toBe('quitCuesDetail')
   })
 
+  // With every cue saved there is nothing to lose there, so the dialog must not warn about it.
+  it('leaves the cues out of the detail when none is unsaved', () => {
+    expect(quitDialog(t, 2, false, 0).detail).toBe('2 running')
+  })
+
   it('names the way to stay after what keeps the app busy', () => {
     expect(quitDialog(t, 2, true, 0).buttons).toEqual(['quitBusyConfirm', 'quitBusyCancel'])
     expect(quitDialog(t, 0, true, 0).buttons).toEqual(['quitBusyConfirm', 'quitUsbCancel'])
