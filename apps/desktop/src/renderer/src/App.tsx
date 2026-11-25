@@ -117,6 +117,7 @@ import { useActivityLog } from './hooks/useActivityLog'
 import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
 import { useAppNotifications } from './hooks/useAppNotifications'
 import { useAutoMatch } from './hooks/useAutoMatch'
+import { useCheckedPlaylist } from './hooks/useCheckedPlaylist'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useCopies } from './hooks/useCopies'
@@ -148,6 +149,7 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useProgramsAvailable } from './hooks/useProgramsAvailable'
+import { usePruneSelection } from './hooks/usePruneSelection'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useRekordboxMatching } from './hooks/useRekordboxMatching'
@@ -290,14 +292,7 @@ import {
   reviewTarget,
 } from './lib/reviewTarget'
 import { sameTracks } from './lib/sameTracks'
-import {
-  type ClickMods,
-  clickSelect,
-  editScope,
-  pruneToVisible,
-  reanchorToVisible,
-  type Selection,
-} from './lib/selection'
+import { type ClickMods, clickSelect, editScope, type Selection } from './lib/selection'
 import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
@@ -1533,11 +1528,7 @@ export default function App(): React.JSX.Element {
   // back to one), so what an earlier visit found never shows for a frame before the new
   // check answers.
   const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
-  const [checkedShowing, setCheckedShowing] = useState(showingPlaylist)
-  if (checkedShowing !== showingPlaylist) {
-    setCheckedShowing(showingPlaylist)
-    setCheckedPlaylist(null)
-  }
+  useCheckedPlaylist(showingPlaylist, setCheckedPlaylist)
   // A pass resolving after the DJ moved to another playlist speaks for one no longer on
   // screen: it must neither mark the new one checked nor spend a notice. Not a cleanup
   // flag, since the entriesFetching re-runs would cancel the very pass that has to notify.
@@ -2820,40 +2811,16 @@ export default function App(): React.JSX.Element {
     const i = visibleTracks.findIndex((t) => t.id === selectedId)
     return i < 0 ? null : i + 1
   }, [visibleTracks, selectedId])
-  // A filter change (quality bucket or format axis) can hide the selected track; left alone
-  // its editor lingers out of view and the position pill reads "‒/N". Drop to the first
-  // track the new filter shows (or clear when it shows none) so the editor and count always
-  // reflect what's on screen. Must react to BOTH filter axes — the format filter hiding the
-  // selection used to leave the list with no visible row selected. Scoped to the filters —
-  // not search, which changes per keystroke and would thrash the editor's per-track fetches;
-  // sort only reorders, never hides.
-  // Selected rows the new filter hides leave the selection too, so the next trash or remove
-  // acts only on rows the user can see.
-  // A search hides rows too, and an action on the selection must not reach them. Only the
-  // hidden extras of a selection go: when no selected row is left on screen the selection
-  // stays, so typing does not jump the editor from track to track on every keystroke.
-  // The search stays across sources, so a switch narrows the selection kept for the new
-  // source the same way. Keyed on its rows too: a playlist still loading shows none (nothing
-  // is pruned then) and its arrival is when its own rows are on screen to prune against.
-  const [prunedFor, setPrunedFor] = useState({
+  usePruneSelection({
     filterSelection,
     deferredSearch,
     source: browser.source,
     playlistIds,
+    visibleTracks,
+    selection,
+    selectedId,
+    setSelectionState,
   })
-  if (
-    prunedFor.filterSelection !== filterSelection ||
-    prunedFor.deferredSearch !== deferredSearch ||
-    prunedFor.source !== browser.source ||
-    prunedFor.playlistIds !== playlistIds
-  ) {
-    setPrunedFor({ filterSelection, deferredSearch, source: browser.source, playlistIds })
-    const ids = visibleTracks.map((t) => t.id)
-    const next =
-      pruneToVisible(ids, selection) ??
-      (prunedFor.filterSelection !== filterSelection ? reanchorToVisible(ids, selectedId) : null)
-    if (next) setSelectionState(next)
-  }
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
