@@ -5149,6 +5149,34 @@ describe('planDestination', () => {
     expect(plan.overwriteOriginal).toBe(true)
   })
 
+  // A job built without a format on Keep original falls back for a file no output format
+  // matches: 'source' itself must never reach the conversion pipeline.
+  it('converts a file with no matching format to AIFF when the job names none', () => {
+    expect(
+      planDestination(job({ inputPath: '/in/song.opus' }), settings({ outputFormat: 'source' }))
+        .format,
+    ).toBe('aiff')
+  })
+
+  // Only a file written beside the source drops the folders of the name; a conversion into
+  // the output folder builds the folders the naming template asks for.
+  it('keeps the folders of the name for a file written to the output folder', () => {
+    expect(
+      planDestination(job({ outputName: 'House/Artist - Title' }), settings()).outputName,
+    ).toBe('House/Artist - Title')
+  })
+
+  // Renaming a file in place writes a new name to the disk, so it follows the plain
+  // spelling setting; only the name the file already has keeps its accents.
+  it('folds accents out of a new name given to a file edited in place', () => {
+    expect(
+      planDestination(
+        job({ inputPath: '/in/Song.mp3', format: 'mp3', outputName: 'Röyksopp - Fiësta' }),
+        settings({ asciiFileNames: true }),
+      ).outputName,
+    ).toBe('Royksopp - Fiesta')
+  })
+
   it('folds accents out of the name unless the file keeps its own name in place', () => {
     const ascii = settings({ asciiFileNames: true })
     expect(planDestination(job({ outputName: 'Röyksopp - Fiësta' }), ascii).outputName).toBe(
