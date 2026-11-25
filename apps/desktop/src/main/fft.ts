@@ -1,7 +1,5 @@
 // In-place iterative radix-2 FFT (Cooley-Tukey). The input length must be a
-// power of two. Shared by the DSP analyzers (musical key, HF-shelf detection)
-// so the same hand-tuned transform backs every spectral pass instead of each
-// shipping its own copy.
+// power of two. Shared by every spectral pass so none ships its own copy.
 export function fft(re: Float64Array, im: Float64Array): void {
   const n = re.length
   for (let i = 1, j = 0; i < n; i++) {
