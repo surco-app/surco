@@ -1,6 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { menuStep } from '../lib/menuStep'
+import { menuItems, menuStep } from '../lib/menuStep'
 
 // The editor footer's split button, shared: a full-width accent body for the main action
 // and a chevron that opens a menu of the others above it.
@@ -35,12 +35,6 @@ export const SPLIT_MENU_DOWN =
 export const SPLIT_ITEM =
   'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:shadow-none'
 
-// The menu's reachable items in order: a disabled pick (Apple Music under FLAC) can't take
-// focus, so the arrows skip it rather than stall on it.
-function menuItemsOf(menu: HTMLElement | null): HTMLElement[] {
-  return Array.from(menu?.querySelectorAll<HTMLElement>('[role^="menuitem"]:not(:disabled)') ?? [])
-}
-
 export function useSplitMenu() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -63,7 +57,7 @@ export function useSplitMenu() {
   // to go, though: a click outside that closed the menu keeps the focus it just set.
   useEffect(() => {
     if (!open) return
-    const items = menuItemsOf(menuRef.current)
+    const items = menuItems(menuRef.current, '[role^="menuitem"]')
     ;(items.find((el) => el.getAttribute('aria-checked') === 'true') ?? items[0])?.focus()
     return () => {
       const at = document.activeElement
@@ -82,7 +76,7 @@ export function useSplitMenu() {
       setOpen(false)
       return
     }
-    const items = menuItemsOf(menuRef.current)
+    const items = menuItems(menuRef.current, '[role^="menuitem"]')
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)
     if (next === null || items.length === 0) return

@@ -1,5 +1,6 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { menuStep } from './menuStep'
+import { menuItems, menuStep } from './menuStep'
 
 describe('menuStep', () => {
   // A menu has no dead end: the arrows wrap like a native macOS menu, so a long press
@@ -32,5 +33,40 @@ describe('menuStep', () => {
     expect(menuStep('Enter', 1, 3)).toBeNull()
     expect(menuStep('j', 1, 3)).toBeNull()
     expect(menuStep('ArrowRight', 1, 3)).toBeNull()
+  })
+})
+
+describe('menuItems', () => {
+  function menu(html: string): HTMLElement {
+    const el = document.createElement('div')
+    el.innerHTML = html
+    return el
+  }
+
+  // An item that cannot be picked is not a stop: landing the arrows on it leaves the
+  // keyboard user on a row that Enter does nothing with. Native controls disable with
+  // the attribute, ARIA options with aria-disabled; both count the same.
+  it('leaves out items disabled either natively or with aria-disabled', () => {
+    const el = menu(`
+      <button role="option" data-testid="a"></button>
+      <button role="option" data-testid="b" disabled></button>
+      <button role="option" data-testid="c" aria-disabled="true"></button>
+      <button role="option" data-testid="d" aria-disabled="false"></button>
+    `)
+    expect(menuItems(el, '[role="option"]').map((i) => i.dataset.testid)).toEqual(['a', 'd'])
+  })
+
+  it('keeps only what the selector picks, in document order', () => {
+    const el = menu(`
+      <button role="menuitem" data-testid="a"></button>
+      <hr />
+      <button data-testid="other"></button>
+      <button role="menuitem" data-testid="b"></button>
+    `)
+    expect(menuItems(el, '[role="menuitem"]').map((i) => i.dataset.testid)).toEqual(['a', 'b'])
+  })
+
+  it('answers no items before the menu is mounted', () => {
+    expect(menuItems(null, '[role="menuitem"]')).toEqual([])
   })
 })

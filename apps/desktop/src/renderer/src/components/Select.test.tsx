@@ -488,6 +488,41 @@ describe('Select portaled menu', () => {
   })
 })
 
+describe('Select disabled options', () => {
+  // An option that cannot be picked is not a stop for the arrows: parked on it, Enter does
+  // nothing and the keyboard user is left wondering why the menu stopped answering.
+  it('steps the arrows, Home and End over a disabled option', () => {
+    render(
+      <Select
+        value="import"
+        options={[
+          { value: 'locked-first', label: 'Locked first', disabled: true },
+          { value: 'import', label: 'Default' },
+          { value: 'locked', label: 'Locked', disabled: true },
+          { value: 'name', label: 'Name' },
+          { value: 'locked-last', label: 'Locked last', disabled: true },
+        ]}
+        onChange={vi.fn()}
+        label="Sort"
+        testid="sort"
+      />,
+    )
+    fireEvent.click(screen.getByTestId('sort'))
+    const list = screen.getByTestId('sort-listbox')
+    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowUp' })
+    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'Home' })
+    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'End' })
+    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+  })
+})
+
 describe('Select counts', () => {
   // The track list's filter reads "All 4", its count set apart in the digits' own tone; the
   // source menu beside it said "All (5)", so two columns of one toolbar spoke two formats.

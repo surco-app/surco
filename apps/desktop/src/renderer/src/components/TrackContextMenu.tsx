@@ -3,7 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SourceNode } from '../../../shared/types'
-import { menuStep } from '../lib/menuStep'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 import type { ViewMenuItem } from './ViewMenu'
@@ -221,12 +221,7 @@ export function TrackContextMenu({
       onClose()
       return
     }
-    // A disabled item cannot take focus; counted as a stop, it would trap the arrows.
-    const items = Array.from(
-      menuRef.current?.querySelectorAll<HTMLElement>(
-        '[role="menuitem"]:not(:disabled), [role="menuitemcheckbox"]',
-      ) ?? [],
-    )
+    const items = menuItems(menuRef.current, '[role="menuitem"], [role="menuitemcheckbox"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)

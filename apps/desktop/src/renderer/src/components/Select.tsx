@@ -4,7 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LAYER } from '../lib/layers'
-import { menuStep } from '../lib/menuStep'
+import { menuItems, menuStep } from '../lib/menuStep'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
@@ -156,9 +156,7 @@ export function Select({
       e.stopPropagation()
       return
     }
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-    )
+    const items = menuItems(listRef.current, '[role="option"]')
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
     const next = menuStep(e.key, idx, items.length)

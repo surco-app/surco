@@ -5,3 +5,12 @@ export function menuStep(key: string, current: number, count: number): number | 
   if (key === 'End') return count - 1
   return null
 }
+
+// The stops the arrows walk. A disabled item is never one, whether a native control
+// disabled with the attribute or an ARIA option with aria-disabled: Enter does nothing
+// there, so parking on it reads as a menu that stopped answering.
+export function menuItems(container: HTMLElement | null, selector: string): HTMLElement[] {
+  return Array.from(container?.querySelectorAll<HTMLElement>(selector) ?? []).filter(
+    (el) => !el.matches(':disabled') && el.getAttribute('aria-disabled') !== 'true',
+  )
+}
