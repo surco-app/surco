@@ -116,6 +116,21 @@ export function versionCopyPath(args: FillCopies): string {
   return copies.find((copy) => isAnotherVersion(copy, args.fileDurationSec))?.path ?? ''
 }
 
+// The copy whose playlists the program's field stages on the track, one program at a time.
+// A copy of the same recording in that program takes it, since the field acts on that copy
+// at once; and a copy still compared or a collection still read may yet prove to be one.
+export function versionCopyIn(
+  program: DjProgram,
+  rows: readonly CopyRow[],
+  fileDurationSec: number | undefined,
+  programsPending: boolean,
+): string {
+  const own = rows.filter((row) => row.program === program)
+  if (programsPending || own.some((row) => row.verdict === 'measuring')) return ''
+  if (copyPathIn(program, own, fileDurationSec)) return ''
+  return own.find((row) => isAnotherVersion(row, fileDurationSec))?.path ?? ''
+}
+
 export interface CopyCandidate {
   program: PlaylistSource
   // '' while Apple Music still looks the file up.

@@ -10,6 +10,7 @@ import {
   pickLibraryCopy,
   replaceCopyPatch,
   replaceWarnsFirst,
+  versionCopyIn,
   versionCopyPath,
 } from './libraryCopy'
 import { replacePatch } from './replaceBeforeConvert'
@@ -397,6 +398,64 @@ describe('versionCopyPath', () => {
   it('lends nothing from a counted copy whose length is unknown, nothing says another edit', () => {
     expect(version({ programs: [rekordbox('here')], fileDurationSec: 361 })).toBe('')
     expect(version({ programs: [rekordbox('here', 357)] })).toBe('')
+  })
+})
+
+// Each program's playlists field stages the playlists of that program's own copy, so the
+// rule looks at one program's rows at a time.
+describe('versionCopyIn', () => {
+  const row = (
+    program: 'rekordbox' | 'traktor',
+    verdict: LibraryVerdict | null,
+    durationSec?: number,
+    path = `/${program}/a.mp3`,
+  ) => ({ program, path, verdict, durationSec })
+
+  it("takes the program's copy that is another version", () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'different', 357)], 361, false)).toBe(
+      '/rekordbox/a.mp3',
+    )
+  })
+
+  it('takes a copy whose length alone says it is another version', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'same', 30)], 95, false)).toBe(
+      '/rekordbox/a.mp3',
+    )
+  })
+
+  it("ignores another program's copy, whose playlists belong to that program", () => {
+    expect(versionCopyIn('rekordbox', [row('traktor', 'different', 30)], 95, false)).toBe('')
+  })
+
+  // That copy is the track: the field acts on it at once and nothing is staged.
+  it('takes nothing when the program also holds a copy of the same recording', () => {
+    const rows = [
+      row('rekordbox', 'different', 30, '/r/edit.mp3'),
+      row('rekordbox', 'same', 95, '/r/a.wav'),
+    ]
+    expect(versionCopyIn('rekordbox', rows, 95, false)).toBe('')
+  })
+
+  // A copy still compared may prove to be the same recording, which the field acts on instead.
+  it('waits while a copy of the program is still being compared', () => {
+    const rows = [
+      row('rekordbox', 'different', 30, '/r/edit.mp3'),
+      row('rekordbox', 'measuring', undefined, '/r/a.wav'),
+    ]
+    expect(versionCopyIn('rekordbox', rows, 95, false)).toBe('')
+  })
+
+  it('waits while a DJ collection is still being read', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'different', 30)], 95, true)).toBe('')
+  })
+
+  it('takes no copy that is missing or unreadable, whose playlists may be stale', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'missing', 30)], 95, false)).toBe('')
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'unreadable', 30)], 95, false)).toBe('')
+  })
+
+  it('takes no copy whose length is unknown, since nothing then tells it apart', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'same')], 95, false)).toBe('')
   })
 })
 

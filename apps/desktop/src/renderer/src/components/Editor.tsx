@@ -74,6 +74,7 @@ import { useSeratoLosesStars, useSeratoStarsLoss } from '../hooks/useSeratoLoses
 import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
+import { useVersionCopyPlaylists } from '../hooks/useVersionCopyPlaylists'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
@@ -115,6 +116,7 @@ import {
   type LibraryCopyRef,
   pickLibraryCopy,
   replaceCopyPatch,
+  versionCopyIn,
   versionCopyPath,
 } from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
@@ -1988,6 +1990,22 @@ export const Editor = memo(function Editor({
     copyPath: fillPath,
     anotherVersion: !sameRecordingCopyPath,
     musicEntry: musicCopyEntry,
+    onChange,
+    onRecordUndo,
+  })
+  // Another version lends its playlists program by program, each judged by its own copies.
+  useVersionCopyPlaylists({
+    item,
+    copies: isMulti
+      ? {}
+      : Object.fromEntries(
+          DJ_PROGRAMS.filter((program) => visibleFields.includes(PLAYLIST_FIELDS[program])).map(
+            (program) => [
+              program,
+              versionCopyIn(program, copyRows, item.duration, programCollectionsPending),
+            ],
+          ),
+        ),
     onChange,
     onRecordUndo,
   })

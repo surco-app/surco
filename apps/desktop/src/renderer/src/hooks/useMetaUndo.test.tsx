@@ -381,6 +381,43 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.custom).toEqual({ mood: 'Dark' })
   })
 
+  // The playlists a library copy lends are staged by a step of their own: ⌘Z must take them
+  // back, or the convert files the new file in playlists the DJ undid.
+  it('takes back the playlists a step staged for one program and keeps the others', () => {
+    const traktor = { targets: [{ id: 'fri', name: 'Friday' }], base: [] }
+    const { result } = setup([track('a', {}, { playlists: { traktor } })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          playlists: {
+            ...t.playlists,
+            rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] },
+          },
+        })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          playlists: { ...t.playlists, engine: { targets: [{ id: '7', name: 'House' }] } },
+        })),
+      )
+    })
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks[0].playlists?.rekordbox).toBeUndefined()
+    expect(result.current.tracks[0].playlists?.traktor).toBe(traktor)
+    expect(result.current.tracks[0].playlists?.engine).toEqual({
+      targets: [{ id: '7', name: 'House' }],
+    })
+  })
+
   it('keeps a field typed between two presses of a grouped cover step when that step is undone', () => {
     const { result } = setup([track('a', { title: 'A' }, { coverUrl: 'data:own' })])
     const press = (coverUrl: string) =>

@@ -52,22 +52,36 @@ function fieldsOf(t: TrackItem, cover: boolean): Fields {
     // unconditionally would make undoing a plain tag sweep revert a cover the user
     // changed afterwards — the snapshot may only restore what its operation touched.
     ...(cover ? { coverUrl: t.coverUrl, coverPath: t.coverPath } : {}),
+    // One key per program, so taking back the playlists a step staged for one program keeps
+    // what the DJ staged for another since.
+    ...Object.fromEntries(
+      Object.entries(t.playlists ?? {}).map(([program, staged]) => [
+        `playlists.${program}`,
+        staged,
+      ]),
+    ),
   }
 }
 
 function withFields(t: TrackItem, fields: Fields): TrackItem {
   const meta: Fields & TrackItem['meta'] = { ...t.meta }
   const custom: Record<string, string> = { ...t.meta.custom }
+  const playlists: Fields = { ...t.playlists }
   const rest: Fields = {}
   for (const [key, value] of Object.entries(fields)) {
     if (key.startsWith('meta.')) meta[key.slice('meta.'.length)] = value
     else if (key === 'custom') continue
+    else if (key.startsWith('playlists.')) playlists[key.slice('playlists.'.length)] = value
     else if (!key.startsWith('custom.')) rest[key] = value
     else if (value === undefined) delete custom[key.slice('custom.'.length)]
     else custom[key.slice('custom.'.length)] = value as string
   }
   if (Object.keys(fields).some((key) => key.startsWith('custom'))) meta.custom = custom
   if (fields.custom === false && Object.keys(custom).length === 0) delete meta.custom
+  if (Object.keys(fields).some((key) => key.startsWith('playlists.')))
+    rest.playlists = Object.fromEntries(
+      Object.entries(playlists).filter(([, staged]) => staged !== undefined),
+    )
   return { ...t, ...rest, meta }
 }
 

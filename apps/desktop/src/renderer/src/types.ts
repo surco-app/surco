@@ -7,6 +7,7 @@ import type {
   MusicReviewField,
   NormalizeConfig,
   OutputFormat,
+  PlaylistLibrary,
   ProcessStage,
   Release,
   ReleaseTrack,
@@ -237,6 +238,9 @@ export interface TrackItem extends TrackOrigin {
   // track (see useAppleMusicFill). An empty field after that is the DJ's own choice.
   appleMusicFilled?: boolean
   copyFilled?: boolean
+  // The programs whose copy, another version of the track, already staged its playlists
+  // here (see useVersionCopyPlaylists). An empty field after that is the DJ's own choice.
+  copyPlaylistsFilled?: PlaylistLibrary[]
   // The file on disk that a replacement supersedes, resolved from the library copy this
   // track would replace. Stamped alongside musicPersistentId just before the convert runs:
   // rekordbox indexes that path, and the file being converted may live anywhere.

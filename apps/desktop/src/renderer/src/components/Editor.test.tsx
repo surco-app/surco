@@ -6974,6 +6974,7 @@ describe('Editor Apple Music library section', () => {
       sameFile,
       traktorLoading = false,
       musicEntryMeta,
+      rekordboxPlaylists,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -7002,6 +7003,8 @@ describe('Editor Apple Music library section', () => {
       traktorLoading?: boolean
       // What Music's database holds for the entry whose file is the path asked with.
       musicEntryMeta?: Api['appleMusicEntryMeta']
+      // rekordbox's playlist membership by path, with its Playlists field shown.
+      rekordboxPlaylists?: Record<string, string[]>
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7039,6 +7042,11 @@ describe('Editor Apple Music library section', () => {
               : rekordbox
                 ? entry(rekordbox.path)
                 : [],
+          ...(rekordboxPlaylists && {
+            available: async () => true,
+            tree: async () => [{ id: '3000', name: 'Makina', kind: 'playlist', count: 1 }],
+            membership: async () => rekordboxPlaylists,
+          }),
         },
         traktor: {
           collection: traktorLoading
@@ -7097,6 +7105,7 @@ describe('Editor Apple Music library section', () => {
           syncSerato: !!serato,
           filesOpen,
           libraryCopyAction,
+          ...(rekordboxPlaylists && { visibleFields: ['rekordboxPlaylists'] }),
         },
       )
       return api
@@ -7322,6 +7331,45 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases', album: '', genre: '' })
+    })
+
+    // The DJ filed the 30 s edit in Makina: the new file belongs there too, so the field
+    // shows it ticked and the convert files it there, without touching rekordbox meanwhile.
+    it('stages the playlists of a rekordbox copy that is another version on the track', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+      })
+      await waitFor(() =>
+        expect(rendered.onChange).toHaveBeenCalledWith({
+          playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+          copyPlaylistsFilled: ['rekordbox'],
+        }),
+      )
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'])
+      expect(
+        (api.dj as { editPlaylist: ReturnType<typeof vi.fn> }).editPlaylist,
+      ).not.toHaveBeenCalled()
+    })
+
+    // A copy of the same recording is the track: the field acts on it and nothing is staged.
+    it('stages no playlists from a rekordbox copy of the same recording', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)).toEqual(
+        [],
+      )
     })
 
     // Traktor's collection may still hold the same recording, whose fill the track gets once.
