@@ -28,7 +28,6 @@ import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
 import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
-import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
   CueSaveThen,
   DeclickConfig,
@@ -81,6 +80,7 @@ import {
   batchSkips,
   batchWritesTagsOnly,
   convertGate,
+  convertReadiness,
   leftOutNote,
   offersSourceFormat,
 } from '../lib/batch'
@@ -96,7 +96,7 @@ import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
-import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
+import { FIELD_DEFS, labeledFields, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { ownsKeystroke } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
@@ -1276,28 +1276,17 @@ export const Editor = memo(function Editor({
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
   const againLeftOut = againGate ? leftOutNote(againGate, tr, i18n.language) : null
-  const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
-  const readOnlyRows = blockedBy !== undefined
-  const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
-  const firstMissing = multiGate?.mixed ? undefined : (multiGate?.missing.fields ?? missing)[0]
-  const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
-  const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
-  const otherReason = missing.length
-    ? tr('editor.missingRequired', {
-        fields: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
-          missing.map((key) => tr(`fields.${key}`)),
-        ),
-      })
-    : undefined
-  const incompleteReason = isMulti
-    ? (againLeftOut ?? undefined)
-    : [...readOnlyReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
-  const otherSummary = missing.length
-    ? missingSummary(
-        missing.map((key) => tr(`fields.${key}`)),
-        tr,
-      )
-    : otherReason
+  const { firstMissing, incomplete, readOnlyReason, incompleteReason, otherSummary } =
+    convertReadiness({
+      item,
+      isMulti,
+      resolvedMeta,
+      requiredFields,
+      multiGate,
+      againLeftOut,
+      tr,
+      language: i18n.language,
+    })
   // The user's default genres come first so they're always one click away even when a
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single

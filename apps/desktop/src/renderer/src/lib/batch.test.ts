@@ -9,6 +9,7 @@ import {
   batchWritesTagsOnly,
   canProcessTrack,
   convertGate,
+  convertReadiness,
   eligibleForBatch,
   leavesListAfterBatch,
   leftOutForMissing,
@@ -573,5 +574,77 @@ describe('leavesListAfterBatch', () => {
   it('keeps a track that did not finish', () => {
     expect(leavesListAfterBatch(track('b', 'error'))).toBe(false)
     expect(leavesListAfterBatch(track('c', 'idle'))).toBe(false)
+  })
+})
+
+describe('convertReadiness', () => {
+  const tr = i18n.getFixedT('en')
+  const ctx = (item: TrackItem, over: Partial<Parameters<typeof convertReadiness>[0]> = {}) => ({
+    item,
+    isMulti: false,
+    resolvedMeta: item.meta,
+    requiredFields: ['title', 'artist'],
+    multiGate: null,
+    againLeftOut: null,
+    tr,
+    language: 'en',
+    ...over,
+  })
+
+  // The convert button is disabled while a required field is empty, so the reason has to
+  // be readable from the editor itself: the first empty field gets focus and the tooltip
+  // names every one.
+  it('names the empty required fields of a single track and points at the first', () => {
+    const r = convertReadiness(ctx(track('a', 'idle', { title: 'T' })))
+    expect(r.incomplete).toBe(true)
+    expect(r.firstMissing).toBe('artist')
+    expect(r.incompleteReason).toBe('Missing required fields: Artist')
+    expect(r.otherSummary).toBe('Missing Artist')
+  })
+
+  it('reports a complete single track as ready', () => {
+    const r = convertReadiness(ctx(track('a', 'idle', { title: 'T', artist: 'A' })))
+    expect(r.incomplete).toBe(false)
+    expect(r.firstMissing).toBeUndefined()
+    expect(r.incompleteReason).toBeUndefined()
+    expect(r.otherSummary).toBeUndefined()
+    expect(r.readOnlyReason).toEqual([])
+  })
+
+  // A Serato row can't be written back without losing its cues, so it blocks convert on
+  // its own even when its tags are complete, and its fields are not asked for.
+  it('blocks a read-only program row and skips the missing-field check', () => {
+    const item = { ...track('a', 'idle'), programs: ['serato' as const] }
+    const r = convertReadiness(ctx(item))
+    expect(r.incomplete).toBe(true)
+    expect(r.firstMissing).toBeUndefined()
+    expect(r.readOnlyReason).toEqual(['Serato would lose the track and its cues'])
+    expect(r.incompleteReason).toBe('Serato would lose the track and its cues')
+    expect(r.otherSummary).toBeUndefined()
+  })
+
+  it('takes the selection gate for a multi selection', () => {
+    const tracks = [track('a', 'idle', { title: 'T' }), track('b', 'idle', { title: 'T' })]
+    const multiGate = convertGate(tracks, ['title', 'artist'])
+    const r = convertReadiness(
+      ctx(tracks[0], { isMulti: true, multiGate, againLeftOut: 'two out' }),
+    )
+    expect(r.incomplete).toBe(true)
+    expect(r.firstMissing).toBe('artist')
+    expect(r.incompleteReason).toBe('two out')
+    expect(r.otherSummary).toBeUndefined()
+  })
+
+  it('is not incomplete for a multi selection with nothing left out', () => {
+    const r = convertReadiness(ctx(track('a', 'idle'), { isMulti: true, againLeftOut: null }))
+    expect(r.incomplete).toBe(false)
+    expect(r.incompleteReason).toBeUndefined()
+  })
+
+  it('gives no field to fill when the selection mixes replacing and adding', () => {
+    const multiGate = { ...convertGate([], ['title']), mixed: true }
+    multiGate.missing = { count: 1, fields: ['title'] }
+    const r = convertReadiness(ctx(track('a', 'idle'), { isMulti: true, multiGate }))
+    expect(r.firstMissing).toBeUndefined()
   })
 })
