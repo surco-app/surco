@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { emptyMetadata } from '../../../shared/metadata'
@@ -635,6 +635,17 @@ describe('from the Apple Music copy that is another file', () => {
       meta: { grouping: 'Bases' },
       copyFilled: true,
     })
+  })
+
+  // A cold NAS fails the read once; marking the track filled then, now kept in the session,
+  // would mean the copy's tags never get another try.
+  it('leaves the track for another opening when the file cannot be read and Music lends nothing', async () => {
+    const api = setMusicApi({}, { grouping: '' })
+    api.readTags.mockRejectedValue(new Error('ENOENT'))
+    const { onChange } = renderFill({}, true)
+    await waitFor(() => expect(api.appleMusicEntryMeta).toHaveBeenCalled())
+    await act(async () => {})
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('asks Music nothing for a copy that is not in Music', async () => {

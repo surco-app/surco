@@ -48,7 +48,9 @@ export function useReplacedCopyFill({
       const musicCoverUrl =
         !cover && !item.coverUrl && !item.coverRemoved && music?.coverUrl ? music.coverUrl : null
       if (!meta && !coverUrl && !musicCoverUrl) {
-        onChange({ copyFilled: true })
+        // Only a copy whose tags were read is done with: one that failed (a NAS still waking)
+        // gets another try on a later opening.
+        if (copy) onChange({ copyFilled: true })
         return
       }
       onRecordUndo?.([item.id], { cover: !!(coverUrl || musicCoverUrl) })
@@ -77,11 +79,10 @@ export function useReplacedCopyFill({
     const music = musicEntry
       ? window.api.appleMusicEntryMeta(copyPath, [musicEntry]).catch(() => null)
       : Promise.resolve(null)
-    // A copy that cannot be read is left for another opening, unless Music answered for it:
-    // what its database holds is worth having without the file's tags.
+    // A copy that cannot be read still lends what Music's database holds for it.
     const tags = window.api.readTags(copyPath).catch(() => null)
     Promise.all([tags, cover, ownCover, music]).then(([copy, art, own, entry]) => {
-      if (!cancelled && (copy || entry)) apply(copy, art, own, entry)
+      if (!cancelled) apply(copy, art, own, entry)
     })
     return () => {
       cancelled = true
