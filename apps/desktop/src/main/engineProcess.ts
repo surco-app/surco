@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { waitForExit } from './programExit'
 
 const run = promisify(execFile)
 
@@ -41,9 +42,5 @@ export async function quitEngineDj(): Promise<boolean> {
     // The quit event failing outright (app already gone, tool missing) resolves by
     // whatever the poll below observes.
   }
-  for (let attempt = 0; attempt < 30; attempt++) {
-    if (!(await isEngineDjRunning())) return true
-    await new Promise((resolve) => setTimeout(resolve, 500))
-  }
-  return false
+  return waitForExit(isEngineDjRunning)
 }
