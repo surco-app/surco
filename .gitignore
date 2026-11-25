@@ -23,3 +23,6 @@ dist
 # Built by scripts/build-baken.mjs on each machine; never committed.
 apps/desktop/resources/baken/
 apps/desktop/.baken-build/
+
+# Private auto cue engine (surco-app/surco-brain), cloned here for release builds.
+apps/desktop/brain/

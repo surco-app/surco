@@ -3,11 +3,11 @@
 // this contract fails the main-side build instead of surfacing as a runtime IPC
 // mismatch — and the renderer (via index.d.ts) reads the very same shape.
 import type { CachedBatchHit, PeekableAnalyses } from '../shared/audioIpcContract'
+import type { DropInput } from '../shared/autoCue'
 import type { CueProfile, CueProfileRead, TasteTrack } from '../shared/cueProfile'
 import type { WindowSnapshot } from '../shared/diagnostics'
 import type { DjApi } from '../shared/djApi'
 import type { CueProgram } from '../shared/djProgram'
-import type { DropInput } from '../shared/dropDetect'
 import type { FeedbackForm, FeedbackOutcome } from '../shared/feedback'
 import type { GridAudit } from '../shared/gridAudit'
 import type { GridFit } from '../shared/gridEdit'

@@ -15,7 +15,7 @@
     "build-baken": "node ../../scripts/build-baken.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "biome lint src",
+    "lint": "biome lint src scripts",
     "format": "biome format --write src",
     "check": "biome check --write src",
     "sweep": "vitest run src/main/spectrumSweep.test.ts",

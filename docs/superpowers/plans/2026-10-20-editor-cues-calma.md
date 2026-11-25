@@ -12,14 +12,14 @@
 
 **Depends on:** branch `worktree-fuentes-dj-playlists` at `ac1d9c07` (plan `2026-10-20-editor-cues-manual.md` done plus the post-plan commits listed in its ledger).
 
-**Out of scope (spec "Fuera de alcance"):** automatic drop detection (`src/shared/dropDetect*`, `src/main/dropDetectMeasure*` are being researched by another agent; no task touches them) and any change to what Surco writes to rekordbox.
+**Out of scope (spec "Fuera de alcance"):** automatic drop detection (being researched by another agent; no task touches it) and any change to what Surco writes to rekordbox.
 
 ## Global Constraints
 
 - `$WT` means `/Users/vicent/code/surco/.claude/worktrees/fuentes-dj-playlists`. **Write it out literally in every command**: the shell guard refuses commands whose paths come from a variable. Paths below are relative to `apps/desktop/` unless they start with `docs/`.
 - Tests: `npm --prefix $WT/apps/desktop exec -- vitest run --root $WT/apps/desktop <paths relative to apps/desktop>`. Never filter by a path from the repo root (the setup is skipped and failures are false). Full suite: add `--reporter=dot --silent > /private/tmp/claude-501/-Users-vicent-code-surco/60b03f2f-5add-4da8-8475-3fe0dd5d1e8d/scratchpad/suite.log` and read the tail.
 - Types: `npm --prefix $WT/apps/desktop exec -- tsc -p $WT/apps/desktop/tsconfig.web.json --noEmit` and the same with `tsconfig.node.json`. A bare `tsc --noEmit` checks nothing.
-- Lint: `npm --prefix $WT/apps/desktop run check` (it is `biome check --write src`, it may reorder imports), then `git -C $WT status --short` must list only the task's files. Other agents work in this tree (one is writing `src/main/zzDropDump.test.ts` and `src/shared/dropDetect*`): never `git add -A` or `.`, stage by path.
+- Lint: `npm --prefix $WT/apps/desktop run check` (it is `biome check --write src`, it may reorder imports), then `git -C $WT status --short` must list only the task's files. Other agents work in this tree (one is writing the auto cue detector): never `git add -A` or `.`, stage by path.
 - The shell guard rejects heredocs, `cd … &&` chains and shell loops: write files with the Write tool, edit with Edit. Search with `rg` or the Grep tool.
 - Locale additions: write the JSON shown in the task with the Write tool to the scratchpad path the task names, then run `node /private/tmp/claude-501/-Users-vicent-code-surco/60b03f2f-5add-4da8-8475-3fe0dd5d1e8d/scratchpad/learn-merge.cjs <that json>` with the Bash working directory `$WT/apps/desktop` (it deep-merges `{ "<locale>": { ...keys } }` into `src/renderer/src/i18n/locales/<locale>.json`). Key removals are done with Edit in each of the 5 files, using the exact lines the task lists. `i18n/usedKeys.test.ts` fails on a key nobody reads and `i18n/keys.test.ts` on a key missing in one locale, so run both after every locale change.
 - Zero comments in new code (biome directives included). `Select.tsx` documents each prop with a comment; the new `split` prop gets none (the user's no-comment rule wins over that file's habit; reviewers are told).

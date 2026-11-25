@@ -1,7 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
+import { autoCue, type DropInput } from '../../../shared/autoCue'
 import type { CueProfileRead } from '../../../shared/cueProfile'
-import type { DropInput } from '../../../shared/dropDetect'
-import { modelWithTaste, tasteTrackOf } from '../../../shared/dropTaste'
 import {
   cueDropInputQuery,
   cueProfileQuery,
@@ -34,7 +33,7 @@ export async function recordCueEdits(
       if (drops.length === 0) return
       try {
         const input = await inputOf(client, contentId)
-        const track = input && tasteTrackOf(input, drops, modelWithTaste(taste))
+        const track = input && autoCue.tasteTrackOf(input, drops, { taste })
         if (track) await window.api.recordCueEdit(track)
       } catch (e: unknown) {
         window.api.logError(

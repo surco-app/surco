@@ -26,6 +26,7 @@ Drop your tracks in. Surco finds the right metadata, checks that your files real
 - **Fake-lossless detection.** A spectrogram and a verdict that explains itself with the numbers it measured. It flags a 320 kbps re-encode sold as FLAC or WAV, upsampled audio and other quality lies.
 - **Cue editor.** Hot cues and CALLs on the rekordbox wave and grid. Pick a flow such as Mix in 64 or one of your own, click where the track drops and the rest of the cues land counting back.
 - **Auto mark.** Suggests where each track drops, on one track or a whole selection, and tells sure suggestions from doubtful ones. It learns how you mark from the cues you already placed and the ones you save.
+- **Auto cue engine.** Official builds include Surco's own private auto cue engine. The open source code uses a simpler one that follows the same interface.
 - **Your libraries, inside Surco.** Opens your rekordbox, Traktor, Engine DJ and Apple Music playlists with their folders and order. rekordbox and Traktor playlists can be created, renamed, reordered and filled from Surco, and the cues you save reach the same track in rekordbox, Traktor and Engine DJ.
 - **Conversion that keeps the track.** AIFF, MP3 (320/V0), WAV, FLAC and ALAC, with optional loudness or peak normalization. Convert a track your DJ software already knows and it keeps its playlists and cues there.
 - **USB sticks for your players.** Writes a stick for Pioneer DJ and AlphaTheta players, or one with an Engine DJ library.

@@ -2,9 +2,13 @@ import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
+import { autoCueImpl } from './scripts/autoCueImpl'
+
+const autoCueEngine = autoCueImpl(__dirname, process.env)
 
 export default defineConfig({
   main: {
+    resolve: { alias: { '@surco/auto-cue-impl': autoCueEngine } },
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
@@ -13,6 +17,7 @@ export default defineConfig({
     },
   },
   preload: {
+    resolve: { alias: { '@surco/auto-cue-impl': autoCueEngine } },
     plugins: [externalizeDepsPlugin()],
     build: {
       rollupOptions: {
@@ -27,7 +32,10 @@ export default defineConfig({
   renderer: {
     root: 'src/renderer',
     resolve: {
-      alias: { '@': resolve(__dirname, 'src/renderer/src') },
+      alias: {
+        '@': resolve(__dirname, 'src/renderer/src'),
+        '@surco/auto-cue-impl': autoCueEngine,
+      },
     },
     plugins: [react(), tailwindcss()],
     build: {

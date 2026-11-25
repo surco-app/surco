@@ -3053,7 +3053,7 @@ vista previa se dibujan en contorno del color del cue, nunca rellenas (`CueWave.
 ⌘Z. Hay también un modo Manual sin flujo.
 
 **Auto marcar** (nuevo en v1.10.0). Propone dónde rompe la pista a partir del análisis de
-rekordbox (frases y onda) y la rejilla (`dropProposals`, `shared/dropDetect.ts:229`), y dibuja
+rekordbox y la rejilla, y dibuja
 lo que pondría el flujo. Desde v1.20.0 las propuestas tienen su propia barra encima de las ondas,
 igual plegado y a pantalla completa, con cuántas hay, cuántas seguras y cuántas dudosas,
 «Aceptar» e «Quitar propuestas» (`cues-auto-review`, `CuesSection.tsx`). Se aceptan con Intro,
@@ -3064,28 +3064,24 @@ onda general (`onDropProposal`, `CueWave.tsx`). Con varias filas seleccionadas d
 «Auto marcar las seleccionadas» las calcula todas y cada fila dice lo que dejó
 (`autoMarkTracks`, `lib/cueAutoMark.ts:56`); «Guardar N pistas en rekordbox» guarda de una
 vez las revisadas. Desde v1.41.0 cada línea del recuento del lote se pulsa y deja en la lista
-solo las pistas que cuenta (ver «Menú de filtros» en §12). Medido sobre pistas apartadas de una colección real con los drops que
-marcó su DJ: encuentra en torno al 68 % de los drops y en torno al 70 % de sus propuestas son
-drops (`dropDetectMeasure.test.ts`). Necesita el análisis de rekordbox. Desde v1.26.0 dos
-propuestas no quedan a 32 compases o menos (`picking.spacingBars` 33, `shared/dropModel.json`):
-de dos drops así se queda el más fuerte, y un mismo build-up recibe la cuenta atrás entera en
-vez de dos cortadas.
+solo las pistas que cuenta (ver «Menú de filtros» en §12). Necesita el análisis de rekordbox. Desde v1.26.0 dos
+propuestas muy próximas se reducen a la más fuerte, y un mismo build-up recibe la cuenta atrás
+entera en vez de dos cortadas. La build oficial lleva el motor de auto cue propio de Surco; el
+código abierto trae uno más sencillo.
 
-**Seguras y dudosas** (nuevo en v1.15.0). Cada propuesta es segura o dudosa según la
-puntuación del detector (`SURE_SCORE`, `shared/dropDetect.ts:37`): las seguras se dibujan con
+**Seguras y dudosas** (nuevo en v1.15.0). Cada propuesta es segura o dudosa según lo
+seguro que esté el detector: las seguras se dibujan con
 línea continua y las dudosas discontinuas y con «¿Rompe aquí?». A pantalla completa cada una
 dice cuántos compases con poco grave había antes; es lo que se oyó, no la razón de la
-seguridad. Medido en pistas apartadas: aciertan el 85 % de las seguras y el 55 % de las
-dudosas (`autoMarkTasteMeasure.test.ts`). Con varias pistas, «Aceptar las N seguras» acepta
+seguridad. Con varias pistas, «Aceptar las N seguras» acepta
 solo esas y deja las dudosas propuestas (`acceptAutoMarks`, `lib/cueAutoMark.ts:111`).
 
 **Tu forma de marcar** (nuevo en v1.15.0). En Ajustes → Cues, una tarjeta
 (`CueProfileCard.tsx`) lee la colección de rekordbox en solo
 lectura, las pistas con CALL (`readCollectionMarks`, `main/rekordboxLearnFlow.ts:35`), y junta
 lo que el DJ ha guardado en el editor de cues de Surco. Con eso:
-- ajusta Auto marcar a ese DJ entrenando sobre el detector de serie, y **solo se queda con el
-  ajuste si encuentra mejor sus marcas en el 30 % de pistas que aparta para comprobarlo**;
-  hacen falta 30 pistas marcadas (`tuneDropTaste`, `shared/dropTaste.ts:128`);
+- ajusta Auto marcar a ese DJ, y **solo se queda con el ajuste si encuentra mejor sus marcas
+  en las pistas que aparta para comprobarlo**; hacen falta pistas marcadas suficientes;
 - enseña cuántos de cada 10 sitios donde marca encuentra Auto en esas pistas apartadas, la
   cuenta atrás aprendida, cuántas veces lleva su CALL debajo y si suele poner cue de inicio.
   Desde v1.26.0 el flujo aprendido se ofrece en el + de la lista de flujos («Desde cómo

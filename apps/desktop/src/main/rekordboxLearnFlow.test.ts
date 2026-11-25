@@ -3,10 +3,22 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
+import type { DropInput, TasteTrack } from '../shared/autoCue'
 import { anlzFile, pqtzSection, pssiSection, pwavSection, pwv5Section } from './anlzFixture'
 import { openRekordboxDb } from './rekordboxDb'
 import { markedTracks, readCollectionMarks, readCollectionMarksAt } from './rekordboxLearnFlow'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
+
+const tasteTrackOf = vi.hoisted(() =>
+  vi.fn(
+    (_input: DropInput, drops: number[]) =>
+      ({ key: 'lesson', candidates: [], drops }) as TasteTrack | null,
+  ),
+)
+vi.mock('../shared/autoCue', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../shared/autoCue')>()
+  return { ...actual, autoCue: { ...actual.autoCue, tasteTrackOf } }
+})
 
 const ANLZ = '/PIONEER/USBANLZ/219/e40e4/ANLZ0000.DAT'
 const BEATS = Array.from({ length: 64 }, (_, i) => i * 500)
@@ -55,11 +67,24 @@ describe('readCollectionMarks', () => {
       { ID: 'c', InMsec: 8000, Kind: 0 },
       { ID: 'd', InMsec: 16000, Kind: 0 },
     ])
+    tasteTrackOf.mockClear()
     const marks = await readCollectionMarks(db, share, async () => {})
     expect(marks.learn).toHaveLength(1)
-    expect(marks.taste).toEqual([expect.objectContaining({ drops: [8] })])
-    expect(marks.taste[0].key).not.toBe('103')
-    expect(marks.taste[0].candidates.length).toBeGreaterThan(0)
+    expect(tasteTrackOf).toHaveBeenCalledTimes(1)
+    const [input, drops] = tasteTrackOf.mock.calls[0]
+    expect(drops).toEqual([16000])
+    expect(input.grid.map((b) => b.ms)).toEqual(BEATS)
+    expect(input.phrases).toEqual(marks.learn[0].phrases)
+    expect(input.words.length).toBeGreaterThan(0)
+    expect(marks.taste).toEqual([{ key: 'lesson', candidates: [], drops: [16000] }])
+  })
+
+  it('keeps no lesson for Auto when its engine makes none of the track, as the basic engine never does', async () => {
+    const { db, share } = await collection([{ ID: 'd', InMsec: 16000, Kind: 0 }])
+    tasteTrackOf.mockReturnValueOnce(null)
+    const marks = await readCollectionMarks(db, share, async () => {})
+    expect(marks.learn).toHaveLength(1)
+    expect(marks.taste).toEqual([])
   })
 
   it('learns nothing for Auto from a track whose CALLs all sit under a hot cue, since it has no drop', async () => {
