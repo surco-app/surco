@@ -1,4 +1,4 @@
-import { matchingBlocks } from '../../../shared/matchingBlocks'
+import { matchingBlocks, withBlockSeparators } from '../../../shared/matchingBlocks'
 import type { SourcePlaylistEntry } from '../../../shared/types'
 import type { MatchingPartner } from './matchingPartners'
 
@@ -46,19 +46,9 @@ export function matchingEntriesFor(
     held.map(([a, b]) => [nfc(a), nfc(b)] as const),
     (path) => titleOf(here.get(path) as SourcePlaylistEntry),
   )
-  return blocks.flatMap((block, i) => [
-    ...(i > 0
-      ? [
-          {
-            path: null,
-            separator: true,
-            meta: {},
-            linkId: `matching-sep-${i}`,
-          } satisfies SourcePlaylistEntry,
-        ]
-      : []),
-    ...block.map((path) => here.get(path) as SourcePlaylistEntry),
-  ])
+  return withBlockSeparators(
+    blocks.map((block) => block.map((path) => here.get(path) as SourcePlaylistEntry)),
+  )
 }
 
 export function pathPartners(
