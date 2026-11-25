@@ -207,6 +207,25 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.title).toBe('A')
   })
 
+  // Taking back a cover picked by hand takes back that it was the DJ's choice too: the file's
+  // own art that returns must give way to a library copy's again, as it did before the pick.
+  it('takes back the hand-picked mark with the cover it came with', () => {
+    const { result } = setup([
+      track('a', { title: 'A' }, { coverUrl: 'data:own', embeddedCover: 'data:own' }),
+    ])
+    act(() => {
+      result.current.record(result.current.tracks, { cover: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, coverUrl: 'blob:dropped', coverPicked: true })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].coverUrl).toBe('data:own')
+    expect(result.current.tracks[0].coverPicked).toBeUndefined()
+  })
+
   // Pasting a copied tag set also stamps the cover, so its undo must bring the old
   // cover back — but ONLY for cover-recording operations: a plain find & replace
   // snapshot must never revert a cover the user changed afterwards.
@@ -379,6 +398,72 @@ describe('useMetaUndo', () => {
     expect(result.current.tracks[0].meta.artist).toBe('Old')
     expect(result.current.tracks[0].meta.title).toBe('Typed')
     expect(result.current.tracks[0].meta.custom).toEqual({ mood: 'Dark' })
+  })
+
+  // The playlists a library copy lends are staged by a step of their own: ⌘Z must take them
+  // back, or the convert files the new file in playlists the DJ undid.
+  it('takes back the playlists a step staged for one program and keeps the others', () => {
+    const traktor = { targets: [{ id: 'fri', name: 'Friday' }], base: [] }
+    const { result } = setup([track('a', {}, { playlists: { traktor } })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          playlists: {
+            ...t.playlists,
+            rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] },
+          },
+        })),
+      )
+    })
+    act(() => {
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          playlists: { ...t.playlists, engine: { targets: [{ id: '7', name: 'House' }] } },
+        })),
+      )
+    })
+    let restored = 0
+    act(() => {
+      restored = result.current.undo()
+    })
+    expect(restored).toBe(1)
+    expect(result.current.tracks[0].playlists?.rekordbox).toBeUndefined()
+    expect(result.current.tracks[0].playlists?.traktor).toBe(traktor)
+    expect(result.current.tracks[0].playlists?.engine).toEqual({
+      targets: [{ id: '7', name: 'House' }],
+    })
+  })
+
+  // Opening a track can stage its copy's playlists and then lend the copy's cover in one
+  // grouped step: one ⌘Z must take back both, the cover too, though the step began without it.
+  it('takes back the cover a later record in the same group joined to the step', () => {
+    const { result } = setup([
+      track('a', { grouping: '' }, { coverUrl: 'data:own', embeddedCover: 'data:own' }),
+    ])
+    act(() => {
+      result.current.record(result.current.tracks, { group: 'open-a' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, playlists: { rekordbox: { targets: [], base: [] } } })),
+      )
+    })
+    act(() => {
+      result.current.record(result.current.tracks, { cover: true, group: 'open-a' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, grouping: 'Bases' }, coverUrl: 'data:copy' })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0]).toMatchObject({
+      meta: { grouping: '' },
+      coverUrl: 'data:own',
+    })
+    expect(result.current.tracks[0].playlists?.rekordbox).toBeUndefined()
+    expect(result.current.canUndo()).toBe(false)
   })
 
   it('keeps a field typed between two presses of a grouped cover step when that step is undone', () => {

@@ -49,8 +49,12 @@ function lookupFor(tracks: CollectionTrack[]): CollectionLookup {
 }
 
 // The collections of the programs Surco sends to, read only while enabled. A switched-off
-// program shows no copy even when its collection is cached by its tab.
-function useActiveCollections(enabled: boolean): (CollectionTrack[] | undefined)[] {
+// program shows no copy even when its collection is cached by its tab. Pending while an
+// enabled program's collection is still being read; one that failed will not arrive.
+function useActiveCollections(enabled: boolean): {
+  collections: (CollectionTrack[] | undefined)[]
+  pending: boolean
+} {
   const settings = useAppSettings()
   const active = useMemo(
     () =>
@@ -60,17 +64,21 @@ function useActiveCollections(enabled: boolean): (CollectionTrack[] | undefined)
       ),
     [settings],
   )
-  const collections = useQueries({
+  const { data, loading } = useQueries({
     queries: DJ_PROGRAMS.map((program, i) => ({
       ...sourceCollectionOptions(program),
       enabled: enabled && active[i],
     })),
-    combine: (results) => results.map((result) => result.data),
+    combine: (results) => ({
+      data: results.map((result) => result.data),
+      loading: results.map((result) => result.isPending),
+    }),
   })
-  return useMemo(
-    () => collections.map((tracks, i) => (enabled && active[i] ? tracks : undefined)),
-    [collections, enabled, active],
+  const collections = useMemo(
+    () => data.map((tracks, i) => (enabled && active[i] ? tracks : undefined)),
+    [data, enabled, active],
   )
+  return { collections, pending: enabled && loading.some((isPending, i) => isPending && active[i]) }
 }
 
 // A selected track has no audio comparison behind it, so only an entry of the same title,
@@ -113,7 +121,7 @@ export function useSelectionCopies(
   tracks: TrackItem[],
   enabled: boolean,
 ): Partial<Record<DjProgram, Record<string, string>>> {
-  const collections = useActiveCollections(enabled)
+  const { collections } = useActiveCollections(enabled)
   return useMemo(
     () =>
       Object.fromEntries(
@@ -137,19 +145,16 @@ export function useSelectionCopies(
   )
 }
 
-export function useProgramCopies({
-  inputPath,
-  meta,
-  durationSec,
-  suggestedMeta,
-  enabled,
-}: Args): ProgramCopy[] {
-  const collections = useActiveCollections(enabled)
+export function useProgramCopies({ inputPath, meta, durationSec, suggestedMeta, enabled }: Args): {
+  copies: ProgramCopy[]
+  pending: boolean
+} {
+  const { collections, pending } = useActiveCollections(enabled)
   const { title, artist } = meta
   const suggestedTitle = suggestedMeta?.title
   const suggestedArtist = suggestedMeta?.artist
   const thisKey = pathKey(inputPath)
-  return useMemo(
+  const copies = useMemo(
     () =>
       DJ_PROGRAMS.flatMap((program, i): ProgramCopy[] => {
         const tracks = collections[i]
@@ -180,4 +185,5 @@ export function useProgramCopies({
       }),
     [collections, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath, thisKey],
   )
+  return { copies, pending }
 }

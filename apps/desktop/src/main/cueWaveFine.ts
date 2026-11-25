@@ -1,6 +1,6 @@
-import { type ChildProcess, spawn } from 'node:child_process'
-import { constants as osConstants, setPriority } from 'node:os'
+import type { ChildProcess } from 'node:child_process'
 import { forcedInputArgs } from '../shared/inputFormat'
+import { f32Chunks, spawnBackgroundDecode } from './ffmpegStream'
 
 export const CUE_WAVE_FINE_PER_SECOND = 1000
 const TOP = 255
@@ -60,7 +60,7 @@ export function runCueWaveFine(
 ): Promise<Uint8Array> {
   const fine = createCueWaveFine(sampleRate)
   return new Promise((resolve, reject) => {
-    const child = spawn(
+    const child = spawnBackgroundDecode(
       ffmpegPath,
       [
         '-hide_banner',
@@ -77,24 +77,13 @@ export function runCueWaveFine(
         'f32le',
         '-',
       ],
-      { stdio: ['ignore', 'pipe', 'ignore'], timeout: timeoutMs },
+      timeoutMs,
     )
-    if (child.pid !== undefined) {
-      try {
-        setPriority(child.pid, osConstants.priority.PRIORITY_BELOW_NORMAL)
-      } catch {}
-    }
     running.add(child)
-    let tail = Buffer.alloc(0)
-    child.stdout.on('data', (chunk: Buffer) => {
-      const data = tail.length > 0 ? Buffer.concat([tail, chunk]) : chunk
-      const usable = data.length - (data.length % 4)
-      tail = Buffer.from(data.subarray(usable))
-      if (usable === 0) return
-      const aligned = new Uint8Array(usable)
-      aligned.set(data.subarray(0, usable))
-      fine.push(new Float32Array(aligned.buffer))
-    })
+    child.stdout.on(
+      'data',
+      f32Chunks((floats) => fine.push(floats)),
+    )
     child.on('error', (err) => {
       running.delete(child)
       reject(err)

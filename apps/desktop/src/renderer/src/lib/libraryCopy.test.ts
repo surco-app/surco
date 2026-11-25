@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { LibraryVerdict } from '../components/LibrarySection'
 import {
   type CopyCandidate,
+  type FillCandidate,
   copyPathIn,
   countsAsCopy,
   fillCopyPath,
@@ -9,6 +10,8 @@ import {
   pickLibraryCopy,
   replaceCopyPatch,
   replaceWarnsFirst,
+  versionCopyIn,
+  versionCopyPath,
 } from './libraryCopy'
 import { replacePatch } from './replaceBeforeConvert'
 
@@ -102,20 +105,82 @@ describe('fillCopyPath', () => {
     durationSec,
   })
   const fill = (args: {
-    musicCopyPath?: string
+    musicCopy?: FillCandidate
     musicCopyPending?: boolean
+    programsPending?: boolean
     programs: Parameters<typeof fillCopyPath>[0]['programs']
     fileDurationSec?: number
   }) =>
     fillCopyPath({
-      musicCopyPath: args.musicCopyPath ?? '',
+      musicCopy: args.musicCopy ?? null,
       musicCopyPending: args.musicCopyPending ?? false,
+      programsPending: args.programsPending ?? false,
       programs: args.programs,
       fileDurationSec: args.fileDurationSec,
     })
 
+  const musicCopy = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/m/old.mp3',
+    verdict,
+    durationSec,
+  })
+
   it('takes the Apple Music copy a replacement supersedes before any DJ copy', () => {
-    expect(fill({ musicCopyPath: '/m/old.mp3', programs: [rekordbox('same')] })).toBe('/m/old.mp3')
+    expect(
+      fill({
+        musicCopy: musicCopy('library', 200),
+        programs: [rekordbox('same', 200)],
+        fileDurationSec: 200,
+      }),
+    ).toBe('/m/old.mp3')
+  })
+
+  // The album, year and label are only this file's when the copy is the same recording, in
+  // Music as in a DJ program: the 5:57 MP3 in Music against a 6:01 FLAC is another edit.
+  it('never fills everything from an Apple Music copy that is another version', () => {
+    expect(fill({ musicCopy: musicCopy('here', 357), programs: [], fileDurationSec: 361 })).toBe('')
+    expect(
+      fill({ musicCopy: musicCopy('different', 361), programs: [], fileDurationSec: 361 }),
+    ).toBe('')
+  })
+
+  it('fills from a DJ copy of the same recording when the Apple Music copy is another version', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('different', 357),
+        programs: [rekordbox('same', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('/r/a.aiff')
+  })
+
+  // Program order decides which copy fills, and a program whose collection is still being
+  // read may hold one ahead of the copy found so far.
+  it('waits for every DJ collection before filling from a DJ copy', () => {
+    expect(
+      fill({ programs: [rekordbox('same', 200)], programsPending: true, fileDurationSec: 200 }),
+    ).toBe('')
+  })
+
+  it('fills from the Apple Music copy without waiting for the DJ collections, it goes first', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('same', 200),
+        programs: [],
+        programsPending: true,
+        fileDurationSec: 200,
+      }),
+    ).toBe('/m/old.mp3')
+  })
+
+  it('waits while the Apple Music copy is still being compared, it has the say', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('measuring'),
+        programs: [rekordbox('same', 200)],
+        fileDurationSec: 200,
+      }),
+    ).toBe('')
   })
 
   it('waits while the Apple Music copy is still being located, since it has the say', () => {
@@ -210,6 +275,187 @@ describe('fillCopyPath', () => {
 
   it('fills from a copy called the same recording when its length matches the file', () => {
     expect(fill({ programs: [rekordbox('same', 211.5)], fileDurationSec: 210 })).toBe('/r/a.aiff')
+  })
+})
+
+// The copy the Editor reads only for the grouping and the cover when no copy of the same
+// recording fills: another version of the track was filed by the DJ under the same grouping,
+// but its album, year or label belong to that other release.
+describe('versionCopyPath', () => {
+  const rekordbox = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/r/a.mp3',
+    verdict,
+    durationSec,
+  })
+  const traktor = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/t/a.wav',
+    verdict,
+    durationSec,
+  })
+  const version = (args: {
+    musicCopy?: FillCandidate
+    musicCopyPending?: boolean
+    programsPending?: boolean
+    programs: Parameters<typeof versionCopyPath>[0]['programs']
+    fileDurationSec?: number
+  }) =>
+    versionCopyPath({
+      musicCopy: args.musicCopy ?? null,
+      musicCopyPending: args.musicCopyPending ?? false,
+      programsPending: args.programsPending ?? false,
+      programs: args.programs,
+      fileDurationSec: args.fileDurationSec,
+    })
+
+  it('takes a copy the comparison called another version', () => {
+    expect(version({ programs: [rekordbox('different', 357)], fileDurationSec: 361 })).toBe(
+      '/r/a.mp3',
+    )
+  })
+
+  // FLAC 6:01 against the MP3 5:57 in rekordbox: a verdict about the same audio, but a length
+  // that makes it another edit, which the section shows as «Another version».
+  it('takes a copy that counts but whose length is another edit', () => {
+    expect(version({ programs: [rekordbox('here', 357)], fileDurationSec: 361 })).toBe('/r/a.mp3')
+  })
+
+  it('leaves the fill to a copy of the same recording, whose tags are all this file', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357), traktor('same', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+    expect(
+      version({
+        musicCopy: { path: '/m/a.mp3', verdict: 'same', durationSec: 361 },
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  it('takes the Apple Music copy that is another version before a DJ one', () => {
+    expect(
+      version({
+        musicCopy: { path: '/m/a.mp3', verdict: 'here', durationSec: 357 },
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('/m/a.mp3')
+  })
+
+  it('waits while the Apple Music copy is still being compared', () => {
+    expect(
+      version({
+        musicCopy: { path: '/m/a.mp3', verdict: 'measuring' },
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // A copy still compared may yet turn out to be the same recording, which fills everything.
+  it('waits while any copy is still being compared', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357), traktor('measuring', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // On first open a fast collection with another version must not spend the track's one fill
+  // before rekordbox's master.db, still loading, turns up the same recording.
+  it('waits while a DJ collection is still being read, it may hold the same recording', () => {
+    expect(
+      version({
+        programs: [rekordbox('different', 357)],
+        programsPending: true,
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  it('waits while the Apple Music copy is still being located, it may be the same recording', () => {
+    expect(
+      version({
+        musicCopyPending: true,
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  // With tied copies Surco cannot tell which one is the track, nor which grouping is its own.
+  it.each(['several', 'missing', 'unreadable', 'thisFile', null] as const)(
+    'lends nothing from a copy that is not known to be another version (%s)',
+    (verdict) => {
+      expect(version({ programs: [rekordbox(verdict, 357)], fileDurationSec: 361 })).toBe('')
+    },
+  )
+
+  it('lends nothing from a counted copy whose length is unknown, nothing says another edit', () => {
+    expect(version({ programs: [rekordbox('here')], fileDurationSec: 361 })).toBe('')
+    expect(version({ programs: [rekordbox('here', 357)] })).toBe('')
+  })
+})
+
+// Each program's playlists field stages the playlists of that program's own copy, so the
+// rule looks at one program's rows at a time.
+describe('versionCopyIn', () => {
+  const row = (
+    program: 'rekordbox' | 'traktor',
+    verdict: LibraryVerdict | null,
+    durationSec?: number,
+    path = `/${program}/a.mp3`,
+  ) => ({ program, path, verdict, durationSec })
+
+  it("takes the program's copy that is another version", () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'different', 357)], 361, false)).toBe(
+      '/rekordbox/a.mp3',
+    )
+  })
+
+  it('takes a copy whose length alone says it is another version', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'same', 30)], 95, false)).toBe(
+      '/rekordbox/a.mp3',
+    )
+  })
+
+  it("ignores another program's copy, whose playlists belong to that program", () => {
+    expect(versionCopyIn('rekordbox', [row('traktor', 'different', 30)], 95, false)).toBe('')
+  })
+
+  // That copy is the track: the field acts on it at once and nothing is staged.
+  it('takes nothing when the program also holds a copy of the same recording', () => {
+    const rows = [
+      row('rekordbox', 'different', 30, '/r/edit.mp3'),
+      row('rekordbox', 'same', 95, '/r/a.wav'),
+    ]
+    expect(versionCopyIn('rekordbox', rows, 95, false)).toBe('')
+  })
+
+  // A copy still compared may prove to be the same recording, which the field acts on instead.
+  it('waits while a copy of the program is still being compared', () => {
+    const rows = [
+      row('rekordbox', 'different', 30, '/r/edit.mp3'),
+      row('rekordbox', 'measuring', undefined, '/r/a.wav'),
+    ]
+    expect(versionCopyIn('rekordbox', rows, 95, false)).toBe('')
+  })
+
+  it('waits while a DJ collection is still being read', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'different', 30)], 95, true)).toBe('')
+  })
+
+  it('takes no copy that is missing or unreadable, whose playlists may be stale', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'missing', 30)], 95, false)).toBe('')
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'unreadable', 30)], 95, false)).toBe('')
+  })
+
+  it('takes no copy whose length is unknown, since nothing then tells it apart', () => {
+    expect(versionCopyIn('rekordbox', [row('rekordbox', 'same')], 95, false)).toBe('')
   })
 })
 

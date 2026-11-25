@@ -651,6 +651,12 @@ export interface SessionEdit extends TrackOrigin {
   coverUrl?: string
   coverPath?: string
   coverRemoved?: boolean
+  // A cover the DJ chose by hand, which a library copy found after the relaunch leaves alone.
+  coverPicked?: boolean
+  // The library copy already lent its fields and its playlists, once: an empty field after
+  // that is the DJ's choice, and a restored session must not fill it again.
+  copyFilled?: boolean
+  copyPlaylistsFilled?: PlaylistLibrary[]
   // The library copy this track belongs to, and whether it arrived from a playlist
   // import. Restored so a reopened row still offers to update that copy instead of adding
   // a second one, and still keeps the source's own format.

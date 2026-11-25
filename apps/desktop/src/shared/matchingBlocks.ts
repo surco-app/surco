@@ -1,3 +1,5 @@
+import type { SourcePlaylistEntry } from './types'
+
 export function matchingBlocks(
   pairs: readonly (readonly [string, string])[],
   label: (id: string) => string,
@@ -27,4 +29,22 @@ export function pairsOfBlocks(
     seen.add(key)
     return [[a, b] as [string, string]]
   })
+}
+
+export function withBlockSeparators(
+  blocks: readonly (readonly SourcePlaylistEntry[])[],
+): SourcePlaylistEntry[] {
+  return blocks.flatMap((block, i) => [
+    ...(i > 0
+      ? [
+          {
+            path: null,
+            separator: true,
+            meta: {},
+            linkId: `matching-sep-${i}`,
+          } satisfies SourcePlaylistEntry,
+        ]
+      : []),
+    ...block,
+  ])
 }

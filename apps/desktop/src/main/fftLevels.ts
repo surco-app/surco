@@ -1,3 +1,5 @@
+import { fft } from './fft'
+
 // 4096 at 44.1 kHz puts ~10.8 Hz in a bin, so even the 500 Hz fine bands span
 // dozens of them. The same size Spek, AudioAuditor and AVIL all settled on.
 const FFT_SIZE = 4096
@@ -9,48 +11,6 @@ const SILENCE_RMS = 1e-4
 export interface BandSpec {
   freqHz: number
   widthHz: number
-}
-
-// In-place iterative radix-2 Cooley-Tukey. The input is real, so the caller
-// leaves `im` zeroed and reads only the first half of the output.
-function transform(re: Float64Array, im: Float64Array): void {
-  const n = re.length
-  for (let i = 1, j = 0; i < n; i++) {
-    let bit = n >> 1
-    for (; j & bit; bit >>= 1) j ^= bit
-    j ^= bit
-    if (i < j) {
-      const tr = re[i]
-      re[i] = re[j]
-      re[j] = tr
-      const ti = im[i]
-      im[i] = im[j]
-      im[j] = ti
-    }
-  }
-  for (let len = 2; len <= n; len <<= 1) {
-    const ang = (-2 * Math.PI) / len
-    const wr = Math.cos(ang)
-    const wi = Math.sin(ang)
-    const half = len / 2
-    for (let i = 0; i < n; i += len) {
-      let cr = 1
-      let ci = 0
-      for (let k = 0; k < half; k++) {
-        const ur = re[i + k]
-        const ui = im[i + k]
-        const vr = re[i + k + half] * cr - im[i + k + half] * ci
-        const vi = re[i + k + half] * ci + im[i + k + half] * cr
-        re[i + k] = ur + vr
-        im[i + k] = ui + vi
-        re[i + k + half] = ur - vr
-        im[i + k + half] = ui - vi
-        const ncr = cr * wr - ci * wi
-        ci = cr * wi + ci * wr
-        cr = ncr
-      }
-    }
-  }
 }
 
 function hannWindow(size: number): { window: Float64Array; power: number } {
@@ -117,7 +77,8 @@ export function sliceLevels(
         energy += v * v
       }
       if (Math.sqrt(energy / FFT_SIZE) < SILENCE_RMS) continue
-      transform(re, im)
+      // The input is real, so `im` stays zeroed and only the first half of the output is read.
+      fft(re, im)
       for (let bin = 0; bin < bins; bin++) acc[bin] += re[bin] * re[bin] + im[bin] * im[bin]
       frames++
     }

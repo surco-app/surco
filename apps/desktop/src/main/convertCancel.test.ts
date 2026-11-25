@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -35,8 +35,8 @@ const meta: TrackMetadata = {
 }
 
 beforeAll(() => {
-  // Long enough that killing the child mid-encode is reliably still in flight —
-  // a stalled network mount is what this simulates, not a slow one.
+  // A stalled network mount is what this simulates, not a slow one. Twenty seconds
+  // still encode in tens of milliseconds, so no length keeps a kill inside the encode.
   execFileSync(FF, [
     '-y',
     '-f',
@@ -58,6 +58,11 @@ beforeAll(() => {
 describe('convertAudio — killed mid-encode', () => {
   it('rejects and leaves no .tmp file behind when the child is killed', async () => {
     const out = join(dir, 'killed.flac')
+    // The cancel flag rides with the kill, as in activeConversions.cancel(): this
+    // 20 s encode takes about 30 ms, so a worker off the CPU for longer under load
+    // sent the SIGTERM to an ffmpeg that had already exited 0, and a kill alone let
+    // the conversion publish.
+    let cancelled = false
     const promise = convertAudio(
       src,
       out,
@@ -67,12 +72,71 @@ describe('convertAudio — killed mid-encode', () => {
       undefined,
       undefined,
       undefined,
-      (child) => child.kill('SIGTERM'),
+      (child) => {
+        cancelled = true
+        child.kill('SIGTERM')
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => cancelled,
     )
 
     await expect(promise).rejects.toThrow()
     const leftovers = readdirSync(dir).filter((f) => f.includes('.tmp-'))
     expect(leftovers).toEqual([])
+  }, 15000)
+})
+
+// A kill that lands before ffmpeg opens its output proves nothing about the cleanup, since
+// there is no temp to remove yet. Blocking inside onChild until the temp holds bytes keeps
+// convertAudio from seeing the encode end before the cancel, so the half-written temp
+// convertAudio itself must delete is always there, however fast ffmpeg runs.
+describe('convertAudio — killed once the temp is written', () => {
+  it('rejects and deletes the half-written temp instead of leaving it in the music folder', async () => {
+    const out = join(dir, 'killed-after-write.flac')
+    let tmp = ''
+    let cancelled = false
+    let tempHadBytes = false
+    const pause = new Int32Array(new SharedArrayBuffer(4))
+    const promise = convertAudio(
+      src,
+      out,
+      'flac',
+      meta,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      (child) => {
+        const deadline = Date.now() + 10_000
+        while (!tempHadBytes && Date.now() < deadline) {
+          tempHadBytes = existsSync(tmp) && statSync(tmp).size > 0
+          if (!tempHadBytes) Atomics.wait(pause, 0, 0, 1)
+        }
+        cancelled = true
+        child.kill('SIGTERM')
+      },
+      (path) => {
+        tmp = path
+      },
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      () => cancelled,
+    )
+
+    await expect(promise).rejects.toThrow('conversionCancelled')
+    expect(tempHadBytes).toBe(true)
+    expect(existsSync(tmp)).toBe(false)
+    expect(existsSync(out)).toBe(false)
   }, 15000)
 })
 

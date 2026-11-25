@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { waitForExit } from './programExit'
 
 const run = promisify(execFile)
 
@@ -17,15 +18,9 @@ export async function isSeratoRunning(): Promise<boolean> {
   }
 }
 
-const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
-
 export async function waitForSeratoExit(
   isRunning: () => Promise<boolean> = isSeratoRunning,
-  wait: (ms: number) => Promise<void> = sleep,
+  wait?: (ms: number) => Promise<void>,
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < 30; attempt++) {
-    if (!(await isRunning())) return true
-    await wait(500)
-  }
-  return false
+  return waitForExit(isRunning, { wait })
 }

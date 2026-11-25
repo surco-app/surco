@@ -3443,7 +3443,7 @@ en las pestañas de los programas ni con varias pistas, y se puede esconder en A
 - **Estados** (`STATE`, `LibrarySection.tsx:31-56`; claves `editor.libraryState*`). «Son el
   mismo» (mismo audio por huella o por diferencia medida, con la misma frecuencia y profundidad
   real, `isSameAudio`, `lib/bestCopy.ts:133-146`), «La nueva es mejor», «La nueva es peor»,
-  «Parecidas» (el mismo master sin nada que las separe), «Ni mejor ni peor» (nada las separa pero
+  «Parecidas» (el mismo master sin nada que las separe), «Misma calidad» (nada las separa pero
   no consta que sean el mismo master), «Otra versión · duración» (otra duración y otro audio,
   `isOtherVersion`, `:68-83`), «Es este archivo», «No se encuentra» (la ruta de la copia no
   existe), «No se puede leer», «No se puede medir», «N copias» (Apple Music tiene varias y no sabe

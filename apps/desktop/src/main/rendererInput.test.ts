@@ -44,4 +44,16 @@ describe('windowSnapshotOf', () => {
     expect(windowSnapshotOf(null)).toBeNull()
     expect(windowSnapshotOf('snapshot')).toBeNull()
   })
+
+  // Every heap number is read on its own: a snapshot missing just one of them would log
+  // a crash cause with a blank heap figure.
+  it('drops a snapshot missing either heap figure', () => {
+    expect(windowSnapshotOf({ heapLimitMb: 4096, listTracks: 900 })).toBeNull()
+    expect(windowSnapshotOf({ heapUsedMb: 120, listTracks: 900 })).toBeNull()
+  })
+
+  // A renderer that sends nothing at all must not throw in the main process.
+  it('drops a snapshot the renderer sent as undefined', () => {
+    expect(windowSnapshotOf(undefined)).toBeNull()
+  })
 })

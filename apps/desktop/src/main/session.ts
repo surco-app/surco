@@ -146,6 +146,11 @@ function sanitizeEdit(raw: unknown, previews: Map<string, ResolvedCover>): Sessi
   if (!isAppliedRelease(edit.appliedRelease)) delete edit.appliedRelease
   if (!Array.isArray(edit.programs) || !edit.programs.every((p) => typeof p === 'string'))
     delete edit.programs
+  if (
+    !Array.isArray(edit.copyPlaylistsFilled) ||
+    !edit.copyPlaylistsFilled.every((p) => typeof p === 'string')
+  )
+    delete edit.copyPlaylistsFilled
   const playlists = sanitizePlaylists(edit.playlists)
   if (playlists) edit.playlists = playlists
   else delete edit.playlists

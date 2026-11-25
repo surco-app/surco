@@ -1,18 +1,15 @@
 import { isUtf8 } from 'node:buffer'
 import {
   copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
   readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
-import { basename, dirname, join, relative, resolve, sep } from 'node:path'
+import { join, relative, resolve, sep } from 'node:path'
 import log from 'electron-log/main'
 import type { BatchResult, OpOutcome, QueueOp } from './rekordboxQueueOps'
-import { backupFolderName, type FileStamp, fileStampOf } from './seratoLibraryWrite'
+import { type FileStamp, fileStampOf, takeRotatedBackups } from './seratoLibraryWrite'
 import { parseVirtualdjDatabase, type VirtualdjSong } from './virtualdjDatabase'
 import { editedBody, type SongSpan, songSpans } from './virtualdjDatabaseWrite'
 import { type VirtualdjRoot, virtualdjRootLabel } from './virtualdjLibrary'
@@ -132,9 +129,9 @@ export type VirtualdjCommit =
   | 'write-failed'
   | 'write-unknown'
 
-const KEPT_BACKUPS = 20
 export const LIST_BACKUPS = 'lists'
 export const HISTORY_BACKUPS = 'history'
+const KEPT_BACKUPS = 20
 const WRITING = '.surco-write'
 
 function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
@@ -144,24 +141,10 @@ function backupPathOf(file: string, roots: VirtualdjRoot[]): string {
 }
 
 export function takeBackups(files: string[], deps: VirtualdjCommitDeps): Map<string, string> {
-  const name = backupFolderName(deps.now?.() ?? new Date())
-  let folder = join(deps.backupDir, name)
-  for (let n = 1; existsSync(folder); n++) folder = join(deps.backupDir, `${name}-${n}`)
-  mkdirSync(folder, { recursive: true })
-  const roots = deps.roots()
-  const copies = new Map<string, string>()
-  for (const file of files) {
-    const copy = join(folder, backupPathOf(file, roots))
-    mkdirSync(dirname(copy), { recursive: true })
-    copyFileSync(file, copy)
-    copies.set(file, copy)
-  }
-  const older = readdirSync(deps.backupDir)
-    .filter((n) => n !== basename(folder) && n !== LIST_BACKUPS && n !== HISTORY_BACKUPS)
-    .sort()
-  for (const old of older.slice(0, Math.max(0, older.length + 1 - KEPT_BACKUPS)))
-    rmSync(join(deps.backupDir, old), { recursive: true, force: true })
-  return copies
+  return takeRotatedBackups(files, deps, backupPathOf, KEPT_BACKUPS, [
+    LIST_BACKUPS,
+    HISTORY_BACKUPS,
+  ])
 }
 
 function clearOrphan(tmp: string): void {

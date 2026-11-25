@@ -294,10 +294,6 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
 // and the next save, a title edit included, wrote "Ann" back as the whole artist. These are
 // the fields whose frame holds more than one value, joined by ';' as the probe already
 // joins a FLAC's repeated comments.
-export function readId3Lists(file: string): Partial<TrackMetadata> {
-  return withTagLibFile(file, id3ListsOf, {})
-}
-
 export function id3ListsOf(f: TagFile): Partial<TrackMetadata> {
   return Object.fromEntries(
     Object.entries(id3ValuesOf(f)).map(([key, values]) => [key, values.join(';').trim()]),
