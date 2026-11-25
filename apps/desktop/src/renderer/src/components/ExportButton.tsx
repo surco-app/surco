@@ -38,7 +38,6 @@ interface ExportButtonProps {
   // A copy of this track already in a library: the body runs the remembered Update or Replace
   // on it instead of converting a second file beside it.
   libraryCopy?: LibraryCopyOffer
-  // Runs the action on the copy.
   onLibraryAction?: (action: LibraryCopyAction) => void
   // Remembers the action picked from the menu as the body's next press.
   onLibraryActionChange?: (action: LibraryCopyAction) => void
