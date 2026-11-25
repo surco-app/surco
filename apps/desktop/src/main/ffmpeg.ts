@@ -2946,6 +2946,106 @@ async function measureConversion(ctx: MeasureConversionContext): Promise<Measure
   return { sourcePcm, sourceDurationSec, sourceSamples, sampleCount, proven }
 }
 
+interface LandConversionContext {
+  input: string
+  output: string
+  tmp: string
+  inPlace: boolean
+  codec: ConversionPlan['codec']
+  rekordboxAudio: { trimmedMs: number; sampleRateHz?: number; sampleCount?: number } | undefined
+  replacesPath: string | undefined
+  probeOnce: (file: string) => Promise<ProbeResult>
+  sourceSamples: number | undefined
+  keepOverwritten: boolean | undefined
+  isCancelled: (() => boolean) | undefined
+  replaceShift: ReplaceShift | undefined
+  replaced: Awaited<ReturnType<typeof readReplaced>> | undefined
+  originalKept: boolean
+  // Called the moment a backup exists, not on return: the caller's catch discards it if
+  // anything below throws before the rename lands.
+  onArchived: (entry: TrashEntry | null) => void
+}
+
+interface LandConversionResult {
+  fromBytes: number | undefined
+  replaceTraktorShift: CueShift
+  originalKept: boolean
+}
+
+async function landConversion(ctx: LandConversionContext): Promise<LandConversionResult> {
+  const {
+    input,
+    output,
+    tmp,
+    inPlace,
+    codec,
+    rekordboxAudio,
+    replacesPath,
+    probeOnce,
+    sourceSamples,
+    keepOverwritten,
+    isCancelled,
+    replaceShift,
+    replaced,
+    onArchived,
+  } = ctx
+  let { originalKept } = ctx
+  const fromBytes = inPlace ? (await stat(input)).size : undefined
+  let trashReplaced: ((path: string) => Promise<void>) | undefined
+  const trashOnceReplaced = (trash: (path: string) => Promise<void>) => {
+    trashReplaced = trash
+  }
+  if (inPlace) {
+    const entry = await keepOriginal(input, 'replaced', output, {
+      reencodes:
+        codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
+      untilChecked: true,
+      trashOnceReplaced,
+      ...(rekordboxAudio && !replacesPath
+        ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceSamples, tmp)
+        : {}),
+    })
+    onArchived(entry)
+    originalKept = entry !== null
+  }
+  // A different file already at the destination ("Overwrite" in the conflict prompt) is
+  // not this source's audio in any form, so nothing re-run could bring it back: kept
+  // like a file with no encode to judge, which only 'never' skips. A re-export over the
+  // track's own previous output never asks, and keeps nothing.
+  else if (keepOverwritten && (await stat(output).catch(() => null)))
+    onArchived(await keepOriginal(output, 'replaced', output, { trashOnceReplaced }))
+  // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
+  // so a cancel can land while it runs. The rename is the first step that cannot be
+  // taken back: checked once more right before it, the original stays as it was and
+  // the catch drops the backup.
+  if (isCancelled?.()) throw errorWithKey('conversionCancelled')
+  // Logged because this failure only reproduces on Windows machines we cannot
+  // attach a debugger to: when a user reports "another program is using the file",
+  // these lines are the whole evidence — whether the destination was still held,
+  // by how many attempts, and whether it ever freed.
+  const replaceTraktorShift: CueShift = replaceShift
+    ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0)
+    : { shiftMs: 0 }
+  const land = () =>
+    renameWithRetry(tmp, output, {
+      onRetry: ({ attempt, code, waitMs, path }) =>
+        log.warn(
+          `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
+        ),
+      // The temp is a finished conversion by now — audio, tags and cues all written —
+      // so a destination that never frees must not cost the user the whole job. When
+      // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
+      // temp alone; when it cannot land (read-only remount, quota, a scanner holding
+      // the whole directory), the temp is still where it was and the catch deletes it
+      // as it would any half-written output.
+      rescue: rescuePath,
+    })
+  if (trashReplaced)
+    await landOverTrashed(inPlace ? input : output, tmp, output, land, trashReplaced)
+  else await land()
+  return { fromBytes, replaceTraktorShift, originalKept }
+}
+
 export async function convertAudio(
   input: string,
   output: string,
@@ -3311,59 +3411,28 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    const fromBytes = inPlace ? (await stat(input)).size : undefined
-    let trashReplaced: ((path: string) => Promise<void>) | undefined
-    const trashOnceReplaced = (trash: (path: string) => Promise<void>) => {
-      trashReplaced = trash
-    }
-    if (inPlace) {
-      archived = await keepOriginal(input, 'replaced', output, {
-        reencodes:
-          codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
-        untilChecked: true,
-        trashOnceReplaced,
-        ...(rekordboxAudio && !replacesPath
-          ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceSamples, tmp)
-          : {}),
-      })
-      originalKept = archived !== null
-    }
-    // A different file already at the destination ("Overwrite" in the conflict prompt) is
-    // not this source's audio in any form, so nothing re-run could bring it back: kept
-    // like a file with no encode to judge, which only 'never' skips. A re-export over the
-    // track's own previous output never asks, and keeps nothing.
-    else if (keepOverwritten && (await stat(output).catch(() => null)))
-      archived = await keepOriginal(output, 'replaced', output, { trashOnceReplaced })
-    // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
-    // so a cancel can land while it runs. The rename is the first step that cannot be
-    // taken back: checked once more right before it, the original stays as it was and
-    // the catch drops the backup.
-    if (isCancelled?.()) throw errorWithKey('conversionCancelled')
-    // Logged because this failure only reproduces on Windows machines we cannot
-    // attach a debugger to: when a user reports "another program is using the file",
-    // these lines are the whole evidence — whether the destination was still held,
-    // by how many attempts, and whether it ever freed.
-    const replaceTraktorShift: CueShift = replaceShift
-      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0)
-      : { shiftMs: 0 }
-    const land = () =>
-      renameWithRetry(tmp, output, {
-        onRetry: ({ attempt, code, waitMs, path }) =>
-          log.warn(
-            `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
-          ),
-        // The temp is a finished conversion by now — audio, tags and cues all written —
-        // so a destination that never frees must not cost the user the whole job. When
-        // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
-        // temp alone; when it cannot land (read-only remount, quota, a scanner holding
-        // the whole directory), the temp is still where it was and the catch deletes it
-        // as it would any half-written output.
-        rescue: rescuePath,
-      })
-    if (trashReplaced)
-      await landOverTrashed(inPlace ? input : output, tmp, output, land, trashReplaced)
-    else await land()
+    const landed = await landConversion({
+      input,
+      output,
+      tmp,
+      inPlace,
+      codec,
+      rekordboxAudio,
+      replacesPath,
+      probeOnce,
+      sourceSamples,
+      keepOverwritten,
+      isCancelled,
+      replaceShift,
+      replaced,
+      originalKept,
+      onArchived: (entry) => {
+        archived = entry
+      },
+    })
     archived = null
+    originalKept = landed.originalKept
+    const { fromBytes, replaceTraktorShift } = landed
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
     // copyCuesToFlac, shiftFlacCues) only ever touched `tmp`.
