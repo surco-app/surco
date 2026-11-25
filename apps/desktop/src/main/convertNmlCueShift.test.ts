@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
@@ -181,6 +181,53 @@ describe('a file saved over itself with a cue offset set', () => {
         nml = applyPatches(nml ?? collectionWithDrop(patches[0], `track${ext}`), patches)
       }
 
+      expect(readTraktorCueStart(storedTree(track) as Uint8Array, 0)).toBeCloseTo(10000, 0)
+      expect(nml).toContain('NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000"')
+    })
+
+  // A tag change can rename the file as it saves (Edit the original): the output is a
+  // new path, then the old one is removed, so the path alone cannot tell this is the
+  // same audio. processTrack says so through the last argument.
+  for (const [format, ext] of [
+    ['mp3', '.mp3'],
+    ['aiff', '.aiff'],
+  ] as const)
+    it(`keeps the ${ext} cues where they were after three saves that rename it`, async () => {
+      const folder = mkdtempSync(join(tmpdir(), 'surco-rename-'))
+      let track = sourceWithDrop(folder, ext)
+      let nml: string | undefined
+
+      for (let save = 1; save <= 3; save++) {
+        const renamed = join(folder, `track ${save}${ext}`)
+        beginNmlBatch()
+        await convertAudio(
+          track,
+          renamed,
+          format,
+          meta,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          true,
+        )
+        const patches = endNmlBatch()
+        nml = applyPatches(nml ?? collectionWithDrop(patches[0], `track${ext}`), patches)
+        rmSync(track)
+        track = renamed
+      }
+
+      expect(nml).toContain(`FILE="track 3${ext}"`)
       expect(readTraktorCueStart(storedTree(track) as Uint8Array, 0)).toBeCloseTo(10000, 0)
       expect(nml).toContain('NAME="Drop" DISPL_ORDER="0" TYPE="0" START="10000.000000"')
     })

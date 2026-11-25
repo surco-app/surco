@@ -143,6 +143,7 @@ describe('runProcessTrack — plain conversion', () => {
       undefined,
       undefined,
       false,
+      false,
     )
     expect(deps.mkdir).toHaveBeenCalledWith('/out', { recursive: true })
     expect(deps.recordConversion).toHaveBeenCalledOnce()
@@ -438,6 +439,7 @@ describe('runProcessTrack — cover handling', () => {
       undefined,
       undefined,
       false,
+      false,
     )
     const stages = (deps.sendProgress as ReturnType<typeof vi.fn>).mock.calls.map((c) => c[0])
     expect(stages).toEqual(['cover', 'converting', 'verify'])
@@ -526,6 +528,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       false,
+      false,
     )
     expect(result.outputPath).toBe('/out/Artist - Title (2).aiff')
   })
@@ -551,6 +554,7 @@ describe('runProcessTrack — output conflict', () => {
       undefined,
       undefined,
       true,
+      false,
     )
     expect(result.outputPath).toBe('/out/Artist - Title.aiff')
   })
@@ -1006,6 +1010,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       undefined,
       false,
+      false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
     expect(deps.confirmConflict).not.toHaveBeenCalled()
@@ -1038,6 +1043,7 @@ describe('runProcessTrack — beside the original', () => {
       undefined,
       undefined,
       undefined,
+      false,
       false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -1199,6 +1205,45 @@ describe('runProcessTrack — a track already in the output format', () => {
 })
 
 describe('runProcessTrack — in-place rewrite', () => {
+  // The 16th argument tells convertAudio the output is the source's own audio rewritten,
+  // so the DJ's Traktor cue offset, already in its cues, is not applied a second time. A
+  // tag change that renames the file still lands on a path that does not exist yet, so
+  // the path alone could not say it.
+  it('tells the conversion a same-format edit that renames the file rewrites the source', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(
+      job({ inputPath: '/in/song.mp3', format: 'mp3', outputName: 'Artist - New' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[1]).toBe('/in/Artist - New.mp3')
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[15]).toBe(true)
+  })
+
+  // A new format over the original is new audio for Traktor, so the offset still applies.
+  it('does not call a format change over the original a rewrite of the source', async () => {
+    const deps = makeDeps({ settings: settings({ overwriteOriginal: true }) })
+    await runProcessTrack(job(), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[1]).toBe('/in/Artist - Title.aiff')
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[15]).toBe(false)
+  })
+
+  // Keep-both steps aside to a "(n)" copy and keeps the source, so the copy is a new file.
+  it('does not call a same-format copy the conflict stepped aside to a rewrite', async () => {
+    const deps = makeDeps({
+      existsSync: vi.fn((p: string) => p === '/in/Artist - New.mp3'),
+      confirmConflict: vi.fn(async () => 'keepBoth' as const),
+    })
+    await runProcessTrack(
+      job({ inputPath: '/in/song.mp3', format: 'mp3', outputName: 'Artist - New' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[1]).toBe('/in/Artist - New (2).mp3')
+    expect(vi.mocked(deps.convertAudio).mock.calls[0]?.[15]).toBe(false)
+  })
+
   // Retiring the old-format original is the last, cheapest step, and on Windows it can
   // fail after the new file has landed (an EBUSY on the unlink that ends a copy into the
   // trash on another volume). Thrown, it reported a finished conversion as failed and
@@ -1340,6 +1385,7 @@ describe('runProcessTrack — in-place rewrite', () => {
       undefined,
       undefined,
       undefined,
+      false,
       false,
     )
     expect(deps.removeRenamedOriginal).toHaveBeenCalledWith(
@@ -1575,6 +1621,7 @@ describe('runProcessTrack — pinned overwrite', () => {
       undefined,
       undefined,
       undefined,
+      false,
       false,
     )
     expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
@@ -2239,6 +2286,7 @@ describe('runProcessTrack — Apple Music only', () => {
       undefined,
       undefined,
       undefined,
+      false,
       false,
     )
     expect(deps.addToAppleMusic).toHaveBeenCalledWith(
