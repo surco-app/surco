@@ -138,8 +138,7 @@ import {
   keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
-  readId3Lists,
-  readTagLibExtras,
+  readTagLibFields,
   type ShownList,
   type TagLibRead,
   type UserTextValues,
@@ -510,8 +509,27 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
   return composeMeta(
-    withId3Lists(input, withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout)))),
+    withTagLibRead(input, tagsFromProbe(JSON.parse(stdout)), readTagLibFields(input)),
   )
+}
+
+// What the probe can't see, filled from TagLib's view of the same file. readMeta and
+// readTags both pass through here: the copy already in the user's library is read with
+// readTags, and its Apple Music grouping and stars came back empty while an import of
+// the same file showed them.
+function withTagLibRead(input: string, tags: TrackMetadata, tagLib: TagLibRead): TrackMetadata {
+  // iTunes writes grouping to its own GRP1 frame, which ffprobe/ffmpeg don't surface — so a
+  // file re-saved by Apple Music reads back with no grouping. When the probe found none,
+  // fall back to reading GRP1 directly through TagLib (ID3 containers only; a no-op elsewhere).
+  if (!tags.grouping.trim() && tagLib.grouping) tags.grouping = tagLib.grouping
+  withTagLibExtras(input, tags, tagLib.extras)
+  withId3Lists(input, tags, tagLib.id3Lists)
+  // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
+  // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
+  // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
+  // found no rating (ID3 containers only; a no-op elsewhere).
+  if (!tags.rating?.trim() && tagLib.popm) tags.rating = tagLib.popm
+  return tags
 }
 
 // The containers ffprobe reads only partly (see readTagLibExtras): whatever the probe
@@ -521,10 +539,10 @@ const TAGLIB_FILLED_INPUT = /\.(wav|aiff?|m4a)$/i
 function withTagLibExtras(
   input: string,
   tags: TrackMetadata,
-  extras: () => Partial<TrackMetadata> = () => readTagLibExtras(input),
+  extras: Partial<TrackMetadata>,
 ): TrackMetadata {
   if (!TAGLIB_FILLED_INPUT.test(input)) return tags
-  for (const [field, value] of Object.entries(extras())) {
+  for (const [field, value] of Object.entries(extras)) {
     const key = field as MetaTextKey
     if (typeof value === 'string' && value && !tags[key]?.trim()) tags[key] = value
   }
@@ -532,15 +550,15 @@ function withTagLibExtras(
 }
 
 // Every value of a multi-value ID3 frame, over the first one the probe kept (see
-// readId3Lists). Only where the tag the user edits is ID3: a FLAC or M4A reads its own.
+// id3ListsOf). Only where the tag the user edits is ID3: a FLAC or M4A reads its own.
 const ID3_INPUT = /\.(mp3|aiff?|wav)$/i
 
 function withId3Lists(
   input: string,
   tags: TrackMetadata,
-  lists: () => Partial<TrackMetadata> = () => readId3Lists(input),
+  lists: Partial<TrackMetadata>,
 ): TrackMetadata {
-  return ID3_INPUT.test(input) ? Object.assign(tags, lists()) : tags
+  return ID3_INPUT.test(input) ? Object.assign(tags, lists) : tags
 }
 
 // Pulls the first embedded picture out as a still image (no audio), letting the
@@ -801,17 +819,7 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
         : { width: 0, height: 0 }
     const tags = tagsFromProbe(data)
     const tagLib = await runInWorker<TagLibRead>({ type: 'tagLibRead', file: input })
-    // iTunes writes grouping to its own GRP1 frame, which ffprobe/ffmpeg don't surface — so a
-    // file re-saved by Apple Music reads back with no grouping. When the probe found none,
-    // fall back to reading GRP1 directly through TagLib (ID3 containers only; a no-op elsewhere).
-    if (!tags.grouping.trim() && tagLib.grouping) tags.grouping = tagLib.grouping
-    withTagLibExtras(input, tags, () => tagLib.extras)
-    withId3Lists(input, tags, () => tagLib.id3Lists)
-    // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
-    // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
-    // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
-    // found no rating (ID3 containers only; a no-op elsewhere).
-    if (!tags.rating?.trim() && tagLib.popm) tags.rating = tagLib.popm
+    withTagLibRead(input, tags, tagLib)
     const reviewRaw = reviewRawOf(tags, reviewRawFromProbe(data), () => tagLib.reviewRaw)
     const duration = Number.isFinite(seconds) ? seconds : await measureDurationByDecoding(input)
     // Read through ffmpeg, not the ffprobe JSON above: the bundled ffprobe (4.4.1) hides a

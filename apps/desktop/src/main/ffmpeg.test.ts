@@ -31,6 +31,7 @@ import {
   propertiesFromProbe,
   qualityPins,
   readMeta,
+  readTags,
   settleQuality,
   SPECTRUM_TOP_HZ,
   spectrogramFilter,
@@ -2449,7 +2450,7 @@ describe('readMeta', () => {
   // ffprobe doesn't surface — readMeta must fall back to reading GRP1 so the grouping isn't
   // lost on re-import. GRP1 isn't a standard TagLib identifier, so it's written as raw ID3
   // bytes: a v2.3 header + a GRP1 text frame ([encoding byte][Latin1 text]).
-  it("reads grouping from the iTunes GRP1 frame the probe can't see", async () => {
+  const writeItunesMp3 = (name: string): string => {
     const syncsafe = (n: number) =>
       Buffer.from([(n >> 21) & 0x7f, (n >> 14) & 0x7f, (n >> 7) & 0x7f, n & 0x7f])
     const frame = (id: string, data: Buffer) => {
@@ -2463,7 +2464,8 @@ describe('readMeta', () => {
       'GRP1',
       Buffer.concat([Buffer.from([0]), Buffer.from('Bases, Cantaditas', 'latin1')]),
     )
-    const body = Buffer.concat([tit2, grp1])
+    const popm = frame('POPM', Buffer.concat([Buffer.from('x\0', 'latin1'), Buffer.from([196])]))
+    const body = Buffer.concat([tit2, grp1, popm])
     const header = Buffer.concat([
       Buffer.from('ID3'),
       Buffer.from([3, 0, 0]),
@@ -2471,12 +2473,24 @@ describe('readMeta', () => {
     ])
     const mpegFrame = Buffer.concat([Buffer.from([0xff, 0xfb, 0x90, 0x00]), Buffer.alloc(413)])
     const audio = Buffer.concat(Array(20).fill(mpegFrame))
-    const mp3 = join(testDir, 'grp1.mp3')
+    const mp3 = join(testDir, name)
     writeFileSync(mp3, Buffer.concat([header, body, audio]))
+    return mp3
+  }
 
-    const result = await readMeta(mp3)
+  it("reads grouping from the iTunes GRP1 frame the probe can't see", async () => {
+    const result = await readMeta(writeItunesMp3('grp1.mp3'))
 
     expect(result.tags.grouping).toBe('Bases, Cantaditas')
+  })
+
+  // readTags is what fills the form from a copy already in the user's library (an MP3
+  // Apple Music saved): without the same fallback its grouping and stars came back empty.
+  it('reads the GRP1 grouping and the POPM stars through readTags as well', async () => {
+    const tags = await readTags(writeItunesMp3('grp1-copy.mp3'))
+
+    expect(tags.grouping).toBe('Bases, Cantaditas')
+    expect(tags.rating).toBe('4')
   })
 })
 
