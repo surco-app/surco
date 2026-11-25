@@ -1,5 +1,12 @@
-import type { SourcePlaylistEntry } from '../../../shared/types'
+import { autoMatchAvailable, usableProviders } from '../../../shared/autoMatch'
+import type { DjProgram } from '../../../shared/djProgram'
+import { MATCHING_ID } from '../../../shared/matching'
+import { TO_REVIEW_ID } from '../../../shared/toReview'
+import type { PlaylistSource, Settings, SourcePlaylistEntry } from '../../../shared/types'
+import type { SourceBrowser } from '../hooks/useSourceBrowser'
 import type { TrackItem } from '../types'
+import type { LibrarySource } from './librarySource'
+import type { FilterSelection, TrackSort } from './triage'
 
 // The crate narrowed to one playlist and put in the playlist's order. The crate itself is
 // untouched — every loaded track keeps its edits whichever playlist is on screen — so this
@@ -221,4 +228,132 @@ export function blocksOf<T extends { id: string }>(
 ): T[] {
   const picked = blocksWith(tracks, separatorBefore, (t) => chosen.has(t.id)).rows
   return distinctById(picked.length > 0 ? picked : [...tracks])
+}
+
+export interface ListScopeContext {
+  playlistScope: PlaylistScope | null
+  pickedSort: TrackSort
+  browser: Pick<SourceBrowser, 'source' | 'playlist' | 'entries'>
+  checkedPlaylist: string | null
+  scopeRows: TrackItem[]
+  filesView: TrackItem[]
+  tracks: TrackItem[]
+  showListPositions: boolean
+  autoAnalyze: boolean | undefined
+  analyzeAsked: boolean
+  filterSelection: FilterSelection
+  librarySource: LibrarySource
+  sourceProgram: DjProgram | null
+  selectedTracks: TrackItem[]
+}
+
+export interface ListScope {
+  hasAddedDates: boolean
+  sortBy: TrackSort
+  listedCount: number
+  filesAway: boolean
+  openPlaylistId: string
+  numberedTracks: TrackItem[] | undefined
+  measuringGrid: boolean
+  comparesLibraryCopy: boolean
+  measuringLibrary: boolean
+  cuesOpen: boolean
+  batchCuesShown: boolean
+}
+
+export function listScopeFlags({
+  playlistScope,
+  pickedSort,
+  browser,
+  checkedPlaylist,
+  scopeRows,
+  filesView,
+  tracks,
+  showListPositions,
+  autoAnalyze,
+  analyzeAsked,
+  filterSelection,
+  librarySource,
+  sourceProgram,
+  selectedTracks,
+}: ListScopeContext): ListScope {
+  const hasAddedDates = (playlistScope?.addedOf.size ?? 0) > 0
+  const sortBy = pickedSort === 'dateAdded' && !hasAddedDates ? 'import' : pickedSort
+  const listedCount = browser.source ? tracks.length : filesView.length
+  const filesAway =
+    browser.source !== null &&
+    browser.playlist !== null &&
+    checkedPlaylist === `${browser.source}:${browser.playlist.id}` &&
+    scopeRows.length === 0 &&
+    (browser.entries?.some((e) => !e.separator) ?? false)
+  // Keyed on the playlist once its rows are applied, not when it is picked: while its
+  // entries load the list is empty, and the order must follow on arrival.
+  const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
+  const numberedTracks =
+    showListPositions &&
+    sortBy === 'import' &&
+    browser.playlist?.id !== MATCHING_ID &&
+    browser.playlist?.id !== TO_REVIEW_ID
+      ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
+      : undefined
+  // The grids and the comparison with the library copy are part of the analysis: they run
+  // with it, by themselves when every import is analysed, else once Analyze is pressed. Picking
+  // their filter still starts them, for a list nobody analysed yet.
+  const measureAll = Boolean(autoAnalyze) || analyzeAsked
+  const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
+  const comparesLibraryCopy = browser.source === null && librarySource === 'appleMusic'
+  const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
+  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
+  const batchCuesShown = cuesOpen && selectedTracks.length > 1
+  return {
+    hasAddedDates,
+    sortBy,
+    listedCount,
+    filesAway,
+    openPlaylistId,
+    numberedTracks,
+    measuringGrid,
+    comparesLibraryCopy,
+    measuringLibrary,
+    cuesOpen,
+    batchCuesShown,
+  }
+}
+
+export interface ToolbarScopeContext {
+  source: PlaylistSource | null
+  visibleTracks: TrackItem[]
+  selectedTracks: TrackItem[]
+  scopeTracks: TrackItem[]
+  settings: Settings | null
+  eligibleCount: number
+  batching: boolean
+}
+
+export interface ToolbarScope {
+  autoMatchButtonTracks: TrackItem[]
+  needsToken: boolean
+  tokenMissing: boolean
+  canProcessAll: boolean
+}
+
+export function toolbarScopeFlags({
+  source,
+  visibleTracks,
+  selectedTracks,
+  scopeTracks,
+  settings,
+  eligibleCount,
+  batching,
+}: ToolbarScopeContext): ToolbarScope {
+  const autoMatchButtonTracks = source === null ? visibleTracks : selectedTracks
+  // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
+  // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
+  // dead end. Only with tracks loaded — nothing to match on an empty list.
+  const needsToken =
+    scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
+  const tokenMissing =
+    !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
+  const canProcessAll = eligibleCount > 0 && !batching
+  return { autoMatchButtonTracks, needsToken, tokenMissing, canProcessAll }
 }

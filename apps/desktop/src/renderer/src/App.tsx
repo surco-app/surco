@@ -12,7 +12,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
-import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
+import { autoMatchAvailable } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
@@ -240,11 +240,13 @@ import {
   blocksOf,
   blocksWith,
   distinctById,
+  listScopeFlags,
   type PlaylistScope,
   playlistMembership,
   playlistPositions,
   playlistView,
   rowKeys,
+  toolbarScopeFlags,
 } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
@@ -2405,8 +2407,6 @@ export default function App(): React.JSX.Element {
         : null
     return prevPlaylistScope.current
   }, [browser.playlist, browser.entries, tracksView])
-  const hasAddedDates = (playlistScope?.addedOf.size ?? 0) > 0
-  const sortBy = pickedSort === 'dateAdded' && !hasAddedDates ? 'import' : pickedSort
   const playlistIds = playlistScope?.ids
   const playlistPathOf = playlistScope?.pathOf
   const playlistContentOf = playlistScope?.contentOf
@@ -2423,13 +2423,34 @@ export default function App(): React.JSX.Element {
     [playlistScope, browser.source, filesView],
   )
   const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
-  const listedCount = browser.source ? tracks.length : filesView.length
-  const filesAway =
-    browser.source !== null &&
-    browser.playlist !== null &&
-    checkedPlaylist === `${browser.source}:${browser.playlist.id}` &&
-    scopeRows.length === 0 &&
-    (browser.entries?.some((e) => !e.separator) ?? false)
+  const {
+    hasAddedDates,
+    sortBy,
+    listedCount,
+    filesAway,
+    openPlaylistId,
+    numberedTracks,
+    measuringGrid,
+    comparesLibraryCopy,
+    measuringLibrary,
+    cuesOpen,
+    batchCuesShown,
+  } = listScopeFlags({
+    playlistScope,
+    pickedSort,
+    browser,
+    checkedPlaylist,
+    scopeRows,
+    filesView,
+    tracks,
+    showListPositions,
+    autoAnalyze: settings?.autoAnalyze,
+    analyzeAsked,
+    filterSelection,
+    librarySource,
+    sourceProgram,
+    selectedTracks,
+  })
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
   // the others stay in the collection, and selected they would reach the row menu and
@@ -2449,9 +2470,6 @@ export default function App(): React.JSX.Element {
         : { ids, anchor }
     })
   }, [playlistIds, setSelection])
-  // Keyed on the playlist once its rows are applied, not when it is picked: while its
-  // entries load the list is empty, and the order must follow on arrival.
-  const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
   // The playlist's order, so a reorder (or a re-read bringing another order) is a new view:
   // the order held for the selected row would otherwise keep the old one on screen.
   const playlistOrder = useMemo(() => playlistIds?.join('\n') ?? '', [playlistIds])
@@ -2513,15 +2531,6 @@ export default function App(): React.JSX.Element {
         (programOf(contentId) === 'traktor' && /\.mp3$/i.test(playlistPathOf?.get(trackId) ?? '')),
     )
   }, [playlistContentOf, playlistPathOf])
-  // The grids and the comparison with the library copy are part of the analysis: they run
-  // with it, by themselves when every import is analysed, else once Analyze is pressed. Picking
-  // their filter still starts them, for a list nobody analysed yet.
-  const measureAll = Boolean(settings?.autoAnalyze) || analyzeAsked
-  const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
-  const comparesLibraryCopy = browser.source === null && librarySource === 'appleMusic'
-  const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
-  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
-  const batchCuesShown = cuesOpen && selectedTracks.length > 1
   const checkedGridEntries = useMemo(
     () =>
       measuringGrid || !batchCuesShown
@@ -2730,13 +2739,6 @@ export default function App(): React.JSX.Element {
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
-  const numberedTracks =
-    showListPositions &&
-    sortBy === 'import' &&
-    browser.playlist?.id !== MATCHING_ID &&
-    browser.playlist?.id !== TO_REVIEW_ID
-      ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
-      : undefined
   const listPositions = useMemo(
     () => (numberedTracks ? playlistPositions(numberedTracks, visibleRows) : undefined),
     [numberedTracks, visibleRows],
@@ -2853,19 +2855,19 @@ export default function App(): React.JSX.Element {
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
-  const autoMatchButtonTracks = browser.source === null ? visibleTracks : selectedTracks
+  const { autoMatchButtonTracks, needsToken, tokenMissing, canProcessAll } = toolbarScopeFlags({
+    source: browser.source,
+    visibleTracks,
+    selectedTracks,
+    scopeTracks,
+    settings,
+    eligibleCount,
+    batching,
+  })
   const autoMatchable = useMemo(
     () => tracksToAutoMatch(autoMatchButtonTracks).length,
     [autoMatchButtonTracks],
   )
-  // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
-  // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
-  // dead end. Only with tracks loaded — nothing to match on an empty list.
-  const needsToken =
-    scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
-  const tokenMissing =
-    !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
-  const canProcessAll = eligibleCount > 0 && !batching
   const batchStripRef = useRef<HTMLDivElement>(null)
   const batchStripRegion = useRef<HTMLElement | null>(null)
   const prevBatching = useRef(batching)

@@ -1,15 +1,22 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { SourcePlaylistEntry } from '../../../shared/types'
+import { MATCHING_ID } from '../../../shared/matching'
+import { TO_REVIEW_ID } from '../../../shared/toReview'
+import type { Settings, SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import {
   blocksOf,
   blocksWith,
   distinctById,
+  type ListScopeContext,
+  listScopeFlags,
   playlistMembership,
   playlistPositions,
   playlistView,
   rowKeys,
+  type ToolbarScopeContext,
+  toolbarScopeFlags,
 } from './playlistView'
+import { EMPTY_FILTER } from './triage'
 
 function track(id: string, inputPath: string): TrackItem {
   return { id, inputPath } as TrackItem
@@ -434,5 +441,199 @@ describe('blocksWith with rows a filter hides', () => {
       ['d', ['s1']],
       ['e', ['s2']],
     ])
+  })
+})
+
+describe('listScopeFlags', () => {
+  const files = [A, B]
+  const scope = (over: Partial<ReturnType<typeof playlistView>> = {}) => ({
+    ...playlistView([A, B, C], [entry('/m/C.wav'), entry('/m/A.wav')]),
+    ...over,
+  })
+  const playlist = { id: 'p1', name: 'Set', folders: [] }
+  const ctx = (over: Partial<ListScopeContext> = {}): ListScopeContext => ({
+    playlistScope: null,
+    pickedSort: 'import',
+    browser: { source: null, playlist: null, entries: undefined },
+    checkedPlaylist: null,
+    scopeRows: files,
+    filesView: files,
+    tracks: [A, B, C],
+    showListPositions: true,
+    autoAnalyze: false,
+    analyzeAsked: false,
+    filterSelection: EMPTY_FILTER,
+    librarySource: null,
+    sourceProgram: null,
+    selectedTracks: [],
+    ...over,
+  })
+
+  // Sorting by date added needs dates to sort by: a list without them (Files, or a
+  // playlist whose program keeps none) would sort into noise, so it falls back to import.
+  it('sorts by date added only where the playlist carries the dates', () => {
+    expect(listScopeFlags(ctx({ pickedSort: 'dateAdded' })).sortBy).toBe('import')
+    const dated = scope({ addedOf: new Map([['a', 1]]) })
+    const flags = listScopeFlags(ctx({ pickedSort: 'dateAdded', playlistScope: dated }))
+    expect(flags.sortBy).toBe('dateAdded')
+    expect(flags.hasAddedDates).toBe(true)
+    expect(listScopeFlags(ctx({ pickedSort: 'name' })).sortBy).toBe('name')
+  })
+
+  // The sidebar counts what the open place holds: the whole collection of a library, the
+  // working list in Files.
+  it('counts the library collection in a library and the working list in Files', () => {
+    expect(listScopeFlags(ctx()).listedCount).toBe(2)
+    expect(
+      listScopeFlags(ctx({ browser: { source: 'rekordbox', playlist: null, entries: undefined } }))
+        .listedCount,
+    ).toBe(3)
+  })
+
+  // "The files are away" is only said once the playlist was checked and it lists real rows
+  // none of which loaded; while it loads, or for a playlist of separators only, it is empty
+  // for another reason.
+  it('reports the files away only for a checked playlist with real rows and none shown', () => {
+    const open = { source: 'rekordbox' as const, playlist, entries: [entry('/m/X.wav')] }
+    const away = ctx({ browser: open, checkedPlaylist: 'rekordbox:p1', scopeRows: [] })
+    expect(listScopeFlags(away).filesAway).toBe(true)
+    expect(listScopeFlags({ ...away, checkedPlaylist: null }).filesAway).toBe(false)
+    expect(listScopeFlags({ ...away, scopeRows: [A] }).filesAway).toBe(false)
+    expect(
+      listScopeFlags({ ...away, browser: { ...open, entries: [entry(null, true)] } }).filesAway,
+    ).toBe(false)
+  })
+
+  // The view key follows the playlist once its rows are applied, so the order held for the
+  // selected row does not carry over while the next playlist's entries load.
+  it('keys the open playlist only once its rows are applied', () => {
+    const open = { source: 'rekordbox' as const, playlist, entries: [] }
+    expect(listScopeFlags(ctx({ browser: open })).openPlaylistId).toBe('')
+    expect(listScopeFlags(ctx({ browser: open, playlistScope: scope() })).openPlaylistId).toBe('p1')
+  })
+
+  // listPositions is memoized on numberedTracks: handing back the playlist's or the
+  // working list's own array keeps it from recounting on every render.
+  it('numbers the import order with the very array the list is drawn from', () => {
+    const applied = scope()
+    expect(listScopeFlags(ctx({ playlistScope: applied })).numberedTracks).toBe(applied.tracks)
+    expect(listScopeFlags(ctx()).numberedTracks).toBe(files)
+    const library = { source: 'rekordbox' as const, playlist: null, entries: undefined }
+    expect(listScopeFlags(ctx({ browser: library })).numberedTracks).toBeUndefined()
+  })
+
+  // Numbers mean the place in the import order: hidden when turned off, when another sort
+  // is on, and in Matching and To review, whose rows are pairs and leftovers, not an order.
+  it('drops the numbers when they would not be the import order', () => {
+    expect(listScopeFlags(ctx({ showListPositions: false })).numberedTracks).toBeUndefined()
+    expect(listScopeFlags(ctx({ pickedSort: 'name' })).numberedTracks).toBeUndefined()
+    for (const id of [MATCHING_ID, TO_REVIEW_ID]) {
+      const open = { source: 'rekordbox' as const, playlist: { ...playlist, id }, entries: [] }
+      expect(
+        listScopeFlags(ctx({ browser: open, playlistScope: scope() })).numberedTracks,
+      ).toBeUndefined()
+    }
+  })
+
+  // Grids and the library comparison run with the analysis: by themselves with auto-analyze,
+  // once Analyze is pressed, or while their own filter asks for them.
+  it('measures grids and the library copy with the analysis or their own filter', () => {
+    const idle = listScopeFlags(ctx())
+    expect([idle.measuringGrid, idle.measuringLibrary]).toEqual([false, false])
+    for (const over of [{ autoAnalyze: true }, { analyzeAsked: true }]) {
+      const flags = listScopeFlags(ctx(over))
+      expect([flags.measuringGrid, flags.measuringLibrary]).toEqual([true, true])
+    }
+    const grid = listScopeFlags(ctx({ filterSelection: { ...EMPTY_FILTER, attention: 'badGrid' } }))
+    expect([grid.measuringGrid, grid.measuringLibrary]).toEqual([true, false])
+    const library = listScopeFlags(
+      ctx({ filterSelection: { ...EMPTY_FILTER, library: 'betterThanLibrary' } }),
+    )
+    expect([library.measuringGrid, library.measuringLibrary]).toEqual([false, true])
+  })
+
+  // The comparison is against the Apple Music copy of a file Surco converts, so it exists
+  // only in Files with Apple Music as the destination library.
+  it('compares with the library copy only in Files sending to Apple Music', () => {
+    expect(listScopeFlags(ctx({ librarySource: 'appleMusic' })).comparesLibraryCopy).toBe(true)
+    expect(listScopeFlags(ctx({ librarySource: 'engineDj' })).comparesLibraryCopy).toBe(false)
+    const library = { source: 'rekordbox' as const, playlist: null, entries: undefined }
+    expect(
+      listScopeFlags(ctx({ librarySource: 'appleMusic', browser: library })).comparesLibraryCopy,
+    ).toBe(false)
+  })
+
+  // Cues belong to a DJ program's playlist once its rows are on screen; the batch cue
+  // strip needs more than one picked row on top of that.
+  it('opens cues on an applied DJ playlist and the batch strip for several rows', () => {
+    const open = { source: 'rekordbox' as const, playlist, entries: [] }
+    const applied = ctx({ browser: open, playlistScope: scope(), sourceProgram: 'rekordbox' })
+    expect(listScopeFlags(applied).cuesOpen).toBe(true)
+    expect(listScopeFlags(applied).batchCuesShown).toBe(false)
+    expect(listScopeFlags({ ...applied, selectedTracks: [A, C] }).batchCuesShown).toBe(true)
+    expect(listScopeFlags({ ...applied, sourceProgram: null }).cuesOpen).toBe(false)
+    expect(listScopeFlags({ ...applied, playlistScope: null }).cuesOpen).toBe(false)
+    expect(
+      listScopeFlags({ ...applied, browser: { ...open, playlist: null }, selectedTracks: [A, C] })
+        .batchCuesShown,
+    ).toBe(false)
+  })
+})
+
+describe('toolbarScopeFlags', () => {
+  const settings = (over: Partial<Settings>): Settings =>
+    ({ autoMatch: true, searchProviders: ['discogs'], discogsToken: '', ...over }) as Settings
+  const ctx = (over: Partial<ToolbarScopeContext> = {}): ToolbarScopeContext => ({
+    source: null,
+    visibleTracks: [A, B],
+    selectedTracks: [B],
+    scopeTracks: [A, B],
+    settings: settings({}),
+    eligibleCount: 2,
+    batching: false,
+    ...over,
+  })
+
+  // autoMatchable is memoized on these tracks: the toolbar must get the list's own array,
+  // the visible rows in Files and only the picked ones in a library.
+  it('matches over the visible rows in Files and the picked rows in a library', () => {
+    const files = ctx()
+    expect(toolbarScopeFlags(files).autoMatchButtonTracks).toBe(files.visibleTracks)
+    const library = ctx({ source: 'traktor' })
+    expect(toolbarScopeFlags(library).autoMatchButtonTracks).toBe(library.selectedTracks)
+  })
+
+  // With auto-match on and no way to run it, the button becomes the "add a token" fix, but
+  // only when there are tracks to match.
+  it('asks for a token only when auto-match is on, cannot run and has tracks', () => {
+    expect(toolbarScopeFlags(ctx()).needsToken).toBe(true)
+    expect(toolbarScopeFlags(ctx({ scopeTracks: [] })).needsToken).toBe(false)
+    expect(toolbarScopeFlags(ctx({ settings: settings({ autoMatch: false }) })).needsToken).toBe(
+      false,
+    )
+    expect(toolbarScopeFlags(ctx({ settings: settings({ discogsToken: 'tok' }) })).needsToken).toBe(
+      false,
+    )
+    expect(toolbarScopeFlags(ctx({ settings: null })).needsToken).toBe(false)
+  })
+
+  // The missing token is Discogs's: Beatport without an account can't run either, but no
+  // token would fix that, so nothing is missing while Discogs is not a source.
+  it('reports the token missing only while Discogs is a source and has no token', () => {
+    expect(toolbarScopeFlags(ctx({ settings: settings({ autoMatch: false }) })).tokenMissing).toBe(
+      true,
+    )
+    expect(
+      toolbarScopeFlags(ctx({ settings: settings({ searchProviders: ['beatport'] }) }))
+        .tokenMissing,
+    ).toBe(false)
+    expect(toolbarScopeFlags(ctx({ settings: null })).tokenMissing).toBe(false)
+  })
+
+  // Convert all needs something ready and no conversion already writing the files.
+  it('converts all only with ready tracks and no batch running', () => {
+    expect(toolbarScopeFlags(ctx()).canProcessAll).toBe(true)
+    expect(toolbarScopeFlags(ctx({ eligibleCount: 0 })).canProcessAll).toBe(false)
+    expect(toolbarScopeFlags(ctx({ batching: true })).canProcessAll).toBe(false)
   })
 })
