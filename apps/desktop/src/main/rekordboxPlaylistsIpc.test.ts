@@ -596,6 +596,21 @@ describe('rekordboxEdit', () => {
     )
   })
 
+  it('grants the files of the collection it read, so Update can retag the library copy the editor found in it', async () => {
+    const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
+    writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)
+    const allowMedia = vi.fn()
+    const read = rekordboxRead(
+      () => path,
+      () => path,
+      { allowMedia },
+    )
+    await read.collection?.()
+    expect(allowMedia).toHaveBeenCalledWith(
+      expect.arrayContaining(['/Volumes/Public/Music/Night Train.aiff']),
+    )
+  })
+
   it('answers which playlists hold each file of the collection, so the field can fill in', async () => {
     const path = join(await mkdtemp(join(tmpdir(), 'surco-rbipc-')), 'master.db')
     writeRekordboxPlaylistFixture(path, ORGANISE_FIXTURE)

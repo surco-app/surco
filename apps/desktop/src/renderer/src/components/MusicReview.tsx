@@ -35,7 +35,7 @@ import {
 import { useStableCallback } from '../hooks/useStableCallback'
 import { damageKey } from '../lib/damageReview'
 import { errorKeyOf } from '../lib/ipcError'
-import { isTypingTarget } from '../lib/keymap'
+import { ownsKeystroke } from '../lib/keymap'
 import { INVISIBLE } from '../lib/musicSpelling'
 import { LIBRARY_NAME, TAG_LIBRARIES } from '../lib/reviewLibraries'
 import { REVIEW_COPY } from '../lib/reviewSource'
@@ -1185,7 +1185,7 @@ export function MusicReview({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || applying) return
-      if (isTypingTarget(e.target as Element)) return
+      if (ownsKeystroke(e.target as Element, e)) return
       if (document.querySelector('[aria-modal="true"]')) return
       onClose()
     }

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, extname, join } from 'node:path'
 import log from 'electron-log/main'
-import { tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
+import { type AudioProcessing, tagsOnly as tagsOnlyExport } from '../shared/audioProcessing'
 import {
   type DjProgram,
   REACH_PROGRAMS,
@@ -97,6 +97,7 @@ export interface ProcessTrackDeps {
     replacesPath?: string,
     keepOverwritten?: boolean,
     rewritesSource?: boolean,
+    keepAudio?: boolean,
   ) => Promise<{ normalizeSkipped: boolean; declickedSamples?: number; written: ConversionWritten }>
   // Lets a cancel reach the encode already in flight for this job, not just ones
   // not yet started. Registered around the convertAudio call and unregistered in
@@ -592,13 +593,29 @@ export async function runProcessTrack(
     const format =
       job.format ??
       resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff', settings.keepMp3Sources)
+    // Another format means another file: the copy the programs hold would be re-encoded.
+    if (job.tagsInPlace && !formatMatchesInput(format, job.inputPath))
+      throw errorWithKey('libraryCopyAudioWouldChange', job.inputPath)
+    // Update promises the copy keeps its audio, so no processing reaches it whatever the
+    // job or the settings ask for.
+    const processing: AudioProcessing = job.tagsInPlace
+      ? {}
+      : {
+          normalize: job.normalize ?? settings.normalize,
+          declick: job.declick ?? settings.declick,
+          trim: job.trim,
+        }
     // Every destination facet prefers the job's pin over the live setting (see the
     // ProcessJob comments): the editor's one-shot destination pick and the batch pin
     // both ride the job, so a Settings change can't redirect a conversion in flight.
     const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
     const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
-    const addToEngineDj = settings.addToEngineDj
+    // Update retags a copy another program holds: adding it would import it into Engine as a
+    // new entry. An Engine row already on the copy follows it through the library sync.
+    const addToEngineDj = !job.tagsInPlace && settings.addToEngineDj
+    // A library copy retagged where it is never gets a sibling: Update leaves one file.
     const besideOriginal =
+      !job.tagsInPlace &&
       (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
       !(job.overwriteOriginal ?? settings.overwriteOriginal)
     // macOS writes file names decomposed (NFD): Finder does, and an SMB NAS hands them
@@ -614,12 +631,7 @@ export async function runProcessTrack(
     const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
     const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
     const tagsOnly =
-      inPlaceWrite &&
-      tagsOnlyExport(formatMatchesInput(format, job.inputPath), {
-        normalize: job.normalize ?? settings.normalize,
-        declick: job.declick ?? settings.declick,
-        trim: job.trim,
-      })
+      inPlaceWrite && tagsOnlyExport(formatMatchesInput(format, job.inputPath), processing)
     stage(tagsOnly ? 'tags' : 'converting')
     const currentName =
       besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
@@ -630,14 +642,16 @@ export async function runProcessTrack(
       settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
       currentName,
     )
-    const resolved = resolveOutputTarget(
-      job.inputPath,
-      deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
-      format,
-      settings.outputDir,
-      overwriteOriginal,
-      besideOriginal,
-    )
+    const resolved = job.tagsInPlace
+      ? { outputPath: job.inputPath, inPlace: true }
+      : resolveOutputTarget(
+          job.inputPath,
+          deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
+          format,
+          settings.outputDir,
+          overwriteOriginal,
+          besideOriginal,
+        )
     const outputPath = resolved.outputPath
     let inPlace = resolved.inPlace
     // "Apple Music only": the user wants the track in Apple Music and no copy left in
@@ -680,7 +694,10 @@ export async function runProcessTrack(
         : undefined
     let keepOverwritten = false
     const outputIsInput =
-      !musicOnly && !besideOriginal && inPlace && (await deps.isSameFile(job.inputPath, outputPath))
+      !musicOnly &&
+      !besideOriginal &&
+      inPlace &&
+      (job.tagsInPlace || (await deps.isSameFile(job.inputPath, outputPath)))
     // Music reads no tags from a WAV at import, so its own copy of a temp file landed in
     // "Unknown Artist/Unknown Album" and tagging the entry never moved it (measured 30/10).
     // A file already inside the Media folder is added where it is, so the conversion goes
@@ -785,20 +802,22 @@ export async function runProcessTrack(
         format,
         job.meta,
         coverPath,
-        job.normalize ?? settings.normalize,
+        processing.normalize,
         job.removeCover,
         (child) => deps.registerActiveConversion(job.id, (signal) => child.kill(signal)),
         (path) => {
           tmpPath = path
           deps.trackTmp(path)
         },
-        job.declick ?? settings.declick,
-        job.trim,
+        processing.declick,
+        processing.trim,
         job.clearExtras,
         job.foreignRemoved,
         job.replacesPath,
         keepOverwritten,
         rewritesSource,
+        // Left out unless set: the call every other conversion makes stays exactly as it was.
+        ...(job.tagsInPlace ? ([true] as const) : ([] as const)),
       ))
     } catch (e) {
       // convertAudio deletes the temp on failure and says so when it couldn't: that is
@@ -885,7 +904,8 @@ export async function runProcessTrack(
         })
     }
     if (renameFollowFailed) originalKept = true
-    else if (inPlace && !retireAfterMusic) await retireOriginal()
+    // The copy retagged where it is is the output itself: there is no original to retire.
+    else if (inPlace && !retireAfterMusic && !job.tagsInPlace) await retireOriginal()
     // The file has landed and the original may be gone: a stats write that fails (a locked
     // or synced settings file) must not turn a finished conversion into a failed one.
     try {
@@ -1275,31 +1295,46 @@ export async function runProcessTrack(
       ...(virtualdjListed ? [library('virtualdj')] : []),
     ])
     const heldOriginal = claimHeldOriginal(finalPath)
-    const originalHeld = settleHeldOriginal(heldOriginal, checked.status)
+    // Update registers no verification below, so the library checks never answer and the hold
+    // would stay pinned for good: the file's and Music's checks, read here, settle it, and
+    // anything short of all clear leaves the original in Copias like any other copy.
+    const copyChecked =
+      job.tagsInPlace &&
+      withChecks({ status: 'checking', checks: [] }, [
+        fileCheck,
+        ...(musicCheck ? [musicCheck] : []),
+      ]).status === 'ok'
+    const originalHeld = settleHeldOriginal(
+      heldOriginal,
+      job.tagsInPlace ? (copyChecked ? 'ok' : 'mismatch') : checked.status,
+    )
     const verification = {
       ...checked,
       job: randomUUID(),
       seq: 0,
       ...(originalHeld ? { originalHeld } : {}),
     }
-    deps.registerVerification?.({
-      trackId: job.id,
-      from: libraryFrom,
-      source: job.inputPath,
-      to: finalPath,
-      samplesKept: written.samplesKept,
-      originalKept: written.originalKept,
-      places,
-      file: fileExpect,
-      music: musicExpect,
-      rekordbox: before.rekordbox,
-      engine: before.engine,
-      virtualdj: before.virtualdj,
-      engineStep: addedToEngineDj,
-      ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
-      heldOriginal,
-      verification,
-    })
+    // A library copy retagged in place rides the open row's id, yet the file checked is the
+    // copy: registered, its verification would land on a row whose file was never touched.
+    if (!job.tagsInPlace)
+      deps.registerVerification?.({
+        trackId: job.id,
+        from: libraryFrom,
+        source: job.inputPath,
+        to: finalPath,
+        samplesKept: written.samplesKept,
+        originalKept: written.originalKept,
+        places,
+        file: fileExpect,
+        music: musicExpect,
+        rekordbox: before.rekordbox,
+        engine: before.engine,
+        virtualdj: before.virtualdj,
+        engineStep: addedToEngineDj,
+        ...(Object.keys(playlists).length > 0 ? { playlists } : {}),
+        heldOriginal,
+        verification,
+      })
 
     // The copy this replacement superseded, so the renderer can offer to trash it: the
     // shell guard rejects any path it was never handed, and this one lives in the user's

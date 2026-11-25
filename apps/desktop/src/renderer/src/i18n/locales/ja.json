@@ -382,6 +382,7 @@
     "conversionCancelled": "変換をキャンセルしました。",
     "verifyUnknownTrack": "この確認はもう行えません。もう一度確認するには、トラックを再変換してください。",
     "seratoBlocked": "Serato でトラックとそのキューが失われます",
+    "libraryCopyAudioWouldChange": "このコピーはそのままにしました。タグを更新すると音声が変わってしまいます。",
     "audioDamaged": "ファイルのオーディオが破損しています",
     "diskFull": "ディスクがいっぱいです",
     "noPermission": "そのフォルダに書き込む権限がありません",
@@ -1066,6 +1067,8 @@
     "copyLimitedBare": "{{loser}} のコピーはリミッティングが強いです。",
     "copyLimitedHereBare": "新しい方はリミッティングが強いです。",
     "libraryHasBetter": "それでも置き換え",
+    "libraryCopyKeepsAudio": "音声はそのまま",
+    "libraryCopyWithThisFile": "このファイルで",
     "requiredEmpty": "必須：変換前に入力してください",
     "coverMixed": "選択したトラックのアートワークが異なります",
     "coversDistinct_one": "{{count}} 種類のアートワーク",
@@ -1093,7 +1096,13 @@
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
       "options": "{{app}} プレイリスト",
-      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください"
+      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください",
+      "copyRemoved_one": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyRemoved_other": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyQueuedStays_one": "{{app}} を閉じると、このトラックは「{{name}}」に入ります",
+      "copyQueuedStays_other": "{{app}} を閉じると、{{count}} 件のトラックは「{{name}}」に入ります",
+      "removeIn_one": "{{app}} で外してください",
+      "removeIn_other": "{{app}} で外してください"
     },
     "cues": {
       "title": "キュー",

@@ -15,8 +15,10 @@ import type {
   MusicOp,
   NormalizeConfig,
   Settings,
+  TrackMetadata,
 } from '../../../shared/types'
 import { removeAnalysisQueries } from '../lib/analysisQueries'
+import { baseName } from '../lib/baseName'
 import {
   type BatchOutcome,
   type BatchSummary,
@@ -30,6 +32,7 @@ import { exportedPatch } from '../lib/export'
 import { missingRequiredOf, requiredFieldsOf } from '../lib/fields'
 import { clearHiddenProvenance, sanitizeMeta } from '../lib/hygiene'
 import { cleanIpcError, errorKeyOf, isFileInUseMessage, mainErrorMessage } from '../lib/ipcError'
+import { keptFormatOf, type LibraryCopyRef } from '../lib/libraryCopy'
 import { autoNamesFile, renderOutputName } from '../lib/outputName'
 import { withCachedQualityTag } from '../lib/qualityTag'
 import { declickFor, declickForJob, jobAudio, normalizeFor, normalizeForJob } from '../lib/reapply'
@@ -122,6 +125,7 @@ interface Params {
   // The destination the user picked for a track in the editor, which the row itself does
   // not store; a retry that converts again must not fall back to the Settings default.
   rememberedPick?: (id: string) => RememberedPick | undefined
+  onLibraryCopyUpdated?: (name: string) => void
 }
 
 interface TrackProcessing {
@@ -134,6 +138,7 @@ interface TrackProcessing {
     declickOverride?: DeclickConfig,
     keepMp3?: boolean,
   ) => Promise<BatchOutcome>
+  updateLibraryCopy: (id: string, copy: LibraryCopyRef) => Promise<BatchOutcome>
   processAll: (
     targets: TrackItem[],
     formatOverride?: FormatSetting,
@@ -183,6 +188,7 @@ export function useTrackProcessing({
   releaseFile,
   reclaimFile,
   rememberedPick,
+  onLibraryCopyUpdated,
 }: Params): TrackProcessing {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -257,6 +263,96 @@ export function useTrackProcessing({
     return () => clearTimeout(id)
   }, [batchSummary])
 
+  // The checks a track passes before anything is written from its form: the row must still be
+  // there, idle and writable, and hold the file's own tags with every required field filled.
+  // Gives the track as it stands after any re-read, or the outcome to report instead.
+  const readyTrack = async (id: string): Promise<TrackItem | 'skipped' | 'failed'> => {
+    let track = tracksRef.current.find((t) => t.id === id)
+    // A track removed after being queued was a user decision, not a failure — count
+    // it as skipped so the summary never reports an error with no visible row.
+    if (!track) return 'skipped'
+    // Already mid-conversion: the user hand-converted (or ⌘⏎'d) a still-idle track a
+    // running batch had queued, or vice versa. A second job would write the same
+    // output path at the same time — whoever started first owns the conversion.
+    if (track.status === 'processing') return 'skipped'
+    if (fromReadOnlyProgram(track)) return 'skipped'
+    // A read that failed must never become a write (see Params.rereadTrackMeta). The row
+    // is re-resolved after the read because the library patches it in place; a row still
+    // flagged afterwards, or with no re-read available, is refused rather than written.
+    if (refreshChangedTrack && (await window.api.sourceChanged(track.inputPath))) {
+      const ok = await refreshChangedTrack(id)
+      const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+      if (!fresh || fresh.metaReadFailed) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    if (track.metaPartial && completeTrackMeta) {
+      await completeTrackMeta(id)
+      const fresh = tracksRef.current.find((t) => t.id === id)
+      if (!fresh || fresh.metaPartial) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    if (track.metaReadFailed && rereadTrackMeta) {
+      const ok = await rereadTrackMeta(id)
+      const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
+      if (!fresh || fresh.metaReadFailed) {
+        updateTrack(id, {
+          status: 'error',
+          error: tr('errors.sourceTagsUnread'),
+          skipReason: undefined,
+          stage: undefined,
+        })
+        return 'failed'
+      }
+      track = fresh
+    }
+    const missing = missingRequiredOf(
+      track,
+      requiredFieldsOf(settings),
+      settings?.customFields ?? [],
+    )
+    if (missing.length) {
+      const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
+      updateTrack(id, {
+        status: 'error',
+        error: tr('editor.missingRequired', { fields: names }),
+        skipReason: undefined,
+        stage: undefined,
+      })
+      return 'failed'
+    }
+    return track
+  }
+
+  const jobMetaOf = (track: TrackItem): TrackMetadata =>
+    withCachedQualityTag(
+      clearHiddenProvenance(
+        sanitizeMeta(effectiveMeta(track, settings?.customFields ?? []), {
+          trim: settings?.trimWhitespace ?? true,
+          zeroPad: settings?.zeroPadTrack ?? true,
+        }),
+        settings?.visibleFields ?? DEFAULT_FIELDS,
+      ),
+      track,
+      queryClient,
+      settings?.importFields,
+    )
+
   // The conversion itself, with no batch bracketing — processAll's loop calls this
   // directly (never the exported processOne below) so a run of any size still produces
   // exactly one begin/end pair, not one per track.
@@ -271,75 +367,9 @@ export function useTrackProcessing({
       keepMp3?: boolean,
       formatChosen?: boolean,
     ): Promise<BatchOutcome> => {
-      let track = tracksRef.current.find((t) => t.id === id)
-      // A track removed after being queued was a user decision, not a failure — count
-      // it as skipped so the summary never reports an error with no visible row.
-      if (!track) return 'skipped'
-      // Already mid-conversion: the user hand-converted (or ⌘⏎'d) a still-idle track a
-      // running batch had queued, or vice versa. A second job would write the same
-      // output path at the same time — whoever started first owns the conversion.
-      if (track.status === 'processing') return 'skipped'
-      if (fromReadOnlyProgram(track)) return 'skipped'
-      // A read that failed must never become a write (see Params.rereadTrackMeta). The row
-      // is re-resolved after the read because the library patches it in place; a row still
-      // flagged afterwards, or with no re-read available, is refused rather than written.
-      if (refreshChangedTrack && (await window.api.sourceChanged(track.inputPath))) {
-        const ok = await refreshChangedTrack(id)
-        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
-        if (!fresh || fresh.metaReadFailed) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      if (track.metaPartial && completeTrackMeta) {
-        await completeTrackMeta(id)
-        const fresh = tracksRef.current.find((t) => t.id === id)
-        if (!fresh || fresh.metaPartial) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      if (track.metaReadFailed && rereadTrackMeta) {
-        const ok = await rereadTrackMeta(id)
-        const fresh = ok ? tracksRef.current.find((t) => t.id === id) : undefined
-        if (!fresh || fresh.metaReadFailed) {
-          updateTrack(id, {
-            status: 'error',
-            error: tr('errors.sourceTagsUnread'),
-            skipReason: undefined,
-            stage: undefined,
-          })
-          return 'failed'
-        }
-        track = fresh
-      }
-      const missing = missingRequiredOf(
-        track,
-        requiredFieldsOf(settings),
-        settings?.customFields ?? [],
-      )
-      if (missing.length) {
-        const names = missing.map((k) => tr(`fields.${k}`)).join(', ')
-        updateTrack(id, {
-          status: 'error',
-          error: tr('editor.missingRequired', { fields: names }),
-          skipReason: undefined,
-          stage: undefined,
-        })
-        return 'failed'
-      }
+      const ready = await readyTrack(id)
+      if (typeof ready === 'string') return ready
+      const track = ready
       const pickedFormat = formatOverride ?? settings?.outputFormat ?? 'aiff'
       // 'source' promises to keep each file in its own format; a file whose format
       // resolveJobFormat can't express (Surco imports .opus/.ogg/.oga/.aac/.mp4,
@@ -412,20 +442,8 @@ export function useTrackProcessing({
         musicStatus: undefined,
         musicError: undefined,
       })
-      const customFields = settings?.customFields ?? []
-      const stray = strayTags(track, customFields)
-      const meta = withCachedQualityTag(
-        clearHiddenProvenance(
-          sanitizeMeta(effectiveMeta(track, customFields), {
-            trim: settings?.trimWhitespace ?? true,
-            zeroPad: settings?.zeroPadTrack ?? true,
-          }),
-          settings?.visibleFields ?? DEFAULT_FIELDS,
-        ),
-        track,
-        queryClient,
-        settings?.importFields,
-      )
+      const stray = strayTags(track, settings?.customFields ?? [])
+      const meta = jobMetaOf(track)
       // Default to the source file's own name: users expect "load and convert" to keep
       // their filename. A metadata-derived name is used when the editor's "Regenerate from
       // metadata" button (or a manual edit) set track.outputName, or — with auto-apply on —
@@ -640,6 +658,93 @@ export function useTrackProcessing({
           declickOverride,
           keepMp3,
         )
+      } finally {
+        const flushed = window.api.endConversionBatch()
+        rereadMovedSources()
+        rereadReachedCollections(flushed)
+      }
+    },
+  )
+
+  // Update rewrites the tags and cover of the copy the library already plays, at its exact path
+  // and in its own format, and leaves its audio and the open file alone: the DJ programs and
+  // Apple Music hold that copy by its path, with cues set against its samples. The open row
+  // only shows the job running and then gets its own state back, since its file is untouched.
+  const updateLibraryCopy = useStableCallback(
+    async (id: string, copy: LibraryCopyRef): Promise<BatchOutcome> => {
+      const format = keptFormatOf(copy.path)
+      if (!format) return 'skipped'
+      // Asked before the row is read, as processOne does: the dialog can stay open as long as
+      // the DJ likes, and a conversion run on the row meanwhile must find it processing, and
+      // its result must not be painted over by a state read before it.
+      const programs = await window.api.conversionPrograms([copy.path]).catch(() => [])
+      if (programs.length > 0) await window.api.dj.askToApply(programs).catch(() => {})
+      window.api.beginConversionBatch()
+      try {
+        const ready = await readyTrack(id)
+        if (typeof ready === 'string') return ready
+        const track = ready
+        const { status, stage } = track
+        const restore = (): void => updateTrack(id, { status, stage })
+        updateTrack(id, { status: 'processing', stage: undefined })
+        try {
+          await releaseFile?.(copy.path)
+          const withCover = await withMusicCover(track, updateTrack)
+          const result = await window.api.processTrack({
+            id: track.id,
+            inputPath: copy.path,
+            outputName: baseName(copy.path).replace(/\.[^.]+$/, ''),
+            meta: jobMetaOf(track),
+            ...coverSourceOf(withCover),
+            removeCover: track.coverRemoved,
+            format,
+            tagsInPlace: true,
+            // The settings' own fallback (main/settings.ts) keeps the shape main expects; only
+            // the mode matters, and it never measures or changes the copy's level.
+            normalize: {
+              ...(settings?.normalize ?? {
+                mode: 'none',
+                targetLufs: -14,
+                truePeakDb: -1,
+                peakDb: -1,
+              }),
+              mode: 'none',
+            },
+            declick: { mode: 'off', noise: 'off' },
+            overwriteOriginal: false,
+            convertBesideOriginal: false,
+            keepOutputCopy: true,
+            addToAppleMusic: !!copy.musicPersistentId,
+            musicPersistentId: copy.musicPersistentId,
+          })
+          wroteRef.current = true
+          restore()
+          if (result.appleMusicFailed) onAppleMusicFailed?.(track.listLabel)
+          if (result.engineDjError) {
+            const message = mainErrorMessage(
+              new Error(result.engineDjError),
+              tr,
+              tr('editor.processError'),
+            )
+            onProcessError?.(message, track.listLabel, result.engineDjError)
+            return 'failed'
+          }
+          onLibraryCopyUpdated?.(track.listLabel)
+          return 'converted'
+        } catch (e) {
+          restore()
+          const marked = splitNameLeftMarked(e instanceof Error ? cleanIpcError(e.message) : '')
+          if (marked.left) onMusicNameLeftMarked?.(track.listLabel)
+          const raw = marked.message
+          if (errorKeyOf(raw) === 'conversionCancelled') return 'skipped'
+          const message = isFileInUseMessage(raw)
+            ? tr('editor.fileInUseError')
+            : mainErrorMessage(marked.left ? new Error(raw) : e, tr, tr('editor.processError'))
+          onProcessError?.(message, track.listLabel, raw)
+          return 'failed'
+        } finally {
+          reclaimFile?.(copy.path)
+        }
       } finally {
         const flushed = window.api.endConversionBatch()
         rereadMovedSources()
@@ -887,6 +992,7 @@ export function useTrackProcessing({
 
   return {
     processOne,
+    updateLibraryCopy,
     processAll,
     retryVerification,
     addTrackToAppleMusic,

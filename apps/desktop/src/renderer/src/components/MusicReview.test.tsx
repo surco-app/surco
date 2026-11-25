@@ -552,6 +552,20 @@ describe('MusicReview', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
+  // A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Escape
+  // there must not leave the review behind the DJ's back.
+  it('stays in the review on Escape while a checkbox holds the focus', () => {
+    const onClose = vi.fn()
+    render(<Panes review={review()} onClose={onClose} />)
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Escape' })
+    box.remove()
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
   // Leaving mid-write would hide a run the button refuses to abandon; in the search, Escape
   // belongs to the field; under a sheet, Escape closes the sheet and stops there.
   it('stays in the review on Escape while applying, in the search or under a sheet', () => {

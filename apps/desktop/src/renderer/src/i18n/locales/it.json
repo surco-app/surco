@@ -382,6 +382,7 @@
     "conversionCancelled": "Conversione annullata.",
     "verifyUnknownTrack": "Questa verifica non è più disponibile. Converti di nuovo il brano per ripeterla.",
     "seratoBlocked": "Serato perderebbe il brano e i suoi cue",
+    "libraryCopyAudioWouldChange": "Questa copia è rimasta com'era. Aggiornarne i tag ne avrebbe cambiato l'audio.",
     "audioDamaged": "L'audio del file è danneggiato",
     "diskFull": "Il disco è pieno",
     "noPermission": "Non hai il permesso di scrivere in quella cartella",
@@ -1066,6 +1067,8 @@
     "copyLimitedBare": "La copia in {{loser}} è più limitata.",
     "copyLimitedHereBare": "La nuova è più limitata.",
     "libraryHasBetter": "Sostituisci comunque",
+    "libraryCopyKeepsAudio": "Mantiene il suo audio",
+    "libraryCopyWithThisFile": "Con questo file",
     "requiredEmpty": "Obbligatorio. Compilalo prima di convertire",
     "coverMixed": "I brani selezionati hanno copertine diverse",
     "coversDistinct_one": "{{count}} copertina diversa",
@@ -1093,7 +1096,13 @@
       "pending": "Verrà creata quando il brano viene scritto",
       "some": "Solo in alcuni brani. Fai clic per metterla in tutti",
       "options": "Playlist di {{app}}",
-      "unconfirmed": "Scegli la collezione in Impostazioni → Programmi DJ → Traktor"
+      "unconfirmed": "Scegli la collezione in Impostazioni → Programmi DJ → Traktor",
+      "copyRemoved_one": "{{count}} brano tolto da «{{name}}»",
+      "copyRemoved_other": "{{count}} brani tolti da «{{name}}»",
+      "copyQueuedStays_one": "Questo brano entra comunque in «{{name}}» quando chiudi {{app}}",
+      "copyQueuedStays_other": "Questi {{count}} brani entrano comunque in «{{name}}» quando chiudi {{app}}",
+      "removeIn_one": "Toglila in {{app}}",
+      "removeIn_other": "Toglile in {{app}}"
     },
     "cues": {
       "title": "Cue",

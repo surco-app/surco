@@ -155,6 +155,33 @@ describe('compareCopies', () => {
       expect(compareCopies(edit(447), edit(483, -71), searched(0.1))).toEqual({ winner: 'tie' })
     })
 
+    // The pair probe only decodes the first 91 s, so an extended mix and its single edit of
+    // one master line up to the sample there. "The same" tells the DJ either copy will do,
+    // which a copy missing minutes of the track is not.
+    describe('the same audio needs the same length', () => {
+      const identical = { correlation: 1, residualDb: Number.NEGATIVE_INFINITY, gainDb: 0 }
+
+      it('calls an extended edit another version however perfectly its head lines up', () => {
+        expect(compareCopies(edit(210), edit(400), identical)).toEqual({ winner: 'different' })
+      })
+
+      it('never calls a copy with a trimmed outro the same audio', () => {
+        expect(
+          compareCopies(edit(447), edit(450), { correlation: 0.99, residualDb: -80, gainDb: 0 }),
+        ).toEqual({ winner: 'tie', sameMaster: true })
+      })
+
+      it('still calls copies within the drift a rounding leaves the same audio', () => {
+        expect(compareCopies(edit(447), edit(449), identical)).toEqual({ winner: 'same' })
+      })
+
+      it('still calls copies the same audio when either length is unknown', () => {
+        const unknown = { ...edit(447), durationSec: undefined }
+        expect(compareCopies(unknown, edit(210), identical)).toEqual({ winner: 'same' })
+        expect(compareCopies(edit(210), unknown, identical)).toEqual({ winner: 'same' })
+      })
+    })
+
     it('never calls copies of unknown length another version', () => {
       const a = { ...netzwerkAif, fingerprint: 'p' }
       const b = { ...netzwerkAif, fingerprint: 'q' }

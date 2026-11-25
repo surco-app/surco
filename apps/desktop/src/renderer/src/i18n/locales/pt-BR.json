@@ -382,6 +382,7 @@
     "conversionCancelled": "Conversão cancelada.",
     "verifyUnknownTrack": "Esta verificação não existe mais. Converta a faixa de novo para refazê-la.",
     "seratoBlocked": "O Serato perderia a faixa e seus cues",
+    "libraryCopyAudioWouldChange": "Esta cópia ficou como estava. Atualizar as tags mudaria o áudio dela.",
     "audioDamaged": "O áudio do arquivo está danificado",
     "diskFull": "O disco está cheio",
     "noPermission": "Você não tem permissão para gravar nessa pasta",
@@ -1066,6 +1067,8 @@
     "copyLimitedBare": "A cópia do {{loser}} está mais limitada.",
     "copyLimitedHereBare": "A nova está mais limitada.",
     "libraryHasBetter": "Substituir mesmo assim",
+    "libraryCopyKeepsAudio": "Mantém o áudio",
+    "libraryCopyWithThisFile": "Com este arquivo",
     "requiredEmpty": "Obrigatório: preencha antes de converter",
     "coverMixed": "As faixas selecionadas têm capas diferentes",
     "coversDistinct_one": "{{count}} capa diferente",
@@ -1093,7 +1096,13 @@
       "pending": "Será criada ao gravar a faixa",
       "some": "Só em algumas faixas. Clique para colocá-la em todas",
       "options": "Playlists do {{app}}",
-      "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor"
+      "unconfirmed": "Escolha a coleção em Ajustes → Programas de DJ → Traktor",
+      "copyRemoved_one": "{{count}} faixa removida de “{{name}}”",
+      "copyRemoved_other": "{{count}} faixas removidas de “{{name}}”",
+      "copyQueuedStays_one": "Esta faixa entra mesmo assim em “{{name}}” quando você fechar o {{app}}",
+      "copyQueuedStays_other": "Estas {{count}} faixas entram mesmo assim em “{{name}}” quando você fechar o {{app}}",
+      "removeIn_one": "Remova-a no {{app}}",
+      "removeIn_other": "Remova-as no {{app}}"
     },
     "cues": {
       "title": "Cues",

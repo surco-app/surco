@@ -382,6 +382,7 @@
     "conversionCancelled": "Konvertierung abgebrochen.",
     "verifyUnknownTrack": "Diese Prüfung gibt es nicht mehr. Konvertiere den Track erneut, um sie zu wiederholen.",
     "seratoBlocked": "Serato würde den Track und seine Cues verlieren",
+    "libraryCopyAudioWouldChange": "Diese Kopie wurde nicht verändert. Das Aktualisieren ihrer Tags hätte ihr Audio verändert.",
     "audioDamaged": "Das Audio der Datei ist beschädigt",
     "diskFull": "Das Laufwerk ist voll",
     "noPermission": "Du hast keine Berechtigung, in diesen Ordner zu schreiben",
@@ -1066,6 +1067,8 @@
     "copyLimitedBare": "Die {{loser}}-Kopie ist stärker limitiert.",
     "copyLimitedHereBare": "Die neue ist stärker limitiert.",
     "libraryHasBetter": "Trotzdem ersetzen",
+    "libraryCopyKeepsAudio": "Audio bleibt gleich",
+    "libraryCopyWithThisFile": "Mit dieser Datei",
     "requiredEmpty": "Pflichtfeld: vor dem Konvertieren ausfüllen",
     "coverMixed": "Die ausgewählten Tracks haben unterschiedliche Cover",
     "coversDistinct_one": "{{count}} unterschiedliches Cover",
@@ -1093,7 +1096,13 @@
       "pending": "Wird beim Schreiben des Tracks erstellt",
       "some": "Nur bei einigen Tracks. Klicken, um sie allen hinzuzufügen",
       "options": "{{app}}-Playlists",
-      "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor"
+      "unconfirmed": "Wähle die Sammlung unter Einstellungen → DJ-Software → Traktor",
+      "copyRemoved_one": "{{count}} Track aus „{{name}}“ entfernt",
+      "copyRemoved_other": "{{count}} Tracks aus „{{name}}“ entfernt",
+      "copyQueuedStays_one": "Dieser Track kommt trotzdem in „{{name}}“, sobald du {{app}} schließt",
+      "copyQueuedStays_other": "Diese {{count}} Tracks kommen trotzdem in „{{name}}“, sobald du {{app}} schließt",
+      "removeIn_one": "Entferne sie in {{app}}",
+      "removeIn_other": "Entferne sie in {{app}}"
     },
     "cues": {
       "title": "Cues",

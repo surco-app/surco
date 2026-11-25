@@ -58,8 +58,10 @@ import type {
   DeclickConfig,
   FormatSetting,
   KeyResult,
+  LibraryCopyAction,
   MetaTextKey,
   NormalizeConfig,
+  OutputFormat,
   PlaylistSource,
   PlaylistTrackRef,
   QueuedCreate,
@@ -221,8 +223,9 @@ import { fillMeasuredPatches } from './lib/fillMeasured'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './lib/keymap'
+import { columnOf, cycleRegion, FOCUSABLE, nextColumn, ownsKeystroke } from './lib/keymap'
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
+import type { LibraryCopyRef } from './lib/libraryCopy'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
 import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
@@ -480,6 +483,15 @@ export default function App(): React.JSX.Element {
     () => ({
       reportError: (message: string) =>
         void pushToast(store, { key: 'app-error', tone: 'danger', message, testid: 'app-error' }),
+      // Same keyed card as notifyEdit, so a burst of edits leaves the latest line.
+      reportNotice: (message: string) =>
+        void pushToast(store, {
+          key: 'rekordbox-edit',
+          tone: 'neutral',
+          message,
+          duration: 5000,
+          testid: 'rekordbox-edit-notice',
+        }),
       reportUndo: (message: string, onUndo: () => void, onSettle?: () => void, key?: string) => {
         // ⌘Z means the newest notice: a newer one takes the shortcut away from an older
         // Reviewed, whose card keeps its own Undo button.
@@ -1468,7 +1480,7 @@ export default function App(): React.JSX.Element {
     // was still being walked. The first row addPaths opens on an empty list is the add's own
     // doing and does not count as one.
     const typingInEditor =
-      isTypingTarget(document.activeElement) && columnOf(document.activeElement) !== 'list'
+      ownsKeystroke(document.activeElement) && columnOf(document.activeElement) !== 'list'
     if (added.length === 0 || typingInEditor || tracksFilterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
@@ -1889,6 +1901,7 @@ export default function App(): React.JSX.Element {
     batchSummary,
     cancelBatch,
     cancelOne,
+    updateLibraryCopy,
   } = useTrackProcessing({
     tracks,
     tracksRef,
@@ -1952,6 +1965,13 @@ export default function App(): React.JSX.Element {
         }),
       ),
     onMusicNameLeftMarked: (name) => setNotice(tr('notices.musicNameLeftMarked', { name })),
+    onLibraryCopyUpdated: () =>
+      pushToast(store, {
+        tone: 'neutral',
+        message: tr('verify.plainLine.tagsUpdated'),
+        duration: 4000,
+        testid: 'library-copy-updated',
+      }),
     rereadTrackMeta,
     refreshChangedTrack,
     completeTrackMeta,
@@ -2311,6 +2331,9 @@ export default function App(): React.JSX.Element {
     viewCache,
     librarySource,
   )
+  // A Music that refused the dump also leaves the index null; only a dump still on its way
+  // is worth the editor's wait.
+  const libraryLoading = librarySource === 'appleMusic' && !libraryIndex && !libraryFailed
   // Ranked over the whole list, not the filtered view, so hiding a copy behind a filter
   // never turns the one left on screen into the best.
   const { ranks: duplicateRankById, onRowVisible: onDuplicateRowVisible } =
@@ -3153,7 +3176,7 @@ export default function App(): React.JSX.Element {
   const onCancelSelected = useStableCallback(() => {
     if (selected) cancelOne(selected.id)
   })
-  const onProcessSelected = useStableCallback(() => {
+  const onProcessSelected = useStableCallback((_format?: OutputFormat, onStarted?: () => void) => {
     if (selected)
       void convertSelected(
         selected.id,
@@ -3161,6 +3184,7 @@ export default function App(): React.JSX.Element {
         editorNormalizeRef.current ?? undefined,
         editorDestinationRef.current ?? undefined,
         editorDeclickRef.current ?? undefined,
+        onStarted,
       )
   })
   const onAddSelectedToAppleMusic = useStableCallback(() => {
@@ -3182,6 +3206,17 @@ export default function App(): React.JSX.Element {
   const onCueSaveThen = useStableCallback((cueSaveThen: CueSaveThen) =>
     saveSettings({ cueSaveThen }),
   )
+  const onLibraryCopyAction = useStableCallback((libraryCopyAction: LibraryCopyAction) =>
+    saveSettings({ libraryCopyAction }),
+  )
+  const onUpdateLibraryCopy = useStableCallback((copy: LibraryCopyRef) => {
+    if (selected) void updateLibraryCopy(selected.id, copy)
+  })
+  // ⌘⏎ reads the editor's library action at run time, like the split-button picks.
+  const editorLibraryRunRef = useRef<((onStarted?: () => void) => void) | null>(null)
+  const onLibraryRunChange = useStableCallback((run: ((onStarted?: () => void) => void) | null) => {
+    editorLibraryRunRef.current = run
+  })
   const onCueStepTrack = useStableCallback(() => moveSelection(1))
   const onCueQuantize = useStableCallback((cueQuantize: CueQuantize) =>
     saveSettings({ cueQuantize }),
@@ -4440,6 +4475,7 @@ export default function App(): React.JSX.Element {
       editorNormalizeRef,
       editorDeclickRef,
       editorConvertLabelRef,
+      editorLibraryRunRef,
       trackSearchRef,
       pickFiles: () => void watchLoad(pickFiles),
       openApplePlaylist: isMacOS() ? () => selectSource('appleMusic') : undefined,
@@ -4622,7 +4658,7 @@ export default function App(): React.JSX.Element {
     // restores it, and Escape must stop there — falling through would ALSO
     // clear the selection, unmounting the editor mid-review.
     if (maximized !== null) return
-    if (isTypingTarget(document.activeElement)) return
+    if (ownsKeystroke(document.activeElement)) return
     if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
 
@@ -5345,6 +5381,10 @@ export default function App(): React.JSX.Element {
                               onCueJumpBars={onCueJumpBars}
                               cueSaveThen={settings?.cueSaveThen}
                               onCueSaveThen={onCueSaveThen}
+                              libraryCopyAction={settings?.libraryCopyAction}
+                              onLibraryCopyAction={onLibraryCopyAction}
+                              onUpdateLibraryCopy={onUpdateLibraryCopy}
+                              onLibraryRunChange={onLibraryRunChange}
                               onStepTrack={onCueStepTrack}
                               onCueQuantize={onCueQuantize}
                               onCueFlow={onCueFlow}
@@ -5361,6 +5401,7 @@ export default function App(): React.JSX.Element {
                               onOpenCueTrack={openCueTrack}
                               cueActionsRef={cueActionsRef}
                               libraryIndex={libraryIndex}
+                              libraryLoading={libraryLoading}
                               searchInputRef={searchInputRef}
                               selectedTracks={selectedTracks}
                               onApplyMatches={onApplyMatches}

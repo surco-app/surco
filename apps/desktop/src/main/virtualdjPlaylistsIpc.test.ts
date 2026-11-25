@@ -99,4 +99,15 @@ describe('virtualdjRead', () => {
     expect(rows).toHaveLength(6)
     expect(rows.every((r) => r.contentId === `virtualdj:${r.path}`)).toBe(true)
   })
+
+  it('grants the files of the collection it read, so Update can retag the library copy the editor found in it', async () => {
+    const dir = copy()
+    const allowMedia = vi.fn()
+    const read = virtualdjRead({ roots: homeOnly(() => dir), allowMedia })
+    const rows = (await read.collection?.()) as CollectionTrack[]
+    expect(allowMedia).toHaveBeenCalledWith(expect.arrayContaining(rows.map((r) => r.path)))
+    expect(allowMedia).toHaveBeenCalledWith(
+      expect.arrayContaining(['/Music/VirtualDJ Pruebas/Pray.mp3']),
+    )
+  })
 })

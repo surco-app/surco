@@ -60,6 +60,7 @@ function makeDeps(overrides: Partial<CommandDeps> = {}): CommandDeps {
     editorNormalizeRef: { current: null },
     editorDeclickRef: { current: null },
     editorConvertLabelRef: { current: '' },
+    editorLibraryRunRef: { current: null },
     trackSearchRef: { current: null },
     pickFiles: () => {},
     openListReview: vi.fn(),
@@ -648,6 +649,28 @@ describe('buildCommands convert-and-advance', () => {
     )
     cmd.run()
     expect(moveSelection).not.toHaveBeenCalled()
+  })
+
+  // With a library copy found, the body updates or replaces it, so ⌘⏎ must do what the body
+  // says: a plain convert would add a second copy beside the one the user meant to act on.
+  it('runs the library copy action on ⌘⏎ instead of converting', () => {
+    const run = vi.fn((onStarted?: () => void) => onStarted?.())
+    const processOne = vi.fn()
+    const moveSelection = vi.fn()
+    const cmd = commandById(
+      makeDeps({
+        selected: track(),
+        canProcessSelected: true,
+        processOne,
+        moveSelection,
+        editorLibraryRunRef: { current: run },
+      }),
+      'process-current',
+    )
+    cmd.run()
+    expect(run).toHaveBeenCalledWith(expect.any(Function))
+    expect(processOne).not.toHaveBeenCalled()
+    expect(moveSelection).toHaveBeenCalledWith(1)
   })
 })
 

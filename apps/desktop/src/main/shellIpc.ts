@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { clipboard, ipcMain, shell } from 'electron'
 import log from 'electron-log/main'
 import { errorWithKey } from '../shared/errorKeys'
+import { isSameFile } from './inplace'
 import { libraryBackupRoot } from './libraryBackups'
 import type { MediaAccess } from './mediaAccess'
 import { currentBackupPolicy } from './originalKeeper'
@@ -57,6 +58,13 @@ export function registerShellIpc(
   ipcMain.handle('shell:keepsTrash', (_e, path: string) => {
     if (!mediaAccess.isAllowed(path)) return false
     return volumeKeepsTrash(path)
+  })
+  // Whether the open file is the library copy under another path, as through a symlinked
+  // folder: by the path text it reads as a separate copy, and Update or Replace would act on
+  // the very file. Same allowlist, since the answer is a stat of a specific file.
+  ipcMain.handle('files:sameFile', (_e, a: string, b: string) => {
+    if (!mediaAccess.isAllowed(a)) return false
+    return isSameFile(a, b)
   })
   ipcMain.handle('clipboard:write', (_e, text: string) => clipboard.writeText(text))
   // The log path is resolved here (not sent by the renderer) so this can't be

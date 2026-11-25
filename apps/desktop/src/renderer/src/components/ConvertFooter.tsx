@@ -12,6 +12,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import type {
   FormatSetting,
+  LibraryCopyAction,
   MusicOp,
   NormalizeConfig,
   OutputFormat,
@@ -22,6 +23,7 @@ import { PLACE_ORDER, type PlaceCheck } from '../../../shared/verification'
 import { type CleanupOffer, cleanupCount } from '../hooks/useConfirmFlows'
 import type { StaleLibraryCopy } from '../lib/appleMusicLibrary'
 import type { Destination } from '../lib/destination'
+import type { LibraryCopyOffer } from '../lib/libraryCopy'
 import { openFeedback } from '../lib/feedback'
 import { formatUpTo } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
@@ -69,14 +71,14 @@ interface ConvertFooterProps {
   // The footer's aggregate view of the selection (done block, reveal, Apple Music).
   status: SelectionStatus
   stale: boolean
-  // Whether this track would supersede a copy already in the library.
-  replaces?: boolean
+  // A copy of this track already in a library, which the convert button updates or replaces.
+  libraryCopy?: LibraryCopyOffer
+  onLibraryAction?: (action: LibraryCopyAction) => void
+  onLibraryActionChange?: (action: LibraryCopyAction) => void
   // Serato holds the copy a replacement would supersede and will lose its stars; with several
   // tracks, the copy any of them supersedes. A track stamped to replace a file supersedes it
   // even when no copy is found now, as each track of a selection does.
   seratoLosesStars?: boolean
-  // The library's copy measured better than this file.
-  libraryBetter?: boolean
   done: boolean
   incomplete: boolean
   // Why the convert is blocked (the empty required fields), surfaced as the button's
@@ -160,9 +162,10 @@ export function ConvertFooter({
   readyCount,
   status,
   stale,
-  replaces,
+  libraryCopy,
+  onLibraryAction,
+  onLibraryActionChange,
   seratoLosesStars,
-  libraryBetter,
   done,
   incomplete,
   incompleteReason,
@@ -762,14 +765,16 @@ export function ConvertFooter({
                 {tr('editor.lossyToLossless', { format: format.toUpperCase() })}
               </p>
             )}
-            {(isMulti || replaces || !!item.replacesPath) && seratoLosesStars && (
-              <p
-                data-testid="convert-serato-stars-note"
-                className="text-center text-xs text-fg-dim"
-              >
-                {tr('editor.seratoLosesStars')}
-              </p>
-            )}
+            {/* Update keeps the copy's file, so Serato keeps its stars: only a new file loses them. */}
+            {(isMulti || libraryCopy?.action === 'replace' || !!item.replacesPath) &&
+              seratoLosesStars && (
+                <p
+                  data-testid="convert-serato-stars-note"
+                  className="text-center text-xs text-fg-dim"
+                >
+                  {tr('editor.seratoLosesStars')}
+                </p>
+              )}
             {isMulti && leftOut && (
               <button
                 type="button"
@@ -785,8 +790,9 @@ export function ConvertFooter({
               status={isMulti ? 'idle' : item.status}
               stage={isMulti ? undefined : item.stage}
               stale={!isMulti && stale}
-              replaces={!isMulti && replaces}
-              libraryBetter={!isMulti && libraryBetter}
+              libraryCopy={isMulti ? undefined : libraryCopy}
+              onLibraryAction={onLibraryAction}
+              onLibraryActionChange={onLibraryActionChange}
               done={!isMulti && done}
               outputFormat={format}
               shownFormat={writtenFormat}

@@ -307,6 +307,7 @@ const api: Api = {
   ): Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }> =>
     ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
+  sameFile: (a: string, b: string): Promise<boolean> => ipcRenderer.invoke('files:sameFile', a, b),
   retireSuperseded: (path: string, titles: string[]): Promise<'retired' | 'used'> =>
     ipcRenderer.invoke('shell:retireSuperseded', path, titles),
   trashList: (): Promise<TrashEntry[]> => ipcRenderer.invoke('trash:list'),

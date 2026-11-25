@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { emptyMetadata } from '../../../shared/metadata'
-import type { SourceNode } from '../../../shared/types'
+import type { SourceNode, SourcePlaylistEntry } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { isStale, trackSignature } from './dirty'
 import {
@@ -9,9 +9,12 @@ import {
   clearWrittenPlaylists,
   discardPlaylistEdits,
   effectivePlaylists,
+  linkAfter,
+  linkIdsOf,
   matchingOptions,
   playlistOptions,
   playlistsEdit,
+  playlistsOfPath,
   withTarget,
 } from './rekordboxPlaylists'
 import { hasStagedEdits } from './sessionEdits'
@@ -418,5 +421,61 @@ describe('each library keeps its own playlist edit', () => {
     expect(trackSignature(traktor)).not.toBe(signature)
     expect(trackSignature(engine)).not.toBe(signature)
     expect(trackSignature(traktor)).not.toBe(trackSignature(engine))
+  })
+})
+
+const entry = (
+  linkId: string | undefined,
+  path: string | null,
+  separator = path === null,
+): SourcePlaylistEntry => ({
+  path,
+  separator,
+  meta: {},
+  linkId,
+})
+
+describe('playlistsOfPath', () => {
+  it('names the playlists a path is in, skipping smart lists the field cannot offer', () => {
+    const options = [{ id: '1', name: 'Verano', path: '' }]
+    expect(playlistsOfPath('/r/a.aiff', { '/r/a.aiff': ['1', '9'] }, options)).toEqual([
+      { id: '1', name: 'Verano' },
+    ])
+  })
+})
+
+describe('linkIdsOf', () => {
+  it('finds every row of the copy, since rekordbox lets a track sit twice in a playlist', () => {
+    const entries = [
+      entry('l1', '/r/a.aiff'),
+      entry('l2', '/R/Copia.aiff'),
+      entry('l3', '/r/b.aiff'),
+      entry('l4', '/r/copia.aiff'),
+      entry(undefined, '/r/copia.aiff'),
+      entry('l6', null),
+      entry('l7', '/r/copia.aiff', true),
+    ]
+    expect(linkIdsOf(entries, ['/r/copia.aiff'])).toEqual(['l2', 'l4'])
+  })
+})
+
+describe('linkAfter', () => {
+  const entries = [entry('a', '/r/a'), entry('c1', '/r/c'), entry('b', '/r/b')]
+
+  it('says which row followed the removed ones, so Undo can put the track back in its place', () => {
+    expect(linkAfter(entries, ['c1'])).toBe('b')
+  })
+
+  it('says nothing when the removed rows were the last, so Undo leaves the track at the end', () => {
+    expect(linkAfter([entry('a', '/r/a'), entry('c1', '/r/c')], ['c1'])).toBeNull()
+  })
+
+  it('skips a following row without a handle, since Undo can only move before a row it can name', () => {
+    const unnamed = entry(undefined, '/r/x')
+    expect(linkAfter([entry('c1', '/r/c'), unnamed, entry('b', '/r/b')], ['c1'])).toBe('b')
+  })
+
+  it('says nothing when none of the removed rows is in the playlist, so Undo moves nothing', () => {
+    expect(linkAfter(entries, ['gone'])).toBeNull()
   })
 })

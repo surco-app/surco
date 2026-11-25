@@ -153,7 +153,9 @@ describe('useMusicReview', () => {
     const reportUndo = vi.fn()
     const hook = renderHook(() => useMusicReview(props({ saveIgnored, ignored: ['older'] })), {
       wrapper: ({ children }) => (
-        <ToastProvider value={{ reportError: vi.fn(), reportUndo }}>{children}</ToastProvider>
+        <ToastProvider value={{ reportError: vi.fn(), reportNotice: vi.fn(), reportUndo }}>
+          {children}
+        </ToastProvider>
       ),
     })
     await waitFor(() => expect(hook.result.current.status).toBe('ready'))

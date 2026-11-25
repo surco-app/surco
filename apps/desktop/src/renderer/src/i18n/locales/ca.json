@@ -382,6 +382,7 @@
     "conversionCancelled": "Conversió cancel·lada.",
     "verifyUnknownTrack": "Aquesta comprovació ja no està disponible. Torna a convertir la pista per repetir-la.",
     "seratoBlocked": "Serato perdria la pista i els seus cues",
+    "libraryCopyAudioWouldChange": "Aquesta còpia s'ha quedat com estava. Actualitzar-ne les etiquetes n'hauria canviat l'àudio.",
     "audioDamaged": "L'àudio del fitxer està malmès",
     "diskFull": "El disc és ple",
     "noPermission": "No tens permís per escriure en aquesta carpeta",
@@ -1066,6 +1067,8 @@
     "copyLimitedBare": "La còpia de {{loser}} està més limitada.",
     "copyLimitedHereBare": "La nova està més limitada.",
     "libraryHasBetter": "Substituir igualment",
+    "libraryCopyKeepsAudio": "Manté el seu àudio",
+    "libraryCopyWithThisFile": "Amb aquest fitxer",
     "requiredEmpty": "Obligatori. Omple'l abans de convertir",
     "coverMixed": "Les pistes seleccionades tenen caràtules diferents",
     "coversDistinct_one": "{{count}} caràtula diferent",
@@ -1093,7 +1096,13 @@
       "pending": "Es crearà en escriure la pista",
       "some": "Només en algunes pistes. Fes clic per posar-la a totes",
       "options": "Playlists de {{app}}",
-      "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor"
+      "unconfirmed": "Tria la col·lecció a Configuració → Programes de DJ → Traktor",
+      "copyRemoved_one": "{{count}} pista treta de «{{name}}»",
+      "copyRemoved_other": "{{count}} pistes tretes de «{{name}}»",
+      "copyQueuedStays_one": "Aquesta pista entra igualment a «{{name}}» quan tanquis {{app}}",
+      "copyQueuedStays_other": "Aquestes {{count}} pistes entren igualment a «{{name}}» quan tanquis {{app}}",
+      "removeIn_one": "Treu-la a {{app}}",
+      "removeIn_other": "Treu-les a {{app}}"
     },
     "cues": {
       "title": "Cues",

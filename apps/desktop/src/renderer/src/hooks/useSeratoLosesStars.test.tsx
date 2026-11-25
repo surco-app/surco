@@ -7,7 +7,7 @@ import type { CollectionTrack, Settings } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
 import { SettingsProvider } from '../lib/settingsContext'
 import { djReads, installApi } from '../test/api'
-import { useSeratoLosesStars } from './useSeratoLosesStars'
+import { useSeratoLosesStars, useSeratoStarsLoss } from './useSeratoLosesStars'
 
 const row = (path: string): CollectionTrack => ({
   contentId: path,
@@ -86,5 +86,33 @@ describe('useSeratoLosesStars', () => {
     })
     await new Promise((resolve) => setTimeout(resolve, 30))
     expect(result.current).toBe(false)
+  })
+})
+
+// Whether stars go cannot be told before Serato's collection is read, and a caller that must
+// not replace blind needs that apart from a known no.
+describe('useSeratoStarsLoss', () => {
+  it('is unknown while Serato’s collection is still being read', () => {
+    installApi({ dj: djReads({ serato: { collection: () => new Promise(() => {}) } }) })
+    const { result } = renderHook(() => useSeratoStarsLoss('/s/old.wav'), {
+      wrapper: wrapperFor({ syncSerato: true }),
+    })
+    expect(result.current).toBeUndefined()
+  })
+
+  it('is a known no with Sync and Add to Serato off, read or not', () => {
+    installApi({ dj: djReads({ serato: { collection: () => new Promise(() => {}) } }) })
+    const { result } = renderHook(() => useSeratoStarsLoss('/s/old.wav'), {
+      wrapper: wrapperFor({ syncSerato: false, addToSerato: false }),
+    })
+    expect(result.current).toBe(false)
+  })
+
+  it('says yes once the collection shows Serato holds the file', async () => {
+    installApi({ dj: serato('/s/old.wav') })
+    const { result } = renderHook(() => useSeratoStarsLoss('/s/old.wav'), {
+      wrapper: wrapperFor({ syncSerato: true }),
+    })
+    await waitFor(() => expect(result.current).toBe(true))
   })
 })

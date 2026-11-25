@@ -1565,6 +1565,7 @@ function registerIpc(): void {
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
     followLibrarySize,
+    allowMedia: (path) => mediaAccess.allow(path),
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
@@ -2103,6 +2104,7 @@ function registerIpc(): void {
         replacesPath,
         keepOverwritten,
         rewritesSource,
+        keepAudio,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -2144,6 +2146,7 @@ function registerIpc(): void {
               () => activeConversions.isCancelled(job.id),
               keepOverwritten,
               rewritesSource,
+              keepAudio,
             ).then(async (result) => {
               tagsAfter = await snapshotTagsInWorker(output)
               return result

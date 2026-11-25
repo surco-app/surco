@@ -140,6 +140,15 @@ export function isSameAudio(
   const bits = bitsClass(a)
   if (bits === null || bits !== bitsClass(b)) return false
   if (a.fingerprint && a.fingerprint === b.fingerprint) return true
+  // The pair probe only decodes the head of each file, so another edit of one master (an
+  // extended mix, a trimmed outro) lines up there to the sample; only the lengths tell it.
+  if (
+    a.durationSec != null &&
+    b.durationSec != null &&
+    Math.abs(a.durationSec - b.durationSec) > VERSION_GAP_SEC
+  ) {
+    return false
+  }
   return (
     !!pair && pair.residualDb <= IDENTICAL_RESIDUAL_DB && Math.abs(pair.gainDb) < IDENTICAL_GAIN_DB
   )

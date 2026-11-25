@@ -110,6 +110,7 @@ import { useVerificationUpdates } from '../renderer/src/hooks/useVerificationUpd
 import { waveformOptions } from '../renderer/src/hooks/useWaveform'
 import { removeAnalysisQueries } from '../renderer/src/lib/analysisQueries'
 import {
+  entryDurationSec,
   isAmbiguousCandidate,
   type ReplaceCandidate,
   type StaleLibraryCopy,
@@ -118,11 +119,12 @@ import { musicEntries } from '../renderer/src/lib/appleMusicSource'
 import { acceptReviewPatch } from '../renderer/src/lib/autoMatch'
 import type { BatchSummary } from '../renderer/src/lib/batch'
 import { type Destination, fromDestination, toDestination } from '../renderer/src/lib/destination'
+import { pickLibraryCopy, replaceCopyPatch } from '../renderer/src/lib/libraryCopy'
 import { librarySourceOf } from '../renderer/src/lib/librarySource'
 import { listReviewEntries } from '../renderer/src/lib/listReviewEntries'
 import { listReviewSource } from '../renderer/src/lib/listReviewSource'
+import { pathKey } from '../renderer/src/lib/pathKey'
 import { createQueryClient } from '../renderer/src/lib/queryClient'
-import { replacePatch } from '../renderer/src/lib/replaceBeforeConvert'
 import { musicSource, type ReviewSource } from '../renderer/src/lib/reviewSource'
 import { SettingsProvider } from '../renderer/src/lib/settingsContext'
 import { detectTrim } from '../renderer/src/lib/trim'
@@ -1032,6 +1034,7 @@ function scenarioApi(
     trashRestore: (id, from) => invokeMain('trash:restore', id, from),
     trashFile: (path, permanent) => invokeMain('shell:trash', path, permanent),
     keepsTrash: (path) => invokeMain('shell:keepsTrash', path),
+    sameFile: (a, b) => invokeMain('files:sameFile', a, b),
     retireSuperseded: (path, titles) => invokeMain('shell:retireSuperseded', path, titles),
     // Only the log line saying why an old file was kept; there is no main log to write to.
     logInfo: () => {},
@@ -1162,8 +1165,10 @@ export interface Scenario {
   summary: () => BatchSummary | null
   reviewNotice: (dropped: string[]) => ReturnType<typeof pendingGroups>
   openListReview: () => Promise<() => MusicReview>
+  // 'convert' is the body's plain press; 'replace' is Replace picked for the Apple Music copy.
   convertInEditor: (
     fileName: string,
+    press?: 'convert' | 'replace',
   ) => Promise<{ replaces: boolean; target: ReplaceCandidate | null }>
   openMusicReview: (filter?: ReviewFilter) => Promise<() => MusicReview>
   waitForNewTracks: () => Promise<string[]>
@@ -1426,7 +1431,7 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
       return mountReview(source, 'all')
     },
     openMusicReview: (filter = 'all') => mountReview(musicSource, filter),
-    convertInEditor: async (fileName) => {
+    convertInEditor: async (fileName, press = 'convert') => {
       const id = trackNamed(fileName).id
       await waitFor(() => expect(result.current.view.libraryIndex).not.toBeNull())
       const editor = renderHook(() => {
@@ -1469,8 +1474,43 @@ export async function openSurco(options: ScenarioOptions): Promise<Scenario> {
         settings.convertBesideOriginal,
       )
       await act(async () => {
-        const patch = replacePatch(offered)
-        if (patch) result.current.library.updateTrack(id, patch)
+        const open = tracks().find((t) => t.id === id) as TrackItem
+        if (press === 'replace') {
+          if (!offered || isAmbiguousCandidate(offered))
+            throw new Error(`${fileName}: no Apple Music copy to replace`)
+          // The harness runs no comparison, so the copy stands as found but unmeasured; the
+          // pick still applies the Editor's length rule, with Music's length as the copy's.
+          const copy = pickLibraryCopy(
+            [
+              {
+                program: 'appleMusic',
+                path: offered.path ?? '',
+                format: '',
+                verdict: 'unmeasurable',
+                better: false,
+                durationSec: entryDurationSec(
+                  result.current.view.libraryIndex,
+                  offered.persistentId,
+                ),
+                music: offered,
+              },
+            ],
+            open.duration,
+          )
+          if (!copy || copy.held) throw new Error(`${fileName}: the Apple Music copy is not ready`)
+          result.current.library.updateTrack(id, replaceCopyPatch(copy, open.inputPath))
+        } else if (
+          // Like the Editor's plain press: only the Music entry that IS the open file is named,
+          // so the convert retags it instead of importing a sibling. Music reports the resolved
+          // path, and the fixtures sit under the temp folder's /var symlink, so both sides are
+          // resolved to stand for the one string a real library and its file share.
+          offered &&
+          !isAmbiguousCandidate(offered) &&
+          offered.path &&
+          existsSync(offered.path) &&
+          pathKey(realpathSync(offered.path)) === pathKey(realpathSync(open.inputPath))
+        )
+          result.current.library.updateTrack(id, { musicPersistentId: offered.persistentId })
         const track = tracks().find((t) => t.id === id) as TrackItem
         const format = resolveJobFormat(
           settings.outputFormat,

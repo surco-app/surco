@@ -1247,6 +1247,24 @@ describe('cue flows', () => {
     expect(getSettings().cueSaveThen).toBe('stay')
   })
 
+  it('starts a library copy on Update, which leaves its audio alone', () => {
+    writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
+    expect(getSettings().libraryCopyAction).toBe('update')
+  })
+
+  it('keeps the action picked for a library copy', () => {
+    saveSettings({ libraryCopyAction: 'replace' })
+    expect(getSettings().libraryCopyAction).toBe('replace')
+  })
+
+  it('reads an unknown library copy action as Update', () => {
+    writeFileSync(
+      join(app.getPath('userData'), 'settings.json'),
+      JSON.stringify({ libraryCopyAction: 'merge' }),
+    )
+    expect(getSettings().libraryCopyAction).toBe('update')
+  })
+
   it('carries the arrow jump to another Mac with the flows', () => {
     writeFileSync(join(app.getPath('userData'), 'settings.json'), JSON.stringify({}))
     const dir = mkdtempSync(join(tmpdir(), 'surco-sync-'))

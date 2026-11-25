@@ -99,10 +99,12 @@ describe.skipIf(process.platform !== 'darwin')(
       expect(row.genre).toBe('House')
     })
 
+    // The Music entry is the open MP3, so the press is a plain convert of that file: the cue
+    // follows its audio by the codec offset between the MP3 and the AIFF in rekordbox's clock.
     it('keeps the track in its playlists with its cues, BPM and key', () => {
       expect(row).toMatchObject({
         playlists: ['pl-peak'],
-        cuesMs: [32000],
+        cuesMs: [31974],
         bpm: 12000,
         keyId: 'k8A',
       })

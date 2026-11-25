@@ -51,7 +51,7 @@ const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
 // v2.4 we used to leave there made Surco-tagged WAVs look empty in it.
-const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
+const ID3_V23 = new Set(['.mp3', '.aiff', '.aif', '.wav'])
 
 // A v2.3 genre is one text. TagLib's default splits it on ';' and '/' when reading and, on
 // any later save, writes the parts back with the first turned into its ID3v1 number, so a
@@ -139,13 +139,12 @@ const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 // Broader than ID3_IN_PLACE on purpose: that set is about whether the tag can be edited in
 // place, which excludes WAV for a reason unrelated to where its cues live. A cue carry-over
 // that needs "is the source ID3-tagged?" must ask this, or a WAV source looks cue-less.
-// Both AIFF spellings, and only in this set of the three: shared/format.ts states the
-// rule outright ("AIFF rips use both .aif and .aiff") and expand.ts imports the pair, so
-// a crate can hold either, while every sibling predicate matches them with /\.aiff?$/i.
-// This is the one set asked about a SOURCE extension — the user's own file, whose name
-// they chose. The other two are only ever asked about an output (planConversion fixes
-// AIFF output at '.aiff', and writeTags is only ever handed the temp, which carries the
-// output's extension), so a '.aif' entry there would be unreachable.
+// Both AIFF spellings: shared/format.ts states the rule outright ("AIFF rips use both
+// .aif and .aiff") and expand.ts imports the pair, so a crate can hold either, while every
+// sibling predicate matches them with /\.aiff?$/i. This set is asked about a SOURCE
+// extension, the user's own file, whose name they chose. ID3_V23 is asked about the temp
+// writeTags is handed, which carries the output's extension, and that is '.aif' too when
+// Update retags a library copy in place under its own name.
 // Listing only the long spelling here meant a .aif source answered false to
 // keepsCuesInId3, sending its cue carry-over to shiftFlacCues — which looks for a Vorbis
 // comment an AIFF has never had, and drops every hot cue and the beatgrid. The same loss

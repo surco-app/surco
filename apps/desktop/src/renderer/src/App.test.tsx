@@ -71,7 +71,13 @@ const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
 
 // Pass-through Editor wrapped in its own memo, so the counter only ticks when App
 // hands it a changed prop identity — the contract the editor-stability test pins.
-const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0, crash: false } }))
+const { editorRenders } = vi.hoisted(() => ({
+  editorRenders: {
+    count: 0,
+    crash: false,
+    lastProps: null as { libraryLoading?: boolean } | null,
+  },
+}))
 vi.mock('./components/Editor', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/Editor')>()
   const { memo } = await import('react')
@@ -80,6 +86,7 @@ vi.mock('./components/Editor', async (importOriginal) => {
   ): React.JSX.Element {
     if (editorRenders.crash) throw new Error('boom')
     editorRenders.count++
+    editorRenders.lastProps = props
     return <real.Editor {...props} />
   })
   return { ...real, Editor: CountingEditor }
@@ -178,6 +185,7 @@ function settings(over: Partial<Settings> = {}): Settings {
     activeCueFlow: 'mine',
     cueJumpBars: 16,
     cueSaveThen: 'stay',
+    libraryCopyAction: 'update',
     cueQuantize: 'bar',
     cueGridTolerance: 10,
     cueLettersByTime: true,
@@ -362,6 +370,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
+    sameFile: vi.fn(async (a: string, b: string) => a === b),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
     rekordboxCollection: vi.fn<Api['rekordboxCollection']>().mockResolvedValue(''),
@@ -2201,6 +2210,21 @@ describe('App sidebar divider', () => {
     await addTwoTracks()
     expect(screen.getByTestId('sidebar')).toBeInTheDocument()
     expect(screen.getAllByRole('separator').length).toBeGreaterThan(0)
+  })
+
+  // A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Escape
+  // there must not clear the selection and unmount the editor around it.
+  it('keeps the selection on Escape while a checkbox holds the focus', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Escape' })
+    box.remove()
+    await act(async () => {})
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
   })
 
   it('asks to pick a track, not to drop files, beside a loaded list with nothing selected, and a click there opens no file dialog', async () => {
@@ -10063,6 +10087,43 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(bravo).toHaveAttribute('aria-selected', 'true'))
   })
 
+  // A checkbox in the editor holding the focus counts as the DJ at work there, as it did
+  // before ⌘Z was let through it: the add does not pull the editor to the new track.
+  it('keeps the selection when files arrive while a checkbox in the editor holds the focus', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/bravo.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // By track, not by the row's whole text: the selected track's quality badge can land
+    // after this snapshot, and that is not the selection moving.
+    const selectedTracks = () =>
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => ['alpha', 'bravo', 'zulu'].find((name) => r.textContent?.includes(name)))
+    const selectedBefore = selectedTracks()
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await act(async () => {})
+    const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
+    expect(bravo).toHaveAttribute('aria-selected', 'false')
+    expect(selectedTracks()).toEqual(selectedBefore)
+    box.remove()
+  })
+
   // Dropping another version of the tune being searched for, to compare them, is a reason to
   // keep the search: everything added is on screen beside what was found.
   it('keeps a search that every file just added matches', async () => {
@@ -11623,6 +11684,39 @@ describe('App continuous playback', () => {
 
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
     expect(rows[1]).toHaveAttribute('aria-selected', 'false')
+  })
+})
+
+// The editor's own destination can be Apple Music while Settings send to a folder; App then
+// reads no Music library at all, so a DJ copy waiting for that library would wait forever.
+describe('App Apple Music library wait handed to the editor', () => {
+  function musicApi(over: Partial<Settings>): void {
+    Object.assign(window.api, {
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getSettings: vi.fn().mockResolvedValue(settings(over)),
+      loadAppleMusicLibrary: vi.fn(() => new Promise(() => {})),
+    })
+  }
+
+  async function openTrack(): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+  }
+
+  it('tells the editor the library is loading while the Settings destination reads it', async () => {
+    musicApi({ addToAppleMusic: true })
+    await openTrack()
+    await waitFor(() => expect(editorRenders.lastProps?.libraryLoading).toBe(true))
+  })
+
+  it('tells the editor nothing is loading when the Settings destination reads no Music library', async () => {
+    musicApi({ addToAppleMusic: false })
+    await openTrack()
+    expect(window.api.loadAppleMusicLibrary).not.toHaveBeenCalled()
+    expect(editorRenders.lastProps?.libraryLoading).toBe(false)
   })
 })
 
@@ -15282,7 +15376,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
       '4 tracks loaded. 1 duplicate and 1 spelling to review',
     )
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     drop(['/music/d.wav'])
     await waitFor(() =>
       expect(
@@ -15315,7 +15414,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await addThree()
     await screen.findByTestId('list-review-notice')
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
     const root = screen.getByTestId('app-root')
@@ -15395,7 +15499,12 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await addThree()
     await screen.findByTestId('list-review-notice')
     swipeAway('list-review-notice')
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     await act(async () => openWith?.(['/music/d.wav']))
     await waitFor(() =>
       expect(
@@ -15578,7 +15687,11 @@ describe('App empty screen offers a single way in', () => {
       )
       await screen.findByTestId('app-notice')
       swipeAway('app-notice')
-      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
+      // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+      // runs past waitFor's default second.
+      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument(), {
+        timeout: 3000,
+      })
       fireEvent.click(screen.getByTestId('source-rail-tracks'))
       fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
       await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))

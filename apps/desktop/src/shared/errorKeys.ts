@@ -54,6 +54,7 @@ export const ERROR_KEYS = [
   'conversionCancelled',
   'verifyUnknownTrack',
   'seratoBlocked',
+  'libraryCopyAudioWouldChange',
 ] as const
 
 export type ErrorKey = (typeof ERROR_KEYS)[number]

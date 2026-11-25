@@ -3,9 +3,11 @@ import type {
   RekordboxPlaylistTarget,
   RekordboxQueueWritten,
   SourceNode,
+  SourcePlaylistEntry,
 } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import { trackSignature } from './dirty'
+import { pathKey } from './pathKey'
 import { SOURCE_PROGRAMS } from './sourcePrograms'
 
 export interface PlaylistOption {
@@ -107,11 +109,42 @@ export function effectivePlaylists(
   if (!membership || !options) return undefined
   const wanted = wantedOf(track, library)
   if (wanted) return wanted.map((t) => resolveTarget(t, options))
+  return playlistsOfPath(rekordboxPathOf(track), membership, options)
+}
+
+export function playlistsOfPath(
+  path: string,
+  membership: Membership,
+  options: readonly PlaylistOption[],
+): RekordboxPlaylistTarget[] {
   const byId = namesOf(options)
-  return (membership[rekordboxPathOf(track)] ?? []).flatMap((id) => {
+  return (membership[path] ?? []).flatMap((id) => {
     const name = byId.get(id)
     return name === undefined ? [] : [{ id, name }]
   })
+}
+
+export function linkIdsOf(
+  entries: readonly SourcePlaylistEntry[],
+  paths: readonly string[],
+): string[] {
+  const keys = new Set(paths.map(pathKey))
+  return entries.flatMap((e) =>
+    !e.separator && e.linkId !== undefined && e.path !== null && keys.has(pathKey(e.path))
+      ? [e.linkId]
+      : [],
+  )
+}
+
+export function linkAfter(
+  entries: readonly SourcePlaylistEntry[],
+  linkIds: readonly string[],
+): string | null {
+  const removed = new Set(linkIds)
+  const last = entries.findLastIndex((e) => e.linkId !== undefined && removed.has(e.linkId))
+  if (last < 0) return null
+  const next = entries.slice(last + 1).find((e) => e.linkId !== undefined && !removed.has(e.linkId))
+  return next?.linkId ?? null
 }
 
 export function bulkPlaylistState(
@@ -119,11 +152,16 @@ export function bulkPlaylistState(
   membership: Membership | undefined,
   options: readonly PlaylistOption[] | undefined,
   library: PlaylistLibrary = 'rekordbox',
+  copyPathOf?: (t: TrackItem) => string | undefined,
 ): { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[] | undefined {
   if (!membership || !options) return undefined
   const seen = new Map<string, { target: RekordboxPlaylistTarget; n: number }>()
   for (const t of tracks) {
-    for (const target of effectivePlaylists(t, membership, options, library) ?? []) {
+    const copy = copyPathOf?.(t)
+    const lists = copy
+      ? playlistsOfPath(copy, membership, options)
+      : (effectivePlaylists(t, membership, options, library) ?? [])
+    for (const target of lists) {
       const entry = seen.get(targetKey(target)) ?? { target, n: 0 }
       entry.n += 1
       seen.set(targetKey(target), entry)
@@ -160,9 +198,12 @@ export function withTarget(
   target: RekordboxPlaylistTarget,
   on: boolean,
   library: PlaylistLibrary = 'rekordbox',
+  copyPathOf?: (t: TrackItem) => string | undefined,
 ): ({ id: string } & PlaylistsEdit)[] | undefined {
   if (!membership || !options) return undefined
+  // A track on its copy is written to the program at once, so nothing is staged for it.
   return tracks
+    .filter((t) => !copyPathOf?.(t))
     .filter((t) => SOURCE_PROGRAMS[library].addsUncollected || rekordboxPathOf(t) in membership)
     .map((t) => {
       const rest = (effectivePlaylists(t, membership, options, library) ?? []).filter(

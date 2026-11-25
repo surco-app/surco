@@ -60,6 +60,7 @@ export const testSettings: Settings = {
   activeCueFlow: 'mix-in',
   cueJumpBars: 16,
   cueSaveThen: 'stay',
+  libraryCopyAction: 'update',
   cueQuantize: 'bar',
   cueGridTolerance: 10,
   cueLettersByTime: true,
@@ -456,6 +457,7 @@ export function stubApi({ cues, ...over }: ApiOverrides = {}): Api {
     // Local by default in tests: the cautious "may be permanent" wording is the exception,
     // and a test that wants it says so.
     keepsTrash: async () => true,
+    sameFile: async (a, b) => a === b,
     retireSuperseded: async () => 'retired',
     trashList: async () => [],
     trashRestore: async () => ({ restoredTo: '' }),

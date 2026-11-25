@@ -313,3 +313,93 @@ describe('useKeyboardShortcuts key repeat on trashing the flagged rips', () => {
     expect(language).toHaveBeenCalledTimes(2)
   })
 })
+
+// The playlists popover is a list of checkboxes. Read as a text field, the focused one held
+// back ⌘Z, so the tick just made could not be undone without clicking elsewhere first. Space
+// stays with the checkbox, or ticking from the keyboard would start the player instead.
+describe('useKeyboardShortcuts with focus on a checkbox', () => {
+  function setupWithUndo(): { undo: () => void; play: () => void } {
+    const undo = vi.fn()
+    const play = vi.fn()
+    const commands: Command[] = [
+      { id: 'undo-meta', title: '', enabled: true, group: 'tags', run: undo },
+      { id: 'play', title: '', enabled: true, group: 'playback', run: play },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        paletteOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    return { undo, play }
+  }
+  function focusInput(type: string): HTMLInputElement {
+    const input = document.createElement('input')
+    input.type = type
+    document.body.appendChild(input)
+    input.focus()
+    return input
+  }
+
+  it('undoes with ⌘Z while a checkbox holds the focus', () => {
+    const { undo } = setupWithUndo()
+    const box = focusInput('checkbox')
+    press({ key: 'z', metaKey: true, cancelable: true })
+    expect(undo).toHaveBeenCalledTimes(1)
+    box.remove()
+  })
+
+  it('still leaves ⌘Z to a text field, whose own undo takes back the typing', () => {
+    const { undo } = setupWithUndo()
+    const field = focusInput('text')
+    press({ key: 'z', metaKey: true, cancelable: true })
+    expect(undo).not.toHaveBeenCalled()
+    field.remove()
+  })
+
+  // The playlists tree moves its focus between row checkboxes. Bare keys there are the tree's
+  // own, and k or End taking the list selection elsewhere remounted the editor and closed
+  // the popover under the user.
+  it('keeps bare list keys away from the list while a checkbox holds the focus', () => {
+    const prev = vi.fn()
+    const bottom = vi.fn()
+    const commands: Command[] = [
+      { id: 'prev', title: '', enabled: true, group: 'navigate', run: prev },
+      { id: 'list-bottom', title: '', enabled: true, group: 'navigate', run: bottom },
+    ]
+    renderHook(() =>
+      useKeyboardShortcuts({
+        isMac: true,
+        overlayOpen: false,
+        paletteOpen: false,
+        bindings: resolveBindings(),
+        getCommands: () => commands,
+        onTogglePalette: () => {},
+        onEscape: () => {},
+        onStepTrack: () => {},
+      }),
+    )
+    const box = focusInput('checkbox')
+    press({ key: 'k', cancelable: true })
+    press({ key: 'End', cancelable: true })
+    expect(prev).not.toHaveBeenCalled()
+    expect(bottom).not.toHaveBeenCalled()
+    box.remove()
+  })
+
+  it('leaves Space to the checkbox so it ticks instead of playing', () => {
+    const { play } = setupWithUndo()
+    const box = focusInput('checkbox')
+    const e = new KeyboardEvent('keydown', { key: ' ', cancelable: true })
+    window.dispatchEvent(e)
+    expect(play).not.toHaveBeenCalled()
+    expect(e.defaultPrevented).toBe(false)
+    box.remove()
+  })
+})

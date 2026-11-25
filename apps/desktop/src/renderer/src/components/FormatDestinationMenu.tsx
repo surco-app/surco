@@ -3,7 +3,7 @@ import type React from 'react'
 import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FORMAT_SETTINGS, OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { FormatSetting, OutputFormat } from '../../../shared/types'
+import type { FormatSetting, LibraryCopyAction, OutputFormat } from '../../../shared/types'
 import type { Destination } from '../lib/destination'
 import { SPLIT_ITEM, SPLIT_MENU } from './SplitButton'
 
@@ -21,6 +21,7 @@ export function FormatDestinationMenu({
   clearAfter = false,
   onToggleClearAfter,
   className = SPLIT_MENU,
+  libraryCopy,
 }: {
   menuRef: React.RefObject<HTMLDivElement | null>
   onMenuKeyDown: (e: React.KeyboardEvent) => void
@@ -35,8 +36,15 @@ export function FormatDestinationMenu({
   clearAfter?: boolean
   onToggleClearAfter?: () => void
   className?: string
+  libraryCopy?: {
+    heading: string
+    action: LibraryCopyAction
+    updatable: boolean
+    onPick: (action: LibraryCopyAction) => void
+  }
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
+  const libraryHeadingId = useId()
   const formatHeadingId = useId()
   const destinationHeadingId = useId()
   return (
@@ -47,9 +55,51 @@ export function FormatDestinationMenu({
       onKeyDown={onMenuKeyDown}
       className={className}
     >
+      {/* First, since with a copy in the library the body's press acts on that copy: Update
+          and Replace sound alike, so each says in grey what it does to it. */}
+      {libraryCopy && (
+        <fieldset aria-labelledby={libraryHeadingId} className="min-w-0">
+          <p
+            id={libraryHeadingId}
+            data-testid="library-copy-heading"
+            className="px-3 pt-1 pb-0.5 text-label font-medium text-fg-dim"
+          >
+            {libraryCopy.heading}
+          </p>
+          {(
+            [
+              ['update', 'editor.update', 'editor.libraryCopyKeepsAudio'],
+              ['replace', 'editor.replaceAction', 'editor.libraryCopyWithThisFile'],
+            ] as const
+          ).map(([action, verb, note]) => (
+            <button
+              key={action}
+              type="button"
+              data-testid={`library-copy-${action}`}
+              role="menuitemradio"
+              aria-checked={action === libraryCopy.action}
+              disabled={action === 'update' && !libraryCopy.updatable}
+              onClick={() => libraryCopy.onPick(action)}
+              className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+                action === libraryCopy.action ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
+            >
+              <span className="flex flex-col">
+                {tr(verb)}
+                <span className="text-label font-normal text-fg-dim">{tr(note)}</span>
+              </span>
+            </button>
+          ))}
+        </fieldset>
+      )}
       {formats && (
         <fieldset aria-labelledby={formatHeadingId} className="min-w-0">
-          <p id={formatHeadingId} className="px-3 pt-1 pb-0.5 text-label font-medium text-fg-dim">
+          <p
+            id={formatHeadingId}
+            className={`px-3 pb-0.5 text-label font-medium text-fg-dim ${
+              libraryCopy ? 'mt-1 border-t border-[var(--color-line)] pt-2' : 'pt-1'
+            }`}
+          >
             {tr('editor.menuFormat')}
           </p>
           {/* "Same as source" only means something over several files at once — a single

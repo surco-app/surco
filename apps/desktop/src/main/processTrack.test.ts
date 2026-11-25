@@ -1204,6 +1204,204 @@ describe('runProcessTrack — a track already in the output format', () => {
   })
 })
 
+// Update retags the copy a DJ program or Apple Music already holds. They hold it by its
+// path, so any rename (even .aif to .aiff, or the safe file name) leaves them pointing at
+// a file that is gone.
+describe('runProcessTrack — retagging a library copy where it is', () => {
+  const copy = (overrides: Partial<ProcessJob> = {}) =>
+    job({
+      inputPath: '/r/Song.aif',
+      outputName: 'Song',
+      format: 'aiff',
+      tagsInPlace: true,
+      ...overrides,
+    })
+
+  it('writes the tags onto an .aif copy without renaming it to .aiff', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('keeps a copy name the safe file name would change', async () => {
+    const deps = makeDeps({ settings: settings({ asciiFileNames: true }) })
+    const result = await runProcessTrack(
+      copy({ inputPath: '/r/A: B.wav', outputName: 'A: B', format: 'wav' }),
+      deps,
+    )
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/A: B.wav')
+    expect(result.outputPath).toBe('/r/A: B.wav')
+  })
+
+  it('keeps the copy name when the tags would name the file differently', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy({ outputName: 'Artist - Song' }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('stays on the copy when the beside-the-original setting is on', async () => {
+    const deps = makeDeps({
+      settings: settings({ convertBesideOriginal: true }),
+      isSameFile: vi.fn(async (a: string, b: string) => a === b),
+    })
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][1]).toBe('/r/Song.aif')
+    expect(result.outputPath).toBe('/r/Song.aif')
+  })
+
+  it('lets the libraries follow the copy it retags', async () => {
+    const deps = makeDeps({
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(
+        async () => ({}),
+      ),
+    })
+    await runProcessTrack(copy(), deps)
+
+    expect(deps.snapshotLibraries).toHaveBeenCalledWith('/r/Song.aif')
+  })
+
+  it('retags the Apple Music entry of the copy instead of adding the file again', async () => {
+    const deps = makeDeps({
+      platform: 'darwin',
+      settings: settings({ addToAppleMusic: true, keepOutputCopy: true }),
+      appleMusicEntry: vi.fn(async () => ({ path: '/r/Song.aif', label: 'Artist - Song' })),
+    })
+    await runProcessTrack(copy({ musicPersistentId: 'P1' }), deps)
+
+    expect(deps.updateInAppleMusic).toHaveBeenCalledWith('P1', {}, undefined)
+    expect(deps.addToAppleMusic).not.toHaveBeenCalled()
+    expect(deps.removeRenamedOriginal).not.toHaveBeenCalled()
+  })
+
+  // The copy Update retags is a rekordbox or Traktor file that Engine may not hold: adding it
+  // would import a second entry into Engine the user never asked for. An Engine row already
+  // on the copy still follows it through the library sync.
+  it('adds no Engine DJ entry for the copy it retags, even with adding to Engine on', async () => {
+    const deps = makeDeps({
+      settings: settings({ addToEngineDj: true }),
+      isEngineDjRunning: vi.fn(async () => false),
+    })
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(deps.addToEngineDj).not.toHaveBeenCalled()
+    expect(result.addedToEngineDj).toBeUndefined()
+    expect(result.engineDjQueued).toBeUndefined()
+  })
+
+  // Under never, a copy rewritten where it is (a WAV losing foreign cue chunks re-encodes)
+  // is held only until its checks answer. Update registers no verification, so the library
+  // checks never answer, and unless the job settles the hold itself it stays pinned in
+  // Copias with nothing to ever drop it.
+  it('settles the original held under never once the retagged copy checks out', async () => {
+    const entry: TrashEntry = {
+      id: 'held',
+      name: 'x',
+      originalPath: '/r/Song.aif',
+      storedPath: '/nowhere/Song.aif',
+      bytes: 0,
+      trashedAt: 0,
+      reason: 'replaced',
+    }
+    const discarded = vi.fn(async () => {})
+    configureOriginalKeeper(
+      policyKeeper(
+        () => 'never',
+        async () => entry,
+      ),
+    )
+    configureBackupDiscarder(discarded)
+    const deps = makeDeps({
+      convertAudio: vi.fn<ProcessTrackDeps['convertAudio']>(async (input, output) => {
+        await keepOriginal(input, 'replaced', output, { reencodes: true, untilChecked: true })
+        return { normalizeSkipped: false, written }
+      }),
+      snapshotLibraries: vi.fn<NonNullable<ProcessTrackDeps['snapshotLibraries']>>(async () => ({
+        rekordbox: 'ambiguous',
+      })),
+      registerVerification: vi.fn(),
+    })
+    try {
+      await runProcessTrack(copy(), deps)
+    } finally {
+      configureOriginalKeeper(null)
+      configureBackupDiscarder(null)
+    }
+
+    expect(deps.registerVerification).not.toHaveBeenCalled()
+    expect(discarded).toHaveBeenCalledWith(entry)
+  })
+
+  it('reports a tags-only write for a library copy update', async () => {
+    const deps = makeDeps()
+    const result = await runProcessTrack(copy(), deps)
+
+    expect(result.tagsOnly).toBe(true)
+    expect(deps.sendProgress).toHaveBeenCalledWith('tags')
+  })
+
+  // Update promises the copy keeps its audio: the programs' cues, grids and analysis
+  // were made on those samples, so no setting or job field may reprocess them.
+  it('keeps the audio of the copy whatever processing the job and settings ask for', async () => {
+    const deps = makeDeps({
+      settings: settings({
+        normalize: { mode: 'loudness', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+        declick: { mode: 'strong', noise: 'medium' },
+      }),
+    })
+    const result = await runProcessTrack(
+      copy({
+        normalize: { mode: 'peak', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+        declick: { mode: 'standard', noise: 'soft' },
+        trim: { startSec: 1, endSec: 2 },
+      }),
+      deps,
+    )
+
+    const call = vi.mocked(deps.convertAudio).mock.calls[0]
+    expect(call[5]).toBeUndefined()
+    expect(call[9]).toBeUndefined()
+    expect(call[10]).toBeUndefined()
+    expect(call[15]).toBe(true)
+    expect(call[16]).toBe(true)
+    expect(result.tagsOnly).toBe(true)
+  })
+
+  it('asks the conversion to keep the audio only for a library copy', async () => {
+    const deps = makeDeps()
+    await runProcessTrack(job({ inputPath: '/in/song.aiff', format: 'aiff' }), deps)
+
+    expect(vi.mocked(deps.convertAudio).mock.calls[0][16]).toBeUndefined()
+  })
+
+  it('refuses to retag a copy in another format instead of converting it', async () => {
+    const deps = makeDeps()
+    await expect(runProcessTrack(copy({ format: 'wav' }), deps)).rejects.toThrow(
+      'libraryCopyAudioWouldChange',
+    )
+    expect(deps.convertAudio).not.toHaveBeenCalled()
+    expect(deps.reservePath).not.toHaveBeenCalled()
+  })
+
+  // The job carries the open row's id, but the checked file is the library copy: its
+  // verification would land on the row of a file Update never touched.
+  it('registers no verification for the copy, while a conversion still does', async () => {
+    const registerVerification = vi.fn<NonNullable<ProcessTrackDeps['registerVerification']>>()
+    await runProcessTrack(copy(), makeDeps({ registerVerification }))
+    expect(registerVerification).not.toHaveBeenCalled()
+
+    await runProcessTrack(job(), makeDeps({ registerVerification }))
+    expect(registerVerification).toHaveBeenCalledOnce()
+  })
+})
+
 describe('runProcessTrack — in-place rewrite', () => {
   // The 16th argument tells convertAudio the output is the source's own audio rewritten,
   // so the DJ's Traktor cue offset, already in its cues, is not applied a second time. A

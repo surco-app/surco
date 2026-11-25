@@ -5,6 +5,9 @@
 // from the renderer as real tracks: the file picker's results, expanded drops, files
 // opened through the OS, and conversion outputs (an in-place export renames the
 // source, so the track then plays the new path). Anything else the handler refuses.
+// It also grants the tracks of the DJ program playlists and collections Surco read and the
+// Apple Music entry locations it looked up, because the editor plays, compares and updates
+// the library copies it found there.
 
 export interface MediaAccess {
   allow(path: string): void
