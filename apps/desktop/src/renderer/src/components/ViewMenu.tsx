@@ -71,7 +71,7 @@ export function ViewMenu({
             onClose()
             return
           }
-          const items = menuItems(menuRef.current, '[role="menuitemcheckbox"]')
+          const items = menuItems(menuRef.current, '[role^="menuitem"]')
           const next = menuStep(
             e.key,
             items.indexOf(document.activeElement as HTMLElement),
