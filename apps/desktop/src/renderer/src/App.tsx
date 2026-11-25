@@ -223,7 +223,7 @@ import { fillMeasuredPatches } from './lib/fillMeasured'
 import { gridNote } from './lib/gridNote'
 import { pushImportNotice } from './lib/importNotices'
 import { mainErrorMessage } from './lib/ipcError'
-import { columnOf, cycleRegion, FOCUSABLE, isTypingTarget, nextColumn } from './lib/keymap'
+import { columnOf, cycleRegion, FOCUSABLE, nextColumn, ownsKeystroke } from './lib/keymap'
 import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import type { LibraryCopyRef } from './lib/libraryCopy'
 import { librarySourceOf } from './lib/librarySource'
@@ -1469,7 +1469,7 @@ export default function App(): React.JSX.Element {
     // the user made while a slow folder was still being walked. The first row addPaths
     // opens on an empty list is the add's own doing and does not count as one.
     const typingInEditor =
-      isTypingTarget(document.activeElement) && columnOf(document.activeElement) !== 'list'
+      ownsKeystroke(document.activeElement) && columnOf(document.activeElement) !== 'list'
     if (added.length === 0 || typingInEditor || tracksFilterActive) return
     const fresh = new Set(added)
     setSelection((current) => {
@@ -4647,7 +4647,7 @@ export default function App(): React.JSX.Element {
     // restores it, and Escape must stop there — falling through would ALSO
     // clear the selection, unmounting the editor mid-review.
     if (maximized !== null) return
-    if (isTypingTarget(document.activeElement)) return
+    if (ownsKeystroke(document.activeElement)) return
     if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
 

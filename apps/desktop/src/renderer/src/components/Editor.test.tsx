@@ -5209,6 +5209,27 @@ describe('Editor track preselection', () => {
     expect(box).toHaveFocus()
   })
 
+  // A ticked checkbox keeps the focus too, as it did before ⌘Z was let through it: the next
+  // Space would tick or untick it, not land in the title.
+  it('leaves the focus on a checkbox when a confident match applies itself', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    await loadTracklist({ autoOpens: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(box).toHaveFocus()
+    box.remove()
+  })
+
   it('records the track, cover included, before a confident match applies itself, so ⌘Z can take back a write nobody clicked', async () => {
     withDiscogs()
     const { onChange, onRecordUndo } = renderEditor(

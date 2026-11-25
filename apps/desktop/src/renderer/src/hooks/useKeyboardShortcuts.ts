@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import type { Chord } from '../../../shared/shortcuts'
 import { type Command, runCommand } from '../lib/commands'
-import { activeScope, isTypingTarget, keyToCommandId, pressesOnSpace } from '../lib/keymap'
+import { activeScope, keyToCommandId, ownsKeystroke, pressesOnSpace } from '../lib/keymap'
 import { isClaimable, runKeyClaim } from '../lib/spaceClaim'
 import { useLatest } from './useLatest'
 
@@ -61,12 +61,7 @@ export function useKeyboardShortcuts(params: Params): void {
         return
       }
       if (e.key === ' ' && pressesOnSpace(document.activeElement)) return
-      // A checkbox takes no typing, so ⌘Z and the other modifier shortcuts reach it, but its
-      // bare keys stay with it: the playlists tree moves its focus between row checkboxes,
-      // and k or End there must not move the list selection behind the popover.
-      const bareOnCheckbox =
-        !e.metaKey && !e.ctrlKey && !!document.activeElement?.matches?.('input[type="checkbox"]')
-      const typing = isTypingTarget(document.activeElement) || bareOnCheckbox
+      const typing = ownsKeystroke(document.activeElement, e)
       const id = keyToCommandId(e, typing, p.bindings, p.isMac, activeScope(document.activeElement))
       if (!id) return
       // A section that owns a key while it is open answers it here, before the global

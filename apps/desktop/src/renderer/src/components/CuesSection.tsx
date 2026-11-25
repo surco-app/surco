@@ -131,7 +131,7 @@ import { type TwinPlan, twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
-import { isTypingTarget } from '../lib/keymap'
+import { ownsKeystroke } from '../lib/keymap'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
@@ -1106,7 +1106,7 @@ function Editing({
     if (maximized) {
       const target = e.target as HTMLElement
       if (
-        isTypingTarget(target) ||
+        ownsKeystroke(target, e) ||
         target.closest('[aria-haspopup="listbox"]') ||
         target.closest('[role="menu"]')
       )
@@ -1118,7 +1118,7 @@ function Editing({
       return
     }
     const pressed = e.target as HTMLElement
-    if (e.key === 'Enter' && !isTypingTarget(pressed) && !pressed.closest('button')) {
+    if (e.key === 'Enter' && !ownsKeystroke(pressed, e) && !pressed.closest('button')) {
       e.preventDefault()
       if (proposals.length > 0) acceptProposals()
       else markHere()
@@ -1808,10 +1808,7 @@ function Editing({
     </div>
   )
   const header = (
-    <div
-      data-testid="cues-header"
-      className="flex shrink-0 items-center gap-3 pb-1"
-    >
+    <div data-testid="cues-header" className="flex shrink-0 items-center gap-3 pb-1">
       {track?.cover ? (
         <img
           data-testid="cues-cover"

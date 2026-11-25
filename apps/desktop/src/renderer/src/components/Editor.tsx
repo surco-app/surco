@@ -97,7 +97,7 @@ import { exportButtonLabel } from '../lib/exportLabel'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { isTypingTarget } from '../lib/keymap'
+import { ownsKeystroke } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
 import { libraryMembership, librarySourceOf } from '../lib/librarySource'
 import {
@@ -1089,7 +1089,7 @@ export const Editor = memo(function Editor({
     ) {
       autoAppliedRelease.current = release.id
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
-      void selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
+      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement))
     }
   }, [
     autoMatch,

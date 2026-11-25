@@ -2207,6 +2207,21 @@ describe('App sidebar divider', () => {
     expect(screen.getAllByRole('separator').length).toBeGreaterThan(0)
   })
 
+  // A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Escape
+  // there must not clear the selection and unmount the editor around it.
+  it('keeps the selection on Escape while a checkbox holds the focus', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Escape' })
+    box.remove()
+    await act(async () => {})
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
+  })
+
   it('asks to pick a track, not to drop files, beside a loaded list with nothing selected, and a click there opens no file dialog', async () => {
     setApi({ getPathForFile: vi.fn(() => '/music/c.wav') })
     await renderApp()
@@ -10045,6 +10060,44 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
     await waitFor(() => expect(bravo).toHaveAttribute('aria-selected', 'true'))
+  })
+
+  // A checkbox in the editor holding the focus counts as the DJ at work there, as it did
+  // before ⌘Z was let through it: the add does not pull the editor to the new track.
+  it('keeps the selection when files arrive while a checkbox in the editor holds the focus', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/bravo.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const selectedBefore = screen
+      .getAllByTestId('track-row')
+      .filter((r) => r.getAttribute('aria-selected') === 'true')
+      .map((r) => r.textContent)
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await act(async () => {})
+    const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
+    expect(bravo).toHaveAttribute('aria-selected', 'false')
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual(selectedBefore)
+    box.remove()
   })
 
   // Dropping another version of the tune being searched for, to compare them, is a reason to

@@ -12,6 +12,7 @@ import {
   moveIndex,
   nextColumn,
   nextRegion,
+  ownsKeystroke,
   pageSize,
   regionOf,
 } from './keymap'
@@ -147,6 +148,33 @@ describe('keyToCommandId', () => {
 
   it('returns null for unmapped keys', () => {
     expect(press(key('x'), false)).toBeNull()
+  })
+})
+
+// A checkbox takes no typing, so ⌘Z right after a tick reaches the app, but every bare key
+// stays with it as before: the playlists tree moves its focus between row checkboxes, and
+// Escape or Enter there must not clear the list or mark a cue behind it.
+describe('ownsKeystroke', () => {
+  function box(): HTMLInputElement {
+    const input = document.createElement('input')
+    input.type = 'checkbox'
+    return input
+  }
+
+  it('keeps bare keys, and focus with no key at all, with a focused checkbox', () => {
+    expect(ownsKeystroke(box(), { metaKey: false, ctrlKey: false })).toBe(true)
+    expect(ownsKeystroke(box())).toBe(true)
+  })
+
+  it('lets ⌘ and Ctrl shortcuts through a focused checkbox', () => {
+    expect(ownsKeystroke(box(), { metaKey: true, ctrlKey: false })).toBe(false)
+    expect(ownsKeystroke(box(), { metaKey: false, ctrlKey: true })).toBe(false)
+  })
+
+  it('still keeps every key with a text field and none with a button', () => {
+    const field = document.createElement('input')
+    expect(ownsKeystroke(field, { metaKey: true, ctrlKey: false })).toBe(true)
+    expect(ownsKeystroke(document.createElement('button'))).toBe(false)
   })
 })
 

@@ -25,8 +25,8 @@ export function pageSize(viewport: number, rowStep: number): number {
 // Whether the focused element owns the keystroke, so the global shortcuts keep
 // their hands off it. Beyond text fields this includes <select> (its own arrow
 // and space keys drive the options — e.g. the album-match dropdown) and any
-// contenteditable surface. A checkbox takes no typing, so the shortcuts pass through it
-// (its Space is kept by pressesOnSpace); a radio stays, its arrows move the choice.
+// contenteditable surface. A checkbox takes no typing, so it is not one; which of its keys
+// reach the app is ownsKeystroke's call. A radio stays, its arrows move the choice.
 export function isTypingTarget(
   el: { tagName: string; isContentEditable?: boolean; type?: string } | null,
 ): boolean {
@@ -37,6 +37,18 @@ export function isTypingTarget(
     el.tagName === 'SELECT' ||
     el.isContentEditable === true
   )
+}
+
+// Whether the focused element keeps this key, or the focus with no key at all, from the app.
+// A checkbox takes no typing, so ⌘ and Ctrl shortcuts pass through it (⌘Z right after a
+// tick), but every bare key stays with it as it always did: the playlists tree moves its
+// focus between row checkboxes, and k, Escape or Enter there must not act behind it.
+export function ownsKeystroke(
+  el: Element | null,
+  e?: { metaKey?: boolean; ctrlKey?: boolean },
+): boolean {
+  if (isTypingTarget(el)) return true
+  return !!el?.matches?.('input[type="checkbox"]') && !e?.metaKey && !e?.ctrlKey
 }
 
 // Space is how the keyboard presses a button, so a button the user tabbed to keeps it.
