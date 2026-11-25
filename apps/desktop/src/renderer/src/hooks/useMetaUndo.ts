@@ -175,6 +175,13 @@ export function useMetaUndo(
         if (!s) {
           s = { id: t.id, cover, before: fieldsOf(t, cover), after: {} }
           fresh.push(s)
+        } else if (cover && !s.cover) {
+          // A step that began without the artwork takes it on from here: nothing in the group
+          // touched it before, so the cover the track shows now is the one to bring back.
+          const art = pick(fieldsOf(t, true), ['coverUrl', 'coverPath', 'coverPicked'])
+          s.cover = true
+          s.before = { ...s.before, ...art }
+          if (s.pending) s.pending = { ...s.pending, ...art }
         }
         s.pending ??= fieldsOf(t, s.cover)
         unsettled.current.push(s)

@@ -7343,7 +7343,10 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
       expect(filledPatches()[0].meta).toMatchObject(copyTags)
-      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], {
+        cover: false,
+        group: expect.any(String),
+      })
     })
 
     // 95 s here and 30 s in rekordbox: another edit, whose album or genre are not this file's,
@@ -7376,7 +7379,7 @@ describe('Editor Apple Music library section', () => {
           copyPlaylistsFilled: ['rekordbox'],
         }),
       )
-      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'])
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { group: expect.any(String) })
       expect(
         (api.dj as { editPlaylist: ReturnType<typeof vi.fn> }).editPlaylist,
       ).not.toHaveBeenCalled()
@@ -7398,6 +7401,27 @@ describe('Editor Apple Music library section', () => {
       expect(staged()).toEqual([])
       act(() => seedEditorSections([{ id: 'form', open: true }]))
       await waitFor(() => expect(staged()).toHaveLength(1))
+    })
+
+    // Opening the track lent the copy's grouping and staged its playlists: both are what the
+    // opening did, so a single ⌘Z takes them back together.
+    it('records the grouping and the playlists another version lends as one undo step', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      await waitFor(() =>
+        expect(
+          rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled),
+        ).toHaveLength(1),
+      )
+      const groups = rendered.onRecordUndo.mock.calls.map(([, opts]) => opts?.group)
+      expect(groups).toHaveLength(2)
+      expect(groups[0]).toEqual(expect.any(String))
+      expect(groups[1]).toBe(groups[0])
     })
 
     // A copy of the same recording is the track: the field acts on it and nothing is staged.
@@ -8592,7 +8616,7 @@ describe('Editor replacing a library copy', () => {
     expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
     const patch = onChange.mock.calls.find(([p]) => p.copyFilled)?.[0]
     expect(patch.meta).toMatchObject({ album: 'Your Love', genre: 'Euro House' })
-    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+    expect(onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false, group: expect.any(String) })
   })
 
   const lengthIndex = buildLibraryIndex([

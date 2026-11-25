@@ -345,6 +345,10 @@ interface Props {
 
 const NARROW_EDITOR_PX = 400
 
+// What a library copy lends on one opening of a track is one undo step, however many reads
+// it took to land; counted across mounts so the next opening starts a step of its own.
+let lendOpenings = 0
+
 // Counted across every mount, not per editor: the editor remounts per track, and a count
 // that started over could hand a field visited again the undo step of its last visit.
 let fieldFocuses = 0
@@ -576,6 +580,7 @@ export const Editor = memo(function Editor({
     return () => window.removeEventListener('keydown', onKey)
   }, [maximized, setMaximized])
   const formOpen = sectionOpen.form
+  const [lendOpening] = useState(() => ++lendOpenings)
   const formBodyId = useId()
   const propertiesOpen = sectionOpen.properties
   const spectrumOpen = sectionOpen.quality
@@ -1985,13 +1990,14 @@ export const Editor = memo(function Editor({
     musicCopy && !musicHoldsFile && !item.musicPersistentId && fillPath === musicCopy.path
       ? musicCopy.music.persistentId
       : undefined
+  const lendGroup = `library-lend-${lendOpening}`
   useReplacedCopyFill({
     item,
     copyPath: fillPath,
     anotherVersion: !sameRecordingCopyPath,
     musicEntry: musicCopyEntry,
     onChange,
-    onRecordUndo,
+    onRecordUndo: (ids, opts) => onRecordUndo?.(ids, { ...opts, group: lendGroup }),
   })
   // Another version lends its playlists program by program, each judged by its own copies.
   // Only into a field the DJ can see: with the metadata folded the picks wait until it opens.
@@ -2009,7 +2015,7 @@ export const Editor = memo(function Editor({
             ),
           ),
     onChange,
-    onRecordUndo,
+    onRecordUndo: (ids) => onRecordUndo?.(ids, { group: lendGroup }),
   })
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.

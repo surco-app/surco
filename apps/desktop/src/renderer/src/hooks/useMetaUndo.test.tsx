@@ -437,6 +437,35 @@ describe('useMetaUndo', () => {
     })
   })
 
+  // Opening a track can stage its copy's playlists and then lend the copy's cover in one
+  // grouped step: one ⌘Z must take back both, the cover too, though the step began without it.
+  it('takes back the cover a later record in the same group joined to the step', () => {
+    const { result } = setup([
+      track('a', { grouping: '' }, { coverUrl: 'data:own', embeddedCover: 'data:own' }),
+    ])
+    act(() => {
+      result.current.record(result.current.tracks, { group: 'open-a' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, playlists: { rekordbox: { targets: [], base: [] } } })),
+      )
+    })
+    act(() => {
+      result.current.record(result.current.tracks, { cover: true, group: 'open-a' })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, grouping: 'Bases' }, coverUrl: 'data:copy' })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0]).toMatchObject({
+      meta: { grouping: '' },
+      coverUrl: 'data:own',
+    })
+    expect(result.current.tracks[0].playlists?.rekordbox).toBeUndefined()
+    expect(result.current.canUndo()).toBe(false)
+  })
+
   it('keeps a field typed between two presses of a grouped cover step when that step is undone', () => {
     const { result } = setup([track('a', { title: 'A' }, { coverUrl: 'data:own' })])
     const press = (coverUrl: string) =>
