@@ -19,13 +19,12 @@ import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
+import { formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
 import type {
@@ -91,7 +90,14 @@ import { configsDiffer } from '../lib/configsDiffer'
 import { copySentence } from '../lib/copySentence'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
-import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
+import {
+  DESTINATIONS,
+  type Destination,
+  exportDestination,
+  exportReadiness,
+  fromDestination,
+  toDestination,
+} from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
 import { exportButtonLabel } from '../lib/exportLabel'
@@ -1309,21 +1315,24 @@ export const Editor = memo(function Editor({
   // resolveOutputTarget actually does. Beside-original never edits in place (a
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.
-  const willEditInPlace =
-    !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
-  const inSourceFolder =
-    (picked.convertBesideOriginal && !picked.overwriteOriginal) ||
-    editsInPlace(format, item.inputPath, picked.overwriteOriginal)
-  // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
-  // quality-losing case worth a sharper warning before the user commits to it.
-  const lossyOverwrite =
-    picked.overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
-  const tagsOnlyExport =
-    !isMulti &&
-    tagsOnly(
-      formatMatchesInput(format, item.inputPath),
-      jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
-    )
+  const { willEditInPlace, inSourceFolder, lossyOverwrite, tagsOnlyExport, batchDestination } =
+    exportDestination({
+      item,
+      isMulti,
+      picked,
+      format,
+      normalizeCfg,
+      declickCfg,
+      normalize,
+      declick,
+      destinationPicked,
+      destination,
+      addToAppleMusic,
+      formatPick,
+      overwriteOriginal,
+      convertBesideOriginal,
+      macOS: isMacOS(),
+    })
   // What a batch over the selection will really do, resolved per track the way the run
   // resolves it, so the destination shown, the count and the verb all describe the run.
   const batchPick = useMemo<BatchPick>(
@@ -1351,14 +1360,6 @@ export const Editor = memo(function Editor({
       addToAppleMusic,
     ],
   )
-  const batchDestination = destinationPicked
-    ? destination
-    : toDestination(
-        addToAppleMusic && isMacOS(),
-        formatPick === 'flac',
-        overwriteOriginal,
-        convertBesideOriginal,
-      )
   const batchReady = useMemo(
     () =>
       (multiGate?.ready ?? []).filter(
@@ -1385,13 +1386,6 @@ export const Editor = memo(function Editor({
     () => offersSourceFormat(multiTracks, formatPick),
     [multiTracks, formatPick],
   )
-  const addsToMusic =
-    !isMulti &&
-    picked.addToAppleMusic &&
-    willEditInPlace &&
-    formatMatchesInput(format, item.inputPath) &&
-    inLibrary === 'no' &&
-    !item.fromAppleMusic
   // A selection adds to Music whenever the batch lands there and any of its tracks is
   // missing from the library. It reads each track as the open track's badge does except for
   // the Discogs-proven step, which needs that track's open release; a track only Discogs
@@ -1438,13 +1432,20 @@ export const Editor = memo(function Editor({
       filenameFormat,
     ],
   )
-  const upToDate = isMulti
-    ? !batchAddsToMusic && !incomplete && batchTagsOnly && selectionHeld
-    : !addsToMusic &&
-      !incomplete &&
-      willEditInPlace &&
-      tagsOnlyExport &&
-      fileHoldsTrack(item, defaultOutputName)
+  const { addsToMusic, upToDate } = exportReadiness({
+    item,
+    isMulti,
+    picked,
+    format,
+    inLibrary,
+    willEditInPlace,
+    tagsOnlyExport,
+    defaultOutputName,
+    incomplete,
+    batchAddsToMusic,
+    batchTagsOnly,
+    selectionHeld,
+  })
 
   // Everything typed into one field while it holds the focus is one ⌘Z step, the same step
   // whether the field writes one track or the whole selection: the Field commits on every
