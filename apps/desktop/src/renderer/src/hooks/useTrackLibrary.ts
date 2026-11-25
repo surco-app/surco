@@ -14,7 +14,7 @@ import type {
   SourcePreview,
   TrackMetadata,
 } from '../../../shared/types'
-import { fillFromAppleMusic } from '../lib/appleMusicFill'
+import { appleMusicFillPatch, fillFromAppleMusic } from '../lib/appleMusicFill'
 import { createPriorityLimit } from '../lib/concurrency'
 import { trackSignature, withSignatureCover, withSignatureMeta } from '../lib/dirty'
 import { parseFileName } from '../lib/filename'
@@ -1122,23 +1122,27 @@ export function useTrackLibrary({
     // takes the identity a fresh row gets. Without it a Discogs retitle broke the tag match
     // and the button offered to add a song Music already held. By input path only: a row
     // whose output Music lists already carries the persistent ID its add returned.
+    // It takes the fill a fresh row gets on import too: the editor's own ask to Music skips
+    // a row marked as Music's. A row still reading its tags, cleared, or already filled is
+    // left as the editor's ask would leave it.
     if (source === 'appleMusic') {
-      const musicId = new Map(
-        entries.flatMap((e) =>
-          e.path && !e.separator ? [[same(e.path), e.musicPersistentId] as const] : [],
-        ),
+      const entryOf = new Map(
+        entries.flatMap((e) => (e.path && !e.separator ? [[same(e.path), e] as const] : [])),
       )
       const unstamped = new Set(
         tracksRef.current
-          .filter((t) => musicId.has(same(t.inputPath)) && !t.fromAppleMusic)
+          .filter((t) => entryOf.has(same(t.inputPath)) && !t.fromAppleMusic)
           .map((t) => t.id),
       )
       if (unstamped.size > 0)
         mapTracks((t) => {
           if (!unstamped.has(t.id)) return t
-          const id = musicId.get(same(t.inputPath))
+          const entry = entryOf.get(same(t.inputPath))
+          const id = entry?.musicPersistentId
+          const fills = entry && !t.loadingMeta && !t.metaCleared && !t.appleMusicFilled
           return {
             ...t,
+            ...(fills && appleMusicFillPatch(t, entry.meta)),
             fromAppleMusic: true,
             ...(id && !t.musicPersistentId && { musicPersistentId: id }),
           }

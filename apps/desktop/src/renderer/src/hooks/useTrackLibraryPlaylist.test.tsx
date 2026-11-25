@@ -505,6 +505,31 @@ describe('opening a source playlist', () => {
     })
   })
 
+  // The editor's own ask to Music skips a row stamped as Music's, since a fresh one was
+  // filled on import: the stamp has to bring the fill too, or the grouping a WAV cannot
+  // carry never shows.
+  it('fills a row loaded before its Music playlist opened with what Music holds and the file does not', async () => {
+    const { result } = setup()
+    await act(async () => {
+      await result.current.addPaths(['/m/a.wav'])
+    })
+    await waitFor(() => expect(result.current.tracks[0]?.loadingMeta).toBeFalsy())
+    await act(async () => {
+      await result.current.openSourcePlaylist(
+        [
+          {
+            path: '/m/a.wav',
+            separator: false,
+            meta: { grouping: 'Cantaditas' },
+            musicPersistentId: 'PID0000000000001',
+          },
+        ],
+        'appleMusic',
+      )
+    })
+    expect(result.current.tracks[0].meta.grouping).toBe('Cantaditas')
+  })
+
   it('expands the Music paths like any other load, so the same filters apply', async () => {
     const { result, expandPaths } = setup()
     await act(async () => {
