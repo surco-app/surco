@@ -12,6 +12,7 @@ const netzwerkWav: CopyFacts = {
   peakCount: 1978,
   crestDb: 10.7,
   integratedLufs: -10,
+  durationSec: 300,
 }
 const netzwerkAif: CopyFacts = {
   ext: 'aif',
@@ -21,6 +22,7 @@ const netzwerkAif: CopyFacts = {
   peakCount: 2,
   crestDb: 13.2,
   integratedLufs: -12.2,
+  durationSec: 300,
 }
 
 describe('compareCopies', () => {
@@ -276,8 +278,8 @@ describe('compareCopies', () => {
     })
 
     it('never calls copies of unknown length another version', () => {
-      const a = { ...netzwerkAif, fingerprint: 'p' }
-      const b = { ...netzwerkAif, fingerprint: 'q' }
+      const a = { ...netzwerkAif, fingerprint: 'p', durationSec: undefined }
+      const b = { ...netzwerkAif, fingerprint: 'q', durationSec: undefined }
       expect(compareCopies(a, b, searched(0.1))).toEqual({ winner: 'tie' })
     })
   })
@@ -289,6 +291,18 @@ describe('compareCopies', () => {
       expect(compareCopies(netzwerkAif, { ...netzwerkAif, fingerprint: 'q' }, sameMaster)).toEqual({
         winner: 'tie',
         sameMaster: true,
+      })
+    })
+
+    // The library counts a copy as the track only with both lengths known, so the row must not
+    // say «It's the same» of a copy Surco then neither fills from nor updates.
+    it('leaves one master unmarked while either length is unknown', () => {
+      const known = { ...netzwerkAif, fingerprint: 'q' }
+      const unknown = { ...netzwerkAif, fingerprint: 'r', durationSec: undefined }
+      expect(compareCopies(known, unknown, sameMaster)).toEqual({ winner: 'tie' })
+      expect(compareCopies(unknown, known, sameMaster)).toEqual({ winner: 'tie' })
+      expect(compareCopies(unknown, { ...unknown, fingerprint: 's' }, sameMaster)).toEqual({
+        winner: 'tie',
       })
     })
 

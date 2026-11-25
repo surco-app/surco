@@ -199,17 +199,19 @@ export function compareCopies(
   const verdict = weighCopies(a, b, probe, margins)
   const across = gap === 'lined' ? silenceAcrossGap(a, b) : null
   if (across) return { ...verdict, sameMasterAcrossGap: across }
-  // One master the library still takes for another edit, by its length, is not shown as the
-  // same track beside that: «It's the same» needs what the fill needs.
-  if (verdict.winner === 'tie' && verdict.sameMaster && lengthsApart(a, b)) return { winner: 'tie' }
+  // «It's the same» needs what the fill needs: both lengths known and within a drift, or the
+  // confirmation above. Otherwise the library takes the copy for another edit, or for no copy
+  // at all while a length is unknown, and the row must not say the same track beside that.
+  if (verdict.winner === 'tie' && verdict.sameMaster && !lengthsAgree(a, b))
+    return { winner: 'tie' }
   return verdict
 }
 
-function lengthsApart(a: CopyFacts, b: CopyFacts): boolean {
+function lengthsAgree(a: CopyFacts, b: CopyFacts): boolean {
   return (
     a.durationSec != null &&
     b.durationSec != null &&
-    Math.abs(a.durationSec - b.durationSec) > VERSION_GAP_SEC
+    Math.abs(a.durationSec - b.durationSec) <= VERSION_GAP_SEC
   )
 }
 

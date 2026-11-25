@@ -598,8 +598,11 @@ describe('compareCopies on the 26 measured pairs', () => {
     })
   })
 
+  // The CSV holds no lengths. Each pair is two copies of one track at one length, which
+  // «It's the same» needs as the library does, so both get the same one here.
   it.each(MEASURED)('$cls $label', ({ a, b, pair, expected }) => {
-    expect(compareCopies(a, b, pair)).toEqual(expected)
+    const length = { durationSec: 300 }
+    expect(compareCopies({ ...a, ...length }, { ...b, ...length }, pair)).toEqual(expected)
   })
 
   // S-drift (PG2, one master drifting against itself, 0.067), B (Nacho Division, one master

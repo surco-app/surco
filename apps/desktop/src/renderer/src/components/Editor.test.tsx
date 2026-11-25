@@ -6867,7 +6867,12 @@ describe('Editor Apple Music library section', () => {
   // the same quality, so the row says so as an identical copy does, and still opens the
   // figures, which are not byte for byte the same, so the reader can weigh them.
   it('says two copies of one master are the same and opens their figures', async () => {
-    renderWithLibraryCopy({ here: aifLoudness, library: aifLoudness })
+    renderWithLibraryCopy({
+      here: aifLoudness,
+      library: aifLoudness,
+      hereDuration: 372,
+      libraryDuration: 372,
+    })
     await waitFor(() =>
       expect(screen.getByTestId('library-verdict')).toHaveAccessibleName("It's the same"),
     )
@@ -6875,6 +6880,15 @@ describe('Editor Apple Music library section', () => {
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-row-crest')).toBeInTheDocument()
     expect(screen.queryByTestId('copy-row-duration')).toBeNull()
+  })
+
+  // Without the copy's length Surco neither fills from it nor updates it, so the row does not
+  // call it the same track either.
+  it('says one master is only the same quality while the copy length is unknown', async () => {
+    renderWithLibraryCopy({ here: aifLoudness, library: aifLoudness, hereDuration: 372 })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'even'),
+    )
   })
 
   // The comparison is with the library's own copy of this track, so it only shows when there
