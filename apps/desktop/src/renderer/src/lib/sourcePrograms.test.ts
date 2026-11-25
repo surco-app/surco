@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from 'vitest'
 import { PROGRAM_TABLE } from '../../../../../web/src/lib/programTable'
 import type { Api } from '../../../preload/api'
 import { DJ_PROGRAMS, type DjProgram, RAIL_PROGRAMS } from '../../../shared/djProgram'
-import type { RekordboxPlaylistEdit, SourceNode } from '../../../shared/types'
+import type { RekordboxPlaylistEdit, Settings, SourceNode } from '../../../shared/types'
 import { djReads, installApi } from '../test/api'
-import { SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
+import { canEdit, openProgramOf, SOURCE_PROGRAMS, SOURCE_READ } from './sourcePrograms'
 
 describe('SOURCE_READ reads each DJ program’s tab through window.api.dj, naming the program', () => {
   it.each([
@@ -252,4 +252,91 @@ describe('the features page table says where pasting a tracklist and the automat
       expect(cellOf('session', program)?.yes).toBe(can('create') && can('add'))
     },
   )
+})
+
+describe('canEdit', () => {
+  // Engine DJ's database has no playlist order, no folders and no rename Surco can write
+  // safely: offering a move or a rename there would hand the DJ an edit that never lands,
+  // or one that breaks the library Engine reads on the decks.
+  it.each(['move', 'rename', 'moveNode', 'remove', 'insertSeparator'] as const)(
+    'refuses %s in Engine DJ, which only takes creating, adding and deleting',
+    (kind) => {
+      expect(canEdit(SOURCE_PROGRAMS.engine.edit, kind)).toBe(false)
+    },
+  )
+
+  it.each(['create', 'add', 'delete'] as const)('lets Engine DJ take %s', (kind) => {
+    expect(canEdit(SOURCE_PROGRAMS.engine.edit, kind)).toBe(true)
+  })
+
+  // rekordbox, Traktor, Serato and VirtualDJ name no kinds: every organising action the
+  // tree and the list offer is one their writer knows.
+  it.each(['rekordbox', 'traktor', 'serato', 'virtualdj'] as const)(
+    'lets %s take every edit',
+    (program) => {
+      expect(canEdit(SOURCE_PROGRAMS[program].edit, 'move')).toBe(true)
+      expect(canEdit(SOURCE_PROGRAMS[program].edit, 'rename')).toBe(true)
+    },
+  )
+})
+
+describe('openProgramOf', () => {
+  const stored = (over: Partial<Settings>): Settings => over as Settings
+  const open = (source: Parameters<typeof openProgramOf>[0]['browser']['source']) =>
+    openProgramOf({ browser: { source }, settings: null })
+
+  // Apple Music is a source to read and tag, not a DJ program Surco organises: it must not
+  // reach the DJ edits, cue editors or USB export as if it were one.
+  it('opens no DJ program on the Apple Music tab nor on the files', () => {
+    expect(open('appleMusic').sourceProgram).toBeNull()
+    expect(open(null).sourceProgram).toBeNull()
+    expect(open('appleMusic').sourceEdit).toBeNull()
+    expect(open(null).sourceEdit).toBeNull()
+  })
+
+  it.each(['rekordbox', 'traktor', 'engine', 'serato', 'virtualdj'] as const)(
+    'opens %s with its own writer',
+    (program) => {
+      const opened = open(program)
+      expect(opened.sourceProgram).toBe(program)
+      expect(opened.sourceEdit).toBe(SOURCE_PROGRAMS[program].edit)
+    },
+  )
+
+  // Surco writes Traktor's playlists only once its collection is confirmed in Settings: the
+  // check of that collection is asked for there alone, so the other programs never wait on it.
+  it('asks whether Traktor can save only while Traktor is open', () => {
+    expect(open('traktor').checksTraktorCollection).toBe(true)
+    for (const source of [
+      'rekordbox',
+      'engine',
+      'serato',
+      'virtualdj',
+      'appleMusic',
+      null,
+    ] as const)
+      expect(open(source).checksTraktorCollection).toBe(false)
+  })
+
+  // The check is cached per collection file: a new path in Settings must ask again.
+  it('keys the Traktor check on the collection path, empty while there is none', () => {
+    expect(open('traktor').traktorNmlPath).toBe('')
+    expect(
+      openProgramOf({
+        browser: { source: 'traktor' },
+        settings: stored({ traktorNmlPath: '/m/collection.nml' }),
+      }).traktorNmlPath,
+    ).toBe('/m/collection.nml')
+  })
+
+  // Each tab remembers whether its results are folded; the files have their own tab.
+  it('reads the folded results of the open tab, unfolded until saved', () => {
+    expect(open('serato').resultsTab).toBe('serato')
+    expect(open(null).resultsTab).toBe('tracks')
+    expect(open('appleMusic').resultsTab).toBe('appleMusic')
+    expect(open('serato').resultsFolded).toBe(false)
+    const settings = stored({ foldedResults: { serato: true } })
+    expect(openProgramOf({ browser: { source: 'serato' }, settings }).resultsFolded).toBe(true)
+    expect(openProgramOf({ browser: { source: null }, settings }).resultsFolded).toBe(false)
+  })
 })

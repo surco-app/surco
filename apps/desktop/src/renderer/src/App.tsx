@@ -64,7 +64,6 @@ import type {
   PlaylistSource,
   PlaylistTrackRef,
   QueuedCreate,
-  RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
   ReviewedFileUpdate,
@@ -302,7 +301,9 @@ import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { hasShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import {
+  canEdit,
   isUsbProgram,
+  openProgramOf,
   SOURCE_PROGRAMS,
   SOURCE_READ,
   sourceCollectionOptions,
@@ -1077,22 +1078,22 @@ export default function App(): React.JSX.Element {
     },
     [store],
   )
-  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
-  // Settings, the only one Surco writes to.
-  const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
-  const resultsTab = browser.source ?? 'tracks'
-  const resultsFolded = settings?.foldedResults?.[resultsTab] ?? false
+  const {
+    sourceProgram,
+    resultsTab,
+    resultsFolded,
+    sourceEdit,
+    traktorNmlPath,
+    checksTraktorCollection,
+  } = openProgramOf({ browser, settings })
   const foldResults = useStableCallback((folded: boolean): void =>
     saveSettings({ foldedResults: { ...settings?.foldedResults, [resultsTab]: folded } }),
   )
-  const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
-  const editCan = (kind: RekordboxPlaylistEdit['kind']): boolean =>
-    !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
   const traktorCanSave =
     useQuery({
-      queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
+      queryKey: ['traktor-can-save', traktorNmlPath],
       queryFn: () => window.api.traktorCanSave(),
-      enabled: sourceEdit?.gate === 'traktorCollection',
+      enabled: checksTraktorCollection,
     }).data === true
   const editableSource =
     sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
@@ -3997,8 +3998,8 @@ export default function App(): React.JSX.Element {
         })
     },
   )
-  const canRename = editCan('rename')
-  const canMoveNode = editCan('moveNode')
+  const canRename = canEdit(sourceEdit, 'rename')
+  const canMoveNode = canEdit(sourceEdit, 'moveNode')
   const noFolders = sourceEdit?.folders === false
   const readsCollection = Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection)
   const treeEdit = useMemo(
@@ -4063,7 +4064,7 @@ export default function App(): React.JSX.Element {
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
   const removablePlaylist =
-    editableSource && crateOpen && editCan('remove') ? browser.playlist : null
+    editableSource && crateOpen && canEdit(sourceEdit, 'remove') ? browser.playlist : null
   const removeLabel =
     matchingOpen && browser.playlist
       ? tr('sources.menu.removeFrom', { name: browser.playlist.name })
@@ -4103,7 +4104,7 @@ export default function App(): React.JSX.Element {
   // Reordering only means something in the playlist's own order with nothing hidden: under
   // another sort, a search or a filter, a drop would land among rows the user cannot see.
   const reorderEnabled =
-    crateOpen && sortBy === 'import' && !search && !filterActive && editCan('move')
+    crateOpen && sortBy === 'import' && !search && !filterActive && canEdit(sourceEdit, 'move')
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
@@ -4135,8 +4136,8 @@ export default function App(): React.JSX.Element {
           !h.node.smart &&
           fixed?.(h.node) !== 'locked',
       ),
-      openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
-      canInsertSeparator: browser.canInsertSeparator && editCan('insertSeparator'),
+      openName: crateOpen && playlist && canEdit(sourceEdit, 'remove') ? playlist.name : null,
+      canInsertSeparator: browser.canInsertSeparator && canEdit(sourceEdit, 'insertSeparator'),
       onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
         const beforeLinkId = playlistScope?.linkOf.get(track.id)
@@ -4150,7 +4151,7 @@ export default function App(): React.JSX.Element {
       // one "above" is neither on screen nor above the row as shown.
       onRemoveSeparatorAbove:
         sortBy === 'import' &&
-        editCan('remove') &&
+        canEdit(sourceEdit, 'remove') &&
         playlistScope?.separatorBefore.get(track.id)?.length
           ? () => {
               const above = playlistScope.separatorBefore.get(track.id)
@@ -5281,7 +5282,7 @@ export default function App(): React.JSX.Element {
                               positions={listPositions}
                               reorder={reorder}
                               onReorderBlocked={
-                                crateOpen && editCan('move') && !reorderEnabled
+                                crateOpen && canEdit(sourceEdit, 'move') && !reorderEnabled
                                   ? tellReorderBlocked
                                   : undefined
                               }

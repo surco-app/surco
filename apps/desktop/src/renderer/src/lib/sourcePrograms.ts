@@ -3,12 +3,15 @@ import type { DjProgram } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
+  PlaylistSource,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  Settings,
   SourceNode,
   SourcePlaylistEntry,
   UsbProgram,
 } from '../../../shared/types'
+import type { SourceBrowser } from '../hooks/useSourceBrowser'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -190,4 +193,41 @@ export const SOURCE_PROGRAMS: {
 
 export function isUsbProgram(program: DjProgram): program is UsbProgram {
   return SOURCE_PROGRAMS[program].usb
+}
+
+export function canEdit(
+  sourceEdit: SourceEdit | null,
+  kind: RekordboxPlaylistEdit['kind'],
+): boolean {
+  return !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
+}
+
+export interface OpenProgramContext {
+  browser: Pick<SourceBrowser, 'source'>
+  settings: Settings | null
+}
+
+export interface OpenProgram {
+  sourceProgram: DjProgram | null
+  resultsTab: PlaylistSource | 'tracks'
+  resultsFolded: boolean
+  sourceEdit: SourceEdit | null
+  traktorNmlPath: string
+  checksTraktorCollection: boolean
+}
+
+export function openProgramOf({ browser, settings }: OpenProgramContext): OpenProgram {
+  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
+  // Settings, the only one Surco writes to.
+  const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
+  const resultsTab = browser.source ?? 'tracks'
+  const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
+  return {
+    sourceProgram,
+    resultsTab,
+    resultsFolded: settings?.foldedResults?.[resultsTab] ?? false,
+    sourceEdit,
+    traktorNmlPath: settings?.traktorNmlPath ?? '',
+    checksTraktorCollection: sourceEdit?.gate === 'traktorCollection',
+  }
 }
