@@ -23,6 +23,18 @@
       {
         "text": "Quando os arquivos de uma playlist não estão mais no disco, a lista avisa e conta quantos faltam. Um arquivo movido ou renomeado não aparece mais como um que não pôde ser lido.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Substitua uma faixa por outro master da mesma música e os cues agora também acompanham o áudio. Se o Surco não tiver certeza da batida, deixa os cues onde estavam. No rekordbox, eles se encaixam na nova grade quando a análise termina.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quando o Discogs pede para esperar, você vê na hora os resultados dos outros catálogos. O Surco volta a buscar no Discogs sozinho, com uma contagem regressiva que você pode pular com um clique.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "A aba Apple Music abre em “Adicionadas recentemente”, com o que você adicionou nos últimos 30 dias. E as playlists abrem muito mais rápido, mesmo com a sua música num NAS.",
+        "in": "1.44.1"
       }
     ]
   },

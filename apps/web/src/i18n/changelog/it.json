@@ -23,6 +23,18 @@
       {
         "text": "Se i file di una playlist non sono più sul disco, la lista lo dice e conta quanti ne mancano. Un file spostato o rinominato non appare più come illeggibile.",
         "in": "1.44.0"
+      },
+      {
+        "text": "Sostituisci un brano con un altro master dello stesso pezzo e ora anche i suoi cue si spostano con l’audio. Se Surco non è sicuro del battito, li lascia dov’erano. In rekordbox si agganciano alla nuova griglia quando l’analisi finisce.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quando Discogs ti chiede di aspettare, vedi subito i risultati degli altri cataloghi. Surco riprova su Discogs da solo, con un conto alla rovescia che puoi saltare con un clic.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "La scheda Apple Music si apre su «Aggiunti di recente», con quello che hai aggiunto negli ultimi 30 giorni. E le sue playlist si aprono molto più in fretta, anche se la tua musica sta su un NAS.",
+        "in": "1.44.1"
       }
     ]
   },
