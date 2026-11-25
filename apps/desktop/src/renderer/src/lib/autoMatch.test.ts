@@ -15,10 +15,11 @@ import {
   type ProbeMatch,
   searchHintsFor,
   shouldAutoApplyMatch,
+  suggestionOf,
   tracksToAutoMatch,
 } from './autoMatch'
 import { coverSourceOf } from './coverSource'
-import { confidenceTier } from './release'
+import { bestMatch, confidenceTier } from './release'
 
 function release(id: number, over: Partial<Release> = {}): Release {
   return { provider: 'discogs', id, title: 'Album', artists: [], tracklist: [], ...over }
@@ -1268,5 +1269,62 @@ describe('isHandEdit', () => {
   it('does not count a tag no release overwrites', () => {
     expect(isHandEdit(track(), { bpm: '128', key: '8A' })).toBe(false)
     expect(isHandEdit(track(), { comment: 'warm up', grouping: 'Peak', mood: 'dark' })).toBe(false)
+  })
+})
+
+describe('suggestionOf', () => {
+  const rel = (tracklist: Release['tracklist']) =>
+    release(1, { artists: [{ name: 'Release Act' }], tracklist })
+  const open = (title: string, artist = 'Release Act'): TrackItem =>
+    ({ id: 't1', duration: 200, meta: { title, artist, trackNumber: '1' } }) as TrackItem
+  const suggest = (r: Release | null, item: TrackItem) =>
+    suggestionOf({
+      match: r ? bestMatch(r.tracklist, matchTargetOf(item)) : undefined,
+      release: r,
+      item,
+    })
+
+  // The library is keyed by the canonical spelling, so a trusted match lends its own
+  // artist and title to the lookup; the file's messier tag is never the one sent.
+  it('suggests the matched track with its own title and the artist of the release', () => {
+    const r = rel([{ ...HIGH, title: 'My Song' }])
+    const s = suggest(r, open('My Song'))
+    expect(s.matchTier).toBe('high')
+    expect(s.matchedTrack).toBe(r.tracklist[0])
+    expect(s.suggestedMeta).toEqual({ title: 'My Song', artist: 'Release Act' })
+  })
+
+  it('prefers the artists of the track over those of the release', () => {
+    const r = rel([{ ...HIGH, artists: [{ name: 'Track Act' }, { name: 'Guest' }] }])
+    expect(suggest(r, open('My Song')).suggestedMeta?.artist).toBe('Track Act, Guest')
+  })
+
+  it('keeps the tier of a plausible match but trusts it for nothing below it', () => {
+    const r = rel([LOW])
+    const s = suggest(r, open('My Different Tune Again'))
+    expect(s.matchTier).toBe('low')
+    expect(s.matchedTrack).toBeUndefined()
+    expect(s.suggestedMeta).toBeUndefined()
+  })
+
+  it('suggests nothing without a release or a match', () => {
+    expect(suggest(null, open('My Song'))).toEqual({
+      matchTier: undefined,
+      matchedTrack: undefined,
+      suggestedMeta: undefined,
+    })
+    expect(suggest(rel([]), open('My Song')).matchedTrack).toBeUndefined()
+  })
+
+  // suggestedMeta feeds effects keyed on its identity, which only change when the
+  // suggestion is rebuilt with the render: it must not be a cached object.
+  it('builds a new suggestedMeta on every call', () => {
+    const r = rel([HIGH])
+    const item = open('My Song')
+    const match = bestMatch(r.tracklist, matchTargetOf(item))
+    const a = suggestionOf({ match, release: r, item }).suggestedMeta
+    const b = suggestionOf({ match, release: r, item }).suggestedMeta
+    expect(a).toEqual(b)
+    expect(a).not.toBe(b)
   })
 })

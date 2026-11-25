@@ -9,13 +9,20 @@ import {
   resolveJobFormat,
 } from '../../../shared/format'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import { fromReadOnlyProgram, isFrom, keepsOwnFormat } from '../../../shared/trackOrigin'
-import type { CustomField, FormatSetting, OutputFormat } from '../../../shared/types'
+import {
+  fromReadOnlyProgram,
+  isFrom,
+  keepsOwnFormat,
+  READ_ONLY_BLOCKED,
+  readOnlyProgramsOf,
+} from '../../../shared/trackOrigin'
+import type { CustomField, FormatSetting, OutputFormat, TrackMetadata } from '../../../shared/types'
 import type { TrackItem } from '../types'
 import type { AppleMusicIndex } from './appleMusicLibrary'
 import { type Destination, fromDestination } from './destination'
 import { isDialStale, isStale } from './dirty'
-import { missingRequiredOf } from './fields'
+import { missingRequired, missingRequiredOf } from './fields'
+import { missingSummary } from './missingSummary'
 import { selectionReplaceMode } from './replaceSelection'
 
 // A track is convertible when it has not been processed yet (idle), a previous attempt
@@ -303,4 +310,58 @@ export function leavesListAfterBatch(track: TrackItem): boolean {
     !isStale(track) &&
     !isDialStale(track)
   )
+}
+
+export type ConvertReadinessContext = {
+  item: TrackItem
+  isMulti: boolean
+  resolvedMeta: TrackMetadata
+  requiredFields: string[]
+  multiGate: ConvertGate | null
+  againLeftOut: string | null
+  tr: TFunction
+  language: string
+}
+
+export type ConvertReadiness = {
+  firstMissing: string | undefined
+  incomplete: boolean
+  readOnlyReason: string[]
+  incompleteReason: string | undefined
+  otherSummary: string | undefined
+}
+
+export function convertReadiness({
+  item,
+  isMulti,
+  resolvedMeta,
+  requiredFields,
+  multiGate,
+  againLeftOut,
+  tr,
+  language,
+}: ConvertReadinessContext): ConvertReadiness {
+  const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
+  const readOnlyRows = blockedBy !== undefined
+  const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
+  const firstMissing = multiGate?.mixed ? undefined : (multiGate?.missing.fields ?? missing)[0]
+  const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
+  const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
+  const otherReason = missing.length
+    ? tr('editor.missingRequired', {
+        fields: new Intl.ListFormat(language, { type: 'conjunction' }).format(
+          missing.map((key) => tr(`fields.${key}`)),
+        ),
+      })
+    : undefined
+  const incompleteReason = isMulti
+    ? (againLeftOut ?? undefined)
+    : [...readOnlyReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
+  const otherSummary = missing.length
+    ? missingSummary(
+        missing.map((key) => tr(`fields.${key}`)),
+        tr,
+      )
+    : otherReason
+  return { firstMissing, incomplete, readOnlyReason, incompleteReason, otherSummary }
 }

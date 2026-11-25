@@ -1,14 +1,19 @@
 import { queryOptions } from '@tanstack/react-query'
-import type { DjProgram } from '../../../shared/djProgram'
+import type { Api } from '../../../preload/api'
+import { type DjProgram, exportsUsbOn } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
+  PlaylistSource,
   RekordboxEditResult,
   RekordboxPlaylistEdit,
+  Settings,
   SourceNode,
   SourcePlaylistEntry,
   UsbProgram,
 } from '../../../shared/types'
+import type { SourceBrowser } from '../hooks/useSourceBrowser'
+import { CUE_PROGRAMS, type CueProgram } from './cuePrograms'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -190,4 +195,99 @@ export const SOURCE_PROGRAMS: {
 
 export function isUsbProgram(program: DjProgram): program is UsbProgram {
   return SOURCE_PROGRAMS[program].usb
+}
+
+export function canEdit(
+  sourceEdit: SourceEdit | null,
+  kind: RekordboxPlaylistEdit['kind'],
+): boolean {
+  return !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
+}
+
+export interface OpenProgramContext {
+  browser: Pick<SourceBrowser, 'source'>
+  settings: Settings | null
+}
+
+export interface OpenProgram {
+  sourceProgram: DjProgram | null
+  resultsTab: PlaylistSource | 'tracks'
+  resultsFolded: boolean
+  sourceEdit: SourceEdit | null
+  traktorNmlPath: string
+  checksTraktorCollection: boolean
+}
+
+export function openProgramOf({ browser, settings }: OpenProgramContext): OpenProgram {
+  const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
+  const resultsTab = browser.source ?? 'tracks'
+  const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
+  return {
+    sourceProgram,
+    resultsTab,
+    resultsFolded: settings?.foldedResults?.[resultsTab] ?? false,
+    sourceEdit,
+    traktorNmlPath: settings?.traktorNmlPath ?? '',
+    checksTraktorCollection: sourceEdit?.gate === 'traktorCollection',
+  }
+}
+
+export interface ProgramEditsContext {
+  sourceProgram: DjProgram | null
+  sourceEdit: SourceEdit | null
+  traktorCanSave: boolean
+  browser: Pick<SourceBrowser, 'sources' | 'libraryMissing'>
+  platform: Api['platform']
+}
+
+export interface ProgramEdits {
+  editableSource: DjProgram | null
+  editProgram: DjProgram
+  usbAvailable: boolean
+  treeUsbProgram: UsbProgram | null
+  runningNote: CueProgram['runningNote']
+  idJoin: string | null
+  fixedNode: SourceProgram['fixedNode']
+  canRename: boolean
+  canMoveNode: boolean
+  noFolders: boolean
+  readsCollection: boolean
+}
+
+export function programEditsOf({
+  sourceProgram,
+  sourceEdit,
+  traktorCanSave,
+  browser,
+  platform,
+}: ProgramEditsContext): ProgramEdits {
+  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
+  // Settings, the only one Surco writes to.
+  const editableSource =
+    sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
+  // tree.
+  const usbPlatform = platform === 'darwin' || platform === 'win32'
+  return {
+    editableSource,
+    editProgram: editableSource ?? 'rekordbox',
+    usbAvailable: usbPlatform && browser.sources.includes('rekordbox'),
+    treeUsbProgram:
+      usbPlatform &&
+      sourceProgram &&
+      isUsbProgram(sourceProgram) &&
+      exportsUsbOn(sourceProgram, platform) &&
+      (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
+        browser.sources.includes(sourceProgram)) &&
+      !browser.libraryMissing
+        ? sourceProgram
+        : null,
+    runningNote: sourceProgram && CUE_PROGRAMS[sourceProgram].runningNote,
+    idJoin: sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null,
+    fixedNode: sourceProgram && SOURCE_PROGRAMS[sourceProgram].fixedNode,
+    canRename: canEdit(sourceEdit, 'rename'),
+    canMoveNode: canEdit(sourceEdit, 'moveNode'),
+    noFolders: sourceEdit?.folders === false,
+    readsCollection: Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection),
+  }
 }

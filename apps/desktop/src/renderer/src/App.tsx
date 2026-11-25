@@ -12,17 +12,15 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ALL_TRACKS_ID } from '../../shared/allTracks'
-import { autoMatchAvailable, usableProviders } from '../../shared/autoMatch'
+import { autoMatchAvailable } from '../../shared/autoMatch'
 import { trashLimits } from '../../shared/backupPolicy'
 import { DEFAULT_CUE_GRID_TOLERANCE } from '../../shared/cueGrid'
 import type { CueJumpBars } from '../../shared/cueJump'
 import type { CueQuantize } from '../../shared/cueQuantize'
 import { effectiveMeta } from '../../shared/customFields'
-import { normalizeImportFields } from '../../shared/defaults'
 import {
   CUE_PROGRAMS,
   type CueProgram,
-  exportsUsbOn,
   LIBRARY_PROGRAMS,
   type LibraryProgram,
   PROGRAM_CAN,
@@ -65,7 +63,6 @@ import type {
   PlaylistSource,
   PlaylistTrackRef,
   QueuedCreate,
-  RekordboxPlaylistEdit,
   RekordboxQueueState,
   RekordboxQueueWritten,
   ReviewedFileUpdate,
@@ -104,8 +101,8 @@ import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
 import type { SessionDestination } from './components/SessionWizard'
-import { SourceRail } from './components/SourceRail'
-import { flattenPlaylists, SourceTree } from './components/SourceTree'
+import { SidebarPanel } from './components/SidebarPanel'
+import { flattenPlaylists } from './components/SourceTree'
 import { FOOTER_BAR } from './components/SplitButton'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
@@ -120,6 +117,7 @@ import { useActivityLog } from './hooks/useActivityLog'
 import { useAppleMusicArtwork } from './hooks/useAppleMusicArtwork'
 import { useAppNotifications } from './hooks/useAppNotifications'
 import { useAutoMatch } from './hooks/useAutoMatch'
+import { useCheckedPlaylist } from './hooks/useCheckedPlaylist'
 import { useColumnLayout } from './hooks/useColumnLayout'
 import { type CleanupOffer, useConfirmFlows } from './hooks/useConfirmFlows'
 import { useCopies } from './hooks/useCopies'
@@ -151,6 +149,7 @@ import { type SettingsTab, useOverlays } from './hooks/useOverlays'
 import { usePlayer } from './hooks/usePlayer'
 import { usePlaylistReadPriority } from './hooks/usePlaylistReadPriority'
 import { useProgramsAvailable } from './hooks/useProgramsAvailable'
+import { usePruneSelection } from './hooks/usePruneSelection'
 import { useQualityAnalysis } from './hooks/useQualityAnalysis'
 import { useRekordboxEdits } from './hooks/useRekordboxEdits'
 import { useRekordboxMatching } from './hooks/useRekordboxMatching'
@@ -202,11 +201,9 @@ import {
   type PaletteTree,
   runCommand,
 } from './lib/commands'
-import { railAlert } from './lib/copiesView'
 import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
-import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
 import {
   type AutoMark,
   focusCue,
@@ -228,10 +225,22 @@ import { lazyChunk, preloadLazyWhenIdle } from './lib/lazyChunk'
 import type { LibraryCopyRef } from './lib/libraryCopy'
 import { librarySourceOf } from './lib/librarySource'
 import { listReviewSource } from './lib/listReviewSource'
-import { type MatchingPartner, partnersOf } from './lib/matchingPartners'
+import {
+  type MatchingPartner,
+  matchingSuggestionSourceOf,
+  partnersOf,
+} from './lib/matchingPartners'
 import { pathPartners } from './lib/matchingPaths'
 import { OpenSettingsProvider } from './lib/openSettingsContext'
 import { outputNamePatches, renderOutputName, titleFormatSummary } from './lib/outputName'
+import {
+  type CopiesOpening,
+  overlayOpenOf,
+  type PasteTracklistOpening,
+  type SessionWizardOpening,
+  showListOf,
+  type UsbOpening,
+} from './lib/overlayLayers'
 import { clampPanelGeometry, type PanelAnchor } from './lib/panelGeometry'
 import { flushPendingEdits } from './lib/pendingEdits'
 import { type PhrasedComment, phraseCountsOf } from './lib/phraseCountBatch'
@@ -241,11 +250,14 @@ import {
   blocksOf,
   blocksWith,
   distinctById,
+  listScopeFlags,
+  openPlaylistEditsOf,
   type PlaylistScope,
   playlistMembership,
   playlistPositions,
   playlistView,
   rowKeys,
+  toolbarScopeFlags,
 } from './lib/playlistView'
 import { needsDiscogsPrefetch } from './lib/prefetch'
 import { sweepTasks, topBarProgress } from './lib/progress'
@@ -275,24 +287,20 @@ import {
   type ReviewOpening,
   reviewDetail,
   reviewOpening,
+  reviewParamsOf,
   reviewTarget,
 } from './lib/reviewTarget'
 import { sameTracks } from './lib/sameTracks'
-import {
-  type ClickMods,
-  clickSelect,
-  editScope,
-  pruneToVisible,
-  reanchorToVisible,
-  type Selection,
-} from './lib/selection'
+import { type ClickMods, clickSelect, editScope, type Selection } from './lib/selection'
 import { hasStagedEdits } from './lib/sessionEdits'
 import { libraryPhases, libraryRoles } from './lib/sessionTree'
 import { SettingsProvider } from './lib/settingsContext'
 import { formatShortcut } from './lib/shortcuts'
 import { hasShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import {
-  isUsbProgram,
+  canEdit,
+  openProgramOf,
+  programEditsOf,
   SOURCE_PROGRAMS,
   SOURCE_READ,
   sourceCollectionOptions,
@@ -325,13 +333,11 @@ import {
 import { detectTrim } from './lib/trim'
 import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
+import { DEFAULT_SEARCH_PROVIDERS, viewPrefsOf } from './lib/viewPrefs'
 import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
-const SIDEBAR_PEEK_DELAY_MS = 150
-const PEEK_TREE_WIDTH = 240
-const NO_HIDDEN_SOURCES: PlaylistSource[] = []
 const NO_SELECTED_PATHS: ReadonlySet<string> = new Set()
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
@@ -359,10 +365,6 @@ const PasteTracklistModal = lazyChunk(() =>
 const SessionWizard = lazyChunk(() =>
   import('./components/SessionWizard').then((m) => ({ default: m.SessionWizard })),
 )
-
-// Stable fallback while settings load, so the memoized Editor doesn't see a new array
-// each render. Mirrors the persisted default (Discogs only).
-const DEFAULT_SEARCH_PROVIDERS: SearchProviderId[] = ['discogs']
 
 // Warms the main-process Discogs caches for a hovered track: the search the editor
 // runs on open, plus the top release behind it. Both are cached by the main
@@ -531,11 +533,7 @@ export default function App(): React.JSX.Element {
   // after every run that could have added to it.
   const [sidebarPeek, setSidebarPeek] = useState(false)
   const peekTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const [copiesOpen, setCopiesOpen] = useState<{
-    openMusic: boolean
-    query: string
-    key: number
-  } | null>(null)
+  const [copiesOpen, setCopiesOpen] = useState<CopiesOpening | null>(null)
   const [trashEntries, setTrashEntries] = useState<TrashEntry[]>([])
   const libraryCopies = useCopies()
   const backupAtByPath = useMemo(() => latestBackupByPath(trashEntries), [trashEntries])
@@ -657,30 +655,47 @@ export default function App(): React.JSX.Element {
   const revealRowRef = useRef<((id: string) => void) | null>(null)
   // The list's sticky filter header, measured when paging the scroll position.
   const qualityFilterRef = useRef<HTMLDivElement>(null)
+  const {
+    showSpectrum,
+    showWaveform,
+    hasToken,
+    searchProviders,
+    importFields,
+    genrePresets,
+    fullReleaseDate,
+    replaceLowResCover,
+    hiddenSources,
+    showSidebar,
+    showRailNames,
+    showListPositions,
+    continuousPlayback,
+    filenameFormat,
+    customFields,
+    sessionsMade,
+    matchingDismissed,
+    suggestionsOpen,
+    showListWaves,
+  } = viewPrefsOf(settings)
   // Refs so the prefetch callback can stay stable (memoized rows depend on it)
   // while still reading the latest spectrum/token settings on each hover.
   const showSpectrumRef = useRef(true)
-  showSpectrumRef.current = settings?.showSpectrum ?? true
+  showSpectrumRef.current = showSpectrum
   const showWaveformRef = useRef(true)
-  showWaveformRef.current = settings?.showWaveform ?? true
+  showWaveformRef.current = showWaveform
   const hasTokenRef = useRef(false)
-  hasTokenRef.current = !!settings?.discogsToken
+  hasTokenRef.current = hasToken
   // Live providers for the background sweep, read at probe time (Settings → Sources).
   const searchProvidersRef = useRef<SearchProviderId[]>(DEFAULT_SEARCH_PROVIDERS)
-  searchProvidersRef.current = settings ? usableProviders(settings) : DEFAULT_SEARCH_PROVIDERS
+  searchProvidersRef.current = searchProviders
   // Which fields a release may fill (Settings → Sources). A ref for the same reason as the
   // providers above: the sweep applies matches in the background, so it must read the
   // current choice at apply time rather than one captured when the sweep started.
-  const importFields = normalizeImportFields(settings?.importFields)
   const importFieldsRef = useRef<MetaTextKey[]>(importFields)
   importFieldsRef.current = importFields
-  const genrePresets = settings?.genrePresets ?? []
   const genrePresetsRef = useRef<string[]>(genrePresets)
   genrePresetsRef.current = genrePresets
-  const fullReleaseDate = settings?.fullReleaseDate ?? false
   const fullReleaseDateRef = useRef(fullReleaseDate)
   fullReleaseDateRef.current = fullReleaseDate
-  const replaceLowResCover = settings?.replaceLowResCover ?? false
   const replaceLowResCoverRef = useRef(replaceLowResCover)
   replaceLowResCoverRef.current = replaceLowResCover
   // Live title-cleanup settings for the sweep's scorer (the Naming pattern and the
@@ -828,7 +843,7 @@ export default function App(): React.JSX.Element {
     matchingPathPairs,
     replacedEntries,
     selectedPaths,
-    hiddenSources: settings?.hiddenSources ?? NO_HIDDEN_SOURCES,
+    hiddenSources,
     libraryFolders: settings && [
       settings.rekordboxDbPath,
       settings.engineLibraryDir,
@@ -1058,34 +1073,47 @@ export default function App(): React.JSX.Element {
     },
     [store],
   )
-  // Traktor's tree is organised like rekordbox's once its collection is confirmed in
-  // Settings, the only one Surco writes to.
-  const sourceProgram = browser.source === 'appleMusic' ? null : browser.source
-  const resultsTab = browser.source ?? 'tracks'
-  const resultsFolded = settings?.foldedResults?.[resultsTab] ?? false
+  const {
+    sourceProgram,
+    resultsTab,
+    resultsFolded,
+    sourceEdit,
+    traktorNmlPath,
+    checksTraktorCollection,
+  } = openProgramOf({ browser, settings })
   const foldResults = useStableCallback((folded: boolean): void =>
     saveSettings({ foldedResults: { ...settings?.foldedResults, [resultsTab]: folded } }),
   )
-  const sourceEdit = sourceProgram && SOURCE_PROGRAMS[sourceProgram].edit
-  const editCan = (kind: RekordboxPlaylistEdit['kind']): boolean =>
-    !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
   const traktorCanSave =
     useQuery({
-      queryKey: ['traktor-can-save', settings?.traktorNmlPath ?? ''],
+      queryKey: ['traktor-can-save', traktorNmlPath],
       queryFn: () => window.api.traktorCanSave(),
-      enabled: sourceEdit?.gate === 'traktorCollection',
+      enabled: checksTraktorCollection,
     }).data === true
-  const editableSource =
-    sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  const {
+    editableSource,
+    editProgram,
+    usbAvailable,
+    treeUsbProgram,
+    runningNote,
+    idJoin,
+    fixedNode,
+    canRename,
+    canMoveNode,
+    noFolders,
+    readsCollection,
+  } = programEditsOf({
+    sourceProgram,
+    sourceEdit,
+    traktorCanSave,
+    browser,
+    platform: window.api.platform,
+  })
   const askToApplyEdit = useStableCallback(() =>
     window.api.dj.askToApply([editableSource ?? 'rekordbox']),
   )
-  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
-  const editRekordboxAsking = useRekordboxEdits(
-    notifyEdit,
-    editableSource ?? 'rekordbox',
-    askToApplyEdit,
-  )
+  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editProgram)
+  const editRekordboxAsking = useRekordboxEdits(notifyEdit, editProgram, askToApplyEdit)
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -1226,28 +1254,12 @@ export default function App(): React.JSX.Element {
     applyVirtualdjQueueNow,
     discardVirtualdjQueue,
   ])
-  // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
-  // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
+  // Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
-  const usbPlatform = window.api.platform === 'darwin' || window.api.platform === 'win32'
-  const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
-  const treeUsbProgram =
-    usbPlatform &&
-    sourceProgram &&
-    isUsbProgram(sourceProgram) &&
-    exportsUsbOn(sourceProgram, window.api.platform) &&
-    (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
-      browser.sources.includes(sourceProgram)) &&
-    !browser.libraryMissing
-      ? sourceProgram
-      : null
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
   const usbRunning = useUsbExportState(isRunning)
-  const [usbModal, setUsbModal] = useState<{
-    preselect: string | null
-    source: UsbProgram
-  } | null>(null)
+  const [usbModal, setUsbModal] = useState<UsbOpening | null>(null)
   const { list: usbVolumes } = useUsbVolumes(
     usbAvailable || (usbModal !== null && usbModal.source !== 'rekordbox'),
   )
@@ -1352,12 +1364,7 @@ export default function App(): React.JSX.Element {
       return result
     },
   )
-  const [sessionWizard, setSessionWizard] = useState<{
-    parentId: string
-    adjust: boolean
-    fill?: FillTarget
-    start?: { path: string; playlistId: string }
-  } | null>(null)
+  const [sessionWizard, setSessionWizard] = useState<SessionWizardOpening | null>(null)
   const readLibraryRoles = useStableCallback(() => {
     const tree = browser.tree ?? []
     void sessionRows.load([
@@ -1517,11 +1524,7 @@ export default function App(): React.JSX.Element {
   // back to one), so what an earlier visit found never shows for a frame before the new
   // check answers.
   const [checkedPlaylist, setCheckedPlaylist] = useState<string | null>(null)
-  const [checkedShowing, setCheckedShowing] = useState(showingPlaylist)
-  if (checkedShowing !== showingPlaylist) {
-    setCheckedShowing(showingPlaylist)
-    setCheckedPlaylist(null)
-  }
+  useCheckedPlaylist(showingPlaylist, setCheckedPlaylist)
   // A pass resolving after the DJ moved to another playlist speaks for one no longer on
   // screen: it must neither mark the new one checked nor spend a notice. Not a cleanup
   // flag, since the entriesFetching re-runs would cancel the very pass that has to notify.
@@ -2227,9 +2230,8 @@ export default function App(): React.JSX.Element {
     setThemePreview(null)
   }
 
-  const showSidebar = settings?.showSidebar ?? true
   const columns = useColumnLayout({
-    railWidth: showSidebar ? railWidth({ names: settings?.showRailNames ?? true }) : 0,
+    railWidth: showSidebar ? railWidth({ names: showRailNames }) : 0,
     hasTree: showSidebar && !!browser.source,
     saved: settings?.columnShares,
     onCommit: (columnShares) => saveSettings({ columnShares }),
@@ -2394,8 +2396,6 @@ export default function App(): React.JSX.Element {
         : null
     return prevPlaylistScope.current
   }, [browser.playlist, browser.entries, tracksView])
-  const hasAddedDates = (playlistScope?.addedOf.size ?? 0) > 0
-  const sortBy = pickedSort === 'dateAdded' && !hasAddedDates ? 'import' : pickedSort
   const playlistIds = playlistScope?.ids
   const playlistPathOf = playlistScope?.pathOf
   const playlistContentOf = playlistScope?.contentOf
@@ -2412,13 +2412,34 @@ export default function App(): React.JSX.Element {
     [playlistScope, browser.source, filesView],
   )
   const scopeTracks = useMemo(() => distinctById(scopeRows), [scopeRows])
-  const listedCount = browser.source ? tracks.length : filesView.length
-  const filesAway =
-    browser.source !== null &&
-    browser.playlist !== null &&
-    checkedPlaylist === `${browser.source}:${browser.playlist.id}` &&
-    scopeRows.length === 0 &&
-    (browser.entries?.some((e) => !e.separator) ?? false)
+  const {
+    hasAddedDates,
+    sortBy,
+    listedCount,
+    filesAway,
+    openPlaylistId,
+    numberedTracks,
+    measuringGrid,
+    comparesLibraryCopy,
+    measuringLibrary,
+    cuesOpen,
+    batchCuesShown,
+  } = listScopeFlags({
+    playlistScope,
+    pickedSort,
+    browser,
+    checkedPlaylist,
+    scopeRows,
+    filesView,
+    tracks,
+    showListPositions,
+    autoAnalyze: settings?.autoAnalyze,
+    analyzeAsked,
+    filterSelection,
+    librarySource,
+    sourceProgram,
+    selectedTracks,
+  })
   // Whenever the open playlist's rows change (its arrival after a switch, a row removed
   // from it, a re-read after rekordbox changed it), the selection keeps only rows it shows:
   // the others stay in the collection, and selected they would reach the row menu and
@@ -2438,9 +2459,6 @@ export default function App(): React.JSX.Element {
         : { ids, anchor }
     })
   }, [playlistIds, setSelection])
-  // Keyed on the playlist once its rows are applied, not when it is picked: while its
-  // entries load the list is empty, and the order must follow on arrival.
-  const openPlaylistId = playlistScope ? (browser.playlist?.id ?? '') : ''
   // The playlist's order, so a reorder (or a re-read bringing another order) is a new view:
   // the order held for the selected row would otherwise keep the old one on screen.
   const playlistOrder = useMemo(() => playlistIds?.join('\n') ?? '', [playlistIds])
@@ -2502,15 +2520,6 @@ export default function App(): React.JSX.Element {
         (programOf(contentId) === 'traktor' && /\.mp3$/i.test(playlistPathOf?.get(trackId) ?? '')),
     )
   }, [playlistContentOf, playlistPathOf])
-  // The grids and the comparison with the library copy are part of the analysis: they run
-  // with it, by themselves when every import is analysed, else once Analyze is pressed. Picking
-  // their filter still starts them, for a list nobody analysed yet.
-  const measureAll = Boolean(settings?.autoAnalyze) || analyzeAsked
-  const measuringGrid = filterSelection.attention === 'badGrid' || measureAll
-  const comparesLibraryCopy = browser.source === null && librarySource === 'appleMusic'
-  const measuringLibrary = filterSelection.library === 'betterThanLibrary' || measureAll
-  const cuesOpen = sourceProgram !== null && browser.playlist !== null && playlistScope !== null
-  const batchCuesShown = cuesOpen && selectedTracks.length > 1
   const checkedGridEntries = useMemo(
     () =>
       measuringGrid || !batchCuesShown
@@ -2719,14 +2728,6 @@ export default function App(): React.JSX.Element {
     return prevVisibleTracks.current
   }, [sortedTracks, viewKey, selectedId, heldRelease])
   const visibleTracks = useMemo(() => distinctById(visibleRows), [visibleRows])
-  const showListPositions = settings?.showListPositions ?? true
-  const numberedTracks =
-    showListPositions &&
-    sortBy === 'import' &&
-    browser.playlist?.id !== MATCHING_ID &&
-    browser.playlist?.id !== TO_REVIEW_ID
-      ? (playlistScope?.tracks ?? (browser.source ? undefined : filesView))
-      : undefined
   const listPositions = useMemo(
     () => (numberedTracks ? playlistPositions(numberedTracks, visibleRows) : undefined),
     [numberedTracks, visibleRows],
@@ -2777,7 +2778,7 @@ export default function App(): React.JSX.Element {
     selectedId,
     selectedIds: selectedIdSet,
     setSelection,
-    continuousPlayback: settings?.continuousPlayback ?? false,
+    continuousPlayback,
     playerVisible,
     playerTrack,
     closePlayer,
@@ -2806,56 +2807,32 @@ export default function App(): React.JSX.Element {
     const i = visibleTracks.findIndex((t) => t.id === selectedId)
     return i < 0 ? null : i + 1
   }, [visibleTracks, selectedId])
-  // A filter change (quality bucket or format axis) can hide the selected track; left alone
-  // its editor lingers out of view and the position pill reads "‒/N". Drop to the first
-  // track the new filter shows (or clear when it shows none) so the editor and count always
-  // reflect what's on screen. Must react to BOTH filter axes — the format filter hiding the
-  // selection used to leave the list with no visible row selected. Scoped to the filters —
-  // not search, which changes per keystroke and would thrash the editor's per-track fetches;
-  // sort only reorders, never hides.
-  // Selected rows the new filter hides leave the selection too, so the next trash or remove
-  // acts only on rows the user can see.
-  // A search hides rows too, and an action on the selection must not reach them. Only the
-  // hidden extras of a selection go: when no selected row is left on screen the selection
-  // stays, so typing does not jump the editor from track to track on every keystroke.
-  // The search stays across sources, so a switch narrows the selection kept for the new
-  // source the same way. Keyed on its rows too: a playlist still loading shows none (nothing
-  // is pruned then) and its arrival is when its own rows are on screen to prune against.
-  const [prunedFor, setPrunedFor] = useState({
+  usePruneSelection({
     filterSelection,
     deferredSearch,
     source: browser.source,
     playlistIds,
+    visibleTracks,
+    selection,
+    selectedId,
+    setSelectionState,
   })
-  if (
-    prunedFor.filterSelection !== filterSelection ||
-    prunedFor.deferredSearch !== deferredSearch ||
-    prunedFor.source !== browser.source ||
-    prunedFor.playlistIds !== playlistIds
-  ) {
-    setPrunedFor({ filterSelection, deferredSearch, source: browser.source, playlistIds })
-    const ids = visibleTracks.map((t) => t.id)
-    const next =
-      pruneToVisible(ids, selection) ??
-      (prunedFor.filterSelection !== filterSelection ? reanchorToVisible(ids, selectedId) : null)
-    if (next) setSelectionState(next)
-  }
   // Drives the toolbar auto-match button: how many visible tracks are still worth a probe, so
   // it disables once every shown track is matched, and changing the filter to reveal unmatched
   // rows re-enables it. Scoped to the visible set because the sweep matches only those.
-  const autoMatchButtonTracks = browser.source === null ? visibleTracks : selectedTracks
+  const { autoMatchButtonTracks, needsToken, tokenMissing, canProcessAll } = toolbarScopeFlags({
+    source: browser.source,
+    visibleTracks,
+    selectedTracks,
+    scopeTracks,
+    settings,
+    eligibleCount,
+    batching,
+  })
   const autoMatchable = useMemo(
     () => tracksToAutoMatch(autoMatchButtonTracks).length,
     [autoMatchButtonTracks],
   )
-  // Auto-match is on but the provider can't run (no Discogs token): the sweep silently does
-  // nothing, so the toolbar button turns into a live "add a token" fix instead of a greyed
-  // dead end. Only with tracks loaded — nothing to match on an empty list.
-  const needsToken =
-    scopeTracks.length > 0 && !!settings?.autoMatch && !autoMatchAvailable(settings)
-  const tokenMissing =
-    !!settings && !autoMatchAvailable(settings) && usableProviders(settings).includes('discogs')
-  const canProcessAll = eligibleCount > 0 && !batching
   const batchStripRef = useRef<HTMLDivElement>(null)
   const batchStripRegion = useRef<HTMLElement | null>(null)
   const prevBatching = useRef(batching)
@@ -3063,8 +3040,8 @@ export default function App(): React.JSX.Element {
       tracksRef,
       selectedIds,
       selected,
-      filenameFormat: settings?.filenameFormat ?? '{artist} - {title}',
-      customFields: settings?.customFields ?? [],
+      filenameFormat,
+      customFields,
       recordMetaUndo,
       updateTracksMeta: editTracksMeta,
       patchTracks,
@@ -3314,18 +3291,12 @@ export default function App(): React.JSX.Element {
   const onSearchWeb = useStableCallback(() => {
     if (selected) searchTrackWeb(selected)
   })
-  // Organising the open crate of an editable library. Every action sends one edit; what the
-  // library holds afterwards is re-read and shown (useRekordboxEdits).
-  const editableOpen =
-    editableSource !== null && browser.playlist !== null && playlistScope !== null
-  const runningNote = sourceProgram && CUE_EDITORS[sourceProgram].runningNote
   const { data: programRunning = false } = useQuery({
     queryKey: [`${sourceProgram}-running`],
     queryFn: async () => sourceProgram !== null && window.api.dj.running(sourceProgram),
     enabled: runningNote !== null,
     staleTime: 0,
   })
-  const cuesMarkable = cuesOpen && sourceProgram !== null
   const openSmart = useMemo(
     () =>
       flattenPlaylists(browser.tree ?? []).some(
@@ -3333,13 +3304,6 @@ export default function App(): React.JSX.Element {
       ),
     [browser.tree, browser.playlist?.id],
   )
-  const crateOpen =
-    editableOpen &&
-    !openSmart &&
-    browser.playlist?.id !== RECENTLY_ADDED_ID &&
-    browser.playlist?.id !== ALL_TRACKS_ID &&
-    browser.playlist?.id !== MATCHING_ID &&
-    browser.playlist?.id !== TO_REVIEW_ID
   const pendingCuePaths = useMemo(
     () =>
       new Set(
@@ -3490,7 +3454,28 @@ export default function App(): React.JSX.Element {
   const selectedProgramPath = selected ? playlistScope?.rowPathOf.get(selected.id) : undefined
   const selectedLabel = selected?.listLabel
   const selectedCueId = selected ? playlistScope?.contentOf.get(selected.id) : undefined
-  const inRekordbox = sourceProgram === 'rekordbox'
+  const {
+    editableOpen,
+    cuesMarkable,
+    crateOpen,
+    inRekordbox,
+    otherOpen,
+    readsRekordboxCollection,
+    removablePlaylist,
+    reorderEnabled,
+  } = openPlaylistEditsOf({
+    editableSource,
+    sourceProgram,
+    sourceEdit,
+    browser,
+    playlistScope,
+    cuesOpen,
+    openSmart,
+    selectedContentId,
+    sortBy,
+    search,
+    filterActive,
+  })
   const { data: matchingPairs } = useRekordboxMatching(inRekordbox)
   const { data: matchingEntries } = useQuery({
     queryKey: ['source-playlist', 'rekordbox', MATCHING_ID],
@@ -3505,8 +3490,6 @@ export default function App(): React.JSX.Element {
         : [],
     [inRekordbox, selectedContentId, matchingPairs, matchingEntries],
   )
-  const otherOpen =
-    sourceProgram !== null && !inRekordbox && browser.playlist !== null && playlistScope !== null
   const { data: programAll } = useQuery({
     queryKey: ['source-playlist', sourceProgram, ALL_TRACKS_ID],
     queryFn: () => readPlaylist(sourceProgram as PlaylistSource, ALL_TRACKS_ID),
@@ -3746,9 +3729,7 @@ export default function App(): React.JSX.Element {
   })
   const { data: rekordboxCollection } = useQuery({
     ...sourceCollectionOptions('rekordbox'),
-    enabled:
-      otherOpen ||
-      (inRekordbox && (Boolean(selectedContentId) || browser.playlist?.id === MATCHING_ID)),
+    enabled: readsRekordboxCollection,
   })
   const collectionById = useMemo(
     () => new Map((rekordboxCollection ?? []).map((t) => [t.contentId, t])),
@@ -3772,17 +3753,26 @@ export default function App(): React.JSX.Element {
     () => new Map(programCollection.map((t) => [t.contentId, t])),
     [programCollection],
   )
-  const suggestionTracks = inRekordbox ? collectionById : programById
-  const suggestionSelf = inRekordbox ? selectedContentId : matchingSelfPath
+  const { suggestionTracks, suggestionSelf, matchedPairs, inMatching } = matchingSuggestionSourceOf(
+    {
+      inRekordbox,
+      collectionById,
+      programById,
+      selectedContentId,
+      matchingSelfPath,
+      matchingPairs,
+      matchingPathPairs,
+      sourceProgram,
+      browser,
+    },
+  )
   const matchingSuggestions = useMatchingSuggestions({
     program: sourceProgram,
     tree: browser.tree,
-    made: settings?.sessionsMade ?? [],
-    matched: inRekordbox ? matchingPairs : matchingPathPairs,
-    dismissed: settings?.matchingDismissed ?? [],
+    made: sessionsMade,
+    matched: matchedPairs,
+    dismissed: matchingDismissed,
   })
-  const inMatching = sourceProgram !== null && browser.playlist?.id === MATCHING_ID
-  const suggestionsOpen = settings?.matchingSuggestionsOpen ?? true
   const suggestedForSelected = useMemo(
     () =>
       suggestionSelf
@@ -3926,7 +3916,6 @@ export default function App(): React.JSX.Element {
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
-  const idJoin = sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null
   const reopenAt = (
     open: typeof browser.playlist,
     node: SourceNode,
@@ -3951,15 +3940,11 @@ export default function App(): React.JSX.Element {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
   })
   const treeTop = useMemo(() => new Set((browser.tree ?? []).map((n) => n.id)), [browser.tree])
-  const fixedNode = sourceProgram && SOURCE_PROGRAMS[sourceProgram].fixedNode
   const fixed = useMemo(
     () => (fixedNode ? (node: SourceNode) => fixedNode(node, treeTop.has(node.id)) : undefined),
     [fixedNode, treeTop],
   )
-  const [pasteTracklist, setPasteTracklist] = useState<{
-    node: SourceNode
-    create: boolean
-  } | null>(null)
+  const [pasteTracklist, setPasteTracklist] = useState<PasteTracklistOpening | null>(null)
   const openPasteTracklist = useStableCallback((node: SourceNode, create: boolean) =>
     setPasteTracklist({ node, create }),
   )
@@ -3992,10 +3977,6 @@ export default function App(): React.JSX.Element {
         })
     },
   )
-  const canRename = editCan('rename')
-  const canMoveNode = editCan('moveNode')
-  const noFolders = sourceEdit?.folders === false
-  const readsCollection = Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection)
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
@@ -4057,8 +4038,6 @@ export default function App(): React.JSX.Element {
     )
   })
   const removeSeparator = useStableCallback((key: string) => removeFromRekordbox([key]))
-  const removablePlaylist =
-    editableSource && crateOpen && editCan('remove') ? browser.playlist : null
   const removeLabel =
     matchingOpen && browser.playlist
       ? tr('sources.menu.removeFrom', { name: browser.playlist.name })
@@ -4095,10 +4074,6 @@ export default function App(): React.JSX.Element {
         ? removeFromPlaylist(targets, onRemoved)
         : dropFromList(targets, onRemoved),
   )
-  // Reordering only means something in the playlist's own order with nothing hidden: under
-  // another sort, a search or a filter, a drop would land among rows the user cannot see.
-  const reorderEnabled =
-    crateOpen && sortBy === 'import' && !search && !filterActive && editCan('move')
   const reorder = useMemo(
     () =>
       reorderEnabled ? { onMove: moveInRekordbox, onRemoveSeparator: removeSeparator } : undefined,
@@ -4130,8 +4105,8 @@ export default function App(): React.JSX.Element {
           !h.node.smart &&
           fixed?.(h.node) !== 'locked',
       ),
-      openName: crateOpen && playlist && editCan('remove') ? playlist.name : null,
-      canInsertSeparator: browser.canInsertSeparator && editCan('insertSeparator'),
+      openName: crateOpen && playlist && canEdit(sourceEdit, 'remove') ? playlist.name : null,
+      canInsertSeparator: browser.canInsertSeparator && canEdit(sourceEdit, 'insertSeparator'),
       onAddTo: (node) => addToRekordbox(node, menuTargets(track.id)),
       onInsertSeparator: () => {
         const beforeLinkId = playlistScope?.linkOf.get(track.id)
@@ -4145,7 +4120,7 @@ export default function App(): React.JSX.Element {
       // one "above" is neither on screen nor above the row as shown.
       onRemoveSeparatorAbove:
         sortBy === 'import' &&
-        editCan('remove') &&
+        canEdit(sourceEdit, 'remove') &&
         playlistScope?.separatorBefore.get(track.id)?.length
           ? () => {
               const above = playlistScope.separatorBefore.get(track.id)
@@ -4364,12 +4339,10 @@ export default function App(): React.JSX.Element {
     const current = settings?.theme ?? 'system'
     saveSettings({ theme: order[(order.indexOf(current) + 1) % order.length] })
   })
-  const showListWaves = settings?.showListWaves ?? true
   const toggleListWaves = useStableCallback(() => saveSettings({ showListWaves: !showListWaves }))
   const toggleListPositions = useStableCallback(() =>
     saveSettings({ showListPositions: !showListPositions }),
   )
-  const showRailNames = settings?.showRailNames ?? true
   const toggleRailNames = useStableCallback(() => saveSettings({ showRailNames: !showRailNames }))
   const toggleSidebar = useStableCallback(() => saveSettings({ showSidebar: !showSidebar }))
   // A remount-keyed confetti burst: bumping the key mounts a fresh <Confetti>, so the ⌘K
@@ -4662,15 +4635,14 @@ export default function App(): React.JSX.Element {
     if (selection.ids.length > 0) setSelection({ ids: [], anchor: null })
   }
 
-  // Any open modal/overlay also swallows the global shortcuts, or space/j/k/⌘⏎ would act
-  // on the list behind the dialog (e.g. start a conversion behind the confirm prompt).
-  const overlayOpen =
-    activeModal !== null ||
-    copiesOpen !== null ||
-    review !== null ||
-    usbModal !== null ||
-    pasteTracklist !== null ||
-    sessionWizard !== null
+  const { overlayOpen } = overlayOpenOf({
+    activeModal,
+    copiesOpen,
+    review,
+    usbModal,
+    pasteTracklist,
+    sessionWizard,
+  })
   overlayOpenRef.current = overlayOpen
 
   useKeyboardShortcuts({
@@ -4741,10 +4713,7 @@ export default function App(): React.JSX.Element {
   // One source per opening: it remembers what it wrote and trashed until the review closes,
   // and it keeps to the rows it opened on. Picking another playlist while it is open does
   // not move it: what the menu said it would touch is what it touches.
-  const reviewKind = review?.source
-  const reviewPaths = review?.source === 'list' ? review.paths : undefined
-  const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
-  const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
+  const { reviewKind, reviewPaths, reviewIds, reviewMode } = reviewParamsOf(review)
   const reviewSource = useMemo(() => {
     const incomplete = {
       required: () => requiredFieldsOf(settingsRef.current),
@@ -4789,11 +4758,13 @@ export default function App(): React.JSX.Element {
   )
   // Drives the slim top bar: it follows the sweep the toolbar pill leads with,
   // and a fresh drop still reading its tags shows as an indeterminate run.
-  const showList =
-    !copiesOpen &&
-    ((browser.source ? browser.playlist !== null : filesView.length > 0) ||
-      review !== null ||
-      player.mounted)
+  const { showList } = showListOf({
+    copiesOpen,
+    browser,
+    filesView,
+    review,
+    playerMounted: player.mounted,
+  })
   const progress = topBarProgress(
     [...sweepTasks({ importing: importProgress, analysis, matching }), batchProgress],
     anyLoadingMeta,
@@ -4899,90 +4870,35 @@ export default function App(): React.JSX.Element {
               </div>
 
               <div className="relative flex min-h-0 flex-1">
-                {!showSidebar && !sidebarPeek && (
-                  <div
-                    data-testid="sidebar-edge"
-                    aria-hidden="true"
-                    onPointerEnter={() => {
-                      peekTimer.current = setTimeout(
-                        () => setSidebarPeek(true),
-                        SIDEBAR_PEEK_DELAY_MS,
-                      )
-                    }}
-                    onPointerLeave={() => clearTimeout(peekTimer.current)}
-                    className="absolute inset-y-0 left-0 z-30 w-2"
-                  />
-                )}
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: the rail and tree inside take the keys, this only closes the overlay */}
-                <div
-                  data-testid={showSidebar ? undefined : 'sidebar-peek'}
-                  data-open={(!showSidebar && sidebarPeek) || undefined}
-                  inert={!showSidebar && !sidebarPeek}
-                  onPointerLeave={showSidebar ? undefined : () => setSidebarPeek(false)}
-                  onKeyDown={
-                    showSidebar
-                      ? undefined
-                      : (e) => {
-                          if (e.key !== 'Escape') return
-                          e.stopPropagation()
-                          setSidebarPeek(false)
-                        }
-                  }
-                  className={
-                    showSidebar
-                      ? 'contents'
-                      : 'sidebar-peek absolute inset-y-0 left-0 z-30 flex bg-[var(--color-ink)]'
-                  }
-                >
-                  <SourceRail
-                    dropsInTracks={dragging && browser.source !== null}
-                    sidebarShown={showSidebar}
-                    onToggleSidebar={() => {
-                      setSidebarPeek(false)
-                      toggleSidebar()
-                    }}
-                    width={railWidth({ names: showRailNames })}
-                    showNames={showRailNames}
-                    onToggleNames={toggleRailNames}
-                    sources={browser.sources}
-                    active={browser.source}
-                    onSelect={(next) => {
-                      setCopiesOpen(null)
-                      selectSource(next)
-                    }}
-                    onHide={(hidden) =>
-                      saveSettings({
-                        hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
-                      })
-                    }
-                    copies={{
-                      active: copiesOpen !== null,
-                      alert: railAlert(libraryCopies.programs),
-                      onOpen: () => {
-                        setSidebarPeek(false)
-                        if (!copiesOpen) openCopies(false, '')
-                      },
-                    }}
-                  />
-                  {!copiesOpen && browser.source && (
-                    <SourceTree
-                      key={browser.source}
-                      width={showSidebar ? columns.widths.tree : PEEK_TREE_WIDTH}
-                      title={tr(`sources.${browser.source}`)}
-                      source={browser.source}
-                      nodes={browser.tree}
-                      failed={browser.treeFailed}
-                      missing={browser.libraryMissing}
-                      notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
-                      selectedId={browser.playlist?.id ?? null}
-                      onSelect={selectTreePlaylist}
-                      edit={editableSource ? treeEdit : undefined}
-                      fixed={fixed}
-                      onExportUsb={treeUsbProgram ? exportTreeToUsb : undefined}
-                      newPlaylistRef={newPlaylistRef}
-                    />
-                  )}
-                </div>
+                <SidebarPanel
+                  showSidebar={showSidebar}
+                  sidebarPeek={sidebarPeek}
+                  setSidebarPeek={setSidebarPeek}
+                  peekTimer={peekTimer}
+                  dragging={dragging}
+                  browser={browser}
+                  toggleSidebar={toggleSidebar}
+                  showRailNames={showRailNames}
+                  toggleRailNames={toggleRailNames}
+                  setCopiesOpen={setCopiesOpen}
+                  selectSource={selectSource}
+                  saveSettings={saveSettings}
+                  hiddenSources={hiddenSources}
+                  copiesOpen={copiesOpen}
+                  libraryCopies={libraryCopies}
+                  openCopies={openCopies}
+                  columns={columns}
+                  tr={tr}
+                  runningNote={runningNote}
+                  programRunning={programRunning}
+                  selectTreePlaylist={selectTreePlaylist}
+                  editableSource={editableSource}
+                  treeEdit={treeEdit}
+                  fixed={fixed}
+                  treeUsbProgram={treeUsbProgram}
+                  exportTreeToUsb={exportTreeToUsb}
+                  newPlaylistRef={newPlaylistRef}
+                />
                 {copiesOpen && (
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1">
@@ -5280,7 +5196,7 @@ export default function App(): React.JSX.Element {
                               positions={listPositions}
                               reorder={reorder}
                               onReorderBlocked={
-                                crateOpen && editCan('move') && !reorderEnabled
+                                crateOpen && canEdit(sourceEdit, 'move') && !reorderEnabled
                                   ? tellReorderBlocked
                                   : undefined
                               }
@@ -5307,13 +5223,13 @@ export default function App(): React.JSX.Element {
                       <LivePlayer
                         track={livePlayerTrack}
                         audioRef={audioRef}
-                        continuous={settings?.continuousPlayback ?? false}
+                        continuous={continuousPlayback}
                         onToggleContinuous={() =>
                           saveSettings({
                             continuousPlayback: !(settings?.continuousPlayback ?? false),
                           })
                         }
-                        showWaveform={settings?.showWaveform ?? true}
+                        showWaveform={showWaveform}
                         onToggleWaveform={() =>
                           saveSettings({ showWaveform: !(settings?.showWaveform ?? true) })
                         }

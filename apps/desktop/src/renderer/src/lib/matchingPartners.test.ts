@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { SourcePlaylistEntry } from '../../../shared/types'
-import { partnersOf } from './matchingPartners'
+import { MATCHING_ID } from '../../../shared/matching'
+import type { CollectionTrack, SourcePlaylistEntry } from '../../../shared/types'
+import {
+  type MatchingSuggestionContext,
+  matchingSuggestionSourceOf,
+  partnersOf,
+} from './matchingPartners'
 
 const entry = (contentId: string, title: string, key = ''): SourcePlaylistEntry => ({
   path: `/m/${title}.wav`,
@@ -53,5 +58,55 @@ describe('partnersOf', () => {
 
   it('leaves out a partner the collection no longer lists, instead of showing a nameless row', () => {
     expect(partnersOf([['1', 'gone']], '1', ENTRIES)).toEqual([])
+  })
+})
+
+describe('matchingSuggestionSourceOf', () => {
+  const song = (contentId: string): CollectionTrack => ({
+    contentId,
+    path: `/m/${contentId}.wav`,
+    title: contentId,
+    artist: 'DLM',
+  })
+  const ctx = (over: Partial<MatchingSuggestionContext> = {}): MatchingSuggestionContext => ({
+    inRekordbox: true,
+    collectionById: new Map([['7', song('7')]]),
+    programById: new Map([['/m/a.wav', song('/m/a.wav')]]),
+    selectedContentId: '7',
+    matchingSelfPath: '/m/a.wav',
+    matchingPairs: [['7', '8']],
+    matchingPathPairs: [['/m/a.wav', '/m/b.wav']],
+    sourceProgram: 'rekordbox',
+    browser: { playlist: { id: MATCHING_ID, name: 'Matching', folders: [] } },
+    ...over,
+  })
+
+  // rekordbox pairs its own collection entries by id; Surco keeps every other program's
+  // pairs by file. Suggesting from the wrong side would name tracks the open program does
+  // not hold, or pair a track with itself. The memos and the suggestion hook are keyed on
+  // these, so each comes back as the very one handed in.
+  it('suggests from rekordbox’s collection by entry id while rekordbox is open', () => {
+    const open = ctx()
+    const source = matchingSuggestionSourceOf(open)
+    expect(source.suggestionTracks).toBe(open.collectionById)
+    expect(source.suggestionSelf).toBe('7')
+    expect(source.matchedPairs).toBe(open.matchingPairs)
+  })
+
+  it('suggests from the open program’s collection by path in any other program', () => {
+    const open = ctx({ inRekordbox: false, sourceProgram: 'serato' })
+    const source = matchingSuggestionSourceOf(open)
+    expect(source.suggestionTracks).toBe(open.programById)
+    expect(source.suggestionSelf).toBe('/m/a.wav')
+    expect(source.matchedPairs).toBe(open.matchingPathPairs)
+  })
+
+  // The suggestions are offered in a DJ program's Matching only.
+  it('is in Matching only with a DJ program open on it', () => {
+    expect(matchingSuggestionSourceOf(ctx()).inMatching).toBe(true)
+    expect(matchingSuggestionSourceOf(ctx({ sourceProgram: null })).inMatching).toBe(false)
+    const crate = { playlist: { id: 'p1', name: 'Friday', folders: [] } }
+    expect(matchingSuggestionSourceOf(ctx({ browser: crate })).inMatching).toBe(false)
+    expect(matchingSuggestionSourceOf(ctx({ browser: { playlist: null } })).inMatching).toBe(false)
   })
 })

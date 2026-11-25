@@ -19,16 +19,15 @@ import type React from 'react'
 import { Fragment, memo, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
 import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
+import { formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
-import { keepsOwnFormat, READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
+import { keepsOwnFormat } from '../../../shared/trackOrigin'
 import type {
   CueSaveThen,
   DeclickConfig,
@@ -75,87 +74,82 @@ import { useVersionCopyPlaylists } from '../hooks/useVersionCopyPlaylists'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
 import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
-import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
+import {
+  clearedTrackPatch,
+  matchTargetOf,
+  shouldAutoApplyMatch,
+  suggestionOf,
+} from '../lib/autoMatch'
 import {
   type BatchPick,
   batchFormats,
   batchSkips,
   batchWritesTagsOnly,
   convertGate,
+  convertReadiness,
   leftOutNote,
   offersSourceFormat,
 } from '../lib/batch'
-import {
-  type CopyFacts,
-  type CopyReason,
-  type CopyVerdict,
-  compareCopies,
-  wantsAudibleSpans,
-} from '../lib/bestCopy'
+import { type CopyFacts, type CopyReason, type CopyVerdict, wantsAudibleSpans } from '../lib/bestCopy'
 import { BULK_FIELDS, GENRE_TAGS, GROUPING_TAGS } from '../lib/bulkEdit'
 import type { CueActions } from '../lib/commands'
 import { configsDiffer } from '../lib/configsDiffer'
 import { copySentence } from '../lib/copySentence'
 import type { AutoMarkTarget } from '../lib/cueAutoMark'
 import { deriveTagPatches } from '../lib/deriveTags'
-import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
+import {
+  DESTINATIONS,
+  type Destination,
+  exportDestination,
+  exportReadiness,
+  fromDestination,
+  toDestination,
+} from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
 import { exportButtonLabel } from '../lib/exportLabel'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
-import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
+import { FIELD_DEFS, labeledFields, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
 import { ownsKeystroke } from '../lib/keymap'
 import { LAYER } from '../lib/layers'
 import {
-  type CopyCandidate,
+  comparedCopyOf,
+  copyComparisonOf,
   copyPathIn,
   copyRefOf,
   fillCopyPath,
   isAnotherVersion,
-  keptFormatOf,
-  type LibraryCopyOffer,
   type LibraryCopyRef,
-  pickLibraryCopy,
+  libraryCopyOfferOf,
+  libraryTargetOf,
+  musicCopyOf,
+  pickedCopyOf,
   replaceCopyPatch,
-  replaceWarnsFirst,
   versionCopyIn,
   versionCopyPath,
 } from '../lib/libraryCopy'
 import { libraryMembership, librarySourceOf } from '../lib/librarySource'
-import { rowVerdict, verdictState } from '../lib/libraryVerdict'
+import { musicRowVerdict, rowVerdict, verdictState } from '../lib/libraryVerdict'
+import { moreItems } from '../lib/metaMenu'
 import { missingSummary } from '../lib/missingSummary'
-import {
-  autoNamesFile,
-  emptyTitleFormatFields,
-  renderOutputName,
-  titleFormatPatches,
-} from '../lib/outputName'
+import { autoNamesFile, renderOutputName, titleFormatState } from '../lib/outputName'
 import { pathKey } from '../lib/pathKey'
 import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { isMacOS, revealCommandKey } from '../lib/platform'
 import { splitPosition } from '../lib/position'
-import { fileExtension, libraryCopyFormat } from '../lib/properties'
+import { libraryCopyFormat } from '../lib/properties'
 import { isLowResCover } from '../lib/quality'
 import { withQualityTag } from '../lib/qualityTag'
 import { declickFor, jobAudio, normalizeFor } from '../lib/reapply'
 import type { PlaylistsEdit } from '../lib/rekordboxPlaylists'
-import {
-  bestMatch,
-  buildReleaseMeta,
-  catalogNumberMatches,
-  corroboratedTier,
-  joinArtists,
-  type ReleaseMetaPatch,
-  titleWithMix,
-} from '../lib/release'
-import { replaceWarning } from '../lib/replaceWarning'
+import { bestMatch, buildReleaseMeta, type ReleaseMetaPatch, titleWithMix } from '../lib/release'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
-import { stripParentheticals } from '../lib/textClean'
+import { proposeAlbumClean } from '../lib/textClean'
 import type { AutoMarkKind } from '../lib/triage'
 import { fileHoldsTrack } from '../lib/upToDate'
 import type { FieldCleanup, TrackItem } from '../types'
@@ -173,7 +167,7 @@ import { type LibraryRow, LibrarySection } from './LibrarySection'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
-import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
+import { MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PhraseCountRow } from './PhraseCountRow'
@@ -802,21 +796,7 @@ export const Editor = memo(function Editor({
     () => (release ? bestMatch(release.tracklist, matchTargetOf(item)) : undefined),
     [release, item.meta.title, item.duration, item.meta.trackNumber, item.meta.artist],
   )
-  // The same guarded tier the sweep acts on (corroboratedTier), so the badge never reads
-  // 'high' on a title-only hit the sweep would have flagged for review.
-  const matchTier =
-    match && release
-      ? corroboratedTier(
-          match.confidence,
-          matchTargetOf(item),
-          release,
-          match.track,
-          catalogNumberMatches(item.meta.catalogNumber, release),
-        )
-      : undefined
-  // 'low' is too weak to trust, so it points at nothing — otherwise loading an
-  // unrelated release still badges whichever mix shares an incidental word.
-  const matchedTrack = matchTier && matchTier !== 'low' ? match?.track : undefined
+  const { matchTier, matchedTrack, suggestedMeta } = suggestionOf({ match, release, item })
 
   // The tracklist entry the file's tags currently spell out — the row selectTrack applied
   // (or its session-restored equivalent). Derived from the meta rather than stored so it
@@ -836,18 +816,6 @@ export const Editor = memo(function Editor({
     [release, item.meta.title, item.meta.trackNumber],
   )
 
-  // The canonical artist/title of the confidently-suggested release. The file's own tag is
-  // often messier than the spelling the user searched for, and the library is keyed by the
-  // canonical name — so this bridges a tag the library can't recognise on its own. Only a
-  // trusted match (matchedTrack already excludes 'low') feeds it, so an unrelated open
-  // release can't manufacture a false "owned".
-  const suggestedMeta =
-    matchedTrack && release
-      ? {
-          title: matchedTrack.title,
-          artist: joinArtists(matchedTrack.artists) || joinArtists(release.artists),
-        }
-      : undefined
   const libraryHidden = editorSections.some((s) => s.id === 'library' && s.hidden === true)
   const libraryShown = filesOpen && !isMulti && !libraryHidden
   // Whether the destination library already owns this track, and whether an older copy of it
@@ -883,15 +851,14 @@ export const Editor = memo(function Editor({
   // be measured gives no verdict and leaves that check as the only answer. A pair that could
   // not be lined up is not one master, so compareCopies skips the level criteria and the
   // format and spectrum still decide.
-  // A track opened from the library's own folder is that copy, so there is nothing to compare.
-  const libraryCopyIsThisFile = pathKey(libraryCopyPath) === pathKey(item.inputPath)
-  const comparedCopyPath = libraryCopyIsThisFile || isMulti ? '' : libraryCopyPath
-  const musicHoldsFile = !!libraryCopyPath && libraryCopyIsThisFile
+  const { comparedCopyPath, musicHoldsFile } = comparedCopyOf({
+    libraryCopyPath,
+    inputPath: item.inputPath,
+    isMulti,
+  })
   const [musicCopyReach] = useCopyReach(
     comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
   )
-  const musicCopyUnreached =
-    !!musicCopyReach && (musicCopyReach.missing || musicCopyReach.unreadable)
   const hereMeasured = withDuration(
     useCopyFacts(item.inputPath, !!comparedCopyPath, 'high'),
     useCopyDuration(item.inputPath, !!comparedCopyPath),
@@ -912,33 +879,20 @@ export const Editor = memo(function Editor({
     useGatedWave(comparedCopyPath, spansWanted),
     spansWanted,
   )
-  const copyVerdict =
-    hereFacts && libraryFacts && copyPair !== undefined
-      ? compareCopies(hereFacts, libraryFacts, copyPair)
-      : null
-  const copyMeasuring =
-    !!comparedCopyPath &&
-    (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
   const [copyOpenFor, setCopyOpenFor] = useState('')
-  const copyOpen =
-    !!copyVerdict &&
-    copyVerdict.winner !== 'same' &&
-    copyOpenFor === `${item.inputPath}\n${libraryCopyPath}`
-  const libraryCopyBetter = copyVerdict
-    ? copyVerdict.winner === 'b'
-    : !!libraryCopyPath &&
-      replaceWarning(
-        {
-          ext: fileExtension(libraryCopyPath),
-          cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
-          hasKnee: replacedCopySpectrum?.hasKnee,
-        },
-        {
-          ext: fileExtension(item.inputPath),
-          cutoffHz: spectrumInHand?.cutoffHz ?? undefined,
-          hasKnee: spectrumInHand?.hasKnee,
-        },
-      ) !== null
+  const { musicCopyUnreached, copyVerdict, copyMeasuring, copyOpen, libraryCopyBetter } =
+    copyComparisonOf({
+      musicCopyReach,
+      hereFacts,
+      libraryFacts,
+      copyPair,
+      comparedCopyPath,
+      copyOpenFor,
+      inputPath: item.inputPath,
+      libraryCopyPath,
+      spectrumInHand,
+      replacedCopySpectrum,
+    })
   const { copies: programCopies, pending: programCollectionsPending } = useProgramCopies({
     inputPath: item.inputPath,
     meta: item.meta,
@@ -1170,27 +1124,14 @@ export const Editor = memo(function Editor({
     [isMulti, visibleFields, resolvedMeta, customFields, tr],
   )
 
-  // "Without version" proposal for the album menu: strip the mix/label parenthetical
-  // from the album, or from the title when the album is still empty (the common case
-  // for a single release). Only set when stripping actually removes something, so the
-  // menu offers the row only when there is a version to drop.
-  const albumCleanSource = isMulti ? '' : (item.meta.album ?? '').trim() || (item.meta.title ?? '')
-  const albumClean = stripParentheticals(albumCleanSource)
-  const albumCleanResult = albumClean && albumClean !== albumCleanSource ? albumClean : undefined
+  const albumCleanResult = proposeAlbumClean({ isMulti, meta: item.meta })
 
-  // The title rebuilt from the settings' title format, for the title menu's one-shot
-  // rewrite. titleFormatPatches carries the shared no-op rules: nothing to offer when
-  // the render is empty/unchanged OR the title already wears the pattern's prefix and
-  // suffix — so the row can never stack "(B2) (B2) …" on a second apply.
-  const titleFormatResult =
-    isMulti || !titleFormat.trim()
-      ? undefined
-      : titleFormatPatches(titleFormat, [{ ...item, meta: resolvedMeta }])[0]?.meta.title
-
-  const titleFormatOff =
-    !resolvedMeta.title?.trim() ||
-    (titleFormatResult === undefined &&
-      emptyTitleFormatFields(titleFormat, [{ ...item, meta: resolvedMeta }]).length === 0)
+  const { titleFormatResult, titleFormatOff } = titleFormatState({
+    isMulti,
+    titleFormat,
+    id: item.id,
+    resolvedMeta,
+  })
   const titleFormatAction = useMemo(
     () =>
       onApplyTitleFormat && titleFormat.trim() !== ''
@@ -1295,28 +1236,17 @@ export const Editor = memo(function Editor({
     [isMulti, selectedTracks, requiredFields, customFields, libraryIndex],
   )
   const againLeftOut = againGate ? leftOutNote(againGate, tr, i18n.language) : null
-  const blockedBy = isMulti ? undefined : readOnlyProgramsOf(item)[0]
-  const readOnlyRows = blockedBy !== undefined
-  const missing = isMulti || readOnlyRows ? [] : missingRequired(resolvedMeta, requiredFields)
-  const firstMissing = multiGate?.mixed ? undefined : (multiGate?.missing.fields ?? missing)[0]
-  const incomplete = isMulti ? againLeftOut !== null : readOnlyRows || missing.length > 0
-  const readOnlyReason = blockedBy ? [tr(`errors.${READ_ONLY_BLOCKED[blockedBy]}`)] : []
-  const otherReason = missing.length
-    ? tr('editor.missingRequired', {
-        fields: new Intl.ListFormat(i18n.language, { type: 'conjunction' }).format(
-          missing.map((key) => tr(`fields.${key}`)),
-        ),
-      })
-    : undefined
-  const incompleteReason = isMulti
-    ? (againLeftOut ?? undefined)
-    : [...readOnlyReason, ...(otherReason ? [otherReason] : [])].join(' · ') || undefined
-  const otherSummary = missing.length
-    ? missingSummary(
-        missing.map((key) => tr(`fields.${key}`)),
-        tr,
-      )
-    : otherReason
+  const { firstMissing, incomplete, readOnlyReason, incompleteReason, otherSummary } =
+    convertReadiness({
+      item,
+      isMulti,
+      resolvedMeta,
+      requiredFields,
+      multiGate,
+      againLeftOut,
+      tr,
+      language: i18n.language,
+    })
   // The user's default genres come first so they're always one click away even when a
   // release isn't matched; the release's own genres/styles follow, deduped case-insensitively
   // so a shared name (the user's "Electronic" vs a provider's "electronic") shows a single
@@ -1339,21 +1269,24 @@ export const Editor = memo(function Editor({
   // resolveOutputTarget actually does. Beside-original never edits in place (a
   // same-format export lands as a fresh "(n)" copy next to the source), so its rows
   // must not carry the in-place rename warning.
-  const willEditInPlace =
-    !picked.convertBesideOriginal && editsInPlace(format, item.inputPath, picked.overwriteOriginal)
-  const inSourceFolder =
-    (picked.convertBesideOriginal && !picked.overwriteOriginal) ||
-    editsInPlace(format, item.inputPath, picked.overwriteOriginal)
-  // Overwriting a lossless master (WAV/AIFF/FLAC) with MP3 is the one irreversible,
-  // quality-losing case worth a sharper warning before the user commits to it.
-  const lossyOverwrite =
-    picked.overwriteOriginal && format === 'mp3' && !formatMatchesInput('mp3', item.inputPath)
-  const tagsOnlyExport =
-    !isMulti &&
-    tagsOnly(
-      formatMatchesInput(format, item.inputPath),
-      jobAudio(item, normalizeCfg, declickCfg, { normalize, declick }),
-    )
+  const { willEditInPlace, inSourceFolder, lossyOverwrite, tagsOnlyExport, batchDestination } =
+    exportDestination({
+      item,
+      isMulti,
+      picked,
+      format,
+      normalizeCfg,
+      declickCfg,
+      normalize,
+      declick,
+      destinationPicked,
+      destination,
+      addToAppleMusic,
+      formatPick,
+      overwriteOriginal,
+      convertBesideOriginal,
+      macOS: isMacOS(),
+    })
   // What a batch over the selection will really do, resolved per track the way the run
   // resolves it, so the destination shown, the count and the verb all describe the run.
   const batchPick = useMemo<BatchPick>(
@@ -1381,14 +1314,6 @@ export const Editor = memo(function Editor({
       addToAppleMusic,
     ],
   )
-  const batchDestination = destinationPicked
-    ? destination
-    : toDestination(
-        addToAppleMusic && isMacOS(),
-        formatPick === 'flac',
-        overwriteOriginal,
-        convertBesideOriginal,
-      )
   const batchReady = useMemo(
     () =>
       (multiGate?.ready ?? []).filter(
@@ -1415,13 +1340,6 @@ export const Editor = memo(function Editor({
     () => offersSourceFormat(multiTracks, formatPick),
     [multiTracks, formatPick],
   )
-  const addsToMusic =
-    !isMulti &&
-    picked.addToAppleMusic &&
-    willEditInPlace &&
-    formatMatchesInput(format, item.inputPath) &&
-    inLibrary === 'no' &&
-    !item.fromAppleMusic
   // A selection adds to Music whenever the batch lands there and any of its tracks is
   // missing from the library. It reads each track as the open track's badge does except for
   // the Discogs-proven step, which needs that track's open release; a track only Discogs
@@ -1468,13 +1386,20 @@ export const Editor = memo(function Editor({
       filenameFormat,
     ],
   )
-  const upToDate = isMulti
-    ? !batchAddsToMusic && !incomplete && batchTagsOnly && selectionHeld
-    : !addsToMusic &&
-      !incomplete &&
-      willEditInPlace &&
-      tagsOnlyExport &&
-      fileHoldsTrack(item, defaultOutputName)
+  const { addsToMusic, upToDate } = exportReadiness({
+    item,
+    isMulti,
+    picked,
+    format,
+    inLibrary,
+    willEditInPlace,
+    tagsOnlyExport,
+    defaultOutputName,
+    incomplete,
+    batchAddsToMusic,
+    batchTagsOnly,
+    selectionHeld,
+  })
 
   // Everything typed into one field while it holds the focus is one ⌘Z step, the same step
   // whether the field writes one track or the whole selection: the Field commits on every
@@ -1718,92 +1643,23 @@ export const Editor = memo(function Editor({
     </button>
   ) : null
 
-  const pasteMetaLabel = copiedMetaTitle
-    ? tr('editor.pasteMetaFrom', { title: copiedMetaTitle })
-    : tr('trackList.context.pasteMeta')
-
-  // The glyphs that used to run along the header, now one menu: the file's own actions
-  // first (reveal, copy the name, search it), then what works on the tags. "Rewrite titles"
-  // only exists when a title format is configured, since without one there is nothing to apply.
-  const moreItems: MetaMenuItem[] = [
-    ...(isMulti
-      ? []
-      : [
-          {
-            id: 'reveal',
-            testid: 'reveal-file-btn',
-            label: tr(revealCommandKey()),
-            Icon: Folder,
-            onSelect: () => window.api.reveal(item.inputPath),
-          },
-          {
-            id: 'copy-filename',
-            testid: 'copy-filename-btn',
-            label: tr('editor.copyFilename'),
-            Icon: Copy,
-            onSelect: onCopyFilename,
-          },
-          {
-            id: 'copy-path',
-            testid: 'copy-path-btn',
-            label: tr('trackList.context.copyPath'),
-            Icon: Link,
-            onSelect: () => onCopyPath(item),
-          },
-          {
-            id: 'search-web',
-            testid: 'search-web-btn',
-            label: tr('editor.searchWeb'),
-            Icon: Globe,
-            onSelect: onSearchWeb,
-          },
-        ]),
-    ...(onApplyTitleFormat && titleFormat.trim() !== ''
-      ? [
-          {
-            id: 'title-format',
-            testid: 'apply-title-format-btn',
-            label: tr('editor.applyTitleFormat'),
-            Icon: Braces,
-            onSelect: onApplyTitleFormat,
-            separatorBefore: !isMulti,
-          },
-        ]
-      : []),
-    ...(isMulti
-      ? []
-      : [
-          {
-            id: 'copy-meta',
-            testid: 'copy-meta-btn',
-            label: tr('trackList.context.copyMeta'),
-            Icon: ClipboardCopy,
-            onSelect: onCopyMeta,
-            separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
-          },
-        ]),
-    {
-      id: 'paste-meta',
-      testid: 'paste-meta-btn',
-      label: pasteMetaLabel,
-      Icon: ClipboardPaste,
-      onSelect: onPasteMeta,
-      disabled: copiedMetaTitle === null,
-      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
-    },
-    ...(Object.keys(restorableRelease).length > 0
-      ? [
-          {
-            id: 'restore-release',
-            testid: 'restore-release-btn',
-            label: tr('editor.restoreRelease'),
-            Icon: Undo2,
-            onSelect: restoreRelease,
-            separatorBefore: true,
-          },
-        ]
-      : []),
-  ]
+  const moreItemsList = moreItems({
+    isMulti,
+    tr,
+    revealKey: revealCommandKey(),
+    icons: { Folder, Copy, Link, Globe, Braces, ClipboardCopy, ClipboardPaste, Undo2 },
+    onReveal: () => window.api.reveal(item.inputPath),
+    onCopyFilename,
+    onCopyPath: () => onCopyPath(item),
+    onSearchWeb,
+    onApplyTitleFormat,
+    titleFormat,
+    onCopyMeta,
+    onPasteMeta,
+    copiedMetaTitle,
+    restorableRelease,
+    restoreRelease,
+  })
 
   const copyState = verdictState(copyVerdict, copyMeasuring)
   const renderComparison = ({
@@ -1886,22 +1742,15 @@ export const Editor = memo(function Editor({
           format: replacedCopyFormat,
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           copies: tiedCopies,
-          verdict: musicHoldsFile
-            ? 'thisFile'
-            : tiedCopies
-              ? 'several'
-              : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
-                ? 'missing'
-                : musicCopyReach?.unreadable
-                  ? 'unreadable'
-                  : musicCopyReach?.checking
-                    ? 'measuring'
-                    : libraryCopyBetter &&
-                        (copyState === 'unmeasurable' || copyState === 'measuring')
-                      ? 'library'
-                      : libraryCopyPending && !libraryCopyPath
-                        ? 'measuring'
-                        : copyState,
+          verdict: musicRowVerdict({
+            musicHoldsFile,
+            tiedCopies,
+            libraryCopyPath,
+            libraryCopyPending,
+            musicCopyReach,
+            libraryCopyBetter,
+            copyState,
+          }),
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: musicCopyUnreached
@@ -1976,19 +1825,14 @@ export const Editor = memo(function Editor({
     () => entryDurationSec(libraryIndex, musicEntryId),
     [libraryIndex, musicEntryId],
   )
-  const musicCopy =
-    replaceTarget && !isAmbiguousCandidate(replaceTarget) && musicRow
-      ? {
-          program: 'appleMusic' as const,
-          path: replaceTarget.path ?? '',
-          format: replacedCopyFormat,
-          verdict: musicRow.verdict,
-          better: libraryCopyBetter,
-          durationSec: musicRow.durationSec ?? musicEntryDurationSec,
-          sameMasterAcrossGap: copyVerdict?.sameMasterAcrossGap,
-          music: replaceTarget,
-        }
-      : null
+  const { musicCopy } = musicCopyOf({
+    replaceTarget,
+    musicRow,
+    replacedCopyFormat,
+    libraryCopyBetter,
+    musicEntryDurationSec,
+    copyVerdict,
+  })
   // Only a copy of the same recording lends all its fields: another version of the track has
   // other tags, and lends only its grouping and cover when no such copy fills. In Music that is
   // the copy a replacement would supersede, judged by its row's verdict and length like a DJ
@@ -2053,65 +1897,29 @@ export const Editor = memo(function Editor({
   })
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.
-  const copyCandidates: CopyCandidate[] = isMulti
-    ? []
-    : [
-        ...(musicCopy && !musicHoldsFile ? [musicCopy] : []),
-        ...comparedProgramCopies.map((copy, i) => {
-          const state = programVerdicts[i]
-          return {
-            program: copy.program,
-            path: copy.path,
-            format: state?.format ?? '',
-            verdict: rowVerdict(state),
-            better: rowVerdict(state) === 'library',
-            durationSec: copyRows[i].durationSec,
-            sameMasterAcrossGap: copyRows[i].sameMasterAcrossGap,
-          }
-        }),
-      ]
-  const pickedCopy = pickLibraryCopy(copyCandidates, item.duration)
+  const { pickedCopy } = pickedCopyOf({
+    isMulti,
+    musicCopy,
+    musicHoldsFile,
+    comparedProgramCopies,
+    programVerdicts,
+    copyRows,
+    fileDurationSec: item.duration,
+  })
   // The copy may be the open file under another path, as through a symlinked folder: acting
   // on it would update or replace the very file. Until main answers, the press waits.
   const pickedIsThisFile = useSameFile(item.inputPath, pickedCopy?.path ?? '')
-  const libraryTarget =
-    pickedCopy && !pickedIsThisFile
-      ? { ...pickedCopy, held: pickedCopy.held || pickedIsThisFile === undefined }
-      : null
-  const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
+  const { libraryTarget, keptFormat } = libraryTargetOf({ pickedCopy, pickedIsThisFile })
   // Asked whatever the body says, since it decides whether picking Replace may run at once.
   const replaceStarsLoss = useSeratoStarsLoss(
     libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
   )
-  const replaceLosesStars =
-    !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
-  // A copy in no format Surco writes can't be updated in place, but it is still the track, so
-  // the body replaces it: offering nothing let the body say Convert and add a second entry
-  // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
-  const updatable = !!keptFormat || !libraryTarget?.path
-  // pickLibraryCopy never targets a copy that is neither updatable nor replaceable.
-  const copyAction: LibraryCopyAction =
-    libraryTarget && !libraryTarget.replaceable
-      ? 'update'
-      : updatable
-        ? libraryCopyAction
-        : 'replace'
-  const libraryCopy: LibraryCopyOffer | undefined = libraryTarget
-    ? {
-        name:
-          libraryTarget.program === 'appleMusic'
-            ? 'Apple Music'
-            : LIBRARY_NAME[libraryTarget.program],
-        format: libraryTarget.format,
-        action: copyAction,
-        better: libraryTarget.better,
-        held: libraryTarget.held,
-        keptFormat,
-        updatable,
-        replaceable: libraryTarget.replaceable,
-        replaceLosesStars,
-      }
-    : undefined
+  const { copyAction, libraryCopy } = libraryCopyOfferOf({
+    libraryTarget,
+    keptFormat,
+    replaceStarsLoss,
+    libraryCopyAction,
+  })
   const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {
     if (!libraryTarget || libraryTarget.held) return
     if (action === 'update') {
@@ -2288,7 +2096,7 @@ export const Editor = memo(function Editor({
                       {clearButton}
                     </>
                   )}
-                  {formOpen && <MetaMoreMenu items={moreItems} />}
+                  {formOpen && <MetaMoreMenu items={moreItemsList} />}
                 </div>
               }
             />

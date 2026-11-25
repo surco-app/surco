@@ -22,6 +22,21 @@ export type ReviewOpening =
       scope?: { ids: ReadonlySet<string>; mode: MusicScopeMode }
     }
 
+export interface ReviewParams {
+  reviewKind: ReviewOpening['source'] | undefined
+  reviewPaths: ReadonlySet<string> | undefined
+  reviewIds: ReadonlySet<string> | undefined
+  reviewMode: MusicScopeMode | undefined
+}
+
+export function reviewParamsOf(review: ReviewOpening | null): ReviewParams {
+  const reviewKind = review?.source
+  const reviewPaths = review?.source === 'list' ? review.paths : undefined
+  const reviewIds = review?.source === 'music' ? review.scope?.ids : undefined
+  const reviewMode = review?.source === 'music' ? review.scope?.mode : undefined
+  return { reviewKind, reviewPaths, reviewIds, reviewMode }
+}
+
 // playlistTracks is the open playlist's rows once they are applied (App's playlistScope):
 // until then workingCount is the rows shown, none in a source, and a click acts on them.
 export function reviewTarget({

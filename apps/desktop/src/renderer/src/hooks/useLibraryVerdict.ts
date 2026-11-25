@@ -26,7 +26,7 @@ interface Params {
   describesCopy: boolean
 }
 
-interface LibraryVerdict {
+export interface LibraryVerdict {
   inLibrary: 'idle' | 'yes' | 'no'
   // The library entry this track's add superseded — the old rip, still in the library under a
   // different persistent ID. The footer offers deleting it.
