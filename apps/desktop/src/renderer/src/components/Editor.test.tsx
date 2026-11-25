@@ -18,7 +18,7 @@ import type {
   TrackMetadata,
   TrackProperties,
 } from '../../../shared/types'
-import { resetEditorSections } from '../hooks/useEditorSections'
+import { resetEditorSections, seedEditorSections } from '../hooks/useEditorSections'
 import i18n from '../i18n'
 import { type AppleMusicIndex, buildLibraryIndex } from '../lib/appleMusicLibrary'
 import { convertGate } from '../lib/batch'
@@ -7000,6 +7000,7 @@ describe('Editor Apple Music library section', () => {
       traktorLoading = false,
       musicEntryMeta,
       rekordboxPlaylists,
+      formFolded = false,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
@@ -7030,6 +7031,8 @@ describe('Editor Apple Music library section', () => {
       musicEntryMeta?: Api['appleMusicEntryMeta']
       // rekordbox's playlist membership by path, with its Playlists field shown.
       rekordboxPlaylists?: Record<string, string[]>
+      // The metadata section, which holds the Playlists fields, starts folded.
+      formFolded?: boolean
     }): Record<string, unknown> {
       setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
@@ -7131,6 +7134,7 @@ describe('Editor Apple Music library section', () => {
           filesOpen,
           libraryCopyAction,
           ...(rekordboxPlaylists && { visibleFields: ['rekordboxPlaylists'] }),
+          ...(formFolded && { editorSections: [{ id: 'form' as const, open: false }] }),
         },
       )
       return api
@@ -7376,6 +7380,24 @@ describe('Editor Apple Music library section', () => {
       expect(
         (api.dj as { editPlaylist: ReturnType<typeof vi.fn> }).editPlaylist,
       ).not.toHaveBeenCalled()
+    })
+
+    // Nothing the DJ cannot see is applied at the convert: with the metadata folded away the
+    // field is out of sight, so its picks wait until the DJ opens it.
+    it('stages the playlists of another version only once the metadata is unfolded', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        rekordboxPlaylists: { '/r/Strobe.wav': ['3000'] },
+        tags: { '/r/Strobe.wav': { grouping: 'Bases' } },
+        formFolded: true,
+      })
+      const staged = () =>
+        rendered.onChange.mock.calls.filter(([patch]) => patch.copyPlaylistsFilled)
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(staged()).toEqual([])
+      act(() => seedEditorSections([{ id: 'form', open: true }]))
+      await waitFor(() => expect(staged()).toHaveLength(1))
     })
 
     // A copy of the same recording is the track: the field acts on it and nothing is staged.
