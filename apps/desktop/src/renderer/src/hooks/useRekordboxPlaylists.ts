@@ -144,8 +144,16 @@ export function usePlaylistsSpec(
   const copy = copyPathOf && copyOf(item, library, copyPathOf)
   return useMemo(() => {
     if (!shown || !tree || !options || !membership) return undefined
-    const disabled = gated && canSave === false ? 'unconfirmed' : undefined
     const copyIn = copyPathOf && ((t: TrackItem) => copyOf(t, library, copyPathOf))
+    const copies = tracks.map((t) => copyIn?.(t))
+    const isBulk = tracks.length > 1
+    // A tick on a copy goes nowhere until the check answers yes, so a field acting only on
+    // copies is greyed out meanwhile; staging just records the pick for the convert.
+    const onCopiesOnly = isBulk ? copies.every((path) => path !== undefined) : !!copy
+    const disabled =
+      gated && (canSave === false || (canSave === undefined && onCopiesOnly))
+        ? 'unconfirmed'
+        : undefined
     const toggleCopies = (paths: string[], target: RekordboxPlaylistTarget, on: boolean) => {
       if (gated && canSave !== true) return
       toggle(paths, target, on).catch((error) => {
@@ -165,8 +173,6 @@ export function usePlaylistsSpec(
           value: effectivePlaylists(item, membership, options, library) ?? [],
           onChange: (next) => onChange(playlistsEdit(item, membership, next, library)),
         }
-    const copies = tracks.map((t) => copyIn?.(t))
-    const isBulk = tracks.length > 1
     return {
       library,
       disabled,

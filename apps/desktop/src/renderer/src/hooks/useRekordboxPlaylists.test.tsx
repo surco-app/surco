@@ -533,6 +533,21 @@ describe('usePlaylistsSpec on a library copy', () => {
     },
   )
 
+  // A tick on the copy does nothing until the check answers, so the field must not look live
+  // meanwhile: a tick that silently goes nowhere reads as Surco losing it.
+  it('greys the copy field out while Traktor’s collection check is still running', async () => {
+    const { hook } = onCopy({ library: 'traktor', canSave: 'pending' })
+    await waitFor(() => expect(hook.result.current?.single.value).toHaveLength(1))
+    expect(hook.result.current?.disabled).toBe('unconfirmed')
+  })
+
+  // Staging only records the pick on the track, which waits for the convert anyway.
+  it('leaves the staging field live while Traktor’s collection check is still running', async () => {
+    const { hook } = onCopy({ library: 'traktor', canSave: 'pending', copyPathOf: null })
+    await waitFor(() => expect(hook.result.current).toBeDefined())
+    expect(hook.result.current?.disabled).toBeUndefined()
+  })
+
   // The suite exits 1 on an unhandled rejection, and the DJ would be told nothing.
   it('says so when the program cannot be read before untagging the copy', async () => {
     const { hook, reportError, editPlaylist } = onCopy({
