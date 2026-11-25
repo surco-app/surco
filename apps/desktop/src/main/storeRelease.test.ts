@@ -68,7 +68,7 @@ describe('Private auto cue engine in the release', () => {
   it('checks the engine out beside the app and refuses to build without it', () => {
     const release = job('release')
     expect(release).toContain('repository: surco-app/surco-brain')
-    expect(release).toContain('ssh-key: ${{ secrets.BRAIN_DEPLOY_KEY }}')
+    expect(release).toContain(`ssh-key: $\{{ secrets.BRAIN_DEPLOY_KEY }}`)
     expect(release).toContain('path: apps/desktop/brain')
     expect(release).toContain("SURCO_REQUIRE_BRAIN: '1'")
   })
