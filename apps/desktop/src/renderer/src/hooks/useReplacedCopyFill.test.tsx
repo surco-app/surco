@@ -184,15 +184,18 @@ describe('useReplacedCopyFill', () => {
     setApi(vi.fn<Api['readTags']>().mockResolvedValue(copyTags({ album: 'Your Love' })))
     const unhandled = vi.fn()
     process.on('unhandledRejection', unhandled)
-    const onChange = vi.fn(() => {
-      throw new Error('row gone')
-    })
-    renderHook(() =>
-      useReplacedCopyFill({ item: track(), copyPath: '/old/your-love.mp3', onChange }),
-    )
-    await waitFor(() => expect(onChange).toHaveBeenCalled())
-    await new Promise((resolve) => setImmediate(resolve))
-    process.off('unhandledRejection', unhandled)
+    try {
+      const onChange = vi.fn(() => {
+        throw new Error('row gone')
+      })
+      renderHook(() =>
+        useReplacedCopyFill({ item: track(), copyPath: '/old/your-love.mp3', onChange }),
+      )
+      await waitFor(() => expect(onChange).toHaveBeenCalled())
+      await new Promise((resolve) => setImmediate(resolve))
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
     expect(unhandled).not.toHaveBeenCalled()
   })
 
