@@ -102,8 +102,8 @@ afterPack: build/afterPack.cjs
 mac:
   category: public.app-category.music
   # The encrypted-database addon ships prebuilt binaries for every OS; each platform
-  # packages only its own (a platform list replaces the top-level files for the app's own
-  # files, so each one repeats them; node_modules exclusions still come from both).
+  # packages only its own. Measured: a platform files list made the package ship the whole
+  # app folder, so each platform repeats the top-level list.
   files:
     - out/**
     - '!out/**/*.map'

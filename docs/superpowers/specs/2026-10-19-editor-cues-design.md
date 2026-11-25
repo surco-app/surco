@@ -184,7 +184,7 @@ Tiempo de lectura y aprendizaje sobre la copia: 906 ms la primera vez y unos 257
 
 ## Detección de donde rompe
 
-Auto propone dónde rompe cada pista a partir del análisis de rekordbox y la rejilla, y separa las propuestas seguras de las dudosas. Propone pocas por pista, cada una a su sitio, y acierta mucho más que marcar cada inicio de estribillo. No está conectado a la interfaz.
+Auto propone dónde rompe cada pista a partir del análisis de rekordbox y la rejilla, y separa las propuestas seguras de las dudosas. Propone pocas por pista, cada una a su sitio, y acierta mucho más que marcar cada inicio de estribillo. Auto marcar lo usa en el editor de cues desde la v1.10.
 
 El detalle del motor que lo hace (cómo puntúa, cómo se entrena y cómo se mide) no se documenta aquí. La build oficial de Surco lleva su propio motor de auto cue, y el código abierto trae uno más sencillo que cumple la misma interfaz.
 
