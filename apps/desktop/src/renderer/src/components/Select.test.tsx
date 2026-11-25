@@ -49,6 +49,39 @@ describe('Select', () => {
     outside.remove()
   })
 
+  // The options are buttons, so Tab walked from one option to the next and kept the menu
+  // open until it ran off the last one; a portaled menu then went on from the end of the
+  // page. Tab means the next control: the menu closes and the move goes on from the
+  // trigger, both ways, inline or portaled.
+  it.each([
+    { name: 'Tab', shiftKey: false, portal: false },
+    { name: 'Shift+Tab', shiftKey: true, portal: false },
+    { name: 'Tab', shiftKey: false, portal: true },
+    { name: 'Shift+Tab', shiftKey: true, portal: true },
+  ])(
+    'closes on $name and lets it carry on from the trigger (portaled: $portal)',
+    ({ shiftKey, portal }) => {
+      render(
+        <Select
+          value="import"
+          options={options}
+          onChange={vi.fn()}
+          label="Sort"
+          testid="sort"
+          portal={portal}
+        />,
+      )
+      fireEvent.click(screen.getByTestId('sort'))
+      const carriedOn = fireEvent.keyDown(screen.getByTestId('sort-option-import'), {
+        key: 'Tab',
+        shiftKey,
+      })
+      expect(carriedOn).toBe(true)
+      expect(screen.queryByTestId('sort-listbox')).toBeNull()
+      expect(screen.getByTestId('sort')).toHaveFocus()
+    },
+  )
+
   it('opens a listbox on click and marks the current option as selected', () => {
     renderSelect('name')
     fireEvent.click(screen.getByTestId('sort'))

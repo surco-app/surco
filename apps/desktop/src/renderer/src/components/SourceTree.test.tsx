@@ -784,6 +784,26 @@ describe('SourceTree rename and delete', () => {
     expect(node).toHaveFocus()
   })
 
+  // Tab did nothing to the open menu: focus walked into its items and on behind it while
+  // the menu stayed up over the tree. Tab means the next control, so the menu closes and
+  // the move goes on from the playlist it was opened on, both ways.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes its menu on %s and lets it carry on from the playlist', (_name, shiftKey) => {
+    setup(null, true)
+    const node = screen.getByTestId('source-node-house')
+    node.focus()
+    openMenu('house')
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('source-tree-rename'), {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(true)
+    expect(screen.queryByTestId('source-tree-menu')).toBeNull()
+    expect(node).toHaveFocus()
+  })
+
   it('closes the delete confirmation on Escape and keeps it and the arrows from the track selection behind it', () => {
     const { edit } = setup(null, true)
     openMenu('house')

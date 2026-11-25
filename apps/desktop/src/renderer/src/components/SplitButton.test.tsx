@@ -76,3 +76,19 @@ describe('useSplitMenu disabled items', () => {
     expect(screen.getByTestId('flac')).toHaveFocus()
   })
 })
+
+describe('useSplitMenu Tab', () => {
+  // Tab means "next control", not "stay in this menu": the menu closes and the browser's
+  // own Tab carries on from the chevron that opened it, so the keyboard user lands on the
+  // control beside it instead of wherever the menu happens to sit in the page.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('closes on %s and lets the move go on from the chevron', (_name, shiftKey) => {
+    openMenu()
+    const carriedOn = fireEvent.keyDown(screen.getByTestId('flac'), { key: 'Tab', shiftKey })
+    expect(carriedOn).toBe(true)
+    expect(screen.queryByTestId('menu')).toBeNull()
+    expect(screen.getByTestId('toggle')).toHaveFocus()
+  })
+})

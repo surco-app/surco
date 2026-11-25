@@ -146,6 +146,14 @@ export function Select({
   // window-level shortcut handler can't also move the track selection (or close an
   // outer modal) behind the popover.
   function onListKeyDown(e: React.KeyboardEvent): void {
+    // Tab is the next control, not the next option: the menu closes and the browser's own
+    // Tab carries on from the trigger, wherever the list sits in the page. It is left to
+    // bubble so a dialog's focus trap around the select still sees it.
+    if (e.key === 'Tab') {
+      triggerRef.current?.focus()
+      setOpen(false)
+      return
+    }
     if (e.key === 'Escape') {
       e.stopPropagation()
       close()

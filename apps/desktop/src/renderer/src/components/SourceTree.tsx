@@ -242,6 +242,13 @@ export const SourceTree = memo(function SourceTree({
     return () => menuOpener.current?.focus()
   }, [menuOpen])
   const onMenuKeyDown = (e: React.KeyboardEvent): void => {
+    // Closing hands the focus back to the playlist (the effect above) before the browser's
+    // own Tab runs, so the move carries on from it rather than from the menu drawn after
+    // the whole tree.
+    if (e.key === 'Tab') {
+      setMenu(null)
+      return
+    }
     if (e.key === 'Escape') {
       e.stopPropagation()
       setMenu(null)

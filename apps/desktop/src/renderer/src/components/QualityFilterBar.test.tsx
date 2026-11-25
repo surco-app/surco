@@ -157,6 +157,24 @@ describe('QualityFilterBar menu', () => {
     fireEvent.keyDown(document.activeElement as Element, { key: 'Tab' })
     expect(screen.queryByTestId('quality-filter-menu')).toBeNull()
   })
+
+  // The menu is portaled to the end of the page, so a Tab left to run from inside it went
+  // on from there, past every control of the window, instead of to the one after the
+  // trigger. It goes on from the trigger, both ways.
+  it.each([
+    ['Tab', false],
+    ['Shift+Tab', true],
+  ])('lets %s carry on from the trigger it was opened from', (_name, shiftKey) => {
+    renderBar({ tally: tally({ suspect: 3, good: 5 }) })
+    openMenu()
+    const carriedOn = fireEvent.keyDown(document.activeElement as Element, {
+      key: 'Tab',
+      shiftKey,
+    })
+    expect(carriedOn).toBe(true)
+    expect(screen.queryByTestId('quality-filter-menu')).toBeNull()
+    expect(screen.getByTestId('quality-filter-trigger')).toHaveFocus()
+  })
 })
 
 describe('QualityFilterBar sections', () => {
