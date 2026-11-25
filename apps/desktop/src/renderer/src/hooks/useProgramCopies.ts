@@ -81,10 +81,6 @@ function useActiveCollections(enabled: boolean): {
   return { collections, pending: enabled && loading.some((isPending, i) => isPending && active[i]) }
 }
 
-export function useProgramCollectionsPending(enabled: boolean): boolean {
-  return useActiveCollections(enabled).pending
-}
-
 // A selected track has no audio comparison behind it, so only an entry of the same title,
 // artist and length is taken as its copy. The match score alone lets an exact title and artist
 // through at any length, and another edit of the track must not be filed in the DJ's set.
@@ -149,19 +145,16 @@ export function useSelectionCopies(
   )
 }
 
-export function useProgramCopies({
-  inputPath,
-  meta,
-  durationSec,
-  suggestedMeta,
-  enabled,
-}: Args): ProgramCopy[] {
-  const { collections } = useActiveCollections(enabled)
+export function useProgramCopies({ inputPath, meta, durationSec, suggestedMeta, enabled }: Args): {
+  copies: ProgramCopy[]
+  pending: boolean
+} {
+  const { collections, pending } = useActiveCollections(enabled)
   const { title, artist } = meta
   const suggestedTitle = suggestedMeta?.title
   const suggestedArtist = suggestedMeta?.artist
   const thisKey = pathKey(inputPath)
-  return useMemo(
+  const copies = useMemo(
     () =>
       DJ_PROGRAMS.flatMap((program, i): ProgramCopy[] => {
         const tracks = collections[i]
@@ -192,4 +185,5 @@ export function useProgramCopies({
       }),
     [collections, title, artist, durationSec, suggestedTitle, suggestedArtist, inputPath, thisKey],
   )
+  return { copies, pending }
 }

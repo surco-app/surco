@@ -10,12 +10,7 @@ import { SettingsProvider } from '../lib/settingsContext'
 import { sourceCollectionOptions } from '../lib/sourcePrograms'
 import { djReads, installApi } from '../test/api'
 import type { TrackItem } from '../types'
-import {
-  sameLengthCopyIn,
-  useProgramCollectionsPending,
-  useProgramCopies,
-  useSelectionCopies,
-} from './useProgramCopies'
+import { sameLengthCopyIn, useProgramCopies, useSelectionCopies } from './useProgramCopies'
 
 const meta = { title: 'Weekend', artist: 'Tantra' }
 
@@ -59,7 +54,7 @@ describe('useProgramCopies', () => {
       wrapper: wrapperFor({ syncRekordbox: true, addToVirtualdj: true, syncSerato: true }),
     })
     await waitFor(() =>
-      expect(result.current).toEqual([
+      expect(result.current.copies).toEqual([
         { program: 'rekordbox', path: '/r/weekend.aiff', isThisFile: false },
         { program: 'virtualdj', path: '/v/weekend.aiff', isThisFile: false },
       ]),
@@ -77,7 +72,7 @@ describe('useProgramCopies', () => {
     const { result } = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({ syncRekordbox: true }),
     })
-    await waitFor(() => expect(result.current).toHaveLength(1))
+    await waitFor(() => expect(result.current.copies).toHaveLength(1))
     expect(traktor).not.toHaveBeenCalled()
     expect(api.dj.collection).not.toHaveBeenCalledWith('traktor')
   })
@@ -93,7 +88,7 @@ describe('useProgramCopies', () => {
     )
     const { result } = renderHook(() => useProgramCopies(args()), { wrapper })
     await Promise.resolve()
-    expect(result.current).toEqual([])
+    expect(result.current.copies).toEqual([])
   })
 
   it('does not read anything while disabled', async () => {
@@ -103,7 +98,7 @@ describe('useProgramCopies', () => {
       wrapper: wrapperFor({ syncRekordbox: true }),
     })
     await Promise.resolve()
-    expect(result.current).toEqual([])
+    expect(result.current.copies).toEqual([])
     expect(rekordbox).not.toHaveBeenCalled()
   })
 
@@ -118,7 +113,7 @@ describe('useProgramCopies', () => {
     )
     const { result } = renderHook(() => useProgramCopies(args({ enabled: false })), { wrapper })
     await Promise.resolve()
-    expect(result.current).toEqual([])
+    expect(result.current.copies).toEqual([])
   })
 
   it('shows no copy for a program whose collection fails to read', async () => {
@@ -136,7 +131,7 @@ describe('useProgramCopies', () => {
       wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
     })
     await waitFor(() =>
-      expect(result.current).toEqual([
+      expect(result.current.copies).toEqual([
         { program: 'traktor', path: '/t/weekend.aiff', isThisFile: false },
       ]),
     )
@@ -155,7 +150,7 @@ describe('useProgramCopies', () => {
       wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
     })
     await waitFor(() =>
-      expect(result.current.map((c) => [c.program, c.isThisFile])).toEqual([
+      expect(result.current.copies.map((c) => [c.program, c.isThisFile])).toEqual([
         ['rekordbox', true],
         ['traktor', false],
       ]),
@@ -180,7 +175,7 @@ describe('useProgramCopies', () => {
         ),
       { wrapper: wrapperFor({ syncRekordbox: true }) },
     )
-    await waitFor(() => expect(result.current).toHaveLength(1))
+    await waitFor(() => expect(result.current.copies).toHaveLength(1))
   })
 
   // 3 Ways: the program's copy runs 35 s shorter, another edit of the same title. Apple
@@ -211,7 +206,7 @@ describe('useProgramCopies', () => {
       { wrapper: wrapperFor({ syncRekordbox: true }) },
     )
     await waitFor(() =>
-      expect(result.current).toEqual([
+      expect(result.current.copies).toEqual([
         { program: 'rekordbox', path: '/r/real-love.wav', isThisFile: false, durationSec: 447.9 },
       ]),
     )
@@ -246,7 +241,7 @@ describe('useProgramCopies', () => {
       { wrapper: wrapperFor({ syncRekordbox: true }) },
     )
     await waitFor(() =>
-      expect(result.current).toEqual([
+      expect(result.current.copies).toEqual([
         { program: 'rekordbox', path: '/r/same.wav', isThisFile: false, durationSec: 483.4 },
       ]),
     )
@@ -263,7 +258,7 @@ describe('useProgramCopies', () => {
     const { result, rerender } = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
     })
-    await waitFor(() => expect(result.current).toHaveLength(2))
+    await waitFor(() => expect(result.current.copies).toHaveLength(2))
     const calls = build.mock.calls.length
     rerender()
     rerender()
@@ -278,11 +273,11 @@ describe('useProgramCopies', () => {
     })
     const wrapper = wrapperFor({ syncRekordbox: true })
     const first = renderHook(() => useProgramCopies(args()), { wrapper })
-    await waitFor(() => expect(first.result.current).toHaveLength(1))
+    await waitFor(() => expect(first.result.current.copies).toHaveLength(1))
     first.unmount()
     expect(build).toHaveBeenCalledTimes(1)
     const second = renderHook(() => useProgramCopies(args()), { wrapper })
-    await waitFor(() => expect(second.result.current).toHaveLength(1))
+    await waitFor(() => expect(second.result.current.copies).toHaveLength(1))
     expect(build).toHaveBeenCalledTimes(1)
   })
 
@@ -306,10 +301,10 @@ describe('useProgramCopies', () => {
     const { result } = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
     })
-    await waitFor(() => expect(result.current).toHaveLength(1))
+    await waitFor(() => expect(result.current.copies).toHaveLength(1))
     expect(build).toHaveBeenCalledTimes(1)
     releaseTraktor()
-    await waitFor(() => expect(result.current).toHaveLength(2))
+    await waitFor(() => expect(result.current.copies).toHaveLength(2))
     expect(build).toHaveBeenCalledTimes(2)
   })
 
@@ -329,7 +324,7 @@ describe('useProgramCopies', () => {
       { wrapper: wrapperFor({ syncRekordbox: true }) },
     )
     await waitFor(() =>
-      expect(result.current).toEqual([
+      expect(result.current.copies).toEqual([
         { program: 'rekordbox', path: '/R/weekend.mp3', isThisFile: true },
       ]),
     )
@@ -338,7 +333,7 @@ describe('useProgramCopies', () => {
 
 // A program whose collection is still being read may hold the same recording, whose fill must
 // not be spent on another version that a faster program found first.
-describe('useProgramCollectionsPending', () => {
+describe('useProgramCopies pending', () => {
   it('is pending while an enabled program is still reading its collection', async () => {
     let land: (tracks: CollectionTrack[]) => void = () => {}
     installApi({
@@ -347,12 +342,12 @@ describe('useProgramCollectionsPending', () => {
         traktor: { collection: async () => [row('/t/weekend.aiff')] },
       }),
     })
-    const { result } = renderHook(() => useProgramCollectionsPending(true), {
+    const { result } = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({ syncRekordbox: true, syncTraktor: true }),
     })
-    expect(result.current).toBe(true)
+    expect(result.current.pending).toBe(true)
     land([row('/r/weekend.aiff')])
-    await waitFor(() => expect(result.current).toBe(false))
+    await waitFor(() => expect(result.current.pending).toBe(false))
   })
 
   it('stops waiting for a collection that failed to read, it will not arrive', async () => {
@@ -365,22 +360,22 @@ describe('useProgramCollectionsPending', () => {
         },
       }),
     })
-    const { result } = renderHook(() => useProgramCollectionsPending(true), {
+    const { result } = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({ syncRekordbox: true }),
     })
-    await waitFor(() => expect(result.current).toBe(false))
+    await waitFor(() => expect(result.current.pending).toBe(false))
   })
 
   it('waits for nothing while disabled or for a switched-off program', () => {
     installApi({ dj: djReads({ rekordbox: { collection: () => new Promise(() => {}) } }) })
-    const off = renderHook(() => useProgramCollectionsPending(false), {
+    const off = renderHook(() => useProgramCopies(args({ enabled: false })), {
       wrapper: wrapperFor({ syncRekordbox: true }),
     })
-    expect(off.result.current).toBe(false)
-    const switchedOff = renderHook(() => useProgramCollectionsPending(true), {
+    expect(off.result.current.pending).toBe(false)
+    const switchedOff = renderHook(() => useProgramCopies(args()), {
       wrapper: wrapperFor({}),
     })
-    expect(switchedOff.result.current).toBe(false)
+    expect(switchedOff.result.current.pending).toBe(false)
   })
 })
 

@@ -60,11 +60,7 @@ import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
-import {
-  useProgramCollectionsPending,
-  useProgramCopies,
-  useSelectionCopies,
-} from '../hooks/useProgramCopies'
+import { useProgramCopies, useSelectionCopies } from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
 import { useSameFile } from '../hooks/useSameFile'
@@ -919,14 +915,13 @@ export const Editor = memo(function Editor({
           hasKnee: spectrumInHand?.hasKnee,
         },
       ) !== null
-  const programCopies = useProgramCopies({
+  const { copies: programCopies, pending: programCollectionsPending } = useProgramCopies({
     inputPath: item.inputPath,
     meta: item.meta,
     durationSec: item.duration,
     suggestedMeta,
     enabled: libraryShown,
   })
-  const programCollectionsPending = useProgramCollectionsPending(libraryShown)
   const comparedProgramCopies = programCopies.filter((copy) => !copy.isThisFile)
   const { data: thisFileProps } = useTrackProperties(
     item.inputPath,
