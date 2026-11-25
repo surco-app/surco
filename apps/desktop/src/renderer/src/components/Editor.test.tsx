@@ -7292,8 +7292,9 @@ describe('Editor Apple Music library section', () => {
     })
 
     // The pair probe lines up only the first 91 s, so an extended edit cut from the same master
-    // reads «same»: 400 s in rekordbox against 210 s here carries another mix name and ISRC.
-    it('never fills from a copy called the same recording when its length is another edit', async () => {
+    // matches it to the sample there: 400 s in rekordbox against 210 s here carries another mix
+    // name and ISRC, so its length makes it another version.
+    it('never fills from an extended edit whose head matches this file to the sample', async () => {
       const api = renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 400 },
         hereDuration: 210,
@@ -7301,7 +7302,7 @@ describe('Editor Apple Music library section', () => {
         tags: { '/r/Strobe.wav': copyTags },
       })
       await waitFor(() =>
-        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
       )
       await new Promise((r) => setTimeout(r, 50))
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
