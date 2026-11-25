@@ -856,7 +856,7 @@ button:hover > .process-fill {
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-standard);
 }
-.press:active:not(:disabled) {
+.press:active:not(:disabled, [aria-disabled='true']) {
   transform: scale(0.97);
 }
 

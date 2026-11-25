@@ -2,6 +2,7 @@ import { Ellipsis, type LucideIcon } from 'lucide-react'
 import type React from 'react'
 import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import { SPLIT_ITEM, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
@@ -43,6 +44,7 @@ export function MetaMoreMenu({ items }: { items: MetaMenuItem[] }): React.JSX.El
           role="menu"
           aria-label={tr('editor.moreActions')}
           onKeyDown={onMenuKeyDown}
+          onClickCapture={ignoreDisabledClick}
           className={MENU}
         >
           {items.map(({ id, testid, label, Icon, onSelect, disabled, separatorBefore }) => (
@@ -52,12 +54,12 @@ export function MetaMoreMenu({ items }: { items: MetaMenuItem[] }): React.JSX.El
                 type="button"
                 data-testid={testid}
                 role="menuitem"
-                disabled={disabled}
+                aria-disabled={disabled || undefined}
                 onClick={() => {
                   setOpen(false)
                   onSelect()
                 }}
-                className={`${SPLIT_ITEM} justify-start gap-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
+                className={`${SPLIT_ITEM} justify-start gap-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent`}
               >
                 <Icon className="h-3.5 w-3.5 shrink-0 text-fg-dim" aria-hidden="true" />
                 <span className="min-w-0 truncate">{label}</span>

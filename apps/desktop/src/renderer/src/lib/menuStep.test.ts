@@ -43,17 +43,21 @@ describe('menuItems', () => {
     return el
   }
 
-  // An item that cannot be picked is not a stop: landing the arrows on it leaves the
-  // keyboard user on a row that Enter does nothing with. Native controls disable with
-  // the attribute, ARIA options with aria-disabled; both count the same.
-  it('leaves out items disabled either natively or with aria-disabled', () => {
+  // Like a macOS menu, an item that cannot be used is still a stop: the keyboard user finds
+  // it and reads why, instead of the arrows jumping over it as if it were not there.
+  it('keeps items disabled natively or with aria-disabled as stops', () => {
     const el = menu(`
       <button role="option" data-testid="a"></button>
       <button role="option" data-testid="b" disabled></button>
       <button role="option" data-testid="c" aria-disabled="true"></button>
       <button role="option" data-testid="d" aria-disabled="false"></button>
     `)
-    expect(menuItems(el, '[role="option"]').map((i) => i.dataset.testid)).toEqual(['a', 'd'])
+    expect(menuItems(el, '[role="option"]').map((i) => i.dataset.testid)).toEqual([
+      'a',
+      'b',
+      'c',
+      'd',
+    ])
   })
 
   it('keeps only what the selector picks, in document order', () => {

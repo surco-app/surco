@@ -1736,7 +1736,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
     await maximize()
     seek(120000)
     fireEvent.contextMenu(screen.getByTestId('cue-wave-call-120000'), { clientX: 100, clientY: 5 })
-    expect(screen.getByTestId('cues-menu-to-hot')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-to-hot')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('cannot convert a hot cue sitting on its CALL, since the two would collapse into one', async () => {
@@ -1746,7 +1746,7 @@ describe('CuesSection maximized over the rest of the editor', () => {
     fireEvent.click(screen.getByTestId('cues-memory'))
     fireEvent.click(screen.getByTestId('cues-pad-A'))
     fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
-    expect(screen.getByTestId('cues-menu-to-call')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-to-call')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('takes an off-grid cue to its beat from its menu, the one cue and not the rest', async () => {
@@ -1815,8 +1815,8 @@ describe('CuesSection maximized over the rest of the editor', () => {
     )
     await maximize()
     fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
-    expect(screen.getByTestId('cues-menu-letter-B')).toBeDisabled()
-    expect(screen.getByTestId('cues-menu-letter-C')).toBeEnabled()
+    expect(screen.getByTestId('cues-menu-letter-B')).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByTestId('cues-menu-letter-C')).not.toHaveAttribute('aria-disabled')
   })
 
   it('closes the mark menu with Escape without restoring the maximized section', async () => {
@@ -3047,7 +3047,9 @@ describe('CuesSection cue menus from the keyboard', () => {
     expect(screen.getByTestId('cue-wave-hot-A')).toBeInTheDocument()
   })
 
-  it('lands on the first entry it can use when the first is disabled', async () => {
+  // Like a macOS menu, the menu opens on its first entry even when the letters are full
+  // and it is greyed: the keyboard user reads it is there, and picking it adds nothing.
+  it('opens on the first entry even when it is disabled, which does nothing when picked', async () => {
     setup(null, {
       ...READ,
       cues: [1, 2, 3, 5, 6, 7, 8, 9].map((kind, i) => ({
@@ -3059,17 +3061,51 @@ describe('CuesSection cue menus from the keyboard', () => {
     })
     await maximize()
     fireEvent.contextMenu(screen.getByTestId('cue-detail'), { clientX: 203, clientY: 40 })
-    expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
-    expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
+    const marks = screen.getAllByTestId(/^cue-wave-hot-/).length
+    const add = screen.getByTestId('cues-menu-add-hot')
+    expect(add).toHaveAttribute('aria-disabled', 'true')
+    expect(add).toHaveFocus()
+    fireEvent.keyDown(add, { key: 'Enter' })
+    fireEvent.click(add)
+    expect(screen.getByTestId('cues-menu')).toBeInTheDocument()
+    expect(screen.getAllByTestId(/^cue-wave-hot-/)).toHaveLength(marks)
     const menu = screen.getByTestId('cues-menu')
     fireEvent.keyDown(menu, { key: 'End' })
     expect(screen.getByTestId('cues-menu-mark-drop')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(add).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
-    expect(screen.getByTestId('cues-menu-mark-drop')).toHaveFocus()
+    expect(add).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'Home' })
-    expect(screen.getByTestId('cues-menu-add-call')).toHaveFocus()
+    expect(add).toHaveFocus()
+  })
+
+  // The letter of a loop is locked: the arrows stop on it, but picking it moves nothing.
+  it('stops the arrows on the letter of a loop, which does nothing when picked', async () => {
+    setup(
+      { cueLettersByTime: false },
+      {
+        ...READ,
+        cues: [
+          { id: 'a', ms: 64000, kind: 1, color: 1 },
+          { id: 'l', ms: 120000, kind: 2, color: 1, loop: true },
+        ],
+      },
+    )
+    await maximize()
+    fireEvent.contextMenu(screen.getByTestId('cue-wave-hot-A'), { clientX: 100, clientY: 5 })
+    const menu = screen.getByTestId('cues-menu')
+    const letterB = screen.getByTestId('cues-menu-letter-B')
+    screen.getByTestId('cues-menu-letter-A').focus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(letterB).toHaveFocus()
+    fireEvent.click(letterB)
+    expect(screen.getByTestId('cues-menu')).toBeInTheDocument()
+    expect(screen.getByTestId('cues-menu-letter-A')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('cues-menu-letter-C')).toHaveFocus()
   })
 
   // Opened over the wave, the menus have no place in the Tab order: Tab and Shift+Tab close

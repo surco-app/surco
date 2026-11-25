@@ -4,7 +4,7 @@ import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { LAYER } from '../lib/layers'
-import { menuItems, menuStep } from '../lib/menuStep'
+import { ignoreDisabledClick, menuItems, menuStep } from '../lib/menuStep'
 import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
 
 interface SelectOption {
@@ -184,6 +184,7 @@ export function Select({
       data-testid={`${testid}-listbox`}
       aria-label={label}
       onKeyDown={onListKeyDown}
+      onClickCapture={ignoreDisabledClick}
       // Tab (or any move of the focus to another control) closes the menu, like a native
       // select; the focus stays where the user sent it. The trigger and the backdrop are
       // left to their own clicks, which close and hand the focus back to the trigger.
@@ -235,9 +236,7 @@ export function Select({
             aria-selected={o.value === value}
             aria-disabled={o.disabled || undefined}
             data-testid={`${testid}-option-${o.value}`}
-            onClick={() => {
-              if (!o.disabled) choose(o.value)
-            }}
+            onClick={() => choose(o.value)}
             className="flex w-full items-center gap-2 whitespace-nowrap rounded-md px-2 py-1.5 text-left text-xs text-fg hover:bg-[var(--color-hover)] aria-disabled:opacity-40 aria-disabled:hover:bg-transparent"
           >
             {o.icon && <o.icon aria-hidden="true" className="h-4 w-4 shrink-0" />}

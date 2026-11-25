@@ -522,9 +522,10 @@ describe('Select portaled menu', () => {
 })
 
 describe('Select disabled options', () => {
-  // An option that cannot be picked is not a stop for the arrows: parked on it, Enter does
-  // nothing and the keyboard user is left wondering why the menu stopped answering.
-  it('steps the arrows, Home and End over a disabled option', () => {
+  // Like a macOS menu, the arrows stop on an option that cannot be picked, so the keyboard
+  // user finds it; Enter on it does nothing and the menu stays open.
+  it('stops the arrows, Home and End on a disabled option, which does nothing when picked', () => {
+    const onChange = vi.fn<(value: string) => void>()
     render(
       <Select
         value="import"
@@ -535,7 +536,7 @@ describe('Select disabled options', () => {
           { value: 'name', label: 'Name' },
           { value: 'locked-last', label: 'Locked last', disabled: true },
         ]}
-        onChange={vi.fn()}
+        onChange={onChange}
         label="Sort"
         testid="sort"
       />,
@@ -544,15 +545,23 @@ describe('Select disabled options', () => {
     const list = screen.getByTestId('sort-listbox')
     expect(screen.getByTestId('sort-option-import')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-locked')).toHaveFocus()
+    fireEvent.keyDown(screen.getByTestId('sort-option-locked'), { key: 'Enter' })
+    fireEvent.click(screen.getByTestId('sort-option-locked'))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(list).toBeInTheDocument()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
     expect(screen.getByTestId('sort-option-name')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'ArrowDown' })
-    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
+    fireEvent.keyDown(list, { key: 'ArrowDown' })
+    expect(screen.getByTestId('sort-option-locked-first')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'ArrowUp' })
-    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'Home' })
-    expect(screen.getByTestId('sort-option-import')).toHaveFocus()
+    expect(screen.getByTestId('sort-option-locked-first')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'End' })
-    expect(screen.getByTestId('sort-option-name')).toHaveFocus()
+    expect(screen.getByTestId('sort-option-locked-last')).toHaveFocus()
   })
 })
 

@@ -216,6 +216,23 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(screen.getByTestId('export-collection')).toHaveTextContent('Export to DJ app…')
   })
 
+  // A blocked "Convert again" is still a stop, so the keyboard user lands on it and hears
+  // the missing tags that block it; picking it converts nothing and the menu stays open.
+  it('lets the keyboard reach a blocked Convert again and read why, and does nothing when picked', () => {
+    const onProcess = vi.fn()
+    render(<ConvertFooter {...footer(true, 'Missing artist').props} onProcess={onProcess} />)
+    fireEvent.click(screen.getByTestId('done-more'))
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Home' })
+    const again = screen.getByTestId('process-btn')
+    expect(again).toHaveFocus()
+    expect(again).toHaveAttribute('aria-disabled', 'true')
+    expect(again).toHaveAccessibleDescription('Missing artist')
+    fireEvent.keyDown(again, { key: 'Enter' })
+    fireEvent.click(again)
+    expect(onProcess).not.toHaveBeenCalled()
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+  })
+
   it('offers the file from the menu by name', () => {
     render(
       <ConvertFooter
@@ -496,7 +513,7 @@ describe('ConvertFooter done layout', () => {
     )
     fireEvent.click(screen.getByTestId('done-more'))
     const add = screen.getByTestId('menu-add-apple-music')
-    expect(add).toBeDisabled()
+    expect(add).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('keeps the Apple Music add the main action when Apple Music is the destination', () => {

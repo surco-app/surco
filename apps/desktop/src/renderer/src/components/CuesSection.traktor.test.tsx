@@ -269,7 +269,7 @@ describe('CuesSection on a Traktor track', () => {
     await ready()
     markAt(bar(8))
     const all = await saveAllItem()
-    await waitFor(() => expect(all).toBeEnabled())
+    await waitFor(() => expect(all).not.toHaveAttribute('aria-disabled'))
     fireEvent.click(all)
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
     const saved = saveRekordboxCues.mock.calls.flatMap(([reqs]) => reqs.map((r) => r.contentId))
@@ -325,7 +325,7 @@ describe('CuesSection on a Traktor track', () => {
       expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true'),
     )
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(5) / 1000, clientY: 30 })
-    expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-add-hot')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('says the CALLs stay in Surco, since Traktor has none', async () => {

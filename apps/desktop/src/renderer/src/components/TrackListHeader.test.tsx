@@ -182,7 +182,10 @@ describe('TrackListHeader actions row', () => {
     expect(within(menu).getByTestId('list-command-number-tracks')).toHaveTextContent(
       'title number-tracks',
     )
-    expect(within(menu).getByTestId('list-command-strip-numbering')).toBeDisabled()
+    expect(within(menu).getByTestId('list-command-strip-numbering')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     fireEvent.click(within(menu).getByTestId('list-command-export'))
     expect(run).toHaveBeenCalledOnce()
     expect(screen.queryByRole('menu')).toBeNull()
@@ -220,16 +223,34 @@ describe('TrackListHeader actions row', () => {
     const handlers = renderHeader({ canReviewList: false })
     openMenu()
     const review = screen.getByTestId('list-review-open')
-    expect(review).toBeDisabled()
+    expect(review).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(review)
     expect(handlers.onReviewList).not.toHaveBeenCalled()
-    expect(screen.getByTestId('fill-all')).toBeEnabled()
+    expect(screen.getByTestId('fill-all')).not.toHaveAttribute('aria-disabled')
   })
 
   it('keeps the trash item in the menu disabled while nothing is selected', () => {
     renderHeader({ selectedId: null, selectedIds: [] })
     openMenu()
-    expect(screen.getByTestId('trash-selected')).toBeDisabled()
+    expect(screen.getByTestId('trash-selected')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // Like a macOS menu, the arrows stop on the greyed trash so a keyboard user finds it, but
+  // picking it, by Enter or by a click, trashes nothing and leaves the menu open.
+  it('stops the arrows on the trash while nothing is selected, which does nothing when picked', () => {
+    const handlers = renderHeader({ selectedId: null, selectedIds: [] })
+    openMenu()
+    const menu = screen.getByRole('menu')
+    const trash = screen.getByTestId('trash-selected')
+    screen.getByTestId('remove-selected').focus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(trash).toHaveFocus()
+    fireEvent.keyDown(trash, { key: 'Enter' })
+    fireEvent.click(trash)
+    expect(handlers.onTrashSelected).not.toHaveBeenCalled()
+    expect(screen.getByRole('menu')).toBeInTheDocument()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('clear-all')).toHaveFocus()
   })
 
   it('offers the neutral remove-from-list item, never the red trash, so removing cannot delete files', () => {
@@ -247,15 +268,17 @@ describe('TrackListHeader actions row', () => {
     const handlers = renderHeader({ selectedId: null, selectedIds: [] })
     openMenu()
     const remove = screen.getByTestId('remove-selected')
-    expect(remove).toBeDisabled()
+    expect(remove).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(remove)
     expect(handlers.onRemoveSelected).not.toHaveBeenCalled()
   })
 
-  it('walks the items with the arrow keys, skipping a disabled one', () => {
+  it('walks the items with the arrow keys, stopping on a disabled one', () => {
     renderHeader({ canReviewList: false })
     const menu = openMenu()
     expect(screen.getByTestId('select-all')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('list-review-open')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('fill-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
@@ -357,8 +380,11 @@ describe('TrackListHeader actions row', () => {
       duplicates: { detail: '“2K” has no tracks to review', onShow: vi.fn() },
     })
     const menu = openMenu()
-    expect(within(menu).getByTestId('list-review-open')).toBeDisabled()
-    expect(within(menu).getByTestId('music-duplicates-open')).toBeDisabled()
+    expect(within(menu).getByTestId('list-review-open')).toHaveAttribute('aria-disabled', 'true')
+    expect(within(menu).getByTestId('music-duplicates-open')).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
   })
 })
 

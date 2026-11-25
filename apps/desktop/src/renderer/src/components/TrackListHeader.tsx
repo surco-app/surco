@@ -44,6 +44,7 @@ import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from '
 import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import { useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 import { ViewMenu } from './ViewMenu'
@@ -147,11 +148,11 @@ function MenuAction({
       role="menuitem"
       data-testid={testid}
       data-destructive={danger ? 'true' : 'false'}
-      disabled={disabled}
+      aria-disabled={disabled || undefined}
       onClick={onClick}
       aria-label={label}
       aria-describedby={detail ? detailId : undefined}
-      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent ${
+      className={`flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-[var(--color-hover)] aria-disabled:cursor-not-allowed aria-disabled:opacity-40 aria-disabled:hover:bg-transparent ${
         danger ? 'text-danger' : 'text-fg'
       }`}
     >
@@ -456,6 +457,7 @@ export function TrackListHeader({
                     role="menu"
                     aria-label={tr('header.moreActions')}
                     onKeyDown={onMenuKeyDown}
+                    onClickCapture={ignoreDisabledClick}
                     style={{
                       top: menuPos.top,
                       bottom: menuPos.bottom,

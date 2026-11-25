@@ -132,7 +132,7 @@ import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
 import { ownsKeystroke } from '../lib/keymap'
-import { menuItems, menuStep } from '../lib/menuStep'
+import { ignoreDisabledClick, menuItems, menuStep } from '../lib/menuStep'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
@@ -341,7 +341,7 @@ function useCueSaveEcho(cue: { contentId: string; path: string }): {
 }
 
 const MENU_ITEM =
-  'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] disabled:opacity-40'
+  'block w-full whitespace-nowrap px-3 py-1 text-left hover:bg-[var(--color-hover)] aria-disabled:opacity-40'
 
 function CueKeys({
   jumpBars,
@@ -1421,6 +1421,7 @@ function Editing({
           role="menu"
           aria-label={tr('editor.cues.saveMore')}
           onKeyDown={saveMenu.onMenuKeyDown}
+          onClickCapture={ignoreDisabledClick}
           className={`${maximized ? SPLIT_MENU_DOWN : SPLIT_MENU} w-auto min-w-56`}
         >
           {SAVE_MODES.map((mode) => (
@@ -1456,12 +1457,12 @@ function Editing({
                 type="button"
                 data-testid="cues-save-all"
                 role="menuitem"
-                disabled={savingAll}
+                aria-disabled={savingAll || undefined}
                 onClick={() => {
                   saveMenu.setOpen(false)
                   void saveAll()
                 }}
-                className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+                className={`${SPLIT_ITEM} whitespace-nowrap aria-disabled:opacity-40`}
               >
                 {saveAllMenuLabel}
               </button>
@@ -2061,6 +2062,7 @@ function Editing({
           data-testid="cues-menu"
           role="menu"
           onKeyDown={onMenuKeyDown}
+          onClickCapture={ignoreDisabledClick}
           style={{ left: menu.x, top: menu.y }}
           className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
         >
@@ -2068,7 +2070,9 @@ function Editing({
             type="button"
             role="menuitem"
             data-testid="cues-menu-add-hot"
-            disabled={state.cues.filter((c) => c.kind !== 0).length >= ctx.slots.kinds.length}
+            aria-disabled={
+              state.cues.filter((c) => c.kind !== 0).length >= ctx.slots.kinds.length || undefined
+            }
             onClick={() => fromMenu({ type: 'add-hot', ms: menu.ms })}
             className={MENU_ITEM}
           >
@@ -2102,6 +2106,7 @@ function Editing({
           data-testid="cues-menu"
           role="menu"
           onKeyDown={onMenuKeyDown}
+          onClickCapture={ignoreDisabledClick}
           style={{ left: markMenu.x, top: markMenu.y }}
           className="absolute z-20 rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel)] py-1 text-xs shadow-[var(--shadow-float)]"
         >
@@ -2150,7 +2155,7 @@ function Editing({
                 type="button"
                 role="menuitem"
                 data-testid={markTarget.kind === 0 ? 'cues-menu-to-hot' : 'cues-menu-to-call'}
-                disabled={paired || (markTarget.kind === 0 && lettersFull)}
+                aria-disabled={paired || (markTarget.kind === 0 && lettersFull) || undefined}
                 onClick={() => fromMarkMenu(convertOf(markTarget))}
                 className={MENU_ITEM}
               >
@@ -2167,11 +2172,13 @@ function Editing({
                         type="button"
                         data-testid={`cues-menu-letter-${cueLetter(kind)}`}
                         aria-pressed={kind === markTarget.kind}
-                        disabled={holder !== undefined && state.locked.includes(holder.key)}
+                        aria-disabled={
+                          (holder !== undefined && state.locked.includes(holder.key)) || undefined
+                        }
                         onClick={() =>
                           fromMarkMenu({ type: 'reletter', key: markTarget.key, kind })
                         }
-                        className={`press h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] disabled:opacity-40 ${
+                        className={`press h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] aria-disabled:opacity-40 ${
                           kind === markTarget.kind
                             ? 'bg-[var(--color-fg)] text-[var(--color-panel)] hover:bg-[var(--color-fg)]'
                             : ''

@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ignoreDisabledClick } from '../lib/menuStep'
 import { useSplitMenu } from './SplitButton'
 
 afterEach(cleanup)
+
+const picked = vi.fn<(id: string) => void>()
 
 function Harness(): React.JSX.Element {
   const { open, setOpen, ref, toggleRef, menuRef, onMenuKeyDown } = useSplitMenu()
@@ -23,12 +26,24 @@ function Harness(): React.JSX.Element {
           onClick={() => setOpen((v) => !v)}
         />
         {open && (
-          <div ref={menuRef} role="menu" data-testid="menu" onKeyDown={onMenuKeyDown}>
+          <div
+            ref={menuRef}
+            role="menu"
+            data-testid="menu"
+            onKeyDown={onMenuKeyDown}
+            onClickCapture={ignoreDisabledClick}
+          >
             <button type="button" role="menuitemradio" aria-checked="true" data-testid="mp3">
               MP3
             </button>
-            <button type="button" role="menuitem" aria-disabled="true" data-testid="again">
-              Again
+            <button
+              type="button"
+              role="menuitem"
+              aria-disabled="true"
+              data-testid="again"
+              onClick={() => picked('again')}
+            >
+              <span data-testid="again-label">Again</span>
             </button>
             <button type="button" role="menuitemradio" aria-checked="false" data-testid="flac">
               FLAC
@@ -37,8 +52,9 @@ function Harness(): React.JSX.Element {
               type="button"
               role="menuitemcheckbox"
               aria-checked="false"
-              disabled
+              aria-disabled="true"
               data-testid="music"
+              onClick={() => picked('music')}
             >
               Apple Music
             </button>
@@ -59,21 +75,31 @@ function openMenu(): HTMLElement {
 }
 
 describe('useSplitMenu disabled items', () => {
-  // Apple Music under FLAC and a blocked convert can't be picked: parked on either, Enter
-  // does nothing and the keyboard user is left in a menu that stopped answering.
-  it('steps the arrows, Home and End over items disabled natively or with aria-disabled', () => {
+  // Apple Music under FLAC and a blocked convert can't be picked, but like a macOS menu the
+  // arrows stop on them, so the keyboard user finds them and hears why; picking one, by
+  // Enter or by a click on the item or on what it holds, does nothing and leaves the menu open.
+  it('stops the arrows, Home and End on disabled items, which do nothing when picked', () => {
+    picked.mockClear()
     const menu = openMenu()
     expect(screen.getByTestId('mp3')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('again')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('flac')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('music')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('mp3')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
-    expect(screen.getByTestId('flac')).toHaveFocus()
+    expect(screen.getByTestId('music')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'Home' })
     expect(screen.getByTestId('mp3')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'End' })
-    expect(screen.getByTestId('flac')).toHaveFocus()
+    expect(screen.getByTestId('music')).toHaveFocus()
+    fireEvent.click(screen.getByTestId('music'))
+    fireEvent.click(screen.getByTestId('again-label'))
+    expect(picked).not.toHaveBeenCalled()
+    expect(screen.getByTestId('menu')).toBeInTheDocument()
   })
 })
 

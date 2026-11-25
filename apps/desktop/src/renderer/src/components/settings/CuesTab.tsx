@@ -28,6 +28,7 @@ import type { PatchSynced } from '../../lib/settingsTabs'
 import { CueFlowTrackPreview } from '../CueFlowPreview'
 import { CueRuleRow } from '../CueRuleRow'
 import { SegmentedControl } from '../SegmentedControl'
+import { ignoreDisabledClick } from '../../lib/menuStep'
 import { SPLIT_ITEM, useSplitMenu } from '../SplitButton'
 import { Tooltip } from '../Tooltip'
 import { CheckboxRow } from './CheckboxRow'
@@ -378,18 +379,19 @@ export function CuesTab({
                 role="menu"
                 aria-label={tr('settings.cueFlows.moreActions')}
                 onKeyDown={more.onMenuKeyDown}
+                onClickCapture={ignoreDisabledClick}
                 className={`${DROP_MENU} right-0 w-60`}
               >
                 <button
                   type="button"
                   role="menuitem"
                   data-testid="cue-flow-use"
-                  disabled={inUse === flow.id}
+                  aria-disabled={inUse === flow.id || undefined}
                   onClick={() => {
                     more.setOpen(false)
                     patch('activeCueFlow', flow.id)
                   }}
-                  className={`${SPLIT_ITEM} disabled:cursor-not-allowed disabled:opacity-40`}
+                  className={`${SPLIT_ITEM} aria-disabled:cursor-not-allowed aria-disabled:opacity-40`}
                 >
                   {tr('settings.cueFlows.use')}
                 </button>

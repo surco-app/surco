@@ -546,7 +546,18 @@ describe('CuesTab', () => {
       within(screen.getByTestId('cue-flow-mix-in')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
     openMore()
-    expect(screen.getByTestId('cue-flow-use')).toBeDisabled()
+    expect(screen.getByTestId('cue-flow-use')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  // The flow already in use cannot be used again: the arrows still stop on it, but picking
+  // it does nothing and the menu stays open.
+  it('keeps Use this flow a stop while it is the one in use, which does nothing when picked', () => {
+    render(<Harness flows={BUNDLED_FLOWS} active="gone" />)
+    openMore()
+    const use = screen.getByTestId('cue-flow-use')
+    expect(use).toHaveFocus()
+    fireEvent.click(use)
+    expect(screen.getByTestId('cue-flow-use')).toBeInTheDocument()
   })
 
   it('keeps marking the Mi flujo an earlier Surco kept when the stored active flow no longer exists, as main still runs it', () => {
@@ -556,7 +567,7 @@ describe('CuesTab', () => {
       within(screen.getByTestId('cue-flow-mine')).getByTestId('cue-flow-in-use'),
     ).toBeInTheDocument()
     openMore()
-    expect(screen.getByTestId('cue-flow-use')).toBeDisabled()
+    expect(screen.getByTestId('cue-flow-use')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('recalculates the preview live when a block changes', () => {
@@ -1436,7 +1447,7 @@ describe('CuesTab', () => {
       screen.getByTestId('cue-flow-in-use'),
     )
     openMore()
-    expect(screen.getByTestId('cue-flow-use')).toBeEnabled()
+    expect(screen.getByTestId('cue-flow-use')).not.toHaveAttribute('aria-disabled')
   })
 
   it('offers no flow from a track whose hot cues give no rule, since there would be nothing to make', async () => {

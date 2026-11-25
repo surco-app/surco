@@ -682,7 +682,7 @@ describe('CuesSection', () => {
     await ready()
     await openFull()
     fireEvent.contextMenu(screen.getByTestId('cue-wave'), { clientX: bar(5) / 1000, clientY: 30 })
-    expect(screen.getByTestId('cues-menu-add-hot')).toBeDisabled()
+    expect(screen.getByTestId('cues-menu-add-hot')).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('puts the waves first and the row with a short Guardar under them while folded, the flow up in the header', async () => {
