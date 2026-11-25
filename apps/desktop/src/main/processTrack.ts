@@ -602,6 +602,257 @@ export function planDestination(job: ProcessJob, settings: Settings) {
   }
 }
 
+interface MusicStepContext {
+  job: ProcessJob
+  deps: ProcessTrackDeps
+  musicDeps: ProcessTrackDeps
+  stage: (s: ProcessStage) => void
+  musicStep: boolean
+  format: ReturnType<typeof planDestination>['format']
+  target: string
+  inPlace: boolean
+  outputIsInput: boolean
+  musicOnly: boolean
+  coverPath: string | undefined
+  existingMusicEntry: { persistentId: string; label: string } | undefined
+  handedOver: { tmpDir?: string } | undefined
+  tmpDir: string | undefined
+  retireAfterMusic: boolean
+  renameFollowFailed: boolean
+}
+
+interface MusicStepResult {
+  musicPersistentId: string | undefined
+  oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
+  supersededPath: string | undefined
+  musicLandedPath: string | undefined
+  appleMusicFailed: true | undefined
+  appleMusicErrorKey: ErrorKey | undefined
+  musicNameLeftMarked: true | undefined
+  musicReplaced: MusicExpect['replaced']
+  landed: MediaCopy | undefined
+  supersededIfKept: string | undefined
+  entryMayPlaySource: boolean
+  keptBeforeMusic: boolean
+  musicOp: MusicOp | undefined
+}
+
+async function runMusicStep(ctx: MusicStepContext): Promise<MusicStepResult> {
+  const {
+    job,
+    deps,
+    musicDeps,
+    stage,
+    musicStep,
+    format,
+    target,
+    inPlace,
+    outputIsInput,
+    musicOnly,
+    coverPath,
+    existingMusicEntry,
+    handedOver,
+    tmpDir,
+    retireAfterMusic,
+    renameFollowFailed,
+  } = ctx
+  // A track that already has a library copy (musicPersistentId from a previous
+  // add) gets its metadata and artwork synced onto that copy instead of being
+  // imported again — re-converting an edited track must never duplicate it in
+  // Music. Only when the user deleted the copy from the library does the fresh
+  // file get imported, which also re-establishes the persistent ID.
+  let musicPersistentId: string | undefined
+  let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
+  let supersededPath: string | undefined
+  let musicLandedPath: string | undefined
+  let appleMusicFailed: true | undefined = renameFollowFailed || undefined
+  let appleMusicErrorKey: ErrorKey | undefined
+  let musicNameLeftMarked: true | undefined
+  let musicReplaced: MusicExpect['replaced']
+  // Where Music filed the "Apple Music only" copy: the temp it was written to is removed.
+  let landed: MediaCopy | undefined
+  // The source a replacement superseded in place: offered only if retiring it fails.
+  let supersededIfKept: string | undefined
+  // Until Music says where the track's own entry points, it may be playing the original.
+  let entryMayPlaySource = retireAfterMusic
+  let keptBeforeMusic = false
+  let musicOp: MusicOp | undefined
+  const musicStage = (op: MusicOp): void => {
+    musicOp = op
+    stage(MUSIC_STAGE[op])
+  }
+  if (musicStep) {
+    log.info(
+      `music step: input="${job.inputPath}" target="${target}" inPlace=${inPlace} outputIsInput=${outputIsInput} musicOnly=${musicOnly} pid=${job.musicPersistentId ?? '-'} replacesPath=${job.replacesPath ?? '-'} existingEntry=${existingMusicEntry?.persistentId ?? '-'}`,
+    )
+    try {
+      // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
+      // entry only rewrites its tags — Music offers no way to repoint one at another file
+      // — so the upgrade reported 14/09 left the library on the MP3 while claiming
+      // success. The new file therefore has to be imported and the old entry retired.
+      //
+      // Add first and delete last: a failing add then destroys nothing. In between, the
+      // old entry's normal playlists, play count and rating move to the new one (see
+      // replaceAppleMusicCopy); its position inside each playlist does not.
+      let verified = false
+      if (job.replacesPath) {
+        musicStage('replaced')
+        const replaced = await replaceAppleMusicCopy(job, target, coverPath, musicDeps, handedOver)
+        musicPersistentId = replaced.added
+        oldMusicCopyKept = replaced.oldCopyKept
+        musicNameLeftMarked = replaced.nameLeftMarked
+        musicReplaced = replacedExpect(job.musicPersistentId, replaced)
+        landed = replaced.landed
+        verified = true
+      } else if (existingMusicEntry && inPlace && outputIsInput) {
+        musicStage('updated')
+        const updated = await deps.updateInAppleMusic(
+          existingMusicEntry.persistentId,
+          job.meta,
+          coverPath,
+        )
+        if (!updated) musicStage('added')
+        musicPersistentId =
+          updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
+      } else if (existingMusicEntry && inPlace) {
+        musicStage('replaced')
+        const replaced = await replaceAppleMusicCopy(
+          job,
+          target,
+          coverPath,
+          musicDeps,
+          handedOver,
+          existingMusicEntry,
+        )
+        musicPersistentId = replaced.added
+        oldMusicCopyKept = replaced.oldCopyKept
+        musicNameLeftMarked = replaced.nameLeftMarked
+        musicReplaced = replacedExpect(existingMusicEntry.persistentId, replaced)
+        landed = replaced.landed
+        verified = true
+      } else {
+        // An entry in another format than the output can't be retagged into it: Music
+        // keeps playing the old file. Compared by format, not path, since the file
+        // written (a temp, or the output Music copies from) is never the entry's own.
+        // Retired under the name Music shows: the job's tags may be edited or matched.
+        // Only an entry that is gone falls back to update ?? add; a read that fails is a
+        // failed Apple Music step, never a silent re-tag of the old file.
+        const entry = job.musicPersistentId
+          ? await deps.appleMusicEntry(job.musicPersistentId)
+          : undefined
+        entryMayPlaySource =
+          retireAfterMusic && entry?.path.normalize('NFC') === job.inputPath.normalize('NFC')
+        if (entry?.path && !formatMatchesInput(format, entry.path)) {
+          musicStage('replaced')
+          const replaced = await replaceAppleMusicCopy(
+            job,
+            target,
+            coverPath,
+            musicDeps,
+            handedOver,
+            {
+              persistentId: job.musicPersistentId,
+              label: entry.label,
+            },
+          )
+          musicPersistentId = replaced.added
+          oldMusicCopyKept = replaced.oldCopyKept
+          musicNameLeftMarked = replaced.nameLeftMarked
+          musicReplaced = replacedExpect(job.musicPersistentId, replaced)
+          landed = replaced.landed
+          const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
+          // The row was the file Music played, so it follows the entry to its new file.
+          if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
+          // Not offered when the in-place rename retires it below, or when Traktor's entry
+          // is still on it.
+          if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
+            if (isSource && inPlace) supersededIfKept = entry.path
+            else supersededPath = entry.path
+          } else
+            log.info(
+              `retire: kept ${entry.path}: ${
+                replaced.oldCopyKept
+                  ? `Apple Music kept the old entry (${replaced.oldCopyKept})`
+                  : 'Traktor still plays it'
+              }`,
+            )
+          verified = true
+        } else {
+          // Music rewrites the entry's file as it retags it, so a file this job did not
+          // just write is copied first. The original a rename retires below is copied now,
+          // as it was, and the retirement only removes it.
+          musicStage(job.musicPersistentId ? 'updated' : 'added')
+          let preMusic: TrashEntry | null = null
+          const retagged =
+            job.musicPersistentId &&
+            entry?.path &&
+            entry.path.normalize('NFC') !== target.normalize('NFC')
+              ? entry.path
+              : undefined
+          if (retagged)
+            preMusic = entryMayPlaySource
+              ? await keepBeforeMusicRewrite(job.inputPath, {
+                  outputPath: target,
+                  reencodes: true,
+                })
+              : await keepBeforeMusicRewrite(retagged)
+          // The original the rename retires is left to the conversion's own repoint.
+          const fromBytes =
+            retagged && !entryMayPlaySource ? await deps.fileBytes?.(retagged) : undefined
+          const updated = job.musicPersistentId
+            ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
+            : null
+          if (updated && retagged && fromBytes !== undefined)
+            deps.followLibrarySize?.(retagged, fromBytes)
+          // Music never follows a rename: the entry stays on the name about to be retired.
+          if (updated && entryMayPlaySource && job.musicPersistentId)
+            await deps.relinkAppleMusicEntry(job.musicPersistentId, target)
+          if (!updated && preMusic) {
+            await discardBackup(preMusic).catch(() => undefined)
+            preMusic = null
+          }
+          keptBeforeMusic = entryMayPlaySource && preMusic !== null
+          if (!updated && job.musicPersistentId) musicStage('added')
+          musicPersistentId =
+            updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
+        }
+      }
+      if (musicOnly && musicPersistentId && !verified)
+        landed = await verifyMediaCopy(
+          musicPersistentId,
+          tmpDir,
+          target,
+          job,
+          deps,
+          'appleMusicNoMediaCopy',
+        )
+    } catch (e) {
+      if (musicOnly) throw e
+      log.warn('process:track Apple Music step failed after the file was written', target, e)
+      if (splitNameLeftMarked(e instanceof Error ? e.message : '').left) musicNameLeftMarked = true
+      musicPersistentId = undefined
+      musicOp = undefined
+      appleMusicFailed = true
+      appleMusicErrorKey = errorKeyOf(e instanceof Error ? e.message : '') ?? undefined
+    }
+  }
+  return {
+    musicPersistentId,
+    oldMusicCopyKept,
+    supersededPath,
+    musicLandedPath,
+    appleMusicFailed,
+    appleMusicErrorKey,
+    musicNameLeftMarked,
+    musicReplaced,
+    landed,
+    supersededIfKept,
+    entryMayPlaySource,
+    keptBeforeMusic,
+    musicOp,
+  }
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -939,25 +1190,6 @@ export async function runProcessTrack(
       log.warn('process:track could not record the conversion stats', e)
     }
 
-    // A track that already has a library copy (musicPersistentId from a previous
-    // add) gets its metadata and artwork synced onto that copy instead of being
-    // imported again — re-converting an edited track must never duplicate it in
-    // Music. Only when the user deleted the copy from the library does the fresh
-    // file get imported, which also re-establishes the persistent ID.
-    let musicPersistentId: string | undefined
-    let oldMusicCopyKept: ProcessResult['oldMusicCopyKept']
-    let supersededPath: string | undefined
-    let musicLandedPath: string | undefined
-    let appleMusicFailed: true | undefined = renameFollowFailed || undefined
-    let appleMusicErrorKey: ErrorKey | undefined
-    let musicNameLeftMarked: true | undefined
-    let musicReplaced: MusicExpect['replaced']
-    // Where Music filed the "Apple Music only" copy: the temp it was written to is removed.
-    let landed: MediaCopy | undefined
-    // The source a replacement superseded in place: offered only if retiring it fails.
-    let supersededIfKept: string | undefined
-    // Until Music says where the track's own entry points, it may be playing the original.
-    let entryMayPlaySource = retireAfterMusic
     // The file in the Media folder is Music's once an add answers with an entry of its own;
     // one that answers with the entry being replaced imported nothing (see replaceAppleMusicCopy).
     // The entries this job's own adds answered with: only one of them can be Music's import
@@ -978,175 +1210,40 @@ export async function runProcessTrack(
         return pid
       },
     }
-    let musicOp: MusicOp | undefined
-    const musicStage = (op: MusicOp): void => {
-      musicOp = op
-      stage(MUSIC_STAGE[op])
-    }
     const handedOver = musicOnly ? { tmpDir } : undefined
     const musicStep = shouldAddToAppleMusic(addToAppleMusic, deps.platform, format)
-    if (musicStep) {
-      log.info(
-        `music step: input="${job.inputPath}" target="${target}" inPlace=${inPlace} outputIsInput=${outputIsInput} musicOnly=${musicOnly} pid=${job.musicPersistentId ?? '-'} replacesPath=${job.replacesPath ?? '-'} existingEntry=${existingMusicEntry?.persistentId ?? '-'}`,
-      )
-      try {
-        // Replacing a DIFFERENT file, not re-converting our own earlier output. Updating an
-        // entry only rewrites its tags — Music offers no way to repoint one at another file
-        // — so the upgrade reported 14/09 left the library on the MP3 while claiming
-        // success. The new file therefore has to be imported and the old entry retired.
-        //
-        // Add first and delete last: a failing add then destroys nothing. In between, the
-        // old entry's normal playlists, play count and rating move to the new one (see
-        // replaceAppleMusicCopy); its position inside each playlist does not.
-        let verified = false
-        if (job.replacesPath) {
-          musicStage('replaced')
-          const replaced = await replaceAppleMusicCopy(
-            job,
-            target,
-            coverPath,
-            musicDeps,
-            handedOver,
-          )
-          musicPersistentId = replaced.added
-          oldMusicCopyKept = replaced.oldCopyKept
-          musicNameLeftMarked = replaced.nameLeftMarked
-          musicReplaced = replacedExpect(job.musicPersistentId, replaced)
-          landed = replaced.landed
-          verified = true
-        } else if (existingMusicEntry && inPlace && outputIsInput) {
-          musicStage('updated')
-          const updated = await deps.updateInAppleMusic(
-            existingMusicEntry.persistentId,
-            job.meta,
-            coverPath,
-          )
-          if (!updated) musicStage('added')
-          musicPersistentId =
-            updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
-        } else if (existingMusicEntry && inPlace) {
-          musicStage('replaced')
-          const replaced = await replaceAppleMusicCopy(
-            job,
-            target,
-            coverPath,
-            musicDeps,
-            handedOver,
-            existingMusicEntry,
-          )
-          musicPersistentId = replaced.added
-          oldMusicCopyKept = replaced.oldCopyKept
-          musicNameLeftMarked = replaced.nameLeftMarked
-          musicReplaced = replacedExpect(existingMusicEntry.persistentId, replaced)
-          landed = replaced.landed
-          verified = true
-        } else {
-          // An entry in another format than the output can't be retagged into it: Music
-          // keeps playing the old file. Compared by format, not path, since the file
-          // written (a temp, or the output Music copies from) is never the entry's own.
-          // Retired under the name Music shows: the job's tags may be edited or matched.
-          // Only an entry that is gone falls back to update ?? add; a read that fails is a
-          // failed Apple Music step, never a silent re-tag of the old file.
-          const entry = job.musicPersistentId
-            ? await deps.appleMusicEntry(job.musicPersistentId)
-            : undefined
-          entryMayPlaySource =
-            retireAfterMusic && entry?.path.normalize('NFC') === job.inputPath.normalize('NFC')
-          if (entry?.path && !formatMatchesInput(format, entry.path)) {
-            musicStage('replaced')
-            const replaced = await replaceAppleMusicCopy(
-              job,
-              target,
-              coverPath,
-              musicDeps,
-              handedOver,
-              {
-                persistentId: job.musicPersistentId,
-                label: entry.label,
-              },
-            )
-            musicPersistentId = replaced.added
-            oldMusicCopyKept = replaced.oldCopyKept
-            musicNameLeftMarked = replaced.nameLeftMarked
-            musicReplaced = replacedExpect(job.musicPersistentId, replaced)
-            landed = replaced.landed
-            const isSource = entry.path.normalize('NFC') === job.inputPath.normalize('NFC')
-            // The row was the file Music played, so it follows the entry to its new file.
-            if (isSource && replaced.landed?.path) musicLandedPath = replaced.landed.path
-            // Not offered when the in-place rename retires it below, or when Traktor's entry
-            // is still on it.
-            if (!replaced.oldCopyKept && replaced.landed?.traktorFollowed !== false) {
-              if (isSource && inPlace) supersededIfKept = entry.path
-              else supersededPath = entry.path
-            } else
-              log.info(
-                `retire: kept ${entry.path}: ${
-                  replaced.oldCopyKept
-                    ? `Apple Music kept the old entry (${replaced.oldCopyKept})`
-                    : 'Traktor still plays it'
-                }`,
-              )
-            verified = true
-          } else {
-            // Music rewrites the entry's file as it retags it, so a file this job did not
-            // just write is copied first. The original a rename retires below is copied now,
-            // as it was, and the retirement only removes it.
-            musicStage(job.musicPersistentId ? 'updated' : 'added')
-            let preMusic: TrashEntry | null = null
-            const retagged =
-              job.musicPersistentId &&
-              entry?.path &&
-              entry.path.normalize('NFC') !== target.normalize('NFC')
-                ? entry.path
-                : undefined
-            if (retagged)
-              preMusic = entryMayPlaySource
-                ? await keepBeforeMusicRewrite(job.inputPath, {
-                    outputPath: target,
-                    reencodes: true,
-                  })
-                : await keepBeforeMusicRewrite(retagged)
-            // The original the rename retires is left to the conversion's own repoint.
-            const fromBytes =
-              retagged && !entryMayPlaySource ? await deps.fileBytes?.(retagged) : undefined
-            const updated = job.musicPersistentId
-              ? await deps.updateInAppleMusic(job.musicPersistentId, job.meta, coverPath)
-              : null
-            if (updated && retagged && fromBytes !== undefined)
-              deps.followLibrarySize?.(retagged, fromBytes)
-            // Music never follows a rename: the entry stays on the name about to be retired.
-            if (updated && entryMayPlaySource && job.musicPersistentId)
-              await deps.relinkAppleMusicEntry(job.musicPersistentId, target)
-            if (!updated && preMusic) {
-              await discardBackup(preMusic).catch(() => undefined)
-              preMusic = null
-            }
-            keptBeforeMusic = entryMayPlaySource && preMusic !== null
-            if (!updated && job.musicPersistentId) musicStage('added')
-            musicPersistentId =
-              updated ?? (await musicDeps.addToAppleMusic(target, job.meta, coverPath))
-          }
-        }
-        if (musicOnly && musicPersistentId && !verified)
-          landed = await verifyMediaCopy(
-            musicPersistentId,
-            tmpDir,
-            target,
-            job,
-            deps,
-            'appleMusicNoMediaCopy',
-          )
-      } catch (e) {
-        if (musicOnly) throw e
-        log.warn('process:track Apple Music step failed after the file was written', target, e)
-        if (splitNameLeftMarked(e instanceof Error ? e.message : '').left)
-          musicNameLeftMarked = true
-        musicPersistentId = undefined
-        musicOp = undefined
-        appleMusicFailed = true
-        appleMusicErrorKey = errorKeyOf(e instanceof Error ? e.message : '') ?? undefined
-      }
-    }
+    const music = await runMusicStep({
+      job,
+      deps,
+      musicDeps,
+      stage,
+      musicStep,
+      format,
+      target,
+      inPlace,
+      outputIsInput,
+      musicOnly,
+      coverPath,
+      existingMusicEntry,
+      handedOver,
+      tmpDir,
+      retireAfterMusic,
+      renameFollowFailed,
+    })
+    const {
+      musicPersistentId,
+      oldMusicCopyKept,
+      musicLandedPath,
+      appleMusicFailed,
+      appleMusicErrorKey,
+      musicNameLeftMarked,
+      musicReplaced,
+      supersededIfKept,
+      entryMayPlaySource,
+      musicOp,
+    } = music
+    let { supersededPath, landed } = music
+    keptBeforeMusic = music.keptBeforeMusic
 
     if (retireAfterMusic) {
       if (entryMayPlaySource && (appleMusicFailed || oldMusicCopyKept)) originalKept = true
