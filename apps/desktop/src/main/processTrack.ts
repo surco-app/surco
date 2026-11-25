@@ -841,6 +841,59 @@ async function runMusicStep(ctx: MusicStepContext): Promise<MusicStepResult> {
   }
 }
 
+interface EngineDjStepContext {
+  deps: ProcessTrackDeps
+  settings: Settings
+  job: ProcessJob
+  stage: (s: ProcessStage) => void
+  target: string
+  coverPath: string | undefined
+}
+
+interface EngineDjStepResult {
+  addedToEngineDj: true | undefined
+  engineDjError: string | undefined
+}
+
+async function runEngineDjStep(ctx: EngineDjStepContext): Promise<EngineDjStepResult> {
+  const { deps, settings, job, stage, target, coverPath } = ctx
+  let addedToEngineDj: true | undefined
+  let engineDjError: string | undefined
+  stage('engineDj')
+  // Engine renders artwork from its own database, never from the file's tags, so
+  // the row needs the image handed over: the job's processed cover when there is
+  // one, else the art embedded in the file just written (carried over from the
+  // source). Extraction failing (an artless file) must not block the add.
+  let extracted: PreparedCover | undefined
+  if (!coverPath) {
+    extracted = await deps
+      .prepareProcessedCover(
+        { coverFromFile: target },
+        {
+          maxSize: settings.coverMaxSize,
+          square: settings.coverSquare,
+          upscale: settings.coverUpscale,
+        },
+      )
+      .catch(() => undefined)
+  }
+  try {
+    await deps.addToEngineDj(
+      target,
+      job.meta,
+      coverPath ?? extracted?.path,
+      job.replacesPath ?? job.inputPath,
+    )
+    addedToEngineDj = true
+  } catch (e) {
+    log.warn('process:track Engine DJ step failed after the file was written', target, e)
+    engineDjError = e instanceof Error ? e.message : String(e)
+  } finally {
+    if (extracted) await extracted.cleanup()
+  }
+  return { addedToEngineDj, engineDjError }
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -1270,38 +1323,14 @@ export async function runProcessTrack(
     let addedToEngineDj: true | undefined
     let engineDjError: string | undefined
     if (addToEngineDj && !engineDjQueued) {
-      stage('engineDj')
-      // Engine renders artwork from its own database, never from the file's tags, so
-      // the row needs the image handed over: the job's processed cover when there is
-      // one, else the art embedded in the file just written (carried over from the
-      // source). Extraction failing (an artless file) must not block the add.
-      let extracted: PreparedCover | undefined
-      if (!coverPath) {
-        extracted = await deps
-          .prepareProcessedCover(
-            { coverFromFile: target },
-            {
-              maxSize: settings.coverMaxSize,
-              square: settings.coverSquare,
-              upscale: settings.coverUpscale,
-            },
-          )
-          .catch(() => undefined)
-      }
-      try {
-        await deps.addToEngineDj(
-          target,
-          job.meta,
-          coverPath ?? extracted?.path,
-          job.replacesPath ?? job.inputPath,
-        )
-        addedToEngineDj = true
-      } catch (e) {
-        log.warn('process:track Engine DJ step failed after the file was written', target, e)
-        engineDjError = e instanceof Error ? e.message : String(e)
-      } finally {
-        if (extracted) await extracted.cleanup()
-      }
+      ;({ addedToEngineDj, engineDjError } = await runEngineDjStep({
+        deps,
+        settings,
+        job,
+        stage,
+        target,
+        coverPath,
+      }))
     }
 
     // Re-read inside the job, not after it: the batch slot bounds how many run at once, and
