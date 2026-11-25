@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import {
-  createReadStream,
   existsSync,
   readdirSync,
   readFileSync,
@@ -22,7 +21,6 @@ import {
 } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
-import { Readable } from 'node:stream'
 import {
   app,
   autoUpdater,
@@ -49,13 +47,7 @@ import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
 import { type CueProgram, exportsUsbOn, type WritableProgram } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
-import {
-  isRecoveryUrl,
-  MEDIA_SCHEME,
-  mediaMimeType,
-  mediaPathFromUrl,
-  parseRange,
-} from '../shared/media'
+import { MEDIA_SCHEME } from '../shared/media'
 import { resolveBindings } from '../shared/shortcutDefaults'
 import { chordToAccelerator } from '../shared/shortcuts'
 import type {
@@ -195,6 +187,7 @@ import { listReviewDeps } from './listReviewWiring'
 import { registerMatchingIpc } from './matchingIpc'
 import { createMatchingStore, followConversion } from './matchingStore'
 import { createMediaAccess } from './mediaAccess'
+import { serveMedia } from './mediaProtocol'
 import { releaseMediaFile, trackMediaStream } from './mediaStreams'
 import { createMemoryWatch, processSamples } from './memoryWatch'
 import { createMoments } from './moments'
@@ -288,7 +281,6 @@ import { createSurcoTrash } from './surcoTrash'
 import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
-import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
 import { traktorCueSource } from './traktorCueSource'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
@@ -2628,71 +2620,15 @@ app.whenReady().then(() => {
   setInterval(() => void pruneToSetting(), 30 * 60 * 1000)
   // Drops what the trash no longer keeps (older than the retention, past the size cap).
   void surcoTrash.sweep().catch((err) => log.warn('trash sweep failed', String(err)))
-  // Serve the local audio file ourselves with real HTTP range support: the
-  // <audio> element seeks by re-requesting a byte range, and it only honours the
-  // jump when the server answers 206 with Content-Range. Streaming the exact
-  // slice (rather than net.fetch'ing the whole file:// URL, which ignores Range)
-  // is what makes scrubbing work.
-  protocol.handle(MEDIA_SCHEME, async (req) => {
-    // Embedded cover thumbnails (see coverThumbs.ts): content-named files in the app's own
-    // store, so no media allow-list applies; coverThumbPathOf admits nothing else.
-    // A Traktor row's cover, drawn from the thumbnail Traktor keeps in its own cache (see
-    // traktorCoverFile): an id resolves inside that cache or not at all.
-    const traktorCover = traktorCoverIdOf(req.url)
-    if (traktorCover !== null) {
-      const file = traktorCoverFile(traktorReadPath(), traktorCover)
-      const png = file && traktorCoverPng(file)
-      return png
-        ? new Response(new Uint8Array(png), { headers: { 'Content-Type': 'image/png' } })
-        : new Response('Not found', { status: 404 })
-    }
-    const thumb = coverThumbPathOf(req.url)
-    if (thumb) {
-      try {
-        return new Response(await readFile(thumb), { headers: { 'Content-Type': 'image/jpeg' } })
-      } catch {
-        return new Response('Not found', { status: 404 })
-      }
-    }
-    // Refuse any path the app never handed to the renderer, before resolvePlayable
-    // can even probe or transcode it — this is what keeps surco:// from being an
-    // arbitrary-file-read primitive.
-    const requested = mediaPathFromUrl(req.url)
-    if (!mediaAccess.isAllowed(requested)) return new Response('Forbidden', { status: 403 })
-    // AIFF can't be decoded by the <audio> element, so resolvePlayable swaps it
-    // for a transcoded WAV (every other format streams untouched). The recovery
-    // flag is the renderer retrying a stream the element rejected — a damaged
-    // file re-encoded whole to a WAV it can take. The size, MIME and ranges
-    // below all come from the file we actually serve.
-    const filePath = isRecoveryUrl(req.url)
-      ? await resolveRecovered(requested)
-      : await resolvePlayable(requested)
-    const { size } = await stat(filePath)
-    const type = mediaMimeType(filePath)
-    const range = parseRange(req.headers.get('range'), size)
-    if (range) {
-      const { start, end } = range
-      const stream = createReadStream(filePath, { start, end })
-      trackMediaStream(requested, stream)
-      const body = Readable.toWeb(stream) as ReadableStream
-      return new Response(body, {
-        status: 206,
-        headers: {
-          'Content-Type': type,
-          'Content-Length': String(end - start + 1),
-          'Content-Range': `bytes ${start}-${end}/${size}`,
-          'Accept-Ranges': 'bytes',
-        },
-      })
-    }
-    const stream = createReadStream(filePath)
-    trackMediaStream(requested, stream)
-    const body = Readable.toWeb(stream) as ReadableStream
-    return new Response(body, {
-      status: 200,
-      headers: { 'Content-Type': type, 'Content-Length': String(size), 'Accept-Ranges': 'bytes' },
-    })
-  })
+  protocol.handle(MEDIA_SCHEME, (req) =>
+    serveMedia(req, {
+      isAllowed: mediaAccess.isAllowed,
+      traktorReadPath,
+      resolvePlayable,
+      resolveRecovered,
+      trackMediaStream,
+    }),
+  )
   migrateProviderDefaults()
   migrateBackupPolicy()
   migrateBackupLimits()
