@@ -1410,7 +1410,6 @@
     "libraryStateLibraryIn": "Millor còpia a {{program}}",
     "libraryStateDifferentBare": "Una altra versió",
     "libraryStateDifferent": "Una altra versió · {{duration}}",
-    "libraryStateTie": "Semblants",
     "libraryStateThisFile": "És aquest fitxer",
     "libraryStateMissing": "No es troba",
     "libraryStateUnreadable": "No es pot llegir",

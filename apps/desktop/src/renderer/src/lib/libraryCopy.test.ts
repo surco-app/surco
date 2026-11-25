@@ -17,7 +17,7 @@ import {
 import { replacePatch } from './replaceBeforeConvert'
 
 describe('countsAsCopy', () => {
-  it.each(['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
+  it.each(['same', 'even', 'here', 'library', 'unmeasurable', 'measuring'] as const)(
     'counts every verdict about the same recording as a copy, since the DJ already has that track there (%s)',
     (verdict) => {
       expect(countsAsCopy(verdict)).toBe(true)
@@ -64,7 +64,7 @@ describe('copyPathIn and the length of the copy', () => {
     { program: 'rekordbox' as const, path: '/r/a.aiff', verdict, durationSec },
   ]
 
-  const counted = ['same', 'even', 'tie', 'here', 'library', 'unmeasurable', 'measuring'] as const
+  const counted = ['same', 'even', 'here', 'library', 'unmeasurable', 'measuring'] as const
 
   it.each(counted)(
     'does not file another edit in the set, whatever the verdict says (%s)',
@@ -563,7 +563,7 @@ describe('one master the comparison lined up across a length gap', () => {
     durationSec: 426,
     sameMasterAcrossGap: true,
   })
-  const counted = ['same', 'even', 'tie', 'here', 'library', 'unmeasurable'] as const
+  const counted = ['same', 'even', 'here', 'library', 'unmeasurable'] as const
   const fill = (copy: FillCandidate | null, programs: FillCandidate[]) => ({
     musicCopy: copy,
     musicCopyPending: false,
@@ -579,7 +579,7 @@ describe('one master the comparison lined up across a length gap', () => {
 
   it('fills every empty field from it, in a DJ program or in Apple Music', () => {
     expect(fillCopyPath(fill(null, [confirmed('here')]))).toBe('/r/a.aiff')
-    const music = { ...confirmed('tie'), path: '/m/a.mp3' }
+    const music = { ...confirmed('same'), path: '/m/a.mp3' }
     expect(fillCopyPath(fill(music, []))).toBe('/m/a.mp3')
     expect(versionCopyPath(fill(music, []))).toBe('')
   })

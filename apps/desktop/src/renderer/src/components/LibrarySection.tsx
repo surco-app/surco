@@ -18,7 +18,6 @@ export type LibraryVerdict =
   | 'same'
   | 'measuring'
   | 'different'
-  | 'tie'
   | 'thisFile'
   | 'missing'
   | 'unreadable'
@@ -39,7 +38,6 @@ const STATE: Record<LibraryVerdict, { label: string; className: string }> = {
     className: 'bg-warn/14 text-[var(--color-warn-label)]',
   },
   different: { label: 'editor.libraryStateDifferentBare', className: 'bg-fg-faint/10 text-fg-dim' },
-  tie: { label: 'editor.libraryStateTie', className: 'bg-fg-faint/10 text-fg-dim' },
   missing: { label: 'editor.libraryStateMissing', className: 'bg-fg-faint/8 text-fg-faint' },
   unreadable: { label: 'editor.libraryStateUnreadable', className: 'bg-fg-faint/8 text-fg-faint' },
   unmeasurable: {
@@ -129,7 +127,6 @@ const RESERVED_STATES = [
   'same',
   'here',
   'library',
-  'tie',
   'even',
   'different',
   'thisFile',

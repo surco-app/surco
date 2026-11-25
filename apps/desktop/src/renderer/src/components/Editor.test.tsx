@@ -6863,11 +6863,15 @@ describe('Editor Apple Music library section', () => {
     expect(screen.queryByTestId('library-verdict')).toBeNull()
   })
 
-  // One master and nothing measurable between the copies: the row says they are alike and
-  // still opens the figures, so the reader can weigh them.
-  it('says two copies of one master are alike and opens their figures', async () => {
+  // One master and nothing measurable between the copies: for a DJ that is the same track at
+  // the same quality, so the row says so as an identical copy does, and still opens the
+  // figures, which are not byte for byte the same, so the reader can weigh them.
+  it('says two copies of one master are the same and opens their figures', async () => {
     renderWithLibraryCopy({ here: aifLoudness, library: aifLoudness })
-    await waitFor(() => expect(screen.getByTestId('library-verdict')).toHaveAccessibleName('Alike'))
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAccessibleName("It's the same"),
+    )
+    expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same')
     fireEvent.click(screen.getByTestId('library-row'))
     expect(screen.getByTestId('copy-row-crest')).toBeInTheDocument()
     expect(screen.queryByTestId('copy-row-duration')).toBeNull()

@@ -11,7 +11,6 @@ import { replacePatch } from './replaceBeforeConvert'
 const COPY_VERDICTS: ReadonlySet<LibraryVerdict> = new Set([
   'same',
   'even',
-  'tie',
   'here',
   'library',
   'unmeasurable',
