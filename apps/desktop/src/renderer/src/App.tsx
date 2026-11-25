@@ -101,8 +101,8 @@ import { RekordboxQueuePill } from './components/RekordboxQueuePill'
 import { ResizeHandle } from './components/ResizeHandle'
 import { SessionBand } from './components/SessionBand'
 import type { SessionDestination } from './components/SessionWizard'
-import { SourceRail } from './components/SourceRail'
-import { flattenPlaylists, SourceTree } from './components/SourceTree'
+import { SidebarPanel } from './components/SidebarPanel'
+import { flattenPlaylists } from './components/SourceTree'
 import { FOOTER_BAR } from './components/SplitButton'
 import { ToastStack } from './components/ToastStack'
 import { Toolbar } from './components/Toolbar'
@@ -201,7 +201,6 @@ import {
   type PaletteTree,
   runCommand,
 } from './lib/commands'
-import { railAlert } from './lib/copiesView'
 import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
@@ -334,13 +333,11 @@ import {
 import { detectTrim } from './lib/trim'
 import { isRunning } from './lib/usbExport'
 import { connectUsbExportFeed, usbExportStore, useUsbExportState } from './lib/usbExportStore'
-import { DEFAULT_SEARCH_PROVIDERS, NO_HIDDEN_SOURCES, viewPrefsOf } from './lib/viewPrefs'
+import { DEFAULT_SEARCH_PROVIDERS, viewPrefsOf } from './lib/viewPrefs'
 import type { CopiedTags, TrackItem } from './types'
 
 // Hovering counts as intent only after the cursor rests briefly, so sweeping the
 // pointer across the list while scrolling doesn't fire a prefetch for every row.
-const SIDEBAR_PEEK_DELAY_MS = 150
-const PEEK_TREE_WIDTH = 240
 const NO_SELECTED_PATHS: ReadonlySet<string> = new Set()
 const PREFETCH_HOVER_MS = 150
 const PLAYER_LEAVE_MS = 200
@@ -4874,90 +4871,35 @@ export default function App(): React.JSX.Element {
               </div>
 
               <div className="relative flex min-h-0 flex-1">
-                {!showSidebar && !sidebarPeek && (
-                  <div
-                    data-testid="sidebar-edge"
-                    aria-hidden="true"
-                    onPointerEnter={() => {
-                      peekTimer.current = setTimeout(
-                        () => setSidebarPeek(true),
-                        SIDEBAR_PEEK_DELAY_MS,
-                      )
-                    }}
-                    onPointerLeave={() => clearTimeout(peekTimer.current)}
-                    className="absolute inset-y-0 left-0 z-30 w-2"
-                  />
-                )}
-                {/* biome-ignore lint/a11y/noStaticElementInteractions: the rail and tree inside take the keys, this only closes the overlay */}
-                <div
-                  data-testid={showSidebar ? undefined : 'sidebar-peek'}
-                  data-open={(!showSidebar && sidebarPeek) || undefined}
-                  inert={!showSidebar && !sidebarPeek}
-                  onPointerLeave={showSidebar ? undefined : () => setSidebarPeek(false)}
-                  onKeyDown={
-                    showSidebar
-                      ? undefined
-                      : (e) => {
-                          if (e.key !== 'Escape') return
-                          e.stopPropagation()
-                          setSidebarPeek(false)
-                        }
-                  }
-                  className={
-                    showSidebar
-                      ? 'contents'
-                      : 'sidebar-peek absolute inset-y-0 left-0 z-30 flex bg-[var(--color-ink)]'
-                  }
-                >
-                  <SourceRail
-                    dropsInTracks={dragging && browser.source !== null}
-                    sidebarShown={showSidebar}
-                    onToggleSidebar={() => {
-                      setSidebarPeek(false)
-                      toggleSidebar()
-                    }}
-                    width={railWidth({ names: showRailNames })}
-                    showNames={showRailNames}
-                    onToggleNames={toggleRailNames}
-                    sources={browser.sources}
-                    active={browser.source}
-                    onSelect={(next) => {
-                      setCopiesOpen(null)
-                      selectSource(next)
-                    }}
-                    onHide={(hidden) =>
-                      saveSettings({
-                        hiddenSources: [...(settings?.hiddenSources ?? NO_HIDDEN_SOURCES), hidden],
-                      })
-                    }
-                    copies={{
-                      active: copiesOpen !== null,
-                      alert: railAlert(libraryCopies.programs),
-                      onOpen: () => {
-                        setSidebarPeek(false)
-                        if (!copiesOpen) openCopies(false, '')
-                      },
-                    }}
-                  />
-                  {!copiesOpen && browser.source && (
-                    <SourceTree
-                      key={browser.source}
-                      width={showSidebar ? columns.widths.tree : PEEK_TREE_WIDTH}
-                      title={tr(`sources.${browser.source}`)}
-                      source={browser.source}
-                      nodes={browser.tree}
-                      failed={browser.treeFailed}
-                      missing={browser.libraryMissing}
-                      notice={runningNote && programRunning ? tr(runningNote.key) : undefined}
-                      selectedId={browser.playlist?.id ?? null}
-                      onSelect={selectTreePlaylist}
-                      edit={editableSource ? treeEdit : undefined}
-                      fixed={fixed}
-                      onExportUsb={treeUsbProgram ? exportTreeToUsb : undefined}
-                      newPlaylistRef={newPlaylistRef}
-                    />
-                  )}
-                </div>
+                <SidebarPanel
+                  showSidebar={showSidebar}
+                  sidebarPeek={sidebarPeek}
+                  setSidebarPeek={setSidebarPeek}
+                  peekTimer={peekTimer}
+                  dragging={dragging}
+                  browser={browser}
+                  toggleSidebar={toggleSidebar}
+                  showRailNames={showRailNames}
+                  toggleRailNames={toggleRailNames}
+                  setCopiesOpen={setCopiesOpen}
+                  selectSource={selectSource}
+                  saveSettings={saveSettings}
+                  settings={settings}
+                  copiesOpen={copiesOpen}
+                  libraryCopies={libraryCopies}
+                  openCopies={openCopies}
+                  columns={columns}
+                  tr={tr}
+                  runningNote={runningNote}
+                  programRunning={programRunning}
+                  selectTreePlaylist={selectTreePlaylist}
+                  editableSource={editableSource}
+                  treeEdit={treeEdit}
+                  fixed={fixed}
+                  treeUsbProgram={treeUsbProgram}
+                  exportTreeToUsb={exportTreeToUsb}
+                  newPlaylistRef={newPlaylistRef}
+                />
                 {copiesOpen && (
                   <div className="flex min-w-0 flex-1 flex-col">
                     <div className="min-h-0 flex-1">
