@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query'
-import type { DjProgram } from '../../../shared/djProgram'
+import type { Api } from '../../../preload/api'
+import { type DjProgram, exportsUsbOn } from '../../../shared/djProgram'
 import { TRAKTOR_BUILT_IN, TRAKTOR_HISTORY } from '../../../shared/traktorContent'
 import type {
   CollectionTrack,
@@ -12,6 +13,7 @@ import type {
   UsbProgram,
 } from '../../../shared/types'
 import type { SourceBrowser } from '../hooks/useSourceBrowser'
+import { CUE_PROGRAMS, type CueProgram } from './cuePrograms'
 
 export interface SourceRead {
   available(): Promise<boolean>
@@ -229,5 +231,61 @@ export function openProgramOf({ browser, settings }: OpenProgramContext): OpenPr
     sourceEdit,
     traktorNmlPath: settings?.traktorNmlPath ?? '',
     checksTraktorCollection: sourceEdit?.gate === 'traktorCollection',
+  }
+}
+
+export interface ProgramEditsContext {
+  sourceProgram: DjProgram | null
+  sourceEdit: SourceEdit | null
+  traktorCanSave: boolean
+  browser: Pick<SourceBrowser, 'sources' | 'libraryMissing'>
+  platform: Api['platform']
+}
+
+export interface ProgramEdits {
+  editableSource: DjProgram | null
+  editProgram: DjProgram
+  usbAvailable: boolean
+  treeUsbProgram: UsbProgram | null
+  runningNote: CueProgram['runningNote']
+  idJoin: string | null
+  fixedNode: SourceProgram['fixedNode']
+  canRename: boolean
+  canMoveNode: boolean
+  noFolders: boolean
+  readsCollection: boolean
+}
+
+export function programEditsOf({
+  sourceProgram,
+  sourceEdit,
+  traktorCanSave,
+  browser,
+  platform,
+}: ProgramEditsContext): ProgramEdits {
+  const editableSource =
+    sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  const usbPlatform = platform === 'darwin' || platform === 'win32'
+  return {
+    editableSource,
+    editProgram: editableSource ?? 'rekordbox',
+    usbAvailable: usbPlatform && browser.sources.includes('rekordbox'),
+    treeUsbProgram:
+      usbPlatform &&
+      sourceProgram &&
+      isUsbProgram(sourceProgram) &&
+      exportsUsbOn(sourceProgram, platform) &&
+      (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
+        browser.sources.includes(sourceProgram)) &&
+      !browser.libraryMissing
+        ? sourceProgram
+        : null,
+    runningNote: sourceProgram && CUE_PROGRAMS[sourceProgram].runningNote,
+    idJoin: sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null,
+    fixedNode: sourceProgram && SOURCE_PROGRAMS[sourceProgram].fixedNode,
+    canRename: canEdit(sourceEdit, 'rename'),
+    canMoveNode: canEdit(sourceEdit, 'moveNode'),
+    noFolders: sourceEdit?.folders === false,
+    readsCollection: Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection),
   }
 }

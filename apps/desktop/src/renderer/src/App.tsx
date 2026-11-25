@@ -21,7 +21,6 @@ import { effectiveMeta } from '../../shared/customFields'
 import {
   CUE_PROGRAMS,
   type CueProgram,
-  exportsUsbOn,
   LIBRARY_PROGRAMS,
   type LibraryProgram,
   PROGRAM_CAN,
@@ -204,7 +203,6 @@ import { railAlert } from './lib/copiesView'
 import { revokeCoverUrlIfUnused, revokeDisplacedCovers } from './lib/coverUrl'
 import { autoMarkTracks } from './lib/cueAutoMark'
 import { forgetStaleDrafts } from './lib/cueDrafts'
-import { CUE_PROGRAMS as CUE_EDITORS } from './lib/cuePrograms'
 import {
   type AutoMark,
   focusCue,
@@ -302,8 +300,8 @@ import { formatShortcut } from './lib/shortcuts'
 import { hasShortcutUndo, takeShortcutUndo } from './lib/shortcutUndo'
 import {
   canEdit,
-  isUsbProgram,
   openProgramOf,
+  programEditsOf,
   SOURCE_PROGRAMS,
   SOURCE_READ,
   sourceCollectionOptions,
@@ -1095,17 +1093,30 @@ export default function App(): React.JSX.Element {
       queryFn: () => window.api.traktorCanSave(),
       enabled: checksTraktorCollection,
     }).data === true
-  const editableSource =
-    sourceEdit && (sourceEdit.gate === 'none' || traktorCanSave) ? sourceProgram : null
+  const {
+    editableSource,
+    editProgram,
+    usbAvailable,
+    treeUsbProgram,
+    runningNote,
+    idJoin,
+    fixedNode,
+    canRename,
+    canMoveNode,
+    noFolders,
+    readsCollection,
+  } = programEditsOf({
+    sourceProgram,
+    sourceEdit,
+    traktorCanSave,
+    browser,
+    platform: window.api.platform,
+  })
   const askToApplyEdit = useStableCallback(() =>
     window.api.dj.askToApply([editableSource ?? 'rekordbox']),
   )
-  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editableSource ?? 'rekordbox')
-  const editRekordboxAsking = useRekordboxEdits(
-    notifyEdit,
-    editableSource ?? 'rekordbox',
-    askToApplyEdit,
-  )
+  const editRekordboxRaw = useRekordboxEdits(notifyEdit, editProgram)
+  const editRekordboxAsking = useRekordboxEdits(notifyEdit, editProgram, askToApplyEdit)
   const dropDiscardedPlaylists = useStableCallback((paths: string[]) =>
     setTracks((prev) => discardPlaylistEdits(prev, paths)),
   )
@@ -1249,18 +1260,6 @@ export default function App(): React.JSX.Element {
   // The USB export: macOS and Windows, with a rekordbox collection or from the Engine DJ
   // tree. Its state lives in usbExportStore, outside React; App reads only the phase (for
   // the notices), so a byte tick never re-renders the app.
-  const usbPlatform = window.api.platform === 'darwin' || window.api.platform === 'win32'
-  const usbAvailable = usbPlatform && browser.sources.includes('rekordbox')
-  const treeUsbProgram =
-    usbPlatform &&
-    sourceProgram &&
-    isUsbProgram(sourceProgram) &&
-    exportsUsbOn(sourceProgram, window.api.platform) &&
-    (SOURCE_PROGRAMS[sourceProgram].missingLibraryCheck ||
-      browser.sources.includes(sourceProgram)) &&
-    !browser.libraryMissing
-      ? sourceProgram
-      : null
   useEffect(() => connectUsbExportFeed(), [])
   const usbPhase = useUsbExportState((s) => s.phase)
   const usbRunning = useUsbExportState(isRunning)
@@ -3328,7 +3327,6 @@ export default function App(): React.JSX.Element {
   // library holds afterwards is re-read and shown (useRekordboxEdits).
   const editableOpen =
     editableSource !== null && browser.playlist !== null && playlistScope !== null
-  const runningNote = sourceProgram && CUE_EDITORS[sourceProgram].runningNote
   const { data: programRunning = false } = useQuery({
     queryKey: [`${sourceProgram}-running`],
     queryFn: async () => sourceProgram !== null && window.api.dj.running(sourceProgram),
@@ -3935,7 +3933,6 @@ export default function App(): React.JSX.Element {
   const createInRekordbox = useStableCallback((parentId: string, name: string, folder: boolean) => {
     void editRekordbox({ kind: 'create', parentId, name, folder }, name)
   })
-  const idJoin = sourceProgram ? SOURCE_PROGRAMS[sourceProgram].idJoin : null
   const reopenAt = (
     open: typeof browser.playlist,
     node: SourceNode,
@@ -3960,7 +3957,6 @@ export default function App(): React.JSX.Element {
     void editRekordbox({ kind: 'delete', playlistId: node.id }, node.name)
   })
   const treeTop = useMemo(() => new Set((browser.tree ?? []).map((n) => n.id)), [browser.tree])
-  const fixedNode = sourceProgram && SOURCE_PROGRAMS[sourceProgram].fixedNode
   const fixed = useMemo(
     () => (fixedNode ? (node: SourceNode) => fixedNode(node, treeTop.has(node.id)) : undefined),
     [fixedNode, treeTop],
@@ -3998,10 +3994,6 @@ export default function App(): React.JSX.Element {
         })
     },
   )
-  const canRename = canEdit(sourceEdit, 'rename')
-  const canMoveNode = canEdit(sourceEdit, 'moveNode')
-  const noFolders = sourceEdit?.folders === false
-  const readsCollection = Boolean(sourceProgram && SOURCE_READ[sourceProgram].collection)
   const treeEdit = useMemo(
     () => ({
       onCreate: createInRekordbox,
