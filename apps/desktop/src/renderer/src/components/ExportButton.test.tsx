@@ -785,6 +785,31 @@ describe('ExportButton library copy', () => {
     expect(replace).toHaveAttribute('aria-checked', 'false')
   })
 
+  // Another version converts from the body, yet Update and Replace stay in the menu so the
+  // DJ can still decide it is the same track (25/11, a vinyl rip against its release).
+  it('converts over another version and still offers both actions in the menu', () => {
+    const onProcess = vi.fn()
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: undefined, otherVersion: true }}
+        onProcess={onProcess}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveTextContent('Convert')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('library-copy-update')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(screen.getByTestId('library-copy-update'))
+    expect(onLibraryAction).toHaveBeenCalledWith('update')
+    fireEvent.click(body)
+    expect(onProcess).toHaveBeenCalled()
+  })
+
   it('remembers and runs the action picked from the menu', () => {
     const onLibraryAction = vi.fn()
     const onLibraryActionChange = vi.fn()

@@ -7799,6 +7799,29 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
+    // Another version is the DJ's call one track at a time (25/11): the body converts, the menu
+    // still updates it at once, and the pick neither turns the action remembered for every
+    // real copy nor leaves the body converting once picked.
+    it('converts over another version and updates it from the menu for this track alone', async () => {
+      renderWithPrograms({
+        rekordbox: { ...sameRekordboxCopy, durationSec: 400 },
+        hereDuration: 210,
+        identicalPair: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-update'))
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(rendered.onLibraryCopyAction).not.toHaveBeenCalled()
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+    })
+
     it('remembers the action picked from the menu', async () => {
       renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
       await readyBody()
@@ -8015,7 +8038,7 @@ describe('Editor Apple Music library section', () => {
     })
 
     // Another version is another track: updating its tags or replacing it would lose it.
-    it('converts as today when the only copy is another version', async () => {
+    it('converts as today when the only copy is another version, with both actions in the menu', async () => {
       renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
         hereDuration: 95,
@@ -8025,7 +8048,9 @@ describe('Editor Apple Music library section', () => {
       )
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
       fireEvent.click(screen.getByTestId('process-format-toggle'))
-      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(/^rekordbox · /)
+      expect(screen.getByTestId('library-copy-update')).toHaveAttribute('aria-checked', 'false')
+      expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'false')
     })
 
     it('waits for the comparison before reading a DJ copy', async () => {
