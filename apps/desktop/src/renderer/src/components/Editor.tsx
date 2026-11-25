@@ -123,13 +123,9 @@ import {
   versionCopyPath,
 } from '../lib/libraryCopy'
 import { musicRowVerdict, rowVerdict, verdictState } from '../lib/libraryVerdict'
+import { moreItems } from '../lib/metaMenu'
 import { missingSummary } from '../lib/missingSummary'
-import {
-  autoNamesFile,
-  emptyTitleFormatFields,
-  renderOutputName,
-  titleFormatPatches,
-} from '../lib/outputName'
+import { autoNamesFile, renderOutputName, titleFormatState } from '../lib/outputName'
 import { pathKey } from '../lib/pathKey'
 import type { PhrasedComment } from '../lib/phraseCountBatch'
 import { isMacOS, revealCommandKey } from '../lib/platform'
@@ -154,7 +150,7 @@ import { selectionStatus } from '../lib/selectionStatus'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
-import { stripParentheticals } from '../lib/textClean'
+import { proposeAlbumClean } from '../lib/textClean'
 import type { AutoMarkKind } from '../lib/triage'
 import { fileHoldsTrack } from '../lib/upToDate'
 import type { FieldCleanup, TrackItem } from '../types'
@@ -172,7 +168,7 @@ import { type LibraryRow, LibrarySection } from './LibrarySection'
 import { LimiterGlimpse } from './LimiterGlimpse'
 import { MatchingSection } from './MatchingSection'
 import { MetadataForm } from './MetadataForm'
-import { type MetaMenuItem, MetaMoreMenu } from './MetaMoreMenu'
+import { MetaMoreMenu } from './MetaMoreMenu'
 import { NormalizeSection } from './NormalizeSection'
 import { OutputNameSection } from './OutputNameSection'
 import { PhraseCountRow } from './PhraseCountRow'
@@ -1157,27 +1153,14 @@ export const Editor = memo(function Editor({
     [isMulti, visibleFields, resolvedMeta, customFields, tr],
   )
 
-  // "Without version" proposal for the album menu: strip the mix/label parenthetical
-  // from the album, or from the title when the album is still empty (the common case
-  // for a single release). Only set when stripping actually removes something, so the
-  // menu offers the row only when there is a version to drop.
-  const albumCleanSource = isMulti ? '' : (item.meta.album ?? '').trim() || (item.meta.title ?? '')
-  const albumClean = stripParentheticals(albumCleanSource)
-  const albumCleanResult = albumClean && albumClean !== albumCleanSource ? albumClean : undefined
+  const albumCleanResult = proposeAlbumClean({ isMulti, meta: item.meta })
 
-  // The title rebuilt from the settings' title format, for the title menu's one-shot
-  // rewrite. titleFormatPatches carries the shared no-op rules: nothing to offer when
-  // the render is empty/unchanged OR the title already wears the pattern's prefix and
-  // suffix — so the row can never stack "(B2) (B2) …" on a second apply.
-  const titleFormatResult =
-    isMulti || !titleFormat.trim()
-      ? undefined
-      : titleFormatPatches(titleFormat, [{ ...item, meta: resolvedMeta }])[0]?.meta.title
-
-  const titleFormatOff =
-    !resolvedMeta.title?.trim() ||
-    (titleFormatResult === undefined &&
-      emptyTitleFormatFields(titleFormat, [{ ...item, meta: resolvedMeta }]).length === 0)
+  const { titleFormatResult, titleFormatOff } = titleFormatState({
+    isMulti,
+    titleFormat,
+    id: item.id,
+    resolvedMeta,
+  })
   const titleFormatAction = useMemo(
     () =>
       onApplyTitleFormat && titleFormat.trim() !== ''
@@ -1689,92 +1672,23 @@ export const Editor = memo(function Editor({
     </button>
   ) : null
 
-  const pasteMetaLabel = copiedMetaTitle
-    ? tr('editor.pasteMetaFrom', { title: copiedMetaTitle })
-    : tr('trackList.context.pasteMeta')
-
-  // The glyphs that used to run along the header, now one menu: the file's own actions
-  // first (reveal, copy the name, search it), then what works on the tags. "Rewrite titles"
-  // only exists when a title format is configured, since without one there is nothing to apply.
-  const moreItems: MetaMenuItem[] = [
-    ...(isMulti
-      ? []
-      : [
-          {
-            id: 'reveal',
-            testid: 'reveal-file-btn',
-            label: tr(revealCommandKey()),
-            Icon: Folder,
-            onSelect: () => window.api.reveal(item.inputPath),
-          },
-          {
-            id: 'copy-filename',
-            testid: 'copy-filename-btn',
-            label: tr('editor.copyFilename'),
-            Icon: Copy,
-            onSelect: onCopyFilename,
-          },
-          {
-            id: 'copy-path',
-            testid: 'copy-path-btn',
-            label: tr('trackList.context.copyPath'),
-            Icon: Link,
-            onSelect: () => onCopyPath(item),
-          },
-          {
-            id: 'search-web',
-            testid: 'search-web-btn',
-            label: tr('editor.searchWeb'),
-            Icon: Globe,
-            onSelect: onSearchWeb,
-          },
-        ]),
-    ...(onApplyTitleFormat && titleFormat.trim() !== ''
-      ? [
-          {
-            id: 'title-format',
-            testid: 'apply-title-format-btn',
-            label: tr('editor.applyTitleFormat'),
-            Icon: Braces,
-            onSelect: onApplyTitleFormat,
-            separatorBefore: !isMulti,
-          },
-        ]
-      : []),
-    ...(isMulti
-      ? []
-      : [
-          {
-            id: 'copy-meta',
-            testid: 'copy-meta-btn',
-            label: tr('trackList.context.copyMeta'),
-            Icon: ClipboardCopy,
-            onSelect: onCopyMeta,
-            separatorBefore: !(onApplyTitleFormat && titleFormat.trim() !== ''),
-          },
-        ]),
-    {
-      id: 'paste-meta',
-      testid: 'paste-meta-btn',
-      label: pasteMetaLabel,
-      Icon: ClipboardPaste,
-      onSelect: onPasteMeta,
-      disabled: copiedMetaTitle === null,
-      separatorBefore: isMulti && !!onApplyTitleFormat && titleFormat.trim() !== '',
-    },
-    ...(Object.keys(restorableRelease).length > 0
-      ? [
-          {
-            id: 'restore-release',
-            testid: 'restore-release-btn',
-            label: tr('editor.restoreRelease'),
-            Icon: Undo2,
-            onSelect: restoreRelease,
-            separatorBefore: true,
-          },
-        ]
-      : []),
-  ]
+  const moreItemsList = moreItems({
+    isMulti,
+    tr,
+    revealKey: revealCommandKey(),
+    icons: { Folder, Copy, Link, Globe, Braces, ClipboardCopy, ClipboardPaste, Undo2 },
+    onReveal: () => window.api.reveal(item.inputPath),
+    onCopyFilename,
+    onCopyPath: () => onCopyPath(item),
+    onSearchWeb,
+    onApplyTitleFormat,
+    titleFormat,
+    onCopyMeta,
+    onPasteMeta,
+    copiedMetaTitle,
+    restorableRelease,
+    restoreRelease,
+  })
 
   const copyState = verdictState(copyVerdict, copyMeasuring)
   const renderComparison = ({
@@ -2243,7 +2157,7 @@ export const Editor = memo(function Editor({
                       {clearButton}
                     </>
                   )}
-                  {formOpen && <MetaMoreMenu items={moreItems} />}
+                  {formOpen && <MetaMoreMenu items={moreItemsList} />}
                 </div>
               }
             />

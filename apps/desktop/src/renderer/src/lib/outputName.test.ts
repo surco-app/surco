@@ -7,6 +7,7 @@ import {
   renderOutputName,
   renderTitle,
   titleFormatPatches,
+  titleFormatState,
   titleFormatSummary,
   unformatTitle,
 } from './outputName'
@@ -477,5 +478,55 @@ describe('autoNamesFile', () => {
 
   it('never renames a Serato track, whose crates point at the file by its path', () => {
     expect(autoNamesFile(true, { programs: ['serato'] })).toBe(false)
+  })
+})
+
+describe('titleFormatState', () => {
+  const ctx = (
+    patch: Partial<TrackMetadata>,
+    over: { isMulti?: boolean; titleFormat?: string } = {},
+  ) => ({
+    isMulti: false,
+    titleFormat: '({trackNumber}) {title}',
+    id: 'a',
+    resolvedMeta: meta(patch),
+    ...over,
+  })
+
+  it('offers the rebuilt title and enables the row', () => {
+    const state = titleFormatState(ctx({ title: 'Action', trackNumber: 'B2' }))
+    expect(state.titleFormatResult).toBe('(B2) Action')
+    expect(state.titleFormatOff).toBe(false)
+  })
+
+  // No title means there is nothing to rewrite, whatever the pattern says.
+  it('turns the row off for an empty title', () => {
+    const state = titleFormatState(ctx({ title: ' ', trackNumber: 'B2' }))
+    expect(state.titleFormatOff).toBe(true)
+  })
+
+  // A no-op because the pattern's fields are empty stays enabled so the click can name
+  // the missing field; one that is a no-op for another reason has nothing to say.
+  it('keeps the row on when a no-op is down to empty pattern fields', () => {
+    const state = titleFormatState(ctx({ title: 'Action', trackNumber: '' }))
+    expect(state.titleFormatResult).toBeUndefined()
+    expect(state.titleFormatOff).toBe(false)
+  })
+
+  it('turns the row off when the title already wears the pattern', () => {
+    const state = titleFormatState(ctx({ title: '(B2) Action', trackNumber: 'B2' }))
+    expect(state.titleFormatResult).toBeUndefined()
+    expect(state.titleFormatOff).toBe(true)
+  })
+
+  it('offers no rewrite for a selection or without a format', () => {
+    expect(
+      titleFormatState(ctx({ title: 'Action', trackNumber: 'B2' }, { isMulti: true }))
+        .titleFormatResult,
+    ).toBeUndefined()
+    expect(
+      titleFormatState(ctx({ title: 'Action', trackNumber: 'B2' }, { titleFormat: ' ' }))
+        .titleFormatResult,
+    ).toBeUndefined()
   })
 })

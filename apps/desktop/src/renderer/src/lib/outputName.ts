@@ -264,3 +264,36 @@ export function titleFormatSummary(
     missingFields: patches.length === 0 ? emptyTitleFormatFields(format, tracks) : [],
   }
 }
+
+export type TitleFormatStateContext = {
+  isMulti: boolean
+  titleFormat: string
+  id: string
+  resolvedMeta: TrackMetadata
+}
+
+export type TitleFormatState = {
+  titleFormatResult: string | undefined
+  titleFormatOff: boolean
+}
+
+// The title rebuilt from the settings' title format, for the title menu's one-shot
+// rewrite. titleFormatPatches carries the shared no-op rules: nothing to offer when
+// the render is empty/unchanged OR the title already wears the pattern's prefix and
+// suffix — so the row can never stack "(B2) (B2) …" on a second apply.
+export function titleFormatState({
+  isMulti,
+  titleFormat,
+  id,
+  resolvedMeta,
+}: TitleFormatStateContext): TitleFormatState {
+  const titleFormatResult =
+    isMulti || !titleFormat.trim()
+      ? undefined
+      : titleFormatPatches(titleFormat, [{ id, meta: resolvedMeta }])[0]?.meta.title
+  const titleFormatOff =
+    !resolvedMeta.title?.trim() ||
+    (titleFormatResult === undefined &&
+      emptyTitleFormatFields(titleFormat, [{ id, meta: resolvedMeta }]).length === 0)
+  return { titleFormatResult, titleFormatOff }
+}

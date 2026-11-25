@@ -8,3 +8,18 @@ export function stripParentheticals(text: string): string {
     .replace(/\s{2,}/g, ' ')
     .trim()
 }
+
+export type AlbumCleanContext = {
+  isMulti: boolean
+  meta: { album?: string; title?: string }
+}
+
+// "Without version" proposal for the album menu: strip the mix/label parenthetical
+// from the album, or from the title when the album is still empty (the common case
+// for a single release). Only set when stripping actually removes something, so the
+// menu offers the row only when there is a version to drop.
+export function proposeAlbumClean({ isMulti, meta }: AlbumCleanContext): string | undefined {
+  const source = isMulti ? '' : (meta.album ?? '').trim() || (meta.title ?? '')
+  const clean = stripParentheticals(source)
+  return clean && clean !== source ? clean : undefined
+}
