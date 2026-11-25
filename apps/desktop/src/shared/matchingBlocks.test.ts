@@ -52,6 +52,19 @@ describe('matchingBlocks', () => {
     expect(matchingBlocks([['a', 'a']], byId)).toEqual([])
   })
 
+  // The same pair saved twice is still one link, or the follower would show twice in its block.
+  it('collapses a pair saved twice in the same order into one link', () => {
+    expect(
+      matchingBlocks(
+        [
+          ['a', 'b'],
+          ['a', 'b'],
+        ],
+        byId,
+      ),
+    ).toEqual([['a', 'b']])
+  })
+
   it('keeps the saved order of a pair, because the first track is the one played first', () => {
     const titles: Record<string, string> = { '9': 'Acid Groove', '1': 'Take Me Home' }
     expect(matchingBlocks([['1', '9']], (id) => titles[id])).toEqual([['1', '9']])
@@ -169,6 +182,19 @@ describe('pairsOfBlocks', () => {
 
   it('ignores a pair of a track with itself', () => {
     expect(pairsOfBlocks([['a', 'a']], ['a'])).toEqual([])
+  })
+
+  // Each link goes to rekordbox once, even when the same pair is listed twice.
+  it('lists a pair saved twice only once', () => {
+    expect(
+      pairsOfBlocks(
+        [
+          ['a', 'b'],
+          ['a', 'b'],
+        ],
+        ['a'],
+      ),
+    ).toEqual([['a', 'b']])
   })
 })
 
