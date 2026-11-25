@@ -1,12 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import type { LibraryVerdict } from '../components/LibrarySection'
+import type { LibraryRow, LibraryVerdict } from '../components/LibrarySection'
+import type { CopyReach } from '../hooks/useCopyReach'
+import type { CopyVerdictState } from '../hooks/useCopyVerdicts'
+import { compareCopies } from './bestCopy'
 import {
   type CopyCandidate,
-  type FillCandidate,
+  type CopyComparisonContext,
+  comparedCopyOf,
+  copyComparisonOf,
   copyPathIn,
   countsAsCopy,
+  type FillCandidate,
   fillCopyPath,
   keptFormatOf,
+  type LibraryCopyOfferContext,
+  type LibraryCopyTarget,
+  libraryCopyOfferOf,
+  libraryTargetOf,
+  type MusicCopyContext,
+  musicCopyOf,
+  type PickedCopyContext,
+  pickedCopyOf,
   pickLibraryCopy,
   replaceCopyPatch,
   replaceWarnsFirst,
@@ -599,5 +613,389 @@ describe('replaceWarnsFirst', () => {
   it('runs a Replace known to cost nothing, or unknown on a copy Serato did not hand over', () => {
     expect(replaceWarnsFirst('serato', false)).toBe(false)
     expect(replaceWarnsFirst('rekordbox', undefined)).toBe(false)
+  })
+})
+
+describe('comparedCopyOf', () => {
+  it('compares the library copy when it is another file than the open one', () => {
+    expect(
+      comparedCopyOf({ libraryCopyPath: '/m/a.mp3', inputPath: '/in/a.wav', isMulti: false }),
+    ).toEqual({ comparedCopyPath: '/m/a.mp3', musicHoldsFile: false })
+  })
+
+  // A track opened from the library's own folder is that copy: measuring it against itself
+  // would only ever say «same».
+  it('compares nothing when the open file is the library copy, which Music then holds', () => {
+    expect(
+      comparedCopyOf({ libraryCopyPath: '/m/A.mp3', inputPath: '/m/a.mp3', isMulti: false }),
+    ).toEqual({ comparedCopyPath: '', musicHoldsFile: true })
+  })
+
+  it('compares nothing for a selection, whose tracks each have their own copy', () => {
+    expect(
+      comparedCopyOf({ libraryCopyPath: '/m/a.mp3', inputPath: '/in/a.wav', isMulti: true }),
+    ).toEqual({ comparedCopyPath: '', musicHoldsFile: false })
+  })
+
+  it('has Music hold nothing while it has no copy at all', () => {
+    expect(
+      comparedCopyOf({ libraryCopyPath: '', inputPath: '', isMulti: false }).musicHoldsFile,
+    ).toBe(false)
+  })
+})
+
+describe('copyComparisonOf', () => {
+  const reach = (over: Partial<CopyReach> = {}): CopyReach => ({
+    missing: false,
+    unreadable: false,
+    checking: false,
+    ...over,
+  })
+  const base: CopyComparisonContext = {
+    musicCopyReach: undefined,
+    hereFacts: { ext: 'WAV' },
+    libraryFacts: { ext: 'MP3' },
+    copyPair: null,
+    comparedCopyPath: '/m/a.mp3',
+    copyOpenFor: '',
+    inputPath: '/in/a.wav',
+    libraryCopyPath: '/m/a.mp3',
+    spectrumInHand: undefined,
+    replacedCopySpectrum: undefined,
+  }
+
+  it('compares the two copies once every fact is in', () => {
+    const c = copyComparisonOf(base)
+    expect(c.copyVerdict).toEqual(compareCopies({ ext: 'WAV' }, { ext: 'MP3' }, null))
+    expect(c.copyVerdict?.winner).toBe('a')
+    expect(c.copyMeasuring).toBe(false)
+    expect(c.libraryCopyBetter).toBe(false)
+  })
+
+  it.each([
+    ['this file', { hereFacts: undefined }],
+    ['the library copy', { libraryFacts: undefined }],
+    ['the pair probe', { copyPair: undefined }],
+  ] as const)('is still measuring while the facts of %s are missing', (_, over) => {
+    const c = copyComparisonOf({ ...base, ...over })
+    expect(c.copyVerdict).toBeNull()
+    expect(c.copyMeasuring).toBe(true)
+  })
+
+  it('measures nothing when there is no copy to compare', () => {
+    expect(
+      copyComparisonOf({ ...base, comparedCopyPath: '', hereFacts: undefined }).copyMeasuring,
+    ).toBe(false)
+  })
+
+  it('says the library copy is better when the comparison makes it the winner', () => {
+    expect(
+      copyComparisonOf({ ...base, hereFacts: { ext: 'MP3' }, libraryFacts: { ext: 'WAV' } })
+        .libraryCopyBetter,
+    ).toBe(true)
+  })
+
+  // Until the comparison answers, the format and cutoff check still tells a WAV in the
+  // library from an MP3 in hand, so the row does not wait to warn.
+  it('falls back on the format and cutoff check while the comparison has no verdict', () => {
+    const waiting = { ...base, hereFacts: undefined }
+    expect(
+      copyComparisonOf({ ...waiting, libraryCopyPath: '/m/a.wav', inputPath: '/in/a.mp3' })
+        .libraryCopyBetter,
+    ).toBe(true)
+    expect(copyComparisonOf(waiting).libraryCopyBetter).toBe(false)
+    expect(
+      copyComparisonOf({
+        ...waiting,
+        libraryCopyPath: '/m/a.mp3',
+        inputPath: '/in/b.mp3',
+        replacedCopySpectrum: { cutoffHz: 20000, hasKnee: false },
+        spectrumInHand: { cutoffHz: 16000, hasKnee: false },
+      }).libraryCopyBetter,
+    ).toBe(true)
+    expect(
+      copyComparisonOf({ ...waiting, libraryCopyPath: '', inputPath: '/in/a.mp3' })
+        .libraryCopyBetter,
+    ).toBe(false)
+  })
+
+  it('takes the copy as unreached when it is missing or unreadable', () => {
+    expect(copyComparisonOf(base).musicCopyUnreached).toBe(false)
+    expect(copyComparisonOf({ ...base, musicCopyReach: reach() }).musicCopyUnreached).toBe(false)
+    expect(
+      copyComparisonOf({ ...base, musicCopyReach: reach({ missing: true }) }).musicCopyUnreached,
+    ).toBe(true)
+    expect(
+      copyComparisonOf({ ...base, musicCopyReach: reach({ unreadable: true }) }).musicCopyUnreached,
+    ).toBe(true)
+  })
+
+  // The open state is keyed on the pair, so a comparison opened on one track does not stay
+  // open on the next one, and one that has nothing to say never opens.
+  it('opens the comparison only for the pair it was opened on, with copies that differ', () => {
+    const openedHere = { ...base, copyOpenFor: '/in/a.wav\n/m/a.mp3' }
+    expect(copyComparisonOf(openedHere).copyOpen).toBe(true)
+    expect(copyComparisonOf(base).copyOpen).toBe(false)
+    expect(copyComparisonOf({ ...openedHere, inputPath: '/in/b.wav' }).copyOpen).toBe(false)
+    expect(copyComparisonOf({ ...openedHere, hereFacts: undefined }).copyOpen).toBe(false)
+  })
+
+  it('never opens the comparison of two copies with the same audio', () => {
+    const same = { ...base, hereFacts: { ext: 'WAV' }, libraryFacts: { ext: 'WAV' } }
+    const pair = { correlation: 1, residualDb: Number.NEGATIVE_INFINITY, gainDb: 0 }
+    const opened = { ...same, copyPair: pair, copyOpenFor: '/in/a.wav\n/m/a.mp3' }
+    expect(copyComparisonOf(opened).copyVerdict).toEqual({ winner: 'same' })
+    expect(copyComparisonOf(opened).copyOpen).toBe(false)
+  })
+
+  it('builds a new verdict on every call, as the render did', () => {
+    expect(copyComparisonOf(base).copyVerdict).not.toBe(copyComparisonOf(base).copyVerdict)
+  })
+})
+
+const musicTarget = { persistentId: 'PID1', label: 'Artist - Title', path: '/m/a.mp3' }
+const musicRowOf = (durationSec?: number): LibraryRow => ({
+  id: 'appleMusic',
+  name: 'Apple Music',
+  format: 'MP3 320',
+  comparable: true,
+  verdict: 'same',
+  durationSec,
+  comparisonOpen: false,
+  onToggleComparison: () => {},
+})
+
+describe('musicCopyOf', () => {
+  const base: MusicCopyContext = {
+    replaceTarget: musicTarget,
+    musicRow: musicRowOf(210),
+    replacedCopyFormat: 'MP3 320',
+    libraryCopyBetter: true,
+    musicEntryDurationSec: 200,
+  }
+
+  it('offers the Music copy with its row verdict, its format and its own entry', () => {
+    const { musicCopy } = musicCopyOf(base)
+    expect(musicCopy).toEqual({
+      program: 'appleMusic',
+      path: '/m/a.mp3',
+      format: 'MP3 320',
+      verdict: 'same',
+      better: true,
+      durationSec: 210,
+      music: musicTarget,
+    })
+    expect(musicCopy?.music).toBe(musicTarget)
+  })
+
+  // Without a measured length the Music copy would drop out and let a DJ copy act in its
+  // place, so Music's own length stands in.
+  it('takes the length Music gives while the row has none measured', () => {
+    expect(musicCopyOf({ ...base, musicRow: musicRowOf() }).musicCopy?.durationSec).toBe(200)
+  })
+
+  it('has an empty path while Music has not said where the copy lives', () => {
+    expect(
+      musicCopyOf({ ...base, replaceTarget: { persistentId: 'PID1', label: 'x' } }).musicCopy?.path,
+    ).toBe('')
+  })
+
+  it('offers no Music copy for an ambiguous match, without a target or without its row', () => {
+    expect(musicCopyOf({ ...base, replaceTarget: { ambiguous: ['A', 'B'] } }).musicCopy).toBeNull()
+    expect(musicCopyOf({ ...base, replaceTarget: null }).musicCopy).toBeNull()
+    expect(musicCopyOf({ ...base, musicRow: null }).musicCopy).toBeNull()
+  })
+})
+
+describe('pickedCopyOf', () => {
+  const musicCopy = musicCopyOf({
+    replaceTarget: musicTarget,
+    musicRow: musicRowOf(210),
+    replacedCopyFormat: 'MP3 320',
+    libraryCopyBetter: false,
+    musicEntryDurationSec: undefined,
+  }).musicCopy
+  const state = (over: Partial<CopyVerdictState> = {}): CopyVerdictState => ({
+    verdict: { winner: 'b', reason: 'lossless' },
+    measuring: false,
+    format: 'AIFF 16/44.1',
+    missing: false,
+    unreadable: false,
+    checking: false,
+    ...over,
+  })
+  const base: PickedCopyContext = {
+    isMulti: false,
+    musicCopy: null,
+    musicHoldsFile: false,
+    comparedProgramCopies: [{ program: 'rekordbox', path: '/r/a.aiff', isThisFile: false }],
+    programVerdicts: [state()],
+    copyRows: [{ program: 'rekordbox', path: '/r/a.aiff', verdict: 'library', durationSec: 210 }],
+    fileDurationSec: 210,
+  }
+
+  it('picks a DJ copy with the format, verdict and length of its row', () => {
+    expect(pickedCopyOf(base).pickedCopy).toEqual({
+      program: 'rekordbox',
+      path: '/r/a.aiff',
+      format: 'AIFF 16/44.1',
+      better: true,
+      durationSec: 210,
+      held: false,
+    })
+  })
+
+  it('says a DJ copy is better only when its verdict makes the library the winner', () => {
+    expect(
+      pickedCopyOf({ ...base, programVerdicts: [state({ verdict: { winner: 'same' } })] })
+        .pickedCopy?.better,
+    ).toBe(false)
+  })
+
+  // Replacing puts this file in Music's place, so its copy is the one the user sees as the
+  // track, ahead of any DJ copy.
+  it('picks the Music copy before any DJ copy', () => {
+    expect(pickedCopyOf({ ...base, musicCopy }).pickedCopy?.program).toBe('appleMusic')
+  })
+
+  it('leaves the Music copy out when Music holds the open file itself', () => {
+    expect(pickedCopyOf({ ...base, musicCopy, musicHoldsFile: true }).pickedCopy?.program).toBe(
+      'rekordbox',
+    )
+  })
+
+  it('picks nothing for a selection', () => {
+    expect(pickedCopyOf({ ...base, musicCopy, isMulti: true }).pickedCopy).toBeNull()
+  })
+
+  it('picks no copy whose length is another edit', () => {
+    expect(pickedCopyOf({ ...base, fileDurationSec: 400 }).pickedCopy).toBeNull()
+  })
+})
+
+describe('libraryTargetOf', () => {
+  const picked = pickLibraryCopy([rekordbox], 210)
+
+  it('acts on the picked copy with the format it keeps', () => {
+    const { libraryTarget, keptFormat } = libraryTargetOf({
+      pickedCopy: picked,
+      pickedIsThisFile: false,
+    })
+    expect(libraryTarget).toEqual(picked)
+    expect(libraryTarget).not.toBe(picked)
+    expect(keptFormat).toBe('aiff')
+  })
+
+  // Through a symlinked folder the copy may be the open file: acting on it would update or
+  // replace the very file, so the press waits until main answers.
+  it('holds the press until main says whether the copy is the open file', () => {
+    expect(
+      libraryTargetOf({ pickedCopy: picked, pickedIsThisFile: undefined }).libraryTarget?.held,
+    ).toBe(true)
+  })
+
+  it('keeps a copy held when it already was', () => {
+    expect(
+      libraryTargetOf({ pickedCopy: picked && { ...picked, held: true }, pickedIsThisFile: false })
+        .libraryTarget?.held,
+    ).toBe(true)
+  })
+
+  it('acts on nothing when the copy is the open file or there is none', () => {
+    expect(libraryTargetOf({ pickedCopy: picked, pickedIsThisFile: true })).toEqual({
+      libraryTarget: null,
+      keptFormat: undefined,
+    })
+    expect(libraryTargetOf({ pickedCopy: null, pickedIsThisFile: false }).libraryTarget).toBeNull()
+  })
+
+  it('keeps no format for a copy in one Surco does not write', () => {
+    const ogg = pickLibraryCopy([{ ...rekordbox, path: '/r/a.ogg' }], 210)
+    expect(libraryTargetOf({ pickedCopy: ogg, pickedIsThisFile: false }).keptFormat).toBeUndefined()
+  })
+})
+
+describe('libraryCopyOfferOf', () => {
+  const target = (over: Partial<LibraryCopyTarget> = {}): LibraryCopyTarget => ({
+    program: 'rekordbox',
+    path: '/r/a.aiff',
+    format: 'AIFF 16/44.1',
+    better: true,
+    durationSec: 210,
+    held: false,
+    ...over,
+  })
+  const base: LibraryCopyOfferContext = {
+    libraryTarget: target(),
+    keptFormat: 'aiff',
+    replaceStarsLoss: false,
+    libraryCopyAction: 'update',
+  }
+
+  it('offers the chosen action on the copy, named after its program', () => {
+    expect(libraryCopyOfferOf(base)).toEqual({
+      copyAction: 'update',
+      libraryCopy: {
+        name: 'rekordbox',
+        format: 'AIFF 16/44.1',
+        action: 'update',
+        better: true,
+        held: false,
+        keptFormat: 'aiff',
+        updatable: true,
+        replaceLosesStars: false,
+      },
+    })
+  })
+
+  it('names the Apple Music copy after Apple Music', () => {
+    expect(
+      libraryCopyOfferOf({ ...base, libraryTarget: target({ program: 'appleMusic' }) }).libraryCopy
+        ?.name,
+    ).toBe('Apple Music')
+  })
+
+  // Offering nothing for a copy Surco can't retag let the body say Convert and add a second
+  // entry beside it: the copy is still the track, so it is replaced.
+  it('replaces a copy in a format Surco does not write, whatever action was chosen', () => {
+    const offer = libraryCopyOfferOf({
+      ...base,
+      libraryTarget: target({ path: '/r/a.ogg' }),
+      keptFormat: undefined,
+    })
+    expect(offer.copyAction).toBe('replace')
+    expect(offer.libraryCopy).toMatchObject({ action: 'replace', updatable: false })
+  })
+
+  it('keeps the chosen action for an Apple Music copy with no path yet to judge', () => {
+    expect(
+      libraryCopyOfferOf({
+        ...base,
+        libraryTarget: target({ program: 'appleMusic', path: '' }),
+        keptFormat: undefined,
+      }).copyAction,
+    ).toBe('update')
+  })
+
+  it('warns that replacing loses Serato stars until the collection says otherwise', () => {
+    const serato = { ...base, libraryTarget: target({ program: 'serato' }) }
+    expect(
+      libraryCopyOfferOf({ ...serato, replaceStarsLoss: undefined }).libraryCopy?.replaceLosesStars,
+    ).toBe(true)
+    expect(libraryCopyOfferOf(serato).libraryCopy?.replaceLosesStars).toBe(false)
+    expect(
+      libraryCopyOfferOf({ ...base, replaceStarsLoss: true }).libraryCopy?.replaceLosesStars,
+    ).toBe(true)
+  })
+
+  it('offers nothing without a copy, and keeps the chosen action', () => {
+    expect(
+      libraryCopyOfferOf({
+        ...base,
+        libraryTarget: null,
+        keptFormat: undefined,
+        libraryCopyAction: 'replace',
+      }),
+    ).toEqual({ copyAction: 'replace', libraryCopy: undefined })
   })
 })

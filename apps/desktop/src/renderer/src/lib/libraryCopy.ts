@@ -2,11 +2,30 @@ import { VERSION_GAP_SEC } from '../../../shared/copyVersion'
 import type { DjProgram } from '../../../shared/djProgram'
 import { formatMatchesInput } from '../../../shared/format'
 import { OUTPUT_FORMATS } from '../../../shared/outputFormats'
-import type { LibraryCopyAction, OutputFormat, PlaylistSource } from '../../../shared/types'
-import type { LibraryVerdict } from '../components/LibrarySection'
+import type {
+  LibraryCopyAction,
+  OutputFormat,
+  PairProbe,
+  PlaylistSource,
+  SpectrumVerdict,
+} from '../../../shared/types'
+import type { LibraryRow, LibraryVerdict } from '../components/LibrarySection'
+import type { CopyReach } from '../hooks/useCopyReach'
+import type { CopyVerdictState } from '../hooks/useCopyVerdicts'
+import type { ProgramCopy } from '../hooks/useProgramCopies'
 import type { TrackItem } from '../types'
-import { isAmbiguousCandidate, type ReplaceCandidate } from './appleMusicLibrary'
+import {
+  isAmbiguousCandidate,
+  type ReplaceCandidate,
+  type StaleLibraryCopy,
+} from './appleMusicLibrary'
+import { type CopyFacts, type CopyVerdict, compareCopies } from './bestCopy'
+import { rowVerdict } from './libraryVerdict'
+import { pathKey } from './pathKey'
+import { fileExtension } from './properties'
 import { replacePatch } from './replaceBeforeConvert'
+import { replaceWarning } from './replaceWarning'
+import { LIBRARY_NAME } from './reviewLibraries'
 
 const COPY_VERDICTS: ReadonlySet<LibraryVerdict> = new Set([
   'same',
@@ -217,4 +236,231 @@ export interface LibraryCopyOffer {
   updatable?: boolean
   // Replacing this copy repoints Serato to a new file, which loses the copy's stars.
   replaceLosesStars?: boolean
+}
+
+export interface ComparedCopyContext {
+  libraryCopyPath: string
+  inputPath: string
+  isMulti: boolean
+}
+
+export interface ComparedCopy {
+  comparedCopyPath: string
+  musicHoldsFile: boolean
+}
+
+export function comparedCopyOf({
+  libraryCopyPath,
+  inputPath,
+  isMulti,
+}: ComparedCopyContext): ComparedCopy {
+  // A track opened from the library's own folder is that copy, so there is nothing to compare.
+  const libraryCopyIsThisFile = pathKey(libraryCopyPath) === pathKey(inputPath)
+  const comparedCopyPath = libraryCopyIsThisFile || isMulti ? '' : libraryCopyPath
+  const musicHoldsFile = !!libraryCopyPath && libraryCopyIsThisFile
+  return { comparedCopyPath, musicHoldsFile }
+}
+
+type SpectrumSide = Pick<SpectrumVerdict, 'cutoffHz' | 'hasKnee'>
+
+export interface CopyComparisonContext {
+  musicCopyReach: CopyReach | undefined
+  hereFacts: CopyFacts | null | undefined
+  libraryFacts: CopyFacts | null | undefined
+  copyPair: PairProbe | null | undefined
+  comparedCopyPath: string
+  copyOpenFor: string
+  inputPath: string
+  libraryCopyPath: string
+  spectrumInHand: SpectrumSide | undefined
+  replacedCopySpectrum: SpectrumSide | undefined
+}
+
+export interface CopyComparison {
+  musicCopyUnreached: boolean
+  copyVerdict: CopyVerdict | null
+  copyMeasuring: boolean
+  copyOpen: boolean
+  libraryCopyBetter: boolean
+}
+
+export function copyComparisonOf({
+  musicCopyReach,
+  hereFacts,
+  libraryFacts,
+  copyPair,
+  comparedCopyPath,
+  copyOpenFor,
+  inputPath,
+  libraryCopyPath,
+  spectrumInHand,
+  replacedCopySpectrum,
+}: CopyComparisonContext): CopyComparison {
+  const musicCopyUnreached =
+    !!musicCopyReach && (musicCopyReach.missing || musicCopyReach.unreadable)
+  const copyVerdict =
+    hereFacts && libraryFacts && copyPair !== undefined
+      ? compareCopies(hereFacts, libraryFacts, copyPair)
+      : null
+  const copyMeasuring =
+    !!comparedCopyPath &&
+    (hereFacts === undefined || libraryFacts === undefined || copyPair === undefined)
+  const copyOpen =
+    !!copyVerdict &&
+    copyVerdict.winner !== 'same' &&
+    copyOpenFor === `${inputPath}\n${libraryCopyPath}`
+  const libraryCopyBetter = copyVerdict
+    ? copyVerdict.winner === 'b'
+    : !!libraryCopyPath &&
+      replaceWarning(
+        {
+          ext: fileExtension(libraryCopyPath),
+          cutoffHz: replacedCopySpectrum?.cutoffHz ?? undefined,
+          hasKnee: replacedCopySpectrum?.hasKnee,
+        },
+        {
+          ext: fileExtension(inputPath),
+          cutoffHz: spectrumInHand?.cutoffHz ?? undefined,
+          hasKnee: spectrumInHand?.hasKnee,
+        },
+      ) !== null
+  return { musicCopyUnreached, copyVerdict, copyMeasuring, copyOpen, libraryCopyBetter }
+}
+
+export interface MusicCopy extends CopyCandidate {
+  program: 'appleMusic'
+  music: StaleLibraryCopy
+}
+
+export interface MusicCopyContext {
+  replaceTarget: ReplaceCandidate | null
+  musicRow: LibraryRow | null
+  replacedCopyFormat: string
+  libraryCopyBetter: boolean
+  musicEntryDurationSec: number | undefined
+}
+
+export function musicCopyOf({
+  replaceTarget,
+  musicRow,
+  replacedCopyFormat,
+  libraryCopyBetter,
+  musicEntryDurationSec,
+}: MusicCopyContext): { musicCopy: MusicCopy | null } {
+  const musicCopy =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) && musicRow
+      ? {
+          program: 'appleMusic' as const,
+          path: replaceTarget.path ?? '',
+          format: replacedCopyFormat,
+          verdict: musicRow.verdict,
+          better: libraryCopyBetter,
+          durationSec: musicRow.durationSec ?? musicEntryDurationSec,
+          music: replaceTarget,
+        }
+      : null
+  return { musicCopy }
+}
+
+export interface PickedCopyContext {
+  isMulti: boolean
+  musicCopy: MusicCopy | null
+  musicHoldsFile: boolean
+  comparedProgramCopies: readonly ProgramCopy[]
+  programVerdicts: readonly CopyVerdictState[]
+  copyRows: readonly CopyRow[]
+  fileDurationSec: number | undefined
+}
+
+export function pickedCopyOf({
+  isMulti,
+  musicCopy,
+  musicHoldsFile,
+  comparedProgramCopies,
+  programVerdicts,
+  copyRows,
+  fileDurationSec,
+}: PickedCopyContext): { pickedCopy: LibraryCopyTarget | null } {
+  const copyCandidates: CopyCandidate[] = isMulti
+    ? []
+    : [
+        ...(musicCopy && !musicHoldsFile ? [musicCopy] : []),
+        ...comparedProgramCopies.map((copy, i) => {
+          const state = programVerdicts[i]
+          return {
+            program: copy.program,
+            path: copy.path,
+            format: state?.format ?? '',
+            verdict: rowVerdict(state),
+            better: rowVerdict(state) === 'library',
+            durationSec: copyRows[i].durationSec,
+          }
+        }),
+      ]
+  return { pickedCopy: pickLibraryCopy(copyCandidates, fileDurationSec) }
+}
+
+export interface LibraryTargetContext {
+  pickedCopy: LibraryCopyTarget | null
+  pickedIsThisFile: boolean | undefined
+}
+
+export interface LibraryTarget {
+  libraryTarget: LibraryCopyTarget | null
+  keptFormat: OutputFormat | undefined
+}
+
+export function libraryTargetOf({
+  pickedCopy,
+  pickedIsThisFile,
+}: LibraryTargetContext): LibraryTarget {
+  const libraryTarget =
+    pickedCopy && !pickedIsThisFile
+      ? { ...pickedCopy, held: pickedCopy.held || pickedIsThisFile === undefined }
+      : null
+  const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
+  return { libraryTarget, keptFormat }
+}
+
+export interface LibraryCopyOfferContext {
+  libraryTarget: LibraryCopyTarget | null
+  keptFormat: OutputFormat | undefined
+  replaceStarsLoss: boolean | undefined
+  libraryCopyAction: LibraryCopyAction
+}
+
+export interface LibraryCopyOfferResult {
+  copyAction: LibraryCopyAction
+  libraryCopy: LibraryCopyOffer | undefined
+}
+
+export function libraryCopyOfferOf({
+  libraryTarget,
+  keptFormat,
+  replaceStarsLoss,
+  libraryCopyAction,
+}: LibraryCopyOfferContext): LibraryCopyOfferResult {
+  const replaceLosesStars =
+    !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
+  // A copy in no format Surco writes can't be updated in place, but it is still the track, so
+  // the body replaces it: offering nothing let the body say Convert and add a second entry
+  // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
+  const updatable = !!keptFormat || !libraryTarget?.path
+  const copyAction: LibraryCopyAction = updatable ? libraryCopyAction : 'replace'
+  const libraryCopy: LibraryCopyOffer | undefined = libraryTarget
+    ? {
+        name:
+          libraryTarget.program === 'appleMusic'
+            ? 'Apple Music'
+            : LIBRARY_NAME[libraryTarget.program],
+        format: libraryTarget.format,
+        action: copyAction,
+        better: libraryTarget.better,
+        held: libraryTarget.held,
+        keptFormat,
+        updatable,
+        replaceLosesStars,
+      }
+    : undefined
+  return { copyAction, libraryCopy }
 }
