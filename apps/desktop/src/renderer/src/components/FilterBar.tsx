@@ -473,6 +473,9 @@ interface Props {
 // A column header's filter row: the dropdown trigger with its menu, the controls that share
 // the row, and the "x/total" position counter. The menu's options come from the caller;
 // this owns opening, focus and the keys, mirroring Select's interaction.
+// The list's placeholder header reserves the toolbar's height from this box.
+export const FILTER_BAR_BOX = 'flex items-center py-2 compact:py-0.5'
+
 export function FilterBar({
   testid,
   filterRef,
@@ -555,7 +558,7 @@ export function FilterBar({
     <div
       ref={filterRef}
       data-testid={testid}
-      className={`flex items-center py-2 compact:py-0.5 ${inline ? 'gap-0.5' : 'gap-1.5 px-1.5'}`}
+      className={`${FILTER_BAR_BOX} ${inline ? 'gap-0.5' : 'gap-1.5 px-1.5'}`}
     >
       <div className={`relative min-w-0 ${inline ? '' : 'flex-1'}`}>
         <button

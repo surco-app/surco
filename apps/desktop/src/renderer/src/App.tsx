@@ -5008,6 +5008,7 @@ export default function App(): React.JSX.Element {
                           testid="source-playlist-loading"
                           label={tr('sources.loadingPlaylist')}
                           showWaves={showListWaves}
+                          showLocation={!showSidebar}
                         />
                       ) : browser.entriesFailed && browser.source ? (
                         // A failed read is not an empty playlist either. The tree's own failure

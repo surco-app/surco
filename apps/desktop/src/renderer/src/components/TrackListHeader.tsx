@@ -177,6 +177,11 @@ function MenuAction({
 // the list actions. Pure presentation — every handler is owned by App, which is where the
 // state they act on lives. Split out of App because it was 175 lines of markup wedged into
 // a component that already had plenty to do; nothing here decides anything.
+// The placeholder header drawn while a playlist is read takes these from here, so the rows
+// under it start where the rows under the real header will.
+export const LOCATION_BOX = 'mx-1.5 mt-1.5 block py-0.5 text-xs'
+export const SEARCH_ROW = 'flex items-center gap-1.5 px-1.5 pt-2 compact:pt-1.5'
+
 export function TrackListHeader({
   tr,
   hintFor,
@@ -303,12 +308,12 @@ export function TrackListHeader({
           type="button"
           data-testid="track-list-location"
           onClick={onOpenLocation}
-          className="press mx-1.5 mt-1.5 block max-w-[calc(100%-0.75rem)] truncate rounded-md px-1.5 py-0.5 text-left text-xs font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+          className={`press ${LOCATION_BOX} max-w-[calc(100%-0.75rem)] truncate rounded-md px-1.5 text-left font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`}
         >
           {location}
         </button>
       )}
-      <div className="flex items-center gap-1.5 px-1.5 pt-2 compact:pt-1.5">
+      <div className={SEARCH_ROW}>
         <SearchInput
           className="flex-1"
           testid="track-search"
