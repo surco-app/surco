@@ -654,11 +654,10 @@ async function commitLists(d: ListsDraft, deps: VirtualdjCommitDeps): Promise<Vi
   if (await deps.virtualdjOpen()) return 'cancelled'
   try {
     await deps.sessionBackup?.()
-    if (d.disk.files.size > 0)
-      takeBackups([...d.disk.files.keys()], {
-        ...deps,
-        backupDir: join(deps.backupDir, LIST_BACKUPS),
-      })
+    takeBackups([...d.disk.files.keys()], {
+      ...deps,
+      backupDir: join(deps.backupDir, LIST_BACKUPS),
+    })
   } catch (e) {
     log.warn('VirtualDJ lists backup failed', e)
     return 'backup-failed'
