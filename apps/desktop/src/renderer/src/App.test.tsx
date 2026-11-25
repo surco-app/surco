@@ -3904,6 +3904,39 @@ describe('App source rail', () => {
     expect(within(loading).queryByTestId('track-row-skeleton-wave')).toBeNull()
   })
 
+  it('keeps the place of the search and the toolbar while the playlist is read, so the rows do not drop when the header arrives', async () => {
+    rekordboxWithFactory({
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-header-skeleton')).toBeInTheDocument()
+    expect(within(loading).queryByTestId('track-list-location-skeleton')).toBeNull()
+    expect(screen.queryByTestId('track-search')).toBeNull()
+  })
+
+  it('also keeps the place of the location line when the sidebar is hidden, since the header shows it there', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-location-skeleton')).toBeInTheDocument()
+  })
+
   it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {
     const readMeta = vi.fn<Api['readMeta']>().mockResolvedValue({
       tags: { ...emptyMetadata(), title: 'Charlie' },
