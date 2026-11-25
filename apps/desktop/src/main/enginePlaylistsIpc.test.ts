@@ -115,4 +115,14 @@ describe('engineRead', () => {
       resolve(dir, '../Music/b.mp3'),
     ])
   })
+
+  it('grants the files of the collection it read, so Update can retag the library copy the editor found in it', async () => {
+    const dir = await library()
+    const allowMedia = vi.fn()
+    const read = engineRead(() => dir, { artDir: () => join(dir, 'art'), allowMedia })
+    await read.collection?.()
+    expect(allowMedia).toHaveBeenCalledWith(
+      expect.arrayContaining([resolve(dir, '../Music/a.mp3'), resolve(dir, '../Music/b.mp3')]),
+    )
+  })
 })

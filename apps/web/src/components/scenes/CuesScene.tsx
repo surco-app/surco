@@ -235,7 +235,7 @@ export default function CuesScene() {
                   <span
                     className={`grid h-4 min-w-4 place-items-center rounded-full px-1 transition-colors duration-200 ${frame.returnPressed ? 'bg-fg text-bg' : 'bg-blue text-bg'}`}
                   >
-                    ↵
+                    ↩
                   </span>
                 </span>
               )}

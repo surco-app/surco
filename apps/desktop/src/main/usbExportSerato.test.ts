@@ -210,6 +210,29 @@ describe('seratoExportMarks', () => {
     expect(m).toMatchObject({ lengthSec: 10, sampleRate: 44100, trackNo: 4 })
   })
 
+  it('exports a cue Serato keeps inside the MP3 lead where Serato plays it, not pushed late by the clamp the editor needs, as it already does for a loop there', async () => {
+    vi.mocked(readSeratoTrack).mockReturnValue({
+      payload: null,
+      oldBlockDisagrees: false,
+      oldBlock: null,
+      durationMs: 10000,
+      sampleRate: 44100,
+      trackNo: 0,
+      markers: {
+        cues: [{ index: 0, ms: 10, color: 0xcc0000, name: 'Intro' }],
+        loops: [{ index: 0, startMs: 10, endMs: 2010, name: '' }],
+      },
+      tempoMap: null,
+      grids: { tempoMap: null, beatGrid: null },
+    })
+    vi.mocked(seratoLeadOfFile).mockResolvedValue(51.18)
+    vi.mocked(rekordboxShiftOfFileIfKnown).mockResolvedValue(51.18)
+    const m = await seratoExportMarks('/m/lame.mp3')
+    expect(m?.cues[0]).toMatchObject({ kind: 1, comment: 'Intro' })
+    expect(m?.cues[0].inMs).toBeCloseTo(10, 6)
+    expect(m?.cues[1].inMs).toBeCloseTo(10, 6)
+  })
+
   it('leaves out the cues and grid of a file whose rekordbox shift is unknown, and counts it, since a guessed shift puts cues off the beat on a CDJ', async () => {
     vi.mocked(readSeratoTrack).mockReturnValue({
       payload: null,

@@ -20,7 +20,7 @@ import {
   traktorCuesIntact,
   traktorTrackCuesOf,
 } from './traktorCues'
-import { findEntries, withAttr } from './traktorNml'
+import { attr, escapeAttr, findEntries, withAttr } from './traktorNml'
 import { bootVolumeName, markNewerThanCollection, writeCollection } from './traktorNmlLibrary'
 import { applyTraktorEdits } from './traktorPlaylistEdit'
 
@@ -38,8 +38,10 @@ function buttonOf(kind: number): number {
   return kind === 0 ? -1 : HOT_KINDS.indexOf(kind) + TRAKTOR_HOT_OFFSET
 }
 
-function newCue(w: WantedCue): string {
-  return `<CUE_V2 NAME="n.n." DISPL_ORDER="0" TYPE="0" START="${w.ms.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="${buttonOf(w.kind)}"></CUE_V2>`
+// A cue the DJ named keeps its name when Surco moves it: "n.n." is only Traktor's own name
+// for a cue nobody named.
+function newCue(w: WantedCue, name = 'n.n.'): string {
+  return `<CUE_V2 NAME="${name}" DISPL_ORDER="0" TYPE="0" START="${w.ms.toFixed(6)}" LEN="0.000000" REPEATS="-1" HOTCUE="${buttonOf(w.kind)}"></CUE_V2>`
 }
 
 // Rewrites only the cues Surco edits. The grid marker, button 1 and anything kept as it
@@ -57,7 +59,8 @@ export function withTraktorCues(block: string, wanted: WantedCue[]): string {
       const was = rows.find((r) => r.id === w.id)
       if (!was || was.ms !== w.ms) {
         changed = true
-        return newCue(w)
+        const name = was && attr(was.element, 'NAME')
+        return name ? newCue(w, escapeAttr(name)) : newCue(w)
       }
       if (was.kind === w.kind) return was.element
       changed = true
@@ -132,6 +135,11 @@ const saneGrid = (grid: EditableGrid): boolean =>
   grid.bpm <= GRID_BPM_MAX &&
   Number.isFinite(grid.anchorMs)
 
+// withTraktorGrid rewrites a single marker: over several it would move the first and leave
+// the DJ's later ones setting the tempo from where they sit.
+const gridMarkerCount = (block: string): number =>
+  traktorCueElements(block).filter((el) => attr(el.element, 'TYPE') === '4').length
+
 function refusalOf(reason: string): RekordboxEditRefusal {
   if (reason === 'traktor-running') return 'rekordbox-running'
   if (reason === 'backup-failed' || reason === 'unreadable') return reason
@@ -186,7 +194,10 @@ function planBatch(
     const notices: RekordboxQueueNotice[] = op.wanted.some((w) => w.kind === NO_BUTTON)
       ? [{ code: 'cues-slot-dropped', track: op.label }]
       : []
-    if (op.grid && (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path)))
+    if (
+      op.grid &&
+      (!saneGrid(op.grid) || !TRAKTOR_GRID_FILE.test(op.path) || gridMarkerCount(entry.block) > 1)
+    )
       return refused('cues-invalid')
     if (op.grid && read.gridFingerprint !== op.gridFingerprint) return refused('cues-changed')
     const cued = withTraktorCues(entry.block, op.wanted)

@@ -13,7 +13,13 @@ export function seratoRead(host: SeratoPlaylistsHost): DjReadMain {
     tree: () => readSerato(host.roots(), 'tree', undefined),
     recentCount: () => readSerato(host.roots(), 'recentCount', undefined),
     trackCount: () => readSerato(host.roots(), 'trackCount', undefined),
-    collection: () => readSerato(host.roots(), 'collection', undefined),
+    // Update retags the copy the editor found in this collection, and main writes only
+    // files it granted.
+    collection: async () => {
+      const rows = await readSerato(host.roots(), 'collection', undefined)
+      host.allowMedia?.(rows.flatMap((r) => (r.path ? [r.path] : [])))
+      return rows
+    },
     playlist: async (id: string) => {
       const entries = await readSerato(host.roots(), 'playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))

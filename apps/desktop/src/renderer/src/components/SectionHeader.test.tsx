@@ -28,8 +28,7 @@ describe('SectionHeader folded summary', () => {
         summaryMuted
       />,
     )
-    const muted = screen.getByTestId('s').className
-    expect(muted).toContain('text-fg-faint')
+    expect(screen.getByTestId('s')).toHaveAttribute('data-muted', 'true')
 
     rerender(
       <SectionHeader
@@ -40,8 +39,7 @@ describe('SectionHeader folded summary', () => {
         summaryTestId="s"
       />,
     )
-    const live = screen.getByTestId('s').className
-    expect(live).not.toContain('text-fg-faint')
+    expect(screen.getByTestId('s')).not.toHaveAttribute('data-muted')
   })
 
   it('shows no summary while the section is open', () => {
@@ -94,13 +92,13 @@ describe('SectionHeader folded row', () => {
       statusAction: <span data-testid="state">a long flow name</span>,
     })
     const lead = screen.getByTestId('section-header-lead')
-    expect(lead.className).toContain('flex-wrap')
+    expect(lead).toHaveAttribute('data-wrap', 'true')
     expect(lead).toContainElement(screen.getByRole('heading', { level: 3 }))
     expect(lead).toContainElement(screen.getByTestId('state'))
     expect(lead).not.toContainElement(screen.getByTestId('section-maximize'))
     expect(lead).not.toContainElement(screen.getByTestId('section-help'))
     const row = lead.parentElement as HTMLElement
-    expect(row.className).not.toContain('flex-wrap')
+    expect(row).not.toHaveAttribute('data-wrap')
     expect(row).toContainElement(screen.getByTestId('section-maximize'))
   })
 
@@ -177,6 +175,19 @@ describe('SectionHeader status placement', () => {
     )
   })
 
+  // At the window's minimum width the folded cue section's line under the title ran past
+  // the panel's edge in German and French: "nicht verschoben" and "Nicht gespeichert" side
+  // by side are wider than the header. Under the title the line is held to the header's
+  // width and its marks wrap one under the other, so no state is ever cut.
+  it('wraps the marks of a status under the title instead of running past the edge', () => {
+    mockWidths(225, 70, 294)
+    header()
+    expect(screen.getByTestId('section-status').firstElementChild).toHaveAttribute(
+      'data-wrap',
+      'true',
+    )
+  })
+
   // A title that gives way with an ellipsis reports only the room left to it, so measured by
   // its box the status always seemed to fit and stayed beside a cut title. The status drops
   // first, measured against the whole title, and the title is cut only if that is not enough.
@@ -247,7 +258,7 @@ describe('SectionHeader title that does not fit', () => {
       vi.useFakeTimers()
       cutTitle(cut)
       render(<SectionHeader title="12 Tracks werden bearbeitet" open onToggle={() => {}} />)
-      expect(screen.getByTestId('section-title').className).toContain('truncate')
+      expect(screen.getByTestId('section-title')).toHaveAttribute('data-truncate', 'true')
       hoverTitle()
       if (tip) expect(screen.getByRole('tooltip')).toHaveTextContent('12 Tracks werden bearbeitet')
       else expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()

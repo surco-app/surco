@@ -3,7 +3,7 @@ import '@testing-library/jest-dom/vitest'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import type React from 'react'
-import { createRef, useState } from 'react'
+import { createRef, useLayoutEffect, useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
 import { DEFAULT_EDITOR_SECTIONS } from '../../../shared/editorSections'
@@ -119,6 +119,8 @@ beforeEach(() => {
     // copy is offered, so this effect mounts wherever a library index is handed in.
     appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
     appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+    // The editor asks main whether a library copy is the open file under another path.
+    sameFile: vi.fn(async (a: string, b: string) => a === b),
     readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
     readCoverFull: vi.fn().mockResolvedValue(null),
     // CoverPicker preloads a draggable file whenever the track has artwork, so any test
@@ -199,11 +201,13 @@ function renderEditor(
     addToRekordbox?: boolean
     syncRekordbox?: boolean
     syncTraktor?: boolean
+    syncSerato?: boolean
     traktorNmlPath?: string
     keepMp3Sources?: boolean
     keyNotation?: KeyNotation
     discogsFormats?: string[]
     libraryIndex?: AppleMusicIndex | null
+    libraryLoading?: boolean
     replaceLowResCover?: boolean
     autoApplyFilename?: boolean
     filenameFormat?: string
@@ -220,9 +224,13 @@ function renderEditor(
     resultsFolded?: boolean
     copiedMetaTitle?: string | null
     filesOpen?: boolean
+    libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
   } = {},
 ): {
   onProcess: ReturnType<typeof vi.fn>
+  onUpdateLibraryCopy: ReturnType<typeof vi.fn>
+  onLibraryCopyAction: ReturnType<typeof vi.fn>
+  onLibraryRunChange: ReturnType<typeof vi.fn>
   onChange: ReturnType<typeof vi.fn>
   onDeriveTags: ReturnType<typeof vi.fn>
   onApplyTitleFormat: ReturnType<typeof vi.fn>
@@ -243,8 +251,12 @@ function renderEditor(
   onFoldResults: ReturnType<typeof vi.fn>
   changeSettings: (next: Partial<Settings>) => void
   setFilesOpen: (filesOpen: boolean) => void
+  unmount: () => void
 } {
   const onProcess = vi.fn()
+  const onUpdateLibraryCopy = vi.fn()
+  const onLibraryCopyAction = vi.fn()
+  const onLibraryRunChange = vi.fn()
   const onFoldResults = vi.fn()
   const onRecordUndo = vi.fn()
   const onChange = vi.fn()
@@ -270,10 +282,15 @@ function renderEditor(
       <Editor
         item={item(over)}
         libraryIndex={props.libraryIndex ?? null}
+        libraryLoading={props.libraryLoading}
         rekordboxCue={props.rekordboxCue}
         searchInputRef={createRef<HTMLInputElement>()}
         onChange={onChange}
         onProcess={onProcess}
+        libraryCopyAction={props.libraryCopyAction}
+        onUpdateLibraryCopy={onUpdateLibraryCopy}
+        onLibraryCopyAction={onLibraryCopyAction}
+        onLibraryRunChange={onLibraryRunChange}
         onFormatChange={onFormatChange}
         onDestinationChange={onDestinationChange}
         rememberedPick={props.rememberedPick}
@@ -303,7 +320,7 @@ function renderEditor(
       />
     </OpenSettingsProvider>
   )
-  const { changeSettings, rerenderUi } = renderWithQuery(ui(props.filesOpen ?? true), {
+  const { changeSettings, rerenderUi, unmount } = renderWithQuery(ui(props.filesOpen ?? true), {
     outputFormat,
     // The membership badge follows the conversion destination now; Apple Music (the
     // pre-destination-aware behaviour every badge test was written against) unless a
@@ -314,6 +331,7 @@ function renderEditor(
     addToRekordbox: props.addToRekordbox ?? false,
     ...(props.syncRekordbox ? { syncRekordbox: true } : {}),
     ...(props.syncTraktor ? { syncTraktor: true } : {}),
+    ...(props.syncSerato ? { syncSerato: true } : {}),
     traktorNmlPath: props.traktorNmlPath ?? '',
     keepMp3Sources: props.keepMp3Sources ?? false,
     overwriteOriginal: props.overwriteOriginal ?? false,
@@ -345,6 +363,9 @@ function renderEditor(
   })
   return {
     onProcess,
+    onUpdateLibraryCopy,
+    onLibraryCopyAction,
+    onLibraryRunChange,
     onChange,
     onExportCollection,
     onDeriveTags,
@@ -365,6 +386,7 @@ function renderEditor(
     onFoldResults,
     changeSettings,
     setFilesOpen: (filesOpen: boolean) => rerenderUi(ui(filesOpen)),
+    unmount,
   }
 }
 
@@ -382,6 +404,7 @@ describe('Editor cues section', () => {
         marked: 0,
       }),
       onCueProfileChanged: () => () => {},
+      onReplacedChanged: () => () => {},
     })
   })
 
@@ -1840,18 +1863,6 @@ describe('Editor Discogs loading skeleton', () => {
     expect(badge).toHaveTextContent('')
     expect(await hoverForTooltip(badge)).toHaveTextContent(i18n.t('editor.matchSuggested'))
   })
-
-  // The provider is an origin label, not a match signal — so it reads as the same plain
-  // secondary text the track list gives the WAV/FLAC format tag. A boxed or filled badge
-  // would compete with the sparkle, and with every other box in the column, for attention.
-  it('shows the provider as plain text like the track list format tag', async () => {
-    const api = (window as unknown as { api: Record<string, unknown> }).api
-    api.search = vi.fn(async () => [{ provider: 'bandcamp', id: 1, title: 'The Release' }])
-    renderEditor({ id: 'a', query: 'artist song' })
-    const provider = await screen.findByTestId('result-provider')
-    expect(provider.className).not.toContain('border')
-    expect(provider.className).not.toMatch(/bg-\[var\(--color-panel-2\)\]/)
-  })
 })
 
 describe('Editor embedded cover size', () => {
@@ -2030,6 +2041,7 @@ describe('Editor multi-select', () => {
       cueTargets?: React.ComponentProps<typeof Editor>['cueTargets']
       fromSeratoA?: boolean
       replacesA?: string
+      durationA?: number
       libraryIndex?: AppleMusicIndex | null
       fileA?: string
       fileB?: string
@@ -2064,6 +2076,7 @@ describe('Editor multi-select', () => {
         spectrum: { cutoffHz: null, sampleRateHz: 44100, processed: false },
         ...(o.fromSeratoA && { programs: ['serato'] }),
         ...(o.replacesA && { replacesPath: o.replacesA }),
+        ...(o.durationA && { duration: o.durationA }),
       })
       const b = item({
         id: 'b',
@@ -2162,6 +2175,23 @@ describe('Editor multi-select', () => {
     expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
   })
 
+  // The 23/11 replacement test: the same track stamped to replace a file Serato holds warned
+  // when selected with another and stayed silent alone, as the single path only asked the
+  // library lookup. One track and several warn about the same file the convert replaces.
+  it('warns that Serato loses the stars when a single track replaces a file Serato holds', async () => {
+    Object.assign(window.api, {
+      dj: djReads({
+        serato: {
+          collection: vi
+            .fn<ProgramReads['collection']>()
+            .mockResolvedValue([{ contentId: '1', path: '/s/old.wav', title: 'A', artist: '' }]),
+        },
+      }),
+    })
+    renderEditor({ id: 'a', replacesPath: '/s/old.wav' }, 'wav', { syncSerato: true })
+    expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
+  })
+
   // Working out what a convert would leave out walks every selected track through the
   // library and required-field checks. Typing a search in the results column changes none
   // of that, so a big selection must not pay for it on every keystroke.
@@ -2253,6 +2283,53 @@ describe('Editor multi-select', () => {
     ])
   })
 
+  // A selected track whose rekordbox collection holds an entry of the same title, artist and
+  // length is filed there at once; the other one is staged for its conversion as before.
+  it('adds the rekordbox copy of a selected track to a playlist at once and stages the other', async () => {
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    Object.assign(window.api, {
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi.fn<ProgramReads['tree']>().mockResolvedValue(rekordboxTree),
+          membership: vi
+            .fn<ProgramReads['membership']>()
+            .mockResolvedValue({ '/r/a.aiff': [], '/music/b.wav': [] }),
+          collection: async () => [
+            { contentId: 'r1', path: '/r/a.aiff', title: 'A', artist: 'Kumara', durationSec: 361 },
+          ],
+          editPlaylist,
+        },
+      }),
+    })
+    const { onChangeTracksPlaylists } = renderMulti({
+      visibleFields: ['rekordboxPlaylists'],
+      metaA: { artist: 'Kumara' },
+      durationA: 361,
+      settings: { syncRekordbox: true },
+    })
+    await waitFor(() =>
+      expect(window.api.dj.membership).toHaveBeenCalledWith('rekordbox', [
+        '/music/b.wav',
+        '/r/a.aiff',
+      ]),
+    )
+    fireEvent.click(await screen.findByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-3000'))
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: '3000', tracks: [{ paths: ['/r/a.aiff'] }] },
+        'Makina',
+      ),
+    )
+    expect(onChangeTracksPlaylists).toHaveBeenCalledWith([
+      {
+        id: 'b',
+        playlists: { rekordbox: { targets: [{ id: '3000', name: 'Makina' }], base: [] } },
+      },
+    ])
+  })
+
   // WHY: with two tracks selected, a grouping chip used to write the same value to
   // both through onChangeAllMeta, erasing each one's own tags. A vocal cut and a beat
   // on the same release need different grouping, so the per-track row writes only its
@@ -2303,10 +2380,13 @@ describe('Editor multi-select', () => {
     const field = screen.getByTestId('field-vinylCondition')
     fireEvent.change(field, { target: { value: 'VG+' } })
     fireEvent.blur(field)
-    expect(onChangeTracksMeta).toHaveBeenCalledWith([
-      { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
-      { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
-    ])
+    expect(onChangeTracksMeta).toHaveBeenCalledWith(
+      [
+        { id: 'a', meta: { custom: { vinylCondition: 'VG+' } } },
+        { id: 'b', meta: { custom: { vinylCondition: 'VG+' } } },
+      ],
+      expect.objectContaining({ group: expect.any(String) }),
+    )
     expect(onChangeAllMeta).not.toHaveBeenCalled()
   })
 
@@ -2735,6 +2815,24 @@ describe('Editor multi-select', () => {
     expect(document.activeElement).not.toBe(screen.getByTestId('field-artist'))
   })
 
+  it('measures no library copy with several tracks selected, since the button warns about one track only', async () => {
+    const api = window.api as unknown as Record<string, unknown>
+    api.appleMusicEntryLocation = vi.fn().mockResolvedValue('/Music/Sunrise.wav')
+    api.loudness = vi.fn().mockResolvedValue(null)
+    api.comparePair = vi.fn().mockResolvedValue(null)
+    renderMulti({
+      platform: 'darwin',
+      music: true,
+      loudness: true,
+      metaA: { artist: 'Halo', title: 'Sunrise' },
+      libraryIndex: buildLibraryIndex([{ title: 'Sunrise', artist: 'Halo', persistentId: 'P1' }]),
+    })
+    await waitFor(() => expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('P1'))
+    await new Promise((r) => setTimeout(r, 50))
+    expect(api.comparePair).not.toHaveBeenCalled()
+    expect(api.loudness).not.toHaveBeenCalledWith('/Music/Sunrise.wav', expect.anything())
+  })
+
   it('does not send the DJ to a field from the amber note either when the selection mixes replacing with adding', () => {
     renderMulti({
       requiredFields: ['artist'],
@@ -2867,13 +2965,19 @@ describe('Editor multi-select', () => {
     const album = screen.getByTestId('field-album')
     fireEvent.change(album, { target: { value: 'New Album' } })
     fireEvent.blur(album)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ album: 'New Album' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { album: 'New Album' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   it('tags every selected track with the selection size as its total tracks in one click', () => {
     const { onChangeAllMeta } = renderMulti({ visibleFields: ['title', 'trackTotal'] })
     fireEvent.click(screen.getByTestId('chip-2'))
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ trackTotal: '2' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { trackTotal: '2' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // App owns the numbering so the button and the ⌘K command agree on the order; the
@@ -2885,6 +2989,37 @@ describe('Editor multi-select', () => {
     fireEvent.click(screen.getByTestId('number-tracks-btn'))
     expect(onNumberTracks).toHaveBeenCalledOnce()
     expect(onChangeTracksMeta).not.toHaveBeenCalled()
+  })
+
+  // Year and Track no. sit in the same short column; Track no. drawn as loose text left a
+  // gap of an invisible box between the ≠ and its button, so the button read as unrelated.
+  it('draws mixed track numbers in a box like the year, with the numbering button beside it', () => {
+    renderMulti({
+      visibleFields: ['year', 'trackNumber'],
+      metaA: { year: '2019', trackNumber: '1' },
+      metaB: { year: '2020', trackNumber: '5' },
+    })
+    const year = screen.getByTestId('field-year')
+    const number = screen.getByTestId('field-trackNumber')
+    expect(number).toHaveAttribute('placeholder', year.getAttribute('placeholder'))
+    expect(number).toHaveAttribute('readonly')
+    expect(number).toHaveAccessibleDescription(i18n.t('editor.perTrackOnly'))
+    expect(year).not.toHaveAttribute('readonly')
+    expect(screen.getByTestId('number-tracks-btn')).toBeInTheDocument()
+  })
+
+  // Title and BPM are per-track like Track no.; loose text for them made the selection form
+  // look unfinished next to the boxed Year, so every per-track field wears the same dashed box.
+  it('draws differing titles and BPMs in the same box as the track number', () => {
+    renderMulti({
+      visibleFields: ['title', 'bpm', 'trackNumber'],
+      metaA: { title: 'One', bpm: '120', trackNumber: '1' },
+      metaB: { title: 'Two', bpm: '128', trackNumber: '5' },
+    })
+    for (const id of ['field-title', 'field-bpm', 'field-trackNumber']) {
+      expect(screen.getByTestId(id)).toHaveAttribute('readonly')
+      expect(screen.getByTestId(id)).toHaveAccessibleDescription(i18n.t('editor.perTrackOnly'))
+    }
   })
 
   it('derives tags for every selected track from its own file name in one click', () => {
@@ -2908,7 +3043,10 @@ describe('Editor multi-select', () => {
     const box = screen.getByTestId('field-compilation')
     expect(box).toHaveProperty('checked', false)
     fireEvent.click(box)
-    expect(onChangeAllMeta).toHaveBeenCalledWith({ compilation: '1' })
+    expect(onChangeAllMeta).toHaveBeenCalledWith(
+      { compilation: '1' },
+      expect.objectContaining({ group: expect.any(String) }),
+    )
   })
 
   // Clearing over a selection goes through the same shared-form channel as any
@@ -3321,6 +3459,149 @@ describe('Editor export control', () => {
         { autoApplyFilename: true, filenameFormat: '{artist} - {title}' },
       )
       expect(screen.getByTestId('convert-up-to-date')).toBeInTheDocument()
+    })
+
+    // Right after importing a folder every track is selected and none is edited: the footer
+    // has to read as quietly as it does for one untouched track, or the new user is pushed
+    // to rewrite files that already carry what the editor shows.
+    describe('over a selection', () => {
+      const untouched = (id: string): TrackItem =>
+        item({ id, meta: read, diskSignature: trackSignature(item({ id, meta: read })) })
+
+      function renderSelection(
+        tracks: TrackItem[],
+        libraryIndex: AppleMusicIndex | null = null,
+        settings: Partial<Settings> = {},
+      ) {
+        const onConvertSelection = vi.fn()
+        const ui = (selected: TrackItem[]) => (
+          <Editor
+            item={selected[0]}
+            selectedTracks={selected}
+            libraryIndex={libraryIndex}
+            searchInputRef={createRef<HTMLInputElement>()}
+            onExportCollection={vi.fn()}
+            readFullTrack={async () => undefined}
+            filesOpen
+            resultsFolded={false}
+            onFoldResults={vi.fn()}
+            onResultsResizeStart={vi.fn()}
+            onResultsFit={vi.fn()}
+            onApplyMatches={vi.fn()}
+            onProcessAll={vi.fn()}
+            onConvertSelection={onConvertSelection}
+            onAddAllToAppleMusic={vi.fn()}
+            onChangeAllMeta={vi.fn()}
+            onApplyCoverAll={vi.fn()}
+            onDeriveTags={vi.fn()}
+            onChange={vi.fn()}
+            onProcess={vi.fn()}
+            onAddToAppleMusic={vi.fn()}
+            onShowLoudnessHelp={vi.fn()}
+            onHideEditorHints={vi.fn()}
+            onOpenRename={vi.fn()}
+            onRegenerateName={vi.fn()}
+            onTrimDetectedAll={vi.fn()}
+            onCopyFilename={vi.fn()}
+            onCopyPath={vi.fn()}
+            onSearchWeb={vi.fn()}
+            onCopyMeta={vi.fn()}
+            onPasteMeta={vi.fn()}
+            copiedMetaTitle={null}
+          />
+        )
+        const { rerenderUi } = renderWithQuery(ui(tracks), {
+          outputFormat: 'wav',
+          addToAppleMusic: true,
+          visibleFields: ['genre'],
+          requiredFields: [],
+          normalize: { mode: 'none', targetLufs: -14, truePeakDb: -1, peakDb: -1 },
+          ...settings,
+        })
+        return { onConvertSelection, rerender: (next: TrackItem[]) => rerenderUi(ui(next)) }
+      }
+
+      it('goes quiet when no selected track is edited, and the quiet face updates them all', () => {
+        const { onConvertSelection } = renderSelection([
+          untouched('a'),
+          untouched('b'),
+          untouched('c'),
+        ])
+        expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        expect(screen.getByTestId('convert-up-to-date')).toHaveTextContent('No changes')
+        expect(screen.queryByTestId('process-btn')).toBeNull()
+        fireEvent.click(screen.getByTestId('convert-update-anyway'))
+        expect(onConvertSelection).toHaveBeenCalledTimes(1)
+      })
+
+      it('brings the update back while one selected track is edited, and quiets on undo', () => {
+        const edited = { ...untouched('b'), meta: { ...untouched('b').meta, genre: 'House' } }
+        const { rerender, onConvertSelection } = renderSelection([
+          untouched('a'),
+          edited,
+          untouched('c'),
+        ])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        fireEvent.click(screen.getByTestId('process-btn'))
+        expect(onConvertSelection).toHaveBeenCalledTimes(1)
+        rerender([untouched('a'), untouched('b'), untouched('c')])
+        expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        expect(screen.queryByTestId('process-btn')).toBeNull()
+      })
+
+      it('keeps the update while one selected track would be renamed', () => {
+        renderSelection([untouched('a'), { ...untouched('b'), outputName: 'renamed' }])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+      })
+
+      // The batch would add the tracks Music lacks, which is something it writes.
+      it('keeps the update while the selection would be added to Music', () => {
+        ;(window as unknown as { api: { platform: string } }).api.platform = 'darwin'
+        const titled = (id: string, title: string): TrackItem => {
+          const meta = { ...read, title, artist: 'deadmau5' }
+          return item({ id, meta, diskSignature: trackSignature(item({ id, meta })) })
+        }
+        renderSelection(
+          [titled('a', 'Strobe'), titled('b', 'Ghosts n Stuff')],
+          buildLibraryIndex([
+            { title: 'Raise Your Weapon', artist: 'deadmau5', persistentId: 'A1' },
+          ]),
+        )
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+        expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+      })
+
+      // The run names the file with the quality its spectrum gives, so before that is known a
+      // {quality} pattern may still rename it.
+      describe('with the quality in the name pattern', () => {
+        const named = (id: string): TrackItem => {
+          const meta = { ...read, title: `${id}.wav` }
+          return item({ id, meta, diskSignature: trackSignature(item({ id, meta })) })
+        }
+        const naming = (filenameFormat: string): Partial<Settings> => ({
+          autoApplyFilename: true,
+          filenameFormat,
+          importFields: ['quality'],
+        })
+
+        it('keeps the update while a track has no quality yet', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}{quality}'))
+          expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+          expect(screen.getByTestId('process-btn')).toBeInTheDocument()
+        })
+
+        it('goes quiet when the pattern does not name the quality', () => {
+          renderSelection([named('a'), named('b')], null, naming('{title}'))
+          expect(screen.getByTestId('convert-up-to-date-row')).toBeInTheDocument()
+        })
+      })
+
+      it('keeps the update while one selected track shows values the file lacks', () => {
+        const b = untouched('b')
+        renderSelection([untouched('a'), { ...b, fillSignature: b.diskSignature }])
+        expect(screen.queryByTestId('convert-up-to-date-row')).toBeNull()
+      })
     })
   })
 
@@ -4379,7 +4660,8 @@ describe('Editor Discogs apply', () => {
       appliedRelease: { before: { publisher: 'Own Label' }, wrote: { publisher: 'Wrong Records' } },
     })
     await search()
-    fireEvent.click(screen.getByTestId('discogs-result'))
+    // The title matches the release, so the search opens it on its own; a click on the row
+    // before that lands would collapse it instead, which is what happened under load.
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     await waitFor(() =>
       expect(onChange).toHaveBeenCalledWith(
@@ -4536,6 +4818,29 @@ describe('Editor Discogs apply', () => {
     fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
     await waitFor(() => expect(readFullTrack).toHaveBeenCalledWith('a'))
     await act(async () => {})
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
+  })
+
+  // App applies the editor's patch to whatever row is selected when it lands, so a full read
+  // that returns after the user moved on must not write this track's release onto the next one.
+  it('applies nothing once the user has moved to another track before the full read returns', async () => {
+    withImages()
+    let finishRead: (track: TrackItem) => void = () => {}
+    const readFullTrack = vi.fn(
+      () =>
+        new Promise<TrackItem | undefined>((resolve) => {
+          finishRead = resolve
+        }),
+    )
+    const { onChange, unmount } = renderEditor({ id: 'a', metaPartial: true }, 'wav', {
+      readFullTrack,
+    })
+    await search()
+    fireEvent.click(screen.getByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(readFullTrack).toHaveBeenCalledWith('a'))
+    unmount()
+    await act(async () => finishRead(item({ id: 'a' })))
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ matched: true }))
   })
 
@@ -4700,6 +5005,27 @@ describe('Editor Discogs apply', () => {
     fireEvent.click(screen.getByTestId('discogs-result'))
     await screen.findAllByTestId('discogs-track')
     fireEvent.click(screen.getByTestId('cover-next'))
+
+    expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
+      first.onRecordUndo.mock.calls[0][1].group,
+    )
+  })
+
+  // A field can commit without a focus event we saw (a menu that keeps the focus on mousedown).
+  // That edit belongs to its own track alone; sharing a step with another track's edit would
+  // let one ⌘Z take back both, the other one unseen.
+  it("keeps a field edit made without a focus event out of another track's undo step", () => {
+    const first = renderEditor({ id: 'a', meta: { title: 'One' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'One typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
+    cleanup()
+    const second = renderEditor({ id: 'b', meta: { title: 'Two' } }, 'wav', {
+      visibleFields: ['title'],
+    })
+    fireEvent.change(screen.getByTestId('field-title'), { target: { value: 'Two typed' } })
+    fireEvent.blur(screen.getByTestId('field-title'))
 
     expect(second.onRecordUndo.mock.calls[0][1].group).not.toBe(
       first.onRecordUndo.mock.calls[0][1].group,
@@ -4881,6 +5207,27 @@ describe('Editor track preselection', () => {
       expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
     )
     expect(box).toHaveFocus()
+  })
+
+  // A ticked checkbox keeps the focus too, as it did before ⌘Z was let through it: the next
+  // Space would tick or untick it, not land in the title.
+  it('leaves the focus on a checkbox when a confident match applies itself', async () => {
+    withDiscogs()
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Track Two (Remix)', artist: 'The Artist' } },
+      'wav',
+      { autoMatch: true, visibleFields: ['title'] },
+    )
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    await loadTracklist({ autoOpens: true })
+    await waitFor(() =>
+      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ matched: true })),
+    )
+    expect(box).toHaveFocus()
+    box.remove()
   })
 
   it('records the track, cover included, before a confident match applies itself, so ⌘Z can take back a write nobody clicked', async () => {
@@ -5250,6 +5597,7 @@ describe('Editor Apple Music library section', () => {
       onWindowFocus: vi.fn(() => () => {}),
       appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
       appleMusicEntryMeta: vi.fn().mockResolvedValue(null),
+      sameFile: vi.fn(async (a: string, b: string) => a === b),
       readTags: vi.fn().mockRejectedValue(new Error('no library copy in this test')),
       readCoverFull: vi.fn().mockResolvedValue(null),
       cancelAnalysis: vi.fn().mockResolvedValue(undefined),
@@ -5304,6 +5652,103 @@ describe('Editor Apple Music library section', () => {
       libraryIndex: owned,
     })
     expect(await screen.findByTestId('library-row')).toHaveTextContent('Engine DJ')
+  })
+
+  function rekordboxWithCopy(copyPath: string): ReturnType<typeof vi.fn> {
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
+    const api = window.api as unknown as Record<string, unknown>
+    api.properties = vi.fn(async (path: string) => (path === copyPath ? mp3Copy : null))
+    // Loudness never answers, so the row stays on Comparing while the DJ ticks.
+    api.loudness = vi.fn(() => new Promise(() => {}))
+    api.cancelAnalysis = vi.fn().mockResolvedValue(undefined)
+    api.dj = djReads({
+      rekordbox: {
+        available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+        tree: vi
+          .fn<ProgramReads['tree']>()
+          .mockResolvedValue([{ id: 'p1', name: 'Friday', kind: 'playlist', count: 0 }]),
+        membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+        collection: async () => [
+          {
+            contentId: 'r1',
+            path: copyPath,
+            title: 'Strobe',
+            artist: 'deadmau5',
+            durationSec: 300,
+          },
+        ],
+        editPlaylist,
+      },
+    })
+    return editPlaylist
+  }
+
+  async function tickFriday(): Promise<void> {
+    const field = await screen.findByTestId('playlists-field')
+    await waitFor(() => expect(within(field).getByTestId('playlists-summary')).not.toBeDisabled())
+    fireEvent.click(within(field).getByTestId('playlists-summary'))
+    fireEvent.click(screen.getByTestId('playlists-check-p1'))
+  }
+
+  // The DJ ticks a playlist to have the track there in rekordbox now. The copy the section
+  // found is the track in rekordbox, so it goes in at once even before the comparison settles.
+  it('adds the rekordbox copy to a playlist from the field while the copy is still being compared', async () => {
+    const editPlaylist = rekordboxWithCopy('/r/Strobe.aiff')
+    const { onChange } = renderEditor(
+      { id: 'a', duration: 300, meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      { addToAppleMusic: false, syncRekordbox: true, visibleFields: ['rekordboxPlaylists'] },
+    )
+    expect(await screen.findByTestId('library-verdict')).toHaveTextContent('Comparing')
+    await tickFriday()
+    await waitFor(() =>
+      expect(editPlaylist).toHaveBeenCalledWith(
+        { kind: 'add', playlistId: 'p1', tracks: [{ paths: ['/r/Strobe.aiff'] }] },
+        expect.anything(),
+      ),
+    )
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ playlists: expect.anything() }),
+    )
+  })
+
+  // The open file is itself the rekordbox entry: there is no other copy to write, so the pick
+  // is staged for the conversion as before.
+  it('stages the playlist as today when the only match is the open file itself', async () => {
+    const editPlaylist = rekordboxWithCopy('/music/a.wav')
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      { addToAppleMusic: false, syncRekordbox: true, visibleFields: ['rekordboxPlaylists'] },
+    )
+    expect(await screen.findByTestId('library-row')).toHaveTextContent('rekordbox')
+    await tickFriday()
+    expect(onChange).toHaveBeenCalledWith({
+      playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Friday' }], base: [] } },
+    })
+    expect(editPlaylist).not.toHaveBeenCalled()
+  })
+
+  // Surco only knows the copy through the section; with it hidden the field stages as before.
+  it('stages the playlist as today when the library section is hidden', async () => {
+    const editPlaylist = rekordboxWithCopy('/r/Strobe.aiff')
+    const { onChange } = renderEditor(
+      { id: 'a', meta: { title: 'Strobe', artist: 'deadmau5' } },
+      'wav',
+      {
+        addToAppleMusic: false,
+        syncRekordbox: true,
+        visibleFields: ['rekordboxPlaylists'],
+        editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+          s.id === 'library' ? { ...s, hidden: true } : s,
+        ),
+      },
+    )
+    await tickFriday()
+    expect(onChange).toHaveBeenCalledWith({
+      playlists: { rekordbox: { targets: [{ id: 'p1', name: 'Friday' }], base: [] } },
+    })
+    expect(editPlaylist).not.toHaveBeenCalled()
   })
 
   // The complement: a song not found in the snapshot shows nothing, because the editor
@@ -5591,6 +6036,8 @@ describe('Editor Apple Music library section', () => {
     libraryProperties,
     libraryGone,
     filesOpen,
+    editorSections,
+    libraryCopyAction,
   }: {
     here: LoudnessResult | null
     library: LoudnessResult | null
@@ -5610,9 +6057,13 @@ describe('Editor Apple Music library section', () => {
     libraryProperties?: TrackProperties
     libraryGone?: 'missing' | 'unreadable' | 'checking'
     filesOpen?: boolean
+    editorSections?: Settings['editorSections']
+    libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
   }): {
     api: Record<string, unknown>
     onProcess: ReturnType<typeof vi.fn>
+    onChange: ReturnType<typeof vi.fn>
+    onUpdateLibraryCopy: ReturnType<typeof vi.fn>
     setFilesOpen: (filesOpen: boolean) => void
   } {
     setApi(platform)
@@ -5653,7 +6104,7 @@ describe('Editor Apple Music library section', () => {
     api.readDuration = vi.fn(async (path: string) =>
       path === '/Music/Strobe.wav' ? libraryDuration : (hereDuration ?? null),
     )
-    const { onProcess, setFilesOpen } = renderEditor(
+    const { onProcess, onChange, onUpdateLibraryCopy, setFilesOpen } = renderEditor(
       {
         id: 'a',
         inputPath: herePath,
@@ -5669,9 +6120,11 @@ describe('Editor Apple Music library section', () => {
         showLoudness: true,
         addToAppleMusic: music,
         filesOpen,
+        editorSections,
+        libraryCopyAction,
       },
     )
-    return { api, onProcess, setFilesOpen }
+    return { api, onProcess, onChange, onUpdateLibraryCopy, setFilesOpen }
   }
 
   // An exact match beside a weaker «(Radio Edit)» is no tie: the exact entry is the copy, so
@@ -5739,7 +6192,7 @@ describe('Editor Apple Music library section', () => {
     expect(screen.queryByTestId('library-section')).toBeNull()
   })
 
-  it('shows no library section and measures no copy for a track opened from a program tab', async () => {
+  it('shows no library section but measures the replace target for a track opened from a program tab', async () => {
     const { api } = renderWithLibraryCopy({
       here: aifLoudness,
       library: wavLoudness,
@@ -5747,10 +6200,10 @@ describe('Editor Apple Music library section', () => {
     })
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByTestId('library-section')).toBeNull()
-    expect(api.comparePair).not.toHaveBeenCalled()
+    expect(api.comparePair).toHaveBeenCalled()
     expect(api.fileExists).not.toHaveBeenCalled()
     expect(api.properties).not.toHaveBeenCalledWith('/Music/Strobe.wav')
-    expect(api.loudness).not.toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
+    expect(api.loudness).toHaveBeenCalledWith('/Music/Strobe.wav', expect.anything())
   })
 
   it('describes no Apple Music copy in a program tab, since describing it is the section own work', async () => {
@@ -6064,14 +6517,132 @@ describe('Editor Apple Music library section', () => {
 
   // Replacing a better copy with a worse one is the mistake the comparison exists to stop,
   // so the button says the replace goes against the verdict; it still names the action
-  // and the press still replaces.
+  // and the press still replaces. Replace is a pick the user remembers; it stamps the Music
+  // copy before the convert so the convert writes over it instead of adding a second one.
+  // Both lengths are known: a copy whose length is unknown could be another edit.
   it('offers the replace as a deliberate one when Apple Music has the better copy', async () => {
-    const { onProcess } = renderWithLibraryCopy({ here: wavLoudness, library: aifLoudness })
+    const { onProcess, onChange } = renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      libraryCopyAction: 'replace',
+    })
     await waitFor(() =>
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
     )
     fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ replacesPath: '/Music/Strobe.wav' }),
+    )
     expect(onProcess).toHaveBeenCalled()
+  })
+
+  // Update is the default: it leaves the better copy's audio alone, so nothing warns.
+  it('offers to update a better Apple Music copy by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+  })
+
+  it('warns before replacing a better Apple Music copy from a program tab', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      filesOpen: false,
+      libraryCopyAction: 'replace',
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
+    )
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('offers to update a better Apple Music copy from a program tab by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      filesOpen: false,
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('warns before replacing a better Apple Music copy with the library section hidden', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      libraryCopyAction: 'replace',
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'library' ? { ...s, hidden: true } : s,
+      ),
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Replace anyway$/),
+    )
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  it('offers to update a better Apple Music copy with the library section hidden by default', async () => {
+    renderWithLibraryCopy({
+      here: wavLoudness,
+      library: aifLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      editorSections: DEFAULT_EDITOR_SECTIONS.map((s) =>
+        s.id === 'library' ? { ...s, hidden: true } : s,
+      ),
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+    expect(screen.queryByTestId('library-section')).toBeNull()
+  })
+
+  // Update rewrites the Music copy's tags; converting the open file instead would leave the
+  // library's copy as it was and add nothing the user asked for.
+  it('updates the Apple Music copy from the body by default, leaving the open file alone', async () => {
+    const { onProcess, onUpdateLibraryCopy } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+    })
+    await waitFor(() => {
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+    })
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onUpdateLibraryCopy).toHaveBeenCalledWith({
+      path: '/Music/Strobe.wav',
+      program: 'appleMusic',
+      musicPersistentId: '0123456789ABCDEF',
+    })
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // Until the comparison is done the copy may yet be another version, so the press waits.
+  it('waits for the comparison before a press updates or replaces', async () => {
+    const { onProcess, onUpdateLibraryCopy } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      hereDuration: 300,
+      libraryDuration: 300,
+      pair: new Promise(() => {}),
+    })
+    await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+    expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onUpdateLibraryCopy).not.toHaveBeenCalled()
+    expect(onProcess).not.toHaveBeenCalled()
   })
 
   it('says it is still comparing while the copies are being measured', async () => {
@@ -6162,6 +6733,29 @@ describe('Editor Apple Music library section', () => {
     expect(lengths.map((cell) => cell.textContent)).toEqual(['8:03', '7:28'])
   })
 
+  // Music says its copy is another version: a plain Convert must add this file, never write
+  // over that entry. Only Update or Replace act on a library copy, and none is offered here.
+  it('converts without stamping the Music entry when its copy is another version', async () => {
+    const { onChange, onProcess } = renderWithLibraryCopy({
+      here: aifLoudness,
+      library: wavLoudness,
+      pair: Promise.resolve({ versionCorrelation: 0.1 }),
+      hereDuration: 483.2,
+      libraryDuration: 448.4,
+    })
+    await waitFor(() =>
+      expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalled()
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ replacesPath: expect.anything() }),
+    )
+    expect(onChange).not.toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: expect.anything() }),
+    )
+  })
+
   // Absolom's Secret, as reported: a FLAC and the library's WAV, both clean, that line up only
   // at 0.92. Nothing makes either better, yet a blank row read as if Surco had not looked:
   // the row says neither is better and opens the figures for the reader to weigh.
@@ -6209,6 +6803,7 @@ describe('Editor Apple Music library section', () => {
     )
     expect(api.appleMusicEntryLocation).toHaveBeenCalledWith('0123456789ABCDEF')
     expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Replace/)
+    expect(screen.getByTestId('process-btn')).not.toHaveTextContent(/Update/)
   })
 
   // Two Music entries match equally: picking one would describe a copy that may not be the
@@ -6348,32 +6943,87 @@ describe('Editor Apple Music library section', () => {
       loudness: LoudnessResult | null
       lossy?: boolean
       gone?: 'missing' | 'unreadable'
+      durationSec?: number
     }
+
+    let rendered: ReturnType<typeof renderEditor>
+    const copyTags = { album: 'Strobe EP', genre: 'Progressive House' }
+    const filledPatches = () =>
+      rendered.onChange.mock.calls.map(([patch]) => patch).filter((patch) => patch.copyFilled)
 
     function renderWithPrograms({
       rekordbox,
       traktor,
+      serato,
       here = aifLoudness,
       herePath = '/music/Strobe.aif',
+      hereDuration,
       syncTraktor = true,
-      index = owned,
+      index,
       filesOpen,
+      tags = {},
+      pairPending = false,
+      identicalPair = false,
+      music,
+      copyFilled,
+      libraryLoading,
+      libraryCopyAction,
+      musicLocation,
+      musicReadable = false,
+      musicDurationPending = false,
+      sameFile,
     }: {
       rekordbox?: Copy | 'other'
       traktor?: Copy
+      serato?: Copy
       here?: LoudnessResult
       herePath?: string
+      hereDuration?: number
       syncTraktor?: boolean
-      index?: AppleMusicIndex
+      index?: AppleMusicIndex | null
       filesOpen?: boolean
+      tags?: Record<string, Partial<TrackMetadata>>
+      pairPending?: boolean
+      identicalPair?: boolean
+      music?: string
+      copyFilled?: boolean
+      libraryLoading?: boolean
+      libraryCopyAction?: React.ComponentProps<typeof Editor>['libraryCopyAction']
+      // Music's answer to where its copy lives, held back to test the wait for it.
+      musicLocation?: Promise<string>
+      // Music's copy at the `music` path reads as a WAV, like the DJ copies.
+      musicReadable?: boolean
+      musicDurationPending?: boolean
+      // Main's answer to whether the open file and a copy are one file on disk.
+      sameFile?: (a: string, b: string) => Promise<boolean>
     }): Record<string, unknown> {
-      setApi('win32')
+      setApi(music ? 'darwin' : 'win32')
       const api = window.api as unknown as Record<string, unknown>
-      const copies = [rekordbox, traktor].filter((c): c is Copy => !!c && c !== 'other')
+      const copies = [rekordbox, traktor, serato].filter((c): c is Copy => !!c && c !== 'other')
       const copyAt = (path: string) => copies.find((c) => c.path === path)
       const entry = (path: string, title = 'Strobe') => [
-        { contentId: path, path, title, artist: 'deadmau5' },
+        {
+          contentId: path,
+          path,
+          title,
+          artist: 'deadmau5',
+          durationSec: copyAt(path)?.durationSec,
+        },
       ]
+      if (music) api.appleMusicEntryLocation = vi.fn(() => musicLocation ?? Promise.resolve(music))
+      if (sameFile) api.sameFile = vi.fn(sameFile)
+      api.readDuration = vi.fn((path: string) =>
+        musicDurationPending && path === music
+          ? new Promise<number | null>(() => {})
+          : Promise.resolve(
+              path === herePath ? (hereDuration ?? null) : (copyAt(path)?.durationSec ?? null),
+            ),
+      )
+      api.readTags = vi.fn(async (path: string) => {
+        const copy = tags[path]
+        if (!copy) throw new Error('no tags for this path in this test')
+        return { ...emptyMetadata(), ...copy }
+      })
       api.dj = djReads({
         rekordbox: {
           collection: async () =>
@@ -6384,6 +7034,7 @@ describe('Editor Apple Music library section', () => {
                 : [],
         },
         traktor: { collection: async () => (traktor ? entry(traktor.path) : []) },
+        serato: { collection: async () => (serato ? entry(serato.path) : []) },
       })
       api.peekAnalysis = vi.fn().mockResolvedValue(null)
       api.spectrogram = vi.fn(async (path: string) => {
@@ -6401,27 +7052,40 @@ describe('Editor Apple Music library section', () => {
         return copy ? copy.loudness : here
       })
       api.fingerprint = vi.fn(async (path: string) => path)
-      api.comparePair = vi.fn(async () => ({
-        correlation: 0.9956,
-        residualDb: -20.5,
-        gainDb: -2.2,
-      }))
+      api.comparePair = pairPending
+        ? vi.fn(() => new Promise(() => {}))
+        : vi.fn(async () =>
+            identicalPair
+              ? { correlation: 1, residualDb: -90, gainDb: 0 }
+              : { correlation: 0.9956, residualDb: -20.5, gainDb: -2.2 },
+          )
       api.fileExists = vi.fn(async (path: string) => copyAt(path)?.gone !== 'missing')
       api.properties = vi.fn(async (path: string) =>
-        (copyAt(path) && !copyAt(path)?.gone) || path === herePath
+        (copyAt(path) && !copyAt(path)?.gone) ||
+        path === herePath ||
+        (musicReadable && path === music)
           ? { ...mp3Copy, container: 'wav', codec: 'pcm_s16le', bitDepth: 16, bitrateKbps: 1411 }
           : null,
       )
-      renderEditor(
-        { id: 'a', inputPath: herePath, meta: { title: 'Strobe', artist: 'deadmau5' } },
+      rendered = renderEditor(
+        {
+          id: 'a',
+          inputPath: herePath,
+          duration: hereDuration,
+          copyFilled,
+          meta: { title: 'Strobe', artist: 'deadmau5' },
+        },
         'wav',
         {
-          libraryIndex: index,
+          libraryIndex: index === undefined ? (music ? ownedWithId : owned) : index,
+          libraryLoading,
           showLoudness: true,
-          addToAppleMusic: false,
+          addToAppleMusic: !!music,
           syncRekordbox: true,
           syncTraktor,
+          syncSerato: !!serato,
           filesOpen,
+          libraryCopyAction,
         },
       )
       return api
@@ -6612,6 +7276,484 @@ describe('Editor Apple Music library section', () => {
       await new Promise((r) => setTimeout(r, 50))
       expect(screen.queryByTestId('library-section')).toBeNull()
       expect(dj.collection).not.toHaveBeenCalledWith('traktor')
+    })
+
+    // With one program row its state goes up to the header, so these tests read the verdict there.
+    it('fills the empty fields from the rekordbox copy once it proves to be the same recording', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()[0].meta).toMatchObject(copyTags)
+      expect(rendered.onRecordUndo).toHaveBeenCalledWith(['a'], { cover: false })
+    })
+
+    // 95 s here and 30 s in rekordbox: another edit, whose album or genre may not be this file's.
+    it('never fills from a DJ copy that is another version, its tags are another edit', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()).toEqual([])
+    })
+
+    // The pair probe lines up only the first 91 s, so an extended edit cut from the same master
+    // matches it to the sample there: 400 s in rekordbox against 210 s here carries another mix
+    // name and ISRC, so its length makes it another version.
+    it('never fills from an extended edit whose head matches this file to the sample', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 400 },
+        hereDuration: 210,
+        identicalPair: true,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+      expect(filledPatches()).toEqual([])
+    })
+
+    const sameRekordboxCopy: Copy = {
+      path: '/r/Strobe.wav',
+      loudness: wavLoudness,
+      durationSec: 95,
+    }
+    const readyBody = () =>
+      waitFor(() => {
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same')
+        expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled')
+      })
+
+    // A DJ copy is replaced by its file alone: a musicPersistentId would make the convert
+    // write over an Apple Music entry the user was never offered.
+    it('replaces a copy only rekordbox holds by its path', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+      })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ musicPersistentId: expect.anything() }),
+      )
+      expect(rendered.onProcess).toHaveBeenCalled()
+      expect(rendered.onChange.mock.invocationCallOrder.at(-1)).toBeLessThan(
+        rendered.onProcess.mock.invocationCallOrder[0],
+      )
+    })
+
+    // Surco can't write an Ogg, so Update can't retag that copy, but the copy is still the
+    // track: offering nothing let the body say Convert and add a second entry beside it.
+    it('replaces a copy in a format Surco cannot write instead of converting beside it', async () => {
+      renderWithPrograms({
+        rekordbox: { ...sameRekordboxCopy, path: '/r/Strobe.ogg' },
+        hereDuration: 95,
+        identicalPair: true,
+      })
+      await readyBody()
+      const body = screen.getByTestId('process-btn')
+      expect(body).toHaveTextContent(/^Replace$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-update')).toBeDisabled()
+      expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'true')
+      fireEvent.click(body)
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.ogg' })
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    it('updates a copy only rekordbox holds', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
+    // Update and Replace act on a file the user does not have open, so the menu names it.
+    it('names the copy and its format above the two actions', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(
+        'rekordbox · WAV 16/44.1',
+      )
+    })
+
+    it('remembers the action picked from the menu', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+    })
+
+    // ⌘⏎ must do what the body says, or the shortcut converts while the button updates.
+    it('hands ⌘⏎ the same update the body runs', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      const run = rendered.onLibraryRunChange.mock.calls.at(-1)?.[0]
+      const onStarted = vi.fn()
+      run(onStarted)
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(onStarted).toHaveBeenCalled()
+    })
+
+    // A WAV exported as WAV is edited where it sits, and that update outranks the copy's on the
+    // body, so ⌘⏎ keeps converting like the body does.
+    it('leaves ⌘⏎ converting when an in-place update outranks the copy on the body', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        herePath: '/music/Strobe.wav',
+        hereDuration: 95,
+        identicalPair: true,
+      })
+      await readyBody()
+      expect(rendered.onLibraryRunChange.mock.calls.at(-1)?.[0]).toBeNull()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    // Replace puts a new file in place of the Serato copy, and Serato keeps its stars only on
+    // the file it had: the DJ must read that before pressing. Update keeps that file.
+    const sameSeratoCopy: Copy = { path: '/s/Strobe.wav', loudness: wavLoudness, durationSec: 95 }
+
+    it('warns that Serato loses the stars when the body replaces the Serato copy', async () => {
+      renderWithPrograms({
+        serato: sameSeratoCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+      })
+      await readyBody()
+      expect(await screen.findByTestId('convert-serato-stars-note')).toBeInTheDocument()
+    })
+
+    // The stars warning shows once the body says Replace, so a Replace picked from the menu
+    // over the Serato copy must not run before the DJ could read it.
+    it('only remembers Replace picked over the Serato copy, leaving the press to the body', async () => {
+      renderWithPrograms({ serato: sameSeratoCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ replacesPath: '/s/Strobe.wav' }),
+      )
+    })
+
+    it('replaces at once when Replace is picked over a copy Serato does not hold', async () => {
+      renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-replace'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    it('says nothing about Serato stars when the body updates the Serato copy', async () => {
+      renderWithPrograms({ serato: sameSeratoCopy, hereDuration: 95, identicalPair: true })
+      await readyBody()
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
+    })
+
+    // Music goes first. While it still says where its copy lives, or its copy's length is
+    // still being read, the body names the action and waits: offering Convert and then
+    // flipping, or acting on the rekordbox copy meanwhile, would update the wrong copy.
+    const musicIndex = buildLibraryIndex([
+      { title: 'Strobe', artist: 'deadmau5', persistentId: '0123456789ABCDEF', durationSec: 95 },
+    ])
+
+    it('waits for Music to say where its copy lives before acting on any copy', async () => {
+      let locate: (path: string) => void = () => {}
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        index: musicIndex,
+        musicLocation: new Promise<string>((resolve) => {
+          locate = resolve
+        }),
+      })
+      await waitFor(() => {
+        const rekordboxRow = screen
+          .getAllByTestId('library-row')
+          .find((row) => row.dataset.row === 'rekordbox')
+        expect(
+          within(rekordboxRow as HTMLElement).getByTestId('library-row-state'),
+        ).toHaveAttribute('data-state', 'same')
+      })
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+      await act(async () => locate('/Music/Strobe.wav'))
+      await waitFor(() =>
+        expect(screen.getByTestId('process-btn')).not.toHaveAttribute('aria-disabled'),
+      )
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/Music/Strobe.wav',
+        program: 'appleMusic',
+        musicPersistentId: '0123456789ABCDEF',
+      })
+    })
+
+    it("names Music's copy and waits while its length is still being read", async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        musicDurationPending: true,
+        index: musicIndex,
+      })
+      await waitFor(() =>
+        expect(screen.getAllByTestId('library-row').map((r) => r.dataset.row)).toEqual([
+          'appleMusic',
+          'rekordbox',
+        ]),
+      )
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/))
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(/^Apple Music · /)
+    })
+
+    // A file opened through a symlinked folder is the copy the program indexed under another
+    // path: offering to update or replace it would act on the very file, and Replace of
+    // itself would offer to trash the source.
+    it('offers no library action when the copy is the open file under another path', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        libraryCopyAction: 'replace',
+        sameFile: async (a, b) => a === '/music/Strobe.aif' && b === '/r/Strobe.wav',
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
+      )
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/))
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).not.toHaveBeenCalledWith(
+        expect.objectContaining({ replacesPath: expect.anything() }),
+      )
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    it('waits for main to say whether the copy is the open file before acting on it', async () => {
+      renderWithPrograms({
+        rekordbox: sameRekordboxCopy,
+        hereDuration: 95,
+        identicalPair: true,
+        sameFile: () => new Promise<boolean>(() => {}),
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'same'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
+    // The Music entry that is the open file under another path is retagged by the convert, as
+    // when the paths match, instead of a second entry being imported beside it.
+    it('names the Music entry that is the open file under another path on a plain convert', async () => {
+      renderWithPrograms({
+        hereDuration: 95,
+        identicalPair: true,
+        music: '/Music/Strobe.wav',
+        musicReadable: true,
+        index: musicIndex,
+        sameFile: async (a, b) => a === '/music/Strobe.aif' && b === '/Music/Strobe.wav',
+      })
+      await waitFor(() => expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/))
+      await new Promise((r) => setTimeout(r, 50))
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onChange).toHaveBeenCalledWith({ musicPersistentId: '0123456789ABCDEF' })
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
+    // Another version is another track: updating its tags or replacing it would lose it.
+    it('converts as today when the only copy is another version', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        hereDuration: 95,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+    })
+
+    it('waits for the comparison before reading a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+        pairPending: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'measuring'),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // A copy Surco just added to a program is still measured, with no length yet, for about
+    // a second: saying Convert meanwhile let a press add a duplicate beside it.
+    it('names the action and waits while a copy with no length yet is still measured', async () => {
+      renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness },
+        hereDuration: 95,
+        pairPending: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'measuring'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Update$/)
+      expect(screen.getByTestId('process-btn')).toHaveAttribute('aria-disabled', 'true')
+      fireEvent.click(screen.getByTestId('process-btn'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
+    it('fills from the next program when the first holds another version', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
+        traktor: { path: '/t/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags, '/t/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(api.readTags).toHaveBeenCalledWith('/t/Strobe.wav'))
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('lets the Apple Music copy a replacement supersedes fill before a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        tags: {
+          '/m/old/Strobe.mp3': { album: 'From Music' },
+          '/r/Strobe.wav': { album: 'From rekordbox' },
+        },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // Until the Music library lands there is no telling whether it holds a copy to replace,
+    // and that copy has the say over a DJ copy.
+    it('waits for the Apple Music library before reading a DJ copy', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: null,
+        libraryLoading: true,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('fills from the DJ copy once the Apple Music library loaded without the track', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: buildLibraryIndex([{ title: 'Other', artist: 'Someone' }]),
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // A Music that refused the dump leaves the index null, and so does Settings sending to a
+    // folder while this track is sent to Music: App reads no library then, nothing will land.
+    it('fills from the DJ copy whenever App is not loading the Apple Music library', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        music: '/m/old/Strobe.mp3',
+        index: null,
+        libraryLoading: false,
+        tags: { '/r/Strobe.wav': copyTags },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(api.readTags).toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    it('does not fill from a DJ copy when the track was already filled once', async () => {
+      const api = renderWithPrograms({
+        rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
+        hereDuration: 95,
+        tags: { '/r/Strobe.wav': copyTags },
+        copyFilled: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).not.toHaveAttribute(
+          'data-state',
+          'measuring',
+        ),
+      )
+      await new Promise((r) => setTimeout(r, 50))
+      expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
     })
   })
 })
@@ -6945,8 +8087,9 @@ describe('Editor maximized section', () => {
       expect(within(screen.getByTestId(id)).getByTestId('section-maximize')).toBeInTheDocument()
     }
     // The File name section draws no wave, so it never grows the maximize toggle.
-    const output = screen.getByTestId('output-name').closest('div[class*="border-t"]')
-    expect(output && within(output as HTMLElement).queryByTestId('section-maximize')).toBeFalsy()
+    expect(
+      within(screen.getByTestId('editor-output-name')).queryByTestId('section-maximize'),
+    ).toBeNull()
   })
 })
 
@@ -7181,7 +8324,7 @@ describe('Discogs token tip', () => {
       throw new Error("Error invoking remote method 'search': Error: SURCO_ERR:discogsRateLimit")
     })
     renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: 'mine' })
-    await screen.findByRole('alert')
+    await screen.findByTestId('discogs-wait')
     expect(screen.queryByTestId('discogs-token-tip')).not.toBeInTheDocument()
     cleanup()
     renderEditor({ id: 'a', query: 'artist song' }, 'wav', { discogsToken: '' })
@@ -7304,5 +8447,77 @@ describe('Editor replacing a library copy', () => {
     expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
     expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
     expect(onRecordUndo).not.toHaveBeenCalled()
+  })
+})
+
+// App keys the editor per track and the auto-match sweep skips every row it believes is
+// under edit. Switching tracks with a field focused removes that field without a blur, so
+// the editor must hand the guard back as it goes, or the old track never gets matched.
+describe('the under-edit guard across a track switch', () => {
+  function Host({
+    id,
+    focusTitle,
+    editing,
+  }: {
+    id: string
+    focusTitle?: boolean
+    editing: { current: readonly string[] }
+  }) {
+    useLayoutEffect(() => {
+      if (focusTitle) screen.getByTestId('field-title').focus()
+    }, [focusTitle])
+    return (
+      <Editor
+        key={id}
+        item={item({ id })}
+        libraryIndex={null}
+        searchInputRef={createRef<HTMLInputElement>()}
+        onChange={vi.fn()}
+        onProcess={vi.fn()}
+        onAddToAppleMusic={vi.fn()}
+        resultsFolded={false}
+        onFoldResults={vi.fn()}
+        onResultsResizeStart={vi.fn()}
+        onResultsFit={vi.fn()}
+        onShowLoudnessHelp={vi.fn()}
+        onHideEditorHints={vi.fn()}
+        onOpenRename={vi.fn()}
+        onRegenerateName={vi.fn()}
+        onTrimDetectedAll={vi.fn()}
+        onCopyFilename={vi.fn()}
+        onCopyPath={vi.fn()}
+        onSearchWeb={vi.fn()}
+        onCopyMeta={vi.fn()}
+        onPasteMeta={vi.fn()}
+        copiedMetaTitle={null}
+        onExportCollection={vi.fn()}
+        readFullTrack={async () => undefined}
+        filesOpen
+        onFieldFocusChange={(ids) => {
+          editing.current = ids
+        }}
+      />
+    )
+  }
+
+  it('releases the old track when the editor moves on with one of its fields focused', () => {
+    const editing: { current: readonly string[] } = { current: [] }
+    const { rerenderUi } = renderWithQuery(<Host id="a" editing={editing} />, {
+      showLoudness: false,
+    })
+    act(() => screen.getByTestId('field-title').focus())
+    expect(editing.current).toEqual(['a'])
+    rerenderUi(<Host id="b" editing={editing} />)
+    expect(editing.current).toEqual([])
+  })
+
+  it('keeps the new track under edit when its field takes focus as the editor switches', () => {
+    const editing: { current: readonly string[] } = { current: [] }
+    const { rerenderUi } = renderWithQuery(<Host id="a" editing={editing} />, {
+      showLoudness: false,
+    })
+    act(() => screen.getByTestId('field-title').focus())
+    rerenderUi(<Host id="b" focusTitle editing={editing} />)
+    expect(editing.current).toEqual(['b'])
   })
 })

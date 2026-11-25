@@ -196,19 +196,37 @@ export function recordReplacement(
     replacementLandedPath?: string
     skipped?: boolean
     replaceShift?: ReplaceShift
+    seratoCarryFailed?: true
   },
   programs: DjProgram[],
   now: number,
 ): void {
   const landed = result.outputPath || result.replacementLandedPath
-  if (!job.replacesPath || result.skipped || !landed || programs.length === 0) return
+  const repointed = result.seratoCarryFailed ? programs.filter((p) => p !== 'serato') : programs
+  if (!job.replacesPath || result.skipped || !landed || repointed.length === 0) return
   store.add({
     newPath: landed,
     oldPath: job.replacesPath,
     replacedAt: now,
     shift: result.replaceShift ?? { unmoved: 'unreadable' },
-    pending: programs,
+    pending: repointed,
   })
+}
+
+export function leaveOutWhereStayed(
+  store: ReplacedStore,
+  program: DjProgram,
+  paths: string[],
+): boolean {
+  let changed = false
+  for (const path of paths) {
+    try {
+      if (store.review(path, [program])) changed = true
+    } catch (e) {
+      log.error(`replaced-tracks store: could not leave ${program} out of ${path}`, e)
+    }
+  }
+  return changed
 }
 
 export function followReplaced(

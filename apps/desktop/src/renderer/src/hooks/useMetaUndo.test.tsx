@@ -89,6 +89,48 @@ describe('useMetaUndo', () => {
     expect(restored.inLibraryResolved).toBe(true)
   })
 
+  // A clear also drops the hand-edit mark so the sweep may refill the emptied track. Undoing
+  // it must bring the mark back, or the sweep matches the track and overwrites the very
+  // hand edits the undo just restored.
+  it('restores the hand-edit mark a clear dropped, so the sweep keeps off the restored tags', () => {
+    const { result } = setup([track('a', { title: 'Typed by hand' }, { handEdited: true })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: emptyMetadata(), handEdited: undefined })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    expect(result.current.tracks[0].handEdited).toBe(true)
+  })
+
+  // Undoing a release apply returns the tags to before it, so the track must not keep
+  // claiming that release: its provider and the applied-release stamp go back too.
+  it('removes the release stamps when a release apply is undone', () => {
+    const { result } = setup([track('a', { title: 'Before' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          meta: { ...t.meta, title: 'From release' },
+          matched: true,
+          matchProvider: 'discogs',
+          appliedRelease: { before: { title: 'Before' }, wrote: { title: 'From release' } },
+        })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    const restored = result.current.tracks[0]
+    expect(restored.meta.title).toBe('Before')
+    expect(restored.matchProvider).toBeUndefined()
+    expect(restored.appliedRelease).toBeUndefined()
+  })
+
   // "Clear all" doesn't just empty the fields — it flags the track for a full wipe on
   // convert (metaCleared/coverRemoved) and marks every foreign tag for deletion
   // (foreignRemoved). Undoing must clear those intents too, or after ⌘Z the inspector
@@ -433,6 +475,58 @@ describe('useMetaUndo', () => {
     })
     expect(reapplied).toBe(0)
     expect(result.current.tracks[0].meta.title).toBe('Second')
+  })
+
+  // The auto-match sweep records in the background, so a match landing after the user's ⌘Z
+  // is no step of theirs and must not cost them the ⌘⇧Z they may still press.
+  it('keeps the redo step when the background sweep records a match on another track', () => {
+    const { result } = setup([track('a', { title: 'A' }), track('b', { title: 'B' })])
+    act(() => {
+      result.current.record([result.current.tracks[0]])
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'a' ? { ...t, meta: { ...t.meta, title: 'Filled' } } : t)),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record([result.current.tracks[1]], { keepRedo: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => (t.id === 'b' ? { ...t, meta: { ...t.meta, title: 'Matched' } } : t)),
+      )
+    })
+    let reapplied = 0
+    act(() => {
+      reapplied = result.current.redo()
+    })
+    expect(reapplied).toBe(1)
+    expect(result.current.tracks.map((t) => t.meta.title)).toEqual(['Filled', 'Matched'])
+  })
+
+  // A kept redo step may name a track the sweep has since tagged: redo must not replay the
+  // user's old value over what the sweep wrote, exactly as it keeps a field typed since.
+  it('never replays a kept redo step over a field the background sweep wrote since', () => {
+    const { result } = setup([track('a', { title: 'A' })])
+    act(() => {
+      result.current.record(result.current.tracks)
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Filled' } })),
+      )
+    })
+    act(() => {
+      result.current.undo()
+    })
+    act(() => {
+      result.current.record(result.current.tracks, { keepRedo: true })
+      result.current.setTracks((prev) =>
+        prev.map((t) => ({ ...t, meta: { ...t.meta, title: 'Matched' } })),
+      )
+    })
+    act(() => {
+      result.current.redo()
+    })
+    expect(result.current.tracks[0].meta.title).toBe('Matched')
   })
 
   it('leaves a converted track with no custom fields matching its converted signature after undoing a paste that added one, so it does not read as stale', () => {

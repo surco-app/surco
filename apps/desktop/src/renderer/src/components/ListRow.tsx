@@ -5,8 +5,20 @@ import type React from 'react'
 // still reads as the same list: the row's fill, its cover tile, its two lines of text and the
 // tinted pill on the right.
 
+// The placeholder rows drawn while a playlist is read take their box from here too, so a
+// change to the row's size can't leave them a different height from the rows that replace them.
+export function rowBox(tight: boolean): string {
+  return `flex items-center gap-2.5 px-2.5 py-2 ${tight ? 'compact:py-0.5' : 'compact:py-1'}`
+}
+
+export function rowTextHeight(waves: boolean): string {
+  return waves ? 'h-16 compact:h-[52px]' : 'h-10 compact:h-9'
+}
+
+export const ROW_WAVE_HEIGHT = 'h-5 compact:h-[15px]'
+
 export function listRowClass(primary: boolean, selected: boolean, tight = false): string {
-  return `group/row relative flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left ${tight ? 'compact:py-0.5' : 'compact:py-1'} transition-[transform] duration-200 ease-standard ${
+  return `group/row relative ${rowBox(tight)} w-full rounded-lg text-left transition-[transform] duration-200 ease-standard ${
     // The primary row (the one open in the editor) takes the selection fill, the way
     // Finder/Mail fill the active row. A multi-selected-but-not-primary row gets the
     // quieter accent tint. Everything else is bare: no outline and no fill of its own,
@@ -25,7 +37,7 @@ export const ROW_DETAIL = 'relative block min-w-0 flex-1 truncate text-xs text-f
 export const ROW_TRAILING = 'shrink-0 text-right text-xs tabular-nums text-fg-dim'
 export const PILL_TEXT = 'text-label font-semibold leading-4'
 
-const COVER_SIZE = {
+export const COVER_SIZE = {
   small: 'h-8 w-8',
   medium: 'h-10 w-10 compact:h-8 compact:w-8',
   large: 'h-16 w-16 compact:h-12 compact:w-12',

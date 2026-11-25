@@ -263,4 +263,71 @@ describe('useReplacedCopyFill', () => {
     expect(readTags).not.toHaveBeenCalled()
     expect(readCoverFull).not.toHaveBeenCalled()
   })
+
+  it('fills only the fields still empty when the copy arrives after the DJ typed', async () => {
+    setApi(
+      vi
+        .fn<Api['readTags']>()
+        .mockResolvedValue(copyTags({ album: 'Your Love', genre: 'Euro House' })),
+    )
+    const order: string[] = []
+    const onRecordUndo = vi.fn(() => order.push('undo'))
+    const onChange = vi.fn((_patch: Partial<TrackItem>) => order.push('change'))
+    const { rerender } = renderHook(
+      ({ item, copyPath }) => useReplacedCopyFill({ item, copyPath, onChange, onRecordUndo }),
+      { initialProps: { item: track(), copyPath: '' } },
+    )
+    const typed = track({ meta: { ...track().meta, album: 'Typed' } })
+    rerender({ item: typed, copyPath: '' })
+    rerender({ item: typed, copyPath: '/r/your-love.aiff' })
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({ album: 'Typed', genre: 'Euro House' })
+    expect(order).toEqual(['undo', 'change'])
+  })
+
+  // A DJ copy's verdict arrives seconds later, so the DJ may already be on another track.
+  it('drops a copy read that answers after the DJ moved to another track', async () => {
+    let answerFirst: (v: TrackMetadata) => void = () => {}
+    const readTags = vi
+      .fn<Api['readTags']>()
+      .mockReturnValueOnce(new Promise((resolve) => (answerFirst = resolve)))
+      .mockResolvedValue(copyTags({}))
+    setApi(readTags)
+    const onChange = vi.fn()
+    const { rerender } = renderHook(
+      ({ item }) => useReplacedCopyFill({ item, copyPath: '/r/your-love.aiff', onChange }),
+      { initialProps: { item: track() } },
+    )
+    rerender({ item: track({ id: 't2' }) })
+    answerFirst(copyTags({ album: 'Your Love' }))
+    await waitFor(() => expect(readTags).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+
+    for (const [patch] of onChange.mock.calls) {
+      expect(patch.meta?.album).not.toBe('Your Love')
+    }
+  })
+
+  it('drops the old answer when the copy to fill from changes mid-read', async () => {
+    const answers: Record<string, (v: TrackMetadata) => void> = {}
+    const readTags = vi.fn<Api['readTags']>(
+      (path) => new Promise((resolve) => (answers[path] = resolve)),
+    )
+    setApi(readTags)
+    const onChange = vi.fn()
+    const { rerender } = renderHook(
+      ({ copyPath }) => useReplacedCopyFill({ item: track(), copyPath, onChange }),
+      { initialProps: { copyPath: '/r/your-love.aiff' } },
+    )
+    rerender({ copyPath: '/m/old.mp3' })
+    await waitFor(() => expect(readTags).toHaveBeenCalledTimes(2))
+    answers['/r/your-love.aiff'](copyTags({ album: 'From R' }))
+    await Promise.resolve()
+    answers['/m/old.mp3'](copyTags({ album: 'From M' }))
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled())
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange.mock.calls[0][0].meta).toMatchObject({ album: 'From M' })
+  })
 })

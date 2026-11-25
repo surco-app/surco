@@ -5,6 +5,9 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import initSqlJs, { type Database, type SqlJsStatic } from 'sql.js'
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { emptyMetadata } from '../shared/metadata'
+import type { ReplaceShift } from '../shared/replaceShift'
+import type { TrackMetadata } from '../shared/types'
 import { buildEngineDatabase } from './engine'
 import { ENGINE_3_SCHEMA } from './engine3Fixture'
 import {
@@ -17,7 +20,8 @@ import {
   encodeLoops,
   inflateEngineBlob,
 } from './engineBlobs'
-import { analysedTrack, quickCuesBlob } from './enginePerformanceFixture'
+import { addToEngineLibrary, setEngineWriteGatherMs } from './engineLibrary'
+import { analysedTrack, overviewBlob, quickCuesBlob } from './enginePerformanceFixture'
 import { isEngineDjRunning } from './engineProcess'
 import {
   engineBitrateKbps,
@@ -26,6 +30,13 @@ import {
   repointEngineTracks,
 } from './engineRepoint'
 import { backupOf } from './libraryBackups'
+import { rekordboxRepointFor } from './rekordboxRepointFor'
+import {
+  beginRekordboxBatch,
+  endRekordboxBatch,
+  type RekordboxRepoint,
+  recordRekordboxRepoint,
+} from './rekordboxBatch'
 
 // The real probe shells out to pgrep/tasklist; tests pin it so they never depend on what
 // happens to be running on the machine (Engine DJ itself, for instance).
@@ -346,6 +357,26 @@ describe.each(['2.18', '3.0.2'] as const)('repointEngineTracks on a %s library',
     expect(result).toEqual({ written: false, reason: 'occupied' })
   })
 
+  // Two tracks converted onto one name both passed against the library as it was read, and
+  // Engine's one-row-per-path rule then failed the whole run's write.
+  it('moves only the first of two tracks the run sends to the same file', async () => {
+    const lib = await library(schema, ['../music/old.mp3', '../music/other.mp3'])
+    const results = await repointEngineTracks(lib.dir, [
+      { from: lib.oldFile, to: lib.newFile },
+      { from: join(lib.music, 'other.mp3'), to: lib.newFile },
+    ])
+    expect(results).toEqual([
+      { written: true, id: '1' },
+      { written: false, reason: 'occupied' },
+    ])
+    const db = await openDb(lib.dbPath)
+    expect(db.exec('SELECT id, path FROM Track ORDER BY id')[0].values).toEqual([
+      [1, '../music/new.aiff'],
+      [2, '../music/other.mp3'],
+    ])
+    db.close()
+  })
+
   it('backs the library up, and takes the run copy, before writing', async () => {
     const lib = await library(schema)
     const original = await readFile(lib.dbPath)
@@ -389,6 +420,7 @@ it('reports a library it cannot read', async () => {
 })
 
 const RATE = 44100
+const ENGINE_META = { title: 'One', artist: 'A', album: 'LP', genre: 'House' } as TrackMetadata
 const TRIM_MS = 1900
 const HOT_SEC = [1, 5, 12]
 const LOOP_SEC: [number, number] = [8, 10]
@@ -534,6 +566,38 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(Math.abs((sample ?? 0) - 11.5 * RATE)).toBeLessThanOrEqual(1)
     })
 
+    // Another master is analysed again and moved by its envelope shift at once. Emptying the old
+    // analysis must not lose the move: the pad on the kick at 10 s has to fire at 9.7 s of a
+    // master that sounds 300 ms earlier, counted at the old rate when the new file's was not
+    // probed, while the old grid goes so Engine draws the new one.
+    it('moves the cues of another master it empties for analysis, at the old rate unprobed', async () => {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET quickCues = ? WHERE trackId = 1', [
+        quickCuesBlob(
+          [{ label: 'Kick', sample: 10 * RATE, argb: 0xffcc0000 }],
+          mainCueTail(MAIN_SEC[0] * RATE, true, MAIN_SEC[1] * RATE),
+        ),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      await repointEngineTracks(lib.dir, [
+        {
+          from: lib.oldFile,
+          to: lib.newFile,
+          engineShift: { trimmedMs: 300 },
+          reanalyse: true,
+        },
+      ])
+      const after = await openDb(lib.dbPath)
+      const row = one(after, 'SELECT quickCues, beatData FROM PerformanceData WHERE trackId = 1')
+      after.close()
+      const sample = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))?.slots[0].cue
+        ?.sample
+      expect(Math.abs((sample ?? 0) - 9.7 * RATE)).toBeLessThanOrEqual(1)
+      expect(row.beatData).toBeNull()
+    })
+
     // Engine stores cues in samples: a cue at 10 s is sample 441 000 on a 44.1 kHz row. Left
     // like that on a 48 kHz replacement it would sound at 9.19 s, early on the booth.
     it('keeps a cue at 10 s at 10 s when a 44.1 kHz track is replaced by a 48 kHz one', async () => {
@@ -661,6 +725,47 @@ describe.each(['2.18', '3.0.2'] as const)(
       expect(after.gridLengthSec * 48000).toBeCloseTo(2_000_003, 6)
     })
 
+    // The queue pools repoints by the file they start from, so a track converted and then
+    // converted again from that output arrives as two steps. Read against the library as it
+    // was, the second found no row on the first one's file: the row stayed on a file the
+    // second conversion replaced, every position short of the second cut.
+    it('follows a track converted twice onto the last file, moving its cues by both cuts', async () => {
+      const lib = await analysedLibrary(schema)
+      const flac = join(lib.music, 'new.flac')
+      await writeFile(flac, Buffer.alloc(999))
+      const results = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+        { from: lib.newFile, to: flac, engineShift: { trimmedMs: 100 } },
+      ])
+      expect(results).toEqual([
+        { written: true, id: '1' },
+        { written: true, id: '1' },
+      ])
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - (TRIM_MS + 100) / 1000, 6)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT count(*) AS n, path, fileBytes FROM Track')).toEqual({
+        n: 1,
+        path: '../music/new.flac',
+        fileBytes: 999,
+      })
+      db.close()
+    })
+
+    // The size guard asks whether the cut already came off, which the row cannot have taken
+    // when this same run is only now moving it onto the file.
+    it('follows a track whose output was then rewritten in place, moving its cues by both cuts', async () => {
+      const lib = await analysedLibrary(schema)
+      const results = await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } },
+        { from: lib.newFile, to: lib.newFile, fromBytes: 1234, engineShift: { trimmedMs: 100 } },
+      ])
+      expect(results).toEqual([
+        { written: true, id: '1' },
+        { written: true, id: '1' },
+      ])
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - (TRIM_MS + 100) / 1000, 6)
+    })
+
     // The retry and the queue hand the same move again. The row already left the old path
     // with the first write, so the second finds nothing to move and nothing shifts twice.
     it('shifts once when the same move is handed again', async () => {
@@ -668,6 +773,38 @@ describe.each(['2.18', '3.0.2'] as const)(
       const move = { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } }
       await repointEngineTracks(lib.dir, [move])
       const once = await positionsOf(lib)
+      const [again] = await repointEngineTracks(lib.dir, [move])
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+    })
+
+    // The 23/11 replacement test on a copy of a real library, with "Add to Engine DJ" and
+    // "Sync" both on: the add moved the row onto the new file during the conversion, the
+    // repoint then found nothing on the old path, and every cue stayed 1.5 s early with the
+    // grid and the length of the old file. The shift lands once whichever write moves the row.
+    it('shifts a replacement once when the Engine DJ destination already moved its row', async () => {
+      setEngineWriteGatherMs(0)
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+      await addToEngineLibrary(lib.dir, lib.newFile, ENGINE_META, undefined, lib.oldFile)
+      const move = {
+        from: lib.oldFile,
+        to: lib.newFile,
+        fromBytes: 100,
+        engineShift: { trimmedMs: -1500 },
+      }
+      const [result] = await repointEngineTracks(lib.dir, [move])
+      expect(result).toEqual({ written: true, id: '1' })
+      const once = await positionsOf(lib)
+      expect(once.hot?.[1]).toBeCloseTo(HOT_SEC[1] + 1.5, 6)
+      expect(once.grid).toEqual(before.grid?.map((s) => expect.closeTo(s + 1.5, 6)))
+      expect(once.lengthSec).toBeCloseTo(before.lengthSec + 1.5, 4)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT path, fileBytes FROM Track')).toEqual({
+        path: '../music/new.aiff',
+        fileBytes: 4321,
+      })
+      db.close()
       const [again] = await repointEngineTracks(lib.dir, [move])
       expect(again).toEqual({ written: false, reason: 'no-match' })
       expect(await positionsOf(lib)).toEqual(once)
@@ -778,24 +915,45 @@ describe.each(['2.18', '3.0.2'] as const)(
       ])
     })
 
-    // The overview is the whole-track waveform Engine draws the cues over, one entry per
-    // fixed run of samples. Left alone after a cut, the cues sit on the right beats while the
-    // drawing under them still shows the lead-in; after a resample its run is counted at the
-    // old rate and the drawing stretches.
-    it('drops the overview’s entries for the cut and counts its run at the new rate', async () => {
-      const lib = await analysedLibrary(schema)
+    // Engine's own overview: 1024 entries over the whole 60 s track, each as loud as the second
+    // it covers counts from 1, so an entry tells which second of the old audio it draws.
+    async function secondsOverview(lib: Library) {
+      const run = (RATE * 60) / 1024
       const head = Buffer.alloc(24)
-      head.writeBigInt64BE(10n, 0)
-      head.writeBigInt64BE(10n, 8)
-      head.writeDoubleBE(RATE / 2, 16)
-      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
-      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
+      head.writeBigInt64BE(1024n, 0)
+      head.writeBigInt64BE(1024n, 8)
+      head.writeDoubleBE(run, 16)
+      const entries = Array.from({ length: 1024 }, (_, i) => {
+        const second = Math.floor((i * run) / RATE) + 1
+        return [second, second, second]
+      })
+      const raw = Buffer.concat([head, Buffer.from(entries.flat()), Buffer.from([60, 60, 60])])
       const db = await openDb(lib.dbPath)
       db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
         deflateEngineBlob(raw),
       ])
       await writeFile(lib.dbPath, db.export())
       db.close()
+    }
+
+    async function overviewOf(lib: Library) {
+      const db = await openDb(lib.dbPath)
+      const overview = inflateEngineBlob(
+        one(db, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
+          .overviewWaveFormData as Uint8Array,
+      )
+      db.close()
+      return { run: overview.readDoubleBE(16), ...decodeOverview(overview) }
+    }
+
+    const entryAt = (sec: number, lengthSec: number) => Math.floor((sec / lengthSec) * 1024)
+
+    // The overview is the whole-track waveform Engine draws the cues over. Left alone after a
+    // cut, the cues sit on the right beats while the drawing under them still shows the
+    // lead-in; after a resample its run is counted at the old rate and the drawing stretches.
+    it('drops the cut from the overview and spreads it over the new length at the new rate', async () => {
+      const lib = await analysedLibrary(schema)
+      await secondsOverview(lib)
       await repointEngineTracks(lib.dir, [
         {
           from: lib.oldFile,
@@ -803,19 +961,63 @@ describe.each(['2.18', '3.0.2'] as const)(
           engineShift: { trimmedMs: TRIM_MS, sampleRateHz: 48000 },
         },
       ])
+      const length = 60 - TRIM_MS / 1000
+      const overview = await overviewOf(lib)
+      expect(overview.entries).toHaveLength(1024)
+      expect(overview.run).toBeCloseTo((length * 48000) / 1024, 3)
+      expect(overview.entries?.[0]).toEqual([2, 2, 2])
+      expect(overview.entries?.[entryAt(10.5, length)]).toEqual([13, 13, 13])
+      expect(overview.entries?.[1023]).toEqual([60, 60, 60])
+      expect(overview.max).toEqual([60, 60, 60])
+    })
+
+    // The 23/11 test in the real Engine DJ 5.3.0: Engine writes every overview with 1024 entries
+    // spanning the whole track, and the one Surco wrote with 1032 after a 1.5 s shift left the
+    // track list's thumbnail and the deck's strip black. The same wave resampled onto 1024
+    // entries of the new length drew fine, the loud bar still under the same beat.
+    it.each([
+      ['a cut', { trimmedMs: TRIM_MS }],
+      ['audio that starts later', { trimmedMs: -1500 }],
+      ['a cut and a resample', { trimmedMs: TRIM_MS, sampleRateHz: 48000 }],
+      ['a resample alone', { trimmedMs: 0, sampleRateHz: 48000 }],
+    ])('keeps 1024 overview entries over the whole new file after %s', async (_, shift) => {
+      const lib = await analysedLibrary(schema)
+      const samples = RATE * 60
+      const head = Buffer.alloc(24)
+      head.writeBigInt64BE(1024n, 0)
+      head.writeBigInt64BE(1024n, 8)
+      head.writeDoubleBE(samples / 1024, 16)
+      const loud = Math.floor((30 * RATE) / (samples / 1024))
+      const entries = Array.from({ length: 1024 }, (_, i) =>
+        i === loud ? [200, 150, 100] : [1, 2, 3],
+      )
+      const raw = Buffer.concat([head, Buffer.from(entries.flat()), Buffer.from([200, 150, 100])])
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        deflateEngineBlob(raw),
+      ])
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+
+      await repointEngineTracks(lib.dir, [
+        { from: lib.oldFile, to: lib.newFile, engineShift: shift },
+      ])
+
+      const { rate, lengthSec } = await positionsOf(lib)
       const after = await openDb(lib.dbPath)
       const overview = inflateEngineBlob(
         one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
           .overviewWaveFormData as Uint8Array,
       )
       after.close()
-      expect(Number(overview.readBigInt64BE(0))).toBe(6)
-      expect(Number(overview.readBigInt64BE(8))).toBe(6)
-      expect(overview.readDoubleBE(16)).toBeCloseTo((RATE / 2) * (48000 / RATE), 6)
-      expect(decodeOverview(overview)).toEqual({
-        entries: [4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
-        max: [9, 10, 11],
-      })
+      expect(Number(overview.readBigInt64BE(0))).toBe(1024)
+      expect(Number(overview.readBigInt64BE(8))).toBe(1024)
+      expect(overview.readDoubleBE(16)).toBeCloseTo((lengthSec * rate) / 1024, 6)
+      const decoded = decodeOverview(overview)
+      expect(decoded?.entries).toHaveLength(1024)
+      const at = (30 - shift.trimmedMs / 1000) / lengthSec
+      expect(decoded?.entries.findIndex((e) => e[0] === 200)).toBe(Math.floor(at * 1024))
+      expect(decoded?.max).toEqual([200, 150, 100])
     })
 
     // Restoring the original a cut replaced moves the row back: the cut put back before every
@@ -823,18 +1025,7 @@ describe.each(['2.18', '3.0.2'] as const)(
     // the lead-in comes back as silence, which is what a cut lead-in is.
     it('moves a cut and resampled row back onto the original', async () => {
       const lib = await analysedLibrary(schema)
-      const head = Buffer.alloc(24)
-      head.writeBigInt64BE(10n, 0)
-      head.writeBigInt64BE(10n, 8)
-      head.writeDoubleBE(RATE / 2, 16)
-      const entries = Array.from({ length: 10 }, (_, i) => [i, i + 1, i + 2]).flat()
-      const raw = Buffer.concat([head, Buffer.from(entries), Buffer.from([9, 10, 11])])
-      const seed = await openDb(lib.dbPath)
-      seed.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
-        deflateEngineBlob(raw),
-      ])
-      await writeFile(lib.dbPath, seed.export())
-      seed.close()
+      await secondsOverview(lib)
       const before = await positionsOf(lib)
       await repointEngineTracks(lib.dir, [
         {
@@ -858,21 +1049,12 @@ describe.each(['2.18', '3.0.2'] as const)(
         expect.closeTo(HOT_SEC[2], 6),
       ])
       expect(back.grid).toEqual(before.grid?.map((s) => expect.closeTo(s, 6)))
-      const after = await openDb(lib.dbPath)
-      const overview = inflateEngineBlob(
-        one(after, 'SELECT overviewWaveFormData FROM PerformanceData WHERE trackId = 1')
-          .overviewWaveFormData as Uint8Array,
-      )
-      after.close()
-      expect(Number(overview.readBigInt64BE(8))).toBe(10)
-      expect(overview.readDoubleBE(16)).toBeCloseTo(RATE / 2, 6)
-      expect(decodeOverview(overview)).toEqual({
-        entries: [
-          ...Array.from({ length: 4 }, () => [0, 0, 0]),
-          ...[4, 5, 6, 7, 8, 9].map((i) => [i, i + 1, i + 2]),
-        ],
-        max: [9, 10, 11],
-      })
+      const overview = await overviewOf(lib)
+      expect(overview.entries).toHaveLength(1024)
+      expect(overview.run).toBeCloseTo((RATE * 60) / 1024, 3)
+      expect(overview.entries?.[entryAt(1, 60)]).toEqual([0, 0, 0])
+      expect(overview.entries?.[entryAt(10.5, 60)]).toEqual([11, 11, 11])
+      expect(overview.max).toEqual([60, 60, 60])
     })
 
     // A blob Surco cannot read is kept as Engine wrote it: guessing at its layout could only
@@ -892,6 +1074,183 @@ describe.each(['2.18', '3.0.2'] as const)(
 
 // Measured on 23 analysed rows of a real m.db on 31/10: Engine shows the length rounded to the
 // nearest second of what its own trackData holds.
+// Engine as a destination with sync on runs the job's own Engine step before the batch's
+// repoint. That step used to move the row onto the new file, or record the new size of one
+// rewritten in place, so the repoint then found nothing owed and every cue, loop and beat
+// stayed where the cut audio no longer is: each pad fired late by the length of the trim.
+describe.each(['2.18', '3.0.2'] as const)(
+  'a trimmed conversion Engine DJ also receives as a destination, on a %s library',
+  (schema) => {
+    beforeEach(() => setEngineWriteGatherMs(0))
+
+    async function convert(lib: Library, repoint: RekordboxRepoint) {
+      beginRekordboxBatch()
+      recordRekordboxRepoint(repoint)
+      await addToEngineLibrary(lib.dir, repoint.to, emptyMetadata(), undefined, repoint.from)
+      return repointEngineTracks(lib.dir, endRekordboxBatch())
+    }
+
+    it('moves the cues with the row onto the new file', async () => {
+      const lib = await analysedLibrary(schema)
+      const before = await positionsOf(lib)
+
+      const [result] = await convert(lib, {
+        from: lib.oldFile,
+        to: lib.newFile,
+        engineShift: { trimmedMs: TRIM_MS },
+      })
+
+      expect(result).toEqual({ written: true, id: '1' })
+      const after = await positionsOf(lib)
+      expect(after.hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      expect(after.grid).toEqual(before.grid?.map((s) => expect.closeTo(s - TRIM_MS / 1000, 6)))
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT count(*) AS n, path, fileBytes FROM Track')).toEqual({
+        n: 1,
+        path: '../music/new.aiff',
+        fileBytes: 4321,
+      })
+      db.close()
+    })
+
+    it('moves the cues of a row rewritten in place', async () => {
+      const lib = await analysedLibrary(schema)
+      await writeFile(lib.oldFile, Buffer.alloc(4321))
+
+      const [result] = await convert(lib, {
+        from: lib.oldFile,
+        to: lib.oldFile,
+        fromBytes: 100,
+        audio: { cueShiftMs: -TRIM_MS },
+        engineShift: { trimmedMs: TRIM_MS },
+      })
+
+      expect(result).toEqual({ written: true, id: '1' })
+      expect((await positionsOf(lib)).hot?.[1]).toBeCloseTo(HOT_SEC[1] - TRIM_MS / 1000, 6)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT fileBytes FROM Track')).toEqual({ fileBytes: 4321 })
+      db.close()
+    })
+
+    it('shifts nothing again when the source is converted once more onto the same file', async () => {
+      const lib = await analysedLibrary(schema)
+      const move = { from: lib.oldFile, to: lib.newFile, engineShift: { trimmedMs: TRIM_MS } }
+      await convert(lib, move)
+      const once = await positionsOf(lib)
+      await writeFile(lib.newFile, Buffer.alloc(5000))
+
+      const [again] = await convert(lib, move)
+
+      expect(again).toEqual({ written: false, reason: 'no-match' })
+      expect(await positionsOf(lib)).toEqual(once)
+      const db = await openDb(lib.dbPath)
+      expect(one(db, 'SELECT fileBytes FROM Track')).toEqual({ fileBytes: 5000 })
+      db.close()
+    })
+  },
+)
+
+// The 23/11 test in the real Engine DJ 5.3.0: a FLAC of another recording replaced an MP3 and
+// the row kept the MP3's grid, key and overview, 210 ms off every beat of the new audio, and
+// Engine never analyses a row that says it is analysed. Emptied of trackData, overview and
+// beatData with isAnalyzed at 0, Engine analysed it again on its next start and kept the hot
+// cues byte for byte. Without a measure vouching for the same audio, that is what it gets.
+describe.each(['2.18', '3.0.2'] as const)(
+  'a replacement by another recording, on a %s library',
+  (schema) => {
+    beforeEach(() => setEngineWriteGatherMs(0))
+
+    async function replacedLibrary(): Promise<Library> {
+      const lib = await analysedLibrary(schema)
+      const db = await openDb(lib.dbPath)
+      db.run('UPDATE PerformanceData SET overviewWaveFormData = ? WHERE trackId = 1', [
+        overviewBlob([[1, 2, 3]]),
+      ])
+      db.run('UPDATE Track SET isAnalyzed = 1 WHERE id = 1')
+      await writeFile(lib.dbPath, db.export())
+      db.close()
+      return lib
+    }
+
+    async function replace(lib: Library, replaceShift: ReplaceShift, sampleRateHz?: number) {
+      const repoint = rekordboxRepointFor('/downloads/new.flac', lib.newFile, {
+        replaces: lib.oldFile,
+        replaceShift,
+        replaceAudio: {
+          oldShiftMs: 26.12,
+          newShiftMs: 0,
+          ...(sampleRateHz ? { sampleRateHz } : {}),
+        },
+        fromBytes: 100,
+      })
+      if (!repoint) throw new Error('the replacement told the libraries nothing')
+      beginRekordboxBatch()
+      recordRekordboxRepoint(repoint)
+      await addToEngineLibrary(lib.dir, lib.newFile, emptyMetadata(), undefined, lib.oldFile)
+      return repointEngineTracks(lib.dir, endRekordboxBatch())
+    }
+
+    async function rowOf(lib: Library) {
+      const db = await openDb(lib.dbPath)
+      try {
+        return one(
+          db,
+          `SELECT t.isAnalyzed, t.path, p.trackData, p.overviewWaveFormData, p.beatData, p.quickCues, p.loops
+             FROM Track t JOIN PerformanceData p ON p.trackId = t.id WHERE t.id = 1`,
+        )
+      } finally {
+        db.close()
+      }
+    }
+
+    it.each(['noMatch', 'drift', 'unreadable'] as const)(
+      "empties Engine's analysis of the old file and keeps the cues and loops when the shift is %s",
+      async (unmoved) => {
+        const lib = await replacedLibrary()
+        const before = await rowOf(lib)
+
+        expect(await replace(lib, { unmoved })).toEqual([{ written: true, id: '1' }])
+
+        expect(await rowOf(lib)).toEqual({
+          isAnalyzed: 0,
+          path: '../music/new.aiff',
+          trackData: null,
+          overviewWaveFormData: null,
+          beatData: null,
+          quickCues: before.quickCues,
+          loops: before.loops,
+        })
+      },
+    )
+
+    // Engine counts cues in samples: a replacement at another rate keeps each cue at its time,
+    // so the cues still take the new rate even though the analysis that carried it goes.
+    it('keeps each cue at its time at the new rate while the analysis goes', async () => {
+      const lib = await replacedLibrary()
+
+      await replace(lib, { unmoved: 'noMatch' }, 48000)
+
+      const row = await rowOf(lib)
+      expect(row.beatData).toBeNull()
+      const cues = decodeQuickCues(inflateEngineBlob(row.quickCues as Uint8Array))
+      expect(cues?.slots.slice(0, 3).map((s) => s.cue?.sample)).toEqual(
+        HOT_SEC.map((s) => s * 48000),
+      )
+    })
+
+    // The same audio measured at the same spot: Engine's grid still fits, and may be one the DJ
+    // corrected by hand.
+    it('keeps the analysis of a replacement measured as the same audio', async () => {
+      const lib = await replacedLibrary()
+      const before = await rowOf(lib)
+
+      await replace(lib, { moved: 0 })
+
+      expect(await rowOf(lib)).toEqual({ ...before, path: '../music/new.aiff' })
+    })
+  },
+)
+
 describe('engineLengthOf', () => {
   it.each([
     [9609216, 44100, 218],

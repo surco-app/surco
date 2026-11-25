@@ -163,6 +163,32 @@ describe('filled-surface label contrast (WCAG 1.4.3 AA)', () => {
   }
 })
 
+// Two translucent layers sit in front of what they must stay legible over. The track number
+// lays on-scrim over a scrim at 80% on a cover that may be any picture, and the quiet footer
+// toggle draws its format at 80% opacity on panel-2. At the previous 65% scrim and fg-faint
+// text they measured 3.6:1 and 3.5:1.
+describe('translucent label contrast (WCAG 1.4.3 AA)', () => {
+  for (const [theme, t] of [
+    ['dark', dark],
+    ['light', light],
+  ] as const) {
+    for (const [name, art] of [
+      ['white', '#ffffff'],
+      ['black', '#000000'],
+    ] as const) {
+      it(`${theme} track number reaches 4.5:1 on a ${name} cover`, () => {
+        const badge = blend(t['color-scrim'], art, 0.8)
+        expect(contrast(t['color-on-scrim'], badge)).toBeGreaterThanOrEqual(4.5)
+      })
+    }
+
+    it(`${theme} quiet format label reaches 4.5:1 on panel-2 at 80% opacity`, () => {
+      const label = blend(t['color-fg-muted'], t['color-panel-2'], 0.8)
+      expect(contrast(label, t['color-panel-2'])).toBeGreaterThanOrEqual(4.5)
+    })
+  }
+})
+
 // The fill a swipe uncovers behind a row. It began as --color-fg-dim, a text colour, and as a
 // large fill it read heavy and lilac and was not Tokyo Night at all (Vicent 24/09). It is the
 // palette's terminal_black in dark and Tokyo Night Light's toolbar grey in light. The label must read on it in
@@ -424,7 +450,6 @@ describe('reduced motion', () => {
     '.animate-pulse',
     '.player-section',
     '.press',
-    '.animate-toast-countdown',
     '.copies-collapse',
     '.copies-feedback',
   ]) {
@@ -437,12 +462,6 @@ describe('reduced motion', () => {
     const rule = reduced.match(/\.copies-feedback\s*\{[^}]*\}/)
     expect(rule?.[0]).toContain('opacity')
     expect(rule?.[0]).not.toContain('transform')
-  })
-
-  it('drains the toast countdown by fading rather than sliding', () => {
-    expect(reduced).toMatch(/\.animate-toast-countdown\s*\{[^}]*toast-countdown-fade/)
-    const frames = css.slice(css.indexOf('@keyframes toast-countdown-fade'))
-    expect(frames.slice(0, frames.indexOf('}\n}'))).toContain('opacity')
   })
 
   it('keeps the hover fade on pressable buttons but drops the shrink', () => {
@@ -1014,5 +1033,18 @@ describe('the track row shimmer stays on the compositor, so a long import does n
 
   it('hides the band when motion is reduced, so a frozen highlight is not painted', () => {
     expect(css).toMatch(/\.skeleton-sweep-row::after\s*\{[^}]*animation: none;[^}]*opacity: 0/)
+  })
+})
+
+describe('the big figure size', () => {
+  it('tightens its tracking, since digits read too loose as they grow', () => {
+    const spacing = /--text-figure--letter-spacing:\s*(-[\d.]+)em/.exec(css)?.[1]
+    expect(Number(spacing)).toBeLessThan(0)
+  })
+})
+
+describe('the beside layout', () => {
+  it('puts labels beside their inputs once a column reaches 24rem', () => {
+    expect(css).toMatch(/@custom-variant beside \{\s*@container \(min-width: 24rem\)/)
   })
 })

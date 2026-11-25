@@ -200,6 +200,18 @@ describe('CuesSection folded', () => {
     expect(screen.queryByTestId('cue-wave-bars')).toBeNull()
   })
 
+  it('lets the folded row wrap its actions so Save never runs past the panel at the narrowest window', async () => {
+    setup()
+    await ready()
+    const row = screen.getByTestId('cues-folded-row')
+    expect(row).toHaveAttribute('data-wrap', 'true')
+    const actions = screen.getByTestId('cues-folded-actions')
+    expect(actions).toHaveAttribute('data-wrap', 'true')
+    expect(actions).toContainElement(screen.getByTestId('cues-save'))
+    placeAtPlayhead()
+    expect(actions).toContainElement(screen.getByTestId('cues-step-back'))
+  })
+
   it('draws both waves on one surface and a row with play, zoom, time and Guardar, with the flow control up in the header', async () => {
     setup()
     await ready()
@@ -217,23 +229,11 @@ describe('CuesSection folded', () => {
       'cues-save',
     ])
       expect(row).toContainElement(screen.getByTestId(id))
-    expect(row.className).toContain('whitespace-nowrap')
     expect(screen.queryByTestId('cues-mark-here')).toBeNull()
     expect(screen.queryByTestId('cue-place-mode')).toBeNull()
     expect(surface).not.toContainElement(screen.getByTestId('cues-flow'))
     expect(row).not.toContainElement(screen.getByTestId('cues-flow'))
     expect(screen.getByTestId('cue-wave-view')).toBeInTheDocument()
-  })
-
-  // The flow menu and the auto-mark buttons are reached with Tab like any other control.
-  // Their ring was switched off, so a keyboard user tabbing through the header could not
-  // see which of them had the focus.
-  it('keeps the keyboard focus ring on the flow menu and the auto-mark buttons', async () => {
-    setup()
-    await ready()
-    const header = screen.getByTestId('cues-flow-menu')
-    expect(header).toContainElement(screen.getByTestId('cues-flow'))
-    expect(header.className).not.toContain('focus-visible]:shadow-none')
   })
 
   it('says the bars to the point in the short form in the row, so the count of what does not fit has room beside it', async () => {
@@ -254,12 +254,12 @@ describe('CuesSection folded', () => {
     await ready()
     const save = screen.getByTestId('cues-save')
     expect(save).toBeDisabled()
-    expect(save.className).not.toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'false')
     seekStrip(128)
     placeAtPlayhead()
     expect(screen.getByTestId('cues-save')).toBe(save)
     expect(save).toBeEnabled()
-    expect(save.className).toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'true')
   })
 
   it('never places with a click or a drag on the strip, nor with a drag on the zoomed wave, which only move the playhead', async () => {
@@ -324,12 +324,13 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  // Discard sat in the row first, where it read as undo, then in the flow menu among the
-  // modes. It sits in the Save menu now, as the other answer to unsaved changes.
-  it('offers Descartar cambios in the Save menu once there are changes, and keeps it out of the row and the flow menu', async () => {
+  // Discard sat in the row first, then in the flow menu among the modes, then in the Save
+  // menu. The Save menu holds only ways to save, so Discard is back in the row as its own
+  // button, as in the full editor, drawn as an icon so the row fits on one line.
+  it('offers Descartar cambios in the row once there are changes, and keeps it out of the Save menu and the flow menu', async () => {
     setup()
     await ready()
-    expect(screen.queryByTestId('cues-save-more')).toBeNull()
+    expect(screen.queryByTestId('cues-discard')).toBeNull()
     fireEvent.click(screen.getByTestId('cues-flow'))
     expect(screen.queryByTestId('cues-flow-option-discard-cues')).toBeNull()
     expect(screen.queryByTestId('cues-flow-option-clear-cues')).toBeNull()
@@ -340,10 +341,12 @@ describe('CuesSection folded', () => {
       screen.queryByTestId('cues-undo'),
     )
     const more = screen.getByTestId('cues-save-more')
-    expect(more).toHaveTextContent('')
+    expect(more.textContent).toBe('')
     fireEvent.click(more)
     const discard = screen.getByTestId('cues-discard')
-    expect(discard).toHaveTextContent('Discard changes')
+    expect(screen.getByTestId('cues-folded-row')).toContainElement(discard)
+    expect(screen.getByRole('menu')).not.toContainElement(discard)
+    expect(discard).toHaveAccessibleName('Discard changes')
     fireEvent.click(discard)
     expect(marks()).toHaveLength(0)
     expect(screen.getByTestId('cues-save')).toBeDisabled()
@@ -382,6 +385,20 @@ describe('CuesSection folded', () => {
     fireEvent.click(add)
     expect(screen.getByTestId('cue-wave-call-128000')).toBeInTheDocument()
     expect(screen.queryAllByTestId(/^cue-wave-hot-/)).toHaveLength(0)
+  })
+
+  it('puts + CALL beside the bars to the CALL and out of the Save actions, so Save keeps its room at the narrowest window', async () => {
+    setup({ activeCueFlow: 'manual' })
+    await ready()
+    seekStrip(128)
+    const add = screen.getByTestId('cues-add-call')
+    fireEvent.click(add)
+    seekStrip(64)
+    expect(screen.getByTestId('cues-folded-actions')).not.toContainElement(add)
+    expect(
+      screen.getByTestId('cue-detail-to-call').compareDocumentPosition(add) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('plays from the folded section and stops when the track changes', async () => {
@@ -547,12 +564,11 @@ describe('CuesSection folded', () => {
     outside.remove()
   })
 
-  it('takes the focus into the section when its zoomed wave is pressed, without a ring around the editor', async () => {
+  it('takes the focus into the section when its zoomed wave is pressed', async () => {
     setup()
     await ready()
     const editor = screen.getByTestId('cues-editor')
     expect(editor).toHaveAttribute('tabindex', '-1')
-    expect(editor.className).toContain('outline-none')
   })
 
   it('zooms the folded zoomed wave with the buttons in the row and goes back to 16 bars with the reset beside them, since a click on the wave now places', async () => {

@@ -162,6 +162,34 @@ describe('useRekordboxQueue', () => {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
   })
 
+  // A queued repoint moves the row onto the converted file and empties its analysis: the
+  // waveform, the decoder lead and the grids read for the old file no longer belong to it.
+  it('re-reads what the cue editor draws from the track’s file and analysis when a queue lands', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    for (const key of [
+      'rekordbox-cue-wave-detail',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
+  // The fine waveform, the grid audit and the drop detector read the repointed file too: kept
+  // from the old file, the DJ would place cues against audio that is no longer the one played.
+  it('re-reads the fine waveform, the grid audit and the drop input when a queue lands', () => {
+    const { invalidate, applied } = setup()
+    act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
+    for (const key of [
+      'rekordbox-cue-wave-fine',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
   it('re-reads the rekordbox collection when a queue lands, so a track it just added shows in the editor', () => {
     const { invalidate, applied } = setup()
     act(() => applied({ tracks: 1, changes: 0, notices: [], written: [] }))
@@ -172,10 +200,12 @@ describe('useRekordboxQueue', () => {
     const { notify, applied } = setup()
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 1, contentId: '7', ms: 1000 }
     act(() => applied({ tracks: 0, changes: 1, notices: [unfit], written: [] }))
-    expect(notify).toHaveBeenCalledWith(expect.stringContaining('Pray'), 'neutral', {
-      contentId: '7',
-      ms: 1000,
-    })
+    expect(notify).toHaveBeenCalledWith('Done in rekordbox · 1 change', 'neutral', [
+      expect.objectContaining({
+        sub: expect.stringContaining('Pray'),
+        goTo: { contentId: '7', ms: 1000 },
+      }),
+    ])
   })
 
   it('hands back what landed so the fields the collection now holds are cleared', async () => {
@@ -401,10 +431,12 @@ describe('useRekordboxQueue on the Serato cue queue', () => {
         written: [],
       }),
     )
-    expect(notify).toHaveBeenCalledWith(
-      'Done in Serato · 1 track. The cues of Tengo were not saved. Surco could not write the file',
-      'neutral',
-    )
+    expect(notify).toHaveBeenCalledWith('Done in Serato · 1 track', 'neutral', [
+      expect.objectContaining({
+        title: 'Cues of 1 track not saved',
+        sub: 'Surco could not write the file · Tengo',
+      }),
+    ])
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['rekordbox-track-cues'] })
   })
 

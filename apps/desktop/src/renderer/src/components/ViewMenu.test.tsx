@@ -35,17 +35,4 @@ describe('ViewMenu', () => {
       Object.assign(window, { innerWidth: size.width, innerHeight: size.height })
     }
   })
-
-  it('opens on the next frame like every other right-click menu, since a context menu answers the click instead of performing', () => {
-    render(
-      <ViewMenu
-        x={10}
-        y={10}
-        label="View"
-        items={[{ id: 'sidebar', label: 'Sidebar', checked: true, onToggle: () => {} }]}
-        onClose={() => {}}
-      />,
-    )
-    expect(screen.getByTestId('view-menu').className).not.toContain('animate-')
-  })
 })

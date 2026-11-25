@@ -1,7 +1,7 @@
 import type React from 'react'
 import type { PhraseKind, PhraseSection } from '../../../shared/cueFlows'
 
-const TONE: Record<PhraseKind, string> = {
+export const TONE: Record<PhraseKind, string> = {
   chorus: 'bg-[var(--color-accent)]/70 text-[var(--color-on-accent)]',
   up: 'bg-[var(--color-accent)]/30 text-fg',
   down: 'bg-[var(--color-fg-muted)]/40 text-fg',

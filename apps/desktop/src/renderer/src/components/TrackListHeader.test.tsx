@@ -77,7 +77,7 @@ describe('TrackListHeader add files', () => {
   it('offers to add files only in Tracks, not beside a library playlist', () => {
     renderHeader({ tab: 'rekordbox' })
     expect(screen.queryByTestId('add-files')).toBeNull()
-    expect(screen.getByTestId('select-all')).toBeInTheDocument()
+    expect(screen.getByTestId('list-actions-more')).toBeInTheDocument()
     cleanup()
     renderHeader({ tab: null })
     expect(screen.getByTestId('add-files')).toBeInTheDocument()
@@ -85,12 +85,16 @@ describe('TrackListHeader add files', () => {
 })
 
 describe('TrackListHeader actions row', () => {
+  // Select all and remove each have a key (⌘A, ⌫) and a right-click path, and remove sits
+  // greyed out until something is selected, so as icons they cost the row the width that
+  // pushed the actions onto a second line. Add files keeps its icon: dragging is how most
+  // add, but a first-time user has to see the button to find out they can.
   it('keeps the everyday actions one click away as icons and names the occasional list-wide ones in a ⋯ menu', () => {
     renderHeader()
-    for (const id of ['add-files', 'select-all', 'remove-selected']) {
-      expect(screen.getByTestId(id)).toBeVisible()
-    }
+    expect(screen.getByTestId('add-files')).toBeVisible()
     for (const id of [
+      'select-all',
+      'remove-selected',
       'list-review-open',
       'fill-all',
       'open-find-replace',
@@ -113,7 +117,19 @@ describe('TrackListHeader actions row', () => {
       within(menu)
         .getAllByRole('menuitem')
         .map((el) => el.dataset.testid),
-    ).toEqual(['list-review-open', 'fill-all', 'open-find-replace', 'trash-selected', 'clear-all'])
+    ).toEqual([
+      'select-all',
+      'list-review-open',
+      'fill-all',
+      'open-find-replace',
+      'remove-selected',
+      'trash-selected',
+      'clear-all',
+    ])
+    expect(within(menu).getByTestId('select-all')).toHaveTextContent(i18n.t('header.selectAll'))
+    expect(within(menu).getByTestId('remove-selected')).toHaveTextContent(
+      i18n.t('trackList.context.remove'),
+    )
     expect(within(menu).getByTestId('list-review-open')).toHaveTextContent(
       i18n.t('header.menu.review'),
     )
@@ -152,12 +168,14 @@ describe('TrackListHeader actions row', () => {
         .getAllByRole('menuitem')
         .map((el) => el.dataset.testid),
     ).toEqual([
+      'select-all',
       'list-review-open',
       'fill-all',
       'open-find-replace',
       'list-command-number-tracks',
       'list-command-strip-numbering',
       'list-command-export',
+      'remove-selected',
       'trash-selected',
       'clear-all',
     ])
@@ -173,12 +191,15 @@ describe('TrackListHeader actions row', () => {
   it('marks clearing the list as destructive, since it is the one item that throws work away', () => {
     renderHeader()
     openMenu()
-    expect(screen.getByTestId('clear-all')).toHaveClass('text-danger')
-    expect(screen.getByTestId('trash-selected')).toHaveClass('text-danger')
-    expect(screen.getByTestId('fill-all')).not.toHaveClass('text-danger')
+    expect(screen.getByTestId('clear-all')).toHaveAttribute('data-destructive', 'true')
+    expect(screen.getByTestId('trash-selected')).toHaveAttribute('data-destructive', 'true')
+    expect(screen.getByTestId('fill-all')).toHaveAttribute('data-destructive', 'false')
+    expect(screen.getByTestId('remove-selected')).toHaveAttribute('data-destructive', 'false')
   })
 
   it.each([
+    ['select-all', 'onSelectAllTracks'],
+    ['remove-selected', 'onRemoveSelected'],
     ['list-review-open', 'onReviewList'],
     ['fill-all', 'onFillAll'],
     ['open-find-replace', 'onFindReplace'],
@@ -211,11 +232,12 @@ describe('TrackListHeader actions row', () => {
     expect(screen.getByTestId('trash-selected')).toBeDisabled()
   })
 
-  it('offers the neutral remove-from-list icon, never the red trash, so the visible action cannot delete files', () => {
+  it('offers the neutral remove-from-list item, never the red trash, so removing cannot delete files', () => {
     const handlers = renderHeader()
+    openMenu()
     const remove = screen.getByTestId('remove-selected')
     expect(remove).toHaveAccessibleName(i18n.t('trackList.context.remove'))
-    expect(remove).not.toHaveClass('hover:text-danger')
+    expect(remove).toHaveAttribute('data-destructive', 'false')
     fireEvent.click(remove)
     expect(handlers.onRemoveSelected).toHaveBeenCalledTimes(1)
     expect(handlers.onTrashSelected).not.toHaveBeenCalled()
@@ -223,6 +245,7 @@ describe('TrackListHeader actions row', () => {
 
   it('disables remove-from-list while nothing is selected', () => {
     const handlers = renderHeader({ selectedId: null, selectedIds: [] })
+    openMenu()
     const remove = screen.getByTestId('remove-selected')
     expect(remove).toBeDisabled()
     fireEvent.click(remove)
@@ -232,23 +255,27 @@ describe('TrackListHeader actions row', () => {
   it('walks the items with the arrow keys, skipping a disabled one', () => {
     renderHeader({ canReviewList: false })
     const menu = openMenu()
+    expect(screen.getByTestId('select-all')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('fill-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('open-find-replace')).toHaveFocus()
+    fireEvent.keyDown(menu, { key: 'ArrowDown' })
+    expect(screen.getByTestId('remove-selected')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('trash-selected')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(screen.getByTestId('clear-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
-    expect(screen.getByTestId('fill-all')).toHaveFocus()
+    expect(screen.getByTestId('select-all')).toHaveFocus()
     fireEvent.keyDown(menu, { key: 'ArrowUp' })
     expect(screen.getByTestId('clear-all')).toHaveFocus()
   })
 
-  it('opens onto the review when it can run', () => {
+  it('opens onto its first item, select all, which is always enabled', () => {
     renderHeader()
     openMenu()
-    expect(screen.getByTestId('list-review-open')).toHaveFocus()
+    expect(screen.getByTestId('select-all')).toHaveFocus()
   })
 
   it('closes on Escape and returns the focus to the ⋯ button', () => {
@@ -304,10 +331,12 @@ describe('TrackListHeader actions row', () => {
         .getAllByRole('menuitem')
         .map((el) => el.dataset.testid),
     ).toEqual([
+      'select-all',
       'list-review-open',
       'music-duplicates-open',
       'fill-all',
       'open-find-replace',
+      'remove-selected',
       'trash-selected',
       'clear-all',
     ])
@@ -382,17 +411,19 @@ describe('TrackListHeader layout', () => {
     expect(screen.getByTestId('track-list-toolbar')).not.toContainElement(strip)
   })
 
+  // Moved off the row, select all and remove are only discoverable by their keys if the
+  // menu shows them, the way the icons' tooltips did.
+  it('shows the keys for select all and remove beside them in the menu', () => {
+    renderHeader({ hintFor: (id) => `key:${id}` })
+    const menu = openMenu()
+    expect(within(menu).getByTestId('select-all')).toHaveTextContent('key:select-all')
+    expect(within(menu).getByTestId('remove-selected')).toHaveTextContent('key:remove')
+  })
+
   it('keeps the list actions on the filter and sort row so the header spends one line, not two, above the tracks', () => {
     renderHeader()
     const row = screen.getByTestId('track-list-toolbar')
-    for (const id of [
-      'add-files',
-      'select-all',
-      'quality-filter',
-      'track-sort',
-      'remove-selected',
-      'list-actions-more',
-    ]) {
+    for (const id of ['add-files', 'quality-filter', 'track-sort', 'list-actions-more']) {
       expect(row).toContainElement(screen.getByTestId(id))
     }
   })
@@ -410,9 +441,7 @@ describe('TrackListHeader layout', () => {
       'view-action',
       'track-position',
       'add-files',
-      'select-all',
       'list-action',
-      'remove-selected',
       'list-actions-more',
     ].map((id) => within(row).getByTestId(id))
     for (let i = 1; i < order.length; i++) {
@@ -422,7 +451,7 @@ describe('TrackListHeader layout', () => {
     }
     const actions = screen.getByTestId('add-files').parentElement as HTMLElement
     expect(actions.parentElement).toBe(row)
-    for (const id of ['select-all', 'list-action', 'remove-selected', 'list-actions-more']) {
+    for (const id of ['list-action', 'list-actions-more']) {
       expect(actions).toContainElement(screen.getByTestId(id))
     }
     expect(actions).not.toContainElement(screen.getByTestId('track-position'))
@@ -432,7 +461,7 @@ describe('TrackListHeader layout', () => {
     renderHeader()
     const filter = screen.getByTestId('quality-filter-trigger')
     expect(filter).toHaveAccessibleName(/All/)
-    expect(within(filter).getByText('All').className).toContain('@[27rem]:')
+    expect(within(filter).getByText('All')).toBeInTheDocument()
   })
 
   it('still says which sort is on once a narrow panel leaves the sort as an icon', () => {
@@ -441,7 +470,7 @@ describe('TrackListHeader layout', () => {
     expect(sort).toHaveAccessibleName(
       `${i18n.t('sidebar.sort.label')}: ${i18n.t('sidebar.sort.import')}`,
     )
-    expect(within(sort).getByText(i18n.t('sidebar.sort.import')).className).toContain('@[27rem]:')
+    expect(within(sort).getByText(i18n.t('sidebar.sort.import'))).toBeInTheDocument()
   })
 
   it('sorts by album, the order a library of whole releases is browsed in', () => {
@@ -579,5 +608,35 @@ describe('TrackListHeader location', () => {
     expect(item).toHaveAttribute('aria-checked', 'false')
     fireEvent.click(item)
     expect(onToggleSidebar).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('TrackListHeader menu placement', () => {
+  const { innerWidth, innerHeight } = window
+  afterEach(() => {
+    vi.restoreAllMocks()
+    window.innerWidth = innerWidth
+    window.innerHeight = innerHeight
+  })
+
+  // The track column sits right of the source rail, so the ⋯ trigger is far closer to the
+  // window's left edge than the menu is wide, and a menu lined up with it ran off the edge.
+  it('keeps the ⋯ menu fully inside the window when it is wider than the room left of its trigger', () => {
+    window.innerWidth = 1280
+    window.innerHeight = 800
+    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(420)
+    renderHeader()
+    const more = screen.getByTestId('list-actions-more')
+    vi.spyOn(more, 'getBoundingClientRect').mockReturnValue({
+      top: 96,
+      bottom: 128,
+      left: 377,
+      right: 409,
+      width: 32,
+      height: 32,
+    } as DOMRect)
+    fireEvent.click(more)
+    const right = Number.parseFloat(screen.getByRole('menu').style.right)
+    expect(1280 - right - 420).toBeGreaterThanOrEqual(8)
   })
 })

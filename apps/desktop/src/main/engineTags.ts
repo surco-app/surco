@@ -14,7 +14,7 @@ import { renameWithRetry } from './renameRetry'
 
 // Rewrites the text names Engine DJ keeps on a Track row when a review fixed the file.
 // The twin of engineRepoint.ts: Engine closed, a backup first, write-then-rename, and a
-// row Engine already spells otherwise is left alone rather than overwritten.
+// name Engine already spells otherwise is left alone rather than overwritten.
 
 const FIELDS = ['title', 'artist', 'album', 'genre'] as const
 type EngineField = (typeof FIELDS)[number]
@@ -88,11 +88,19 @@ async function writeEngineTags(
         continue
       }
       const matches = find(update.path, pathKey(update))
+      // Each field on its own, as Traktor's: one Engine spells otherwise stays, and holds
+      // back none of the others.
+      const still =
+        matches.length === 1
+          ? set.filter(([field, change]) => sameText(matches[0][field], change.from))
+          : []
+      const already =
+        matches.length === 1 && set.some(([field, change]) => sameText(matches[0][field], change.to))
       if (matches.length === 0) results[index] = { written: false, reason: 'no-match' }
       else if (matches.length > 1) results[index] = { written: false, reason: 'ambiguous' }
-      else if (!set.every(([field, change]) => sameText(matches[0][field], change.from)))
-        results[index] = { written: false, reason: 'changed' }
-      else writes.push({ index, id: matches[0].id, set })
+      else if (still.length === 0)
+        results[index] = already ? { written: true } : { written: false, reason: 'changed' }
+      else writes.push({ index, id: matches[0].id, set: still })
     }
     if (writes.length === 0) return settle({ written: false, reason: 'no-match' })
 

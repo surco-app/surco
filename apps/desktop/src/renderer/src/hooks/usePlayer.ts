@@ -102,7 +102,7 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
     return () => audio.removeEventListener('timeupdate', onTime)
   }, [])
 
-  const startPlayback = useCallback((track: TrackItem): void => {
+  const startPlayback = useCallback((track: TrackItem, paused = false): void => {
     const audio = audioRef.current
     if (!audio) return
     // Only a genuinely different track counts as a new listen for the lifetime tally:
@@ -124,7 +124,7 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
     // too closes the whole class rather than one leaked sequence at a time.
     playerVisibleRef.current = true
     setPlayerVisible(true)
-    audio.play().catch(() => {})
+    if (!paused) audio.play().catch(() => {})
   }, [])
 
   const closePlayer = useCallback((): void => {
@@ -200,11 +200,17 @@ export function usePlayer({ tracks, selected, selectedId, onListened }: Params):
   }, [playing, playingId, closePlayer])
 
   // An in-place export rewrites (and can rename) the playing track's file under the
-  // stream; restart from the new path instead of holding a file that no longer exists.
+  // stream; restart from the new path instead of holding a file that no longer exists, at
+  // the spot and play state the old one had. On Windows the element let go of the old path
+  // before the write, so those are the ones releaseFile kept.
   useEffect(() => {
-    if (playing && playingPathRef.current && playing.inputPath !== playingPathRef.current) {
-      startPlayback(playing)
-    }
+    const from = playingPathRef.current
+    const audio = audioRef.current
+    if (!playing || !from || !audio || playing.inputPath === from) return
+    const released = releasedRef.current?.path === from ? releasedRef.current : null
+    if (released) releasedRef.current = null
+    resumeRef.current = { path: playing.inputPath, time: released?.time ?? audio.currentTime }
+    startPlayback(playing, released?.paused ?? audio.paused)
   }, [playing, startPlayback])
 
   // Invariant guard and field probe. startPlayback keeps sound and card in step, but if any

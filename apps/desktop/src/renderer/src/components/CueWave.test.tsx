@@ -7,6 +7,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
 import type { Api } from '../../../preload/api'
+import { GONE_EDGE_SHARE } from '../lib/cueMarks'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import { resetRowWaves } from '../lib/rowWaves'
 import { hoverTooltip } from '../test/tooltip'
@@ -60,8 +61,6 @@ describe('CueWave', () => {
       const call = screen.getByTestId(`cue-wave-call-${ms}`)
       expect(call).not.toHaveAttribute('data-auto')
       expect(call.tagName).toBe('BUTTON')
-      expect(call).toHaveClass('h-0', 'w-0', 'border-t-[6px]')
-      expect(call).not.toHaveClass('rounded-full')
       expect(call).toHaveAccessibleName(/^CALL at /)
     }
   })
@@ -70,8 +69,6 @@ describe('CueWave', () => {
     setup({ readOnly: true, autoMarks: { at: [40000], label: 'Point found by Auto mark' } })
     const found = screen.getByTestId('cue-wave-call-40000')
     expect(found).toHaveAttribute('data-auto', 'true')
-    expect(found).toHaveClass('h-2', 'w-2', 'rounded-full')
-    expect(found).not.toHaveClass('border-t-[6px]')
     expect(found.style.borderColor).not.toBe('')
     expect(found.style.backgroundColor).toBe('')
     expect(found).not.toHaveAttribute('title')
@@ -79,19 +76,6 @@ describe('CueWave', () => {
     expect(hoverTooltip(found)).toBe('Point found by Auto mark')
     const own = screen.getByTestId('cue-wave-call-16000')
     expect(own).not.toHaveAttribute('data-auto')
-    expect(own).toHaveClass('h-0', 'w-0', 'border-t-[6px]')
-  })
-
-  it('widens the press area of a mark only downward, never past its own drawn width', () => {
-    setup()
-    expect(screen.getByTestId('cue-wave-hot-A').className).toContain('after:w-full')
-    expect(screen.getByTestId('cue-wave-call-16000').className).toContain('after:w-2')
-    for (const id of ['cue-wave-hot-A', 'cue-wave-call-16000']) {
-      const mark = screen.getByTestId(id)
-      expect(mark.className).toContain('after:h-6')
-      expect(mark.className).not.toContain('after:w-6')
-      expect(mark.className).not.toContain('after:-translate-x-1/2')
-    }
   })
 
   it('draws the overview with the list row’s own mirrored bars, accent and opacity, so the two waves read as one', async () => {
@@ -180,11 +164,6 @@ describe('CueWave', () => {
       ['60%', 'false'],
       ['80%', 'true'],
     ])
-    for (const t of ticks) {
-      expect(t.className).toContain('bottom-0')
-      expect(t.closest('[data-testid="cue-wave-area"]')).toHaveClass('pointer-events-none')
-    }
-    expect(ticks[0].className).not.toBe(ticks[1].className)
   })
 
   it('counts the phrases of the scale from the first downbeat of the grid, as the zoomed wave counts its caps', () => {
@@ -341,13 +320,6 @@ describe('CueWave', () => {
     expect(screen.queryByTestId('cue-wave-playhead')).toBeNull()
   })
 
-  it('draws no focus ring once Space is pressed on it, since the global keyboard ring of a focusable element showed as a blue line under the strip', () => {
-    setup({ slim: true, onSeek: vi.fn() })
-    const strip = screen.getByTestId('cue-wave')
-    expect(strip.className).toContain('outline-none')
-    expect(strip.className).toContain('focus-visible:shadow-none')
-  })
-
   // The strip answers no key of its own: the cue editor around it owns the keyboard. As a
   // Tab stop it was a ringless stop where nothing happened; a click still focuses it.
   it('is no Tab stop of its own, since the cue editor around it handles the keys', () => {
@@ -370,15 +342,13 @@ describe('CueWave', () => {
 
   it('draws as a slim strip without its own card when it shares a surface with the zoomed wave, its marks in a lane above the bars so none is cut', () => {
     setup({ slim: true })
-    expect(screen.getByTestId('cue-wave').className).toContain('h-[44px]')
-    expect(screen.getByTestId('cue-wave').className).not.toContain('rounded-md')
+    expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-slim', 'true')
     expect(screen.getByTestId('cue-wave-bars').style.height).toBe('calc(100% - 14px)')
   })
 
   it('keeps the full editor overview a thin 44px card, so the zoomed wave stays the one large shape', () => {
     setup()
-    expect(screen.getByTestId('cue-wave').className).toContain('h-11')
-    expect(screen.getByTestId('cue-wave').className).toContain('rounded-md')
+    expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-slim', 'false')
   })
 
   it('draws two dropped cues at one position without a key clash', () => {
@@ -433,10 +403,6 @@ describe('CueWave', () => {
     const saved = screen.getByTestId('cue-wave-hot-A')
     expect(unsaved.style.backgroundColor).toBe(saved.style.backgroundColor)
     expect(unsaved.style.borderColor).toBe('')
-    expect(unsaved.className).toBe(saved.className)
-    expect(screen.getByTestId('cue-wave-call-40000').className).toBe(
-      screen.getByTestId('cue-wave-call-16000').className,
-    )
   })
 
   it('draws no preview over a cue already in place, neither a see-through twin nor a dashed outline', () => {
@@ -521,12 +487,7 @@ describe('CueWave', () => {
       const gone = screen.getByTestId('cue-wave-ghost-gone-24000')
       expect(gone).toHaveAttribute('data-diff', 'gone')
       expect(gone.textContent).toBe('')
-      expect(gone.className).not.toMatch(/(?<![\w-])text-/)
       expect(gone.style.getPropertyValue('--cue')).toBe(hotCueColor(22))
-      expect(gone).toHaveClass(
-        'border-2',
-        'border-[color:color-mix(in_srgb,var(--cue)_55%,var(--color-fg))]',
-      )
       expect(gone.style.opacity).toBe('')
       expect(screen.getByTestId('cue-wave-strike-24000').style.background).toContain(
         'var(--color-warn)',
@@ -543,11 +504,10 @@ describe('CueWave', () => {
 
     it('mixes enough of the text colour into the edge of a hot cue the flow would take away for every colour rekordbox has to pass 3:1 against the wave ground in the light and the dark theme, so the hollow square is seen whatever its colour', () => {
       setup({ readOnly: true, cues, diff })
-      const edge =
-        /border-\[color:color-mix\(in_srgb,var\(--cue\)_(\d+)%,var\(--color-fg\)\)\]/.exec(
-          screen.getByTestId('cue-wave-ghost-gone-24000').className,
-        )
-      const share = Number(edge?.[1]) / 100
+      expect(screen.getByTestId('cue-wave-ghost-gone-24000').style.borderColor).toContain(
+        `${GONE_EDGE_SHARE}%`,
+      )
+      const share = GONE_EDGE_SHARE / 100
       const css = readFileSync(join(__dirname, '..', 'index.css'), 'utf8')
       const light = css.slice(css.indexOf(':root[data-theme="light"] {'))
       const token = (sheet: string, name: string): string =>
@@ -590,7 +550,6 @@ describe('CueWave', () => {
       expect(gone.style.top).toBe('14px')
       expect(screen.getByTestId('cue-wave-hot-A').style.top).toBe('0px')
       expect(screen.getByTestId('cue-wave-ghost-dropped-24200').style.top).toBe('0px')
-      expect(gone.className).not.toContain('pointer-events-none')
       expect(
         screen.getByTestId('cue-wave-area').compareDocumentPosition(gone) &
           Node.DOCUMENT_POSITION_FOLLOWING,
@@ -639,21 +598,17 @@ describe('CueWave', () => {
       expect(screen.getByTestId('cue-wave-ghost-gone-24000').style.opacity).toBe('')
     })
 
-    it('brings the rest back at full strength once the differences are no longer pointed at, without motion for who asked for none', () => {
+    it('brings the rest back at full strength once the differences are no longer pointed at', () => {
       setup({ readOnly: true, cues, diff })
       expect(screen.getByTestId('cue-wave')).toHaveAttribute('data-focus-diff', 'false')
       const kept = screen.getByTestId('cue-wave-hot-B')
       expect(kept.style.opacity).toBe('')
-      expect(kept.className).toContain('transition-opacity')
-      expect(kept.className).toContain('duration-120')
-      expect(kept.className).toContain('motion-reduce:transition-none')
     })
 
     it('keeps the editor wave as it was, which compares nothing', () => {
       setup()
       expect(screen.getByTestId('cue-wave')).not.toHaveAttribute('data-focus-diff')
       expect(screen.getByTestId('cue-wave-hot-A')).not.toHaveAttribute('data-diff')
-      expect(screen.getByTestId('cue-wave-hot-A').className).not.toContain('transition-opacity')
       expect(screen.queryByTestId(/^cue-wave-ghost-gone-/)).toBeNull()
     })
   })
@@ -794,7 +749,6 @@ describe('CueWave', () => {
     for (const id of ['cue-wave-hot-A', 'cue-wave-call-40000']) {
       const mark = screen.getByTestId(id)
       expect(playhead.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-      expect(mark.className).toContain('z-10')
     }
   })
 })

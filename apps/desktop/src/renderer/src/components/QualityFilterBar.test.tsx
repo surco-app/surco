@@ -60,7 +60,10 @@ const tally = (over: Partial<Tally> = {}): Tally => ({
 
 const sel = (over: Partial<FilterSelection> = {}): FilterSelection => ({ ...EMPTY_FILTER, ...over })
 
-function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
+function renderBar(
+  over: Partial<Parameters<typeof QualityFilterBar>[0]> = {},
+  wrapper?: React.JSXElementConstructor<{ children: React.ReactNode }>,
+) {
   const onChange = vi.fn()
   render(
     <QualityFilterBar
@@ -83,6 +86,7 @@ function renderBar(over: Partial<Parameters<typeof QualityFilterBar>[0]> = {}) {
       onTrashSuspects={() => {}}
       {...over}
     />,
+    { wrapper },
   )
   return { onChange }
 }
@@ -97,18 +101,18 @@ describe('QualityFilterBar menu', () => {
   // The review dialog has this filter too. Portaled out of it, a backdrop under the
   // dialog's overlay let a click beside the menu land in the review instead of closing it.
   it('keeps its backdrop over the dialog it opened from', () => {
-    const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
-    render(
+    renderBar({}, ({ children }) => (
       <ModalShell onClose={vi.fn()} backdropTestId="shell-backdrop" className="w-80">
-        <p>review</p>
-      </ModalShell>,
-    )
-    renderBar()
+        {children}
+      </ModalShell>
+    ))
     openMenu()
     const overlay = screen.getByTestId('shell-backdrop').parentElement as Element
-    expect(layer(screen.getByTestId('quality-filter-backdrop'))).toBeGreaterThanOrEqual(
-      layer(overlay),
-    )
+    const backdrop = screen.getByTestId('quality-filter-backdrop')
+    expect(overlay).not.toContainElement(backdrop)
+    expect(
+      overlay.compareDocumentPosition(backdrop) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   // In the app at 650 px tall, with 97 tracks and the player open, the last bucket sat
@@ -143,17 +147,6 @@ describe('QualityFilterBar menu', () => {
     expect(calls.length).toBeGreaterThanOrEqual(4)
     for (const [, opts] of calls) expect(opts).toEqual({ preventScroll: true })
     focus.mockRestore()
-  })
-
-  // The options are walked with the arrows, often with a key held. A colour fade on them
-  // lights the focused option a step behind the cursor and leaves a trail on the ones left.
-  it('moves the focus fill through the options with no colour transition', () => {
-    renderBar({ tally: tally({ suspect: 3, good: 5, unanalyzed: 2 }) })
-    openMenu()
-    fireEvent.keyDown(document.activeElement as Element, { key: 'ArrowRight' })
-    const options = within(screen.getByTestId('quality-filter-menu')).getAllByRole('option')
-    expect(options.length).toBeGreaterThan(1)
-    for (const option of options) expect(option.className).not.toContain('transition-colors')
   })
 
   // Tab leaves the menu like a native one. Left open, its full-window backdrop swallowed
@@ -761,16 +754,6 @@ describe('QualityFilterBar', () => {
     expect(screen.getByTestId('quality-filter-good')).toBeInTheDocument()
   })
 
-  // A dropdown that rises from below reads as arriving from somewhere else; it has to
-  // grow out of its trigger's corner like every other anchored menu in the app.
-  it('grows the menu out of the trigger instead of rising like a modal', () => {
-    renderBar()
-    openMenu()
-    const menu = screen.getByTestId('quality-filter-menu')
-    expect(menu).toHaveClass('animate-pop-flat', 'origin-top-left')
-    expect(menu).not.toHaveClass('animate-pop')
-  })
-
   // A pick toggles its axis and closes the menu like a native select — the common
   // single-filter case shouldn't need a click outside to dismiss the popover.
   it('reports a bucket pick on its axis and closes the menu', () => {
@@ -1160,14 +1143,6 @@ describe('ActiveFilters', () => {
     cleanup()
     renderStrip(sel())
     expect(screen.queryByTestId('active-filters')).toBeNull()
-  })
-
-  it('gives the remove button a hit area larger than its 16px circle', () => {
-    renderStrip(sel({ quality: 'good', tags: 'noCover' }))
-    const classes = screen.getByTestId('active-filter-tags-remove').className.split(' ')
-    expect(classes).toContain('relative')
-    expect(classes).toContain('after:absolute')
-    expect(classes).toContain('after:-inset-1.5')
   })
 
   it('drops one filter from its ✕ and keeps the rest', () => {

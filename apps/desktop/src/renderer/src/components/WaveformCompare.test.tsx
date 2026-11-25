@@ -787,13 +787,13 @@ describe('WaveformSolo', () => {
     }
     // Half the strip per lane would squash each channel to half the mono wave's
     // size, so splitting grows the strip: every lane keeps a readable height.
-    expect(canvas().className).toContain('h-24')
+    const mono = canvas().height
     fireEvent.click(toggle)
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'true')
-    expect(canvas().className).toContain('h-36')
+    expect(canvas().height).toBe(mono * 1.5)
     fireEvent.click(screen.getByTestId('waveform-split'))
     expect(screen.getByTestId('waveform-split')).toHaveAttribute('aria-pressed', 'false')
-    expect(canvas().className).toContain('h-24')
+    expect(canvas().height).toBe(mono)
   })
 
   it('hides the split toggle when the decoder shipped no channel lanes', async () => {

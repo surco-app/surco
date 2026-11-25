@@ -530,3 +530,31 @@ describe('reading Apple Music', () => {
     expect(order).toEqual(['B', 'covers'])
   })
 })
+
+describe('applemusic:entryLocation', () => {
+  const original = process.platform
+
+  beforeEach(() => {
+    handlers.clear()
+    appleMusicEntryLocation.mockReset()
+    Object.defineProperty(process, 'platform', { value: 'darwin', configurable: true })
+  })
+
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: original, configurable: true })
+  })
+
+  // Update retags the Music copy at this location, and main refuses to process a file it
+  // never granted: without the grant every Update on a Music copy said Surco didn't open it.
+  it('grants the file it reports, so Update can retag the Music copy there', async () => {
+    appleMusicEntryLocation.mockResolvedValue('/Music/Media/Castion - El Consentido.m4a')
+    const allowMedia = vi.fn()
+    const { registerAppleMusicIpc } = await import('./appleMusicIpc')
+    registerAppleMusicIpc({ allowMedia })
+
+    const path = await handlers.get('applemusic:entryLocation')?.(null, 'PID')
+
+    expect(path).toBe('/Music/Media/Castion - El Consentido.m4a')
+    expect(allowMedia).toHaveBeenCalledWith('/Music/Media/Castion - El Consentido.m4a')
+  })
+})

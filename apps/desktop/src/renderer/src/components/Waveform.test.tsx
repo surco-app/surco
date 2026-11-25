@@ -247,7 +247,6 @@ describe('Waveform', () => {
     const canvas = await screen.findByTestId('waveform')
     const strip = canvas.querySelector('canvas')
     expect(strip).not.toBeNull()
-    expect(strip).toHaveClass('h-12')
     expect(strip).toHaveAttribute('height', '96')
   })
   describe('frame-rate playhead', () => {

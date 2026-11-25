@@ -28,6 +28,7 @@ export type PlaylistsDisabled = 'unconfirmed'
 export interface PlaylistsSpec {
   library: PlaylistLibrary
   disabled?: PlaylistsDisabled
+  locked?: string[]
   tree: SourceNode[]
   options: PlaylistOption[]
   single: {
@@ -36,6 +37,7 @@ export interface PlaylistsSpec {
   }
   bulk: {
     states: { target: RekordboxPlaylistTarget; state: 'all' | 'some' }[]
+    count?: number
     onToggle: (target: RekordboxPlaylistTarget, on: boolean) => void
   }
 }
@@ -111,9 +113,6 @@ export interface FieldSpec {
   cleaned?: FieldCleanedNote
   readOnly?: boolean
   readOnlyNote?: string
-  // Read-only because a selection cannot write one value into every track: drawn as text in
-  // the field's own row rather than as a box, unlike Quality, which is a box you cannot type in.
-  plain?: boolean
   // A button beside a read-only per-track field that fills it for the whole selection.
   action?: { label: string; onApply: () => void }
   perTrack?: {
@@ -364,7 +363,6 @@ export function buildFieldSpecs({
           : {}),
       width,
       readOnly: true,
-      plain: true,
       readOnlyNote: tr('editor.perTrackOnly'),
       action:
         key === 'trackNumber' && numberTracks

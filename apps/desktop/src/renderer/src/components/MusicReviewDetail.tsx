@@ -22,7 +22,7 @@ import type { TrackItem } from '../types'
 import { DIALOG_CANCEL } from './ConfirmDialog'
 import { DamageDetail } from './DamageDetail'
 import { IncompleteDetail } from './IncompleteDetail'
-import { fieldsLabel } from './MusicReview'
+import { fieldsLabel, hasNothingToReview } from './MusicReview'
 import { SectionBody } from './SectionBody'
 import { SectionGroupHeading } from './SectionGroupHeading'
 import { SectionHeader } from './SectionHeader'
@@ -802,13 +802,7 @@ export function MusicReviewDetail({
   }
   return (
     <section data-testid="music-review-detail" className="flex h-full min-h-0 flex-col">
-      {review.status === 'ready' &&
-        review.spelling.length +
-          review.duplicates.length +
-          review.damage.length +
-          review.incomplete.length ===
-          0 &&
-        !review.damageLoading && (
+      {hasNothingToReview(review) && (
           <div
             data-testid="music-review-all-clear"
             className="flex h-full flex-col items-center justify-center p-8 text-center"

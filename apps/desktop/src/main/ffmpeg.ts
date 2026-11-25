@@ -47,7 +47,7 @@ import { currentAnalysisLane } from './analysisLane'
 import type { BeatGridFit, GridAuditRun } from './beatGrid'
 import { ffmpegPath, ffprobePath } from './binaries'
 import type { FullScan } from './channelScan'
-import { automaticCueOffsetOfFiles } from './cueCalibration'
+import { automaticCueOffsetOfFiles, replacedCueOffsetOfFiles } from './cueCalibration'
 import {
   BAND_WIDTH_HZ,
   bandFrequencies,
@@ -76,6 +76,7 @@ import {
   BAND_WIDTH_HZ as SHELF_BAND_WIDTH_HZ,
 } from './hfShelf'
 import { isSameFile } from './inplace'
+import { landOverTrashed } from './landOverTrashed'
 import { glimpseColumns, pickCeilingWindow } from './limiterGlimpse'
 import { isMissingInputError } from './missingInput'
 import { absorbMp3HeadJunk } from './mp3Head'
@@ -116,6 +117,7 @@ import { rekordboxShiftOfFile } from './rekordboxTimeline'
 import { removeTemp, renameWithRetry, rescuePath } from './renameRetry'
 import { traktorReplaceShift } from './replaceCueShift'
 import {
+  MASTER_RATE,
   REPLACE_HEAD_AT_SECONDS,
   REPLACE_REACH_SECONDS,
   REPLACE_TAIL_BEFORE_END_SECONDS,
@@ -130,11 +132,17 @@ import { readTagFormats } from './tagFormats'
 import {
   type CueShift,
   dropsForeignCues,
+  type Id3Values,
+  keepCustomValues,
+  keepId3Values,
   keepsCuesInId3,
   preservesCuesInPlace,
   readCueTree,
+  readId3Lists,
   readTagLibExtras,
+  type ShownList,
   type TagLibRead,
+  type UserTextValues,
 } from './tags'
 import { TEMPO_SAMPLE_RATE } from './tempo'
 import { tmpName } from './tmp'
@@ -501,7 +509,9 @@ export async function readTags(input: string): Promise<TrackMetadata> {
     ],
     { timeout: ANALYSIS_TIMEOUT_MS },
   )
-  return composeMeta(withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout))))
+  return composeMeta(
+    withId3Lists(input, withTagLibExtras(input, tagsFromProbe(JSON.parse(stdout)))),
+  )
 }
 
 // The containers ffprobe reads only partly (see readTagLibExtras): whatever the probe
@@ -519,6 +529,18 @@ function withTagLibExtras(
     if (typeof value === 'string' && value && !tags[key]?.trim()) tags[key] = value
   }
   return tags
+}
+
+// Every value of a multi-value ID3 frame, over the first one the probe kept (see
+// readId3Lists). Only where the tag the user edits is ID3: a FLAC or M4A reads its own.
+const ID3_INPUT = /\.(mp3|aiff?|wav)$/i
+
+function withId3Lists(
+  input: string,
+  tags: TrackMetadata,
+  lists: () => Partial<TrackMetadata> = () => readId3Lists(input),
+): TrackMetadata {
+  return ID3_INPUT.test(input) ? Object.assign(tags, lists()) : tags
 }
 
 // Pulls the first embedded picture out as a still image (no audio), letting the
@@ -712,7 +734,15 @@ export async function readMeta(input: string): Promise<MetaRead> {
   if (result) return composed(result)
   // Flagged, not just empty: the caller cannot otherwise tell this fallback from a file
   // that carries no tags, and the row would show a bare file name with no explanation.
-  return FAILED_READ
+  return failedRead(input)
+}
+
+async function failedRead(input: string): Promise<MetaRead> {
+  const missing = await stat(input).then(
+    () => false,
+    (e: NodeJS.ErrnoException) => e.code === 'ENOENT',
+  )
+  return missing ? { ...FAILED_READ, missing: true } : FAILED_READ
 }
 
 export async function readMetaLight(input: string): Promise<MetaRead & { partial: boolean }> {
@@ -721,7 +751,9 @@ export async function readMetaLight(input: string): Promise<MetaRead & { partial
   const light = await cachedAnalysis(readMetaLightNamespace(input), input, () =>
     readMetaUncached(input, false),
   )
-  return light ? { ...composed(light), partial: true } : { ...FAILED_READ, partial: false }
+  return light
+    ? { ...composed(light), partial: true }
+    : { ...(await failedRead(input)), partial: false }
 }
 
 // What readMeta (or readMetaLight, for a light row) would answer from disk, without ever
@@ -774,6 +806,7 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // fall back to reading GRP1 directly through TagLib (ID3 containers only; a no-op elsewhere).
     if (!tags.grouping.trim() && tagLib.grouping) tags.grouping = tagLib.grouping
     withTagLibExtras(input, tags, () => tagLib.extras)
+    withId3Lists(input, tags, () => tagLib.id3Lists)
     // Same gap for the star rating: ffprobe surfaces FLAC's Vorbis RATING comment but never
     // the ID3 POPM frame, so a track rated in Traktor read back unrated on MP3/AIFF and the
     // editor showed no stars at all. Fall back to reading POPM through TagLib when the probe
@@ -785,7 +818,10 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // WAV's ID3 TXXX frames, so foreignTagsFromProbe(data) would miss them. readForeignTags
     // runs its own ffmpeg pass (best-effort) that surfaces them on every container.
     const [cover, foreignTags] = full
-      ? await Promise.all([extractCover(input, dims), readForeignTags(input)])
+      ? await Promise.all([
+          extractCover(input, dims),
+          readForeignTags(input).then((read) => withForeignLists(read, tagLib.foreignLists)),
+        ])
       : [null, []]
     return {
       tags,
@@ -799,6 +835,18 @@ async function readMetaUncached(input: string, full = true): Promise<MetaRead | 
     // degraded state the three granular reads reached when each failed on its own.
     return null
   }
+}
+
+// Every value of the tags ffmpeg listed by one (see foreignListsOf), and the rows it left out.
+function withForeignLists(tags: ForeignTag[], lists: ShownList[] = []): ForeignTag[] {
+  const byName = new Map(lists.map((list) => [list.name.toLowerCase(), list.value]))
+  const listed = new Set(tags.map((tag) => tag.name.toLowerCase()))
+  return [
+    ...tags.map((tag) => ({ ...tag, value: byName.get(tag.name.toLowerCase()) ?? tag.value })),
+    ...lists
+      .filter((list) => list.unlisted && !listed.has(list.name.toLowerCase()))
+      .map(({ name, value }) => ({ name, value })),
+  ]
 }
 
 interface ProbeResult {
@@ -981,6 +1029,26 @@ function pcmCodec(depth: SampleDepth, endian: 'be' | 'le'): string {
 // Vorbis, TENC/TSSE en ID3, ITCH/ISFT en RIFF), así que basta nombrarlos una vez.
 const SOURCE_PROVENANCE = ['engineer', 'technician', 'software', 'originator', 'product', 'source']
 
+// What other programs measured of the audio itself: Sound Check, ReplayGain, R128 and
+// MP3Gain figures, and iTunSMPB, the encoder priming and padding of that very stream.
+// Carried onto samples Surco re-encoded, normalized or cut, a player turned the new file up
+// or down by the old one's loudness and trimmed its start and end by the old encoder's
+// counts, so they ride only an output whose samples are the source's own.
+const AUDIO_MEASUREMENTS = [
+  'iTunNORM',
+  'iTunSMPB',
+  'REPLAYGAIN_TRACK_GAIN',
+  'REPLAYGAIN_TRACK_PEAK',
+  'REPLAYGAIN_ALBUM_GAIN',
+  'REPLAYGAIN_ALBUM_PEAK',
+  'REPLAYGAIN_REFERENCE_LOUDNESS',
+  'R128_TRACK_GAIN',
+  'R128_ALBUM_GAIN',
+  'MP3GAIN_MINMAX',
+  'MP3GAIN_ALBUM_MINMAX',
+  'MP3GAIN_UNDO',
+]
+
 const argValue = (v: string | undefined): string => (v ?? '').replaceAll('\0', '').trim()
 
 function metadataArgs(meta: TrackMetadata, vorbis: boolean): string[] {
@@ -1141,8 +1209,11 @@ export function convertArgs(
   // campo propio borraba el VINYLCONDITION recién escrito.
   for (const name of foreignRemoved ?? []) args.push('-metadata', `${name}=`)
   // The M4A's content advisory rides -map_metadata 0 as `rating`, which every target
-  // format reads back as stars.
-  if (M4A_INPUT.test(input)) args.push('-metadata', 'rating=')
+  // format reads back as stars, and its file-type box as three tags naming a container the
+  // output is not.
+  if (M4A_INPUT.test(input))
+    for (const name of ['rating', 'major_brand', 'minor_version', 'compatible_brands'])
+      args.push('-metadata', `${name}=`)
   args.push(...metadataArgs(meta, FLAC_INPUT.test(output)))
   // FLAC carries the rating as a Vorbis RATING comment (POPM is ID3-only, written
   // by the TagLib pass for the other formats). Steps of 51, matching Traktor.
@@ -1896,6 +1967,13 @@ function traktorCueOffsetMs(): number {
 // rather than replacing it, so the files that genuinely drifted still get fixed. Zero by
 // default; see the Settings copy for what it is and when to touch it.
 //
+// The DJ's offset is skipped when the output rewrites the source's own audio in the same
+// format: written over the source's path, or under a new name the old file gives way to
+// (a tag change renaming it on Save, which processTrack reports as rewritesSource). Its
+// cues already carry the offset, and the editor saves that way on every Save: applying it
+// again walked the cues by the offset each time, in the file and the collection alike.
+// Every other output, a format change over the original included, gets it once.
+//
 // Undefined only when none of the three applies — the carried frames then stay
 // byte-exact, as they always did for plain re-encodes and constant gains.
 function cueShiftFor(
@@ -1903,8 +1981,9 @@ function cueShiftFor(
   active: boolean,
   bpm: string,
   codecCueOffsetMs: number,
+  rewritesSource: boolean,
 ): CueShift | undefined {
-  const userOffsetMs = traktorCueOffsetMs()
+  const userOffsetMs = rewritesSource ? 0 : traktorCueOffsetMs()
   const trimmed = active && trim !== undefined
   if (!trimmed && userOffsetMs === 0 && codecCueOffsetMs === 0) return undefined
   const startSec = trimmed ? (trim?.startSec ?? 0) : 0
@@ -2236,6 +2315,7 @@ export interface ConversionWritten {
   // How far a replacement moved the audio against the file it replaces, present exactly
   // when the conversion replaced one.
   replaceShift?: ReplaceShift
+  seratoCarryFailed?: true
 }
 
 export interface DecodeProof {
@@ -2251,7 +2331,8 @@ const SERATO_FLAC_MARKERS = 'SERATO_MARKERS_V2'
 
 // What the programs need of the replaced file next to the measured shift: where rekordbox
 // places its first sample (at the rate sourceRate would use), the replacement's real rate,
-// the codec offset Traktor adds, and the old size when the new file lands on its path.
+// the codec offset Traktor adds, and the old size, taken before the new file may land on
+// its path.
 // A read that fails leaves its neutral value: none of them may cost the conversion.
 async function readReplaced(
   old: string,
@@ -2268,10 +2349,11 @@ async function readReplaced(
     probeAudio(tmp)
       .then((p) => Number(p.sampleRate) || undefined)
       .catch(() => undefined),
-    automaticCueOffsetOfFiles(old, tmp).catch(() => 0),
-    isSameFile(old, output)
-      .then((same) => (same ? stat(old).then((s) => s.size) : undefined))
-      .catch(() => undefined),
+    replacedCueOffsetOfFiles(old, tmp).catch(() => 0),
+    stat(old).then(
+      (s) => s.size,
+      () => undefined,
+    ),
   ])
   return {
     oldShiftMs,
@@ -2321,15 +2403,43 @@ export async function convertAudio(
   isCancelled?: () => boolean,
   // The user answered "Overwrite" for a different file already at the destination.
   keepOverwritten?: boolean,
+  // The output is the source's own audio rewritten in its format under a new name that
+  // replaces it (see cueShiftFor). Only the caller knows: the new path does not exist yet.
+  rewritesSource?: boolean,
+  // Update on a library copy: the DJ programs' cues, grids and analysis were made on its
+  // samples, so only the tags may change. The quality pins are set aside and anything
+  // short of a stream copy fails instead of being written.
+  keepAudio?: boolean,
 ): Promise<{
   normalizeSkipped: boolean
   declickedSamples?: number
   written: ConversionWritten
 }> {
-  const meta = composeMeta(sourceMeta)
+  // A field still holding only the first value of the source's multi-value ID3 frame is one
+  // the DJ never touched (see keepId3Values and keepCustomValues).
+  const kept =
+    !clearExtras && ID3_INPUT.test(input)
+      ? keepId3Values(sourceMeta, await runInWorker<Id3Values>({ type: 'id3Values', file: input }))
+      : sourceMeta
+  const meta = composeMeta(
+    !clearExtras && ID3_INPUT.test(input) && Object.keys(kept.custom ?? {}).length > 0
+      ? keepCustomValues(
+          kept,
+          await runInWorker<UserTextValues>({ type: 'userTextValues', file: input }),
+        )
+      : kept,
+  )
+  // What the file was named before, for each DJ program whose sync rewrites the names it
+  // holds when the file changes. A replacement's entries were made from the replaced file,
+  // so its names are the ones they hold: a download spelled otherwise would read as the DJ's
+  // own edit and keep the new names out.
+  const settings = getSettings()
   const namesBefore =
-    (getSettings().syncTraktor && getSettings().traktorNmlPath) || getSettings().syncEngineDj
-      ? await readMeta(input)
+    (settings.syncTraktor && settings.traktorNmlPath) ||
+    settings.syncEngineDj ||
+    settings.syncSerato ||
+    settings.syncVirtualdj
+      ? await readMeta(replacesPath ?? input)
           .then((read) => (read.failed ? undefined : read.tags))
           .catch(() => undefined)
       : undefined
@@ -2356,10 +2466,13 @@ export async function convertAudio(
   // 'source' (no resample) for anything genuine, unverifiable or already 44.1.
   // Downstream (the normalize filter and the planner) only ever sees concrete
   // values, so the policy string can never reach a Number() as NaN.
+  const pins: Partial<ConversionQuality> | undefined = keepAudio
+    ? { ...quality, bitDepth: 'source', sampleRate: 'source' }
+    : quality
   const resolvedQuality =
-    quality?.sampleRate === 'corrected'
+    pins?.sampleRate === 'corrected'
       ? {
-          ...quality,
+          ...pins,
           sampleRate: ((await measureResolution(
             input,
             Number((await probeOnce(input)).sampleRate) || 0,
@@ -2367,7 +2480,7 @@ export async function convertAudio(
             ? '44100'
             : 'source') as ConversionQuality['sampleRate'],
         }
-      : quality
+      : pins
   const pinnedRateHz =
     resolvedQuality?.sampleRate && resolvedQuality.sampleRate !== 'source'
       ? Number(resolvedQuality.sampleRate)
@@ -2393,6 +2506,7 @@ export async function convertAudio(
     resolvedQuality,
   )
   const { codec, dither, ext } = plan
+  if (keepAudio && codec !== 'copy') throw errorWithKey('libraryCopyAudioWouldChange', input)
   const copiedVerbatim = codec === 'copy' && preservesCuesInPlace(ext)
   // The trim runs first (every later stage works on the kept audio only), click
   // repair next — the gains below were measured through both — then a pinned rate
@@ -2403,13 +2517,16 @@ export async function convertAudio(
     [trimAf, declickAf, normalizeAf, rateAf, dither ? DITHER_FILTER : undefined]
       .filter(Boolean)
       .join(',') || undefined
-  const tmp = convertTmpPath(output, ext)
+  // From the output's own extension, not the plan's: a library copy retagged in place
+  // keeps its .aif, which the plan's '.aiff' would not match.
+  const tmp = convertTmpPath(output, extname(output))
   onTmp?.(tmp)
   // adeclick reports its repaired-sample total on the encode's stderr; undefined
   // when declick is off so "not run" and "ran, found 0" stay distinct upstream.
   let declickedSamples: number | undefined
   let archived: TrashEntry | null = null
   const samplesKept = copiedVerbatim || plan.samplesKept === true
+  const staleMeasurements = samplesKept ? [] : AUDIO_MEASUREMENTS
   let sourcePcm: PcmDigest | undefined
   let absorbedPcm: PcmDigest | null | undefined
   let sourceDurationSec: number | undefined
@@ -2421,6 +2538,17 @@ export async function convertAudio(
   let codecCueOffsetMs = 0
   let seratoAnalysisKept = false
   let replaceShift: ReplaceShift | undefined
+  let seratoCarryFailed = false
+  const inPlace = await isSameFile(input, output)
+  // Read before any cue is written: the DJ's offset depends on it (see cueShiftFor).
+  const sameAudio = inPlace || rewritesSource === true
+  // A library copy retagged in place moves no audio, so its cues, in the file and in the
+  // libraries, stay where the DJ put them: the DJ's offset applied to the copy's own cues
+  // would shift them again on every Update.
+  const cueShift = (): CueShift | undefined =>
+    keepAudio
+      ? undefined
+      : cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs, sameAudio)
 
   try {
     // A cancel during the measures and probes above has no child to kill yet.
@@ -2462,11 +2590,12 @@ export async function convertAudio(
       })
       // The copy carries the source's cues verbatim, which is right for a trim (this
       // branch never trims) but wrong for the DJ's cue offset: that has to move them on
-      // every route, and a same-format conversion is still a conversion. Reported as "the
-      // MP3 it converts does not have the -51 ms applied" — the offset was wired into the
-      // re-encode call sites below and this one was missed. copyCueFrames re-reads the
-      // source and writes the shifted frames over the copy's own.
-      const copyShift = cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs)
+      // every route to a new file, and a same-format conversion is still a conversion.
+      // Reported as "the MP3 it converts does not have the -51 ms applied" — the offset
+      // was wired into the re-encode call sites below and this one was missed.
+      // copyCueFrames re-reads the source and writes the shifted frames over the copy's
+      // own.
+      const copyShift = cueShift()
       if (copyShift && !clearExtras)
         await runInWorker({ type: 'copyCueFrames', source: input, dest: tmp, shift: copyShift })
       else seratoAnalysisKept = true
@@ -2482,7 +2611,7 @@ export async function convertAudio(
             coverPath,
             filter,
             clearExtras,
-            foreignRemoved,
+            [...(foreignRemoved ?? []), ...staleMeasurements],
             removeCover,
           ),
           {
@@ -2541,9 +2670,19 @@ export async function convertAudio(
       if (declickAf) declickedSamples = parseDeclickedSamples(String(stderr)) ?? undefined
       codecCueOffsetMs = await automaticCueOffsetOfFiles(input, tmp)
       // The flac muxer just wrote the comment as DESCRIPTION whatever metadataArgs called
-      // it; put it under the name the DJ software reads (see setFlacComment).
+      // it; put it under the name the DJ software reads (see setFlacComment). The source's
+      // multi-valued tags, which ffmpeg joined or cut to one, come back in the same save
+      // unless cleared.
       if (ext === '.flac')
-        await runInWorker({ type: 'setFlacComment', file: tmp, comment: meta.comment })
+        await runInWorker({
+          type: 'setFlacComment',
+          file: tmp,
+          comment: meta.comment,
+          multiFrom:
+            !clearExtras && (FLAC_INPUT.test(input) || keepsCuesInId3(extname(input)))
+              ? input
+              : undefined,
+        })
       if (ext === '.wav' || ext === '.m4a') {
         // RIFF rejects an attached-picture stream, so convertArgs can't embed the
         // cover and drops tags with no RIFF-INFO field (grouping). TagLib writes a
@@ -2575,9 +2714,12 @@ export async function convertAudio(
             coverPath: coverPath ?? carried ?? undefined,
             removeCover,
             clearExtras,
-            foreignRemoved,
+            // The loudness figures go with the rest of the deleted: an M4A encoded again gets
+            // its atoms back, but not the ones measured on the old samples.
+            foreignRemoved: [...(foreignRemoved ?? []), ...staleMeasurements],
             cueSource: input,
-            cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            cueShift: cueShift(),
+            carryAtoms: ext === '.m4a' && M4A_INPUT.test(input),
           })
         } finally {
           // Only the extracted copy is ours to delete; a caller-supplied coverPath is
@@ -2594,7 +2736,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            shift: cueShift(),
           })
         // The markers, loops and headers ffmpeg leaves out of a WAV it rewrites (see
         // riffCarry.ts). Only when the audio is copied through: their positions count
@@ -2629,7 +2771,7 @@ export async function convertAudio(
           clearExtras,
           foreignRemoved,
           cueSource: input,
-          cueShift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+          cueShift: cueShift(),
         })
         // cueSource only knows how to clone ID3 frames, so a FLAC source hands it nothing
         // and the rated file would keep ffmpeg's TXXX — the same loss the unrated path had,
@@ -2640,7 +2782,7 @@ export async function convertAudio(
             type: 'copyCuesFromFlac',
             source: input,
             dest: tmp,
-            shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+            shift: cueShift(),
           })
       }
       // Any re-encode through ffmpeg drops Traktor's cue/beatgrid frames — a
@@ -2662,13 +2804,13 @@ export async function convertAudio(
                 type: 'copyCuesFromFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               }
             : {
                 type: 'copyCueFrames',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               },
         )
       // FLAC needs the mirror image: its armored TRAKTOR4 comment rides the
@@ -2684,19 +2826,20 @@ export async function convertAudio(
       // that predicate here silently routed it to shiftFlacCues — which had no comment to
       // re-anchor, so the cues were dropped. ID3_SOURCED names the real property this
       // branch needs: "the source keeps its cues in an ID3 tag".
-      else if (ext === '.flac')
+      // A clear wins over both, as over every other carry-over: the cues go with the rest.
+      else if (ext === '.flac' && !clearExtras)
         await runInWorker(
           keepsCuesInId3(extname(input))
             ? {
                 type: 'copyCuesToFlac',
                 source: input,
                 dest: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               }
             : {
                 type: 'shiftFlacCues',
                 file: tmp,
-                shift: cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+                shift: cueShift(),
               },
         )
       // The cue sheet and application blocks ffmpeg leaves out of a FLAC it rewrites
@@ -2704,7 +2847,26 @@ export async function convertAudio(
       if (codec === 'copy' && !clearExtras && ext === '.flac' && FLAC_INPUT.test(input))
         await carryFlacBlocks(input, tmp)
     }
-    let seratoCarryFailed = false
+    // The tags Surco does not manage, which ffmpeg cut to one value or left out of every
+    // target but a FLAC, and an M4A's into any (see carryUnmanagedTags). The custom fields are Surco's to write, and
+    // the encoder stamp and the previous owner's chain are cleared on purpose.
+    if (
+      !clearExtras &&
+      ((ext !== '.flac' && (ID3_INPUT.test(input) || FLAC_INPUT.test(input))) ||
+        (ext !== '.m4a' && M4A_INPUT.test(input)))
+    )
+      await runInWorker({
+        type: 'carryUnmanagedTags',
+        source: input,
+        dest: tmp,
+        owned: [
+          ...SOURCE_PROVENANCE,
+          'encoder',
+          ...Object.keys(meta.custom ?? {}).map(customTagName),
+          ...(foreignRemoved ?? []),
+          ...staleMeasurements,
+        ],
+      })
     const carrySerato =
       !clearExtras && !foreignRemoved?.some((name) => name.toUpperCase() === SERATO_FLAC_MARKERS)
     // Measured once, on the temp's finished audio and before the rename can land on the
@@ -2866,13 +3028,17 @@ export async function convertAudio(
     // the other two write paths (a format change, a NAS delete) ignoring it. What only
     // this scope knows is what the encode did — `codec` is the planner's own verdict,
     // 'copy' exactly when the audio passes through untouched — so that rides along.
-    const inPlace = await isSameFile(input, output)
     const fromBytes = inPlace ? (await stat(input)).size : undefined
+    let trashReplaced: ((path: string) => Promise<void>) | undefined
+    const trashOnceReplaced = (trash: (path: string) => Promise<void>) => {
+      trashReplaced = trash
+    }
     if (inPlace) {
       archived = await keepOriginal(input, 'replaced', output, {
         reencodes:
           codec !== 'copy' || (extname(output).toLowerCase() === '.wav' && dropsForeignCues(input)),
         untilChecked: true,
+        trashOnceReplaced,
         ...(rekordboxAudio && !replacesPath
           ? await engineMoveKept(rekordboxAudio, () => probeOnce(input), sourceSamples, tmp)
           : {}),
@@ -2884,7 +3050,7 @@ export async function convertAudio(
     // like a file with no encode to judge, which only 'never' skips. A re-export over the
     // track's own previous output never asks, and keeps nothing.
     else if (keepOverwritten && (await stat(output).catch(() => null)))
-      archived = await keepOriginal(output, 'replaced', output)
+      archived = await keepOriginal(output, 'replaced', output, { trashOnceReplaced })
     // The backup above can be a whole copy on a NAS, queued behind the other tracks' ones,
     // so a cancel can land while it runs. The rename is the first step that cannot be
     // taken back: checked once more right before it, the original stays as it was and
@@ -2895,21 +3061,25 @@ export async function convertAudio(
     // these lines are the whole evidence — whether the destination was still held,
     // by how many attempts, and whether it ever freed.
     const replaceTraktorShift: CueShift = replaceShift
-      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0, traktorCueOffsetMs())
+      ? traktorReplaceShift(replaceShift, replaced?.codecMs ?? 0)
       : { shiftMs: 0 }
-    await renameWithRetry(tmp, output, {
-      onRetry: ({ attempt, code, waitMs, path }) =>
-        log.warn(
-          `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
-        ),
-      // The temp is a finished conversion by now — audio, tags and cues all written —
-      // so a destination that never frees must not cost the user the whole job. When
-      // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
-      // temp alone; when it cannot land (read-only remount, quota, a scanner holding
-      // the whole directory), the temp is still where it was and the catch deletes it
-      // as it would any half-written output.
-      rescue: rescuePath,
-    })
+    const land = () =>
+      renameWithRetry(tmp, output, {
+        onRetry: ({ attempt, code, waitMs, path }) =>
+          log.warn(
+            `rename blocked: ${code} on ${path} (attempt ${attempt}${waitMs === null ? ', giving up' : `, retrying in ${waitMs}ms`})`,
+          ),
+        // The temp is a finished conversion by now — audio, tags and cues all written —
+        // so a destination that never frees must not cost the user the whole job. When
+        // the rescue lands, the error carries `rescuedTo` and the catch below leaves the
+        // temp alone; when it cannot land (read-only remount, quota, a scanner holding
+        // the whole directory), the temp is still where it was and the catch deletes it
+        // as it would any half-written output.
+        rescue: rescuePath,
+      })
+    if (trashReplaced)
+      await landOverTrashed(inPlace ? input : output, tmp, output, land, trashReplaced)
+    else await land()
     archived = null
     // Comes after the rename, not before: the patch has to describe the file as
     // it now exists at `output`, and the cue-writing branches above (copyCueFrames,
@@ -2920,7 +3090,7 @@ export async function convertAudio(
       meta,
       !removeCover,
       clearExtras ?? false,
-      cueShiftFor(trim, trimAf !== undefined, meta.bpm, codecCueOffsetMs),
+      cueShift(),
       namesBefore,
       replacesPath ? { path: replacesPath, cueShift: replaceTraktorShift } : undefined,
     )
@@ -2942,7 +3112,7 @@ export async function convertAudio(
             },
           }
         : {}),
-      fromBytes: replaced?.oldBytes ?? fromBytes,
+      fromBytes: replaced ? replaced.oldBytes : fromBytes,
       names: namesBefore && changedNames(namesBefore, meta),
     })
     if (repoint)
@@ -3004,6 +3174,7 @@ export async function convertAudio(
       ...(sourceDurationSec !== undefined ? { sourceDurationSec } : {}),
       ...(proven ? { proven } : {}),
       ...(replaceShift ? { replaceShift } : {}),
+      ...(seratoCarryFailed ? { seratoCarryFailed: true as const } : {}),
       trimmedSec: trimAf !== undefined ? Math.max(0, trim?.startSec ?? 0) + cutTail : 0,
     },
   }
@@ -3755,10 +3926,45 @@ export async function measureReplaceShift(
   const transfer = [headWindow, tailWindow].flatMap((w) =>
     w ? [w.old.buffer as ArrayBuffer, w.new.buffer as ArrayBuffer] : [],
   )
-  return await runInWorker<ReplaceShift>(
+  const exact = await runInWorker<ReplaceShift>(
     { type: 'replaceShift', head: headWindow, tail: tailWindow },
     transfer,
   )
+  // The exact measure needs the same master; another one (other lead-in, EQ or clock) never lines
+  // up sample by sample, and leaving it unmoved puts the cues hundreds of ms off. Its loudness
+  // contour still lines up, so that is measured instead, but never on a drift (a step between
+  // head and tail is an edit) nor without both windows read (a short track or an unreadable new
+  // file has nothing for six windows either).
+  if (!('unmoved' in exact) || exact.unmoved !== 'noMatch' || !headWindow || !tailWindow) {
+    return exact
+  }
+  return (await measureMasterShift(old, current, duration, signal)) ?? exact
+}
+
+// Null when the envelope does not line up or the measure fails: only a cancel throws.
+async function measureMasterShift(
+  old: string,
+  current: string,
+  duration: number,
+  signal?: AbortSignal,
+): Promise<ReplaceShift | null> {
+  // The new file's length is not probed: a minute over the old one covers another lead-in, and a
+  // file longer than that overruns the buffer and stays unmoved, as a different edit should.
+  const maxBufferMb = Math.ceil(((duration + 60) * MASTER_RATE * 4) / 1e6) + 1
+  try {
+    const [pcmOld, pcmNew] = await Promise.all([
+      decodePcm(old, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+      decodePcm(current, { sampleRate: MASTER_RATE, maxBufferMb, signal }),
+    ])
+    const moved = await runInWorker<number | null>(
+      { type: 'masterShift', old: pcmOld, current: pcmNew },
+      [pcmOld.buffer as ArrayBuffer, pcmNew.buffer as ArrayBuffer],
+    )
+    return moved === null ? null : { moved, master: 'other' }
+  } catch {
+    signal?.throwIfAborted()
+    return null
+  }
 }
 
 // Aligns two copies and says how alike they are over a minute of both (from 30 s, or from

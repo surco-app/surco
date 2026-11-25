@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createQuitGuard } from './quitGuard'
+import { createQuitGuard, quitDialog } from './quitGuard'
 
 // Closing mid-batch used to kill the running conversions and silently drop everything
 // still queued: the DJ came back to a half-converted crate with no sign of where it
@@ -185,5 +185,37 @@ describe('createQuitGuard', () => {
     expect(await first).toBe(false)
     expect(await second).toBe(false)
     expect(confirm).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('quitDialog', () => {
+  const t = (key: string): string => (key === 'quitBusyDetail' ? '{n} running' : key)
+
+  // The headline names the loudest loss: a running batch outweighs a USB stick being
+  // written, which outweighs cues left unsaved in the editor.
+  it('headlines the batch over the USB export over the unsaved cues', () => {
+    expect(quitDialog(t, 2, true, 1).message).toBe('quitBusyMessage')
+    expect(quitDialog(t, 0, true, 1).message).toBe('quitUsbMessage')
+    expect(quitDialog(t, 0, false, 1).message).toBe('quitCuesMessage')
+  })
+
+  // Every loss still at stake is listed, so a quit never hides that cues go too.
+  it('lists every loss at stake, with the running count', () => {
+    expect(quitDialog(t, 2, true, 1).detail).toBe('2 running\n\nquitUsbDetail\n\nquitCuesDetail')
+    expect(quitDialog(t, 0, false, 3).detail).toBe('quitCuesDetail')
+  })
+
+  it('names the way to stay after what keeps the app busy', () => {
+    expect(quitDialog(t, 2, true, 0).buttons).toEqual(['quitBusyConfirm', 'quitBusyCancel'])
+    expect(quitDialog(t, 0, true, 0).buttons).toEqual(['quitBusyConfirm', 'quitUsbCancel'])
+    expect(quitDialog(t, 0, false, 1).buttons).toEqual(['quitBusyConfirm', 'quitCuesCancel'])
+  })
+
+  // An absent-minded Return or Escape must keep the work, never throw away a batch.
+  it('defaults to staying', () => {
+    const dialog = quitDialog(t, 1, false, 0)
+    expect(dialog.defaultId).toBe(1)
+    expect(dialog.cancelId).toBe(1)
+    expect(dialog.buttons[1]).toBe('quitBusyCancel')
   })
 })

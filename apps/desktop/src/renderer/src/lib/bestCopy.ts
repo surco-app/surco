@@ -140,6 +140,15 @@ export function isSameAudio(
   const bits = bitsClass(a)
   if (bits === null || bits !== bitsClass(b)) return false
   if (a.fingerprint && a.fingerprint === b.fingerprint) return true
+  // The pair probe only decodes the head of each file, so another edit of one master (an
+  // extended mix, a trimmed outro) lines up there to the sample; only the lengths tell it.
+  if (
+    a.durationSec != null &&
+    b.durationSec != null &&
+    Math.abs(a.durationSec - b.durationSec) > VERSION_GAP_SEC
+  ) {
+    return false
+  }
   return (
     !!pair && pair.residualDb <= IDENTICAL_RESIDUAL_DB && Math.abs(pair.gainDb) < IDENTICAL_GAIN_DB
   )
@@ -153,6 +162,7 @@ export function compareCopies(
 ): CopyVerdict {
   const pair = probe === undefined ? undefined : aligned(probe)
   if (isSameAudio(a, b, probe)) return { winner: 'same' }
+  if (probe !== undefined && isOtherVersion(a, b, probe)) return { winner: 'different' }
   const bWorse = replaceWarning(side(a), side(b))
   const aWorse = replaceWarning(side(b), side(a))
   if (bWorse && !aWorse) return { winner: 'a', reason: REASON[bWorse.reason] }
@@ -161,7 +171,6 @@ export function compareCopies(
     flag(a.processed, b.processed, 'processed') ?? flag(a.upsampled, b.upsampled, 'upsampled')
   if (cleaner) return cleaner
   if (pair === undefined) return { winner: 'tie' }
-  if (isOtherVersion(a, b, probe ?? null)) return { winner: 'different' }
   if (pair === null || pair.correlation < margins.sameMasterCorrelation) return { winner: 'tie' }
   return (
     byPeakCount(a, b, margins.peakCountRatio) ??

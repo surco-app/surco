@@ -190,6 +190,7 @@ export interface Api {
     provider?: SearchProviderId,
     priority?: SearchPriority,
     hints?: SearchHints,
+    retryOnLimit?: boolean,
   ) => Promise<SearchResult[]>
   getRelease: (
     ref: number | string,
@@ -267,6 +268,7 @@ export interface Api {
   // The last list of playlists Music gave, shown while Music lists them again.
   loadAppleMusicPlaylistsCached: () => Promise<AppleMusicPlaylist[] | null>
   loadAppleMusicPlaylistCached: (persistentId: string) => Promise<AppleMusicPlaylistTracks | null>
+  loadAppleMusicRecentCount: () => Promise<number>
   appleMusicArtwork: (
     persistentIds: string[],
   ) => Promise<Record<string, { coverPath: string; coverUrl: string }>>
@@ -275,6 +277,7 @@ export interface Api {
   djAppRunning: () => Promise<boolean>
   matchingPairs: () => Promise<[string, string][]>
   replacedTracks: () => Promise<ReplacedEntry[]>
+  onReplacedChanged: (cb: () => void) => () => void
   reviewReplaced: (path: string, programs?: DjProgram[]) => Promise<ReplacedEntry | null>
   restoreReplaced: (entry: ReplacedEntry) => Promise<void>
   addMatchingPair: (a: string, b: string) => Promise<void>
@@ -332,9 +335,9 @@ export interface Api {
   beginConversionBatch: () => void
   conversionPrograms: (paths: string[]) => Promise<CueProgram[]>
   // Marks the end of a convert-all run so main flushes any Traktor collection.nml
-  // patches the batch recorded. Fire-and-forget; must fire even when the run was
-  // cancelled or failed, or its patches would leak into the next batch's flush.
-  endConversionBatch: () => void
+  // patches the batch recorded. Must fire even when the run was cancelled or failed, or its
+  // patches would leak into the next batch's flush. Settles once the libraries are written.
+  endConversionBatch: () => Promise<void>
   // Reaches an encode already in flight for this job id; a no-op if it already
   // finished or never started. Fire-and-forget, mirroring dock:frames/track:drag.
   cancelJob: (jobId: string) => void
@@ -379,6 +382,9 @@ export interface Api {
   // volume rather than guessed from the path: a NAS often has no Trash, and macOS then
   // deletes outright — which a dialog promising recovery once turned into a lost file.
   keepsTrash: (path: string) => Promise<boolean>
+  // Whether two paths are one file on disk, as a file opened through a symlinked folder and
+  // the path a library indexed for it.
+  sameFile: (a: string, b: string) => Promise<boolean>
   // The file a format change superseded, once its check came back ok: 'used' leaves it where
   // it is because a library still uses it, or one could not be read. `titles` are the names
   // an Apple Music entry on it may carry.

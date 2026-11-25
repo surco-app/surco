@@ -42,6 +42,47 @@ const READ: TrackCues = {
   gridFingerprint: '',
 }
 
+// A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Enter
+// there answers the checkbox, not the cue editor around it.
+describe('CuesSection with focus on a checkbox', () => {
+  it('marks no cue on Enter pressed on a checkbox inside the editor', async () => {
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+    installApi({
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async () => READ),
+        save: saveRekordboxCues,
+      },
+    })
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SettingsProvider settings={{ cueFlows: [MY_FLOW, ONE_AT_32], activeCueFlow: 'mine' }}>
+          <CuesSection
+            cue={{ contentId: '103', path: '/m/g.wav', label: 'Gowan' }}
+            open
+            onToggle={vi.fn()}
+          />
+        </SettingsProvider>
+      </QueryClientProvider>,
+    )
+    await waitFor(() => expect(screen.getByTestId('cue-wave')).toBeInTheDocument())
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    screen.getByTestId('cues-editor').appendChild(box)
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 128 })
+    fireEvent.mouseUp(window, { clientX: 128 })
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Enter' })
+    fireEvent.mouseDown(screen.getByTestId('cue-wave'), { button: 0, clientX: 200 })
+    fireEvent.mouseUp(window, { clientX: 200 })
+    fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalled())
+    const [[req]] = saveRekordboxCues.mock.calls[0]
+    expect(req.wanted.some((c) => c.ms === 128000)).toBe(false)
+    expect(req.wanted.some((c) => c.ms === 200000)).toBe(true)
+  })
+})
+
 describe('CuesSection drops', () => {
   it('keeps one drop when the same position is added twice', async () => {
     const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})

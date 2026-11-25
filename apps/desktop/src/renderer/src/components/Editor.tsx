@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Braces,
   ClipboardCopy,
@@ -22,19 +23,17 @@ import { tagsOnly } from '../../../shared/audioProcessing'
 import type { CueJumpBars } from '../../../shared/cueJump'
 import type { CueQuantize } from '../../../shared/cueQuantize'
 import { effectiveMeta, fieldValue, isCustomTag } from '../../../shared/customFields'
+import { DJ_PROGRAMS, type DjProgram } from '../../../shared/djProgram'
 import { EDITOR_SECTION_GROUP } from '../../../shared/editorSections'
-import {
-  editsInPlace,
-  fileNamePart,
-  formatMatchesInput,
-  resolveJobFormat,
-} from '../../../shared/format'
+import { editsInPlace, formatMatchesInput, resolveJobFormat } from '../../../shared/format'
 import type { GridCheck } from '../../../shared/gridAudit'
 import type { CommentMode } from '../../../shared/phraseCount'
 import { READ_ONLY_BLOCKED, readOnlyProgramsOf } from '../../../shared/trackOrigin'
 import type {
+  CueSaveThen,
   DeclickConfig,
   FormatSetting,
+  LibraryCopyAction,
   MetaTextKey,
   NormalizeConfig,
   OutputFormat,
@@ -61,17 +60,18 @@ import { useLatest } from '../hooks/useLatest'
 import { useLibraryReveals } from '../hooks/useLibraryReveals'
 import { useLibraryVerdict } from '../hooks/useLibraryVerdict'
 import { useMaximizeMotion } from '../hooks/useMaximizeMotion'
-import { useProgramCopies } from '../hooks/useProgramCopies'
+import { useProgramCopies, useSelectionCopies } from '../hooks/useProgramCopies'
 import { usePlaylistsSpec } from '../hooks/useRekordboxPlaylists'
 import { useReplacedCopyFill } from '../hooks/useReplacedCopyFill'
+import { useSameFile } from '../hooks/useSameFile'
 import { useScrollAffordance } from '../hooks/useScrollAffordance'
 import { useSectionNavigation } from '../hooks/useSectionNavigation'
-import { useSeratoLosesStars } from '../hooks/useSeratoLosesStars'
-import { useCachedSpectrum } from '../hooks/useSpectrogram'
+import { useSeratoLosesStars, useSeratoStarsLoss } from '../hooks/useSeratoLosesStars'
+import { cachedSpectrumOf, useCachedSpectrum } from '../hooks/useSpectrogram'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { useTrackProperties } from '../hooks/useTrackProperties'
 import type { AppleMusicIndex } from '../lib/appleMusicLibrary'
-import { isAmbiguousCandidate } from '../lib/appleMusicLibrary'
+import { entryDurationSec, isAmbiguousCandidate } from '../lib/appleMusicLibrary'
 import { activeCleanups, cleanReasons, undoCleanup } from '../lib/autoClean'
 import { clearedTrackPatch, matchTargetOf, shouldAutoApplyMatch } from '../lib/autoMatch'
 import {
@@ -93,11 +93,25 @@ import { deriveTagPatches } from '../lib/deriveTags'
 import { DESTINATIONS, type Destination, fromDestination, toDestination } from '../lib/destination'
 import { isDeclickStale, isNormalizeStale, isStale } from '../lib/dirty'
 import { editorPlace } from '../lib/editorPlace'
+import { exportButtonLabel } from '../lib/exportLabel'
 import { buildFieldSpecs, type PlaylistsSpec } from '../lib/fieldSpecs'
 import { FIELD_DEFS, labeledFields, missingRequired, PLAYLIST_FIELDS } from '../lib/fields'
 import { genreChips as buildGenreChips } from '../lib/genre'
-import { isTypingTarget } from '../lib/keymap'
-import { librarySourceOf } from '../lib/librarySource'
+import { ownsKeystroke } from '../lib/keymap'
+import { LAYER } from '../lib/layers'
+import { libraryMembership, librarySourceOf } from '../lib/librarySource'
+import {
+  type CopyCandidate,
+  copyPathIn,
+  copyRefOf,
+  fillCopyPath,
+  keptFormatOf,
+  replaceWarnsFirst,
+  type LibraryCopyOffer,
+  type LibraryCopyRef,
+  pickLibraryCopy,
+  replaceCopyPatch,
+} from '../lib/libraryCopy'
 import { rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
@@ -124,16 +138,15 @@ import {
   type ReleaseMetaPatch,
   titleWithMix,
 } from '../lib/release'
-import { replacePatch } from '../lib/replaceBeforeConvert'
 import { replaceWarning } from '../lib/replaceWarning'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
 import { selectionStatus } from '../lib/selectionStatus'
-import { hasStagedEdits } from '../lib/sessionEdits'
 import { useAppSettings } from '../lib/settingsContext'
 import { matchStatKey } from '../lib/stats'
 import { supersededFile } from '../lib/supersededFile'
 import { stripParentheticals } from '../lib/textClean'
 import type { AutoMarkKind } from '../lib/triage'
+import { fileHoldsTrack } from '../lib/upToDate'
 import type { FieldCleanup, TrackItem } from '../types'
 import { ConvertFooter } from './ConvertFooter'
 import { CopyComparison } from './CopyComparison'
@@ -168,6 +181,9 @@ interface Props {
   // the same one the list and quality filter read, so the "already owned" section can never
   // disagree with them. App owns it; the editor only reads.
   libraryIndex: AppleMusicIndex | null
+  // Whether App is still reading the Music library. It decides by the Settings destination,
+  // not this track's: a library App never asked for would leave the index null for good.
+  libraryLoading?: boolean
   searchInputRef: React.RefObject<HTMLInputElement | null>
   // The whole multi-selection, when more than one track is picked. Its presence flips the
   // Discogs column to album-match mode (map every file to a tracklist entry at once) and
@@ -182,7 +198,7 @@ interface Props {
   onAddAllToAppleMusic?: () => void
   // Multi-select writes: a field edited in the shared form goes to every selected track,
   // and a dropped/picked cover is stamped onto all of them.
-  onChangeAllMeta?: (patch: Partial<TrackMetadata>) => void
+  onChangeAllMeta?: (patch: Partial<TrackMetadata>, opts?: { group?: string }) => void
   // Stages a per-track setting (the volume) on every selected track, so a multi-select
   // pick reaches each of them and not only the anchor.
   onChangeSelection?: (patch: Partial<TrackItem>) => void
@@ -190,7 +206,10 @@ interface Props {
   // Fills each track's tags from its own file name; applies to the primary in single view
   // and to the whole selection in multi.
   onDeriveTags?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
-  onChangeTracksMeta?: (patches: { id: string; meta: Partial<TrackMetadata> }[]) => void
+  onChangeTracksMeta?: (
+    patches: { id: string; meta: Partial<TrackMetadata> }[],
+    opts?: { group?: string },
+  ) => void
   // Numbers the selection 1..N in list order — App owns it so the button and the ⌘K
   // command share one order, one undo and one toast.
   onNumberTracks?: () => void
@@ -200,8 +219,8 @@ interface Props {
   // nothing" notices; the editor's format button is just a second trigger for it.
   onApplyTitleFormat?: () => void
   // Snapshots the given tracks' tags into App's ⌘Z stack before the clear button, a
-  // release pick or a cover change overwrites them (derive is already recorded inside
-  // onDeriveTags).
+  // release pick, a cover change or a field typed into overwrites them (derive is already
+  // recorded inside onDeriveTags).
   onRecordUndo?: (ids: string[], opts?: { cover?: boolean; group?: string }) => void
   onClearAll?: () => void
   autoMatchDeclined?: boolean
@@ -210,7 +229,17 @@ interface Props {
   // the rows being typed into alone (see App's editingRef). Empty on blur.
   onFieldFocusChange?: (ids: readonly string[]) => void
   onChange: (patch: Partial<TrackItem>) => void
-  onProcess: (format: OutputFormat) => void
+  // onStarted fires once the run commits (after any overwrite confirm), so ⌘⏎ advances only
+  // past a track whose run actually started.
+  onProcess: (format: OutputFormat, onStarted?: () => void) => void
+  // What the body does to a library copy of this track: Update its tags or Replace it with
+  // this file. The user picks it and App remembers it; the copy's verdict can't tell which.
+  libraryCopyAction?: LibraryCopyAction
+  onLibraryCopyAction?: (action: LibraryCopyAction) => void
+  onUpdateLibraryCopy?: (copy: LibraryCopyRef) => void
+  // Hands App the body's library action so ⌘⏎ runs what the body says; null while the body
+  // only converts.
+  onLibraryRunChange?: (run: ((onStarted?: () => void) => void) | null) => void
   // Cancels an in-flight single-track conversion — the button becomes a cancel while it
   // runs, so a long convert has the escape a batch always had. Single-only.
   onCancel?: () => void
@@ -237,6 +266,8 @@ interface Props {
   onNormalizeChange?: (normalize: NormalizeConfig) => void
   // Reports the per-track click-repair override, mirroring onNormalizeChange.
   onDeclickChange?: (declick: DeclickConfig) => void
+  // Reports the convert button's label, so the palette names the same action.
+  onConvertLabelChange?: (label: string) => void
   onAddToAppleMusic: () => void
   // Offers the files a conversion left behind (the original, the files a replacement
   // superseded, the old Apple Music copy) for the Trash in one confirmed step. Confirmation
@@ -250,9 +281,12 @@ interface Props {
   // shortcuts like every other dialog — a track-switch key pressed while it was
   // Editor-local used to remount the editor and silently destroy the open dialog.
   onShowLoudnessHelp: () => void
-  rekordboxCue?: { contentId: string; path: string; label: string }
+  rekordboxCue?: { contentId: string; path: string; label: string; programPath?: string }
   matching?: Omit<React.ComponentProps<typeof MatchingSection>, 'open' | 'onToggle'>
   onCueJumpBars?: (bars: CueJumpBars) => void
+  cueSaveThen?: CueSaveThen
+  onCueSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
   onCueQuantize?: (unit: CueQuantize) => void
   onCueFlow?: (id: string) => void
   onCueAutoMarkAll?: () => void
@@ -308,6 +342,25 @@ interface Props {
 
 const NARROW_EDITOR_PX = 400
 
+// Counted across every mount, not per editor: the editor remounts per track, and a count
+// that started over could hand a field visited again the undo step of its last visit.
+let fieldFocuses = 0
+// An edit with no focus we saw opens a step of its own rather than a shared «0» step.
+const fieldEdit = (focus: number, key: string) => ({
+  group: `field-${focus || ++fieldFocuses}-${key}`,
+})
+
+// The name an export saves the track under when nobody typed one, the same rule the run
+// follows, so one track and a selection read it alike.
+const patternName = (
+  track: TrackItem,
+  meta: TrackMetadata,
+  autoApplyFilename: boolean,
+  filenameFormat: string,
+): string =>
+  (autoNamesFile(autoApplyFilename, track) && renderOutputName(filenameFormat, meta)) ||
+  track.fileName
+
 // What a release writes about where it came from rather than about the music.
 const RELEASE_STAMPS: ReadonlySet<string> = new Set(['discogsReleaseId', 'discogsUrl'])
 
@@ -324,6 +377,7 @@ const SPECTRUM_REASONS: ReadonlySet<CopyReason> = new Set([
 export const Editor = memo(function Editor({
   item,
   libraryIndex,
+  libraryLoading = false,
   searchInputRef,
   selectedTracks,
   onApplyMatches,
@@ -343,6 +397,10 @@ export const Editor = memo(function Editor({
   onFieldFocusChange,
   onChange,
   onProcess,
+  libraryCopyAction = 'update',
+  onLibraryCopyAction,
+  onUpdateLibraryCopy,
+  onLibraryRunChange,
   onCancel,
   onConvertSelection,
   convertHint,
@@ -354,6 +412,7 @@ export const Editor = memo(function Editor({
   rememberedPick,
   onNormalizeChange,
   onDeclickChange,
+  onConvertLabelChange,
   onAddToAppleMusic,
   onCleanUp,
   resultsFolded,
@@ -364,6 +423,9 @@ export const Editor = memo(function Editor({
   rekordboxCue,
   matching,
   onCueJumpBars,
+  cueSaveThen,
+  onCueSaveThen,
+  onStepTrack,
   onCueQuantize,
   onCueFlow,
   onCueAutoMarkAll,
@@ -444,9 +506,15 @@ export const Editor = memo(function Editor({
   } = appSettings
   const discogsTokenMissing = discogsToken === ''
   const isMulti = (selectedTracks?.length ?? 0) > 1
+  const queryClient = useQueryClient()
   // A bulk field writes to every selected track, so all of them are under edit, not just
   // the anchor the form is keyed on.
   const editedIds = isMulti ? (selectedTracks ?? []).map((t) => t.id) : [item.id]
+  // Leaving with a field focused removes it without a blur, so the guard is handed back on
+  // unmount. A layout cleanup runs before the next editor's layout phase, so it can never
+  // clear a field the new editor focuses as it mounts.
+  const focusChange = useLatest(onFieldFocusChange)
+  useLayoutEffect(() => () => focusChange.current?.([]), [focusChange])
   const revealIn = useLibraryReveals(item, isMulti ? [] : librarySources)
   const { ref: scrollRef, moreBelow } = useScrollAffordance()
   useLayoutEffect(() => {
@@ -801,7 +869,7 @@ export const Editor = memo(function Editor({
   // format and spectrum still decide.
   // A track opened from the library's own folder is that copy, so there is nothing to compare.
   const libraryCopyIsThisFile = pathKey(libraryCopyPath) === pathKey(item.inputPath)
-  const comparedCopyPath = libraryCopyIsThisFile || !libraryShown ? '' : libraryCopyPath
+  const comparedCopyPath = libraryCopyIsThisFile || isMulti ? '' : libraryCopyPath
   const musicHoldsFile = !!libraryCopyPath && libraryCopyIsThisFile
   const [musicCopyReach] = useCopyReach(
     comparedCopyPath ? [{ path: comparedCopyPath, properties: replacedCopyQuery }] : [],
@@ -863,6 +931,54 @@ export const Editor = memo(function Editor({
     item.inputPath,
     comparedProgramCopies.map((copy) => copy.path),
   )
+  const copyRows = comparedProgramCopies.map((copy, i) => ({
+    program: copy.program,
+    path: copy.path,
+    verdict: rowVerdict(programVerdicts[i]),
+    // A collection may not store the length; the measured one then stands in for it.
+    durationSec: copy.durationSec ?? programVerdicts[i]?.copy?.durationSec,
+  }))
+  // Keyed on each program's copy target after the verdict filter, not on the rows (new on
+  // every render, so a new copyPathOf would read the membership again each time) nor on the
+  // raw paths: a copy that turns out to be another version must stop being the target.
+  const copyTargets = JSON.stringify(
+    DJ_PROGRAMS.map((program) => copyPathIn(program, copyRows, item.duration)),
+  )
+  // A selection has no section rows, so its copies come from the collections by title, artist
+  // and length. Only the playlists fields use them, so no collection is read without one.
+  // Keyed like copyTargets: the selection is a new array on every progress tick.
+  const selectionCopies = JSON.stringify(
+    useSelectionCopies(
+      selectedTracks ?? [],
+      isMulti &&
+        filesOpen &&
+        !libraryHidden &&
+        Object.values(PLAYLIST_FIELDS).some((field) => visibleFields.includes(field)),
+    ),
+  )
+  const itemId = item.id
+  const copyPathOf = useMemo(() => {
+    if (isMulti) {
+      const byProgram: Partial<Record<DjProgram, Record<string, string>>> =
+        JSON.parse(selectionCopies)
+      return Object.fromEntries(
+        DJ_PROGRAMS.map((program) => {
+          const copies = byProgram[program]
+          return [program, copies ? (track: TrackItem) => copies[track.id] : undefined]
+        }),
+      ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
+    }
+    const paths: (string | null)[] = JSON.parse(copyTargets)
+    return Object.fromEntries(
+      DJ_PROGRAMS.map((program, i) => {
+        const path = paths[i]
+        return [
+          program,
+          path ? (track: TrackItem) => (track.id === itemId ? path : undefined) : undefined,
+        ]
+      }),
+    ) as Record<DjProgram, ((track: TrackItem) => string | undefined) | undefined>
+  }, [isMulti, selectionCopies, copyTargets, itemId])
   const [programOpenFor, setProgramOpenFor] = useState<ReadonlySet<string>>(new Set())
   // What Music holds for this file when it is in the library: grouping and artwork, which
   // a WAV cannot carry. The entry to ask is the track's own copy or the one it matched.
@@ -877,23 +993,37 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
-  // Only the copy a replacement would supersede lends its fields: a copy the section merely
-  // describes may be another version of the track, whose tags would not be this file's.
+  // Only a copy of the same recording lends its fields: another version of the track has other
+  // tags. In Music that is the copy a replacement would supersede, and it goes first because
+  // the convert puts this file in its place, so a DJ copy waits while the Music library is still
+  // loading; otherwise the first DJ copy whose length matches this file's, once its comparison
+  // is done.
   const replacedCopyPath =
     replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  useReplacedCopyFill({ item, copyPath: replacedCopyPath, onChange, onRecordUndo })
-  // A selection replaces what each track was stamped to replace by an earlier convert.
-  const seratoLosesStars = useSeratoLosesStars(
-    ...(isMulti
-      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
-      : [replacedCopyPath]),
-  )
-
-  const latestItem = useLatest(item)
+  useReplacedCopyFill({
+    item,
+    copyPath: fillCopyPath({
+      musicCopyPath: replacedCopyPath,
+      musicCopyPending: replaceTargetPending || libraryLoading,
+      programs: copyRows,
+      fileDurationSec: item.duration,
+    }),
+    onChange,
+    onRecordUndo,
+  })
+  // The editor remounts per track and App applies its patch to whichever row is selected,
+  // so a full read that returns after the user moved on must apply nothing.
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+    }
+  }, [])
   async function selectTrack(track: ReleaseTrack, moveFocus = true): Promise<void> {
     if (!release) return
     const current = item.metaPartial ? await readFullTrack(item.id) : item
-    if (!current || current.metaPartial || current.id !== latestItem.current.id) return
+    if (!current || current.metaPartial || !mounted.current) return
     // The cover flag protects only the file's ORIGINAL embedded art. While the shown
     // cover is still that original (coverUrl === embeddedCover), keep it — unless the user
     // opted into replacing low-res art and this original is small, in which case the
@@ -960,7 +1090,7 @@ export const Editor = memo(function Editor({
     ) {
       autoAppliedRelease.current = release.id
       // Nobody clicked, so someone typing (in the search box) keeps their keys.
-      void selectTrack(matchedTrack, !isTypingTarget(document.activeElement))
+      void selectTrack(matchedTrack, !ownsKeystroke(document.activeElement))
     }
   }, [
     autoMatch,
@@ -1179,9 +1309,7 @@ export const Editor = memo(function Editor({
   // Default to the file's own name so converting keeps it; the metadata-derived name is
   // opt-in via the "Regenerate from metadata" button below — unless auto-apply is on, where
   // it derives live from the pattern (falling back to the file name for sparse metadata).
-  const defaultOutputName =
-    (autoNamesFile(autoApplyFilename, item) && renderOutputName(filenameFormat, resolvedMeta)) ||
-    item.fileName
+  const defaultOutputName = patternName(item, resolvedMeta, autoApplyFilename, filenameFormat)
   // Exporting to the source's own format edits the original file in place (and
   // renames it on disk) rather than writing a copy to the output folder — warn the
   // user before they hit the button so the rename isn't a surprise. Overwrite mode
@@ -1273,19 +1401,68 @@ export const Editor = memo(function Editor({
     formatMatchesInput(format, item.inputPath) &&
     inLibrary === 'no' &&
     !item.fromAppleMusic
-  const upToDate =
-    !isMulti &&
-    !addsToMusic &&
-    !incomplete &&
-    item.status === 'idle' &&
-    willEditInPlace &&
-    tagsOnlyExport &&
-    item.diskSignature !== undefined &&
-    !hasStagedEdits(item) &&
-    item.fillSignature !== item.diskSignature &&
-    !(item.notInFile?.signature === item.diskSignature && item.notInFile.fields.length > 0) &&
-    fileNamePart(item.outputName?.trim() || defaultOutputName) === item.fileName
+  // A selection adds to Music whenever the batch lands there and any of its tracks is
+  // missing from the library. It reads each track as the open track's badge does except for
+  // the Discogs-proven step, which needs that track's open release; a track only Discogs
+  // would prove owned reads as an add, so the normal button stays rather than claiming
+  // there is nothing to write.
+  const batchAddsToMusic = useMemo(
+    () =>
+      isMulti &&
+      fromDestination(batchDestination).addToAppleMusic &&
+      multiTracks.some(
+        (t) => !t.fromAppleMusic && libraryMembership(t, 'appleMusic', libraryIndex) === 'no',
+      ),
+    [isMulti, batchDestination, multiTracks, libraryIndex],
+  )
+  // A selection goes quiet on the rule one track does, asked of every track it holds: an
+  // edit, a fill or a rename on any one of them is something the batch would write. Each
+  // track's quality comes from the spectrum cache, where the open track and the run read
+  // it. The cache does not rerender this memo, so a quality still unknown under a
+  // {quality} pattern counts as a rename: once it lands the run may name the file anew.
+  // A track the pattern does not name keeps its own file name, so the cache and the meta
+  // are only read for one it does. This memo reruns on every track change, and a selection
+  // of thousands during a background analysis paid for both on each one.
+  const selectionHeld = useMemo(
+    () =>
+      isMulti &&
+      multiTracks.every((t) => {
+        if (!autoNamesFile(autoApplyFilename, t)) return fileHoldsTrack(t, t.fileName)
+        const spectrum = cachedSpectrumOf(queryClient, t.inputPath)
+        if (qualityAuto && !spectrum && filenameFormat.includes('{quality}')) return false
+        const meta = withQualityTag(
+          effectiveMeta(t, customFields),
+          { inputPath: t.inputPath, spectrum },
+          qualityAuto,
+        )
+        return fileHoldsTrack(t, patternName(t, meta, autoApplyFilename, filenameFormat))
+      }),
+    [
+      isMulti,
+      multiTracks,
+      queryClient,
+      customFields,
+      qualityAuto,
+      autoApplyFilename,
+      filenameFormat,
+    ],
+  )
+  const upToDate = isMulti
+    ? !batchAddsToMusic && !incomplete && batchTagsOnly && selectionHeld
+    : !addsToMusic &&
+      !incomplete &&
+      willEditInPlace &&
+      tagsOnlyExport &&
+      fileHoldsTrack(item, defaultOutputName)
 
+  // Everything typed into one field while it holds the focus is one ⌘Z step, the same step
+  // whether the field writes one track or the whole selection: the Field commits on every
+  // pause, and those commits join the step its focus opened.
+  const fieldFocus = useRef(0)
+  const typeField = useStableCallback((key: string, write: () => void): void => {
+    onRecordUndo?.([item.id], fieldEdit(fieldFocus.current, key))
+    write()
+  })
   // One onChange per possible key, built once (setField/onChangeAllMeta never
   // change identity) and reused by every fieldSpecs rebuild below. Field.tsx is
   // memoized on this exact prop — closing over `key` inline inside
@@ -1294,12 +1471,24 @@ export const Editor = memo(function Editor({
   // defeat that memo, re-rendering every visible field instead of just the one
   // whose value moved.
   const singleOnChange = useMemo(
-    () => new Map(FIELD_DEFS.map((def) => [def.key, (v: string) => setField(def.key, v)])),
-    [setField],
+    () =>
+      new Map(
+        FIELD_DEFS.map((def) => [
+          def.key,
+          (v: string) => typeField(def.key, () => setField(def.key, v)),
+        ]),
+      ),
+    [setField, typeField],
   )
   const customOnChange = useMemo(
-    () => new Map(customFields.map((f) => [f.key, (v: string) => setCustom(f.key, v)])),
-    [customFields, setCustom],
+    () =>
+      new Map(
+        customFields.map((f) => [
+          f.key,
+          (v: string) => typeField(`custom.${f.key}`, () => setCustom(f.key, v)),
+        ]),
+      ),
+    [customFields, setCustom, typeField],
   )
   // Across a selection each track keeps its other custom values: the edit is merged into
   // that track's own set, not stamped as one shared set over all of them.
@@ -1314,6 +1503,7 @@ export const Editor = memo(function Editor({
                 id: t.id,
                 meta: { custom: { ...effectiveMeta(t, customFields).custom, [f.key]: v } },
               })),
+              fieldEdit(fieldFocus.current, `custom.${f.key}`),
             ),
         ]),
       ),
@@ -1321,7 +1511,13 @@ export const Editor = memo(function Editor({
   )
   const customValueMap = useMemo(() => resolvedMeta.custom ?? {}, [resolvedMeta])
   const bulkOnChange = useMemo(
-    () => new Map(BULK_FIELDS.map((key) => [key, (v: string) => onChangeAllMeta?.({ [key]: v })])),
+    () =>
+      new Map(
+        BULK_FIELDS.map((key) => [
+          key,
+          (v: string) => onChangeAllMeta?.({ [key]: v }, fieldEdit(fieldFocus.current, key)),
+        ]),
+      ),
     [onChangeAllMeta],
   )
 
@@ -1379,6 +1575,7 @@ export const Editor = memo(function Editor({
     tracks: playlistTracks,
     onChange,
     onChangeTracks: onChangeTracksPlaylists,
+    copyPathOf: copyPathOf[library],
   })
   const rekordboxPlaylists = usePlaylistsSpec('rekordbox', playlistsOf('rekordbox'))
   const traktorPlaylists = usePlaylistsSpec('traktor', playlistsOf('traktor'))
@@ -1749,6 +1946,129 @@ export const Editor = memo(function Editor({
   })
   const libraryRows = [...(musicRow ? [musicRow] : []), ...programRows]
   const showLibrary = libraryShown && libraryRows.length > 0
+  const musicEntryId =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? replaceTarget.persistentId : ''
+  // Music's own length for its copy, like a DJ collection's: while Music still says where the
+  // file lives or its length is being read, the measured one is missing, and without a length
+  // the Music copy would drop out and let a DJ copy act in its place.
+  const musicEntryDurationSec = useMemo(
+    () => entryDurationSec(libraryIndex, musicEntryId),
+    [libraryIndex, musicEntryId],
+  )
+  // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
+  // this file in its place, so its copy is the one the user sees as the track.
+  const copyCandidates: CopyCandidate[] = isMulti
+    ? []
+    : [
+        ...(replaceTarget && !isAmbiguousCandidate(replaceTarget) && !musicHoldsFile && musicRow
+          ? [
+              {
+                program: 'appleMusic' as const,
+                path: replaceTarget.path ?? '',
+                format: replacedCopyFormat,
+                verdict: musicRow.verdict,
+                better: libraryCopyBetter,
+                durationSec: musicRow.durationSec ?? musicEntryDurationSec,
+                music: replaceTarget,
+              },
+            ]
+          : []),
+        ...comparedProgramCopies.map((copy, i) => {
+          const state = programVerdicts[i]
+          return {
+            program: copy.program,
+            path: copy.path,
+            format: state?.format ?? '',
+            verdict: rowVerdict(state),
+            better: rowVerdict(state) === 'library',
+            durationSec: copyRows[i].durationSec,
+          }
+        }),
+      ]
+  const pickedCopy = pickLibraryCopy(copyCandidates, item.duration)
+  // The copy may be the open file under another path, as through a symlinked folder: acting
+  // on it would update or replace the very file. Until main answers, the press waits.
+  const pickedIsThisFile = useSameFile(item.inputPath, pickedCopy?.path ?? '')
+  const libraryTarget =
+    pickedCopy && !pickedIsThisFile
+      ? { ...pickedCopy, held: pickedCopy.held || pickedIsThisFile === undefined }
+      : null
+  const keptFormat = libraryTarget ? keptFormatOf(libraryTarget.path) : undefined
+  // Asked whatever the body says, since it decides whether picking Replace may run at once.
+  const replaceStarsLoss = useSeratoStarsLoss(
+    libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
+  )
+  const replaceLosesStars =
+    !!libraryTarget && replaceWarnsFirst(libraryTarget.program, replaceStarsLoss)
+  // A copy in no format Surco writes can't be updated in place, but it is still the track, so
+  // the body replaces it: offering nothing let the body say Convert and add a second entry
+  // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
+  const updatable = !!keptFormat || !libraryTarget?.path
+  const copyAction: LibraryCopyAction = updatable ? libraryCopyAction : 'replace'
+  const libraryCopy: LibraryCopyOffer | undefined = libraryTarget
+    ? {
+        name:
+          libraryTarget.program === 'appleMusic'
+            ? 'Apple Music'
+            : LIBRARY_NAME[libraryTarget.program],
+        format: libraryTarget.format,
+        action: copyAction,
+        better: libraryTarget.better,
+        held: libraryTarget.held,
+        keptFormat,
+        updatable,
+        replaceLosesStars,
+      }
+    : undefined
+  const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {
+    if (!libraryTarget || libraryTarget.held) return
+    if (action === 'update') {
+      onUpdateLibraryCopy?.(copyRefOf(libraryTarget))
+      onStarted?.()
+      return
+    }
+    // Stamped before the convert runs, so the convert writes over that copy instead of adding
+    // a second one beside it.
+    onChange(replaceCopyPatch(libraryTarget, item.inputPath))
+    onProcess(format, onStarted)
+  }
+  // An in-place update or a re-export outranks the library action on the body, and ⌘⏎ must
+  // do what the body says, so the run is handed over only when the body acts on the copy.
+  const bodyActsOnCopy =
+    !!libraryCopy &&
+    !!exportButtonLabel({
+      processing: false,
+      inPlace: willEditInPlace,
+      stale,
+      done,
+      format: '',
+      tagsOnly: tagsOnlyExport,
+      sameFormat: formatMatchesInput(format, item.inputPath),
+      addsToMusic,
+      libraryAction: copyAction,
+    }).library
+  const runLibraryRef = useRef(runLibraryAction)
+  runLibraryRef.current = runLibraryAction
+  useEffect(() => {
+    if (!bodyActsOnCopy) {
+      onLibraryRunChange?.(null)
+      return
+    }
+    onLibraryRunChange?.((onStarted) => runLibraryRef.current(copyAction, onStarted))
+    return () => onLibraryRunChange?.(null)
+  }, [bodyActsOnCopy, copyAction, onLibraryRunChange])
+  // The file each convert replaces: a selection's, what each track was stamped to replace by
+  // an earlier convert; one track's, the library copy when the body replaces it, else the one
+  // it already has.
+  const seratoLosesStars = useSeratoLosesStars(
+    ...(isMulti
+      ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
+      : [
+          bodyActsOnCopy && libraryTarget && !libraryTarget.held && copyAction === 'replace'
+            ? libraryTarget.path
+            : (item.replacesPath ?? ''),
+        ]),
+  )
 
   return (
     <div className="flex h-full min-h-0">
@@ -1887,7 +2207,10 @@ export const Editor = memo(function Editor({
                 reopen the very window it closes. onChange (a text commit) also confirms the rows
                 are under active edit, in case focus arrived without a focus event we saw. */}
               <div
-                onFocusCapture={() => onFieldFocusChange?.(editedIds)}
+                onFocusCapture={() => {
+                  fieldFocus.current = ++fieldFocuses
+                  onFieldFocusChange?.(editedIds)
+                }}
                 onChangeCapture={() => onFieldFocusChange?.(editedIds)}
                 onBlurCapture={(e) => {
                   if (!e.currentTarget.contains(e.relatedTarget as Node | null))
@@ -2012,6 +2335,9 @@ export const Editor = memo(function Editor({
                           onQuantize={onCueQuantize}
                           onFlow={onCueFlow}
                           actionsRef={cueActionsRef}
+                          saveThen={cueSaveThen}
+                          onSaveThen={onCueSaveThen}
+                          onStepTrack={onStepTrack}
                           footer={
                             <PhraseCountRow
                               contentId={rekordboxCue.contentId}
@@ -2251,7 +2577,8 @@ export const Editor = memo(function Editor({
                 <div
                   ref={maximizeMotion.overlayRef}
                   data-testid="section-maximized-overlay"
-                  className="fixed inset-0 z-[46] origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                  className="fixed inset-0 origin-top-left overflow-y-auto bg-[var(--color-panel)] px-8 pb-8 pt-2"
+                  style={{ zIndex: LAYER.maximizedSection }}
                 >
                   {lifted}
                 </div>,
@@ -2269,6 +2596,7 @@ export const Editor = memo(function Editor({
         />
 
         <ConvertFooter
+          onLabelChange={onConvertLabelChange}
           narrow={narrow}
           item={item}
           spectrum={spectrumInHand}
@@ -2277,14 +2605,10 @@ export const Editor = memo(function Editor({
           readyCount={isMulti ? batchReady.length : undefined}
           status={footerStatus}
           stale={stale}
-          replaces={
-            !!replaceTarget &&
-            !isAmbiguousCandidate(replaceTarget) &&
-            !musicHoldsFile &&
-            !replaceTargetPending
-          }
+          libraryCopy={libraryCopy}
+          onLibraryAction={runLibraryAction}
+          onLibraryActionChange={onLibraryCopyAction}
           seratoLosesStars={seratoLosesStars}
-          libraryBetter={libraryCopyBetter}
           done={done}
           incomplete={incomplete}
           incompleteReason={incompleteReason}
@@ -2369,14 +2693,19 @@ export const Editor = memo(function Editor({
             isMulti
               ? (f) => onProcessAll?.(f)
               : (f) => {
-                  // Stamped BEFORE the convert runs: musicPersistentId is what makes the
-                  // Apple Music step update that copy instead of importing a sibling, and
-                  // replacesPath is the file rekordbox has indexed — the one being
-                  // converted may sit in any download folder the collection never saw.
-                  // The button already offered a replacement; without this the action
-                  // stayed an add, leaving two library entries and two files on disk.
-                  const patch = replacePatch(replaceTarget, item.inputPath)
-                  if (patch) onChange(patch)
+                  // Every replace of a library copy goes through the library action. A plain
+                  // convert only names the Music entry when that entry IS the open file, so
+                  // the convert retags it instead of importing a sibling; any other entry
+                  // (another version, missing, still measuring) is left alone and this file
+                  // is added.
+                  if (
+                    replaceTarget &&
+                    !isAmbiguousCandidate(replaceTarget) &&
+                    replaceTarget.path &&
+                    (pathKey(replaceTarget.path) === pathKey(item.inputPath) ||
+                      (pickedCopy?.program === 'appleMusic' && pickedIsThisFile === true))
+                  )
+                    onChange({ musicPersistentId: replaceTarget.persistentId })
                   onProcess(f as OutputFormat)
                 }
           }

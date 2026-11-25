@@ -47,7 +47,7 @@ import type { TunedTaste } from '../shared/autoCue'
 import { trashLimits } from '../shared/backupPolicy'
 import { activeCueFlow } from '../shared/cueFlows'
 import { DJ_CUE_QUEUE_CHANGED, DJ_SYNC_ISSUE } from '../shared/djApi'
-import { type CueProgram, exportsUsbOn } from '../shared/djProgram'
+import { type CueProgram, exportsUsbOn, type WritableProgram } from '../shared/djProgram'
 import { errorWithKey } from '../shared/errorKeys'
 import {
   isRecoveryUrl,
@@ -111,7 +111,7 @@ import { writeCommentToFile } from './commentFileWrite'
 import { registerCopiesIpc } from './copiesIpc'
 import type { CoverSource } from './cover'
 import { createCoverMemo, hasCoverSource, prepareProcessedCover } from './cover'
-import { downloadCover, imageExt } from './coverDownload'
+import { downloadCover, resolveDraggedCover } from './coverDownload'
 import { coverThumbPathOf, pruneCoverThumbs } from './coverThumbs'
 import {
   installCrashGuards,
@@ -141,7 +141,6 @@ import {
 } from './djProcesses'
 import { parseDockFrames } from './dockFrames'
 import { type ReplacePair, replaceDuplicates } from './duplicateReplace'
-import { engineCueQueueSection } from './engineCueQueueIpc'
 import { engineCueSource } from './engineCueSource'
 import { applyEngineCuesBatch } from './engineCuesWrite'
 import { addToEngineLibrary, dumpEngineLibrary, withEngineDatabase } from './engineLibrary'
@@ -167,12 +166,14 @@ import { libraryCopyInfo, libraryTracksOf, type RootLibraries } from './libraryF
 import {
   conversionPrograms,
   currentLibraryStatus,
+  discardLeftBehind,
   duplicateLibraryDeps,
   engineFlushDeps,
   flushConversionBatch,
   type LibraryHost,
   librariesKeepingOriginal,
   libraryUntouched,
+  queueLeftBehind,
   rekordboxCollectionPath,
   rekordboxFlushDeps,
   repointEngineQueued,
@@ -214,7 +215,7 @@ import {
 import { runProcessTrack } from './processTrack'
 import { createProgramQueue, type ProgramQueueDeps } from './programQueue'
 import { getProvider } from './providers'
-import { createQuitGuard } from './quitGuard'
+import { createQuitGuard, quitDialog } from './quitGuard'
 import { trashRecoverably, trashWithoutRoom } from './recoverableTrash'
 import {
   attachPlaylists,
@@ -240,13 +241,19 @@ import { adjustProvisional, createProvisionalList } from './rekordboxProvisional
 import { fileStore } from './rekordboxQueue'
 import { rekordboxQueueSection } from './rekordboxQueueIpc'
 import { createSessionBackup } from './rekordboxSessionBackup'
+import { statBumpOf, windowSnapshotOf } from './rendererInput'
 import { registerReplacedIpc } from './replacedIpc'
-import { createReplacedStore, followingPrograms, keepReplacedForReview } from './replacedStore'
+import {
+  createReplacedStore,
+  followingPrograms,
+  keepReplacedForReview,
+  leaveOutWhereStayed,
+} from './replacedStore'
 import { registerRowWavesIpc } from './rowWavesIpc'
 import { applySeratoBatch } from './seratoBatch'
 import { seratoCueSource } from './seratoCueSource'
 import { seratoLibraryRoots } from './seratoLibrary'
-import { recoverSeratoTemps } from './seratoLibraryWrite'
+import { createSeratoSessionCopy, recoverSeratoTemps } from './seratoLibraryWrite'
 import { seratoEdit } from './seratoPlaylistEditIpc'
 import { seratoRead } from './seratoPlaylistsIpc'
 import { repointSerato, settleSeratoRepoint } from './seratoRepoint'
@@ -272,6 +279,7 @@ import {
   saveSettings,
   setConfigDir,
   settingsForRenderer,
+  settingsPatchEffects,
 } from './settings'
 import { registerShellIpc } from './shellIpc'
 import { sourceStat } from './sourceStat'
@@ -281,7 +289,6 @@ import { snapshotTagsInWorker, tagChangeDetail } from './tagChanges'
 import { sendLogsTo } from './threadLog'
 import { createTmpManifest } from './tmpManifest'
 import { traktorCoverFile, traktorCoverIdOf, traktorCoverPng } from './traktorCoverCache'
-import { traktorCueQueueSection } from './traktorCueQueueIpc'
 import { traktorCueSource } from './traktorCueSource'
 import { applyTraktorBatch } from './traktorCuesWrite'
 import { bootVolumeName, syncCollection } from './traktorNmlLibrary'
@@ -291,7 +298,7 @@ import {
   detectTraktorNmlPaths,
   sameCollection,
 } from './traktorNmlPath'
-import { type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
+import { discardedRelocations, type QueuedNmlPatch, syncQueuedPatches } from './traktorPatchQueue'
 import { traktorEdit } from './traktorPlaylistEditIpc'
 import { nmlPath } from './traktorPlaylists'
 import { traktorRead } from './traktorPlaylistsIpc'
@@ -435,6 +442,10 @@ const virtualdjSessionBackup = createSessionBackup({
     }
   },
 })
+const seratoSessionCopy = createSeratoSessionCopy(
+  join(app.getPath('userData'), 'serato-session'),
+  seratoRoots,
+)
 function seratoRoots() {
   try {
     const volumes = readdirSync('/Volumes').map((name) => join('/Volumes', name))
@@ -479,6 +490,12 @@ const FILE_CHECK_DELAY_MS = 3000
 const fileDatesStore = fileStore(join(app.getPath('userData'), 'file-dates.json'))
 const matchingStore = createMatchingStore(join(app.getPath('userData'), 'matching-pairs.json'))
 const replacedStore = createReplacedStore(join(app.getPath('userData'), 'replaced-tracks.json'))
+const leaveOutAndTell = (program: CueProgram, paths: string[]): void => {
+  if (leaveOutWhereStayed(replacedStore, program, paths)) broadcast('replaced:changed', null)
+}
+const leaveTraktorOutWhereStayed = (write: FlushOutcome['traktor']): void => {
+  if (typeof write === 'object' && write.stayed) leaveOutAndTell('traktor', write.stayed)
+}
 const fileSignatures = createFileSignatures({
   load: () => {
     try {
@@ -555,7 +572,8 @@ const programQueues = {
             realPath: (p: string) => realpathSync(p),
           }),
         repoint: async (collectionPath, list) => {
-          const results = await repointRekordbox(collectionPath, list, sessions)
+          const results = await repointRekordbox(collectionPath, list, sessions, provisionalCues)
+          leaveOutAndTell('rekordbox', queueLeftBehind(list, results))
           queueChecks.repointed('rekordbox', results)
           return results
         },
@@ -563,6 +581,7 @@ const programQueues = {
         onChange: (state) =>
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'rekordbox', value: state }),
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('rekordbox', discardLeftBehind(list)),
       },
       alwaysWatch: () => getSettings().completeCuesOnClose || provisionalCues.all().length > 0,
       onClosed: () => {
@@ -592,6 +611,7 @@ const programQueues = {
           }),
         repoint: async (libraryDir, list) => {
           const results = await repointEngineQueued(libraryDir, list, sessions)
+          leaveOutAndTell('engine', queueLeftBehind(list, results))
           queueChecks.repointed('engine', results)
           return results
         },
@@ -599,6 +619,7 @@ const programQueues = {
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'engine', value: state }),
         addsTracks: false,
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('engine', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
@@ -620,6 +641,7 @@ const programQueues = {
             async (path, list) => {
               const result = await syncCollection(path, list, sessions.traktor)
               write = traktorWrite(list, result)
+              leaveTraktorOutWhereStayed(write)
               return result
             },
             bootVolumeName(),
@@ -630,6 +652,8 @@ const programQueues = {
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'traktor', value: state }),
         addsTracks: false,
+        onDiscard: (patches) =>
+          leaveOutAndTell('traktor', discardedRelocations(patches, bootVolumeName())),
       },
     },
     programQueueDeps,
@@ -652,16 +676,19 @@ const programQueues = {
             tracking: tmpManifest,
             rewritten: followLibrarySize,
             seratoOpen: DJ_PROCESSES.serato.isRunning,
+            sessionBackup: seratoSessionCopy,
           }),
         repoint: (_library, list) =>
           repointSerato(list, {
             roots: seratoRoots,
             backupDir: join(app.getPath('userData'), 'serato-backups'),
             seratoOpen: DJ_PROCESSES.serato.isRunning,
+            sessionBackup: seratoSessionCopy,
           }),
         nodeStamps: async () => ({}),
         onChange: (state) => broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'serato', value: state }),
         addsTracks: false,
+        onDiscard: (list) => leaveOutAndTell('serato', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
@@ -697,6 +724,7 @@ const programQueues = {
               }
             },
           })
+          leaveOutAndTell('virtualdj', queueLeftBehind(list, results))
           queueChecks.repointed('virtualdj', results)
           return results
         },
@@ -705,6 +733,7 @@ const programQueues = {
           broadcast(DJ_CUE_QUEUE_CHANGED, { program: 'virtualdj', value: state }),
         addsTracks: false,
         stack: stackRepoint,
+        onDiscard: (list) => leaveOutAndTell('virtualdj', discardLeftBehind(list)),
       },
     },
     programQueueDeps,
@@ -1077,29 +1106,10 @@ function createWindow(): BrowserWindow {
     unsavedCues: () => unsavedCueTracks.size,
     confirm: async (running, exporting, unsavedCues) => {
       const t = createMenuT(menuLocale())
-      const details = [
-        running > 0 ? t('quitBusyDetail').replace('{n}', String(running)) : null,
-        exporting ? t('quitUsbDetail') : null,
-        unsavedCues > 0 ? t('quitCuesDetail') : null,
-      ]
-      const { response } = await dialog.showMessageBox(win, {
-        type: 'warning',
-        message:
-          running > 0
-            ? t('quitBusyMessage')
-            : exporting
-              ? t('quitUsbMessage')
-              : t('quitCuesMessage'),
-        detail: details.filter(Boolean).join('\n\n'),
-        buttons: [
-          t('quitBusyConfirm'),
-          running > 0 ? t('quitBusyCancel') : exporting ? t('quitUsbCancel') : t('quitCuesCancel'),
-        ],
-        // Keep converting is the default: an absent-minded Return on this dialog must
-        // not be what throws away a batch that has been running for minutes.
-        defaultId: 1,
-        cancelId: 1,
-      })
+      const { response } = await dialog.showMessageBox(
+        win,
+        quitDialog(t, running, exporting, unsavedCues),
+      )
       return response === 0
     },
   })
@@ -1290,24 +1300,14 @@ function registerIpc(): void {
   ipcMain.handle('settings:get', () => settingsForRenderer(getSettings()))
   ipcMain.handle('settings:set', (e, patch: Partial<Settings>) => {
     const next = saveSettings(sanitizeSettingsPatch(patch))
-    // Rebinding a shortcut changes the menu accelerators, and pinning a language
-    // changes every menu label — both need the menu rebuilt from the freshly-saved
-    // settings (buildAppMenu re-reads shortcuts and menuLocale re-reads language).
-    if (
-      patch.shortcutOverrides !== undefined ||
-      patch.language !== undefined ||
-      patch.showListWaves !== undefined ||
-      patch.showListPositions !== undefined ||
-      patch.showRailNames !== undefined ||
-      patch.showSidebar !== undefined
-    ) {
+    const effects = settingsPatchEffects(patch)
+    if (effects.rebuildMenu) {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) buildAppMenu(win)
     }
-    if (patch.completeCuesOnClose !== undefined) rekordboxQueueWatch.poke()
-    if (patch.rekordboxDbPath !== undefined) rekordboxQueue.announce()
-    if (patch.engineLibraryDir !== undefined) engineCueQueue.announce()
-    if (patch.traktorNmlPath !== undefined) traktorCueQueue.announce()
+    if (effects.pokeRekordboxWatch) rekordboxQueueWatch.poke()
+    const queues = { rekordbox: rekordboxQueue, engine: engineCueQueue, traktor: traktorCueQueue }
+    for (const program of effects.announce) queues[program].announce()
     return settingsForRenderer(next)
   })
 
@@ -1321,20 +1321,8 @@ function registerIpc(): void {
   // applies). The key is allowlisted here — this channel takes renderer input, so an
   // arbitrary string must not reach the settings file as a new property.
   ipcMain.on('stats:record', (_e, key: unknown, by?: unknown) => {
-    const keys: readonly string[] = [
-      'imported',
-      'listened',
-      'analyzed',
-      'discogsMatches',
-      'bandcampMatches',
-      'deezerMatches',
-      'beatportMatches',
-      'musicbrainzMatches',
-      'itunesMatches',
-    ] satisfies (keyof Settings['stats'])[]
-    if (typeof key === 'string' && keys.includes(key)) {
-      recordStat(key as keyof Settings['stats'], typeof by === 'number' ? by : 1)
-    }
+    const bump = statBumpOf(key, by)
+    if (bump) recordStat(bump.key, bump.by)
   })
 
   // Renderer crashes forwarded into the shared log file, so a "the app went blank"
@@ -1346,21 +1334,8 @@ function registerIpc(): void {
   })
   // A decision the renderer takes that the log should keep (why an original stayed).
   ipcMain.on('diag:snapshot', (_e, snapshot: unknown) => {
-    const s = snapshot as Record<string, unknown> | null
-    if (typeof s !== 'object' || s === null) return
-    if (
-      typeof s.heapUsedMb !== 'number' ||
-      typeof s.heapLimitMb !== 'number' ||
-      typeof s.listTracks !== 'number'
-    )
-      return
-    crashState.watch.window({
-      heapUsedMb: s.heapUsedMb,
-      heapLimitMb: s.heapLimitMb,
-      listTracks: s.listTracks,
-      source: typeof s.source === 'string' ? s.source : null,
-      sourceTracks: typeof s.sourceTracks === 'number' ? s.sourceTracks : null,
-    })
+    const window = windowSnapshotOf(snapshot)
+    if (window) crashState.watch.window(window)
   })
   ipcMain.on('log:info', (_e, message: unknown) => {
     if (typeof message === 'string') log.info('[renderer]', message)
@@ -1579,8 +1554,8 @@ function registerIpc(): void {
     ),
   )
 
-  ipcMain.handle('search:query', (_e, query: string, provider, priority, hints) =>
-    getProvider(provider).search(query, priority, hints),
+  ipcMain.handle('search:query', (_e, query: string, provider, priority, hints, retryOnLimit) =>
+    getProvider(provider).search(query, priority, hints, retryOnLimit),
   )
   ipcMain.handle('search:release', (_e, ref: number | string, provider, priority) =>
     getProvider(provider).getRelease(ref, priority),
@@ -1590,6 +1565,7 @@ function registerIpc(): void {
     trackTmp: tmpManifest.track,
     untrackTmp: tmpManifest.untrack,
     followLibrarySize,
+    allowMedia: (path) => mediaAccess.allow(path),
   })
   const allowMedia = (paths: string[]) => mediaAccess.allowAll(paths)
   const rekordboxCollectionNow = () =>
@@ -1656,7 +1632,7 @@ function registerIpc(): void {
       pickLibraryPath: pickLibraryPath('dialogEngineLibrary', {
         properties: ['openDirectory', 'createDirectory'],
       }),
-      cueQueue: engineCueQueueSection(engineCueQueue, {
+      cueQueue: rekordboxQueueSection(engineCueQueue, {
         isClosed: async () => !(await DJ_PROCESSES.engine.isRunning()),
         onWaiting: engineCueQueueWatch.poke,
         onReady: engineCueQueueWatch.poke,
@@ -1680,7 +1656,7 @@ function registerIpc(): void {
         properties: ['openFile'],
         filters: [{ name: 'Traktor Collection', extensions: ['nml'] }],
       }),
-      cueQueue: traktorCueQueueSection(traktorCueQueue, {
+      cueQueue: rekordboxQueueSection(traktorCueQueue, {
         isClosed: async () => !(await DJ_PROCESSES.traktor.isRunning()),
         onWaiting: traktorCueQueueWatch.poke,
         onReady: traktorCueQueueWatch.poke,
@@ -1898,6 +1874,7 @@ function registerIpc(): void {
         sender.send(DJ_SYNC_ISSUE, { program, value: issue })
     },
     rekordboxHeld: () => rekordboxQueue.state().halted === true,
+    provisional: provisionalCues,
   })
 
   // Queued behind any review sync still writing, and the other way round.
@@ -1906,7 +1883,7 @@ function registerIpc(): void {
   // pending when it lands. The flush judges the tracks registered before this end arrived,
   // so a batch begun meanwhile waits for its own; a library a nested end took nothing from
   // is left for the end that does.
-  ipcMain.on('process:batch-end', (e) => endConversionBatch?.(e.sender))
+  ipcMain.handle('process:batch-end', (e) => endConversionBatch?.(e.sender))
   const programsDeps = {
     traktorRead: traktorReadPath,
     rootLibraries,
@@ -1957,6 +1934,9 @@ function registerIpc(): void {
             },
           },
         )
+        leaveTraktorOutWhereStayed(outcome.traktor)
+        for (const [program, paths] of Object.entries(outcome.stayed ?? {}))
+          leaveOutAndTell(program as WritableProgram, paths)
       } finally {
         await verifyRegistry
           .afterFlush(outcome, upTo)
@@ -2123,6 +2103,8 @@ function registerIpc(): void {
         // zero rows.
         replacesPath,
         keepOverwritten,
+        rewritesSource,
+        keepAudio,
       ) => {
         const track = meta.artist && meta.title ? `${meta.artist} - ${meta.title}` : job.outputName
         // The quality knobs are global preferences, so they're read here (at job time)
@@ -2163,6 +2145,8 @@ function registerIpc(): void {
               replacesPath,
               () => activeConversions.isCancelled(job.id),
               keepOverwritten,
+              rewritesSource,
+              keepAudio,
             ).then(async (result) => {
               tagsAfter = await snapshotTagsInWorker(output)
               return result
@@ -2428,28 +2412,12 @@ function registerIpc(): void {
   // renderer CSP only allows img-src from self/data/blob/Discogs — a raw remote URL would
   // render as a broken thumbnail. Null when nothing resolves to an image, so the drop is
   // a clean no-op instead of a red ffmpeg error on undecodable bytes.
-  ipcMain.handle('cover:resolveDragged', async (_e, urls: string[]) => {
-    for (const url of urls) {
-      // A real inline image dragged from the page is usable as-is; skip the ~1px data-URL
-      // placeholders lazy-loading leaves behind in an <img src>.
-      if (url.startsWith('data:image/')) {
-        const data = url.slice(url.indexOf(',') + 1)
-        if (Buffer.from(data, 'base64').length > 1024) return { coverUrl: url }
-        continue
-      }
-      if (!url.startsWith('http')) continue
-      try {
-        const path = await downloadCover(url)
-        const buf = await readFile(path)
-        const ext = imageExt(buf) ?? 'jpg'
-        const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`
-        return { coverPath: path, coverUrl: `data:${mime};base64,${buf.toString('base64')}` }
-      } catch {
-        // Not an image, or unreachable from the main process — try the next candidate.
-      }
-    }
-    return null
-  })
+  ipcMain.handle('cover:resolveDragged', (_e, urls: string[]) =>
+    resolveDraggedCover(urls, async (url) => {
+      const path = await downloadCover(url)
+      return { path, bytes: await readFile(path) }
+    }),
+  )
 
   // Same allowlist the shell:* channels apply: a drag hands the OS a file path, so
   // only paths this app itself produced (prepareDrag's covers) may ride it.

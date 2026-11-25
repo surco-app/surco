@@ -83,6 +83,9 @@ export function PlaylistTree({
   onlyIds,
   folderControl,
   onRowKey,
+  locked,
+  count = 1,
+  app,
 }: {
   tree: readonly SourceNode[]
   options: readonly PlaylistOption[]
@@ -100,6 +103,9 @@ export function PlaylistTree({
     key: string,
     row: { target: RekordboxPlaylistTarget } | { node: SourceNode },
   ) => boolean
+  locked?: readonly string[]
+  count?: number
+  app?: string
 }): React.JSX.Element {
   const { t: tr, i18n } = useTranslation()
   const [query, setQuery] = useState('')
@@ -137,8 +143,12 @@ export function PlaylistTree({
   ]
   rowRefs.current = []
 
-  const toggle = (target: RekordboxPlaylistTarget): void =>
+  const isLocked = (target: RekordboxPlaylistTarget): boolean =>
+    target.id !== undefined && !!locked?.includes(target.id) && stateOf(target) === 'all'
+  const toggle = (target: RekordboxPlaylistTarget): void => {
+    if (isLocked(target)) return
     onToggle(target, stateOf(target) !== 'all')
+  }
   const create = (name: string): void => {
     onToggle({ name }, true)
     setQuery('')
@@ -244,6 +254,7 @@ export function PlaylistTree({
     }
     const state = stateOf(row.target)
     const pending = !row.target.id
+    const rowLocked = isLocked(row.target)
     const label = control ? (
       <div
         key={targetKey(row.target)}
@@ -270,11 +281,12 @@ export function PlaylistTree({
         key={targetKey(row.target)}
         data-testid={`playlists-row-${targetKey(row.target)}`}
         style={{ paddingLeft: 8 + row.depth * 18 }}
-        className={`${ROW} cursor-pointer focus-within:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
+        className={`${ROW} ${rowLocked ? 'cursor-default' : 'cursor-pointer'} focus-within:bg-[var(--color-hover)] ${state === 'none' ? 'text-fg-muted' : 'text-fg'}`}
       >
         {(pending || state === 'some') && (
           <Tooltip label={pending ? tr('editor.playlists.pending') : tr('editor.playlists.some')} />
         )}
+        {rowLocked && <Tooltip label={tr('editor.playlists.removeIn', { app, count })} />}
         <span className="w-3 shrink-0" />
         <input
           ref={(el) => {
@@ -285,6 +297,7 @@ export function PlaylistTree({
           tabIndex={-1}
           data-testid={`playlists-check-${targetKey(row.target)}`}
           checked={state === 'all'}
+          aria-disabled={rowLocked || undefined}
           onChange={() => toggle(row.target)}
           className="h-3.5 w-3.5 shrink-0 accent-[var(--color-accent)] outline-none"
         />
@@ -329,7 +342,7 @@ export function PlaylistTree({
 
   return (
     <fieldset onKeyDown={onKeyDown} className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <label className="m-2 flex h-[30px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs focus-within:border-[var(--color-accent)]">
+      <label className="m-2 flex h-[30px] shrink-0 items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
         <Search size={13} className="shrink-0 text-fg-faint" aria-hidden="true" />
         <input
           ref={(el) => {

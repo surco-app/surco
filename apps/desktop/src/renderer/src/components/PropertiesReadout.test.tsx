@@ -87,9 +87,9 @@ describe('PropertiesReadout two-column grid', () => {
         duration={404}
       />,
     )
-    expect(screen.getByTestId('property-fileName').className).toContain('col-span-2')
-    expect(screen.getByTestId('property-path').className).toContain('col-span-2')
-    expect(screen.getByTestId('property-kind').className).not.toContain('col-span-2')
+    expect(screen.getByTestId('property-fileName')).toHaveAttribute('data-full-width', 'true')
+    expect(screen.getByTestId('property-path')).toHaveAttribute('data-full-width', 'true')
+    expect(screen.getByTestId('property-kind')).toHaveAttribute('data-full-width', 'false')
   })
 
   // With an odd number of short facts the last one stretches full-width, so the grid never
@@ -105,7 +105,7 @@ describe('PropertiesReadout two-column grid', () => {
         duration={404}
       />,
     )
-    expect(screen.getByTestId('property-duration').className).toContain('col-span-2')
+    expect(screen.getByTestId('property-duration')).toHaveAttribute('data-full-width', 'true')
   })
 
   it('leaves every short row single-cell when the shorts come out even', () => {
@@ -113,7 +113,7 @@ describe('PropertiesReadout two-column grid', () => {
     render(
       <PropertiesReadout properties={props} fileName="x" inputPath="/x/x.flac" duration={404} />,
     )
-    expect(screen.getByTestId('property-duration').className).not.toContain('col-span-2')
+    expect(screen.getByTestId('property-duration')).toHaveAttribute('data-full-width', 'false')
   })
 })
 

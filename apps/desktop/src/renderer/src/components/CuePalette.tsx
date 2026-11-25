@@ -23,6 +23,7 @@ export function CuePalette({
   const grid = (
     <div
       data-testid="cue-palette"
+      data-columns={wide ? 8 : 4}
       className={`grid gap-1.5 ${wide ? 'w-full grid-cols-8' : 'w-max shrink-0 grid-cols-4'}`}
     >
       {HOT_CUE_PICKER.map((index) => (

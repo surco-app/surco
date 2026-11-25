@@ -80,7 +80,15 @@ describe('getProvider', () => {
       { artist: 'Rosalía', title: 'Despechá' },
       [],
       0,
+      undefined,
     )
+  })
+
+  // The editor's panel shows the wait itself, so a 429 has to reach it at once.
+  it('tells the Discogs client when the caller retries a rate limit on its own', async () => {
+    search.mockResolvedValue([])
+    await getProvider('discogs').search('panel query', 'high', undefined, false)
+    expect(search).toHaveBeenCalledWith('panel query', 'tok', 'high', undefined, [], 0, false)
   })
 
   it('defaults to Discogs when no provider id is given', () => {
@@ -95,7 +103,7 @@ describe('getProvider', () => {
     search.mockResolvedValue([{ id: 1 }])
     const hints = { title: 'Airwave', catalogNumber: 'ANJ001' }
     const out = await getProvider('discogs').search('rank 1 airwave', 'high', hints)
-    expect(search).toHaveBeenCalledWith('rank 1 airwave', 'tok', 'high', hints, [], 0)
+    expect(search).toHaveBeenCalledWith('rank 1 airwave', 'tok', 'high', hints, [], 0, undefined)
     expect(out).toEqual([{ id: 1 }])
   })
 
@@ -109,7 +117,15 @@ describe('getProvider', () => {
     })
     search.mockResolvedValue([])
     await getProvider('discogs').search('only vinyl', 'high')
-    expect(search).toHaveBeenCalledWith('only vinyl', 'tok', 'high', undefined, ['Vinyl'], 0)
+    expect(search).toHaveBeenCalledWith(
+      'only vinyl',
+      'tok',
+      'high',
+      undefined,
+      ['Vinyl'],
+      0,
+      undefined,
+    )
   })
 
   // A rip-crew stamp in the query/hints ("rip djotas good") sinks every search shape —
@@ -134,6 +150,7 @@ describe('getProvider', () => {
       { title: 'Sueño Latino', artist: 'Latino Project' },
       [],
       0,
+      undefined,
     )
   })
 
@@ -148,7 +165,7 @@ describe('getProvider', () => {
     })
     search.mockResolvedValue([])
     await getProvider('discogs').search('fifty please', 'high')
-    expect(search).toHaveBeenCalledWith('fifty please', 'tok', 'high', undefined, [], 50)
+    expect(search).toHaveBeenCalledWith('fifty please', 'tok', 'high', undefined, [], 50, undefined)
   })
 
   // The renderer always sends the tagged album; the setting decides here whether any

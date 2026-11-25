@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { describe, expect, it } from 'vitest'
 import type { RekordboxQueueNotice } from '../../../shared/types'
 import i18n from '../i18n'
@@ -12,15 +13,32 @@ import ptBR from '../i18n/locales/pt-BR.json'
 import {
   appliedMessage,
   ENGINE_QUEUE_WORDS,
-  noticeText,
   partText,
   pillText,
+  type QueueWords,
+  REKORDBOX_QUEUE_WORDS,
   SERATO_QUEUE_WORDS,
   TRAKTOR_QUEUE_WORDS,
   VIRTUALDJ_QUEUE_WORDS,
 } from './rekordboxQueueText'
 
 const tr = i18n.getFixedT('en')
+
+const LOCALES = { en, es, de, fr, 'pt-BR': ptBR, ja, ca, it: itIT }
+
+function fixedT(lng: string, bundle: object) {
+  if (!i18n.hasResourceBundle(lng, 'translation'))
+    i18n.addResourceBundle(lng, 'translation', bundle)
+  return i18n.getFixedT(lng)
+}
+
+function rows(
+  notices: RekordboxQueueNotice[],
+  words: QueueWords = REKORDBOX_QUEUE_WORDS,
+  t: TFunction = tr,
+) {
+  return appliedMessage(t, { tracks: 0, changes: 0, notices, written: [] }, words)?.rows
+}
 
 describe('rekordbox queue text', () => {
   it('counts tracks first, tree changes otherwise, and hides with nothing waiting', () => {
@@ -89,15 +107,10 @@ describe('rekordbox queue text', () => {
 
   it('points at the first cue left off the grid, so the notice can take the DJ to it', () => {
     const unfit = { code: 'cues-unfit' as const, track: 'Pray', count: 2, contentId: '7', ms: 1000 }
-    expect(
-      appliedMessage(tr, { tracks: 0, changes: 1, notices: [unfit], written: [] })?.goTo,
-    ).toEqual({
-      contentId: '7',
-      ms: 1000,
-    })
-    expect(
-      appliedMessage(tr, { tracks: 2, changes: 0, notices: [], written: [] })?.goTo,
-    ).toBeUndefined()
+    expect(rows([unfit])?.[0].goTo).toEqual({ contentId: '7', ms: 1000 })
+    expect(appliedMessage(tr, { tracks: 2, changes: 0, notices: [], written: [] })?.rows).toEqual(
+      [],
+    )
   })
 
   it('names what happens to each track', () => {
@@ -130,44 +143,90 @@ describe('rekordbox queue text', () => {
     expect(partText(tr, { kind: 'tree', edit: 'moveNode' })).toBe('move')
   })
 
-  it('never lands in silence, naming what rekordbox kept in the same line as what landed', () => {
+  // A batch used to come back as one paragraph, a sentence per track: six tracks and four
+  // playlist refusals filled the window. The line says what landed, and each reason gets
+  // one row with the tracks it hit, so the DJ reads why first and who second.
+  it('says what landed in one line and gathers the tracks rekordbox kept under one row per reason', () => {
     expect(
       appliedMessage(tr, {
-        tracks: 3,
+        tracks: 6,
         changes: 0,
-        notices: [{ code: 'playlist-changed', track: 'Bam Bam', playlist: 'Makina' }],
+        notices: [
+          { code: 'playlist-changed', track: 'Madagascar', playlist: 'Warm Up' },
+          { code: 'playlist-changed', track: 'Soca Boys', playlist: 'Warm Up' },
+          { code: 'cues-unfit', track: 'Rave Allstars', count: 16, contentId: '7', ms: 1000 },
+          { code: 'playlist-changed', track: 'Oxia', playlist: 'Warm Up' },
+          { code: 'playlist-changed', track: 'Bam Bam', playlist: 'Cierre' },
+        ],
         written: [],
       }),
     ).toEqual({
-      text: 'Done in rekordbox · 3 tracks. Bam Bam was not changed in Makina. It changed in rekordbox',
+      text: 'Done in rekordbox · 6 tracks',
       tone: 'neutral',
+      rows: [
+        {
+          icon: 'list',
+          tone: 'warn',
+          title: '3 tracks not changed in Warm Up',
+          sub: 'It changed in rekordbox · Madagascar, Soca Boys, Oxia',
+        },
+        {
+          icon: 'cue',
+          tone: 'warn',
+          title: '16 cues off rekordbox’s beats',
+          sub: 'Left where they were. Check them · Rave Allstars',
+          goTo: { contentId: '7', ms: 1000 },
+        },
+        {
+          icon: 'list',
+          tone: 'warn',
+          title: '1 track not changed in Cierre',
+          sub: 'It changed in rekordbox · Bam Bam',
+        },
+      ],
     })
   })
 
-  it('says why a track or an edit was skipped, for every notice code that can arrive', () => {
-    expect(noticeText(tr, { code: 'cues-adjusted', track: 'Pray', moved: 4, maxMs: 7 })).toBe(
-      'rekordbox has analysed Pray. 4 cues moved onto its grid, the furthest 7 ms',
-    )
-    expect(noticeText(tr, { code: 'cues-adjusted', track: 'Pray', moved: 1, maxMs: 3 })).toBe(
-      'rekordbox has analysed Pray. 1 cue moved onto its grid, 3 ms',
-    )
+  it('names each track once in its row even when the same reason came back for it twice', () => {
     expect(
-      noticeText(tr, { code: 'cues-unfit', track: 'Pray', count: 1, contentId: '7', ms: 1000 }),
-    ).toBe('One cue of Pray sits far from rekordbox’s beats and was left where it was. Check it')
-    expect(noticeText(tr, { code: 'ambiguous', track: 'Bam Bam' })).toBe(
-      'Bam Bam was not added. rekordbox has it twice',
+      rows([
+        { code: 'cues-changed', track: 'Tengo' },
+        { code: 'cues-changed', track: 'Tengo' },
+      ])?.[0].sub,
+    ).toBe('Changed in rekordbox. Mark them again · Tengo')
+  })
+
+  it('says why a track or an edit was skipped, for every notice code that can arrive', () => {
+    const say = (notice: RekordboxQueueNotice) => {
+      const r = rows([notice])?.[0]
+      return `${r?.title} | ${r?.sub}`
+    }
+    expect(say({ code: 'cues-adjusted', track: 'Pray', moved: 4, maxMs: 7 })).toBe(
+      '4 cues moved onto rekordbox’s grid | The furthest 7 ms · Pray',
     )
-    expect(noticeText(tr, { code: 'file-missing', track: 'Bam Bam' })).toBe(
-      'Bam Bam was not added to the collection. The file is gone',
+    expect(say({ code: 'ambiguous', track: 'Bam Bam' })).toBe(
+      '1 track not added to rekordbox | Twice in rekordbox · Bam Bam',
     )
-    expect(noticeText(tr, { code: 'not-added', track: 'Bam Bam' })).toBe(
-      'Bam Bam was not added to the collection. The file could not be read',
+    expect(say({ code: 'file-missing', track: 'Bam Bam' })).toBe(
+      '1 track not added to rekordbox | The file is gone · Bam Bam',
     )
-    expect(noticeText(tr, { code: 'playlist-gone', track: 'Bam Bam', playlist: 'Makina' })).toBe(
-      'Makina is no longer in rekordbox. Bam Bam was not added',
+    expect(say({ code: 'not-added', track: 'Bam Bam' })).toBe(
+      '1 track not added to rekordbox | The file could not be read · Bam Bam',
     )
-    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Makina' })).toBe(
-      'Makina was not changed. It changed in rekordbox',
+    expect(say({ code: 'playlist-gone', track: 'Bam Bam', playlist: 'Makina' })).toBe(
+      '1 track not added to Makina | It is no longer in rekordbox · Bam Bam',
+    )
+    expect(say({ code: 'edit-changed', playlist: 'Makina' })).toBe(
+      'Makina not changed | It changed in rekordbox',
+    )
+    expect(say({ code: 'not-in-library', track: 'Tengo' })).toBe(
+      '1 track no longer in rekordbox | Playlists not changed · Tengo',
+    )
+  })
+
+  it('marks the cues rekordbox only nudged onto its grid as news, not as a problem', () => {
+    expect(rows([{ code: 'cues-adjusted', track: 'Pray', moved: 1, maxMs: 3 }])?.[0]).toMatchObject(
+      { icon: 'cue', tone: 'neutral' },
     )
   })
 
@@ -192,16 +251,27 @@ describe('rekordbox queue text', () => {
         changes: 0,
         notices: [{ code: 'cues-changed', track: 'Tengo' }],
         written: [],
-      })?.text,
-    ).toBe('The cues of Tengo changed in rekordbox. Mark them again')
-    expect(noticeText(tr, { code: 'cues-too-many', track: 'Tengo' })).toBe(
-      'Tengo would need more than 8 hot cues. Remove a mark',
+      }),
+    ).toEqual({
+      text: '',
+      tone: 'neutral',
+      rows: [
+        {
+          icon: 'cue',
+          tone: 'warn',
+          title: 'Cues of 1 track not saved',
+          sub: 'Changed in rekordbox. Mark them again · Tengo',
+        },
+      ],
+    })
+    expect(rows([{ code: 'cues-too-many', track: 'Tengo' }])?.[0].sub).toBe(
+      'More than 8 hot cues. Remove a mark · Tengo',
     )
-    expect(noticeText(tr, { code: 'cues-invalid', track: 'Tengo' })).toBe(
-      'The cues of Tengo were not saved. Surco could not read them as cues',
+    expect(rows([{ code: 'cues-invalid', track: 'Tengo' }])?.[0].sub).toBe(
+      'Surco could not read them as cues · Tengo',
     )
-    expect(noticeText(tr, { code: 'cues-write-failed', track: 'Tengo' })).toBe(
-      'The cues of Tengo were not saved. Surco could not write the file',
+    expect(rows([{ code: 'cues-write-failed', track: 'Tengo' }])?.[0].sub).toBe(
+      'Surco could not write the file · Tengo',
     )
     expect(partText(tr, { kind: 'cues' })).toBe('cues')
   })
@@ -218,35 +288,30 @@ describe('Engine DJ queue text', () => {
     )
   })
 
-  it('names the CALLs Engine DJ did not keep and where they were, in the same line as what landed', () => {
+  it('counts every CALL Engine DJ did not keep across the tracks, under the line of what landed', () => {
     expect(
       appliedMessage(
         tr,
         {
-          tracks: 1,
+          tracks: 2,
           changes: 0,
-          notices: [{ code: 'cues-calls-dropped', track: 'Tengo', calls: [4000, 72500] }],
+          notices: [
+            { code: 'cues-calls-dropped', track: 'Tengo', calls: [4000, 72500] },
+            { code: 'cues-calls-dropped', track: 'Pray', calls: [9000] },
+          ],
           written: [],
         },
         ENGINE_QUEUE_WORDS,
-      )?.text,
-    ).toBe(
-      'Done in Engine DJ · 1 track. 2 CALLs of Tengo were not saved (0:04, 1:12). Engine DJ only keeps hot cues',
-    )
+      ),
+    ).toMatchObject({
+      text: 'Done in Engine DJ · 2 tracks',
+      rows: [{ title: '3 CALLs not saved', sub: 'Engine DJ only keeps hot cues · Tengo, Pray' }],
+    })
   })
 
   it('says the cues changed in Engine DJ when a save was refused for it', () => {
-    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, ENGINE_QUEUE_WORDS)).toBe(
-      'The cues of Tengo changed in Engine DJ. Mark them again',
-    )
-  })
-
-  it('says in Spanish which CALLs did not reach Engine DJ, plainly and without a colon', () => {
-    expect(es.engineQueue.notice.callsDropped_one).toBe(
-      'No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues',
-    )
-    expect(es.engineQueue.notice.callsDropped_other).toBe(
-      'No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues',
+    expect(rows([{ code: 'cues-changed', track: 'Tengo' }], ENGINE_QUEUE_WORDS)?.[0].sub).toBe(
+      'Changed in Engine DJ. Mark them again · Tengo',
     )
   })
 })
@@ -259,15 +324,18 @@ describe('Traktor queue text', () => {
   })
 
   it('names the track whose cue H did not fit on Traktor’s buttons', () => {
-    expect(noticeText(tr, { code: 'cues-slot-dropped', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
-      "Traktor has 7 buttons for Surco's cues, so cue H of Tengo was not saved",
-    )
+    expect(
+      rows([{ code: 'cues-slot-dropped', track: 'Tengo' }], TRAKTOR_QUEUE_WORDS)?.[0],
+    ).toMatchObject({
+      title: 'Cue H of 1 track not saved',
+      sub: "Traktor has 7 buttons for Surco's cues · Tengo",
+    })
   })
 
   it('says a playlist changed in Traktor when an edit was refused for it', () => {
-    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, TRAKTOR_QUEUE_WORDS)).toBe(
-      'Friday was not changed. It changed in Traktor',
-    )
+    expect(
+      rows([{ code: 'edit-changed', playlist: 'Friday' }], TRAKTOR_QUEUE_WORDS)?.[0],
+    ).toMatchObject({ title: 'Friday not changed', sub: 'It changed in Traktor' })
   })
 
   it('speaks of changes, not only cues, now that playlists wait in the same queue', () => {
@@ -280,33 +348,31 @@ describe('Traktor queue text', () => {
   })
 
   it('says the cues changed in Traktor when a save was refused for it', () => {
-    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
-      'The cues of Tengo changed in Traktor. Mark them again',
+    expect(rows([{ code: 'cues-changed', track: 'Tengo' }], TRAKTOR_QUEUE_WORDS)?.[0].sub).toBe(
+      'Changed in Traktor. Mark them again · Tengo',
     )
   })
 })
 
 describe('playlist notices from the Traktor and Engine DJ queues', () => {
   it('name the app that holds the playlists, never rekordbox', () => {
-    expect(
-      noticeText(
-        tr,
-        { code: 'playlist-changed', track: 'Tengo', playlist: 'Friday' },
-        TRAKTOR_QUEUE_WORDS,
-      ),
-    ).toBe('Tengo was not changed in Friday. It changed in Traktor')
-    expect(
-      noticeText(
-        tr,
-        { code: 'playlist-gone', track: 'Tengo', playlist: 'House' },
-        ENGINE_QUEUE_WORDS,
-      ),
-    ).toBe('House is no longer in Engine DJ. Tengo was not added')
-    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' }, ENGINE_QUEUE_WORDS)).toBe(
-      'Tengo is no longer in Engine DJ. Its playlists were not changed',
-    )
-    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' }, TRAKTOR_QUEUE_WORDS)).toBe(
-      'Tengo is no longer in Traktor. Its playlists were not changed',
+    const subs = (words: QueueWords) =>
+      rows(
+        [
+          { code: 'playlist-changed', track: 'Tengo', playlist: 'Friday' },
+          { code: 'playlist-gone', track: 'Tengo', playlist: 'House' },
+          { code: 'not-in-library', track: 'Tengo' },
+        ],
+        words,
+      )?.map((r) => r.sub)
+    expect(subs(TRAKTOR_QUEUE_WORDS)).toEqual([
+      'It changed in Traktor · Tengo',
+      'It is no longer in Traktor · Tengo',
+      'Playlists not changed · Tengo',
+    ])
+    expect(subs(ENGINE_QUEUE_WORDS)?.[1]).toBe('It is no longer in Engine DJ · Tengo')
+    expect(rows([{ code: 'not-in-library', track: 'Tengo' }], ENGINE_QUEUE_WORDS)?.[0].title).toBe(
+      '1 track no longer in Engine DJ',
     )
   })
 })
@@ -360,18 +426,18 @@ describe('Serato queue text', () => {
           written: [],
         },
         SERATO_QUEUE_WORDS,
-      )?.text,
-    ).toBe(
-      'Done in Serato · 1 track. 1 CALL of Tengo was not saved (0:04). Serato only keeps hot cues',
-    )
+      ),
+    ).toMatchObject({
+      text: 'Done in Serato · 1 track',
+      rows: [{ title: '1 CALL not saved', sub: 'Serato only keeps hot cues · Tengo' }],
+    })
   })
 
   it('says a converted track stayed out of a crate that lives on another drive', () => {
     expect(
-      noticeText(tr, { code: 'other-volume', track: 'Tengo', playlist: 'Gig' }, SERATO_QUEUE_WORDS),
-    ).toBe('Tengo is on another drive and cannot go in the crate “Gig”')
+      rows([{ code: 'other-volume', track: 'Tengo', playlist: 'Gig' }], SERATO_QUEUE_WORDS)?.[0],
+    ).toMatchObject({ title: '1 track not added to Gig', sub: 'On another drive · Tengo' })
   })
-
   it('names Serato, never rekordbox, in every notice about a converted track the Serato queue gives', () => {
     const notices: RekordboxQueueNotice[] = [
       { code: 'not-added', track: 'Tengo' },
@@ -382,21 +448,11 @@ describe('Serato queue text', () => {
       { code: 'tags-not-in-library', track: 'Tengo' },
       { code: 'tags-changed', track: 'Tengo' },
     ]
-    for (const [lng, bundle] of Object.entries({
-      en,
-      es,
-      de,
-      fr,
-      'pt-BR': ptBR,
-      ja,
-      ca,
-      it: itIT,
-    })) {
-      if (!i18n.hasResourceBundle(lng, 'translation'))
-        i18n.addResourceBundle(lng, 'translation', bundle)
-      const t = i18n.getFixedT(lng)
+    for (const [lng, bundle] of Object.entries(LOCALES)) {
+      const t = fixedT(lng, bundle)
       for (const notice of notices) {
-        const text = noticeText(t, notice, SERATO_QUEUE_WORDS)
+        const r = rows([notice], SERATO_QUEUE_WORDS, t)?.[0]
+        const text = `${r?.title} ${r?.sub}`
         if (notice.code !== 'other-volume')
           expect(text, `${lng} ${notice.code}`).toContain('Serato')
         expect(text, `${lng} ${notice.code}`).not.toMatch(/rekordbox/i)
@@ -406,56 +462,55 @@ describe('Serato queue text', () => {
 
   it('says a review tag change left a track Serato no longer has, without talking about crates', () => {
     expect(
-      noticeText(tr, { code: 'tags-not-in-library', track: 'Tengo' }, SERATO_QUEUE_WORDS),
-    ).toBe('Tengo is no longer in Serato and its tags were not changed')
-    if (!i18n.hasResourceBundle('es', 'translation'))
-      i18n.addResourceBundle('es', 'translation', es)
+      rows([{ code: 'tags-not-in-library', track: 'Tengo' }], SERATO_QUEUE_WORDS)?.[0],
+    ).toMatchObject({ title: '1 track no longer in Serato', sub: 'Tags not changed · Tengo' })
     expect(
-      noticeText(
-        i18n.getFixedT('es'),
-        { code: 'tags-not-in-library', track: 'Tengo' },
+      rows(
+        [{ code: 'tags-not-in-library', track: 'Tengo' }],
         SERATO_QUEUE_WORDS,
-      ),
-    ).toBe('Tengo ya no está en Serato y sus etiquetas no se cambiaron')
+        fixedT('es', es),
+      )?.[0],
+    ).toMatchObject({ title: '1 pista ya no está en Serato', sub: 'Etiquetas sin cambiar · Tengo' })
   })
 
   it('says a review tag change left a track the user changed in Serato meanwhile', () => {
-    expect(noticeText(tr, { code: 'tags-changed', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
-      'Tengo changed in Serato and its tags were not changed',
+    expect(rows([{ code: 'tags-changed', track: 'Tengo' }], SERATO_QUEUE_WORDS)?.[0]).toMatchObject(
+      {
+        title: 'Tags of 1 track not changed',
+        sub: 'Changed in Serato · Tengo',
+      },
     )
   })
 
-  it('keeps the rekordbox wording for rekordbox while Serato gets its own', () => {
-    expect(noticeText(tr, { code: 'not-in-library', track: 'Tengo' })).toContain('rekordbox')
+  it('says only that a track was not added to Serato, since Serato gives no reason', () => {
+    expect(rows([{ code: 'not-added', track: 'Tengo' }], SERATO_QUEUE_WORDS)?.[0]).toMatchObject({
+      title: '1 track not added to Serato',
+      sub: 'Tengo',
+    })
   })
 
   it('says a converted track whose original Serato keeps stays out of the crate the user chose', () => {
-    if (!i18n.hasResourceBundle('es', 'translation'))
-      i18n.addResourceBundle('es', 'translation', es)
     expect(
-      noticeText(
-        i18n.getFixedT('es'),
-        { code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' },
+      rows(
+        [{ code: 'source-in-serato', track: 'Tengo', playlist: 'Gig' }],
         SERATO_QUEUE_WORDS,
-      ),
-    ).toBe('Tengo sigue en Serato con el archivo original y no entra en el crate «Gig»')
+        fixedT('es', es),
+      )?.[0],
+    ).toMatchObject({
+      title: '1 pista no se añadió a Gig',
+      sub: 'Serato se queda el archivo original · Tengo',
+    })
   })
 
   it('says why Surco left a track whose older Serato cues say something else, and how to clear it', () => {
-    expect(noticeText(tr, { code: 'cues-old-block', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
-      'The cues of Tengo were not saved. Serato keeps an older copy of them that does not match. Move any cue of the track in Serato and save again',
-    )
-  })
-
-  it('says the cues changed in Serato when a save was refused for it', () => {
-    expect(noticeText(tr, { code: 'cues-changed', track: 'Tengo' }, SERATO_QUEUE_WORDS)).toBe(
-      'The cues of Tengo changed in Serato. Mark them again',
+    expect(rows([{ code: 'cues-old-block', track: 'Tengo' }], SERATO_QUEUE_WORDS)?.[0].sub).toBe(
+      'Serato keeps an older copy. Move a cue there and save again · Tengo',
     )
   })
 
   it('says a queued crate edit that Serato changed under it in Serato words, not rekordbox', () => {
-    expect(noticeText(tr, { code: 'edit-changed', playlist: 'Friday' }, SERATO_QUEUE_WORDS)).toBe(
-      'Friday was not changed. It changed in Serato',
+    expect(rows([{ code: 'edit-changed', playlist: 'Friday' }], SERATO_QUEUE_WORDS)?.[0].sub).toBe(
+      'It changed in Serato',
     )
   })
 
@@ -472,9 +527,14 @@ describe('Serato queue text', () => {
       tr(SERATO_QUEUE_WORDS.elsewhere, { count: 1 }),
     ]
     for (const line of queueLines) expect(line).toMatch(/Serato/)
-    const trackLines = (['cues-write-failed', 'cues-invalid', 'cues-too-many'] as const).map(
-      (code) => noticeText(tr, { code, track: 'Tengo' }, SERATO_QUEUE_WORDS),
-    )
+    const trackLines = (
+      rows(
+        (['cues-write-failed', 'cues-invalid', 'cues-too-many', 'cues-changed'] as const).map(
+          (code) => ({ code, track: 'Tengo' }),
+        ),
+        SERATO_QUEUE_WORDS,
+      ) ?? []
+    ).map((r) => `${r.title} ${r.sub}`)
     for (const line of [...queueLines, ...trackLines])
       expect(line).not.toMatch(/rekordbox|Engine DJ|Traktor/)
   })
@@ -495,14 +555,13 @@ describe('VirtualDJ queue text', () => {
 
   it('says in VirtualDJ’s words that a CALL was not saved and that cues changed there', () => {
     expect(
-      noticeText(
-        tr,
-        { code: 'cues-calls-dropped', track: 'Pray', calls: [90000] },
+      rows(
+        [{ code: 'cues-calls-dropped', track: 'Pray', calls: [90000] }],
         VIRTUALDJ_QUEUE_WORDS,
-      ),
-    ).toBe('1 CALL of Pray was not saved (1:30). VirtualDJ only keeps hot cues')
-    expect(noticeText(tr, { code: 'cues-changed', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
-      'The cues of Pray changed in VirtualDJ. Mark them again',
+      )?.[0],
+    ).toMatchObject({ title: '1 CALL not saved', sub: 'VirtualDJ only keeps hot cues · Pray' })
+    expect(rows([{ code: 'cues-changed', track: 'Pray' }], VIRTUALDJ_QUEUE_WORDS)?.[0].sub).toBe(
+      'Changed in VirtualDJ. Mark them again · Pray',
     )
   })
 
@@ -520,29 +579,37 @@ describe('VirtualDJ queue text', () => {
   })
 
   it('says in VirtualDJ’s words what became of a converted track and its lists', () => {
-    const say = (notice: Parameters<typeof noticeText>[1]) =>
-      noticeText(tr, notice, VIRTUALDJ_QUEUE_WORDS)
-    expect(say({ code: 'not-added', track: 'Pray' })).toBe('Pray was not added to VirtualDJ')
+    const say = (notice: RekordboxQueueNotice) => {
+      const r = rows([notice], VIRTUALDJ_QUEUE_WORDS)?.[0]
+      return `${r?.title} | ${r?.sub}`
+    }
+    expect(say({ code: 'not-added', track: 'Pray' })).toBe('1 track not added to VirtualDJ | Pray')
     expect(say({ code: 'playlist-changed', track: 'Pray', playlist: 'Sets' })).toBe(
-      'Pray was not changed in Sets. It changed in VirtualDJ',
+      '1 track not changed in Sets | It changed in VirtualDJ · Pray',
     )
     expect(say({ code: 'playlist-gone', track: 'Pray', playlist: 'Sets' })).toBe(
-      'Sets is no longer in VirtualDJ. Pray was not added',
+      '1 track not added to Sets | It is no longer in VirtualDJ · Pray',
     )
     expect(say({ code: 'source-in-virtualdj', track: 'Pray', playlist: 'Sets' })).toBe(
-      'Pray stays in VirtualDJ with the original file and does not go in the list “Sets”',
+      '1 track not added to Sets | VirtualDJ keeps the original file · Pray',
     )
     expect(say({ code: 'tags-not-in-library', track: 'Pray' })).toBe(
-      'Pray is no longer in VirtualDJ and its tags were not changed',
+      '1 track no longer in VirtualDJ | Tags not changed · Pray',
     )
     expect(say({ code: 'tags-changed', track: 'Pray' })).toBe(
-      'Pray changed in VirtualDJ and its tags were not changed',
+      'Tags of 1 track not changed | Changed in VirtualDJ · Pray',
     )
     expect(say({ code: 'repoint-other-volume', track: 'Pray.aiff' })).toBe(
-      'Pray.aiff is on another disk, so VirtualDJ keeps the original file and Surco keeps it too',
+      '1 track kept on the original file | On another drive · Pray.aiff',
     )
     expect(say({ code: 'repoint-song-taken', track: 'Pray.aiff' })).toBe(
-      'VirtualDJ already has a song for Pray.aiff, so it keeps the original file and Surco keeps it too',
+      '1 track kept on the original file | VirtualDJ already has a song for it · Pray.aiff',
+    )
+    expect(say({ code: 'repoint-unwritable', track: 'Pray.aiff' })).toBe(
+      '1 track kept on the original file | VirtualDJ cannot take its length · Pray.aiff',
+    )
+    expect(say({ code: 'repoint-song-taken-gone', track: 'Pray.aiff' })).toBe(
+      '1 old song points to a missing file | VirtualDJ already had a song for it · Pray.aiff',
     )
     expect(partText(tr, { kind: 'collection' }, VIRTUALDJ_QUEUE_WORDS)).toBe('added to the library')
     expect(partText(tr, { kind: 'playlists', names: [] }, VIRTUALDJ_QUEUE_WORDS)).toBe(
@@ -551,9 +618,9 @@ describe('VirtualDJ queue text', () => {
   })
 
   it('says a track is gone from VirtualDJ when its song is not in the database', () => {
-    expect(noticeText(tr, { code: 'not-in-library', track: 'Pray' }, VIRTUALDJ_QUEUE_WORDS)).toBe(
-      'Pray is no longer in VirtualDJ. Its cues were not saved',
-    )
+    expect(
+      rows([{ code: 'not-in-library', track: 'Pray' }], VIRTUALDJ_QUEUE_WORDS)?.[0],
+    ).toMatchObject({ title: '1 track no longer in VirtualDJ', sub: 'Cues not saved · Pray' })
   })
 
   it('words the VirtualDJ backups warning in every language', () => {

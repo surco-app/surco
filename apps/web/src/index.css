@@ -146,6 +146,17 @@ button:not(:disabled) {
   }
 }
 
+/* Loading bones breathe rather than sweep: a sheen reads as progress the page cannot
+   measure, a slow fade only says it is still working. */
+.skeleton {
+  animation: skeleton 1.6s ease-in-out infinite;
+}
+@keyframes skeleton {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* scroll-triggered reveal */
 .reveal-init {
   opacity: 0;
@@ -194,14 +205,6 @@ button:not(:disabled) {
 }
 .language-offer {
   animation: offerIn 0.2s var(--ease-strong);
-}
-
-/* blue→cyan gradient text accent */
-.text-grad {
-  background: linear-gradient(100deg, var(--color-blue), var(--color-cyan));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
 }
 
 /* Stage light behind the hero window: one soft blue pool at the centre, so the product is

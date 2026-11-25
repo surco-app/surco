@@ -3,6 +3,7 @@ import type React from 'react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { SourceNode } from '../../../shared/types'
+import { menuStep } from '../lib/menuStep'
 import { isWindows } from '../lib/platform'
 import type { TrackItem } from '../types'
 import type { ViewMenuItem } from './ViewMenu'
@@ -97,6 +98,7 @@ function MenuItem({
     >
       <span
         data-testid={`${testid}-label`}
+        data-wrap={wrap ? 'true' : 'false'}
         className={`block min-w-0 ${wrap ? 'break-words' : 'truncate'}`}
       >
         {label}
@@ -227,12 +229,8 @@ export function TrackContextMenu({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     items[next].focus()

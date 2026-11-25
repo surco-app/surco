@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { downloadCover } from './coverDownload'
+import { downloadCover, resolveDraggedCover } from './coverDownload'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -112,5 +112,49 @@ describe('downloadCover redirects and size', () => {
       /SURCO_ERR:coverDownloadFailed/,
     )
     expect(pulled).toBeLessThan(30)
+  })
+})
+
+describe('resolveDraggedCover', () => {
+  const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])
+  const realInline = `data:image/jpeg;base64,${Buffer.alloc(2048, 1).toString('base64')}`
+  const placeholder = `data:image/gif;base64,${Buffer.alloc(40).toString('base64')}`
+
+  it('uses a real inline image as it is, without a download', async () => {
+    const fetchCover = vi.fn()
+    expect(await resolveDraggedCover([realInline], fetchCover)).toEqual({ coverUrl: realInline })
+    expect(fetchCover).not.toHaveBeenCalled()
+  })
+
+  // Lazy-loading pages leave a ~1px data-URL in <img src>; taking it would set a blank cover.
+  it('skips the lazy-loading placeholder for the real image behind it', async () => {
+    const fetchCover = vi.fn(async () => ({ path: '/tmp/c.png', bytes: PNG }))
+    expect(await resolveDraggedCover([placeholder, 'https://x/c.png'], fetchCover)).toEqual({
+      coverPath: '/tmp/c.png',
+      coverUrl: `data:image/png;base64,${PNG.toString('base64')}`,
+    })
+  })
+
+  it('tries the next candidate when one does not download', async () => {
+    const fetchCover = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('not an image'))
+      .mockResolvedValueOnce({ path: '/tmp/b.png', bytes: PNG })
+    const cover = await resolveDraggedCover(['https://x/a', 'https://x/b'], fetchCover)
+    expect(cover?.coverPath).toBe('/tmp/b.png')
+    expect(fetchCover).toHaveBeenCalledWith('https://x/b')
+  })
+
+  it('reads bytes it cannot name as a JPEG', async () => {
+    const fetchCover = vi.fn(async () => ({ path: '/tmp/c', bytes: Buffer.from('abc') }))
+    const cover = await resolveDraggedCover(['https://x/c'], fetchCover)
+    expect(cover?.coverUrl.startsWith('data:image/jpeg;base64,')).toBe(true)
+  })
+
+  // Null makes the drop a clean no-op instead of a red ffmpeg error on undecodable bytes.
+  it('answers null when nothing resolves to an image', async () => {
+    const fetchCover = vi.fn()
+    expect(await resolveDraggedCover(['file:///etc/passwd', placeholder], fetchCover)).toBeNull()
+    expect(fetchCover).not.toHaveBeenCalled()
   })
 })

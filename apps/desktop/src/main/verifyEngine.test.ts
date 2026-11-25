@@ -119,6 +119,7 @@ describe('snapshotEngineRow', () => {
         beatData: [-0.5, 59.5, -0.5, 59.5],
         loops: null,
       },
+      sampleRate: 44100,
     })
   })
 
@@ -741,6 +742,24 @@ describe('checkEngine after a conversion that moved the audio', () => {
     expect(checkOne(dir, expectFor(before, trimmedBy(CUT, 48000)))[0].state).toBe('ok')
   })
 
+  // The 23/11 replacement test on a copy of a real library: a FLAC copied into an AIFF keeps
+  // its samples, yet its audio sits 1.5 s later than the MP3's, so the repoint moved every cue
+  // and the grid by the measure. The check read that write as cues the DJ lost, warned on a
+  // right row and kept the old MP3 from retiring.
+  it('cues and grid moved by a replacement whose samples were kept are ok', () => {
+    const dir = trimmable()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    moved(dir, -1.5)
+    expect(
+      checkOne(dir, expectFor(before, { samplesKept: true, shift: { trimmedMs: -1500 } }))[0],
+    ).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
   // The bug this check exists for: the row followed the file and kept every blob intact,
   // so nothing looked lost, but each pad fired the length of the cut late.
   it('cues left where they were before the cut are engineCuesMisplaced', () => {
@@ -837,6 +856,114 @@ describe('checkEngine after a conversion that moved the audio', () => {
     expect(checkOne(dir, expectFor(before, trimmedBy(CUT)))[0].detail).toEqual({
       key: 'engineCuesMisplaced',
       params: { field },
+    })
+  })
+})
+
+// A replacement no measure vouches for the same audio has Engine analyse the new file again:
+// its write empties the old analysis and keeps the cues and loops (engineRepoint.ts). The
+// check reads that emptied analysis as the plan, not as lost data, and flags the old one left
+// in place, which would draw the old file's grid and overview over another recording.
+describe('checkEngine after a replacement Engine is to analyse again', () => {
+  const SIZE_SMALL = 4321
+
+  async function replaced(sampleRateHz?: number, trimmedMs = 0) {
+    const dir = library()
+    const from = join(dir, '..', 'Title.aiff')
+    const to = join(dir, '..', 'Title.wav')
+    writeFileSync(from, Buffer.alloc(1))
+    writeFileSync(to, Buffer.alloc(SIZE_SMALL))
+    write(dir, 'UPDATE Track SET path = ?, isAnalyzed = 1 WHERE id = 1', relative(dir, from))
+    const before = snapshot(dir, from)
+    const shift =
+      sampleRateHz || trimmedMs
+        ? { trimmedMs, ...(sampleRateHz ? { sampleRateHz } : {}) }
+        : undefined
+    const [result] = await repointEngineTracks(dir, [
+      { from, to, reanalyse: true, ...(shift ? { engineShift: shift } : {}) },
+    ])
+    expect(result.written).toBe(true)
+    const expected = expectFor(before, {
+      from,
+      to,
+      size: SIZE_SMALL,
+      reanalysed: true,
+      ...(shift ? { shift } : {}),
+    })
+    return { dir, expected }
+  }
+
+  it('the emptied analysis of a replacement Engine is to analyse again is ok', async () => {
+    const { dir, expected } = await replaced()
+    expect(checkOne(dir, expected)[0]).toEqual({
+      place: 'engine',
+      state: 'ok',
+      detail: { key: 'engineOk', params: { format: 'WAV' } },
+    })
+  })
+
+  it('the emptied analysis of a replacement at another rate is ok', async () => {
+    const { dir, expected } = await replaced(48000)
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  // Another master measured on the envelope is analysed again and its cues move by the shift
+  // too. A check that cannot place them would tell the DJ the cues landed wrong on a row Surco
+  // wrote right, and teach them to ignore the warning.
+  it('the moved cues of another master Engine is to analyse again are ok', async () => {
+    const { dir, expected } = await replaced(48000, -300)
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  // When the new file's probe failed the write keeps counting at the old file's rate, and the
+  // emptied analysis no longer says which: the check has to count at that same rate.
+  it('the moved cues of another master whose rate was not probed are ok', async () => {
+    const { dir, expected } = await replaced(undefined, -300)
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  // Falling back to the old rate must not blind the check: cues the write left unmoved still sit
+  // 300 ms off the new master's audio.
+  it('cues of another master left where they were are engineCuesMisplaced', async () => {
+    const { dir, expected } = await replaced(undefined, -300)
+    write(dir, 'UPDATE PerformanceData SET quickCues = ?', analysedTrack(1, CUES).quickCues)
+    expect(checkOne(dir, expected)[0].detail).toEqual({
+      key: 'engineCuesMisplaced',
+      params: { field: 'quickCues' },
+    })
+  })
+
+  it('a replacement Engine already analysed again on the new file is ok', async () => {
+    const { dir, expected } = await replaced()
+    write(
+      dir,
+      'UPDATE PerformanceData SET trackData = ?, beatData = ?',
+      trackDataBlob(44100, 44100 * 61),
+      beatDataBlob(44100, 44100 * 61, [
+        [9240, 0],
+        [44100 * 61 - 12810, 121],
+      ]),
+    )
+    expect(checkOne(dir, expected)[0].state).toBe('ok')
+  })
+
+  it("the old file's analysis left on a row Engine was to analyse again is engineAnalysisStale", async () => {
+    const dir = library()
+    const before = snapshot(dir)
+    repoint(dir, 1)
+    expect(checkOne(dir, expectFor(before, { reanalysed: true }))[0]).toEqual({
+      place: 'engine',
+      state: 'mismatch',
+      detail: { key: 'engineAnalysisStale' },
+    })
+  })
+
+  it('cues lost from a row Engine is to analyse again are still enginePerformanceChanged', async () => {
+    const { dir, expected } = await replaced()
+    write(dir, 'UPDATE PerformanceData SET quickCues = NULL')
+    expect(checkOne(dir, expected)[0].detail).toEqual({
+      key: 'enginePerformanceChanged',
+      params: { field: 'quickCues' },
     })
   })
 })

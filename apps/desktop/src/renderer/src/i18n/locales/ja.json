@@ -9,7 +9,9 @@
     "scopeVisible_other": "表示中の {{count}} トラックに適用",
     "change": "変更",
     "close": "閉じる",
-    "copy": "コピー"
+    "copy": "コピー",
+    "more_one": "他 {{count}} 件",
+    "more_other": "他 {{count}} 件"
   },
   "rename": {
     "moreFields": "その他のフィールド ({{count}})",
@@ -197,8 +199,8 @@
     "updateSelected_one": "選択した {{count}} 件を更新",
     "updateSelected_other": "選択した {{count}} 件を更新",
     "updateSomeSelected": "選択した {{total}} 件のうち {{ready}} 件を更新",
-    "cancelConvert": "変換を中止：キューに入ったトラックはスキップされ、進行中のものは完了します",
-    "cancelImport": "読み取りを停止：既に読み込んだファイルは保持され、残りは削除されます",
+    "cancelConvert": "変換を中止。キューに入ったトラックはスキップされ、進行中のものは完了します",
+    "cancelImport": "読み取りを停止。既に読み込んだファイルは保持され、残りは削除されます",
     "autoMatch": "すべてのトラックを自動マッチ",
     "autoMatchNoToken": "設定にDiscogsトークンを追加して自動マッチ",
     "autoMatchLabel": "マッチ",
@@ -234,8 +236,8 @@
       },
       "showDuplicates": "重複を表示"
     },
-    "cancelAutoMatch": "自動マッチを停止：既にマッチしたトラックはタグを保持します",
-    "cancelAnalyze": "分析を停止：既に分析したトラックは判定を保持します"
+    "cancelAutoMatch": "自動マッチを停止。既にマッチしたトラックはタグを保持します",
+    "cancelAnalyze": "分析を停止。既に分析したトラックは判定を保持します"
   },
   "sidebar": {
     "fitHint": "トラック名に合わせて幅を自動調整するにはダブルクリック",
@@ -317,6 +319,7 @@
       "placeholder": "トラックを検索",
       "clear": "検索をクリア",
       "empty": "トラックが一致しません。",
+      "away": "ファイルがディスクにありません。",
       "reset": "検索とフィルターをクリア"
     },
     "sort": {
@@ -342,7 +345,7 @@
     "position": "トラック {{current}} / {{total}}",
     "selectedCount_one": "{{count}} 件選択中",
     "selectedCount_other": "{{count}} 件選択中",
-    "positionReveal": "トラック {{current}} / {{total}}：クリックでスクロール"
+    "positionReveal": "トラック {{current}} / {{total}}。クリックでスクロール"
   },
   "empty": {
     "title": "ここにトラックをドロップ",
@@ -379,12 +382,13 @@
     "conversionCancelled": "変換をキャンセルしました。",
     "verifyUnknownTrack": "この確認はもう行えません。もう一度確認するには、トラックを再変換してください。",
     "seratoBlocked": "Serato でトラックとそのキューが失われます",
+    "libraryCopyAudioWouldChange": "このコピーはそのままにしました。タグを更新すると音声が変わってしまいます。",
     "audioDamaged": "ファイルのオーディオが破損しています",
     "diskFull": "ディスクがいっぱいです",
     "noPermission": "そのフォルダに書き込む権限がありません",
     "fileLocked": "ファイルが別のアプリで使用中です",
     "readOnlyDisk": "ディスクが読み取り専用です",
-    "sourceTagsUnread": "このファイルを読み取れなかったため、変換せずにそのままにしました：変換すると既存のタグが削除されます。ファイルが破損しているか、Surcoが開けない形式の可能性があります。",
+    "sourceTagsUnread": "このファイルを読み取れなかったため、変換せずにそのままにしました。変換すると既存のタグが削除されます。ファイルが破損しているか、Surcoが開けない形式の可能性があります。",
     "coverDownloadFailed": "アートワークのダウンロードに失敗しました。",
     "coverNotImage": "そのアドレスは画像を示していません。",
     "bandcampUnavailable": "Bandcampが正しく応答しませんでした。しばらく待って再度お試しください。",
@@ -402,15 +406,15 @@
     "musicbrainzUnavailable": "MusicBrainzが正しく応答しませんでした。しばらく待って再度お試しください。",
     "musicbrainzRateLimit": "MusicBrainzが検索を制限しています。しばらく待って再度お試しください。",
     "discogsUnavailable": "Discogsが正しく応答しませんでした。しばらく待って再度お試しください。",
-    "pathNotAllowed": "Surcoはそのファイルを開けませんでした：読み込んだトラックの一つではありません。"
+    "pathNotAllowed": "Surcoはそのファイルを開けませんでした。読み込んだトラックの一つではありません。"
   },
   "rekordboxIssue": {
-    "read-only": "rekordboxのコレクションが更新されませんでした：ファイルは読み取り専用です。",
-    "unreadable": "rekordboxのコレクションが更新されませんでした：Surcoが読めませんでした。",
-    "write-failed": "rekordboxのコレクションが更新されませんでした：書き込みに失敗したため、そのまま残っています。",
-    "backup-failed": "rekordboxのコレクションが更新されませんでした：Surcoが先にバックアップできませんでした。",
-    "ambiguous_one": "rekordboxは {{name}} の古いファイルを指しています：コレクション内の複数のエントリが一致しています。",
-    "ambiguous_other": "rekordbox は {{count}} トラック（{{name}} を含む）で古いファイルを指したままです：それぞれコレクション内の複数のエントリが一致しています。"
+    "read-only": "rekordboxのコレクションが更新されませんでした。ファイルは読み取り専用です。",
+    "unreadable": "rekordboxのコレクションが更新されませんでした。Surcoが読めませんでした。",
+    "write-failed": "rekordboxのコレクションが更新されませんでした。書き込みに失敗したため、そのまま残っています。",
+    "backup-failed": "rekordboxのコレクションが更新されませんでした。Surcoが先にバックアップできませんでした。",
+    "ambiguous_one": "rekordboxは {{name}} の古いファイルを指しています。コレクション内の複数のエントリが一致しています。",
+    "ambiguous_other": "rekordbox は {{count}} トラック（{{name}} を含む）で古いファイルを指したままです。それぞれコレクション内の複数のエントリが一致しています。"
   },
   "trash": {
     "title": "バックアップ › 音楽ファイル",
@@ -505,7 +509,9 @@
     "redoneMeta_one": "{{count}} トラックのメタデータ編集をやり直しました",
     "redoneMeta_other": "{{count}} トラックのメタデータ編集をやり直しました",
     "metaReadFailed_one": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。",
-    "metaReadFailed_other": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。"
+    "metaReadFailed_other": "{{count}} 件のファイルのタグを読み取れなかったため、ファイル名のみ表示しています。",
+    "metaFilesMissing_one": "{{count}} 件のファイルが元の場所にありません。移動または名前変更された可能性があります。",
+    "metaFilesMissing_other": "{{count}} 件のファイルが元の場所にありません。移動または名前変更された可能性があります。"
   },
   "newTracks": {
     "prompt_one": "「{{folder}}」に新しいトラックが {{count}} 件あります",
@@ -529,7 +535,7 @@
     "play": "再生",
     "pause": "一時停止",
     "continuous": "連続再生",
-    "continuousHelp": "連続再生：トラックが終了したとき、リスト内の次のトラックが自動的に再生されます。",
+    "continuousHelp": "連続再生。トラックが終了したとき、リスト内の次のトラックが自動的に再生されます。",
     "waveform": "波形",
     "waveformHelp": "波形を表示します。非表示にすると波形分析がスキップされるため、大容量ファイルやネットワークドライブで役立ちます。",
     "seek": "シーク",
@@ -588,7 +594,7 @@
     "numberTracks": "リスト順にトラック番号を付与",
     "stripNumbering": "タイトルの番号付けを削除",
     "applyTitleFormat": "タイトル形式を選択範囲に適用",
-    "regenerateNames": "メタデータから選択範囲のファイル名を再生成",
+    "regenerateNames": "メタデータでファイル名を変更",
     "renameKeywords": "名前を変更 リネーム",
     "trimDetected": "選択範囲の検出された無音部分をトリミング",
     "clearMeta": "メタデータをクリア",
@@ -723,7 +729,7 @@
       "copyPath": "ファイルパスをコピー",
       "search": "ソースを検索",
       "searchWeb": "Googleで検索",
-      "startOver": "やり直し",
+      "startOver": "変更を破棄",
       "startSession": "この曲からセッションを作る…",
       "matching": "Matchingに登録",
       "matchingBlock": "Matchingに登録",
@@ -836,14 +842,14 @@
     "qualityCaptionWarn": "エネルギーは約 {{cutoff}} まで届きますが、約 20 kHz のフルクオリティ基準には届いていません。",
     "qualityCaptionBad": "約 {{cutoff}} で頭打ち。非可逆ソースの印です。",
     "qualityCaptionProcessed": "約 {{cutoff}} でカットされた高域が再生成された可能性があります。",
-    "qualityUpsampled": "22 kHz 以上のコンテンツなし：おそらく 44.1 kHz からアップサンプリングされています。",
+    "qualityUpsampled": "22 kHz 以上のコンテンツなし。おそらく 44.1 kHz からアップサンプリングされています。",
     "qualityHiRes": "22 kHz を超える実際のコンテンツがあります。この {{rate}} ファイルは CD 品質（44.1 kHz）由来ではありません。",
     "qualityResolutionUnknown": "これが本物のハイレゾか確認できませんでした。",
     "qualityBitsPill": "パディング済み",
     "qualityBitsPadded": "24 ビットと記載されていますが、音声は 16 ビットをパディングしたものです。",
     "qualityBitsPaddedWhy": "最初の1分間で下位バイトをほとんど使用していません。",
     "qualityBitsPaddedNote": "「修正済み」では 16 ビットとして保存され、可聴損失はありません。",
-    "qualityBitsFull": "最初の1分間で下位バイトは {{pct}}% 使用されています：パディングなし。",
+    "qualityBitsFull": "最初の1分間で下位バイトは {{pct}}% 使用されています。パディングなし。",
     "qualityBitsUnknown": "24 ビットが本物か確認できませんでした。",
     "qualityConvertHead": "変換時",
     "qualityConvertRate": "{{from}} → {{to}}",
@@ -853,11 +859,11 @@
     "qualityCaptionGenuine": "コーデックカットは検出されず、高域は約 {{cutoff}} までです。",
     "qualityCaptionTranscode": "約 {{cutoff}} にコーデックカット。ソースは非可逆でした。",
     "qualityCaptionLossy": "約 {{cutoff}} にコーデックカット。非可逆ファイルでは正常です。",
-    "qualityEvidenceGood": "コーデックカットなし：最も急な低下は {{drop}} dB/kHz です。",
+    "qualityEvidenceGood": "コーデックカットなし。最も急な低下は {{drop}} dB/kHz です。",
     "qualityEvidenceTranscode": "約 {{cutoff}} にコーデックカット。ソースは非可逆でした。",
     "qualityEvidenceLossy": "約 {{cutoff}} にコーデックカット。非可逆ファイルでは正常です。",
-    "qualityEvidenceTeeth": "{{teeth}} が {{from}} と {{to}} の間で上昇：再生成された高域の可能性があります。",
-    "qualityEvidenceHump": "約 {{cutoff}} の谷と {{peak}} までの上昇：再生成された高域の可能性があります。",
+    "qualityEvidenceTeeth": "{{teeth}} が {{from}} と {{to}} の間で上昇。再生成された高域の可能性があります。",
+    "qualityEvidenceHump": "約 {{cutoff}} の谷と {{peak}} までの上昇。再生成された高域の可能性があります。",
     "qualityEvidenceShelf": "17〜22 kHz の高域が平坦。リミッターや修復処理の典型で、判断できません。",
     "loudnessLufsLabel": "ラウドネス",
     "loudnessIntegratedLabel": "統合",
@@ -908,15 +914,15 @@
     "spectrumHighs": "高域 ~{{cutoff}}",
     "spectrumHighsCap": "高域 ≥ {{cutoff}}",
     "outputName": "出力名",
-    "outputNameHintInPlace": "ソースと同じ形式：元ファイルをその場で更新し名前を変更します。出力フォルダーにコピーは書き込まれません",
+    "outputNameHintInPlace": "ソースと同じ形式。元ファイルをその場で更新し名前を変更します。出力フォルダーにコピーは書き込まれません",
     "outputNameFolder": "フォルダー「{{folder}}」に保存されます（スラッシュはフォルダーを区切ります）",
     "overwriteTitle": "元ファイルを上書きする",
-    "overwriteAlacHint": "ALACは元ファイルを置き換えません：新しいファイルが出力フォルダーに書き込まれ、元は保持されます",
-    "overwriteLossyHint": "この機能はロスレスオリジナルを 320 kbps MP3 にその場で置き換えます。マスターは失われ復元できません。設定 → 出力でオフにしてください",
+    "overwriteAlacHint": "ALACは元ファイルを置き換えません。新しいファイルが出力フォルダーに書き込まれ、元は保持されます",
+    "overwriteLossyHint": "この機能はロスレスオリジナルを 320 kbps MP3 にその場で置き換えます。マスターは失われ復元できません。設定 → ファイル → 出力でオフにしてください。",
     "overwriteLossyHintBackup": "これは、ロスレス元ファイルを 320 kbps MP3 に置き換えます。Surco は元ファイルのバックアップを最初に保持しており、トラックから復元できます。",
     "regenerate": "メタデータからファイル名を再生成",
     "regenerateAll": "メタデータからファイル名を再生成",
-    "regenerateHint": "設定 → 命名パターンを使用して、上記メタデータからファイル名を再構築",
+    "regenerateHint": "設定 → ファイル → 命名のパターンを使って、上記メタデータからファイル名を再構築",
     "regenerateCustom": "このトラックのファイル名パターンをカスタマイズ…",
     "lossyToLossless": "ソースは非可逆です。{{format}} に変換しても音質は戻りません。",
     "seratoLosesStars": "Serato でこのトラックの星の評価が失われます。",
@@ -967,7 +973,7 @@
     "releaseError": "リリースの読み込みに失敗",
     "analyzeError": "オーディオの分析に失敗",
     "processError": "変換に失敗",
-    "fileInUseError": "他のプログラムがこのファイル（ウイルス対策ソフト、プレイヤー等）を使用しています。変換は安全です：元ファイルの横に ~ を付けた名前で保存されました。",
+    "fileInUseError": "他のプログラムがこのファイル（ウイルス対策ソフト、プレイヤー等）を使用しています。変換は安全です。元ファイルの横に ~ を付けた名前で保存されました。",
     "missingRequired": "必須フィールドが不足しています：{{fields}}",
     "missingOne": "{{field}} が不足しています",
     "missingTwo": "{{first}} と {{second}} が不足しています",
@@ -1019,19 +1025,19 @@
     "otherTagsRemove": "{{name}} を削除",
     "otherTagsRestore": "{{name}} を復元",
     "loudnessRangeLufs": "良好：-16 から -8 LUFS。",
-    "loudnessFixLufs": "ここで修正可能：ラウドネス正規化でこれを目標値に設定します。",
+    "loudnessFixLufs": "ここで修正可能。ラウドネス正規化でこれを目標値に設定します。",
     "loudnessRangePeak": "良好：-1 dBTP 以下。",
-    "loudnessFixPeak": "ここで修正可能：ラウドネス正規化のトゥルーピーク上限がこれを制限します。",
+    "loudnessFixPeak": "ここで修正可能。ラウドネス正規化のトゥルーピーク上限がこれを制限します。",
     "loudnessRangeRange": "良好：6 LU 以上。",
-    "loudnessFixRange": "ここで修正不可：マスターに焼き込まれています。正規化はレベルを変えますが広がりは変えません。",
+    "loudnessFixRange": "ここで修正不可。マスターに焼き込まれています。正規化はレベルを変えますが広がりは変えません。",
     "loudnessRangeCrest": "良好：12 dB 以上。",
-    "loudnessFixCrest": "ここで修正不可：マスター由来です。",
+    "loudnessFixCrest": "ここで修正不可。マスター由来です。",
     "loudnessRangeBalance": "良好：1 dB 未満。",
     "loudnessFixBalance": "ピークモードと「ステレオチャンネルを独立して正規化」で改善することがあります。",
     "loudnessRangeDc": "良好：0.2% 未満。",
-    "loudnessFixDc": "ここで修正可能：ラウドネス正規化（ラウドネスまたはピークモード）の「DC オフセットを除去（0.0 を中心に）」にチェックを入れます。",
+    "loudnessFixDc": "ここで修正可能。ラウドネス正規化（ラウドネスまたはピークモード）の「DC オフセットを除去（0.0 を中心に）」にチェックを入れます。",
     "loudnessRangeNoise": "良好：-45 dB 以下。",
-    "loudnessFixNoise": "ここで修正不可：Surco はノイズ除去を行いません。ソースや録音に由来します。",
+    "loudnessFixNoise": "ここで修正不可。Surco はノイズ除去を行いません。ソースや録音に由来します。",
     "loudnessAfterHeader": "現在 → 変換後",
     "copyThisFile": "新しい方",
     "copyRowCutoff": "カットオフ",
@@ -1061,6 +1067,8 @@
     "copyLimitedBare": "{{loser}} のコピーはリミッティングが強いです。",
     "copyLimitedHereBare": "新しい方はリミッティングが強いです。",
     "libraryHasBetter": "それでも置き換え",
+    "libraryCopyKeepsAudio": "音声はそのまま",
+    "libraryCopyWithThisFile": "このファイルで",
     "requiredEmpty": "必須：変換前に入力してください",
     "coverMixed": "選択したトラックのアートワークが異なります",
     "coversDistinct_one": "{{count}} 種類のアートワーク",
@@ -1074,6 +1082,8 @@
     "lastApplied": "最後に適用されたアルバム",
     "heldResults": "{{providers}} からさらに {{count}} 件 · 表示",
     "stillSearching": "{{providers}} を検索中…",
+    "discogsWait": "Discogs が検索を制限しています。{{seconds}} 秒後に再試行します。クリックすると今すぐ検索します。",
+    "waitSeconds": "{{seconds}} 秒",
     "resultsCount_one": "{{count}} 件の結果",
     "resultsCount_other": "{{count}} 件の結果",
     "suggestedStatus": "提案：{{title}}",
@@ -1086,7 +1096,13 @@
       "pending": "トラックの書き込み時に作成されます",
       "some": "一部のトラックのみ。クリックするとすべてに追加します",
       "options": "{{app}} プレイリスト",
-      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください"
+      "unconfirmed": "設定 → DJソフト → Traktor でコレクションを選んでください",
+      "copyRemoved_one": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyRemoved_other": "「{{name}}」から {{count}} 件のトラックを外しました",
+      "copyQueuedStays_one": "{{app}} を閉じると、このトラックは「{{name}}」に入ります",
+      "copyQueuedStays_other": "{{app}} を閉じると、{{count}} 件のトラックは「{{name}}」に入ります",
+      "removeIn_one": "{{app}} で外してください",
+      "removeIn_other": "{{app}} で外してください"
     },
     "cues": {
       "title": "キュー",
@@ -1153,11 +1169,14 @@
       },
       "resetColour": "リセット",
       "saveShort": "保存",
-      "saveThis": "このトラックを保存",
+      "saveNextShort": "保存して次へ",
+      "saveAndNext": "{{save}}して次のトラックへ",
       "saveMore": "ほかの保存方法",
       "saveFailed": "rekordbox に保存できませんでした。キューはまだ保存されていません",
       "saveAll_one": "{{count}} トラックを rekordbox に保存",
       "saveAll_other": "{{count}} トラックを rekordbox に保存",
+      "saveAllShort_one": "{{count}} トラックを保存",
+      "saveAllShort_other": "{{count}} トラックを保存",
       "saveAllBoth_one": "{{count}} トラックを rekordbox と Engine DJ に保存",
       "saveAllBoth_other": "{{count}} トラックを rekordbox と Engine DJ に保存",
       "saveAllMixed_one": "{{count}} トラックをそのライブラリに保存",
@@ -1185,7 +1204,6 @@
         "discard_other": "提案を取り消す",
         "ask": "ここでブレイクしますか？ {{time}}",
         "acceptOne": "採用",
-        "acceptSave": "採用して保存",
         "drop": "削除",
         "unanalysed": "rekordbox の解析なし",
         "none": "Surco はこのトラックのブレイク位置を見つけられません",
@@ -1194,9 +1212,7 @@
         "sure": "ここでブレイク {{time}}",
         "why_one": "低音の弱い {{count}} 小節のあと",
         "why_other": "低音の弱い {{count}} 小節のあと",
-        "whyNone": "直前に低音の途切れなし",
-        "acceptSave_one": "提案を採用して保存",
-        "acceptSave_other": "{{count}} 件の提案を採用して保存"
+        "whyNone": "直前に低音の途切れなし"
       },
       "batch": {
         "mark_one": "{{count}} トラックを自動マーク",
@@ -1319,6 +1335,7 @@
         "measuring": "ビートグリッドを計測中…"
       },
       "replaced": {
+        "moved": "キューを新しいファイルに合わせて移動しました。",
         "notMoved": "移動なし",
         "noMatch": "Surco は新しいファイルを古いファイルに合わせられませんでした。キューは元のままです。",
         "drift": "曲の始まりと終わりでずれ方が違いました。キューは元のままです。",
@@ -1467,7 +1484,7 @@
     "virtualdjPlaylists": "VirtualDJ リスト"
   },
   "declick": {
-    "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません：変換すると失われます。",
+    "cueWarning": "ALACはTraktorのキューやビートグリッドを保持しません。変換すると失われます。",
     "title": "レコード修復",
     "clicksLabel": "クリック音",
     "hint": "針のクリック音やポップ、レコードの背景ノイズを変換時に除去します。",
@@ -1598,15 +1615,15 @@
     "cueWarningShort": "音声を再エンコードします · ALAC はキューを失います",
     "predictionEstimate": "（推定）",
     "presetHint": {
-      "streaming": "Spotify と Apple Music がトラックを均一にする方式：リスニングライブラリの安全なデフォルトです。",
+      "streaming": "Spotify と Apple Music がトラックを均一にする方式。リスニングライブラリの安全なデフォルトです。",
       "club": "大音量。ブース向け。多くのトラックはピークリミッティングが必要になり、パンチが少し犠牲になります。",
       "broadcast": "テレビとラジオのレベル。ストリーミングより静かで、ヘッドルームが十分にあります。",
       "custom": "独自の目標。波形下のプレビューでトラックがどこに着地するかが表示されます。"
     },
     "appliesToSelection": "これらの設定は選択されたすべてのトラックに適用されます。",
-    "truePeakCaption": "安全リミットであり、二次的な目標ではありません：ピークがそれに達した場合にのみ機能します。",
+    "truePeakCaption": "安全リミットであり、二次的な目標ではありません。ピークがそれに達した場合にのみ機能します。",
     "modeLine": {
-      "loudness": "すべてのトラックは同等の音量で出力されます：ゲインはそれぞれを目標値に合わせます。",
+      "loudness": "すべてのトラックは同等の音量で出力されます。ゲインはそれぞれを目標値に合わせます。",
       "peak": "各トラックの最も大きいサンプルに合わせますが、体感の音量はトラックごとに変わります。"
     },
     "plan": {
@@ -1792,7 +1809,7 @@
     "backupsReveal": "フォルダーを表示",
     "backupsHint": "rekordbox、Engine DJ、Traktor を変更する前に、Surco はここにコレクションのコピーを保存します。問題が起きた場合は、このフォルダーから復元できます。",
     "beatportConnected": "接続済み",
-    "beatportHint": "BeatportはオープンAPIがありません：Surcoはアカウントで検索します（無料アカウントでも可）。パスワードは暗号化されてこのコンピュータにのみ保存されます。",
+    "beatportHint": "BeatportはオープンAPIがありません。Surcoはアカウントで検索します（無料アカウントでも可）。パスワードは暗号化されてこのコンピュータにのみ保存されます。",
     "beatportUsername": "ユーザー名またはメールアドレス",
     "beatportPassword": "パスワード",
     "beatportConnect": "接続",
@@ -1805,7 +1822,7 @@
     "tokenHelp": "無料で生成するには",
     "autoMatch": "インポート時の自動マッチング",
     "autoMatchHint": "インポート時にソースを検索し、確信度の高いマッチングを適用します。Discogsが優先され、他のソースはフォールバックします。デフォルトではオフです。",
-    "autoMatchNeedsToken": "Discogsはソースの一つです：自動マッチングにトークンを追加してください。",
+    "autoMatchNeedsToken": "Discogsはソースの一つです。自動マッチングにトークンを追加してください。",
     "autoMatchNeedsSource": "自動マッチングを有効にするには、少なくとも1つの検索ソースを有効にしてください。",
     "autoCleanSpacing": "読み込み時にクリーンアップ",
     "autoCleanSpacingHint": "タイトル、アーティスト、アルバム、ジャンルの余分なスペースや不可視文字を削除します。変換または更新するまで保留中の変更として残ります。",
@@ -1820,7 +1837,6 @@
     "searchByAlbumFirst": "アルバム優先で検索",
     "searchByAlbumFirstHint": "タグにアルバムがあれば、まずアルバム名とアーティスト名で検索し、見つからなければトラック名で検索します。",
     "searchProviders": "検索ソース",
-    "searchProvidersHint": "エディタが検索するカタログ。Discogsはキュレーション、Bandcampはセルフリリース素材、Deezerは商業デジタルリリース、BeatportはBPM・キー・ミックス、MusicBrainzはコミュニティが管理するオープンカタログ、Apple Musicは大きなアートワーク付きのAppleのカタログです。",
     "searchResultsSection": "結果",
     "searchMatchingSection": "マッチング",
     "providerDescription": {
@@ -1860,7 +1876,7 @@
     "clearListAfterConvertHint": "変換できたトラックはリストから外れ、取り消せます。失敗したものは残ります。",
     "keepMp3Sources": "MP3 と M4A ファイルはそのまま保持",
     "keepMp3SourcesHint": "MP3 または M4A をロスレス形式に変換しても品質は復元できず、ファイルが大きくなるだけです。これをオンにすると元のフォーマットを保持し、Surco が選択した保存先にタグを書き込みます。「元ファイルの横」の場合はそのままです。ラウドネス正規化、クリック修復、トリミングを行うと、音声は再エンコードされます。",
-    "keepMp3SourcesOff": "MP3 または「ソースと同じ」の場合は不要です：MP3 はすでに MP3 のままです。",
+    "keepMp3SourcesOff": "MP3 または「ソースと同じ」の場合は不要です。MP3 はすでに MP3 のままです。",
     "mp3Quality": "MP3 品質",
     "mp3Qualities": {
       "128": "128",
@@ -2410,6 +2426,7 @@
     },
     "djLibraryNone": "使っていない（ファイルのタグ付けだけ）",
     "destinationKeepsCollection": "DJソフトやApple Musicにすでにあるトラックはその場で更新され、コレクション内の位置が保たれます。",
+    "searchProvidersIntro": "エディタが検索するカタログ。",
     "tokenOffer": "検索はそのまま使えます。Discogsトークンがあると「インポート時の自動マッチング」が使え、混雑時も検索が安定します。",
     "tokenAdd": "Discogsトークンを追加",
     "macTitle": "このMacでSurcoを使うのは初めてですか？",
@@ -2436,7 +2453,7 @@
     "items": {
       "token": {
         "q": "Discogsトークンは必要ですか？",
-        "a": "いいえ。Surcoは独自のアプリ資格情報で最初からDiscogsを検索できるので、すぐにタグ付けを開始できます。\n\nこれらの共有資格情報はすべてのSurcoユーザーで合計レートリミット（60 リクエスト/分）があるため、混雑時に「rate limit reached」メッセージで検索が失敗することがあります。数秒待って再度お試しください。\n\n大量にタグ付けする場合は、discogs.com/settings/developersで無料の個人トークンを生成し、設定 → ソースに貼り付けてください。トークンは独自のプライベートレートリミットを持つため、Surcoが混雑していても検索は高速に保たれます。"
+        "a": "いいえ。Surcoは独自のアプリ資格情報で最初からDiscogsを検索できるので、すぐにタグ付けを開始できます。\n\nこれらの共有資格情報はすべてのSurcoユーザーで合計レートリミット（60 リクエスト/分）があるため、混雑時に「rate limit reached」メッセージで検索が失敗することがあります。数秒待って再度お試しください。\n\n大量にタグ付けする場合は、discogs.com/settings/developersで無料の個人トークンを生成し、設定 → ソースに貼り付けてください。トークンは独自のプライベートレートリミットを持つため、Surcoが混雑していても検索は高速に保たれます。リスト全体の自動マッチには、自分のトークンが必要です。"
       },
       "quality": {
         "q": "トラックが「疑わしい」とフラグ付けされるのはなぜですか？",
@@ -2448,7 +2465,7 @@
       },
       "appleMusic": {
         "q": "「Apple Musicに追加」とは何ですか？",
-        "a": "有効化すると（macOS のみ）、Surco は変換後の各トラックを自動的に Apple Music ライブラリにインポートします。そのため、タグ付けされたファイルが手動でドラッグせずにライブラリに追加されます。\n\n編集中に、Surco はトラックがすでにライブラリにあるかを確認し、重複作成を防ぐ小さなバッジを表示します。自動追加は 設定 → 出力 でいつでもオフにできます。"
+        "a": "有効化すると（macOS のみ）、Surco は変換後の各トラックを自動的に Apple Music ライブラリにインポートします。そのため、タグ付けされたファイルが手動でドラッグせずにライブラリに追加されます。\n\n編集中に、Surco はトラックがすでにライブラリにあるかを確認し、重複作成を防ぐ小さなバッジを表示します。自動追加は 設定 → ファイル → 出力 でいつでもオフにできます。"
       },
       "windows": {
         "q": "Windows では何か違いがありますか？",
@@ -2981,11 +2998,11 @@
     }
   },
   "engineIssue": {
-    "unreadable": "Engine DJのライブラリが更新されませんでした：Surcoが読み取れませんでした。",
-    "write-failed": "Engine DJのライブラリが更新されませんでした：書き込みに失敗したため、そのまま残されました。",
-    "backup-failed": "Engine DJのライブラリが更新されませんでした：Surcoがバックアップを先に取れませんでした。",
-    "ambiguous_one": "Engine DJ は {{name}} の古いファイルを指したままです：ライブラリ内に複数の該当エントリがあります。",
-    "ambiguous_other": "Engine DJ は {{count}} トラック（{{name}} を含む）で古いファイルを指したままです：それぞれライブラリ内に複数の該当エントリがあります。"
+    "unreadable": "Engine DJのライブラリが更新されませんでした。Surcoが読み取れませんでした。",
+    "write-failed": "Engine DJのライブラリが更新されませんでした。書き込みに失敗したため、そのまま残されました。",
+    "backup-failed": "Engine DJのライブラリが更新されませんでした。Surcoがバックアップを先に取れませんでした。",
+    "ambiguous_one": "Engine DJ は {{name}} の古いファイルを指したままです。ライブラリ内に複数の該当エントリがあります。",
+    "ambiguous_other": "Engine DJ は {{count}} トラック（{{name}} を含む）で古いファイルを指したままです。それぞれライブラリ内に複数の該当エントリがあります。"
   },
   "musicReview": {
     "title": "メタデータを確認",
@@ -3122,7 +3139,6 @@
       "undoLibraryFailed": "{{library}} は更新できなかったため変更が残っています。再度「元に戻す」を押すかアクティビティを確認してください"
     },
     "empty": "Apple Music ライブラリが空です",
-    "clean": "確認するものがありません",
     "allClear": "問題は見つかりませんでした",
     "allClearHint": "誤字、大文字、不可視文字、重複はありません",
     "back": "トラックに戻る",
@@ -3444,24 +3460,6 @@
     "appliedChanges_one": "rekordbox に反映しました · {{count}} 件の変更",
     "appliedChanges_other": "rekordbox に反映しました · {{count}} 件の変更",
     "backupFailed": "rekordbox をバックアップできませんでした。終了時に Surco が再試行します",
-    "notice": {
-      "ambiguous": "{{track}} は追加されませんでした。rekordbox に 2 つあります",
-      "fileMissing": "{{track}} はコレクションに追加されませんでした。ファイルがありません",
-      "notAdded": "{{track}} はコレクションに追加されませんでした。ファイルを読み取れませんでした",
-      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。rekordbox 側で変更されています",
-      "playlistGone": "{{playlist}} はもう rekordbox にありません。{{track}} は追加されませんでした",
-      "editChanged": "{{playlist}} は変更されませんでした。rekordbox 側で変更されています",
-      "cuesChanged": "{{track}} のキューが rekordbox で変更されました。もう一度マークしてください",
-      "cuesTooMany": "{{track}} はホットキューが 8 個を超えてしまいます。マークを 1 つ削除してください",
-      "cuesInvalid": "{{track}} のキューは保存されませんでした。Surco がキューとして読み取れませんでした",
-      "cuesWriteFailed": "{{track}} のキューは保存されませんでした。Surco がファイルに書き込めませんでした",
-      "cuesAdjusted_one": "rekordbox が {{track}} を解析しました。{{count}} 個のキューをグリッドに合わせて移動しました（{{maxMs}} ms）",
-      "cuesAdjusted_other": "rekordbox が {{track}} を解析しました。{{count}} 個のキューをグリッドに合わせて移動しました（最大 {{maxMs}} ms）",
-      "cuesUnfit_one": "{{track}} のキュー 1 個が rekordbox のビートから離れているため、そのままにしました。確認してください",
-      "cuesUnfit_other": "{{track}} のキュー {{count}} 個が rekordbox のビートから離れているため、そのままにしました。確認してください",
-      "goToCue": "キューへ移動",
-      "notInLibrary": "{{track}} はもう rekordbox にありません。プレイリストは変更されませんでした"
-    },
     "part": {
       "repoint": "新しいパス",
       "collection": "コレクションに追加",
@@ -3510,14 +3508,6 @@
     "backupFailed": "Engine DJ をバックアップできませんでした。終了時に Surco が再試行します",
     "unreadable": "Surco は現在 Engine DJ のライブラリを読み取れないため、何も変更していません",
     "writeFailed": "Engine DJ に変更を保存できませんでした。ライブラリは元のままです",
-    "notice": {
-      "cuesChanged": "{{track}} のキューが Engine DJ で変更されました。もう一度マークしてください",
-      "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません",
-      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Engine DJ はホットキューしか保持しません",
-      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Engine DJ 側で変更されています",
-      "playlistGone": "{{playlist}} はもう Engine DJ にありません。{{track}} は追加されませんでした",
-      "notInLibrary": "{{track}} はもう Engine DJ にありません。プレイリストは変更されませんでした"
-    },
     "discardConfirm": "待機中の内容を破棄しますか？Engine DJ のプレイリストとキューは Engine DJ の状態のままです",
     "pillHalted": "Engine DJ の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はライブラリに触れません。「今すぐ適用」はバックアップコピー m.db.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
@@ -3542,14 +3532,6 @@
     "backupFailed": "Traktor をバックアップできませんでした。終了時に Surco が再試行します",
     "unreadable": "Surco は現在 Traktor のコレクションを読み取れないため、何も変更していません",
     "writeFailed": "Traktor に変更を保存できませんでした。コレクションは元のままです",
-    "notice": {
-      "cuesChanged": "{{track}} のキューが Traktor で変更されました。もう一度マークしてください",
-      "slotDropped": "Traktor には Surco のキュー用のボタンが 7 つしかないため、{{track}} のキュー H は保存されませんでした",
-      "editChanged": "{{playlist}} は変更されませんでした。Traktor 側で変更されています",
-      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Traktor 側で変更されています",
-      "playlistGone": "{{playlist}} はもう Traktor にありません。{{track}} は追加されませんでした",
-      "notInLibrary": "{{track}} はもう Traktor にありません。プレイリストは変更されませんでした"
-    },
     "discardConfirm": "待機中の内容を破棄しますか？Traktor のプレイリストとキューは Traktor の状態のままです",
     "pillHalted": "Traktor の変更を保留中",
     "halted": "最後の変更を保存も取り消しもできませんでした。「今すぐ適用」か「破棄」を選ぶまで、Surco はコレクションに触れません。「今すぐ適用」はバックアップコピー collection.nml.surco-backup を置き換えるため、何かおかしい場合は先にそこから復元してください。設定 → 詳細 → コレクションのバックアップにあります",
@@ -3574,20 +3556,6 @@
     "part": {
       "collection": "ライブラリに追加",
       "noPlaylists": "クレートから外す"
-    },
-    "notice": {
-      "cuesChanged": "{{track}} のキューが Serato で変更されました。もう一度マークしてください",
-      "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
-      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。Serato はホットキューしか保持しません",
-      "oldBlock": "{{track}} のキューは保存されませんでした。Serato に一致しない古いコピーが残っています。Serato でこのトラックのキューをどれか動かしてから、もう一度保存してください",
-      "editChanged": "{{playlist}} は変更されませんでした。Serato で変更されています",
-      "otherVolume": "{{track}} は別のドライブにあるため、クレート「{{playlist}}」に入れられません",
-      "notAdded": "{{track}} は Serato に追加されませんでした",
-      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。Serato で変更されています",
-      "playlistGone": "{{playlist}} はもう Serato にありません。{{track}} は追加されませんでした",
-      "sourceInSerato": "{{track}} は元のファイルのまま Serato に残り、クレート「{{playlist}}」には入りません",
-      "tagsNotInLibrary": "{{track}} はもう Serato にないため、タグは変更されませんでした",
-      "tagsChanged": "{{track}} は Serato で変更されたため、タグは変更されませんでした"
     }
   },
   "virtualdjQueue": {
@@ -3614,23 +3582,7 @@
     "pillElsewhere_one": "{{count}} 件が別の VirtualDJ ライブラリを待っています",
     "pillElsewhere_other": "{{count}} 件が別の VirtualDJ ライブラリを待っています",
     "elsewhere_one": "{{count}} 件の変更が別の VirtualDJ ライブラリを待っています。そのライブラリに戻ると反映されます",
-    "elsewhere_other": "{{count}} 件の変更が別の VirtualDJ ライブラリを待っています。そのライブラリに戻ると反映されます",
-    "notice": {
-      "cuesChanged": "{{track}} のキューが VirtualDJ で変更されました。もう一度マークしてください",
-      "callsDropped_one": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません",
-      "callsDropped_other": "{{track}} の CALL {{count}} 個は保存されませんでした（{{times}}）。VirtualDJ はホットキューしか保持しません",
-      "notInLibrary": "{{track}} はもう VirtualDJ にありません。キューは保存されませんでした",
-      "notAdded": "{{track}} は VirtualDJ に追加されませんでした",
-      "playlistChanged": "{{playlist}} の {{track}} は変更されませんでした。VirtualDJ で変更されています",
-      "playlistGone": "{{playlist}} はもう VirtualDJ にありません。{{track}} は追加されませんでした",
-      "sourceInVirtualdj": "{{track}} は元のファイルのまま VirtualDJ に残り、リスト「{{playlist}}」には入りません",
-      "tagsNotInLibrary": "{{track}} はもう VirtualDJ にないため、タグは変更されませんでした",
-      "tagsChanged": "{{track}} は VirtualDJ で変更されたため、タグは変更されませんでした",
-      "repointOtherVolume": "{{track}} は別のディスクにあるため、VirtualDJ は元のファイルのままで、Surco も元のファイルを残します",
-      "repointSongTaken": "VirtualDJ には {{track}} の曲がすでにあるため、元のファイルのままで、Surco も元のファイルを残します",
-      "repointUnwritable": "VirtualDJ は {{track}} の長さを保存できないため、元のファイルのままで、Surco も元のファイルを残します",
-      "repointSongTakenGone": "VirtualDJ には {{track}} の曲がすでにあったため、古い曲は元のファイルを参照したままですが、そのファイルはもう元のフォルダにありません"
-    }
+    "elsewhere_other": "{{count}} 件の変更が別の VirtualDJ ライブラリを待っています。そのライブラリに戻ると反映されます"
   },
   "cueWave": {
     "notAnalysed": "このトラックは rekordbox で分析されていません。キューを設定するには rekordbox で分析してください",
@@ -3821,6 +3773,7 @@
       "rekordboxCuesChanged_one": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxCuesChanged_other": "rekordboxのキューが{{count}}個から{{after}}個になりました",
       "rekordboxAnalysisEmptied": "rekordboxの解析が変わりました",
+      "rekordboxAnalysisStale": "rekordboxに古いファイルの解析が残っています",
       "rekordboxPlaylistMissing": "トラックがrekordboxのプレイリスト{{playlist}}にありません",
       "rekordboxUnreadable": "rekordboxを確認できませんでした",
       "engineStillOld": "Engine DJはまだ{{format}}を参照しています",
@@ -3839,6 +3792,7 @@
       "engineCuesMisplaced_quickCues": "Engine DJのキューが音声に合わせて動いていません",
       "engineCuesMisplaced_beatData": "Engine DJのグリッドが音声に合わせて動いていません",
       "engineCuesMisplaced_loops": "Engine DJのループが音声に合わせて動いていません",
+      "engineAnalysisStale": "Engine DJに古いファイルの解析が残っています",
       "engineNameStale": "Engine DJにはまだ「{{value}}」と表示されています",
       "enginePlaylistMissing": "トラックがEngine DJのプレイリスト{{playlist}}にありません",
       "engineUnreadable": "Engine DJを確認できませんでした",
@@ -3934,5 +3888,58 @@
     "railNames": "名前を表示",
     "sidebar": "サイドバーを表示",
     "hideSidebar": "サイドバーを隠す"
+  },
+  "queueNotice": {
+    "notAdded_one": "{{count}} トラックを {{program}} に追加できませんでした",
+    "notAdded_other": "{{count}} トラックを {{program}} に追加できませんでした",
+    "notChangedIn_one": "{{playlist}} の {{count}} トラックは変更されませんでした",
+    "notChangedIn_other": "{{playlist}} の {{count}} トラックは変更されませんでした",
+    "notAddedToList_one": "{{count}} トラックを {{playlist}} に追加できませんでした",
+    "notAddedToList_other": "{{count}} トラックを {{playlist}} に追加できませんでした",
+    "listNotChanged": "{{playlist}} は変更されませんでした",
+    "cuesNotSaved_one": "{{count}} トラックのキューを保存できませんでした",
+    "cuesNotSaved_other": "{{count}} トラックのキューを保存できませんでした",
+    "cueHNotSaved_one": "{{count}} トラックのキュー H を保存できませんでした",
+    "cueHNotSaved_other": "{{count}} トラックのキュー H を保存できませんでした",
+    "callsNotSaved_one": "CALL {{count}} 個を保存できませんでした",
+    "callsNotSaved_other": "CALL {{count}} 個を保存できませんでした",
+    "cuesMoved_one": "{{count}} 個のキューを {{program}} のグリッドに合わせました",
+    "cuesMoved_other": "{{count}} 個のキューを {{program}} のグリッドに合わせました",
+    "cuesOffBeats_one": "{{count}} 個のキューが {{program}} のビートから離れています",
+    "cuesOffBeats_other": "{{count}} 個のキューが {{program}} のビートから離れています",
+    "notInLibrary_one": "{{count}} トラックはもう {{program}} にありません",
+    "notInLibrary_other": "{{count}} トラックはもう {{program}} にありません",
+    "tagsNotChanged_one": "{{count}} トラックのタグは変更されませんでした",
+    "tagsNotChanged_other": "{{count}} トラックのタグは変更されませんでした",
+    "keptOriginal_one": "{{count}} トラックは元のファイルのままです",
+    "keptOriginal_other": "{{count}} トラックは元のファイルのままです",
+    "oldSongMissing_one": "古い曲 {{count}} 個が存在しないファイルを指しています",
+    "oldSongMissing_other": "古い曲 {{count}} 個が存在しないファイルを指しています",
+    "goToCue": "キューへ移動",
+    "why": {
+      "twice": "{{program}} に 2 つあります",
+      "fileGone": "ファイルがありません",
+      "unreadable": "ファイルを読み込めませんでした",
+      "listChanged": "{{program}} 側で変更されています",
+      "listGone": "もう {{program}} にありません",
+      "otherDrive": "別のドライブにあります",
+      "originalKept": "{{program}} は元のファイルを使います",
+      "markAgain": "{{program}} で変更されました。もう一度マークしてください",
+      "tooMany": "ホットキューが 8 個を超えます。マークを 1 つ外してください",
+      "notCues": "Surco がキューとして読み込めませんでした",
+      "notWritten": "Surco がファイルに書き込めませんでした",
+      "oldBlock": "{{program}} に古いコピーがあります。そこでキューを動かしてもう一度保存してください",
+      "hotCuesOnly": "{{program}} はホットキューしか保持しません",
+      "sevenButtons": "{{program}} の Surco 用キューボタンは 7 個です",
+      "furthest": "最大 {{maxMs}} ms",
+      "leftInPlace": "そのままにしました。確認してください",
+      "playlistsKept": "プレイリストは変更されませんでした",
+      "cuesKept": "キューは保存されませんでした",
+      "tagsKept": "タグは変更されませんでした",
+      "tagsChanged": "{{program}} で変更されています",
+      "songTaken": "{{program}} にはすでにこの曲があります",
+      "lengthUnfit": "{{program}} はこの長さを扱えません",
+      "songTakenGone": "{{program}} にはすでにこの曲がありました"
+    }
   }
 }

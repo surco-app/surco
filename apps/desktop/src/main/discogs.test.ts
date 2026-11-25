@@ -513,6 +513,36 @@ describe('search rate-limit retry', () => {
     )
     expect(fetchMock).toHaveBeenCalledTimes(4)
   })
+
+  // The editor's panel shows the wait and retries on its own: holding its search for
+  // every silent retry left the panel on a skeleton with no word of why.
+  it('reports the limit at once when the caller does its own retrying', async () => {
+    const fetchMock = mockSequence([res(429, {}, '0')])
+    await expect(
+      search('panel limited query', 'tok', 'high', undefined, [], 0, false),
+    ).rejects.toThrow(/SURCO_ERR:discogsRateLimit/)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  // The sweep asking for the same search at the same moment still wants its patient
+  // retries; joining the panel's request would hand it the panel's quick failure.
+  it('does not hand a quick failure to a caller that waits out the limit', async () => {
+    mockSequence([res(429, {}, '0'), res(200, { results: [{ id: 12 }] })])
+    const panel = search('shared limited query', 'tok', 'high', undefined, [], 0, false)
+    const sweep = search('shared limited query', 'tok', 'high')
+    await expect(panel).rejects.toThrow(/SURCO_ERR:discogsRateLimit/)
+    await expect(sweep).resolves.toEqual([{ id: 12, provider: 'discogs' }])
+  })
+
+  // The focused track's sweep often asks first: joining its patient request would put the
+  // panel back on a silent skeleton for every retry.
+  it('reports the limit at once even when a patient search for the same query runs', async () => {
+    mockSequence([res(429, {}, '0'), res(429, {}, '0'), res(200, { results: [{ id: 13 }] })])
+    const sweep = search('sweep first query', 'tok', 'high')
+    const panel = search('sweep first query', 'tok', 'high', undefined, [], 0, false)
+    await expect(panel).rejects.toThrow(/SURCO_ERR:discogsRateLimit/)
+    await expect(sweep).resolves.toEqual([{ id: 13, provider: 'discogs' }])
+  })
 })
 
 describe('request timeout', () => {

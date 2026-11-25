@@ -3,9 +3,10 @@ import type React from 'react'
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import { menuStep } from '../lib/menuStep'
 import { foldText } from '../lib/normalizeText'
 import { formatCount } from '../lib/stats'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { showOption } from './Select'
 import { Tooltip } from './Tooltip'
 
@@ -472,6 +473,9 @@ interface Props {
 // A column header's filter row: the dropdown trigger with its menu, the controls that share
 // the row, and the "x/total" position counter. The menu's options come from the caller;
 // this owns opening, focus and the keys, mirroring Select's interaction.
+// The list's placeholder header reserves the toolbar's height from this box.
+export const FILTER_BAR_BOX = 'flex items-center py-2 compact:py-0.5'
+
 export function FilterBar({
   testid,
   filterRef,
@@ -499,6 +503,7 @@ export function FilterBar({
   // above the player. Focus never scrolls anything but the menu itself.
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, listRef, setOpen)
+  useKeepInWindow(open, pos, listRef, setPos)
   useLayoutEffect(() => {
     if (!open || !focusTestId) return
     const list = listRef.current
@@ -542,12 +547,8 @@ export function FilterBar({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     showOption(listRef.current, items[next])
@@ -557,7 +558,7 @@ export function FilterBar({
     <div
       ref={filterRef}
       data-testid={testid}
-      className={`flex items-center py-2 compact:py-0.5 ${inline ? 'gap-0.5' : 'gap-1.5 px-1.5'}`}
+      className={`${FILTER_BAR_BOX} ${inline ? 'gap-0.5' : 'gap-1.5 px-1.5'}`}
     >
       <div className={`relative min-w-0 ${inline ? '' : 'flex-1'}`}>
         <button

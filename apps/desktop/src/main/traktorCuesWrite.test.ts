@@ -76,6 +76,16 @@ describe('withTraktorCues', () => {
     expect(out).toContain('<STEMS STEMS="x"></STEMS>')
   })
 
+  // A moved cue was written as a fresh Traktor cue, so the DJ's "Drop" came back "n.n."
+  // after Onto the beat. Its name is the DJ's, and a new place does not make it another cue.
+  it('keeps the name of a cue it moves', () => {
+    const named = nml([GRID, AUTOGRID, LOAD, BLUE.replace('NAME="n.n."', 'NAME="Drop &amp; Roll"')])
+    const moved = asWanted(named).map((c) => (c.id === '3' ? { ...c, ms: 100000 } : c))
+    expect(withTraktorCues(block(named), moved)).toContain(
+      '<CUE_V2 NAME="Drop &amp; Roll" DISPL_ORDER="0" TYPE="0" START="100000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="2"></CUE_V2>',
+    )
+  })
+
   it('adds a new cue as a normal Traktor cue on the button after AutoGrid', () => {
     const bare = nml([GRID, AUTOGRID])
     const out = withTraktorCues(block(bare), [{ ms: 60000, kind: HOT_KINDS[0], color: 5 }])
@@ -566,6 +576,29 @@ describe('saving an edited grid to Traktor', () => {
       write,
     })
     expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+  })
+
+  // Surco writes a single marker, so it would move only the first and leave the DJ's later
+  // ones setting the tempo from where they sit: the beats past them would not be the ones
+  // Surco showed. The DJ's markers stay exactly as they were.
+  it('refuses a grid on a track with several grid markers and leaves every marker in place', async () => {
+    const second =
+      '<CUE_V2 NAME="Beat Marker" DISPL_ORDER="0" TYPE="4" START="60000.000000" LEN="0.000000" REPEATS="-1" HOTCUE="-1"><GRID BPM="120.000000"></GRID></CUE_V2>'
+    const marked = nml([GRID, second, AUTOGRID, LOAD, BLUE])
+    const file = await onDisk(marked)
+    const result = await applyTraktorBatch(
+      file,
+      [
+        {
+          ...op(marked, asWanted(marked)),
+          grid: { bpm: 128.5, anchorMs: 40 },
+          gridFingerprint: read(marked)?.gridFingerprint,
+        },
+      ],
+      { session, ensureClosed: async () => true, write },
+    )
+    expect(result).toMatchObject({ outcomes: [{ applied: false }] })
+    expect(await readFile(file, 'utf8')).toBe(marked)
   })
 
   it('refuses a grid on a format whose clock in Traktor is not measured yet', async () => {

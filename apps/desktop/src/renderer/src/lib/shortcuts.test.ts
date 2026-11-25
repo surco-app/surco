@@ -9,7 +9,7 @@ describe('formatShortcut', () => {
 
   it('stacks the mac glyphs with no separator, the native macOS style', () => {
     expect(formatShortcut(['mod', 'O'], true)).toBe('⌘O')
-    expect(formatShortcut(['mod', 'shift', 'enter'], true)).toBe('⌘⇧↵')
+    expect(formatShortcut(['mod', 'shift', 'enter'], true)).toBe('⇧⌘↩')
     expect(formatShortcut(['mod', 'backspace'], true)).toBe('⌘⌫')
     expect(formatShortcut(['mod', ','], true)).toBe('⌘,')
   })
@@ -31,11 +31,26 @@ describe('formatShortcut', () => {
     expect(formatShortcut(['down'], false)).toBe('↓')
   })
 
+  // Apple lists modifiers as ⌃ ⌥ ⇧ ⌘ in every menu, whatever order the chord was stored in,
+  // so a recorded or default chord must read like the ones the user sees in macOS.
+  it('writes mac modifiers in the Apple order whatever order the keys come in', () => {
+    expect(formatShortcut(['mod', 'shift', 'f'], true)).toBe('⇧⌘F')
+    expect(formatShortcut(['shift', 'mod', 'f'], true)).toBe('⇧⌘F')
+    expect(formatShortcut(['mod', 'alt', 'x'], true)).toBe('⌥⌘X')
+    expect(formatShortcut(['ctrl', 'mod', 'k'], true)).toBe('⌃⌘K')
+    expect(formatShortcut(['mod', 'shift', 'alt', 'ctrl', 'k'], true)).toBe('⌃⌥⇧⌘K')
+  })
+
+  it('keeps the order given off mac', () => {
+    expect(formatShortcut(['mod', 'shift', 'f'], false)).toBe('Ctrl+Shift+F')
+    expect(formatShortcut(['shift', 'mod', 'f'], false)).toBe('Shift+Ctrl+F')
+  })
+
   describe('modificadores alt y ctrl', () => {
     it('usa los glifos de macOS', () => {
       expect(formatShortcut(['alt', 'e'], true)).toBe('⌥E')
       expect(formatShortcut(['ctrl', 'e'], true)).toBe('⌃E')
-      expect(formatShortcut(['mod', 'alt', 'shift', 'e'], true)).toBe('⌘⌥⇧E')
+      expect(formatShortcut(['mod', 'alt', 'shift', 'e'], true)).toBe('⌥⇧⌘E')
     })
 
     it('los deletrea fuera de macOS', () => {

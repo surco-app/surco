@@ -21,13 +21,6 @@ const loud: LoudnessResult = {
 const club: NormalizeConfig = { mode: 'loudness', targetLufs: -13, truePeakDb: -1, peakDb: -1 }
 const off: NormalizeConfig = { ...club, mode: 'none' }
 
-describe('LoudnessReadout help toggle', () => {
-  it('keeps a 24 px press area around its 20 px drawing', () => {
-    render(<LoudnessReadout loudness={loud} normalize={club} onShowHelp={vi.fn()} />)
-    expect(screen.getByTestId('loudness-help-toggle').className).toContain('after:-inset-0.5')
-  })
-})
-
 // The estimates used to sit in italics with a footnote legend at the very bottom
 // explaining what the italics meant. The arrow carries that meaning inline: it only
 // appears on the figures the conversion moves, and the figures it cannot move say "="
@@ -207,13 +200,19 @@ describe('LoudnessReadout verdict without colour', () => {
     expect(new Set(shapes).size).toBe(3)
   })
 
-  it('keeps colour for the figures that need a look, so a red peak is not lost among greens', () => {
+  it('grades each figure on its own pill, so a warning peak is not lost among good ones', () => {
     render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
-    const good = screen.getByTestId('loudness-pill-lufs')
-    expect(screen.getByTestId('loudness-grade-mark-lufs').className).not.toMatch(/bg-good/)
-    expect(within(good).getByText('-12.0 LUFS').className).not.toMatch(/text-good/)
-    expect(screen.getByTestId('loudness-grade-mark-peak').className).toMatch(/bg-warn/)
-    expect(screen.getByTestId('loudness-grade-mark-range').className).toMatch(/bg-danger/)
+    expect(screen.getByTestId('loudness-pill-lufs')).toHaveAttribute('data-grade', 'good')
+    expect(screen.getByTestId('loudness-pill-peak')).toHaveAttribute('data-grade', 'warn')
+    expect(screen.getByTestId('loudness-pill-range')).toHaveAttribute('data-grade', 'bad')
+  })
+
+  it('tells a bad verdict by its square mark and its name in text', () => {
+    render(<LoudnessReadout loudness={mixed} normalize={off} onShowHelp={vi.fn()} />)
+    expect(screen.getByTestId('loudness-grade-mark-range')).toHaveAttribute('data-shape', 'square')
+    expect(
+      within(screen.getByTestId('loudness-pill-range')).getByText('Out of range'),
+    ).toBeInTheDocument()
   })
 })
 

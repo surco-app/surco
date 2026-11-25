@@ -2,14 +2,15 @@ import { extname } from 'node:path'
 import {
   ByteVector,
   Id3v2AttachmentFrame,
-  type Id3v2Frame,
+  Id3v2CommentsFrame,
+  Id3v2Frame,
   Id3v2FrameClassType,
   Id3v2FrameIdentifier,
   Id3v2FrameIdentifiers,
   Id3v2PopularimeterFrame,
   Id3v2PrivateFrame,
   Id3v2Settings,
-  type Id3v2Tag,
+  Id3v2Tag,
   Id3v2TextInformationFrame,
   Id3v2UnknownFrame,
   Id3v2UserTextInformationFrame,
@@ -31,8 +32,8 @@ import {
   TRAKTOR_RATING_USER,
   WMP_RATING_USER,
 } from '../shared/rating'
-import { fullDateOf } from '../shared/tagFields'
-import type { ReviewRawFields, TrackMetadata } from '../shared/types'
+import { fullDateOf, MANAGED_ALIASES, TAG_FIELDS } from '../shared/tagFields'
+import type { ForeignTag, MetaTextKey, ReviewRawFields, TrackMetadata } from '../shared/types'
 import { decodeBase91, encodeBase91 } from './base91'
 import { mixedInKeyCuesToTraktorTree, parseMixedInKeyCues } from './mixedInKey'
 import { shiftTraktorCues } from './traktor4'
@@ -50,12 +51,81 @@ const GRP1 = new Id3v2FrameIdentifier('GRP1', 'GRP1', 'GP1')
 // global Id3v2Settings so a library upgrade can't silently change other tag kinds.
 // WAV included: mp3tag only reads a RIFF "id3 " chunk when it holds v2.3, so the
 // v2.4 we used to leave there made Surco-tagged WAVs look empty in it.
-const ID3_V23 = new Set(['.mp3', '.aiff', '.wav'])
+const ID3_V23 = new Set(['.mp3', '.aiff', '.aif', '.wav'])
 
 // A v2.3 genre is one text. TagLib's default splits it on ';' and '/' when reading and, on
 // any later save, writes the parts back with the first turned into its ID3v1 number, so a
 // pass that only adds cues left "House; Deep House" as "(35) Deep House".
 Id3v2Settings.useNonStandardV2V3GenreSeparators = false
+
+// TagLib knows TSOP, TSOA and TSOT as ID3v2.4 frames only and leaves them out of every v2.3
+// tag it saves, though iTunes and mp3tag write and read them on v2.3 all the same, so any
+// save of an iTunes-tagged MP3, AIFF or WAV (a list fix, a cue, an update) lost the sort
+// names. The disc subtitle (TSST), the producer notice (TPRO) and the musicians (TMCL) were
+// lost the same way to the v2.3 tag every update pins. TagLib offers no way to name a frame
+// for another version, and its readers and setters compare these very identifier objects,
+// so each one is given its v2.4 name for v2.3 too, here where every TagLib writer in Surco
+// is loaded from. TMOO stays out on purpose: Surco writes the mood as TXXX MOOD, and a TMOO
+// kept beside it would be read first, the old mood over the new.
+for (const id of ['TSOP', 'TSOA', 'TSOT', 'TSST', 'TPRO', 'TMCL'])
+  Object.assign(Id3v2FrameIdentifiers[id], { _version3: Id3v2FrameIdentifiers[id].render(4) })
+
+// TagLib reads a v2.3 text frame up to its first null and writes its values joined by '/',
+// right for v2.3's single texts but not for its involved people list: IPLS holds role and
+// name pairs separated by nulls, as v2.4's TIPL and TMCL do, so a v2.3 IPLS read as its first
+// word and an update pinning a v2.4 tag to v2.3 wrote the pairs as one "producer/Ann" text.
+// These two keep their nulls on v2.3 as well.
+type RawTextFrame = {
+  frameId: Id3v2FrameIdentifier
+  text: string[]
+  textEncoding: StringType
+  _rawData?: ByteVector
+  _rawVersion: number
+  parseRawData(): void
+  renderFields(version: number): ByteVector
+}
+const textFrame = Id3v2TextInformationFrame.prototype as unknown as RawTextFrame
+const isCredits = (frame: RawTextFrame) =>
+  frame.frameId === Id3v2FrameIdentifiers.TIPL || frame.frameId === Id3v2FrameIdentifiers.TMCL
+const parseRawData = textFrame.parseRawData
+textFrame.parseRawData = function (this: RawTextFrame) {
+  if (!this._rawData || this._rawVersion !== 3 || !isCredits(this)) return parseRawData.call(this)
+  this._rawVersion = 4
+  try {
+    parseRawData.call(this)
+  } finally {
+    this._rawVersion = 3
+  }
+}
+const renderFields = textFrame.renderFields
+textFrame.renderFields = function (this: RawTextFrame, version: number) {
+  if (version !== 3 || !isCredits(this) || (this._rawData && this._rawVersion === 3))
+    return renderFields.call(this, version)
+  const encoding = (
+    Id3v2Frame as unknown as { correctEncoding(type: StringType, version: number): StringType }
+  ).correctEncoding(this.textEncoding, 3)
+  return ByteVector.concatenate(
+    encoding,
+    ...this.text.flatMap((value, i) => [
+      ...(i > 0 ? [ByteVector.getTextDelimiter(encoding)] : []),
+      ByteVector.fromString(value, encoding),
+    ]),
+  )
+}
+
+// Every save rebuilds TMCL from the performers' roles, which only a read of them fills, so a
+// tag saved without anyone asking for the roles lost its TMCL whatever its version.
+type TextFrameSetter = (id: Id3v2FrameIdentifier, ...text: string[]) => void
+const id3Tag = Id3v2Tag.prototype as unknown as {
+  _performersRole?: string[]
+  setTextFrame: TextFrameSetter
+}
+const setAnyTextFrame = id3Tag.setTextFrame
+id3Tag.setTextFrame = function (this: typeof id3Tag, id: Id3v2FrameIdentifier, ...text: string[]) {
+  if (id === Id3v2FrameIdentifiers.TMCL && text.length === 0 && this._performersRole === undefined)
+    return
+  setAnyTextFrame.apply(this, [id, ...text])
+}
 
 // Traktor stores its cue points and beatgrid inside the audio file itself, in an
 // ID3 GEOB frame described "TRAKTOR4". ffmpeg rebuilds the whole tag even on a
@@ -69,13 +139,12 @@ const ID3_IN_PLACE = new Set(['.mp3', '.aiff'])
 // Broader than ID3_IN_PLACE on purpose: that set is about whether the tag can be edited in
 // place, which excludes WAV for a reason unrelated to where its cues live. A cue carry-over
 // that needs "is the source ID3-tagged?" must ask this, or a WAV source looks cue-less.
-// Both AIFF spellings, and only in this set of the three: shared/format.ts states the
-// rule outright ("AIFF rips use both .aif and .aiff") and expand.ts imports the pair, so
-// a crate can hold either, while every sibling predicate matches them with /\.aiff?$/i.
-// This is the one set asked about a SOURCE extension — the user's own file, whose name
-// they chose. The other two are only ever asked about an output (planConversion fixes
-// AIFF output at '.aiff', and writeTags is only ever handed the temp, which carries the
-// output's extension), so a '.aif' entry there would be unreachable.
+// Both AIFF spellings: shared/format.ts states the rule outright ("AIFF rips use both
+// .aif and .aiff") and expand.ts imports the pair, so a crate can hold either, while every
+// sibling predicate matches them with /\.aiff?$/i. This set is asked about a SOURCE
+// extension, the user's own file, whose name they chose. ID3_V23 is asked about the temp
+// writeTags is handed, which carries the output's extension, and that is '.aif' too when
+// Update retags a library copy in place under its own name.
 // Listing only the long spelling here meant a .aif source answered false to
 // keepsCuesInId3, sending its cue carry-over to shiftFlacCues — which looks for a Vorbis
 // comment an AIFF has never had, and drops every hot cue and the beatgrid. The same loss
@@ -220,6 +289,140 @@ export function tagLibExtrasOf(f: TagFile): Partial<TrackMetadata> {
   )
 }
 
+// The bundled ffprobe reads an ID3v2.4 text frame holding several values ("Ann\0Bob", what
+// Picard, foobar2000 and beets write) as its first value alone, so the editor showed "Ann"
+// and the next save, a title edit included, wrote "Ann" back as the whole artist. These are
+// the fields whose frame holds more than one value, joined by ';' as the probe already
+// joins a FLAC's repeated comments.
+export function readId3Lists(file: string): Partial<TrackMetadata> {
+  return withTagLibFile(file, id3ListsOf, {})
+}
+
+export function id3ListsOf(f: TagFile): Partial<TrackMetadata> {
+  return Object.fromEntries(
+    Object.entries(id3ValuesOf(f)).map(([key, values]) => [key, values.join(';').trim()]),
+  )
+}
+
+export type Id3Values = Partial<Record<MetaTextKey, string[]>>
+
+export function readId3Values(file: string): Id3Values {
+  return withTagLibFile(file, id3ValuesOf, {})
+}
+
+// Every other managed field riding an ID3 text frame or a TXXX, in the order the probe reads
+// them (TMOO before TXXX MOOD, ENERGYLEVEL before ENERGY). The numbers and dates are left
+// out: a second value there is nothing the editor can hold.
+const ID3_LIST_FRAMES: [MetaTextKey, string[]][] = [
+  ['title', ['TIT2']],
+  ['album', ['TALB']],
+  ['grouping', ['TIT1']],
+  ['key', ['TKEY']],
+  ['publisher', ['TPUB']],
+  ['remixArtist', ['TPE4']],
+  ['isrc', ['TSRC']],
+  ['mixName', ['TIT3']],
+  ['originalArtist', ['TOPE']],
+  ['lyricist', ['TEXT']],
+  ['conductor', ['TPE3']],
+  ['copyright', ['TCOP']],
+  ['encodedBy', ['TENC']],
+  ['mood', ['TMOO', 'TXXX:MOOD']],
+  ['catalogNumber', ['TXXX:CATALOGNUMBER']],
+  ['discogsReleaseId', ['TXXX:DISCOGS_RELEASE_ID']],
+  ['energy', ['TXXX:ENERGYLEVEL', 'TXXX:ENERGY']],
+  ['style', ['TXXX:STYLE']],
+  ['country', ['TXXX:COUNTRY']],
+  ['quality', ['TXXX:QUALITY']],
+  ['mediaType', ['TXXX:MEDIATYPE']],
+  ['discogsUrl', ['TXXX:DISCOGS_RELEASE_URL']],
+]
+
+// A TXXX's values are every frame under its description, in any case: ID3v2.3 has no null
+// separator, so a tagger writing a second style there writes a second TXXX STYLE, which the
+// probe never reads. Only those carry several values on v2.3; its text frames keep one.
+function id3ValuesOf(f: TagFile): Id3Values {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (!id3) return {}
+  const v4 = id3.version === 4
+  const txxx = id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  )
+  const textOf = (name: string): string[] => {
+    const [id, description] = name.split(':')
+    const frames = description
+      ? txxx.filter((fr) => fr.description.toUpperCase() === description)
+      : v4
+        ? id3.frames.filter((fr) => fr.frameId.toString() === id).slice(0, 1)
+        : []
+    return frames
+      .flatMap((fr) => (fr as Id3v2TextInformationFrame).text ?? [])
+      .filter((value) => value.trim())
+  }
+  const lists: [string, string[]][] = [
+    ...((v4
+      ? [
+          ['artist', id3.performers],
+          ['albumArtist', id3.albumArtists],
+          ['genre', id3.genres],
+          ['composer', id3.composers],
+        ]
+      : []) as [string, string[]][]),
+    ...ID3_LIST_FRAMES.map(([key, names]): [string, string[]] => [
+      key,
+      names.map(textOf).find((values) => values.length > 0) ?? [],
+    ]),
+  ]
+  return Object.fromEntries(lists.filter(([, values]) => values.length > 1))
+}
+
+// A file read before every value was still serves its first one from readMeta's cache, and
+// moving that cache to a new namespace would re-read every library. So a field holding just
+// the first value of the source's multi-value frame is one the DJ never touched, and every
+// value is written back; a field the DJ changed or emptied is written as they left it.
+const same = (a: string, b: string): boolean =>
+  a.trim().normalize('NFC') === b.trim().normalize('NFC')
+
+export function keepId3Values(meta: TrackMetadata, values: Id3Values): TrackMetadata {
+  const kept = { ...meta }
+  for (const [key, list] of Object.entries(values) as [MetaTextKey, string[]][])
+    if (same(meta[key] ?? '', list[0])) kept[key] = list.join(';').trim()
+  return kept
+}
+
+// Every TXXX holding several values, by its description upper-cased as a custom field's
+// tag name is: one ID3v2.4 frame's null-separated values, or v2.3 frames sharing it.
+export type UserTextValues = Record<string, string[]>
+
+export function readUserTextValues(file: string): UserTextValues {
+  return withTagLibFile(file, userTextValuesOf, {})
+}
+
+function userTextValuesOf(f: TagFile): UserTextValues {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const byName: UserTextValues = {}
+  for (const frame of id3?.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  ) ?? []) {
+    const name = frame.description.toUpperCase()
+    byName[name] = [...(byName[name] ?? []), ...frame.text.filter((value) => value.trim())]
+  }
+  return Object.fromEntries(Object.entries(byName).filter(([, values]) => values.length > 1))
+}
+
+// A custom field shows the first value the inspector read, and every conversion hands the
+// custom fields over whole, so a field still holding just that first value is one the DJ
+// never touched: every value is written back, joined by ';' like a managed field's.
+export function keepCustomValues(meta: TrackMetadata, values: UserTextValues): TrackMetadata {
+  if (!meta.custom) return meta
+  const custom = { ...meta.custom }
+  for (const [key, value] of Object.entries(custom)) {
+    const list = values[customTagName(key)]
+    if (list && same(value, list[0])) custom[key] = list.join(';').trim()
+  }
+  return { ...meta, custom }
+}
+
 function albumArtistsOf(f: TagFile): string[] | undefined {
   return f.getTag(TagTypes.RiffInfo, false)
     ? f.getTag(TagTypes.Id3v2, false)?.albumArtists
@@ -302,7 +505,7 @@ function tagLibFieldsOf(f: TagFile): Partial<TrackMetadata> {
     style: userText('STYLE'),
     country: userText('COUNTRY'),
     mediaType: userText('MEDIATYPE'),
-    mood: userText('MOOD'),
+    mood: text('TMOO') || userText('MOOD'),
     quality: userText('QUALITY'),
   }
 }
@@ -333,18 +536,23 @@ export function popmRatingOf(f: TagFile): string {
 export interface TagLibRead {
   grouping: string
   extras: Partial<TrackMetadata>
+  id3Lists: Partial<TrackMetadata>
   popm: string
   reviewRaw: ReviewRawFields
+  foreignLists?: ShownList[]
 }
 
 export function readTagLibFields(file: string): TagLibRead {
   const taglib = lazyTagLibFile(file)
   try {
+    const foreignLists = taglib.use(foreignListsOf, [])
     return {
       grouping: taglib.use(itunesGroupingOf, ''),
       extras: taglib.use(tagLibExtrasOf, {}),
+      id3Lists: taglib.use(id3ListsOf, {}),
       popm: taglib.use(popmRatingOf, ''),
       reviewRaw: taglib.use(tagLibReviewRawOf, {}),
+      ...(foreignLists.length > 0 && { foreignLists }),
     }
   } finally {
     taglib.dispose()
@@ -388,7 +596,9 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
 
     const out = TagFile.createFromPath(dest)
     try {
+      const fresh = (out.tagTypesOnDisk & TagTypes.Id3v2) === 0
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      if (fresh) tag.version = 3
       removeCueFrames(tag)
       for (const frame of cues) tag.addFrame(frame)
       keepGenreParentheses(tag)
@@ -401,6 +611,289 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
   }
 }
 
+const VORBIS_MANAGED = new Set(
+  [...MANAGED_ALIASES, ...TAG_FIELDS.flatMap((f) => [f.vorbis ?? '', ...(f.vorbisAlso ?? [])])].map(
+    (name) => name.toLowerCase(),
+  ),
+)
+
+// The ID3 text frames Surco does not manage that another program writes several values
+// into, or that ffmpeg leaves out of a WAV or ALAC, under the name ffmpeg's ID3 reader gives
+// them; every other text frame is either Surco's own or one ffmpeg renames to a field Surco
+// writes (TPE1 to artist).
+const FFMPEG_ID3_TEXT_NAMES: Record<string, string> = {
+  TSOP: 'ARTIST-SORT',
+  TSOA: 'ALBUM-SORT',
+  TSOT: 'TITLE-SORT',
+  TLAN: 'LANGUAGE',
+  TSST: 'TSST',
+  TPRO: 'TPRO',
+  TIPL: 'TIPL',
+  TMCL: 'TMCL',
+}
+
+// A source tag with several values and the one value ffmpeg carries of it into a FLAC.
+// ffmpeg's FLAC reader folds a comment's repeated entries into one value joined by ';',
+// and its ID3 reader keeps only the first value of a frame (ID3v2.4 separates them with a
+// null) and the first of two TXXX frames sharing a description (measured 23/11/2026 with
+// the bundled ffmpeg).
+function multiValuedTags(f: TagFile): (CarriedTag & { carried: string })[] {
+  const apple = f.getTag(TagTypes.Apple, false) as Mpeg4AppleTag | null
+  if (apple) return m4aTags(apple).map((tag) => ({ ...tag, carried: tag.values.at(-1) ?? '' }))
+  const from = f.getTag(TagTypes.Xiph, false) as XiphComment | null
+  if (from)
+    return from.fieldNames.map((name) => {
+      const values = from.getField(name)
+      return { name, values, carried: values.join(';') }
+    })
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  if (!id3) return []
+  const byName = new Map<string, string[]>()
+  for (const frame of id3.getFramesByClassType<Id3v2UserTextInformationFrame>(
+    Id3v2FrameClassType.UserTextInformationFrame,
+  ))
+    byName.set(frame.description, [...(byName.get(frame.description) ?? []), ...frame.text])
+  const frames = new Map<string, string>()
+  for (const frame of id3.getFramesByClassType<Id3v2TextInformationFrame>(
+    Id3v2FrameClassType.TextInformationFrame,
+  )) {
+    const name = FFMPEG_ID3_TEXT_NAMES[frame.frameId.toString()]
+    if (name) byName.set(name, [...frame.text])
+    if (name) frames.set(name, frame.frameId.toString())
+  }
+  // iTunes' and other players' own fields, which ffmpeg reads under their description; the
+  // COMM with none is the comment Surco writes.
+  const languages = new Map<string, string>()
+  for (const frame of id3.getFramesByClassType<Id3v2CommentsFrame>(
+    Id3v2FrameClassType.CommentsFrame,
+  ))
+    if (frame.description && !byName.has(frame.description)) {
+      byName.set(frame.description, [frame.text])
+      languages.set(frame.description, frame.language)
+    }
+  // ffmpeg reads no v2.3 IPLS at all, so it carries nothing of one.
+  const unread = (name: string) => id3.version === 3 && frames.get(name) === 'TIPL'
+  return [...byName].map(([name, values]) => ({
+    name,
+    values,
+    carried: unread(name) ? '' : values[0],
+    frame: frames.get(name),
+    language: languages.get(name),
+  }))
+}
+
+// The inspector's rows for the tags holding several values, every value joined by ';' as
+// the ffmetadata dump it reads joins a FLAC's repeated comment: ffmpeg lists an ID3 frame or
+// TXXX by its first value and an M4A freeform atom by its last, and a v2.3 IPLS not at all
+// (`unlisted`, a row of its own).
+export type ShownList = ForeignTag & { unlisted?: true }
+
+function foreignListsOf(f: TagFile): ShownList[] {
+  return multiValuedTags(f)
+    .filter(({ values, language }) => values.length > 1 && language === undefined)
+    .map(({ name, values, carried, frame }) => ({
+      name,
+      value: values.join(';'),
+      ...(carried === '' && frame && { unlisted: true as const }),
+    }))
+}
+
+// Never carried by carryUnmanagedTags whatever the source holds: Surco's own fields, the
+// mirrors writeTags clears, and the cue blobs the cue carries own. Traktor's tree rides a
+// FLAC as a TRAKTOR4 comment that copyCuesFromFlac re-armors as a PRIV, dropping its text
+// mirror; Serato's SERATO_ ones are carrySeratoCues' to keep or drop.
+const NEVER_CARRIED = new Set([
+  ...VORBIS_MANAGED,
+  ...TXXX_NATIVE_MIRRORS.map((name) => name.toLowerCase()),
+  FLAC_CUE_FIELD.toLowerCase(),
+])
+
+// The sort names' MP4 home: the atoms Music sorts the library by.
+const MP4_SORT_ATOMS: Record<string, string> = { TSOP: 'soar', TSOA: 'soal', TSOT: 'sonm' }
+
+// ffmpeg carries a source's tags into an MP3 or AIFF cut to one value, a TSOP as a TXXX
+// "artist-sort" nothing reads, and into a WAV or an ALAC not at all; a same-format MP3 or
+// AIFF update lost the sort names to TagLib's v2.3 rendering (measured 23/11/2026 with the
+// bundled ffmpeg). Each tag Surco does not manage comes back from the source in the target's
+// own form, a TXXX or text frame on ID3, a freeform or sort atom on MP4 and a comment on
+// the FLAC an M4A becomes (see m4aTags). `owned` names
+// what Surco wrote, cleared on purpose or the DJ deleted: those stay as they are.
+// Best-effort, like copyCueFrames: a file TagLib cannot open stays as ffmpeg wrote it.
+export function carryUnmanagedTags(dest: string, source: string, owned: string[]): void {
+  const skipped = new Set(owned.map((name) => name.toLowerCase()))
+  try {
+    const from = TagFile.createFromPath(source)
+    try {
+      const tags = multiValuedTags(from).filter(
+        ({ name, values }) =>
+          values.length > 0 &&
+          !NEVER_CARRIED.has(name.toLowerCase()) &&
+          !skipped.has(name.toLowerCase()) &&
+          !/^serato_/i.test(name),
+      )
+      if (tags.length === 0) return
+      const out = TagFile.createFromPath(dest)
+      try {
+        const carry = (tag: CarriedTag) =>
+          extname(dest).toLowerCase() === '.m4a'
+            ? carryToMp4(out.tag as Mpeg4AppleTag, tag)
+            : extname(dest).toLowerCase() === '.flac'
+              ? carryToXiph(out.getTag(TagTypes.Xiph, true) as XiphComment, tag)
+              : tag.language !== undefined
+                ? carryCommentToId3(out, tag)
+                : carryToId3(out, tag)
+        if (tags.filter(carry).length > 0) out.save()
+      } finally {
+        out.dispose()
+      }
+    } finally {
+      from.dispose()
+    }
+  } catch {
+    // The DJ's other tags are worth carrying, never worth failing a finished conversion for.
+  }
+}
+
+type CarriedTag = {
+  name: string
+  values: string[]
+  frame?: string
+  language?: string
+  vorbis?: string
+}
+
+// An M4A's standard text atoms Surco does not manage, under the name ffmpeg lists each by,
+// or Picard's for the work and movement ffmpeg does not read, with the sort names' own
+// ID3 frame and Vorbis field. ffmpeg carried the rest of these into an MP3, AIFF or FLAC as
+// a TXXX or comment under that name, and the sort names where nothing sorts by them.
+const M4A_TEXT_ATOMS: [string, string, string?, string?][] = [
+  ['sonm', 'sort_name', 'TSOT', 'TITLESORT'],
+  ['soar', 'sort_artist', 'TSOP', 'ARTISTSORT'],
+  ['soaa', 'sort_album_artist', 'TSO2', 'ALBUMARTISTSORT'],
+  ['soal', 'sort_album', 'TSOA', 'ALBUMSORT'],
+  ['soco', 'sort_composer', 'TSOC', 'COMPOSERSORT'],
+  ['sosn', 'sort_show'],
+  ['catg', 'category'],
+  ['purd', 'purchase_date'],
+  ['©dir', 'director'],
+  ['©wrk', 'WORK'],
+  ['©mvn', 'MOVEMENTNAME'],
+]
+
+// Every freeform atom by the name ffmpeg reads it under, which drops its mean, and every
+// value it holds, where ffmpeg kept the last; Serato's stay with carrySeratoCues.
+function m4aTags(apple: Mpeg4AppleTag): CarriedTag[] {
+  const items =
+    (
+      apple as unknown as {
+        _ilstBox?: { children: { boxType: ByteVector; children: unknown[] }[] }
+      }
+    )._ilstBox?.children ?? []
+  const tags: CarriedTag[] = []
+  for (const item of items) {
+    if (item.boxType.toString(StringType.Latin1) !== '----') continue
+    const children = item.children as { boxType: ByteVector; text?: string }[]
+    const named = (type: string) =>
+      children.find((c) => c.boxType.toString(StringType.Latin1) === type)?.text ?? ''
+    const [mean, name] = [named('mean'), named('name')]
+    if (!mean || mean === 'com.serato.dj' || tags.some((tag) => tag.name === name)) continue
+    tags.push({ name, values: apple.getItunesStrings(mean, name) })
+  }
+  for (const [atom, name, frame, vorbis] of M4A_TEXT_ATOMS)
+    tags.push({
+      name,
+      values: apple.getQuickTimeStrings(ByteVector.fromString(atom, StringType.Latin1)),
+      frame,
+      vorbis,
+    })
+  return tags
+}
+
+function carryToId3(f: TagFile, { name, values, frame }: CarriedTag): boolean {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  if (fresh) id3.version = 3
+  const mirrors = id3
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => fr.description.toLowerCase() === name.toLowerCase())
+  const held = frame ? id3.frames.filter((fr) => fr.frameId.toString() === frame) : mirrors
+  const texts = held.flatMap((fr) => [...(fr as Id3v2TextInformationFrame).text])
+  // An ID3v2.3 text frame keeps its values joined by '/', a TXXX by a null.
+  const separator = frame ? '/' : '\0'
+  if (texts.join(separator) === values.join(separator)) return false
+  for (const fr of new Set([...held, ...mirrors])) id3.removeFrame(fr)
+  const text = frame
+    ? Id3v2TextInformationFrame.fromIdentifier(Id3v2FrameIdentifiers[frame])
+    : Id3v2UserTextInformationFrame.fromDescription(name)
+  text.text = values
+  id3.addFrame(text)
+  return true
+}
+
+// A described COMM goes back as one, in place of the TXXX ffmpeg turned it into.
+function carryCommentToId3(f: TagFile, { name, values, language }: CarriedTag): boolean {
+  const fresh = (f.tagTypesOnDisk & TagTypes.Id3v2) === 0
+  const id3 = f.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+  if (fresh) id3.version = 3
+  const same = (description: string) => description.toLowerCase() === name.toLowerCase()
+  const mirrors = id3
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => same(fr.description))
+  const held = id3
+    .getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+    .filter((fr) => same(fr.description))
+  if (mirrors.length === 0 && held.length === 1 && held[0].text === values[0]) return false
+  for (const fr of [...held, ...mirrors]) id3.removeFrame(fr)
+  const comment = Id3v2CommentsFrame.fromDescription(name, language)
+  comment.text = values[0]
+  id3.addFrame(comment)
+  return true
+}
+
+// Under its own Vorbis name, in place of the comment ffmpeg wrote under its MP4 one.
+function carryToXiph(xiph: XiphComment, { name, values, vorbis }: CarriedTag): boolean {
+  const field = vorbis ?? name
+  if (field === name && xiph.getField(field).join('\0') === values.join('\0')) return false
+  xiph.removeField(name)
+  xiph.setFieldAsStrings(field, ...values)
+  return true
+}
+
+function carryToMp4(apple: Mpeg4AppleTag, { name, values, frame }: CarriedTag): boolean {
+  const atom = frame && MP4_SORT_ATOMS[frame]
+  if (atom) {
+    const type = ByteVector.fromString(atom, StringType.Latin1)
+    if (apple.getQuickTimeStrings(type).length > 0) return false
+    apple.setQuickTimeStrings(type, values)
+    return true
+  }
+  if (apple.getItunesStrings('com.apple.iTunes', name).length > 0) return false
+  apple.setItunesStrings('com.apple.iTunes', name, ...values)
+  return true
+}
+
+// Two MUSICBRAINZ_ARTISTID ids that ffmpeg turned into one nothing can look up. A tag Surco
+// does not manage gets its values back from the source, only while the file still holds
+// exactly the value ffmpeg carried: one the user deleted in the inspector, or emptied with
+// the rest, was cleared and stays cleared.
+function carryRepeatedComments(xiph: XiphComment, source: string): void {
+  const f = TagFile.createFromPath(source)
+  try {
+    for (const { name, values, carried } of multiValuedTags(f)) {
+      if (values.length < 2 || VORBIS_MANAGED.has(name.toLowerCase())) continue
+      const written = xiph.getField(name)
+      if (written.join(';') === carried && written.length < 2)
+        xiph.setFieldAsStrings(name, ...values)
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // ffmpeg's flac muxer renames the comment on write whatever spelling it is handed
 // (measured: `-metadata COMMENT=` and `-metadata comment=` both land as DESCRIPTION),
 // so a FLAC target came out with the one field Traktor, Engine and mp3tag read for the
@@ -408,14 +901,16 @@ export function copyCueFrames(source: string, dest: string, shift?: CueShift): v
 // before and after an update (17/09/2026). Rewritten after the encode by TagLib, which
 // writes the field under its own name: the value goes to COMMENT and DESCRIPTION is
 // cleared, so a file an earlier Surco wrote does not keep the old text under the alias
-// the reader falls back to.
-export function setFlacComment(file: string, comment: string): void {
+// the reader falls back to. `multiFrom` is the file it was written from, whose
+// multi-valued tags come back in this same save (see carryRepeatedComments).
+export function setFlacComment(file: string, comment: string, multiFrom?: string): void {
   const f = TagFile.createFromPath(file)
   try {
     const xiph = f.getTag(TagTypes.Xiph, true) as XiphComment
     xiph.removeField('DESCRIPTION')
     if (comment.trim()) xiph.setFieldAsStrings('COMMENT', comment)
     else xiph.removeField('COMMENT')
+    if (multiFrom) carryRepeatedComments(xiph, multiFrom)
     f.save()
   } finally {
     f.dispose()
@@ -515,7 +1010,9 @@ export function copyCuesFromFlac(source: string, dest: string, shift?: CueShift)
 
     const out = TagFile.createFromPath(dest)
     try {
+      const fresh = (out.tagTypesOnDisk & TagTypes.Id3v2) === 0
       const tag = out.getTag(TagTypes.Id3v2, true) as Id3v2Tag
+      if (fresh) tag.version = 3
       removeTraktorTextMirror(tag)
       removeCueFrames(tag)
       if (anchored) {
@@ -871,6 +1368,91 @@ function setTextFrame(tag: Id3v2Tag, frameId: Id3v2TextFrameId, value: string): 
   tag.addFrame(frame)
 }
 
+// ffmpeg's mp4 muxer writes only the atoms it has names for, so a same-format M4A update,
+// copied through with no backup under "Only when the audio changes", lost every "----"
+// atom the file had: the gapless iTunSMPB, Sound Check, MusicBrainz ids, other programs'
+// own, and an M4A encoded again lost them just the same. Each comes back from the source
+// unless it names a field Surco writes or reads, or one in `deleted`: what the user deleted,
+// and the loudness figures of samples the file no longer holds. Serato's stay with
+// carrySeratoCues, which keeps the cues and drops the analysis. Text atoms only, the kind
+// TagLib can write back.
+function carryFreeformAtoms(apple: Mpeg4AppleTag, source: string, deleted: string[]): void {
+  const dropped = new Set(deleted.map((name) => name.toLowerCase()))
+  const f = TagFile.createFromPath(source)
+  try {
+    const items =
+      (
+        f.tag as unknown as {
+          _ilstBox?: { children: { boxType: ByteVector; children: unknown[] }[] }
+        }
+      )._ilstBox?.children ?? []
+    for (const box of items) {
+      if (box.boxType.toString(StringType.Latin1) !== '----') continue
+      const children = box.children as { boxType: ByteVector; text?: string }[]
+      const named = (type: string) =>
+        children.find((c) => c.boxType.toString(StringType.Latin1) === type)?.text ?? ''
+      const [mean, name] = [named('mean'), named('name')]
+      const key = name.toLowerCase()
+      if (!mean || mean === 'com.serato.dj' || MANAGED_ALIASES.has(key) || dropped.has(key))
+        continue
+      if (apple.getItunesStrings(mean, name).length > 0) continue
+      const texts = (f.tag as Mpeg4AppleTag).getItunesStrings(mean, name)
+      if (texts.length > 0) apple.setItunesStrings(mean, name, ...texts)
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
+// The same remux lost these standard atoms too (measured 23/11/2026 with the bundled ffmpeg):
+// the sort names Music sorts the library by, the classical work and movement, category,
+// purchase date, director and narrator. Surco edits none of them, so each comes back from
+// the source unless the user deleted it in the inspector, under the name ffmpeg lists it by.
+// Left out on purpose, as fields Surco reads or writes: ©con (conductor), ©pub (label),
+// ©enc (encoded by), rtng and stik (read as rating and media type), and ©too, the encoder
+// stamp ffmpeg owns.
+const CARRIED_ATOMS: [string, string?][] = [
+  ['sonm', 'sort_name'],
+  ['soar', 'sort_artist'],
+  ['soaa', 'sort_album_artist'],
+  ['soal', 'sort_album'],
+  ['soco', 'sort_composer'],
+  ['sosn', 'sort_show'],
+  ['catg', 'category'],
+  ['purd', 'purchase_date'],
+  ['©dir', 'director'],
+  ['akID', 'account_type'],
+  ['©wrk'],
+  ['©mvn'],
+  ['©mvi'],
+  ['©mvc'],
+  ['shwm'],
+  ['©nrt'],
+]
+
+type DataBoxes = { getQuickTimeDataBoxes(type: ByteVector): { data: ByteVector; flags: number }[] }
+
+function carryStandardAtoms(apple: Mpeg4AppleTag, source: string, deleted: string[]): void {
+  const dropped = new Set(deleted.map((name) => name.toLowerCase()))
+  const f = TagFile.createFromPath(source)
+  try {
+    for (const [atom, listedAs] of CARRIED_ATOMS) {
+      if (listedAs && dropped.has(listedAs)) continue
+      const type = ByteVector.fromString(atom, StringType.Latin1)
+      const boxes =
+        (f.tag as unknown as { _ilstBox?: DataBoxes })._ilstBox?.getQuickTimeDataBoxes(type) ?? []
+      if (boxes.length > 0)
+        apple.setQuickTimeData(
+          type,
+          boxes.map((b) => b.data),
+          boxes[0].flags,
+        )
+    }
+  } finally {
+    f.dispose()
+  }
+}
+
 // The MP4 counterpart of setUserText: writes a freeform atom, or removes it when the value
 // is empty. setItunesStrings with no data strings is TagLib's own way of clearing one, so
 // an emptied field leaves nothing behind rather than keeping the previous value.
@@ -879,15 +1461,36 @@ function setItunesText(apple: Mpeg4AppleTag, name: string, value: string): void 
   else apple.setItunesStrings('com.apple.iTunes', name)
 }
 
+// TagLib's comment setter takes every COMM frame for the comment: emptied, it removed them
+// all, iTunes' Sound Check (iTunNORM) and gapless counts (iTunSMPB, iTunPGAP) and another
+// player's own field with them, and with no plain comment to reuse it wrote the new one
+// over one of those. The comment is the COMM with no description, the one ffmpeg and the
+// DJ software read, so the described ones are set aside while `write` sets it.
+export function keepDescribedComments(f: TagFile, write: () => void): void {
+  const id3 = f.getTag(TagTypes.Id3v2, false) as Id3v2Tag | null
+  const described =
+    id3
+      ?.getFramesByClassType<Id3v2CommentsFrame>(Id3v2FrameClassType.CommentsFrame)
+      .filter((frame) => frame.description) ?? []
+  for (const frame of described) id3?.removeFrame(frame)
+  write()
+  for (const frame of described) id3?.addFrame(frame)
+}
+
 // node-taglib-sharp keeps its TXXX user-text accessors private, but the catalog
 // number lives in a TXXX frame. This mirrors the library's own setUserTextAsString
 // through its public frame API: an empty value clears the frame, otherwise it is
 // created if missing and its text replaced.
+// Every frame under the description is the field's, in any case: a second one an ID3v2.3
+// tagger wrote for a second value would otherwise read back beside what the DJ set.
 export function setUserText(tag: Id3v2Tag, description: string, text: string): void {
-  const frames = tag.getFramesByClassType<Id3v2UserTextInformationFrame>(
-    Id3v2FrameClassType.UserTextInformationFrame,
-  )
-  let frame = Id3v2UserTextInformationFrame.findUserTextInformationFrame(frames, description)
+  const [found, ...extra] = tag
+    .getFramesByClassType<Id3v2UserTextInformationFrame>(
+      Id3v2FrameClassType.UserTextInformationFrame,
+    )
+    .filter((fr) => fr.description.toUpperCase() === description.toUpperCase())
+  for (const fr of extra) tag.removeFrame(fr)
+  let frame = found
   if (!text) {
     if (frame) tag.removeFrame(frame)
     return
@@ -1021,6 +1624,8 @@ export function keepGenreParentheses(id3: Id3v2Tag): void {
 // goes via removeCover), so a cleared file keeps none of the fields we manage.
 // `foreignRemoved` names the third-party tags the inspector's per-tag delete marked —
 // applied on both ID3 and m4a regardless of clearExtras, unlike the fields above.
+// `carryAtoms` brings an m4a cueSource's atoms back into the m4a written from it, copied
+// through or encoded again (see carryFreeformAtoms).
 export function writeTags(
   file: string,
   meta: TrackMetadata,
@@ -1030,6 +1635,7 @@ export function writeTags(
   cueShift?: CueShift,
   clearExtras = false,
   foreignRemoved: string[] = [],
+  carryAtoms = false,
 ): void {
   const f = TagFile.createFromPath(file)
   try {
@@ -1063,7 +1669,9 @@ export function writeTags(
     tag.year = toYear(meta.year)
     tag.genres = toArray(meta.genre)
     tag.grouping = meta.grouping
-    tag.comment = meta.comment
+    keepDescribedComments(f, () => {
+      tag.comment = meta.comment
+    })
     tag.track = toTrackNumber(meta.trackNumber)
     tag.trackCount = toNumber(meta.trackTotal ?? '') || totalInNumber(meta.trackNumber)
     tag.disc = toDiscNumber(meta.discNumber)
@@ -1123,6 +1731,10 @@ export function writeTags(
       // only ever looks for POPM. Armoring it into a freeform atom would write bytes
       // nothing reads back — not even Surco itself.
       const apple = f.tag as Mpeg4AppleTag
+      if (carryAtoms && cueSource && !clearExtras) {
+        carryFreeformAtoms(apple, cueSource, foreignRemoved)
+        carryStandardAtoms(apple, cueSource, foreignRemoved)
+      }
       const date = fullDateOf(meta.year)
       if (date) apple.setQuickTimeString(Mpeg4BoxType.DAY, date)
       for (const name of foreignRemoved) apple.setItunesStrings('com.apple.iTunes', name)
@@ -1140,14 +1752,21 @@ export function writeTags(
     setId3Date(id3, meta.year)
     dropBrokenUfids(id3)
     // The foreign tags the user marked in the inspector: remove them by name. Covers
-    // the free-text TXXX route (setUserText with '' clears it) and any frame whose id
-    // matches the name outright. Applies always, not just on clearExtras.
+    // every TXXX and described COMM under that description, in any case as ffmpeg and the
+    // inspector match it, and any frame whose id matches the name outright, or that the
+    // inspector lists by ffmpeg's name for it (a TSOP as artist-sort). Applies always, not
+    // just on clearExtras.
     for (const name of foreignRemoved) {
-      setUserText(id3, name, '')
       const upper = name.toUpperCase()
-      for (const fr of id3.frames.filter(
-        (frame) => frame.frameId.toString().toUpperCase() === upper,
-      )) {
+      for (const fr of id3.frames.filter((frame) => {
+        const id = frame.frameId.toString()
+        return (
+          id.toUpperCase() === upper ||
+          FFMPEG_ID3_TEXT_NAMES[id] === upper ||
+          ((id === 'TXXX' || id === 'COMM') &&
+            (frame as Id3v2CommentsFrame).description.toUpperCase() === upper)
+        )
+      })) {
         id3.removeFrame(fr)
       }
     }

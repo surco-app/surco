@@ -1,4 +1,6 @@
 import type { Settings } from '../../../shared/types'
+import type { TrackItem } from '../types'
+import { type AppleMusicIndex, isInLibrary } from './appleMusicLibrary'
 import { toDestination } from './destination'
 
 // Which library the "already owned" membership check reads. A conversion that lands in
@@ -32,4 +34,32 @@ export function librarySourceOf(
   if (destination === 'appleMusic' && mac) return 'appleMusic'
   if (settings.addToEngineDj) return 'engineDj'
   return null
+}
+
+// Whether that library already owns the track, read from the track's own record first (an
+// add Surco made, or a verdict pinned earlier) and from the session snapshot otherwise.
+// 'idle' while there is no library to ask or its snapshot has not landed, so nothing is
+// claimed either way. A selection asks this per track; the open track's hook adds the
+// Discogs-proven verdict on top.
+export function libraryMembership(
+  track: Pick<
+    TrackItem,
+    'meta' | 'duration' | 'musicPersistentId' | 'engineDjAdded' | 'inLibraryResolved'
+  >,
+  source: LibrarySource,
+  index: AppleMusicIndex | null,
+): 'idle' | 'yes' | 'no' {
+  if (!source) return 'idle'
+  const owned =
+    source === 'appleMusic'
+      ? track.musicPersistentId || track.inLibraryResolved
+      : track.engineDjAdded || track.inLibraryResolved
+  if (owned) return 'yes'
+  if (!index) return 'idle'
+  const ownTags = {
+    title: track.meta.title,
+    artist: track.meta.artist,
+    durationSec: track.duration,
+  }
+  return isInLibrary(index, ownTags) ? 'yes' : 'no'
 }

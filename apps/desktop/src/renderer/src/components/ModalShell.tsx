@@ -3,6 +3,7 @@ import { createContext, useContext, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useExitPresence } from '../hooks/useExitPresence'
 import { lastInputWasKeyboard } from '../lib/inputModality'
+import { LAYER } from '../lib/layers'
 import { useFocusTrap } from './useFocusTrap'
 
 // The fast duration, shorter than the panel-length entrance: leaving needs no ceremony.
@@ -89,13 +90,15 @@ export function ModalShell({
   return (
     <div
       inert={leaving}
-      className={`fixed inset-0 z-50 flex justify-center ${
+      style={{ zIndex: LAYER.overlay }}
+      className={`fixed inset-0 flex justify-center ${
         align === 'top' ? 'items-start pt-[8vh]' : 'items-center'
       }${leaving ? ' pointer-events-none' : ''}`}
     >
       <button
         type="button"
         data-testid={backdropTestId}
+        data-bare={bare}
         aria-label={tr('common.close')}
         onClick={onClose}
         className={`${leaving ? 'animate-overlay-out ' : bare ? '' : 'animate-overlay '}absolute inset-0 bg-scrim/60 backdrop-blur-sm`}
@@ -105,6 +108,7 @@ export function ModalShell({
         role="dialog"
         aria-modal="true"
         data-testid={dialogTestId}
+        data-bare={bare}
         aria-labelledby={labelledBy}
         aria-label={label}
         className={`${leaving ? 'animate-pop-out ' : bare ? '' : 'animate-pop '}relative z-10 shadow-modal ${className}`}

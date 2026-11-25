@@ -106,6 +106,7 @@ export function ConfirmDialog({
           ref={confirmRef}
           type="submit"
           data-testid="confirm-ok"
+          data-destructive={!!destructive}
           disabled={confirmDisabled}
           className={`${DIALOG_BUTTON} ${destructive ? 'bg-[var(--color-danger)] hover:brightness-110' : DIALOG_OK}`}
         >

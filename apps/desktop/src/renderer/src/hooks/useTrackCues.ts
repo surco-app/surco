@@ -1,4 +1,4 @@
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, type QueryClient, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import type { CueProfileRead } from '../../../shared/cueProfile'
 import type { GridAudit } from '../../../shared/gridAudit'
@@ -50,6 +50,25 @@ export const gridFitQuery = (contentId: string) => ({
   queryFn: () => window.api.cues.gridFit(contentId),
   staleTime: Number.POSITIVE_INFINITY,
 })
+
+// What the cue editor reads from the file a track points at and from the program's analysis
+// of it. A repoint or a replacement keeps the content id while changing both, so these are
+// read again: cues are placed against the file the DJ will play, not the one it replaced.
+const TRACK_FILE_QUERY_KEYS = [
+  'rekordbox-track-cues',
+  'rekordbox-cue-wave-detail',
+  'rekordbox-cue-wave-fine',
+  'rekordbox-audition-lead',
+  'rekordbox-surco-grid',
+  'rekordbox-grid-fit',
+  'grid-audit',
+  'rekordbox-cue-drop-input',
+  'cue-preview-drop-input',
+]
+
+export function rereadTrackFileQueries(client: QueryClient): Promise<void>[] {
+  return TRACK_FILE_QUERY_KEYS.map((key) => client.invalidateQueries({ queryKey: [key] }))
+}
 
 export const cueProfileQuery = {
   queryKey: ['cue-profile'],

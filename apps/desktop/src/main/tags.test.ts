@@ -1207,7 +1207,49 @@ describe('readPopmRating', () => {
   })
 })
 
+// ffmpeg writes an AIFF with no tags to carry and no ID3 chunk at all, so the cue carry
+// creates the tag itself. TagLib starts an AIFF's at v2.2, which has no PRIV frame: the
+// FLAC cues were dropped without a word. It has to be v2.3, like every other ID3 tag Surco
+// writes on MP3, AIFF and WAV.
+function untaggedAiff(dir: string): string {
+  const file = join(dir, 'untagged.aiff')
+  execFileSync(FFMPEG, [
+    '-v',
+    'quiet',
+    '-f',
+    'lavfi',
+    '-i',
+    'sine=frequency=440:duration=2',
+    '-write_id3v2',
+    '1',
+    '-fflags',
+    '+bitexact',
+    '-y',
+    file,
+  ])
+  return file
+}
+
+function id3Version(file: string): number | undefined {
+  const f = TagFile.createFromPath(file)
+  try {
+    if ((f.tagTypesOnDisk & TagTypes.Id3v2) === 0) return undefined
+    return (f.getTag(TagTypes.Id3v2, false) as Id3v2Tag).version
+  } finally {
+    f.dispose()
+  }
+}
+
 describe('copyCueFrames', () => {
+  it('creates the ID3 tag it carries the cues into as v2.3', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-tags-v23-'))
+    const out = untaggedAiff(dir)
+    expect(id3Version(out)).toBeUndefined()
+    copyCueFrames(buildSeed(dir), out)
+    expect(readFileSync(out).includes(Buffer.from('TRAKTORCUEBLOB'))).toBe(true)
+    expect(id3Version(out)).toBe(3)
+  })
+
   // Normalizing re-encodes the audio (ffmpeg drops the GEOB), but a constant gain
   // never moves the cues in time — so re-injecting the source's frame restores them
   // exactly. This is what keeps Traktor cues through a normalizing convert.
@@ -1556,6 +1598,16 @@ describe('shiftFlacCues', () => {
     copyCuesFromFlac(source, dest, { shiftMs: -51, bpm: 138.3 })
 
     expect(readCueTree(dest)).not.toBeNull()
+  })
+
+  it('creates the ID3 tag it re-armors the FLAC cues into as v2.3', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'surco-fromfl-v23-'))
+    const source = flacWithCues(dir, buildTraktorTree([traktorCue('Drop', 0, 79672.64, 1)]))
+    const dest = untaggedAiff(dir)
+    expect(id3Version(dest)).toBeUndefined()
+    copyCuesFromFlac(source, dest)
+    expect(readCueTree(dest)).not.toBeNull()
+    expect(id3Version(dest)).toBe(3)
   })
 
   // Reported 10/09/2026: some real FLAC libraries carry the TRAKTOR4 tree in a leading

@@ -32,6 +32,13 @@ vi.mock('node:child_process', () => ({
     cb: (err: unknown, out: { stdout: string; stderr: string }) => void,
   ) => {
     calls.push({ file, args })
+    if (args.some((a) => a.includes('moved away'))) {
+      cb(Object.assign(new Error('probe failed'), { stderr: 'No such file or directory' }), {
+        stdout: '',
+        stderr: 'No such file or directory',
+      })
+      return
+    }
     if (args.some((a) => a.includes('broken.flac'))) {
       cb(new Error('probe failed'), { stdout: '', stderr: '' })
       return
@@ -125,6 +132,28 @@ describe('readMeta caching', () => {
     })
     expect(second).toEqual(first)
     expect(calls.length).toBeGreaterThan(callsAfterFirst)
+  })
+
+  // A row whose file was moved or deleted since it was listed fails its read too, and the
+  // notice blamed the tags of a file that no longer exists. The read says which it was, so
+  // the DJ is told to look for the file instead of thinking it is damaged.
+  it('says the file is missing when nothing is at the path any more', async () => {
+    const read = await readMeta(join(work, 'moved away.mp3'))
+
+    expect(read).toEqual({
+      tags: {},
+      duration: null,
+      cover: null,
+      foreignTags: [],
+      failed: true,
+      missing: true,
+    })
+  })
+
+  it('says a light read the file is missing too', async () => {
+    const read = await readMetaLight(join(work, 'moved away.mp3'))
+
+    expect(read.missing).toBe(true)
   })
 
   // A degraded read and a file that genuinely carries no tags produce the same empty

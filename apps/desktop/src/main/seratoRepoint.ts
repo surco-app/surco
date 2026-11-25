@@ -8,6 +8,7 @@ import {
   seratoPathOn,
   seratoRootOf,
   withCrateTrackRepointed,
+  withCrateTracks,
 } from './seratoCrateFile'
 import { seratoDatabaseTruncated } from './seratoDatabase'
 import { seratoDatabaseHas, withSeratoTrackRepointed } from './seratoDatabaseWrite'
@@ -26,6 +27,15 @@ import {
 const DATABASE = 'database V2'
 
 type Outcome = LibraryRepointResult | 'truncated'
+
+// A crate already holding the new file only loses the old row, or the track would be in it
+// twice. Null when the crate never held the old file.
+function withoutTrack(bytes: Uint8Array, paths: string[], from: string): Uint8Array | null {
+  const kept = paths.flatMap((path, i) =>
+    path.normalize('NFC') === from.normalize('NFC') ? [] : [{ keep: i }],
+  )
+  return kept.length === paths.length ? null : withCrateTracks(bytes, kept)
+}
 
 // Each volume keeps its own _Serato_ library, and an entry stores a path relative to its
 // volume, so a file that moved to another drive cannot be followed by pointing the old entry.
@@ -46,6 +56,7 @@ function repointOne(
   const from = seratoPathOn(repoint.from, root)
   const to = seratoPathOn(repoint.to, root)
   const repointed = withSeratoTrackRepointed(database, from, to)
+  if (repointed && seratoDatabaseHas(database, to)) return { written: false, reason: 'occupied' }
   // A commit whose rollback failed can leave the database on the new file and a crate still
   // on the old one: the retry finds no old entry, and the crates must still follow it, or
   // they keep a path that is about to be retired.
@@ -56,8 +67,11 @@ function repointOne(
   for (const name of draft.list(subcrates).filter((n) => n.endsWith('.crate'))) {
     const file = join(subcrates, name)
     const bytes = draft.read(file)
-    if (!bytes || crateTrackPaths(bytes) === null) return 'truncated'
-    const crate = withCrateTrackRepointed(bytes, from, to)
+    const paths = bytes && crateTrackPaths(bytes)
+    if (!bytes || !paths) return 'truncated'
+    const crate = paths.some((path) => path.normalize('NFC') === to.normalize('NFC'))
+      ? withoutTrack(bytes, paths, from)
+      : withCrateTrackRepointed(bytes, from, to)
     if (crate) draft.write(file, crate)
   }
   return { written: true }

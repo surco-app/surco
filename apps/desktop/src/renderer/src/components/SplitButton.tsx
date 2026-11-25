@@ -1,5 +1,6 @@
 import type React from 'react'
 import { useEffect, useRef, useState } from 'react'
+import { menuStep } from '../lib/menuStep'
 
 // The editor footer's split button, shared: a full-width accent body for the main action
 // and a chevron that opens a menu of the others above it.
@@ -21,13 +22,16 @@ export const FORMAT_TOGGLE_BOX_NAME = 'format-toggle'
 export const SPLIT_TOGGLE_FORMAT = `press relative flex items-center justify-center ${FORMAT_TOGGLE_BOX} overflow-hidden rounded-r-lg before:absolute before:inset-y-2.5 before:left-0 before:z-10 before:w-px disabled:pointer-events-none`
 export const SPLIT_BODY_QUIET = 'text-fg-muted'
 export const SPLIT_TOGGLE_QUIET =
-  'bg-[var(--color-panel-2)] text-fg-faint before:bg-[var(--color-line-strong)]'
+  'bg-[var(--color-panel-2)] text-fg-muted before:bg-[var(--color-line-strong)]'
 export const SPLIT_TOGGLE_DIMMED =
   'bg-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-ink))] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 hover:bg-[color-mix(in_srgb,var(--color-accent)_55%,var(--color-ink))]'
 export const SPLIT_TOGGLE_READY =
   'bg-[var(--color-accent)] text-[var(--color-on-accent)] before:bg-[var(--color-on-accent)]/20 disabled:opacity-40'
 export const SPLIT_MENU =
   'animate-pop-flat absolute right-0 bottom-full z-50 mb-2 w-56 origin-bottom-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
+// The same menu hung under its chevron, for a split button that sits in a top bar.
+export const SPLIT_MENU_DOWN =
+  'animate-pop-flat absolute right-0 top-full z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-[var(--color-line)] bg-[var(--color-panel-2)] py-1 shadow-[var(--shadow-float)]'
 export const SPLIT_ITEM =
   'flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-[var(--color-panel)] focus-visible:bg-[var(--color-panel)] focus-visible:shadow-none'
 
@@ -80,12 +84,8 @@ export function useSplitMenu() {
     }
     const items = menuItemsOf(menuRef.current)
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1 || items.length === 0) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null || items.length === 0) return
     e.preventDefault()
     e.stopPropagation()
     items[next].focus()

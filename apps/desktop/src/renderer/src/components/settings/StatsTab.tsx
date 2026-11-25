@@ -47,18 +47,19 @@ const CELLS: { key: keyof LifetimeStats; icon: typeof FolderDown }[] = [
 ]
 
 // Matches by source as one proportional bar, a segment per source with the raw counts
-// beside their swatches, both ranked from the most matches to the fewest. When no match
-// has landed yet the bar stays flat and empty rather than dividing by zero.
+// beside their swatches, both ranked from the most matches to the fewest. Sources with no
+// matches are left out, and with none at all the card is not drawn: a chart of nothing.
 function MatchSplit({
   heading,
   sources,
 }: {
   heading: string
   sources: { key: string; label: string; count: number; swatch: string }[]
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const { i18n } = useTranslation()
-  const total = sources.reduce((sum, s) => sum + s.count, 0)
-  const ranked = [...sources].sort((a, b) => b.count - a.count)
+  const ranked = sources.filter((s) => s.count > 0).sort((a, b) => b.count - a.count)
+  if (ranked.length === 0) return null
+  const total = ranked.reduce((sum, s) => sum + s.count, 0)
   return (
     <div
       data-testid="stats-match-split"
@@ -71,7 +72,7 @@ function MatchSplit({
             key={s.key}
             data-testid={`stats-match-${s.key}`}
             className={`h-full ${s.swatch}`}
-            style={{ width: total > 0 ? `${(s.count / total) * 100}%` : '0%' }}
+            style={{ width: `${(s.count / total) * 100}%` }}
           />
         ))}
       </div>

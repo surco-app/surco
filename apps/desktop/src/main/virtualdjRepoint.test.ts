@@ -131,6 +131,57 @@ describe('repointVirtualdjTracks', () => {
     expect(Number(cue)).toBeCloseTo(11.5, 3)
   })
 
+  // The 23/11 replacement test on a copy of a real database: a FLAC of another recording kept
+  // the MP3's grid, 290 ms off the new audio. With no measure saying it is the same audio the
+  // cues stay where the DJ set them, as in rekordbox, and VirtualDJ's analysis of the old file
+  // goes so VirtualDJ scans the new one, as it does a song it never scanned.
+  it('drops the old file’s scan and grid but keeps the cues when the replacement is another recording', async () => {
+    const lib = library()
+    const block = songBlock(FIXTURE_XML, FROM)
+    writeFileSync(
+      join(lib.dir, 'database.xml'),
+      FIXTURE_XML.replace(
+        block,
+        block.replace(
+          '  <Poi Pos="0.248163"',
+          '  <Poi Type="beatgrid" Pos="2.586893" />\r\n  <Poi Pos="0.248163"',
+        ),
+      ),
+    )
+    const to = lib.track('Pray.aiff')
+    const repoint = rekordboxRepointFor('/downloads/Pray.flac', to, {
+      replaces: FROM,
+      replaceShift: { unmoved: 'noMatch' },
+      replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+    })
+    if (!repoint) throw new Error('the replacement told the libraries nothing')
+
+    expect(await repointVirtualdjTracks([repoint], lib.deps)).toEqual([{ written: true }])
+
+    const moved = songBlock(lib.database(), to)
+    expect(moved).not.toContain('<Scan ')
+    expect(moved).not.toContain('Type="beatgrid"')
+    expect(moved).toContain('<Poi Name="Surco" Pos="29.973878" Num="1"')
+    expect(moved).toContain('<Poi Pos="0.248163" Type="automix" Point="realStart" />')
+  })
+
+  // The same audio measured at the same spot: VirtualDJ's grid still fits, and may be one the
+  // DJ corrected by hand.
+  it('keeps the scan of a replacement measured as the same audio', async () => {
+    const lib = library()
+    const to = lib.track('Pray.aiff')
+    const repoint = rekordboxRepointFor('/downloads/Pray.flac', to, {
+      replaces: FROM,
+      replaceShift: { moved: 0 },
+      replaceAudio: { oldShiftMs: 51.18, newShiftMs: 0 },
+    })
+    if (!repoint) throw new Error('the replacement told the libraries nothing')
+
+    await repointVirtualdjTracks([repoint], lib.deps)
+
+    expect(songBlock(lib.database(), to)).toContain('Phase="57.559456"')
+  })
+
   it('writes the converted file’s own bitrate, so a FLAC turned MP3 does not keep showing the FLAC’s', async () => {
     const lib = library()
     const flac = '/Music/Serato Pruebas/Pray.flac'

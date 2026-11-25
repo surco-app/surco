@@ -618,6 +618,13 @@ describe('syncCollection with a replace', () => {
     expect(readFileSync(nmlPath, 'utf8')).toBe(before)
   })
 
+  it('names the gone output whose move was dropped, so To review does not say the old entry moved', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    writeFileSync(nmlPath, withOld())
+    const result = await syncCollection(nmlPath, [replace('gone.aiff')], session, BOOT)
+    expect(result.stayed).toEqual([join(dir, 'new', 'gone.aiff')])
+  })
+
   it('moves the entry onto an output that is on disk', async () => {
     writeFileSync(join(dir, 'old.mp3'), 'old')
     mkdirSync(join(dir, 'new'))
@@ -627,6 +634,45 @@ describe('syncCollection with a replace', () => {
     expect(readFileSync(nmlPath, 'utf8')).toContain(
       `DIR="${nmlDir(join(dir, 'new'))}" FILE="here.aiff"`,
     )
+  })
+
+  it('says which new files the entry did not follow, so To review leaves Traktor out of them', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(
+      nmlPath,
+      withOld().replace(
+        '</COLLECTION>',
+        `<ENTRY TITLE="Uno again"><LOCATION DIR="${nmlDir(join(dir, 'new'))}" FILE="here.aiff" VOLUME="${BOOT}" VOLUMEID="${BOOT}"></LOCATION></ENTRY>\n</COLLECTION>`,
+      ),
+    )
+    const result = await syncCollection(
+      nmlPath,
+      [{ ...replace('here.aiff'), cueShift: { shiftMs: -120 } }],
+      session,
+      BOOT,
+    )
+    expect(result.stayed).toEqual([join(dir, 'new', 'here.aiff')])
+  })
+
+  it('names the new file of a track the collection never held, so To review leaves Traktor out of it', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(nmlPath, withOld().replace('FILE="old.mp3"', 'FILE="another.mp3"'))
+    const result = await syncCollection(nmlPath, [replace('here.aiff')], session, BOOT)
+    expect(result.reason).toBe('no-matches')
+    expect(result.stayed).toEqual([join(dir, 'new', 'here.aiff')])
+  })
+
+  it('says nothing stayed when the entry followed its new file', async () => {
+    writeFileSync(join(dir, 'old.mp3'), 'old')
+    mkdirSync(join(dir, 'new'))
+    writeFileSync(join(dir, 'new', 'here.aiff'), 'new')
+    writeFileSync(nmlPath, withOld())
+    const result = await syncCollection(nmlPath, [replace('here.aiff')], session, BOOT)
+    expect(result.stayed).toBeUndefined()
   })
 })
 

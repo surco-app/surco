@@ -211,8 +211,9 @@ describe('CuesSection on an Engine DJ track', () => {
     expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox and Engine DJ')
   })
 
+  // From a rekordbox track the body names rekordbox, so the line must say the tracks go to Engine DJ.
   it('says Save all to Engine DJ when every unsaved track is Engine’s', async () => {
-    setup()
+    setup({ ...READ, contentId: '103' }, '103')
     await ready()
     const target = { path: '/m/x.wav', label: 'x', fingerprint: 'f0' }
     keepDraft('engine:8', 'engine:8|f0|null', startDraft([], 'mine'), target)

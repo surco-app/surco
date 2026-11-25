@@ -19,7 +19,7 @@ function faintBoxedFields(code: string): number[] {
 
 const FIELD_SHELLS: Record<string, string> = {
   'components/PathField.tsx': `rounded-lg border ${FAINT} bg-[var(--color-field)]`,
-  'components/FindReplaceModal.tsx': `${FAINT} focus-within:border-[var(--color-accent)]`,
+  'components/FindReplaceModal.tsx': `${FAINT} has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]`,
 }
 
 describe('a text field shows its edge at 3:1, so an empty one is not read as plain background', () => {

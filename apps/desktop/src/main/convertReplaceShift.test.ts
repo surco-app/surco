@@ -60,7 +60,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 })
 
 import { withSeratoCues } from '../shared/seratoMarkers'
-import type { TrackMetadata } from '../shared/types'
+import type { OutputFormat, TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
 import { recordNmlPatch } from './nmlBatch'
 import { recordRekordboxRepoint } from './rekordboxBatch'
@@ -153,12 +153,13 @@ function replace(
     trim?: { startSec: number }
     isCancelled?: () => boolean
     onTmp?: (p: string) => void
+    format?: OutputFormat
   } = {},
 ) {
   return convertAudio(
     input,
     output,
-    'aiff',
+    extra.format ?? 'aiff',
     meta,
     undefined,
     undefined,
@@ -238,14 +239,12 @@ describe('a replacement measured in the conversion', () => {
     near(10000 + (repoint()?.audio?.cueShiftMs ?? Number.NaN), 9949)
   }, 120_000)
 
-  // The DJ's own Traktor offset is applied to every conversion; a replacement that moves the
-  // cues is no exception, or the DJ's calibration is lost on exactly the tracks they swap.
-  it("applies the DJ's Traktor offset on a moved replacement", async () => {
+  it("moves a replaced entry's cues by the measured shift alone, since the DJ set them by ear in Traktor where the rig offset already counts", async () => {
     watch.traktorCueOffsetMs = -51
 
     await replace(later, fresh('Song.aiff'), oldWav)
 
-    near(patch()?.cueShift?.shiftMs, -1449)
+    near(patch()?.cueShift?.shiftMs, -1500)
   }, 120_000)
 
   // Traktor's codec offset is a property of the file the DJ's cues were set on: it has to be
@@ -259,17 +258,33 @@ describe('a replacement measured in the conversion', () => {
 
     await replace(later, fresh('Song.aiff'), oldMp3)
 
-    expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18 + 10, 1)
+    expect(patch()?.cueShift?.shiftMs).toBeCloseTo(-1500 + 51.18, 1)
+  }, 120_000)
+
+  // A header-less MP3 download is copied as it is, and Traktor plays it exactly as ffmpeg
+  // decodes it, encoder delay included: the measured shift already holds that delay, so the
+  // cue moves by it alone. Adding libmp3lame's 1105 samples again put every cue 25 ms after
+  // the beat the DJ set.
+  it('moves Traktor cues by the measured shift alone onto a header-less MP3 replacement', async () => {
+    const bare = fresh('later.mp3')
+    derive(later, bare, ['-c:a', 'libmp3lame', '-b:a', '320k', '-write_xing', '0'])
+
+    const { written } = await replace(bare, fresh('Song.mp3'), oldWav, { format: 'mp3' })
+
+    const moved = (written.replaceShift as { moved: number }).moved
+    near(moved, 1525)
+    near(patch()?.cueShift?.shiftMs, -moved)
   }, 120_000)
 
   // Another recording has no shift to measure: moving the cues to the best fit of noise would
-  // scatter them, so nothing moves and the measure says why. The FLAC's samples reach the AIFF
-  // untouched, so rekordbox gets no cue move at all and keeps its analysis.
-  it('moves nothing and says why when the new file is another recording', async () => {
+  // scatter them, so nothing moves and the measure says why. The row now points at other audio
+  // and rekordbox never analyses a repointed file by itself, so it is told to analyse it again
+  // with its cues left where they were.
+  it('moves no cue and has rekordbox re-analyse when the new file is another recording', async () => {
     const { written } = await replace(other, fresh('Song.aiff'), oldWav)
 
     expect(written.replaceShift).toEqual({ unmoved: 'noMatch' })
-    expect(repoint()?.audio).toBeUndefined()
+    expect(repoint()?.audio).toEqual({ cueShiftMs: 0 })
     expect(repoint()?.engineShift?.trimmedMs).toBe(0)
     expect(patch()?.cueShift).toBeUndefined()
   }, 120_000)
@@ -309,6 +324,38 @@ describe('a replacement measured in the conversion', () => {
 
     near((written.replaceShift as { moved: number }).moved, 1500)
     expect(repoint()).toMatchObject({ from: oldAiff, to: oldAiff, fromBytes: bytes })
+  }, 120_000)
+
+  // With "Add to Engine DJ" on, the destination moves the old row onto the new file before
+  // the repoint runs, and only the old file's size tells the repoint the shift is still owed.
+  it("hands the libraries the replaced file's size when the new file lands elsewhere", async () => {
+    await replace(later, fresh('Song.aiff'), oldWav)
+
+    expect(repoint()?.fromBytes).toBe(statSync(oldWav).size)
+  }, 120_000)
+
+  // The libraries hold the names of the file being replaced, not of the download: a download
+  // spelled otherwise read as the DJ's own edit in Traktor, Engine DJ and Serato, and the
+  // names typed in Surco never reached them.
+  it("hands the libraries the names to replace from the replaced file's tags, not the download's", async () => {
+    const old = fresh('old.mp3')
+    derive(oldWav, old, [
+      '-c:a',
+      'libmp3lame',
+      '-b:a',
+      '320k',
+      '-metadata',
+      'title=Old Spelling',
+      '-metadata',
+      'artist=A',
+    ])
+    const download = fresh('download.flac')
+    derive(later, download, ['-metadata', 'title=Download Spelling', '-metadata', 'artist=A'])
+
+    await replace(download, fresh('Song.aiff'), old)
+
+    expect(repoint()?.names).toEqual({ title: { from: 'Old Spelling', to: 'T' } })
+    expect(patch()?.tags).toEqual({ title: { from: 'Old Spelling', to: 'T' } })
   }, 120_000)
 
   // A replaced file that is gone cannot be measured, but the DJ asked for the new file and

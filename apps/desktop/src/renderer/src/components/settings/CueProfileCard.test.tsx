@@ -107,11 +107,6 @@ describe('CueProfileCard', () => {
     setup(read({ profile: PROFILE }))
     await screen.findByTestId('cue-profile-summary')
     expect(screen.getByRole('heading')).toHaveTextContent(/^How you mark$/)
-    expect(screen.getByRole('heading')).toHaveClass(
-      'text-section',
-      'font-semibold',
-      'text-fg-muted',
-    )
     cleanup()
     setup(read())
     await screen.findByTestId('cue-profile')

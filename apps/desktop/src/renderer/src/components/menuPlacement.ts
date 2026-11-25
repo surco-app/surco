@@ -1,5 +1,5 @@
 import type React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect } from 'react'
 
 // Breathing room between the trigger and its menu, and the height below which dropping
 // down is not worth it and the menu flips above instead.
@@ -16,6 +16,7 @@ export interface MenuPlacement {
   right?: number
   minWidth: number
   maxHeight: number
+  anchorX?: number
 }
 
 // Where a fixed, body-portaled menu sits, measured from its trigger when it opens. It
@@ -35,7 +36,49 @@ export function placeMenu(r: DOMRect, align: 'start' | 'end' = 'start'): MenuPla
     right: align === 'end' ? window.innerWidth - r.right : undefined,
     minWidth: r.width,
     maxHeight: Math.max(flip ? above : below, MIN_MENU_HEIGHT),
+    anchorX: r.left + r.width / 2,
   }
+}
+
+// The menu's width is only known once it is mounted, so placeMenu cannot keep it inside
+// the window by itself: an 'end' menu wider than the room left of its trigger would start
+// below x=0 and lose its icons to the edge. This slides it sideways by just what it
+// overflows, keeping the same breathing room as the vertical edges, and never cuts it.
+export function keepInWindow(p: MenuPlacement, width: number): MenuPlacement {
+  const room = window.innerWidth - width - EDGE
+  const clampSide = (side: number | undefined): number | undefined =>
+    side === undefined ? undefined : Math.max(EDGE, Math.min(side, room))
+  const left = clampSide(p.left)
+  const right = clampSide(p.right)
+  return left === p.left && right === p.right ? p : { ...p, left, right }
+}
+
+// Where a menu's entrance should grow from: the trigger's horizontal centre, in the menu's
+// own coordinates, on the edge facing the trigger. A class origin pins to the menu's corner,
+// which is no longer where the trigger is once keepInWindow slid the menu sideways.
+export function menuOrigin(p: MenuPlacement, width: number): string | undefined {
+  if (p.anchorX === undefined) return undefined
+  const left = p.left ?? window.innerWidth - (p.right ?? 0) - width
+  return `${p.anchorX - left}px ${p.bottom !== undefined ? '100%' : '0'}`
+}
+
+export function useKeepInWindow(
+  open: boolean,
+  pos: MenuPlacement | null,
+  menuRef: React.RefObject<HTMLElement | null>,
+  setPos: (pos: MenuPlacement) => void,
+): void {
+  useLayoutEffect(() => {
+    if (!open || !pos || !menuRef.current) return
+    const width = menuRef.current.offsetWidth
+    const fitted = keepInWindow(pos, width)
+    if (fitted !== pos) {
+      setPos(fitted)
+      return
+    }
+    const origin = menuOrigin(pos, width)
+    if (origin) menuRef.current.style.transformOrigin = origin
+  }, [open, pos, menuRef, setPos])
 }
 
 // A placed menu is measured once, at open. Anything that moves the trigger afterwards

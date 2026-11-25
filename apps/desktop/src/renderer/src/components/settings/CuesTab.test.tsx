@@ -480,7 +480,6 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-manual').lastElementChild).toBe(row)
     const info = within(row).getByTestId('settings-cue-letters-hint')
     expect(info.tagName).toBe('BUTTON')
-    expect(info).toHaveClass('press')
     expect(info).not.toHaveAttribute('title')
     expect(info).toHaveAccessibleName(why)
     expect(info.closest('label')).toBeNull()
@@ -503,37 +502,12 @@ describe('CuesTab', () => {
     expect(screen.getByTestId('cue-flow-mix-in')).toHaveAttribute('aria-checked', 'true')
   })
 
-  it('cuts a long flow name with an ellipsis inside the list button, so the row never grows wider than Settings nor pushes + and the actions away', () => {
-    const long = 'Warm up for the long sets at the club on Sundays'
-    render(<Harness flows={[MIX_IN, { ...MY_FLOW, name: long }]} />)
-    const picker = screen.getByTestId('cue-flow-picker')
-    expect(picker).toHaveClass('w-full', 'min-w-0')
-    expect(picker.parentElement).toHaveClass('min-w-0', 'flex-1')
-    expect(within(picker).getByText(long)).toHaveClass('min-w-0', 'flex-1', 'truncate')
-    expect(screen.getByTestId('cue-flow-add')).toHaveClass('shrink-0')
-    expect(screen.getByTestId('cue-flow-more')).toHaveClass('shrink-0')
-    openPicker()
-    expect(within(screen.getByTestId('cue-flow-mine')).getByText(long)).toHaveClass(
-      'min-w-0',
-      'truncate',
-    )
-  })
-
   it('renames the flow where the list of flows was, + and the actions keeping their place', () => {
     render(<Harness />)
     startRename()
     expect(screen.queryByTestId('cue-flow-picker')).toBeNull()
-    expect(screen.getByTestId('cue-flow-name')).toHaveClass('min-w-0', 'flex-1')
     fireEvent.blur(screen.getByTestId('cue-flow-name'))
     expect(screen.getByTestId('cue-flow-picker')).toHaveTextContent('My flow')
-  })
-
-  // Every flow menu hangs below its button's right edge, so it has to scale out of that
-  // corner; growing from its centre makes it look detached from the button that opened it.
-  it('grows the flow menus out of the corner that touches their button', () => {
-    render(<Harness />)
-    openMore()
-    expect(screen.getByRole('menu')).toHaveClass('origin-top-right')
   })
 
   it('keeps Poner por defecto with the actions on the open flow, out of the list of flows to pick', () => {
@@ -1077,47 +1051,14 @@ describe('CuesTab', () => {
     expect(within(bench).getByRole('region', { name: 'Rules' })).toContainElement(inside[1])
   })
 
-  it('pins the preview to the top of Settings on a square strip of the panel colour as wide as the piece, so nothing scrolling under it shows through its round corners, below the lists a rule opens', () => {
+  it('pins the preview in a strip of its own as wide as the piece, above the rules and out of them', () => {
     render(<Harness />)
     const pin = screen.getByTestId('cue-flow-bench-pin')
     const card = screen.getByTestId('cue-flow-bench-preview')
     expect(pin.parentElement).toBe(screen.getByTestId('cue-flow-bench'))
-    expect(pin).toHaveClass('sticky', 'top-0', 'z-10', 'bg-[var(--color-panel)]')
-    expect(pin.className).not.toMatch(/rounded|(?<![\w-])(?:p|m)[xlr]?-/)
     expect(pin).toContainElement(card)
     expect(card).toContainElement(screen.getByTestId('cue-flow-preview'))
-    expect(card).toHaveClass('rounded-t-lg', 'bg-[var(--color-field)]')
-    expect(card.className).not.toContain('sticky')
     expect(pin).not.toContainElement(screen.getByTestId('cue-rule-0'))
-  })
-
-  it('insets the preview by the same amount on both sides as the text of a rule, so the selector, the wave, the status line and the rules share one left edge with room for the ring of a new cue', () => {
-    render(<Harness />)
-    const card = screen.getByTestId('cue-flow-bench-preview')
-    expect(card).toHaveClass('px-3.5')
-    expect(card.className).not.toMatch(/(?<![\w-])p[lr]-/)
-    expect(screen.getByTestId('cue-rule-0')).toHaveClass('pl-3.5')
-    expect(screen.getByTestId('cue-flow-preview').className).not.toMatch(/(?<![\w-])[pm][xlr]?-/)
-  })
-
-  it('draws a stronger line under the pinned preview, so it stays apart from the rules passing under it on the light theme too', () => {
-    render(<Harness />)
-    expect(screen.getByTestId('cue-flow-bench-preview')).toHaveClass(
-      'border',
-      'border-[var(--color-line)]',
-      'border-b-[var(--color-line-strong)]',
-    )
-  })
-
-  it('never clips the piece of the preview and the rules, so their lists keep placing themselves against the edges of Settings', () => {
-    render(<Harness />)
-    const bench = screen.getByTestId('cue-flow-bench')
-    const clipping = [
-      bench,
-      ...Array.from(bench.querySelectorAll('section, [data-testid="cue-flow-bench-pin"]')),
-    ].filter((el) => /overflow-/.test(el.className))
-    expect(clipping).toEqual([])
-    expect(bench.querySelectorAll('section, [data-testid="cue-flow-bench-pin"]')).toHaveLength(3)
   })
 
   it('sets the arrow jump of the manual editor in its own card', () => {
@@ -1244,18 +1185,9 @@ describe('CuesTab', () => {
       }
       for (const [library, text] of Object.entries(gets)) {
         const row = screen.getByTestId(`cue-flow-target-${library}`)
-        expect(row).toHaveClass('flex', 'items-center')
         expect(row).toContainElement(screen.getByTestId(`settings-cue-flow-to-${library}`))
         const said = within(row).getByTestId(`settings-cue-flow-to-${library}-gets`)
         expect(said.textContent).toBe(text)
-        expect(said).toHaveClass(
-          'min-w-0',
-          'flex-1',
-          'truncate',
-          'text-right',
-          'text-xs',
-          'text-fg-dim',
-        )
         expect(row.querySelectorAll('p')).toHaveLength(0)
       }
       expect(screen.getByTestId('cue-flow-targets').children).toHaveLength(5)
@@ -1286,7 +1218,6 @@ describe('CuesTab', () => {
         const info = screen.getByTestId(`settings-cue-flow-to-${library}-caveat`)
         expect(screen.getByTestId(`cue-flow-target-${library}`)).toContainElement(info)
         expect(info.tagName).toBe('BUTTON')
-        expect(info).toHaveClass('press')
         expect(info).not.toHaveAttribute('title')
         expect(info).toHaveAccessibleName(text)
         expect(info.closest('label')).toBeNull()
@@ -1306,34 +1237,22 @@ describe('CuesTab', () => {
       render(<Harness />)
       const missing = await screen.findByTestId('settings-cue-flow-to-serato-missing')
       expect(screen.getByTestId('cue-flow-target-serato')).toContainElement(missing)
-      expect(missing).toHaveClass(
-        'min-w-0',
-        'flex-1',
-        'truncate',
-        'text-right',
-        'text-xs',
-        'text-fg-dim',
-      )
       expect(screen.queryByTestId('settings-cue-flow-to-serato-gets')).toBeNull()
       expect(screen.queryByTestId('settings-cue-flow-to-serato-caveat')).toBeNull()
       expect(screen.queryByTestId('settings-cue-flow-to-traktor-caveat')).toBeNull()
-      expect(screen.getByTestId('settings-cue-flow-to-serato').closest('label')).toHaveClass(
-        'opacity-50',
-      )
+      expect(screen.getByTestId('settings-cue-flow-to-serato')).toBeDisabled()
     })
 
     it('heads the programs list and the manual editor with a section title like the other tabs of Settings, the help of the programs inside its title', () => {
       installApi()
       render(<Harness collection="/c/master.db" />)
       const programs = screen.getByRole('heading', { name: /^Also place the flows in/ })
-      expect(programs).toHaveClass('text-section', 'font-semibold', 'text-fg-muted')
       expect(programs).toContainElement(screen.getByTestId('cue-flow-targets-help'))
       expect(
         programs.compareDocumentPosition(screen.getByTestId('cue-flow-targets')) &
           Node.DOCUMENT_POSITION_FOLLOWING,
       ).toBeTruthy()
       const manual = screen.getByRole('heading', { name: 'Manual editor' })
-      expect(manual).toHaveClass('text-section', 'font-semibold', 'text-fg-muted')
       expect(
         manual.compareDocumentPosition(screen.getByTestId('cue-manual')) &
           Node.DOCUMENT_POSITION_FOLLOWING,

@@ -1,5 +1,107 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Salve os cues e vá para a próxima",
+    "items": [
+      {
+        "text": "Ao salvar os cues, escolha “Salvar e próxima” no menu do botão e o Surco abre a próxima faixa da lista. Ele lembra a sua escolha para a próxima vez, e salvar não fecha mais o editor de cues.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "“Aceitar a sugestão” coloca os cues sugeridos sem salvá-los. Mova-os se quiser e salve quando estiver pronto.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Seja qual for a ordem em que você marca os drops, o cue de início não cai mais no silêncio antes da música.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "A faixa que toca no Surco aparece no macOS com a capa. As teclas de mídia, os AirPods e o Apple Watch pausam ou pulam para a próxima.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Quando os arquivos de uma playlist não estão mais no disco, a lista avisa e conta quantos faltam. Um arquivo movido ou renomeado não aparece mais como um que não pôde ser lido.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Substitua uma faixa por outro master da mesma música e os cues agora também acompanham o áudio. Se o Surco não tiver certeza da batida, deixa os cues onde estavam. No rekordbox, eles se encaixam na nova grade quando a análise termina.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quando o Discogs pede para esperar, você vê na hora os resultados dos outros catálogos. O Surco volta a buscar no Discogs sozinho, com uma contagem regressiva que você pode pular com um clique.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "A aba Apple Music abre em “Adicionadas recentemente”, com o que você adicionou nos últimos 30 dias. E as playlists abrem muito mais rápido, mesmo com a sua música num NAS.",
+        "in": "1.44.1"
+      }
+    ]
+  },
+  {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Substitua uma faixa sem perder os cues",
+    "items": [
+      {
+        "text": "Substitua uma faixa por uma cópia melhor e os cues continuam no tempo no rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. O Surco compara as duas cópias e move os cues quando a nova começa um pouco antes ou depois. Se for outra gravação, o rekordbox, o Engine DJ e o VirtualDJ analisam de novo.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "O Serato também acompanha uma faixa substituída, com os cues, o grid e as crates. Ela perde as estrelas, e o Surco avisa você antes de substituir.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Cada faixa que você substitui aparece em “Para revisar”, abaixo de “Adicionadas recentemente” em cada programa de DJ. Uma marca verde diz que os cues se moveram com o áudio, uma âmbar que ficaram onde estavam. Salve os cues ou toque em “Revisada” e ela sai da lista. ⌘Z traz de volta.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Uma cópia que substitui outra pega da antiga as tags que faltam. Se não tiver capa, fica com a dela também.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "A nova seção “Na sua biblioteca” do editor encontra uma faixa de Tracks em todos os programas de DJ que você usa e no Apple Music. Cada cópia diz se é igual, melhor, pior ou outra versão. Abra uma linha para comparar os dois espectros.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "O Apple Music entra nas “Fontes de busca”, com capas grandes. Funciona também no Windows, e quando a loja do seu país não tem um lançamento, o Surco procura nas do Reino Unido e dos Estados Unidos.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Com várias faixas selecionadas, o editor funciona como com uma. Edite os campos do álbum de todas, cole um lançamento, avalie todas de uma vez ou numere na ordem da lista. Um campo que difere mostra cada valor em vez de uma contagem.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Os comentários de frases também podem ir para os seus arquivos. Ao lado de “Salvar N comentários”, escolha “Arquivo e rekordbox” e depois “Antes do comentário” ou “Substituir o comentário”. Enquanto salva, o botão vai enchendo, e um clique para.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Converter mantém todas as suas tags, até as que o Surco não mostra. Campos com vários valores, como dois artistas ou dois gêneros, mantêm todos eles.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z desfaz o que você digitou num campo e ⇧⌘Z refaz. Comentário mantém as quebras de linha, e Return começa uma linha nova.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Mostrar números” também numera Tracks, na ordem em que você adicionou as faixas. Cada aba guarda a própria busca, então o que você digita num programa de DJ fica lá.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "A correspondência automática não mexe mais numa faixa que você editou à mão. Na página de um selo no Bandcamp, o selo não vira mais o artista.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "“Restaurar as tags de antes” passa para o menu ⋯ do editor em vez de ficar embaixo de cada campo. “Copiar caminho do arquivo” também está lá.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ aumenta a janela junto com o zoom e para no maior zoom que cabe na sua tela.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Leve suas frases para o rekordbox",
@@ -678,7 +780,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "O editor de cues ampliado abre com ⌘⇧C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todos os cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
+        "text": "O editor de cues ampliado abre com ⇧⌘C a partir da faixa selecionada. Os botões de baixo ficam em grupos, pads, CALL, grade e zoom, e “Apagar todos os cues” fica sozinho no fim. O zoom aproxima até um compasso, “Aceitar e salvar” salva as sugestões de “Marcar automático” no seu programa de DJ com um clique, e com “Letras na ordem da faixa” um pad vazio mostra que letra o cue vai ter.",
         "in": "1.27.3"
       },
       {

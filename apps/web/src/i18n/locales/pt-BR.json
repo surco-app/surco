@@ -129,8 +129,8 @@
           },
           {
             "t": "Edição em lote",
-            "s": "Edita os campos de um release inteiro de uma vez, com localizar e substituir.",
-            "d": "Os campos que um release compartilha, mais localizar e substituir com regex."
+            "s": "Edite várias faixas como edita uma, colando um lançamento, com estrelas e números de faixa.",
+            "d": "Com várias faixas selecionadas, o editor mostra os mesmos campos que com uma. Edite os campos que um lançamento compartilha, cole um lançamento, avalie todas, numere na ordem da lista e localize e substitua com regex. Um campo que difere mostra cada valor."
           },
           {
             "t": "Capa",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, não v2.4",
             "s": "Grava a versão de tags que CDJs e rekordbox leem sem surpresas.",
-            "d": "Para que CDJs e rekordbox leiam sem surpresas."
+            "d": "Converter e “Atualizar” gravam em v2.3, para que os CDJs e o rekordbox leiam sem surpresas. Uma edição pequena, como adicionar um cue, deixa uma tag v2.4 como estava."
           },
           {
             "t": "Avaliações que vão e voltam",
@@ -236,8 +236,8 @@
           },
           {
             "t": "O que você já tem",
-            "s": "Avisa se uma faixa já está no seu Apple Music ou Engine DJ.",
-            "d": "Diz se uma faixa está no seu Apple Music ou Engine DJ, e filtra o resto."
+            "s": "Encontra uma faixa em todos os seus programas de DJ e no Apple Music, e diz qual cópia é melhor.",
+            "d": "No editor, “Na sua biblioteca” mostra cada cópia de uma faixa de Tracks nos seus programas de DJ e no Apple Music. Cada uma diz se é igual, melhor, pior ou outra versão, e uma linha se abre para comparar os dois espectros. O filtro “Melhor que no Music” deixa só o que soa melhor que a sua cópia no Apple Music."
           },
           {
             "t": "Bits conferidos",
@@ -345,8 +345,8 @@
           },
           {
             "t": "Substitui o que você já tem",
-            "s": "Uma cópia melhor ocupa o lugar da antiga no Apple Music e no rekordbox, com suas playlists.",
-            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music e no rekordbox, em vez de deixar você com duas. A faixa continua nas playlists, sem adicioná-la de novo a cada uma à mão, e no Apple Music mantém o número de reproduções e a sua avaliação. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
+            "s": "Uma cópia melhor ocupa o lugar da antiga no Apple Music e nos seus programas de DJ, com os cues.",
+            "d": "Carregue outra cópia de uma faixa que você já tem, em qualquer formato, inclusive o mesmo, e ela ocupa o lugar da antiga no Apple Music, rekordbox, Traktor, Engine DJ, Serato e VirtualDJ, em vez de deixar você com duas. A faixa continua nas playlists, e os cues se movem com o áudio quando a cópia nova começa um pouco antes ou depois. Cada faixa substituída espera em “Para revisar” até você conferir. No Apple Music ela mantém o número de reproduções e a sua avaliação. O Serato mantém a faixa nas crates, mas ela perde as estrelas. O selo do Apple Music mostra em que formato está a sua cópia, para você saber se vale a pena."
           },
           {
             "t": "Erros de grafia e duplicados na biblioteca",
@@ -450,6 +450,7 @@
         "add": "Adicionar a faixa convertida",
         "names": "Levar título, artista, álbum e gênero",
         "follow": "Seguir a faixa nova com seus cues",
+        "replace": "Substituir uma faixa e manter os cues",
         "usb": "Pendrive para players Pioneer",
         "copies": "Cópia antes de gravar e restaurar",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "No lugar",
         "sameFolder": "Na mesma pasta",
         "keepsOriginal": "Mantém o original",
+        "losesStars": "Perde as estrelas",
         "engineUsb": "Pendrive do Engine",
         "noRestore": "Sem restaurar em Cópias",
         "beta": "Beta",
@@ -883,7 +885,7 @@
         "steps": [
           {
             "lead": "Analise.",
-            "text": "Abra a seção de qualidade de uma faixa, ou analise a fila toda com o botão da barra ou ⌘⇧A."
+            "text": "Abra a seção de qualidade de uma faixa, ou analise a fila toda com o botão da barra ou ⇧⌘A."
           },
           {
             "lead": "Leia o veredito.",
@@ -942,7 +944,7 @@
         "title": "Converta suas faixas",
         "s": "Uma faixa ou a fila toda, no formato que você escolher ou no dela.",
         "body": [
-          "⌘Enter converte a faixa selecionada e ⌘⇧Enter a fila toda, pulando o que já está pronto. Se você filtrou a lista, só se converte o que está à vista."
+          "⌘Enter converte a faixa selecionada e ⇧⌘Enter a fila toda, pulando o que já está pronto. Se você filtrou a lista, só se converte o que está à vista."
         ],
         "steps": [
           {
@@ -961,7 +963,7 @@
         "points": [
           "Se a conversão muda o áudio de um original, o Surco guarda antes um backup. A marca na linha leva você de volta a ele.",
           "Com “Editar o original”, mudar de formato apaga o original.",
-          "Converter não busca nas suas fontes. Se quiser dados novos, rode antes Associar (⌘⇧D)."
+          "Converter não busca nas suas fontes. Se quiser dados novos, rode antes Associar (⇧⌘D)."
         ],
         "shot": "convertir-pt-BR.webp",
         "shotCaption": "O botão de converter com o seletor de formato."
@@ -1021,7 +1023,7 @@
           "Se o programa está aberto, o Surco espera você fechar ou se oferece para fechar, e sempre faz backup antes de escrever.",
           "O Traktor não relê o arquivo, ele lê o collection.nml. Para ele ver seus cues novos, indique sua coleção ao Surco em Ajustes.",
           "Os cues do Traktor sobrevivem à conversão entre MP3, AIFF, FLAC e WAV e só se perdem em ALAC.",
-          "Carregue outra cópia de uma faixa que você já tem e o botão vira “Substituir”, mantendo playlists e cues."
+          "Carregue outra cópia de uma faixa que você tem e o botão vira “Substituir”. Os cues seguem o áudio e ela espera em “Para revisar”."
         ],
         "shot": "exportar-pt-BR.webp",
         "shotCaption": "Mandando a faixa para o Apple Music ou exportando a coleção."

@@ -306,6 +306,76 @@ describe('usePlayer reclaimFile', () => {
   })
 })
 
+// A conversion that renames the playing file in place moves the stream to the new path. The
+// DJ was somewhere in the track, maybe paused on a cue: restarting from 0:00 and playing
+// threw that spot away and sounded a track they had stopped.
+describe('usePlayer moving to a renamed file', () => {
+  function MoveHarness({ tracks }: { tracks: TrackItem[] }): React.JSX.Element {
+    const { audioRef, togglePlay, releaseFile } = usePlayer({
+      tracks,
+      selected: tracks[0] ?? null,
+      selectedId: tracks[0]?.id ?? null,
+    })
+    return (
+      <>
+        {/* biome-ignore lint/a11y/useMediaCaption: silent test fixture */}
+        <audio ref={audioRef} data-testid="audio" />
+        <button type="button" data-testid="toggle" onClick={togglePlay} />
+        <button type="button" data-testid="release" onClick={() => releaseFile('/m/a.wav')} />
+      </>
+    )
+  }
+
+  function playingAt(time: number, paused: boolean) {
+    const view = render(<MoveHarness tracks={[track('a', '/m/a.wav')]} />)
+    const audio = screen.getByTestId('audio') as HTMLAudioElement
+    audio.play = vi.fn().mockResolvedValue(undefined)
+    audio.pause = vi.fn()
+    audio.load = vi.fn()
+    fireEvent.click(screen.getByTestId('toggle'))
+    Object.defineProperty(audio, 'paused', { configurable: true, get: () => paused })
+    audio.currentTime = time
+    const rename = () => view.rerender(<MoveHarness tracks={[track('a', '/m/a.aiff')]} />)
+    return { audio, rename }
+  }
+
+  it('plays on from the same spot in the renamed file', () => {
+    const { audio, rename } = playingAt(42, false)
+
+    rename()
+
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/a.aiff')
+    expect(audio.currentTime).toBe(42)
+    expect(audio.play).toHaveBeenCalledTimes(2)
+  })
+
+  it('stays paused at the same spot in the renamed file', () => {
+    const { audio, rename } = playingAt(42, true)
+
+    rename()
+
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/a.aiff')
+    expect(audio.currentTime).toBe(42)
+    expect(audio.play).toHaveBeenCalledTimes(1)
+  })
+
+  // On Windows the element was torn down before the write, so it sits paused at 0:00: where
+  // the track was and whether it sounded are what the release kept.
+  it('picks up on Windows where the release left the track, sounding as it was', () => {
+    ;(window as unknown as { api: { platform: string } }).api.platform = 'win32'
+    const { audio, rename } = playingAt(42, false)
+    fireEvent.click(screen.getByTestId('release'))
+    Object.defineProperty(audio, 'paused', { configurable: true, get: () => true })
+    audio.currentTime = 0
+
+    rename()
+
+    expect(mediaPathFromUrl(audio.src)).toBe('/m/a.aiff')
+    expect(audio.currentTime).toBe(42)
+    expect(audio.play).toHaveBeenCalledTimes(2)
+  })
+})
+
 // Only Windows refuses the rename, so only Windows pays for it. Everywhere else the
 // kernel renames happily over an open descriptor — the playing track keeps sounding
 // from the old inode until the rewrite watcher moves it to the new path — so cutting

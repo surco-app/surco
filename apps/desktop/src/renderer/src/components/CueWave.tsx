@@ -17,6 +17,7 @@ import {
   DROPPED_OPACITY,
   droppedStyle,
   GHOST_OPACITY,
+  GONE_EDGE_SHARE,
   GONE_OPACITY,
   GONE_ROW_TOP_PX,
   HOT_MARK_PX,
@@ -284,6 +285,7 @@ export function CueWave({
     <div
       ref={rootRef}
       data-testid="cue-wave"
+      data-slim={slim ? 'true' : 'false'}
       role="application"
       aria-label={t('cueWave.label')}
       tabIndex={-1}
@@ -524,10 +526,11 @@ export function CueWave({
               ...markStyle(h.at),
               top: `${GONE_ROW_TOP_PX}px`,
               backgroundColor: 'var(--color-panel-2)',
+              borderColor: `color-mix(in srgb, var(--cue) ${GONE_EDGE_SHARE}%, var(--color-fg))`,
               '--cue': h.colour,
             } as React.CSSProperties
           }
-          className="absolute z-10 h-3 w-3 rounded-[3px] border-2 border-[color:color-mix(in_srgb,var(--cue)_55%,var(--color-fg))]"
+          className="absolute z-10 h-3 w-3 rounded-[3px] border-2"
         >
           <span
             data-testid={`cue-wave-strike-${h.ms}`}

@@ -9,7 +9,9 @@
     "scopeVisible_other": "Se aplica a las {{count}} pistas visibles",
     "change": "Cambiar",
     "close": "Cerrar",
-    "copy": "Copiar"
+    "copy": "Copiar",
+    "more_one": "{{count}} más",
+    "more_other": "{{count}} más"
   },
   "rename": {
     "moreFields": "Más campos ({{count}})",
@@ -197,8 +199,8 @@
     "updateSelected_one": "Actualizar {{count}} seleccionada",
     "updateSelected_other": "Actualizar {{count}} seleccionadas",
     "updateSomeSelected": "Actualizar {{ready}} de {{total}} seleccionadas",
-    "cancelConvert": "Cancelar la conversión: las pistas en cola se saltan, las que están en curso terminan",
-    "cancelImport": "Dejar de leer: lo ya leído se queda, el resto se descarta",
+    "cancelConvert": "Cancelar la conversión. Las pistas en cola se saltan, las que están en curso terminan",
+    "cancelImport": "Dejar de leer. Lo ya leído se queda, el resto se descarta",
     "autoMatch": "Auto-emparejar todas las pistas",
     "autoMatchNoToken": "Añade un token de Discogs en Ajustes para auto-emparejar",
     "autoMatchLabel": "Emparejar",
@@ -234,8 +236,8 @@
       },
       "showDuplicates": "Mostrar duplicados"
     },
-    "cancelAutoMatch": "Detener el emparejado: las pistas ya emparejadas conservan sus etiquetas",
-    "cancelAnalyze": "Detener el análisis: las pistas ya analizadas conservan su veredicto"
+    "cancelAutoMatch": "Detener el emparejado. Las pistas ya emparejadas conservan sus etiquetas",
+    "cancelAnalyze": "Detener el análisis. Las pistas ya analizadas conservan su veredicto"
   },
   "sidebar": {
     "fitHint": "Doble clic para ajustar el ancho a los nombres de las pistas",
@@ -317,6 +319,7 @@
       "placeholder": "Buscar pistas",
       "clear": "Borrar búsqueda",
       "empty": "Ninguna pista coincide.",
+      "away": "Sus archivos no están en el disco.",
       "reset": "Borrar búsqueda y filtros"
     },
     "sort": {
@@ -342,7 +345,7 @@
     "position": "Pista {{current}} de {{total}}",
     "selectedCount_one": "{{count}} seleccionada",
     "selectedCount_other": "{{count}} seleccionadas",
-    "positionReveal": "Pista {{current}} de {{total}}: desplazarse hasta ella"
+    "positionReveal": "Pista {{current}} de {{total}}. Desplazarse hasta ella"
   },
   "empty": {
     "title": "Suelta tus pistas aquí",
@@ -371,7 +374,7 @@
     "appleMusicAddReturnedOld": "Music ha devuelto una pista que ya estaba en tu biblioteca en vez de importar el archivo nuevo, así que no se ha añadido. No se ha borrado ninguna pista de tu biblioteca. Si vuelve a pasar, busca en Music otra pista con el mismo título y artista, o con el nombre del archivo.",
     "convertedOutputUnreadable": "El archivo convertido salió ilegible, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
     "convertedOutputTruncated": "El archivo convertido salió más corto que el original, así que se descartó y el original quedó intacto. Prueba con otros ajustes de conversión.",
-    "engineDjOpen": "Cierra Engine DJ antes de convertir: tiene la biblioteca abierta.",
+    "engineDjOpen": "Cierra Engine DJ antes de convertir. Tiene la biblioteca abierta.",
     "noRoomForBackup": "No hay sitio en el disco para la copia de seguridad del original y su disco no tiene papelera, así que no se ha tocado. Libera espacio y vuelve a intentarlo.",
     "noRoomBeforeMusicRewrite": "No queda sitio en Copias para la copia que Surco guarda antes de que Music reescriba el archivo, así que no se ha tocado. Libera espacio y vuelve a intentarlo.",
     "noBackup": "Haz sitio en Copias para su copia de seguridad y vuelve a intentarlo",
@@ -379,12 +382,13 @@
     "conversionCancelled": "Conversión cancelada.",
     "verifyUnknownTrack": "Esta comprobación ya no está disponible. Vuelve a convertir la pista para repetirla.",
     "seratoBlocked": "Serato perdería la pista y sus cues",
+    "libraryCopyAudioWouldChange": "Esta copia se ha quedado como estaba. Actualizar sus etiquetas habría cambiado su audio.",
     "audioDamaged": "El audio del archivo está dañado",
     "diskFull": "El disco está lleno",
     "noPermission": "No tienes permiso para escribir en esa carpeta",
     "fileLocked": "El archivo está en uso por otra app",
     "readOnlyDisk": "El disco es de solo lectura",
-    "sourceTagsUnread": "No se ha podido leer este archivo, así que no se ha tocado: convertirlo habría borrado las etiquetas que tiene. Puede que esté dañado o en un formato que Surco no sabe abrir.",
+    "sourceTagsUnread": "No se ha podido leer este archivo, así que no se ha tocado. Convertirlo habría borrado las etiquetas que tiene. Puede que esté dañado o en un formato que Surco no sabe abrir.",
     "coverDownloadFailed": "No se pudo descargar la carátula.",
     "coverNotImage": "Esa dirección no apunta a una imagen.",
     "bandcampUnavailable": "Bandcamp no ha respondido bien. Prueba otra vez en un momento.",
@@ -402,15 +406,15 @@
     "musicbrainzUnavailable": "MusicBrainz no ha respondido bien. Prueba otra vez en un momento.",
     "musicbrainzRateLimit": "MusicBrainz está limitando las búsquedas. Espera un momento y vuelve a intentarlo.",
     "discogsUnavailable": "Discogs no ha respondido bien. Prueba otra vez en un momento.",
-    "pathNotAllowed": "Surco no ha abierto ese archivo: no es una de las pistas que ha cargado."
+    "pathNotAllowed": "Surco no ha abierto ese archivo. No es una de las pistas que ha cargado."
   },
   "rekordboxIssue": {
-    "read-only": "La colección de rekordbox no se ha actualizado: el archivo es de solo lectura.",
-    "unreadable": "La colección de rekordbox no se ha actualizado: Surco no ha podido leerla.",
-    "write-failed": "La colección de rekordbox no se ha actualizado: no se pudo escribir y se ha dejado como estaba.",
-    "backup-failed": "La colección de rekordbox no se ha actualizado: Surco no pudo hacer antes una copia de seguridad.",
-    "ambiguous_one": "rekordbox sigue apuntando al archivo antiguo de {{name}}: su colección tiene más de una entrada que coincide.",
-    "ambiguous_other": "rekordbox sigue apuntando a los archivos antiguos de {{count}} pistas, entre ellas {{name}}: su colección tiene más de una entrada que coincide con cada una."
+    "read-only": "La colección de rekordbox no se ha actualizado. El archivo es de solo lectura.",
+    "unreadable": "La colección de rekordbox no se ha actualizado. Surco no ha podido leerla.",
+    "write-failed": "La colección de rekordbox no se ha actualizado. No se pudo escribir y se ha dejado como estaba.",
+    "backup-failed": "La colección de rekordbox no se ha actualizado. Surco no pudo hacer antes una copia de seguridad.",
+    "ambiguous_one": "rekordbox sigue apuntando al archivo antiguo de {{name}}. Su colección tiene más de una entrada que coincide.",
+    "ambiguous_other": "rekordbox sigue apuntando a los archivos antiguos de {{count}} pistas, entre ellas {{name}}. Su colección tiene más de una entrada que coincide con cada una."
   },
   "trash": {
     "title": "Copias › Archivos de música",
@@ -505,7 +509,9 @@
     "redoneMeta_one": "Edición de metadatos rehecha en {{count}} pista",
     "redoneMeta_other": "Edición de metadatos rehecha en {{count}} pistas",
     "metaReadFailed_one": "No se pudieron leer los metadatos de {{count}} archivo, así que solo se muestra su nombre.",
-    "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos, así que solo se muestran sus nombres."
+    "metaReadFailed_other": "No se pudieron leer los metadatos de {{count}} archivos, así que solo se muestran sus nombres.",
+    "metaFilesMissing_one": "{{count}} archivo ya no está donde estaba. Puede que se haya movido o renombrado.",
+    "metaFilesMissing_other": "{{count}} archivos ya no están donde estaban. Puede que se hayan movido o renombrado."
   },
   "newTracks": {
     "prompt_one": "{{count}} pista nueva en «{{folder}}»",
@@ -529,7 +535,7 @@
     "play": "Reproducir",
     "pause": "Pausar",
     "continuous": "Reproducción continua",
-    "continuousHelp": "Reproducción continua: al terminar una pista, suena automáticamente la siguiente de la lista.",
+    "continuousHelp": "Reproducción continua. Al terminar una pista, suena automáticamente la siguiente de la lista.",
     "waveform": "Forma de onda",
     "waveformHelp": "Mostrar la forma de onda. Ocultarla evita su análisis, útil para archivos grandes o discos de red.",
     "seek": "Ir a posición",
@@ -588,7 +594,7 @@
     "numberTracks": "Numerar pistas en orden de lista",
     "stripNumbering": "Quitar la numeración del título",
     "applyTitleFormat": "Aplicar el formato del título a la selección",
-    "regenerateNames": "Regenerar los nombres de archivo de la selección con los metadatos",
+    "regenerateNames": "Renombrar los archivos con los metadatos",
     "renameKeywords": "renombrar cambiar nombre",
     "trimDetected": "Recortar el silencio detectado en la selección",
     "clearMeta": "Borrar metadatos",
@@ -723,7 +729,7 @@
       "copyPath": "Copiar ruta del archivo",
       "search": "Buscar en tus fuentes",
       "searchWeb": "Buscar en Google",
-      "startOver": "Empezar de nuevo",
+      "startOver": "Descartar cambios",
       "startSession": "Sesión desde esta pista…",
       "matching": "Hacer matching",
       "matchingBlock": "Hacer matching",
@@ -836,14 +842,14 @@
     "qualityCaptionWarn": "Energía hasta ~{{cutoff}}, por debajo de la línea de ~20 kHz de plena calidad.",
     "qualityCaptionBad": "Techo en ~{{cutoff}}, propio de una fuente con pérdidas.",
     "qualityCaptionProcessed": "Posibles agudos regenerados sobre un corte en ~{{cutoff}}.",
-    "qualityUpsampled": "Sin contenido por encima de 22 kHz: probablemente reescalado desde 44,1 kHz.",
+    "qualityUpsampled": "Sin contenido por encima de 22 kHz. Probablemente reescalado desde 44,1 kHz.",
     "qualityHiRes": "Hay contenido real por encima de 22 kHz. Este archivo a {{rate}} no viene de calidad CD (44,1 kHz).",
     "qualityResolutionUnknown": "No se pudo comprobar si es alta resolución real.",
     "qualityBitsPill": "Bits rellenados",
     "qualityBitsPadded": "Declara 24 bits, pero el audio es de 16 bits rellenado.",
     "qualityBitsPaddedWhy": "Casi ninguna muestra usa el byte bajo en el primer minuto.",
     "qualityBitsPaddedNote": "Con «Corregido» se guarda a 16 bits, sin pérdida audible.",
-    "qualityBitsFull": "El byte bajo se usa en el {{pct}} % del primer minuto: no hay relleno.",
+    "qualityBitsFull": "El byte bajo se usa en el {{pct}} % del primer minuto. No hay relleno.",
     "qualityBitsUnknown": "No se pudo verificar si los 24 bits son reales.",
     "qualityConvertHead": "Al convertir",
     "qualityConvertRate": "{{from}} → {{to}}",
@@ -851,13 +857,13 @@
     "saveQualityReport": "Guardar informe…",
     "reportFooter": "Analizado con Surco · getsurco.app",
     "qualityCaptionGenuine": "Sin corte de códec detectado; agudos hasta ~{{cutoff}}.",
-    "qualityCaptionTranscode": "Corte de códec en ~{{cutoff}}: el origen fue con pérdidas.",
+    "qualityCaptionTranscode": "Corte de códec en ~{{cutoff}}. El origen fue con pérdidas.",
     "qualityCaptionLossy": "Corte de códec en ~{{cutoff}}, normal en un archivo con pérdida.",
-    "qualityEvidenceGood": "Sin corte de códec: la caída máxima es de {{drop}} dB por kHz.",
-    "qualityEvidenceTranscode": "Corte de códec en ~{{cutoff}}: el origen fue con pérdidas.",
+    "qualityEvidenceGood": "Sin corte de códec. La caída máxima es de {{drop}} dB por kHz.",
+    "qualityEvidenceTranscode": "Corte de códec en ~{{cutoff}}. El origen fue con pérdidas.",
     "qualityEvidenceLossy": "Corte de códec en ~{{cutoff}}, normal en un archivo con pérdida.",
-    "qualityEvidenceTeeth": "{{teeth}} subidas entre {{from}} y {{to}}: posibles agudos regenerados.",
-    "qualityEvidenceHump": "Valle en ~{{cutoff}} y subida hasta {{peak}}: posibles agudos regenerados.",
+    "qualityEvidenceTeeth": "{{teeth}} subidas entre {{from}} y {{to}}. Posibles agudos regenerados.",
+    "qualityEvidenceHump": "Valle en ~{{cutoff}} y subida hasta {{peak}}. Posibles agudos regenerados.",
     "qualityEvidenceShelf": "Agudos planos entre 17 y 22 kHz, típico de un limitador o de una restauración; no concluyente.",
     "loudnessLufsLabel": "Sonoridad",
     "loudnessIntegratedLabel": "Integrada",
@@ -908,17 +914,17 @@
     "spectrumHighs": "agudos hasta ~{{cutoff}}",
     "spectrumHighsCap": "agudos ≥ {{cutoff}}",
     "outputName": "Nombre de salida",
-    "outputNameHintInPlace": "Mismo formato que el original: actualiza el archivo original y lo renombra. No se crea ninguna copia en la carpeta de salida.",
+    "outputNameHintInPlace": "Mismo formato que el original. Actualiza el archivo original y lo renombra. No se crea ninguna copia en la carpeta de salida.",
     "outputNameFolder": "Se guardará dentro de la carpeta «{{folder}}», porque la barra separa carpetas.",
     "overwriteTitle": "Sobrescribe el original",
-    "overwriteAlacHint": "ALAC no reemplaza el original: se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
-    "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. El máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Destino.",
+    "overwriteAlacHint": "ALAC no reemplaza el original. Se crea un archivo nuevo en la carpeta de salida y el original se conserva.",
+    "overwriteLossyHint": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. El máster se pierde y no se puede recuperar. Desactívalo en Ajustes → Archivos → Destino.",
     "overwriteLossyHintBackup": "Sustituye el original sin pérdida por un MP3 de 320 kbps en su sitio. Antes, Surco guarda una copia de seguridad del original, que puedes restaurar desde la pista.",
     "regenerate": "Regenerar nombre del archivo con los metadatos",
     "regenerateAll": "Regenerar los nombres de archivo con los metadatos",
-    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Nombres",
+    "regenerateHint": "Reconstruir el nombre del archivo con los metadatos de arriba usando tu patrón de Ajustes → Archivos → Nombres",
     "regenerateCustom": "Personalizar el patrón del nombre para esta pista…",
-    "lossyToLossless": "La fuente tiene pérdidas: convertir a {{format}} no recupera su calidad.",
+    "lossyToLossless": "La fuente tiene pérdidas. Convertir a {{format}} no recupera su calidad.",
     "seratoLosesStars": "Serato perderá las estrellas de esta pista.",
     "damagedSource": "Este archivo está dañado o incompleto, así que la copia también lo estará.",
     "exportAgain": "Convertir de nuevo",
@@ -967,7 +973,7 @@
     "releaseError": "No se pudo cargar el disco",
     "analyzeError": "No se pudo analizar el audio",
     "processError": "Error al convertir",
-    "fileInUseError": "Otro programa está usando este archivo (antivirus, reproductor…). La conversión no se ha perdido: está guardada al lado, con ~ al final del nombre.",
+    "fileInUseError": "Otro programa está usando este archivo (antivirus, reproductor…). La conversión no se ha perdido. Está guardada al lado, con ~ al final del nombre.",
     "missingRequired": "Faltan campos obligatorios: {{fields}}",
     "missingOne": "Falta {{field}}",
     "missingTwo": "Faltan {{first}} y {{second}}",
@@ -1019,19 +1025,19 @@
     "otherTagsRemove": "Borrar {{name}}",
     "otherTagsRestore": "Restaurar {{name}}",
     "loudnessRangeLufs": "Bueno: entre -16 y -8 LUFS.",
-    "loudnessFixLufs": "Se puede corregir: Igualar volumen lo lleva a tu objetivo.",
+    "loudnessFixLufs": "Se puede corregir. Igualar volumen lo lleva a tu objetivo.",
     "loudnessRangePeak": "Bueno: -1 dBTP o menos.",
-    "loudnessFixPeak": "Se puede corregir: el techo de picos de Igualar volumen lo limita.",
+    "loudnessFixPeak": "Se puede corregir. El techo de picos de Igualar volumen lo limita.",
     "loudnessRangeRange": "Bueno: 6 LU o más.",
-    "loudnessFixRange": "No se puede corregir aquí: viene del máster. Normalizar cambia el nivel, no el margen.",
+    "loudnessFixRange": "No se puede corregir aquí. Viene del máster. Normalizar cambia el nivel, no el margen.",
     "loudnessRangeCrest": "Bueno: 12 dB o más.",
-    "loudnessFixCrest": "No se puede corregir aquí: viene del máster.",
+    "loudnessFixCrest": "No se puede corregir aquí. Viene del máster.",
     "loudnessRangeBalance": "Bueno: menos de 1 dB.",
     "loudnessFixBalance": "Puede mejorar con el modo Pico y «Normalizar canales estéreo independientemente».",
     "loudnessRangeDc": "Bueno: menos del 0,2 %.",
-    "loudnessFixDc": "Se puede corregir: marca «Eliminar desplazamiento DC (centrar en 0,0)» en Igualar volumen (modo Sonoridad o Pico).",
+    "loudnessFixDc": "Se puede corregir. Marca «Eliminar desplazamiento DC (centrar en 0,0)» en Igualar volumen (modo Sonoridad o Pico).",
     "loudnessRangeNoise": "Bueno: -45 dB o menos.",
-    "loudnessFixNoise": "No se puede corregir aquí: Surco no elimina ruido. Viene del origen o de la captura.",
+    "loudnessFixNoise": "No se puede corregir aquí. Surco no elimina ruido. Viene del origen o de la captura.",
     "loudnessAfterHeader": "ahora → tras convertir",
     "copyThisFile": "La nueva",
     "copyRowCutoff": "Corte",
@@ -1061,6 +1067,8 @@
     "copyLimitedBare": "La copia de {{loser}} está más limitada.",
     "copyLimitedHereBare": "La nueva está más limitada.",
     "libraryHasBetter": "Sustituir igualmente",
+    "libraryCopyKeepsAudio": "Mantiene su audio",
+    "libraryCopyWithThisFile": "Con este archivo",
     "requiredEmpty": "Obligatorio: rellénalo antes de convertir",
     "coverMixed": "Las pistas seleccionadas tienen carátulas distintas",
     "coversDistinct_one": "{{count}} carátula distinta",
@@ -1074,6 +1082,8 @@
     "lastApplied": "Último álbum aplicado",
     "heldResults": "{{count}} más de {{providers}} · Mostrar",
     "stillSearching": "Sigue buscando en {{providers}}…",
+    "discogsWait": "Discogs limita las búsquedas. Nuevo intento en {{seconds}} s. Pulsa para buscar ya.",
+    "waitSeconds": "{{seconds}} s",
     "resultsCount_one": "{{count}} resultado",
     "resultsCount_other": "{{count}} resultados",
     "suggestedStatus": "Sugerido: {{title}}",
@@ -1086,7 +1096,13 @@
       "pending": "Se creará al escribir la pista",
       "some": "Solo en algunas pistas. Haz clic para ponerla en todas",
       "options": "Playlists de {{app}}",
-      "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor"
+      "unconfirmed": "Elige la colección en Ajustes → Programas de DJ → Traktor",
+      "copyRemoved_one": "{{count}} pista quitada de «{{name}}»",
+      "copyRemoved_other": "{{count}} pistas quitadas de «{{name}}»",
+      "copyQueuedStays_one": "Esta pista entra igualmente en «{{name}}» cuando cierres {{app}}",
+      "copyQueuedStays_other": "Estas {{count}} pistas entran igualmente en «{{name}}» cuando cierres {{app}}",
+      "removeIn_one": "Quítala en {{app}}",
+      "removeIn_other": "Quítalas en {{app}}"
     },
     "cues": {
       "title": "Cues",
@@ -1153,11 +1169,14 @@
       },
       "resetColour": "Restablecer",
       "saveShort": "Guardar",
-      "saveThis": "Guardar esta pista",
+      "saveNextShort": "Guardar y siguiente",
+      "saveAndNext": "{{save}} e ir a la siguiente pista",
       "saveMore": "Más formas de guardar",
       "saveFailed": "No se pudo guardar en rekordbox. Los cues siguen sin guardar",
       "saveAll_one": "Guardar {{count}} pista en rekordbox",
       "saveAll_other": "Guardar {{count}} pistas en rekordbox",
+      "saveAllShort_one": "Guardar {{count}} pista",
+      "saveAllShort_other": "Guardar {{count}} pistas",
       "saveAllBoth_one": "Guardar {{count}} pista en rekordbox y Engine DJ",
       "saveAllBoth_other": "Guardar {{count}} pistas en rekordbox y Engine DJ",
       "saveAllMixed_one": "Guardar {{count}} pista en su biblioteca",
@@ -1185,7 +1204,6 @@
         "discard_other": "Quitar propuestas",
         "ask": "¿Rompe aquí? {{time}}",
         "acceptOne": "Aceptar",
-        "acceptSave": "Aceptar y guardar",
         "drop": "Quitar",
         "unanalysed": "Sin análisis de rekordbox",
         "none": "Surco no encuentra dónde rompe esta pista",
@@ -1194,9 +1212,7 @@
         "sure": "Rompe aquí {{time}}",
         "why_one": "tras {{count}} compás con poco grave",
         "why_other": "tras {{count}} compases con poco grave",
-        "whyNone": "sin parón de grave antes",
-        "acceptSave_one": "Aceptar la propuesta y guardar",
-        "acceptSave_other": "Aceptar las {{count}} propuestas y guardar"
+        "whyNone": "sin parón de grave antes"
       },
       "batch": {
         "mark_one": "Auto marcar {{count}} pista",
@@ -1319,6 +1335,7 @@
         "measuring": "Calculando la rejilla…"
       },
       "replaced": {
+        "moved": "Los cues se movieron al fichero nuevo.",
         "notMoved": "sin mover",
         "noMatch": "Surco no pudo alinear el fichero nuevo con el viejo. Los cues siguen como estaban.",
         "drift": "El principio y el final se movieron distinto. Los cues siguen como estaban.",
@@ -1334,10 +1351,10 @@
         "both": "{{hot}} y {{calls}}",
         "unsaved": "Tienes cambios sin guardar en {{program}} para esta pista. No se tocan.",
         "overwrite": "Ponerlo también ahí y perder esos cambios",
-        "left_one": "{{count}} no cabe: no quedan letras libres",
-        "left_other": "{{count}} no caben: no quedan letras libres",
-        "full_one": "El hot cue no cabe: todas las letras ya tienen cue",
-        "full_other": "Los {{count}} hot cues no caben: todas las letras ya tienen cue"
+        "left_one": "{{count}} no cabe. No quedan letras libres",
+        "left_other": "{{count}} no caben. No quedan letras libres",
+        "full_one": "El hot cue no cabe. Todas las letras ya tienen cue",
+        "full_other": "Los {{count}} hot cues no caben. Todas las letras ya tienen cue"
       },
       "grid": {
         "bpm": "BPM de la rejilla",
@@ -1467,7 +1484,7 @@
     "virtualdjPlaylists": "Listas de VirtualDJ"
   },
   "declick": {
-    "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor: se pierden al convertir.",
+    "cueWarning": "ALAC no guarda los cues ni el beatgrid de Traktor. Se pierden al convertir.",
     "title": "Reparación de vinilo",
     "clicksLabel": "Clics",
     "hint": "Quita los clics y pops de la aguja y el ruido de fondo del disco al convertir.",
@@ -1598,15 +1615,15 @@
     "cueWarningShort": "Recodifica el audio · en ALAC se pierden los cues",
     "predictionEstimate": "(estimado)",
     "presetHint": {
-      "streaming": "Como nivelan Spotify y Apple Music: el valor seguro para una biblioteca de escucha.",
-      "club": "Caliente, para cabina: la mayoría de pistas necesitan limitar picos para llegar, a costa de algo de pegada.",
+      "streaming": "Nivela como Spotify y Apple Music. Es el valor seguro para una biblioteca de escucha.",
+      "club": "Caliente, para cabina. La mayoría de pistas necesitan limitar picos para llegar, a costa de algo de pegada.",
       "broadcast": "El nivel de TV y radio. Más bajo que streaming, con mucho margen.",
       "custom": "Tu propio objetivo. La previsualización bajo la onda dice dónde quedará la pista."
     },
     "appliesToSelection": "Estos ajustes se aplican a todas las pistas seleccionadas.",
-    "truePeakCaption": "Límite de seguridad, no un segundo objetivo: solo actúa si los picos lo tocan.",
+    "truePeakCaption": "Límite de seguridad, no un segundo objetivo. Solo actúa si los picos lo tocan.",
     "modeLine": {
-      "loudness": "Todas las pistas saldrán igual de fuertes: la ganancia lleva cada una hasta el objetivo.",
+      "loudness": "Todas las pistas saldrán igual de fuertes. La ganancia lleva cada una hasta el objetivo.",
       "peak": "Iguala la muestra más alta de cada pista; el volumen percibido seguirá variando."
     },
     "plan": {
@@ -1615,9 +1632,9 @@
       "limitedTouch": "Cambiará {{gain}} dB hasta {{lufs}} LUFS. Sus picos quedarían justo en el techo de {{peak}} dBTP, a menos de 0,1 dB por encima, así que el limitador apenas los roza.",
       "limitedSub": "Solo se recortan los picos que sobran, pero con tanto limitador espera un pelín menos de pegada en los golpes más fuertes.",
       "limitedSubLight": "Solo se recortan las puntas de los transitorios más afilados; un toque tan ligero no se oye.",
-      "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP: el techo no llega a actuar.",
+      "gain": "Cambiará {{gain}} dB hasta {{lufs}} LUFS con una ganancia constante. Sus picos quedarán en {{peak}} dBTP. El techo no llega a actuar.",
       "gainSub": "No se limita ni comprime nada; la dinámica queda intacta.",
-      "peak": "Cambiará {{gain}} dB: su muestra más alta quedará exactamente en {{peak}} dBFS.",
+      "peak": "Cambiará {{gain}} dB. Su muestra más alta quedará exactamente en {{peak}} dBFS.",
       "peakSub": "Ganancia constante, sin limitador. Sonará a unos {{lufs}} LUFS.",
       "mp3Ceiling": "Codificar en MP3 sube un poco los picos, así que Surco mide el MP3 y, si pasa de {{ceiling}} dBTP, lo vuelve a codificar con los picos más abajo, y puede quedar un poco por debajo de {{lufs}} LUFS.",
       "limiterCeiling": "El limitador contiene los picos muestra a muestra y entre muestras pueden quedar un poco por encima, así que Surco mide el archivo y, si pasa de {{ceiling}} dBTP, lo vuelve a generar con los picos más abajo, y puede quedar un poco por debajo de {{lufs}} LUFS.",
@@ -1792,7 +1809,7 @@
     "backupsReveal": "Mostrar carpeta",
     "backupsHint": "Antes de cambiar rekordbox, Engine DJ o Traktor, Surco guarda aquí una copia de la colección. Si algo sale mal, puedes recuperarla desde esta carpeta.",
     "beatportConnected": "conectado",
-    "beatportHint": "Beatport no tiene API abierta: Surco busca con tu cuenta (una gratuita vale). La contraseña se guarda cifrada y solo en este ordenador.",
+    "beatportHint": "Beatport no tiene API abierta. Surco busca con tu cuenta (una gratuita vale). La contraseña se guarda cifrada y solo en este ordenador.",
     "beatportUsername": "Usuario o email",
     "beatportPassword": "Contraseña",
     "beatportConnect": "Conectar",
@@ -1805,7 +1822,7 @@
     "tokenHelp": "Genera uno gratis en",
     "autoMatch": "Auto-emparejar al importar",
     "autoMatchHint": "Al importar, busca en tus fuentes y aplica las coincidencias fiables. Discogs va primero y el resto de tus fuentes, de respaldo. Desactivado por defecto.",
-    "autoMatchNeedsToken": "Discogs está entre tus fuentes: añade su token para poder auto-emparejar.",
+    "autoMatchNeedsToken": "Discogs está entre tus fuentes. Añade su token para poder auto-emparejar.",
     "autoMatchNeedsSource": "Activa al menos una fuente de búsqueda para auto-emparejar.",
     "autoCleanSpacing": "Limpiar al cargar",
     "autoCleanSpacingHint": "Quita espacios sobrantes y caracteres invisibles de título, artista, álbum y género. Queda como cambio pendiente hasta que conviertas o actualices.",
@@ -1820,7 +1837,6 @@
     "searchByAlbumFirst": "Buscar primero por álbum",
     "searchByAlbumFirstHint": "Si las etiquetas tienen álbum, se busca con el artista antes que la pista. Si no sale nada, se busca la pista.",
     "searchProviders": "Fuentes de búsqueda",
-    "searchProvidersHint": "Catálogos donde busca el editor. Discogs está curado, Bandcamp añade material autoeditado, Deezer cubre los lanzamientos digitales comerciales, Beatport aporta BPM, tonalidad y mix, MusicBrainz es un catálogo abierto que mantiene su comunidad y Apple Music trae el catálogo de Apple con carátula grande.",
     "searchResultsSection": "Resultados",
     "searchMatchingSection": "Coincidencias",
     "providerDescription": {
@@ -1860,7 +1876,7 @@
     "clearListAfterConvertHint": "Las pistas convertidas salen de la lista, con Deshacer. Las que fallen se quedan.",
     "keepMp3Sources": "Mantener MP3 y M4A como están",
     "keepMp3SourcesHint": "Convertir un MP3 o un M4A a un formato sin pérdida no recupera calidad, solo ocupa más. Con esto activo se quedan en su formato y Surco escribe sus etiquetas en el destino que tengas elegido. Con «Junto al original» no los toca. Si igualas el volumen, reparas clics o recortas, el audio sí se vuelve a codificar.",
-    "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen»: los MP3 ya se quedan como MP3.",
+    "keepMp3SourcesOff": "No hace falta con MP3 o «Igual que el origen». Los MP3 ya se quedan como MP3.",
     "mp3Quality": "Calidad MP3",
     "mp3Qualities": {
       "128": "128",
@@ -2016,7 +2032,7 @@
     "allVisible": "Todos los campos están visibles.",
     "customFieldName": "Nombre",
     "customFieldKey": "Clave",
-    "customFieldKeyHint": "La clave nombra el campo en el resto de Surco: {clave} en el nombre de archivo. En el archivo se guarda en mayúsculas.",
+    "customFieldKeyHint": "La clave nombra el campo en el resto de Surco, como {clave} en el nombre de archivo. En el archivo se guarda en mayúsculas.",
     "customFieldAdd": "Añadir",
     "customFieldInvalid": "La clave empieza por una letra y lleva solo letras, números y _.",
     "customFieldTaken": "Esa clave ya la usa otro campo.",
@@ -2075,7 +2091,7 @@
       "update": "Actualizar",
       "add": "Actualizar y añadir"
     },
-    "djReachAddHint": "Además da de alta las pistas que no tenía, sin análisis: el programa las analiza al abrirlas.",
+    "djReachAddHint": "Además da de alta las pistas que no tenía, sin análisis. El programa las analiza al abrirlas.",
     "completeCues": "Al cerrar rekordbox, aplicar tu flujo activo en las pistas con CALL y sin hot cues",
     "completeCuesHint": "Escribe en tu colección, también en pistas que no has mirado en Surco. Apagado, tus cues solo se guardan desde la sección Cues.",
     "completeCuesCount_one": "Se completará {{count}} pista al cerrar rekordbox.",
@@ -2378,7 +2394,7 @@
     "audioBody": "Surco muestra solo las secciones del editor que tu flujo necesita. Elige lo que encaje. Puedes cambiarlo cuando quieras en Ajustes.",
     "intent": {
       "metadata": "Corregir los metadatos",
-      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music. Siempre activo: es para lo que sirve Surco.",
+      "metadataBody": "Etiquetas, carátula y el emparejamiento con Discogs, Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music. Siempre activo. Para eso sirve Surco.",
       "restore": "Restaurar rips de vinilo",
       "restoreBody": "Recorta el silencio y repara clics y pops en grabaciones de vinilo.",
       "level": "Nivelar el volumen",
@@ -2410,6 +2426,7 @@
     },
     "djLibraryNone": "Ninguno, solo etiqueto archivos",
     "destinationKeepsCollection": "Las pistas que ya están en tu programa de DJ o en Apple Music se actualizan donde están, así conservan su sitio en tu colección.",
+    "searchProvidersIntro": "Catálogos donde busca el editor.",
     "tokenOffer": "La búsqueda funciona tal cual. Un token de Discogs activa «Auto-emparejar al importar» y mantiene las búsquedas estables en horas punta.",
     "tokenAdd": "Añadir un token de Discogs",
     "macTitle": "¿Es tu primer Mac con Surco?",
@@ -2436,7 +2453,7 @@
     "items": {
       "token": {
         "q": "¿Necesito un token de Discogs?",
-        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de «límite alcanzado»: espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Fuentes. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco."
+        "a": "No. Surco busca en Discogs sin configurar nada, usando sus propias credenciales de app, así que puedes empezar a etiquetar al momento.\n\nEsas credenciales compartidas tienen un límite común (60 peticiones por minuto entre todos los usuarios de Surco), por lo que en momentos de mucho uso una búsqueda puede fallar con un aviso de «límite alcanzado». Espera unos segundos y vuelve a intentarlo.\n\nSi etiquetas mucho, genera gratis tu propio token personal en discogs.com/settings/developers y pégalo en Ajustes → Fuentes. Tu token tiene su propio límite privado, así que las búsquedas van rápidas sin importar cuánta gente esté usando Surco. Emparejar automáticamente toda la lista sí necesita tu propio token."
       },
       "quality": {
         "q": "¿Por qué una pista sale marcada como «Dudosa»?",
@@ -2448,7 +2465,7 @@
       },
       "appleMusic": {
         "q": "¿Qué hace «Añadir a Apple Music»?",
-        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivarlo cuando quieras en Ajustes → Destino."
+        "a": "Cuando está activado (solo en macOS), Surco importa automáticamente cada pista convertida a tu biblioteca de Apple Music justo después de convertirla, así tus archivos recién etiquetados llegan ahí sin arrastrarlos a mano.\n\nMientras editas, Surco también comprueba si una pista ya está en tu biblioteca y muestra una pequeña insignia, para que no acabes con duplicados. Puedes desactivarlo cuando quieras en Ajustes → Archivos → Destino."
       },
       "windows": {
         "q": "¿Hay algo distinto en Windows?",
@@ -2981,11 +2998,11 @@
     }
   },
   "engineIssue": {
-    "unreadable": "La biblioteca de Engine DJ no se ha actualizado: Surco no ha podido leerla.",
-    "write-failed": "La biblioteca de Engine DJ no se ha actualizado: no se pudo escribir y se ha dejado como estaba.",
-    "backup-failed": "La biblioteca de Engine DJ no se ha actualizado: Surco no pudo hacer antes una copia de seguridad.",
-    "ambiguous_one": "Engine DJ sigue apuntando al archivo antiguo de {{name}}: su biblioteca tiene más de una entrada que coincide.",
-    "ambiguous_other": "Engine DJ sigue apuntando a los archivos antiguos de {{count}} pistas, entre ellas {{name}}: su biblioteca tiene más de una entrada que coincide con cada una."
+    "unreadable": "La biblioteca de Engine DJ no se ha actualizado. Surco no ha podido leerla.",
+    "write-failed": "La biblioteca de Engine DJ no se ha actualizado. No se pudo escribir y se ha dejado como estaba.",
+    "backup-failed": "La biblioteca de Engine DJ no se ha actualizado. Surco no pudo hacer antes una copia de seguridad.",
+    "ambiguous_one": "Engine DJ sigue apuntando al archivo antiguo de {{name}}. Su biblioteca tiene más de una entrada que coincide.",
+    "ambiguous_other": "Engine DJ sigue apuntando a los archivos antiguos de {{count}} pistas, entre ellas {{name}}. Su biblioteca tiene más de una entrada que coincide con cada una."
   },
   "musicReview": {
     "title": "Revisar metadatos",
@@ -3122,7 +3139,6 @@
       "undoLibraryFailed": "{{library}} sigue con el cambio porque no se pudo actualizar. Pulsa Deshacer otra vez o mira Actividad."
     },
     "empty": "Tu biblioteca de Apple Music está vacía.",
-    "clean": "No hay nada que revisar.",
     "allClear": "Todo está correcto",
     "allClearHint": "Sin erratas, mayúsculas, caracteres invisibles ni duplicados.",
     "back": "Volver a las pistas",
@@ -3444,24 +3460,6 @@
     "appliedChanges_one": "Listo en rekordbox · {{count}} cambio",
     "appliedChanges_other": "Listo en rekordbox · {{count}} cambios",
     "backupFailed": "No se pudo hacer la copia de rekordbox. Se volverá a intentar cuando lo cierres",
-    "notice": {
-      "ambiguous": "No se añadió {{track}}. rekordbox la tiene dos veces",
-      "fileMissing": "No se dio de alta {{track}}. El archivo ya no está",
-      "notAdded": "No se dio de alta {{track}}. No se pudo leer el archivo",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en rekordbox",
-      "playlistGone": "{{playlist}} ya no está en rekordbox. {{track}} no se añadió",
-      "editChanged": "No se cambió {{playlist}}. Cambió en rekordbox",
-      "cuesChanged": "Los cues de {{track}} cambiaron en rekordbox. Vuelve a marcarlos",
-      "cuesTooMany": "{{track}} necesitaría más de 8 hot cues. Quita una marca",
-      "cuesInvalid": "No se guardaron los cues de {{track}}. Surco no pudo leerlos como cues",
-      "cuesWriteFailed": "No se guardaron los cues de {{track}}. Surco no pudo escribir el archivo",
-      "cuesAdjusted_one": "rekordbox ya ha analizado {{track}}. {{count}} cue ajustado a su rejilla, {{maxMs}} ms",
-      "cuesAdjusted_other": "rekordbox ya ha analizado {{track}}. {{count}} cues ajustados a su rejilla, el que más {{maxMs}} ms",
-      "cuesUnfit_one": "Un cue de {{track}} cae lejos de los golpes de rekordbox y se ha dejado donde estaba. Revísalo",
-      "cuesUnfit_other": "{{count}} cues de {{track}} caen lejos de los golpes de rekordbox y se han dejado donde estaban. Revísalos",
-      "goToCue": "Ir al cue",
-      "notInLibrary": "{{track}} ya no está en rekordbox. Sus playlists no se cambiaron"
-    },
     "part": {
       "repoint": "nueva ruta",
       "collection": "alta en la colección",
@@ -3510,14 +3508,6 @@
     "backupFailed": "No se pudo hacer la copia de Engine DJ. Se volverá a intentar cuando lo cierres",
     "unreadable": "Surco no puede leer ahora la biblioteca de Engine DJ y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar los cambios en Engine DJ. La biblioteca sigue como estaba",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Engine DJ. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Engine DJ solo guarda hot cues",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Engine DJ",
-      "playlistGone": "{{playlist}} ya no está en Engine DJ. {{track}} no se añadió",
-      "notInLibrary": "{{track}} ya no está en Engine DJ. Sus playlists no se cambiaron"
-    },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Engine DJ se quedan como los tiene Engine DJ",
     "pillHalted": "Cambios de Engine DJ en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la biblioteca hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia m.db.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
@@ -3542,14 +3532,6 @@
     "backupFailed": "No se pudo hacer la copia de Traktor. Se volverá a intentar cuando lo cierres",
     "unreadable": "Surco no puede leer ahora la colección de Traktor y no ha cambiado nada",
     "writeFailed": "No se pudieron guardar los cambios en Traktor. La colección sigue como estaba",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Traktor. Vuelve a marcarlos",
-      "slotDropped": "Traktor tiene 7 botones para los cues de Surco, así que el cue H de {{track}} no se guardó",
-      "editChanged": "{{playlist}} no se cambió. Cambió en Traktor",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Traktor",
-      "playlistGone": "{{playlist}} ya no está en Traktor. {{track}} no se añadió",
-      "notInLibrary": "{{track}} ya no está en Traktor. Sus playlists no se cambiaron"
-    },
     "discardConfirm": "¿Descartar lo que espera? Tus playlists y cues de Traktor se quedan como los tiene Traktor",
     "pillHalted": "Cambios de Traktor en pausa",
     "halted": "El último cambio no se pudo guardar ni deshacer. Surco no tocará la colección hasta que elijas Aplicar ahora o Descartar. Aplicar ahora sustituye la copia collection.nml.surco-backup, así que si algo no cuadra, restaura antes desde ella. La encontrarás en Ajustes → Avanzado → Copias de las colecciones",
@@ -3574,20 +3556,6 @@
     "part": {
       "collection": "alta en la biblioteca",
       "noPlaylists": "fuera de sus crates"
-    },
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en Serato. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). Serato solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). Serato solo guarda hot cues",
-      "oldBlock": "Los cues de {{track}} no se guardaron. Serato guarda una copia antigua que no coincide. Mueve cualquier cue de la pista en Serato y vuelve a guardar",
-      "editChanged": "{{playlist}} no se cambió. Cambió en Serato",
-      "otherVolume": "{{track}} está en otro disco y no puede ir al crate «{{playlist}}»",
-      "notAdded": "{{track}} no se añadió a Serato",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en Serato",
-      "playlistGone": "{{playlist}} ya no está en Serato. {{track}} no se añadió",
-      "sourceInSerato": "{{track}} sigue en Serato con el archivo original y no entra en el crate «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ya no está en Serato y sus etiquetas no se cambiaron",
-      "tagsChanged": "{{track}} cambió en Serato y sus etiquetas no se cambiaron"
     }
   },
   "virtualdjQueue": {
@@ -3614,23 +3582,7 @@
     "pillElsewhere_one": "{{count}} pendiente de otra biblioteca de VirtualDJ",
     "pillElsewhere_other": "{{count}} pendientes de otra biblioteca de VirtualDJ",
     "elsewhere_one": "{{count}} cambio espera a otra biblioteca de VirtualDJ. Se aplicará cuando vuelvas a ella",
-    "elsewhere_other": "{{count}} cambios esperan a otra biblioteca de VirtualDJ. Se aplicarán cuando vuelvas a ella",
-    "notice": {
-      "cuesChanged": "Los cues de {{track}} cambiaron en VirtualDJ. Vuelve a marcarlos",
-      "callsDropped_one": "No se guardó el CALL de {{track}} ({{times}}). VirtualDJ solo guarda hot cues",
-      "callsDropped_other": "No se guardaron los {{count}} CALL de {{track}} ({{times}}). VirtualDJ solo guarda hot cues",
-      "notInLibrary": "{{track}} ya no está en VirtualDJ. Sus cues no se guardaron",
-      "notAdded": "{{track}} no se añadió a VirtualDJ",
-      "playlistChanged": "No se cambió {{track}} en {{playlist}}. Cambió en VirtualDJ",
-      "playlistGone": "{{playlist}} ya no está en VirtualDJ. {{track}} no se añadió",
-      "sourceInVirtualdj": "{{track}} sigue en VirtualDJ con el archivo original y no entra en la lista «{{playlist}}»",
-      "tagsNotInLibrary": "{{track}} ya no está en VirtualDJ y sus etiquetas no se cambiaron",
-      "tagsChanged": "{{track}} cambió en VirtualDJ y sus etiquetas no se cambiaron",
-      "repointOtherVolume": "{{track}} está en otro disco, así que VirtualDJ sigue con el archivo original y Surco también lo guarda",
-      "repointSongTaken": "VirtualDJ ya tiene una canción para {{track}}, así que sigue con el archivo original y Surco también lo guarda",
-      "repointUnwritable": "VirtualDJ no puede guardar la duración de {{track}}, así que sigue con el archivo original y Surco también lo guarda",
-      "repointSongTakenGone": "VirtualDJ ya tenía una canción para {{track}}, así que la antigua sigue en el archivo original, que ya no está en su carpeta"
-    }
+    "elsewhere_other": "{{count}} cambios esperan a otra biblioteca de VirtualDJ. Se aplicarán cuando vuelvas a ella"
   },
   "cueWave": {
     "notAnalysed": "Esta pista no está analizada en rekordbox. Analízala allí para poner cues",
@@ -3656,7 +3608,7 @@
       "ok": "Al día",
       "pending_one": "{{count}} cambio espera a que cierres {{program}}",
       "pending_other": "{{count}} cambios esperan a que cierres {{program}}",
-      "halted": "Surco ha parado: revisa los cambios pendientes",
+      "halted": "Surco ha parado. Revisa los cambios pendientes",
       "failed": "La última copia falló",
       "untouched": "No lo toca"
     },
@@ -3821,6 +3773,7 @@
       "rekordboxCuesChanged_one": "rekordbox tenía {{count}} cue y ahora {{after}}",
       "rekordboxCuesChanged_other": "rekordbox tenía {{count}} cues y ahora {{after}}",
       "rekordboxAnalysisEmptied": "El análisis de rekordbox cambió",
+      "rekordboxAnalysisStale": "rekordbox aún tiene el análisis del archivo anterior",
       "rekordboxPlaylistMissing": "La pista no está en la playlist {{playlist}} de rekordbox",
       "rekordboxUnreadable": "No se pudo comprobar rekordbox",
       "engineStillOld": "Engine DJ sigue en el {{format}}",
@@ -3839,6 +3792,7 @@
       "engineCuesMisplaced_quickCues": "Los cues de Engine DJ no siguieron al audio",
       "engineCuesMisplaced_beatData": "La rejilla de Engine DJ no siguió al audio",
       "engineCuesMisplaced_loops": "Los loops de Engine DJ no siguieron al audio",
+      "engineAnalysisStale": "Engine DJ aún tiene el análisis del archivo anterior",
       "engineNameStale": "Engine DJ sigue mostrando «{{value}}»",
       "enginePlaylistMissing": "La pista no está en la playlist {{playlist}} de Engine DJ",
       "engineUnreadable": "No se pudo comprobar Engine DJ",
@@ -3934,5 +3888,58 @@
     "railNames": "Mostrar nombres",
     "sidebar": "Mostrar barra lateral",
     "hideSidebar": "Ocultar barra lateral"
+  },
+  "queueNotice": {
+    "notAdded_one": "{{count}} pista no se añadió a {{program}}",
+    "notAdded_other": "{{count}} pistas no se añadieron a {{program}}",
+    "notChangedIn_one": "{{count}} pista sin cambiar en {{playlist}}",
+    "notChangedIn_other": "{{count}} pistas sin cambiar en {{playlist}}",
+    "notAddedToList_one": "{{count}} pista no se añadió a {{playlist}}",
+    "notAddedToList_other": "{{count}} pistas no se añadieron a {{playlist}}",
+    "listNotChanged": "{{playlist}} sin cambiar",
+    "cuesNotSaved_one": "Cues de {{count}} pista sin guardar",
+    "cuesNotSaved_other": "Cues de {{count}} pistas sin guardar",
+    "cueHNotSaved_one": "Cue H de {{count}} pista sin guardar",
+    "cueHNotSaved_other": "Cue H de {{count}} pistas sin guardar",
+    "callsNotSaved_one": "{{count}} CALL sin guardar",
+    "callsNotSaved_other": "{{count}} CALL sin guardar",
+    "cuesMoved_one": "{{count}} cue ajustado a la rejilla de {{program}}",
+    "cuesMoved_other": "{{count}} cues ajustados a la rejilla de {{program}}",
+    "cuesOffBeats_one": "{{count}} cue lejos de los golpes de {{program}}",
+    "cuesOffBeats_other": "{{count}} cues lejos de los golpes de {{program}}",
+    "notInLibrary_one": "{{count}} pista ya no está en {{program}}",
+    "notInLibrary_other": "{{count}} pistas ya no están en {{program}}",
+    "tagsNotChanged_one": "Etiquetas de {{count}} pista sin cambiar",
+    "tagsNotChanged_other": "Etiquetas de {{count}} pistas sin cambiar",
+    "keptOriginal_one": "{{count}} pista sigue con el archivo original",
+    "keptOriginal_other": "{{count}} pistas siguen con el archivo original",
+    "oldSongMissing_one": "{{count}} canción antigua apunta a un archivo que ya no está",
+    "oldSongMissing_other": "{{count}} canciones antiguas apuntan a un archivo que ya no está",
+    "goToCue": "Ir al cue",
+    "why": {
+      "twice": "Está dos veces en {{program}}",
+      "fileGone": "El archivo ya no está",
+      "unreadable": "No se pudo leer el archivo",
+      "listChanged": "Cambió en {{program}}",
+      "listGone": "Ya no está en {{program}}",
+      "otherDrive": "En otro disco",
+      "originalKept": "{{program}} se queda el archivo original",
+      "markAgain": "Cambiaron en {{program}}. Vuelve a marcarlos",
+      "tooMany": "Más de 8 hot cues. Quita una marca",
+      "notCues": "Surco no pudo leerlos como cues",
+      "notWritten": "Surco no pudo escribir el archivo",
+      "oldBlock": "{{program}} guarda una copia antigua. Mueve un cue allí y vuelve a guardar",
+      "hotCuesOnly": "{{program}} solo guarda hot cues",
+      "sevenButtons": "{{program}} tiene 7 botones para los cues de Surco",
+      "furthest": "El que más, {{maxMs}} ms",
+      "leftInPlace": "Se han dejado donde estaban. Revísalos",
+      "playlistsKept": "Playlists sin cambiar",
+      "cuesKept": "Cues sin guardar",
+      "tagsKept": "Etiquetas sin cambiar",
+      "tagsChanged": "Cambiaron en {{program}}",
+      "songTaken": "{{program}} ya tiene una canción para ella",
+      "lengthUnfit": "{{program}} no admite su duración",
+      "songTakenGone": "{{program}} ya tenía una canción para ella"
+    }
   }
 }

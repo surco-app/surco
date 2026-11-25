@@ -8,6 +8,7 @@ import { NAME_LEFT_MARKED } from '../../../shared/errorKeys'
 import type { ProcessResult, Settings, TrackMetadata } from '../../../shared/types'
 import type { PlaceCheck, Verification } from '../../../shared/verification'
 import i18n from '../i18n'
+import { replacePatch } from '../lib/replaceBeforeConvert'
 import type { TrackItem } from '../types'
 import { useTrackProcessing } from './useTrackProcessing'
 import { useVerificationUpdates } from './useVerificationUpdates'
@@ -55,7 +56,7 @@ function setApi(over: Record<string, unknown>): void {
   ;(window as unknown as { api: unknown }).api = {
     conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
-    endConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(async () => {}),
     sourceChanged: vi.fn<Api['sourceChanged']>().mockResolvedValue(false),
     ...over,
   }
@@ -270,7 +271,7 @@ describe('useTrackProcessing', () => {
 
   it('still converts the batch when the close-program prompt fails, since the quiet path queues the change for an open program', async () => {
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/m/a.aiff' })
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     const beginConversionBatch = vi.fn()
     setApi({
       processTrack,
@@ -2233,7 +2234,7 @@ describe('useTrackProcessing', () => {
   // The volume of the NML sync goes at the end of the batch, not per track: a
   // collection.nml can weigh tens of megabytes, so one write per run, not one per track.
   it('closes the conversion batch so the collection is written once', async () => {
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2262,7 +2263,7 @@ describe('useTrackProcessing', () => {
           releaseFirst = resolve
         }),
     )
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({ processTrack, cancelJob: vi.fn(), endConversionBatch })
     const tracks = [track({ id: 'a' }), track({ id: 'b' })]
     const { result } = renderHook(
@@ -2290,7 +2291,7 @@ describe('useTrackProcessing', () => {
   // (counted as if that batch produced it) or resetNmlPatches discards it outright.
   it('closes its own batch for a lone processOne call outside processAll', async () => {
     const beginConversionBatch = vi.fn()
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2317,7 +2318,7 @@ describe('useTrackProcessing', () => {
   // collection 300 times instead of the one write batching exists to produce.
   it('does not bracket processAll’s internal per-track conversions with their own batch', async () => {
     const beginConversionBatch = vi.fn()
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     setApi({
       processTrack: vi
         .fn<Api['processTrack']>()
@@ -2348,7 +2349,7 @@ describe('useTrackProcessing', () => {
         .fn<Api['processTrack']>()
         .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false }),
     })
-    const endConversionBatch = vi.fn()
+    const endConversionBatch = vi.fn(async () => {})
     ;(window as unknown as { api: { endConversionBatch: () => void } }).api.endConversionBatch =
       endConversionBatch
     // updateTrack runs synchronously inside processOne, outside its own try/catch — an
@@ -3111,6 +3112,73 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     )
   })
 
+  // Reported 24/11: a replacement, then a cover picked and saved again. The second job sent
+  // the first one's replacesPath, a file already retired that rekordbox no longer indexed,
+  // so Music took a third copy and rekordbox stayed on the second, without its cover. Once
+  // the replacement is done the track's own library copy is what the next save updates.
+  it('does not send a replacement already carried out with the next job', async () => {
+    const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+      outputPath: '',
+      inPlace: false,
+      addedToMusicOnly: true,
+      musicPersistentId: 'PID2',
+    })
+    setApi({ processTrack })
+    const live = {
+      current: [track({ id: 'a', musicPersistentId: 'PID1', replacesPath: '/m/old.aiff' })],
+    }
+    const updateTrack = (id: string, patch: Partial<TrackItem>) => {
+      live.current = live.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: live.current, tracksRef: live, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+
+    await act(() => result.current.processOne('a'))
+    await act(() => result.current.processOne('a'))
+
+    expect(processTrack.mock.calls[0][0]).toMatchObject({
+      musicPersistentId: 'PID1',
+      replacesPath: '/m/old.aiff',
+    })
+    expect(processTrack.mock.calls[1][0]).toMatchObject({ musicPersistentId: 'PID2' })
+    expect(processTrack.mock.calls[1][0].replacesPath).toBeUndefined()
+  })
+
+  // A track that finished one replacement can still be offered another copy to replace:
+  // the editor's new stamp is a fresh replacement and goes with the job.
+  it('sends a replacement stamped after an earlier one was carried out', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({ processTrack })
+    const live = {
+      current: [track({ id: 'a', replacesPath: '/m/old.aiff', replaceDone: true })],
+    }
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: live.current,
+          tracksRef: live,
+          settings: null,
+          updateTrack: vi.fn(),
+        }),
+      { wrapper: withClient() },
+    )
+
+    await act(async () => {
+      const stamp = replacePatch({ persistentId: 'PID3', label: 'X', path: '/m/other.aiff' })
+      live.current = live.current.map((t) => (t.id === 'a' ? { ...t, ...stamp } : t))
+      await result.current.processOne('a')
+    })
+
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({ musicPersistentId: 'PID3', replacesPath: '/m/other.aiff' }),
+    )
+  })
+
   it('sends the wanted rekordbox playlists with the job', async () => {
     const processTrack = vi
       .fn<Api['processTrack']>()
@@ -3196,6 +3264,150 @@ describe('useTrackProcessing reading a track patched in the same tick', () => {
     expect(keys).toContainEqual(['source-collection', 'rekordbox'])
     expect(keys).toContainEqual(['source-collection', 'traktor'])
     expect(keys).not.toContainEqual(['source-collection', 'engine'])
+  })
+
+  // A direct repoint keeps the content id but moves the row onto the new file and empties its
+  // analysis: the open cue editor must drop what it read from the old file, or the DJ places
+  // cues against a waveform and a grid that are not the file they will play.
+  it('re-reads what the cue editor draws from the track’s file and analysis once a conversion reaches a DJ program', async () => {
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/new.flac',
+        inPlace: false,
+        replaceShift: { moved: 120 },
+      }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { syncEngineDj: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    for (const key of [
+      'rekordbox-track-cues',
+      'rekordbox-cue-wave-detail',
+      'rekordbox-cue-wave-fine',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
+  // Every program keeps pointing at the same path, but a normalize, trim or declick moved the
+  // audio under it: the waveform and grids read before belong to sound that no longer exists.
+  it('re-reads what the cue editor draws from the track’s file once a run rewrites a file in place, with no DJ program reached', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    for (const key of [
+      'rekordbox-track-cues',
+      'rekordbox-cue-wave-detail',
+      'rekordbox-cue-wave-fine',
+      'rekordbox-audition-lead',
+      'rekordbox-surco-grid',
+      'rekordbox-grid-fit',
+      'grid-audit',
+      'rekordbox-cue-drop-input',
+      'cue-preview-drop-input',
+    ])
+      expect(invalidate).toHaveBeenCalledWith({ queryKey: [key] })
+  })
+
+  // Each re-read decodes the open track again, so a batch of in-place rewrites must cost one.
+  it('re-reads the cue editor’s file queries once per run, not once per rewritten track', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockImplementation(async (job) => ({ outputPath: job.inputPath, inPlace: true })),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const tracks = [track({ id: 'a' }), track({ id: 'b' })]
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks, settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processAll(tracks)
+    })
+    const fine = invalidate.mock.calls.filter(
+      ([filters]) => filters?.queryKey?.[0] === 'rekordbox-cue-wave-fine',
+    )
+    expect(fine).toHaveLength(1)
+  })
+
+  // Only the tags changed, so the audio the editor drew is still the audio on disk.
+  it('leaves the cue editor’s file queries alone when an in-place run only rewrote tags', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.wav', inPlace: true, tagsOnly: true }),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({ tracks: [track({ id: 'a' })], settings: null, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['rekordbox-cue-wave-fine'] })
+  })
+
+  // The 23/11 test in the real Engine DJ: the libraries are written by the flush main runs
+  // after the batch ends, and the collections were re-read while it was still running, so the
+  // editor's In your library kept the Engine DJ row on the old MP3 though it was on the AIFF.
+  it('re-reads the collections the run reached once main has written them, not before', async () => {
+    let flushed = () => {}
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/m/a.aiff', inPlace: false }),
+      endConversionBatch: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            flushed = resolve
+          }),
+      ),
+    })
+    const client = new QueryClient()
+    const invalidate = vi.spyOn(client, 'invalidateQueries')
+    const settings = { syncEngineDj: true } as unknown as Settings
+    const { result } = renderHook(
+      () => useTrackProcessing({ tracks: [track({ id: 'a' })], settings, updateTrack: vi.fn() }),
+      { wrapper: withClient(client) },
+    )
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const keys = () => invalidate.mock.calls.map(([filters]) => filters?.queryKey)
+    expect(keys()).not.toContainEqual(['source-collection', 'engine'])
+
+    await act(async () => flushed())
+
+    expect(keys()).toContainEqual(['source-collection', 'engine'])
   })
 
   it('leaves the DJ collections alone when the conversion wrote nothing', async () => {
@@ -3504,5 +3716,312 @@ describe('useTrackProcessing retryVerification', () => {
       await done
     })
     expect(rows.current[0].verification).toEqual(late)
+  })
+})
+
+describe('useTrackProcessing updateLibraryCopy', () => {
+  const copy = { path: '/r/Song.aif', program: 'rekordbox' as const }
+
+  function renderUpdate(
+    rows: TrackItem[],
+    over: Partial<Parameters<typeof useTrackProcessing>[0]> = {},
+  ) {
+    return renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: rows,
+          settings: null,
+          updateTrack: vi.fn(),
+          ...over,
+        }),
+      { wrapper: withClient() },
+    )
+  }
+
+  // DJ programs and Apple Music hold the copy by its path and play its audio, so Update may
+  // only rewrite its tags there: a renamed or re-encoded copy would lose its cues and plays.
+  it('retags the library copy where it is, in its own format, and never the open file', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate([track({ id: 'a', meta: meta({ genre: 'House' }) })])
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(processTrack).toHaveBeenCalledTimes(1)
+    expect(processTrack).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'a',
+        inputPath: '/r/Song.aif',
+        format: 'aiff',
+        tagsInPlace: true,
+        outputName: 'Song',
+        meta: expect.objectContaining({ title: 'Title', artist: 'Artist', genre: 'House' }),
+      }),
+    )
+  })
+
+  // The trim, the stripped tags and the playlists are edits of the open file; carried onto
+  // the copy they would cut its audio or file it into playlists it was never placed in.
+  it('sends the copy nothing that belongs to the open file or changes audio', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate(
+      [
+        track({
+          id: 'a',
+          foreignRemoved: ['TXXX:Old'],
+          metaCleared: true,
+          metaReadFailed: true,
+          replacesPath: '/old/a.mp3',
+          outputPath: '/out/a.aiff',
+          trim: { startSec: 1 },
+          playlists: { traktor: { targets: [], base: ['Set'] } },
+          programs: ['traktor'],
+        }),
+      ],
+      {
+        settings: {
+          normalize: { mode: 'lufs', targetLufs: -9, truePeakDb: -1, peakDb: -1 },
+          declick: { mode: 'auto', noise: 'auto' },
+        } as unknown as Settings,
+      },
+    )
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    const job = processTrack.mock.lastCall?.[0]
+    expect(job).toBeDefined()
+    for (const key of [
+      'trim',
+      'foreignRemoved',
+      'clearExtras',
+      'metaUnread',
+      'replacesPath',
+      'previousOutputPath',
+      'playlists',
+      'programs',
+    ])
+      expect(job).not.toHaveProperty(key)
+    expect(job?.normalize?.mode).toBe('none')
+    expect(job?.declick).toEqual({ mode: 'off', noise: 'off' })
+  })
+
+  // Music keeps its own copy of the tags: the entry that plays this file is updated along with
+  // it, and a copy Music does not play must never be added to Music by an update.
+  it('retags the Apple Music entry when the copy is the one Music plays', async () => {
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+    setApi({ processTrack })
+    const { result } = renderUpdate([track({ id: 'a' })])
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', { ...copy, musicPersistentId: 'P1' })
+    })
+    expect(processTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ addToAppleMusic: true, musicPersistentId: 'P1' }),
+    )
+    await act(async () => {
+      await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(processTrack).toHaveBeenLastCalledWith(
+      expect.objectContaining({ addToAppleMusic: false }),
+    )
+  })
+
+  // The row describes the file open in the editor, which Update never touched: following the
+  // copy or showing it done would make the open file look converted when it is not.
+  it('leaves the open row on its own file and state after updating the copy', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockResolvedValue({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true }),
+    })
+    const updateTrack = vi.fn()
+    const refreshTrackFromDisk = vi.fn(async () => {})
+    const onLibraryCopyUpdated = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a', outputPath: '/out/a.aiff' })], {
+      updateTrack,
+      refreshTrackFromDisk,
+      onLibraryCopyUpdated,
+    })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('converted')
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+    for (const [, patch] of updateTrack.mock.calls) {
+      expect(patch).not.toHaveProperty('outputPath')
+      expect(patch).not.toHaveProperty('inputPath')
+    }
+    expect(refreshTrackFromDisk).not.toHaveBeenCalled()
+    expect(onLibraryCopyUpdated).toHaveBeenCalledWith('a.wav')
+  })
+
+  it('puts the state back on the row that ran it even when another track is open by then', async () => {
+    let release: (r: ProcessResult) => void = () => {}
+    setApi({
+      processTrack: vi.fn<Api['processTrack']>(
+        () =>
+          new Promise<ProcessResult>((resolve) => {
+            release = resolve
+          }),
+      ),
+    })
+    const updateTrack = vi.fn()
+    let rows = [track({ id: 'a', status: 'done' }), track({ id: 'b' })]
+    const { result, rerender } = renderHook(
+      () => useTrackProcessing({ tracks: rows, settings: null, updateTrack }),
+      { wrapper: withClient() },
+    )
+    let done: Promise<unknown> = Promise.resolve()
+    act(() => {
+      done = result.current.updateLibraryCopy('a', copy)
+    })
+    await waitFor(() =>
+      expect(updateTrack).toHaveBeenCalledWith(
+        'a',
+        expect.objectContaining({ status: 'processing' }),
+      ),
+    )
+    rows = [rows[1], rows[0]]
+    rerender()
+    await act(async () => {
+      release({ outputPath: '/r/Song.aif', inPlace: true, tagsOnly: true })
+      await done
+    })
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'done', stage: undefined })
+    expect(updateTrack.mock.calls.some(([id]) => id === 'b')).toBe(false)
+  })
+
+  // main refuses a copy whose audio a retag would change; that has to reach the DJ like any
+  // failed conversion, and the open row, whose file was never in play, keeps its state.
+  it('says a failed copy update like a failed conversion and leaves the row as it was', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(
+          new Error(
+            "Error invoking remote method 'process:track': Error: SURCO_ERR:libraryCopyAudioWouldChange: /r/Song.aif",
+          ),
+        ),
+    })
+    const updateTrack = vi.fn()
+    const onProcessError = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a' })], { updateTrack, onProcessError })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('failed')
+    expect(onProcessError).toHaveBeenCalledWith(
+      i18n.t('errors.libraryCopyAudioWouldChange'),
+      'a.wav',
+      'SURCO_ERR:libraryCopyAudioWouldChange: /r/Song.aif',
+    )
+    expect(updateTrack).toHaveBeenLastCalledWith('a', { status: 'idle', stage: undefined })
+  })
+
+  // Closing a DJ program can wait on the DJ for as long as they like, and the row stays
+  // convertible meanwhile: a conversion run then must not have its result painted over by
+  // the state the update read before the dialog.
+  it('leaves a conversion run during the close dialog with its own result', async () => {
+    let closed: () => void = () => {}
+    const processTrack = vi
+      .fn<Api['processTrack']>()
+      .mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+    setApi({
+      processTrack,
+      conversionPrograms: vi.fn<Api['conversionPrograms']>(async (paths) =>
+        paths.includes('/r/Song.aif') ? ['traktor'] : [],
+      ),
+      dj: {
+        askToApply: vi.fn(
+          () =>
+            new Promise<void>((resolve) => {
+              closed = resolve
+            }),
+        ),
+      },
+    })
+    const rows = { current: [track({ id: 'a' })] }
+    const updateTrack = vi.fn((id: string, patch: Partial<TrackItem>) => {
+      rows.current = rows.current.map((t) => (t.id === id ? { ...t, ...patch } : t))
+    })
+    const { result } = renderHook(
+      () =>
+        useTrackProcessing({
+          tracks: rows.current,
+          tracksRef: rows,
+          settings: null,
+          updateTrack,
+        }),
+      { wrapper: withClient() },
+    )
+    let update: Promise<unknown> = Promise.resolve()
+    act(() => {
+      update = result.current.updateLibraryCopy('a', copy)
+    })
+    await act(async () => {
+      await result.current.processOne('a')
+    })
+    const converted = rows.current[0].status
+    expect(converted).not.toBe('idle')
+    await act(async () => {
+      closed()
+      await update
+    })
+    expect(rows.current[0].status).toBe(converted)
+  })
+
+  // The replaced Music entry's marker rides the end of any failure; a cancel carrying it is
+  // still a cancel, not an error to toast.
+  it('takes a cancelled copy update for a skip even with the name marker on it', async () => {
+    setApi({
+      processTrack: vi
+        .fn<Api['processTrack']>()
+        .mockRejectedValue(
+          new Error(
+            `Error invoking remote method 'process:track': Error: SURCO_ERR:conversionCancelled${NAME_LEFT_MARKED}`,
+          ),
+        ),
+    })
+    const onProcessError = vi.fn()
+    const onMusicNameLeftMarked = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a' })], { onProcessError, onMusicNameLeftMarked })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('skipped')
+    expect(onProcessError).not.toHaveBeenCalled()
+    expect(onMusicNameLeftMarked).toHaveBeenCalledWith('a.wav')
+  })
+
+  it('refuses a copy update with required fields empty, as a conversion would', async () => {
+    const processTrack = vi.fn<Api['processTrack']>()
+    setApi({ processTrack })
+    const updateTrack = vi.fn()
+    const { result } = renderUpdate([track({ id: 'a', meta: meta({ genre: '' }) })], {
+      updateTrack,
+      settings: { requiredFields: ['genre'] } as unknown as Settings,
+    })
+    let outcome: string | undefined
+    await act(async () => {
+      outcome = await result.current.updateLibraryCopy('a', copy)
+    })
+    expect(outcome).toBe('failed')
+    expect(processTrack).not.toHaveBeenCalled()
+    expect(updateTrack).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({
+        status: 'error',
+        error: i18n.t('editor.missingRequired', { fields: i18n.t('fields.genre') }),
+      }),
+    )
   })
 })

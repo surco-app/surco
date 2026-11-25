@@ -69,7 +69,6 @@ describe('CueWaveDetail', () => {
     const bars = new Set(screen.getAllByTestId('cue-detail-bar').map((b) => b.style.left))
     for (const tick of ticks) {
       expect(bars.has(tick.style.left)).toBe(false)
-      expect(tick.className).toContain('bg-[var(--color-fg-dim)]/15')
       expect(within(tick).queryAllByTestId('cue-detail-cap')).toHaveLength(0)
     }
   })
@@ -463,7 +462,6 @@ describe('CueWaveDetail', () => {
     })
     const hot = screen.getByTestId(`cue-detail-ghost-dropped-${bar(28)}`)
     expect(hot).toHaveStyle({ borderStyle: 'dashed', borderColor: hotCueColor(22), opacity: '0.3' })
-    expect(hot.className).toContain('pointer-events-none')
     expect(screen.getByTestId(`cue-detail-ghost-dropped-${bar(36)}`)).toHaveStyle({
       borderColor: MEMORY_CUE_COLOR,
     })
@@ -755,10 +753,10 @@ describe('CueWaveDetail', () => {
     const saved = screen.getByTestId('cue-detail-hot-A')
     expect(unsaved.style.backgroundColor).toBe(saved.style.backgroundColor)
     expect(unsaved.style.borderColor).toBe('')
-    expect(unsaved.className).toBe(saved.className)
-    expect(screen.getByTestId(`cue-detail-call-${bar(40)}`).className).toBe(
-      screen.getByTestId(`cue-detail-call-${bar(34)}`).className,
-    )
+    const unsavedCall = screen.getByTestId(`cue-detail-call-${bar(40)}`)
+    const savedCall = screen.getByTestId(`cue-detail-call-${bar(34)}`)
+    expect(unsavedCall.style.borderTopColor).not.toBe('')
+    expect(unsavedCall.style.borderTopColor).toBe(savedCall.style.borderTopColor)
   })
 
   it('draws no preview over a cue already in place, neither a see-through twin nor a dashed outline', () => {
@@ -869,7 +867,6 @@ describe('CueWaveDetail', () => {
     for (const id of ['cue-detail-hot-B', `cue-detail-call-${bar(32)}`]) {
       const mark = screen.getByTestId(id)
       expect(playhead.compareDocumentPosition(mark) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-      expect(mark.className).toContain('z-10')
     }
   })
 

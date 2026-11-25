@@ -369,7 +369,8 @@ describe('GeneralTab sources', () => {
 
   it('leaves a library that is not on this machine unticked, since a ticked box says the sidebar shows it and it cannot', async () => {
     renderSources({ platform: 'darwin', rekordbox: true, serato: false })
-    await waitFor(() => expect(screen.getByTestId('settings-source-serato')).toBeDisabled())
+    await screen.findByText(i18n.t('settings.sourceSeratoUnavailable'))
+    expect(screen.getByTestId('settings-source-serato')).toBeDisabled()
     expect(screen.getByTestId('settings-source-serato')).not.toBeChecked()
   })
 

@@ -51,6 +51,8 @@ export interface VerifyEntry {
   engineShift?: EngineShift
   // The source's size before a rewrite in place, handed again with the repoint.
   fromBytes?: number
+  // A replacement no measure vouches for the same audio, whose analysis Engine is to redo.
+  reanalyse?: true
   names?: EngineExpect['names']
   // The original held under «Nunca» for this verdict (claimHeldOriginal).
   heldOriginal?: string
@@ -67,7 +69,7 @@ export const traktorPatchKey = (patch: NmlPatch) =>
 // no entry, and that entry's cues as the same read found them; or 'failed' when nothing was
 // written.
 export type TraktorWrite =
-  | { before: Map<string, string | null>; cues?: Map<string, string | null> }
+  | { before: Map<string, string | null>; cues?: Map<string, string | null>; stayed?: string[] }
   | 'failed'
 
 // 'failed' is a write that went wrong or a flush that threw: nothing is known, nothing pending.
@@ -78,6 +80,9 @@ export interface FlushOutcome {
   traktor: TraktorWrite | 'queued' | 'off' | 'later'
   virtualdj: 'written' | 'queued' | 'off' | 'failed' | 'later'
   added?: Partial<Record<'rekordbox' | 'traktor' | 'virtualdj', string[]>>
+  // The new files of replacements whose entry stayed on the old file there, the way
+  // TraktorWrite.stayed says it for Traktor.
+  stayed?: Partial<Record<'rekordbox' | 'engine' | 'virtualdj', string[]>>
 }
 
 // How a queue apply went; Traktor's carries its write's facts like the flush.

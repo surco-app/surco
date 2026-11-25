@@ -19,6 +19,7 @@ export type Note =
   | 'inPlace'
   | 'sameFolder'
   | 'keepsOriginal'
+  | 'losesStars'
   | 'engineUsb'
   | 'noRestore'
   | 'beta'
@@ -36,6 +37,7 @@ export type RowId =
   | 'add'
   | 'names'
   | 'follow'
+  | 'replace'
   | 'usb'
   | 'copies'
   | 'windows'
@@ -113,6 +115,16 @@ export const PROGRAM_TABLE: readonly {
           traktor: y('sameFolder'),
           engine: Y,
           serato: n('keepsOriginal'),
+          virtualdj: Y,
+        },
+      },
+      {
+        id: 'replace',
+        cells: {
+          rekordbox: Y,
+          traktor: Y,
+          engine: Y,
+          serato: y('losesStars'),
           virtualdj: Y,
         },
       },

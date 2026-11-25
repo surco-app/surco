@@ -16,6 +16,7 @@ import {
   refreshedCoverIds,
   replaceDuplicateInNml,
   spareEditedEntries,
+  stayedRelocations,
 } from './traktorNml'
 
 const NML = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -1115,6 +1116,23 @@ describe('applyPatches', () => {
 
     expect(out).toContain('FILE="A (edit).flac"')
   })
+
+  // Two stale copies of one track (Song.aiff and Song.wav, neither on disk) both match a
+  // conversion Traktor never had by name. Renamed together they leave two entries on the one
+  // new file, the clones Traktor stacks for a path it indexes once; only one may take it.
+  it('renames only one of two stale entries matched by name onto the new file', () => {
+    const nml =
+      '<NML VERSION="19"><COLLECTION ENTRIES="2">' +
+      '<ENTRY TITLE="S1"><LOCATION DIR="/:M/:" FILE="Song.aiff" VOLUME="HD"></LOCATION></ENTRY>' +
+      '<ENTRY TITLE="S2"><LOCATION DIR="/:M/:" FILE="Song.wav" VOLUME="HD"></LOCATION></ENTRY>' +
+      '</COLLECTION></NML>'
+    const patches = [{ volume: 'HD', dir: '/:M/:', file: 'Song.mp3', newFile: 'Song.flac' }]
+
+    const out = applyPatches(nml, patches, () => false)
+
+    expect(findEntries(out).filter((e) => e.file === 'Song.flac')).toHaveLength(1)
+    expect(matchedPatchCount(nml, patches, () => false)).toBe(1)
+  })
 })
 
 // Los ids que hay que refrescar se leen de la colección, que es lo único que sabe qué
@@ -1255,11 +1273,34 @@ describe('applyPatches with tags', () => {
     expect(albumOnly).toContain('<ALBUM TITLE="Need You Now">')
   })
 
-  it('leaves an absent attribute absent instead of inserting it', () => {
+  it('does not create an ALBUM or INFO element the entry never had', () => {
     const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION></ENTRY></COLLECTION></NML>`
     const out = applyPatches(bare, [
       patch({ album: { from: '', to: 'New' }, genre: { from: '', to: 'House' } }),
     ])
+    expect(out).toBe(bare)
+  })
+
+  // A DJ who fills in a field Traktor never held (a bare entry has no ARTIST) must see it in
+  // the collection, or the check reads the missing attribute as the old empty name and the
+  // replaced file is never retired.
+  it('adds an attribute the entry never had when the review read it as empty', () => {
+    const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION><ALBUM></ALBUM><INFO RANKING="102"></INFO></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(bare, [
+      patch({
+        artist: { from: '', to: 'A & B' },
+        album: { from: '', to: 'New' },
+        genre: { from: '', to: 'House' },
+      }),
+    ])
+    expect(out).toContain('<ENTRY ARTIST="A &amp; B" TITLE="X">')
+    expect(out).toContain('<ALBUM TITLE="New">')
+    expect(out).toContain('<INFO GENRE="House" RANKING="102">')
+  })
+
+  it('does not add an attribute when the review read a name there', () => {
+    const bare = `<NML><COLLECTION ENTRIES="1"><ENTRY TITLE="X"><LOCATION DIR="/:m/:" FILE="c.mp3" VOLUME="Mac"></LOCATION></ENTRY></COLLECTION></NML>`
+    const out = applyPatches(bare, [patch({ artist: { from: 'Dj Lara', to: 'DJ Lara' } })])
     expect(out).toBe(bare)
   })
 
@@ -1643,6 +1684,39 @@ describe('a replace moves the entry whole', () => {
     const out = applyPatches(collect(stale('wav'), stale('flac')), [replace()], () => false)
 
     expect(findEntries(out).filter((e) => e.file === 'Song.aiff')).toHaveLength(1)
+  })
+
+  it('names a replace whose entry stays on the old file because no entry names the new volume, so To review does not say its cues moved', () => {
+    const patch = replace({ outputVolume: 'USB', cueShift: { shiftMs: 120 } })
+
+    expect(stayedRelocations(NML_, [patch])).toEqual([patch])
+  })
+
+  it('names a replace whose entry stays because another entry already holds the new file', () => {
+    const patch = replace({ cueShift: { shiftMs: 120 } })
+    const both = collect(SONG, NAS, TAKEN)
+
+    expect(entryCues(applyPatches(both, [patch]))).toBe(entryCues(both))
+    expect(stayedRelocations(both, [patch])).toEqual([patch])
+  })
+
+  it('names a replace Traktor has no entry for, so a track it never held is not left in its To review', () => {
+    const patch = replace({ cueShift: { shiftMs: 120 } })
+
+    expect(stayedRelocations(collect(NAS), [patch])).toEqual([patch])
+  })
+
+  it('does not name a replace whose entry moved to the new file', () => {
+    expect(stayedRelocations(NML_, [replace({ cueShift: { shiftMs: 120 } })])).toEqual([])
+  })
+
+  it('does not name a replace when one of two stale entries matched by name moved', () => {
+    const stale = (ext: string) =>
+      `<ENTRY TITLE="Song"><LOCATION DIR="/:Music/:Old/:" FILE="Song.${ext}" VOLUME="Macintosh HD" VOLUMEID="Macintosh HD"></LOCATION></ENTRY>`
+
+    expect(
+      stayedRelocations(collect(stale('wav'), stale('flac')), [replace()], () => false),
+    ).toEqual([])
   })
 
   // Why the move is opt-in: a plain conversion into another folder never repointed the entry.

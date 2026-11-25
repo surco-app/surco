@@ -61,6 +61,8 @@ export interface TrackItem extends TrackOrigin {
   // shows only its file-name parse, and the warning mark tells that apart from a file
   // that genuinely carries no tags. Cleared by rebuilding the row (start over).
   metaReadFailed?: boolean
+  // The failed read found no file at the path: moved or deleted since the row was listed.
+  metaFileMissing?: boolean
   metaPartial?: boolean
   // Set when the quality sweep could not measure this file (ffmpeg refused it, the
   // mount went away mid-run). The sweep used to report only how many failed, which
@@ -241,6 +243,10 @@ export interface TrackItem extends TrackOrigin {
   replacesPath?: string
   // The name Music showed for that copy, which retiring it is verified against.
   replacesLabel?: string
+  // Set once a conversion carried that replacement out. replacesPath stays, as the file the
+  // replacement superseded, but the next job must not send it: Music already holds the new
+  // copy, and replacing again from a retired file no library indexes left a third copy.
+  replaceDone?: true
   // Set when a conversion registered this track in the Engine DJ library — the Engine
   // counterpart of musicPersistentId's "Surco itself added it, owned by definition",
   // so the row reads in-library before the Engine snapshot refreshes.

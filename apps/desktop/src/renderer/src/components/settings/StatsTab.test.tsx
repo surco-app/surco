@@ -174,6 +174,32 @@ describe('StatsTab', () => {
     )
   })
 
+  // Before the first match the card was a flat empty bar over six catalogs at 0: a chart of
+  // nothing. It is status, not a setting, so it simply appears with the first match.
+  it('shows no match card until some match has landed', () => {
+    render(<StatsTab settings={withStats({ conversionCount: 5 })} />)
+    expect(screen.queryByTestId('stats-match-split')).toBeNull()
+  })
+
+  // A catalog with no matches says nothing about where the metadata came from, so the bar
+  // and the legend carry only the sources that found something.
+  it('lists only the catalogs that have matches', () => {
+    render(
+      <StatsTab
+        settings={withStats({
+          conversionCount: 20,
+          stats: { ...zeroStats, discogsMatches: 14, beatportMatches: 6 },
+        })}
+      />,
+    )
+    const split = screen.getByTestId('stats-match-split')
+    expect(split.textContent).toMatch(/Discogs14.*Beatport6/)
+    for (const key of ['bandcamp', 'deezer', 'musicbrainz', 'itunes']) {
+      expect(screen.queryByTestId(`stats-match-${key}`)).toBeNull()
+      expect(screen.queryByTestId(`stats-${key}Matches`)).toBeNull()
+    }
+  })
+
   // A shortened count must not cost the exact figure: it stays one hover away.
   it('shortens a four-digit count and keeps the exact one on hover', () => {
     render(
@@ -184,16 +210,6 @@ describe('StatsTab', () => {
     const count = screen.getByTestId('stats-discogsMatches')
     expect(count).toHaveTextContent('1.2K')
     expect(hoverTooltip(count)).toEqual('1234')
-  })
-
-  it('tightens the tracking of the big figures, which read too loose as they grow', () => {
-    render(
-      <StatsTab
-        settings={withStats({ conversionCount: 29215, stats: { ...zeroStats, imported: 3071 } })}
-      />,
-    )
-    expect(screen.getByTestId('stats-count')).toHaveClass('text-figure')
-    expect(screen.getByText('3,071')).toHaveClass('tracking-[-0.02em]')
   })
 
   // A five-digit lifetime count is the tab's headline; ungrouped it reads as raw output.

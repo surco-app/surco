@@ -129,8 +129,8 @@
           },
           {
             "t": "Bulk editing",
-            "s": "Edit a whole release's fields at once, with find and replace.",
-            "d": "The fields a release shares, plus find and replace with regex."
+            "s": "Edit several tracks as you edit one, with a pasted release, stars and track numbers.",
+            "d": "With several tracks selected, the editor shows the same fields as with one. Edit the fields a release shares, paste a release, rate them all, number them in list order, and find and replace with regex. A field that differs shows each value."
           },
           {
             "t": "Artwork",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, not v2.4",
             "s": "Writes the tag version CDJs and rekordbox read without surprises.",
-            "d": "So CDJs and rekordbox read it without surprises."
+            "d": "Converting and Update write v2.3, so CDJs and rekordbox read it without surprises. A small edit, like adding a cue, leaves a v2.4 tag as it was."
           },
           {
             "t": "Ratings that round-trip",
@@ -236,8 +236,8 @@
           },
           {
             "t": "What you already have",
-            "s": "Tells you if a track is already in your Apple Music or Engine DJ.",
-            "d": "Tells you if a track is in your Apple Music or Engine DJ, and filters the rest."
+            "s": "Finds a track in every DJ program you use and in Apple Music, and tells you which copy is better.",
+            "d": "In the editor, “In your library” shows each copy of a track from Tracks in your DJ programs and in Apple Music. Each one says if it is the same, better, worse or another version, and a row opens to compare both spectra. The “Better than Music” filter leaves only what sounds better than your Apple Music copy."
           },
           {
             "t": "Bits, checked",
@@ -345,8 +345,8 @@
           },
           {
             "t": "Replaces what you already have",
-            "s": "A better copy takes the old one's place in Apple Music and rekordbox, playlists included.",
-            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one's place in Apple Music and rekordbox, instead of leaving you with two. The track stays in its playlists, with no adding it back to each one by hand, and in Apple Music it keeps its play count and your rating. The Apple Music badge shows what format your copy is in, so you know whether it's worth it."
+            "s": "A better copy takes the old one’s place in Apple Music and your DJ programs, cues included.",
+            "d": "Load another copy of a track you own, in any format including the same one, and it takes the old one’s place in Apple Music, rekordbox, Traktor, Engine DJ, Serato and VirtualDJ, instead of leaving you with two. The track stays in its playlists, and its cues move with the audio when the new copy starts a little earlier or later. Every replaced track waits in “To review” until you check it. In Apple Music it keeps its play count and your rating. Serato keeps it in its crates but loses its stars. The Apple Music badge shows what format your copy is in, so you know whether it’s worth it."
           },
           {
             "t": "Typos and duplicates in your library",
@@ -450,6 +450,7 @@
         "add": "Add the converted track",
         "names": "Carry title, artist, album and genre",
         "follow": "Follow the new track with its cues",
+        "replace": "Replace a track and keep its cues",
         "usb": "USB for Pioneer players",
         "copies": "Backup before writing, and restore",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "In place",
         "sameFolder": "Same folder",
         "keepsOriginal": "Keeps the original",
+        "losesStars": "Loses its stars",
         "engineUsb": "Engine USB",
         "noRestore": "Not in Backups",
         "beta": "Beta",
@@ -883,7 +885,7 @@
         "steps": [
           {
             "lead": "Analyze.",
-            "text": "Open a track's quality section, or analyze the whole queue with the toolbar button or ⌘⇧A."
+            "text": "Open a track's quality section, or analyze the whole queue with the toolbar button or ⇧⌘A."
           },
           {
             "lead": "Read the verdict.",
@@ -942,7 +944,7 @@
         "title": "Convert your tracks",
         "s": "One track or the whole queue, to the format you pick or in its own.",
         "body": [
-          "⌘Enter converts the selected track and ⌘⇧Enter the whole queue, skipping what's already done. If you've filtered the list, only what you see gets converted."
+          "⌘Enter converts the selected track and ⇧⌘Enter the whole queue, skipping what's already done. If you've filtered the list, only what you see gets converted."
         ],
         "steps": [
           {
@@ -961,7 +963,7 @@
         "points": [
           "If the conversion changes an original's audio, Surco keeps a backup first. The mark on the row takes you back to it.",
           "With “Edit the original”, changing the format deletes the original.",
-          "Converting doesn't search your sources. If you want fresh data, run Match first (⌘⇧D)."
+          "Converting doesn't search your sources. If you want fresh data, run Match first (⇧⌘D)."
         ],
         "shot": "convertir-en.webp",
         "shotCaption": "The convert button with its format picker."
@@ -1021,7 +1023,7 @@
           "If the program is open, Surco waits until you close it or offers to close it, and always keeps a backup before writing.",
           "Traktor doesn't re-read the file, it reads its collection.nml. For it to see your new cues, point Surco at your collection in Settings.",
           "Traktor's cues survive conversion across MP3, AIFF, FLAC and WAV, and are only lost on ALAC.",
-          "Load another copy of a track you already have and the button changes to “Replace”, keeping its playlists and cues."
+          "Load another copy of a track you have and the button changes to “Replace”. Its cues follow the audio and it waits in “To review”."
         ],
         "shot": "exportar-en.webp",
         "shotCaption": "Sending the track to Apple Music or exporting the collection."

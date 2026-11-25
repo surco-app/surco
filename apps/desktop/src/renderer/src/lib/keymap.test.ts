@@ -12,6 +12,7 @@ import {
   moveIndex,
   nextColumn,
   nextRegion,
+  ownsKeystroke,
   pageSize,
   regionOf,
 } from './keymap'
@@ -150,6 +151,33 @@ describe('keyToCommandId', () => {
   })
 })
 
+// A checkbox takes no typing, so ⌘Z right after a tick reaches the app, but every bare key
+// stays with it as before: the playlists tree moves its focus between row checkboxes, and
+// Escape or Enter there must not clear the list or mark a cue behind it.
+describe('ownsKeystroke', () => {
+  function box(): HTMLInputElement {
+    const input = document.createElement('input')
+    input.type = 'checkbox'
+    return input
+  }
+
+  it('keeps bare keys, and focus with no key at all, with a focused checkbox', () => {
+    expect(ownsKeystroke(box(), { metaKey: false, ctrlKey: false })).toBe(true)
+    expect(ownsKeystroke(box())).toBe(true)
+  })
+
+  it('lets ⌘ and Ctrl shortcuts through a focused checkbox', () => {
+    expect(ownsKeystroke(box(), { metaKey: true, ctrlKey: false })).toBe(false)
+    expect(ownsKeystroke(box(), { metaKey: false, ctrlKey: true })).toBe(false)
+  })
+
+  it('still keeps every key with a text field and none with a button', () => {
+    const field = document.createElement('input')
+    expect(ownsKeystroke(field, { metaKey: true, ctrlKey: false })).toBe(true)
+    expect(ownsKeystroke(document.createElement('button'))).toBe(false)
+  })
+})
+
 describe('isTypingTarget', () => {
   it('treats text inputs and textareas as typing so their keystrokes are theirs', () => {
     expect(isTypingTarget({ tagName: 'INPUT' })).toBe(true)
@@ -164,6 +192,20 @@ describe('isTypingTarget', () => {
 
   it('treats contenteditable elements as typing', () => {
     expect(isTypingTarget({ tagName: 'DIV', isContentEditable: true })).toBe(true)
+  })
+
+  // A checkbox takes no typing, so treating it as a field swallowed ⌘Z right after ticking a
+  // playlist in the popover, and the tick could not be undone from the keyboard.
+  it('is not typing for a checkbox, which takes no keys but its own Space', () => {
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'checkbox' })).toBe(false)
+  })
+
+  // A radio group moves its choice with the arrows, which the list would otherwise take.
+  it('still treats a radio and text-like inputs as typing', () => {
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'radio' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'text' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'number' })).toBe(true)
+    expect(isTypingTarget({ tagName: 'INPUT', type: 'search' })).toBe(true)
   })
 
   it('is not typing for plain elements or nothing focused', () => {

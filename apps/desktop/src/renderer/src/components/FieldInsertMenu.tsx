@@ -5,8 +5,10 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import type { InsertSource } from '../lib/fieldSpecs'
 import { stripTitleNumberingLoose } from '../lib/hygiene'
+import { LAYER } from '../lib/layers'
+import { menuStep } from '../lib/menuStep'
 import { titleCase } from '../lib/textCase'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { Tooltip } from './Tooltip'
 
 // Re-exported so Field.tsx keeps importing the shape from here while the definition
@@ -58,6 +60,7 @@ export function FieldInsertMenu({
   // Naming lists 35 fields), and placed in the window under the field, right-aligned to it.
   const [pos, setPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  useKeepInWindow(open, pos, menuRef, setPos)
   const caretRef = useRef<{ start: number; end: number } | null>(null)
   const fromMouseRef = useRef(false)
 
@@ -169,12 +172,8 @@ export function FieldInsertMenu({
     )
     if (items.length === 0) return
     const idx = items.indexOf(document.activeElement as HTMLElement)
-    let next = -1
-    if (e.key === 'ArrowDown') next = idx < items.length - 1 ? idx + 1 : 0
-    else if (e.key === 'ArrowUp') next = idx > 0 ? idx - 1 : items.length - 1
-    else if (e.key === 'Home') next = 0
-    else if (e.key === 'End') next = items.length - 1
-    if (next === -1) return
+    const next = menuStep(e.key, idx, items.length)
+    if (next === null) return
     e.preventDefault()
     e.stopPropagation()
     items[next].focus()
@@ -186,6 +185,7 @@ export function FieldInsertMenu({
         ref={triggerRef}
         type="button"
         data-testid={`field-insert-${fieldName}`}
+        data-first-line={firstLine ? 'true' : 'false'}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={tr('editor.fieldActions')}
@@ -222,7 +222,8 @@ export function FieldInsertMenu({
               // A pointer-only click catcher: keyboard users close with Escape or Tab.
               tabIndex={-1}
               onClick={close}
-              className="fixed inset-0 z-50 cursor-default"
+              className="fixed inset-0 cursor-default"
+              style={{ zIndex: LAYER.overlay }}
             />
             <div
               ref={menuRef}
@@ -230,6 +231,7 @@ export function FieldInsertMenu({
               data-testid="field-insert-menu"
               aria-label={tr('editor.fieldActions')}
               onKeyDown={onMenuKeyDown}
+              data-opens={pos.bottom !== undefined ? 'up' : 'down'}
               style={{
                 top: pos.top,
                 bottom: pos.bottom,

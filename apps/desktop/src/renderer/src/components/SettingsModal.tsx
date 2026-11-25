@@ -358,7 +358,7 @@ export function SettingsModal({
           point a single centred row of ten tabs starts to crowd — every label gets its
           full width, and adding a tab costs a row, not horizontal space it doesn't have. */}
       <div className="flex w-[204px] shrink-0 flex-col overflow-y-auto border-r border-[var(--color-line)] bg-[var(--color-ink)] p-3">
-        <label className="mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2.5 focus-within:border-[var(--color-accent)]">
+        <label className="mb-2 flex h-8 shrink-0 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] px-2.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
           <Search
             className="h-3.5 w-3.5 shrink-0 text-fg-faint"
             strokeWidth={2}
@@ -503,6 +503,7 @@ export function SettingsModal({
             role="tabpanel"
             id="settings-tabpanel"
             aria-labelledby={`settings-tab-${entry.id}`}
+            data-pinned-preview={tab === 'cues'}
             className={`${tab === 'cues' ? 'scroll-pt-40 ' : ''}-mr-2 flex-1 overflow-x-hidden overflow-y-auto pr-2 [&_[data-search-id]]:rounded-md [&_[data-search-id]]:outline-1 [&_[data-search-id]]:outline-offset-4 [&_[data-search-id]]:outline-transparent [&_[data-search-id]]:outline-solid [&_[data-search-id]]:transition-[outline-color] [&_[data-search-id]]:duration-500 motion-reduce:[&_[data-search-id]]:transition-none [&_[data-search-hit=true]]:outline-[var(--color-accent)]`}
           >
             <SettingsHintsVisible value={synced.showEditorHints}>

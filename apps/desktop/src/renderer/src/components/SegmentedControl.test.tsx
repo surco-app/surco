@@ -68,7 +68,7 @@ describe('SegmentedControl sliding highlight', () => {
     renderControl()
     const overlay = screen.getByTestId('seg-highlight')
     expect(overlay.style.visibility).toBe('hidden')
-    expect(overlay.className).not.toContain('transition-[clip-path]')
+    expect(overlay).toHaveAttribute('data-settled', 'false')
   })
 
   // Two regressions in one measurement. Rects alone: the settings modal pops in at
@@ -229,8 +229,8 @@ describe('SegmentedControl sliding highlight', () => {
       )
     try {
       renderControl('c')
-      expect(screen.getByRole('group').className).toContain('flex-wrap')
-      expect(screen.getByTestId('seg-highlight').className).toContain('flex-wrap')
+      expect(screen.getByRole('group')).toHaveAttribute('data-wrap', 'true')
+      expect(screen.getByTestId('seg-highlight')).toHaveAttribute('data-wrap', 'true')
       expect(screen.getByTestId('seg-highlight').style.clipPath).toBe(
         'inset(37px 180px 3px 3px round 6px)',
       )

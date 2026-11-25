@@ -99,6 +99,52 @@ describe('repointSerato', () => {
     expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(halfway)
   })
 
+  it('leaves the track alone when Serato already holds the new file, so it never shows twice with its plays and BPM split', async () => {
+    const lib = library({ internal: [['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']]] })
+    const both = databaseOf('Users/dj/Music/A.mp3', 'Users/dj/Music/A.aiff')
+    writeFileSync(join(lib.home.dir, 'database V2'), both)
+    const setBefore = readFileSync(crateFileOf(lib.home, 'Set'))
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: false, reason: 'occupied' }])
+    expect(readFileSync(join(lib.home.dir, 'database V2'))).toEqual(both)
+    expect(readFileSync(crateFileOf(lib.home, 'Set'))).toEqual(setBefore)
+    expect(readdirSync(lib.base)).not.toContain('serato-backups')
+  })
+
+  // The original is retired once database V2 no longer holds it, which never looks in crates:
+  // a crate keeping its old row would be left with a dead entry.
+  it('drops the old row from a crate that already lists the new file, so the track is in it once and never dead', async () => {
+    const lib = library({
+      internal: [
+        ['Set', ['Users/dj/Music/A.mp3', 'Users/dj/Music/B.mp3']],
+        ['Both', ['Users/dj/Music/A.mp3', 'Users/dj/Music/A.aiff']],
+      ],
+    })
+    writeFileSync(
+      join(lib.home.dir, 'database V2'),
+      databaseOf('Users/dj/Music/A.aiff', 'Users/dj/Music/B.mp3'),
+    )
+
+    const results = await repointSerato(
+      [{ from: '/Users/dj/Music/A.mp3', to: '/Users/dj/Music/A.aiff', replaced: true }],
+      lib.deps,
+    )
+
+    expect(results).toEqual([{ written: true }])
+    expect(parseSeratoCrate(readFileSync(crateFileOf(lib.home, 'Set')))).toEqual([
+      'Users/dj/Music/A.aiff',
+      'Users/dj/Music/B.mp3',
+    ])
+    expect(parseSeratoCrate(readFileSync(crateFileOf(lib.home, 'Both')))).toEqual([
+      'Users/dj/Music/A.aiff',
+    ])
+  })
+
   it('waits while Serato is open, since Serato writes its own library over ours when it quits', async () => {
     const lib = library()
 

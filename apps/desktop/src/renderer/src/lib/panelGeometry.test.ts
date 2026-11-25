@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { clampPanelGeometry, DEFAULT_GEOMETRY, MIN_HEIGHT, MIN_WIDTH } from './panelGeometry'
+import {
+  clampPanelGeometry,
+  DEFAULT_GEOMETRY,
+  MIN_HEIGHT,
+  MIN_WIDTH,
+  PANEL_MARGIN,
+} from './panelGeometry'
 
 const viewport = { width: 1440, height: 900 }
 
@@ -34,5 +40,45 @@ describe('clampPanelGeometry', () => {
   it('floors a saved size at the minimums', () => {
     const g = clampPanelGeometry({ x: 0, y: 0, width: 10, height: 10 }, viewport)
     expect(g.size).toEqual({ width: MIN_WIDTH, height: MIN_HEIGHT })
+  })
+})
+
+// A panel that appears far from the button that opened it does not read as that button's
+// panel; with nothing saved it hangs from the button instead of a fixed corner.
+describe('clampPanelGeometry with nothing saved and a button to hang from', () => {
+  const button = { right: 1420, bottom: 44 }
+
+  it('lines its right edge up with the button, below it, at 440 wide', () => {
+    const g = clampPanelGeometry(null, viewport, button)
+    expect(g.size.width).toBe(440)
+    expect(g.pos.x + g.size.width).toBe(button.right)
+    expect(g.pos.y).toBeGreaterThan(button.bottom)
+  })
+
+  it('keeps the right margin when the button sits closer to the edge than that', () => {
+    const g = clampPanelGeometry(null, viewport, { right: 1438, bottom: 44 })
+    expect(g.pos.x + g.size.width).toBe(viewport.width - PANEL_MARGIN)
+  })
+
+  it('stays inside a narrow window with its margin on both sides', () => {
+    const g = clampPanelGeometry(null, { width: 300, height: 900 }, { right: 290, bottom: 44 })
+    expect(g.pos.x).toBeGreaterThanOrEqual(PANEL_MARGIN)
+    expect(g.pos.x + g.size.width).toBeLessThanOrEqual(300 - PANEL_MARGIN)
+    expect(g.size.width).toBeGreaterThanOrEqual(MIN_WIDTH)
+  })
+
+  it('stays above the bottom edge of a short window', () => {
+    const g = clampPanelGeometry(null, { width: 1440, height: 300 }, button)
+    expect(g.pos.y + g.size.height).toBeLessThanOrEqual(300 - PANEL_MARGIN)
+    expect(g.size.height).toBeGreaterThanOrEqual(MIN_HEIGHT)
+  })
+
+  it('still restores a saved geometry untouched by the button', () => {
+    expect(
+      clampPanelGeometry({ x: 100, y: 200, width: 400, height: 500 }, viewport, button),
+    ).toEqual({
+      pos: { x: 100, y: 200 },
+      size: { width: 400, height: 500 },
+    })
   })
 })

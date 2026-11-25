@@ -1,5 +1,107 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Cues speichern und weiter",
+    "items": [
+      {
+        "text": "Wähle beim Speichern der Cues „Speichern und weiter“ im Menü des Buttons, und Surco öffnet den nächsten Track der Liste. Surco merkt sich deine Wahl fürs nächste Mal, und Speichern schließt den Cue-Editor nicht mehr.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "„Vorschlag übernehmen“ setzt die vorgeschlagenen Cues, ohne sie zu speichern. Verschieb sie, wenn du willst, und speichere, wenn du bereit bist.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Egal in welcher Reihenfolge du die Drops markierst, der Start-Cue landet nicht mehr in der Stille vor der Musik.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Der Track, der in Surco läuft, erscheint in macOS mit seinem Cover. Medientasten, AirPods und Apple Watch pausieren ihn oder springen zum nächsten.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Wenn die Dateien einer Playlist nicht mehr auf der Platte sind, sagt die Liste das und zählt, wie viele fehlen. Eine verschobene oder umbenannte Datei erscheint nicht mehr als unlesbar.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Ersetze einen Track durch ein anderes Master desselben Songs, und seine Cues wandern jetzt auch mit dem Audio. Ist Surco sich beim Beat nicht sicher, bleiben sie, wo sie waren. In rekordbox rasten sie nach der Analyse im neuen Raster ein.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Wenn Discogs dich warten lässt, siehst du sofort die Ergebnisse der anderen Kataloge. Surco sucht von selbst erneut bei Discogs, mit einem Countdown, den du per Klick überspringen kannst.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Der Apple-Music-Tab öffnet mit „Zuletzt hinzugefügt“, also dem, was du in den letzten 30 Tagen hinzugefügt hast. Und seine Playlists öffnen sich viel schneller, auch wenn deine Musik auf einem NAS liegt.",
+        "in": "1.44.1"
+      }
+    ]
+  },
+  {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Ersetze einen Track und behalte seine Cues",
+    "items": [
+      {
+        "text": "Ersetze einen Track durch eine bessere Kopie, und seine Cues bleiben in rekordbox, Traktor, Engine DJ, Serato und VirtualDJ auf dem Beat. Surco vergleicht beide Kopien und verschiebt die Cues, wenn die neue etwas früher oder später beginnt. Ist es eine andere Aufnahme, analysieren rekordbox, Engine DJ und VirtualDJ sie neu.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Auch Serato folgt jetzt einem ersetzten Track, mit seinen Cues, seinem Grid und seinen Crates. Er verliert seine Sterne, und Surco sagt es dir vor dem Ersetzen.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Jeder Track, den du ersetzt, erscheint in jedem DJ-Programm unter „Zuletzt hinzugefügt“ in „Zu prüfen“. Ein grünes Zeichen heißt, die Cues sind mit dem Audio mitgewandert, ein gelbes, dass sie geblieben sind. Speichere seine Cues oder drücke „Geprüft“, dann verlässt er die Liste. ⌘Z holt ihn zurück.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Eine Kopie, die eine andere ersetzt, übernimmt von der alten die Tags, die ihr fehlen. Hat sie kein Cover, übernimmt sie auch das.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Der neue Bereich „In deiner Bibliothek“ im Editor findet einen Track aus Tracks in jedem DJ-Programm, das du nutzt, und in Apple Music. Jede Kopie sagt dir, ob sie gleich, besser, schlechter oder eine andere Version ist. Öffne eine Zeile, um beide Spektren zu vergleichen.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music kommt zu den „Suchquellen“ dazu, mit großen Covern. Es funktioniert auch unter Windows, und wenn der Store deines Landes ein Release nicht hat, sucht Surco im britischen und im US-Store.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Mit mehreren ausgewählten Tracks arbeitet der Editor wie mit einem. Bearbeite die Albumfelder aller Tracks, füge ein Release ein, bewerte sie auf einmal oder nummeriere sie in Listenreihenfolge. Ein Feld mit verschiedenen Werten zeigt jeden Wert statt einer Anzahl.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Phrasen-Kommentare können jetzt auch in deine Dateien. Wähle neben „N Kommentare speichern“ die Option „Datei und rekordbox“ und dann „Vor den Kommentar“ oder „Kommentar ersetzen“. Beim Speichern füllt sich der Button, und ein Klick hält ihn an.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Beim Konvertieren bleiben alle deine Tags erhalten, auch die, die Surco nicht zeigt. Felder mit mehreren Werten, etwa zwei Artists oder zwei Genres, behalten jeden davon.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z macht rückgängig, was du in ein Feld getippt hast, und ⇧⌘Z stellt es wieder her. Kommentar behält seine Zeilenumbrüche, und Return beginnt eine neue Zeile.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "„Nummern zeigen“ nummeriert auch Tracks, in der Reihenfolge, in der du sie hinzugefügt hast. Jeder Tab behält seine eigene Suche, was du in einem DJ-Programm tippst, bleibt also dort.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Das automatische Matching lässt Tracks in Ruhe, die du von Hand bearbeitet hast. Auf der Seite eines Bandcamp-Labels landet das Label nicht mehr als Artist.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "„Frühere Tags wiederherstellen“ liegt jetzt im ⋯-Menü des Editors statt unter jedem Feld. „Dateipfad kopieren“ findest du dort auch.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ vergrößert das Fenster mit dem Zoom und hält beim größten Zoom an, der auf deinen Bildschirm passt.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Bring deine Phrasen nach rekordbox",
@@ -678,7 +780,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "Der große Cue-Editor öffnet sich mit ⌘⇧C für den ausgewählten Track. Seine Buttons unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben nach Position im Track“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
+        "text": "Der große Cue-Editor öffnet sich mit ⇧⌘C für den ausgewählten Track. Seine Buttons unten stehen in Gruppen, Pads, CALL, Raster und Zoom, und „Alle Cues löschen“ steht allein am Ende. Der Zoom geht bis auf einen Takt heran, „Übernehmen und speichern“ speichert die Vorschläge von „Auto-Markieren“ mit einem Klick in deiner DJ-Software, und mit „Buchstaben nach Position im Track“ zeigt ein leeres Pad, welchen Buchstaben der Cue bekommt.",
         "in": "1.27.3"
       },
       {

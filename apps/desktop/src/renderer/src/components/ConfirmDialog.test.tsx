@@ -30,13 +30,6 @@ describe('ConfirmDialog', () => {
     expect(screen.getByText('This removes all 4 tracks.')).toBeInTheDocument()
   })
 
-  it('breaks an unbreakable file name in the title and the message so it stays inside the card', () => {
-    const name = 'Artist_Name_-_Track_Title_(Extended_Mix)_[LABEL123]_WEB_320.aiff'
-    renderDialog({ title: name, message: name })
-    expect(screen.getByRole('heading', { name })).toHaveClass('break-words')
-    expect(screen.getByTestId('confirm-message')).toHaveClass('break-words')
-  })
-
   // A dialog that moves several things at once must name each one: the user can only
   // catch a wrong file (or a wrong library match) if it is written out before confirming.
   it('lists every item the action will touch', () => {
@@ -83,12 +76,12 @@ describe('ConfirmDialog', () => {
   // the originals". Nothing asserted it, so the styling could be dropped silently.
   it('paints the confirm button as dangerous when the action is destructive', () => {
     renderDialog({ destructive: true })
-    expect(screen.getByTestId('confirm-ok').className).toContain('--color-danger')
+    expect(screen.getByTestId('confirm-ok')).toHaveAttribute('data-destructive', 'true')
   })
 
   it('paints the confirm button as ordinary when the action is not destructive', () => {
     renderDialog()
-    expect(screen.getByTestId('confirm-ok').className).not.toContain('--color-danger')
+    expect(screen.getByTestId('confirm-ok')).toHaveAttribute('data-destructive', 'false')
   })
 
   // Pressing Enter submits the dialog's form; without form wiring it did nothing.

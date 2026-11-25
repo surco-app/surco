@@ -40,7 +40,7 @@ import type { Command } from '../lib/commands'
 import type { LibrarySource } from '../lib/librarySource'
 import type { FilterSelection, FilterTab, TrackSort } from '../lib/triage'
 import type { TrackItem } from '../types'
-import { type MenuPlacement, placeMenu, useCloseOnMove } from './menuPlacement'
+import { type MenuPlacement, placeMenu, useCloseOnMove, useKeepInWindow } from './menuPlacement'
 import { ActiveFilters, QualityFilterBar } from './QualityFilterBar'
 import { SearchInput } from './SearchInput'
 import { Select } from './Select'
@@ -146,6 +146,7 @@ function MenuAction({
       type="button"
       role="menuitem"
       data-testid={testid}
+      data-destructive={danger ? 'true' : 'false'}
       disabled={disabled}
       onClick={onClick}
       aria-label={label}
@@ -176,6 +177,11 @@ function MenuAction({
 // the list actions. Pure presentation — every handler is owned by App, which is where the
 // state they act on lives. Split out of App because it was 175 lines of markup wedged into
 // a component that already had plenty to do; nothing here decides anything.
+// The placeholder header drawn while a playlist is read takes these from here, so the rows
+// under it start where the rows under the real header will.
+export const LOCATION_BOX = 'mx-1.5 mt-1.5 block py-0.5 text-xs'
+export const SEARCH_ROW = 'flex items-center gap-1.5 px-1.5 pt-2 compact:pt-1.5'
+
 export function TrackListHeader({
   tr,
   hintFor,
@@ -235,6 +241,7 @@ export function TrackListHeader({
   // and anything else layered over the list, and placed from its toggle in the window.
   const [menuPos, setMenuPos] = useState<MenuPlacement | null>(null)
   useCloseOnMove(open, menuRef, setOpen)
+  useKeepInWindow(open, menuPos, menuRef, setMenuPos)
   const [scrolled, setScrolled] = useState(false)
   const [viewMenu, setViewMenu] = useState<{ x: number; y: number } | null>(null)
 
@@ -301,12 +308,12 @@ export function TrackListHeader({
           type="button"
           data-testid="track-list-location"
           onClick={onOpenLocation}
-          className="press mx-1.5 mt-1.5 block max-w-[calc(100%-0.75rem)] truncate rounded-md px-1.5 py-0.5 text-left text-xs font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+          className={`press ${LOCATION_BOX} max-w-[calc(100%-0.75rem)] truncate rounded-md px-1.5 text-left font-medium text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg`}
         >
           {location}
         </button>
       )}
-      <div className="flex items-center gap-1.5 px-1.5 pt-2 compact:pt-1.5">
+      <div className={SEARCH_ROW}>
         <SearchInput
           className="flex-1"
           testid="track-search"
@@ -413,10 +420,6 @@ export function TrackListHeader({
           </QualityFilterBar>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
-          <span
-            aria-hidden="true"
-            className="mx-0.5 h-5 w-px shrink-0 self-center bg-[var(--color-line)]"
-          />
           {tab === null && (
             <button
               type="button"
@@ -425,127 +428,118 @@ export function TrackListHeader({
               aria-label={tr('header.add')}
               className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
             >
-              <FilePlus className="h-3.5 w-3.5" aria-hidden="true" />
+              <FilePlus className="h-4 w-4" aria-hidden="true" />
               <Tooltip label={tr('header.add')} hint={hintFor('add')} />
-            </button>
-          )}
-          {tracks.length > 0 && (
-            <button
-              type="button"
-              data-testid="select-all"
-              onClick={onSelectAllTracks}
-              aria-label={tr('header.selectAll')}
-              className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg"
-            >
-              <SquareCheckBig className="h-3.5 w-3.5" aria-hidden="true" />
-              <Tooltip label={tr('header.selectAll')} hint={hintFor('select-all')} />
             </button>
           )}
           {listAction}
           {tracks.length > 0 && (
-            <>
+            <div ref={moreRef} className="shrink-0">
               <button
                 type="button"
-                data-testid="remove-selected"
-                onClick={onRemoveSelected}
-                disabled={!selectedId && selectedIds.length === 0}
-                aria-label={removeLabel ?? tr('trackList.context.remove')}
-                className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg disabled:opacity-40"
+                data-testid="list-actions-more"
+                ref={toggleRef}
+                onClick={toggleMenu}
+                aria-label={tr('header.moreActions')}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
               >
-                <ListMinus className="h-3.5 w-3.5" aria-hidden="true" />
-                <Tooltip label={removeLabel ?? tr('trackList.context.remove')} />
+                <Ellipsis className="h-4 w-4" aria-hidden="true" />
+                <Tooltip label={tr('header.moreActions')} />
               </button>
-              <div ref={moreRef} className="shrink-0">
-                <button
-                  type="button"
-                  data-testid="list-actions-more"
-                  ref={toggleRef}
-                  onClick={toggleMenu}
-                  aria-label={tr('header.moreActions')}
-                  aria-haspopup="menu"
-                  aria-expanded={open}
-                  className="press relative flex h-8 w-8 compact:h-7 shrink-0 items-center justify-center rounded-md text-fg-faint outline-none transition-colors hover:bg-[var(--color-hover)] hover:text-fg aria-expanded:bg-[var(--color-hover)] aria-expanded:text-fg"
-                >
-                  <Ellipsis className="h-3.5 w-3.5" aria-hidden="true" />
-                  <Tooltip label={tr('header.moreActions')} />
-                </button>
-                {open &&
-                  menuPos &&
-                  createPortal(
-                    <div
-                      ref={menuRef}
-                      role="menu"
-                      aria-label={tr('header.moreActions')}
-                      onKeyDown={onMenuKeyDown}
-                      style={{
-                        top: menuPos.top,
-                        bottom: menuPos.bottom,
-                        right: menuPos.right,
-                        maxHeight: menuPos.maxHeight,
-                      }}
-                      className={`animate-pop-flat fixed z-50 w-max max-w-[calc(100vw-1rem)] overflow-y-auto ${menuPos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
-                    >
+              {open &&
+                menuPos &&
+                createPortal(
+                  <div
+                    ref={menuRef}
+                    role="menu"
+                    aria-label={tr('header.moreActions')}
+                    onKeyDown={onMenuKeyDown}
+                    style={{
+                      top: menuPos.top,
+                      bottom: menuPos.bottom,
+                      right: menuPos.right,
+                      maxHeight: menuPos.maxHeight,
+                    }}
+                    className={`animate-pop-flat fixed z-50 w-max max-w-[calc(100vw-1rem)] overflow-y-auto ${menuPos.bottom !== undefined ? 'origin-bottom-right' : 'origin-top-right'} rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-panel)] p-1 shadow-[var(--shadow-float)]`}
+                  >
+                    <MenuAction
+                      testid="select-all"
+                      icon={SquareCheckBig}
+                      label={tr('header.selectAll')}
+                      hint={hintFor('select-all')}
+                      onClick={() => run(onSelectAllTracks)}
+                    />
+                    <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                    <MenuAction
+                      testid="list-review-open"
+                      icon={SpellCheck}
+                      label={tr('header.menu.review')}
+                      detail={reviewDetail}
+                      hint={hintFor('list-review')}
+                      disabled={!canReviewList}
+                      onClick={() => run(onReviewList)}
+                    />
+                    {duplicates && (
                       <MenuAction
-                        testid="list-review-open"
-                        icon={SpellCheck}
-                        label={tr('header.menu.review')}
-                        detail={reviewDetail}
-                        hint={hintFor('list-review')}
+                        testid="music-duplicates-open"
+                        icon={Copy}
+                        label={tr('header.menu.showDuplicates')}
+                        detail={duplicates.detail}
                         disabled={!canReviewList}
-                        onClick={() => run(onReviewList)}
+                        onClick={() => run(duplicates.onShow)}
                       />
-                      {duplicates && (
-                        <MenuAction
-                          testid="music-duplicates-open"
-                          icon={Copy}
-                          label={tr('header.menu.showDuplicates')}
-                          detail={duplicates.detail}
-                          disabled={!canReviewList}
-                          onClick={() => run(duplicates.onShow)}
-                        />
-                      )}
-                      <MenuAction
-                        testid="fill-all"
-                        icon={Tag}
-                        label={tr('header.menu.fill')}
-                        hint={hintFor('fill-all')}
-                        onClick={() => run(onFillAll)}
-                      />
-                      <MenuAction
-                        testid="open-find-replace"
-                        icon={Replace}
-                        label={tr('header.menu.findReplace')}
-                        hint={hintFor('find-replace')}
-                        onClick={() => run(onFindReplace)}
-                      />
-                      {listTools
-                        .filter(({ command }) => !command.id.startsWith('export'))
-                        .map(listTool)}
-                      {exportTools.length > 0 && (
-                        <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-                      )}
-                      {exportTools.map(listTool)}
+                    )}
+                    <MenuAction
+                      testid="fill-all"
+                      icon={Tag}
+                      label={tr('header.menu.fill')}
+                      hint={hintFor('fill-all')}
+                      onClick={() => run(onFillAll)}
+                    />
+                    <MenuAction
+                      testid="open-find-replace"
+                      icon={Replace}
+                      label={tr('header.menu.findReplace')}
+                      hint={hintFor('find-replace')}
+                      onClick={() => run(onFindReplace)}
+                    />
+                    {listTools
+                      .filter(({ command }) => !command.id.startsWith('export'))
+                      .map(listTool)}
+                    {exportTools.length > 0 && (
                       <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
-                      <MenuAction
-                        testid="trash-selected"
-                        icon={Trash2}
-                        label={tr('header.menu.trash')}
-                        danger
-                        disabled={!selectedId && selectedIds.length === 0}
-                        onClick={() => run(onTrashSelected)}
-                      />
-                      <MenuAction
-                        testid="clear-all"
-                        icon={ListX}
-                        label={tr('header.menu.clear')}
-                        danger
-                        onClick={() => run(onClearAll)}
-                      />
-                    </div>,
-                    document.body,
-                  )}
-              </div>
-            </>
+                    )}
+                    {exportTools.map(listTool)}
+                    <hr className="my-1 h-px border-0 bg-[var(--color-line)]" />
+                    <MenuAction
+                      testid="remove-selected"
+                      icon={ListMinus}
+                      label={removeLabel ?? tr('trackList.context.remove')}
+                      hint={hintFor('remove')}
+                      disabled={!selectedId && selectedIds.length === 0}
+                      onClick={() => run(onRemoveSelected)}
+                    />
+                    <MenuAction
+                      testid="trash-selected"
+                      icon={Trash2}
+                      label={tr('header.menu.trash')}
+                      danger
+                      disabled={!selectedId && selectedIds.length === 0}
+                      onClick={() => run(onTrashSelected)}
+                    />
+                    <MenuAction
+                      testid="clear-all"
+                      icon={ListX}
+                      label={tr('header.menu.clear')}
+                      danger
+                      onClick={() => run(onClearAll)}
+                    />
+                  </div>,
+                  document.body,
+                )}
+            </div>
           )}
         </div>
       </div>

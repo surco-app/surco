@@ -23,6 +23,10 @@ export interface KeepContext {
   // A file that stays on its path, playing in Music while Music rewrites it: short of
   // room it is not sent to the system Trash, which would take it from under the entry.
   staysInPlace?: boolean
+  // A rename about to land on this path: short of room, the system Trash is handed back
+  // here instead of taking the file now, for the caller to send it there once the new
+  // file is in its place (see landOverTrashed).
+  trashOnceReplaced?: (trash: (path: string) => Promise<void>) => void
   // The original a conversion writes over. Under 'never' it is kept anyway until the
   // checks of the new file answer (settleHeldOriginal), which happens after it is gone.
   untilChecked?: boolean
@@ -107,8 +111,10 @@ export function policyKeeper(
       return holdUntilChecked(stash, path, reason, outputPath, ctx)
     }
     const kept = await stash(path, reason, outputPath, ctx)
-    if (!kept && !ctx?.regardlessOfPolicy && !ctx?.staysInPlace && noRoom && existsSync(path))
-      await noRoom(path)
+    if (!kept && !ctx?.regardlessOfPolicy && !ctx?.staysInPlace && noRoom && existsSync(path)) {
+      if (ctx?.trashOnceReplaced) ctx.trashOnceReplaced(noRoom)
+      else await noRoom(path)
+    }
     return kept
   }
 }

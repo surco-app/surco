@@ -133,16 +133,17 @@ export function ShortcutsTab({ synced, patch, bindings, conflictIds }: Props): R
             onKeyDown={isRecording ? (e) => captureChord(def.id, e) : undefined}
             onBlur={() => isRecording && setRecording(null)}
             aria-pressed={isRecording}
-            className={`press min-w-[6rem] rounded-md border px-2.5 py-1 text-center font-mono text-xs ${
+            aria-label={isRecording ? tr('settings.shortcuts.recording') : undefined}
+            className={`press min-w-[4.5rem] rounded-md border px-2.5 py-1 text-center text-sm tracking-wide ${
               isRecording
                 ? 'border-[var(--color-accent)] text-[var(--color-accent)]'
                 : conflictIds.has(def.id)
                   ? 'border-danger text-danger'
-                  : 'border-[var(--color-line-strong)] text-fg-muted hover:text-fg'
+                  : 'border-[var(--color-line-strong)] text-fg'
             }`}
           >
             {isRecording
-              ? tr('settings.shortcuts.recording')
+              ? '…'
               : chord.length
                 ? formatShortcut(chord, isMac)
                 : tr('settings.shortcuts.unbound')}

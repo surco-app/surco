@@ -16,7 +16,13 @@ export function virtualdjRead(host: VirtualdjPlaylistsHost): DjReadMain {
     tree: () => readVirtualdj(host.roots(), 'tree', undefined),
     recentCount: () => readVirtualdj(host.roots(), 'recentCount', undefined),
     trackCount: () => readVirtualdj(host.roots(), 'trackCount', undefined),
-    collection: () => readVirtualdj(host.roots(), 'collection', undefined),
+    // Update retags the copy the editor found in this collection, and main writes only
+    // files it granted.
+    collection: async () => {
+      const rows = await readVirtualdj(host.roots(), 'collection', undefined)
+      host.allowMedia?.(rows.flatMap((r) => (r.path ? [r.path] : [])))
+      return rows
+    },
     playlist: async (id: string) => {
       const entries = await readVirtualdj(host.roots(), 'playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))

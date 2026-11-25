@@ -1,6 +1,7 @@
 import { basename, extname } from 'node:path'
 import type { SourceNode } from '../shared/types'
 import { rekordboxShiftOfFileIfKnown } from './rekordboxTimeline'
+import { seratoLeadOfFile } from './seratoClock'
 import { seratoTrackCuesOf } from './seratoCueSource'
 import { type SeratoLibrary, seratoTree } from './seratoLibrary'
 import { readSeratoTrack } from './seratoTags'
@@ -24,13 +25,18 @@ export async function seratoExportMarks(file: string): Promise<SeratoMarks | nul
   const track = readSeratoTrack(file)
   if (!track) return null
   const read = await seratoTrackCuesOf(`serato:${file}`, track)
+  const lead = await seratoLeadOfFile(file, track.sampleRate)
+  // The editor shows a cue Serato keeps inside the MP3 lead at 0, but rekordbox
+  // adds a lead of its own on export, so the clamp would make it play late.
+  const onSerato = new Map((track.markers?.cues ?? []).map((c) => [String(c.index), c.ms - lead]))
+  const cues = read.cues.map((c) => ({ ...c, ms: onSerato.get(c.id) ?? c.ms }))
   const delta = await rekordboxShiftOfFileIfKnown(file, track.sampleRate)
   const facts = {
     lengthSec: Math.round(track.durationMs / 1000),
     sampleRate: track.sampleRate,
     trackNo: track.trackNo,
   }
-  return { ...foreignMarks(read, delta), ...facts }
+  return { ...foreignMarks({ ...read, cues }, delta), ...facts }
 }
 
 interface PickedCrate {

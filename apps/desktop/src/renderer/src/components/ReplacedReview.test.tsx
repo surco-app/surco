@@ -34,7 +34,7 @@ function setup() {
   const reportUndo = vi.fn((_message: string, _onUndo: () => void) => dismiss)
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ToastProvider value={{ reportError: vi.fn(), reportUndo }}>
+      <ToastProvider value={{ reportError: vi.fn(), reportNotice: vi.fn(), reportUndo }}>
         <ReviewedButton path="/m/new.flac" name="Name" />
       </ToastProvider>
     </QueryClientProvider>,
@@ -97,7 +97,7 @@ describe('ReviewedButton', () => {
     }
     render(
       <QueryClientProvider client={new QueryClient()}>
-        <ToastProvider value={{ reportError: vi.fn(), reportUndo }}>
+        <ToastProvider value={{ reportError: vi.fn(), reportNotice: vi.fn(), reportUndo }}>
           <ReviewedButton path={ENTRY.newPath} name="One" />
           <ReviewedButton path={other.newPath} name="Two" />
         </ToastProvider>

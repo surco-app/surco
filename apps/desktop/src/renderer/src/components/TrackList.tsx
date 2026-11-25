@@ -31,6 +31,7 @@ import type { ReplaceShift } from '../../../shared/replaceShift'
 import { matchChord } from '../../../shared/shortcutDefaults'
 import { type Chord, eventToChord } from '../../../shared/shortcuts'
 import type { OutputFormat } from '../../../shared/types'
+import { useFoldedMarks } from '../hooks/useFoldedMarks'
 import { useMiddleTruncatedTitle } from '../hooks/useMiddleTruncatedTitle'
 import { useStableCallback } from '../hooks/useStableCallback'
 import { activeCleanups } from '../lib/autoClean'
@@ -62,12 +63,15 @@ import { sourceFormat, type TrackQuality, trackQuality, unanalysedIn } from '../
 import type { TrackItem } from '../types'
 import { CleanSpark } from './CleanSpark'
 import {
+  COVER_SIZE,
   CoverPlaceholder,
   listRowClass,
   PILL_TEXT,
   ROW_DETAIL,
   ROW_TITLE,
   ROW_TRAILING,
+  ROW_WAVE_HEIGHT,
+  rowTextHeight,
   ToneBadge,
   TonePill,
 } from './ListRow'
@@ -300,7 +304,9 @@ function QualityPill({
         </span>
       )}
       <Tooltip label={label} align="end" scope="dot" />
-      <span className="sr-only">{label}</span>
+      <span data-testid="track-quality-label" className="sr-only">
+        {label}
+      </span>
     </TonePill>
   )
 }
@@ -440,9 +446,11 @@ const TrackRow = memo(function TrackRow({
   const format = sourceFormat(t)
   const readFailedLabel = t.analyzeFailed
     ? tr('trackList.audioReadFailed')
-    : t.metaReadFailed
-      ? tr('trackList.metaReadFailed')
-      : ''
+    : t.metaFileMissing
+      ? tr('errors.fileMissing')
+      : t.metaReadFailed
+        ? tr('trackList.metaReadFailed')
+        : ''
   const backupLabel =
     backupAt === undefined
       ? ''
@@ -566,6 +574,22 @@ const TrackRow = memo(function TrackRow({
   }
   const reviewPending = !t.autoMatched && t.matchReview && !t.matched
   const cleaned = activeCleanups(t).length > 0
+  const marksRef = useRef<HTMLSpanElement>(null)
+  const foldedMarks = useFoldedMarks(
+    marksRef,
+    [
+      readFailedLabel,
+      unsaved,
+      played,
+      backupAt,
+      t.autoMatched,
+      cleaned,
+      duplicate?.rank,
+      matched,
+      replaced !== undefined,
+      t.verification?.status,
+    ].join('|'),
+  )
   const stage = t.status === 'processing' ? t.stage : undefined
   const converting = stage !== undefined
   const stageLabel = stage
@@ -743,6 +767,7 @@ const TrackRow = memo(function TrackRow({
           // just left trails behind a held key. Only the swipe position eases, and only the
           // settle to Remove or back to 0: while a swipe's wheel events arrive the row follows
           // the fingers with no easing (inline transition: none).
+          data-waves={showWaves ? 'true' : 'false'}
           className={`${listRowClass(primary, selected, !showWaves)}${outsideFilter && !selected ? ' opacity-50' : ''}`}
         >
           {/* Severity stripe at the left edge: ambient, scannable — a page of rows shows which
@@ -780,7 +805,8 @@ const TrackRow = memo(function TrackRow({
                 // which, combined with content-visibility below, lands mid-scroll and janks.
                 loading="lazy"
                 decoding="async"
-                className={`${showWaves ? 'h-16 w-16 compact:h-12 compact:w-12' : 'h-10 w-10 compact:h-8 compact:w-8'} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
+                data-waves={showWaves ? 'true' : 'false'}
+                className={`${COVER_SIZE[showWaves ? 'large' : 'medium']} object-cover outline outline-1 -outline-offset-1 outline-on-scrim/10 transition-[border-radius] duration-120 ${
                   converting ? 'rounded-full' : 'rounded-md'
                 }`}
               />
@@ -794,7 +820,7 @@ const TrackRow = memo(function TrackRow({
             {!converting && position !== undefined && (
               <span
                 data-testid="track-number"
-                className="pointer-events-none absolute bottom-0.5 left-0.5 min-w-3.5 rounded bg-scrim/65 px-0.5 text-center text-label font-semibold leading-3.5 tabular-nums text-on-scrim"
+                className="pointer-events-none absolute bottom-0.5 left-0.5 min-w-3.5 rounded bg-scrim/80 px-0.5 text-center text-label font-semibold leading-3.5 tabular-nums text-on-scrim"
               >
                 {position}
               </span>
@@ -816,9 +842,7 @@ const TrackRow = memo(function TrackRow({
               nothing. */}
           <span
             data-fit
-            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${
-              showWaves ? 'h-16 compact:h-[52px]' : 'h-10 compact:h-9'
-            }`}
+            className={`relative ml-0.5 flex min-w-0 flex-1 flex-col justify-between ${rowTextHeight(showWaves)}`}
           >
             <span className="flex flex-col gap-px">
               {/* The duration rides the title line, the way Mail puts the time beside the
@@ -852,7 +876,7 @@ const TrackRow = memo(function TrackRow({
                 </span>
               </span>
               <span data-testid="track-detail-line" className="flex h-4 items-center gap-2">
-                <span className={ROW_DETAIL}>
+                <span className={ROW_DETAIL.replace('min-w-0', 'min-w-12')}>
                   <span
                     data-testid="track-artist"
                     dir="auto"
@@ -894,129 +918,162 @@ const TrackRow = memo(function TrackRow({
                     {note.text}
                   </span>
                 )}
-                {/* A failed tag read leaves the row showing only its file-name parse; the mark
-                    tells that apart from a file that genuinely carries no tags. */}
-                {readFailedLabel && (
-                  <span
-                    data-testid={t.analyzeFailed ? 'track-audio-failed' : 'track-meta-failed'}
-                    className="group/dot relative flex shrink-0 items-center text-warn"
-                  >
-                    <TriangleAlert className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={readFailedLabel} align="end" scope="dot" />
-                    <span className="sr-only">{readFailedLabel}</span>
-                  </span>
-                )}
-                {/* The re-read after converting found something wrong: the same amber as the
-                    batch line's "no cuadran", so the rows it counts are found by eye. */}
-                {t.verification?.status === 'mismatch' && (
-                  <span className="group/dot relative flex shrink-0 items-center">
+                <span
+                  ref={marksRef}
+                  data-testid="track-marks"
+                  className="relative flex h-4 min-w-0 flex-wrap items-center gap-x-2 overflow-hidden"
+                >
+                  {/* A failed tag read leaves the row showing only its file-name parse; the mark
+                      tells that apart from a file that genuinely carries no tags. */}
+                  {readFailedLabel && (
                     <span
-                      data-testid="verify-dot"
+                      data-testid={t.analyzeFailed ? 'track-audio-failed' : 'track-meta-failed'}
+                      data-mark-label={readFailedLabel}
+                      className="group/dot relative flex shrink-0 items-center text-warn"
+                    >
+                      <TriangleAlert className="h-3 w-3" aria-hidden="true" />
+                      <Tooltip label={readFailedLabel} align="end" scope="dot" />
+                      <span className="sr-only">{readFailedLabel}</span>
+                    </span>
+                  )}
+                  {/* The re-read after converting found something wrong: the same amber as the
+                      batch line's "no cuadran", so the rows it counts are found by eye. */}
+                  {t.verification?.status === 'mismatch' && (
+                    <span
+                      data-mark-label={tr('trackList.verifyMismatch')}
+                      className="group/dot relative flex shrink-0 items-center"
+                    >
+                      <span
+                        data-testid="verify-dot"
+                        role="img"
+                        aria-label={tr('trackList.verifyMismatch')}
+                        className="h-1.5 w-1.5 rounded-full bg-warn"
+                      />
+                      <Tooltip label={tr('trackList.verifyMismatch')} align="end" scope="dot" />
+                    </span>
+                  )}
+                  {unsaved && (
+                    <span
+                      data-testid="track-unsaved"
+                      data-mark-label={tr('trackList.unsaved')}
+                      className="group/dot relative flex shrink-0 items-center"
+                    >
+                      <span
+                        aria-hidden
+                        className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
+                      />
+                      <Tooltip label={tr('trackList.unsaved')} align="end" scope="dot" />
+                      <span className="sr-only">{tr('trackList.unsaved')}</span>
+                    </span>
+                  )}
+                  {played && (
+                    <span
+                      data-testid="track-played"
+                      data-mark-label={tr('trackList.played')}
+                      className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                    >
+                      <Headphones className="h-3 w-3" aria-hidden="true" />
+                      <Tooltip label={tr('trackList.played')} align="end" scope="dot" />
+                      <span className="sr-only">{tr('trackList.played')}</span>
+                    </span>
+                  )}
+                  {backupAt !== undefined && (
+                    <span
+                      data-testid="track-backup"
+                      data-mark-label={backupLabel}
+                      data-backup-mark
+                      className="group/dot relative flex shrink-0 items-center text-fg-faint"
+                    >
+                      <Undo2 className="h-3 w-3" aria-hidden="true" />
+                      <Tooltip label={backupLabel} align="end" scope="dot" />
+                      <span className="sr-only">{backupLabel}</span>
+                    </span>
+                  )}
+                  {t.autoMatched ? (
+                    <span
+                      data-testid="track-automatched"
+                      data-mark-label={autoMatchLabel}
+                      data-confidence="high"
+                      className="group/dot relative flex shrink-0 items-center text-fg-dim"
+                    >
+                      <Spark />
+                      <Tooltip label={autoMatchLabel} align="end" scope="dot" />
+                      <span className="sr-only">{autoMatchLabel}</span>
+                    </span>
+                  ) : (
+                    reviewPending && <span className="w-3 shrink-0" />
+                  )}
+                  {cleaned && (
+                    <span
+                      data-testid="track-cleaned"
+                      data-mark-label={tr('trackList.cleaned')}
+                      className="group/dot relative flex shrink-0 items-center text-good"
+                    >
+                      <CleanSpark />
+                      <Tooltip label={tr('trackList.cleaned')} align="end" scope="dot" />
+                      <span className="sr-only">{tr('trackList.cleaned')}</span>
+                    </span>
+                  )}
+                  {duplicate && (
+                    <span
+                      data-testid="track-duplicate"
+                      data-mark-label={duplicateLabel}
+                      data-rank={duplicate.rank}
+                      className={`group/dot relative flex shrink-0 items-center ${duplicate.rank === 'best' ? 'text-good' : 'text-fg-faint'}`}
+                    >
+                      {duplicate.rank === 'best' ? (
+                        <CopyCheck className="h-3 w-3" aria-hidden="true" />
+                      ) : duplicate.rank === 'worse' ? (
+                        <Copy className="h-3 w-3" aria-hidden="true" />
+                      ) : (
+                        <CopyMinus className="h-3 w-3" aria-hidden="true" />
+                      )}
+                      <Tooltip label={duplicateLabel} align="end" scope="dot" />
+                      <span className="sr-only">{duplicateLabel}</span>
+                    </span>
+                  )}
+                  {/* A fixed slot, right-aligned under the duration, so the two read as one
+                      trailing column and the review sparkle's place never moves. The pill fills the
+                      slot, so a narrow WAV leaves no gap before the key and every key sits in one column. */}
+                  {matched && (
+                    <span
+                      data-testid="track-matching"
+                      data-mark-label={tr('trackList.matchingPartner')}
+                      className="flex shrink-0 items-center"
+                    >
+                      <MatchingIcon size={12} className="text-[var(--color-accent)]" />
+                      <span className="sr-only">{tr('trackList.matchingPartner')}</span>
+                    </span>
+                  )}
+                  {replaced && (
+                    <span
+                      data-testid="track-replaced"
+                      data-mark-label={tr(
+                        'moved' in replaced ? 'trackList.cuesMoved' : 'trackList.cuesNotMoved',
+                      )}
+                      data-state={'moved' in replaced ? 'moved' : 'unmoved'}
                       role="img"
-                      aria-label={tr('trackList.verifyMismatch')}
-                      className="h-1.5 w-1.5 rounded-full bg-warn"
-                    />
-                    <Tooltip label={tr('trackList.verifyMismatch')} align="end" scope="dot" />
-                  </span>
-                )}
-                {unsaved && (
+                      aria-label={tr(
+                        'moved' in replaced ? 'trackList.cuesMoved' : 'trackList.cuesNotMoved',
+                      )}
+                      className="flex shrink-0 items-center"
+                    >
+                      {'moved' in replaced ? (
+                        <CircleCheck className="h-3 w-3 text-good" aria-hidden="true" />
+                      ) : (
+                        <CircleAlert className="h-3 w-3 text-warn" aria-hidden="true" />
+                      )}
+                    </span>
+                  )}
+                </span>
+                {foldedMarks.length > 0 && (
                   <span
-                    data-testid="track-unsaved"
-                    className="group/dot relative flex shrink-0 items-center"
+                    data-testid="track-marks-more"
+                    aria-hidden="true"
+                    className="group/dot relative shrink-0 text-label font-semibold leading-4 text-fg-faint"
                   >
-                    <span
-                      aria-hidden
-                      className="h-1.5 w-1.5 rounded-full bg-[var(--color-accent)]"
-                    />
-                    <Tooltip label={tr('trackList.unsaved')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.unsaved')}</span>
-                  </span>
-                )}
-                {played && (
-                  <span
-                    data-testid="track-played"
-                    className="group/dot relative flex shrink-0 items-center text-fg-faint"
-                  >
-                    <Headphones className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={tr('trackList.played')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.played')}</span>
-                  </span>
-                )}
-                {backupAt !== undefined && (
-                  <span
-                    data-testid="track-backup"
-                    data-backup-mark
-                    className="group/dot relative flex shrink-0 items-center text-fg-faint"
-                  >
-                    <Undo2 className="h-3 w-3" aria-hidden="true" />
-                    <Tooltip label={backupLabel} align="end" scope="dot" />
-                    <span className="sr-only">{backupLabel}</span>
-                  </span>
-                )}
-                {t.autoMatched ? (
-                  <span
-                    data-testid="track-automatched"
-                    data-confidence="high"
-                    className="group/dot relative flex shrink-0 items-center text-fg-dim"
-                  >
-                    <Spark />
-                    <Tooltip label={autoMatchLabel} align="end" scope="dot" />
-                    <span className="sr-only">{autoMatchLabel}</span>
-                  </span>
-                ) : (
-                  reviewPending && <span className="w-3 shrink-0" />
-                )}
-                {cleaned && (
-                  <span
-                    data-testid="track-cleaned"
-                    className="group/dot relative flex shrink-0 items-center text-good"
-                  >
-                    <CleanSpark />
-                    <Tooltip label={tr('trackList.cleaned')} align="end" scope="dot" />
-                    <span className="sr-only">{tr('trackList.cleaned')}</span>
-                  </span>
-                )}
-                {duplicate && (
-                  <span
-                    data-testid="track-duplicate"
-                    data-rank={duplicate.rank}
-                    className={`group/dot relative flex shrink-0 items-center ${duplicate.rank === 'best' ? 'text-good' : 'text-fg-faint'}`}
-                  >
-                    {duplicate.rank === 'best' ? (
-                      <CopyCheck className="h-3 w-3" aria-hidden="true" />
-                    ) : duplicate.rank === 'worse' ? (
-                      <Copy className="h-3 w-3" aria-hidden="true" />
-                    ) : (
-                      <CopyMinus className="h-3 w-3" aria-hidden="true" />
-                    )}
-                    <Tooltip label={duplicateLabel} align="end" scope="dot" />
-                    <span className="sr-only">{duplicateLabel}</span>
-                  </span>
-                )}
-                {/* A fixed slot, right-aligned under the duration, so the two read as one
-                    trailing column and the review sparkle's place never moves. The pill fills the
-                    slot, so a narrow WAV leaves no gap before the key and every key sits in one column. */}
-                {matched && (
-                  <span data-testid="track-matching" className="flex shrink-0 items-center">
-                    <MatchingIcon size={12} className="text-[var(--color-accent)]" />
-                    <span className="sr-only">{tr('trackList.matchingPartner')}</span>
-                  </span>
-                )}
-                {replaced && (
-                  <span
-                    data-testid="track-replaced"
-                    data-state={'moved' in replaced ? 'moved' : 'unmoved'}
-                    role="img"
-                    aria-label={tr(
-                      'moved' in replaced ? 'trackList.cuesMoved' : 'trackList.cuesNotMoved',
-                    )}
-                    className="flex shrink-0 items-center"
-                  >
-                    {'moved' in replaced ? (
-                      <CircleCheck className="h-3 w-3 text-good" aria-hidden="true" />
-                    ) : (
-                      <CircleAlert className="h-3 w-3 text-warn" aria-hidden="true" />
-                    )}
+                    {`+${foldedMarks.length}`}
+                    <Tooltip label={foldedMarks.join(' · ')} align="end" scope="dot" />
                   </span>
                 )}
                 {key && (
@@ -1066,7 +1123,7 @@ const TrackRow = memo(function TrackRow({
               </span>
             </span>
             {showWaves ? (
-              <span data-testid="track-wave-line" className="relative block h-5 compact:h-[15px]">
+              <span data-testid="track-wave-line" className={`relative block ${ROW_WAVE_HEIGHT}`}>
                 {shown.waiting ? (
                   <span
                     data-testid="track-loading"

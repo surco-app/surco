@@ -332,7 +332,6 @@ describe('MusicReview', () => {
   it('keeps the header outside the only scrolling area and has no tray', () => {
     render(<Panes review={review()} />)
     const scroll = screen.getByTestId('music-review-scroll')
-    expect(scroll.className).toContain('overflow-y-auto')
     expect(scroll).toContainElement(rows()[0])
     expect(screen.queryByTestId('music-review-tray')).toBeNull()
     expect(scroll).not.toContainElement(screen.getByTestId('music-review-search'))
@@ -361,7 +360,7 @@ describe('MusicReview', () => {
     const second = within(row).getByTestId('music-review-row-detail-line')
     expect(second).toContainElement(within(row).getByTestId('music-review-row-detail'))
     expect(second).toContainElement(within(row).getByTestId('music-review-row-kind'))
-    expect(row.className).toContain('is-primary')
+    expect(row).toHaveAttribute('aria-selected', 'true')
   })
 
   it('lists each group as a row with no choice in it and opens its detail on click', () => {
@@ -416,6 +415,67 @@ describe('MusicReview', () => {
     fireEvent.change(screen.getByTestId('music-review-search'), { target: { value: 'nobody' } })
     expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
     expect(screen.getByTestId('music-review-no-match')).toBeVisible()
+  })
+
+  // Two equal messages and controls with nothing to act on are noise.
+  it('says once that there is nothing to review and drops the controls and the idle Apply', () => {
+    render(<Panes review={review({ spelling: [] })} />)
+    expect(screen.getAllByTestId('music-review-all-clear')).toHaveLength(1)
+    expect(screen.getByTestId('music-review-all-clear')).toBeVisible()
+    expect(screen.getByTestId('music-review-close')).toBeVisible()
+    expect(screen.queryByTestId('music-review-search')).toBeNull()
+    expect(screen.queryByTestId('music-review-filter')).toBeNull()
+    expect(screen.queryByTestId('music-review-sort')).toBeNull()
+    expect(screen.getByTestId('music-review-apply')).not.toBeVisible()
+  })
+
+  // An Apply with nothing to apply is a control with nothing to do, but its slot stays so the
+  // bar does not move when a change appears.
+  it('shows Apply only once something is staged, keeping its slot and out of the tab order', () => {
+    render(<Panes review={review()} />)
+    const apply = screen.getByTestId('music-review-apply')
+    expect(apply).not.toBeVisible()
+    expect(apply).toBeInTheDocument()
+    expect(apply.closest('[style*="visibility: hidden"]')).not.toBeNull()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply')).toBeVisible()
+    expect(screen.getByTestId('music-review-apply')).toHaveTextContent('Apply 1 change')
+  })
+
+  // The divider separates Apply from the buttons before it; beside an empty slot it would be
+  // a stray line.
+  it('hides the divider before Apply together with Apply', () => {
+    render(<Panes review={review()} />)
+    expect(screen.getByTestId('music-review-apply-divider')).toBeInTheDocument()
+    expect(screen.getByTestId('music-review-apply-divider')).not.toBeVisible()
+    cleanup()
+    render(
+      <Panes
+        review={review({
+          staged: new Set([group.key]),
+          summary: { tracks: 1, byField: { artist: 1 }, duplicates: 0, damage: {} },
+        })}
+      />,
+    )
+    expect(screen.getByTestId('music-review-apply-divider')).toBeVisible()
+  })
+
+  // Warnings the search or the filter hide are still there to review.
+  it('keeps the controls when the filter hides every warning', () => {
+    render(<Panes review={review({ filter: 'duplicates' })} />)
+    expect(screen.queryAllByTestId('music-review-row')).toHaveLength(0)
+    expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
+    expect(screen.getByTestId('music-review-search')).toBeVisible()
+    expect(screen.getByTestId('music-review-filter')).toBeVisible()
+    expect(screen.getByTestId('music-review-sort')).toBeVisible()
   })
 
   it('finds a duplicate by its title', () => {
@@ -485,18 +545,25 @@ describe('MusicReview', () => {
     expect(onClose).toHaveBeenCalledOnce()
   })
 
-  it('draws its Escape hint as the same keycap the toolbar uses for its shortcut', () => {
-    render(<Panes review={review()} onClose={vi.fn()} />)
-    const key = screen.getByTestId('music-review-close').querySelector('kbd')
-    expect(key?.className).toMatch(/\bborder\b/)
-    expect(key?.className).toMatch(/\brounded\b/)
-  })
-
   it('goes back to the tracks with Escape', () => {
     const onClose = vi.fn()
     render(<Panes review={review()} onClose={onClose} />)
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  // A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Escape
+  // there must not leave the review behind the DJ's back.
+  it('stays in the review on Escape while a checkbox holds the focus', () => {
+    const onClose = vi.fn()
+    render(<Panes review={review()} onClose={onClose} />)
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Escape' })
+    box.remove()
+    expect(onClose).not.toHaveBeenCalled()
   })
 
   // Leaving mid-write would hide a run the button refuses to abandon; in the search, Escape
@@ -710,6 +777,7 @@ describe('MusicReview', () => {
   describe('while a run goes', () => {
     const applying = (over: Partial<Review>) => review({ status: 'applying', ...over })
     const bar = () => screen.getByTestId('top-progress').firstElementChild as HTMLElement
+    const sliding = () => screen.getByTestId('top-progress').getAttribute('data-indeterminate')
 
     it('slides the bar until the first track is done, then fills it', () => {
       const { rerender } = render(
@@ -720,7 +788,7 @@ describe('MusicReview', () => {
           })}
         />,
       )
-      expect(bar().className).toContain('animate-top-progress')
+      expect(sliding()).toBe('true')
       rerender(
         <MusicReviewProgress
           review={applying({
@@ -729,7 +797,7 @@ describe('MusicReview', () => {
           })}
         />,
       )
-      expect(bar().className).not.toContain('animate-top-progress')
+      expect(sliding()).toBe('false')
       expect(bar().style.transform).toBe('scaleX(0.25)')
     })
 
@@ -741,7 +809,7 @@ describe('MusicReview', () => {
           review={applying({ progress: { done: 2, total: 2 }, phase: { name: 'libraries' } })}
         />,
       )
-      expect(bar().className).toContain('animate-top-progress')
+      expect(sliding()).toBe('true')
     })
 
     // Two bars on one line read as one bar jumping between two runs.
@@ -1790,7 +1858,10 @@ describe('MusicReview', () => {
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
     expect(screen.getByTestId('music-review-confirm-cancel')).toHaveFocus()
-    expect(screen.getByTestId('music-review-confirm-apply').className).toContain('--color-danger')
+    expect(screen.getByTestId('music-review-confirm-apply')).toHaveAttribute(
+      'data-destructive',
+      'true',
+    )
   })
 
   it('keeps Apply as the ordinary default when nothing is removed', () => {
@@ -1800,8 +1871,9 @@ describe('MusicReview', () => {
     })
     render(<Panes review={r} />)
     fireEvent.click(screen.getByTestId('music-review-apply'))
-    expect(screen.getByTestId('music-review-confirm-apply').className).not.toContain(
-      '--color-danger',
+    expect(screen.getByTestId('music-review-confirm-apply')).toHaveAttribute(
+      'data-destructive',
+      'false',
     )
   })
 
@@ -3087,7 +3159,6 @@ describe('damage findings in the list review', () => {
   // Clean spellings and duplicates say nothing about damage still being looked for.
   it('does not call the list clean while the damage scan runs', () => {
     render(<Panes review={listReview({ damage: [], damageLoading: true })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 
@@ -3338,7 +3409,6 @@ describe('incomplete tracks', () => {
 
   it('does not call the review clean while tracks still lack a field', () => {
     render(<Panes review={incompleteReview({ filter: 'all' })} />)
-    expect(screen.queryByTestId('music-review-clean')).toBeNull()
     expect(screen.queryByTestId('music-review-all-clear')).toBeNull()
   })
 })

@@ -229,6 +229,10 @@ export interface CommandDeps {
   editorDestinationPickRef: { readonly current: Destination | null }
   editorNormalizeRef: { readonly current: NormalizeConfig | null }
   editorDeclickRef: { readonly current: DeclickConfig | null }
+  // The label the editor's convert button wears now, empty while no editor shows one.
+  editorConvertLabelRef: { readonly current: string }
+  // The editor's library copy action (Update or Replace), null while its body only converts.
+  editorLibraryRunRef: { readonly current: ((onStarted?: () => void) => void) | null }
   // The sidebar's track-filter field — the `/` shortcut focuses this.
   trackSearchRef: { readonly current: HTMLInputElement | null }
   pickFiles: () => void
@@ -411,6 +415,8 @@ export function buildCommands(deps: CommandDeps): Command[] {
     editorDestinationPickRef,
     editorNormalizeRef,
     editorDeclickRef,
+    editorConvertLabelRef,
+    editorLibraryRunRef,
     trackSearchRef,
     pickFiles,
     openApplePlaylist,
@@ -895,7 +901,7 @@ export function buildCommands(deps: CommandDeps): Command[] {
     {
       id: 'process-current',
       group: 'convert',
-      title: tr('commands.processCurrent'),
+      title: editorConvertLabelRef.current || tr('commands.processCurrent'),
       hint: hintFor('process-current'),
       // Over several picked tracks ⌘⏎ converts the selection, the same batch the footer
       // button names, rather than the one open track (the user's call, 06/11).
@@ -912,6 +918,12 @@ export function buildCommands(deps: CommandDeps): Command[] {
           return
         }
         if (!selected) return
+        // The body updates or replaces the library copy, so ⌘⏎ does the same; a plain convert
+        // would add a second copy beside the one the body names.
+        if (editorLibraryRunRef.current) {
+          editorLibraryRunRef.current(() => moveSelection(1))
+          return
+        }
         // Convert-and-advance: the conversion runs in the background, so move straight to
         // the next track — ⌘⏎ ⌘⏎ … works through the crate without a manual step between.
         // The advance rides onStarted so an in-place overwrite confirms first: a cancelled

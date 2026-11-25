@@ -33,7 +33,10 @@ export interface QueueIpcHost {
   onDiscarded?: () => void
 }
 
-export function rekordboxQueueSection(queue: RekordboxQueue, host: QueueIpcHost): DjCueQueueMain {
+export function rekordboxQueueSection(
+  queue: Pick<RekordboxQueue, 'state' | 'discard' | 'apply'>,
+  host: QueueIpcHost,
+): DjCueQueueMain {
   return {
     read: () => queue.state(),
     apply: () =>

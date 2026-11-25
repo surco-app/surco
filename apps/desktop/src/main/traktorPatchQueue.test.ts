@@ -8,6 +8,7 @@ import { buildTraktorTree, traktorCue } from './traktor4Fixture'
 import type { NmlPatch } from './traktorNml'
 import type { SyncResult } from './traktorNmlLibrary'
 import {
+  discardedRelocations,
   holdInQueue,
   nmlPatchOf,
   type QueuedNmlPatch,
@@ -53,6 +54,22 @@ describe('queuedNmlPatch', () => {
     expect(nfd.from).toBe(nfc.from)
     expect(nfd.from).not.toBe(queuedNmlPatch(patch({ dir: '/:Otra/:' })).from)
     expect(nfd.to).toBe('uno.flac')
+  })
+})
+
+describe('discardedRelocations', () => {
+  // A replacement's patch discarded from the queue never moves the entry, so To review must
+  // stop telling the DJ Traktor followed the new file. Only a replace relocates, and the
+  // store knows the new file by its full path.
+  it('names the new file of each replacement a discard drops, and nothing for a plain conversion', () => {
+    const replaced = queuedNmlPatch(
+      patch({ relocates: true, newFile: undefined, outputVolume: 'Gig', outputDir: '/:Sets/:' }),
+    )
+    const converted = queuedNmlPatch(patch())
+
+    expect(discardedRelocations([replaced, converted], 'Macintosh HD')).toEqual([
+      '/Volumes/Gig/Sets/uno.flac',
+    ])
   })
 })
 

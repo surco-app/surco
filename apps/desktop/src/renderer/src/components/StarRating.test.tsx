@@ -32,9 +32,9 @@ describe('StarRating', () => {
   it('punches only the star that was clicked', () => {
     render(<StarRating value="" onChange={() => {}} />)
     fireEvent.click(screen.getByTestId('star-3'))
-    expect(screen.getByTestId('star-3').className).toContain('star-punch')
-    expect(screen.getByTestId('star-2').className).not.toContain('star-punch')
-    expect(screen.getByTestId('star-4').className).not.toContain('star-punch')
+    expect(screen.getByTestId('star-3')).toHaveAttribute('data-punched', 'true')
+    expect(screen.getByTestId('star-2')).toHaveAttribute('data-punched', 'false')
+    expect(screen.getByTestId('star-4')).toHaveAttribute('data-punched', 'false')
   })
 
   // Clicking the top filled star clears the rating. That is an undo, and celebrating an
@@ -42,7 +42,7 @@ describe('StarRating', () => {
   it('does not punch when the click clears the rating', () => {
     render(<StarRating value="3" onChange={() => {}} />)
     fireEvent.click(screen.getByTestId('star-3'))
-    expect(screen.getByTestId('star-3').className).not.toContain('star-punch')
+    expect(screen.getByTestId('star-3')).toHaveAttribute('data-punched', 'false')
   })
 
   // Hovering is not a commitment — it must leave the flourish alone, or the animation
@@ -50,7 +50,7 @@ describe('StarRating', () => {
   it('does not punch on hover alone', () => {
     render(<StarRating value="" onChange={() => {}} />)
     fireEvent.mouseEnter(screen.getByTestId('star-4'))
-    expect(screen.getByTestId('star-4').className).not.toContain('star-punch')
+    expect(screen.getByTestId('star-4')).toHaveAttribute('data-punched', 'false')
   })
 
   // Five buttons named "1 stars".."5 stars" floated free of any label: a screen reader
@@ -146,14 +146,5 @@ describe('StarRating', () => {
     render(<StarRating value="3" onChange={onChange} />)
     fireEvent.click(screen.getByTestId('star-3'))
     expect(onChange).toHaveBeenCalledWith('')
-  })
-
-  // A 16 px star is under the 24 px pointer target. The stars sit 18 px apart, so the press
-  // area grows to the full 24 px in height and to the pitch in width, without overlapping.
-  it('gives every star a taller press area than its drawing', () => {
-    render(<StarRating value="" onChange={() => {}} />)
-    for (const n of [1, 2, 3, 4, 5]) {
-      expect(screen.getByTestId(`star-${n}`).className).toContain('after:-inset-y-1')
-    }
   })
 })

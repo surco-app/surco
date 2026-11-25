@@ -33,6 +33,8 @@ function renderField(
         tree={f.playlists.tree}
         options={f.playlists.options}
         states={f.playlists.bulk.states}
+        count={f.playlists.bulk.count}
+        locked={f.playlists.locked}
         onToggle={f.playlists.bulk.onToggle}
       />
     ) : (
@@ -43,6 +45,7 @@ function renderField(
         tree={f.playlists.tree}
         options={f.playlists.options}
         value={f.playlists.single.value}
+        locked={f.playlists.locked}
         onChange={f.playlists.single.onChange}
       />
     )
@@ -97,7 +100,6 @@ function renderField(
       cleaned={f.cleaned}
       readOnly={f.readOnly}
       readOnlyNote={f.readOnlyNote}
-      plain={f.plain}
       required={f.required}
       invalid={f.invalid}
       mixed={f.mixed}
@@ -216,7 +218,7 @@ export function MetadataForm({
                               type="button"
                               data-testid="number-tracks-btn"
                               onClick={f.action.onApply}
-                              className="press h-[26px] self-end rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
+                              className="press h-[26px] self-center rounded-md border border-[var(--color-line-strong)] bg-[var(--color-panel-2)] px-2 text-label text-fg-muted transition-colors hover:text-fg"
                             >
                               {f.action.label}
                             </button>,

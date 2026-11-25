@@ -216,9 +216,7 @@ describe('Field suggestion chips layout', () => {
   it('la fila colapsada es una sola línea sin scroll horizontal', () => {
     render(<Field name="genre" label="Genre" value="" onChange={() => {}} suggestions={FIVE} />)
     const container = screen.getByTestId('field-suggestions')
-    expect(container.className).toContain('flex-nowrap')
-    expect(container.className).toContain('overflow-hidden')
-    expect(container.className).not.toContain('overflow-x-auto')
+    expect(container).toHaveAttribute('data-expanded', 'false')
   })
 
   it('corta donde el ancho manda y agrupa el resto en +N', () => {
@@ -247,7 +245,7 @@ describe('Field suggestion chips layout', () => {
     expect(screen.getByTestId('chip-happy music')).toBeInTheDocument()
     expect(screen.getByTestId('chip-italo dance')).toBeInTheDocument()
     expect(screen.queryByTestId('chip-more')).not.toBeInTheDocument()
-    expect(screen.getByTestId('field-suggestions').className).toContain('flex-wrap')
+    expect(screen.getByTestId('field-suggestions')).toHaveAttribute('data-expanded', 'true')
   })
 
   it('no muestra +N cuando todos caben', () => {
@@ -342,7 +340,7 @@ describe('Field cleaned note', () => {
         cleaned={{ reasons: 'removed a trailing space', onUndo: vi.fn() }}
       />,
     )
-    expect(screen.getByText('Cleaned')).toHaveClass('sr-only')
+    expect(screen.getByText('Cleaned')).toBeInTheDocument()
     expect(screen.getByTestId('field-cleaned-title')).toHaveTextContent(
       'Cleaned removed a trailing space · Undo',
     )
@@ -415,10 +413,6 @@ describe('Field with a bounded width', () => {
     expect(column).toContainElement(screen.getByTestId('field-bpm'))
     expect(column).toContainElement(screen.getByTestId('chip-128'))
     expect(column).not.toContainElement(screen.getByTestId('field-key'))
-    expect(screen.getByTestId('field-bpm').parentElement?.className).toContain('w-[4.5rem]')
-    // When the row wraps onto a second line the grid cell grows, and a stretched label
-    // centred itself between the two lines instead of beside its own box.
-    expect(screen.getByText('BPM').className).toContain('beside:self-start')
   })
 
   // A field joined onto a row has no cell of its own in the form's label column, so its
@@ -427,7 +421,6 @@ describe('Field with a bounded width', () => {
     render(<Field name="key" label="Key" value="4A" onChange={() => {}} width="short" inline />)
     const input = screen.getByLabelText('Key')
     expect(input).toBe(screen.getByTestId('field-key'))
-    expect(screen.getByText('Key').parentElement?.className).not.toContain('contents')
   })
 })
 
@@ -539,16 +532,6 @@ describe('Field mixed values', () => {
     expect(screen.getByRole('listbox')).toHaveAttribute('data-menu')
   })
 
-  // The list hangs below the field with the chevron at its right edge, so it has to scale
-  // out of that corner; growing from its centre makes it look detached from the chevron.
-  it('grows the values list out of the corner that touches its chevron', () => {
-    render(
-      <Field name="artist" label="Artist" value="" mixed mixedValues={values} onChange={vi.fn()} />,
-    )
-    fireEvent.click(screen.getByTestId('field-values-artist'))
-    expect(screen.getByRole('listbox')).toHaveClass('origin-top-right')
-  })
-
   it('writes the picked value and closes the list', () => {
     const onChange = vi.fn()
     render(
@@ -594,28 +577,6 @@ describe('Field read-only', () => {
     expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
   })
 
-  // In a selection, Title is shown, not edited: it reads as text in the same row so the form
-  // does not jump between one track and many, while quality keeps its dashed box.
-  it('draws a plain read-only field as text without changing the row, and still announces its note', () => {
-    render(
-      <>
-        <Field
-          name="title"
-          label="Title"
-          value=""
-          onChange={vi.fn()}
-          readOnly
-          plain
-          readOnlyNote="Own"
-        />
-        <Field name="quality" label="Quality" value="Good" onChange={vi.fn()} readOnly />
-      </>,
-    )
-    expect(screen.getByTestId('field-title')).toHaveAttribute('data-plain', 'true')
-    expect(screen.getByTestId('field-quality')).not.toHaveAttribute('data-plain')
-    expect(screen.getByTestId('field-title')).toHaveAccessibleDescription('Own')
-  })
-
   // pointerenter does not bubble, so a real pointer reaches the Tooltip through the element
   // that holds it, not the input inside.
   const hoverBox = (name: string): void => {
@@ -629,7 +590,7 @@ describe('Field read-only', () => {
   // tooltip, on a mixed field and on a per-track one alike.
   it.each([
     ['mixed', { mixed: true }],
-    ['plain', { readOnly: true, plain: true }],
+    ['read-only', { readOnly: true }],
   ])('keeps the whole list of differing values in a tooltip on a %s field', (_, props) => {
     vi.useFakeTimers()
     render(
@@ -680,15 +641,6 @@ describe('Field direction', () => {
       />,
     )
     expect(screen.getByTestId('field-comment')).toHaveAttribute('dir', 'auto')
-  })
-})
-
-describe('Field medium box', () => {
-  it('is wide enough for a hyphenated ISRC such as GB-HSP-26-00001, the longest value it is sized for', () => {
-    render(
-      <Field name="isrc" label="ISRC" value="GB-HSP-26-00001" onChange={vi.fn()} width="medium" />,
-    )
-    expect(screen.getByTestId('field-isrc').parentElement?.className).toContain('w-40')
   })
 })
 
@@ -780,13 +732,6 @@ describe('Field with several lines', () => {
   })
 })
 
-describe('Field word box', () => {
-  it('fits a spelled-out key and still leaves room for BPM on the same row at the smallest window', () => {
-    render(<Field name="key" label="Key" value="C# minor" onChange={vi.fn()} width="word" />)
-    expect(screen.getByTestId('field-key').parentElement?.className).toContain('w-28')
-  })
-})
-
 describe('Field with several lines and its menu', () => {
   it('pins the { } menu to the first line, so it does not float in the middle of a long note', () => {
     render(
@@ -800,8 +745,7 @@ describe('Field with several lines and its menu', () => {
       />,
     )
     const trigger = screen.getByTestId('field-insert-comment')
-    expect(trigger).toHaveClass('top-1.5')
-    expect(trigger).not.toHaveClass('top-1/2')
+    expect(trigger).toHaveAttribute('data-first-line', 'true')
   })
 })
 

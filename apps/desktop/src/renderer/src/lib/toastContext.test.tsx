@@ -22,7 +22,7 @@ describe('useToast', () => {
   it('reports through the provider it is given', () => {
     const reportError = vi.fn()
     render(
-      <ToastProvider value={{ reportError, reportUndo: vi.fn() }}>
+      <ToastProvider value={{ reportError, reportNotice: vi.fn(), reportUndo: vi.fn() }}>
         <Boom />
       </ToastProvider>,
     )
@@ -40,5 +40,20 @@ describe('useToast', () => {
     expect(() => screen.getByRole('button').click()).not.toThrow()
     expect(err).toHaveBeenCalledWith('it broke')
     err.mockRestore()
+  })
+
+  // A component posting the library edit notice must not crash a render that has no toast
+  // queue behind it, same as reportError.
+  it('says a neutral notice without a provider and without throwing', () => {
+    function Notice(): React.JSX.Element {
+      const { reportNotice } = useToast()
+      return (
+        <button type="button" onClick={() => reportNotice('x')}>
+          go
+        </button>
+      )
+    }
+    render(<Notice />)
+    expect(() => screen.getByRole('button').click()).not.toThrow()
   })
 })

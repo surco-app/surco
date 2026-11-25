@@ -123,6 +123,9 @@ interface Params {
   // say so — those rows silently showing only file-name data used to read as "this
   // file has no tags" when the real tags were just unreadable.
   onMetaReadFailed: (count: number) => void
+  // How many of those failed because no file was at the path any more, told apart so the
+  // notice sends the DJ looking for a moved file instead of blaming its tags.
+  onMetaFilesMissing?: (count: number) => void
   // How many rows of an open playlist went because the background check found their files
   // gone, so App can say so as it does for the ones missing when the playlist opens.
   onSourceFilesGone?: (count: number) => void
@@ -177,7 +180,7 @@ interface TrackLibrary {
   openSourcePlaylist: (
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
-    options?: { fillLoaded?: boolean },
+    options?: { fillLoaded?: boolean; reread?: boolean },
   ) => Promise<number>
   updateTrack: (id: string, patch: Partial<TrackItem>) => void
   stageTrack: (progress: ProcessProgress) => void
@@ -220,6 +223,7 @@ export function useTrackLibrary({
   onDuplicatesSkipped,
   onNoAudioFound,
   onMetaReadFailed,
+  onMetaFilesMissing,
   onSourceFilesGone,
   onPathsAdded,
   filesOpen = true,
@@ -227,6 +231,9 @@ export function useTrackLibrary({
   const filesOpenRef = useRef(filesOpen)
   filesOpenRef.current = filesOpen
   const listedBySource = useRef(new Set<string>())
+  const checkingDisk = useRef(new Map<string, Promise<Set<string>>>())
+  // The playlist files the disk was found to lack, until the playlist is opened again.
+  const goneFromDisk = useRef(new Set<string>())
   const [tracks, setTracks] = useState<TrackItem[]>([])
   const tracksRef = useRef<TrackItem[]>([])
   tracksRef.current = tracks
@@ -279,6 +286,7 @@ export function useTrackLibrary({
   // Failed metadata reads in the in-flight batch, reported once when it settles so a
   // 300-file drop yields one "couldn't read N" notice rather than a toast per file.
   const importFailed = useRef(new Set<string>())
+  const importMissing = useRef(new Set<string>())
   // removeTrack must keep a stable identity (memoized rows depend on it) while App's
   // registry-cleanup callback is recreated every render; the ref bridges the two.
   const onRemoveRef = useRef(onRemove)
@@ -297,6 +305,8 @@ export function useTrackLibrary({
   onNoAudioFoundRef.current = onNoAudioFound
   const onMetaReadFailedRef = useRef(onMetaReadFailed)
   onMetaReadFailedRef.current = onMetaReadFailed
+  const onMetaFilesMissingRef = useRef(onMetaFilesMissing)
+  onMetaFilesMissingRef.current = onMetaFilesMissing
   const onPathsAddedRef = useRef(onPathsAdded)
   onPathsAddedRef.current = onPathsAdded
 
@@ -465,8 +475,10 @@ export function useTrackLibrary({
     onPathsAddedRef.current?.(fresh)
     // Importing a new crate is a context change, not a track step: if a section was blown
     // up to the whole window, leave that view now so the freshly selected track's spectrum
-    // doesn't render full-screen behind the editor while it analyzes.
-    clearMaximizedSection()
+    // doesn't render full-screen behind the editor while it analyzes. A playlist read again
+    // under the editor (a cue save re-reads it) is no import: an entry whose file is gone
+    // comes back as new on every read, and it closed the full editor after each save.
+    if (toFiles) clearMaximizedSection()
     // Show the rows the instant they're dropped, parsed from the file name, then fill in
     // tags, duration and cover as each file's read resolves. Reading metadata up front used
     // to block the whole drop behind the slowest file — on a cloud/network folder that's
@@ -545,9 +557,13 @@ export function useTrackLibrary({
             // The import is done: whatever reads are still waiting on the window land with
             // the pill's end, not a moment after it.
             flushMetaPatches()
-            const failed = tracksRef.current.filter((t) => importFailed.current.has(t.id)).length
+            const failedRows = tracksRef.current.filter((t) => importFailed.current.has(t.id))
+            const missing = failedRows.filter((t) => importMissing.current.has(t.id)).length
+            const failed = failedRows.length - missing
             importFailed.current = new Set()
+            importMissing.current = new Set()
             if (failed > 0) onMetaReadFailedRef.current(failed)
+            if (missing > 0) onMetaFilesMissingRef.current?.(missing)
           } else {
             progressPending.current = true
             scheduleMetaFlush()
@@ -564,6 +580,13 @@ export function useTrackLibrary({
     })
   }
 
+  // embeddedCover is read as the file's own art: a write sends that file as the source, and
+  // the cover picker lists it as the original. A web URL (a Discogs match) is never that, so
+  // it stays on coverUrl only, or a file with no art is converted with none.
+  function libraryArt(url: string | undefined): url is string {
+    return !!url && !/^https?:/i.test(url)
+  }
+
   function joinFiles(t: TrackItem, saved: SessionEdit | undefined): Partial<TrackItem> {
     if (!saved) return { inFiles: true }
     if (t.loadingMeta) {
@@ -576,7 +599,7 @@ export function useTrackLibrary({
     return {
       ...restoredPatch(saved),
       ...mergedOrigin(t, fromLegacy(saved)),
-      ...(!t.embeddedCover && saved.coverUrl && { embeddedCover: saved.coverUrl }),
+      ...(!t.embeddedCover && libraryArt(saved.coverUrl) && { embeddedCover: saved.coverUrl }),
       meta: saved.meta,
       inFiles: true,
     }
@@ -667,7 +690,8 @@ export function useTrackLibrary({
   ): boolean {
     const path = base.inputPath
     const savedOrigin = saved && fromLegacy(saved)
-    const { tags, duration, cover, foreignTags, failed, reviewRaw, fileDate } = read
+    const { tags, duration, cover, foreignTags, failed, missing, reviewRaw, fileDate } = read
+    if (missing) importMissing.current.add(base.id)
     const s = searchFromTags(parseFileName(path), tags)
     // Whatever Music knows that this file does not. Consumed once, like the restored
     // edit above: a later start-over must rebuild from the file alone.
@@ -726,7 +750,7 @@ export function useTrackLibrary({
     // editor showed the art, for every track whose cover came from the library rather
     // than the file. The file's own art still wins: the row is a view of the file on
     // disk, and this only fills the gap when the file carries none.
-    if (!cover?.thumbUrl && saved?.coverUrl) patch.embeddedCover = saved.coverUrl
+    if (!cover?.thumbUrl && libraryArt(saved?.coverUrl)) patch.embeddedCover = saved?.coverUrl
     // A restored edit replaces the read wholesale (it was itself built on a read of
     // this same file, plus everything the user staged since); the matched flag rides
     // in the patch so the auto-match sweep skips the row instead of overwriting it.
@@ -748,6 +772,11 @@ export function useTrackLibrary({
       // A read that succeeded clears the mark a failed one left; a degraded read sets
       // it, so the row says so instead of looking like a file with no tags.
       ...(failed ? { metaReadFailed: true } : t.metaReadFailed ? { metaReadFailed: false } : {}),
+      ...(missing
+        ? { metaFileMissing: true }
+        : t.metaFileMissing
+          ? { metaFileMissing: false }
+          : {}),
       ...(t.queryTyped && { query: t.query, queryTyped: true }),
       meta: mergeReadMeta(base.meta, t.meta, finalMeta),
     }))
@@ -1032,11 +1061,14 @@ export function useTrackLibrary({
   // The rows go in at once, without waiting for the disk; expandPaths then stats them in
   // the background and the rows whose file is not there are removed. Resolves how many of
   // the playlist's files are not on disk: the paths expandPaths drops are that set, without
-  // a second stat per row (a network crate pays ~340 ms per 100 files for it).
+  // a second stat per row (a network crate pays ~340 ms per 100 files for it). A re-read
+  // landing while an earlier opening is still checking the disk finds those rows loaded and
+  // nothing fresh, so it waits for that check and counts what it found: a 0 there spent the
+  // playlist's one missing-file notice before the real count arrived.
   async function openSourcePlaylist(
     entries: SourcePlaylistEntry[],
     source: PlaylistSource,
-    { fillLoaded = false }: { fillLoaded?: boolean } = {},
+    { fillLoaded = false, reread = false }: { fillLoaded?: boolean; reread?: boolean } = {},
   ): Promise<number> {
     // Compared composed: the NAS stores names decomposed while a drop is composed, and one
     // file under both spellings must stay the one row that holds the user's edits. Outputs
@@ -1083,9 +1115,18 @@ export function useTrackLibrary({
       if (unmarked.size > 0)
         mapTracks((t) => (unmarked.has(t.id) ? { ...t, programs: withPrograms(t, [source]) } : t))
     }
+    // Every cue save, edit and refocus reads the playlist again, and a file the disk lacks is
+    // never a row: offered as new each time, it was added, analysed and removed on every read.
+    // A re-read leaves it out; an opening asks the disk again, so a file put back shows up.
+    const named = new Set(entries.flatMap((e) => (e.path && !e.separator ? [same(e.path)] : [])))
+    if (!reread) for (const p of named) goneFromDisk.current.delete(p)
+    const knownGone = new Set([...named].filter((p) => goneFromDisk.current.has(p)))
     const fresh = entries.filter(
       (e): e is SourcePlaylistEntry & { path: string } =>
-        !e.separator && e.path !== null && !loaded.has(same(e.path)),
+        !e.separator &&
+        e.path !== null &&
+        !loaded.has(same(e.path)) &&
+        !knownGone.has(same(e.path)),
     )
     // A row loaded before its rekordbox playlist was opened gets the BPM, key and stars the
     // entry holds, as a fresh one does: only its empty fields, so what it holds wins, and as
@@ -1124,7 +1165,12 @@ export function useTrackLibrary({
           }
         })
     }
-    if (fresh.length === 0) return 0
+    const checks = new Set([...named].flatMap((p) => checkingDisk.current.get(p) ?? []))
+    const goneElsewhere = async (): Promise<number> => {
+      const found = await Promise.all(checks)
+      return new Set(found.flatMap((g) => [...g].filter((p) => named.has(p)))).size
+    }
+    if (fresh.length === 0) return knownGone.size + (await goneElsewhere())
     // Staged BEFORE adding: the rows created below must find the stamp waiting.
     for (const e of fresh) {
       appleMusicMeta.current.set(e.path, e.meta)
@@ -1141,9 +1187,22 @@ export function useTrackLibrary({
         })
     }
     const freshPaths = [...new Map(fresh.map((e) => [same(e.path), e.path])).values()]
-    await addPaths(freshPaths, undefined, false, false)
-    const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
-    const gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+    let answer: (gone: Set<string>) => void = () => {}
+    const check = new Promise<Set<string>>((resolve) => {
+      answer = resolve
+    })
+    for (const p of freshPaths) checkingDisk.current.set(same(p), check)
+    let gone = new Set<string>()
+    try {
+      await addPaths(freshPaths, undefined, false, false)
+      const onDisk = new Set((await window.api.expandPaths(freshPaths)).map(same))
+      gone = new Set(freshPaths.filter((p) => !onDisk.has(same(p))).map(same))
+      for (const p of gone) goneFromDisk.current.add(p)
+    } finally {
+      for (const p of freshPaths)
+        if (checkingDisk.current.get(same(p)) === check) checkingDisk.current.delete(same(p))
+      answer(gone)
+    }
     // A staged path the disk lacks may never have been consumed by a row, and would leak
     // into a later unrelated load of that same file.
     for (const e of fresh) {
@@ -1162,7 +1221,7 @@ export function useTrackLibrary({
       if (firstKept)
         setSelection((s) => (s.anchor ? s : { ids: [firstKept.id], anchor: firstKept.id }))
     }
-    return gone.size
+    return gone.size + knownGone.size + (await goneElsewhere())
   }
 
   // Publishes to the live crate as well as to state, for the same reason the import
@@ -1320,8 +1379,10 @@ export function useTrackLibrary({
         const dropped: string[] = []
         for (const t of tracksRef.current) {
           if (t.status === 'processing' || !touched.has(same(t.inputPath))) continue
-          if (went.has(same(t.inputPath)) && !t.inFiles) dropped.push(t.id)
-          else void readSlot.current.run(t.id, () => refreshChangedTrack(t.id))
+          if (went.has(same(t.inputPath)) && !t.inFiles) {
+            dropped.push(t.id)
+            goneFromDisk.current.add(same(t.inputPath))
+          } else void readSlot.current.run(t.id, () => refreshChangedTrack(t.id))
         }
         if (dropped.length === 0) return
         for (const p of went) listedBySource.current.delete(p)
@@ -1383,6 +1444,7 @@ export function useTrackLibrary({
     importDone.current = 0
     importTotal.current = 0
     importFailed.current = new Set()
+    importMissing.current = new Set()
     progressPending.current = false
     setImportProgress(null)
   }

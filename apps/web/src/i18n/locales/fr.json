@@ -129,8 +129,8 @@
           },
           {
             "t": "Édition en masse",
-            "s": "Modifie d’un coup les champs d’une release entière, avec rechercher et remplacer.",
-            "d": "Les champs que partage une release, plus rechercher et remplacer avec regex."
+            "s": "Modifie plusieurs morceaux comme un seul, avec une sortie collée, les étoiles et les numéros.",
+            "d": "Avec plusieurs morceaux sélectionnés, l’éditeur montre les mêmes champs qu’avec un seul. Modifie les champs que partage une sortie, colle une sortie, note-les tous, numérote-les dans l’ordre de la liste, et cherche et remplace avec regex. Un champ qui diffère montre chaque valeur."
           },
           {
             "t": "Pochettes",
@@ -140,7 +140,7 @@
           {
             "t": "ID3v2.3, pas v2.4",
             "s": "Écrit la version de tags que les CDJ et rekordbox lisent sans surprise.",
-            "d": "Pour que les CDJ et rekordbox le lisent sans surprise."
+            "d": "Convertir et « Mettre à jour » écrivent en v2.3, pour que les CDJ et rekordbox la lisent sans surprise. Une petite modification, comme ajouter un cue, laisse un tag v2.4 tel quel."
           },
           {
             "t": "Des notes qui font l’aller-retour",
@@ -236,8 +236,8 @@
           },
           {
             "t": "Ce que tu as déjà",
-            "s": "Te dit si un morceau est déjà dans ton Apple Music ou ton Engine DJ.",
-            "d": "Te dit si un morceau est dans ton Apple Music ou ton Engine DJ, et filtre le reste."
+            "s": "Trouve un morceau dans tous tes logiciels DJ et dans Apple Music, et te dit quelle copie est meilleure.",
+            "d": "Dans l’éditeur, « Dans ta bibliothèque » montre chaque copie d’un morceau de Tracks dans tes logiciels DJ et dans Apple Music. Chacune dit si elle est identique, meilleure, moins bonne ou une autre version, et une ligne s’ouvre pour comparer les deux spectres. Le filtre « Meilleur que dans Music » ne laisse que ce qui sonne mieux que ta copie dans Apple Music."
           },
           {
             "t": "Les bits, vérifiés",
@@ -345,8 +345,8 @@
           },
           {
             "t": "Remplace ce que tu as déjà",
-            "s": "Une meilleure copie prend la place de l’ancienne dans Apple Music et rekordbox, playlists comprises.",
-            "d": "Charge une autre copie d’un morceau que tu possèdes, dans n’importe quel format, même le même, et elle prend la place de l’ancienne dans Apple Music et rekordbox, au lieu de t’en laisser deux. Le morceau reste dans ses playlists, sans le rajouter à la main dans chacune, et dans Apple Music il garde son nombre de lectures et ta note. Le badge Apple Music montre dans quel format est ta copie, pour savoir si ça vaut le coup."
+            "s": "Une meilleure copie prend la place de l’ancienne dans Apple Music et tes logiciels DJ, cues compris.",
+            "d": "Charge une autre copie d’un morceau que tu possèdes, dans n’importe quel format, même le même, et elle prend la place de l’ancienne dans Apple Music, rekordbox, Traktor, Engine DJ, Serato et VirtualDJ, au lieu de t’en laisser deux. Le morceau reste dans ses playlists, et ses cues suivent l’audio si la nouvelle copie commence un peu plus tôt ou plus tard. Chaque morceau remplacé attend dans « À vérifier » jusqu’à ce que tu le regardes. Dans Apple Music il garde son nombre de lectures et ta note. Serato le garde dans ses crates, mais il perd ses étoiles. Le badge Apple Music montre dans quel format est ta copie, pour savoir si ça vaut le coup."
           },
           {
             "t": "Fautes et doublons dans ta bibliothèque",
@@ -450,6 +450,7 @@
         "add": "Ajouter le morceau converti",
         "names": "Reporter titre, artiste, album et genre",
         "follow": "Suivre le nouveau morceau avec ses cues",
+        "replace": "Remplacer un morceau en gardant ses cues",
         "usb": "USB pour lecteurs Pioneer",
         "copies": "Sauvegarde avant d’écrire, et restauration",
         "windows": "Windows"
@@ -465,6 +466,7 @@
         "inPlace": "Sur place",
         "sameFolder": "Même dossier",
         "keepsOriginal": "Garde l’original",
+        "losesStars": "Perd les étoiles",
         "engineUsb": "USB Engine",
         "noRestore": "Pas dans Sauvegardes",
         "beta": "Bêta",
@@ -883,7 +885,7 @@
         "steps": [
           {
             "lead": "Analyse.",
-            "text": "Ouvre la section qualité d’un morceau, ou analyse toute la file avec le bouton de la barre ou ⌘⇧A."
+            "text": "Ouvre la section qualité d’un morceau, ou analyse toute la file avec le bouton de la barre ou ⇧⌘A."
           },
           {
             "lead": "Lis le verdict.",
@@ -942,7 +944,7 @@
         "title": "Convertis tes morceaux",
         "s": "Un morceau ou toute la file, dans le format choisi ou dans le sien.",
         "body": [
-          "⌘Entrée convertit le morceau sélectionné et ⌘⇧Entrée toute la file, en sautant ce qui est déjà fait. Si tu as filtré la liste, seul ce que tu vois est converti."
+          "⌘Entrée convertit le morceau sélectionné et ⇧⌘Entrée toute la file, en sautant ce qui est déjà fait. Si tu as filtré la liste, seul ce que tu vois est converti."
         ],
         "steps": [
           {
@@ -961,7 +963,7 @@
         "points": [
           "Si la conversion change l’audio d’un original, Surco en garde d’abord une sauvegarde. La marque sur la ligne te ramène à lui.",
           "Avec « Modifier l’original », changer de format supprime l’original.",
-          "Convertir ne cherche pas dans tes sources. Si tu veux des données fraîches, lance d’abord Associer (⌘⇧D)."
+          "Convertir ne cherche pas dans tes sources. Si tu veux des données fraîches, lance d’abord Associer (⇧⌘D)."
         ],
         "shot": "convertir-fr.webp",
         "shotCaption": "Le bouton de conversion avec son choix de format."
@@ -1021,7 +1023,7 @@
           "Si le logiciel est ouvert, Surco attend que tu le fermes ou propose de le fermer, et fait toujours une sauvegarde avant d’écrire.",
           "Traktor ne relit pas le fichier, il lit son collection.nml. Pour qu’il voie tes nouveaux cues, indique ta collection à Surco dans les Réglages.",
           "Les cues de Traktor survivent à la conversion entre MP3, AIFF, FLAC et WAV, et ne se perdent qu’en ALAC.",
-          "Charge une autre copie d’un morceau que tu as déjà et le bouton devient « Remplacer », en gardant ses playlists et ses cues."
+          "Charge une autre copie d’un morceau et le bouton devient « Remplacer ». Ses cues suivent l’audio et il attend dans « À vérifier »."
         ],
         "shot": "exportar-fr.webp",
         "shotCaption": "Envoyer le morceau vers Apple Music ou exporter la collection."

@@ -11,7 +11,10 @@ function SkeletonGroup({ rows }: { rows: number }): React.JSX.Element {
   return (
     <div>
       <div className="mb-1.5 h-2.5 w-12 skeleton-sweep rounded bg-[var(--color-panel-2)]" />
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]">
+      <div
+        data-testid="properties-skeleton-group"
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-[var(--color-line)]"
+      >
         {Array.from({ length: rows }, (_, i) => (
           <div
             // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder rows, never reordered

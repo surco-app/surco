@@ -8,6 +8,7 @@ import { emptyMetadata } from '../../../shared/metadata'
 import type { LegacyOrigin } from '../../../shared/sessionLegacy'
 import { isFrom } from '../../../shared/trackOrigin'
 import type { SessionEdit } from '../../../shared/types'
+import { coverSourceOf } from '../lib/coverSource'
 import { isStale, trackSignature } from '../lib/dirty'
 import { discardPlaylistEdits, playlistsEdit } from '../lib/rekordboxPlaylists'
 import { useTrackLibrary } from './useTrackLibrary'
@@ -1392,6 +1393,41 @@ describe('useTrackLibrary foreign tags', () => {
     expect(result.current.tracks[0]?.embeddedCover).toBe('data:image/jpeg;base64,RESTORED')
   })
 
+  // Reported 24/11: a FLAC with no art, matched on Discogs, reopened and then added to Music
+  // arrived with no cover. The restored Discogs URL had been taken for the file's own art,
+  // so the job asked the FLAC for a picture it never had instead of downloading the image.
+  it('sends a restored Discogs cover to the conversion as the URL, not as the file\u2019s own art', async () => {
+    setApi({
+      readMeta: vi.fn().mockResolvedValue({
+        tags: { title: '', artist: '' },
+        duration: 180,
+        cover: null,
+        foreignTags: [],
+      }),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed: vi.fn(),
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/m/a.flac'], {
+        '/m/a.flac': { meta: { title: 'Restored' } as never, coverUrl: 'https://i.discogs.com/primary.jpeg' },
+      }),
+    )
+
+    const track = result.current.tracks[0]
+    expect(track?.coverUrl).toBe('https://i.discogs.com/primary.jpeg')
+    expect(coverSourceOf(track)).toEqual({ coverUrl: 'https://i.discogs.com/primary.jpeg', coverPath: undefined })
+  })
+
   // A file that carries its own art must keep showing that, not a cover restored from a
   // session: the row is a view of the file on disk.
   it('keeps the file\u2019s own art over a restored session cover', async () => {
@@ -1848,6 +1884,49 @@ describe('useTrackLibrary meta read failures', () => {
     expect(empty?.metaReadFailed).toBe(true)
     expect(empty?.loadingMeta, 'the row must not be left spinning').toBe(false)
     expect(fine?.metaReadFailed).toBeUndefined()
+    expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
+  })
+
+  // A Tracks row restored from last session whose file was deleted or moved since fails
+  // its read like a damaged file, and the notice said the tags could not be read. The file
+  // is not damaged, it is gone, and the DJ needs to look for it, not retag it.
+  it('reports a file that is no longer there apart from a file it could not read', async () => {
+    const onMetaReadFailed = vi.fn()
+    const onMetaFilesMissing = vi.fn()
+    setApi({
+      readMeta: vi.fn((path: string) =>
+        Promise.resolve({
+          tags: emptyMetadata(),
+          duration: null,
+          cover: null,
+          foreignTags: [],
+          failed: true,
+          ...(path.includes('gone') && { missing: true }),
+        }),
+      ),
+    })
+    const { result } = renderHook(() =>
+      useTrackLibrary({
+        setSelection: vi.fn(),
+        onForget: vi.fn(),
+        onRemove: vi.fn(),
+        onClear: vi.fn(),
+        onMetaLoaded: vi.fn(),
+        onDuplicatesSkipped: vi.fn(),
+        onNoAudioFound: vi.fn(),
+        onMetaReadFailed,
+        onMetaFilesMissing,
+      }),
+    )
+    await act(() =>
+      result.current.addPaths(['/music/gone one.mp3', '/music/gone two.mp3', '/music/bad.mp3']),
+    )
+
+    const gone = result.current.tracks.find((t) => t.fileName.includes('gone one'))
+    const bad = result.current.tracks.find((t) => t.fileName.includes('bad'))
+    expect(gone?.metaFileMissing).toBe(true)
+    expect(bad?.metaFileMissing).toBeUndefined()
+    expect(onMetaFilesMissing).toHaveBeenCalledExactlyOnceWith(2)
     expect(onMetaReadFailed).toHaveBeenCalledExactlyOnceWith(1)
   })
 

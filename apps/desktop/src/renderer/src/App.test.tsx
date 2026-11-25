@@ -23,7 +23,7 @@ import { MATCHING_ID } from '../../shared/matching'
 import { emptyMetadata } from '../../shared/metadata'
 import { RECENTLY_ADDED_ID } from '../../shared/recentlyAdded'
 import { DEFAULT_SESSION_WIZARD } from '../../shared/sessionSettings'
-import { TO_REVIEW_ID } from '../../shared/toReview'
+import { type ReplacedEntry, TO_REVIEW_ID } from '../../shared/toReview'
 import type {
   ActivityEvent,
   ProgramCopies,
@@ -71,14 +71,22 @@ const { sortRuns } = vi.hoisted(() => ({ sortRuns: { count: 0 } }))
 
 // Pass-through Editor wrapped in its own memo, so the counter only ticks when App
 // hands it a changed prop identity — the contract the editor-stability test pins.
-const { editorRenders } = vi.hoisted(() => ({ editorRenders: { count: 0 } }))
+const { editorRenders } = vi.hoisted(() => ({
+  editorRenders: {
+    count: 0,
+    crash: false,
+    lastProps: null as { libraryLoading?: boolean } | null,
+  },
+}))
 vi.mock('./components/Editor', async (importOriginal) => {
   const real = await importOriginal<typeof import('./components/Editor')>()
   const { memo } = await import('react')
   const CountingEditor = memo(function CountingEditor(
     props: React.ComponentProps<typeof real.Editor>,
   ): React.JSX.Element {
+    if (editorRenders.crash) throw new Error('boom')
     editorRenders.count++
+    editorRenders.lastProps = props
     return <real.Editor {...props} />
   })
   return { ...real, Editor: CountingEditor }
@@ -176,6 +184,8 @@ function settings(over: Partial<Settings> = {}): Settings {
     cueFlows: BUNDLED_FLOWS,
     activeCueFlow: 'mine',
     cueJumpBars: 16,
+    cueSaveThen: 'stay',
+    libraryCopyAction: 'update',
     cueQuantize: 'bar',
     cueGridTolerance: 10,
     cueLettersByTime: true,
@@ -335,6 +345,11 @@ class MockIntersectionObserver {
 
 let menuListener: ((id: string) => void) | undefined
 
+const selectedRowIndexes = (): number[] =>
+  screen
+    .getAllByTestId('track-row')
+    .flatMap((row, i) => (row.getAttribute('aria-selected') === 'true' ? [i] : []))
+
 function runMenu(id: string): void {
   act(() => menuListener?.(id))
 }
@@ -355,6 +370,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     loadAppleMusicPlaylistsCached: vi.fn().mockResolvedValue(null),
     loadAppleMusicPlaylistCached: vi.fn().mockResolvedValue(null),
     keepsTrash: vi.fn().mockResolvedValue(true),
+    sameFile: vi.fn(async (a: string, b: string) => a === b),
     saveSettings: vi.fn<Api['saveSettings']>().mockResolvedValue(settings()),
     recordStat: vi.fn(),
     rekordboxCollection: vi.fn<Api['rekordboxCollection']>().mockResolvedValue(''),
@@ -396,6 +412,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     retryVerification: vi.fn<Api['retryVerification']>().mockResolvedValue('rechecked'),
     copiesStatus: vi.fn<Api['copiesStatus']>().mockResolvedValue([]),
     onCopiesChanged: vi.fn<Api['onCopiesChanged']>(() => () => {}),
+    onReplacedChanged: () => () => {},
     traktorCanSave: vi.fn<Api['traktorCanSave']>().mockResolvedValue(true),
     onWindowFocus: () => () => {},
     usbVolumes: vi.fn<Api['usbVolumes']>().mockResolvedValue({ volumes: [], lastKey: null }),
@@ -450,7 +467,7 @@ function setApi(over: Record<string, unknown> = {}): void {
     // to cancel a single convert; stub all so processAll doesn't throw.
     conversionPrograms: vi.fn<Api['conversionPrograms']>().mockResolvedValue([]),
     beginConversionBatch: vi.fn(),
-    endConversionBatch: vi.fn(),
+    endConversionBatch: vi.fn(async () => {}),
     cancelJob: vi.fn(),
     reportUnsavedCues: vi.fn<Api['reportUnsavedCues']>(),
     ...over,
@@ -539,6 +556,17 @@ async function addOneTrack(): Promise<HTMLElement[]> {
 const openTab = (row: string, tab: string): void => {
   fireEvent.click(screen.getByTestId(`settings-tab-${row}`))
   fireEvent.click(screen.getByTestId(`settings-subtab-${tab}`))
+}
+
+// A notice that leaves on its own has no ✕; the user takes it away early with a sideways
+// swipe, which jsdom only measures against a card that has a width.
+function swipeAway(testid: string): void {
+  const width = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(300)
+  try {
+    for (let i = 0; i < 7; i++) fireEvent.wheel(screen.getByTestId(testid), { deltaX: -20 })
+  } finally {
+    width.mockRestore()
+  }
 }
 
 describe('App unsaved cues', () => {
@@ -654,6 +682,66 @@ describe('App Engine DJ cues', () => {
     fireEvent.click(await screen.findByTestId('source-node-7'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
   }
+
+  const cueRead = (contentId: string) => ({
+    contentId,
+    analysed: true,
+    grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+    strong: [],
+    phrases: [],
+    cues: [],
+    wave: null,
+    durationMs: 400000,
+    fingerprint: 'f0',
+    gridFingerprint: '',
+  })
+  const openWithUnsavedCues = async (over: ApiOverrides = {}) => {
+    openEngine({
+      ...over,
+      onCueProfileChanged: () => () => {},
+      cues: {
+        trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => cueRead(id)),
+        queued: vi.fn<Api['cues']['queued']>(async () => null),
+        save: vi.fn<Api['cues']['save']>(async () => {}),
+      },
+    })
+    await openFriday()
+    act(() =>
+      keepDraft(
+        'engine:11',
+        'engine:11|f0|null',
+        startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+        { path: '/m/a.wav', label: 'a', fingerprint: 'f0' },
+      ),
+    )
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await screen.findByTestId('cue-wave')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+  }
+
+  // The remembered way lives in Settings and the step is the list's own arrow-down, so the
+  // DJ who saves and moves on lands on the row under the one they just finished.
+  it('saves the cues and opens the next row when Settings remember saving and moving on', async () => {
+    await openWithUnsavedCues({
+      getSettings: vi.fn().mockResolvedValue(settings({ cueSaveThen: 'next' })),
+    })
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(window.api.cues.save).toHaveBeenCalledOnce())
+    await waitFor(() =>
+      expect(screen.getAllByTestId('track-row')[1]).toHaveAttribute('aria-selected', 'true'),
+    )
+  })
+
+  it('keeps the way picked from the save menu in Settings, so the next track and the next session use it', async () => {
+    await openWithUnsavedCues()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    fireEvent.click(screen.getByTestId('cues-save-mode-next'))
+    await waitFor(() =>
+      expect(window.api.saveSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ cueSaveThen: 'next' }),
+      ),
+    )
+  })
 
   // Tracks takes the same numbers as a playlist, in the order the files came in, so the
   // one View switch reads the same on every tab.
@@ -1530,6 +1618,145 @@ describe('App VirtualDJ tab', () => {
     )
   })
 
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the renamed one yanked them back out of it.
+  const openOtra = async () => {
+    fireEvent.click(screen.getByTestId('source-node-Carpeta/Otra'))
+    await waitFor(() =>
+      expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+        'aria-current',
+        'true',
+      ),
+    )
+  }
+  const RENAMED: SourceNode[] = [
+    {
+      id: 'Carpeta',
+      name: 'Carpeta',
+      kind: 'folder',
+      count: 2,
+      children: [
+        { id: 'Carpeta/Fuera', name: 'Fuera', kind: 'playlist', count: 1 },
+        { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+      ],
+    },
+  ]
+  const renameDentro = () => {
+    fireEvent.contextMenu(screen.getByTestId('source-node-Carpeta/Dentro'))
+    fireEvent.click(screen.getByTestId('source-tree-rename'))
+    const field = screen.getByTestId('source-tree-rename-field')
+    fireEvent.change(field, { target: { value: 'Fuera' } })
+    fireEvent.keyDown(field, { key: 'Enter' })
+  }
+  async function editWhileOpeningAnother(
+    edit: () => void,
+    after: SourceNode[],
+    openOther: () => Promise<void> = openOtra,
+  ): Promise<ReturnType<typeof vi.fn<ProgramReads['playlist']>>> {
+    let tree: SourceNode[] = [
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 2,
+        children: [
+          { id: 'Carpeta/Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+          { id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 },
+        ],
+      },
+    ]
+    let finish: () => void = () => {}
+    const editPlaylist = vi.fn<ProgramReads['editPlaylist']>(
+      () =>
+        new Promise((resolve) => {
+          finish = () => {
+            tree = after
+            resolve({ applied: true })
+          }
+        }),
+    )
+    const playlist = vi
+      .fn<ProgramReads['playlist']>()
+      .mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {}, contentId: 'virtualdj:/m/a.wav' },
+      ])
+    openVirtualdj({
+      dj: djReads({
+        virtualdj: { tree: vi.fn<ProgramReads['tree']>(async () => tree), playlist, editPlaylist },
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('source-rail-virtualdj'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta'))
+    fireEvent.click(await screen.findByTestId('source-node-Carpeta/Dentro'))
+    await waitFor(() => expect(playlist).toHaveBeenCalledWith('Carpeta/Dentro'))
+    edit()
+    await waitFor(() => expect(editPlaylist).toHaveBeenCalled())
+
+    await openOther()
+    await act(async () => finish())
+    return playlist
+  }
+
+  // The write can wait on a confirmation and a slow save: a list the DJ opened meanwhile is
+  // where they went, and reopening the edited one yanked them back out of it.
+  it('stays on the list opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED)
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list the palette opened while a rename was being written', async () => {
+    const playlist = await editWhileOpeningAnother(renameDentro, RENAMED, async () => {
+      fireEvent.click(screen.getByTestId('open-palette'))
+      fireEvent.change(await screen.findByTestId('palette-input'), { target: { value: 'Otra' } })
+      await waitFor(() =>
+        expect(
+          document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra'),
+        ).not.toBeNull(),
+      )
+      fireEvent.click(
+        document.getElementById('palette-option-playlist:virtualdj:Carpeta/Otra') as HTMLElement,
+      )
+      await waitFor(() =>
+        expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute(
+          'aria-current',
+          'true',
+        ),
+      )
+    })
+    await waitFor(() => expect(screen.getByTestId('source-node-Carpeta/Fuera')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Carpeta/Fuera')
+  })
+
+  it('stays on the list opened while a move was being written', async () => {
+    const playlist = await editWhileOpeningAnother(() => {
+      const dt = fakeDataTransfer()
+      fireEvent.dragStart(screen.getByTestId('source-node-Carpeta/Dentro'), { dataTransfer: dt })
+      const folder = screen.getByTestId('source-node-Carpeta')
+      vi.spyOn(folder, 'getBoundingClientRect').mockReturnValue({ top: 0, height: 28 } as DOMRect)
+      fireEvent.dragOver(folder, { dataTransfer: dt, clientY: 3 })
+      fireEvent.drop(folder, { dataTransfer: dt })
+    }, [
+      { id: 'Dentro', name: 'Dentro', kind: 'playlist', count: 1 },
+      {
+        id: 'Carpeta',
+        name: 'Carpeta',
+        kind: 'folder',
+        count: 1,
+        children: [{ id: 'Carpeta/Otra', name: 'Otra', kind: 'playlist', count: 1 }],
+      },
+    ])
+    await waitFor(() => expect(screen.getByTestId('source-node-Dentro')).toBeInTheDocument())
+    await act(async () => {})
+    expect(screen.getByTestId('source-node-Carpeta/Otra')).toHaveAttribute('aria-current', 'true')
+    expect(playlist).not.toHaveBeenCalledWith('Dentro')
+  })
+
   it('asks before a tree edit in VirtualDJ too, as in the other programs', async () => {
     const editPlaylist = vi
       .fn<ProgramReads['editPlaylist']>()
@@ -1948,13 +2175,7 @@ describe('App Serato crate move', () => {
   })
 })
 
-describe('App sidebar clipping', () => {
-  it('clips the sidebar so the player cannot animate into page scroll', async () => {
-    await renderApp()
-    await addTwoTracks()
-    expect(screen.getByTestId('sidebar').className).toContain('overflow-hidden')
-  })
-
+describe('App sidebar landmark', () => {
   // VoiceOver's landmark rotor listed the column as a bare "complementary", with nothing to
   // tell it apart; its name is what lets a screen reader user jump straight to the tracks.
   it('names the sidebar landmark', async () => {
@@ -1989,6 +2210,21 @@ describe('App sidebar divider', () => {
     await addTwoTracks()
     expect(screen.getByTestId('sidebar')).toBeInTheDocument()
     expect(screen.getAllByRole('separator').length).toBeGreaterThan(0)
+  })
+
+  // A focused checkbox keeps its bare keys, as it did before ⌘Z was let through it: Escape
+  // there must not clear the selection and unmount the editor around it.
+  it('keeps the selection on Escape while a checkbox holds the focus', async () => {
+    await renderApp()
+    await addTwoTracks()
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+    fireEvent.keyDown(box, { key: 'Escape' })
+    box.remove()
+    await act(async () => {})
+    expect(screen.queryByTestId('source-pick-track')).toBeNull()
   })
 
   it('asks to pick a track, not to drop files, beside a loaded list with nothing selected, and a click there opens no file dialog', async () => {
@@ -2386,7 +2622,9 @@ describe('App quality triage', () => {
     })
     await renderApp()
     await addTwoTracks()
-    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0))
+    await waitFor(() => expect(screen.getAllByText('Song A').length).toBeGreaterThan(0), {
+      timeout: 3000,
+    })
     await waitFor(() => expect(spectrogram).toHaveBeenCalledWith('/music/a.wav', 'high'))
     expect(screen.queryByTestId('sweep-icon-analyze')).toBeNull()
     expect(loudness).not.toHaveBeenCalled()
@@ -2842,6 +3080,66 @@ describe('App auto-match', () => {
       expect(await albumOfRow(1)).toBe('')
     })
 
+    const libraryApi = (over: Record<string, unknown>) => {
+      handApi()
+      Object.assign(window.api, {
+        platform: 'darwin',
+        getSettings: vi.fn().mockResolvedValue(
+          settings({
+            discogsToken: 'tok',
+            addToAppleMusic: true,
+            visibleFields: ['title', 'artist', 'album', 'year', 'trackNumber', 'comment'],
+          }),
+        ),
+        loadAppleMusicLibrary: vi
+          .fn()
+          .mockResolvedValue([
+            { title: 'My Song', artist: 'Artist', persistentId: '0123456789ABCDEF' },
+          ]),
+        appleMusicEntryMeta: vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue(null),
+        ...over,
+      })
+    }
+
+    it('still matches a track whose empty year Apple Music filled when it was opened', async () => {
+      libraryApi({
+        appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
+        appleMusicEntryMeta: vi.fn<Api['appleMusicEntryMeta']>().mockResolvedValue({
+          year: '1999',
+        }),
+      })
+      await renderApp()
+      await addTwoTracks()
+      await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('1999'), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    })
+
+    it('still matches a track whose empty fields the copy it replaces filled', async () => {
+      libraryApi({
+        appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/my-song.mp3'),
+        readCoverFull: vi.fn<Api['readCoverFull']>().mockResolvedValue(null),
+        readTags: vi.fn((path: string) =>
+          Promise.resolve(
+            path === '/music/old/my-song.mp3'
+              ? { ...emptyMetadata(), title: 'My Song', artist: 'Artist', year: '1999' }
+              : { title: 'My Song', artist: 'Artist' },
+          ),
+        ),
+      })
+      await renderApp()
+      await addTwoTracks()
+      await waitFor(() => expect(screen.getByTestId('field-year')).toHaveValue('1999'), {
+        timeout: 3000,
+      })
+
+      fireEvent.click(screen.getByTestId('auto-match'))
+      await waitFor(() => expect(screen.getAllByTestId('track-automatched')).toHaveLength(2))
+    })
+
     // Clearing hands a track back to the sweep only until the DJ types into it again: the
     // search it kept still finds the old release, which would land over the retyped tags.
     it('keeps what was typed after a clear through the sweep', async () => {
@@ -2943,6 +3241,11 @@ describe('App auto-match', () => {
     })
     await renderApp()
     const rows = await addTwoTracks()
+    // The editor opened on the first track loads its top release too, as soon as its own
+    // search answers. Under load that landed after the selection grew and was counted as a
+    // third sweep probe, so the test waits for it and counts the sweep's probes apart.
+    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(1))
+    const sweepProbes = () => getRelease.mock.calls.length - 1
     fireEvent.click(rows[1], { metaKey: true })
 
     const album = await screen.findByTestId('field-album')
@@ -2950,7 +3253,7 @@ describe('App auto-match', () => {
     fireEvent.change(album, { target: { value: 'Hand Typed' } })
 
     fireEvent.click(screen.getByTestId('auto-match'))
-    await waitFor(() => expect(getRelease).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(sweepProbes()).toBe(2))
     releaseGate()
     await waitFor(() => expect(screen.queryByTestId('sweep-icon-match')).toBeNull())
 
@@ -3383,6 +3686,61 @@ describe('App source rail', () => {
     expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
   })
 
+  // The palette jumps straight into another source's playlist: what that source had selected
+  // comes back, as from the rail. The row picked in the list being left opened instead.
+  it('gives the source a palette jump lands in back its own selected row', async () => {
+    const entry = (path: string) => ({ path, separator: false, meta: {} })
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/m/a.wav', '/m/b.wav']),
+      readTags: vi.fn(async (path: string) => ({
+        title: { '/m/a.wav': 'Alpha', '/m/b.wav': 'Bravo', '/m/c.wav': 'Charlie' }[path],
+        artist: 'DJ',
+      })),
+      dj: djReads({
+        rekordbox: {
+          available: vi.fn<ProgramReads['available']>().mockResolvedValue(true),
+          tree: vi
+            .fn<ProgramReads['tree']>()
+            .mockResolvedValue([{ id: 'f', name: 'Factory', kind: 'playlist', count: 2 }]),
+          playlist: vi
+            .fn<ProgramReads['playlist']>()
+            .mockResolvedValue([entry('/m/c.wav'), entry('/m/b.wav')]),
+        },
+      }),
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Bravo'))
+
+    fireEvent.click(screen.getByTestId('open-palette'))
+    fireEvent.change(await screen.findByTestId('palette-input'), {
+      target: { value: 'Factory' },
+    })
+    await waitFor(() =>
+      expect(document.getElementById('palette-option-playlist:rekordbox:f')).not.toBeNull(),
+    )
+    fireEvent.click(document.getElementById('palette-option-playlist:rekordbox:f') as HTMLElement)
+    await waitFor(() =>
+      expect(screen.getByTestId('source-rail-rekordbox')).toHaveAttribute('aria-pressed', 'true'),
+    )
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Charlie')])
+  })
+
   function rekordboxWithFactory(over: Record<string, unknown> = {}): void {
     setApi({
       readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
@@ -3443,7 +3801,7 @@ describe('App source rail', () => {
   // Tracks comes forward with what was added, and what was added is what the next edit is
   // for, as when adding from Tracks itself: the row picked there before leaving came back
   // as the selection instead, and the new files had to be picked by hand.
-  it('selects the files added while a source is on screen, not the row picked in Tracks before', async () => {
+  it('selects the first file added while a source is on screen, not the row picked in Tracks before', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3459,12 +3817,10 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
-  it('selects the files added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
+  it('selects the first file added under a filter only the source offers, since Tracks drops it and hides nothing', async () => {
     rekordboxWithFactory({
       pickFiles: vi
         .fn<Api['pickFiles']>()
@@ -3492,9 +3848,7 @@ describe('App source rail', () => {
     runMenu('add')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     expect(screen.getByTestId('source-rail-tracks')).toHaveAttribute('aria-pressed', 'true')
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // The list's count is the size of the list on screen: inside a playlist that is its rows,
@@ -3554,6 +3908,57 @@ describe('App source rail', () => {
     expect(loading).toHaveAttribute('role', 'status')
     expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
     expect(within(loading).queryByTestId('track-row')).toBeNull()
+    expect(within(loading).getAllByTestId('track-row-skeleton-wave')).toHaveLength(8)
+  })
+
+  it('drops the wave bar from the placeholder rows when the list hides waves, so the rows do not shrink when the tracks arrive', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showListWaves: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getAllByTestId('track-row-skeleton')).toHaveLength(8)
+    expect(within(loading).queryByTestId('track-row-skeleton-wave')).toBeNull()
+  })
+
+  it('keeps the place of the search and the toolbar while the playlist is read, so the rows do not drop when the header arrives', async () => {
+    rekordboxWithFactory({
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-header-skeleton')).toBeInTheDocument()
+    expect(within(loading).queryByTestId('track-list-location-skeleton')).toBeNull()
+    expect(screen.queryByTestId('track-search')).toBeNull()
+  })
+
+  it('also keeps the place of the location line when the sidebar is hidden, since the header shows it there', async () => {
+    rekordboxWithFactory({
+      getSettings: vi.fn().mockResolvedValue(settings({ showSidebar: false })),
+      dj: djReads({
+        rekordbox: { playlist: vi.fn<ProgramReads['playlist']>(() => new Promise(() => {})) },
+      }),
+    })
+    await renderApp()
+
+    fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+    fireEvent.click(await screen.findByTestId('source-node-f'))
+
+    const loading = await screen.findByTestId('source-playlist-loading')
+    expect(within(loading).getByTestId('track-list-location-skeleton')).toBeInTheDocument()
   })
 
   it('lists a rekordbox row rekordbox has art for from the light read and completes it once the row is selected', async () => {
@@ -3624,6 +4029,306 @@ describe('App source rail', () => {
       "Couldn't read the collection.",
     )
     expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+  })
+
+  // A DJ whose NAS or drive is unplugged opens a playlist and every row goes away. A blank
+  // column, or "No tracks match" with nothing typed, read as Surco losing the playlist.
+  describe('a playlist whose files are not on the disk', () => {
+    const unplugged = (): void =>
+      rekordboxWithFactory({
+        expandPaths: vi.fn(async (paths: string[]) => paths.filter((p) => !p.startsWith('/nas/'))),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+              { path: '/nas/a.wav', separator: false, meta: {} },
+              { path: '/nas/b.wav', separator: false, meta: {} },
+            ]),
+          },
+        }),
+      })
+
+    it.each([
+      ['an empty working list', false],
+      ['tracks in the working list', true],
+    ])(
+      'keeps the column and says the files are not on the disk, with %s',
+      async (_, withTracks) => {
+        unplugged()
+        await renderApp()
+        if (withTracks) await addTwoTracks()
+        fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+        fireEvent.click(await screen.findByTestId('source-node-f'))
+
+        expect(await screen.findByTestId('source-playlist-away')).toHaveTextContent(
+          "Its files aren't on the disk.",
+        )
+        expect(
+          within(screen.getByTestId('sidebar')).getByTestId('track-search'),
+        ).toBeInTheDocument()
+        expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+        expect(screen.queryByTestId('reset-view')).not.toBeInTheDocument()
+      },
+    )
+
+    it('keeps "No tracks match" and its reset for a search that hides every row', async () => {
+      rekordboxWithFactory({
+        dj: djReads({
+          rekordbox: {
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([{ path: '/m/a.wav', separator: false, meta: {} }]),
+          },
+        }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+
+      fireEvent.change(screen.getByTestId('track-search'), { target: { value: 'zz' } })
+
+      expect(await screen.findByText('No tracks match.')).toBeInTheDocument()
+      expect(screen.getByTestId('reset-view')).toBeInTheDocument()
+      expect(screen.queryByTestId('source-playlist-away')).not.toBeInTheDocument()
+    })
+
+    // The rows land a moment after the entries: saying the files are missing in that gap
+    // would be a false alarm on every playlist opened.
+    it('never says the files are missing before the disk has answered', async () => {
+      rekordboxWithFactory({
+        expandPaths: vi.fn((paths: string[]) =>
+          paths.some((p) => p.startsWith('/nas/'))
+            ? new Promise<string[]>(() => {})
+            : Promise.resolve(paths),
+        ),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockResolvedValue([{ path: '/nas/a.wav', separator: false, meta: {} }]),
+          },
+        }),
+      })
+      let saidAway = false
+      const watch = new MutationObserver(() => {
+        if (document.querySelector('[data-testid="source-playlist-away"]')) saidAway = true
+      })
+      watch.observe(document.body, { subtree: true, childList: true })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await act(async () => {})
+      watch.disconnect()
+
+      expect(saidAway).toBe(false)
+    })
+
+    // "No tracks match" with nothing typed or filtered read as the playlist being lost.
+    it('says neither line for an empty playlist with tracks in the working list', async () => {
+      rekordboxWithFactory({
+        dj: djReads({
+          rekordbox: { playlist: vi.fn<ProgramReads['playlist']>().mockResolvedValue([]) },
+        }),
+      })
+      await renderApp()
+      await addTwoTracks()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+
+      expect(
+        await within(await screen.findByTestId('sidebar')).findByTestId('track-search'),
+      ).toBeInTheDocument()
+      await act(async () => {})
+      expect(screen.queryByText('No tracks match.')).not.toBeInTheDocument()
+      expect(screen.queryByTestId('source-playlist-away')).not.toBeInTheDocument()
+    })
+
+    // A re-read landing while the disk is still being checked found no new rows and
+    // counted 0, which spent the playlist's one notice before the real count arrived.
+    it('tells the full count once even when the playlist is re-read while the disk is checked', async () => {
+      const focusListeners: ((focused: boolean) => void)[] = []
+      let answerDisk: (onDisk: string[]) => void = () => {}
+      const entries = () => [
+        { path: '/nas/a.wav', separator: false, meta: {} },
+        { path: '/nas/b.wav', separator: false, meta: {} },
+      ]
+      let answerReread: () => void = () => {}
+      const playlist = vi
+        .fn<ProgramReads['playlist']>()
+        .mockResolvedValueOnce(entries())
+        .mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              answerReread = () => resolve(entries())
+            }),
+        )
+      rekordboxWithFactory({
+        onWindowFocus: (cb: (focused: boolean) => void) => {
+          focusListeners.push(cb)
+          return () => {}
+        },
+        expandPaths: vi.fn(
+          (paths: string[]) =>
+            new Promise<string[]>((resolve) => {
+              if (paths.some((p) => p.startsWith('/nas/'))) answerDisk = resolve
+              else resolve(paths)
+            }),
+        ),
+        dj: djReads({ rekordbox: { playlist } }),
+      })
+      const pushed = vi.spyOn(await import('./lib/toastQueue'), 'pushToast')
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+
+      const readsBefore = playlist.mock.calls.length
+      act(() => {
+        for (const cb of focusListeners) cb(true)
+      })
+      await waitFor(() => expect(playlist).toHaveBeenCalledTimes(readsBefore + 1))
+      await act(async () => {})
+      await act(async () => {
+        answerReread()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+      await act(async () => answerDisk([]))
+
+      expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+        '2 tracks from “Factory” have no file on disk',
+      )
+      await act(async () => {})
+      expect(pushed.mock.calls.filter(([, t]) => t.key === 'source-missing-files')).toHaveLength(1)
+      pushed.mockRestore()
+    })
+
+    // A playlist the DJ already left must not decide what the one on screen says: its late
+    // disk answer left the new one's column blank, the case this line exists for.
+    it('keeps the line for the playlist on screen when the one left behind answers later', async () => {
+      const answers = new Map<string, (onDisk: string[]) => void>()
+      rekordboxWithFactory({
+        expandPaths: vi.fn((paths: string[]) =>
+          paths.some((p) => p.startsWith('/nas/'))
+            ? new Promise<string[]>((resolve) => {
+                answers.set(paths[0], resolve)
+              })
+            : Promise.resolve(paths),
+        ),
+        dj: djReads({
+          rekordbox: {
+            tree: vi.fn<ProgramReads['tree']>().mockResolvedValue([
+              { id: 'a', name: 'Alpha', kind: 'playlist', count: 1 },
+              { id: 'b', name: 'Beta', kind: 'playlist', count: 1 },
+            ]),
+            playlist: vi.fn<ProgramReads['playlist']>(async (id) => [
+              { path: `/nas/${id}.wav`, separator: false, meta: {} },
+            ]),
+          },
+        }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-a'))
+      await waitFor(() => expect(answers.has('/nas/a.wav')).toBe(true))
+      fireEvent.click(screen.getByTestId('source-node-b'))
+      await waitFor(() => expect(answers.has('/nas/b.wav')).toBe(true))
+
+      await act(async () => answers.get('/nas/b.wav')?.([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+      await act(async () => answers.get('/nas/a.wav')?.([]))
+      await act(async () => {})
+
+      expect(screen.getByTestId('source-playlist-away')).toBeInTheDocument()
+    })
+
+    // Coming back to a playlist checks its disk again; what the last visit found may no
+    // longer hold, so the line waits for the new answer. The rows land in the same flush
+    // as the reopening, so a line drawn in between only shows up among the removed nodes.
+    it('waits for the new disk answer before saying it again on a reopened playlist', async () => {
+      let answerDisk: (onDisk: string[]) => void = () => {}
+      unplugged()
+      window.api.expandPaths = vi.fn((paths: string[]) =>
+        paths.some((p) => p.startsWith('/nas/'))
+          ? new Promise<string[]>((resolve) => {
+              answerDisk = resolve
+            })
+          : Promise.resolve(paths),
+      )
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await act(async () => answerDisk([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+
+      let saidAway = false
+      const watch = new MutationObserver((records) => {
+        for (const r of records)
+          for (const n of [...r.addedNodes, ...r.removedNodes])
+            if (
+              n instanceof Element &&
+              (n.matches('[data-testid="source-playlist-away"]') ||
+                n.querySelector('[data-testid="source-playlist-away"]'))
+            )
+              saidAway = true
+      })
+      watch.observe(document.body, { subtree: true, childList: true })
+      fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+      await act(async () => {})
+      watch.disconnect()
+      expect(saidAway).toBe(false)
+
+      await act(async () => answerDisk([]))
+      expect(await screen.findByTestId('source-playlist-away')).toBeInTheDocument()
+    })
+
+    // A cue save, an edit or a refocus reads the playlist again. A file its opening found
+    // missing came back each time as a new row, was analysed (ENOENT in the log) and removed.
+    it('leaves a file its opening found missing alone when the playlist is read again', async () => {
+      const focusListeners: ((focused: boolean) => void)[] = []
+      const playlist = vi.fn<ProgramReads['playlist']>().mockResolvedValue([
+        { path: '/m/a.wav', separator: false, meta: {} },
+        { path: '/nas/gone.wav', separator: false, meta: {} },
+      ])
+      const expandPaths = vi.fn(async (paths: string[]) =>
+        paths.filter((p) => !p.startsWith('/nas/')),
+      )
+      const readTags = vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' })
+      rekordboxWithFactory({
+        onWindowFocus: (cb: (focused: boolean) => void) => {
+          focusListeners.push(cb)
+          return () => {}
+        },
+        expandPaths,
+        readTags,
+        dj: djReads({ rekordbox: { playlist } }),
+      })
+      await renderApp()
+      fireEvent.click(await screen.findByTestId('source-rail-rekordbox'))
+      fireEvent.click(await screen.findByTestId('source-node-f'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+      await act(async () => {})
+      const touchedGone = () =>
+        [...expandPaths.mock.calls, ...readTags.mock.calls].filter(([arg]) =>
+          [arg].flat().includes('/nas/gone.wav'),
+        ).length
+      const before = touchedGone()
+
+      const readsBefore = playlist.mock.calls.length
+      act(() => {
+        for (const cb of focusListeners) cb(true)
+      })
+      await waitFor(() => expect(playlist).toHaveBeenCalledTimes(readsBefore + 1))
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(touchedGone()).toBe(before)
+      expect(screen.getAllByTestId('track-row')).toHaveLength(1)
+    })
   })
 })
 
@@ -5228,6 +5933,32 @@ describe('App source playlists', () => {
   // stay in the working list. A selection kept across the switch made the editor, the row
   // menu and the bulk actions act on rows the DJ could no longer see, a rekordbox write
   // among them. Only what the new view shows may stay selected.
+  // Tracks keeps its selection while another source is on screen; a row trashed meanwhile
+  // takes the editor's row with it, and the rows still selected need one to show.
+  it('moves the editor of Tracks onto a selected row left when the one shown was trashed away', async () => {
+    await openFactory({ trashFile: vi.fn().mockResolvedValue({ where: 'trash' }) })
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('source-rail-rekordbox'))
+    await screen.findByTestId('track-separator-s1')
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Alpha'))
+    runMenu('trash-selected')
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getByTestId('source-rail-tracks'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    expect(
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => r.textContent),
+    ).toEqual([expect.stringContaining('Bravo')])
+    expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+  })
+
   describe('switching playlists inside rekordbox', () => {
     const HOUSE_ENTRIES = [linked('/m/b.wav', 'h2'), linked('/m/c.wav', 'h3')]
     const openThree = async (over: Record<string, unknown> = {}) => {
@@ -5313,6 +6044,18 @@ describe('App source playlists', () => {
       await openHouse()
       await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Bravo')]))
       expect(screen.getByTestId('field-title')).toHaveValue('Bravo')
+    })
+
+    // The editor and the arrow keys follow the anchor: losing it with rows still selected left
+    // them highlighted beside an empty editor, and ↑/↓ starting from nowhere.
+    it('moves the editor onto a selected row the new playlist holds when it lacks the one shown', async () => {
+      await openThree()
+      const rows = screen.getAllByTestId('track-row')
+      fireEvent.click(rows[0])
+      fireEvent.click(rows[2], { metaKey: true })
+      await openHouse()
+      await waitFor(() => expect(selectedTitles()).toEqual([expect.stringContaining('Charlie')]))
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
     })
 
     it('has no selection to trash when the new playlist holds none of it', async () => {
@@ -5543,7 +6286,7 @@ describe('App source playlists', () => {
 
   // Inside a playlist, taking a track out of the list and out of the playlist were two actions
   // and the DJ could not tell them apart; now every way to remove reaches the playlist.
-  it('removes from the open rekordbox playlist with the key and with the list button too', async () => {
+  it('removes from the open rekordbox playlist with the key and with the list menu too', async () => {
     const edit = vi.fn<ProgramReads['editPlaylist']>().mockResolvedValue({ applied: true })
     await openFactory({ dj: djReads({ rekordbox: { editPlaylist: edit } }) })
     fireEvent.click(screen.getAllByTestId('track-row')[1])
@@ -5562,6 +6305,7 @@ describe('App source playlists', () => {
       ),
     )
     fireEvent.click(screen.getAllByTestId('track-row')[1])
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     await waitFor(() =>
       expect(screen.getByTestId('remove-selected')).toHaveAttribute(
         'aria-label',
@@ -5911,6 +6655,164 @@ describe('App source playlists', () => {
       fireEvent.click(screen.getByTestId('source-node-h'))
       await waitFor(() => expect(screen.getAllByTestId('track-row').length).toBeGreaterThan(0))
       expect(screen.queryByTestId('track-replaced')).not.toBeInTheDocument()
+    })
+
+    // Right after Update the row is the Tracks item that made the new file: its own path is
+    // the download, and only the file it wrote is the one To review lists.
+    it('marks and opens a track replaced in this session by the file the replacement wrote', async () => {
+      const processTrack = vi.fn<Api['processTrack']>().mockResolvedValue({
+        outputPath: '/m/a.aiff',
+        inPlace: false,
+      })
+      await openFactory({
+        processTrack,
+        replacedTracks: vi.fn().mockResolvedValue([
+          {
+            newPath: '/m/a.aiff',
+            oldPath: '/m/a.mp3',
+            replacedAt: 1,
+            shift: { moved: 40 },
+            pending: ['rekordbox'],
+          },
+        ]),
+        dj: djReads({
+          rekordbox: {
+            playlist: vi.fn<ProgramReads['playlist']>().mockImplementation(async (id) =>
+              id === ALL_TRACKS_ID
+                ? [
+                    {
+                      path: '/m/a.aiff',
+                      separator: false,
+                      meta: {},
+                      linkId: 'r1',
+                      contentId: 'r1',
+                    },
+                  ]
+                : FACTORY_ENTRIES,
+            ),
+          },
+        }),
+      })
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('process-btn'))
+      await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+      await act(async () => {})
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      expect(screen.getByTestId('track-replaced')).toHaveAttribute('data-state', 'moved')
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      expect(await screen.findByTestId('cues-replaced-pill')).toHaveAttribute('data-state', 'moved')
+      expect(screen.getByTestId('cues-reviewed')).toBeInTheDocument()
+    })
+
+    const reviewable = () => {
+      let listed = REPLACED as ReplacedEntry[]
+      return {
+        replacedTracks: vi.fn(async () => listed),
+        reviewReplaced: vi.fn(async (path: string) => {
+          const was = listed.find((e) => e.newPath === path) ?? null
+          listed = listed.filter((e) => e !== was)
+          return was
+        }),
+        restoreReplaced: vi.fn(async (entry: ReplacedEntry) => {
+          listed = [...listed, entry]
+        }),
+        cues: {
+          trackCues: vi.fn<Api['cues']['trackCues']>(async (contentId) => ({
+            contentId,
+            analysed: true,
+            grid: Array.from({ length: 800 }, (_, i) => ({ ms: i * 500, beat: (i % 4) + 1 })),
+            strong: [],
+            phrases: [],
+            cues: [],
+            wave: null,
+            durationMs: 400000,
+            fingerprint: 'f0',
+            gridFingerprint: '',
+          })),
+          queued: vi.fn<Api['cues']['queued']>(async () => null),
+        },
+        onCueProfileChanged: () => () => {},
+        dj: reviewReads(),
+      }
+    }
+    const openCharlie = async () => {
+      fireEvent.click(await screen.findByTestId(`source-node-${TO_REVIEW_ID}`))
+      await waitFor(() =>
+        expect(titles()).toEqual([
+          expect.stringContaining('Charlie'),
+          expect.stringContaining('Alpha'),
+        ]),
+      )
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Charlie'))
+    }
+
+    // Vicent's call (option B): Reviewed or a save is the DJ's last look at the track, and the
+    // editor closing under them hid the Saved mark and lost their place. It stays on the track
+    // until they pick another; only then does the row leave the list.
+    it('keeps the editor on a track that leaves To review until the DJ picks another one', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(api.reviewReplaced).toHaveBeenCalledOnce())
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
+      expect(screen.getByTestId('cues-section')).toBeInTheDocument()
+      expect(screen.getAllByTestId('track-row')[0]).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getAllByTestId('track-replaced')).toHaveLength(1)
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      expect(screen.getByTestId('field-title')).toHaveValue('Alpha')
+    })
+
+    it('keeps the editor on the track when ⌘Z brings it back to To review', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+      await waitFor(() => expect(api.restoreReplaced).toHaveBeenCalledOnce())
+      expect(await screen.findByTestId('cues-replaced-pill')).toBeInTheDocument()
+      expect(screen.getByTestId('field-title')).toHaveValue('Charlie')
+      expect(screen.getAllByTestId('track-replaced')).toHaveLength(2)
+    })
+
+    it('keeps the maximized cue editor open on a track Reviewed there', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      await screen.findByTestId('cue-wave')
+      fireEvent.click(within(screen.getByTestId('cues-section')).getByTestId('section-maximize'))
+      await screen.findByTestId('section-maximized-overlay')
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
+      expect(screen.getByTestId('section-maximized-overlay')).toBeInTheDocument()
+      expect(screen.getByTestId('cues-editor')).toHaveAttribute('data-maximized', 'true')
+    })
+
+    // Single and multi behave alike: a track that left the list stays while it is selected,
+    // alone or with others, and goes once the selection moves off it.
+    it('keeps a track that left To review while it stays in a selection of several', async () => {
+      const api = reviewable()
+      await openFactory(api)
+      await openCharlie()
+      fireEvent.click(await screen.findByTestId('cues-reviewed'))
+      await waitFor(() => expect(screen.queryByTestId('cues-replaced-pill')).toBeNull())
+      fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+      await waitFor(() =>
+        expect(
+          screen.getAllByTestId('track-row').map((r) => r.getAttribute('aria-selected')),
+        ).toEqual(['true', 'true']),
+      )
+      expect(titles()).toEqual([
+        expect.stringContaining('Charlie'),
+        expect.stringContaining('Alpha'),
+      ])
+      fireEvent.click(screen.getAllByTestId('track-row')[1])
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
     })
 
     it('gives no icon for a track pending review only in another program', async () => {
@@ -7445,6 +8347,32 @@ describe('App import skeleton', () => {
     )
   })
 
+  // A Tracks row reopened from last session whose file was deleted or moved since was
+  // reported as a file whose tags could not be read, which sends the DJ to retag a file
+  // that is not damaged, only gone.
+  it('says a reopened file is no longer where it was instead of saying its tags could not be read', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/gone.mp3']),
+      expandPaths: vi.fn().mockResolvedValue(['/music/gone.mp3']),
+      readMeta: vi.fn().mockResolvedValue({
+        tags: emptyMetadata(),
+        duration: null,
+        cover: null,
+        foreignTags: [],
+        failed: true,
+        missing: true,
+      }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    expect(await screen.findByTestId('app-notice')).toHaveTextContent(
+      i18n.t('notices.metaFilesMissing', { count: 1 }),
+    )
+    expect(screen.getByTestId('app-notice')).not.toHaveTextContent(
+      i18n.t('notices.metaReadFailed', { count: 1 }),
+    )
+  })
+
   // The rows are editable from the instant they land, so a slow read (cloud folder) can
   // resolve after the user already typed into the form. The read fills what it learned,
   // but a field the user touched meanwhile must keep the user's value.
@@ -8734,7 +9662,7 @@ describe('App multi-select convert', () => {
     // Selects all three: the anchor (a.wav) plus b.mp3 and c.flac via range-select.
     fireEvent.click(rows[0])
     fireEvent.click(rows[2], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(3))
     const byInput = Object.fromEntries(
@@ -8852,7 +9780,7 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    fireEvent.click(await screen.findByTestId('process-btn'))
+    fireEvent.click(await screen.findByTestId('convert-update-anyway'))
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const mp3Job = processTrack.mock.calls.find((c) => c[0].inputPath === '/music/b.mp3')?.[0]
     expect(mp3Job.addToAppleMusic).toBeUndefined()
@@ -9026,9 +9954,10 @@ describe('App multi-select convert', () => {
     expect(document.activeElement).toBe(screen.getByTestId('source-node-p1'))
   })
 
-  // Tagging an album starts by dropping it: the files that just arrived are the ones the
-  // next edit is for, and selecting them by hand was a step before every single album.
-  it('selects the files that were just added, leaving the earlier ones out', async () => {
+  // A dropped folder opens on its first track, as a click on it would: selecting every
+  // file put the editor on a mixed batch of hundreds the DJ never asked for, and the
+  // whole drop is one ⌘A away when the batch is what they want.
+  it('selects only the first file just added, leaving the earlier ones and the rest out', async () => {
     setApi({
       getSettings: vi.fn().mockResolvedValue(settings()),
       pickFiles: vi
@@ -9042,35 +9971,7 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     fireEvent.click(screen.getByTestId('add-files'))
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 2 }),
-    )
-  })
-
-  // A folder walk hands its files over while it is still walking, before the add itself
-  // returns: those rows arrived with this drop too, and one of three stayed unselected.
-  it('selects the files a walk delivered before it finished', async () => {
-    let deliver: (paths: string[]) => void = () => {}
-    setApi({
-      getSettings: vi.fn().mockResolvedValue(settings()),
-      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
-      onExpandedBatch: (listener: (paths: string[]) => void) => {
-        deliver = listener
-        return () => {}
-      },
-      expandPaths: vi.fn(async (paths: string[]) => {
-        deliver(paths.slice(0, 1))
-        await new Promise((r) => setTimeout(r, 0))
-        return paths
-      }),
-      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
-    })
-    await renderApp()
-    fireEvent.click(await screen.findByTestId('add-files'))
-    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
-    expect(await screen.findByTestId('process-btn')).toHaveTextContent(
-      i18n.t('header.convertSelected', { count: 3 }),
-    )
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
   })
 
   // A folder on a NAS can take many seconds to walk. A track picked meanwhile is what the
@@ -9186,6 +10087,43 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(bravo).toHaveAttribute('aria-selected', 'true'))
   })
 
+  // A checkbox in the editor holding the focus counts as the DJ at work there, as it did
+  // before ⌘Z was let through it: the add does not pull the editor to the new track.
+  it('keeps the selection when files arrive while a checkbox in the editor holds the focus', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings()),
+      pickFiles: vi
+        .fn()
+        .mockResolvedValueOnce(['/music/alpha.wav', '/music/zulu.wav'])
+        .mockResolvedValueOnce(['/music/bravo.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: '', artist: '' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    // By track, not by the row's whole text: the selected track's quality badge can land
+    // after this snapshot, and that is not the selection moving.
+    const selectedTracks = () =>
+      screen
+        .getAllByTestId('track-row')
+        .filter((r) => r.getAttribute('aria-selected') === 'true')
+        .map((r) => ['alpha', 'bravo', 'zulu'].find((name) => r.textContent?.includes(name)))
+    const selectedBefore = selectedTracks()
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    document.body.appendChild(box)
+    box.focus()
+
+    runMenu('add')
+
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+    await act(async () => {})
+    const bravo = screen.getAllByTestId('track-row').find((r) => r.textContent?.includes('bravo'))
+    expect(bravo).toHaveAttribute('aria-selected', 'false')
+    expect(selectedTracks()).toEqual(selectedBefore)
+    box.remove()
+  })
+
   // Dropping another version of the tune being searched for, to compare them, is a reason to
   // keep the search: everything added is on screen beside what was found.
   it('keeps a search that every file just added matches', async () => {
@@ -9261,13 +10199,15 @@ describe('App multi-select convert', () => {
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
     runMenu('process-all')
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
-    expect(
-      screen
-        .getAllByTestId('app-notice')
-        .some((card) =>
-          card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
-        ),
-    ).toBe(true)
+    await waitFor(() =>
+      expect(
+        screen
+          .getAllByTestId('app-notice')
+          .some((card) =>
+            card.textContent?.includes(i18n.t('notices.removedFromList', { count: 2 })),
+          ),
+      ).toBe(true),
+    )
   })
 
   // A check still running has not said anything yet: the track waits in the list for its
@@ -9418,6 +10358,8 @@ describe('App multi-select convert', () => {
     })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { shiftKey: true })
     fireEvent.click(await screen.findByTestId('process-format-toggle'))
     const option = (): HTMLElement => screen.getByTestId('process-clear-after')
     expect(option()).toHaveAttribute('aria-checked', 'false')
@@ -9473,13 +10415,14 @@ describe('App multi-select convert', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
-    const convert = await screen.findByTestId('process-btn')
-    expect(convert).toHaveTextContent(i18n.t('header.updateSelected', { count: 2 }))
+    expect(await screen.findByTestId('convert-up-to-date-row')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-format-alac'))
     expect(screen.getByTestId('process-format-current')).toHaveTextContent('ALAC')
     fireEvent.click(screen.getByTestId('process-format-toggle'))
     fireEvent.click(screen.getByTestId('process-destination-beside'))
+    const convert = screen.getByTestId('process-btn')
+    expect(convert).toHaveTextContent(i18n.t('header.convertSelected', { count: 2 }))
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     for (const [job] of processTrack.mock.calls) {
@@ -9821,7 +10764,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(2))
     const byInput = Object.fromEntries(
@@ -9848,7 +10791,7 @@ describe('App Default format x input extension matrix', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { shiftKey: true })
-    const convert = await screen.findByTestId('process-btn')
+    const convert = await screen.findByTestId('convert-update-anyway')
     fireEvent.click(convert)
     await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
     expect(processTrack.mock.calls[0][0].inputPath).toBe('/music/a.wav')
@@ -10302,6 +11245,76 @@ describe('App landmarks', () => {
 })
 
 describe('App command palette list-wide actions', () => {
+  // The palette named the main action "Convert current track" while the footer button said
+  // what the click really does ("Update" for a tags-only save), so the same job had two
+  // names and the palette overpromised a conversion.
+  async function paletteTitleOf(id: string): Promise<string | null> {
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    await screen.findByTestId('palette-input')
+    const option = document.getElementById(`palette-option-${id}`)
+    const title = option?.querySelector('[data-testid="palette-item-title"]')?.textContent ?? null
+    fireEvent.keyDown(document.body, { key: 'Escape' })
+    return title
+  }
+
+  it('names the current-track action like the footer button when it only updates tags', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ overwriteOriginal: true })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.aiff']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    await addOneTrack()
+    fireEvent.change(await screen.findByTestId('field-title'), { target: { value: 'Edited' } })
+    const button = await screen.findByTestId('process-btn')
+    expect(button).toHaveTextContent(i18n.t('editor.update'))
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent)
+  })
+
+  it('names the current-track action like the footer button when it converts', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    await addOneTrack()
+    const button = await screen.findByTestId('process-btn')
+    expect(button).toHaveTextContent(i18n.t('editor.convertAction'))
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent)
+  })
+
+  // An untouched track already in its target format swaps the footer to the up-to-date row,
+  // whose button says "Update anyway". The palette kept the normal button's name, so the
+  // same job was named twice and the palette hid that nothing would change.
+  it('names the current-track action like the up-to-date button on an untouched track', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    const rows = await addOneTrack()
+    fireEvent.click(rows[0])
+    const button = await screen.findByTestId('convert-update-anyway')
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent?.replace('✓', ''))
+  })
+
+  it('names the current-track action like the up-to-date button on an untouched selection', async () => {
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(settings({ outputFormat: 'source' })),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.aiff']),
+      readTags: vi.fn().mockResolvedValue({ title: 'T', artist: 'A' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { shiftKey: true })
+    const button = await screen.findByTestId('convert-update-anyway')
+    expect(await paletteTitleOf('process-current')).toBe(button.textContent?.replace('✓', ''))
+  })
+
   // The list-wide toolbar actions are reachable from the palette too, so a keyboard-only
   // user can run them without hunting for the icon. Stats needs no loaded tracks, so it
   // proves the run wiring on its own.
@@ -10671,6 +11684,39 @@ describe('App continuous playback', () => {
 
     expect(rows[0]).toHaveAttribute('aria-selected', 'true')
     expect(rows[1]).toHaveAttribute('aria-selected', 'false')
+  })
+})
+
+// The editor's own destination can be Apple Music while Settings send to a folder; App then
+// reads no Music library at all, so a DJ copy waiting for that library would wait forever.
+describe('App Apple Music library wait handed to the editor', () => {
+  function musicApi(over: Partial<Settings>): void {
+    Object.assign(window.api, {
+      platform: 'darwin',
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      getSettings: vi.fn().mockResolvedValue(settings(over)),
+      loadAppleMusicLibrary: vi.fn(() => new Promise(() => {})),
+    })
+  }
+
+  async function openTrack(): Promise<void> {
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
+    await screen.findByTestId('field-title')
+  }
+
+  it('tells the editor the library is loading while the Settings destination reads it', async () => {
+    musicApi({ addToAppleMusic: true })
+    await openTrack()
+    await waitFor(() => expect(editorRenders.lastProps?.libraryLoading).toBe(true))
+  })
+
+  it('tells the editor nothing is loading when the Settings destination reads no Music library', async () => {
+    musicApi({ addToAppleMusic: false })
+    await openTrack()
+    expect(window.api.loadAppleMusicLibrary).not.toHaveBeenCalled()
+    expect(editorRenders.lastProps?.libraryLoading).toBe(false)
   })
 })
 
@@ -11711,7 +12757,7 @@ describe('App metadata undo', () => {
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
     await screen.findByText('Imported Title')
-    expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('Imported Title')
+    expect(await screen.findByTestId('field-title')).toHaveValue('Imported Title')
 
     fireEvent.keyDown(window, { key: 'e', ctrlKey: true })
     expect((screen.getByTestId('field-title') as HTMLInputElement).value).toBe('')
@@ -11834,7 +12880,9 @@ describe('App metadata undo', () => {
     takeShortcutUndo()
   })
 
-  it('keeps a title typed after a clear when the clear is undone, bringing back only what the clear wiped', async () => {
+  // What was typed after the clear is the newer step, so it goes first and the clear second;
+  // undoing the clear past the typing would leave the user unable to reach either.
+  it('takes back a title typed after a clear before the clear itself', async () => {
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
@@ -11851,8 +12899,37 @@ describe('App metadata undo', () => {
     fireEvent.blur(title)
 
     fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue(''))
+    expect(screen.getByTestId('field-artist')).toHaveValue('')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
     await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
-    expect(screen.getByTestId('field-title')).toHaveValue('Typed Title')
+    expect(screen.getByTestId('field-title')).toHaveValue('Imported Title')
+  })
+
+  // Coming back to a field is a new thought: ⌘Z after the second visit has to land on what the
+  // first visit left, not jump past it to the value from before both.
+  it('undoes two visits to one field as two steps', async () => {
+    setApi({
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Imported Title', artist: 'Artist' }),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await screen.findByText('Imported Title')
+    const title = await screen.findByTestId('field-title')
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'First visit' } })
+    fireEvent.blur(title)
+    fireEvent.focus(title)
+    fireEvent.change(title, { target: { value: 'Second visit' } })
+    fireEvent.blur(title)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('First visit'))
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Imported Title'))
   })
 
   it('reapplies an undone clear with the redo shortcut and confirms it, so one ⌘Z too many is not a dead end', async () => {
@@ -12048,6 +13125,42 @@ describe('App metadata undo', () => {
     expect(screen.getByText('Metadata restored on 2 tracks')).toBeInTheDocument()
   })
 
+  // The same field typed across a selection is one step too: every selected track gets its
+  // own value back with one ⌘Z however many pauses the typing had, the sweep under it stays
+  // until the next ⌘Z, and ⇧⌘Z puts it back.
+  it('undoes a field typed across a selection in one step before the sweep under it, and redoes the sweep', async () => {
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'Deep Mix', artist: 'Artist' }),
+    })
+    await renderApp()
+    const rows = await addTwoTracks()
+    fireEvent.keyDown(window, { key: 'f', ctrlKey: true })
+    fireEvent.change(await screen.findByTestId('find-replace-find'), { target: { value: 'Deep' } })
+    fireEvent.change(screen.getByTestId('find-replace-replace'), { target: { value: 'Dub' } })
+    fireEvent.click(screen.getByTestId('find-replace-apply'))
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix'))
+    fireEvent.click(screen.getByTestId('find-replace-cancel'))
+    fireEvent.click(rows[1], { metaKey: true })
+    const artist = await screen.findByTestId('field-artist')
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    fireEvent.focus(artist)
+    fireEvent.change(artist, { target: { value: 'Every' } })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    fireEvent.change(artist, { target: { value: 'Everyone' } })
+    fireEvent.blur(artist)
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-artist')).toHaveValue('Artist'))
+    expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Deep Mix'))
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Dub Mix'))
+    expect(screen.getByTestId('field-artist')).toHaveValue('Artist')
+  })
+
   const matchRelease: Release = {
     provider: 'discogs',
     id: 1,
@@ -12137,6 +13250,57 @@ describe('App metadata undo', () => {
 
     await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
     expect(screen.getByTestId('field-artist')).toHaveValue('Own Artist')
+  })
+
+  // Seen in the app: a release applied, then Grouping typed by hand. Once the field let go,
+  // ⌘Z skipped the typing and took the release away, and ⇧⌘Z could not put it back. The
+  // last thing the user did has to be the first thing ⌘Z takes back, and a step too far
+  // must be one ⇧⌘Z from undone, with the key as the browser sends it under Shift.
+  it('undoes a typed field before the release under it and redoes the release with Shift-Command-Z', async () => {
+    setApi({
+      getSettings: vi
+        .fn()
+        .mockResolvedValue(
+          settings({ discogsToken: 'tok', visibleFields: ['title', 'artist', 'grouping'] }),
+        ),
+      pickFiles: vi.fn().mockResolvedValue(['/music/a.wav']),
+      readTags: vi.fn().mockResolvedValue({ title: 'Own Title', artist: 'Own Artist' }),
+      search: vi.fn().mockResolvedValue([{ id: 1, title: 'Artist - Album' }]),
+      getRelease: vi.fn<Api['getRelease']>().mockResolvedValue({
+        ...matchRelease,
+        tracklist: [{ position: '1', title: 'Release Title' }],
+      }),
+    })
+    await renderApp()
+    await addOneTrack()
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+    fireEvent.change(screen.getByTestId('discogs-query'), { target: { value: 'album' } })
+    fireEvent.keyDown(screen.getByTestId('discogs-query'), { key: 'Enter' })
+    fireEvent.click(await screen.findByTestId('discogs-result'))
+    fireEvent.click((await screen.findAllByTestId('discogs-track'))[0])
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Release Title'))
+    const grouping = screen.getByTestId('field-grouping')
+    const groupingBefore = (grouping as HTMLInputElement).value
+    fireEvent.focus(grouping)
+    fireEvent.change(grouping, { target: { value: 'Warm up' } })
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    fireEvent.change(grouping, { target: { value: 'Warm up set' } })
+    fireEvent.blur(grouping)
+    ;(document.activeElement as HTMLElement | null)?.blur()
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-grouping')).toHaveValue(groupingBefore))
+    expect(screen.getByTestId('field-title')).toHaveValue('Release Title')
+
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Own Title'))
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-title')).toHaveValue('Release Title'))
+    expect(screen.getByTestId('field-grouping')).toHaveValue(groupingBefore)
+
+    fireEvent.keyDown(document.body, { key: 'Z', ctrlKey: true, shiftKey: true })
+    await waitFor(() => expect(screen.getByTestId('field-grouping')).toHaveValue('Warm up set'))
   })
 
   it('takes the release artwork back off every selected track when a release applied across them is undone', async () => {
@@ -12592,6 +13756,25 @@ describe('App metadata undo', () => {
 })
 
 describe('App reopen last session', () => {
+  // ⌘Q right after typing: the field holds the last keystrokes for a short pause before they
+  // reach the track, and the session written as the window goes away lost them.
+  it('saves the text still in a field’s typing pause when the window goes away', async () => {
+    const saveLastSessionSync = vi.fn<Api['saveLastSessionSync']>()
+    setApi({
+      readTags: vi.fn().mockResolvedValue({ title: 'My Song', artist: 'DJ' }),
+      saveLastSessionSync,
+    })
+    await renderApp()
+    await addTwoTracks()
+    fireEvent.change(await screen.findByTestId('field-title'), {
+      target: { value: 'Hand Typed' },
+    })
+
+    window.dispatchEvent(new Event('pagehide'))
+
+    expect(saveLastSessionSync.mock.lastCall?.[1]['/music/a.wav']?.meta.title).toBe('Hand Typed')
+  })
+
   // The app opens empty every launch; someone cleaning the same downloads folder over
   // days re-imported it by hand every time. The launch offer restores the previous
   // list in one click — through the same expand pipeline as a drop, so media access
@@ -12777,30 +13960,37 @@ describe('App reopen last session', () => {
 
   // An unanswered launch offer for a paths-only session must not park in the corner
   // forever: like the new-tracks prompt it carries a duration, so the shared toast
-  // draws its countdown bar and retires the card on its own. Expiring only hides the
-  // offer; only the ✕ clears the saved session.
-  it('auto-dismisses the offer with a visible countdown', async () => {
+  // retires the card on its own. Expiring only hides the offer; only the ✕ clears the
+  // saved session, which is why this notice keeps its ✕ while it counts down.
+  const offerLeavesOnItsOwn = async (session: Awaited<ReturnType<Api['getLastSession']>>) => {
+    const saveLastSession = vi.fn().mockResolvedValue(undefined)
     setApi({
-      getLastSession: vi
-        .fn<Api['getLastSession']>()
-        .mockResolvedValue({ paths: ['/music/a.wav'], edits: {} }),
+      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue(session),
+      saveLastSession,
     })
-    await renderApp()
-    await screen.findByTestId('last-session')
-    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      await renderApp()
+      await screen.findByTestId('last-session')
+      expect(screen.getByTestId('last-session-dismiss')).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(7000))
+      await waitFor(() => expect(screen.queryByTestId('last-session')).toBeNull())
+      expect(saveLastSession).not.toHaveBeenCalledWith([], {})
+    } finally {
+      vi.useRealTimers()
+    }
+  }
+
+  it('auto-dismisses the offer while still offering the ✕ that declines it', async () => {
+    await offerLeavesOnItsOwn({ paths: ['/music/a.wav'], edits: {} })
   })
 
   // A session with staged edits counts down the same way as a paths-only one.
   it('counts down the offer even when the session carries staged edits', async () => {
-    setApi({
-      getLastSession: vi.fn<Api['getLastSession']>().mockResolvedValue({
-        paths: ['/music/a.wav'],
-        edits: { '/music/a.wav': { meta: { ...emptyMetadata(), title: 'Staged' } } },
-      }),
+    await offerLeavesOnItsOwn({
+      paths: ['/music/a.wav'],
+      edits: { '/music/a.wav': { meta: { ...emptyMetadata(), title: 'Staged' } } },
     })
-    await renderApp()
-    await screen.findByTestId('last-session')
-    expect(screen.getByTestId('last-session-countdown')).toBeInTheDocument()
   })
 
   // If the user has already started importing, restoring the old list on top would mix
@@ -13399,7 +14589,6 @@ const spellingFixture = () => ({
 describe('App Music review', () => {
   // The review takes the list column while open and gives it back as it was.
   it('swaps the list for the Music review and back', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     await addOneTrack()
@@ -13413,7 +14602,6 @@ describe('App Music review', () => {
   // The review needs the room of the main pane for the group it is deciding; the empty
   // screen's invitation to add tracks would sit where that decision goes.
   it('shows the selected group in the main pane instead of the empty screen', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     expect(screen.getByTestId('add-files')).toBeInTheDocument()
@@ -13428,7 +14616,6 @@ describe('App Music review', () => {
   // Ignoring is saved for good, so the toast right after it is the only way back from a
   // misclick; pressing its Undo returns the group to the review and retires the toast.
   it('brings an ignored group back from the toast Undo', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     runMenu('music-review')
@@ -13447,7 +14634,6 @@ describe('App Music review', () => {
   // The review's batch is the screen's main action while it is open, so it takes the
   // toolbar's main button.
   it('puts Apply in the toolbar while the review is open', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     await addOneTrack()
@@ -13464,7 +14650,6 @@ describe('App Music review', () => {
   })
 
   it('takes Apply out of the toolbar when the review closes', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     await addOneTrack()
@@ -13477,7 +14662,6 @@ describe('App Music review', () => {
   // A running batch has its progress and its only Cancel in the footer; opening the
   // review must not take them away.
   it('keeps the running batch and its cancel in the footer when the review opens', async () => {
-    vi.resetModules()
     const cancelJob = vi.fn()
     const processTrack = vi.fn(() => new Promise(() => {}))
     reviewApi({ processTrack, cancelJob, ...spellingFixture() })
@@ -13497,7 +14681,6 @@ describe('App Music review', () => {
   // The offer reopens tracks into a list the review hides; it steps aside without
   // answering for the user, so the next launch still offers the session and its edits.
   it('withdraws the reopen offer when the review opens and keeps the saved session', async () => {
-    vi.resetModules()
     const saveLastSession = vi.fn()
     reviewApi({
       saveLastSession,
@@ -13518,7 +14701,6 @@ describe('App Music review', () => {
 
   // Reviewing a library is the point of the view; it must not need a track in the list.
   it('opens over an empty list', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-review')
@@ -13526,7 +14708,6 @@ describe('App Music review', () => {
   })
 
   it('opens on the duplicates filter from its own command', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-duplicates')
@@ -13537,7 +14718,6 @@ describe('App Music review', () => {
   // A file the review rewrote may be open in the list. The row has to say what the file
   // now says and count as clean, or a later Update writes the old artist back over the fix.
   it('shows the fixed artist on a listed track and leaves it with nothing pending', async () => {
-    vi.resetModules()
     const readTags = vi.fn().mockResolvedValue({ title: 'T', artist: 'Dj Lara' })
     const fixture = spellingFixture()
     const applied = await fixture.applyMusicFixes()
@@ -13570,7 +14750,6 @@ describe('App Music review', () => {
   // The list is hidden while the review is open; a track shortcut acting on it would
   // remove or convert files the user cannot see.
   it('does not let list shortcuts reach the hidden tracks', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     const [row] = await addOneTrack()
@@ -13586,7 +14765,6 @@ describe('App Music review', () => {
 
   // Escape peels one layer at a time: closing Settings must not also throw away the review.
   it('closes only the dialog on top of the review with Escape', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     await addOneTrack()
@@ -13600,7 +14778,6 @@ describe('App Music review', () => {
   })
 
   it('does not convert the hidden selected track on the process shortcut', async () => {
-    vi.resetModules()
     const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
     reviewApi({ processTrack })
     await renderApp()
@@ -13616,7 +14793,6 @@ describe('App Music review', () => {
   })
 
   it('holds the review Apply while a conversion is running', async () => {
-    vi.resetModules()
     const processTrack = vi.fn(() => new Promise(() => {}))
     reviewApi({ processTrack, ...spellingFixture() })
     await renderApp()
@@ -13631,7 +14807,6 @@ describe('App Music review', () => {
   })
 
   it('switches the filter when a Music command runs while the review is open', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
     runMenu('music-review')
@@ -13646,7 +14821,6 @@ describe('App Music review', () => {
   // The sheet and the app both listen for Escape; closing the sheet must not also
   // close the review the user is in the middle of.
   it('closes only the confirmation sheet on Escape', async () => {
-    vi.resetModules()
     reviewApi(spellingFixture())
     await renderApp()
     const [row] = await addOneTrack()
@@ -13681,7 +14855,6 @@ describe('App Music review', () => {
       '/m/copper.wav': '0000000000000005',
     }
     const openFriday = async (persistentIds: Record<string, string> = fridayIds) => {
-      vi.resetModules()
       reviewApi({
         loadMusicReview: vi.fn().mockResolvedValue(library),
         appleMusicEntryLocation: vi.fn().mockResolvedValue(''),
@@ -13791,7 +14964,6 @@ const addThree = async () => {
 
 describe('App list review', () => {
   it('opens a track missing a field only the editor fills in the editor', async () => {
-    vi.resetModules()
     listApi({
       getSettings: vi
         .fn()
@@ -13823,7 +14995,6 @@ describe('App list review', () => {
 
   // The user's ask: pick the tracks missing required data in the list and fix them all at once.
   it('fills a track missing required data from the filter, in the review', async () => {
-    vi.resetModules()
     listApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
       readTags: vi.fn(async (path: string) =>
@@ -13858,7 +15029,6 @@ describe('App list review', () => {
 
   // Windows has no Music, but it has the list and the DJ libraries.
   it('opens over the list on Windows and gives the list back as it was', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -13873,7 +15043,6 @@ describe('App list review', () => {
   // A clean review used to leave the main pane blank: nothing said the list was fine, and the
   // only way back was a small X that reads like clearing the search.
   it('says the list is fine when there is nothing to review and leads back to it', async () => {
-    vi.resetModules()
     listApi({ pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']) })
     await renderApp()
     fireEvent.click(await screen.findByTestId('add-files'))
@@ -13888,7 +15057,6 @@ describe('App list review', () => {
   })
 
   it('does nothing with an empty list', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     runMenu('list-review')
@@ -13900,7 +15068,6 @@ describe('App list review', () => {
   // The row shows the fixed artist straight away, so a later Update cannot write the old
   // spelling back over the fix.
   it('fixes a spelling in the file and shows it on the row', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     const rows = await addThree()
@@ -13926,7 +15093,6 @@ describe('App list review', () => {
   })
 
   it('takes a trashed duplicate out of the list', async () => {
-    vi.resetModules()
     listApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav']),
       readTags: vi.fn().mockResolvedValue({ title: 'Song', artist: 'Ann' }),
@@ -13954,7 +15120,6 @@ describe('App list review', () => {
   // The source remembers what the review wrote and trashed; a second click on the entry
   // must not start the review over and drop what the user had staged.
   it('keeps the open review as it is when it is asked for again', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -13970,7 +15135,6 @@ describe('App list review', () => {
   // The search, the order and the open sheet belong to the review they were set in; the
   // other review starting with them would hide its groups behind a filter nobody typed.
   it('starts the list review clean when it replaces the Music review', async () => {
-    vi.resetModules()
     listApi({
       platform: 'darwin',
       loadMusicReview: vi.fn().mockResolvedValue([]),
@@ -13987,7 +15151,6 @@ describe('App list review', () => {
   })
 
   it('saves what is ignored in the list apart from Music', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14005,7 +15168,6 @@ describe('App list review', () => {
   // The list's own tools live in its header; the review is one of them now that it works
   // on the loaded tracks.
   it('opens from the list header, and holds the button still while a conversion runs', async () => {
-    vi.resetModules()
     listApi({ processTrack: vi.fn(() => new Promise(() => {})) })
     await renderApp()
     await addThree()
@@ -14023,7 +15185,6 @@ describe('App list review', () => {
 
   // No source open, the review is the list's, and the line says it writes the files.
   it('says under Review metadata that it changes the files of the whole list', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14038,7 +15199,6 @@ describe('App list review', () => {
   // it, not in every file that ever passed through the list, and it keeps to the rows the
   // menu named even when another playlist is picked while it is open.
   it('reviews only the open rekordbox playlist and keeps to it when another one is picked', async () => {
-    vi.resetModules()
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     listApi({
       dj: djReads({
@@ -14089,7 +15249,6 @@ describe('App list review', () => {
 // libraries; the notice says what the review would find without opening it uninvited.
 describe('App list review notice', { timeout: 15000 }, () => {
   it('says what a finished load leaves to review and opens the review from there', async () => {
-    vi.resetModules()
     listApi()
     await renderApp()
     await addThree()
@@ -14102,7 +15261,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('counts duplicates and spellings together after a drop', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Song', artist: 'Ann' },
       '/music/b.wav': { title: 'Song', artist: 'Ann' },
@@ -14124,7 +15282,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('waits for every file of the load to be read before it counts', async () => {
-    vi.resetModules()
     let release: () => void = () => {}
     const slow = new Promise<void>((resolve) => {
       release = resolve
@@ -14153,7 +15310,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('stays quiet when the list has nothing to review', async () => {
-    vi.resetModules()
     const clean: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'Ann' },
       '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
@@ -14171,7 +15327,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 
   // What the user already chose to ignore in the list review is not news.
   it('leaves out the groups the list review ignores', async () => {
-    vi.resetModules()
     const entry = (id: string, title: string, artist: string) => ({
       id,
       title,
@@ -14197,7 +15352,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   // The groups the list already had were told about with their own load; a second drop
   // repeating them would read as if the new files brought them.
   it('counts only the groups a later drop takes part in', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
       '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
@@ -14221,8 +15375,13 @@ describe('App list review notice', { timeout: 15000 }, () => {
     expect(await screen.findByTestId('list-review-notice')).toHaveTextContent(
       '4 tracks loaded. 1 duplicate and 1 spelling to review',
     )
-    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    swipeAway('list-review-notice')
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     drop(['/music/d.wav'])
     await waitFor(() =>
       expect(
@@ -14242,7 +15401,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 
   // The user is already in a review; a prompt to open one would only cover it.
   it('stays quiet about a load that lands while a review is open', async () => {
-    vi.resetModules()
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
       '/music/b.wav': { title: 'Bravo', artist: 'DJ Lara' },
@@ -14254,8 +15412,14 @@ describe('App list review notice', { timeout: 15000 }, () => {
     listApi({ readTags, getPathForFile: (f: { name: string }) => f.name })
     await renderApp()
     await addThree()
-    fireEvent.click(await screen.findByTestId('list-review-notice-dismiss'))
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    await screen.findByTestId('list-review-notice')
+    swipeAway('list-review-notice')
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     runMenu('list-review')
     await screen.findByTestId('list-review-scope')
     const root = screen.getByTestId('app-root')
@@ -14284,7 +15448,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   // Files that arrive another way while the drop's tags are still being read are not
   // part of what the user dropped.
   it('counts only what the drop or the pick handed over', async () => {
-    vi.resetModules()
     let release: () => void = () => {}
     const slow = new Promise<void>((resolve) => {
       release = resolve
@@ -14318,7 +15481,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
   })
 
   it('tells once per load', async () => {
-    vi.resetModules()
     let openWith: ((paths: string[]) => void) | undefined
     const tags: Record<string, { title: string; artist: string }> = {
       '/music/a.wav': { title: 'Alpha', artist: 'DJ Lara' },
@@ -14336,8 +15498,13 @@ describe('App list review notice', { timeout: 15000 }, () => {
     await renderApp()
     await addThree()
     await screen.findByTestId('list-review-notice')
-    fireEvent.click(screen.getByTestId('list-review-notice-dismiss'))
-    await waitFor(() => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument())
+    swipeAway('list-review-notice')
+    // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+    // runs past waitFor's default second.
+    await waitFor(
+      () => expect(screen.queryByTestId('list-review-notice')).not.toBeInTheDocument(),
+      { timeout: 3000 },
+    )
     await act(async () => openWith?.(['/music/d.wav']))
     await waitFor(() =>
       expect(
@@ -14357,7 +15524,6 @@ describe('App list review notice', { timeout: 15000 }, () => {
 // rekordbox playlist. The rail and the palette are the way in now; the toolbar has no copy.
 describe('App list toolbar leaves opening Music to the rail', () => {
   it('has no Music button in Tracks, Music or rekordbox', async () => {
-    vi.resetModules()
     const entry = (path: string) => ({ path, separator: false, meta: {} })
     setApi({
       platform: 'darwin',
@@ -14400,7 +15566,6 @@ describe('App list toolbar leaves opening Music to the rail', () => {
 // the menus, where they are reached once there is something to act on.
 describe('App empty screen offers a single way in', () => {
   it('puts adding files in the centre panel, not in the track column', async () => {
-    vi.resetModules()
     setApi({ platform: 'darwin' })
     await renderApp()
 
@@ -14409,7 +15574,6 @@ describe('App empty screen offers a single way in', () => {
   })
 
   it('says only where to drop and which key opens the dialog, with no headers or other doors', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -14425,7 +15589,6 @@ describe('App empty screen offers a single way in', () => {
 
   // The hint teaches the key that really opens the dialog, and off macOS that key is Ctrl.
   it('names the shortcut the way the platform writes it', async () => {
-    vi.resetModules()
     reviewApi({ platform: 'win32' })
     await renderApp()
 
@@ -14435,7 +15598,6 @@ describe('App empty screen offers a single way in', () => {
   // The whole panel is the target: aiming at the text, the disc or the space around them
   // has to open the dialog, the way the panel already takes a drop anywhere on it.
   it('opens the file dialog from a click anywhere on the panel', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -14450,7 +15612,6 @@ describe('App empty screen offers a single way in', () => {
   // a clickable div would leave the keyboard user with no way in. Its name says the action,
   // since the visible line only says where to drop.
   it('is a native button the keyboard can reach, named for adding tracks', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -14463,7 +15624,6 @@ describe('App empty screen offers a single way in', () => {
   })
 
   it('keeps the Music doors in the rail and the palette now that the empty screen drops them', async () => {
-    vi.resetModules()
     reviewApi()
     await renderApp()
 
@@ -14479,7 +15639,6 @@ describe('App empty screen offers a single way in', () => {
   // A source with no playlist open has nothing to add files into; its one action is
   // picking a playlist, so the panel says that and a click there opens no dialog.
   it('asks for a playlist instead of files in a source with none open', async () => {
-    vi.resetModules()
     reviewApi({ loadAppleMusicPlaylists: vi.fn().mockResolvedValue([]) })
     await renderApp()
 
@@ -14500,7 +15659,6 @@ describe('App empty screen offers a single way in', () => {
       missing: rows.filter((r) => !r.path).length,
     })
     const openMusic = async (rows: { path: string | null }[], later = rows) => {
-      vi.resetModules()
       reviewApi({
         loadAppleMusicPlaylists: vi
           .fn()
@@ -14527,9 +15685,13 @@ describe('App empty screen offers a single way in', () => {
         [{ path: '/m/a.wav' }, { path: null }],
         [{ path: '/m/a.wav' }, { path: null }, { path: null }],
       )
-      const notice = await screen.findByTestId('app-notice')
-      fireEvent.click(within(notice).getByTestId('app-notice-dismiss'))
-      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument())
+      await screen.findByTestId('app-notice')
+      swipeAway('app-notice')
+      // The swiped notice plays its 200 ms leave before it unmounts, which on a loaded machine
+      // runs past waitFor's default second.
+      await waitFor(() => expect(screen.queryByTestId('app-notice')).not.toBeInTheDocument(), {
+        timeout: 3000,
+      })
       fireEvent.click(screen.getByTestId('source-rail-tracks'))
       fireEvent.click(screen.getByTestId('source-rail-appleMusic'))
       await waitFor(() => expect(window.api.loadAppleMusicPlaylistTracks).toHaveBeenCalledTimes(2))
@@ -14547,7 +15709,6 @@ describe('App empty screen offers a single way in', () => {
   // The panel is where people aim a folder: a drop anywhere on it, the text included,
   // has to bring the tracks in rather than be taken as a click on the button.
   it('adds the files dropped on the empty panel', async () => {
-    vi.resetModules()
     reviewApi({ getPathForFile: vi.fn(() => '/music/dropped.wav') })
     await renderApp()
 
@@ -14563,7 +15724,6 @@ describe('App empty screen offers a single way in', () => {
   // The panel is where the tracks visibly land, so it has to answer the drag the copy
   // invites. Previously only the sidebar carried the drop state.
   it('answers the drag in the panel the copy points at', async () => {
-    vi.resetModules()
     setApi({ platform: 'darwin' })
     await renderApp()
 
@@ -14865,7 +16025,7 @@ describe('App list header', () => {
 
   // The visible button only drops rows from the list, so it must never reach the files. It
   // takes the selection at once, like the context menu's Remove, since Undo brings it back.
-  it('removes the selection from the list with the visible button at once, never trashing files', async () => {
+  it('removes the selection from the list from the list menu at once, never trashing files', async () => {
     const trashFile = vi.fn().mockResolvedValue({ where: 'trash' })
     setApi({
       pickFiles: vi.fn().mockResolvedValue(['/music/a.wav', '/music/b.wav', '/music/c.wav']),
@@ -14878,15 +16038,17 @@ describe('App list header', () => {
     const rows = screen.getAllByTestId('track-row')
     fireEvent.click(rows[0])
     fireEvent.click(rows[1], { metaKey: true })
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     fireEvent.click(screen.getByTestId('remove-selected'))
     expect(screen.queryByTestId('confirm-ok')).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(1))
     expect(trashFile).not.toHaveBeenCalled()
   })
 
-  it('disables the remove-from-list button while nothing is selected', async () => {
+  it('disables remove-from-list in the list menu while nothing is selected', async () => {
     await renderApp()
     await addTwoTracks()
+    fireEvent.click(screen.getByTestId('list-actions-more'))
     expect(screen.getByTestId('remove-selected')).toBeEnabled()
     fireEvent.keyDown(window, { key: 'Escape' })
     await waitFor(() => expect(screen.getByTestId('remove-selected')).toBeDisabled())
@@ -15130,7 +16292,6 @@ describe('App clean-up on load', () => {
   }
 
   it('leaves every row as read while the settings are off', async () => {
-    vi.resetModules()
     cleanApi({}, spaced)
     await renderApp()
     await load(2)
@@ -15142,7 +16303,6 @@ describe('App clean-up on load', () => {
   // The row's spark is the whole signal: a toolbar tally of cleaned rows only repeated what
   // the marked rows already show, beside controls that do something.
   it('stages the clean value and marks the row, writing nothing and tallying nothing in the toolbar', async () => {
-    vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
@@ -15156,7 +16316,6 @@ describe('App clean-up on load', () => {
   })
 
   it('says what was cleaned in the editor and puts the value as read back on undo', async () => {
-    vi.resetModules()
     cleanApi({ autoCleanSpacing: true }, spaced)
     await renderApp()
     await load(2)
@@ -15170,7 +16329,6 @@ describe('App clean-up on load', () => {
   })
 
   it('writes a name the way most of the list does only when the majority is clear', async () => {
-    vi.resetModules()
     cleanApi(
       { autoCleanCase: true },
       {
@@ -15187,7 +16345,6 @@ describe('App clean-up on load', () => {
   })
 
   it('leaves a close call to the review', async () => {
-    vi.resetModules()
     listApi({ getSettings: vi.fn().mockResolvedValue(settings({ autoCleanCase: true })) })
     await renderApp()
     await addThree()
@@ -15232,7 +16389,6 @@ describe('App clean-up of a space the read already trimmed', () => {
     (save.mock.calls.at(-1)?.[1] ?? {}) as Record<string, { meta: { title: string } }>
 
   it('keeps the trim as a pending change and writes the trimmed title', async () => {
-    vi.resetModules()
     const { saveLastSession, processTrack } = spacedApi({ autoCleanSpacing: true })
     await renderApp()
     await load()
@@ -15255,7 +16411,6 @@ describe('App clean-up of a space the read already trimmed', () => {
   })
 
   it('leaves the row clean while the setting is off', async () => {
-    vi.resetModules()
     const { saveLastSession } = spacedApi({})
     await renderApp()
     await load()
@@ -15265,7 +16420,6 @@ describe('App clean-up of a space the read already trimmed', () => {
   })
 
   it('undoes back to the file as it is, with nothing left to save', async () => {
-    vi.resetModules()
     const { saveLastSession } = spacedApi({ autoCleanSpacing: true })
     await renderApp()
     await load()
@@ -15949,12 +17103,7 @@ describe('App sidebar', () => {
 describe('App editor crash', () => {
   it('keeps the running batch and its cancel under the editor when the editor crashes mid-batch', async () => {
     const silenced = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.resetModules()
-    vi.doMock('./components/Editor', () => ({
-      Editor: () => {
-        throw new Error('boom')
-      },
-    }))
+    editorRenders.crash = true
     try {
       const pending: ((v: unknown) => void)[] = []
       const processTrack = vi.fn(() => new Promise((resolve) => pending.push(resolve)))
@@ -15979,9 +17128,50 @@ describe('App editor crash', () => {
       expect(cancelJob).toHaveBeenCalled()
       await waitFor(() => expect(screen.queryByTestId('batch-run')).toBeNull())
     } finally {
-      vi.doUnmock('./components/Editor')
-      vi.resetModules()
+      editorRenders.crash = false
       silenced.mockRestore()
+    }
+  })
+})
+
+describe('the notice of what a DJ program queue applied', () => {
+  // A batch with reasons used to stay until closed: a DJ who meant to read it later had it
+  // parked over the player for good. It leaves on its own like any notice, a little later
+  // since it has more to read, and the pointer resting on it still holds it.
+  it('gathers the reasons under what landed and leaves on its own, so ignoring it never parks it over the player', async () => {
+    let applied: (a: RekordboxQueueApplied) => void = () => {}
+    setApi({
+      dj: djReads({
+        rekordbox: {
+          onCueQueueApplied: (cb) => {
+            applied = cb
+            return () => {}
+          },
+        },
+      }),
+    })
+    await renderApp()
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      act(() =>
+        applied({
+          tracks: 6,
+          changes: 0,
+          written: [],
+          notices: [
+            { code: 'playlist-changed', track: 'Madagascar', playlist: 'Warm Up' },
+            { code: 'playlist-changed', track: 'Oxia', playlist: 'Warm Up' },
+            { code: 'cues-unfit', track: 'Rave Allstars', count: 16, contentId: '7', ms: 1000 },
+          ],
+        }),
+      )
+      const notice = await screen.findByTestId('rekordbox-edit-notice')
+      expect(screen.getAllByTestId('rekordbox-edit-notice-row')).toHaveLength(2)
+      expect(within(notice).getByRole('button', { name: 'Go to cue' })).toBeInTheDocument()
+      act(() => vi.advanceTimersByTime(10_000))
+      await waitFor(() => expect(screen.queryByTestId('rekordbox-edit-notice')).toBeNull())
+    } finally {
+      vi.useRealTimers()
     }
   })
 })

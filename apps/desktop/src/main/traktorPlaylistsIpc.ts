@@ -17,7 +17,13 @@ export function traktorRead(collection: () => string, host: TraktorPlaylistsHost
     tree: () => read('tree', undefined),
     recentCount: () => read('recentCount', undefined),
     trackCount: () => read('trackCount', undefined),
-    collection: () => read('collection', undefined),
+    // Update retags the copy the editor found in this collection, and main writes only
+    // files it granted.
+    collection: async () => {
+      const rows = await read('collection', undefined)
+      host.allowMedia?.(rows.flatMap((r) => (r.path ? [r.path] : [])))
+      return rows
+    },
     playlist: async (id: string) => {
       const entries = await read('playlist', id)
       host.allowMedia?.(entries.flatMap((e) => (e.path ? [e.path] : [])))

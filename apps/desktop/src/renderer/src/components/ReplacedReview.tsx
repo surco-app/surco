@@ -13,10 +13,12 @@ export function ReviewedButton({
   path,
   name,
   onPress,
+  inNotice,
 }: {
   path: string
   name: string
   onPress?: () => void
+  inNotice?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const { review, restore } = useReviewReplaced()
@@ -40,7 +42,11 @@ export function ReviewedButton({
       type="button"
       data-testid="cues-reviewed"
       onClick={() => onClick().catch((error) => window.api.logError(String(error)))}
-      className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--color-line-strong)] px-3 text-xs font-medium text-fg hover:bg-[var(--color-hover)]"
+      className={`press flex shrink-0 items-center whitespace-nowrap font-medium hover:bg-[var(--color-hover)] ${
+        inNotice
+          ? 'gap-1 rounded px-1.5 text-accent'
+          : 'h-6 gap-1.5 rounded-full border border-[var(--color-line-strong)] px-3 text-xs text-fg'
+      }`}
     >
       <Check className="h-3 w-3" aria-hidden="true" />
       {tr('editor.cues.replaced.reviewed')}

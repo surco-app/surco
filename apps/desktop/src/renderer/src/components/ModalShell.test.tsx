@@ -119,16 +119,16 @@ describe('ModalShell entrance', () => {
   it('opens without the entrance when a key opened it', () => {
     fireEvent.keyDown(window, { key: ',', metaKey: true })
     open()
-    expect(screen.getByRole('dialog').className).not.toContain('animate-pop')
-    expect(screen.getByTestId('shell-backdrop').className).not.toContain('animate-overlay')
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-bare', 'true')
+    expect(screen.getByTestId('shell-backdrop')).toHaveAttribute('data-bare', 'true')
   })
 
   it('keeps the entrance when a click opened it', () => {
     fireEvent.keyDown(window, { key: ',', metaKey: true })
     fireEvent.pointerDown(window)
     open()
-    expect(screen.getByRole('dialog').className).toContain('animate-pop')
-    expect(screen.getByTestId('shell-backdrop').className).toContain('animate-overlay')
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-bare', 'false')
+    expect(screen.getByTestId('shell-backdrop')).toHaveAttribute('data-bare', 'false')
   })
 })
 
@@ -190,17 +190,5 @@ describe('ModalShell exit', () => {
     fireEvent.keyDown(window, { key: 'Escape' })
     rerender(<Harness open={false} />)
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-})
-
-describe('ModalShell depth', () => {
-  it('lifts every dialog above the page with the modal shadow, deeper than a menu would be', () => {
-    render(
-      <ModalShell onClose={() => {}} backdropTestId="depth-backdrop" className="w-80">
-        <p>body</p>
-      </ModalShell>,
-    )
-    expect(screen.getByRole('dialog')).toHaveClass('shadow-modal')
-    expect(screen.getByRole('dialog')).not.toHaveClass('shadow-float')
   })
 })

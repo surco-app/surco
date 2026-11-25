@@ -77,20 +77,28 @@ export function traktorCueRows(block: string): TraktorCueRow[] {
   })
 }
 
-// Traktor keeps one grid marker per track: the first beat of a bar and the tempo from
-// there on. The beats run both ways from it to fill the track.
+// Each grid marker is the first beat of a bar and the tempo from there to the next marker.
+// The first one's beats also run back to the start of the track.
 export function traktorGridOf(block: string, durationMs: number): { ms: number; beat: number }[] {
-  const marker = traktorCueElements(block)
+  const markers = traktorCueElements(block)
     .map((el) => el.element)
-    .find((el) => Number(attr(el, 'TYPE')) === GRID_TYPE)
-  const bpm = Number(attr(marker?.match(/<GRID\b[^>]*>/)?.[0] ?? '', 'BPM'))
-  if (!marker || !(bpm > 0)) return []
-  const anchor = Number(attr(marker, 'START'))
-  const step = 60000 / bpm
-  const first = -Math.floor(anchor / step)
+    .filter((el) => Number(attr(el, 'TYPE')) === GRID_TYPE)
+    .map((el) => ({
+      anchor: Number(attr(el, 'START')),
+      bpm: Number(attr(el.match(/<GRID\b[^>]*>/)?.[0] ?? '', 'BPM')),
+    }))
+    .filter((m) => m.bpm > 0)
+    .sort((a, b) => a.anchor - b.anchor)
   const grid: { ms: number; beat: number }[] = []
-  for (let n = first; anchor + n * step <= durationMs; n++)
-    grid.push({ ms: anchor + n * step, beat: (((n % 4) + 4) % 4) + 1 })
+  markers.forEach(({ anchor, bpm }, i) => {
+    const step = 60000 / bpm
+    const next = markers[i + 1]?.anchor ?? Number.POSITIVE_INFINITY
+    for (let n = i === 0 ? -Math.floor(anchor / step) : 0; ; n++) {
+      const ms = anchor + n * step
+      if (ms > durationMs || ms >= next) break
+      grid.push({ ms, beat: (((n % 4) + 4) % 4) + 1 })
+    }
+  })
   return grid
 }
 

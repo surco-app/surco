@@ -1,11 +1,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
-import { mkdtemp } from 'node:fs/promises'
+import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type { TrackCueRow } from '../shared/types'
 import { anlzFile, pqtzSection } from './anlzFixture'
 import { openRekordboxDb } from './rekordboxDb'
+import { repointTracks } from './rekordboxLibrary'
 import { ORGANISE_FIXTURE, writeRekordboxPlaylistFixture } from './rekordboxPlaylistsFixture'
 import {
   adjustmentOps,
@@ -15,6 +16,9 @@ import {
   type ProvisionalEntry,
 } from './rekordboxProvisional'
 import type { QueueStore, RekordboxQueue } from './rekordboxQueue'
+import { rekordboxRepointFor } from './rekordboxRepointFor'
+
+vi.mock('./rekordboxProcess', () => ({ isRekordboxRunning: vi.fn(async () => false) }))
 
 const BEATS = Array.from({ length: 800 }, (_, i) => i * 500)
 const ANLZ = '/PIONEER/USBANLZ/1/a/ANLZ0000.DAT'
@@ -256,5 +260,91 @@ describe('adjustProvisional', () => {
     adjustProvisional({ list, collection: () => path, queue, newId: () => 'op' })
     expect(queue.enqueue).toHaveBeenCalledWith([expect.objectContaining({ contentId: '103' })])
     expect(list.all()).toEqual([])
+  })
+})
+
+// World of Dreams, 24/11: another master of the track, measured 264 ms earlier on the
+// envelope and 290 ms once each file's lead in rekordbox is counted. Its kick runs a hair off
+// the old one's, so the hot cue moved to 9 710 ms still misses the beat rekordbox finds at
+// 9 700 ms when it analyses the new file. Only the whole chain, from the conversion's repoint
+// to the adjustment after rekordbox's analysis, puts it on that beat.
+describe('another master, from the replacement to the grid rekordbox draws for it', () => {
+  // The old master's grid (BEATS) is on disk when the replacement is written; rekordbox's
+  // analysis of the new one draws its beats 200 ms into each old one.
+  async function replacedByAnotherMaster(
+    cueRows: NonNullable<Parameters<typeof writeRekordboxPlaylistFixture>[1]['cueRows']>,
+  ) {
+    const dir = await mkdtemp(join(tmpdir(), 'surco-other-master-'))
+    const path = join(dir, 'master.db')
+    writeRekordboxPlaylistFixture(path, {
+      ...ORGANISE_FIXTURE,
+      content: ORGANISE_FIXTURE.content.map((c) =>
+        c.ID === '103' ? { ...c, AnalysisDataPath: ANLZ, Analysed: 105 } : c,
+      ),
+      cueRows,
+    })
+    mkdirSync(join(dir, 'share/PIONEER/USBANLZ/1/a'), { recursive: true })
+    writeFileSync(join(dir, 'share', ANLZ), anlzFile(pqtzSection(BEATS)))
+    const output = join(dir, 'Gowan.aiff')
+    await writeFile(output, Buffer.alloc(5000))
+    const repoint = rekordboxRepointFor('/downloads/Gowan.flac', output, {
+      replaces: '/Volumes/Public/Music/Gowan.wav',
+      replaceShift: { moved: -264, master: 'other' },
+      replaceAudio: { oldShiftMs: 26.12, newShiftMs: 0 },
+    })
+    if (!repoint) throw new Error('no repoint')
+
+    const [result] = await repointTracks(path, [repoint])
+    const waiting = result.written ? result.settleOnGrid?.['103'] : undefined
+    if (!waiting) throw new Error('nothing left waiting for the grid')
+
+    const db = openRekordboxDb(path)
+    if (!db) throw new Error('did not open')
+    db.prepare(`UPDATE djmdContent SET AnalysisDataPath = ?, Analysed = 105 WHERE ID = '103'`).run(
+      ANLZ,
+    )
+    db.close()
+    writeFileSync(
+      join(dir, 'share', ANLZ),
+      anlzFile(pqtzSection(Array.from({ length: 800 }, (_, i) => 200 + i * 500))),
+    )
+    return opsFor(path, [{ contentId: '103', label: 'Gowan', ...waiting }])
+  }
+
+  it('settles the moved hot cue on the beat of the new grid, leaving the loop alone', async () => {
+    const { ops } = await replacedByAnotherMaster([
+      { ID: 'hot', ContentID: '103', InMsec: 10_000, Kind: 1, ColorTableIndex: 42 },
+      {
+        ID: 'loop',
+        ContentID: '103',
+        InMsec: 20_000,
+        Kind: 0,
+        ColorTableIndex: null,
+        OutMsec: 24_000,
+      },
+    ])
+    expect(ops[0]?.wanted).toEqual([
+      { id: 'hot', ms: 9700, kind: 1, color: 42 },
+      { id: 'loop', ms: 19_710, kind: 0, color: null },
+    ])
+  })
+
+  // A DJ who set a cue 60 ms after the kick, or on the offbeat, meant it there: snapping it to
+  // the new grid would pull it onto a beat they chose not to use, and an offbeat cue would raise
+  // a warning about a cue that moved exactly as it should.
+  it('leaves the cues the DJ set off the old grid where the shift put them', async () => {
+    const { ops } = await replacedByAnotherMaster([
+      { ID: 'hot', ContentID: '103', InMsec: 10_000, Kind: 1, ColorTableIndex: 42 },
+      { ID: 'late', ContentID: '103', InMsec: 15_060, Kind: 2, ColorTableIndex: null },
+      { ID: 'offbeat', ContentID: '103', InMsec: 12_250, Kind: 3, ColorTableIndex: null },
+    ])
+    expect(ops[0]?.wanted).toEqual([
+      { id: 'hot', ms: 9700, kind: 1, color: 42 },
+      { id: 'late', ms: 14_770, kind: 2, color: null },
+      { id: 'offbeat', ms: 11_960, kind: 3, color: null },
+    ])
+    expect(ops[0]?.notices).toEqual([
+      { code: 'cues-adjusted', track: 'Gowan', moved: 1, maxMs: 10 },
+    ])
   })
 })

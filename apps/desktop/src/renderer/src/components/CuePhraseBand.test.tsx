@@ -2,7 +2,8 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { CuePhraseBand } from './CuePhraseBand'
+import type { PhraseKind } from '../../../shared/cueFlows'
+import { CuePhraseBand, TONE } from './CuePhraseBand'
 
 afterEach(cleanup)
 
@@ -61,7 +62,7 @@ describe('CuePhraseBand', () => {
     )
     const [intro, down, outro] = screen
       .getAllByTestId('cue-phrase')
-      .map((b) => (b.firstElementChild as HTMLElement).className)
+      .map((b) => TONE[b.getAttribute('data-kind') as PhraseKind])
     expect(intro).toBe(outro)
     expect(down).not.toBe(intro)
   })

@@ -84,7 +84,9 @@ function setup({
   settings = {},
   actionsRef,
   profile = null,
+  platform = 'darwin',
 }: {
+  platform?: 'darwin' | 'win32'
   profile?: CueProfile | null
   read?: TrackCues
   words?: Uint16Array | null
@@ -93,6 +95,7 @@ function setup({
 } = {}) {
   const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
   installApi({
+    platform,
     cues: {
       trackCues: vi.fn<Api['cues']['trackCues']>(async (id) => ({
         ...read,
@@ -162,7 +165,6 @@ describe('Auto marcar', () => {
     expect(dropProposals).not.toHaveBeenCalled()
     expect(proposals()).toEqual([])
     expect(autoButton()).toHaveTextContent('Auto mark')
-    expect(autoButton().className).toContain('bg-[var(--color-accent-soft)]')
   })
 
   it('sits in the section header next to the flow menu while folded', async () => {
@@ -245,6 +247,23 @@ describe('Auto marcar', () => {
     expect(screen.getByTestId('cues-step-back')).toBeDisabled()
   })
 
+  // Reviewing the suggestions means looking at the waves: the pointer crossing the zoomed wave
+  // swapped them for the preview of placing a drop by hand there, so they seemed to show only
+  // once the pointer left. While suggestions wait for an answer they stay what is drawn.
+  it.each([
+    ['folded', async () => {}],
+    ['full screen', async () => openFull()],
+  ])('keeps the suggestions drawn while the pointer crosses the zoomed wave, %s', async (_, layout) => {
+    setup()
+    await ready()
+    await layout()
+    await autoMark()
+    const shown = ghostCalls()
+    expect(shown.length).toBeGreaterThan(0)
+    fireEvent.mouseMove(screen.getByTestId('cue-detail'), { clientX: 300 })
+    expect(ghostCalls()).toEqual(shown)
+  })
+
   it('ghosts the proposals with the flow the DJ switches to, so the preview matches what accepting does', async () => {
     setup()
     await ready()
@@ -254,6 +273,17 @@ describe('Auto marcar', () => {
     fireEvent.click(screen.getByTestId('cues-flow-option-one-at-32'))
     expect(screen.getAllByTestId(/^cue-wave-ghost-hot-/)).toHaveLength(2)
     expect(proposals()).toHaveLength(2)
+  })
+
+  // A key drawn in a box inside the button read as an emoji; the shortcut lives in the
+  // tooltip, the way every other Surco button shows its keys.
+  it('keeps Enter out of the accept button and names it in its tooltip where the host has no Return glyph', async () => {
+    setup({ platform: 'win32' })
+    await ready()
+    await autoMark()
+    const accept = screen.getByTestId('cues-auto-accept')
+    expect(accept.textContent).toBe('Accept')
+    expect(hoverTooltip(accept)).toContain('Enter')
   })
 
   // The suggestions are a review the DJ is in the middle of, not a state of the Auto mark
@@ -269,9 +299,10 @@ describe('Auto marcar', () => {
     await autoMark()
     const review = screen.getByTestId('cues-auto-review')
     expect(review).toHaveTextContent('2 suggestions')
-    expect(screen.getByTestId('cues-auto-accept')).toHaveTextContent(/^Accept and save↵$/)
+    expect(screen.getByTestId('cues-auto-accept').textContent).toBe('Accept')
+    expect(hoverTooltip(screen.getByTestId('cues-auto-accept'))).toContain('↩')
     expect(screen.getByTestId('cues-auto-discard')).toHaveTextContent(/^Remove$/)
-    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions and save' })).toBe(
+    expect(screen.getByRole('button', { name: 'Accept the 2 suggestions' })).toBe(
       screen.getByTestId('cues-auto-accept'),
     )
     expect(screen.getByRole('button', { name: 'Remove suggestions' })).toBe(
@@ -297,7 +328,7 @@ describe('Auto marcar', () => {
     expect(accept.parentElement).toBe(remove.parentElement)
     expect(accept.parentElement).not.toBe(review)
     expect(remove).toHaveAccessibleName('Remove the suggestion')
-    expect(accept).toHaveAccessibleName('Accept the suggestion and save')
+    expect(accept).toHaveAccessibleName('Accept the suggestion')
   })
 
   it('removes one suggestion from the overview without moving the playhead to it', async () => {
@@ -352,9 +383,7 @@ describe('Auto marcar', () => {
     seekStrip(bar(64))
     fireEvent.click(screen.getByTestId(`cue-proposal-drop-${bar(64)}`))
     expect(proposals()).toEqual([`cue-wave-proposal-${bar(128)}`])
-    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName(
-      'Accept the suggestion and save',
-    )
+    expect(screen.getByTestId('cues-auto-accept')).toHaveAccessibleName('Accept the suggestion')
     expect(realMarks()).toHaveLength(0)
   })
 
@@ -485,17 +514,20 @@ describe('accepting Auto marcar', () => {
     expect(screen.getByTestId('cues-unsaved')).toBeInTheDocument()
   })
 
-  it('saves to the program as soon as the suggestions are accepted, folded or in full screen, so accepting never needs a second click on Save', async () => {
+  // Accepting answers the suggestions; saving is the Save button's, with the way it remembers
+  // (stay or move on). Accepting used to save too, a second Save that skipped that choice.
+  it('places the suggestions on Accept, folded or in full screen, and leaves saving to Save', async () => {
     const { saveRekordboxCues } = setup()
     await ready()
     await autoMark()
     fireEvent.click(screen.getByTestId('cues-auto-accept'))
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
-    expect(saveRekordboxCues.mock.calls[0][0][0].wanted.length).toBeGreaterThan(0)
+    await waitFor(() => expect(realMarks().length).toBeGreaterThan(0))
     await openFull()
     await autoMark()
     fireEvent.keyDown(screen.getByTestId('cues-editor'), { key: 'Enter' })
-    await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(2))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(saveRekordboxCues).not.toHaveBeenCalled()
+    expect(screen.getByTestId('cues-save')).toBeEnabled()
   })
 
   it('leaves Save to the DJ after accepting one suggestion on its own, since the rest are still being weighed', async () => {
@@ -667,7 +699,8 @@ describe('saving several tracks', () => {
 
   // Two buttons that both said Save, one on a line of its own, left the user guessing which
   // one saved what. The folded row keeps one Save for this track; saving every pending track
-  // sits in its menu, beside "this track", each saying what it saves.
+  // sits in its menu, under the ways to save this one, each saying what it saves. The folded
+  // chevron carries no count, since the row has no room for it and the menu line says it.
   it('keeps one Save in the folded row and offers every pending track from its menu', async () => {
     other()
     setup()
@@ -675,15 +708,15 @@ describe('saving several tracks', () => {
     await autoMark()
     acceptOne()
     const more = await screen.findByTestId('cues-save-more')
-    expect(more).toHaveTextContent('2')
+    expect(more.textContent).toBe('')
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
     fireEvent.click(more)
-    expect(screen.getByTestId('cues-save-this')).toHaveTextContent('Save this track')
-    expect(await saveAllItem()).toHaveTextContent('Save 2 tracks to rekordbox')
+    expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
+    expect((await saveAllItem()).textContent).toBe('Save 2 tracks')
     expect((await saveAllItem()).closest('[data-testid="cues-folded-row"]')).not.toBeNull()
   })
 
-  it('offers only Discard, with no track count, when this is the only track with unsaved cues', async () => {
+  it('offers only the ways to save this track, with no track count, when this is the only track with unsaved cues', async () => {
     setup()
     await ready()
     await autoMark()
@@ -691,11 +724,12 @@ describe('saving several tracks', () => {
     await screen.findByTestId('cues-unsaved')
     expect(screen.getByTestId('cues-save')).toBeEnabled()
     const more = screen.getByTestId('cues-save-more')
-    expect(more).toHaveTextContent('')
+    expect(more.textContent).toBe('')
     fireEvent.click(more)
     expect(screen.queryByTestId('cues-save-all')).toBeNull()
-    expect(screen.queryByTestId('cues-save-this')).toBeNull()
-    expect(screen.getByTestId('cues-discard')).toBeEnabled()
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-mode-stay'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-mode-next'))
+    expect(screen.getByRole('menu')).not.toContainElement(screen.getByTestId('cues-discard'))
   })
 
   it('saves every reviewed track to rekordbox in one go, so the collection is written once', async () => {
@@ -705,7 +739,7 @@ describe('saving several tracks', () => {
     await autoMark()
     acceptOne()
     const all = await saveAllItem()
-    expect(all).toHaveTextContent('Save 2 tracks to rekordbox')
+    expect(all.textContent).toBe('Save 2 tracks')
     fireEvent.click(all)
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0]).toEqual(
@@ -786,7 +820,9 @@ describe('saving several tracks', () => {
     expect([...unsavedCueTracks()]).toEqual(['103'])
   })
 
-  it('hands the command palette this same save, named as the button names it', async () => {
+  // The palette has no Save body beside it to say the program, so it keeps the long name
+  // while the menu line, under a body that already names rekordbox, can stay short.
+  it('hands the command palette this same save, naming the program the menu line leaves out', async () => {
     other()
     const actionsRef: { current: CueActions | null } = { current: null }
     const { saveRekordboxCues } = setup({ actionsRef })
@@ -795,7 +831,11 @@ describe('saving several tracks', () => {
     expect(actionsRef.current?.saveAll).toBeUndefined()
     acceptOne()
     const all = await saveAllItem()
-    expect(actionsRef.current?.saveAll).toMatchObject({ label: all.textContent, saving: false })
+    expect(all.textContent).toBe('Save 2 tracks')
+    expect(actionsRef.current?.saveAll).toMatchObject({
+      label: 'Save 2 tracks to rekordbox',
+      saving: false,
+    })
     actionsRef.current?.saveAll?.run()
     await waitFor(() => expect(saveRekordboxCues).toHaveBeenCalledTimes(1))
     expect(saveRekordboxCues.mock.calls[0][0]).toHaveLength(2)

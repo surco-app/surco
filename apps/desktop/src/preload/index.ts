@@ -146,7 +146,8 @@ const api: Api = {
     provider?: SearchProviderId,
     priority?: SearchPriority,
     hints?: SearchHints,
-  ) => ipcRenderer.invoke('search:query', query, provider, priority, hints),
+    retryOnLimit?: boolean,
+  ) => ipcRenderer.invoke('search:query', query, provider, priority, hints, retryOnLimit),
   getRelease: (ref: number | string, provider?: SearchProviderId, priority?: SearchPriority) =>
     ipcRenderer.invoke('search:release', ref, provider, priority),
   loadAppleMusicLibrary: (): Promise<AppleMusicLookupCandidate[]> =>
@@ -208,6 +209,7 @@ const api: Api = {
     ipcRenderer.invoke('applemusic:playlistsCached'),
   loadAppleMusicPlaylistCached: (persistentId: string): Promise<AppleMusicPlaylistTracks | null> =>
     ipcRenderer.invoke('applemusic:playlistCached', persistentId),
+  loadAppleMusicRecentCount: (): Promise<number> => ipcRenderer.invoke('applemusic:recentCount'),
   appleMusicArtwork: (
     persistentIds: string[],
   ): Promise<Record<string, { coverPath: string; coverUrl: string }>> =>
@@ -217,6 +219,11 @@ const api: Api = {
   djAppRunning: (): Promise<boolean> => ipcRenderer.invoke('djApps:running'),
   matchingPairs: (): Promise<[string, string][]> => ipcRenderer.invoke('matching:list'),
   replacedTracks: (): Promise<ReplacedEntry[]> => ipcRenderer.invoke('replaced:list'),
+  onReplacedChanged: (cb: () => void): (() => void) => {
+    const handler = () => cb()
+    ipcRenderer.on('replaced:changed', handler)
+    return () => ipcRenderer.removeListener('replaced:changed', handler)
+  },
   reviewReplaced: (path: string, programs?: DjProgram[]): Promise<ReplacedEntry | null> =>
     ipcRenderer.invoke('replaced:review', path, programs),
   restoreReplaced: (entry: ReplacedEntry): Promise<void> =>
@@ -278,7 +285,7 @@ const api: Api = {
   checkZoom: () => ipcRenderer.send('window:zoom-check'),
   conversionPrograms: (paths) => ipcRenderer.invoke('process:programs-for', paths),
   beginConversionBatch: (): void => ipcRenderer.send('process:batch-begin'),
-  endConversionBatch: (): void => ipcRenderer.send('process:batch-end'),
+  endConversionBatch: (): Promise<void> => ipcRenderer.invoke('process:batch-end'),
   cancelJob: (jobId: string): void => ipcRenderer.send('process:cancel', jobId),
   reportUnsavedCues: (contentIds: string[]): void => ipcRenderer.send('cues:unsaved', contentIds),
   exportCover: (job) => ipcRenderer.invoke('cover:export', job),
@@ -300,6 +307,7 @@ const api: Api = {
   ): Promise<{ where: 'trash' | 'surco' | 'deleted'; id?: string }> =>
     ipcRenderer.invoke('shell:trash', path, permanentConfirmed),
   keepsTrash: (path: string): Promise<boolean> => ipcRenderer.invoke('shell:keepsTrash', path),
+  sameFile: (a: string, b: string): Promise<boolean> => ipcRenderer.invoke('files:sameFile', a, b),
   retireSuperseded: (path: string, titles: string[]): Promise<'retired' | 'used'> =>
     ipcRenderer.invoke('shell:retireSuperseded', path, titles),
   trashList: (): Promise<TrashEntry[]> => ipcRenderer.invoke('trash:list'),

@@ -42,7 +42,8 @@ export function rekordboxRepointFor(
       sampleRateHz?: number
       sampleCount?: number
     }
-    // The source's size before the conversion rewrote it on its own path.
+    // The size of the file the row is on before the conversion: the source rewritten on its
+    // own path, or the replaced file.
     fromBytes?: number
     names?: RekordboxRepoint['names']
   } = {},
@@ -59,12 +60,25 @@ export function rekordboxRepointFor(
   const replaceAudio = options.replaceAudio ?? { oldShiftMs: 0, newShiftMs: 0 }
   const replaceCueShiftMs =
     moved === undefined ? 0 : Math.round(moved + replaceAudio.newShiftMs - replaceAudio.oldShiftMs)
-  // A replacement whose audio moved in rekordbox's own timeline leaves its waveform and grid
-  // describing the old file even when the samples were copied, so it gets the same
-  // re-analysis a re-encoded one does. A shift of zero is not enough to skip it: the lossless
-  // master of a LAME MP3 measures 0 on ffmpeg's clock yet sits 51 ms earlier in rekordbox's.
+  // A replacement points the row at another file, and rekordbox never analyses a repointed
+  // file by itself (measured 24/10), so its waveform and grid would keep describing the old
+  // one even when the samples were copied: it gets the same re-analysis a re-encoded one
+  // does. Only a measure that matched both ends of the two files at one spot of rekordbox's
+  // timeline vouches for the same audio, and keeps a grid the DJ may have corrected by hand.
+  // A shift of zero is not enough alone: the lossless master of a LAME MP3 measures 0 on
+  // ffmpeg's clock yet sits 51 ms earlier in rekordbox's. Another master measured on the
+  // envelope moves its cues all the same, but its grid and waveform are not the old file's,
+  // and its speed can differ a hair from it: rekordbox draws its own grid and the cues then
+  // settle on it.
+  const otherMaster =
+    !!options.replaces &&
+    !!options.replaceShift &&
+    'moved' in options.replaceShift &&
+    options.replaceShift.master === 'other'
+  const reanalyse =
+    !!options.replaces && !!options.replaceShift && (moved === undefined || otherMaster)
   const audio =
-    options.replaces && (options.audio || replaceCueShiftMs !== 0)
+    options.replaces && (options.audio || reanalyse || replaceCueShiftMs !== 0)
       ? { cueShiftMs: replaceCueShiftMs }
       : options.audio && {
           cueShiftMs: Math.round(
@@ -93,9 +107,9 @@ export function rekordboxRepointFor(
     ...(options.meta ? { meta: options.meta } : {}),
     ...(audio ? { audio } : {}),
     ...(engineShift ? { engineShift } : {}),
-    ...((!options.replaces || options.replaces === output) && options.fromBytes !== undefined
-      ? { fromBytes: options.fromBytes }
-      : {}),
+    ...(reanalyse ? { reanalyse: true as const } : {}),
+    ...(otherMaster ? { snapToGrid: true as const } : {}),
+    ...(options.fromBytes !== undefined ? { fromBytes: options.fromBytes } : {}),
     ...(options.names ? { names: options.names } : {}),
   }
   if (from === output && !options.meta && !audio) return null

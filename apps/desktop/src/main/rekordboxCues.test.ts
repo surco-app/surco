@@ -436,6 +436,57 @@ describe('applyCueChanges', () => {
     db.close()
   })
 
+  // rekordbox also keeps an MP3 cue's position as an MPEG frame, which still points at where
+  // the cue was: left beside the moved milliseconds it contradicts them, the same reason
+  // shiftCues clears it.
+  it('clears the MPEG positions of a cue it moves, since they still describe where it was', async () => {
+    const db = await writable()
+    db.prepare(`UPDATE djmdCue SET InMpegFrame = 6296, InMpegAbs = 1772826 WHERE ID = 'q2'`).run()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
+    ).run(
+      JSON.stringify([
+        { ID: 'q2', Kind: 1, InMsec: 8000, InFrame: 1200, InMpegFrame: 6296, InMpegAbs: 1772826 },
+      ]),
+    )
+
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'q2', kind: 1, color: 1, ms: 12000 }], remove: [] },
+      { now: NOW },
+    )
+
+    expect(db.prepare(`SELECT InMpegFrame, InMpegAbs FROM djmdCue WHERE ID = 'q2'`).get()).toEqual({
+      InMpegFrame: 0,
+      InMpegAbs: 0,
+    })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)[0]).toMatchObject({ InMsec: 12000, InMpegFrame: 0, InMpegAbs: 0 })
+    db.close()
+  })
+
+  // A recolour leaves the cue where it was, so its MPEG position is still true.
+  it('keeps the MPEG positions of a cue it does not move', async () => {
+    const db = await writable()
+    db.prepare(`UPDATE djmdCue SET InMpegFrame = 6296, InMpegAbs = 1772826 WHERE ID = 'q2'`).run()
+
+    applyCueChanges(
+      db,
+      '103',
+      { insert: [], update: [{ id: 'q2', kind: 3, color: 1 }], remove: [] },
+      { now: NOW },
+    )
+
+    expect(db.prepare(`SELECT InMpegFrame, InMpegAbs FROM djmdCue WHERE ID = 'q2'`).get()).toEqual({
+      InMpegFrame: 6296,
+      InMpegAbs: 1772826,
+    })
+    db.close()
+  })
+
   it('updates an existing contentCue entry and drops the removed one', async () => {
     const db = await writable()
     db.prepare(
@@ -580,6 +631,24 @@ describe('shiftCues', () => {
     const db = await writable()
     shiftCues(db, '103', -9000, { now: NOW })
     expect(rows(db).map((r) => (r as { InMsec: number }).InMsec)).toEqual([7000, 0, 0])
+    db.close()
+  })
+
+  // A loop is as long as the bars the DJ chose: held at the start, its end moves only as far
+  // as its start did, or a two-second loop near the start comes back one second long.
+  it('keeps the length of a loop it holds at the start', async () => {
+    const db = await writable()
+    db.prepare(
+      `INSERT INTO contentCue (ID, ContentID, Cues, rb_cue_count) VALUES ('uuid-c-103', '103', ?, 1)`,
+    ).run(JSON.stringify([{ ID: 'loop', Kind: 2, InMsec: 16000, OutMsec: 18000 }]))
+
+    shiftCues(db, '103', -17000, { now: NOW })
+
+    expect(rows(db)[0]).toMatchObject({ ID: 'loop', InMsec: 0, OutMsec: 2000 })
+    const cc = db.prepare(`SELECT Cues FROM contentCue WHERE ContentID = '103'`).get() as {
+      Cues: string
+    }
+    expect(JSON.parse(cc.Cues)[0]).toMatchObject({ InMsec: 0, OutMsec: 2000 })
     db.close()
   })
 

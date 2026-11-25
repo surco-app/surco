@@ -32,11 +32,13 @@ export type RekordboxBefore =
   | 'unreadable'
 
 // added when the flush created a row for the file instead of repointing one; size is the
-// written file's size on disk.
+// written file's size on disk. reanalysed when the repoint emptied the analysis on purpose,
+// so rekordbox analyses the file it now points at.
 export interface RekordboxExpect {
   from: string
   to: string
   samplesKept: boolean
+  reanalysed?: boolean
   before: RekordboxBefore
   added: boolean
   size: number
@@ -197,10 +199,21 @@ function judgeRow(
     // and rekordbox drew a new grid over audio that had not moved.
     if (
       e.samplesKept &&
+      !e.reanalysed &&
       ((row.AnalysisDataPath ?? '') !== before.analysisDataPath ||
         (row.Analysed ?? 0) !== before.analysed)
     )
       return check('mismatch', 'rekordboxAnalysisEmptied')
+    // rekordbox never analyses a repointed file by itself (measured 24/10): the old analysis
+    // still on a row that was to be analysed again draws the old file's waveform and grid
+    // over the new audio.
+    if (
+      e.reanalysed &&
+      (before.analysisDataPath !== '' || before.analysed !== 0) &&
+      (row.AnalysisDataPath ?? '') === before.analysisDataPath &&
+      (row.Analysed ?? 0) === before.analysed
+    )
+      return check('mismatch', 'rekordboxAnalysisStale')
   }
   const ok = { format: formatOf(extname(e.to)), cues }
   if (!e.playlists?.length) return check('ok', 'rekordboxOk', ok)

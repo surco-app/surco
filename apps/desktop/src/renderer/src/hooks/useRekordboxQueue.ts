@@ -11,8 +11,8 @@ import type {
 import { claimCueSave } from '../lib/cueSaveEcho'
 import {
   appliedMessage,
-  type CueSpot,
   ENGINE_QUEUE_WORDS,
+  type QueueRow,
   type QueueWords,
   REKORDBOX_QUEUE_WORDS,
   SERATO_QUEUE_WORDS,
@@ -20,6 +20,7 @@ import {
   VIRTUALDJ_QUEUE_WORDS,
 } from '../lib/rekordboxQueueText'
 import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { rereadTrackFileQueries } from './useTrackCues'
 
 const NOTHING: RekordboxQueueState = { tracks: 0, changes: 0, items: [] }
 
@@ -71,7 +72,7 @@ export const PROGRAM_QUEUES = {
 } satisfies Record<CueProgram, { source: QueueSource; testid: string } | null>
 
 export function useRekordboxQueue(
-  notify: (text: string, tone: 'neutral' | 'danger', goTo?: CueSpot) => void,
+  notify: (text: string, tone: 'neutral' | 'danger', rows?: QueueRow[]) => void,
   onDiscarded: (paths: string[]) => void,
   onWritten: (written: RekordboxQueueWritten[]) => void,
   source: QueueSource = REKORDBOX_QUEUE,
@@ -112,8 +113,8 @@ export function useRekordboxQueue(
         ),
         queryClient.invalidateQueries({ queryKey: ['source-tree'] }),
         queryClient.invalidateQueries({ queryKey: ['source-playlist'] }),
-        queryClient.invalidateQueries({ queryKey: ['rekordbox-track-cues'] }),
         queryClient.invalidateQueries({ queryKey: ['rekordbox-queued-cues'] }),
+        ...rereadTrackFileQueries(queryClient),
         queryClient.invalidateQueries({ queryKey: ['source-collection', source.program] }),
       ]),
     [queryClient, source],
@@ -128,7 +129,7 @@ export function useRekordboxQueue(
         confirmedByEditor ? { ...applied, tracks: 0, changes: 0 } : applied,
         source.words,
       )
-      if (message?.goTo) notify(message.text, message.tone, message.goTo)
+      if (message?.rows?.length) notify(message.text, message.tone, message.rows)
       else if (message) notify(message.text, message.tone)
       if ('written' in applied) onWritten(applied.written)
       if ('created' in applied && applied.created) onCreated?.(applied.created)

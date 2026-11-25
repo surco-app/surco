@@ -144,6 +144,7 @@ export function libraryReaders(
             from: e.from,
             to: e.to,
             samplesKept: e.samplesKept,
+            reanalysed: e.cueShiftMs !== undefined,
             before: e.rekordbox ?? 'unreadable',
             added: e.rekordbox === 'absent',
             size: size[i],
@@ -168,6 +169,7 @@ export function libraryReaders(
             size: size[i],
             added: (e.engineStep === true || !!e.playlists?.engine) && typeof e.engine !== 'object',
             shift: e.engineShift,
+            reanalysed: e.reanalyse === true,
             ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
             ...(e.names ? { names: e.names } : {}),
             ...(e.playlists?.engine ? { playlists: e.playlists.engine } : {}),
@@ -209,9 +211,9 @@ interface RequeueTarget<T> {
   holds: (from: string) => boolean
 }
 
-// A retry hands a library still on the old file the move again, with the cue shift the
-// first repoint carried: that one never touched the row, and the shift goes with the move in
-// the same write. A row already moved is not found by the old path, so nothing shifts twice.
+// A retry hands a library still on the old file the move again, with the cue shift and the
+// re-analysis the first repoint carried: that one never touched the row, and both go with the
+// move in the same write. A row already moved is not found by the old path, so nothing shifts twice.
 // Tags, grid and stars are left out, so a repoint still queued for the source, which may
 // carry them, is left as it is and only applied. True when the library is not there to take
 // it now.
@@ -221,6 +223,7 @@ type Move = {
   audio?: { cueShiftMs: number }
   engineShift?: EngineShift
   fromBytes?: number
+  reanalyse?: true
 }
 export function libraryRequeue(queues: {
   rekordbox: RequeueTarget<Move>
@@ -239,6 +242,7 @@ export function libraryRequeue(queues: {
             ...(e.cueShiftMs === undefined ? {} : { audio: { cueShiftMs: e.cueShiftMs } }),
             ...(e.engineShift ? { engineShift: e.engineShift } : {}),
             ...(e.fromBytes === undefined ? {} : { fromBytes: e.fromBytes }),
+            ...(e.reanalyse ? { reanalyse: true as const } : {}),
           },
         ],
       )

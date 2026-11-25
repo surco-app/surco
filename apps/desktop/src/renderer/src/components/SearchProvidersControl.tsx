@@ -9,12 +9,14 @@ import type { SearchProviderId, Settings } from '../../../shared/types'
 //
 // With `details`, the sources become a list: one row per source with what it brings, and
 // its setup (a token, an account) under its own checkbox, dimmed while the source is off.
+// The wizard passes it empty: the same rows, with nothing to set up under them.
 export function SearchProvidersControl({
   value,
   onChange,
   testid,
   testidPrefix,
   details,
+  compact,
 }: {
   value: Settings['searchProviders']
   onChange: (value: Settings['searchProviders']) => void
@@ -23,6 +25,8 @@ export function SearchProvidersControl({
   // `${testidPrefix}-row-${provider}`.
   testidPrefix: string
   details?: Partial<Record<SearchProviderId, React.ReactNode>>
+  // Tighter rows for the wizard, whose step height is fixed and short on a small window.
+  compact?: boolean
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const toggle = (p: SearchProviderId, on: boolean): void =>
@@ -51,7 +55,7 @@ export function SearchProvidersControl({
         <div
           key={p}
           data-testid={`${testidPrefix}-row-${p}`}
-          className="border-t border-[var(--color-line)] px-3.5 py-3 first:border-t-0"
+          className={`border-t border-[var(--color-line)] px-3.5 first:border-t-0 ${compact ? 'py-1' : 'py-3'}`}
         >
           <div className="flex items-center gap-x-3">
             <label className="flex w-36 shrink-0 cursor-pointer items-center gap-3">

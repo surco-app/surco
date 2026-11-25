@@ -14,7 +14,7 @@ import { bandEnergiesDb } from './hfShelf'
 import { detectKey } from './musicalKey'
 import { versionMatch } from './pairLag'
 import { type RekordboxReadName, runRekordboxRead } from './rekordboxReads'
-import { type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
+import { masterShiftOf, type ReplaceWindow, replaceShiftOf } from './replaceShiftMeasure'
 import { readSeratoTrackCues } from './seratoCues'
 import type { SeratoLibraryRoot } from './seratoLibrary'
 import { runSeratoRead, type SeratoReadName } from './seratoReads'
@@ -29,14 +29,19 @@ import {
 import { snapshotTagsOrNull } from './tagSnapshot'
 import {
   type CueShift,
+  carryUnmanagedTags,
   copyCueFrames,
   copyCuesFromFlac,
   copyCuesToFlac,
+  type Id3Values,
   readCoverAndNumbers,
+  readId3Values,
   readTagLibFields,
+  readUserTextValues,
   setFlacComment,
   shiftFlacCues,
   type TagLibRead,
+  type UserTextValues,
   writeTags,
 } from './tags'
 import { detectBpm } from './tempo'
@@ -94,6 +99,8 @@ export type WorkerJob =
       clearExtras?: boolean
       // The specific third-party tags the inspector's user marked for deletion.
       foreignRemoved?: string[]
+      // The m4a was written from cueSource, whose atoms it should keep.
+      carryAtoms?: boolean
     }
   | { type: 'copyCueFrames'; source: string; dest: string; shift?: CueShift }
   // FLAC's armored cue comment survives the re-encode on its own; only a trim
@@ -101,7 +108,10 @@ export type WorkerJob =
   | { type: 'shiftFlacCues'; file: string; shift?: CueShift }
   // ffmpeg's flac muxer writes the comment as DESCRIPTION; moving it to COMMENT is another
   // TagLib save on the whole file (see setFlacComment).
-  | { type: 'setFlacComment'; file: string; comment: string }
+  | { type: 'setFlacComment'; file: string; comment: string; multiFrom?: string }
+  // The source's tags Surco does not manage, back in an MP3, AIFF, WAV or M4A ffmpeg wrote:
+  // another TagLib save on the whole file (see carryUnmanagedTags).
+  | { type: 'carryUnmanagedTags'; source: string; dest: string; owned: string[] }
   // An ID3 source encoded to FLAC: the cues have to be re-armored across tag families,
   // which is another TagLib rewrite and so belongs off the main process too.
   | { type: 'copyCuesToFlac'; source: string; dest: string; shift?: CueShift }
@@ -158,12 +168,17 @@ export type WorkerJob =
   | { type: 'tagFieldsHeld'; file: string; changes: TagFieldChange[] }
   | { type: 'heldComment'; file: string }
   | { type: 'tagLibRead'; file: string }
+  // Every value of a source's multi-value ID3 frames, which a save keeps (see keepId3Values).
+  | { type: 'id3Values'; file: string }
+  // Every value of its multi-value TXXX, which a custom field keeps (see keepCustomValues).
+  | { type: 'userTextValues'; file: string }
   // The activity panel's before/after tag snapshot, a full synchronous TagLib parse.
   | { type: 'tagSnapshot'; file: string }
   // The self-check's cover and M4A numbers, read beside that snapshot.
   | { type: 'verifyTagExtras'; file: string }
   | { type: 'tuneDrops'; tracks: TasteTrack[] }
   | { type: 'replaceShift'; head: ReplaceWindow | null; tail: ReplaceWindow | null }
+  | { type: 'masterShift'; old: Float32Array; current: Float32Array }
 
 export type WorkerJobResult =
   | Record<string, TrackCues | null>
@@ -183,6 +198,8 @@ export type WorkerJobResult =
   | Uint16Array
   | Uint8Array
   | TagLibRead
+  | Id3Values
+  | UserTextValues
   | TunedTaste
   | { cover: boolean; track: number; bpm: number }
   | { raw: string; info?: string }
@@ -248,6 +265,8 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return bandEnergiesDb(job.pcm, job.sampleRate)
     case 'replaceShift':
       return replaceShiftOf(job.head, job.tail)
+    case 'masterShift':
+      return masterShiftOf(job.old, job.current)
     case 'clicks':
       return detectClicks(job.pcm, job.sampleRate)
     case 'waveformPeaks':
@@ -262,6 +281,7 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
         job.cueShift,
         job.clearExtras,
         job.foreignRemoved,
+        job.carryAtoms,
       )
       return null
     case 'copyCueFrames':
@@ -271,7 +291,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       shiftFlacCues(job.file, job.shift)
       return null
     case 'setFlacComment':
-      setFlacComment(job.file, job.comment)
+      setFlacComment(job.file, job.comment, job.multiFrom)
+      return null
+    case 'carryUnmanagedTags':
+      carryUnmanagedTags(job.dest, job.source, job.owned)
       return null
     case 'copyCuesToFlac':
       copyCuesToFlac(job.source, job.dest, job.shift)
@@ -296,6 +319,10 @@ export function runWorkerJob(job: WorkerJob): WorkerJobResult | Promise<WorkerJo
       return heldComment(job.file)
     case 'tagLibRead':
       return readTagLibFields(job.file)
+    case 'id3Values':
+      return readId3Values(job.file)
+    case 'userTextValues':
+      return readUserTextValues(job.file)
     case 'tagSnapshot':
       return snapshotTagsOrNull(job.file)
     case 'verifyTagExtras':

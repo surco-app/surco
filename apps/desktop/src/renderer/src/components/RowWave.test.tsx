@@ -309,6 +309,5 @@ describe('RowWave', () => {
     )
     const lines = screen.getAllByTestId('track-wave-proposal')
     expect(lines.map((l) => l.style.left)).toEqual(['25%', '75%'])
-    expect(lines[0].className).toContain('border-dashed')
   })
 })

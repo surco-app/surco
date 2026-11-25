@@ -17,6 +17,9 @@ export interface ProvisionalEntry {
   contentId: string
   label: string
   wanted: WantedCue[]
+  // The cues another master's replacement found off the old grid, by id: the DJ set them off
+  // the beat, so the new grid leaves them where they are. Absent in lists stored before it.
+  free?: string[]
 }
 
 export interface ProvisionalList {
@@ -56,6 +59,7 @@ export function createProvisionalList(
 export function onRekordboxGrid(
   cues: TrackCueRow[],
   beats: number[],
+  free: readonly string[] = [],
 ): { wanted: WantedCue[]; moved: number; maxMs: number; unfit: number; unfitMs: number } {
   let moved = 0
   let maxMs = 0
@@ -63,7 +67,7 @@ export function onRekordboxGrid(
   let unfitMs = Number.POSITIVE_INFINITY
   const wanted = cues.map((c) => {
     const keep = { id: c.id, ms: c.ms, kind: c.kind, color: c.color }
-    if (c.loop) return keep
+    if (c.loop || free.includes(c.id)) return keep
     const at = nearestBeat(beats, c.ms)
     const beat = beats[at]
     const period = Math.abs((beats[at + 1] ?? beats[at - 1]) - beat)
@@ -111,6 +115,7 @@ export function adjustmentOps(
     const fit = onRekordboxGrid(
       read.cues,
       read.grid.map((b) => b.ms),
+      entry.free,
     )
     const notices: RekordboxQueueNotice[] = []
     if (fit.moved > 0)

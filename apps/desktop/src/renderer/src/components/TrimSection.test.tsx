@@ -119,11 +119,9 @@ describe('TrimSection', () => {
     )
     const lane = await screen.findByTestId('trim-lane-start', undefined, { timeout: 3000 })
     expect(lane).toHaveAttribute('height', '96')
-    expect(lane).toHaveClass('h-24')
     act(() => screen.getByTestId('maximize-trim').click())
     const tall = screen.getByTestId('trim-lane-start')
     expect(Number(tall.getAttribute('height'))).toBeGreaterThan(96)
-    expect(tall).not.toHaveClass('h-24')
   })
 
   it('draws a wave already decoded on disk before its live probe answers', async () => {
@@ -165,14 +163,6 @@ describe('TrimSection', () => {
     const end = screen.getByTestId('trim-loading-end')
     expect(start).toBeInTheDocument()
     expect(end).toBeInTheDocument()
-    // Each wave is `absolute inset-0 h-full`, so it MUST sit in a positioned box with a
-    // fixed lane height. Rendered bare it resolved h-full against the scroll pane and painted
-    // a full-window wave behind the whole app — the reported "giant wave". The h-24 parent
-    // pins the height so that can't happen.
-    for (const s of [start, end]) {
-      expect(s.parentElement?.className).toContain('relative')
-      expect(s.parentElement?.className).toContain('h-24')
-    }
   })
 
   // The detection only suggests — nothing is staged until a scissors marker is

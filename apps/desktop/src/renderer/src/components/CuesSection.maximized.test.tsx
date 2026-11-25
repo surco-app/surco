@@ -11,6 +11,7 @@ import {
   waitFor,
   within,
 } from '@testing-library/react'
+import type React from 'react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Api } from '../../../preload/api'
@@ -25,9 +26,9 @@ import '../i18n'
 import { resetEditorSections, useMaximizedSection } from '../hooks/useEditorSections'
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts'
 import type { Command, CueActions } from '../lib/commands'
-import { reduceDraft } from '../lib/cueDraft'
+import { reduceDraft, startDraft } from '../lib/cueDraft'
 import { claimCueSave } from '../lib/cueSaveEcho'
-import { autoMarkOf, resetCueSession } from '../lib/cueSession'
+import { autoMarkOf, keepDraft, resetCueSession } from '../lib/cueSession'
 import { SettingsProvider } from '../lib/settingsContext'
 import { takeShortcutUndo } from '../lib/shortcutUndo'
 import { claimKeys, runKeyClaim } from '../lib/spaceClaim'
@@ -94,6 +95,7 @@ function setup(
   read: TrackCues = READ,
   api: ApiOverrides = {},
   actionsRef?: { current: CueActions | null },
+  props: Partial<React.ComponentProps<typeof CuesSection>> = {},
 ) {
   const rekordboxCueWaveDetail = vi.fn<Api['cues']['waveDetail']>(async () => null)
   const gridFit = api.cues?.gridFit
@@ -124,6 +126,7 @@ function setup(
           onJumpBars={onJumpBars}
           onQuantize={onQuantize}
           actionsRef={actionsRef}
+          {...props}
         />
       </SettingsProvider>
     </QueryClientProvider>,
@@ -309,7 +312,6 @@ describe('CuesSection maximized', () => {
   it('starts the work right under the track header, so the eye reads down from the title without a gap', async () => {
     setup()
     await maximize()
-    expect(screen.getByTestId('cues-toolbar').className).not.toContain('mt-auto')
     expect(screen.getByTestId('cues-deck').parentElement).toBe(screen.getByTestId('cues-editor'))
   })
 
@@ -718,6 +720,31 @@ describe('CuesSection maximized', () => {
     expect(legend).toHaveTextContent('place the flow at the playhead, or accept the suggestions')
     expect(legend).toHaveTextContent('redo')
     expect(legend).toHaveTextContent('close the open menu')
+  })
+
+  // ⌘ and the glyphs are mac-only: the list and the undo hint must spell the keys a Windows
+  // user actually has, with Ctrl first in the redo chord.
+  it('spells the key list and the undo hint for the host platform', async () => {
+    setup(null, READ, { platform: 'win32' })
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    const legend = screen.getByTestId('cues-legend')
+    expect(legend).toHaveTextContent('Enter')
+    expect(legend).toHaveTextContent('Ctrl+Z')
+    expect(legend).toHaveTextContent('Ctrl+Shift+Z')
+    expect(legend).not.toHaveTextContent('⌘')
+    expect(legend).not.toHaveTextContent('↩')
+    expect(hoverTooltip(screen.getByTestId('cues-step-back'))).toMatch(/Ctrl\+Z$/)
+  })
+
+  it('writes the key list and the undo hint in Apple order on macOS', async () => {
+    setup()
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-keys'))
+    const legend = screen.getByTestId('cues-legend')
+    expect(legend).toHaveTextContent('⇧⌘Z')
+    expect(legend).toHaveTextContent('↩')
+    expect(hoverTooltip(screen.getByTestId('cues-step-back'))).toMatch(/⌘Z$/)
   })
 
   it('closes the key list on Escape without restoring the full editor and gives the keys back to it', async () => {
@@ -1840,7 +1867,7 @@ describe('CuesSection maximized undo', () => {
     await maximize()
     const undo = screen.getByTestId('cues-step-back')
     expect(screen.getByTestId('cues-actions')).toContainElement(undo)
-    expect(undo.nextElementSibling).toBe(screen.getByTestId('cues-save'))
+    expect(undo.nextElementSibling).toContainElement(screen.getByTestId('cues-save'))
     expect(hoverTooltip(undo)).toEqual('Undo⌘Z')
     expect(undo).toBeDisabled()
     seek(128000)
@@ -1858,12 +1885,12 @@ describe('CuesSection maximized undo', () => {
     setup()
     await maximize()
     const save = screen.getByTestId('cues-save')
-    expect(save.className).not.toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'false')
     seek(128000)
     editor().focus()
     key('Enter')
     expect(save).toBeEnabled()
-    expect(save.className).toContain('bg-[var(--color-accent)]')
+    expect(save).toHaveAttribute('data-filled', 'true')
   })
 })
 
@@ -2415,6 +2442,122 @@ describe('CuesSection maximized grid', () => {
     expect(saveRekordboxCues.mock.calls[0][0][0].grid).toBeUndefined()
   })
 
+  it('keeps saving every unsaved track inside the save menu in full screen, the count said once in its line and not on the chevron', async () => {
+    keepDraft('104', '104|f0|null', startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'), {
+      path: '/m/h.wav',
+      label: 'Other',
+      fingerprint: 'f0',
+    })
+    setup(null, READ, { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } })
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    expect(screen.queryByTestId('cues-save-all')).toBeNull()
+    expect(screen.getByTestId('cues-save-more').textContent).toBe('')
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByRole('menu')).toContainElement(screen.getByTestId('cues-save-all'))
+    expect(screen.getByTestId('cues-save-all')).toHaveTextContent('2')
+  })
+
+  // The full-screen body names the program in both ways, since that is where the cues land,
+  // and reads the same in both ways, so switching the way never resizes the button. Its name
+  // still says both where it saves and that it moves on.
+  it('keeps the program on the full-screen Save in both ways with no arrow', async () => {
+    setup(null, READ, undefined, undefined, { saveThen: 'next' })
+    await maximize()
+    const body = screen.getByTestId('cues-save')
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
+    expect(body).toHaveAccessibleName('Save to rekordbox and go to next track')
+    cleanup()
+    resetEditorSections()
+    setup(null, READ)
+    await maximize()
+    expect(screen.getByTestId('cues-save-label').textContent).toBe('Save to rekordbox')
+    expect(screen.queryByTestId('cues-save-next-mark')).toBeNull()
+    expect(screen.getByTestId('cues-save')).toHaveAccessibleName('Save to rekordbox')
+  })
+
+  // The body already says where the cues go, so the menu lines only say how, the same short
+  // words in full screen as folded, with no arrow: the words already say it moves on.
+  it('reads the ways to save as short words in full screen, as folded', async () => {
+    setup(null, READ)
+    await maximize()
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-mode-stay').textContent).toBe('Save')
+    expect(screen.getByTestId('cues-save-mode-next').textContent).toBe('Save and next')
+    expect(screen.queryByTestId('cues-save-mode-next-mark')).toBeNull()
+  })
+
+  // Only when every pending track lands in the program the body names can the line drop the
+  // program; with tracks in another program it must still say where each one goes.
+  it('shortens saving every track only when they all go to the program on the body', async () => {
+    const save = { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } }
+    const target = { path: '/m/h.wav', label: 'Other', fingerprint: 'f0' }
+    keepDraft(
+      '104',
+      '104|f0|null',
+      startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+      target,
+    )
+    setup(null, READ, save)
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-all').textContent).toBe('Save 2 tracks')
+    cleanup()
+    resetEditorSections()
+    resetCueSession()
+    keepDraft(
+      'engine:9',
+      'engine:9|f0|null',
+      startDraft([{ ms: 64000, kind: 0, color: null }], 'mine'),
+      target,
+    )
+    setup(null, READ, save)
+    await maximize()
+    key('m')
+    await waitFor(() => expect(screen.getByTestId('cues-save')).toBeEnabled())
+    fireEvent.click(screen.getByTestId('cues-save-more'))
+    expect(screen.getByTestId('cues-save-all').textContent).toBe(
+      'Save 2 tracks to rekordbox and Engine DJ',
+    )
+  })
+
+  it('stays full screen after saving and moving to the next track', async () => {
+    const saveRekordboxCues = vi.fn<Api['cues']['save']>(async () => {})
+    const onStepTrack = vi.fn()
+    setup(null, READ, { cues: { save: saveRekordboxCues } }, undefined, {
+      saveThen: 'next',
+      onStepTrack,
+    })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    const { result } = renderHook(() => useMaximizedSection())
+    expect(result.current.maximized).toBe('cues')
+  })
+
+  // On the last row the list has nowhere to go, yet stepping still focuses its row behind the
+  // full editor, which would leave m, ⌘Z and Enter acting on a list the DJ cannot see.
+  it('gives the keys back to the full editor after saving and moving on', async () => {
+    const listRow = document.createElement('button')
+    document.body.append(listRow)
+    const onStepTrack = vi.fn(() => listRow.focus())
+    setup(null, READ, { cues: { save: vi.fn<Api['cues']['save']>(async () => {}) } }, undefined, {
+      saveThen: 'next',
+      onStepTrack,
+    })
+    await maximize()
+    key('m')
+    fireEvent.click(screen.getByTestId('cues-save'))
+    await waitFor(() => expect(onStepTrack).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId('cues-editor')))
+    listRow.remove()
+  })
+
   const LANDED = { tracks: 1, changes: 0, cues: ['/m/g.wav'] }
   const saveOneMark = async (refused = false) => {
     let waiting: Awaited<ReturnType<Api['cues']['queued']>> = null
@@ -2690,7 +2833,10 @@ describe('CuesSection while the track loads', () => {
 })
 
 describe('CuesSection maximized replaced track', () => {
-  it('shows the pill and the reason in the maximized editor too, where the DJ actually checks cues', async () => {
+  // The why of an unmoved track is a warning the DJ acts on, so it reads as one: the same
+  // amber notice as off-grid cues, above the wave, and not a grey line that passes for help.
+  // The header's pill would only repeat it.
+  it('warns of an unmoved track in the notices above the wave, not in the header', async () => {
     setup(null, READ, {
       replacedTracks: async () => [
         {
@@ -2703,14 +2849,35 @@ describe('CuesSection maximized replaced track', () => {
       ],
     })
     await maximize()
-    await waitFor(() =>
-      expect(
-        within(screen.getByTestId('cues-header')).getByTestId('cues-replaced-pill'),
-      ).toHaveTextContent('not moved'),
+    const notice = await waitFor(() =>
+      within(screen.getByTestId('cues-notices')).getByTestId('cues-replaced-notice'),
     )
-    expect(
-      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-replaced-reason'),
-    ).toBeInTheDocument()
+    expect(notice).toHaveAttribute('data-state', 'unmoved')
+    expect(notice).toHaveTextContent("Surco couldn't line up the new file with the old one.")
+    expect(screen.queryByTestId('cues-replaced-pill')).toBeNull()
+  })
+
+  // A moved track still waits for the DJ's ear, so it gets the same notice with what Surco
+  // measured, and Reviewed is always found in the same place.
+  it('tells a moved track by how far its cues went, in the same notice', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 12 },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    const notice = await waitFor(() =>
+      within(screen.getByTestId('cues-notices')).getByTestId('cues-replaced-notice'),
+    )
+    expect(notice).toHaveAttribute('data-state', 'moved')
+    expect(notice).toHaveTextContent('+12 ms')
+    expect(notice).toHaveTextContent('Cues moved to the new file.')
   })
 
   // The maximized editor is where the DJ checks the cues by ear; making them fold it back
@@ -2731,10 +2898,29 @@ describe('CuesSection maximized replaced track', () => {
     })
     await maximize()
     const button = await waitFor(() =>
-      within(screen.getByTestId('cues-replaced-row')).getByTestId('cues-reviewed'),
+      within(screen.getByTestId('cues-replaced-notice')).getByTestId('cues-reviewed'),
     )
     fireEvent.click(button)
     await waitFor(() => expect(reviewReplaced).toHaveBeenCalledWith('/m/g.wav', undefined))
+  })
+
+  // A row of its own made the wave jump up the moment Reviewed was pressed. The notices
+  // keep their height when the notice goes, so the editor below stays still.
+  it('gives a replaced track no row above the toolbar, so Reviewed leaves the wave where it is', async () => {
+    setup(null, READ, {
+      replacedTracks: async () => [
+        {
+          newPath: '/m/g.wav',
+          oldPath: '/m/g.mp3',
+          replacedAt: 1,
+          shift: { moved: 0 },
+          pending: ['rekordbox'],
+        },
+      ],
+    })
+    await maximize()
+    await waitFor(() => screen.getByTestId('cues-reviewed'))
+    expect(screen.queryByTestId('cues-replaced-row')).toBeNull()
   })
 
   // Reviewed removes its own row, and with it the focused button. The keys must stay with the
@@ -2774,7 +2960,7 @@ describe('CuesSection maximized replaced track', () => {
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     reviewed.focus()
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     expect(document.activeElement).toBe(editor())
 
     key('z', { metaKey: true })
@@ -2819,7 +3005,7 @@ describe('CuesSection maximized replaced track', () => {
     await maximize()
     const reviewed = await waitFor(() => screen.getByTestId('cues-reviewed'))
     fireEvent.click(reviewed)
-    await waitFor(() => expect(screen.queryByTestId('cues-replaced-row')).toBeNull())
+    await waitFor(() => expect(screen.queryByTestId('cues-reviewed')).toBeNull())
     fireEvent.click(screen.getByTestId('cues-clear-all'))
     expect(screen.queryByTestId('cue-wave-hot-B')).toBeNull()
 

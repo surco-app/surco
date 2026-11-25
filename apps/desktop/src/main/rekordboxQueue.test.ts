@@ -361,6 +361,24 @@ describe('rekordbox queue', () => {
     expect(q.state()).toEqual({ tracks: 0, changes: 0, items: [], elsewhere: 1 })
   })
 
+  // The moves a discard drops will never be written, so whoever tracks them (To review)
+  // has to hear which ones, whether the DJ discarded or a restore did.
+  it('hands the repoints a discard or a restore drops to onDiscard, and none on an apply', async () => {
+    const onDiscard = vi.fn()
+    const q = createRekordboxQueue(deps({ onDiscard }))
+    const a = { from: '/m/a.mp3', to: '/m/a.flac', replaced: true as const }
+    const b = { from: '/m/b.mp3', to: '/m/b.flac', replaced: true as const }
+    q.enqueue([], [a])
+    await q.apply(closed)
+    expect(onDiscard).not.toHaveBeenCalled()
+    q.enqueue([], [a])
+    q.discard()
+    expect(onDiscard).toHaveBeenLastCalledWith([a])
+    q.enqueue([rename], [b])
+    q.discardCurrent()
+    expect(onDiscard).toHaveBeenLastCalledWith([b])
+  })
+
   it('lifts the hold on this collection without discarding what waits for another', async () => {
     let at = '/copy/master.db'
     const d = deps({ collection: () => at })

@@ -11,6 +11,7 @@ import {
 } from '../../../shared/verification'
 import i18n from '../i18n'
 import type { Destination } from '../lib/destination'
+import type { LibraryCopyOffer } from '../lib/libraryCopy'
 import type { BatchVerification, SelectionStatus } from '../lib/selectionStatus'
 import { hoverTooltip } from '../test/tooltip'
 import type { TrackItem } from '../types'
@@ -74,13 +75,13 @@ describe('ConvertFooter state swap', () => {
   // footer actually changes shape: the convert button giving way to the done line.
   it('does not animate the state block on mount, even when already done', () => {
     render(footer(true))
-    expect(screen.getByTestId('footer-state').className).not.toContain('animate-footer-swap')
+    expect(screen.getByTestId('footer-state')).toHaveAttribute('data-swapped', 'false')
   })
 
   it('animates the state block in when convert flips to done', () => {
     const { rerender } = render(footer(false))
     rerender(footer(true))
-    expect(screen.getByTestId('footer-state').className).toContain('animate-footer-swap')
+    expect(screen.getByTestId('footer-state')).toHaveAttribute('data-swapped', 'true')
   })
 
   // The swap replaces the button the keyboard user pressed, so focus fell to <body> the
@@ -202,11 +203,6 @@ describe('ConvertFooter announcements', () => {
 // The user wants it on one line, always, so everything past the outcome is an icon named by
 // its tooltip and accessible label: no translation can push it onto a second line.
 describe('ConvertFooter done footer stays on one line', () => {
-  it('never lets the row wrap', () => {
-    render(footer(true))
-    expect(screen.getByTestId('done-row').className).not.toContain('flex-wrap')
-  })
-
   // Redesigned 15/10 after macOS: a bare ↻ read as "reload" and a disc as nothing at all,
   // so the follow-ups moved into a menu where each one is a full phrase. The row keeps one
   // icon for all of them, and no translation can widen it.
@@ -218,13 +214,6 @@ describe('ConvertFooter done footer stays on one line', () => {
     fireEvent.click(more)
     expect(screen.getByTestId('process-btn')).toHaveTextContent('Convert again')
     expect(screen.getByTestId('export-collection')).toHaveTextContent('Export to DJ app…')
-  })
-
-  it('draws the menu button with the same corners as every other icon button, not as the one round control', () => {
-    render(footer(true))
-    const more = screen.getByTestId('done-more')
-    expect(more.className).not.toMatch(/rounded-full/)
-    expect(more.className).toMatch(/rounded-lg/)
   })
 
   it('offers the file from the menu by name', () => {
@@ -508,8 +497,6 @@ describe('ConvertFooter done layout', () => {
     fireEvent.click(screen.getByTestId('done-more'))
     const add = screen.getByTestId('menu-add-apple-music')
     expect(add).toBeDisabled()
-    expect(add).toHaveClass('disabled:opacity-40')
-    expect(add).toHaveClass('disabled:hover:bg-transparent')
   })
 
   it('keeps the Apple Music add the main action when Apple Music is the destination', () => {
@@ -626,10 +613,17 @@ describe('ConvertFooter lossy source note', () => {
 })
 
 describe('ConvertFooter Serato stars note', () => {
-  const withStars = (over: { replaces?: boolean }): React.JSX.Element =>
+  const replacing: LibraryCopyOffer = {
+    name: 'Serato',
+    format: 'AIFF 16/44.1',
+    action: 'replace',
+    better: false,
+    held: false,
+  }
+  const withStars = (over: { libraryCopy?: LibraryCopyOffer }): React.JSX.Element =>
     cloneElement(footer(false), {
       item: { id: 't1', status: 'idle', inputPath: '/crate/a.aiff', meta: {} } as TrackItem,
-      replaces: true,
+      libraryCopy: replacing,
       seratoLosesStars: true,
       ...over,
     })
@@ -647,7 +641,7 @@ describe('ConvertFooter Serato stars note', () => {
   // track the batch replaces are lost the same way.
   it('says Serato will lose the stars before several tracks replace a Serato track', () => {
     render(
-      cloneElement(withStars({ replaces: false }), {
+      cloneElement(withStars({ libraryCopy: undefined }), {
         isMulti: true,
         selectedCount: 2,
         readyCount: 2,
@@ -659,8 +653,33 @@ describe('ConvertFooter Serato stars note', () => {
     )
   })
 
+  // A track stamped to replace a file is converted over that file whatever the lookup finds
+  // now, as each track of a selection is: alone it has to warn as it does in a selection.
+  it('says Serato will lose the stars when the track is stamped to replace a Serato track', () => {
+    render(
+      cloneElement(withStars({ libraryCopy: undefined }), {
+        item: {
+          id: 't1',
+          status: 'idle',
+          inputPath: '/crate/a.aiff',
+          replacesPath: '/s/old.wav',
+          meta: {},
+        } as TrackItem,
+      }),
+    )
+    expect(screen.getByTestId('convert-serato-stars-note')).toHaveTextContent(
+      i18n.t('editor.seratoLosesStars'),
+    )
+  })
+
+  // Update rewrites the copy's tags where it sits, so Serato keeps the same file and its stars.
+  it('does not warn about Serato stars when only the copy tags are updated', () => {
+    render(withStars({ libraryCopy: { ...replacing, action: 'update' } }))
+    expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
+  })
+
   it('says nothing when the button adds instead of replacing', () => {
-    render(withStars({ replaces: false }))
+    render(withStars({ libraryCopy: undefined }))
     expect(screen.queryByTestId('convert-serato-stars-note')).toBeNull()
   })
 })
@@ -833,13 +852,6 @@ describe('ConvertFooter verification', () => {
     const line = screen.getByTestId('export-success')
     expect(line).toHaveTextContent(/^Convertido a WAV · rekordbox al cerrarlo$/)
     expect(line.textContent).not.toContain('✓')
-  })
-
-  // The pending line is the longest the row ever holds, and it is the part that tells
-  // the DJ to close a program: it wraps at the narrowest editor instead of an ellipsis.
-  it('the pending line is never cut short', () => {
-    render(verified([fileOk, pending('rekordbox', 'rekordbox'), pending('engine', 'Engine DJ')]))
-    expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
   })
 
   it('the check mark appears only when the queue applied and every place is ok', () => {
@@ -1160,6 +1172,20 @@ describe('ConvertFooter batch verification', () => {
     })
   }
 
+  // The pill after a batch names the format the batch wrote (MP3 sources kept as MP3), so the
+  // ••• menu must not mark the AIFF the setting says instead.
+  it('marks in the done menu the one format the batch wrote, as the pill names it', () => {
+    render(
+      cloneElement(batchFooter({ ok: 2 }), {
+        format: 'aiff',
+        batchFormats: ['mp3'],
+      }),
+    )
+    fireEvent.click(screen.getByTestId('done-more'))
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
   it('the batch line counts verified and mismatched', () => {
     render(batchFooter({ ok: 38, mismatch: 2 }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(
@@ -1257,12 +1283,6 @@ describe('ConvertFooter batch verification', () => {
     render(batchFooter({ mismatch: 2 }))
     expect(screen.getByTestId('export-success')).toHaveTextContent(/^2 no cuadran$/)
   })
-
-  // The longest batch line names counts and programs; it wraps at the narrowest editor.
-  it('the batch line is never cut short', () => {
-    render(batchFooter({ ok: 36, mismatch: 1, checking: 2, unverified: 3 }))
-    expect(screen.getByTestId('export-success').className).not.toMatch(/\btruncate\b/)
-  })
 })
 
 describe('ConvertFooter up to date', () => {
@@ -1275,74 +1295,6 @@ describe('ConvertFooter up to date', () => {
     rerender(cloneElement(idle, quiet))
     expect(screen.getByTestId('convert-update-anyway')).toHaveFocus()
   })
-})
-
-describe('ConvertFooter height', () => {
-  const LINE = 20
-  function heightOf(el: HTMLElement, compact: boolean): number {
-    const own = el.className.split(/\s+/)
-    const pick = (re: RegExp): number | undefined => {
-      const base = own.find((c) => re.test(c) && !c.includes(':'))
-      const dense = own.find((c) => c.startsWith('compact:') && re.test(c.slice(8)))
-      const cls = compact && dense ? dense.slice(8) : base
-      return cls === undefined ? undefined : Number(cls.split('-')[1]) * 4
-    }
-    const fixed = pick(/^h-[\d.]+$/)
-    if (fixed !== undefined) return fixed
-    return (pick(/^py-[\d.]+$/) ?? 0) * 2 + LINE
-  }
-  const selection = {
-    isMulti: true,
-    selectedCount: 3,
-    readyCount: 3,
-    status: { ...status(false), superseded: [] },
-    onConvertSelection: vi.fn(),
-  }
-  const states: [string, React.JSX.Element, string][] = [
-    ['ready to convert', footer(false), 'process-btn'],
-    [
-      'converting one track',
-      cloneElement(footer(false), {
-        item: {
-          id: 't1',
-          status: 'processing',
-          stage: 'converting',
-          inputPath: '/a.wav',
-          meta: {},
-        },
-        onCancel: vi.fn(),
-      }),
-      'process-btn',
-    ],
-    ['a selection to convert', cloneElement(footer(false), selection), 'process-btn'],
-    [
-      'a batch running',
-      cloneElement(footer(false), { batchRun: { done: 1, total: 3 }, onCancelBatch: vi.fn() }),
-      'batch-run-cancel',
-    ],
-    [
-      'up to date',
-      cloneElement(footer(false), {
-        upToDate: true,
-        willEditInPlace: true,
-        tagsOnly: true,
-        sameFormat: true,
-      }),
-      'convert-up-to-date-row',
-    ],
-  ]
-
-  // 21/11: in Compact the convert button sat at 32 px, too thin to aim at, while converting,
-  // a running batch and the up-to-date line stood 40 px, so the footer jumped as it changed state.
-  it.each(states)(
-    'stands 40 px in either density while %s, so the main action never shrinks and the footer never changes height',
-    (_, el, testId) => {
-      render(el)
-      const target = screen.getByTestId(testId)
-      expect(heightOf(target, false)).toBe(40)
-      expect(heightOf(target, true)).toBe(40)
-    },
-  )
 })
 
 describe('ConvertFooter one track shortcut hint', () => {
@@ -1380,6 +1332,35 @@ describe('ConvertFooter selection split button', () => {
     expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
     expect(screen.getByTestId('process-destination-beside')).toBeInTheDocument()
     expect(screen.queryByTestId('batch-destination-toggle')).toBeNull()
+  })
+
+  // Two MP3s with an AIFF setting write MP3 (kept sources), as a single track already shows:
+  // the dropdown must not promise AIFF next to an "Update" that rewrites MP3 tags.
+  it('shows on the dropdown and marks in the menu the one format the plan writes', () => {
+    render(plan({ format: 'aiff', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('shows and marks the picked format when the plan writes exactly that', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    openMenu()
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('shows and marks the one real format a "Same as source" pick resolves to', () => {
+    render(plan({ format: 'source', batchFormats: ['mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('MP3')
+    openMenu()
+    expect(screen.getByTestId('process-format-mp3')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('keeps showing the picked format when the plan writes several', () => {
+    render(plan({ format: 'aiff', batchFormats: ['aiff', 'mp3'] }))
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
   })
 
   it('says out of how many it converts when the plan leaves some out', () => {

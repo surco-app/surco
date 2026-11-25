@@ -1,3 +1,5 @@
+import type { LibraryCopyAction } from '../../../shared/types'
+
 export interface ExportLabelState {
   processing: boolean
   quiet?: boolean
@@ -9,10 +11,12 @@ export interface ExportLabelState {
   // What the last export actually produced (uppercased), null before any export. Lets
   // the quiet re-export label name the pending format when the menu changed it.
   exportedFormat?: string | null
-  // True when the file would supersede a copy already in the library, so the button can
-  // offer a replacement instead of an add. Ranked below the in-place and stale updates:
-  // those already describe an update of the file itself.
-  replaces?: boolean
+  // The action the user picked for the library copy (undefined = no copy). The user picks
+  // it, rather than the label deducing Replace from the copy existing or from the verdict,
+  // because Update keeps the copy's audio and Replace swaps it: a verdict can't tell which
+  // the user wants. Ranked below the in-place and stale updates: those already describe an
+  // update of the file itself.
+  libraryAction?: LibraryCopyAction
   // The library's copy measured better than this file, so the replace offer says it goes
   // against that verdict ("anyway"). It still names the action, and pressing still replaces.
   libraryBetter?: boolean
@@ -33,6 +37,7 @@ export interface ExportLabelState {
 export function exportButtonLabel(state: ExportLabelState): {
   key: string
   options?: Record<string, unknown>
+  library?: LibraryCopyAction
 } {
   if (state.processing) return { key: 'editor.processing' }
   // Picking a format from the menu only relabels the button, so after an export the
@@ -53,8 +58,12 @@ export function exportButtonLabel(state: ExportLabelState): {
     return { key: 'editor.updateAudio' }
   if (state.done) return { key: 'editor.exportAgain' }
   // The chosen format is shown on the button's dropdown half, so these say only the verb.
-  if (state.replaces) {
-    return { key: state.libraryBetter ? 'editor.libraryHasBetter' : 'editor.replaceAction' }
+  if (state.libraryAction === 'update') return { key: 'editor.update', library: 'update' }
+  if (state.libraryAction === 'replace') {
+    return {
+      key: state.libraryBetter ? 'editor.libraryHasBetter' : 'editor.replaceAction',
+      library: 'replace',
+    }
   }
   return { key: 'editor.convertAction' }
 }

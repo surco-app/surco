@@ -14,11 +14,13 @@ import type { TrackItem } from '../types'
 // Separators are kept one by one, each under its own key (its playlist row), so each can be
 // dragged and removed; one in a run or after the last row is not folded away. Each shown
 // track also knows its first row in the playlist, every row it has there, and its
-// collection entry: a drag moves all its rows, a copy links that entry.
+// collection entry: a drag moves all its rows, a copy links that entry. It also knows the
+// file that row names, which is not the track's own path when the track converted into it.
 export interface PlaylistScope {
   tracks: TrackItem[]
   ids: readonly string[]
   pathOf: ReadonlyMap<string, string>
+  rowPathOf: ReadonlyMap<string, string>
   separatorBefore: ReadonlyMap<string, readonly string[]>
   trailingSeparators: readonly string[]
   linkOf: ReadonlyMap<string, string>
@@ -114,6 +116,7 @@ export function playlistView(
   const linkOf = new Map<string, string>()
   const linksOf = new Map<string, string[]>()
   const contentOf = new Map<string, string>()
+  const rowPathOf = new Map<string, string>()
   const addedOf = new Map<string, number>()
   const rowIds: (string | undefined)[] = []
   const rowPaths: (string | undefined)[] = []
@@ -142,6 +145,7 @@ export function playlistView(
     const key = times === 0 ? t.id : `${t.id}~${times}`
     if (times === 0 && e.linkId) linkOf.set(t.id, e.linkId)
     if (times === 0 && e.contentId) contentOf.set(t.id, e.contentId)
+    if (times === 0 && e.path) rowPathOf.set(t.id, e.path)
     const added = e.meta.addedAt ?? Date.parse(e.meta.dateAdded ?? '')
     if (times === 0 && Number.isFinite(added)) addedOf.set(t.id, added)
     if (pending.length) separatorBefore.set(key, pending)
@@ -156,6 +160,7 @@ export function playlistView(
           tracks: shown,
           ids: shown.map((t) => t.id),
           pathOf: new Map(shown.map((t) => [t.id, t.inputPath])),
+          rowPathOf,
           separatorBefore,
           trailingSeparators: pending,
           linkOf,

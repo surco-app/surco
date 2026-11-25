@@ -87,6 +87,7 @@ export function Spectrogram({
       </svg>
       <img
         data-testid="spectrogram"
+        data-tall={tall}
         // undefined, not '', when there's no rendered image yet: an empty src makes the
         // browser refetch the whole page.
         src={spectrum.image || undefined}

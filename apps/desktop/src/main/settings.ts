@@ -102,6 +102,8 @@ export const defaults: Settings = {
   cueFlows: BUNDLED_FLOWS,
   activeCueFlow: DEFAULT_CUE_FLOW_ID,
   cueJumpBars: DEFAULT_CUE_JUMP_BARS,
+  cueSaveThen: 'stay',
+  libraryCopyAction: 'update',
   cueQuantize: DEFAULT_CUE_QUANTIZE,
   cueGridTolerance: DEFAULT_CUE_GRID_TOLERANCE,
   cueLettersByTime: true,
@@ -414,6 +416,9 @@ function mergeSettings(base: Settings, patch: Partial<Settings>): Settings {
     cueFlows: keepLegacyFlow(flows.flows, flows.active),
     activeCueFlow: flows.active,
     cueJumpBars: normalizeCueJumpBars(patch.cueJumpBars ?? base.cueJumpBars),
+    cueSaveThen: (patch.cueSaveThen ?? base.cueSaveThen) === 'next' ? 'next' : 'stay',
+    libraryCopyAction:
+      (patch.libraryCopyAction ?? base.libraryCopyAction) === 'replace' ? 'replace' : 'update',
     cueQuantize: normalizeCueQuantize(patch.cueQuantize ?? base.cueQuantize),
     cueGridTolerance: normalizeCueGridTolerance(patch.cueGridTolerance ?? base.cueGridTolerance),
     cueLettersByTime: (patch.cueLettersByTime ?? base.cueLettersByTime) !== false,
@@ -743,4 +748,31 @@ export function migrateBackupLimits(): void {
     backupMaxGb: cur.backupMaxGb === 10 ? TRASH_MAX_BYTES / 1024 ** 3 : cur.backupMaxGb,
     backupLimitsMigrated: true,
   })
+}
+
+const MENU_SETTINGS = [
+  'shortcutOverrides',
+  'language',
+  'showListWaves',
+  'showListPositions',
+  'showRailNames',
+  'showSidebar',
+] as const satisfies readonly (keyof Settings)[]
+
+const QUEUE_LIBRARY_PATHS = [
+  ['rekordbox', 'rekordboxDbPath'],
+  ['engine', 'engineLibraryDir'],
+  ['traktor', 'traktorNmlPath'],
+] as const satisfies readonly (readonly [string, keyof Settings])[]
+
+// Rebinding a shortcut changes the menu accelerators, and pinning a language changes every
+// menu label, so both need the menu rebuilt from the freshly saved settings.
+export function settingsPatchEffects(patch: Partial<Settings>) {
+  return {
+    rebuildMenu: MENU_SETTINGS.some((key) => patch[key] !== undefined),
+    pokeRekordboxWatch: patch.completeCuesOnClose !== undefined,
+    announce: QUEUE_LIBRARY_PATHS.filter(([, key]) => patch[key] !== undefined).map(
+      ([program]) => program,
+    ),
+  }
 }

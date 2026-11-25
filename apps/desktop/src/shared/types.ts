@@ -171,6 +171,9 @@ export interface ColumnShares {
   results?: number
 }
 
+export type CueSaveThen = 'stay' | 'next'
+export type LibraryCopyAction = 'update' | 'replace'
+
 export interface Settings {
   theme: ThemePref
   density: Density
@@ -255,6 +258,8 @@ export interface Settings {
   cueFlows: CueFlow[]
   activeCueFlow: string
   cueJumpBars: CueJumpBars
+  cueSaveThen: CueSaveThen
+  libraryCopyAction: LibraryCopyAction
   cueQuantize: CueQuantize
   cueGridTolerance: CueGridTolerance
   cueLettersByTime: boolean
@@ -814,6 +819,9 @@ export interface MetaRead {
   // left a degraded read indistinguishable from a file that simply carries no tags —
   // so an unreadable one sat in the list saying nothing. Absent on a successful read.
   failed?: true
+  // The failed read found nothing at the path: the file was moved or deleted since the row
+  // was listed, which the DJ fixes by finding the file, not by retagging a damaged one.
+  missing?: true
 }
 
 export interface ProcessJob extends TrackOrigin {
@@ -882,6 +890,10 @@ export interface ProcessJob extends TrackOrigin {
   // checked against this name, never against the new tags: the copy was matched by score,
   // so the two rarely spell the same.
   replacesLabel?: string
+  // Set by Update on a library copy: its tags are written onto that exact file, which is
+  // never renamed (not even .aif to .aiff), since the DJ programs and Apple Music hold it
+  // by that path.
+  tagsInPlace?: true
 }
 
 export interface CoverExportJob {
@@ -1507,6 +1519,7 @@ export interface ProcessResult {
   // How far the audio of a replacement moved against the file it replaced, measured by
   // the conversion. Absent on an ordinary conversion. Kept by the "To review" list.
   replaceShift?: ReplaceShift
+  seratoCarryFailed?: true
 }
 
 // A fixed-length envelope of max-abs peaks (each 0..1) for drawing the track's

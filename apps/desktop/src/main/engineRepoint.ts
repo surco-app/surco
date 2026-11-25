@@ -59,6 +59,8 @@ export interface EngineRepoint extends PathMatchOptions {
   // repair already landed, and whether the length is rewritten from the row's own trackData.
   expectTrackData?: { sampleRate: number; sampleCount: number }
   fixLength?: boolean
+  // A replacement no measure vouches holds the replaced file's audio (see RekordboxRepoint).
+  reanalyse?: true
 }
 
 export const engineLengthOf = (sampleCount: number, sampleRate: number): number =>
@@ -88,6 +90,8 @@ export function engineBitrateKbps(probe: {
 const BITRATE_EXTENSIONS = new Set(['wav', 'aif', 'aiff', 'mp3', 'm4a', 'aac', 'ogg', 'opus'])
 
 type Blob = Uint8Array | null
+
+const ENGINE_OVERVIEW_ENTRIES = 1024
 
 interface Performance {
   trackData: Blob
@@ -155,21 +159,34 @@ export function shiftEnginePerformance(perf: Performance, shift: EngineShift): P
     next.beatData = deflateEngineBlob(grid)
   }
 
+  // Engine draws an overview only with its 1024 entries spread over the whole file: the 1032
+  // a shift once left drew the list's thumbnail and the deck's strip black (measured in Engine
+  // DJ 5.3.0 on 23/11). So the wave is resampled onto 1024 entries of the new length, each
+  // the loudest of the old entries under it, and audio the old file did not have is silence.
   const overview = inflated(perf.overviewWaveFormData)
   const runSamples = overview && decodeOverview(overview) ? overview.readDoubleBE(16) : 0
   if (overview && runSamples > 0) {
     const count = Number(overview.readBigInt64BE(0))
-    const runs = Math.round(((shift.trimmedMs / 1000) * from) / runSamples)
-    // A cut put back (a negative trim) comes back as silent entries: the ones it dropped are gone.
-    const dropped = Math.min(count, Math.max(0, runs))
-    const added = Math.max(0, -runs)
+    const span = samples ?? Math.max(0, Math.round(moved(count * runSamples)))
+    const run = span / ENGINE_OVERVIEW_ENTRIES
+    const old = (sample: number) => ((sample / to + shift.trimmedMs / 1000) * from) / runSamples
+    const entries = Buffer.alloc(ENGINE_OVERVIEW_ENTRIES * 3)
+    for (let i = 0; i < ENGINE_OVERVIEW_ENTRIES; i++) {
+      const end = old((i + 1) * run)
+      if (end <= 0) continue
+      const first = Math.max(0, Math.floor(old(i * run)))
+      const last = Math.min(count, Math.max(first + 1, Math.ceil(end)))
+      for (let o = first; o < last; o++)
+        for (let b = 0; b < 3; b++)
+          entries[i * 3 + b] = Math.max(entries[i * 3 + b], overview[24 + o * 3 + b])
+    }
     const head = Buffer.from(overview.subarray(0, 24))
-    head.writeBigInt64BE(BigInt(count - dropped + added), 0)
+    head.writeBigInt64BE(BigInt(ENGINE_OVERVIEW_ENTRIES), 0)
     if (Number(head.readBigInt64BE(8)) === count)
-      head.writeBigInt64BE(BigInt(count - dropped + added), 8)
-    head.writeDoubleBE((runSamples * to) / from, 16)
+      head.writeBigInt64BE(BigInt(ENGINE_OVERVIEW_ENTRIES), 8)
+    head.writeDoubleBE(run, 16)
     next.overviewWaveFormData = deflateEngineBlob(
-      Buffer.concat([head, Buffer.alloc(added * 3), overview.subarray(24 + dropped * 3)]),
+      Buffer.concat([head, entries, overview.subarray(24 + count * 3)]),
     )
   }
 
@@ -312,11 +329,23 @@ export async function writeEngineRepoints(
       inPlace: boolean
       bitrate: number | null | undefined
       fixLength?: boolean
+      reanalyse?: true
     }[] = []
+    // The row each earlier repoint of the run puts on a file, by that file: the rows read
+    // above do not know it yet.
+    const planned = new Map<string, (typeof stored)[number]>()
     for (const [i, repoint] of repoints.entries()) {
       if (results[i]) continue
       const key = pathKey(repoint)
-      const matches = find(repoint.from, key)
+      const chained = planned.get(key(repoint.from))
+      // The Engine DJ destination moves a replaced row onto the new file during the
+      // conversion, before this runs: a row there still on the old file's size is that one,
+      // its shift still owed.
+      const onOld = chained ? [chained] : find(repoint.from, key)
+      const matches =
+        onOld.length === 0 && repoint.fromBytes !== undefined && repoint.from !== repoint.to
+          ? find(repoint.to, key)
+          : onOld
       if (matches.length === 0) {
         results[i] = { written: false, reason: 'no-match' }
         continue
@@ -325,7 +354,8 @@ export async function writeEngineRepoints(
         results[i] = { written: false, reason: 'ambiguous', ids: matches.map((m) => m.id) }
         continue
       }
-      const onTarget = find(repoint.to, key)
+      const claimed = planned.get(key(repoint.to))
+      const onTarget = [...find(repoint.to, key), ...(claimed ? [claimed] : [])]
       if (onTarget.some((row) => row.id !== matches[0].id)) {
         results[i] = { written: false, reason: 'occupied' }
         continue
@@ -334,6 +364,7 @@ export async function writeEngineRepoints(
       // records the source's size: the same write records the new one, so the shift lands once.
       const sizeUnknown = repoint.expectTrackData !== undefined && matches[0].fileBytes == null
       if (
+        !chained &&
         onTarget.length > 0 &&
         !sizeUnknown &&
         (repoint.fromBytes === undefined || matches[0].fileBytes !== repoint.fromBytes)
@@ -350,6 +381,7 @@ export async function writeEngineRepoints(
         onTarget.length > 0 &&
         !repoint.engineShift &&
         !repoint.fixLength &&
+        !repoint.reanalyse &&
         sizes[i] === matches[0].fileBytes &&
         (bitrates[i] === undefined || bitrates[i] === matches[0].bitrate)
       ) {
@@ -364,8 +396,11 @@ export async function writeEngineRepoints(
         inPlace: onTarget.length > 0,
         bitrate: bitrates[i],
         fixLength: repoint.fixLength,
+        reanalyse: repoint.reanalyse,
       })
       results[i] = { written: true, id: matches[0].id }
+      planned.delete(key(repoint.from))
+      planned.set(key(repoint.to), { ...matches[0], fileBytes: sizes[i] })
     }
     if (updates.length === 0) return results as EngineRepointResult[]
 
@@ -420,6 +455,17 @@ export async function writeEngineRepoints(
             Number(u.id),
           ],
         )
+      // Engine never analyses a row that says it is analysed, so the old file's grid, key and
+      // overview would sit over another recording. Emptied, with isAnalyzed at 0, Engine
+      // analyses the file again on its next start and keeps the hot cues and loops as they
+      // are (measured in Engine DJ 5.3.0 on 23/11).
+      if (u.reanalyse) {
+        db.run(
+          'UPDATE PerformanceData SET trackData = NULL, overviewWaveFormData = NULL, beatData = NULL WHERE trackId = ?',
+          [Number(u.id)],
+        )
+        db.run('UPDATE Track SET isAnalyzed = 0 WHERE id = ?', [Number(u.id)])
+      }
     }
 
     // Engine launched while the rows were being read would have loaded the old library and

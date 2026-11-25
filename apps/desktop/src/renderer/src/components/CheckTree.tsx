@@ -134,7 +134,7 @@ export function CheckTree({
 
   return (
     <div className="flex min-h-0 flex-col">
-      <label className="mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs">
+      <label className="mb-2 flex h-[30px] items-center gap-1.5 rounded-md border border-[var(--color-input-border)] bg-[var(--color-field)] px-2 text-xs has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
         <Search size={13} className="text-fg-faint" aria-hidden="true" />
         <input
           data-testid="check-tree-search"
@@ -142,7 +142,7 @@ export function CheckTree({
           placeholder={tr('sources.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-0 flex-1 bg-transparent outline-none"
+          className="min-w-0 flex-1 bg-transparent outline-none focus-visible:shadow-none"
         />
       </label>
       <ul className="min-h-0 flex-1 overflow-y-auto">

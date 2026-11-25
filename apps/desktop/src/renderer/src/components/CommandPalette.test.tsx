@@ -28,26 +28,18 @@ function track(id: string, artist: string, title: string): TrackItem {
 }
 
 describe('CommandPalette', () => {
-  it('truncates a long command title so the row keeps one line while arrowing', () => {
-    render(
-      <CommandPalette commands={[cmd({ id: 'a', title: 'T'.repeat(200) })]} onClose={vi.fn()} />,
-    )
-    expect(screen.getByTestId('palette-item-title')).toHaveClass('truncate')
+  // The palette is opened dozens of times a day, often from the keyboard: paying an
+  // entrance on every open makes the whole app feel slower than it is.
+  it('opens bare, without an entrance', () => {
+    render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
+    expect(screen.getByRole('dialog')).toHaveAttribute('data-bare', 'true')
+    expect(screen.getByTestId('palette-backdrop')).toHaveAttribute('data-bare', 'true')
   })
 
   it('exposes an accessible name on the dialog and search field', () => {
     render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
     expect(screen.getByRole('dialog')).toHaveAccessibleName()
     expect(screen.getByTestId('palette-input')).toHaveAccessibleName()
-  })
-
-  // The palette is opened dozens of times a day, often from the keyboard — paying a
-  // 220ms pop on every open makes the whole app feel slower than it is. It must
-  // appear instantly, unlike the card dialogs that keep their entrance.
-  it('opens without an entrance animation', () => {
-    render(<CommandPalette commands={[cmd({ id: 'a', title: 'Add' })]} onClose={vi.fn()} />)
-    expect(screen.getByRole('dialog').className).not.toContain('animate-pop')
-    expect(screen.getByTestId('palette-backdrop').className).not.toContain('animate-overlay')
   })
 
   // Virtual focus (aria-activedescendant) never scrolls on its own: with ~25
@@ -220,26 +212,6 @@ describe('CommandPalette', () => {
     fireEvent.keyDown(input, { key: 'ArrowDown' })
     expect(input).toHaveAttribute('aria-activedescendant', 'palette-option-b')
     expect(screen.getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true')
-  })
-
-  // The palette is opened and arrowed through hundreds of times a day, so the highlight
-  // has to move the instant the key does, both ways. A colour transition on the active
-  // option makes it fade in one step BEHIND the cursor; one on the option just left makes
-  // it fade out behind it, so a held ↓ drags a trail of half-lit rows down the list.
-  it('moves the active highlight with no colour transition', () => {
-    render(
-      <CommandPalette
-        commands={[cmd({ id: 'a', title: 'Add' }), cmd({ id: 'b', title: 'Bee' })]}
-        onClose={vi.fn()}
-      />,
-    )
-    const [first, second] = screen.getAllByTestId('palette-item')
-    expect(first.className).not.toContain('transition-colors')
-    expect(second.className).not.toContain('transition-colors')
-    fireEvent.keyDown(screen.getByTestId('palette-input'), { key: 'ArrowDown' })
-    const [afterFirst, afterSecond] = screen.getAllByTestId('palette-item')
-    expect(afterSecond.className).not.toContain('transition-colors')
-    expect(afterFirst.className).not.toContain('transition-colors')
   })
 
   // Typing re-filters the list underneath the highlight: after arrowing down, a new

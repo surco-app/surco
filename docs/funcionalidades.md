@@ -6,7 +6,7 @@ evidencia en `fichero:línea`. Lo que aquí no está, no se puede prometer en la
 Documento de referencia: sirve para redactar la home, llenar `/funciones` y
 saber qué NO decir.
 
-**Última revisión: 21 de noviembre de 2026** (v1.42.0: «Guardar N comentarios en rekordbox» tras «Poner frases en los comentarios», que escribe solo el recuento en la columna Comentarios de rekordbox, delante de lo que ya tiene, sin tocar archivos ni otros campos; progreso de la conversión como la onda de la fila que se llena y progreso del lote dentro del botón de cancelar; archivo sin etiquetas buscado por la carpeta «Artista - Álbum» y sin la cara del vinilo del nombre; lo añadido entra seleccionado y quita la búsqueda que lo escondía, y abrir otra playlist limpia la búsqueda; «Explicaciones en línea» que también esconde las de Ajustes; antes, el 20 de noviembre, v1.41.0: vista previa del flujo de cues sobre cualquier pista de la colección de cualquier programa activo, con o sin marcas, colgada de los puntos de Auto marcar cuando no tiene, que dice qué hot cues añade y cuáles quita y enseña con «Ahora» los que tiene la pista; flujo hecho desde los cues de una sola pista con «Desde «título»»; condiciones propias y combinables en cada cuadro de color de una regla, con secciones y sin otro cue N compases antes o después; reglas que se reordenan arrastrando su número o con Alt y las flechas; frases de rekordbox de vuelta bajo la onda del editor de cues; sesión automática que cuenta la fecha de alta de los cinco programas y las escuchas de rekordbox y Traktor, y «Reabrir la última sesión»; «Pegar tracklist…» que encuentra las pistas de Engine DJ, «Copiar las que faltan» y playlist nueva desde tracklist creada con sus pistas en una escritura; orden por «Sonoridad», filtros «Bits rellenados», «Posible reescalado» y los de Auto marcar a los que lleva su recuento, y «Rellenar BPM y tonalidad»; canal sin señal nombrado en el balance; borrar en un disco sin papelera sin preguntar, con «Deshacer» desde Copias; carátulas de baja resolución sustituidas también en el barrido; pista ya en el formato editada en su sitio otra vez, patrón de nombre que renombra el original con «Editar el original» y «Igual que el origen» que se queda; Ctrl+Shift+B para la barra lateral fuera de macOS; texto de hi-res que solo dice lo medido; antes, el 19 de noviembre, v1.40.0: orden de la lista por álbum y por fecha de alta, fichas `{currentYear}` y `{currentMonth}` en el nombre de archivo, barra de la lista en una fila con «Crear playlist» y el plegado de las sugerencias de Matching como iconos, el botón de convertir que dice «Añadir» cuando la pista entra en Apple Music y «Actualizar» cuando solo cambian etiquetas, y el número de cada pista sobre su carátula en una playlist vista en su orden, con «Mostrar números» en el menú de vista; antes, el 18 de noviembre, v1.39.0: avisos apilados abajo a la izquierda, junto a la barra de fuentes, que se despliegan bajo el puntero; «Guardado» junto al botón de guardar cues; «Hacer matching» con tres o más pistas seleccionadas, que las guarda como un bloque encabezado por la primera en pantalla; buscador de Matching siempre a la vista en el editor, sin «Añadir»; «Frases» en una línea con un icono que las pone en el comentario; la lista se desplaza al arrastrar una fila hasta su borde; antes, el 17 de noviembre, v1.38.0: selector de formato de un clic y menú de destino en el pie del lote, sin la frase de resumen; botón «Actualizar N seleccionadas» cuando el lote solo reescribe etiquetas sobre el original; ajuste «Vaciar la lista al terminar un lote»; lo que se añade a la lista entra seleccionado; géneros aplicados siempre a la vista; una selección ya convertida y editada recupera el botón; Traktor sin bloqueos con bibliotecas grandes; antes, el 16 de noviembre, v1.37.0: quitar filas de la lista y rellenar desde el nombre del archivo sin preguntar, con «Deshacer» en el aviso que junta varias quitadas seguidas; «Mover a la Papelera» sin preguntar cuando todos los ficheros tienen papelera; avisos de sobrescribir y de recodificar que se silencian con «No volver a preguntar» y vuelven desde Ajustes › Avanzado; motivo del fallo de una fila en su idioma; zoom con pellizco o ⌘ y rueda en «Recorte de silencio»; avisos arriba a la derecha que se cierran deslizando dos dedos; carpetas importadas en orden natural y aviso de carpeta sin audio; renombrar y borrar listas inteligentes de rekordbox; antes, el 15 de noviembre, v1.36.0: Matching en bloques, cada uno una pista y las que se guardaron tras ella en ese orden, con «Invertir orden», «Quitar del bloque» y «Fusionar bloques» en el menú de la fila, búsqueda por bloques enteros; editor de cues que mantiene su forma mientras carga; antes, el 14 de noviembre, v1.35.0: Matching de rekordbox leído, escrito y en cadenas, también en Traktor, Engine DJ, Serato y VirtualDJ con parejas que guarda Surco, parejas sugeridas de lo pinchado seguido, sesión que encadena las parejas y avisa si no puede alternar bases y vocales; listas inteligentes de rekordbox leídas, de solo lectura y exportables a USB; frases de 32 golpes entre CALLs en el comentario; botón de formato dentro del campo Título y sin puntuación suelta de un campo vacío; «Rejilla mal» medido sobre la rejilla del propio programa; catalán e italiano; antes, el 12 de noviembre, con un programa de DJ abierto Surco pregunta «Cerrar <programa> y aplicar» o «Aplicar al cerrarlo» antes de dejar el cambio esperando en la cola; v1.34.0: VirtualDJ como quinto programa de DJ, en beta, con su pestaña, listas editables, cues, conversión que lo sigue, USB y Copias, en macOS y, sin probar en un Windows real, también en Windows, y la tabla por programa de `/funciones`; título, artista, álbum y género que llegan a Serato al actualizar una pista en su sitio; menú de clic derecho en la onda ampliada y en cada cue del editor; botón de convertir que solo nombra la acción con el destino en una línea aparte; densidad «Compacta»; ocultar la barra lateral, los nombres de las fuentes y las ondas de la lista; playlists de cualquier fuente en la paleta; biblioteca de DJ que se abre en «Añadidas recientemente»; antes, el 11 de noviembre, v1.33.0, bloque «Rejilla» en el panel de Cues con varias pistas que ajusta solo las que tienen la rejilla fuera de los golpes, mueve con ella los cues y CALL sin guardar hasta «Guardar» y aparta con su motivo las que el ajuste descolocaría, con «Deshacer el ajuste»; «Rejilla mal» con el mismo criterio de corrida y deriva, medido en la ventana, que ve corridas grandes que antes se escapaban; «Ajustar rejilla» en la cabecera del editor de cues pequeño, antes de «Auto marcar»; convertir pistas de rekordbox y Traktor con el programa abierto, con los cambios en cola sin preguntar; montar una sesión con rekordbox, Traktor, Serato o Engine DJ abierto, esperando en la cola; crear playlists, añadir pistas y borrar playlists en Engine DJ; tonalidad en cada fila en la notación elegida, ahora Alfanumérica o Clásica, y lectura de grafías como Abm, Gbmin o Ab Major; sesiones que se ven como cualquier playlist, sin línea de motivos, candados ni «Cambiar», con «Rehacer» que solo conserva la pista de arranque y bases y vocales que se alternan antes que el tono; diálogo «Enviar comentarios»; «Comentario» editable con varias pistas; antes v1.32.0, sesión automática que sortea sus pistas en vez de tomar siempre la mejor, aprende de las Mezcladas el margen de tempo y el peso del tono, sube poco a poco de tempo, da su parte del set a las playlists de apertura, cierre y fijas, abre siempre con un vocal, no aprende de las sesiones que escribió Surco y no repite un tema en dos ficheros, «Sesión desde esta pista…» y candados que «Rehacer» respeta, grupos Bases y Vocales, quitar una pista de una playlist abierta la quita siempre de la playlist; antes v1.31.0, «Sesión automática…» que monta una playlist en rekordbox, Traktor o Serato con papeles por playlist, combos de las Mezcladas, gusto, Camelot y pistas nuevas, con el porqué de cada pista y «Cambiar»; «Clavar» la rejilla y seis comprobaciones bajo la onda de toda la pista, Auto que ya no salta medio golpe al contratiempo, onda ampliada de los cues medida del audio a 1000 niveles por segundo, Play al instante; antes v1.30.0, Auto marcar que aprende solo del DJ sin botón de aprender y con las ediciones de cues compartidas entre Macs por la carpeta de ajustes, rejilla que Surco deja bloqueada en rekordbox, Traktor y Engine DJ y que se puede corregir y guardar encima aunque esté bloqueada, cues que acompañan a la rejilla al cambiarla, asistente de primer arranque que pregunta si es el primer Mac y trae los ajustes sincronizados, restaurar una copia que conserva las rutas de este Mac que no existen en la copia; antes v1.29.0, playlists y carpetas que se mueven arrastrándolas en el árbol de rekordbox, Traktor y Serato, árbol que pinta crear, renombrar, borrar y mover antes de que el programa escriba, aviso con «Deshacer» tras Buscar y reemplazar, rellenar toda la lista y los botones de Tag, revisión del tracklist con una casilla por fila y filtros por nivel, lectura de tracklists de YouTube escritos a mano, Ajustes en diez filas, botón de ayuda en la barra de herramientas, acciones de archivo de la cabecera de metadatos en «Más acciones»; antes v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
+**Última revisión: 24 de noviembre de 2026** (v1.44.0: «Guardar y siguiente» en el botón partido de guardar cues, recordado, y guardar sin cerrar el editor; Aceptar las propuestas sin guardar; la pista que suena en la reproducción en curso de macOS con las teclas multimedia; playlists cuyos archivos no están en el disco, que lo dicen y cuentan cuántos faltan. v1.43.0: sección «En tu biblioteca» del editor, que encuentra la pista de Tracks en cada programa de DJ activo y en Apple Music y dice de cada copia si es la misma, mejor, peor, otra versión o no se encuentra, y se abre para comparar espectros; «Guardar N comentarios» que escribe el recuento de frases también en el archivo, con «Archivo y rekordbox» o «Solo en rekordbox» y «Delante del comentario» o «Sustituir el comentario», progreso en el botón y cancelar con un clic; editor de varias pistas con los campos del lanzamiento editables, los de cada pista en su sitio de solo lectura, pegar metadatos, puntuar todas, numerar en orden de lista, los valores distintos escritos en el campo y el mismo botón partido de formato y destino que con una; conversión que conserva las etiquetas que Surco no gestiona con todos sus valores, los nombres de orden y los átomos de M4A, y deja fuera las cifras de sonoridad de otro audio; ⌘Z y ⇧⌘Z para lo tecleado en un campo; Comentario en varias líneas; «Restaurar las etiquetas de antes» y «Copiar ruta del archivo» en «Más»; auto-emparejado que deja en paz las pistas editadas a mano; páginas de sello de Bandcamp que ya no ponen el sello de artista y coincidencias retenidas si el artista contradice al del archivo; Apple Music que busca también en las tiendas del Reino Unido y Estados Unidos, también en Windows; cada fuente con su búsqueda; números también en Tracks; ⌘+ que agranda la ventana y se para en el mayor zoom que cabe; pistas sustituidas por un fichero mejor («Actualizar»): Traktor, también con solo «Actualizar y añadir», y Serato, con sus cues y su rejilla y el aviso de que pierde las estrellas, siguen al fichero nuevo como ya hacían rekordbox, Engine DJ y VirtualDJ; Surco mide cuánto se movió el audio y, si la medida es fiable, mueve los cues en los cinco programas, y si no, los deja como estaban y hace que rekordbox, Engine DJ y VirtualDJ analicen la pista otra vez; nodo «Para revisar» en la pestaña de cada programa, con «Revisada» y la pastilla del editor; nombres de cues de Traktor que se conservan al moverlos; antes, el 21 de noviembre, v1.42.0: «Guardar N comentarios en rekordbox» tras «Poner frases en los comentarios», que escribe solo el recuento en la columna Comentarios de rekordbox, delante de lo que ya tiene, sin tocar archivos ni otros campos; progreso de la conversión como la onda de la fila que se llena y progreso del lote dentro del botón de cancelar; archivo sin etiquetas buscado por la carpeta «Artista - Álbum» y sin la cara del vinilo del nombre; lo añadido entra seleccionado y quita la búsqueda que lo escondía, y abrir otra playlist limpia la búsqueda; «Explicaciones en línea» que también esconde las de Ajustes; antes, el 20 de noviembre, v1.41.0: vista previa del flujo de cues sobre cualquier pista de la colección de cualquier programa activo, con o sin marcas, colgada de los puntos de Auto marcar cuando no tiene, que dice qué hot cues añade y cuáles quita y enseña con «Ahora» los que tiene la pista; flujo hecho desde los cues de una sola pista con «Desde «título»»; condiciones propias y combinables en cada cuadro de color de una regla, con secciones y sin otro cue N compases antes o después; reglas que se reordenan arrastrando su número o con Alt y las flechas; frases de rekordbox de vuelta bajo la onda del editor de cues; sesión automática que cuenta la fecha de alta de los cinco programas y las escuchas de rekordbox y Traktor, y «Reabrir la última sesión»; «Pegar tracklist…» que encuentra las pistas de Engine DJ, «Copiar las que faltan» y playlist nueva desde tracklist creada con sus pistas en una escritura; orden por «Sonoridad», filtros «Bits rellenados», «Posible reescalado» y los de Auto marcar a los que lleva su recuento, y «Rellenar BPM y tonalidad»; canal sin señal nombrado en el balance; borrar en un disco sin papelera sin preguntar, con «Deshacer» desde Copias; carátulas de baja resolución sustituidas también en el barrido; pista ya en el formato editada en su sitio otra vez, patrón de nombre que renombra el original con «Editar el original» y «Igual que el origen» que se queda; Ctrl+Shift+B para la barra lateral fuera de macOS; texto de hi-res que solo dice lo medido; antes, el 19 de noviembre, v1.40.0: orden de la lista por álbum y por fecha de alta, fichas `{currentYear}` y `{currentMonth}` en el nombre de archivo, barra de la lista en una fila con «Crear playlist» y el plegado de las sugerencias de Matching como iconos, el botón de convertir que dice «Añadir» cuando la pista entra en Apple Music y «Actualizar» cuando solo cambian etiquetas, y el número de cada pista sobre su carátula en una playlist vista en su orden, con «Mostrar números» en el menú de vista; antes, el 18 de noviembre, v1.39.0: avisos apilados abajo a la izquierda, junto a la barra de fuentes, que se despliegan bajo el puntero; «Guardado» junto al botón de guardar cues; «Hacer matching» con tres o más pistas seleccionadas, que las guarda como un bloque encabezado por la primera en pantalla; buscador de Matching siempre a la vista en el editor, sin «Añadir»; «Frases» en una línea con un icono que las pone en el comentario; la lista se desplaza al arrastrar una fila hasta su borde; antes, el 17 de noviembre, v1.38.0: selector de formato de un clic y menú de destino en el pie del lote, sin la frase de resumen; botón «Actualizar N seleccionadas» cuando el lote solo reescribe etiquetas sobre el original; ajuste «Vaciar la lista al terminar un lote»; lo que se añade a la lista entra seleccionado; géneros aplicados siempre a la vista; una selección ya convertida y editada recupera el botón; Traktor sin bloqueos con bibliotecas grandes; antes, el 16 de noviembre, v1.37.0: quitar filas de la lista y rellenar desde el nombre del archivo sin preguntar, con «Deshacer» en el aviso que junta varias quitadas seguidas; «Mover a la Papelera» sin preguntar cuando todos los ficheros tienen papelera; avisos de sobrescribir y de recodificar que se silencian con «No volver a preguntar» y vuelven desde Ajustes › Avanzado; motivo del fallo de una fila en su idioma; zoom con pellizco o ⌘ y rueda en «Recorte de silencio»; avisos arriba a la derecha que se cierran deslizando dos dedos; carpetas importadas en orden natural y aviso de carpeta sin audio; renombrar y borrar listas inteligentes de rekordbox; antes, el 15 de noviembre, v1.36.0: Matching en bloques, cada uno una pista y las que se guardaron tras ella en ese orden, con «Invertir orden», «Quitar del bloque» y «Fusionar bloques» en el menú de la fila, búsqueda por bloques enteros; editor de cues que mantiene su forma mientras carga; antes, el 14 de noviembre, v1.35.0: Matching de rekordbox leído, escrito y en cadenas, también en Traktor, Engine DJ, Serato y VirtualDJ con parejas que guarda Surco, parejas sugeridas de lo pinchado seguido, sesión que encadena las parejas y avisa si no puede alternar bases y vocales; listas inteligentes de rekordbox leídas, de solo lectura y exportables a USB; frases de 32 golpes entre CALLs en el comentario; botón de formato dentro del campo Título y sin puntuación suelta de un campo vacío; «Rejilla mal» medido sobre la rejilla del propio programa; catalán e italiano; antes, el 12 de noviembre, con un programa de DJ abierto Surco pregunta «Cerrar <programa> y aplicar» o «Aplicar al cerrarlo» antes de dejar el cambio esperando en la cola; v1.34.0: VirtualDJ como quinto programa de DJ, en beta, con su pestaña, listas editables, cues, conversión que lo sigue, USB y Copias, en macOS y, sin probar en un Windows real, también en Windows, y la tabla por programa de `/funciones`; título, artista, álbum y género que llegan a Serato al actualizar una pista en su sitio; menú de clic derecho en la onda ampliada y en cada cue del editor; botón de convertir que solo nombra la acción con el destino en una línea aparte; densidad «Compacta»; ocultar la barra lateral, los nombres de las fuentes y las ondas de la lista; playlists de cualquier fuente en la paleta; biblioteca de DJ que se abre en «Añadidas recientemente»; antes, el 11 de noviembre, v1.33.0, bloque «Rejilla» en el panel de Cues con varias pistas que ajusta solo las que tienen la rejilla fuera de los golpes, mueve con ella los cues y CALL sin guardar hasta «Guardar» y aparta con su motivo las que el ajuste descolocaría, con «Deshacer el ajuste»; «Rejilla mal» con el mismo criterio de corrida y deriva, medido en la ventana, que ve corridas grandes que antes se escapaban; «Ajustar rejilla» en la cabecera del editor de cues pequeño, antes de «Auto marcar»; convertir pistas de rekordbox y Traktor con el programa abierto, con los cambios en cola sin preguntar; montar una sesión con rekordbox, Traktor, Serato o Engine DJ abierto, esperando en la cola; crear playlists, añadir pistas y borrar playlists en Engine DJ; tonalidad en cada fila en la notación elegida, ahora Alfanumérica o Clásica, y lectura de grafías como Abm, Gbmin o Ab Major; sesiones que se ven como cualquier playlist, sin línea de motivos, candados ni «Cambiar», con «Rehacer» que solo conserva la pista de arranque y bases y vocales que se alternan antes que el tono; diálogo «Enviar comentarios»; «Comentario» editable con varias pistas; antes v1.32.0, sesión automática que sortea sus pistas en vez de tomar siempre la mejor, aprende de las Mezcladas el margen de tempo y el peso del tono, sube poco a poco de tempo, da su parte del set a las playlists de apertura, cierre y fijas, abre siempre con un vocal, no aprende de las sesiones que escribió Surco y no repite un tema en dos ficheros, «Sesión desde esta pista…» y candados que «Rehacer» respeta, grupos Bases y Vocales, quitar una pista de una playlist abierta la quita siempre de la playlist; antes v1.31.0, «Sesión automática…» que monta una playlist en rekordbox, Traktor o Serato con papeles por playlist, combos de las Mezcladas, gusto, Camelot y pistas nuevas, con el porqué de cada pista y «Cambiar»; «Clavar» la rejilla y seis comprobaciones bajo la onda de toda la pista, Auto que ya no salta medio golpe al contratiempo, onda ampliada de los cues medida del audio a 1000 niveles por segundo, Play al instante; antes v1.30.0, Auto marcar que aprende solo del DJ sin botón de aprender y con las ediciones de cues compartidas entre Macs por la carpeta de ajustes, rejilla que Surco deja bloqueada en rekordbox, Traktor y Engine DJ y que se puede corregir y guardar encima aunque esté bloqueada, cues que acompañan a la rejilla al cambiarla, asistente de primer arranque que pregunta si es el primer Mac y trae los ajustes sincronizados, restaurar una copia que conserva las rutas de este Mac que no existen en la copia; antes v1.29.0, playlists y carpetas que se mueven arrastrándolas en el árbol de rekordbox, Traktor y Serato, árbol que pinta crear, renombrar, borrar y mover antes de que el programa escriba, aviso con «Deshacer» tras Buscar y reemplazar, rellenar toda la lista y los botones de Tag, revisión del tracklist con una casilla por fila y filtros por nivel, lectura de tracklists de YouTube escritos a mano, Ajustes en diez filas, botón de ayuda en la barra de herramientas, acciones de archivo de la cabecera de metadatos en «Más acciones»; antes v1.28.0, «Pegar tracklist…» sobre una playlist de rekordbox, Traktor o Serato y «Nueva playlist desde tracklist…» sobre una carpeta, con revisión por niveles antes de escribir; en las pestañas de los programas de DJ «Convertir» solo convierte lo seleccionado, ⌘⏎ convierte la selección, el botón y el plan del editor dicen qué se queda fuera; antes v1.27.0, menú de filtros por secciones con búsqueda y filtros puestos bajo la barra, filtros «Escucha», «Selección» y «Estrellas» y orden por estrellas, filtro «Mejor que Music», «Rejilla mal» y «Mejor que Music» medidos con el análisis y con anillo de progreso, sesión reabierta con filtros, orden, búsqueda, selección, escuchadas y posición, barrido en dos fases a un hilo que solo se frena con un programa de DJ abierto; antes v1.26.0, pestaña «Programas de DJ» en Ajustes y pregunta por el programa al empezar, condiciones «hasta la marca anterior» y «si no viene otro cue en los siguientes» en los flujos, vista previa del flujo sobre la pista seleccionada con cues que se quedan fuera, flujo aprendido desde el +, Auto marcar a más de 32 compases entre propuestas, copiar y pegar metadatos y Mostrar en Finder desde la cabecera, pistas fuera de «Convertir todas» por campo obligatorio, análisis que solo se pausa con un programa de DJ abierto; antes v1.25.0, campo «Calidad» con el veredicto del análisis, autocomprobación de las playlists de rekordbox, Traktor y Engine DJ, búsqueda solo de lo seleccionado fuera de la pestaña de ficheros y columna de resultados plegable, recuentos de los filtros combinados, la playlist abierta se analiza primero; antes v1.24.0, USB de Pioneer desde Serato y Traktor, crates de Serato editables, ajuste «Biblioteca de Serato» con Actualizar y Actualizar y añadir, crates de Serato elegidos en el editor, «Auto» de la rejilla que lleva los cues al golpe, Auto marcar en pistas que rekordbox no ha analizado; antes v1.23.0, cues de Serato escritos en el fichero con Serato cerrado, editor y flujos de cues en Serato, cues de Serato conservados al convertir, rejilla de Serato leída, Music relee una pista reescrita en su sitio, original renombrado que se queda si otro programa lo usa, título, artista, álbum y género cambiados al convertir que llegan a Traktor y Engine DJ, cambios de biblioteca que sobreviven a una recarga; antes v1.22.0, ajuste de la rejilla en el editor de cues maximizado con guardado en rekordbox, Traktor y Engine DJ, filtro «Rejilla mal», cues fuera del golpe señalados y «Al golpe», pestaña de Serato de solo lectura, MP3 de iTunes a tiempo en Traktor; antes v1.21.0, filtro «Cues fuera de la rejilla» en rekordbox, Traktor y Engine DJ con su tolerancia en Ajustes › Cues; antes v1.20.0, espectros de las dos copias en la comparación con la biblioteca, editor de cues sin vista previa en reposo, barra de propuestas de Auto marcar, un solo Guardar en el editor plegado, reproductor que se cierra al cambiar de pestaña; antes v1.19.0, filtro Incompletas en la revisión, valores de un campo mezclado, deshacer «Borrar metadatos», 32 bits a 24 bajo «Corregido», fechas y auto-match recordados; antes filtro Daños en «Revisar metadatos de la lista…»; antes v1.18.0, autocomprobación tras convertir, sustituir al cambiar de formato, pantalla Copias, carpeta Artista/Álbum en Music, grouping y totales; antes v1.17.0, elección por programa de DJ, cola de Engine DJ abierto, búsqueda en Ajustes, deshacer y rehacer, «Antes:» por campo, archivos dañados, orden por BPM/tonalidad/año/calidad). Levantado por primera vez el
 2026-07-30 y revisado contra el código el 2026-09-02, cuando cinco releases lo
 habían dejado atrás: daba por perdidos cues que hoy se conservan y publicaba
 umbrales del espectro que el código había recalibrado.
@@ -839,10 +839,12 @@ campos propios del usuario (abajo).
 editor permite copiar todos los metadatos de la pista, pegar en ella los de la última
 copiada («Pegar los metadatos de "…"») y «Mostrar en Finder». Desde v1.29.0 ya no son iconos
 sueltos: viven en el menú «Más acciones» (`MetaMoreMenu.tsx`, `moreItems` en
-`Editor.tsx:1295`) junto a copiar el nombre del archivo, buscar en la web y reescribir títulos
-(este solo si hay un formato de título configurado); con varias pistas seleccionadas no salen
-«Mostrar en Finder», copiar el nombre ni buscar en la web. En la cabecera quedan, con su nombre, «Rellenar del nombre» y «Borrar», este
-al final y aparte tras un separador (`derive-btn`, `clear-meta-btn`, `Editor.tsx:1215`).
+`Editor.tsx:1564`) junto a copiar el nombre del archivo, «Copiar ruta del archivo» (v1.43.0, la
+ruta entera, `copy-path`, `:1583`), buscar en la web, reescribir títulos (este solo si hay un
+formato de título configurado) y «Restaurar las etiquetas de antes» (§9); con varias pistas
+seleccionadas no salen «Mostrar en Finder», copiar el nombre, copiar la ruta ni buscar en la web.
+En la cabecera quedan, con su nombre, «Rellenar del nombre» y «Borrar», este
+al final y aparte tras un separador (`derive-btn`, `clear-meta-btn`, `Editor.tsx:1531-1546`).
 
 **Formato del título en el campo** (v1.35.0). Con un formato de título configurado y una sola
 pista, el campo Título lleva un botón `{ }` que aparece al pasar el ratón y aplica el formato
@@ -870,14 +872,45 @@ Surco) y las pastillas por añadir ya no llevan «+» delante: el borde punteado
 
 **«Comentario» con varias pistas** (v1.33.0). Comentario se ofrece también en el editor de
 varias pistas, para escribir uno para todas o vaciarlo en todas a la vez, por ejemplo la nota de
-una web de descargas (`BULK_FIELDS`, `lib/bulkEdit.ts:10`, `'comment'` en `:24`). Título, nº de
-pista, BPM, tonalidad y remixer siguen fuera del lote.
+una web de descargas (`BULK_FIELDS`, `lib/bulkEdit.ts:11`, `'comment'` en `:25`).
 
-**Un campo mezclado enseña sus valores** (v1.19.0). Con varias pistas, un campo de texto
-cuyo valor difiere entre ellas cuenta cuántos valores distintos lleva, los lista con
-cuántas pistas tiene cada uno y deja elegir uno para toda la selección (`mixedValues`,
-`Field.tsx:43`). La carátula dice antes de soltar una nueva cuántas distintas hay en la
-selección, o cuántas de las N pistas llevan una (`CoverPicker.tsx:129-130`).
+**El editor de varias pistas, igual que el de una** (v1.43.0). Con varias pistas el formulario
+enseña los mismos campos en el orden que el usuario eligió (`multiSpecs`,
+`lib/fieldSpecs.ts:384-395`).
+- **Campos del lanzamiento editables en toda la selección.** Además de artista, artista del
+  álbum, álbum, año, género, grouping, compositor, año original, recopilatorio, sello, catálogo,
+  nº y total de disco, total de pistas y comentario, ahora también estilo, copyright, país, tipo
+  de medio y el ID y la dirección de Discogs (`BULK_FIELDS`, `lib/bulkEdit.ts:11-33`).
+- **Los campos de cada pista** (título, nº de pista, BPM, tonalidad, remixer, mix, ISRC, mood,
+  energía y los demás) salen en su sitio pero de solo lectura, con la nota «Se edita pista a
+  pista», porque un valor para todas borraría lo que las distingue (`perTrackSpec`,
+  `lib/fieldSpecs.ts:348-376`).
+- **Numerar en orden de lista.** El nº de pista lleva «Numerar 1–N», que pone 1, 2, 3… según el
+  orden en que las filas se ven en la lista, no el de la biblioteca; el comando de la paleta
+  «Numerar pistas en orden de lista» hace lo mismo (`numberTracks`, `App.tsx:4175-4187`).
+- **Puntuar todas.** Las estrellas bajo la carátula valen para toda la selección y enseñan la
+  puntuación común si la hay (`MetadataForm.tsx:183-191`).
+- **Pegar metadatos sobre la selección.** Pegar los de una pista copiada en varias pega solo los
+  campos del lanzamiento de la lista de arriba, sin el comentario, que en cada pista empieza con su
+  propio recuento de frases, y la carátula; un ⌘Z lo devuelve todo (`onPasteMetaAll`,
+  `hooks/useMetadataClipboard.ts:85-96`, `PASTE_ALL_FIELDS` en `:9`).
+- **El mismo botón partido de formato y destino** que con una pista, en el pie del lote
+  (`ExportButton`, `ConvertFooter.tsx:779`).
+
+**Un campo mezclado enseña sus valores** (v1.19.0; desde v1.43.0 los escribe en el campo). Con
+varias pistas, un campo de texto cuyo valor difiere entre ellas escribe en gris sus valores
+distintos separados por «·», con «vacío» si alguna no lleva, y solo cuando son más de tres dice
+cuántos son (`mixedPlaceholder`, `lib/fieldSpecs.ts:64-76`). En un campo estrecho, como BPM o
+tonalidad, pone «≠» y los valores van en la ayuda flotante (`MIXED_MARK`, `:62`). El desplegable
+los lista con cuántas pistas tiene cada uno y deja elegir uno para toda la selección
+(`mixedValues`, `Field.tsx:49`, `:307`). La carátula dice antes de soltar una nueva cuántas
+distintas hay en la selección, o cuántas de las N pistas llevan una (`CoverPicker.tsx:128-130`).
+
+**Comentario en varias líneas** (v1.43.0). El campo Comentario es una caja que conserva los
+saltos de línea y crece con ellos hasta un tope, con su propio desplazamiento después
+(`multiline`, `lib/fields.ts:38`; `<textarea>` en `Field.tsx:270-275`). Retorno parte la línea,
+como en cualquier caja de varias líneas de macOS; en los demás campos Retorno sigue guardando y
+pasando al siguiente (`onKeyDown`, `Field.tsx:163-173`).
 
 **Cada lista elige su separador.** Género y Grouping se unen por separado con coma
 (por defecto), punto y coma, barra o un separador propio de hasta tres caracteres,
@@ -962,15 +995,56 @@ importar se relee antes de convertir; si sigue sin poder leerse, se rechaza con
 `sourceTagsUnread` en vez de escribir en blanco sobre lo que el fichero conserva
 (`useTrackProcessing.ts:186-196`, `processTrack.ts:144`).
 
+**Convertir conserva todas las etiquetas, también las que Surco no gestiona** (v1.43.0). ffmpeg
+dejaba cada etiqueta ajena en un solo valor al escribir MP3 o AIFF, convertía un TSOP en un TXXX
+«artist-sort» que nadie lee, y en un WAV o un ALAC no las llevaba (medido el 23/11/2026 con el
+ffmpeg incluido). Ahora, después de ffmpeg, Surco vuelve a leer el origen y repone cada etiqueta
+que no gestiona en la forma del destino (TXXX o frame de texto en ID3, átomo freeform o de orden en
+MP4, comentario en FLAC) (`carryUnmanagedTags`, `tags.ts:723`; llamada en `ffmpeg.ts:2807-2826`).
+- **Todos los valores.** Un campo con varios valores (un frame ID3v2.4 con valores separados por
+  nulos, varios TXXX con la misma descripción en v2.3, un comentario FLAC repetido) llega entero.
+  Para los campos que Surco gestiona, un campo que el DJ no tocó y que solo mostraba el primer valor
+  se escribe con todos, unidos por «;» (`keepId3Values`, `tags.ts:387-392`; `keepCustomValues`,
+  `:417`, para los campos propios; llamadas en `ffmpeg.ts:2394-2405`). En FLAC los comentarios
+  repetidos vuelven en la misma pasada que escribe el comentario (`carryRepeatedComments`,
+  `tags.ts:884-899`).
+- **Nombres de orden y créditos.** TSOP, TSOA y TSOT (los nombres por los que Music ordena), el
+  subtítulo del disco (TSST), el aviso del productor (TPRO), los músicos (TMCL) y las personas
+  implicadas (IPLS/TIPL) sobreviven a toda pasada de TagLib en v2.3, también al añadir un cue o
+  corregir la lista (`tags.ts:61-71`, `:73-77`). De un M4A, los nombres de orden van a sus frames y
+  campos propios y la obra y el movimiento llegan a MP3, AIFF, WAV y FLAC (`MP4_SORT_ATOMS`,
+  `tags.ts:713`).
+- **Átomos de M4A.** Los átomos freeform `----` (gapless, Sound Check, identificadores de
+  MusicBrainz, los de otros programas) y los estándar que Surco no escribe pasan a otro M4A, tanto
+  al recodificar como en una actualización que copia el audio (`carryFreeformAtoms`,
+  `tags.ts:1380`; `carryStandardAtoms`, `:1436`). Las marcas del contenedor M4A
+  (`major_brand`, `compatible_brands`) y su aviso de contenido explícito, que el destino leería
+  como estrellas, no pasan a MP3, AIFF ni FLAC (`ffmpeg.ts:1200-1205`).
+- **Lo que no viaja, a propósito.** Lo que el DJ borró en el inspector, los campos propios (los
+  escribe Surco), el sello del codificador y la cadena de producción del dueño anterior
+  (`SOURCE_PROVENANCE`, `ffmpeg.ts:1019`). Las cifras de sonoridad y gapless de otro programa
+  (Sound Check, iTunSMPB, ReplayGain, R128, MP3Gain) solo viajan si las muestras de la salida son
+  las del origen; tras recodificar, normalizar o recortar se quedan fuera, porque un reproductor
+  subiría o bajaría el volumen por la medida del fichero viejo (`AUDIO_MEASUREMENTS`,
+  `ffmpeg.ts:1026-1039`, `staleMeasurements`, `:2497`). Con «Borrar metadatos» no se repone nada.
+- **El inspector enseña cada valor** de una etiqueta ID3 o M4A que lleva varios, y lista un IPLS
+  de v2.3 (`855e83d9e`).
+
 ### 8.1 ID3v2.3, nunca v2.4
 
-Todo contenedor ID3 se escribe en v2.3 para seguir siendo legible en los equipos
-CDJ/rekordbox/Serato que manejan mal v2.4 (`tags.ts:31-34`, `:462-463`).
+Todo contenedor ID3 que escribe una conversión o un «Actualizar» va en v2.3 para seguir
+siendo legible en los equipos CDJ/rekordbox/Serato que manejan mal v2.4 (`ID3_V23`,
+`tags.ts:50-54`; `writeTags`, `:1749-1752`). Las pasadas pequeñas sobre el fichero (añadir cues,
+una corrección de la revisión de la lista, el comentario de frases) dejan en v2.4 un tag que ya lo
+era y, desde v1.43.0, crean en v2.3 el que no existía (`copyCueFrames`, `tags.ts:602`;
+`copyCuesFromFlac`, `:1016`; `tagFieldSet.ts:255`). Al leer, un frame v2.4 con varios valores se lee entero (ver «Convertir
+conserva todas las etiquetas» arriba).
 
 Consecuencias de esa decisión:
 - El año original va en `TORY` (predecesor v2.3 de TDOR).
 - El mood se escribe en TXXX `MOOD`, porque `TMOO` es exclusivo de v2.4 y
-  TagLib lo tiraría en silencio al guardar.
+  TagLib lo tiraría en silencio al guardar. Al leer, un `TMOO` va antes que el TXXX, también
+  el de un solo valor que guarda un WAV (`tags.ts:509`).
 
 ### 8.2 WAV con carátula y metadatos
 
@@ -1049,7 +1123,13 @@ Revisada el 2026-09-23 para v1.0: `tags.ts` y `tagFields.ts` no cambiaron desde
 v0.100.0, así que la tabla sigue en vigor. Revisada el 2026-10-21 para v1.9.0. `tags.ts`
 solo cambió en la lectura (pasa al worker), las celdas siguen igual y se añade la fila de
 rekordbox, cuyos cues y playlists no viven en el fichero. Revisada el 2026-11-04 para v1.23.0.
-Se añade la fila de los cues de Serato, que sí viven en el fichero.
+Se añade la fila de los cues de Serato, que sí viven en el fichero. Revisada el 2026-11-23: en una
+sustitución, Serato también recibe la rejilla y los cues se mueven lo que se movió el audio
+(`carrySeratoCues`, `ffmpeg.ts:2776-2788`); las celdas de la tabla no cambian. Revisada el
+2026-11-23 para v1.43.0. Se añade la fila de las etiquetas que Surco no gestiona, que ahora
+llegan a los cinco formatos con todos sus valores (§8, «Convertir conserva todas las
+etiquetas»). No se ha comprobado con qué nombre quedan los nombres de orden de un MP3 o AIFF
+que pasa a FLAC, porque esa ruta los deja a ffmpeg.
 
 | Campo | MP3 | AIFF | WAV | FLAC | M4A/ALAC |
 |---|---|---|---|---|---|
@@ -1061,6 +1141,7 @@ Se añade la fila de los cues de Serato, que sí viven en el fichero.
 | Artista original, letrista, director, codificado por | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Total de pistas y de discos | Sí | Sí | Sí | Sí | Sí |
 | Campos propios | Sí | Sí | Sí | Sí | **Sí** (freeform) |
+| Etiquetas que Surco no gestiona, con todos sus valores | Sí | Sí | Sí | Sí | **Sí** (freeform) |
 | Año original | Sí | Sí | Sí | Sí | **No** |
 | Posición vinilo «A2» | Sí | Sí | Sí | Sí | **No** (solo dígitos) |
 | Cues de Traktor | Sí | Sí | **Sí** | Sí | **No** |
@@ -1079,9 +1160,9 @@ corte un recorte del inicio; lo que caía dentro del corte se pierde (`carrySera
 `seratoTags.ts:298`, enganchado en `ffmpeg.ts:2537`; matriz en `cueMatrix.test.ts:359`). Al
 recodificar no se arrastra el resto de lo que Serato guarda en el fichero (onda, rejilla,
 bloque antiguo) (`dropSeratoAnalysis`, `seratoTags.ts:248`); una copia en el mismo formato lo
-deja tal cual. No pasan con «limpiar metadatos», si se quitó su etiqueta, ni si el bloque antiguo de Serato
+deja tal cual. Una sustitución sí arrastra la rejilla de Serato, movida igual que los cues. No pasan con «limpiar metadatos», si se quitó su etiqueta, ni si el bloque antiguo de Serato
 del origen no coincide con Markers2, porque Serato leería ese. La biblioteca de Serato no se
-repunta (ver §13).
+repunta al convertir, solo al sustituir (ver «Revisar las pistas sustituidas» y §13).
 
 ---
 
@@ -1125,7 +1206,7 @@ notación elegida, `providers/index.ts:126-131`), mix e ISRC (`beatport.ts:157-1
 campo fuera de la lista de importación no se toca. Entre versiones con el mismo
 título se preselecciona la que nombra el fichero, y el mix se añade al título
 salvo «Original Mix» (`lib/release.ts:237-242`). En la lista de resultados va
-detrás de Discogs, Bandcamp y Deezer (`release.ts:408-415`).
+detrás de Discogs, Bandcamp y Deezer (`renderer/src/lib/release.ts:435-442`).
 
 **MusicBrainz** es el catálogo abierto de la comunidad. Sale **encendido** para todos:
 en instalaciones nuevas por defecto (`shared/defaults.ts:80`) y en las existentes con
@@ -1145,21 +1226,26 @@ Edition)») se busca sin ella pero puntúa primero la edición que la nombra
 Archive: la miniatura es la del álbum, que existe en cuanto alguna edición tiene imagen
 (`musicbrainz.ts:141-145`), y una edición sin carátula propia toma la del álbum solo si
 responde (`musicbrainz.ts:436`). Va justo antes de Apple Music en la lista
-(`release.ts:413`).
+(`renderer/src/lib/release.ts:440`).
 
 **Apple Music** usa la API pública de búsqueda de iTunes, sin cuenta ni clave. Sale
 **encendido** para todos, en instalaciones nuevas por defecto (`shared/defaults.ts:81`) y
-en las existentes con la misma migración de una sola vez (`settings.ts:686-687`). Apple
+en las existentes con la misma migración de una sola vez (`settings.ts:690-691`). Apple
 ordena los resultados por popularidad y no por parecido, así que cada consulta pide 200
-canciones (`itunes.ts:104`) y se queda solo con las que nombran todas sus palabras en el
-artista, el título o el disco (`itunes.ts:86-94`); después las agrupa por disco
-(`itunes.ts:59-77`). Busca en la tienda del país del sistema, o en la de `US` si el sistema
-no lo dice (`itunes.ts:19-21`). Apple no publica su límite, que ronda las 20 peticiones por
-minuto, y Surco va a 3 cada 9 segundos (`itunes.ts:25`, `itunesLimiter.ts:3-4`); un 403 o
-un 429 se reintenta con espera creciente (`itunes.ts:32-36`). Trae la fecha entera, el
-género, el tracklist con duraciones y la carátula a 3000 px (`itunes.ts:164-185`). El sello
-sale del copyright sin el «℗ 2020» del principio (`itunes.ts:150-153`), y no hay número de
-catálogo, BPM, tonalidad ni ISRC. Va la última en la lista (`release.ts:414`).
+canciones (`itunes.ts:114`) y se queda solo con las que nombran todas sus palabras en el
+artista, el título o el disco (`itunes.ts:86-101`); después las agrupa por disco
+(`itunes.ts:66-84`). Busca primero en la tienda del país del sistema (`US` si el sistema no
+lo dice) y, si esa tienda no trae nada, prueba la del Reino Unido y luego la de Estados
+Unidos (v1.43.0; `FALLBACK_STORES`, `itunes.ts:19-28`, recorridas en `:132-135`); abrir un
+disco sigue el mismo orden hasta la tienda que lo tiene (`getRelease`, `itunes.ts:216-225`).
+Es una API web sin nada del sistema, así que funciona igual en Windows que en macOS, y no hay
+ninguna condición de plataforma en `itunes.ts` ni en su entrada de `providers/index.ts:152`.
+Apple no publica su límite, que ronda las 20 peticiones por minuto, y Surco va a 3 cada 9
+segundos (`itunes.ts:32`, `itunesLimiter.ts:3-4`); un 403 o un 429 se reintenta con espera
+creciente (`itunes.ts:39-43`). Trae la fecha entera, el género, el tracklist con duraciones y
+la carátula a 3000 px (`mapRelease`, `itunes.ts:172-204`). El sello sale del copyright sin el
+«℗ 2020» del principio (`itunes.ts:167-170`), y no hay número de catálogo, BPM, tonalidad ni
+ISRC. Va la última en la lista (`renderer/src/lib/release.ts:441`).
 
 ### La escalera de búsqueda
 
@@ -1211,6 +1297,20 @@ búsquedas precisas con la etiqueta tal cual se repiten las mismas con el acto y
 pista que nombra el título, saltando un «Preview - » de Bandcamp delante
 (`discogs.ts:335-346`, `shared/searchClean.ts:174-177`). Va después, así que un
 fichero bien etiquetado se resuelve igual que antes.
+
+**Páginas de sello en Bandcamp** (v1.43.0). La página de un sello pone el sello como artista y
+deja el acto delante de cada título («Artista - Pista»). Cuando ese prefijo es, sin contar
+mayúsculas, espacios ni tildes, el artista del fichero, Surco lo saca del título y lo pone de
+artista de la pista, y el nombre de la página pasa al campo Sello si el lanzamiento no traía
+ninguno; así el sello ya no acaba como artista (`readLabelPage`, `renderer/src/lib/labelPage.ts:29-50`).
+Si solo algunas pistas son del acto (un recopilatorio del sello), el lanzamiento se queda sin
+artista de álbum y el fichero conserva el suyo. Vale para cualquier fuente salvo Discogs, y se
+aplica al puntuar y al aplicar, en el editor (`useDiscogsBrowser.ts:554`), en el barrido
+(`lib/autoMatch.ts:322`, `:382`) y en las filas del álbum, con el artista de cada fichero
+(`AlbumMatchRows.tsx:60`). Además, una coincidencia de una fuente que no es Discogs cuyo
+lanzamiento o pista nombra a otro artista que el del fichero nunca se aplica sola y se queda
+«Por confirmar» aunque las duraciones cuadren (`contradictsFileArtist`,
+`renderer/src/lib/release.ts:353`, `:361`). Un resultado sin artista no contradice a nadie.
 
 **Orden de resultados.** Un disco acreditado al artista del fichero («Artista - …»)
 sube por delante de otro que solo lo nombra más adelante, como un remix o un bootleg
@@ -1275,10 +1375,13 @@ búsqueda (`editor.lengthMismatch`, `DiscogsPanel.tsx:304-306`) y en las filas d
 **BPM y tonalidad propios se quedan** (v1.17.0). Aplicar un lanzamiento solo rellena BPM y
 tonalidad si la pista no los tiene (`release.ts`, `base.bpm || track?.bpm`).
 
-**«Restaurar las etiquetas de antes»** (v1.17.0 bajo cada campo; ahora una sola acción en «Más»).
-Tras aplicar un lanzamiento con una pista, «Más» ofrece devolver de una vez los campos que cambió
-y siguen con lo que escribió (los que el usuario retocó después no se tocan), en un solo paso de
-Deshacer (`editor.restoreRelease`, `Editor.tsx`).
+**«Restaurar las etiquetas de antes»** (v1.17.0 bajo cada campo; desde v1.43.0 una sola acción en
+«Más»). Tras aplicar un lanzamiento con una pista, «Más» ofrece devolver de una vez los campos que
+cambió y siguen con lo que escribió (los que el usuario retocó después no se tocan), en un solo
+paso de Deshacer (`restorableRelease`, `Editor.tsx:1410-1424`; entrada `restore-release`,
+`:1630-1641`). Un campo que el lanzamiento rellenó vuelve a quedar vacío. La acción solo sale
+mientras quede alguna etiqueta que escribió el lanzamiento. El ID y la dirección de Discogs vuelven
+con las demás, pero solos no la mantienen. Con varias pistas no sale.
 
 **Las demás fuentes, con listón propio.** Discogs va siempre primero por ser la fuente
 curada; Bandcamp, Deezer, Beatport, MusicBrainz y Apple Music solo se prueban si Discogs no
@@ -1288,6 +1391,17 @@ cualquiera de ellas necesita un 92 %
 «Por confirmar» solo si el artista coincide; sin artista es ruido (resubidas,
 sesiones con el nombre de la pista) y se descarta. Una sugerencia de Discogs manda
 sobre una de cualquier otra fuente (`lib/autoMatch.ts:480-486`).
+
+**Lo editado a mano se queda** (v1.43.0). Cambiar a mano un campo que escribe un lanzamiento
+(título, artista, álbum y los demás de `RELEASE_WRITTEN_KEYS`, `renderer/src/lib/release.ts:606`)
+marca la pista como editada (`isHandEdit`, `lib/autoMatch.ts:62-66`; `markHandEdited`,
+`App.tsx:2102`), desde el editor de una pista, el de varias, pegar metadatos, buscar y
+reemplazar, rellenar desde el nombre y los botones de Tag (`deriveTracksUndoable`, `:2117`). Una pista marcada queda fuera de todo auto-emparejado, del barrido
+(`tracksToAutoMatch`, `lib/autoMatch.ts:52`), de la escritura del barrido que llega tarde
+(`useAutoMatch.ts:250`) y del de la pista abierta (`Editor.tsx:983`). La valoración, el
+comentario y los campos propios no la marcan. El barrido, la limpieza al cargar, aplicar un
+lanzamiento y ⌘Z tampoco, porque no son el DJ reetiquetando. Mientras se escribe en el editor de
+varias pistas, ninguna de las seleccionadas entra en el barrido.
 
 **Contradicción de título:** tres rips distintos colapsando sobre una misma
 entrada de «Rocket Man» fue el bug que motivó esta guarda (`assign.ts:44-48`).
@@ -1568,7 +1682,7 @@ los flujos hacia Serato solo están probados en tests, no comprobados a mano en 
 
 ### VirtualDJ
 
-Nuevo en la rama `virtualdj` (12/11/2026, sin publicar). VirtualDJ es el quinto programa de DJ y
+Nuevo en v1.34.0 (12/11/2026). VirtualDJ es el quinto programa de DJ y
 el último del carril (`DJ_PROGRAMS`, `shared/djProgram.ts`). Probado en macOS. Desde el 12/11 se
 ofrece también en Windows (`PROGRAM_CAN.virtualdj.windows: true`; `offeredHere`,
 `renderer/src/lib/platform.ts:15`) escribiendo igual que en Mac, sin haberse probado en un Windows
@@ -1644,8 +1758,8 @@ lee la colección de Engine DJ (`collection: true`, `lib/sourcePrograms.ts:37`;
 (`readsCollection`, `App.tsx`). La sesión sale como «Sí» en Engine DJ, que crea la playlist y le
 añade pistas (`kinds`), y se alcanza desde la paleta y «Rellenar con una sesión…», probada solo en
 tests; las dos filas están atadas por test a `SOURCE_READ` y `SOURCE_PROGRAMS`. Traktor solo sigue a la pista convertida en la misma carpeta (`newFile` solo con
-`sameDir`, `ffmpeg.ts:2010`) y guarda la rejilla en WAV, AIFF y FLAC (y los MP3 de iTunes); Serato
-conserva el original al convertir (`write: false`), recibe los nombres solo al actualizar en su
+`sameDir`, `ffmpeg.ts:2010`), salvo al sustituir, que la sigue siempre y guarda la rejilla en WAV, AIFF y FLAC (y los MP3 de iTunes); Serato
+conserva el original al convertir (`write: false`) y solo sigue al fichero que sustituye a otro, recibe los nombres solo al actualizar en su
 sitio (`queueSeratoRun`, `libraryFlushes.ts:454`) y no aparece en Copias (`WRITABLE_PROGRAMS`).
 
 ## 11. Destinos
@@ -1704,7 +1818,7 @@ original de una pista que cambió de nombre, Surco mira quién lo reproduce toda
 (`librariesKeepingOriginal`, `libraryFlushes.ts:204`; `retireOriginal`, `processTrack.ts:796`).
 Se queda si lo tiene una biblioteca de rekordbox, Engine DJ o Traktor encontrada pero sin
 «Actualizar», si Traktor ya tenía una entrada con el nombre nuevo y dejaría atrás la vieja, si
-lo tiene Serato, o si Music no ha podido responder. El aviso nombra el programa
+lo tiene Serato (salvo que sea el fichero que sustituye, ver «Revisar las pistas sustituidas»), o si Music no ha podido responder. El aviso nombra el programa
 (`notices.originalHeld`, `App.tsx:1548`). Si no se puede leer una biblioteca, también se queda.
 
 **Los nombres cambiados llegan a Traktor y Engine DJ** (v1.23.0). Si una conversión cambia el
@@ -1713,7 +1827,22 @@ título, el artista, el álbum o el género, el cambio llega a la entrada de Tra
 después de repuntarla (`updateEngineTags`, `libraryFlushes.ts:695`), solo con el «Actualizar» de
 ese programa encendido (`ffmpeg.ts:2161`). Con Engine DJ abierto el cambio espera en su cola junto al repunte y se escribe al cerrarse Engine aunque el tamaño del fichero no cambie (`engineConversionFlusher`, `libraryFlushes.ts:664`; `repointEngineQueued`, `libraryFlushes.ts:836`). Cada campo solo se cambia si el programa aún tiene
 el valor que tenía el fichero, así que un nombre editado a mano en el programa se respeta
-(`replaceTags`, `traktorNml.ts:547`).
+(`replaceTags`, `traktorNml.ts:547`). Desde el 23/11, un campo que la entrada de Traktor no tenía
+(una entrada sin `ARTIST`, por ejemplo) y que el DJ rellenó se escribe en la colección: antes
+se leía como vacío y el fichero sustituido no llegaba a retirarse (`TAG_HOSTS`, `traktorNml.ts:562`).
+
+**Los nombres de una sustitución llegan a los cinco programas** (v1.43.0).
+Con el «Actualizar» de Traktor, Engine DJ, Serato o VirtualDJ encendido, Surco lee los nombres de
+antes de convertir (`namesBefore`, `ffmpeg.ts:2355-2362`). En una sustitución los lee del fichero
+sustituido que tienen las bibliotecas, no de la descarga, porque una descarga con otra grafía se
+tomaría por una edición del DJ y dejaría fuera los nombres nuevos (`readMeta(replacesPath ?? input)`).
+Un campo que el programa tenía vacío y que ahora lleva valor también se escribe. Engine DJ
+decide campo por campo (`writeEngineTags`, `engineTags.ts:90-100`), así que uno que Engine escribe
+distinto no frena a los demás. En Serato el cambio va en la misma cola que el movimiento que trae
+el fichero nuevo, aunque Serato aún tenga el viejo (`queueSeratoRun`, `libraryFlushes.ts:623-625`;
+`seratoTagOps`, `seratoTagSync.ts:19-39`). Si el fichero sustituido no se puede leer, no se envía
+ningún nombre a ningún programa (`namesBefore && changedNames(...)`, `ffmpeg.ts:2995`). Solo con
+tests, no comprobado en un programa real.
 
 **Una recarga a mitad no pierde los cambios** (v1.23.0). Si la ventana se recarga en mitad de
 una tanda, los cambios de biblioteca que llevaba se escriben en vez de tirarse
@@ -1888,6 +2017,20 @@ celdas por perdidas que hoy se conservan):
 | **Cualquiera → WAV** | **Sí** (`ffmpeg.ts:2080-2105`, `:2112-2123`) |
 | Cualquiera → **ALAC/M4A** | **No**, a propósito |
 | Con «limpiar metadatos» | **No**, a propósito |
+
+**Matriz al sustituir** (v1.43.0). Qué hace cada programa con la
+pista cuando el fichero nuevo reemplaza al viejo (`cueMatrix.test.ts`, bloque «a replacement carries
+the Serato cues of the file it replaces»):
+
+| Programa | Sigue al fichero nuevo | Cues | Rejilla y análisis |
+|---|---|---|---|
+| rekordbox | Sí | Movidos lo medido, o iguales si no es fiable | Se conserva con medida fiable, se reanaliza si no |
+| Engine DJ | Sí | Igual, y frecuencia y longitud reescritas siempre | Igual que rekordbox |
+| VirtualDJ | Sí | Igual | Igual que rekordbox |
+| Traktor | Sí, también con solo «Actualizar y añadir» | Los del fichero y los de la colección, movidos lo medido | La de la colección manda, movida igual |
+| Serato | Sí, con Serato cerrado y con «Actualizar» o «Actualizar y añadir» | Copiados al fichero nuevo, movidos lo medido | Copiada y movida igual; Serato pierde las estrellas |
+
+Ante una medida dudosa ningún programa mueve nada.
 
 **Las dos grafías de AIFF cuentan.** Los rips llevan `.aif` y `.aiff`
 indistintamente, y listar solo la larga hacía que un origen `.aif` fuese a buscar
@@ -2491,9 +2634,13 @@ hot cue A a H, ⌫ borra la seleccionada, + − hacen zoom (`cueKeyAction`, `lib
 Estas teclas viven en la sección, no en la tabla de atajos rebindables.
 
 **Guardar, descartar y borrar** (v1.20.0). En el editor plegado hay un solo «Guardar», que
-guarda la pista abierta. Una flecha a su lado abre un menú con «Guardar esta pista» y «Guardar N
-pistas en rekordbox» cuando hay otras pistas con cues sin guardar, y «Descartar cambios» cuando
-hay algo que descartar (`cues-save-more`, `CuesSection.tsx`). «Borrar todos los cues» es una
+guarda la pista abierta. Desde v1.44.0 es un botón partido: su flecha abre un menú con
+«Guardar» y «Guardar y siguiente», marca con un ✓ el que hace el botón, y Surco recuerda la
+elección (`cues-save-more`, `cues-save-mode-*`, `CuesSection.tsx`; `cueSaveThen`,
+`Editor.tsx`). Con «Guardar y siguiente», al terminar de guardar abre la pista siguiente de la
+lista, salvo que mientras guardaba se haya abierto otra. Guardar ya no cierra el editor de
+cues. El mismo menú ofrece «Guardar N pistas» cuando hay otras pistas con cues sin guardar, y
+«Descartar cambios» es un botón aparte (`cues-discard`). «Borrar todos los cues» es una
 papelera junto a deshacer. El menú «Flujo» solo lista flujos y Manual. A pantalla completa
 siguen los botones de siempre en la cabecera y la barra.
 
@@ -2535,19 +2682,46 @@ anterior si lo había (`withPhraseCount`, `:39`); pasa a una marca de hecho cuan
 ya lo lleva. Con varias pistas, «Poner frases en
 los comentarios» lo hace en toda la selección y deja sin tocar las que no tienen dos CALLs.
 
-**Guardar solo los comentarios en rekordbox** (v1.42.0). Tras «Poner frases en los comentarios»,
-si alguna pista es de rekordbox sale «Guardar N comentarios en rekordbox» con «Descartar» al lado
-(`CuesBatchSection.tsx`). Guardar pide cerrar rekordbox como el resto de escrituras y deja en su
-cola una operación que escribe solo `Commnt`, `rb_local_usn` y `updated_at` de la pista; el
-archivo de audio y los demás campos no se tocan (`planComment`, `rekordboxPlaylistWrite.ts`;
-`cues:saveComments`, `cuesIpc.ts`). El recuento se pone delante del comentario que rekordbox
-tiene en ese momento, no del del archivo, así que se conservan el bloque `/* My Tags */` y el
-texto a mano, y un recuento anterior se sustituye. Guardar y Descartar devuelven el comentario
-del formulario al de antes de poner frases (salvo que se editara a mano), para que un Convertir
-posterior no lo escriba en el archivo. La copia de seguridad se anota como «Antes de corregir
-metadatos». Un comentario de rekordbox hecho solo de números («1998») se toma por un recuento
-anterior y se sustituye. Sin comprobar en un rekordbox real que cambiar un My Tag conserve el
-recuento.
+**Guardar los comentarios** (v1.42.0 solo en rekordbox; desde v1.43.0 también en el archivo).
+Tras «Poner frases en los comentarios», si alguna pista es de rekordbox sale «Guardar N
+comentarios» con «Descartar» al lado (`CuesBatchSection.tsx:403-520`; hasta v1.42.0 decía
+«Guardar N comentarios en rekordbox»). Es un botón partido. La flecha abre «Opciones de guardado»
+con dos elecciones que se recuerdan (`commentsToFile`, `commentsReplace`, `main/settings.ts:118-119`,
+`CuesBatchSection.tsx:489-503`).
+- **«Archivo y rekordbox»** (por defecto) o **«Solo en rekordbox»**.
+- **«Delante del comentario»** (por defecto) o **«Sustituir el comentario»**, que deja solo el
+  recuento y, si lo había, el bloque `/* My Tags */` detrás (`phrasedComment`,
+  `shared/phraseCount.ts:50-54`). Cambiar esta opción recompone los comentarios pendientes.
+
+Guardar pide cerrar rekordbox como el resto de escrituras y deja en su cola una operación que
+escribe solo `Commnt`, `rb_local_usn` y `updated_at` de la pista (`planComment`,
+`rekordboxPlaylistWrite.ts:386-395`; `cues:saveComments`, `cuesIpc.ts:146-180`). El recuento
+se compone sobre el comentario que rekordbox tiene en ese momento, no sobre el del archivo, así que
+se conservan el bloque `/* My Tags */` y el texto a mano, y un recuento anterior se sustituye. Un
+comentario de rekordbox hecho solo de números («1998») se toma por un recuento anterior y se
+sustituye. La copia de seguridad se anota como «Antes de corregir metadatos».
+
+Con «Archivo y rekordbox», además, escribe los archivos de uno en uno, una vez dejada la
+operación en la cola de rekordbox. En cada uno compone el recuento sobre el comentario que el archivo tiene y reescribe
+solo esa etiqueta, en el campo que leen los programas de DJ (en MP3, un comentario guardado solo
+en un TXXX pasa al COMM); el audio y las demás etiquetas no se tocan, y Sound Check, gapless y
+los demás comentarios con descripción se quedan (`writeCommentToFile`,
+`commentFileWrite.ts:14-35`; `rewriteTagFields`, `main/index.ts:1770-1779`;
+`keepDescribedComments`, `tagFieldSet.ts:270`). Espera a que acabe
+una escritura de cues de Serato pendiente sobre el mismo archivo, y lleva el BPM, la tonalidad,
+la rejilla, la onda y el auto-emparejado guardados a la fecha nueva del archivo, para que la
+pista no se mida otra vez (`carryAnalysis` con `AUDIO_ONLY_NAMESPACES`,
+`carriedAnalysis.ts:16-30`). El botón se llena con el progreso, «Guardando… N/M», y un clic
+mientras guarda cancela tras el archivo en curso; los que no llegaron a escribirse se quedan
+pendientes (`cues:cancelComments`, `cuesIpc.ts:182-184`). Si rekordbox guardó pero algún archivo
+no, lo dice con «No se pudo escribir en N archivos» y esos quedan pendientes.
+
+Después, con «Solo en rekordbox», Guardar devuelve el comentario del formulario al de antes de
+poner frases (salvo que se editara a mano), para que un Convertir posterior no lo escriba en el
+archivo; con «Archivo y rekordbox», Surco relee la pista del archivo, que ya lleva el recuento
+(`phrasedCommentsSaved`, `App.tsx:3383-3389`). Descartar siempre devuelve el comentario de antes.
+Solo vale para pistas de rekordbox, y las de otros programas no entran en el botón. Sin comprobar en
+un rekordbox real que cambiar un My Tag conserve el recuento.
 
 ### Cues fuera de la rejilla
 
@@ -2883,7 +3057,8 @@ rekordbox (frases y onda) y la rejilla (`dropProposals`, `shared/dropDetect.ts:2
 lo que pondría el flujo. Desde v1.20.0 las propuestas tienen su propia barra encima de las ondas,
 igual plegado y a pantalla completa, con cuántas hay, cuántas seguras y cuántas dudosas,
 «Aceptar» e «Quitar propuestas» (`cues-auto-review`, `CuesSection.tsx`). Se aceptan con Intro,
-todas o de una en una, y no se guarda nada hasta aceptarlas. Una propuesta se quita sola con el
+todas o de una en una. Desde v1.44.0 aceptar solo coloca los cues propuestos y no guarda
+nada; se guardan con el botón de guardar, como cualquier cue. Una propuesta se quita sola con el
 ✕ de su etiqueta en la onda ampliada o con el ✕ que sale al pasar el ratón por su línea en la
 onda general (`onDropProposal`, `CueWave.tsx`). Con varias filas seleccionadas de una playlist,
 «Auto marcar las seleccionadas» las calcula todas y cada fila dice lo que dejó
@@ -3035,8 +3210,9 @@ desde rekordbox antes de que Surco escriba. Ese consejo no aparece dentro de la 
 ### Sustituir la copia de la biblioteca
 
 Cuando la pista cargada ya está en la biblioteca, el botón ofrece **sustituir** en vez de
-añadir una segunda copia (`exportLabel.ts`, `useLibraryVerdict.ts`). Antes de sustituir, «Calidad de audio» compara las
-dos copias y dice cuál es mejor (`compareCopies`, `lib/bestCopy.ts`); el veredicto abre una
+añadir una segunda copia (`exportLabel.ts`, `useLibraryVerdict.ts`). Antes de sustituir, la sección «En tu biblioteca»
+del editor compara las dos copias y dice cuál es mejor (`compareCopies`, `lib/bestCopy.ts:148`; ver
+«En tu biblioteca» más abajo; hasta v1.42.0 lo hacía «Calidad de audio»); la fila de la copia abre una
 tarjeta con la frase que lo justifica y una tabla con corte, volumen, dinámica y muestras en el
 techo. Si el veredicto lo decidió un limitador, la tarjeta dibuja las ondas de las dos copias
 (`LimiterGlimpse.tsx`); si lo decidió el espectro (corte, fuente con pérdidas, agudos
@@ -3097,6 +3273,101 @@ fichero (claves `confirm.cleanUpMessageBackups*` y `*Mixed*`). Con Copias de seg
 **Un repunte rechazado no cancela la sustitución:** el fichero ya está en disco y la copia
 de biblioteca sigue mereciendo actualizarse. El motivo viaja hacia arriba para contarlo.
 
+### Revisar las pistas sustituidas
+
+Nuevo en v1.43.0. Diseño en `docs/superpowers/specs/2026-11-22-revisar-sustituidas-design.md`.
+Vale solo para una sustitución, es decir «Actualizar» sobre una pista que la biblioteca ya tiene
+(`job.replacesPath`). Una conversión normal, que cambia de formato con el mismo audio, no entra:
+sus cues siguen moviéndose por el adelanto del códec y no hay lista de revisión.
+
+**Traktor y Serato siguen al fichero nuevo.** Antes solo seguían rekordbox, Engine DJ y VirtualDJ:
+la entrada de Traktor y la de Serato se quedaban en la ruta vieja y, al retirar el fichero viejo,
+la pista salía perdida con sus cues.
+- **Traktor** lleva su entrada de la colección al fichero nuevo con sus cues, con «Actualizar» o
+  solo con «Actualizar y añadir» (`traktor`, `processTrack.ts:1233-1236`). El fichero viejo
+  espera a Traktor hasta que la entrada se mueve.
+- **Serato** lleva al fichero nuevo los cues y la rejilla, movidos lo que se movió el audio
+  (`carrySeratoCues`, `ffmpeg.ts:2776-2793`), y reapunta la ruta en `database V2` y en cada
+  crate, con «Actualizar» o «Actualizar y añadir» de Serato (`queueSeratoRun`,
+  `libraryFlushes.ts:599-640`). Solo con Serato cerrado y por su cola. Antes de sustituir,
+  el botón avisa de que Serato perderá las estrellas de la pista, con una o con varias
+  seleccionadas (`editor.seratoLosesStars`, `ConvertFooter.tsx:759`). Conserva BPM, tonalidad,
+  reproducciones y crates. Si el fichero nuevo ya estaba en la biblioteca de Serato, solo se
+  quita la fila vieja del crate. Si los cues no se pueden llevar al fichero nuevo (la rejilla no se
+  puede mover, o el DJ vació las etiquetas de Serato del nuevo), Serato se queda en el fichero viejo,
+  que no se retira, y la pista no entra en «Para revisar» por Serato (`seratoCarryFailed`,
+  `replacedStore.ts:205`).
+
+**Cuánto se movió el audio** (`measureReplaceShift`, `ffmpeg.ts:3768`; constantes y regla en
+`replaceShiftMeasure.ts:19-26`). Antes de colocar el fichero nuevo, y contra el temporal ya
+terminado, Surco decodifica una ventana de 5 s del viejo y del nuevo a 90 s del principio y
+otra a 90 s del final, con un margen de búsqueda de ±5 s, y las correlaciona en el worker para
+no bloquear el proceso principal.
+- **Solo pistas de unos 190 s o más.** Con menos no caben las dos ventanas y la medida sale
+  «sin alinear».
+- **Fiable** cuando las dos ventanas casan con correlación de 0,95 o más y coinciden a 2 ms. El
+  resultado es `{ moved }`, en milisegundos.
+- **Un audio en bucle se rechaza.** Si otra posición a 50 ms o más ajusta casi igual de bien (una
+  intro o un outro que se repiten compás a compás), la ventana no cuenta, porque los cues
+  caerían compases enteros fuera.
+- **No fiable** si una ventana no casa o el fichero viejo no se lee. Con el principio y el final
+  desfasados distinto (otro edit, otra duración) sale «sin mover» con motivo `noMatch`, `drift` o
+  `unreadable` (`replaceShift.ts`). Entonces los cues no se tocan.
+- Los umbrales salen de un barrido sobre 234 pares reales (`replaceShiftSweep.test.ts`): 156 se
+  mueven, 58 son otro master, 17 ambiguas, 2 demasiado cortas y 1 con deriva; ningún par de control
+  se mueve. Un edit con paso constante entre principio y final se queda sin mover.
+- Una cancelación mata los ffmpeg de la medida y solo se da por cerrada cuando el proceso hijo ya
+  salió (`45102edd8`); un decode fallido no para a los demás.
+
+**Los cinco programas mueven los cues lo medido** más la diferencia de adelanto del códec entre
+el fichero viejo y el nuevo, cada uno con el suyo (`rekordboxRepointFor`,
+`rekordboxRepointFor.ts:56-62`; `traktorReplaceShift`, `replaceCueShift.ts:7`; las marcas de Serato
+ya citadas; Engine DJ y VirtualDJ restan un recorte negativo). Un MP3 sin cabecera en Traktor se
+mueve solo por lo medido, sin el retardo de libmp3lame encima.
+- **Si la medida no es fiable, los cues quedan como estaban** en los cinco.
+- **rekordbox, Engine DJ y VirtualDJ reanalizan** el fichero nuevo cuando ninguna medida respalda
+  que sea el mismo audio (`reanalyse`, `rekordboxRepointFor.ts:70`; `engineRepoint.ts:462`;
+  `virtualdjTrackWrite.ts:267`): vacían onda y rejilla y conservan los cues. Con una medida fiable
+  se conserva el análisis, que puede llevar una rejilla corregida a mano. No se ha subido ningún
+  namespace de caché ni se fuerza reanálisis en Surco.
+- **Engine DJ reescribe la frecuencia y la longitud** de la fila en cada sustitución, haya movido
+  cues o no (`engineShift`, `rekordboxRepointFor.ts:82-90`), porque guarda los cues en muestras de
+  la frecuencia del fichero viejo.
+- **Los nombres de los cues de Traktor se conservan** cuando Surco mueve un cue (`59a0e522e`).
+- Un fichero viejo solo se retira si es un fichero normal, nunca una carpeta ni un enlace
+  (`retireSuperseded.ts`, `b9193d927`).
+
+**«Para revisar»** (`sources.toReview`). Nodo fijo en la pestaña de cada programa de DJ, debajo de
+«Añadidas recientemente», que se esconde cuando está vacío y lleva su recuento
+(`useSourceBrowser.ts:253-263`; `toReviewEntriesFor`, `lib/toReview.ts:43`). Como los otros nodos
+fijos, no se edita, no se arrastra y no recibe pistas.
+- **Qué entra.** Toda pista sustituida, se haya movido o no, en cada programa al que Surco llegó
+  (`recordReplacement`, `replacedStore.ts:191`). Un programa se queda fuera si su entrada no pudo
+  seguir al fichero (no tenía la pista, el movimiento se descartó, la entrada se quedó en el viejo
+  o el nuevo ya no existe). Una pista sin cues en ese programa no sale en su nodo. Una pista
+  sustituida otra vez desde su fichero anterior empieza la revisión de nuevo.
+- **Qué sale.** Solo dos cosas. Guardar los cues de esa pista en el editor de una sola pista,
+  que la quita de los programas donde se guardó (`savedReviews`, `lib/toReview.ts:90`;
+  «Guardar solo en este programa» solo de ese); o pulsar «Revisada», que la quita de todos a la
+  vez, sin preguntar, con aviso y «Deshacer» o ⌘Z. No sale por abrirla, escucharla ni con el
+  tiempo, ni por un guardado de cues en lote.
+- **Cómo se ve.** Orden con las sin mover primero y luego la sustituida más reciente
+  (`lib/toReview.ts:61-64`). Cada fila lleva un icono verde (cues movidos) o ámbar (sin mover) con
+  su `aria-label` (`trackList.cuesMoved`, `trackList.cuesNotMoved`, `TrackList.tsx:1045`), sin
+  texto ni números de posición.
+- **En el editor**, junto al título de «Cues» y en el editor completo bajo el de la pista, una
+  pastilla (`ReplacedPill.tsx`) verde con los milisegundos movidos o ámbar «sin mover», con su
+  motivo en una frase (`editor.cues.replaced.*`) y el botón «Revisada». Cuando la pista deja
+  la lista, el editor sigue en ella hasta que el DJ elija otra (`keepOpenRows`,
+  `lib/toReview.ts:75`).
+- **Dónde vive.** Un fichero en la carpeta de datos, con versión y rutas NFC, que sigue al fichero
+  si una conversión posterior lo mueve (`replacedStore.ts`). Un fichero roto se aparta, nunca se
+  sobrescribe, y un fallo al escribirlo no hace fallar la conversión. Vive en la carpeta de datos de
+  este Mac (`replaced-tracks.json`, `index.ts:492`).
+- **Probado en programas reales.** Que Traktor y Serato sigan la sustitución se probó el
+  23/11/2026 en un Mac con un Traktor real, sobre su colección real, y con un Serato real, donde
+  la sustitución llevó los cues y los crates. Además lo cubren tests con fixtures sintéticos.
+
 ### Autocomprobación tras convertir
 
 Desde v1.18.0, al acabar cada pista Surco relee lo que acaba de tocar y solo entonces da el ✓
@@ -3153,11 +3424,48 @@ nombres cubre casos reales de rips («DJ F.R.A.N.K.» ↔ «DJ. Frank», «A Sev
 «A7»).
 
 El propio código lo califica: **es un indicio, no una garantía**
-(`appleMusicLibrary.ts:288`).
+(`appleMusicLibrary.ts:310`).
 
 Si la biblioteca de Apple Music o de Engine DJ no se puede leer, un aviso lo dice
 (las pistas no se marcan como incluidas) y se reintenta al volver a la ventana
 (`useLibraryMembership.ts`, claves `libraryCheckFailed*`).
+
+### «En tu biblioteca» en el editor
+
+Nuevo en v1.43.0. Sección fija arriba del editor, antes de los metadatos (`'library'` en
+`pinned`, `shared/editorSections.ts:109`; `LibrarySection.tsx`), que dice dónde más está la pista
+abierta y cómo es cada copia respecto a ella. **Solo sale con una pista de la lista Tracks**, no
+en las pestañas de los programas ni con varias pistas, y se puede esconder en Ajustes › Secciones
+(`libraryShown`, `Editor.tsx:785`). Sin ninguna copia encontrada no sale.
+- **Una fila por biblioteca.** Apple Music, cuando es el destino en macOS y la tiene
+  (`musicRow`, `Editor.tsx:1717-1756`), y cada programa de DJ con su «Actualizar» o «Actualizar y
+  añadir» encendido (`useProgramCopies.ts:51-59`). En cada programa la busca primero por la ruta del
+  propio archivo y, si no, por título, artista y duración con el mismo índice puntuado de arriba,
+  también con el título y artista del lanzamiento sugerido, y por último sin la duración, para que
+  otra versión del mismo título salga como tal en vez de esconderse (`useProgramCopies.ts:73-91`).
+  Cada fila lleva el icono del programa, el formato de la copia y su estado.
+- **Estados** (`STATE`, `LibrarySection.tsx:31-56`; claves `editor.libraryState*`). «Son el
+  mismo» (mismo audio por huella o por diferencia medida, con la misma frecuencia y profundidad
+  real, `isSameAudio`, `lib/bestCopy.ts:133-146`), «La nueva es mejor», «La nueva es peor»,
+  «Parecidas» (el mismo master sin nada que las separe), «Ni mejor ni peor» (nada las separa pero
+  no consta que sean el mismo master), «Otra versión · duración» (otra duración y otro audio,
+  `isOtherVersion`, `:68-83`), «Es este archivo», «No se encuentra» (la ruta de la copia no
+  existe), «No se puede leer», «No se puede medir», «N copias» (Apple Music tiene varias y no sabe
+  cuál) y «Comparando» mientras mide. El veredicto sale del análisis completo de las dos copias
+  (`compareCopies`, `:148-170`); mientras falta, responde la comprobación rápida de formato y corte.
+- **Un estado común se dice una vez.** Si todas las copias están igual, el estado sube a la
+  cabecera de la sección y las filas lo callan; plegada, la cabecera dice el que más importa, por
+  ejemplo «Mejor copia en rekordbox» (`sharedState`, `LibrarySection.tsx:298-310`;
+  `aggregateLibraryVerdict`, `lib/libraryVerdict.ts:21-38`). El porqué del veredicto va en la
+  ayuda del estado.
+- **Se abre para comparar.** Una fila con veredicto entre dos copias distintas se despliega con la
+  comparación, que lleva la frase que lo justifica, la tabla de corte, volumen, dinámica y muestras en el
+  techo, los dos espectros a la misma escala y, si lo decidió un limitador, las dos ondas
+  (`renderComparison`, `Editor.tsx:1645-1704`; `CopyComparison`, `SpectrumGlimpse.tsx`,
+  `LimiterGlimpse.tsx`). «Son el mismo», «No se encuentra» y «No se puede leer» no se abren.
+- **Lo que no dice.** Encontrar la pista es el mismo indicio puntuado por etiquetas y duración que
+  arriba, no una huella sobre toda la biblioteca, así que una copia con otras etiquetas puede no salir. Y
+  solo mira los programas activos en Ajustes › Programas de DJ.
 
 ### Revisar metadatos: grafías y duplicados
 
@@ -3335,10 +3643,25 @@ Filtros nuevos en v1.41.0, en la sección «Audio y cues»:
   lista cuenta las mismas que el panel (`2ac955962`). El filtro vuelve con la sesión
   (`lib/sessionView.ts`).
 
+### Archivos que ya no están
+
+Desde v1.44.0, al leer una lista con archivos que ya no están donde estaban, el aviso dice
+cuántos faltan y que pueden haberse movido o renombrado, en vez de decir que sus etiquetas no
+se pudieron leer (`notices.metaFilesMissing`, `App.tsx:963`). Una playlist cuyos archivos no
+están en el disco sigue saliendo en la búsqueda de la barra lateral y lo dice
+(`sidebar.search.away`, `App.tsx:5180`), y una relectura posterior ya no vuelve a añadir,
+analizar y quitar el archivo que falta (`useTrackLibrary.ts`).
+
 ### Reproductor
 
 Al cambiar de pestaña en la barra lateral el reproductor se cierra y la pista deja de sonar
 (`selectSource`, `App.tsx`, v1.20.0); antes seguía sonando una pista que esa pestaña no enseña.
+
+**Reproducción en curso de macOS** (v1.44.0). La pista que suena se anuncia al sistema con
+título, artista, álbum y carátula, y las teclas multimedia, los AirPods y el Apple Watch la
+pausan, saltan a la siguiente o la anterior de la lista y la mueven en el tiempo
+(`useMediaSession`, `hooks/useMediaSession.ts`). Sin carátula incrustada, el sistema no
+recibe imagen.
 
 Servidor propio con soporte real de rangos HTTP: el elemento `<audio>` busca
 re-pidiendo un rango de bytes, y solo respeta el salto si el servidor responde 206
@@ -3497,7 +3820,13 @@ comparación»* (`useDeclickAb.ts:60-67`).
   carátula a mano; cada paso devuelve solo los campos que cambió, así que una corrección
   posterior sobrevive, en una edición sobre varias pistas cada una recupera su propio
   valor, se saltan los pasos que no cambiaron nada, y un auto-emparejado deshecho no se
-  vuelve a aplicar al volver a la pista. No cubre operaciones de fichero ni conversiones.
+  vuelve a aplicar al volver a la pista. Desde v1.43.0 también lo tecleado en un campo. Todo lo
+  escrito mientras el campo tiene el foco es un solo paso, con una pista o con varias, así que
+  al salir del campo ⌘Z lo deshace antes que lo que hubiera debajo (un lanzamiento aplicado, un
+  buscar y reemplazar) y ⇧⌘Z lo vuelve a poner (`typeField`, `fieldEdit`,
+  `Editor.tsx:317-321`, `:1320-1323`). Dentro del campo, ⌘Z sigue siendo el deshacer del texto
+  del sistema (`suppressWhileTyping`, `shortcutDefaults.ts:69-70`). No cubre operaciones de
+  fichero ni conversiones.
   «Borrar metadatos» ofrece además «Deshacer» en el aviso que sale al vaciar
   (`notices.clearedMeta`, `App.tsx:3036`), y el botón está apartado del de rellenar. Desde
   v1.29.0 también lo ofrecen «Buscar y reemplazar…», «Rellenar desde el nombre del archivo,
@@ -3527,6 +3856,16 @@ comparación»* (`useDeclickAb.ts:60-67`).
 - **Editar el original avisa en el menú de destino** (v1.29.0). En el menú de destino de
   «Convertir», la opción que sobrescribe lleva debajo «Sobrescribe el archivo»
   (`editor.menuOverwriteNote`, `FormatDestinationMenu.tsx:95`).
+- **Cada fuente recuerda su búsqueda** (v1.43.0). Lo escrito en el buscador de la lista se
+  guarda por fuente. Al pasar de Tracks a la pestaña de un programa de DJ y volver, cada una
+  recupera la suya, así que una búsqueda escrita en rekordbox ya no esconde filas de Tracks
+  (`searchBySource`, `App.tsx:1270`, `:1387-1388`).
+- **⌘+ agranda la ventana** (v1.43.0). Con el zoom crece también el tamaño mínimo de la
+  ventana, y si la ventana queda por debajo se agranda sin salirse del área útil de la pantalla.
+  Si ni así cabe, el zoom baja hasta el mayor que cabe, a pasos de medio nivel
+  (`zoomFit`, `main/zoomFit.ts:18-22`; `window:zoom-check`, `main/index.ts:1278-1295`). Se
+  comprueba al abrir y en cada cambio de la densidad de píxeles, que cambia con el zoom
+  (`useZoomFit.ts:3-13`).
 - **Lista** (v1.17.0). Se ordena también por BPM, tonalidad, año y calidad
   (`TrackSort`, `triage.ts:475-489`), y la búsqueda encuentra por género y sello además de
   título, artista y álbum (`triage.ts:319-327`). Las filas con ediciones sin escribir en el
@@ -3557,10 +3896,12 @@ comparación»* (`useDeclickAb.ts:60-67`).
   (`TrackListHeader.tsx`).
 - **Números de la playlist** (v1.40.0). Una playlist vista en su propio orden lleva sobre la
   carátula de cada fila el número que la pista ocupa en ella, y con un filtro o una búsqueda
-  puestos cada fila conserva el suyo (`playlistPositions`, `playlistView.ts:76`). Con otro
-  orden y en Matching no salen (`App.tsx:2545`). «Mostrar números» en el menú de vista y en la
-  paleta los quita y los pone, y la elección se recuerda (`showListPositions`,
-  `shared/types.ts:363`).
+  puestos cada fila conserva el suyo (`playlistPositions`, `playlistView.ts:78`). Desde v1.43.0
+  la lista Tracks también se numera, en el orden en que se importaron las pistas, bajo el mismo
+  interruptor (`numberedTracks`, `App.tsx:2650-2656`). Con otro orden que el de importación, en
+  Matching y en «Para revisar» no salen. «Mostrar números» en el menú de vista y en la paleta
+  («Mostrar u ocultar los números») los quita y los pone, y la elección se recuerda
+  (`showListPositions`, `shared/types.ts:373`).
 - **Botón «Añadir»** (v1.40.0). Con una sola pista que se edita en su sitio, sin cambiar de
   formato, con Apple Music como destino y que Music aún no tiene, el botón dice «Añadir» en
   vez de «Actualizar», porque el clic también la da de alta (`addsToMusic`,
@@ -3613,12 +3954,15 @@ Recopilado de los cinco informes. Cada punto está verificado.
    rejilla, no muestra sus bucles en el editor y no convierte sus pistas. El reloj de Serato no
    está medido en AAC de Apple ni en MP3 MPEG-2. Conservar sus cues al convertir y los flujos
    hacia Serato solo están probados en tests, no en un Serato real.
-   **La biblioteca de Serato no se repunta.** Una conversión que renombra o cambia de formato
+   **La biblioteca de Serato no se repunta al convertir.** Una conversión que renombra o cambia de formato
    no mueve la pista en Serato, así que el original se queda en su carpeta mientras Serato lo
-   use (`librariesKeepingOriginal`, `libraryFlushes.ts:204`). Nunca cambia la ruta de una pista
+   use (`librariesKeepingOriginal`, `libraryFlushes.ts:204`). Al convertir nunca cambia la ruta de una pista
    que Serato ya tiene: se intentó y se retiró (`99597884a`), porque cambiarla hacía que Serato 5
    perdiera la pista y su valoración (medido el 4 de noviembre de 2026 en Serato 5, que guarda
-   la valoración en `master.sqlite`). Lo que sí escribe en `database V2` desde v1.24.0 (editar
+   la valoración en `master.sqlite`). **La excepción es sustituir** (v1.43.0, decisión del
+   22/11): ahí sí cambia la ruta en `database V2` y en los crates, y Serato pierde las
+   estrellas de esa pista, cosa que el botón avisa antes. No decir que Serato conserva la
+   valoración al sustituir. Lo que sí escribe en `database V2` desde v1.24.0 (editar
    campos de una pista sin tocar su ruta y añadir pistas al final) se midió en Serato 5 sin esa
    pérdida. Nunca escribe en `master.sqlite`.
    **El USB desde Serato y Traktor** (v1.24.0) no se ha abierto en un CDJ ni en rekordbox.
@@ -3655,7 +3999,10 @@ Recopilado de los cinco informes. Cada punto está verificado.
    que pasa la prueba no decir «auténtico», «genuino» ni «verdadero», porque la app solo dice que hay
    contenido real por encima de 22 kHz y que el fichero no viene de calidad CD (v1.41.0, atado
    por `hiResWording.test.ts`). El filtro de la lista es «Posible reescalado», no «Reescalado».
-9. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía.
+9. **«Ya está en tu biblioteca»** es un indicio puntuado, no una garantía. La sección «En tu
+   biblioteca» del editor (v1.43.0) busca igual, por etiquetas y duración. No decir que encuentra
+   todas las copias de una pista. Solo sale con una pista de la lista Tracks y solo mira Apple
+   Music (en macOS, como destino) y los programas de DJ activos.
 10. **BPM y tonalidad** son sugerencias; nunca se escriben sin confirmar. Desde v1.41.0
     «Rellenar BPM y tonalidad» los pone en varias pistas a la vez, pero solo cuando el usuario lo
     pide, solo en campos vacíos y solo con lo ya medido. No decir que Surco etiqueta BPM y
@@ -3800,8 +4147,38 @@ Recopilado de los cinco informes. Cada punto está verificado.
     sincronizados. No consta que rekordbox muestre en su panel una pareja escrita por Surco:
     la fila es idéntica a la suya, pero no se ha mirado en rekordbox.
 47. **Que rekordbox conserve el recuento de frases al cambiar un My Tag** (v1.42.0). «Guardar N
-    comentarios en rekordbox» pone el recuento delante del comentario y deja el bloque
-    `/* My Tags */` detrás. Según el foro de Pioneer, rekordbox conserva el comentario y solo
-    rehace ese bloque, pero no se ha probado en un rekordbox real. Tampoco sobrevive a un
-    Convertir posterior: la conversión manda a rekordbox el comentario del archivo, que no lleva
-    el recuento.
+    comentarios» pone el recuento delante del comentario (o lo deja solo, con «Sustituir el
+    comentario») y deja el bloque `/* My Tags */` detrás. Según el foro de Pioneer, rekordbox
+    conserva el comentario y solo rehace ese bloque, pero no se ha probado en un rekordbox real.
+    Con «Solo en rekordbox» el recuento no sobrevive a un Convertir posterior, porque la conversión manda
+    a rekordbox el comentario del archivo, que no lo lleva. Con «Archivo y rekordbox» (por defecto
+    desde v1.43.0) el archivo sí lo lleva, así que un Convertir lo mantiene. El botón solo guarda
+    pistas de rekordbox. No decir que escribe el recuento en las bibliotecas de Traktor, Serato,
+    Engine DJ ni VirtualDJ.
+48. **Sustituir una pista no garantiza que sus cues sigan en su sitio.** Surco los mueve solo si
+    mide el mismo audio en el principio y en el final de las dos copias, y solo en pistas de unos
+    190 s o más. Si la medida es dudosa, o el fichero nuevo es otro master o tiene otro edit, los
+    cues se quedan como estaban y la pista queda «sin mover» para que el DJ la mire. No decir
+    «ajusta los cues solo», «siempre» ni «sin revisar»; un audio en bucle (una intro que se repite)
+    se rechaza a propósito. La medida está calibrada con 234 pares reales, no con todas las pistas.
+49. **«Para revisar» no dice que los cues estén bien, dice que nadie ha mirado la pista.** La
+    pista sale solo al guardar sus cues en el editor de una sola pista o al pulsar «Revisada»;
+    nunca por abrirla, escucharla ni con el tiempo, y un guardado en lote no cuenta. La lista es de
+    Surco y de este Mac: el programa no la ve, no es una playlist suya y no sigue lo que el DJ
+    revise dentro del programa. No decir que Surco avisa de los cues mal puestos.
+50. **Traktor y Serato siguen al fichero nuevo solo al sustituir.** Al convertir con otro
+    nombre o formato, Traktor sigue solo en la misma carpeta y Serato no sigue (punto 1). Al
+    sustituir, Serato exige su «Actualizar» o «Actualizar y añadir», Serato cerrado (la cola
+    espera si está abierto, y mientras tanto el fichero viejo se queda) y pierde las estrellas de
+    la pista. Si los cues no se pueden llevar, Serato se queda en el fichero viejo. Probado el
+    23/11/2026 en un Mac con un Traktor real, sobre su colección real, y con un Serato real, donde
+    la sustitución llevó los cues y los crates; no en Windows.
+51. **Reanalizar al sustituir es de rekordbox, Engine DJ y VirtualDJ.** Cuando no hay una medida
+    que respalde el mismo audio, esos tres vacían onda y rejilla de la pista para que el programa
+    la calcule otra vez y conservan los cues; Traktor y Serato no reanalizan. No decir que Surco
+    conserva la rejilla de una pista sustituida en los tres: solo cuando la medida es fiable.
+52. **Convertir conserva las etiquetas ajenas, salvo las cifras de sonoridad de otro audio**
+    (v1.43.0). Lo que Surco no gestiona llega a la salida con todos sus valores, pero Sound Check,
+    iTunSMPB, ReplayGain, R128 y MP3Gain se quedan fuera cuando la salida no lleva las mismas
+    muestras que el origen, y con «Borrar metadatos» no llega nada. No decir que conserva
+    «absolutamente todo».

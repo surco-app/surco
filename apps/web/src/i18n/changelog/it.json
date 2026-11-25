@@ -1,5 +1,107 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Salva i cue e passa al successivo",
+    "items": [
+      {
+        "text": "Quando salvi i cue, scegli «Salva e successivo» nel menu del pulsante e Surco apre il brano successivo della lista. Ricorda la tua scelta per la prossima volta, e salvare non chiude più l’editor dei cue.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "«Accetta la proposta» posiziona i cue suggeriti senza salvarli. Spostali se vuoi e salva quando sei pronto.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "In qualunque ordine segni i drop, il cue di inizio non cade più nel silenzio prima della musica.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Il brano che suona in Surco appare in macOS con la sua copertina. I tasti multimediali, gli AirPods e l’Apple Watch lo mettono in pausa o passano al successivo.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Se i file di una playlist non sono più sul disco, la lista lo dice e conta quanti ne mancano. Un file spostato o rinominato non appare più come illeggibile.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Sostituisci un brano con un altro master dello stesso pezzo e ora anche i suoi cue si spostano con l’audio. Se Surco non è sicuro del battito, li lascia dov’erano. In rekordbox si agganciano alla nuova griglia quando l’analisi finisce.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quando Discogs ti chiede di aspettare, vedi subito i risultati degli altri cataloghi. Surco riprova su Discogs da solo, con un conto alla rovescia che puoi saltare con un clic.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "La scheda Apple Music si apre su «Aggiunti di recente», con quello che hai aggiunto negli ultimi 30 giorni. E le sue playlist si aprono molto più in fretta, anche se la tua musica sta su un NAS.",
+        "in": "1.44.1"
+      }
+    ]
+  },
+  {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Sostituisci un brano senza perdere i cue",
+    "items": [
+      {
+        "text": "Sostituisci un brano con una copia migliore e i suoi cue restano sul battito in rekordbox, Traktor, Engine DJ, Serato e VirtualDJ. Surco confronta le due copie e sposta i cue se la nuova inizia un po’ prima o un po’ dopo. Se è un’altra registrazione, rekordbox, Engine DJ e VirtualDJ la analizzano di nuovo.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Anche Serato segue un brano sostituito, con i suoi cue, la sua griglia e le sue crate. Perde le stelle, e Surco te lo dice prima di sostituire.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Ogni brano che sostituisci compare in «Da rivedere», sotto «Aggiunti di recente» in ogni programma DJ. Un segno verde dice che i cue si sono spostati con l’audio, uno ambra che sono rimasti dov’erano. Salva i suoi cue o premi «Rivisto» ed esce dalla lista. ⌘Z lo riporta.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Una copia che ne sostituisce un’altra prende dalla vecchia i tag che le mancano. Se non ha copertina, prende anche quella.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La nuova sezione «Nella tua libreria» dell’editor trova un brano di Tracks in tutti i programmi DJ che usi e in Apple Music. Ogni copia ti dice se è uguale, migliore, peggiore o un’altra versione. Apri una riga per confrontare i due spettri.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music entra nelle «Sorgenti di ricerca», con le sue copertine grandi. Funziona anche su Windows, e se lo store del tuo paese non ha un’uscita, Surco la cerca in quelli del Regno Unito e degli Stati Uniti.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Con più brani selezionati, l’editor funziona come con uno solo. Modifica i campi dell’album di tutti, incolla un’uscita, valutali insieme o numerali nell’ordine della lista. Un campo che differisce mostra ogni valore invece di contarli.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "I commenti delle frasi possono andare anche nei tuoi file. Accanto a «Salva N commenti», scegli «File e rekordbox», poi «Prima del commento» o «Sostituisci il commento». Mentre salva, il pulsante si riempie, e un clic lo ferma.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La conversione conserva tutti i tuoi tag, anche quelli che Surco non mostra. I campi con più valori, come due artisti o due generi, li conservano tutti.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z annulla quello che hai scritto in un campo e ⇧⌘Z lo ripristina. Commento conserva gli a capo, e Invio inizia una riga nuova.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Mostra numeri» numera anche Tracks, nell’ordine in cui hai aggiunto i brani. Ogni scheda tiene la sua ricerca, quindi quello che scrivi in un programma DJ resta lì.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "L’abbinamento automatico non tocca più un brano che hai modificato a mano. Nella pagina di un’etichetta su Bandcamp, l’etichetta non finisce più come artista.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "«Ripristina i tag di prima» passa al menu ⋯ dell’editor invece di stare sotto ogni campo. Anche «Copia il percorso del file» è lì.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ ingrandisce la finestra insieme allo zoom e si ferma allo zoom più grande che sta nel tuo schermo.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Porta le frasi in rekordbox",
@@ -678,7 +780,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "L'editor dei cue a schermo intero si apre con ⌘⇧C dal brano selezionato. I suoi pulsanti in basso sono in gruppi, pad, CALL, griglia e zoom, e «Elimina tutti i cue» resta da solo alla fine. Lo zoom arriva fino a una battuta, «Accetta e salva» salva con un clic le proposte di «Auto marca» nel tuo programma DJ, e con «Lettere in ordine di brano» un pad vuoto ti dice che lettera avrà il cue.",
+        "text": "L'editor dei cue a schermo intero si apre con ⇧⌘C dal brano selezionato. I suoi pulsanti in basso sono in gruppi, pad, CALL, griglia e zoom, e «Elimina tutti i cue» resta da solo alla fine. Lo zoom arriva fino a una battuta, «Accetta e salva» salva con un clic le proposte di «Auto marca» nel tuo programma DJ, e con «Lettere in ordine di brano» un pad vuoto ti dice che lettera avrà il cue.",
         "in": "1.27.3"
       },
       {

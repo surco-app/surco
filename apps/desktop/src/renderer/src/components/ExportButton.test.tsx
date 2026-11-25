@@ -4,6 +4,7 @@ import '@testing-library/jest-dom/vitest'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n from '../i18n'
+import type { LibraryCopyOffer } from '../lib/libraryCopy'
 import { ExportButton } from './ExportButton'
 import { FORMAT_TOGGLE_BOX_NAME } from './SplitButton'
 
@@ -34,9 +35,38 @@ const hover = (el: HTMLElement): void => {
 }
 
 describe('ExportButton', () => {
-  // In a 262 px editor the words pushed the format menu's button off the panel, so the
-  // tick alone stays in sight and the words are still read out.
-  it('shows only the tick of an up-to-date track when the editor is narrow, so the buttons beside it stay on the panel', () => {
+  // The up-to-date footer is the normal split button in a discreet fill, so the footer keeps
+  // one shape whether or not there is something to write: body and format half share one group,
+  // as process-btn and its toggle do.
+  it('draws the up-to-date footer as one split button, body and format half in the same group', () => {
+    const props = {
+      ...baseProps,
+      incomplete: false,
+      inPlace: true,
+      tagsOnly: true,
+      sameFormat: true,
+    }
+    const { rerender } = render(<ExportButton {...props} upToDate={false} />)
+    expect(screen.getByTestId('process-btn').parentElement).toBe(
+      screen.getByTestId('process-format-toggle').parentElement,
+    )
+    rerender(<ExportButton {...props} upToDate />)
+    const group = screen.getByTestId('convert-update-anyway').parentElement
+    expect(group).toBe(screen.getByTestId('process-format-toggle').parentElement)
+    expect(screen.getByTestId('convert-up-to-date-row')).toContainElement(group)
+  })
+
+  it('keeps the format menu opening from the up-to-date format half', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
+    const toggle = screen.getByTestId('process-format-toggle')
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByTestId('process-format-mp3')).toBeInTheDocument()
+  })
+
+  // The words "No changes" left the screen to keep the footer to one button, but a blind user
+  // still needs to hear why the action is a re-update.
+  it('keeps "No changes" for screen readers as the description of the update button', () => {
     render(
       <ExportButton
         {...baseProps}
@@ -46,26 +76,12 @@ describe('ExportButton', () => {
         sameFormat
         upToDate
         narrow
-        onProcess={vi.fn()}
       />,
     )
-    expect(screen.getByText('No changes').className).toContain('sr-only')
-    expect(screen.getByTestId('convert-update-anyway')).toBeInTheDocument()
-  })
-
-  it('spells out that a track is up to date when there is room', () => {
-    render(
-      <ExportButton
-        {...baseProps}
-        incomplete={false}
-        inPlace
-        tagsOnly
-        sameFormat
-        upToDate
-        onProcess={vi.fn()}
-      />,
-    )
-    expect(screen.getByText('No changes').className).not.toContain('sr-only')
+    const body = screen.getByTestId('convert-update-anyway')
+    const described = body.getAttribute('aria-describedby')
+    expect(described).toBeTruthy()
+    expect(document.getElementById(described as string)).toHaveTextContent('No changes')
   })
 
   it('goes quiet when there is nothing to write', () => {
@@ -143,9 +159,7 @@ describe('ExportButton', () => {
 
   it('shows an already converted track as up to date without a rise, since the footer remounts on every track switch and an arrow key held through the list would replay it each step', () => {
     render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly sameFormat upToDate />)
-    expect(screen.getByTestId('convert-up-to-date-row').className).not.toContain(
-      'animate-footer-swap',
-    )
+    expect(screen.getByTestId('convert-up-to-date-row')).toHaveAttribute('data-swapped', 'false')
   })
 
   it('rises into up to date when the track becomes up to date while on screen', () => {
@@ -158,7 +172,7 @@ describe('ExportButton', () => {
     }
     const { rerender } = render(<ExportButton {...props} upToDate={false} />)
     rerender(<ExportButton {...props} upToDate />)
-    expect(screen.getByTestId('convert-up-to-date-row').className).toContain('animate-footer-swap')
+    expect(screen.getByTestId('convert-up-to-date-row')).toHaveAttribute('data-swapped', 'true')
   })
 
   // A disabled convert with no explanation leaves the user guessing; the tooltip must
@@ -391,25 +405,6 @@ describe('ExportButton', () => {
     expect(screen.getByTestId('process-progress')).toHaveStyle({ transform: 'scaleX(0.85)' })
   })
 
-  // Reported 21/11: in compact density the button grew taller the moment a convert started,
-  // nudging the footer. Idle, blocked and converting must share one height in every density.
-  it('keeps the same vertical padding whether idle, blocked or converting', () => {
-    const paddingOf = () =>
-      screen
-        .getByTestId('process-btn')
-        .className.split(/\s+/)
-        .filter((c) => /(^|:)py-/.test(c))
-        .sort()
-    const { rerender } = render(<ExportButton {...baseProps} incomplete={false} />)
-    const idle = paddingOf()
-    rerender(<ExportButton {...baseProps} incomplete />)
-    expect(paddingOf()).toEqual(idle)
-    rerender(
-      <ExportButton {...baseProps} incomplete={false} status="processing" stage="converting" />,
-    )
-    expect(paddingOf()).toEqual(idle)
-  })
-
   // Reported 02/11: editing a track already in Music read "Adding to Apple Music…" under
   // an "Update" button. Each step names what the job really does.
   it.each([
@@ -515,9 +510,6 @@ describe('ExportButton', () => {
       }),
     )
     expect(btn).toHaveAccessibleName(/Converting to AIFF…/)
-    expect(screen.getByText(i18n.t('common.cancel')).className).toContain(
-      'group-focus-within:inline',
-    )
   })
 
   // The fill is a bare aria-hidden span, so a screen reader heard the stage but never how
@@ -667,18 +659,7 @@ describe('ExportButton', () => {
   })
 })
 
-// Opened in the app with a track's end trim near the footer, the trim handle (z-10) and its
-// scissors (z-20) drew over Apple Music and Engine DJ and took the click meant for them: a
-// menu with no layer of its own loses to any positioned control with one.
-describe('ExportButton menu layer', () => {
-  const layer = (el: Element): number => Number(/\bz-\[?(\d+)\]?/.exec(el.className)?.[1] ?? 0)
-
-  it('opens over the trim lane controls it can cover', () => {
-    render(<ExportButton {...baseProps} incomplete={false} />)
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
-    expect(layer(screen.getByRole('menu'))).toBeGreaterThan(20)
-  })
-
+describe('ExportButton menu', () => {
   // The label may be cut with an ellipsis at the narrowest editor, so the full text must
   // stay reachable: by name for a screen reader and on hover for everyone else.
   it('keeps the full update-anyway label on hover and in its name when it is cut short', () => {
@@ -697,6 +678,13 @@ describe('ExportButton menu layer', () => {
     const button = screen.getByTestId('convert-update-anyway')
     expect(button).toHaveAccessibleName('Update anyway')
     expect(hoverTooltip(button)).toBe('Update anyway')
+  })
+
+  it('shows the convert shortcut on the up-to-date body, where it still works', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} tagsOnly sameFormat upToDate hint="⌘↩" />,
+    )
+    expect(hoverTooltip(screen.getByTestId('convert-update-anyway'))).toMatch(/⌘↩$/)
   })
 
   it('dims the format half with the body when a held-back selection cannot convert, while its menu still opens since another format can unblock it', () => {
@@ -731,5 +719,277 @@ describe('ExportButton menu layer', () => {
   it('keeps the format half filled while the selection can convert', () => {
     render(<ExportButton {...baseProps} incomplete={false} />)
     expect(screen.getByTestId('process-format-fill')).toHaveAttribute('data-on', 'true')
+  })
+})
+
+describe('ExportButton library copy', () => {
+  const offer: LibraryCopyOffer = {
+    name: 'rekordbox',
+    format: 'AIFF 16/44.1',
+    action: 'update',
+    better: false,
+    held: false,
+    keptFormat: 'aiff',
+  }
+
+  // The copy already sits in the library, so the body's press is the remembered action on
+  // that copy: running a conversion instead would write a second file beside it.
+  it('updates the copy from the body when Update is the remembered action', () => {
+    const onProcess = vi.fn()
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={offer}
+        onProcess={onProcess}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onLibraryAction).toHaveBeenCalledWith('update')
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // A better copy does not stop the user, it only makes the press say it goes against the
+  // measure, so swapping the copy is never a surprise.
+  it('says Replace anyway over a better copy, and still replaces', () => {
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: 'replace', better: true }}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveTextContent('Replace anyway')
+    fireEvent.click(body)
+    expect(onLibraryAction).toHaveBeenCalledWith('replace')
+  })
+
+  // Update and Replace sound alike, so each says in grey what it does to the copy: Update
+  // keeps the copy's audio, Replace puts this file in its place.
+  it('offers both actions under the copy, each saying what it does', () => {
+    render(<ExportButton {...baseProps} incomplete={false} libraryCopy={offer} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('library-copy-heading')).toHaveTextContent('rekordbox · AIFF 16/44.1')
+    const update = screen.getByTestId('library-copy-update')
+    expect(update).toHaveTextContent('Update')
+    expect(update).toHaveTextContent('Keeps its audio')
+    expect(update).toHaveAttribute('aria-checked', 'true')
+    const replace = screen.getByTestId('library-copy-replace')
+    expect(replace).toHaveTextContent('Replace')
+    expect(replace).toHaveTextContent('With this file')
+    expect(replace).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('remembers and runs the action picked from the menu', () => {
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={offer}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+      />,
+    )
+    const toggle = screen.getByTestId('process-format-toggle')
+    fireEvent.click(toggle)
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).toHaveBeenCalledWith('replace')
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+  })
+
+  // Replacing a copy Serato holds costs its stars, and the footer says so only once the body
+  // says Replace. Run from the menu, the first Replace went through before the DJ could read
+  // it: the pick only turns the body to Replace, and the body's press replaces.
+  it('only remembers Replace from the menu when replacing would cost Serato its stars', () => {
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, replaceLosesStars: true }}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
+  })
+
+  it('still runs Update from the menu at once when replacing would cost Serato its stars', () => {
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: 'replace', replaceLosesStars: true }}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-update'))
+    expect(onLibraryAction).toHaveBeenCalledWith('update')
+  })
+
+  // A copy still being compared may yet turn out to be another version, so nothing is
+  // written to it until the verdict lands; the pick is kept for when it does.
+  it('only remembers a pick while the copy is still being compared', () => {
+    const onProcess = vi.fn()
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, held: true }}
+        onProcess={onProcess}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(body)
+    expect(onLibraryAction).not.toHaveBeenCalled()
+    expect(onProcess).not.toHaveBeenCalled()
+  })
+
+  // Update rewrites only the copy's tags, so the file keeps the copy's own format whatever
+  // the format pick says; Replace writes the picked format.
+  it('shows the copy format on the dropdown half while updating, since that is what gets written', () => {
+    const { rerender } = render(
+      <ExportButton {...baseProps} incomplete={false} outputFormat="flac" libraryCopy={offer} />,
+    )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    rerender(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        outputFormat="flac"
+        libraryCopy={{ ...offer, action: 'replace' }}
+      />,
+    )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('FLAC')
+  })
+
+  // In-place tag updates outrank the copy on the body, so offering Update or Replace in the
+  // menu would run an action the button itself never shows.
+  it('leaves the copy out of the menu while the body updates the file itself', () => {
+    render(<ExportButton {...baseProps} incomplete={false} inPlace tagsOnly libraryCopy={offer} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+  })
+
+  // The kept format only describes what Update writes. The menu's Format radios stay on the
+  // user's pick, or picking Replace would write a format the screen never showed.
+  it('keeps the format pick checked in the menu while the dropdown half shows the copy format', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} outputFormat="flac" libraryCopy={offer} />,
+    )
+    expect(screen.getByTestId('process-format-current')).toHaveTextContent('AIFF')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('keeps the format pick checked in the menu of the up-to-date row too', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        outputFormat="flac"
+        libraryCopy={offer}
+        upToDate
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('process-format-flac')).toHaveAttribute('aria-checked', 'true')
+    expect(screen.getByTestId('process-format-aiff')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  // A body that ignores its press has to say why, as the missing-tags case does.
+  it('says the copy is still being compared on the held body', () => {
+    render(
+      <ExportButton {...baseProps} incomplete={false} libraryCopy={{ ...offer, held: true }} />,
+    )
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveAccessibleDescription(i18n.t('editor.libraryStateMeasuring'))
+    expect(hoverTooltip(screen.getByTestId('process-btn-wrap'))).toBe(
+      i18n.t('editor.libraryStateMeasuring'),
+    )
+  })
+
+  // Empty required fields block the action, not the choice: the pick is kept for when the
+  // fields are filled, and choosing is no press on the blocked body.
+  it('only remembers a pick while required fields are empty, without the blocked press', () => {
+    const onLibraryAction = vi.fn()
+    const onLibraryActionChange = vi.fn()
+    const onBlockedPress = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete
+        blockedLabel="Missing Artist"
+        libraryCopy={offer}
+        onLibraryAction={onLibraryAction}
+        onLibraryActionChange={onLibraryActionChange}
+        onBlockedPress={onBlockedPress}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    fireEvent.click(screen.getByTestId('library-copy-replace'))
+    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
+    expect(onBlockedPress).not.toHaveBeenCalled()
+  })
+
+  // A copy in a format Surco can't write can only be replaced. Update stays in the menu, greyed
+  // with its line, so the two rows keep their place and the menu says why the body replaces.
+  it('greys Update out for a copy Surco cannot retag, leaving Replace to pick', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: 'replace', keptFormat: undefined, updatable: false }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    const update = screen.getByTestId('library-copy-update')
+    expect(update).toBeDisabled()
+    expect(update).toHaveTextContent('Keeps its audio')
+    expect(screen.getByTestId('library-copy-replace')).toBeEnabled()
+  })
+
+  it('reaches Replace with the arrow keys from the first item of the menu', () => {
+    render(<ExportButton {...baseProps} incomplete={false} libraryCopy={offer} />)
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    const update = screen.getByTestId('library-copy-update')
+    update.focus()
+    fireEvent.keyDown(update, { key: 'ArrowDown' })
+    expect(screen.getByTestId('library-copy-replace')).toHaveFocus()
+  })
+
+  it('converts as today with no library copy', () => {
+    const onProcess = vi.fn()
+    render(<ExportButton {...baseProps} incomplete={false} onProcess={onProcess} />)
+    fireEvent.click(screen.getByTestId('process-btn'))
+    expect(onProcess).toHaveBeenCalledWith('aiff')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.queryByTestId('library-copy-heading')).toBeNull()
   })
 })

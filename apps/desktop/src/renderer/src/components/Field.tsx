@@ -65,8 +65,6 @@ interface FieldProps {
   readOnly?: boolean
   // What a screen reader hears for a read-only field; Quality's own note when absent.
   readOnlyNote?: string
-  // Read-only text in a selection, not a box: no border or fill, same row height.
-  plain?: boolean
 }
 
 // Memoized so a keystroke in one field doesn't re-render every other visible field:
@@ -99,7 +97,6 @@ export const Field = memo(function Field({
   cleaned,
   readOnly,
   readOnlyNote,
-  plain,
 }: FieldProps): React.JSX.Element {
   const inputRef = useRef<HTMLInputElement & HTMLTextAreaElement>(null)
   const { t: tr } = useTranslation()
@@ -239,7 +236,6 @@ export const Field = memo(function Field({
     dir: 'auto',
     readOnly,
     placeholder,
-    'data-plain': plain || undefined,
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       onType(e.target.value),
     onKeyDown,
@@ -253,10 +249,8 @@ export const Field = memo(function Field({
   // A column of empty Album/Year/Genre boxes used to read as heavy black slabs
   // that dominated the form; now they wait quietly until you engage one.
   const boxClass = `w-full rounded-lg border px-2.5 py-1.5 text-sm outline-none compact:py-1 placeholder:text-fg-faint ${
-    plain
-      ? 'border-transparent bg-transparent focus:border-[var(--color-accent)]'
-      : `${readOnly ? 'border-dashed' : ''} border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)]`
-  } ${formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''}`
+    readOnly ? 'border-dashed' : ''
+  } border-[var(--color-line-strong)] bg-[var(--color-panel-2)]/30 transition-colors hover:border-[var(--color-line-strong)] hover:bg-[var(--color-hover)]/50 focus:border-[var(--color-accent)] focus:bg-[var(--color-field)] ${formatAction && hasMenu ? 'pr-14' : hasMenu || listsValues || formatAction ? 'pr-8' : ''}`
   const control = (
     <>
       <span
@@ -277,7 +271,7 @@ export const Field = memo(function Field({
           <input {...boxProps} className={`truncate ${boxClass}`} />
         )}
         {/* The placeholder is cut with an ellipsis in a narrow form; the tooltip keeps it whole. */}
-        {(mixed || plain) && placeholderTooltip && placeholder && (
+        {(mixed || readOnly) && placeholderTooltip && placeholder && (
           <Tooltip label={placeholderHint ?? placeholder} hoverOnly />
         )}
         {draft !== '' && <Tooltip label={valueCut ? draft : ''} hoverOnly />}

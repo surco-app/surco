@@ -385,7 +385,7 @@ function MusicFiles({
               <span className="text-fg-faint tabular-nums">{counts[id]}</span>
             </button>
           ))}
-          <div className="ml-auto flex w-60 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] px-2.5 py-1.5 focus-within:border-[var(--color-accent)]">
+          <div className="ml-auto flex w-60 items-center gap-2 rounded-lg border border-[var(--color-line-strong)] bg-[var(--color-field)] px-2.5 py-1.5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[var(--color-accent)]">
             <Search className="h-3.5 w-3.5 shrink-0 text-fg-faint" aria-hidden="true" />
             <input
               data-testid="trash-search"
@@ -393,7 +393,7 @@ function MusicFiles({
               onChange={(e) => setQuery(e.target.value)}
               aria-label={tr('trash.search')}
               placeholder={tr('trash.search')}
-              className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none placeholder:text-fg-faint"
+              className="min-w-0 flex-1 bg-transparent text-section text-fg outline-none focus-visible:shadow-none placeholder:text-fg-faint"
             />
           </div>
         </div>

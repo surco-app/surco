@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import log from 'electron-log/main'
+import { nearestBeat, type WantedCue } from '../shared/cueRules'
 import { backupOf } from './libraryBackups'
 import {
   discardArtwork,
@@ -10,12 +11,14 @@ import {
   type StagedArtwork,
   stageArtwork,
 } from './rekordboxArtwork'
-import { shiftCues } from './rekordboxCues'
+import { type ContentProbe, type FileFacts, readFileFacts } from './rekordboxContentAdd'
+import { liveCues, readTrackCues, shiftCues } from './rekordboxCues'
 import {
   FILE_TYPES,
   type FindOptions,
   isAmbiguous,
   openRekordboxDb,
+  rekordboxPathKey,
   rekordboxStoredPath,
   sameFileOnDisk,
   type TrackFinder,
@@ -30,8 +33,7 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // track keeps its ID and therefore its playlists, cues and play history. Writing into a
 // library the user cannot rebuild is what shapes everything here: the collection is
 // backed up before it is touched, a running rekordbox refuses the write twice over, an
-// ambiguous match refuses rather than guesses, and a failed write is rolled back from the
-// backup.
+// ambiguous match refuses rather than guesses, and a failed write is rolled back.
 //
 // Best-effort, like the Traktor and Engine counterparts: the audio conversion has already
 // succeeded on disk by the time this runs, so nothing here throws to its caller. Every
@@ -43,7 +45,15 @@ import { foldWal, restoreCollection, writeBackup } from './rekordboxSessionBacku
 // net. rekordbox keeps its own rotating backups beside it as well.
 
 export type RepointResult =
-  | { written: true; id: string; ids?: string[] }
+  | {
+      written: true
+      id: string
+      ids?: string[]
+      // The cues each row of another master holds after this write, by row: what the
+      // provisional list settles on the grid rekordbox draws once it has analysed the file,
+      // and the ones that were off the old grid, which stay where the shift put them.
+      settleOnGrid?: Record<string, { wanted: WantedCue[]; free?: string[] }>
+    }
   | { written: false; reason: 'no-match' | 'output-missing' | 'unreadable' | 'occupied' }
   | { written: false; reason: 'rekordbox-running' | 'backup-failed' | 'write-failed' }
   | { written: false; reason: 'read-only' }
@@ -55,6 +65,7 @@ export interface RepointOptions extends FindOptions, RepointBatchOptions {
   to: string
   meta?: RekordboxMeta
   audio?: { cueShiftMs: number }
+  snapToGrid?: true
   // Seam for the tests to force the failure that must never be simulated by damaging a
   // real collection: a write that dies halfway. Runs right after this track's row changed.
   onWrite?: () => void
@@ -68,6 +79,9 @@ export interface RepointBatchOptions {
   // the write like any other missing backup.
   sessionBackup?: (collectionPath: string) => Promise<void>
   readCover?: (file: string) => Buffer | null
+  // Reads the new file's bitrate, depth, rate and length; without it those columns keep
+  // what they held.
+  probe?: ContentProbe
 }
 
 // rekordbox stores the format as a number, so an entry left on the old code would
@@ -88,6 +102,32 @@ export async function repointTrack(
 
 type Repoint = Omit<RepointOptions, keyof RepointBatchOptions>
 
+// rekordbox's quantised cues sit 0 to 2 ms from their beat in real collections; a cue further
+// off than this was set there by the DJ on purpose (a pickup, an offbeat) and is not the grid's.
+const ON_OLD_GRID_MS = 10
+
+// The non-loop cues of a row that sit on its analysed grid, by id; none when it has no grid or
+// the grid does not read, which leaves every cue at the constant shift and the write unharmed.
+function cuesOnGrid(
+  db: NonNullable<ReturnType<typeof openRekordboxDb>>,
+  share: string,
+  id: string,
+): Set<string> {
+  let read: ReturnType<typeof readTrackCues>
+  try {
+    read = readTrackCues(db, share, id, { wave: false })
+  } catch {
+    return new Set()
+  }
+  if (!read?.analysed) return new Set()
+  const beats = read.grid.map((b) => b.ms)
+  return new Set(
+    read.cues
+      .filter((c) => !c.loop && Math.abs(beats[nearestBeat(beats, c.ms)] - c.ms) <= ON_OLD_GRID_MS)
+      .map((c) => c.id),
+  )
+}
+
 function stageCovers(
   db: NonNullable<ReturnType<typeof openRekordboxDb>>,
   collectionPath: string,
@@ -99,7 +139,11 @@ function stageCovers(
   const share = rekordboxShareDir(collectionPath)
   if (!readCover || !existsSync(share)) return staged
   const current = db.prepare('SELECT ImagePath FROM djmdContent WHERE ID = ?')
-  for (const w of writes) {
+  // A row the run moves twice ends on its last file, so only that file's cover is staged.
+  const last = new Set<string>()
+  for (const w of [...writes].reverse()) {
+    if (last.has(w.id)) continue
+    last.add(w.id)
     const { to, meta } = repoints[w.index]
     if (!meta) continue
     try {
@@ -131,8 +175,8 @@ const heldByAnother = (holder: ReturnType<TrackFinder>, ids: string[]): boolean 
 // process for minutes. Results come back per track, in the order given.
 //
 // One backup now stands behind the whole run, so the writes go in one transaction and a
-// failure restores that backup: no track is ever reported written from a collection that
-// was put back.
+// failure undoes all of them: no track is ever reported written from a collection that
+// was rolled back.
 export async function repointTracks(
   collectionPath: string,
   repoints: Repoint[],
@@ -140,7 +184,7 @@ export async function repointTracks(
 ): Promise<RepointResult[]> {
   const copy = batch.backup ?? writeBackup
   const results: (RepointResult | undefined)[] = repoints.map(() => undefined)
-  const pending: { index: number; size: number; fileType: number }[] = []
+  const pending: { index: number; size: number; fileType: number; file?: FileFacts | null }[] = []
   for (const [index, { from, to }] of repoints.entries()) {
     // The pair the renderer handed over, logged before any guard runs. A lookup miss can
     // come from the wrong `from` (the renderer named a file rekordbox never had) or from
@@ -166,6 +210,13 @@ export async function repointTracks(
   // Every track still undecided gets the reason that stopped the run.
   const settle = (result: RepointResult): RepointResult[] => results.map((r) => r ?? result)
   if (pending.length === 0) return settle({ written: false, reason: 'output-missing' })
+  const { probe } = batch
+  if (probe)
+    await Promise.all(
+      pending.map(async (p) => {
+        p.file = await readFileFacts(repoints[p.index].to, p.fileType, probe).catch(() => null)
+      }),
+    )
 
   // rekordbox holds master.db open through SQLCipher for as long as it runs, so a write
   // underneath it can be lost or can corrupt the file. Checked again below, right before
@@ -174,12 +225,33 @@ export async function repointTracks(
 
   const db = openRekordboxDb(collectionPath)
   if (!db) return settle({ written: false, reason: 'unreadable' })
-  const writes: { index: number; id: string; size: number; fileType: number }[] = []
+  const writes: {
+    index: number
+    id: string
+    size: number
+    fileType: number
+    file?: FileFacts | null
+  }[] = []
   let folded = false
   try {
     const trackOf = trackFinder(db)
+    // The rows each earlier repoint of the run puts on a file, by that file: the collection
+    // read above does not know them yet.
+    const planned = new Map<string, string[]>()
     for (const p of pending) {
       const repoint = repoints[p.index]
+      const key = rekordboxPathKey(repoint)
+      const chained = planned.get(key(repoint.from))
+      if (chained) {
+        if (planned.get(key(repoint.to))?.some((id) => !chained.includes(id)))
+          results[p.index] = { written: false, reason: 'occupied' }
+        else {
+          for (const id of chained) writes.push({ ...p, id })
+          planned.delete(key(repoint.from))
+          planned.set(key(repoint.to), chained)
+        }
+        continue
+      }
       const match = trackOf(repoint.from, repoint)
       // A collection that never had this track is the normal case for a partly-imported
       // library, and nothing — not even a backup — should be written for it.
@@ -195,12 +267,18 @@ export async function repointTracks(
         continue
       }
       const ids = isAmbiguous(match) ? match.ambiguous : [match.id]
-      if (heldByAnother(trackOf(repoint.to, repoint), ids))
+      if (
+        heldByAnother(trackOf(repoint.to, repoint), ids) ||
+        planned.get(key(repoint.to))?.some((id) => !ids.includes(id))
+      )
         results[p.index] = { written: false, reason: 'occupied' }
       else {
         const unclaimed = ids.filter((id) => !writes.some((w) => w.id === id))
         if (unclaimed.length === 0) results[p.index] = { written: false, reason: 'occupied' }
-        else for (const id of unclaimed) writes.push({ ...p, id })
+        else {
+          for (const id of unclaimed) writes.push({ ...p, id })
+          planned.set(key(repoint.to), unclaimed)
+        }
       }
     }
     if (writes.length > 0) {
@@ -232,6 +310,7 @@ export async function repointTracks(
 
   const write = openRekordboxDb(collectionPath)
   if (!write) return settle({ written: false, reason: 'unreadable' })
+  const share = rekordboxShareDir(collectionPath)
   const staged = stageCovers(write, collectionPath, repoints, writes, batch.readCover)
   try {
     // FolderPath, FileNameL, FileType and FileSize are the four columns a format change
@@ -245,9 +324,24 @@ export async function repointTracks(
               rb_local_usn = ?, updated_at = ?
         WHERE ID = ?`,
     )
+    // rekordbox reads these off the file when it imports it and never again, so a row moved
+    // onto another file kept describing the old one: an AIFF listed at the MP3's 320 kbps.
+    const technical = writes.some((w) => w.file)
+      ? write.prepare(
+          `UPDATE djmdContent SET BitRate = ?, BitDepth = ?, SampleRate = ?, Length = ? WHERE ID = ?`,
+        )
+      : null
     const now = new Date()
     const stamp = rekordboxStamp(now)
+    const onGrid = new Map<number, Record<string, { wanted: WantedCue[]; free?: string[] }>>()
     write.transaction(() => {
+      // Read before the writes below empty the analysis: only a cue that sat on the old
+      // master's grid is one to settle on the new one. Without that grid nothing settles.
+      const onOldGrid = new Map<string, Set<string>>()
+      for (const w of writes) {
+        if (repoints[w.index].snapToGrid && !onOldGrid.has(w.id))
+          onOldGrid.set(w.id, cuesOnGrid(write, share, w.id))
+      }
       for (const w of writes) {
         const { to, meta, audio, onWrite } = repoints[w.index]
         update.run(
@@ -259,6 +353,14 @@ export async function repointTracks(
           stamp,
           w.id,
         )
+        if (w.file)
+          technical?.run(
+            w.file.bitRateKbps,
+            w.file.bitDepth,
+            w.file.sampleRate,
+            Math.floor(w.file.durationSec),
+            w.id,
+          )
         if (meta) applyRekordboxMeta(write, w.id, meta, { imagePath: staged.get(w.id)?.imagePath })
         if (audio) {
           shiftCues(write, w.id, audio.cueShiftMs, { now })
@@ -277,11 +379,32 @@ export async function repointTracks(
         // really changed — the only state in which the rollback below is doing anything.
         onWrite?.()
       }
+      // Read once every write of the run is in, so a row moved twice hands back where its
+      // cues ended. Loops go with them though they never move: the provisional list only
+      // touches a row whose cues in rekordbox are still exactly this set, loops included.
+      for (const w of writes) {
+        const onBeat = onOldGrid.get(w.id)
+        if (!repoints[w.index].snapToGrid || !onBeat) continue
+        const cues = liveCues(write, w.id)
+        if (!cues.some((c) => onBeat.has(c.id))) continue
+        const free = cues.filter((c) => !c.loop && !onBeat.has(c.id)).map((c) => c.id)
+        const byRow = onGrid.get(w.index) ?? {}
+        byRow[w.id] = {
+          wanted: cues.map((c) => ({ id: c.id, ms: c.ms, kind: c.kind, color: c.color })),
+          ...(free.length > 0 ? { free } : {}),
+        }
+        onGrid.set(w.index, byRow)
+      }
     })()
     for (const w of writes) {
       const ids = writes.filter((o) => o.index === w.index).map((o) => o.id)
-      results[w.index] ??=
-        ids.length > 1 ? { written: true, id: w.id, ids } : { written: true, id: w.id }
+      const settleOnGrid = onGrid.get(w.index)
+      results[w.index] ??= {
+        written: true,
+        id: w.id,
+        ...(ids.length > 1 ? { ids } : {}),
+        ...(settleOnGrid ? { settleOnGrid } : {}),
+      }
     }
     return settle({ written: false, reason: 'no-match' })
   } catch (err) {
@@ -294,10 +417,19 @@ export async function repointTracks(
       for (const w of writes) results[w.index] = { written: false, reason: 'read-only' }
       return settle({ written: false, reason: 'read-only' })
     }
-    // The collection is left exactly as it was found; the backup is the only copy that
-    // can guarantee that, so it is put back rather than trusting a half-applied write.
+    // SQLite has already undone the transaction, which leaves the collection exactly as it
+    // was found. The backup goes back only when even that rollback failed, and never over
+    // a master.db a rekordbox launched meanwhile holds open: its busy lock is a common way
+    // for this write to fail at all.
+    let known = true
+    try {
+      if (write.inTransaction) write.exec('ROLLBACK')
+    } catch (rollbackErr) {
+      log.error(`rekordbox repoint rollback failed: ${String(rollbackErr)}`)
+      known = false
+    }
     write.close()
-    await restoreCollection(collectionPath)
+    if (!known && !(await isRekordboxRunning())) await restoreCollection(collectionPath)
     for (const w of writes) results[w.index] = { written: false, reason: 'write-failed' }
     return settle({ written: false, reason: 'write-failed' })
   } finally {

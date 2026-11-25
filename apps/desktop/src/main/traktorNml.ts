@@ -551,7 +551,7 @@ function patchEntry(block: string, patch: NmlPatch & { relocation?: Relocation }
 
 // The whitespace before the name is what keeps TITLE from matching inside another
 // attribute, and [^>]* keeps each spot inside its own opening tag (the album's TITLE is
-// not the entry's). An attribute the entry does not carry stays absent.
+// not the entry's).
 const TAG_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', RegExp> = {
   title: /(<ENTRY\b[^>]*\sTITLE=")([^"]*)(")/,
   artist: /(<ENTRY\b[^>]*\sARTIST=")([^"]*)(")/,
@@ -559,14 +559,31 @@ const TAG_SPOTS: Record<'title' | 'artist' | 'album' | 'genre', RegExp> = {
   genre: /(<INFO\b[^>]*\sGENRE=")([^"]*)(")/,
 }
 
+const TAG_HOSTS: Record<keyof typeof TAG_SPOTS, [RegExp, string]> = {
+  title: [/<ENTRY\b/, 'TITLE'],
+  artist: [/<ENTRY\b/, 'ARTIST'],
+  album: [/<ALBUM\b/, 'TITLE'],
+  genre: [/<INFO\b/, 'GENRE'],
+}
+
+// Traktor leaves out the attribute of a field it holds empty, so a name the DJ fills in
+// there has to be written or the collection keeps saying empty, which the check reads as
+// the old name never replaced. Only when the review read it as empty (an absent attribute
+// is empty); a name the review read stays untouched when its attribute is gone. The tag
+// itself must exist: no ALBUM or INFO element is invented.
 function replaceTags(block: string, tags: NonNullable<NmlPatch['tags']>): string {
   let out = block
   for (const [field, change] of Object.entries(tags) as [keyof typeof TAG_SPOTS, TagChange][]) {
-    out = out.replace(TAG_SPOTS[field], (whole, open, value, close) =>
-      unescapeAttr(value).normalize('NFC') === change.from.normalize('NFC')
-        ? `${open}${escapeAttr(change.to)}${close}`
-        : whole,
-    )
+    if (TAG_SPOTS[field].test(out)) {
+      out = out.replace(TAG_SPOTS[field], (whole, open, value, close) =>
+        unescapeAttr(value).normalize('NFC') === change.from.normalize('NFC')
+          ? `${open}${escapeAttr(change.to)}${close}`
+          : whole,
+      )
+    } else if (change.from === '' && change.to !== '') {
+      const [host, name] = TAG_HOSTS[field]
+      out = out.replace(host, (tag) => `${tag} ${name}="${escapeAttr(change.to)}"`)
+    }
   }
   return out
 }
@@ -611,13 +628,16 @@ function patchFor(
   const relocation = patch.relocates
     ? relocationFor(nml, entries, patch, entry, claimed)
     : undefined
-  const repoints = patch.relocates
-    ? relocation !== undefined
-    : patch.newFile !== undefined && !pathTaken(entries, patch, entry)
   // The names are the file's own; a same-stem sibling is another file the review never read.
   const exact =
     locationKey(entry.volume, entry.dir, entry.file) ===
     locationKey(patch.volume, patch.dir, patch.file)
+  // Two stale entries matched by name would both land on the new file; only the first takes it.
+  const renamed = patchedFileKey(patch)
+  const repoints = patch.relocates
+    ? relocation !== undefined
+    : renamed !== undefined && !pathTaken(entries, patch, entry) && (exact || !claimed.has(renamed))
+  if (!patch.relocates && !exact && repoints && renamed) claimed.add(renamed)
   const safe = {
     ...patch,
     newFile: repoints ? patch.newFile : undefined,
@@ -692,6 +712,19 @@ function relocationFor(
 }
 
 const LOCATION_TAG_RE = /<LOCATION\b[^>]*>/
+
+export function stayedRelocations(nml: string, patches: NmlPatch[], onDisk?: OnDisk): NmlPatch[] {
+  const entries = findEntries(nml)
+  const index = indexPatches(patches, entries, onDisk)
+  const claimed = new Set<string>()
+  const moved = new Set<NmlPatch>()
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const patch = matchPatch(entries[i], index)
+    if (!patch?.relocates) continue
+    if (relocationFor(nml, entries, patch, entries[i], claimed)) moved.add(patch)
+  }
+  return patches.filter((patch) => patch.relocates && !moved.has(patch))
+}
 
 export function applyPatches(nml: string, patches: NmlPatch[], onDisk?: OnDisk): string {
   const entries = findEntries(nml)
@@ -812,14 +845,16 @@ export function matchedPatchCount(nml: string, patches: NmlPatch[], onDisk?: OnD
   const index = indexPatches(patches, entries, onDisk)
   const produced = producedOutputs(patches)
   const matched = new Set<NmlPatch>()
-  for (const entry of entries) {
+  const claimed = new Set<string>()
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const entry = entries[i]
     const patch = matchPatch(entry, index)
     const output = produced.get(locationKey(entry.volume, entry.dir, entry.file))
     if (!patch && !output) continue
     // Same rewrite applyPatches makes, or the count would claim a rename or a cue write
     // that the write itself declines to make.
     const block = nml.slice(entry.start, entry.end)
-    if (patch && patchEntry(block, patchFor(nml, entries, patch, entry)) !== block)
+    if (patch && patchEntry(block, patchFor(nml, entries, patch, entry, claimed)) !== block)
       matched.add(patch)
     if (output && rewriteEntry(block, entry, entries, undefined, output, nml) !== block)
       matched.add(output)

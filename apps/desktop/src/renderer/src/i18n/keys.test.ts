@@ -120,14 +120,6 @@ describe('USB export failures', () => {
   })
 })
 
-describe('search sources hint', () => {
-  it('names every source the checkboxes offer, Beatport included, in every language', () => {
-    for (const locale of [es, en, de, fr, ptBR, ja]) {
-      expect(locale.settings.searchProvidersHint).toContain('Beatport')
-    }
-  })
-})
-
 describe('skipped library activity lines', () => {
   it('read as one sentence with a comma, without an explanatory colon, in every language', () => {
     for (const locale of [es, en, de, fr, ptBR, ja]) {

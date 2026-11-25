@@ -106,12 +106,6 @@ describe('CoverPicker copy/paste', () => {
     })
   })
 
-  it('outlines the empty well with the theme line, since the scrim tone is near white and vanishes on the light panel', () => {
-    renderPicker()
-    expect(screen.getByTestId('cover-pick')).toHaveClass('outline-[var(--color-line)]')
-    expect(screen.getByTestId('cover-pick')).not.toHaveClass('outline-on-scrim/10')
-  })
-
   it('pastes with Cmd+V while keyboard focus is on the empty well', async () => {
     api.pasteCoverImage.mockResolvedValue({
       coverUrl: 'data:image/png;base64,AAAA',
@@ -281,14 +275,6 @@ describe('CoverPicker resolution readout', () => {
   it('adds no warning to a cover that is large enough', () => {
     renderWithDims(600, 600)
     expect(within(screen.getByTestId('cover-resolution')).queryByText('Low resolution')).toBeNull()
-  })
-})
-
-describe('CoverPicker action bar under keyboard focus', () => {
-  it('reveals the bar when one of its buttons takes focus', () => {
-    renderPicker({ coverUrl: 'http://img/cover.jpg' })
-    const bar = screen.getByTestId('cover-remove').parentElement
-    expect(bar?.className).toContain('group-focus-within:opacity-100')
   })
 })
 

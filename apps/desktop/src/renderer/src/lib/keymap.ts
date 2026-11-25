@@ -25,25 +25,40 @@ export function pageSize(viewport: number, rowStep: number): number {
 // Whether the focused element owns the keystroke, so the global shortcuts keep
 // their hands off it. Beyond text fields this includes <select> (its own arrow
 // and space keys drive the options — e.g. the album-match dropdown) and any
-// contenteditable surface.
+// contenteditable surface. A checkbox takes no typing, so it is not one; which of its keys
+// reach the app is ownsKeystroke's call. A radio stays, its arrows move the choice.
 export function isTypingTarget(
-  el: { tagName: string; isContentEditable?: boolean } | null,
+  el: { tagName: string; isContentEditable?: boolean; type?: string } | null,
 ): boolean {
   if (!el) return false
   return (
-    el.tagName === 'INPUT' ||
+    (el.tagName === 'INPUT' && el.type !== 'checkbox') ||
     el.tagName === 'TEXTAREA' ||
     el.tagName === 'SELECT' ||
     el.isContentEditable === true
   )
 }
 
+// Whether the focused element keeps this key, or the focus with no key at all, from the app.
+// A checkbox takes no typing, so ⌘ and Ctrl shortcuts pass through it (⌘Z right after a
+// tick), but every bare key stays with it as it always did: the playlists tree moves its
+// focus between row checkboxes, and k, Escape or Enter there must not act behind it.
+export function ownsKeystroke(
+  el: Element | null,
+  e?: { metaKey?: boolean; ctrlKey?: boolean },
+): boolean {
+  if (isTypingTarget(el)) return true
+  return !!el?.matches?.('input[type="checkbox"]') && !e?.metaKey && !e?.ctrlKey
+}
+
 // Space is how the keyboard presses a button, so a button the user tabbed to keeps it.
 // :focus-visible tells that apart from the focus a mouse click leaves behind, where Space
 // has to keep auditioning. The track row is a button too, but as a list option its Space
-// is the player's.
+// is the player's. A checkbox ticks on Space however it got the focus, as it did while it
+// still counted as a typing target.
 export function pressesOnSpace(el: Element | null): boolean {
   if (!el?.matches) return false
+  if (el.matches('input[type="checkbox"]')) return true
   return el.matches('button:not([role="option"]), [role="button"]') && el.matches(':focus-visible')
 }
 

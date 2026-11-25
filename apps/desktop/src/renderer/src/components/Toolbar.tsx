@@ -1,11 +1,11 @@
 import {
+  Activity,
   ChartColumn,
   CircleQuestionMark,
   Gauge,
   Loader2,
   type LucideIcon,
   MessageSquare,
-  Radio,
   Settings as SettingsIcon,
   Snail,
   Sparkles,
@@ -340,7 +340,7 @@ export const Toolbar = memo(function Toolbar({
           className="press group relative flex h-8 w-8 items-center justify-center rounded-lg text-fg-muted hover:bg-[var(--color-hover)] hover:text-fg"
           aria-label={tr('header.activity')}
         >
-          <Radio className="h-4 w-4" aria-hidden="true" />
+          <Activity className="h-4 w-4" aria-hidden="true" />
           {activityRunning && (
             <span
               data-testid="activity-running"
@@ -380,12 +380,7 @@ export const Toolbar = memo(function Toolbar({
           <MessageSquare className="h-4 w-4" aria-hidden="true" />
           <Tooltip label={tr('header.feedback')} align="end" />
         </button>
-        {primary && (
-          <>
-            <div aria-hidden="true" className="mx-1 h-5 w-px self-center bg-[var(--color-line)]" />
-            {primary}
-          </>
-        )}
+        {primary}
       </div>
     </header>
   )

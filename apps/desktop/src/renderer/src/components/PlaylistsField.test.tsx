@@ -85,7 +85,6 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
     open()
     const popover = screen.getByTestId('playlists-popover')
     expect(popover.getAttribute('data-side')).toBe('down')
-    expect(popover).toHaveClass('animate-pop-flat', 'origin-top')
   })
 
   it('grows from the bottom edge when it opens upward because the field sits low in the window', () => {
@@ -109,8 +108,6 @@ describe('PlaylistsField for Traktor and Engine DJ', () => {
       open()
       const popover = screen.getByTestId('playlists-popover')
       expect(popover.getAttribute('data-side')).toBe('up')
-      expect(popover).toHaveClass('origin-bottom')
-      expect(popover).not.toHaveClass('origin-top')
     } finally {
       vi.restoreAllMocks()
       Object.assign(window, { innerHeight: size })
@@ -574,4 +571,82 @@ describe('the program mark', () => {
       expect(maskOf(screen.getByTestId(testId))).toBe(own)
     },
   )
+})
+
+describe('PlaylistsField with locked playlists', () => {
+  const renderLocked = (onChange = vi.fn()) => {
+    render(
+      <PlaylistsField
+        library="engine"
+        label="Engine DJ playlists"
+        tree={TREE}
+        options={OPTIONS}
+        value={[target('house')]}
+        locked={['house']}
+        onChange={onChange}
+      />,
+    )
+    open()
+    return onChange
+  }
+
+  it('will not untick a locked playlist, since that program cannot take the track out', () => {
+    const onChange = renderLocked()
+    const check = screen.getByTestId('playlists-check-house')
+    fireEvent.click(check)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(check).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  const arrowDown = () =>
+    fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowDown' })
+
+  it('lets the arrow keys land on a locked row and move past it', () => {
+    renderLocked()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    expect(document.activeElement).toBe(house)
+    arrowDown()
+    expect(document.activeElement).toBe(screen.getByTestId('playlists-check-mash'))
+  })
+
+  it('will not untick a focused locked playlist with the space bar', () => {
+    const onChange = renderLocked()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    fireEvent.keyDown(house, { key: ' ' })
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('still ticks other playlists when some are locked', () => {
+    const onChange = renderLocked()
+    fireEvent.click(screen.getByTestId('playlists-check-mash'))
+    expect(onChange).toHaveBeenCalledWith([target('house'), target('mash')])
+  })
+
+  it('says where to remove a locked playlist', () => {
+    renderLocked()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Remove it in Engine DJ')
+  })
+
+  it('says where to remove a locked playlist in the plural when several tracks are selected', () => {
+    render(
+      <PlaylistsBulkField
+        library="engine"
+        label="Engine DJ playlists"
+        tree={TREE}
+        options={OPTIONS}
+        states={[{ target: target('house'), state: 'all' }]}
+        locked={['house']}
+        count={3}
+        onToggle={vi.fn()}
+      />,
+    )
+    open()
+    const house = screen.getByTestId('playlists-check-house')
+    for (let i = 0; i < 10 && document.activeElement !== house; i++) arrowDown()
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Remove them in Engine DJ')
+  })
 })

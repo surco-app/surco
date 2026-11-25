@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
+import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import {
   buildEntriesScript,
   buildLibraryPlaylistScript,
   buildPlaylistDumpScript,
   buildPlaylistMembersScript,
   buildPlaylistTracksScript,
+  buildRecentCountScript,
   entryForFile,
+  musicRecentSince,
   parsePlaylistDump,
   parsePlaylistMembers,
   parsePlaylistTracks,
@@ -144,6 +147,52 @@ describe('buildLibraryPlaylistScript', () => {
   // ratings depending on which way it was read.
   it('marks each rating as given or computed, as Music does', () => {
     expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).toContain("'ratingComputed'")
+  })
+
+  // A file location costs a NAS round trip per track; the rows come back without one, and
+  // only the tracks Surco has not resolved yet are asked for theirs.
+  it('reads the rows without resolving a single file', () => {
+    expect(buildLibraryPlaylistScript('A1B2C3D4E5F60718')).not.toContain('location')
+    expect(buildLibraryPlaylistScript(RECENTLY_ADDED_ID, 1761346800000)).not.toContain('location')
+  })
+})
+
+// Music offers no Recently added among the user's playlists, so Surco builds it from the
+// whole library, with the rule every DJ program's tab uses: the last 30 days, newest first.
+describe('Music Recently added', () => {
+  it('counts the 30 days from the start of today, as rekordbox does', () => {
+    expect(musicRecentSince(new Date(2026, 10, 24, 21, 5))).toBe(new Date(2026, 9, 25).getTime())
+  })
+
+  it('reads the whole library from the database and keeps what was added since then, newest first', () => {
+    const script = buildLibraryPlaylistScript(RECENTLY_ADDED_ID, 1761346800000)
+    expect(script).toContain("ObjC.import('iTunesLibrary')")
+    expect(script).toContain('p.master')
+    expect(script).toContain("valueForKeyPath('addedDate')")
+    expect(script).toContain('>= 1761346800000')
+    expect(script).toContain('added[picked[b]] - added[picked[a]]')
+    expect(script).not.toContain(JSON.stringify(RECENTLY_ADDED_ID))
+  })
+
+  // Every file location is resolved on the NAS: 41 s for the whole 2,171-track library,
+  // 3.4 s for the 164 added lately. Only the picked tracks' fields are read.
+  it('reads file locations only for the tracks added lately, not the whole library', () => {
+    const script = buildLibraryPlaylistScript(RECENTLY_ADDED_ID, 1761346800000)
+    expect(script).toContain('const items = found.items.objectsAtIndexes(set)')
+    expect(script).toContain('ObjC.deepUnwrap(items.valueForKeyPath(key))')
+  })
+
+  it('counts the tracks added lately from their dates alone, without a file location', () => {
+    const script = buildRecentCountScript(1761346800000)
+    expect(script).toContain('p.master')
+    expect(script).toContain('>= 1761346800000')
+    expect(script).not.toContain('location')
+  })
+
+  it('keeps a playlist read in Music\u2019s own order, with no date filter', () => {
+    const script = buildLibraryPlaylistScript('A1B2C3D4E5F60718')
+    expect(script).not.toContain('addedDate')
+    expect(script).toContain('"A1B2C3D4E5F60718"')
   })
 })
 

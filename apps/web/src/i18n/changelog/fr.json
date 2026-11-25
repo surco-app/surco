@@ -1,5 +1,107 @@
 [
   {
+    "version": "1.44",
+    "date": "November 24, 2026",
+    "title": "Enregistre tes cues et passe au suivant",
+    "items": [
+      {
+        "text": "En enregistrant tes cues, choisis « Enregistrer et suivant » dans le menu du bouton et Surco ouvre le morceau suivant de la liste. Il retient ton choix pour la prochaine fois, et enregistrer ne ferme plus l’éditeur de cues.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "« Accepter la proposition » place les cues suggérés sans les enregistrer. Déplace-les si tu veux et enregistre quand tu es prêt.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Quel que soit l’ordre dans lequel tu marques les drops, le cue de départ ne tombe plus dans le silence avant la musique.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Le morceau qui joue dans Surco apparaît dans macOS avec sa pochette. Les touches multimédia, les AirPods et l’Apple Watch le mettent en pause ou passent au suivant.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Quand les fichiers d’une playlist ne sont plus sur le disque, la liste le dit et compte combien il en manque. Un fichier déplacé ou renommé n’apparaît plus comme illisible.",
+        "in": "1.44.0"
+      },
+      {
+        "text": "Remplace un morceau par un autre master du même titre et ses cues suivent maintenant l’audio eux aussi. Si Surco n’est pas sûr du temps, il les laisse où ils étaient. Dans rekordbox, ils se calent sur la nouvelle grille une fois l’analyse terminée.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "Quand Discogs te demande d’attendre, tu vois tout de suite les résultats des autres catalogues. Surco relance la recherche sur Discogs tout seul, avec un compte à rebours que tu peux sauter d’un clic.",
+        "in": "1.44.1"
+      },
+      {
+        "text": "L’onglet Apple Music s’ouvre sur « Ajoutés récemment », avec ce que tu as ajouté ces 30 derniers jours. Et ses playlists s’ouvrent bien plus vite, même si ta musique est sur un NAS.",
+        "in": "1.44.1"
+      }
+    ]
+  },
+  {
+    "version": "1.43",
+    "date": "November 23, 2026",
+    "title": "Remplace un morceau sans perdre ses cues",
+    "items": [
+      {
+        "text": "Remplace un morceau par une meilleure copie et ses cues restent sur le temps dans rekordbox, Traktor, Engine DJ, Serato et VirtualDJ. Surco compare les deux copies et déplace les cues si la nouvelle commence un peu plus tôt ou plus tard. Si c’est un autre enregistrement, rekordbox, Engine DJ et VirtualDJ l’analysent à nouveau.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Serato suit aussi un morceau remplacé, avec ses cues, sa grille et ses crates. Il perd ses étoiles, et Surco te prévient avant de remplacer.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Chaque morceau que tu remplaces apparaît dans « À vérifier », sous « Ajoutés récemment » dans chaque logiciel DJ. Une marque verte indique que ses cues ont suivi l’audio, une marque orange qu’ils sont restés en place. Enregistre ses cues ou appuie sur « Vérifié » et il quitte la liste. ⌘Z le fait revenir.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Une copie qui en remplace une autre reprend de l’ancienne les tags qui lui manquent. Si elle n’a pas de pochette, elle reprend aussi la sienne.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La nouvelle section « Dans ta bibliothèque » de l’éditeur trouve un morceau de Tracks dans tous les logiciels DJ que tu utilises et dans Apple Music. Chaque copie te dit si elle est identique, meilleure, moins bonne ou une autre version. Ouvre une ligne pour comparer les deux spectres.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Apple Music rejoint les « Sources de recherche », avec ses grandes pochettes. Ça marche aussi sous Windows, et si le store de ton pays n’a pas une sortie, Surco la cherche dans ceux du Royaume-Uni et des États-Unis.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Avec plusieurs morceaux sélectionnés, l’éditeur marche comme avec un seul. Modifie les champs de l’album pour tous, colle une sortie, note-les d’un coup ou numérote-les dans l’ordre de la liste. Un champ qui diffère montre chaque valeur au lieu d’un nombre.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "Les commentaires de phrases peuvent aussi aller dans tes fichiers. À côté de « Enregistrer N commentaires », choisis « Fichier et rekordbox », puis « Avant le commentaire » ou « Remplacer le commentaire ». Pendant l’enregistrement, le bouton se remplit, et un clic l’arrête.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "La conversion garde tous tes tags, même ceux que Surco n’affiche pas. Les champs à plusieurs valeurs, comme deux artistes ou deux genres, les gardent toutes.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘Z annule ce que tu as tapé dans un champ et ⇧⌘Z le rétablit. Commentaire garde ses retours à la ligne, et Retour commence une nouvelle ligne.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "« Afficher les numéros » numérote aussi Tracks, dans l’ordre où tu as ajouté les morceaux. Chaque onglet garde sa propre recherche, donc ce que tu tapes dans un logiciel DJ y reste.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "L’association automatique ne touche plus un morceau que tu as modifié à la main. Sur la page d’un label Bandcamp, le label ne finit plus comme artiste.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "« Restaurer les anciens tags » passe dans le menu ⋯ de l’éditeur au lieu d’être sous chaque champ. « Copier le chemin du fichier » s’y trouve aussi.",
+        "in": "1.43.0"
+      },
+      {
+        "text": "⌘+ agrandit la fenêtre avec le zoom, et s’arrête au plus grand zoom qui tient sur ton écran.",
+        "in": "1.43.0"
+      }
+    ]
+  },
+  {
     "version": "1.42",
     "date": "November 21, 2026",
     "title": "Envoie tes phrases dans rekordbox",
@@ -678,7 +780,7 @@
         "in": "1.27.3"
       },
       {
-        "text": "Le grand éditeur de cues s’ouvre avec ⌘⇧C depuis le morceau sélectionné. Ses boutons du bas sont rangés par groupes, pads, CALL, grille et zoom, et « Effacer tous les cues » reste seul au bout. Le zoom s’approche jusqu’à une mesure, « Accepter et enregistrer » enregistre les propositions de « Marquage auto » dans ton logiciel DJ en un clic, et avec « Lettres dans l’ordre du morceau » un pad vide te dit quelle lettre aura le cue.",
+        "text": "Le grand éditeur de cues s’ouvre avec ⇧⌘C depuis le morceau sélectionné. Ses boutons du bas sont rangés par groupes, pads, CALL, grille et zoom, et « Effacer tous les cues » reste seul au bout. Le zoom s’approche jusqu’à une mesure, « Accepter et enregistrer » enregistre les propositions de « Marquage auto » dans ton logiciel DJ en un clic, et avec « Lettres dans l’ordre du morceau » un pad vide te dit quelle lettre aura le cue.",
         "in": "1.27.3"
       },
       {

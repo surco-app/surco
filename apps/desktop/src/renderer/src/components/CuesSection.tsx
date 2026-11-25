@@ -3,6 +3,7 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
+  CircleX,
   Keyboard,
   Loader2,
   Minimize2,
@@ -47,7 +48,13 @@ import {
 } from '../../../shared/gridEdit'
 import { hotCueColor } from '../../../shared/rekordboxCueColors'
 import type { ReplacedEntry } from '../../../shared/toReview'
-import type { QueuedCues, SaveCuesRequest, SurcoGrid, TrackCues } from '../../../shared/types'
+import type {
+  CueSaveThen,
+  QueuedCues,
+  SaveCuesRequest,
+  SurcoGrid,
+  TrackCues,
+} from '../../../shared/types'
 import { type CueAudition, useCueAudition } from '../hooks/useCueAudition'
 import { useMaximizedSection } from '../hooks/useEditorSections'
 import { useReplacedTracks, useReviewReplaced } from '../hooks/useReplacedTracks'
@@ -124,7 +131,7 @@ import { type TwinPlan, twinPlansOf, twinSettingsOf } from '../lib/cueTwins'
 import { quantizePoints } from '../lib/cueWave'
 import { formatTime } from '../lib/duration'
 import { gridGate } from '../lib/gridGate'
-import { isTypingTarget } from '../lib/keymap'
+import { ownsKeystroke } from '../lib/keymap'
 import { formatFixed } from '../lib/numberFormat'
 import { isMacOS } from '../lib/platform'
 import { LIBRARY_NAME } from '../lib/reviewLibraries'
@@ -143,18 +150,23 @@ import { CuePhraseBand } from './CuePhraseBand'
 import { CuesSkeleton } from './CuesSkeleton'
 import { CueWave } from './CueWave'
 import { CueWaveDetail, CueZoom } from './CueWaveDetail'
-import { ReplacedPill, ReplacedReason } from './ReplacedPill'
+import { ReplacedNotice, ReplacedPill, ReplacedReason } from './ReplacedPill'
 import { ReviewedButton } from './ReplacedReview'
 import { SectionBody } from './SectionBody'
 import { SectionHeader } from './SectionHeader'
 import { Select } from './Select'
-import { SPLIT_ITEM, SPLIT_MENU, useSplitMenu } from './SplitButton'
+import { SPLIT_ITEM, SPLIT_MENU, SPLIT_MENU_DOWN, useSplitMenu } from './SplitButton'
 import { Tooltip } from './Tooltip'
 
+const SAVE_MODES: CueSaveThen[] = ['stay', 'next']
+
+// programPath is the file the program's row names: a Tracks item that converted into it
+// still has its own path, and To review only knows the program's file.
 interface CueTarget {
   contentId: string
   path: string
   label: string
+  programPath?: string
 }
 
 export interface CueTrackInfo {
@@ -368,10 +380,10 @@ function CueKeys({
     ['C', tr('editor.cues.keys.centre')],
     ['M', tr('editor.cues.keys.memory')],
     ['1…8', tr('editor.cues.keys.hot')],
-    ['↵', tr('editor.cues.keys.enter')],
+    [formatShortcut(['enter'], mac), tr('editor.cues.keys.enter')],
     [formatShortcut(['backspace'], mac), tr('editor.cues.keys.remove')],
     [formatShortcut(['mod', 'z'], mac), tr('editor.cues.keys.undo')],
-    [formatShortcut(['shift', 'mod', 'z'], mac), tr('editor.cues.keys.redo')],
+    [formatShortcut(['mod', 'shift', 'z'], mac), tr('editor.cues.keys.redo')],
     [`${alt}← ${alt}→`, tr('editor.cues.keys.grid')],
     [`G ${shift}G`, tr('editor.cues.keys.pin')],
     ['+ −', tr('editor.cues.keys.zoom')],
@@ -540,6 +552,9 @@ function Editing({
   provisional,
   replaced,
   actionsRef,
+  saveThen,
+  onSaveThen,
+  onStepTrack,
 }: {
   read: TrackCues
   queued: QueuedCues | null
@@ -560,6 +575,9 @@ function Editing({
   provisional?: SurcoGrid
   replaced?: ReplacedEntry
   actionsRef?: { current: CueActions | null }
+  saveThen: CueSaveThen
+  onSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -710,13 +728,6 @@ function Editing({
   useEffect(() => {
     if (menu === null) setHoverMs(null)
   }, [menu])
-  const hoverGhost = useMemo<DraftGhost | null>(
-    () =>
-      placing && hoverMs !== null
-        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
-        : null,
-    [placing, hoverMs, state, ctx],
-  )
   const { data: rekordboxWords } = useCueWaveDetail(cue.contentId, !provisional)
   const words = provisional ? provisional.words : rekordboxWords
   const { readsAudio, fixedColour, collectionGate, callsNote, runningNote } = cueProgramOf(
@@ -763,6 +774,15 @@ function Editing({
   const proposals = useMemo(
     () => withoutCallInBar(proposed ?? [], state.cues, barGrid),
     [proposed, state.cues, barGrid],
+  )
+  // While suggestions wait for an answer they are what the waves show: reviewing them moves the
+  // pointer over the zoomed wave, and the preview of placing by hand there used to replace them.
+  const hoverGhost = useMemo<DraftGhost | null>(
+    () =>
+      placing && hoverMs !== null && proposals.length === 0
+        ? ghostOf(state, { type: 'mark-drop', ms: hoverMs, byHand: true }, ctx)
+        : null,
+    [placing, hoverMs, proposals.length, state, ctx],
   )
   useEffect(() => {
     if (proposals.length > 0) keepAutoMark(cue.contentId, { kind: 'proposed', proposals })
@@ -812,11 +832,9 @@ function Editing({
         setAutoNote('unanalysed')
       })
   }
-  const saveAccepted = useRef(false)
   const acceptProposals = () => {
     dispatch(acceptAll)
     setProposed(null)
-    saveAccepted.current = true
   }
   const dropProposal = (ms: number) => {
     setProposed((all) => (all ?? []).filter((p) => p.ms !== ms))
@@ -1088,7 +1106,7 @@ function Editing({
     if (maximized) {
       const target = e.target as HTMLElement
       if (
-        isTypingTarget(target) ||
+        ownsKeystroke(target, e) ||
         target.closest('[aria-haspopup="listbox"]') ||
         target.closest('[role="menu"]')
       )
@@ -1100,7 +1118,7 @@ function Editing({
       return
     }
     const pressed = e.target as HTMLElement
-    if (e.key === 'Enter' && !isTypingTarget(pressed) && !pressed.closest('button')) {
+    if (e.key === 'Enter' && !ownsKeystroke(pressed, e) && !pressed.closest('button')) {
       e.preventDefault()
       if (proposals.length > 0) acceptProposals()
       else markHere()
@@ -1184,7 +1202,10 @@ function Editing({
     forgetDrafts(reqs.map((r) => r.contentId))
     // A track the DJ just fixed in a program stops being asked about there. Not awaited and
     // not surfaced: the cues are already saved, so a failure here must not read as a failed save.
-    for (const [path, programs] of savedReviews(reqs)) {
+    const reviewed = reqs.map((r) =>
+      r.contentId === cue.contentId && cue.programPath ? { ...r, path: cue.programPath } : r,
+    )
+    for (const [path, programs] of savedReviews(reviewed)) {
       review(path, programs).catch((error) => window.api.logError(String(error)))
     }
     await refreshQueued()
@@ -1204,12 +1225,36 @@ function Editing({
       ...(flowMarked ? await twinRequests([own]) : []),
     ])
     if (saved) setProposed(null)
+    return saved
   }
+  // Null once this editor is gone, so a save that lands after the DJ moved on knows it.
+  const shownTrack = useRef<string | null>(cue.contentId)
   useEffect(() => {
-    if (!saveAccepted.current) return
-    saveAccepted.current = false
-    if (!unchanged && !blocked) void save()
-  })
+    shownTrack.current = cue.contentId
+    return () => {
+      shownTrack.current = null
+    }
+  }, [cue.contentId])
+  // A failed save keeps the track in view, so its unsaved cues and the warning stay with it.
+  // A save that lands after the DJ already moved to another track must not step again, or
+  // the list would skip a track they never saw.
+  // In "next" a second save of the same track would also step a second time.
+  const savingRef = useRef(false)
+  const [saving, setSaving] = useState(false)
+  const saveWith = async (mode: CueSaveThen) => {
+    if (savingRef.current) return
+    savingRef.current = true
+    setSaving(true)
+    const savedOn = cue.contentId
+    const saved = await save()
+    savingRef.current = false
+    setSaving(false)
+    if (!saved || mode !== 'next' || shownTrack.current !== savedOn) return
+    onStepTrack?.()
+    // Stepping focuses the list row, which on the last row stays put behind the full editor,
+    // so the keys would act on a list the DJ cannot see.
+    if (maximized) requestAnimationFrame(() => focusEditor())
+  }
   const copy = copyOf(cue.contentId)
   const unsavedTracks = [...unsavedSet].filter(savable).length
   const [savingAll, setSavingAll] = useState(false)
@@ -1226,9 +1271,15 @@ function Editing({
       setSavingAll(false)
     }
   }
-  const saveAllLabel = tr(saveAllKey(new Set([...unsavedSet].filter(savable))), {
-    count: unsavedTracks,
-  })
+  const savableUnsaved = new Set([...unsavedSet].filter(savable))
+  const saveAllLabel = tr(saveAllKey(savableUnsaved), { count: unsavedTracks })
+  // The body names only this track's program, so the menu line may drop the program only
+  // when every pending track lands there too.
+  const saveAllMenuLabel = [...savableUnsaved].every(
+    (id) => programOf(id) === programOf(cue.contentId),
+  )
+    ? tr('editor.cues.saveAllShort', { count: unsavedTracks })
+    : saveAllLabel
   const clearAll = () => {
     dispatch({ type: 'clear' })
     focusEditor()
@@ -1247,35 +1298,144 @@ function Editing({
   })
   const saveMenu = useSplitMenu()
   const discardable = !unchanged || queued !== null
-  const saveAllButton = unsavedTracks > 1 && (
-    <button
-      type="button"
-      data-testid="cues-save-all"
-      disabled={savingAll}
-      onClick={() => void saveAll()}
-      className={`press shrink-0 disabled:opacity-40 whitespace-nowrap border border-[var(--color-accent)] px-3 text-xs font-semibold text-[var(--color-accent)] hover:bg-[var(--color-hover)] ${
-        maximized ? 'h-8 rounded-lg' : 'h-6 rounded-full'
-      }`}
-    >
-      {saveAllLabel}
-    </button>
-  )
+  const severalUnsaved = unsavedTracks > 1
   const flowOptions = [
     ...flows.map((f) => ({ value: f.id, label: flowName(f, tr) })),
     { value: MANUAL_CUE_FLOW, label: tr('editor.cues.manualMode'), divided: true },
   ]
-  const saveMenuShown = !!saveAllButton || discardable
-  const discardButton = discardable && (
-    <button
-      type="button"
-      data-testid="cues-undo"
-      onClick={onDiscard}
-      className={`press shrink-0 whitespace-nowrap text-xs text-fg-dim hover:text-fg ${
-        maximized ? 'h-8 rounded-lg px-3 hover:bg-[var(--color-hover)]' : 'px-2 py-1.5'
-      }`}
-    >
-      {tr('editor.cues.discard')}
-    </button>
+  const discardButton =
+    discardable &&
+    (maximized ? (
+      <button
+        type="button"
+        data-testid="cues-undo"
+        onClick={onDiscard}
+        className="press h-8 shrink-0 whitespace-nowrap rounded-lg px-3 text-xs text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        {tr('editor.cues.discard')}
+      </button>
+    ) : (
+      <button
+        type="button"
+        data-testid="cues-discard"
+        aria-label={tr('editor.cues.discard')}
+        onClick={onDiscard}
+        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg"
+      >
+        <Tooltip label={tr('editor.cues.discard')} />
+        <CircleX className="h-3.5 w-3.5" aria-hidden="true" />
+      </button>
+    ))
+  const saveLabel =
+    saveThen === 'next' ? tr('editor.cues.saveAndNext', { save: tr(copy.save) }) : tr(copy.save)
+  const saveSplit = (
+    <div ref={saveMenu.ref} className={`relative flex shrink-0 ${maximized ? 'ml-1' : ''}`}>
+      <button
+        type="button"
+        data-testid="cues-save"
+        disabled={unchanged || blocked || saving}
+        data-filled={!unchanged}
+        aria-label={saveLabel}
+        onClick={() => void saveWith(saveThen)}
+        className={`press grid shrink-0 whitespace-nowrap text-xs font-semibold ${
+          maximized ? 'h-8 rounded-l-lg border px-3' : 'h-6 rounded-l-md px-2.5'
+        } ${
+          unchanged
+            ? maximized
+              ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
+              : 'text-fg-dim'
+            : 'border-transparent bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25 disabled:opacity-40 disabled:hover:bg-[var(--color-accent-soft)]'
+        }`}
+      >
+        {!maximized && <Tooltip label={saveLabel} />}
+        {/* The same words in both ways, so switching the way never resizes the body; the menu's
+            check and the body's name say which. The folded row has no room for the program. */}
+        <span data-testid="cues-save-label" className="self-center">
+          {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
+        </span>
+      </button>
+      <button
+        type="button"
+        data-testid="cues-save-more"
+        ref={saveMenu.toggleRef}
+        disabled={savingAll}
+        aria-label={tr('editor.cues.saveMore')}
+        aria-haspopup="menu"
+        aria-expanded={saveMenu.open}
+        onClick={() => saveMenu.setOpen((v) => !v)}
+        className={`press flex shrink-0 items-center text-xs font-semibold tabular-nums disabled:opacity-40 ${
+          maximized
+            ? 'h-8 gap-0.5 rounded-r-lg border pr-2 pl-1.5'
+            : 'h-6 w-[18px] justify-center rounded-r-md border-l'
+        } ${
+          unchanged
+            ? `border-[var(--color-line-strong)] text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg ${
+                maximized ? 'border-l-0 bg-[var(--color-panel-2)]' : ''
+              }`
+            : `bg-[var(--color-accent-soft)] text-[var(--color-accent)] hover:bg-[var(--color-accent)]/25 ${
+                maximized
+                  ? 'border-transparent border-l-[var(--color-accent)]/25'
+                  : 'border-[var(--color-accent)]/25'
+              }`
+        }`}
+      >
+        <ChevronDown className="h-3 w-3" aria-hidden="true" />
+      </button>
+      {saveMenu.open && (
+        <div
+          ref={saveMenu.menuRef}
+          role="menu"
+          aria-label={tr('editor.cues.saveMore')}
+          onKeyDown={saveMenu.onMenuKeyDown}
+          className={`${maximized ? SPLIT_MENU_DOWN : SPLIT_MENU} w-auto min-w-56`}
+        >
+          {SAVE_MODES.map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              data-testid={`cues-save-mode-${mode}`}
+              role="menuitemradio"
+              aria-checked={mode === saveThen}
+              onClick={() => {
+                saveMenu.setOpen(false)
+                onSaveThen?.(mode)
+                if (!unchanged && !blocked && !saving) void saveWith(mode)
+              }}
+              className={`${SPLIT_ITEM} gap-3 whitespace-nowrap ${
+                mode === saveThen ? 'font-medium text-[var(--color-accent)]' : ''
+              }`}
+            >
+              {mode === 'next' ? tr('editor.cues.saveNextShort') : tr('editor.cues.saveShort')}
+              <Check
+                data-testid={`cues-save-mode-${mode}-check`}
+                className="h-3.5 w-3.5"
+                strokeWidth={2.5}
+                aria-hidden="true"
+                style={mode === saveThen ? undefined : { visibility: 'hidden' }}
+              />
+            </button>
+          ))}
+          {severalUnsaved && (
+            <>
+              <hr className="my-1 border-0 border-t border-[var(--color-line)]" />
+              <button
+                type="button"
+                data-testid="cues-save-all"
+                role="menuitem"
+                disabled={savingAll}
+                onClick={() => {
+                  saveMenu.setOpen(false)
+                  void saveAll()
+                }}
+                className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
+              >
+                {saveAllMenuLabel}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
   )
   const undoButton = (
     <button
@@ -1291,12 +1451,12 @@ function Editing({
         maximized ? 'h-8 w-8 rounded-lg' : 'h-6 w-6 rounded-md'
       }`}
     >
-      <Tooltip label={tr('editor.cues.undo')} hint="⌘Z" />
+      <Tooltip label={tr('editor.cues.undo')} hint={formatShortcut(['mod', 'z'], isMacOS())} />
       <Undo2 className="h-3.5 w-3.5" aria-hidden="true" />
     </button>
   )
   const autoHeight = maximized ? 'h-8 rounded-lg px-3' : 'h-6 rounded-md px-2'
-  const acceptLabel = tr('editor.cues.auto.acceptSave', { count: proposals.length })
+  const acceptLabel = tr('editor.cues.auto.accept', { count: proposals.length })
   const discardLabel = tr('editor.cues.auto.discard', { count: proposals.length })
   const sureCount = proposals.filter((p) => p.sure).length
   const offGrid = provisional
@@ -1362,11 +1522,8 @@ function Editing({
           }}
           className="press flex h-6 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md bg-[var(--color-accent)] px-2.5 font-semibold text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)]"
         >
-          <Tooltip label={acceptLabel} />
-          {tr('editor.cues.auto.acceptSave')}
-          <kbd className="rounded border border-[var(--color-on-accent)]/40 px-1 font-sans text-label">
-            ↵
-          </kbd>
+          <Tooltip label={acceptLabel} hint={formatShortcut(['enter'], isMacOS())} />
+          {tr('editor.cues.auto.acceptOne')}
         </button>
         <button
           type="button"
@@ -1452,21 +1609,7 @@ function Editing({
       {!unchanged ? <UnsavedMark /> : saveEcho.saved && <SavedMark />}
       {undoButton}
       {discardButton}
-      {saveAllButton}
-      <button
-        type="button"
-        data-testid="cues-save"
-        disabled={unchanged || blocked}
-        aria-label={maximized ? undefined : tr(copy.save)}
-        onClick={() => void save()}
-        className={`press ml-1 h-8 whitespace-nowrap rounded-lg border px-3 text-xs font-semibold ${
-          unchanged
-            ? 'border-[var(--color-line-strong)] bg-[var(--color-panel-2)] text-fg opacity-40'
-            : 'border-transparent bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
-        }`}
-      >
-        {maximized ? tr(copy.save) : tr('editor.cues.saveShort')}
-      </button>
+      {saveSplit}
     </div>
   )
   const stripGhostIn = (stripView: { fromMs: number; toMs: number }) => {
@@ -1558,8 +1701,14 @@ function Editing({
     </AtHead>
   )
   const toCallAt = (ms: number) => barsToNextCall(ctx.beats, pointMs, ms)
+  // In the folded header the flow, Fit grid and Auto mark wrap onto a second line when the
+  // panel is narrower than the three side by side, as German at the window's minimum width.
   const flowControl = (
-    <span data-testid="cues-flow-menu" className="flex min-w-0 items-center gap-2">
+    <span
+      data-testid="cues-flow-menu"
+      data-wrap={!maximized || undefined}
+      className={`flex min-w-0 items-center gap-2 ${maximized ? '' : 'flex-wrap'}`}
+    >
       <Select
         testid="cues-flow"
         portal
@@ -1586,7 +1735,8 @@ function Editing({
   const foldedRow = (
     <div
       data-testid="cues-folded-row"
-      className="mt-2 flex min-w-0 items-center gap-2 whitespace-nowrap text-xs"
+      data-wrap="true"
+      className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 whitespace-nowrap text-xs"
     >
       <button
         type="button"
@@ -1632,116 +1782,33 @@ function Editing({
           )
         }}
       </AtHead>
-      <span className="flex-1" />
+      {/* Beside the bars to the CALL it speaks of: in the actions it pushed Save off the
+          panel at the narrowest window. */}
       {addCallButton}
-      <button
-        type="button"
-        data-testid="cues-clear-all"
-        aria-label={tr('editor.cues.clearAll')}
-        disabled={!clearable}
-        onClick={clearAll}
-        className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
+      <div
+        data-testid="cues-folded-actions"
+        data-wrap="true"
+        className="ml-auto flex shrink-0 items-center gap-1"
       >
-        <Tooltip label={tr('editor.cues.clearAll')} />
-        <Trash2 className="h-3 w-3" aria-hidden="true" />
-      </button>
-      {undoButton}
-      <div ref={saveMenu.ref} className="relative flex shrink-0">
         <button
           type="button"
-          data-testid="cues-save"
-          disabled={unchanged || blocked}
-          aria-label={tr(copy.save)}
-          onClick={() => void save()}
-          className={`press h-6 shrink-0 whitespace-nowrap px-3 text-xs font-semibold ${
-            saveMenuShown ? 'rounded-l-md' : 'rounded-md'
-          } ${
-            unchanged
-              ? 'text-fg-dim'
-              : 'bg-[var(--color-accent)] text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40 disabled:hover:bg-[var(--color-accent)]'
-          }`}
+          data-testid="cues-clear-all"
+          aria-label={tr('editor.cues.clearAll')}
+          disabled={!clearable}
+          onClick={clearAll}
+          className="press flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-fg-dim hover:bg-[var(--color-hover)] hover:text-fg disabled:pointer-events-none disabled:opacity-40"
         >
-          {tr('editor.cues.saveShort')}
+          <Tooltip label={tr('editor.cues.clearAll')} />
+          <Trash2 className="h-3 w-3" aria-hidden="true" />
         </button>
-        {saveMenuShown && (
-          <button
-            type="button"
-            data-testid="cues-save-more"
-            ref={saveMenu.toggleRef}
-            disabled={savingAll}
-            aria-label={tr('editor.cues.saveMore')}
-            aria-haspopup="menu"
-            aria-expanded={saveMenu.open}
-            onClick={() => saveMenu.setOpen((v) => !v)}
-            className="press flex h-6 shrink-0 items-center gap-0.5 rounded-r-md border-l border-[var(--color-on-accent)]/30 bg-[var(--color-accent)] pr-2 pl-1.5 text-xs font-semibold tabular-nums text-[var(--color-on-accent)] hover:bg-[var(--color-accent-hover)] disabled:opacity-40"
-          >
-            {saveAllButton && unsavedTracks}
-            <ChevronDown className="h-3 w-3" aria-hidden="true" />
-          </button>
-        )}
-        {saveMenuShown && saveMenu.open && (
-          <div
-            ref={saveMenu.menuRef}
-            role="menu"
-            aria-label={tr('editor.cues.saveMore')}
-            onKeyDown={saveMenu.onMenuKeyDown}
-            className={`${SPLIT_MENU} w-auto min-w-56`}
-          >
-            {saveAllButton && (
-              <>
-                <button
-                  type="button"
-                  data-testid="cues-save-this"
-                  role="menuitem"
-                  disabled={unchanged || blocked}
-                  onClick={() => {
-                    saveMenu.setOpen(false)
-                    void save()
-                  }}
-                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                >
-                  {tr('editor.cues.saveThis')}
-                </button>
-                <button
-                  type="button"
-                  data-testid="cues-save-all"
-                  role="menuitem"
-                  disabled={savingAll}
-                  onClick={() => {
-                    saveMenu.setOpen(false)
-                    void saveAll()
-                  }}
-                  className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40`}
-                >
-                  {saveAllLabel}
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              data-testid="cues-discard"
-              role="menuitem"
-              disabled={!discardable}
-              onClick={() => {
-                saveMenu.setOpen(false)
-                onDiscard()
-              }}
-              className={`${SPLIT_ITEM} whitespace-nowrap disabled:opacity-40 ${
-                saveAllButton ? 'mt-1 border-t border-[var(--color-line)]' : ''
-              }`}
-            >
-              {tr('editor.cues.discard')}
-            </button>
-          </div>
-        )}
+        {undoButton}
+        {discardButton}
+        {saveSplit}
       </div>
     </div>
   )
   const header = (
-    <div
-      data-testid="cues-header"
-      className="flex shrink-0 items-center gap-3 border-b border-[var(--color-line)] pb-3"
-    >
+    <div data-testid="cues-header" className="flex shrink-0 items-center gap-3 pb-1">
       {track?.cover ? (
         <img
           data-testid="cues-cover"
@@ -1779,7 +1846,6 @@ function Editing({
             )}
           </div>
           {provisional && <ProvisionalMark bpm={provisional.bpm} />}
-          {replaced && <ReplacedPill shift={replaced.shift} />}
         </div>
       </div>
       <span className="flex-1" />
@@ -1894,20 +1960,6 @@ function Editing({
         {tr('editor.cues.keys.description')}
       </p>
       {maximized && header}
-      {/* The full editor has no section header, so the why of a replaced track and its
-      Reviewed get a row of their own under the track's header. Only a replaced track has it,
-      and Reviewed removes it with the track still open: the row only takes height, so nothing
-      above the wave changes width. */}
-      {maximized && replaced && (
-        <div data-testid="cues-replaced-row" className="flex shrink-0 items-center gap-3">
-          <ReplacedReason shift={replaced.shift} />
-          <ReviewedButton
-            path={replaced.newPath}
-            name={track?.title || cue.label}
-            onPress={focusEditor}
-          />
-        </div>
-      )}
       {maximized ? (
         <>
           {toolbar}
@@ -1916,6 +1968,18 @@ function Editing({
             style={{ minHeight: '36px' }}
             className="flex shrink-0 flex-col justify-center gap-1"
           >
+            {/* The full editor has no section header, so a replaced track's state and its
+            Reviewed live here. The notices keep their height when it goes: the wave stays. */}
+            {replaced && (
+              <ReplacedNotice shift={replaced.shift}>
+                <ReviewedButton
+                  path={replaced.newPath}
+                  name={track?.title || cue.label}
+                  onPress={focusEditor}
+                  inNotice
+                />
+              </ReplacedNotice>
+            )}
             {reviewBar}
             {offGridBar}
           </div>
@@ -2319,6 +2383,9 @@ export function CuesSection({
   onFlow,
   actionsRef,
   footer,
+  saveThen = 'stay',
+  onSaveThen,
+  onStepTrack,
 }: {
   cue: CueTarget
   open: boolean
@@ -2329,6 +2396,9 @@ export function CuesSection({
   onFlow?: (id: string) => void
   actionsRef?: { current: CueActions | null }
   footer?: React.ReactNode
+  saveThen?: CueSaveThen
+  onSaveThen?: (mode: CueSaveThen) => void
+  onStepTrack?: () => void
 }): React.JSX.Element {
   const { t: tr } = useTranslation()
   const queryClient = useQueryClient()
@@ -2338,7 +2408,11 @@ export function CuesSection({
   const { colourHelp, provisionalHelp } = cueProgramOf(cue.contentId)
   const { data: surco } = useSurcoGrid(cue.contentId, wantsSurcoGrid)
   const provisional = wantsSurcoGrid && surco ? surco : undefined
-  const replaced = replacedEntryOf(useReplacedTracks(), cue.path, programOf(cue.contentId))
+  const replaced = replacedEntryOf(
+    useReplacedTracks(),
+    cue.programPath ?? cue.path,
+    programOf(cue.contentId),
+  )
   const shown = read && provisional ? { ...read, analysed: true, grid: provisional.grid } : read
   const { maximized: whole, setMaximized } = useMaximizedSection()
   const maximized = open && whole === 'cues'
@@ -2452,6 +2526,9 @@ export function CuesSection({
         onQuantize={onQuantize}
         onFlow={onFlow}
         actionsRef={actionsRef}
+        saveThen={saveThen}
+        onSaveThen={onSaveThen}
+        onStepTrack={onStepTrack}
         onRestore={() => setMaximized(null)}
         headerSlot={headerSlot}
         saveEcho={saveEcho}

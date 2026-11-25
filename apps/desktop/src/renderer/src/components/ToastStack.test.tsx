@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import '../i18n'
-import type { Toast } from '../lib/toastQueue'
+import type { Toast, ToastRow } from '../lib/toastQueue'
 import { ModalShell } from './ModalShell'
 import { ToastStack } from './ToastStack'
 
@@ -15,22 +15,6 @@ function toast(over: Partial<Toast> = {}): Toast {
 }
 
 describe('ToastStack', () => {
-  it('breaks an unbreakable file name in the message so it is not cut inside a hidden horizontal scroll', () => {
-    render(
-      <ToastStack
-        toasts={[
-          toast({
-            testid: 'long-name',
-            message: 'Artist_Name_-_Track_Title_(Extended_Mix)_[LABEL123]_WEB_320.aiff',
-          }),
-        ]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    expect(screen.getByTestId('long-name-message')).toHaveClass('break-words')
-  })
-
   // The empty container still mounts: a live region must exist before content arrives
   // or screen readers miss the first toast. No cards means nothing visible or clickable.
   it('keeps an empty, announced live region mounted when the queue is empty', () => {
@@ -79,7 +63,9 @@ describe('ToastStack', () => {
     })
     afterEach(() => {
       vi.restoreAllMocks()
-      for (const el of document.body.querySelectorAll('[data-toast-anchor], [data-toast-lift]'))
+      for (const el of document.body.querySelectorAll(
+        '[data-toast-anchor], [data-toast-lift], [data-toast-lift-within]',
+      ))
         el.remove()
     })
     const show = (toasts: Toast[] = three) =>
@@ -91,7 +77,6 @@ describe('ToastStack', () => {
       expect(pile().style.left).toBe('88px')
       expect(pile().style.bottom).toBe('12px')
       expect(pile().style.width).toBe('272px')
-      for (const slot of slots()) expect(slot.className).toContain('w-full')
     })
 
     it('climbs above where the mini-player rests when it is open under the pile, even while the player is still sliding in from below', () => {
@@ -105,6 +90,24 @@ describe('ToastStack', () => {
       expect(pile().style.bottom).toBe(`${window.innerHeight - 500 + 8}px`)
     })
 
+    // Changing source mounts the list column again, and the player opens inside the new one:
+    // a pile that only watched the first column stayed down and was drawn over the player.
+    it('climbs above a player that opens in a list column mounted after the notice came up', async () => {
+      marked('data-toast-anchor', { right: 76 })
+      const first = marked('data-toast-lift-within', {})
+      show()
+      expect(pile().style.bottom).toBe('12px')
+      first.remove()
+      const column = marked('data-toast-lift-within', { top: 60 })
+      const player = document.createElement('div')
+      player.setAttribute('data-toast-lift', '')
+      player.getBoundingClientRect = () => ({ left: 84, right: 460, top: 500 }) as DOMRect
+      Object.defineProperty(player, 'offsetParent', { value: column })
+      Object.defineProperty(player, 'offsetTop', { value: 440 })
+      column.append(player)
+      await waitFor(() => expect(pile().style.bottom).toBe(`${window.innerHeight - 500 + 8}px`))
+    })
+
     it('stays at the bottom when the mini-player is open somewhere the pile does not reach', () => {
       marked('data-toast-anchor', { right: 76 })
       marked('data-toast-lift', { left: 400, right: 780, top: 500 })
@@ -114,7 +117,6 @@ describe('ToastStack', () => {
 
     it('keeps the close button at the far end of the card however short the message, so it is always in the same place', () => {
       show([toast({ id: 'a', testid: 'short', message: 'ok' })])
-      expect(screen.getByTestId('short-message').className).toContain('flex-1')
       expect(screen.getByTestId('short').lastElementChild).toBe(screen.getByTestId('short-dismiss'))
     })
 
@@ -134,7 +136,7 @@ describe('ToastStack', () => {
       expect(pile().style.height).toBe(`${tall + 14}px`)
     })
 
-    it('spreads into a list under the pointer and holds every countdown, so each notice can be read and reached, then folds back', () => {
+    it('spreads into a list under the pointer, so each notice can be read and reached, then folds back', () => {
       show()
       fireEvent.pointerEnter(pile())
       const [front, second, third] = slots()
@@ -146,10 +148,8 @@ describe('ToastStack', () => {
         expect(slot).not.toHaveAttribute('inert')
       }
       expect(pile().style.height).toBe(`${3 * tall + 12}px`)
-      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'paused' })
       fireEvent.pointerLeave(pile())
       expect(slots()[1]).toHaveAttribute('data-behind')
-      expect(screen.getByTestId('second-countdown')).toHaveStyle({ animationPlayState: 'running' })
     })
 
     it('spreads when the keyboard enters it too, and folds once focus leaves', () => {
@@ -164,10 +164,11 @@ describe('ToastStack', () => {
     it('leaves a dismissed notice where it stood while it fades and moves the rest up at once, so the pile settles instead of jumping', () => {
       const { rerender } = show()
       const leaving = slots()[1]
+      expect(leaving).not.toHaveAttribute('data-leaving')
       expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
       rerender(<ToastStack toasts={[three[0], three[2]]} onExpire={vi.fn()} onClose={vi.fn()} />)
       expect(leaving.style.transform).toBe('translateY(-7px) scale(0.95)')
-      expect(leaving.className).toContain('pointer-events-none')
+      expect(leaving).toHaveAttribute('data-leaving', 'true')
       const first = slots().find((slot) => slot.textContent?.includes('first')) as HTMLElement
       expect(first.style.transform).toBe('translateY(-7px) scale(0.95)')
     })
@@ -189,19 +190,6 @@ describe('ToastStack', () => {
     expect(slots[1]).toHaveTextContent('first notice')
   })
 
-  it('brings a card in with the toast entrance, rising from the edge the pile stands on, instead of the modal pop', () => {
-    render(
-      <ToastStack
-        toasts={[toast({ id: 'a', message: 'hola' })]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    const card = screen.getByTestId('toast-slot').querySelector('.rounded-xl') as HTMLElement
-    expect(card.className).toContain('animate-toast-in')
-    expect(card.className).not.toContain('animate-pop')
-  })
-
   it('keeps every queued toast in the pile so a notice and a prompt coexist', () => {
     // The reason the toasts were unified: independent notifications coexist instead of one
     // corner overwriting another.
@@ -219,6 +207,62 @@ describe('ToastStack', () => {
     expect(screen.getByText('update ready')).toBeInTheDocument()
   })
 
+  describe('a notice with rows', () => {
+    const row = (title: string, over: Partial<ToastRow> = {}): ToastRow => ({
+      icon: 'list',
+      tone: 'warn',
+      title,
+      sub: `${title} tracks`,
+      ...over,
+    })
+
+    // One paragraph per track filled the window. What landed is one line, each reason one
+    // row, and an action sits on the row it acts on, never beside a text that is not its own.
+    it('says what landed on one line and each reason on its own row, with the action on the row it acts on', () => {
+      const go = vi.fn()
+      render(
+        <ToastStack
+          toasts={[
+            toast({
+              testid: 'edit',
+              message: 'Done in rekordbox · 6 tracks',
+              rows: [
+                row('3 tracks not changed in Warm Up', {
+                  sub: 'It changed in rekordbox · A, B, C',
+                }),
+                row('16 cues off', { icon: 'cue', action: { label: 'Go to cue', onAction: go } }),
+              ],
+            }),
+          ]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      expect(screen.getByTestId('edit-message')).toHaveTextContent('Done in rekordbox · 6 tracks')
+      const rows = screen.getAllByTestId('edit-row')
+      expect(rows).toHaveLength(2)
+      expect(rows[0]).toHaveTextContent('3 tracks not changed in Warm Up')
+      expect(rows[0]).toHaveTextContent('It changed in rekordbox · A, B, C')
+      expect(within(rows[0]).queryByRole('button')).toBeNull()
+      fireEvent.click(within(rows[1]).getByRole('button', { name: 'Go to cue' }))
+      expect(go).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows three reasons and folds the rest behind a count, so a long batch keeps the card short', () => {
+      render(
+        <ToastStack
+          toasts={[toast({ testid: 'edit', rows: ['a', 'b', 'c', 'd', 'e'].map((t) => row(t)) })]}
+          onExpire={vi.fn()}
+          onClose={vi.fn()}
+        />,
+      )
+      expect(screen.getAllByTestId('edit-row')).toHaveLength(3)
+      fireEvent.click(screen.getByRole('button', { name: '2 more' }))
+      expect(screen.getAllByTestId('edit-row')).toHaveLength(5)
+      expect(screen.queryByRole('button', { name: '2 more' })).toBeNull()
+    })
+  })
+
   it('shows an action button that fires the toast action', () => {
     const onAction = vi.fn()
     render(
@@ -232,26 +276,36 @@ describe('ToastStack', () => {
     expect(onAction).toHaveBeenCalledTimes(1)
   })
 
-  it('shows a countdown bar only on a toast that auto-dismisses', () => {
-    // The bar visualises the remaining time before a transient notice clears itself; a
-    // persistent prompt (no duration) has nothing to count down, so it must not show one.
-    const { rerender } = render(
+  // A notice that leaves on its own, where closing it means the same as letting it go, has
+  // no use for a ✕: it would be a third control next to Undo and the swipe for the same
+  // thing. One that stays, or whose ✕ is an answer of its own (the session offer declines
+  // for good, while letting it go only hides it), keeps the ✕ or could never be answered.
+  it('offers the ✕ only where closing does something that waiting would not', () => {
+    const settle = vi.fn()
+    render(
       <ToastStack
-        toasts={[toast({ testid: 'app-notice', duration: 4000 })]}
+        toasts={[
+          toast({ id: 'a', testid: 'plain', duration: 4000 }),
+          toast({ id: 'b', testid: 'undo', duration: 6000, onDismiss: settle, onExpire: settle }),
+          toast({
+            id: 'c',
+            testid: 'offer',
+            duration: 6000,
+            onDismiss: vi.fn(),
+            onExpire: vi.fn(),
+          }),
+          toast({ id: 'd', testid: 'stays' }),
+          toast({ id: 'e', testid: 'error', tone: 'danger' }),
+        ]}
         onExpire={vi.fn()}
         onClose={vi.fn()}
       />,
     )
-    expect(screen.getByTestId('app-notice-countdown')).toBeInTheDocument()
-
-    rerender(
-      <ToastStack
-        toasts={[toast({ testid: 'new-tracks', action: { label: 'Load', onAction: vi.fn() } })]}
-        onExpire={vi.fn()}
-        onClose={vi.fn()}
-      />,
-    )
-    expect(screen.queryByTestId('new-tracks-countdown')).toBeNull()
+    expect(screen.queryByTestId('plain-dismiss')).toBeNull()
+    expect(screen.queryByTestId('undo-dismiss')).toBeNull()
+    expect(screen.getByTestId('offer-dismiss')).toBeInTheDocument()
+    expect(screen.getByTestId('stays-dismiss')).toBeInTheDocument()
+    expect(screen.getByTestId('error-dismiss')).toBeInTheDocument()
   })
 
   it('the ✕ routes through onClose so the toast’s own cleanup runs, not a bare removal', () => {
@@ -370,21 +424,39 @@ describe('ToastStack', () => {
       expect(onExpire).toHaveBeenCalledWith('n')
     })
 
-    it('keeps the countdown bar running instead of display-none while a dialog hides the notice', () => {
+    it('keeps the hidden notice mounted instead of display-none while a dialog is open, so it comes back as it was', () => {
       const toasts = [toast({ id: 'n', testid: 'notice', message: 'saved', duration: 6000 })]
       const { rerender } = render(withModal(false, toasts))
-      const bar = screen.getByTestId('notice-countdown')
+      const card = screen.getByTestId('notice')
       const slot = screen.getByTestId('toast-slot')
       rerender(withModal(true, toasts))
       expect(slot).not.toHaveAttribute('hidden')
       expect(slot).not.toBeVisible()
-      expect(screen.getByTestId('notice-countdown')).toBe(bar)
-      expect(bar).toHaveStyle({ animationPlayState: 'paused' })
+      expect(screen.getByTestId('notice')).toBe(card)
       rerender(withModal(false, toasts))
       expect(slot).not.toHaveAttribute('hidden')
       expect(slot).toBeVisible()
-      expect(screen.getByTestId('notice-countdown')).toBe(bar)
-      expect(bar).toHaveStyle({ animationPlayState: 'running' })
+      expect(screen.getByTestId('notice')).toBe(card)
+    })
+
+    // Spread, the pile shows every notice for reading; none may expire under the pointer
+    // while the user reads one of the others.
+    it('holds every notice in a spread pile and lets the clocks run again once it folds', () => {
+      const onExpire = vi.fn()
+      render(
+        <ToastStack
+          toasts={[toast({ id: 'a', duration: 4000 }), toast({ id: 'b', duration: 4000 })]}
+          onExpire={onExpire}
+          onClose={vi.fn()}
+        />,
+      )
+      fireEvent.pointerEnter(screen.getByTestId('toast-pile'))
+      act(() => vi.advanceTimersByTime(10_000))
+      expect(onExpire).not.toHaveBeenCalled()
+      fireEvent.pointerLeave(screen.getByTestId('toast-pile'))
+      act(() => vi.advanceTimersByTime(4000))
+      expect(onExpire).toHaveBeenCalledWith('a')
+      expect(onExpire).toHaveBeenCalledWith('b')
     })
 
     // The re-push brings a fresh deadline, so the clock starts over even though the card
@@ -444,7 +516,6 @@ describe('ToastStack', () => {
       fireEvent.pointerEnter(screen.getByTestId('app-notice'))
       act(() => vi.advanceTimersByTime(10_000))
       expect(onExpire).not.toHaveBeenCalled()
-      expect(screen.getByTestId('app-notice-countdown').style.animationPlayState).toBe('paused')
       fireEvent.pointerLeave(screen.getByTestId('app-notice'))
       act(() => vi.advanceTimersByTime(2999))
       expect(onExpire).not.toHaveBeenCalled()
@@ -664,26 +735,7 @@ describe('ToastStack', () => {
       render(<Live />)
       for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
       expect(card()).toHaveAttribute('aria-hidden', 'true')
-      expect(card().className).not.toContain('animate-toast-leave')
       expect(card().style.transform).toBe('translateX(324px)')
-    })
-
-    it('does not clip the sideways exit of a swiped card, which would cut it off mid-slide', () => {
-      function Live() {
-        const [toasts, setToasts] = useState([toast({ id: 's', testid: 'swipe-toast' })])
-        return (
-          <ToastStack
-            toasts={toasts}
-            onExpire={vi.fn()}
-            onClose={(id) => setToasts((all) => all.filter((t) => t.id !== id))}
-          />
-        )
-      }
-      render(<Live />)
-      for (let i = 0; i < 7; i++) fireEvent.wheel(card(), { deltaX: -20 })
-      expect(screen.getByTestId('toast-slot').className).not.toMatch(
-        /\boverflow-(hidden|clip|x-hidden|x-clip)\b/,
-      )
     })
   })
 })

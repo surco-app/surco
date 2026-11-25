@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, renameSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { basename, join } from 'node:path'
 import ffmpegStatic from 'ffmpeg-static'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -11,7 +11,7 @@ vi.mock('./settings', () => ({ getSettings: () => ({ traktorNmlPath: '' }) }))
 import type { BackupPolicy } from '../shared/backupPolicy'
 import type { NormalizeConfig, TrackMetadata } from '../shared/types'
 import { convertAudio } from './ffmpeg'
-import { configureOriginalKeeper, policyKeeper } from './originalKeeper'
+import { configureBackupStore, configureOriginalKeeper, policyKeeper } from './originalKeeper'
 
 const FF = ffmpegStatic as unknown as string
 const dir = mkdtempSync(join(tmpdir(), 'surco-backup-'))
@@ -116,5 +116,109 @@ describe('backup policy on an in-place rewrite', () => {
     expect(await rewriteInPlace({ backupPolicy: 'never', normalize: PEAK })).toEqual([
       'the original',
     ])
+  })
+})
+
+// Copias short of room sends the original to the system Trash instead. That used to happen
+// inside the keeper, before the last cancel check and the rename: a cancel there, or a
+// rename that never landed, left the track in neither its folder nor Copias, with every DJ
+// library pointing at a file that was gone.
+describe('an in-place rewrite when Copias has no room', () => {
+  function noRoomStore(onStash: () => void = () => {}): string[] {
+    const trashed: string[] = []
+    configureBackupStore(
+      {
+        stash: async () => {
+          onStash()
+          return null
+        },
+        remove: async () => {},
+      },
+      () => 'always',
+      async (path) => {
+        const to = join(mkdtempSync(join(dir, 'system-trash-')), basename(path))
+        renameSync(path, to)
+        trashed.push(to)
+      },
+    )
+    return trashed
+  }
+
+  it('leaves the original on its path when the user cancels before the rename', async () => {
+    const src = sourceAiff()
+    const before = readFileSync(src)
+    let cancelled = false
+    const trashed = noRoomStore(() => {
+      cancelled = true
+    })
+    await expect(
+      convertAudio(
+        src,
+        src,
+        'aiff',
+        meta,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        () => cancelled,
+      ),
+    ).rejects.toThrow('conversionCancelled')
+    expect(readFileSync(src)).toEqual(before)
+    expect(trashed).toEqual([])
+  })
+
+  it('leaves a different file the user chose to overwrite in place on a cancel', async () => {
+    const src = sourceAiff()
+    const other = sourceAiff()
+    const before = readFileSync(other)
+    let cancelled = false
+    const trashed = noRoomStore(() => {
+      cancelled = true
+    })
+    await expect(
+      convertAudio(
+        src,
+        other,
+        'aiff',
+        meta,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        () => cancelled,
+        true,
+      ),
+    ).rejects.toThrow('conversionCancelled')
+    expect(readFileSync(other)).toEqual(before)
+    expect(trashed).toEqual([])
+  })
+
+  it('still sends the original to the system Trash once the new file is on its path', async () => {
+    const src = sourceAiff()
+    const before = readFileSync(src)
+    const trashed = noRoomStore()
+    await convertAudio(src, src, 'aiff', { ...meta, title: 'New' })
+    expect(trashed).toHaveLength(1)
+    expect(basename(trashed[0])).toBe(basename(src))
+    expect(readFileSync(trashed[0])).toEqual(before)
+    expect(readFileSync(src)).not.toEqual(before)
+    expect(readdirSync(dir).filter((f) => f.startsWith('.'))).toEqual([])
   })
 })
