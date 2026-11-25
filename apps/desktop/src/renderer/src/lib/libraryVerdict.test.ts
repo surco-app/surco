@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CopyVerdictState } from '../hooks/useCopyVerdicts'
-import { aggregateLibraryVerdict, rowVerdict } from './libraryVerdict'
+import { aggregateLibraryVerdict, musicRowVerdict, rowVerdict } from './libraryVerdict'
 
 describe('aggregateLibraryVerdict', () => {
   it('lets a better library copy win over everything else', () => {
@@ -95,5 +95,113 @@ describe('rowVerdict', () => {
         verdict: { winner: 'different' },
       } as CopyVerdictState),
     ).toBe('measuring')
+  })
+})
+
+describe('musicRowVerdict', () => {
+  const settled = {
+    musicHoldsFile: false,
+    tiedCopies: 0,
+    libraryCopyPath: '/music/song.mp3',
+    libraryCopyPending: false,
+    musicCopyReach: undefined,
+    libraryCopyBetter: false,
+    copyState: 'same',
+  } as const
+
+  it('says this file is the one Music holds, whatever else is known', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        musicHoldsFile: true,
+        tiedCopies: 3,
+        musicCopyReach: { missing: true, unreadable: true, checking: true },
+      }),
+    ).toBe('thisFile')
+  })
+
+  it('says several when Music keeps tied copies, before looking at any one of them', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        tiedCopies: 2,
+        libraryCopyPath: '',
+        musicCopyReach: { missing: true, unreadable: false, checking: false },
+      }),
+    ).toBe('several')
+  })
+
+  it('says missing when Music has no copy and none is being looked up', () => {
+    expect(musicRowVerdict({ ...settled, libraryCopyPath: '' })).toBe('missing')
+  })
+
+  it('does not say missing while the copy is still being looked up', () => {
+    expect(musicRowVerdict({ ...settled, libraryCopyPath: '', libraryCopyPending: true })).toBe(
+      'measuring',
+    )
+  })
+
+  it('says missing when the copy file is gone from disk', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        musicCopyReach: { missing: true, unreadable: true, checking: true },
+      }),
+    ).toBe('missing')
+  })
+
+  it('says unreadable when the copy is there but cannot be read', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        musicCopyReach: { missing: false, unreadable: true, checking: true },
+      }),
+    ).toBe('unreadable')
+  })
+
+  it('says measuring while the copy check is not settled', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        libraryCopyBetter: true,
+        copyState: 'unmeasurable',
+        musicCopyReach: { missing: false, unreadable: false, checking: true },
+      }),
+    ).toBe('measuring')
+  })
+
+  it.each(['unmeasurable', 'measuring'] as const)(
+    'warns the library copy is better when it looks worse than the file and the comparison is %s',
+    (copyState) => {
+      expect(musicRowVerdict({ ...settled, libraryCopyBetter: true, copyState })).toBe('library')
+    },
+  )
+
+  it('trusts the measured comparison over the early guess that the library copy is better', () => {
+    expect(musicRowVerdict({ ...settled, libraryCopyBetter: true, copyState: 'here' })).toBe('here')
+  })
+
+  it('keeps measuring while the copy path is pending and not yet known', () => {
+    expect(
+      musicRowVerdict({
+        ...settled,
+        libraryCopyPath: '',
+        libraryCopyPending: true,
+        copyState: 'here',
+      }),
+    ).toBe('measuring')
+  })
+
+  it.each(['here', 'library', 'same', 'even', 'unmeasurable'] as const)(
+    'falls back to the compared state %s',
+    (copyState) => {
+      expect(musicRowVerdict({ ...settled, copyState })).toBe(copyState)
+    },
+  )
+
+  it('falls back to the compared state while a pending lookup already has a path', () => {
+    expect(musicRowVerdict({ ...settled, libraryCopyPending: true, copyState: 'different' })).toBe(
+      'different',
+    )
   })
 })

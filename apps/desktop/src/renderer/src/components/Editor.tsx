@@ -116,7 +116,7 @@ import {
   isAnotherVersion,
   versionCopyPath,
 } from '../lib/libraryCopy'
-import { rowVerdict, verdictState } from '../lib/libraryVerdict'
+import { musicRowVerdict, rowVerdict, verdictState } from '../lib/libraryVerdict'
 import { missingSummary } from '../lib/missingSummary'
 import {
   autoNamesFile,
@@ -1867,22 +1867,15 @@ export const Editor = memo(function Editor({
           format: replacedCopyFormat,
           comparable: !musicHoldsFile && (libraryCopyPending || !!comparedCopyPath),
           copies: tiedCopies,
-          verdict: musicHoldsFile
-            ? 'thisFile'
-            : tiedCopies
-              ? 'several'
-              : (!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing
-                ? 'missing'
-                : musicCopyReach?.unreadable
-                  ? 'unreadable'
-                  : musicCopyReach?.checking
-                    ? 'measuring'
-                    : libraryCopyBetter &&
-                        (copyState === 'unmeasurable' || copyState === 'measuring')
-                      ? 'library'
-                      : libraryCopyPending && !libraryCopyPath
-                        ? 'measuring'
-                        : copyState,
+          verdict: musicRowVerdict({
+            musicHoldsFile,
+            tiedCopies,
+            libraryCopyPath,
+            libraryCopyPending,
+            musicCopyReach,
+            libraryCopyBetter,
+            copyState,
+          }),
           durationSec: libraryFacts?.durationSec,
           detail: reasonFor(copyVerdict, hereFacts, libraryFacts, 'Apple Music'),
           comparison: musicCopyUnreached

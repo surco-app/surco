@@ -1,4 +1,5 @@
 import type { LibraryVerdict } from '../components/LibrarySection'
+import type { CopyReach } from '../hooks/useCopyReach'
 import type { CopyVerdictState } from '../hooks/useCopyVerdicts'
 import type { CopyVerdict } from './bestCopy'
 
@@ -16,6 +17,36 @@ export function rowVerdict(state: CopyVerdictState): LibraryVerdict {
   if (state.unreadable) return 'unreadable'
   if (state.checking) return 'measuring'
   return verdictState(state.verdict, state.measuring)
+}
+
+export interface MusicRowVerdictContext {
+  musicHoldsFile: boolean
+  tiedCopies: number
+  libraryCopyPath: string
+  libraryCopyPending: boolean
+  musicCopyReach: CopyReach | undefined
+  libraryCopyBetter: boolean
+  copyState: LibraryVerdict
+}
+
+export function musicRowVerdict({
+  musicHoldsFile,
+  tiedCopies,
+  libraryCopyPath,
+  libraryCopyPending,
+  musicCopyReach,
+  libraryCopyBetter,
+  copyState,
+}: MusicRowVerdictContext): LibraryVerdict {
+  if (musicHoldsFile) return 'thisFile'
+  if (tiedCopies) return 'several'
+  if ((!libraryCopyPath && !libraryCopyPending) || musicCopyReach?.missing) return 'missing'
+  if (musicCopyReach?.unreadable) return 'unreadable'
+  if (musicCopyReach?.checking) return 'measuring'
+  if (libraryCopyBetter && (copyState === 'unmeasurable' || copyState === 'measuring'))
+    return 'library'
+  if (libraryCopyPending && !libraryCopyPath) return 'measuring'
+  return copyState
 }
 
 export function aggregateLibraryVerdict(rows: (LibraryVerdict | null)[]): LibraryVerdict | null {
