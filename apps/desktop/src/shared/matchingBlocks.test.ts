@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { matchingBlocks, pairsOfBlocks } from './matchingBlocks'
+import { matchingBlocks, pairsOfBlocks, withBlockSeparators } from './matchingBlocks'
+import type { SourcePlaylistEntry } from './types'
 
 const byId = (id: string): string => id
 
@@ -168,5 +169,29 @@ describe('pairsOfBlocks', () => {
 
   it('ignores a pair of a track with itself', () => {
     expect(pairsOfBlocks([['a', 'a']], ['a'])).toEqual([])
+  })
+})
+
+describe('withBlockSeparators', () => {
+  const entry = (path: string): SourcePlaylistEntry => ({ path, separator: false, meta: {} })
+
+  it('puts one separator between blocks and none at the ends, so the list shows where one set stops and the next starts', () => {
+    expect(withBlockSeparators([[entry('/a'), entry('/b')], [entry('/c')], [entry('/d')]])).toEqual(
+      [
+        entry('/a'),
+        entry('/b'),
+        { path: null, separator: true, meta: {}, linkId: 'matching-sep-1' },
+        entry('/c'),
+        { path: null, separator: true, meta: {}, linkId: 'matching-sep-2' },
+        entry('/d'),
+      ],
+    )
+  })
+
+  it('numbers each separator by the block it opens, even past a block that came back empty, so each row keeps its key', () => {
+    const ids = withBlockSeparators([[], [entry('/a')], []]).flatMap((e) =>
+      e.separator ? [e.linkId] : [],
+    )
+    expect(ids).toEqual(['matching-sep-1', 'matching-sep-2'])
   })
 })

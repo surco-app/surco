@@ -3,6 +3,7 @@ import path, { resolve } from 'node:path'
 import { ALL_TRACKS_ID } from '../shared/allTracks'
 import { cueGridDrift } from '../shared/cueGrid'
 import { MATCHING_ID } from '../shared/matching'
+import { withBlockSeparators } from '../shared/matchingBlocks'
 import { mediaUrl } from '../shared/media'
 import { RECENTLY_ADDED_ID } from '../shared/recentlyAdded'
 import type {
@@ -281,19 +282,7 @@ function gridDriftOf(analysis: string | null, cues: RowCue[]): { gridDriftMs?: n
 
 function inBlocks(rows: SourcePlaylistEntry[], blocks: string[][]): SourcePlaylistEntry[] {
   const byId = new Map(rows.map((r) => [r.contentId, r]))
-  return blocks.flatMap((block, i) => [
-    ...(i > 0
-      ? [
-          {
-            path: null,
-            separator: true,
-            meta: {},
-            linkId: `matching-sep-${i}`,
-          } satisfies SourcePlaylistEntry,
-        ]
-      : []),
-    ...block.flatMap((id) => byId.get(id) ?? []),
-  ])
+  return withBlockSeparators(blocks.map((block) => block.flatMap((id) => byId.get(id) ?? [])))
 }
 
 export function readRekordboxPlaylistWithPreview(

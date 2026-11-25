@@ -206,6 +206,25 @@ describe('commitVirtualdjDraft', () => {
     expect(kept[0]).toBe('2026-11-11T09-00-02-000Z')
   })
 
+  it('takes no copy when every written database is new, so an empty copy never pushes a real one out of the last 20', async () => {
+    const { dir, database, backupDir, deps } = library()
+    for (let i = 0; i < 20; i++) {
+      const draft = createVirtualdjDraft()
+      draft.write(database, `${draft.read(database)}\r\n`)
+      await commitVirtualdjDraft(draft, deps({ now: () => new Date(T0 + i * 1000) }))
+    }
+    const before = readdirSync(backupDir).sort()
+    const fresh = join(dir, 'Fresh', 'database.xml')
+    mkdirSync(dirname(fresh))
+    const draft = createVirtualdjDraft()
+    draft.write(fresh, fixture)
+    expect(await commitVirtualdjDraft(draft, deps({ now: () => new Date(T0 + 60_000) }))).toBe(
+      'written',
+    )
+    expect(readFileSync(fresh, 'utf8')).toBe(fixture)
+    expect(readdirSync(backupDir).sort()).toEqual(before)
+  })
+
   it('never prunes the MyLists copies kept beside the database ones', async () => {
     const { database, backupDir, deps } = library()
     mkdirSync(join(backupDir, 'lists'), { recursive: true })

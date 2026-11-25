@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { waitForExit } from './programExit'
 
 const run = promisify(execFile)
 
@@ -44,13 +45,7 @@ export async function quitRekordbox(
     // The quit request failing outright (already gone, tool missing) resolves by
     // whatever the poll below observes.
   }
-  const attempts = options.attempts ?? 30
-  const waitMs = options.waitMs ?? 500
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    if (!(await isRekordboxRunning())) return true
-    await new Promise((resolve) => setTimeout(resolve, waitMs))
-  }
-  return false
+  return waitForExit(isRekordboxRunning, options)
 }
 
 export async function isRekordboxRunning(): Promise<boolean> {

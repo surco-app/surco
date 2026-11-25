@@ -67,6 +67,7 @@ import {
 } from './cutoff'
 import { declickRepairedArgs, parseDeclickedSamples, parseProgressSeconds } from './declick'
 import { isPcmOverrun, slimDecodeError } from './decodeError'
+import { floatsFrom } from './ffmpegStream'
 import { measureBands } from './fftBands'
 import { carryFlacBlocks } from './flacCarry'
 import {
@@ -4566,10 +4567,7 @@ async function decodePcm(
   } catch (err) {
     throw slimDecodeError(err)
   }
-  const bytes = stdout.length - (stdout.length % 4)
-  const pcm = new Uint8Array(bytes)
-  pcm.set(stdout.subarray(0, bytes))
-  return new Float32Array(pcm.buffer)
+  return floatsFrom(stdout)
 }
 
 // The opening four minutes at a low rate for the tempo and key detectors. Four minutes
