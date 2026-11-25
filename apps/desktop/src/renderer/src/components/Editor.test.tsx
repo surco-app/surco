@@ -7681,6 +7681,8 @@ describe('Editor Apple Music library section', () => {
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 95 },
         hereDuration: 95,
         music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        index: musicIndex,
         tags: {
           '/m/old/Strobe.mp3': { album: 'From Music' },
           '/r/Strobe.wav': { album: 'From rekordbox' },
@@ -7689,6 +7691,27 @@ describe('Editor Apple Music library section', () => {
       await waitFor(() => expect(filledPatches()).toHaveLength(1))
       expect(filledPatches()[0].meta).toMatchObject({ album: 'From Music' })
       expect(api.readTags).not.toHaveBeenCalledWith('/r/Strobe.wav')
+    })
+
+    // FLAC 6:01 against the MP3 5:57 in Music: the section calls it another version, so its
+    // album is another release's, but the DJ filed it under the grouping this track takes too.
+    it('takes only the grouping from an Apple Music copy that is another version', async () => {
+      renderWithPrograms({
+        hereDuration: 361,
+        music: '/m/old/Strobe.mp3',
+        musicReadable: true,
+        index: buildLibraryIndex([
+          {
+            title: 'Strobe',
+            artist: 'deadmau5',
+            persistentId: '0123456789ABCDEF',
+            durationSec: 357,
+          },
+        ]),
+        tags: { '/m/old/Strobe.mp3': { album: 'From Music', grouping: 'Bases, Rockola' } },
+      })
+      await waitFor(() => expect(filledPatches()).toHaveLength(1))
+      expect(filledPatches()[0].meta).toMatchObject({ grouping: 'Bases, Rockola', album: '' })
     })
 
     // Until the Music library lands there is no telling whether it holds a copy to replace,
@@ -8362,13 +8385,35 @@ describe('Editor convert notes from the measured spectrum', () => {
 
 describe('Editor replacing a library copy', () => {
   const libraryIndex = buildLibraryIndex([
-    { title: 'Your Love (Power Love Mix)', artist: '2 Shy', persistentId: '0123456789ABCDEF' },
+    {
+      title: 'Your Love (Power Love Mix)',
+      artist: '2 Shy',
+      persistentId: '0123456789ABCDEF',
+      durationSec: 300,
+    },
   ])
 
   beforeEach(() => {
     Object.assign(window.api, {
       platform: 'darwin',
       appleMusicEntryLocation: vi.fn().mockResolvedValue('/music/old/your-love.mp3'),
+      // Music's copy reads like any file, so its row gives a verdict the fill can trust.
+      properties: vi.fn(async (path: string) =>
+        path === '/music/old/your-love.mp3'
+          ? {
+              container: 'mp3',
+              codec: 'mp3',
+              sampleRateHz: 44100,
+              bitDepth: null,
+              channels: 2,
+              bitrateKbps: 320,
+              sizeBytes: 9_000_000,
+              createdMs: null,
+              modifiedMs: null,
+              tagFormats: [],
+            }
+          : null,
+      ),
       readTags: vi.fn<Api['readTags']>().mockResolvedValue({
         ...emptyMetadata(),
         title: 'Your Love (Power Love Mix)',
@@ -8385,6 +8430,7 @@ describe('Editor replacing a library copy', () => {
         id: 'a',
         inputPath: '/music/new/your-love.aiff',
         fileName: 'your-love.aiff',
+        duration: 300,
         meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
       },
       'aiff',
@@ -8408,22 +8454,25 @@ describe('Editor replacing a library copy', () => {
     },
   ])
 
-  it('fills from the copy when its length confirms it is the same recording', async () => {
+  // As for a DJ copy, a verdict alone cannot rule out another edit: without this file's length
+  // nothing says the copy's album and year are this recording's.
+  it('fills nothing from the copy while this file length is unknown', async () => {
     const { onChange } = renderEditor(
       {
         id: 'a',
         inputPath: '/music/new/your-love.aiff',
         fileName: 'your-love.aiff',
-        duration: 300,
         meta: { title: 'Your Love (Power Love Mix)', artist: '2 Shy' },
       },
       'aiff',
       { libraryIndex: lengthIndex, addToAppleMusic: true },
     )
     await waitFor(() =>
-      expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true })),
+      expect(window.api.properties).toHaveBeenCalledWith('/music/old/your-love.mp3'),
     )
-    expect(window.api.readTags).toHaveBeenCalledWith('/music/old/your-love.mp3')
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(window.api.readTags).not.toHaveBeenCalledWith('/music/old/your-love.mp3')
+    expect(onChange).not.toHaveBeenCalledWith(expect.objectContaining({ copyFilled: true }))
   })
 
   // The 35 s gap makes the library entry another version, not a replace target: its tags would not be this file's.

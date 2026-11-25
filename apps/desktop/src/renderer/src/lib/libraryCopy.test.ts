@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { LibraryVerdict } from '../components/LibrarySection'
 import {
   type CopyCandidate,
+  type FillCandidate,
   copyPathIn,
   countsAsCopy,
   fillCopyPath,
@@ -103,20 +104,61 @@ describe('fillCopyPath', () => {
     durationSec,
   })
   const fill = (args: {
-    musicCopyPath?: string
+    musicCopy?: FillCandidate
     musicCopyPending?: boolean
     programs: Parameters<typeof fillCopyPath>[0]['programs']
     fileDurationSec?: number
   }) =>
     fillCopyPath({
-      musicCopyPath: args.musicCopyPath ?? '',
+      musicCopy: args.musicCopy ?? null,
       musicCopyPending: args.musicCopyPending ?? false,
       programs: args.programs,
       fileDurationSec: args.fileDurationSec,
     })
 
+  const musicCopy = (verdict: LibraryVerdict | null, durationSec?: number) => ({
+    path: '/m/old.mp3',
+    verdict,
+    durationSec,
+  })
+
   it('takes the Apple Music copy a replacement supersedes before any DJ copy', () => {
-    expect(fill({ musicCopyPath: '/m/old.mp3', programs: [rekordbox('same')] })).toBe('/m/old.mp3')
+    expect(
+      fill({
+        musicCopy: musicCopy('library', 200),
+        programs: [rekordbox('same', 200)],
+        fileDurationSec: 200,
+      }),
+    ).toBe('/m/old.mp3')
+  })
+
+  // The album, year and label are only this file's when the copy is the same recording, in
+  // Music as in a DJ program: the 5:57 MP3 in Music against a 6:01 FLAC is another edit.
+  it('never fills everything from an Apple Music copy that is another version', () => {
+    expect(fill({ musicCopy: musicCopy('here', 357), programs: [], fileDurationSec: 361 })).toBe('')
+    expect(
+      fill({ musicCopy: musicCopy('different', 361), programs: [], fileDurationSec: 361 }),
+    ).toBe('')
+  })
+
+  it('fills from a DJ copy of the same recording when the Apple Music copy is another version', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('different', 357),
+        programs: [rekordbox('same', 361)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('/r/a.aiff')
+  })
+
+  it('waits while the Apple Music copy is still being compared, it has the say', () => {
+    expect(
+      fill({
+        musicCopy: musicCopy('measuring'),
+        programs: [rekordbox('same', 200)],
+        fileDurationSec: 200,
+      }),
+    ).toBe('')
   })
 
   it('waits while the Apple Music copy is still being located, since it has the say', () => {
@@ -229,13 +271,13 @@ describe('versionCopyPath', () => {
     durationSec,
   })
   const version = (args: {
-    musicCopyPath?: string
+    musicCopy?: FillCandidate
     musicCopyPending?: boolean
     programs: Parameters<typeof versionCopyPath>[0]['programs']
     fileDurationSec?: number
   }) =>
     versionCopyPath({
-      musicCopyPath: args.musicCopyPath ?? '',
+      musicCopy: args.musicCopy ?? null,
       musicCopyPending: args.musicCopyPending ?? false,
       programs: args.programs,
       fileDurationSec: args.fileDurationSec,
@@ -262,7 +304,27 @@ describe('versionCopyPath', () => {
     ).toBe('')
     expect(
       version({
-        musicCopyPath: '/m/a.mp3',
+        musicCopy: { path: '/m/a.mp3', verdict: 'same', durationSec: 361 },
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('')
+  })
+
+  it('takes the Apple Music copy that is another version before a DJ one', () => {
+    expect(
+      version({
+        musicCopy: { path: '/m/a.mp3', verdict: 'here', durationSec: 357 },
+        programs: [rekordbox('different', 357)],
+        fileDurationSec: 361,
+      }),
+    ).toBe('/m/a.mp3')
+  })
+
+  it('waits while the Apple Music copy is still being compared', () => {
+    expect(
+      version({
+        musicCopy: { path: '/m/a.mp3', verdict: 'measuring' },
         programs: [rekordbox('different', 357)],
         fileDurationSec: 361,
       }),

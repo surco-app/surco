@@ -994,27 +994,6 @@ export const Editor = memo(function Editor({
           : [replaceTarget.persistentId],
     onChange,
   })
-  // Only a copy of the same recording lends all its fields: another version of the track has
-  // other tags, and lends only its grouping and cover when no such copy fills. In Music that is
-  // the copy a replacement would supersede, and it goes first because the convert puts this
-  // file in its place, so a DJ copy waits while the Music library is still loading; otherwise
-  // the first DJ copy whose length matches this file's, once its comparison is done.
-  const replacedCopyPath =
-    replaceTarget && !isAmbiguousCandidate(replaceTarget) ? (replaceTarget.path ?? '') : ''
-  const fillCopies = {
-    musicCopyPath: replacedCopyPath,
-    musicCopyPending: replaceTargetPending || libraryLoading,
-    programs: copyRows,
-    fileDurationSec: item.duration,
-  }
-  const sameRecordingCopyPath = fillCopyPath(fillCopies)
-  useReplacedCopyFill({
-    item,
-    copyPath: sameRecordingCopyPath || versionCopyPath(fillCopies),
-    anotherVersion: !sameRecordingCopyPath,
-    onChange,
-    onRecordUndo,
-  })
   // The editor remounts per track and App applies its patch to whichever row is selected,
   // so a full read that returns after the user moved on must apply nothing.
   const mounted = useRef(true)
@@ -1959,24 +1938,44 @@ export const Editor = memo(function Editor({
     () => entryDurationSec(libraryIndex, musicEntryId),
     [libraryIndex, musicEntryId],
   )
+  const musicCopy =
+    replaceTarget && !isAmbiguousCandidate(replaceTarget) && musicRow
+      ? {
+          program: 'appleMusic' as const,
+          path: replaceTarget.path ?? '',
+          format: replacedCopyFormat,
+          verdict: musicRow.verdict,
+          better: libraryCopyBetter,
+          durationSec: musicRow.durationSec ?? musicEntryDurationSec,
+          music: replaceTarget,
+        }
+      : null
+  // Only a copy of the same recording lends all its fields: another version of the track has
+  // other tags, and lends only its grouping and cover when no such copy fills. In Music that is
+  // the copy a replacement would supersede, judged by its row's verdict and length like a DJ
+  // copy, and it goes first because the convert puts this file in its place, so a DJ copy waits
+  // while the Music library is still loading; otherwise the first DJ copy whose length matches
+  // this file's, once its comparison is done.
+  const fillCopies = {
+    musicCopy,
+    musicCopyPending: replaceTargetPending || libraryLoading,
+    programs: copyRows,
+    fileDurationSec: item.duration,
+  }
+  const sameRecordingCopyPath = fillCopyPath(fillCopies)
+  useReplacedCopyFill({
+    item,
+    copyPath: sameRecordingCopyPath || versionCopyPath(fillCopies),
+    anotherVersion: !sameRecordingCopyPath,
+    onChange,
+    onRecordUndo,
+  })
   // The copy the body updates or replaces. Music goes first, as for the fill: replacing puts
   // this file in its place, so its copy is the one the user sees as the track.
   const copyCandidates: CopyCandidate[] = isMulti
     ? []
     : [
-        ...(replaceTarget && !isAmbiguousCandidate(replaceTarget) && !musicHoldsFile && musicRow
-          ? [
-              {
-                program: 'appleMusic' as const,
-                path: replaceTarget.path ?? '',
-                format: replacedCopyFormat,
-                verdict: musicRow.verdict,
-                better: libraryCopyBetter,
-                durationSec: musicRow.durationSec ?? musicEntryDurationSec,
-                music: replaceTarget,
-              },
-            ]
-          : []),
+        ...(musicCopy && !musicHoldsFile ? [musicCopy] : []),
         ...comparedProgramCopies.map((copy, i) => {
           const state = programVerdicts[i]
           return {
