@@ -9,7 +9,7 @@ import type {
 } from '../../../shared/types'
 import { linkAfter, linkIdsOf, type Membership } from '../lib/rekordboxPlaylists'
 import { offerShortcutUndo } from '../lib/shortcutUndo'
-import { SOURCE_PROGRAMS } from '../lib/sourcePrograms'
+import { canEdit, SOURCE_PROGRAMS } from '../lib/sourcePrograms'
 import { useToast } from '../lib/toastContext'
 import { useRekordboxEdits } from './useRekordboxEdits'
 
@@ -75,10 +75,8 @@ export function useCopyPlaylistEdits(
   const beforeWrite = useCallback(() => window.api.dj.askToApply([library]), [library])
   const edit = useRekordboxEdits(notify, library, beforeWrite)
   const sourceEdit = SOURCE_PROGRAMS[library].edit
-  const can = (kind: RekordboxPlaylistEdit['kind']): boolean =>
-    !sourceEdit?.kinds || sourceEdit.kinds.has(kind)
-  const canRemove = can('remove')
-  const canMove = can('move')
+  const canRemove = canEdit(sourceEdit, 'remove')
+  const canMove = canEdit(sourceEdit, 'move')
   const [queued, setQueued] = useState<ReadonlyMap<string, boolean>>(new Map())
   const queuedRef = useRef(queued)
   queuedRef.current = queued
