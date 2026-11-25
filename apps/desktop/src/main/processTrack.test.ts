@@ -16,7 +16,12 @@ import {
   policyKeeper,
 } from './originalKeeper'
 import { createOutputReservations } from './outputReservations'
-import { type ProcessTrackDeps, replaceAppleMusicCopy, runProcessTrack } from './processTrack'
+import {
+  type ProcessTrackDeps,
+  planDestination,
+  replaceAppleMusicCopy,
+  runProcessTrack,
+} from './processTrack'
 import { createReplacedStore, recordReplacement } from './replacedStore'
 
 function settings(overrides: Partial<Settings> = {}): Settings {
@@ -5103,5 +5108,58 @@ describe('runProcessTrack — replacement shift', () => {
   it('says nothing about a shift on an ordinary conversion', async () => {
     const result = await runProcessTrack(job(), withShift())
     expect('replaceShift' in result).toBe(false)
+  })
+})
+
+describe('planDestination', () => {
+  it('refuses to retag a library copy into another format, since that would re-encode the file the programs hold', () => {
+    expect(() =>
+      planDestination(job({ tagsInPlace: true, format: 'mp3' }), settings(), 'linux'),
+    ).toThrowError(
+      expect.objectContaining({ message: expect.stringContaining('libraryCopyAudioWouldChange') }),
+    )
+  })
+
+  it('retags a library copy where it is, with no processing and no Engine DJ add', () => {
+    const plan = planDestination(
+      job({ tagsInPlace: true, format: 'wav' }),
+      settings({ normalize: { mode: 'peak' }, addToEngineDj: true } as Partial<Settings>),
+      'linux',
+    )
+    expect(plan.processing).toEqual({})
+    expect(plan.addToEngineDj).toBe(false)
+    expect(plan.outputPath).toBe('/in/song.wav')
+    expect(plan.inPlace).toBe(true)
+  })
+
+  it('lets the job pin win over the live setting for the Apple Music destination', () => {
+    const plan = planDestination(
+      job({ addToAppleMusic: true, keepOutputCopy: false }),
+      settings({ addToAppleMusic: false, keepOutputCopy: true }),
+      'darwin',
+    )
+    expect(plan.addToAppleMusic).toBe(true)
+    expect(plan.keepOutputCopy).toBe(false)
+    expect(plan.musicOnly).toBe(true)
+  })
+
+  it('drops the sibling copy when the original is overwritten', () => {
+    const plan = planDestination(
+      job({ convertBesideOriginal: true, overwriteOriginal: true }),
+      settings(),
+      'linux',
+    )
+    expect(plan.besideOriginal).toBe(false)
+    expect(plan.overwriteOriginal).toBe(true)
+  })
+
+  it('names the output in NFD on macOS only', () => {
+    const outputName = 'Röyksopp - Fiësta'.normalize('NFC')
+    expect(planDestination(job({ outputName }), settings(), 'darwin').outputPath).toBe(
+      '/out/Röyksopp - Fiësta.aiff'.normalize('NFD'),
+    )
+    expect(planDestination(job({ outputName }), settings(), 'linux').outputPath).toBe(
+      '/out/Röyksopp - Fiësta.aiff'.normalize('NFC'),
+    )
   })
 })

@@ -534,6 +534,102 @@ export const JOB_PLAYLISTS: Record<ReachProgram, (job: ProcessJob) => PlaylistCh
     virtualdj: jobChoice('virtualdj', true),
   }
 
+export function planDestination(job: ProcessJob, settings: Settings, platform: NodeJS.Platform) {
+  // job.format is always set by the renderer's job builder; this fallback only
+  // guards the type, since settings.outputFormat may be 'source' and 'source' must
+  // never reach the conversion pipeline.
+  const format =
+    job.format ??
+    resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff', settings.keepMp3Sources)
+  // Another format means another file: the copy the programs hold would be re-encoded.
+  if (job.tagsInPlace && !formatMatchesInput(format, job.inputPath))
+    throw errorWithKey('libraryCopyAudioWouldChange', job.inputPath)
+  // Update promises the copy keeps its audio, so no processing reaches it whatever the
+  // job or the settings ask for.
+  const processing: AudioProcessing = job.tagsInPlace
+    ? {}
+    : {
+        normalize: job.normalize ?? settings.normalize,
+        declick: job.declick ?? settings.declick,
+        trim: job.trim,
+      }
+  // Every destination facet prefers the job's pin over the live setting (see the
+  // ProcessJob comments): the editor's one-shot destination pick and the batch pin
+  // both ride the job, so a Settings change can't redirect a conversion in flight.
+  const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
+  const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
+  // Update retags a copy another program holds: adding it would import it into Engine as a
+  // new entry. An Engine row already on the copy follows it through the library sync.
+  const addToEngineDj = !job.tagsInPlace && settings.addToEngineDj
+  // A library copy retagged where it is never gets a sibling: Update leaves one file.
+  const besideOriginal =
+    !job.tagsInPlace &&
+    (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
+    !(job.overwriteOriginal ?? settings.overwriteOriginal)
+  // macOS writes file names decomposed (NFD): Finder does, and an SMB NAS hands them
+  // back that way. The name built from the tags is composed (NFC), and on such a NAS
+  // the two spellings are different files: the rename over the source failed with
+  // EEXIST or -83, and a temp named in NFC could not be found again to rename or
+  // delete. APFS treats both as one name, so this changes nothing on a local disk.
+  //
+  // A name the source already has is kept untouched only when the write lands in the
+  // source's own folder, the disk known to hold it: the output folder can be the very
+  // disk the plain spelling is for. Its accents are kept only when the file itself keeps
+  // the name (in place); a new file beside it is spelled the way the setting asks.
+  const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
+  const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
+  const tagsOnly =
+    inPlaceWrite && tagsOnlyExport(formatMatchesInput(format, job.inputPath), processing)
+  const currentName =
+    besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
+  const requestedName = currentName === undefined ? job.outputName : fileNamePart(job.outputName)
+  const keepsName = inPlaceWrite && currentName?.normalize('NFC') === requestedName.normalize('NFC')
+  const outputName = sanitizeOutputName(
+    settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
+    currentName,
+  )
+  const resolved = job.tagsInPlace
+    ? { outputPath: job.inputPath, inPlace: true }
+    : resolveOutputTarget(
+        job.inputPath,
+        platform === 'darwin' ? outputName.normalize('NFD') : outputName,
+        format,
+        settings.outputDir,
+        overwriteOriginal,
+        besideOriginal,
+      )
+  const outputPath = resolved.outputPath
+  const inPlace = resolved.inPlace
+  // "Apple Music only": the user wants the track in Apple Music and no copy left in
+  // the output folder. Apple Music still imports a real path, so write the conversion
+  // where Music files its own copies, or else to a private temp dir (never the output
+  // folder — it can't collide with or clobber anything there), hand it over, then remove
+  // the temp below.
+  const musicOnly = isAppleMusicOnly(
+    addToAppleMusic,
+    keepOutputCopy,
+    addToEngineDj,
+    platform,
+    format,
+    inPlace,
+  )
+  return {
+    format,
+    processing,
+    addToAppleMusic,
+    keepOutputCopy,
+    addToEngineDj,
+    besideOriginal,
+    overwriteOriginal,
+    inPlaceWrite,
+    tagsOnly,
+    outputName,
+    outputPath,
+    inPlace,
+    musicOnly,
+  }
+}
+
 export async function runProcessTrack(
   job: ProcessJob,
   deps: ProcessTrackDeps,
@@ -587,86 +683,19 @@ export async function runProcessTrack(
     }
     const coverPath = prepared?.path
 
-    // job.format is always set by the renderer's job builder; this fallback only
-    // guards the type, since settings.outputFormat may be 'source' and 'source' must
-    // never reach the conversion pipeline.
-    const format =
-      job.format ??
-      resolveJobFormat(settings.outputFormat, job.inputPath, 'aiff', settings.keepMp3Sources)
-    // Another format means another file: the copy the programs hold would be re-encoded.
-    if (job.tagsInPlace && !formatMatchesInput(format, job.inputPath))
-      throw errorWithKey('libraryCopyAudioWouldChange', job.inputPath)
-    // Update promises the copy keeps its audio, so no processing reaches it whatever the
-    // job or the settings ask for.
-    const processing: AudioProcessing = job.tagsInPlace
-      ? {}
-      : {
-          normalize: job.normalize ?? settings.normalize,
-          declick: job.declick ?? settings.declick,
-          trim: job.trim,
-        }
-    // Every destination facet prefers the job's pin over the live setting (see the
-    // ProcessJob comments): the editor's one-shot destination pick and the batch pin
-    // both ride the job, so a Settings change can't redirect a conversion in flight.
-    const addToAppleMusic = job.addToAppleMusic ?? settings.addToAppleMusic
-    const keepOutputCopy = job.keepOutputCopy ?? settings.keepOutputCopy
-    // Update retags a copy another program holds: adding it would import it into Engine as a
-    // new entry. An Engine row already on the copy follows it through the library sync.
-    const addToEngineDj = !job.tagsInPlace && settings.addToEngineDj
-    // A library copy retagged where it is never gets a sibling: Update leaves one file.
-    const besideOriginal =
-      !job.tagsInPlace &&
-      (job.convertBesideOriginal ?? settings.convertBesideOriginal ?? false) &&
-      !(job.overwriteOriginal ?? settings.overwriteOriginal)
-    // macOS writes file names decomposed (NFD): Finder does, and an SMB NAS hands them
-    // back that way. The name built from the tags is composed (NFC), and on such a NAS
-    // the two spellings are different files: the rename over the source failed with
-    // EEXIST or -83, and a temp named in NFC could not be found again to rename or
-    // delete. APFS treats both as one name, so this changes nothing on a local disk.
-    //
-    // A name the source already has is kept untouched only when the write lands in the
-    // source's own folder, the disk known to hold it: the output folder can be the very
-    // disk the plain spelling is for. Its accents are kept only when the file itself keeps
-    // the name (in place); a new file beside it is spelled the way the setting asks.
-    const overwriteOriginal = job.overwriteOriginal ?? settings.overwriteOriginal
-    const inPlaceWrite = !besideOriginal && editsInPlace(format, job.inputPath, overwriteOriginal)
-    const tagsOnly =
-      inPlaceWrite && tagsOnlyExport(formatMatchesInput(format, job.inputPath), processing)
-    stage(tagsOnly ? 'tags' : 'converting')
-    const currentName =
-      besideOriginal || inPlaceWrite ? basename(job.inputPath, extname(job.inputPath)) : undefined
-    const requestedName = currentName === undefined ? job.outputName : fileNamePart(job.outputName)
-    const keepsName =
-      inPlaceWrite && currentName?.normalize('NFC') === requestedName.normalize('NFC')
-    const outputName = sanitizeOutputName(
-      settings.asciiFileNames && !keepsName ? foldAccents(requestedName) : requestedName,
-      currentName,
-    )
-    const resolved = job.tagsInPlace
-      ? { outputPath: job.inputPath, inPlace: true }
-      : resolveOutputTarget(
-          job.inputPath,
-          deps.platform === 'darwin' ? outputName.normalize('NFD') : outputName,
-          format,
-          settings.outputDir,
-          overwriteOriginal,
-          besideOriginal,
-        )
-    const outputPath = resolved.outputPath
-    let inPlace = resolved.inPlace
-    // "Apple Music only": the user wants the track in Apple Music and no copy left in
-    // the output folder. Apple Music still imports a real path, so write the conversion
-    // where Music files its own copies, or else to a private temp dir (never the output
-    // folder — it can't collide with or clobber anything there), hand it over, then remove
-    // the temp below.
-    const musicOnly = isAppleMusicOnly(
-      addToAppleMusic,
-      keepOutputCopy,
-      addToEngineDj,
-      deps.platform,
+    const plan = planDestination(job, settings, deps.platform)
+    const {
       format,
-      inPlace,
-    )
+      processing,
+      addToAppleMusic,
+      addToEngineDj,
+      besideOriginal,
+      tagsOnly,
+      outputPath,
+      musicOnly,
+    } = plan
+    let inPlace = plan.inPlace
+    stage(tagsOnly ? 'tags' : 'converting')
     let target = outputPath
     const existingMusicEntry =
       inPlace &&
