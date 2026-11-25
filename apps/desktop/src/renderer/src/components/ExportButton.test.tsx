@@ -958,6 +958,23 @@ describe('ExportButton library copy', () => {
     expect(onBlockedPress).not.toHaveBeenCalled()
   })
 
+  // A copy in a format Surco can't write can only be replaced. Update stays in the menu, greyed
+  // with its line, so the two rows keep their place and the menu says why the body replaces.
+  it('greys Update out for a copy Surco cannot retag, leaving Replace to pick', () => {
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: 'replace', keptFormat: undefined, updatable: false }}
+      />,
+    )
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    const update = screen.getByTestId('library-copy-update')
+    expect(update).toBeDisabled()
+    expect(update).toHaveTextContent('Keeps its audio')
+    expect(screen.getByTestId('library-copy-replace')).toBeEnabled()
+  })
+
   it('reaches Replace with the arrow keys from the first item of the menu', () => {
     render(<ExportButton {...baseProps} incomplete={false} libraryCopy={offer} />)
     fireEvent.click(screen.getByTestId('process-format-toggle'))

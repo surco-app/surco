@@ -153,6 +153,8 @@ export interface LibraryCopyOffer {
   held: boolean
   // The copy's own format, which Update keeps since it never touches the audio.
   keptFormat?: OutputFormat
+  // False for a copy in a format Surco can't write, which Update can't retag.
+  updatable?: boolean
   // Replacing this copy repoints Serato to a new file, which loses the copy's stars.
   replaceLosesStars?: boolean
 }

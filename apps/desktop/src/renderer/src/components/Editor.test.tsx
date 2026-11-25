@@ -7341,6 +7341,26 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
+    // Surco can't write an Ogg, so Update can't retag that copy, but the copy is still the
+    // track: offering nothing let the body say Convert and add a second entry beside it.
+    it('replaces a copy in a format Surco cannot write instead of converting beside it', async () => {
+      renderWithPrograms({
+        rekordbox: { ...sameRekordboxCopy, path: '/r/Strobe.ogg' },
+        hereDuration: 95,
+        identicalPair: true,
+      })
+      await readyBody()
+      const body = screen.getByTestId('process-btn')
+      expect(body).toHaveTextContent(/^Replace$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      expect(screen.getByTestId('library-copy-update')).toBeDisabled()
+      expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'true')
+      fireEvent.click(body)
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.ogg' })
+      expect(rendered.onProcess).toHaveBeenCalled()
+    })
+
     it('updates a copy only rekordbox holds', async () => {
       renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
       await readyBody()

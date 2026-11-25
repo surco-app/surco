@@ -1997,24 +1997,26 @@ export const Editor = memo(function Editor({
   const replaceLosesStars = useSeratoLosesStars(
     libraryTarget && !libraryTarget.held ? libraryTarget.path : '',
   )
-  // A copy in no format Surco writes can't be updated in place nor named on the button. A held
-  // copy is offered still, so the body names the action it waits for instead of saying
-  // Convert and then flipping; its format half shows the pick until the path is known.
-  const libraryCopy: LibraryCopyOffer | undefined =
-    libraryTarget && (keptFormat || libraryTarget.held)
-      ? {
-          name:
-            libraryTarget.program === 'appleMusic'
-              ? 'Apple Music'
-              : LIBRARY_NAME[libraryTarget.program],
-          format: libraryTarget.format,
-          action: libraryCopyAction,
-          better: libraryTarget.better,
-          held: libraryTarget.held,
-          keptFormat,
-          replaceLosesStars,
-        }
-      : undefined
+  // A copy in no format Surco writes can't be updated in place, but it is still the track, so
+  // the body replaces it: offering nothing let the body say Convert and add a second entry
+  // beside it. Apple Music's copy with no path yet has no format to judge, so the pick holds.
+  const updatable = !!keptFormat || !libraryTarget?.path
+  const copyAction: LibraryCopyAction = updatable ? libraryCopyAction : 'replace'
+  const libraryCopy: LibraryCopyOffer | undefined = libraryTarget
+    ? {
+        name:
+          libraryTarget.program === 'appleMusic'
+            ? 'Apple Music'
+            : LIBRARY_NAME[libraryTarget.program],
+        format: libraryTarget.format,
+        action: copyAction,
+        better: libraryTarget.better,
+        held: libraryTarget.held,
+        keptFormat,
+        updatable,
+        replaceLosesStars,
+      }
+    : undefined
   const runLibraryAction = (action: LibraryCopyAction, onStarted?: () => void) => {
     if (!libraryTarget || libraryTarget.held) return
     if (action === 'update') {
@@ -2040,7 +2042,7 @@ export const Editor = memo(function Editor({
       tagsOnly: tagsOnlyExport,
       sameFormat: formatMatchesInput(format, item.inputPath),
       addsToMusic,
-      libraryAction: libraryCopyAction,
+      libraryAction: copyAction,
     }).library
   const runLibraryRef = useRef(runLibraryAction)
   runLibraryRef.current = runLibraryAction
@@ -2049,9 +2051,9 @@ export const Editor = memo(function Editor({
       onLibraryRunChange?.(null)
       return
     }
-    onLibraryRunChange?.((onStarted) => runLibraryRef.current(libraryCopyAction, onStarted))
+    onLibraryRunChange?.((onStarted) => runLibraryRef.current(copyAction, onStarted))
     return () => onLibraryRunChange?.(null)
-  }, [bodyActsOnCopy, libraryCopyAction, onLibraryRunChange])
+  }, [bodyActsOnCopy, copyAction, onLibraryRunChange])
   // The file each convert replaces: a selection's, what each track was stamped to replace by
   // an earlier convert; one track's, the library copy when the body replaces it, else the one
   // it already has.
@@ -2059,7 +2061,7 @@ export const Editor = memo(function Editor({
     ...(isMulti
       ? (selectedTracks ?? []).flatMap((t) => (t.replacesPath ? [t.replacesPath] : []))
       : [
-          bodyActsOnCopy && libraryTarget && !libraryTarget.held && libraryCopyAction === 'replace'
+          bodyActsOnCopy && libraryTarget && !libraryTarget.held && copyAction === 'replace'
             ? libraryTarget.path
             : (item.replacesPath ?? ''),
         ]),
