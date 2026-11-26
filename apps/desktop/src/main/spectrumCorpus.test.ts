@@ -13,7 +13,20 @@ describe('spectrum verdicts over the measured corpus', () => {
     expect(byKind('encode')).toHaveLength(40)
     expect(byKind('lossless')).toHaveLength(9)
     expect(byKind('clean')).toHaveLength(6)
+    expect(byKind('transcode')).toHaveLength(4)
   })
+
+  it.each(byKind('transcode').map((e) => [e.name, e] as const))(
+    'catches the shallow codec wall in the user-reported FLAC %s',
+    async (_name, entry) => {
+      // Sold or shared as FLAC, graded "Good quality", and lossy underneath: the highs end
+      // in one stroke on a dead, flat floor. Missing them is the lie the badge exists to
+      // catch, just as much as accusing a clean master.
+      const verdict = await grade(entry)
+      expect(verdict.hasKnee).toBe(true)
+      expect(verdict.processed).toBe(false)
+    },
+  )
 
   it.each(byKind('encode').map((e) => [e.name, e] as const))(
     'catches the codec lowpass in %s',
