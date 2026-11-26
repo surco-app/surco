@@ -226,6 +226,47 @@ describe('createReplacedStore', () => {
 })
 
 describe('recordReplacement', () => {
+  // A conversion that lands beside a copy a program already held is a format change too
+  // (26/11: Minute 8 came in as a new AIFF beside its MP3 with 15 cues, and To review never
+  // listed it). Nothing measured a shift between them, so it is listed unmoved.
+  it('records a conversion beside a copy the programs already held', async () => {
+    const store = createReplacedStore(await fileIn())
+    recordReplacement(
+      store,
+      { reviewAgainst: '/m/old.mp3' },
+      { outputPath: '/m/new.flac' },
+      ['rekordbox'],
+      3,
+    )
+    expect(store.list()).toEqual([
+      entry({ shift: { unmoved: 'noMatch' }, pending: ['rekordbox'], replacedAt: 3 }),
+    ])
+  })
+
+  it('records nothing for tags written in place, which change no format', async () => {
+    const store = createReplacedStore(await fileIn())
+    recordReplacement(
+      store,
+      { inputPath: '/m/a.aiff', reviewAgainst: '/m/old.mp3' },
+      { outputPath: '/m/a.aiff' },
+      ['rekordbox'],
+      3,
+    )
+    expect(store.list()).toEqual([])
+  })
+
+  it('records nothing for a conversion that rewrote the copy itself in place', async () => {
+    const store = createReplacedStore(await fileIn())
+    recordReplacement(
+      store,
+      { reviewAgainst: '/m/a.aiff' },
+      { outputPath: '/m/a.aiff' },
+      ['rekordbox'],
+      3,
+    )
+    expect(store.list()).toEqual([])
+  })
+
   it('records an unmeasured replacement in amber rather than leaving it out', async () => {
     const store = createReplacedStore(await fileIn())
     recordReplacement(

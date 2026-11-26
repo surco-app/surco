@@ -815,7 +815,34 @@ describe('ExportButton library copy', () => {
     expect(replace).toHaveAttribute('aria-checked', 'false')
   })
 
-  it('remembers and runs the action picked from the menu', () => {
+  // Another version converts from the body, yet Update and Replace stay in the menu so the
+  // DJ can still decide it is the same track (25/11, a vinyl rip against its release).
+  it('converts over another version and still offers both actions in the menu', () => {
+    const onProcess = vi.fn()
+    const onLibraryAction = vi.fn()
+    render(
+      <ExportButton
+        {...baseProps}
+        incomplete={false}
+        libraryCopy={{ ...offer, action: undefined, otherVersion: true }}
+        onProcess={onProcess}
+        onLibraryAction={onLibraryAction}
+      />,
+    )
+    const body = screen.getByTestId('process-btn')
+    expect(body).toHaveTextContent('Convert')
+    fireEvent.click(screen.getByTestId('process-format-toggle'))
+    expect(screen.getByTestId('library-copy-update')).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'false')
+    fireEvent.click(screen.getByTestId('library-copy-update'))
+    expect(onLibraryAction).not.toHaveBeenCalled()
+    fireEvent.click(body)
+    expect(onProcess).toHaveBeenCalled()
+  })
+
+  // A pick only sets what the body does (26/11): writing to a library from a menu row came as a
+  // surprise, the DJ presses the body once it says what will happen.
+  it('remembers the action picked from the menu and leaves the press to the body', () => {
     const onLibraryAction = vi.fn()
     const onLibraryActionChange = vi.fn()
     render(
@@ -831,45 +858,9 @@ describe('ExportButton library copy', () => {
     fireEvent.click(toggle)
     fireEvent.click(screen.getByTestId('library-copy-replace'))
     expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
-    expect(onLibraryAction).toHaveBeenCalledWith('replace')
+    expect(onLibraryAction).not.toHaveBeenCalled()
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(screen.queryByTestId('library-copy-heading')).toBeNull()
-  })
-
-  // Replacing a copy Serato holds costs its stars, and the footer says so only once the body
-  // says Replace. Run from the menu, the first Replace went through before the DJ could read
-  // it: the pick only turns the body to Replace, and the body's press replaces.
-  it('only remembers Replace from the menu when replacing would cost Serato its stars', () => {
-    const onLibraryAction = vi.fn()
-    const onLibraryActionChange = vi.fn()
-    render(
-      <ExportButton
-        {...baseProps}
-        incomplete={false}
-        libraryCopy={{ ...offer, replaceLosesStars: true }}
-        onLibraryAction={onLibraryAction}
-        onLibraryActionChange={onLibraryActionChange}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
-    fireEvent.click(screen.getByTestId('library-copy-replace'))
-    expect(onLibraryActionChange).toHaveBeenCalledWith('replace')
-    expect(onLibraryAction).not.toHaveBeenCalled()
-  })
-
-  it('still runs Update from the menu at once when replacing would cost Serato its stars', () => {
-    const onLibraryAction = vi.fn()
-    render(
-      <ExportButton
-        {...baseProps}
-        incomplete={false}
-        libraryCopy={{ ...offer, action: 'replace', replaceLosesStars: true }}
-        onLibraryAction={onLibraryAction}
-      />,
-    )
-    fireEvent.click(screen.getByTestId('process-format-toggle'))
-    fireEvent.click(screen.getByTestId('library-copy-update'))
-    expect(onLibraryAction).toHaveBeenCalledWith('update')
   })
 
   // A copy still being compared may yet turn out to be another version, so nothing is

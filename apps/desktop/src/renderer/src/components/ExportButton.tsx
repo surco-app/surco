@@ -270,19 +270,20 @@ export function ExportButton({
     onSelectDestination(d)
   }
 
+  // A pick only sets what the body does (26/11): writing to a library straight from a menu row
+  // came as a surprise, so the DJ presses the body once it says what will happen.
   function pickLibraryAction(action: LibraryCopyAction): void {
     setOpen(false)
     onLibraryActionChange?.(action)
-    // The stars warning shows only once the body says Replace, so a Replace that costs them
-    // waits for the body's press: run from here, the DJ would read the warning too late.
-    const warnsFirst = action === 'replace' && !!libraryCopy?.replaceLosesStars
-    if (!libraryCopy?.held && !softBlocked && !warnsFirst) onLibraryAction?.(action)
   }
 
   // Only while the body acts on the copy: an in-place update or a re-export outranks it there,
-  // and the menu must not run an action the button never shows.
+  // and the menu must not run an action the button never shows. Another version with nothing
+  // picked converts from the body, yet the menu keeps both actions on it for the DJ to take.
+  const otherVersionConverts =
+    !!libraryCopy?.otherVersion && !libraryCopy.action && labelSpec.key === 'editor.convertAction'
   const libraryMenu = libraryCopy &&
-    libraryAction && {
+    (!!libraryAction || otherVersionConverts) && {
       heading: `${libraryCopy.name} · ${libraryCopy.format}`,
       action: libraryCopy.action,
       updatable: libraryCopy.updatable !== false,
@@ -551,7 +552,7 @@ export function ExportButton({
             onPickDestination={pickDestination}
             clearAfter={clearAfter}
             onToggleClearAfter={onToggleClearAfter}
-            libraryCopy={libraryMenu}
+            libraryCopy={libraryMenu || undefined}
           />
         )}
       </div>

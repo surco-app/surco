@@ -7799,6 +7799,33 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
+    // Another version is the DJ's call one track at a time (25/11): the body converts, a pick
+    // from the menu turns the body for this track alone without touching the action remembered
+    // for every real copy, and only the body's press updates it (26/11).
+    it('converts over another version and updates it from the menu for this track alone', async () => {
+      renderWithPrograms({
+        rekordbox: { ...sameRekordboxCopy, durationSec: 400 },
+        hereDuration: 210,
+        identicalPair: true,
+      })
+      await waitFor(() =>
+        expect(screen.getByTestId('library-verdict')).toHaveAttribute('data-state', 'different'),
+      )
+      expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
+      fireEvent.click(screen.getByTestId('process-format-toggle'))
+      fireEvent.click(screen.getByTestId('library-copy-update'))
+      expect(rendered.onUpdateLibraryCopy).not.toHaveBeenCalled()
+      expect(rendered.onLibraryCopyAction).not.toHaveBeenCalled()
+      const body = screen.getByTestId('process-btn')
+      expect(body).toHaveTextContent(/^Update$/)
+      fireEvent.click(body)
+      expect(rendered.onUpdateLibraryCopy).toHaveBeenCalledWith({
+        path: '/r/Strobe.wav',
+        program: 'rekordbox',
+      })
+      expect(rendered.onProcess).not.toHaveBeenCalled()
+    })
+
     it('remembers the action picked from the menu', async () => {
       renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
       await readyBody()
@@ -7866,13 +7893,14 @@ describe('Editor Apple Music library section', () => {
       )
     })
 
-    it('replaces at once when Replace is picked over a copy Serato does not hold', async () => {
+    it('leaves the press to the body when Replace is picked over a copy Serato does not hold', async () => {
       renderWithPrograms({ rekordbox: sameRekordboxCopy, hereDuration: 95, identicalPair: true })
       await readyBody()
       fireEvent.click(screen.getByTestId('process-format-toggle'))
       fireEvent.click(screen.getByTestId('library-copy-replace'))
-      expect(rendered.onChange).toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
-      expect(rendered.onProcess).toHaveBeenCalled()
+      expect(rendered.onLibraryCopyAction).toHaveBeenCalledWith('replace')
+      expect(rendered.onChange).not.toHaveBeenCalledWith({ replacesPath: '/r/Strobe.wav' })
+      expect(rendered.onProcess).not.toHaveBeenCalled()
     })
 
     it('says nothing about Serato stars when the body updates the Serato copy', async () => {
@@ -8015,7 +8043,7 @@ describe('Editor Apple Music library section', () => {
     })
 
     // Another version is another track: updating its tags or replacing it would lose it.
-    it('converts as today when the only copy is another version', async () => {
+    it('converts as today when the only copy is another version, with both actions in the menu', async () => {
       renderWithPrograms({
         rekordbox: { path: '/r/Strobe.wav', loudness: wavLoudness, durationSec: 30 },
         hereDuration: 95,
@@ -8025,7 +8053,9 @@ describe('Editor Apple Music library section', () => {
       )
       expect(screen.getByTestId('process-btn')).toHaveTextContent(/^Convert$/)
       fireEvent.click(screen.getByTestId('process-format-toggle'))
-      expect(screen.queryByTestId('library-copy-heading')).toBeNull()
+      expect(screen.getByTestId('library-copy-heading')).toHaveTextContent(/^rekordbox · /)
+      expect(screen.getByTestId('library-copy-update')).toHaveAttribute('aria-checked', 'false')
+      expect(screen.getByTestId('library-copy-replace')).toHaveAttribute('aria-checked', 'false')
     })
 
     it('waits for the comparison before reading a DJ copy', async () => {

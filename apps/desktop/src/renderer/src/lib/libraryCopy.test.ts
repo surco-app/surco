@@ -24,7 +24,6 @@ import {
   pickedCopyOf,
   pickLibraryCopy,
   replaceCopyPatch,
-  replaceWarnsFirst,
   versionCopyIn,
   versionCopyPath,
 } from './libraryCopy'
@@ -511,17 +510,39 @@ describe('pickLibraryCopy', () => {
     })
   })
 
-  it.each(['different', 'unreadable', 'missing', 'thisFile', 'several', null] as const)(
+  it.each(['unreadable', 'missing', 'thisFile', 'several', null] as const)(
     'offers nothing for a lone copy that is %s',
     (verdict) => {
       expect(pickLibraryCopy([{ ...rekordbox, verdict }], 210)).toBeNull()
     },
   )
 
+  // Whether to update or replace another version is the DJ's call, not the measure's (25/11):
+  // Surco can take a vinyl rip and the release of one track for two edits. The copy is still
+  // offered, marked, so the body converts and only a pick from the menu acts on it.
+  it('offers a lone copy that is another version, marked as one', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, verdict: 'different' }], 210)).toMatchObject({
+      program: 'rekordbox',
+      path: '/r/a.aiff',
+      held: false,
+      replaceable: true,
+      otherVersion: true,
+    })
+  })
+
   // «same» can come from the 91 s pair probe, which a longer edit of the same master passes
-  // too: updating that copy would overwrite another version of the track.
-  it('offers nothing for a copy whose length is another edit, whatever its verdict', () => {
-    expect(pickLibraryCopy([{ ...rekordbox, durationSec: 400 }], 210)).toBeNull()
+  // too: the body must not update that copy as if it were this track.
+  it('offers a copy whose length is another edit only as another version', () => {
+    expect(pickLibraryCopy([{ ...rekordbox, durationSec: 400 }], 210)).toMatchObject({
+      path: '/r/a.aiff',
+      otherVersion: true,
+    })
+  })
+
+  it('takes a copy of this recording before another version listed ahead of it', () => {
+    const picked = pickLibraryCopy([{ ...rekordbox, durationSec: 400 }, traktor], 210)
+    expect(picked).toMatchObject({ program: 'traktor' })
+    expect(picked?.otherVersion).toBeUndefined()
   })
 
   it('offers nothing while either length is unknown', () => {
@@ -684,24 +705,6 @@ describe('keptFormatOf', () => {
     expect(keptFormatOf('/r/a.aif')).toBe('aiff')
     expect(keptFormatOf('/m/a.m4a')).toBe('alac')
     expect(keptFormatOf('/x/a.ogg')).toBeUndefined()
-  })
-})
-
-// A menu Replace runs at once only when it is known to cost no stars: on a Serato copy whose
-// collection is not read yet, the first Replace would go through before the warning could show.
-describe('replaceWarnsFirst', () => {
-  it('holds a Replace on a Serato copy while the stars loss is unknown', () => {
-    expect(replaceWarnsFirst('serato', undefined)).toBe(true)
-  })
-
-  it('holds a Replace that is known to cost stars, whatever the program', () => {
-    expect(replaceWarnsFirst('rekordbox', true)).toBe(true)
-    expect(replaceWarnsFirst('serato', true)).toBe(true)
-  })
-
-  it('runs a Replace known to cost nothing, or unknown on a copy Serato did not hand over', () => {
-    expect(replaceWarnsFirst('serato', false)).toBe(false)
-    expect(replaceWarnsFirst('rekordbox', undefined)).toBe(false)
   })
 })
 
@@ -960,8 +963,8 @@ describe('pickedCopyOf', () => {
     expect(pickedCopyOf({ ...base, musicCopy, isMulti: true }).pickedCopy).toBeNull()
   })
 
-  it('picks no copy whose length is another edit', () => {
-    expect(pickedCopyOf({ ...base, fileDurationSec: 400 }).pickedCopy).toBeNull()
+  it('picks a copy whose length is another edit only as another version', () => {
+    expect(pickedCopyOf({ ...base, fileDurationSec: 400 }).pickedCopy?.otherVersion).toBe(true)
   })
 })
 
@@ -1021,7 +1024,6 @@ describe('libraryCopyOfferOf', () => {
   const base: LibraryCopyOfferContext = {
     libraryTarget: target(),
     keptFormat: 'aiff',
-    replaceStarsLoss: false,
     libraryCopyAction: 'update',
   }
 
@@ -1037,9 +1039,20 @@ describe('libraryCopyOfferOf', () => {
         keptFormat: 'aiff',
         updatable: true,
         replaceable: true,
-        replaceLosesStars: false,
       },
     })
+  })
+
+  // Another version keeps the body on Convert until the DJ picks Update or Replace for it;
+  // the action remembered for real copies would otherwise act on another edit unasked.
+  it('acts on another version only with the action picked for it', () => {
+    const other = { ...base, libraryTarget: target({ otherVersion: true }) }
+    const unpicked = libraryCopyOfferOf(other)
+    expect(unpicked.copyAction).toBeUndefined()
+    expect(unpicked.libraryCopy).toMatchObject({ otherVersion: true, action: undefined })
+    const picked = libraryCopyOfferOf({ ...other, otherVersionAction: 'replace' })
+    expect(picked.copyAction).toBe('replace')
+    expect(picked.libraryCopy?.action).toBe('replace')
   })
 
   it('names the Apple Music copy after Apple Music', () => {
@@ -1069,17 +1082,6 @@ describe('libraryCopyOfferOf', () => {
         keptFormat: undefined,
       }).copyAction,
     ).toBe('update')
-  })
-
-  it('warns that replacing loses Serato stars until the collection says otherwise', () => {
-    const serato = { ...base, libraryTarget: target({ program: 'serato' }) }
-    expect(
-      libraryCopyOfferOf({ ...serato, replaceStarsLoss: undefined }).libraryCopy?.replaceLosesStars,
-    ).toBe(true)
-    expect(libraryCopyOfferOf(serato).libraryCopy?.replaceLosesStars).toBe(false)
-    expect(
-      libraryCopyOfferOf({ ...base, replaceStarsLoss: true }).libraryCopy?.replaceLosesStars,
-    ).toBe(true)
   })
 
   it('offers nothing without a copy, and keeps the chosen action', () => {
