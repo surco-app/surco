@@ -1231,21 +1231,10 @@
     "lede": "Lo importante de cada versión, sin ruido. Las funciones que cambian cómo preparas tu música, versión a versión.",
     "beta": {
       "kicker": "En pruebas",
-      "version": "1.44.2-beta.0",
+      "version": "",
       "title": "Lo que llega en la próxima versión",
       "how": "Para probarlo ya, activa Recibir versiones beta en Ajustes, General, y reinicia Surco. Las betas llegan al instalador de la web, no a la copia de la Microsoft Store.",
-      "items": [
-        "Si una pista ya está en tu biblioteca, en Apple Music o en un programa DJ, el editor la reconoce. Puedes meter esa copia en playlists o sacarla de ellas desde el editor, y deshacerlo.",
-        "Los campos vacíos se rellenan con lo que ya tiene tu copia, también la agrupación y la carátula, aunque sea otra versión de la misma grabación.",
-        "En vez de convertir al lado de la copia que ya tienes, el botón de convertir ofrece Actualizar sus etiquetas o Sustituirla por la nueva.",
-        "Una pista de Apple Music o de un programa DJ se convierte a su propio formato, no al de Ajustes.",
-        "Los cues de Traktor ya no se mueven al guardar una pista.",
-        "Una conversión que cae junto a una copia que ya tenía un programa DJ entra en Para revisar, para que la compruebes.",
-        "El editor de cues recoge el análisis de rekordbox en cuanto termina, sin reiniciar Surco.",
-        "Discogs encuentra más discos. Si no da con nada por artista y título, prueba con el álbum de la etiqueta.",
-        "Los avisos de lo que espera a que cierres un programa DJ se agrupan por motivo y se van solos.",
-        "Todos los menús se recorren con las flechas del teclado."
-      ]
+      "items": []
     },
     "olderTitle": "Versiones anteriores",
     "outroTitle": "Pruébalo todo en tu próxima sesión",

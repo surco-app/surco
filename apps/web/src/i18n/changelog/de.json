@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "November 26, 2026",
+    "title": "Deine Bibliothekskopie, direkt im Editor",
+    "items": [
+      {
+        "text": "Ist ein Track schon in deiner Bibliothek, in Apple Music oder einem DJ-Programm, erkennt ihn der Editor. Du kannst diese Kopie im Editor zu Playlists hinzufügen oder daraus entfernen und das rückgängig machen.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Leere Felder werden mit dem gefüllt, was deine Kopie schon hat, auch Gruppierung und Cover, selbst wenn es eine andere Version derselben Aufnahme ist.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Statt neben deiner vorhandenen Kopie zu konvertieren, bietet der Konvertieren-Button Aktualisieren für ihre Tags oder Ersetzen durch die neue an.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Ein Track aus Apple Music oder einem DJ-Programm wird in sein eigenes Format konvertiert, nicht in das aus den Einstellungen.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Traktor-Cues verschieben sich beim Speichern eines Tracks nicht mehr.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Eine Konvertierung, die neben einer Kopie landet, die ein DJ-Programm schon hatte, kommt in Zu prüfen, damit du sie kontrollierst.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Der Cue-Editor übernimmt die rekordbox-Analyse, sobald sie fertig ist, ohne Surco neu zu starten.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Discogs findet mehr Releases. Ergibt Künstler und Titel nichts, versucht es das Album aus den Tags.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Hinweise auf das, was auf das Schließen eines DJ-Programms wartet, werden nach Grund gruppiert und verschwinden von selbst.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Alle Menüs lassen sich mit den Pfeiltasten durchgehen.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Surco erkennt mehr FLAC-Dateien, die aus einer komprimierten Datei entstanden sind und als gute Qualität durchgingen. Bereits analysierte Tracks behalten ihr Ergebnis, bis sie erneut analysiert werden.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "November 24, 2026",
     "title": "Cues speichern und weiter",

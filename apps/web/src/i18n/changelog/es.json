@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "26 de noviembre de 2026",
+    "title": "Tu copia de la biblioteca, desde el editor",
+    "items": [
+      {
+        "text": "Si una pista ya está en tu biblioteca, en Apple Music o en un programa DJ, el editor la reconoce. Puedes meter esa copia en playlists o sacarla de ellas desde el editor, y deshacerlo.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Los campos vacíos se rellenan con lo que ya tiene tu copia, también la agrupación y la carátula, aunque sea otra versión de la misma grabación.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "En vez de convertir al lado de la copia que ya tienes, el botón de convertir ofrece Actualizar sus etiquetas o Sustituirla por la nueva.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Una pista de Apple Music o de un programa DJ se convierte a su propio formato, no al de Ajustes.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Los cues de Traktor ya no se mueven al guardar una pista.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Una conversión que cae junto a una copia que ya tenía un programa DJ entra en Para revisar, para que la compruebes.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "El editor de cues recoge el análisis de rekordbox en cuanto termina, sin reiniciar Surco.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Discogs encuentra más discos. Si no da con nada por artista y título, prueba con el álbum de la etiqueta.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Los avisos de lo que espera a que cierres un programa DJ se agrupan por motivo y se van solos.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Todos los menús se recorren con las flechas del teclado.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Surco detecta más FLAC que se hicieron a partir de un archivo comprimido y pasaban por buena calidad. Las pistas que ya habías analizado conservan su resultado hasta que se vuelvan a analizar.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "24 de noviembre de 2026",
     "title": "Guarda los cues y pasa a la siguiente",

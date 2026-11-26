@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "November 26, 2026",
+    "title": "Sua cópia da biblioteca, direto no editor",
+    "items": [
+      {
+        "text": "Se uma faixa já está na sua biblioteca, no Apple Music ou num programa de DJ, o editor a reconhece. Você pode colocar essa cópia em playlists ou tirá-la delas pelo editor, e desfazer.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Os campos vazios são preenchidos com o que a sua cópia já tem, incluindo agrupamento e capa, mesmo que seja outra versão da mesma gravação.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Em vez de converter ao lado da cópia que você já tem, o botão de converter oferece Atualizar as tags dela ou Substituir pela nova.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Uma faixa do Apple Music ou de um programa de DJ é convertida no próprio formato, não no dos Ajustes.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Os cues do Traktor não se movem mais ao salvar uma faixa.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Uma conversão que fica ao lado de uma cópia que um programa de DJ já tinha vai para Para revisar, para você conferir.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "O editor de cues pega a análise do rekordbox assim que ela termina, sem reiniciar o Surco.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "O Discogs encontra mais discos. Quando artista e título não dão em nada, ele tenta o álbum das tags.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Os avisos do que espera você fechar um programa de DJ ficam agrupados por motivo e somem sozinhos.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Todos os menus podem ser percorridos com as setas do teclado.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "O Surco detecta mais FLAC feitos a partir de um arquivo comprimido que passavam por boa qualidade. As faixas que você já tinha analisado mantêm o resultado até serem analisadas de novo.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "November 24, 2026",
     "title": "Salve os cues e vá para a próxima",

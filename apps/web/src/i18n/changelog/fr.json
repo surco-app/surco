@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "November 26, 2026",
+    "title": "Ta copie de la bibliothèque, depuis l'éditeur",
+    "items": [
+      {
+        "text": "Si un morceau est déjà dans ta bibliothèque, dans Apple Music ou un logiciel DJ, l’éditeur le reconnaît. Tu peux ajouter cette copie à des playlists ou l’en retirer depuis l’éditeur, et l’annuler.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Les champs vides se remplissent avec ce que ta copie contient déjà, regroupement et pochette compris, même s’il s’agit d’une autre version du même enregistrement.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Au lieu de convertir à côté de la copie que tu as déjà, le bouton de conversion propose Mettre à jour ses tags ou Remplacer par la nouvelle.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Un morceau d’Apple Music ou d’un logiciel DJ est converti dans son propre format, pas dans celui des Réglages.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Les cues de Traktor ne bougent plus quand tu enregistres un morceau.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Une conversion qui arrive à côté d’une copie qu’un logiciel DJ avait déjà passe dans À vérifier, pour que tu la contrôles.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "L’éditeur de cues reprend l’analyse de rekordbox dès qu’elle est terminée, sans redémarrer Surco.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Discogs trouve plus de disques. Quand l’artiste et le titre ne donnent rien, il essaie l’album des tags.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Les avis sur ce qui attend la fermeture d’un logiciel DJ sont regroupés par motif et partent tout seuls.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Tous les menus se parcourent avec les flèches du clavier.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Surco repère plus de FLAC fabriqués à partir d'un fichier compressé qui passaient pour de bonne qualité. Les morceaux que tu avais déjà analysés gardent leur résultat jusqu'à leur prochaine analyse.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "November 24, 2026",
     "title": "Enregistre tes cues et passe au suivant",

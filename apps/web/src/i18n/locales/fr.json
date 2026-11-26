@@ -1231,21 +1231,10 @@
     "lede": "L’essentiel de chaque version, sans le bruit. Les fonctions qui changent ta façon de préparer ta musique, version après version.",
     "beta": {
       "kicker": "En test",
-      "version": "1.44.2-beta.0",
+      "version": "",
       "title": "Ce qui arrive dans la prochaine version",
       "how": "Pour l’essayer dès maintenant, active Recevoir les versions bêta dans Réglages, Général, puis relance Surco. Les bêtas arrivent sur l’installateur de ce site, pas sur la copie du Microsoft Store.",
-      "items": [
-        "Si un morceau est déjà dans ta bibliothèque, dans Apple Music ou un logiciel DJ, l’éditeur le reconnaît. Tu peux ajouter cette copie à des playlists ou l’en retirer depuis l’éditeur, et l’annuler.",
-        "Les champs vides se remplissent avec ce que ta copie contient déjà, regroupement et pochette compris, même s’il s’agit d’une autre version du même enregistrement.",
-        "Au lieu de convertir à côté de la copie que tu as déjà, le bouton de conversion propose Mettre à jour ses tags ou Remplacer par la nouvelle.",
-        "Un morceau d’Apple Music ou d’un logiciel DJ est converti dans son propre format, pas dans celui des Réglages.",
-        "Les cues de Traktor ne bougent plus quand tu enregistres un morceau.",
-        "Une conversion qui arrive à côté d’une copie qu’un logiciel DJ avait déjà passe dans À vérifier, pour que tu la contrôles.",
-        "L’éditeur de cues reprend l’analyse de rekordbox dès qu’elle est terminée, sans redémarrer Surco.",
-        "Discogs trouve plus de disques. Quand l’artiste et le titre ne donnent rien, il essaie l’album des tags.",
-        "Les avis sur ce qui attend la fermeture d’un logiciel DJ sont regroupés par motif et partent tout seuls.",
-        "Tous les menus se parcourent avec les flèches du clavier."
-      ]
+      "items": []
     },
     "olderTitle": "Versions précédentes",
     "outroTitle": "Essaie tout ça à ta prochaine session",

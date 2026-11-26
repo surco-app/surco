@@ -1231,21 +1231,10 @@
     "lede": "Das Wichtigste jeder Version, ohne Rauschen. Die Funktionen, die verändern, wie du deine Musik vorbereitest, Version für Version.",
     "beta": {
       "kicker": "Im Test",
-      "version": "1.44.2-beta.0",
+      "version": "",
       "title": "Was in der nächsten Version kommt",
       "how": "Um es jetzt auszuprobieren, schalte unter Einstellungen, Allgemein die Option Beta-Versionen erhalten ein und starte Surco neu. Betas kommen über das Installationsprogramm dieser Website, nicht über die Version aus dem Microsoft Store.",
-      "items": [
-        "Ist ein Track schon in deiner Bibliothek, in Apple Music oder einem DJ-Programm, erkennt ihn der Editor. Du kannst diese Kopie im Editor zu Playlists hinzufügen oder daraus entfernen und das rückgängig machen.",
-        "Leere Felder werden mit dem gefüllt, was deine Kopie schon hat, auch Gruppierung und Cover, selbst wenn es eine andere Version derselben Aufnahme ist.",
-        "Statt neben deiner vorhandenen Kopie zu konvertieren, bietet der Konvertieren-Button Aktualisieren für ihre Tags oder Ersetzen durch die neue an.",
-        "Ein Track aus Apple Music oder einem DJ-Programm wird in sein eigenes Format konvertiert, nicht in das aus den Einstellungen.",
-        "Traktor-Cues verschieben sich beim Speichern eines Tracks nicht mehr.",
-        "Eine Konvertierung, die neben einer Kopie landet, die ein DJ-Programm schon hatte, kommt in Zu prüfen, damit du sie kontrollierst.",
-        "Der Cue-Editor übernimmt die rekordbox-Analyse, sobald sie fertig ist, ohne Surco neu zu starten.",
-        "Discogs findet mehr Releases. Ergibt Künstler und Titel nichts, versucht es das Album aus den Tags.",
-        "Hinweise auf das, was auf das Schließen eines DJ-Programms wartet, werden nach Grund gruppiert und verschwinden von selbst.",
-        "Alle Menüs lassen sich mit den Pfeiltasten durchgehen."
-      ]
+      "items": []
     },
     "olderTitle": "Frühere Versionen",
     "outroTitle": "Probier alles in deiner nächsten Session aus",

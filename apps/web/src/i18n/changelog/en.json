@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "November 26, 2026",
+    "title": "Your library copy, from the editor",
+    "items": [
+      {
+        "text": "If a track is already in your library, in Apple Music or a DJ program, the editor recognises it. You can add that copy to playlists or take it out from the editor, and undo it.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Empty fields fill in with what your copy already has, grouping and cover included, even when it is another version of the same recording.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Instead of converting next to the copy you already have, the convert button offers Update for its tags or Replace with the new one.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "A track from Apple Music or a DJ program converts to its own format, not the one in Settings.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Traktor cues no longer move when you save a track.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "A conversion that lands next to a copy a DJ program already had goes to To review, so you can check it.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "The cue editor picks up the rekordbox analysis as soon as it finishes, without restarting Surco.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Discogs finds more releases. When nothing turns up by artist and title, it tries the album in the tags.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Notices about what waits for you to close a DJ program are grouped by reason and go away on their own.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Every menu can be walked with the arrow keys.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Surco spots more FLAC files that were made from a compressed file and passed as good quality. Tracks you had already analysed keep their result until they are analysed again.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "November 24, 2026",
     "title": "Save your cues and move on",

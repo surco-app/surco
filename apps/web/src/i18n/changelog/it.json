@@ -1,5 +1,56 @@
 [
   {
+    "version": "1.45",
+    "date": "November 26, 2026",
+    "title": "La tua copia in libreria, dall'editor",
+    "items": [
+      {
+        "text": "Se un brano è già nella tua libreria, in Apple Music o in un programma DJ, l’editor lo riconosce. Puoi aggiungere quella copia alle playlist o toglierla dall’editor, e annullare.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "I campi vuoti si riempiono con quello che la tua copia ha già, raggruppamento e copertina compresi, anche se è un’altra versione della stessa registrazione.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Invece di convertire accanto alla copia che hai già, il pulsante di conversione propone Aggiorna i suoi tag o Sostituisci con la nuova.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Un brano di Apple Music o di un programma DJ viene convertito nel suo formato, non in quello delle Impostazioni.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "I cue di Traktor non si spostano più quando salvi un brano.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Una conversione che finisce accanto a una copia che un programma DJ aveva già entra in Da rivedere, così la controlli.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "L’editor dei cue prende l’analisi di rekordbox appena finisce, senza riavviare Surco.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Discogs trova più dischi. Se con artista e titolo non trova nulla, prova con l’album dei tag.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Gli avvisi su ciò che aspetta la chiusura di un programma DJ si raggruppano per motivo e se ne vanno da soli.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Tutti i menu si percorrono con le frecce della tastiera.",
+        "in": "1.45.0"
+      },
+      {
+        "text": "Surco riconosce più FLAC ricavati da un file compresso che passavano per buona qualità. I brani che avevi già analizzato mantengono il risultato finché non vengono analizzati di nuovo.",
+        "in": "1.45.0"
+      }
+    ]
+  },
+  {
     "version": "1.44",
     "date": "November 24, 2026",
     "title": "Salva i cue e passa al successivo",
