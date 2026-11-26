@@ -2178,7 +2178,9 @@ function Editing({
                         onClick={() =>
                           fromMarkMenu({ type: 'reletter', key: markTarget.key, kind })
                         }
-                        className={`press h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] aria-disabled:opacity-40 ${
+                        className={`${
+                          holder !== undefined && state.locked.includes(holder.key) ? '' : 'press '
+                        }h-5 w-5 rounded-[3px] text-center font-semibold hover:bg-[var(--color-hover)] aria-disabled:opacity-40 ${
                           kind === markTarget.kind
                             ? 'bg-[var(--color-fg)] text-[var(--color-panel)] hover:bg-[var(--color-fg)]'
                             : ''
