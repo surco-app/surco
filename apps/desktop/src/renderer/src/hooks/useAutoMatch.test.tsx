@@ -765,6 +765,103 @@ describe('useAutoMatch', () => {
     )
   })
 
+  describe('narrowing the sweep to the open playlist', () => {
+    function gatedSearch() {
+      let releaseGate: () => void = () => {}
+      const gate = new Promise<void>((res) => {
+        releaseGate = res
+      })
+      const queries = new Set<string>()
+      const search = vi.fn(async (q: string) => {
+        queries.add(q)
+        await gate
+        return []
+      })
+      return { search, queries, release: () => releaseGate() }
+    }
+    const crate = ['a', 'b', 'c', 'd', 'e'].map((id) => ({ ...track(id), query: `q ${id}` }))
+
+    // A DJ opening a playlist mid-sweep wants that playlist's rows matched now; the rest of
+    // a thousand-track crate waiting ahead of them made the playlist look abandoned, and the
+    // pill kept promising tracks that are not on screen.
+    it('sets aside the queued tracks outside the playlist and counts only the playlist', async () => {
+      const { search, queries, release } = gatedSearch()
+      setApi({ search })
+      const { result } = setup(crate)
+
+      act(() => result.current.enqueueAutoMatch(crate))
+      await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 5 }))
+      act(() => result.current.scopeTo((t) => t.id === 'a' || t.id === 'c'))
+
+      expect(result.current.matching).toEqual({ done: 0, total: 2 })
+      release()
+      await waitFor(() => expect(result.current.matching).toBeNull())
+      expect([...queries].sort()).toEqual(['q a', 'q b', 'q c'])
+    })
+
+    // Set aside is not given up: those tracks were never matched, so going back to the whole
+    // list has to pick them up again or they stay unmatched until the next import.
+    it('queues the set aside tracks again when the DJ goes back to the whole list', async () => {
+      const { search, queries, release } = gatedSearch()
+      setApi({ search })
+      const { result } = setup(crate)
+
+      act(() => result.current.enqueueAutoMatch(crate))
+      await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 5 }))
+      act(() => result.current.scopeTo((t) => t.id === 'a'))
+      act(() => result.current.scopeTo(null))
+
+      expect(result.current.matching).toEqual({ done: 0, total: 4 })
+      release()
+      await waitFor(() => expect(queries.size).toBe(5))
+      await waitFor(() => expect(result.current.matching).toBeNull())
+    })
+
+    // Hopping from one playlist to another brings back only what the new one holds; the rest
+    // stays aside rather than flooding the new playlist's sweep.
+    it('brings back only the set aside tracks the next playlist holds', async () => {
+      const { search, queries, release } = gatedSearch()
+      setApi({ search })
+      const { result } = setup(crate)
+
+      act(() => result.current.enqueueAutoMatch(crate))
+      await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 5 }))
+      act(() => result.current.scopeTo((t) => t.id === 'a'))
+      act(() => result.current.scopeTo((t) => t.id === 'd'))
+
+      expect(result.current.matching).toEqual({ done: 0, total: 1 })
+      release()
+      await waitFor(() => expect(result.current.matching).toBeNull())
+      expect([...queries].sort()).toEqual(['q a', 'q b', 'q d'])
+    })
+
+    // A queued id whose row the list has not committed yet cannot be judged against the
+    // playlist; dropping it would lose a track the import is about to show.
+    it('keeps a queued track whose row is not in the list yet', async () => {
+      const { search, release } = gatedSearch()
+      setApi({ search })
+      const { result, tracksRef } = setup(crate.slice(0, 2))
+
+      act(() => result.current.enqueueAutoMatch(crate))
+      await waitFor(() => expect(result.current.matching).toEqual({ done: 0, total: 5 }))
+      act(() => result.current.scopeTo((t) => t.id === 'a'))
+
+      expect(result.current.matching).toEqual({ done: 0, total: 4 })
+      release()
+      await waitFor(() => expect(search).toHaveBeenCalledTimes(2))
+      tracksRef.current = crate
+      act(() => result.current.focusTrack('e'))
+      await waitFor(() =>
+        expect(search).toHaveBeenCalledWith(
+          'q e',
+          expect.anything(),
+          expect.anything(),
+          expect.anything(),
+        ),
+      )
+    })
+  })
+
   // The whole point of the sweep re-checking the library: a file whose own messy tags don't
   // match the library ('Unknown DJ') but whose confident Discogs match resolves to the
   // canonical artist the library knows ('Artist') must be pinned owned, so the list/filter
