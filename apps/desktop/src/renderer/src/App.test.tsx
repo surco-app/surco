@@ -6435,6 +6435,139 @@ describe('App source playlists', () => {
       )
     }
 
+    // After converting into rekordbox the footer offers to show the track there; the DJ
+    // lands on it in Recently added, cues maximized, ready to set them.
+    it('shows a converted track in rekordbox from the footer, cues maximized', async () => {
+      const processTrack = vi.fn().mockResolvedValue({ outputPath: '/out/a.aiff', inPlace: false })
+      await openFactory({
+        getSettings: vi.fn().mockResolvedValue(
+          settings({
+            addToRekordbox: true,
+            visibleFields: ['title', 'artist', 'rekordboxPlaylists'],
+          }),
+        ),
+        processTrack,
+        dj: djReads({
+          rekordbox: {
+            recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(1),
+            membership: vi.fn<ProgramReads['membership']>().mockResolvedValue({}),
+            playlist: vi
+              .fn<ProgramReads['playlist']>()
+              .mockImplementation(async (id) =>
+                id === RECENTLY_ADDED_ID ? [fresh('/out/a.aiff', 'r9')] : FACTORY_ENTRIES,
+              ),
+          },
+        }),
+      })
+      fireEvent.click(screen.getByTestId('source-rail-tracks'))
+      await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+      fireEvent.click(screen.getAllByTestId('track-row')[0])
+      fireEvent.click(await screen.findByTestId('playlists-summary'))
+      fireEvent.click(screen.getByTestId('playlists-check-h'))
+      fireEvent.click(await screen.findByTestId('process-btn'))
+      await waitFor(() => expect(processTrack).toHaveBeenCalledTimes(1))
+
+      fireEvent.click(await screen.findByTestId('reveal-in-rekordbox'))
+
+      await waitFor(() => expect(titles()).toEqual([expect.stringContaining('Alpha')]))
+      await waitFor(() => expect(selectedRowIndexes()).toEqual([0]))
+      const overlay = await screen.findByTestId('section-maximized-overlay')
+      expect(within(overlay).getByTestId('cues-section')).toBeInTheDocument()
+    })
+
+    // A cue rekordbox could not take names its track by content id only; Go to cue has to
+    // bring that track up with its cues wherever the DJ is browsing, through Recently added
+    // where every track rekordbox holds is listed.
+    describe('Go to cue on a queue notice', () => {
+      async function openWithNotice() {
+        let applied: (a: RekordboxQueueApplied) => void = () => {}
+        await openFactory({
+          dj: djReads({
+            rekordbox: {
+              recentCount: vi.fn<ProgramReads['recentCount']>().mockResolvedValue(2),
+              playlist: vi
+                .fn<ProgramReads['playlist']>()
+                .mockImplementation(async (id) =>
+                  id === RECENTLY_ADDED_ID ? RECENT_ENTRIES : FACTORY_ENTRIES,
+                ),
+              onCueQueueApplied: (cb) => {
+                applied = cb
+                return () => {}
+              },
+            },
+          }),
+        })
+        const notify = (contentId: string) =>
+          act(() =>
+            applied({
+              tracks: 1,
+              changes: 0,
+              written: [],
+              notices: [{ code: 'cues-unfit', track: 'Alpha', count: 9, contentId, ms: 1000 }],
+            }),
+          )
+        const goToCue = async () => {
+          const notice = await screen.findByTestId('rekordbox-edit-notice')
+          fireEvent.click(within(notice).getByRole('button', { name: 'Go to cue' }))
+        }
+        return { notify, goToCue }
+      }
+
+      it('opens the track in Recently added with its cues maximized', async () => {
+        const { notify, goToCue } = await openWithNotice()
+        notify('r1')
+        await goToCue()
+
+        await waitFor(() =>
+          expect(titles()).toEqual([
+            expect.stringContaining('Charlie'),
+            expect.stringContaining('Alpha'),
+          ]),
+        )
+        await waitFor(() => expect(selectedRowIndexes()).toEqual([1]))
+        const overlay = await screen.findByTestId('section-maximized-overlay')
+        expect(within(overlay).getByTestId('cues-section')).toBeInTheDocument()
+      })
+
+      it('switches to rekordbox first when the DJ is on the working list', async () => {
+        const { notify, goToCue } = await openWithNotice()
+        fireEvent.click(screen.getByTestId('source-rail-tracks'))
+        await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(3))
+        notify('r3')
+        await goToCue()
+
+        await waitFor(() =>
+          expect(titles()).toEqual([
+            expect.stringContaining('Charlie'),
+            expect.stringContaining('Alpha'),
+          ]),
+        )
+        await waitFor(() => expect(selectedRowIndexes()).toEqual([0]))
+        expect(await screen.findByTestId('section-maximized-overlay')).toBeInTheDocument()
+      })
+
+      // A track rekordbox no longer lists has nowhere to go; the reveal gives up instead of
+      // pulling the DJ back to Recently added every time they open another playlist.
+      it('gives up on a track Recently added does not hold and lets the DJ browse on', async () => {
+        const { notify, goToCue } = await openWithNotice()
+        notify('gone')
+        await goToCue()
+
+        await waitFor(() =>
+          expect(titles()).toEqual([
+            expect.stringContaining('Charlie'),
+            expect.stringContaining('Alpha'),
+          ]),
+        )
+        expect(selectedRowIndexes()).toEqual([])
+        expect(screen.queryByTestId('section-maximized-overlay')).toBeNull()
+        fireEvent.click(screen.getByTestId('source-node-f'))
+        await screen.findByTestId('track-separator-s1')
+        await act(async () => {})
+        expect(screen.getByTestId('track-separator-s1')).toBeInTheDocument()
+      })
+    })
+
     // Its order is when each track entered the collection, and it has no rows in rekordbox
     // to remove or move: any of these edits would name a playlist rekordbox does not have.
     it('offers no reorder, removal or separator on its rows', async () => {
@@ -17204,5 +17337,112 @@ describe('the notice of what a DJ program queue applied', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+// The title format is a one-shot rewrite a DJ runs over a whole crate from ⌘K; what it says
+// afterwards is all they have to tell a pass that worked from one that did nothing.
+describe('App title format over a selection', () => {
+  const TAGS: Record<string, { title: string; artist: string; trackNumber?: string }> = {
+    '/music/a.wav': { title: 'Alpha', artist: 'Ann', trackNumber: '1' },
+    '/music/b.wav': { title: 'Bravo', artist: 'Bob', trackNumber: '2' },
+  }
+
+  async function loadBoth(titleFormat: string, tags = TAGS) {
+    const saved = settings({ titleFormat })
+    setApi({
+      getSettings: vi.fn().mockResolvedValue(saved),
+      saveSettings: vi.fn<Api['saveSettings']>(async (patch) => ({ ...saved, ...patch })),
+      readTags: vi.fn(async (path: string) => tags[path]),
+    })
+    await renderApp()
+    fireEvent.click(await screen.findByTestId('add-files'))
+    await waitFor(() => expect(screen.getAllByTestId('track-row')).toHaveLength(2))
+    const rows = screen.getAllByTestId('track-row')
+    fireEvent.click(rows[0])
+    fireEvent.click(rows[1], { metaKey: true })
+    await waitFor(() => expect(selectedRowIndexes()).toEqual([0, 1]))
+  }
+
+  function applyFromPalette(): void {
+    fireEvent.keyDown(document.body, { key: 'k', ctrlKey: true })
+    fireEvent.change(screen.getByTestId('palette-input'), {
+      target: { value: i18n.t('commands.applyTitleFormat') },
+    })
+    const item = screen
+      .getAllByTestId('palette-item')
+      .find((el) => el.textContent?.includes(i18n.t('commands.applyTitleFormat')))
+    if (!item) throw new Error('no title format command in the palette')
+    fireEvent.click(item)
+  }
+
+  // The row keeps the file's label, so each title is read where the DJ reads it: the
+  // editor of that track alone.
+  async function titles(): Promise<string[]> {
+    const out: string[] = []
+    for (const row of screen.getAllByTestId('track-row')) {
+      fireEvent.click(row)
+      await waitFor(() => expect(selectedRowIndexes()).toHaveLength(1))
+      out.push((screen.getByTestId('field-title') as HTMLInputElement).value)
+    }
+    return out
+  }
+
+  it('rewrites every selected title and says how many, undoable in one step', async () => {
+    await loadBoth('({trackNumber}) {title}')
+    applyFromPalette()
+
+    expect(
+      await screen.findByText(i18n.t('notices.titleFormatted', { count: 2 })),
+    ).toBeInTheDocument()
+    expect(await titles()).toEqual(['(1) Alpha', '(2) Bravo'])
+    fireEvent.click(screen.getAllByTestId('track-row')[0])
+    fireEvent.click(screen.getAllByTestId('track-row')[1], { metaKey: true })
+    fireEvent.keyDown(document.body, { key: 'z', ctrlKey: true })
+    await waitFor(async () => expect(await titles()).toEqual(['Alpha', 'Bravo']))
+  })
+
+  // A second press must not stack the prefix, and a silent no-op reads as a broken button.
+  it('leaves titles already in the format alone and says so', async () => {
+    await loadBoth('({trackNumber}) {title}')
+    applyFromPalette()
+    await screen.findByText(i18n.t('notices.titleFormatted', { count: 2 }))
+
+    applyFromPalette()
+    await act(async () => {})
+
+    expect(
+      await screen.findByText(i18n.t('notices.titleFormatApplied', { count: 2 })),
+    ).toBeInTheDocument()
+    expect(await titles()).toEqual(['(1) Alpha', '(2) Bravo'])
+  })
+
+  // Nothing to build the title from is a different fix (fill the field) than "already done".
+  it('names the empty field when the format has nothing to build from', async () => {
+    await loadBoth('({trackNumber}) {title}', {
+      '/music/a.wav': { title: 'Alpha', artist: 'Ann' },
+      '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
+    })
+    applyFromPalette()
+
+    expect(
+      await screen.findByText(
+        i18n.t('notices.titleFormatMissing', { fields: i18n.t('fields.trackNumber'), count: 2 }),
+      ),
+    ).toBeInTheDocument()
+  })
+
+  // A partial pass must not celebrate as a full one: the DJ needs to know some rows stayed.
+  it('counts the titles it left unchanged when only some could be formatted', async () => {
+    await loadBoth('({trackNumber}) {title}', {
+      '/music/a.wav': { title: 'Alpha', artist: 'Ann', trackNumber: '1' },
+      '/music/b.wav': { title: 'Bravo', artist: 'Bob' },
+    })
+    applyFromPalette()
+
+    expect(
+      await screen.findByText(i18n.t('notices.titleFormattedPartial', { count: 1, skipped: 1 })),
+    ).toBeInTheDocument()
+    expect(await titles()).toEqual(['(1) Alpha', 'Bravo'])
   })
 })
