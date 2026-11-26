@@ -39,7 +39,7 @@ vi.mock('./verifyPcm', async (importOriginal) => {
 })
 
 import type { ConversionQuality, OutputFormat, TrackMetadata, TrimRange } from '../shared/types'
-import { convertAudio, deliveredDurationSec } from './ffmpeg'
+import { convertAudio, deliveredDurationSec, probeAudio, proveDecodable } from './ffmpeg'
 import { configureOriginalKeeper } from './originalKeeper'
 import { pcmDigest } from './verifyPcm'
 
@@ -431,5 +431,22 @@ describe('the planned bit depth is what the written file stores', () => {
     const { written } = await convert(src, join(dir, 'copied.aiff'), 'aiff')
     expect(written.plan.codec).toBe('copy')
     expect(written.plan.bitDepth).toBeUndefined()
+  })
+})
+
+// A temp cut right after its header still opens: the container names its format and the
+// decoder simply runs out of data, so ffmpeg reports success with nothing delivered and
+// no progress time for the truncation check to compare. Its digest is that of zero bytes.
+describe('a written file with no audio behind its header', () => {
+  it('fails the check instead of passing as an empty but decodable file', async () => {
+    const whole = source('.aiff', ['-c:a', 'pcm_s16be'])
+    const bytes = readFileSync(whole)
+    const headerOnly = join(dir, 'header-only.aiff')
+    writeFileSync(headerOnly, bytes.subarray(0, bytes.indexOf('SSND') + 16))
+    const probe = await probeAudio(whole)
+
+    await expect(proveDecodable(headerOnly, undefined, undefined, probe)).rejects.toThrow(
+      'convertedOutputUnreadable',
+    )
   })
 })

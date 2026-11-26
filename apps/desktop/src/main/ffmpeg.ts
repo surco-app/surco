@@ -1701,6 +1701,10 @@ export async function proveDecodable(
   if (whole.ok) {
     assertNotTruncated(file, whole.stderr, whole.stdout)
     const md5 = /^MD5=([0-9a-f]{32})/m.exec(whole.stdout)?.[1]
+    // A file cut right after its header opens and "decodes" cleanly, delivering nothing:
+    // no progress time for the truncation check, and the digest of zero bytes.
+    if (md5 === EMPTY_MD5 || decodedDurationSec(whole.stdout) === 0)
+      throw errorWithKey('convertedOutputUnreadable', `no audio in ${basename(file)}`)
     const samples = [...whole.stderr.matchAll(/Number of samples: (\d+)/g)].at(-1)?.[1]
     return {
       durationSec: decodedDurationSec(whole.stdout),
@@ -1935,6 +1939,8 @@ function decodedDurationSec(stdout: string): number | null {
 // the result may be inaccurate. Measured over the 837 MP3s on a user's machine, 432
 // declare such a duration.
 const ESTIMATED_DURATION = /Estimating duration from bitrate/
+
+const EMPTY_MD5 = 'd41d8cd98f00b204e9800998ecf8427e'
 
 function assertNotTruncated(file: string, stderr: string, stdout: string): void {
   const header = headerDurationSec(stderr)
