@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Gut: unter 0,2 %.",
     "loudnessFixDc": "Korrigierbar. „DC-Versatz entfernen (auf 0,0 zentrieren)“ unter Lautheitsnormalisierung aktivieren (Modus Lautheit oder Peak).",
     "loudnessRangeNoise": "Gut: -45 dB oder niedriger.",
-    "loudnessFixNoise": "Hier nicht korrigierbar. Surco entrauscht nicht. Es stammt aus Quelle oder Aufnahme.",
+    "loudnessFixNoise": "Bei einem Vinyl-Rip kann es mit „Hintergrundrauschen“ in Vinyl-Reparatur sinken. Sonst stammt es aus Quelle oder Aufnahme.",
     "loudnessAfterHeader": "jetzt → nach dem Konvertieren",
     "copyThisFile": "Die neue",
     "copyRowCutoff": "Cutoff",

@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Buono sotto lo 0,2 %.",
     "loudnessFixDc": "Si può correggere. Attiva «Rimuovi il DC offset (centra su 0,0)» in Uniforma il volume (modalità Loudness o Picco).",
     "loudnessRangeNoise": "Buono a -45 dB o meno.",
-    "loudnessFixNoise": "Non si può correggere qui, Surco non rimuove il rumore. Viene dall'origine o dalla registrazione.",
+    "loudnessFixNoise": "In un rip da vinile può scendere con «Rumore di fondo» in Riparazione vinile. Altrimenti viene dall'origine o dalla registrazione.",
     "loudnessAfterHeader": "ora → dopo la conversione",
     "copyThisFile": "La nuova",
     "copyRowCutoff": "Taglio",

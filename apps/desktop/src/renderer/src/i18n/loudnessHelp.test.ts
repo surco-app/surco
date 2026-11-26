@@ -36,11 +36,11 @@ describe('loudness help copy', () => {
   })
 
   // The other half of the request: say plainly when nothing in the app will change a
-  // figure, so the user stops hunting for a setting that does not exist. Range, dynamics
-  // and the noise floor are properties of the master — normalizing moves the level, not
-  // the spread, and Surco does not denoise.
-  it('marks the three metrics no setting can change', () => {
-    for (const m of ['Range', 'Crest', 'Noise']) {
+  // figure, so the user stops hunting for a setting that does not exist. Range and dynamics
+  // are properties of the master, and normalizing moves the level, not the spread. The noise
+  // floor is not among them: vinyl repair's background noise lowers it on a rip.
+  it('marks the two metrics no setting can change', () => {
+    for (const m of ['Range', 'Crest']) {
       expect(editor[`loudnessFix${m}`], `loudnessFix${m}`).toMatch(/not fixable/i)
     }
   })

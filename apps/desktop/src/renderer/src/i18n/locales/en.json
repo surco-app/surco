@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Good: under 0.2%.",
     "loudnessFixDc": "Fixable here. Tick “Remove DC offset (center on 0.0)” under Loudness normalization (Loudness or Peak mode).",
     "loudnessRangeNoise": "Good: -45 dB or lower.",
-    "loudnessFixNoise": "Not fixable here. Surco does not denoise. It comes from the source or the capture.",
+    "loudnessFixNoise": "On a vinyl rip it may drop with “Background noise” in Vinyl repair. Otherwise it comes from the source or the capture.",
     "loudnessAfterHeader": "now → after converting",
     "copyThisFile": "The new one",
     "copyRowCutoff": "Cutoff",

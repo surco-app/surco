@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "Bé si és per sota del 0,2 %.",
     "loudnessFixDc": "Es pot corregir. Marca «Eliminar el desplaçament DC (centrar a 0,0)» a Igualar el volum (mode Sonoritat o Pic).",
     "loudnessRangeNoise": "Bé si és de -45 dB o menys.",
-    "loudnessFixNoise": "No es pot corregir aquí perquè Surco no elimina soroll. Ve de l'origen o de la captura.",
+    "loudnessFixNoise": "En un rip de vinil pot baixar amb «Soroll de fons» a Reparació de vinil. Si no, ve de l'origen o de la captura.",
     "loudnessAfterHeader": "ara → després de convertir",
     "copyThisFile": "La nova",
     "copyRowCutoff": "Tall",

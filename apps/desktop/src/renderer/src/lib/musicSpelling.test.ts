@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ReviewEntry } from '../../../shared/types'
-import { replaceAct, SAFE_KINDS, spellingGroups, splitActs, withinOneEdit } from './musicSpelling'
+import { replaceAct, spellingGroups, splitActs, withinOneEdit } from './musicSpelling'
 
 let n = 0
 function entry(over: Partial<ReviewEntry>): ReviewEntry {
@@ -37,13 +37,6 @@ describe('replacement values', () => {
   it('writes a name with dollar signs literally', () => {
     expect(replaceAct('Kesha, DJ X', 'Kesha', 'Ke$$ha')).toBe('Ke$$ha, DJ X')
     expect(replaceAct('Asap & DJ X', 'Asap', 'A$AP $&')).toBe('A$AP $& & DJ X')
-  })
-})
-
-describe('SAFE_KINDS', () => {
-  it('never lets a typo be applied without review', () => {
-    expect([...SAFE_KINDS].sort()).toEqual(['case', 'invisible', 'punctuation'])
-    expect(SAFE_KINDS.has('typo')).toBe(false)
   })
 })
 

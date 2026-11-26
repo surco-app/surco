@@ -1037,7 +1037,7 @@
     "loudnessRangeDc": "良好：0.2% 未満。",
     "loudnessFixDc": "ここで修正可能。ラウドネス正規化（ラウドネスまたはピークモード）の「DC オフセットを除去（0.0 を中心に）」にチェックを入れます。",
     "loudnessRangeNoise": "良好：-45 dB 以下。",
-    "loudnessFixNoise": "ここで修正不可。Surco はノイズ除去を行いません。ソースや録音に由来します。",
+    "loudnessFixNoise": "レコードのリッピングなら、レコード修復の「背景ノイズ」で下がることがあります。それ以外はソースや録音に由来します。",
     "loudnessAfterHeader": "現在 → 変換後",
     "copyThisFile": "新しい方",
     "copyRowCutoff": "カットオフ",
