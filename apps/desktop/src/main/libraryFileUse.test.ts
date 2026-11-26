@@ -375,6 +375,47 @@ describe('libraryCopyInfo', () => {
     })
   })
 
+  // The duplicate detail says how much work a copy carries in VirtualDJ, so the DJ keeps
+  // the one with the hot cues. Only pads 1 to 8 are hot cues; loops, the beatgrid and the
+  // automatic markers VirtualDJ keeps beside them are not work anyone did.
+  it('counts the hot cues on pads 1 to 8 and the playlists of each copy VirtualDJ has', async () => {
+    const dir = await mkdtemp(join(root, 'vdj-info-'))
+    const pois = [
+      '<Poi Pos="1.0" Num="1" Type="cue" />',
+      '<Poi Pos="2.0" Num="8" Type="cue" />',
+      '<Poi Pos="3.0" Num="9" Type="cue" />',
+      '<Poi Pos="4.0" Num="0" Type="cue" />',
+      '<Poi Pos="5.0" Type="cue" />',
+      '<Poi Pos="6.0" Num="2" Type="loop" Size="4.0" />',
+      '<Poi Pos="7.0" Num="3" Type="remix" />',
+      '<Poi Pos="0.5" Type="beatgrid" />',
+    ]
+    await writeFile(
+      join(dir, 'database.xml'),
+      `<VirtualDJ_Database Version="2026">\r\n<Song FilePath="/Volumes/M/Music/a.mp3">\r\n${pois.join('\r\n')}\r\n</Song>\r\n<Song FilePath="/Volumes/M/Music/b.mp3" />\r\n</VirtualDJ_Database>\r\n`,
+    )
+    await mkdir(join(dir, 'MyLists'))
+    const list = async (name: string, paths: string[]) =>
+      writeFile(
+        join(dir, 'MyLists', `${name}.vdjfolder`),
+        `<VirtualFolder>\r\n${paths.map((p, i) => `<song path="${p}" idx="${i}" />`).join('\r\n')}\r\n</VirtualFolder>`,
+      )
+    await list('Friday', ['/Volumes/M/Music/a.mp3'])
+    await list('Gigs', ['/Volumes/M/Music/b.mp3', '/Volumes/M/Music/a.mp3'])
+    await list('Other', ['/Volumes/M/Music/b.mp3'])
+
+    expect(
+      await libraryCopyInfo(['/Volumes/M/Music/a.mp3', '/Volumes/M/Music/b.mp3', '/m/c.mp3'], {
+        ...OFF,
+        virtualdj: [{ dir, root: '/' }],
+      }),
+    ).toEqual({
+      '/Volumes/M/Music/a.mp3': { virtualdj: { cues: 2, playlists: 2 } },
+      '/Volumes/M/Music/b.mp3': { virtualdj: { cues: 0, playlists: 2 } },
+      '/m/c.mp3': { virtualdj: null },
+    })
+  })
+
   // The detail only shows what it could read; a locked library just stays out of it.
   it('leaves out a library it cannot read and keeps the others', async () => {
     const collection = await richRekordbox()

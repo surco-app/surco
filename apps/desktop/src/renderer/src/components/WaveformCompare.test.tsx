@@ -6,6 +6,7 @@ import type React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { NormalizeConfig, WaveformResult, WaveformScan } from '../../../shared/types'
 import { createQueryClient } from '../lib/queryClient'
+import { installApi } from '../test/api'
 import '../i18n'
 
 // Spied rather than stubbed: the redraw test counts how often the canvas is repainted,
@@ -964,5 +965,125 @@ describe('redraw cost', () => {
     } finally {
       vi.unstubAllGlobals()
     }
+  })
+})
+
+// Past ×8 the visible slice is re-decoded at full fidelity onto its own canvas. The panel is
+// 1000 px and the track 60 s, so at ×16 a view is 3.75 s and the window fetched for it is
+// that view and the two either side of it, 11.25 s from the start.
+describe('Strip deep zoom detail', () => {
+  const PANEL = 1000
+  const ZOOM = 16
+  const windowPeaks = [0.2, 0.7, 0.3]
+
+  function deepStrip() {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(PANEL)
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(PANEL * ZOOM)
+    const waveformWindow = vi.fn(async () => ({ peaks: windowPeaks, rms: [0.1, 0.3, 0.2] }))
+    installApi({ waveformWindow })
+    renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        inputPath="/m/a.flac"
+        zoom={ZOOM}
+      />,
+    )
+    const hiRes = screen.getByTestId('waveform-hires') as HTMLCanvasElement
+    const hiResDraws = () => vi.mocked(drawWaveform).mock.calls.filter(([c]) => c === hiRes)
+    return { hiRes, hiResDraws, waveformWindow }
+  }
+
+  // A bitmap narrower than the box it is stretched over scales every bar up: the "fat,
+  // deformed wave" a DJ saw while hunting a clip bar by bar. Sized to the panel and cut to
+  // the view, the bars stay as thin as the decode.
+  it('draws the decoded window cut to the view on a bitmap the size of the panel', async () => {
+    const { hiRes, hiResDraws, waveformWindow } = deepStrip()
+
+    await waitFor(() => expect(hiResDraws()).toHaveLength(1))
+    expect(waveformWindow).toHaveBeenCalledWith('/m/a.flac', 0, 11.25, expect.any(Number))
+    const [, peaks, opts] = hiResDraws()[0]
+    expect(peaks).toEqual(windowPeaks)
+    expect(opts?.window?.from).toBe(0)
+    expect(opts?.window?.to).toBeCloseTo(1 / 3)
+    expect(hiRes.width).toBe(PANEL)
+    expect(hiRes).toHaveStyle({ left: '0%', width: '6.25%' })
+  })
+
+  // A Retina panel has two device pixels per CSS pixel; a bitmap at CSS size draws soft.
+  it('doubles the bitmap on a Retina screen', async () => {
+    vi.spyOn(window, 'devicePixelRatio', 'get').mockReturnValue(2)
+    const { hiRes, hiResDraws } = deepStrip()
+
+    await waitFor(() => expect(hiResDraws()).toHaveLength(1))
+    expect(hiRes.width).toBe(PANEL * 2)
+  })
+
+  // A fast scroll outruns the decode. Stretching the coarse overview in the meantime is
+  // what drew blocks; the last good window parked where it belongs reads as loading.
+  it('keeps the last window at its own place while the scrolled-to one decodes', async () => {
+    const { hiRes, hiResDraws, waveformWindow } = deepStrip()
+    await waitFor(() => expect(hiResDraws()).toHaveLength(1))
+    waveformWindow.mockImplementation(() => new Promise(() => {}))
+
+    const scroller = screen.getByTestId('waveform-scroller')
+    scroller.scrollLeft = PANEL * ZOOM * 0.5
+    fireEvent.scroll(scroller)
+
+    await waitFor(() => expect(hiRes).toHaveStyle({ width: '18.75%' }))
+    const [, peaks, opts] = hiResDraws()[hiResDraws().length - 1]
+    expect(peaks).toEqual(windowPeaks)
+    expect(opts?.window).toBeUndefined()
+    expect(hiRes).toHaveStyle({ left: '0%' })
+    expect(hiRes.width).toBe(PANEL * 0.1875 * ZOOM)
+  })
+
+  // Once the scrolled-to window lands, the detail snaps back over just the view; left at
+  // the parked width it would stretch one view's bars across three.
+  it('moves the detail back over the view once the scrolled-to window lands', async () => {
+    const { hiRes, hiResDraws, waveformWindow } = deepStrip()
+    await waitFor(() => expect(hiResDraws()).toHaveLength(1))
+    let land: (r: { peaks: number[]; rms: number[] }) => void = () => {}
+    waveformWindow.mockImplementation(
+      () =>
+        new Promise((res) => {
+          land = res
+        }),
+    )
+
+    const scroller = screen.getByTestId('waveform-scroller')
+    scroller.scrollLeft = PANEL * ZOOM * 0.5
+    fireEvent.scroll(scroller)
+    await waitFor(() =>
+      expect(waveformWindow).toHaveBeenCalledWith('/m/a.flac', 26.25, 11.25, expect.any(Number)),
+    )
+    expect(hiRes).toHaveStyle({ width: '18.75%' })
+    await act(async () => land({ peaks: [0.5, 0.6], rms: [0.2, 0.3] }))
+
+    await waitFor(() => expect(hiRes).toHaveStyle({ left: '50%', width: '6.25%' }))
+    expect(hiResDraws()[hiResDraws().length - 1][1]).toEqual([0.5, 0.6])
+    expect(hiRes.width).toBe(PANEL)
+  })
+
+  it('draws nothing on the detail canvas until a window has been decoded', async () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(PANEL)
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(PANEL * ZOOM)
+    const waveformWindow = vi.fn(() => new Promise<null>(() => {}))
+    installApi({ waveformWindow })
+    renderWithQuery(
+      <Strip
+        wave={wave}
+        loading={false}
+        loudness={undefined}
+        color={AFTER_COLOR}
+        inputPath="/m/a.flac"
+        zoom={ZOOM}
+      />,
+    )
+    await waitFor(() => expect(waveformWindow).toHaveBeenCalled())
+    const hiRes = screen.getByTestId('waveform-hires')
+    expect(vi.mocked(drawWaveform).mock.calls.filter(([c]) => c === hiRes)).toEqual([])
   })
 })

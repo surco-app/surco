@@ -836,6 +836,61 @@ describe('registerCuesIpc', () => {
     expect(await handler('cues:auditionLead')({}, '101')).toBeCloseTo((1152 / 44100) * 1000, 3)
   })
 
+  // The fine wave is Surco's own decode of the file, on Surco's clock; rekordbox skips the
+  // LAME frames, so the wave has to start that much later or every transient drawn under a
+  // rekordbox cue sits 51 ms off what the CDJ plays.
+  it('hands the fine wave of a LAME MP3 to the editor starting where rekordbox starts it', async () => {
+    const path = await collectionWithMp3('LAME')
+    const levels = Uint8Array.from([1, 2, 3])
+    const fine = vi.fn(async () => levels)
+    registerWithSources({
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      fine,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    })
+    const out = (await handler('cues:waveFine')({}, '101')) as {
+      levels: Uint8Array
+      perSecond: number
+      startMs: number
+    }
+    expect(fine).toHaveBeenCalledWith(expect.stringMatching(/track\.mp3$/))
+    expect(out.levels).toBe(levels)
+    expect(out.perSecond).toBe(1000)
+    expect(out.startMs).toBeCloseTo(((1152 + 576 + 529) / 44100) * 1000, 3)
+  })
+
+  // No fine wave is better than a wrong one: the editor then falls back to rekordbox's own
+  // colour wave instead of drawing a file it could not read.
+  it('has no fine wave without a reader, for an unknown track or when the file gives none', async () => {
+    const path = await collectionWithMp3('LAME')
+    const host = {
+      collection: () => path,
+      queue: queue(),
+      applyQuietly: quietly(),
+      flow: () => MY_FLOW,
+      beatGrid: async () => null,
+      words: async () => null,
+      provisional: { add: vi.fn() },
+      twins: async () => ({}),
+    }
+    registerWithSources(host)
+    expect(await handler('cues:waveFine')({}, '101')).toBeNull()
+
+    const fine = vi.fn(async () => Uint8Array.from([9]))
+    registerWithSources({ ...host, fine })
+    expect(await handler('cues:waveFine')({}, '999')).toBeNull()
+    expect(fine).not.toHaveBeenCalled()
+
+    registerWithSources({ ...host, fine: async () => null })
+    expect(await handler('cues:waveFine')({}, '101')).toBeNull()
+  })
+
   it('gives no lead for an MP3 the editor already plays in step with rekordbox', async () => {
     const path = await collectionWithMp3('Lavc')
     registerWithSources({
