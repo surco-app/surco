@@ -47,6 +47,18 @@
       {
         "text": "Surco detecta més FLAC fets a partir d'un fitxer comprimit que passaven per bona qualitat. Les pistes que ja havies analitzat conserven el resultat fins que es tornin a analitzar.",
         "in": "1.45.0"
+      },
+      {
+        "text": "Els punts sota l'ona només comproven la graella on sona el bombo. Una intro o una outro sense bombo ja no fan semblar que Auto s'ha equivocat.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Si una pista arrenca amb el primer bombo ja començat, els cues que poses a mà o amb un flux cauen just en aquest bombo.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Quan Auto ajusta una graella molt desplaçada, el temps 1 es queda al bombo que marcava el teu programa DJ.",
+        "in": "1.45.1"
       }
     ]
   },

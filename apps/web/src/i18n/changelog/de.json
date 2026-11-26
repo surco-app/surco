@@ -47,6 +47,18 @@
       {
         "text": "Surco erkennt mehr FLAC-Dateien, die aus einer komprimierten Datei entstanden sind und als gute Qualität durchgingen. Bereits analysierte Tracks behalten ihr Ergebnis, bis sie erneut analysiert werden.",
         "in": "1.45.0"
+      },
+      {
+        "text": "Die Punkte unter der Wellenform prüfen das Raster nur dort, wo die Kick spielt. Ein Intro oder Outro ohne Kick lässt Auto nicht mehr falsch aussehen.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Beginnt ein Track mitten in der ersten Kick, landen die Cues, die du von Hand oder mit einem Ablauf setzt, genau auf dieser Kick.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Wenn Auto ein weit verschobenes Raster anpasst, bleibt Schlag 1 auf der Kick, die dein DJ-Programm markiert hatte.",
+        "in": "1.45.1"
       }
     ]
   },

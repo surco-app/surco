@@ -47,6 +47,18 @@
       {
         "text": "O Surco detecta mais FLAC feitos a partir de um arquivo comprimido que passavam por boa qualidade. As faixas que você já tinha analisado mantêm o resultado até serem analisadas de novo.",
         "in": "1.45.0"
+      },
+      {
+        "text": "Os pontos sob a forma de onda só verificam a grade onde o bumbo toca. Uma intro ou um outro sem bumbo não fazem mais parecer que o Auto errou.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Se uma faixa começa com o primeiro bumbo já em andamento, os cues que você põe à mão ou com um fluxo caem bem nesse bumbo.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Quando o Auto ajusta uma grade muito deslocada, o tempo 1 fica no bumbo que o seu programa de DJ tinha marcado.",
+        "in": "1.45.1"
       }
     ]
   },

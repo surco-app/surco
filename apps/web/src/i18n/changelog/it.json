@@ -47,6 +47,18 @@
       {
         "text": "Surco riconosce più FLAC ricavati da un file compresso che passavano per buona qualità. I brani che avevi già analizzato mantengono il risultato finché non vengono analizzati di nuovo.",
         "in": "1.45.0"
+      },
+      {
+        "text": "I punti sotto la forma d'onda controllano la griglia solo dove suona la cassa. Un'intro o un'outro senza cassa non fanno più sembrare che Auto abbia sbagliato.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Se un brano parte con la prima cassa già iniziata, i cue che metti a mano o con un flusso cadono proprio su quella cassa.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Quando Auto adatta una griglia molto spostata, il tempo 1 resta sulla cassa che aveva segnato il tuo programma DJ.",
+        "in": "1.45.1"
       }
     ]
   },

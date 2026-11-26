@@ -47,6 +47,18 @@
       {
         "text": "Surco repère plus de FLAC fabriqués à partir d'un fichier compressé qui passaient pour de bonne qualité. Les morceaux que tu avais déjà analysés gardent leur résultat jusqu'à leur prochaine analyse.",
         "in": "1.45.0"
+      },
+      {
+        "text": "Les points sous la forme d’onde ne vérifient la grille que là où joue le kick. Une intro ou une outro sans kick ne fait plus croire qu’Auto s’est trompé.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Si un morceau commence avec son premier kick déjà entamé, les cues que tu poses à la main ou avec un flux tombent pile sur ce kick.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Quand Auto cale une grille très décalée, le temps 1 reste sur le kick que ton logiciel DJ avait marqué.",
+        "in": "1.45.1"
       }
     ]
   },

@@ -47,6 +47,18 @@
       {
         "text": "Surco detecta más FLAC que se hicieron a partir de un archivo comprimido y pasaban por buena calidad. Las pistas que ya habías analizado conservan su resultado hasta que se vuelvan a analizar.",
         "in": "1.45.0"
+      },
+      {
+        "text": "Los puntos bajo la onda solo comprueban la rejilla donde suena el bombo. Un intro o un outro sin bombo ya no hacen parecer que Auto se ha equivocado.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Si una pista arranca con el primer bombo ya empezado, los cues que pones a mano o con un flujo caen justo en ese bombo.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "Cuando Auto ajusta una rejilla muy corrida, el tiempo 1 se queda en el bombo que marcaba tu programa DJ.",
+        "in": "1.45.1"
       }
     ]
   },

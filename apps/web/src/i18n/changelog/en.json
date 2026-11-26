@@ -47,6 +47,18 @@
       {
         "text": "Surco spots more FLAC files that were made from a compressed file and passed as good quality. Tracks you had already analysed keep their result until they are analysed again.",
         "in": "1.45.0"
+      },
+      {
+        "text": "The dots under the waveform only check the grid where the kick plays. A kickless intro or outro no longer makes Auto look wrong.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "If a track starts with its first kick already under way, the cues you place by hand or with a flow land right on that kick.",
+        "in": "1.45.1"
+      },
+      {
+        "text": "When Auto fits a grid that was far off, beat 1 stays on the kick your DJ program had marked.",
+        "in": "1.45.1"
       }
     ]
   },
