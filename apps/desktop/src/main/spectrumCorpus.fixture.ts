@@ -3,11 +3,13 @@
 // pipeline can be run end to end without ffmpeg. Nine lossless sources from a real
 // collection, each encoded with LAME at 128/192/256/320 (36 encodes whose lowpass
 // is known by construction), plus four clean rips users reported as wrongly flagged.
-// Every row's right answer is known: an encode carries a codec knee, everything
-// else is clean. Re-measure and extend rather than hand-edit: a tweak to any
-// threshold must be judged against all of these at once.
+// Every row's right answer is known: an encode carries a codec knee, and so do four
+// FLACs one user reported as lossy (a codec wall at 16-18 kHz over a flat floor, too
+// shallow for the strict fine-wall bar); everything else is clean. Re-measure and
+// extend rather than hand-edit: a tweak to any threshold must be judged against all of
+// these at once.
 
-export type CorpusKind = 'encode' | 'lossless' | 'clean'
+export type CorpusKind = 'encode' | 'lossless' | 'clean' | 'transcode'
 
 export interface CorpusEntry {
   name: string
@@ -892,6 +894,69 @@ export const SPECTRUM_CORPUS: CorpusEntry[] = [
     shelf: [
       58.91, 58.09, 55.68, 54.98, 52.6, 49.17, 52.84, 47.52, 46.94, 40.9, 40.09, 35.98, 14.51,
       -2.93,
+    ],
+  },
+  {
+    name: 'paco-party',
+    kind: 'transcode',
+    coarse: [
+      -50.2, -50.98, -53.18, -54.84, -56.58, -59.49, -63.43, -69.8, -76.7, -90.79, -111.85, -116.43,
+      -116.14,
+    ],
+    fine: [
+      -57.25, -57.98, -59.61, -61.52, -63.06, -66.68, -70.48, -74.4, -76.18, -83.02, -100.75,
+      -110.37, -110.77, -115.6, -116.31, -116.51, -116.49,
+    ],
+    shelf: [
+      72.17, 71.89, 70.82, 69.45, 67.91, 65.1, 61.66, 57.54, 49.58, 46.37, 37.68, 10.17, 7.82, 7.78,
+    ],
+  },
+  {
+    name: 'laguna-wont-let-you',
+    kind: 'transcode',
+    coarse: [
+      -47.19, -47.91, -49.73, -51.7, -53.01, -55.5, -58.23, -60.33, -71.69, -81.28, -81.79, -82.05,
+      -82.4,
+    ],
+    fine: [
+      -52.56, -54.12, -55.43, -57.92, -57.96, -58.71, -61.49, -62.36, -74.9, -80.85, -81.3, -81.48,
+      -81.85, -81.82, -82.15, -82.15, -82.54,
+    ],
+    shelf: [
+      78.07, 75.68, 74.91, 72.53, 70.93, 69.14, 66.06, 64.18, 58.91, 42.13, 40.6, 40.43, 40.01,
+      38.92,
+    ],
+  },
+  {
+    name: 'laguna-will-cant-promise',
+    kind: 'transcode',
+    coarse: [
+      -47.45, -49.95, -51.16, -52.72, -53.71, -54.3, -54.88, -58.42, -81.3, -85.2, -86.1, -86.95,
+      -87.12,
+    ],
+    fine: [
+      -53.69, -54.04, -54.32, -54.44, -54.83, -55.32, -58.54, -70.66, -83.7, -84.5, -85.29, -85.75,
+      -86.15, -86.49, -87, -87.01, -87.16,
+    ],
+    shelf: [
+      76.25, 74.81, 73.07, 71.98, 70.79, 70.03, 69.45, 68.5, 57.76, 38.74, 37.74, 37.17, 36.82,
+      36.85,
+    ],
+  },
+  {
+    name: 'serna-next-to-me',
+    kind: 'transcode',
+    coarse: [
+      -50.08, -50.62, -50.89, -51.43, -53.16, -55.43, -58.47, -62.64, -79.41, -82.35, -82.26,
+      -82.74, -82.6,
+    ],
+    fine: [
+      -53.03, -53.93, -55.39, -57.42, -57.67, -59.49, -62.94, -72.69, -80.95, -81.7, -82.33, -82.4,
+      -82.09, -82.81, -82.69, -83.1, -82.49,
+    ],
+    shelf: [
+      72.39, 72.37, 71.38, 71.47, 69.59, 68.17, 65.08, 62.65, 53.24, 39.72, 39.27, 38.46, 38.42,
+      38.66,
     ],
   },
 ]

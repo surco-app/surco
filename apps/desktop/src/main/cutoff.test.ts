@@ -935,3 +935,75 @@ describe('detectCutoff holds back an alarm that sits within the jitter of its th
     expect(fineBandsShowWall(wall)).toBe(false)
   })
 })
+
+// Three FLACs from one user's library, each a lossy source: highs cut in one stroke at
+// 16-18 kHz and a dead, flat floor above. The step stays under the strict fine-wall bar
+// because the highs already arrive quiet (paco) or a noise floor added after decoding
+// stops the fall short (the two Laguna mixes), so all three graded "Good quality".
+describe('detectCutoff on a shallow codec wall over a flat floor', () => {
+  const pacoCoarse = fftBand([
+    -50.2, -50.98, -53.18, -54.84, -56.58, -59.49, -63.43, -69.8, -76.7, -90.79, -111.85, -116.43,
+    -116.14,
+  ])
+  const pacoFine = fine([
+    -57.25, -57.98, -59.61, -61.52, -63.06, -66.68, -70.48, -74.4, -76.18, -83.02, -100.68, -110.38,
+    -110.79, -115.61, -116.3, -116.49, -116.47,
+  ])
+  // The same file read one second shorter, as a trim or re-encode leaves it: the floor
+  // above the wall now falls in two steps instead of lying flat.
+  const pacoShiftedCoarse = fftBand([
+    -50.96, -51.61, -53.39, -55.08, -56.72, -59.7, -63.61, -69.99, -76.86, -90.74, -108.08, -118.07,
+    -118.07,
+  ])
+  const pacoShiftedFine = fine([
+    -57.41, -58.13, -59.81, -61.7, -63.27, -66.83, -70.55, -74.84, -76.24, -83.04, -100.17, -105.93,
+    -107.5, -117.22, -118.07, -118.1, -118.02,
+  ])
+  const lagunaCoarse = fftBand([
+    -47.19, -47.91, -49.73, -51.7, -53.01, -55.5, -58.23, -60.33, -71.69, -81.28, -81.79, -82.05,
+    -82.4,
+  ])
+  const lagunaFine = fine([
+    -52.56, -54.12, -55.43, -57.92, -57.96, -58.71, -61.49, -62.36, -74.9, -80.86, -81.31, -81.5,
+    -81.79, -81.81, -82.05, -82.11, -82.47,
+  ])
+  const willCoarse = fftBand([
+    -47.45, -49.95, -51.16, -52.72, -53.71, -54.3, -54.88, -58.42, -81.3, -85.2, -86.1, -86.95,
+    -87.12,
+  ])
+  const willFine = fine([
+    -53.69, -54.04, -54.32, -54.44, -54.83, -55.32, -58.54, -70.66, -83.97, -84.67, -85.19, -85.5,
+    -85.95, -86.22, -86.53, -86.77, -87.03,
+  ])
+
+  it.each([
+    ['paco', pacoCoarse, pacoFine, 18000],
+    ['paco one second shorter', pacoShiftedCoarse, pacoShiftedFine, 18000],
+    ['laguna', lagunaCoarse, lagunaFine, 16000],
+    ['will', willCoarse, willFine, 16000],
+  ])('calls the codec wall in %s a lossy cut at its knee', (_name, coarse, fineBands, cutoffHz) => {
+    const verdict = detectCutoff(coarse, NYQUIST, fineBands)
+    expect(verdict.hasKnee).toBe(true)
+    expect(verdict.cutoffHz).toBe(cutoffHz)
+  })
+
+  // A mastering rolloff can fall as steeply for a kilohertz, but it keeps falling: the
+  // dead shelf above is what only a codec leaves behind.
+  it('does not trust the same step when the spectrum keeps falling above it', () => {
+    const stillFalling = fine([
+      -52.56, -54.12, -55.43, -57.92, -57.96, -58.71, -61.49, -62.36, -74.9, -80.86, -85.9, -90.9,
+      -95.9, -100.9, -105.9, -110.9, -115.9,
+    ])
+    expect(fineBandsShowWall(stillFalling)).toBe(false)
+  })
+
+  // A 19.5-20 kHz brickwall over a flat floor is how honest shop masters end (four of 162
+  // Bandcamp and Juno purchases), and a 320 lands there too: it stays on the strict bar.
+  it('leaves a shallow wall at 19.5 kHz to the strict bar', () => {
+    const shopMaster = fine([
+      -53.2, -55.76, -57.35, -58.61, -59.8, -61.56, -62.3, -64.08, -65.81, -68.55, -71.51, -75.29,
+      -83.17, -92.57, -93.82, -93.91, -95.18,
+    ])
+    expect(fineBandsShowWall(shopMaster)).toBe(false)
+  })
+})

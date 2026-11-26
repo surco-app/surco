@@ -78,6 +78,10 @@ const KNEE_RECOVERY_DB = 2
 // noisy floor (a 90s dance master with -79 dB highs cut to a -104 floor measures
 // 24), which stays reported as a cutoff without the accusation.
 const KNEE_FINE_STEP_DB = CODEC_WALL_FINE_STEP_DB
+const FLAT_FLOOR_STEP_DB = 15
+const FLAT_FLOOR_SPREAD_DB = 8
+const FLAT_FLOOR_MAX_WALL_HZ = 18500
+const FLAT_FLOOR_BANDS = 3
 // The 9–11 kHz bands are the reference plateau the rest of the curve is read
 // against: every real track keeps solid energy there, so it normalizes quiet
 // masters and loud ones alike.
@@ -282,8 +286,34 @@ export function steepestFineStep(fineBands: Band[]): number {
 // check against, so a knee stands on its own as it always did.
 export function fineBandsShowWall(fineBands: Band[]): boolean {
   return (
-    fineBands.length === 0 || steepestFineStep(fineBands) >= KNEE_FINE_STEP_DB + FINE_STEP_JITTER_DB
+    fineBands.length === 0 ||
+    steepestFineStep(fineBands) >= KNEE_FINE_STEP_DB + FINE_STEP_JITTER_DB ||
+    landsOnFlatFloor(fineBands)
   )
+}
+
+// A shallower wall that lands on a dead, flat floor below 19 kHz. The strict bar above
+// misses lossy files whose highs already arrive quiet, or whose fall a noise floor added
+// after decoding stops short: a user's FLACs cut at 16-18 kHz stepped 18-27 dB onto a
+// floor flat within 1-6 dB and graded "Good quality". A mastering rolloff can step as far
+// but keeps falling above it, and an honest master's brickwall sits at 19.5-20 kHz, so
+// walls that high stay on the strict bar. Only the 1.5 kHz above the wall must lie flat:
+// read one second shorter, one of those files had its floor fall a second time further
+// up, and a verdict must not hang on where the analysis window lands. On 6,600 library
+// FLACs the rule held the same files from 8 to 9 dB of spread, and no Bandcamp or Juno
+// purchase steps more than 12.9 dB onto such a floor. The band at Nyquist is left out of
+// the floor, as it is of the step.
+function landsOnFlatFloor(fineBands: Band[]): boolean {
+  const body = fineBands.slice(0, -1)
+  for (let i = 2; i < body.length - FLAT_FLOOR_BANDS + 1; i++) {
+    if (body[i].freqHz > FLAT_FLOOR_MAX_WALL_HZ) return false
+    const floor = body.slice(i, i + FLAT_FLOOR_BANDS).map((b) => b.rmsDb)
+    if (!floor.every(Number.isFinite) || !Number.isFinite(body[i - 2].rmsDb)) continue
+    const step = body[i - 2].rmsDb - body[i].rmsDb
+    if (step < FLAT_FLOOR_STEP_DB) continue
+    if (Math.max(...floor) - Math.min(...floor) <= FLAT_FLOOR_SPREAD_DB) return true
+  }
+  return false
 }
 
 // The ceiling the synthetic patches were grafted onto, or null when the fine
