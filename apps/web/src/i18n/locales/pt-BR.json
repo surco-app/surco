@@ -1231,10 +1231,21 @@
     "lede": "O mais importante de cada versão, sem ruído. As funções que mudam o jeito de preparar sua música, versão por versão.",
     "beta": {
       "kicker": "Em testes",
-      "version": "",
+      "version": "1.44.2-beta.0",
       "title": "O que vem na próxima versão",
       "how": "Para testar agora, ative Receber versões beta em Ajustes, Geral, e reinicie o Surco. As betas chegam ao instalador deste site, não à cópia da Microsoft Store.",
-      "items": []
+      "items": [
+        "Se uma faixa já está na sua biblioteca, no Apple Music ou num programa de DJ, o editor a reconhece. Você pode colocar essa cópia em playlists ou tirá-la delas pelo editor, e desfazer.",
+        "Os campos vazios são preenchidos com o que a sua cópia já tem, incluindo agrupamento e capa, mesmo que seja outra versão da mesma gravação.",
+        "Em vez de converter ao lado da cópia que você já tem, o botão de converter oferece Atualizar as tags dela ou Substituir pela nova.",
+        "Uma faixa do Apple Music ou de um programa de DJ é convertida no próprio formato, não no dos Ajustes.",
+        "Os cues do Traktor não se movem mais ao salvar uma faixa.",
+        "Uma conversão que fica ao lado de uma cópia que um programa de DJ já tinha vai para Para revisar, para você conferir.",
+        "O editor de cues pega a análise do rekordbox assim que ela termina, sem reiniciar o Surco.",
+        "O Discogs encontra mais discos. Quando artista e título não dão em nada, ele tenta o álbum das tags.",
+        "Os avisos do que espera você fechar um programa de DJ ficam agrupados por motivo e somem sozinhos.",
+        "Todos os menus podem ser percorridos com as setas do teclado."
+      ]
     },
     "olderTitle": "Versões anteriores",
     "outroTitle": "Experimente tudo na sua próxima sessão",

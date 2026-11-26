@@ -1231,10 +1231,21 @@
     "lede": "The highlights of every release, without the noise. The features that change how you prep your music, version by version.",
     "beta": {
       "kicker": "In testing",
-      "version": "",
+      "version": "1.44.2-beta.0",
       "title": "What is coming in the next version",
       "how": "To try it now, turn on Get beta versions in Settings, General, and restart Surco. Betas reach the installer from this website, not the Microsoft Store copy.",
-      "items": []
+      "items": [
+        "If a track is already in your library, in Apple Music or a DJ program, the editor recognises it. You can add that copy to playlists or take it out from the editor, and undo it.",
+        "Empty fields fill in with what your copy already has, grouping and cover included, even when it is another version of the same recording.",
+        "Instead of converting next to the copy you already have, the convert button offers Update for its tags or Replace with the new one.",
+        "A track from Apple Music or a DJ program converts to its own format, not the one in Settings.",
+        "Traktor cues no longer move when you save a track.",
+        "A conversion that lands next to a copy a DJ program already had goes to To review, so you can check it.",
+        "The cue editor picks up the rekordbox analysis as soon as it finishes, without restarting Surco.",
+        "Discogs finds more releases. When nothing turns up by artist and title, it tries the album in the tags.",
+        "Notices about what waits for you to close a DJ program are grouped by reason and go away on their own.",
+        "Every menu can be walked with the arrow keys."
+      ]
     },
     "olderTitle": "Earlier versions",
     "outroTitle": "Try it all in your next session",

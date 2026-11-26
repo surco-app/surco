@@ -1231,10 +1231,21 @@
     "lede": "El que importa de cada versió, sense soroll. Les funcions que canvien com prepares la teva música, versió a versió.",
     "beta": {
       "kicker": "En proves",
-      "version": "",
+      "version": "1.44.2-beta.0",
       "title": "El que arriba a la propera versió",
       "how": "Per provar-ho ja, activa «Rebre versions beta» a Configuració, General, i reinicia Surco. Les versions beta arriben a l'instal·lador del web, no a la còpia de la Microsoft Store.",
-      "items": []
+      "items": [
+        "Si una pista ja és a la teva biblioteca, a Apple Music o en un programa DJ, l’editor la reconeix. Pots posar aquesta còpia en playlists o treure-la’n des de l’editor, i desfer-ho.",
+        "Els camps buits s’omplen amb el que ja té la teva còpia, també l’agrupació i la caràtula, encara que sigui una altra versió de la mateixa gravació.",
+        "En lloc de convertir al costat de la còpia que ja tens, el botó de convertir ofereix Actualitzar les seves etiquetes o Substituir-la per la nova.",
+        "Una pista d’Apple Music o d’un programa DJ es converteix al seu propi format, no al de Configuració.",
+        "Els cues de Traktor ja no es mouen en desar una pista.",
+        "Una conversió que cau al costat d’una còpia que ja tenia un programa DJ entra a Per revisar, perquè la comprovis.",
+        "L’editor de cues recull l’anàlisi de rekordbox tan bon punt acaba, sense reiniciar Surco.",
+        "Discogs troba més discos. Si no troba res per artista i títol, prova amb l’àlbum de l’etiqueta.",
+        "Els avisos del que espera que tanquis un programa DJ s’agrupen per motiu i se’n van sols.",
+        "Tots els menús es recorren amb les fletxes del teclat."
+      ]
     },
     "olderTitle": "Versions anteriors",
     "outroTitle": "Prova-ho tot a la teva propera sessió",
