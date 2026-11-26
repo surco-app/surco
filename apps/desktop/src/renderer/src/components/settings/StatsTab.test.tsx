@@ -1,10 +1,12 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest'
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Settings } from '../../../../shared/types'
-import '../../i18n'
+import i18n from '../../i18n'
 import { PAYPAL_ME_URL } from '../../lib/donate'
+import { ToastProvider } from '../../lib/toastContext'
+import { installApi } from '../../test/api'
 import { hoverTooltip } from '../../test/tooltip'
 import { StatsTab } from './StatsTab'
 
@@ -276,5 +278,124 @@ describe('StatsTab', () => {
     render(<StatsTab settings={withStats()} />)
     expect(screen.getByTestId('stats-empty')).toBeInTheDocument()
     expect(screen.getByTestId('stats-roi-donate')).toBeInTheDocument()
+  })
+})
+
+// jsdom draws nothing, so the card's canvas records the text it is asked to paint: what the
+// card says is what someone scrolling past the story reads.
+describe('StatsTab share image', () => {
+  let drawn: string[] = []
+
+  function recordingContext(): CanvasRenderingContext2D {
+    const ignore = (): void => {}
+    const ctx: Partial<CanvasRenderingContext2D> = {
+      fillStyle: '',
+      strokeStyle: '',
+      font: '',
+      textAlign: 'start',
+      textBaseline: 'alphabetic',
+      letterSpacing: '0px',
+      lineWidth: 1,
+      measureText: (text: string) => ({ width: text.length * 10 }) as TextMetrics,
+      fillText: (text: string) => {
+        drawn.push(text)
+      },
+      fillRect: ignore,
+      beginPath: ignore,
+      arc: ignore,
+      roundRect: ignore,
+      fill: ignore,
+      stroke: ignore,
+    }
+    return ctx as CanvasRenderingContext2D
+  }
+
+  beforeEach(() => {
+    drawn = []
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(recordingContext)
+    vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue('data:image/png;base64,CARD')
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  const busy = withStats({
+    conversionCount: 385,
+    stats: { ...zeroStats, imported: 812, discogsMatches: 301 },
+  })
+
+  // The card is the DJ's own numbers leaving the app; a card that saved but said
+  // something else than the tab, or nothing at all, would be a brag about someone else.
+  it('saves a card with the numbers and the time saved the tab shows', async () => {
+    const exportStatsImage = vi.fn(async () => '/Users/dj/surco.png')
+    installApi({ exportStatsImage })
+    render(<StatsTab settings={busy} />)
+
+    fireEvent.click(screen.getByTestId('stats-share'))
+
+    await waitFor(() => expect(exportStatsImage).toHaveBeenCalledWith('data:image/png;base64,CARD'))
+    expect(drawn).toContain(i18n.t('settings.stats.shareTitle'))
+    expect(drawn).toContain('385')
+    expect(drawn).toContain('812')
+    expect(drawn).toContain(i18n.t('settings.stats.imported'))
+    expect(drawn).toContain('301')
+    const headline = screen.getByTestId('stats-time-saved').firstChild?.textContent
+    expect(headline).toBeTruthy()
+    expect(drawn).toContain(headline)
+  })
+
+  // Time saved is worked out from conversions; with none, a "0 minutes saved" panel would
+  // turn the card into an anti-achievement.
+  it('leaves the time saved off the card when nothing was converted yet', async () => {
+    const exportStatsImage = vi.fn(async () => null)
+    installApi({ exportStatsImage })
+    render(<StatsTab settings={withStats({ stats: { ...zeroStats, imported: 40 } })} />)
+
+    fireEvent.click(screen.getByTestId('stats-share'))
+
+    await waitFor(() => expect(exportStatsImage).toHaveBeenCalledTimes(1))
+    expect(drawn).toContain('40')
+    expect(drawn.some((text) => /saved|ahorrad/i.test(text))).toBe(false)
+  })
+
+  // A second click while the save dialog is up would compose and open a second dialog.
+  it('ignores a second press while the first card is still being saved', async () => {
+    let finish: (path: string | null) => void = () => {}
+    const exportStatsImage = vi.fn(
+      () =>
+        new Promise<string | null>((res) => {
+          finish = res
+        }),
+    )
+    installApi({ exportStatsImage })
+    render(<StatsTab settings={busy} />)
+    const button = screen.getByTestId('stats-share')
+
+    fireEvent.click(button)
+    fireEvent.click(button)
+
+    await waitFor(() => expect(button).toBeDisabled())
+    expect(exportStatsImage).toHaveBeenCalledTimes(1)
+    await act(async () => finish(null))
+    expect(button).toBeEnabled()
+  })
+
+  // The save crosses IPC to write a file; the spinner finishing with no image and no word
+  // reads as "it worked".
+  it('says so when the card could not be saved, and lets the DJ try again', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const reportError = vi.fn()
+    installApi({ exportStatsImage: vi.fn(async () => Promise.reject(new Error('EACCES'))) })
+    render(
+      <ToastProvider value={{ reportError, reportNotice: vi.fn(), reportUndo: vi.fn() }}>
+        <StatsTab settings={busy} />
+      </ToastProvider>,
+    )
+
+    fireEvent.click(screen.getByTestId('stats-share'))
+
+    await waitFor(() => expect(reportError).toHaveBeenCalledWith(i18n.t('errors.statsImage')))
+    expect(screen.getByTestId('stats-share')).toBeEnabled()
   })
 })
