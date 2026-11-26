@@ -406,11 +406,26 @@ function driftCorrectedBpm(fit: GridFit): number {
 const offbeatFolded = (offsetMs: number, period: number): number =>
   Math.abs(offsetMs) > period / 4 ? offsetMs - Math.sign(offsetMs) * (period / 2) : offsetMs
 
+// Auto moves the lines onto the kicks but leaves the bar where the program counts it: a
+// grid nudged past half a beat would otherwise snap beat 1 onto the neighbouring kick and
+// shift every bar and phrase by a beat. A draft about a whole beat or more away from the
+// program's bar was moved on purpose with the downbeat button, and keeps its own; the cut
+// sits at three quarters so a downbeat change nudged a few ms back still reads as one.
+const NUDGE_BEATS = 0.75
+
+function barFrom(bars: EditableGrid | null, zone: EditableGrid, ms: number): number {
+  if (!bars) return zone.anchorMs
+  const program = zoneAt(bars, ms)
+  const beats = (zone.anchorMs - program.anchorMs) / periodOf(program.bpm)
+  return Math.abs(beats - 4 * Math.round(beats / 4)) < NUDGE_BEATS ? program.anchorMs : zone.anchorMs
+}
+
 export function fitGrid(
   grid: EditableGrid,
   fit: GridFit,
   atMs?: number,
   kicks: number[] = [],
+  bars: EditableGrid | null = null,
 ): EditableGrid {
   const first =
     atMs === undefined
@@ -430,7 +445,7 @@ export function fitGrid(
     const beatAt = heard - off + offbeatFolded(off, periodOf(fit.bpm))
     return {
       bpm: tempo,
-      anchorMs: nearestOn(zone.anchorMs, beatAt, periodOf(tempo)),
+      anchorMs: nearestOn(barFrom(bars, zone, beatAt), beatAt, periodOf(tempo)),
     }
   })
   return fitted ?? grid
@@ -488,12 +503,13 @@ export function autoFitGrid(
   atMs: number,
   kicks: number[],
   zones: boolean,
+  bars: EditableGrid | null = null,
 ): EditableGrid {
   const { zones: _, ...base } = grid
   const sameTempo = Math.abs(fit.bpm - grid.bpm) / grid.bpm < SAME_TEMPO_RATIO
   const runs = zones && sameTempo ? splitRuns(steadyStretches(fit)) : []
   if (runs.length < 2)
-    return zones ? fitGrid(base, fit, atMs, kicks) : fitGrid(grid, fit, atMs, kicks)
+    return zones ? fitGrid(base, fit, atMs, kicks, bars) : fitGrid(grid, fit, atMs, kicks, bars)
   const fitPeriod = periodOf(fit.bpm)
   const lines = runs.map((run) => {
     const { at, slope } = lineOf(run)
@@ -509,7 +525,7 @@ export function autoFitGrid(
   const beatAt = heard - off + offbeatFolded(off, fitPeriod)
   const first = {
     bpm: 60000 / lines[0].period,
-    anchorMs: nearestOn(grid.anchorMs, beatAt, lines[0].period),
+    anchorMs: nearestOn(barFrom(bars, grid, beatAt), beatAt, lines[0].period),
   }
   const out: GridZone[] = []
   let previous: EditableGrid = first

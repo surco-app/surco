@@ -271,6 +271,19 @@ describe('CueGridControls', () => {
     expect(fitted.zones).toHaveLength(1)
   })
 
+  it('leaves beat 1 on the kick the program counts it from after the DJ nudged the grid past half a beat', () => {
+    const program = { bpm: 150, anchorMs: 1600 }
+    const onChange = setup({
+      grid: { bpm: 150, anchorMs: 1350 },
+      fit: { bpm: 150, firstMs: 0 },
+      needsFix: true,
+      kicks: gridBeats(program, 360000).map((b) => b.ms),
+      bars: program,
+    })
+    fireEvent.click(screen.getByTestId('cues-grid-auto'))
+    expect(onChange.onFit.mock.calls[0][0].anchorMs).toBeCloseTo(1600, 3)
+  })
+
   it('keeps one tempo with Auto where the program has no zones', () => {
     const fit = {
       bpm: 150,

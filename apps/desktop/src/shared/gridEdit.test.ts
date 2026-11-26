@@ -622,6 +622,21 @@ describe('Auto over the whole track', () => {
     }
   })
 
+  it('keeps beat 1 where the program had it when it opens zones on a grid the DJ moved more than half a beat', () => {
+    const program = { bpm: 142.13, anchorMs: 244 + 4 * P_142 }
+    const kicks = drawn(program, DURATION)
+    const auto = autoFitGrid(
+      shiftGrid(program, -0.7 * P_142),
+      steadyThenFaster,
+      0,
+      kicks,
+      true,
+      program,
+    )
+    expect(auto.zones).toHaveLength(1)
+    expect(auto.anchorMs).toBeCloseTo(program.anchorMs, 0)
+  })
+
   it('leaves a track of one tempo in one zone, though each stretch reads a few ms either way', () => {
     const jitter = {
       bpm: BPM_142,
@@ -841,5 +856,39 @@ describe('Auto on the fine measurements', () => {
       const carried = carryOntoGrid(read, again, b.ms, 20)
       expect(Math.abs((carried ?? Number.NaN) - b.ms)).toBeLessThanOrEqual(15)
     }
+  })
+})
+
+describe('autoFitGrid keeps the bar of the program grid', () => {
+  const program = { bpm: 150, anchorMs: 1600 }
+  const fit = { bpm: 150, firstMs: 0 }
+  const kicks = drawn(program, 360000)
+
+  // A DJ nudging the grid more than half a beat away and pressing Auto got every line back on
+  // a kick but beat 1 on the kick before, and the bars and phrases counted from the wrong one.
+  it('puts beat 1 back on the kick the program had it on, however far the DJ moved the grid before', () => {
+    for (const shift of [-150, -250, -290, 250])
+      for (const zones of [true, false])
+        expect(
+          autoFitGrid(shiftGrid(program, shift), fit, 30000, kicks, zones, program).anchorMs,
+        ).toBeCloseTo(1600, 3)
+  })
+
+  it('keeps the beat 1 the DJ chose with the downbeat button, a whole beat or more from the program one', () => {
+    for (const [anchorMs, want] of [
+      [2000, 2000],
+      [2400, 2400],
+      [1970, 2000],
+      [800, 800],
+    ])
+      expect(
+        autoFitGrid({ bpm: 150, anchorMs }, fit, 30000, kicks, true, program).anchorMs,
+      ).toBeCloseTo(want, 3)
+  })
+
+  it('counts the bar from the draft when there is no program grid to go by', () => {
+    expect(
+      autoFitGrid(shiftGrid(program, -250), fit, 30000, kicks, true, null).anchorMs,
+    ).toBeCloseTo(1200, 3)
   })
 })

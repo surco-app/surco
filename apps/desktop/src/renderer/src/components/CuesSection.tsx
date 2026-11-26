@@ -1620,7 +1620,9 @@ function Editing({
       onClick={() =>
         state.grid &&
         gridFit &&
-        fitGridTo(autoFitGrid(state.grid, gridFit, head.get(), programBeats, rekordboxGrid))
+        fitGridTo(
+          autoFitGrid(state.grid, gridFit, head.get(), programBeats, rekordboxGrid, programGrid),
+        )
       }
       className={`press relative flex shrink-0 items-center gap-1.5 whitespace-nowrap border border-[var(--color-line-strong)] text-xs font-medium text-fg-muted hover:bg-[var(--color-hover)] disabled:opacity-40 data-[needs-fix=true]:border-[var(--color-accent)] data-[needs-fix=true]:bg-[var(--color-accent)] data-[needs-fix=true]:font-semibold data-[needs-fix=true]:text-[var(--color-on-accent)] ${autoHeight}`}
     >
@@ -2364,6 +2366,7 @@ function Editing({
                           onDone={focusEditor}
                           zones={rekordboxGrid}
                           kicks={programBeats}
+                          bars={programGrid}
                           onPin={pin}
                         />
                       )}
