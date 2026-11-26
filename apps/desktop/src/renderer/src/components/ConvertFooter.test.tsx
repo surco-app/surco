@@ -227,6 +227,7 @@ describe('ConvertFooter done footer stays on one line', () => {
     expect(again).toHaveFocus()
     expect(again).toHaveAttribute('aria-disabled', 'true')
     expect(again).toHaveAccessibleDescription('Missing artist')
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(again, { key: 'Enter' })
     fireEvent.click(again)
     expect(onProcess).not.toHaveBeenCalled()

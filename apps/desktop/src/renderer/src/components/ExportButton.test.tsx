@@ -413,6 +413,7 @@ describe('ExportButton', () => {
     screen.getByTestId('process-destination-folder').focus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(music).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(music, { key: 'Enter' })
     fireEvent.click(music)
     expect(onSelectDestination).not.toHaveBeenCalled()

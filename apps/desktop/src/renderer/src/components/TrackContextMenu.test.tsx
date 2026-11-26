@@ -263,6 +263,7 @@ describe('TrackContextMenu playlist actions', () => {
     screen.getByTestId('track-menu-add-to').focus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(item).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(item, { key: 'Enter' })
     fireEvent.click(item)
     expect(p.onInsertSeparator).not.toHaveBeenCalled()

@@ -546,6 +546,7 @@ describe('Select disabled options', () => {
     expect(screen.getByTestId('sort-option-import')).toHaveFocus()
     fireEvent.keyDown(list, { key: 'ArrowDown' })
     expect(screen.getByTestId('sort-option-locked')).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(screen.getByTestId('sort-option-locked'), { key: 'Enter' })
     fireEvent.click(screen.getByTestId('sort-option-locked'))
     expect(onChange).not.toHaveBeenCalled()

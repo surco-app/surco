@@ -558,6 +558,7 @@ describe('CuesTab', () => {
     expect(use).toHaveFocus()
     fireEvent.click(use)
     expect(screen.getByTestId('cue-flow-use')).toBeInTheDocument()
+    expect(last?.activeCueFlow).toBe('gone')
   })
 
   it('keeps marking the Mi flujo an earlier Surco kept when the stored active flow no longer exists, as main still runs it', () => {

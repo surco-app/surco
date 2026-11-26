@@ -245,6 +245,7 @@ describe('TrackListHeader actions row', () => {
     screen.getByTestId('remove-selected').focus()
     fireEvent.keyDown(menu, { key: 'ArrowDown' })
     expect(trash).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(trash, { key: 'Enter' })
     fireEvent.click(trash)
     expect(handlers.onTrashSelected).not.toHaveBeenCalled()

@@ -3065,6 +3065,7 @@ describe('CuesSection cue menus from the keyboard', () => {
     const add = screen.getByTestId('cues-menu-add-hot')
     expect(add).toHaveAttribute('aria-disabled', 'true')
     expect(add).toHaveFocus()
+    // jsdom does not turn Enter into a click: this checks no menu key handler acts, and the click below is what guards activation.
     fireEvent.keyDown(add, { key: 'Enter' })
     fireEvent.click(add)
     expect(screen.getByTestId('cues-menu')).toBeInTheDocument()
