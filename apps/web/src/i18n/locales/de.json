@@ -1023,7 +1023,7 @@
           "Ist das Programm offen, wartet Surco, bis du es schließt, oder bietet an, es zu schließen, und legt vor dem Schreiben immer ein Backup an.",
           "Traktor liest die Datei nicht neu, sondern seine collection.nml. Damit es deine neuen Cues sieht, zeig Surco in den Einstellungen deine Sammlung.",
           "Die Traktor-Cues überstehen das Konvertieren zwischen MP3, AIFF, FLAC und WAV und gehen nur bei ALAC verloren.",
-          "Lädst du eine andere Kopie eines Tracks, wird der Button zu „Ersetzen“. Die Cues folgen dem Audio, und der Track wartet in „Zu prüfen“."
+          "Bei einer anderen Kopie eines Tracks wird der Button zu „Aktualisieren“. Mit „Ersetzen“ folgen die Cues dem Audio, und der Track wartet in „Zu prüfen“."
         ],
         "shot": "exportar-de.webp",
         "shotCaption": "Den Track an Apple Music schicken oder die Sammlung exportieren."

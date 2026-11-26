@@ -1023,7 +1023,7 @@
           "Si el programa está abierto, Surco espera a que lo cierres o se ofrece a cerrarlo, y siempre guarda una copia antes de escribir.",
           "Traktor no relee el archivo, lee su collection.nml. Para que vea tus cues nuevos, señala tu colección en Ajustes.",
           "Los cues de Traktor sobreviven a la conversión entre MP3, AIFF, FLAC y WAV, y solo se pierden en ALAC.",
-          "Si cargas otra copia de una pista que tienes, el botón pasa a «Sustituir». Sus cues siguen al audio y espera en «Para revisar»."
+          "Con otra copia de una pista que tienes, el botón pasa a «Actualizar». Con «Sustituir», sus cues siguen al audio y espera en «Para revisar»."
         ],
         "shot": "exportar-es.webp",
         "shotCaption": "Enviar la pista a Apple Music o exportar la colección."

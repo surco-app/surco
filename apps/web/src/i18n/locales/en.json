@@ -1023,7 +1023,7 @@
           "If the program is open, Surco waits until you close it or offers to close it, and always keeps a backup before writing.",
           "Traktor doesn't re-read the file, it reads its collection.nml. For it to see your new cues, point Surco at your collection in Settings.",
           "Traktor's cues survive conversion across MP3, AIFF, FLAC and WAV, and are only lost on ALAC.",
-          "Load another copy of a track you have and the button changes to “Replace”. Its cues follow the audio and it waits in “To review”."
+          "With another copy of a track you have, the button becomes “Update”. With “Replace”, its cues follow the audio and it waits in “To review”."
         ],
         "shot": "exportar-en.webp",
         "shotCaption": "Sending the track to Apple Music or exporting the collection."

@@ -1023,7 +1023,7 @@
           "Si el programa és obert, Surco espera que el tanquis o s'ofereix a tancar-lo, i sempre desa una còpia abans d'escriure.",
           "Traktor no torna a llegir el fitxer, llegeix el seu collection.nml. Perquè vegi els cues nous, indica la teva col·lecció a Configuració.",
           "Els cues de Traktor sobreviuen a la conversió entre MP3, AIFF, FLAC i WAV, i només es perden en ALAC.",
-          "Si carregues una altra còpia d’una pista que tens, el botó passa a «Substituir». Els cues segueixen l’àudio i espera a «Per revisar»."
+          "Amb una altra còpia d’una pista que tens, el botó passa a «Actualitzar». Amb «Substituir», els cues segueixen l’àudio i espera a «Per revisar»."
         ],
         "shot": "exportar-ca.webp",
         "shotCaption": "Enviar la pista a Apple Music o exportar la col·lecció."
